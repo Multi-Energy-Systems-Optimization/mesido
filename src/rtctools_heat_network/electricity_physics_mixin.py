@@ -36,7 +36,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         self.__asset_is_switched_on_var = {}
         self.__asset_is_switched_on_bounds = {}
 
-        self.__windpark_upper_bounds = {}
+        self.__electricity_producer_upper_bounds = {}
 
         self._electricity_cable_topo_cable_class_map = {}
 
@@ -69,7 +69,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
         options = self.energy_system_options()
 
-        self.__update_windpark_upper_bounds()
+        self.__update_electricity_producer_upper_bounds()
 
         if options["include_asset_is_switched_on"]:
             for asset in [
@@ -128,7 +128,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         bounds = super().bounds()
 
         bounds.update(self.__asset_is_switched_on_bounds)
-        bounds.update(self.__windpark_upper_bounds)
+        bounds.update(self.__electricity_producer_upper_bounds)
 
         return bounds
 
@@ -160,15 +160,15 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
         )
 
-    def __update_windpark_upper_bounds(self):
+    def __update_electricity_producer_upper_bounds(self):
         t = self.times()
         for asset in [*self.energy_system_components.get("wind_park", []),
                    *self.energy_system_components.get("solar_pv", [])]:
             lb = Timeseries(t, np.zeros(len(self.times())))
             ub = self.get_timeseries(f"{asset}.maximum_electricity_source")
-            self.__windpark_upper_bounds[f"{asset}.Electricity_source"] = (lb, ub)
+            self.__electricity_producer_upper_bounds[f"{asset}.Electricity_source"] = (lb, ub)
 
-    def __wind_park_set_point_constraints(self, ensemble_member):
+    def __electricity_producer_set_point_constraints(self, ensemble_member):
         """
         This function adds constraints for wind parks which generates electrical power. The
         produced electrical power is capped with a user specified percentage value of the maximum
@@ -570,7 +570,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         """
         constraints = super().constraints(ensemble_member)
 
-        constraints.extend(self.__wind_park_set_point_constraints(ensemble_member))
+        constraints.extend(self.__electricity_producer_set_point_constraints(ensemble_member))
 
         return constraints
 

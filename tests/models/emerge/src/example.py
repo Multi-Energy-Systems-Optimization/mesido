@@ -282,5 +282,12 @@ if __name__ == "__main__":
         profile_reader=ProfileReaderFromFile,
         input_timeseries_file="timeseries_with_pv.csv",
     )
+    # elect = run_optimization_problem(
+    #     EmergeTest,
+    #     esdl_file_name="emerge.esdl",
+    #     esdl_parser=ESDLFileParser,
+    #     profile_reader=ProfileReaderFromFile,
+    #     input_timeseries_file="timeseries.csv",
+    # )
     results = elect.extract_results()
     a = 1
