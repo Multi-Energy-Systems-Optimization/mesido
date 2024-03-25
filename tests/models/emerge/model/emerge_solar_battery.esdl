@@ -107,7 +107,7 @@
         <port xsi:type="esdl:OutPort" id="fd7fab3b-9c6e-491d-b3c2-a39833edf0bf" connectedTo="b0ed14ac-faa8-499f-aa98-53be98852d0f" carrier="e1077d81-b32a-4004-9a33-db65c96b5f4c" name="Out"/>
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="52.492891564137324" lon="3.381034242066989"/>
       </asset>
-      <asset xsi:type="esdl:Battery" name="Battery_4688" capacity="10000000000.0" dischargeEfficiency="0.85" id="4688dd12-3e5a-4291-b6ba-bfb55813b05a" chargeEfficiency="0.9" maxChargeRate="500000000.0" maxDischargeRate="500000000.0">
+      <asset xsi:type="esdl:Battery" name="Battery_4688" capacity="1000000000000.0" dischargeEfficiency="0.85" id="4688dd12-3e5a-4291-b6ba-bfb55813b05a" chargeEfficiency="0.9" maxChargeRate="500000000.0" maxDischargeRate="500000000.0">
         <costInformation xsi:type="esdl:CostInformation" id="6856790a-20f3-492f-9e60-774c70d3fc1b">
           <fixedOperationalCosts xsi:type="esdl:SingleValue" id="5df2b109-2123-4c48-80c0-d96d3d51edfc" value="5000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="162d775b-773f-4671-8bf7-edcf3aedb6ce" unit="EURO" description="Cost in EUR/MW" perMultiplier="MEGA" physicalQuantity="COST" perUnit="WATT"/>
