@@ -20,6 +20,7 @@ class ElectricityStorage(ElectricityComponent, BaseAsset):
         self.component_type = "electricity_storage"
 
         self.max_capacity = nan
+        self.min_voltage = nan
 
         self.add_variable(ElectricityPort, "ElectricityIn")
 

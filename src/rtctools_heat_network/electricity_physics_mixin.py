@@ -391,6 +391,47 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
         return constraints
 
+    def __electricity_storage_path_constraints(self, ensemble_member):
+        """
+        This function adds the constraints for the electricity commodity at the demand assets. We
+        enforce that a minimum voltage is exactly met together with the power that is carried by
+        the current. By fixing the voltage at the demand we ensure that at the demands
+        P = U * I is met exactly at this point in the network and the power is conservatively
+        in the cables at all locations in the network.
+        """
+        constraints = []
+        parameters = self.parameters(ensemble_member)
+
+        for asset in [
+            *self.energy_system_components.get("electricity_storage", []),
+        ]:
+            min_voltage = parameters[f"{asset}.min_voltage"]
+            voltage = self.state(f"{asset}.ElectricityIn.V")
+
+            # when charging act like a demand, when discharging act like a source
+            # to ensure that voltage is equal or larger than the minimum voltage
+            #TODO: still add the boolean for charging with bigm to determine if constraint is active
+            constraints.append(((voltage - min_voltage) / min_voltage, 0.0, np.inf))
+
+            power_nom = self.variable_nominal(f"{asset}.ElectricityIn.Power")
+            curr_nom = self.variable_nominal(f"{asset}.ElectricityIn.I")
+            power_in = self.state(f"{asset}.ElectricityIn.Power")
+            current_in = self.state(f"{asset}.ElectricityIn.I")
+
+            constraints.append(
+                (
+                    (power_in - min_voltage * current_in)
+                    / (power_nom * curr_nom * min_voltage) ** 0.5,
+                    0,
+                    0,
+                )
+            )
+
+            #TODO: update battery storage change using charge/discharge efficiency requires charging/discharging boolean.
+
+        return constraints
+
+
     def __get_electrolyzer_gas_mass_flow_out(
         self, coef_a, coef_b, coef_c, electrical_power_input
     ) -> float:
