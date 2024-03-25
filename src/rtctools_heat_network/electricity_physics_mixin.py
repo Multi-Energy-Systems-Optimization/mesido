@@ -430,6 +430,12 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             #TODO: still add the boolean for charging with bigm to determine if constraint is active
             constraints.append(((voltage - min_voltage) / min_voltage, 0.0, np.inf))
 
+            # is_charging is 1 if charging and powerin>0
+            big_m = self.bounds()[f"{asset}.ElectricityIn.Power"]
+            is_charging = self.state(f"{asset}__is_charging")
+            constraints.append((power_in + (1 - is_charging) * big_m, 0.0, np.inf))
+            constraints.append((power_in - is_charging * big_m, -np.inf, 0.0))
+
             power_nom = self.variable_nominal(f"{asset}.ElectricityIn.Power")
             curr_nom = self.variable_nominal(f"{asset}.ElectricityIn.I")
             power_in = self.state(f"{asset}.ElectricityIn.Power")
@@ -437,31 +443,55 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
             constraints.append(
                 (
-                    (power_in - min_voltage * current_in)
-                    / (power_nom * curr_nom * min_voltage) ** 0.5,
+                    (power_in - min_voltage * current_in
+                     + (1-is_charging) * big_m)
+                    / (power_nom * curr_nom * min_voltage) ** 0.5 ,
                     0,
-                    0,
+                    np.inf,
                 )
             )
             constraints.append(
                 (
-                    (power_in - min_voltage * current_in)
+                    (power_in - min_voltage * current_in
+                     - (1 - is_charging) * big_m)
                     / (power_nom * curr_nom * min_voltage) ** 0.5,
-                    0,
+                    -np.inf,
                     0,
                 )
             )
 
-            #is_charging is 1 if charging and powerin>0
-            big_m = self.bounds()[f"{asset}.ElectricityIn.Power"]
-            is_charging = self.state(f"{asset}__is_charging")
-            constraints.append((power_in + (1 - is_charging) * big_m, 0.0, np.inf))
-            constraints.append((power_in - is_charging * big_m, -np.inf, 0.0))
 
 
             #power charging using discharge/charge efficiency, needs boolean
-            constraints.append((()))
-            # (self.Power_charging - self.ElectricityIn.Power) / self.ElectricityIn.Power.nominal
+            eff_power = self.state(f"{asset}.Effective_power_charging")
+            discharge_eff = parameters[f"{asset}.discharge_efficiency"]
+            charge_eff = parameters[f"{asset}.charge_efficiency"]
+            #charging
+            constraints.append(
+                (
+                    (eff_power - charge_eff*power_in + (1-is_charging) * big_m)
+                    /power_nom, 0, np.inf,
+                )
+            )
+            constraints.append(
+                (
+                    (eff_power - charge_eff * power_in - (1 - is_charging) * big_m)
+                    / power_nom, -np.inf, 0,
+                )
+            )
+            # discharging
+            constraints.append(
+                (
+                    (eff_power - discharge_eff * power_in + is_charging * big_m)
+                    / power_nom, 0, np.inf,
+                )
+            )
+            constraints.append(
+                (
+                    (eff_power - discharge_eff * power_in - is_charging * big_m)
+                    / power_nom, -np.inf, 0,
+                )
+            )
 
             #TODO: update battery storage change using charge/discharge efficiency requires charging/discharging boolean.
 

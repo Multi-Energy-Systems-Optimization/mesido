@@ -21,6 +21,8 @@ class ElectricityStorage(ElectricityComponent, BaseAsset):
 
         self.max_capacity = nan
         self.min_voltage = nan
+        self.charge_efficiency = 1.0
+        self.discharge_efficiency = 1.0
 
         self.add_variable(ElectricityPort, "ElectricityIn")
 
@@ -35,10 +37,10 @@ class ElectricityStorage(ElectricityComponent, BaseAsset):
             max=self.max_capacity,
             nominal=self._nominal_stored_electricity,
         )
-        self.add_variable(Variable, "Power_charging", nominal=self.ElectricityIn.Power.nominal)
+        self.add_variable(Variable, "Effective_power_charging", nominal=self.ElectricityIn.Power.nominal)
 
         self.add_equation(
-            ((self.der(self.Stored_electricity) - self.Power_charging)
+            ((self.der(self.Stored_electricity) - self.Effective_power_charging)
              / self.ElectricityIn.Power.nominal)
         )
 
