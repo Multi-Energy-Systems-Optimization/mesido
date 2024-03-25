@@ -163,8 +163,13 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 nominal_fixed_operational = bounds[f"{asset_name}.Power_consumed"][1]
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
-            elif asset_name in [*self.energy_system_components.get("wind_park", [])]:
+            elif asset_name in [*self.energy_system_components.get("wind_park", []),
+                                *self.energy_system_components.get("solar_pv", [])]:
                 nominal_fixed_operational = bounds[f"{asset_name}.Set_point"][1]
+                nominal_variable_operational = nominal_fixed_operational
+                nominal_investment = nominal_fixed_operational
+            elif asset_name in [*self.energy_system_components.get("electricity_storage", [])]:
+                nominal_fixed_operational = bounds[f"{asset_name}.Stored_electricity"][1]
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
             else:

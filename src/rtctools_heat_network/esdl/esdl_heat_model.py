@@ -1142,11 +1142,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
         max_discharge = asset.attributes.get("maxDischargeRate", max_capacity/3600)
 
         modifiers = dict(
-            capacity_nominal =max_capacity / 2.0,
+            max_capacity=max_capacity,
+            Stored_electricity=dict(min=0.0, max=max_capacity),
             ElectricityIn=dict(
                 V=dict(min=v_min, nominal=v_min),
                 I=dict(min=-i_max, max=i_max, nominal=i_nom),
-                Power=dict(min=-max_discharge, max=max_charge, nominal=max_discharge / 2.0),
+                Power=dict(min=-max_discharge, max=max_charge, nominal=max_charge / 2.0),
             ),
             **self._get_cost_figure_modifiers(asset),
         )

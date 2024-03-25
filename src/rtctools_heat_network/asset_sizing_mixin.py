@@ -854,6 +854,15 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             lb = 0.0 if parameters[f"{asset_name}.state"] == 2 else ub
             _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
 
+        for asset_name in self.energy_system_components.get("electricity_storage", []):
+            ub = (
+                bounds[f"{asset_name}.Stored_electricity"][1]
+                if not isinstance(bounds[f"{asset_name}.Stored_electricity"][1], Timeseries)
+                else np.max(bounds[f"{asset_name}.Stored_electricity"][1].values)
+            )
+            lb = 0.0 if parameters[f"{asset_name}.state"] == 2 else ub
+            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
+
         # Making the __aggregation_count variable for each asset
         for asset_list in self.energy_system_components.values():
             for asset in asset_list:
@@ -1884,6 +1893,24 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     np.inf,
                 )
             )
+
+        for d in self.energy_system_components.get("electricity_storage", []):
+            max_var = self._asset_max_size_map[d]
+            max_power = self.extra_variable(max_var, ensemble_member)
+            electricity_stored = self.__state_vector_scaled(
+                f"{d}.Stored_electricity", ensemble_member
+            )
+            constraint_nominal = self.variable_nominal(f"{d}.Stored_electricity")
+
+            constraints.append(
+                (
+                    (np.ones(len(self.times())) * max_power - electricity_stored)
+                    / constraint_nominal,
+                    0.0,
+                    np.inf,
+                )
+            )
+
 
         for d in self.energy_system_components.get("electrolyzer", []):
             max_var = self._asset_max_size_map[d]
