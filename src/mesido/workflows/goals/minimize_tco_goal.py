@@ -50,7 +50,6 @@ class MinimizeTCO(Goal):
                 "heat_buffer",
                 "heat_pump",
                 "heat_exchanger",
-                "heat_exchanger_elec",
                 "pump",
             },
             "investment": {
@@ -61,7 +60,6 @@ class MinimizeTCO(Goal):
                 "heat_exchanger",
                 "heat_pump",
                 "heat_pipe",
-                "heat_exchanger_elec",
                 "pump",
             },
             "installation": {
@@ -72,7 +70,6 @@ class MinimizeTCO(Goal):
                 "heat_exchanger",
                 "heat_pump",
                 "heat_pipe",
-                "heat_exchanger_elec",
                 "pump",
             },
             "annualized": {
@@ -83,9 +80,8 @@ class MinimizeTCO(Goal):
                 "heat_exchanger",
                 "heat_pump",
                 "heat_pipe",
-                "heat_exchanger_elec",
                 "pump",
-            },  # TODO: confirm inclusion of "heat_exchanger_elec" & "pump"  in "annualized"
+            },
         }
 
         self.asset_type_maps = (
