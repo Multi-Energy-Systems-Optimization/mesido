@@ -40,6 +40,11 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
         self._electricity_cable_topo_cable_class_map = {}
 
+        # Boolean path-variable for the charging of storage assets
+        self.__storage_charging = {}
+        self.__storage_charging_bounds = {}
+        self.__storage_charging_map = {}
+
     def energy_system_options(self):
         r"""
         Returns a dictionary of milp network specific options.
@@ -80,6 +85,14 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                 self.__asset_is_switched_on_var[var_name] = ca.MX.sym(var_name)
                 self.__asset_is_switched_on_bounds[var_name] = (0.0, 1.0)
 
+        for asset in [*self.energy_system_components.get("energy_storage", [])]:
+            var_name = f"{asset}__is_charging"
+            self.__storage_charging_map[asset] = var_name
+            self.__storage_charging_var[var_name] = ca.MX.sym(var_name)
+            self.__storage_charging_bounds[var_name] = (0.0, 1.0)
+
+
+
     @property
     def extra_variables(self):
         """
@@ -100,6 +113,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         variables = super().path_variables.copy()
 
         variables.extend(self.__asset_is_switched_on_var.values())
+        variables.extend(self.__storage_charging_var.values())
 
         return variables
 
@@ -109,6 +123,8 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         """
 
         if variable in self.__asset_is_switched_on_var:
+            return True
+        if variable in self.__storage_charging_var:
             return True
         else:
             return super().variable_is_discrete(variable)
@@ -128,6 +144,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         bounds = super().bounds()
 
         bounds.update(self.__asset_is_switched_on_bounds)
+        bounds.update(self.__storage_charging_bounds)
         bounds.update(self.__electricity_producer_upper_bounds)
 
         return bounds
@@ -426,6 +443,25 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                     0,
                 )
             )
+            constraints.append(
+                (
+                    (power_in - min_voltage * current_in)
+                    / (power_nom * curr_nom * min_voltage) ** 0.5,
+                    0,
+                    0,
+                )
+            )
+
+            #is_charging is 1 if charging and powerin>0
+            big_m = self.bounds()[f"{asset}.ElectricityIn.Power"]
+            is_charging = self.state(f"{asset}__is_charging")
+            constraints.append((power_in + (1 - is_charging) * big_m, 0.0, np.inf))
+            constraints.append((power_in - is_charging * big_m, -np.inf, 0.0))
+
+
+            #power charging using discharge/charge efficiency, needs boolean
+            constraints.append((()))
+            # (self.Power_charging - self.ElectricityIn.Power) / self.ElectricityIn.Power.nominal
 
             #TODO: update battery storage change using charge/discharge efficiency requires charging/discharging boolean.
 
@@ -599,6 +635,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         constraints.extend(self.__electricity_cable_mixing_path_constraints(ensemble_member))
         constraints.extend(self.__voltage_loss_path_constraints(ensemble_member))
         constraints.extend(self.__electrolyzer_path_constaint(ensemble_member))
+        constraints.extend(self.__electricity_storage_path_constraints(ensemble_member))
 
         return constraints
 
