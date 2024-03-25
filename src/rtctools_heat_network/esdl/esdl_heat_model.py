@@ -14,6 +14,7 @@ from rtctools_heat_network.pycml.component_library.milp import (
     ElectricityDemand,
     ElectricityNode,
     ElectricitySource,
+    ElectricityStorage,
     Electrolyzer,
     GasDemand,
     GasNode,
@@ -1116,6 +1117,41 @@ class AssetToHeatComponent(_AssetToComponentBase):
             return WindPark, modifiers
         if asset.asset_type == "PVInstallation":
             return SolarPV, modifiers
+
+    def convert_electricity_storage(self, asset: Asset) -> Tuple[Type[ElectricityStorage], MODIFIERS]:
+        """
+        This function converts the ElectricityStorage object in esdl to a set of modifiers that can
+        be used in a pycml object. Most important:
+
+        - Setting the electrical power caps
+
+        Parameters
+        ----------
+        asset : The asset object with its properties.
+
+        Returns
+        -------
+        ElectricityStorage class with modifiers
+        """
+        assert asset.asset_type in {"Battery"}
+
+        max_capacity = asset.attributes.get("capacity")
+        i_max, i_nom = self._get_connected_i_nominal_and_max(asset)
+        v_min = asset.in_ports[0].carrier.voltage
+        max_charge = asset.attributes.get("maxChargeRate", max_capacity/3600)
+        max_discharge = asset.attributes.get("maxDischargeRate", max_capacity/3600)
+
+        modifiers = dict(
+            capacity_nominal =max_capacity / 2.0,
+            ElectricityIn=dict(
+                V=dict(min=v_min, nominal=v_min),
+                I=dict(min=-i_max, max=i_max, nominal=i_nom),
+                Power=dict(min=-max_discharge, max=max_charge, nominal=max_discharge / 2.0),
+            ),
+            **self._get_cost_figure_modifiers(asset),
+        )
+
+        return ElectricityStorage, modifiers
 
     def convert_electricity_node(self, asset: Asset) -> Tuple[Type[ElectricityNode], MODIFIERS]:
         """

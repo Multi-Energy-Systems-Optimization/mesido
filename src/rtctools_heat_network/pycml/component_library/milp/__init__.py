@@ -1,3 +1,4 @@
+from .electricity.electricity_storage import ElectricityStorage
 from .electricity.electricity_cable import ElectricityCable
 from .electricity.electricity_demand import ElectricityDemand
 from .electricity.electricity_node import ElectricityNode
