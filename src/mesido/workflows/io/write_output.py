@@ -869,17 +869,6 @@ class ScenarioOutput(TechnoEconomicMixin):
         if self.write_result_db_profiles:
             logger.info("Writing asset result profile data to influxDB")
             results = self.extract_results()
-            # Note: when adding new variables to variables_one_hydraulic_system or"
-            # variables_two_hydraulic_system also add quantity and units to the ESDL for the new
-            # variables in the code lower down
-            variables_one_hydraulic_system = ["HeatIn.Q", "HeatIn.H", "Heat_flow"]
-            variables_two_hydraulic_system = [
-                "Primary.HeatIn.Q",
-                "Primary.HeatIn.H",
-                "Secondary.HeatIn.Q",
-                "Secondary.HeatIn.H",
-                "Heat_flow",
-            ]
 
             influxdb_conn_settings = ConnectionSettings(
                 host=self.influxdb_host,
@@ -909,6 +898,36 @@ class ScenarioOutput(TechnoEconomicMixin):
                 *self.energy_system_components.get("heat_exchanger", []),
                 *self.energy_system_components.get("heat_pump", []),
             ]:
+                # Note: when adding new variables to variables_one_hydraulic_system or"
+                # variables_two_hydraulic_system also add quantity and units to the ESDL for the new
+                # variables in the code lower down
+                # These variables exist for all the assets. Variables that only exist for specific
+                # assets are only added later, like Pump_power
+                variables_one_hydraulic_system = ["HeatIn.Q", "Heat_flow"]
+                variables_two_hydraulic_system = [
+                    "Primary.HeatIn.Q",
+                    "Secondary.HeatIn.Q",
+                    "Heat_flow",
+                ]
+
+                # Update/overwrite each asset variable list due to:
+                # - the addition of head loss minimization: head variable and pump power
+                # - only a specific variable required for a specific asset: pump power
+                if self.heat_network_settings["minimize_head_losses"]:
+                    variables_one_hydraulic_system.append("HeatIn.H")
+                    variables_two_hydraulic_system.append("Primary.HeatIn.H")
+                    variables_two_hydraulic_system.append("Secondary.HeatIn.H")
+                    if asset_name in [
+                        *self.energy_system_components.get("heat_source", []),
+                        *self.energy_system_components.get("heat_buffer", []),
+                        *self.energy_system_components.get("ates", []),
+                    ]:
+                        variables_one_hydraulic_system.append("Pump_power")
+                        variables_two_hydraulic_system.append("Pump_power")
+                    elif asset_name in [*self.energy_system_components.get("pump", [])]:
+                        variables_one_hydraulic_system = ["Pump_power"]
+                        variables_two_hydraulic_system = ["Pump_power"]
+
                 profiles = ProfileManager()
                 profiles.profile_type = "DATETIME_LIST"
                 profiles.profile_header = ["datetime"]
@@ -948,13 +967,20 @@ class ScenarioOutput(TechnoEconomicMixin):
                                 numbers.Number,
                             ):
                                 variables_names = variables_one_hydraulic_system
-                        except Exception:
+                        except KeyError:
                             # For all components dealing with two hydraulic system
                             if isinstance(
                                 results[f"{asset_name}." + variables_two_hydraulic_system[0]][ii],
                                 numbers.Number,
                             ):
                                 variables_names = variables_two_hydraulic_system
+                        except Exception:
+                            logger.error(
+                                f"During the influxDB profile writing for asset: {asset_name}, the "
+                                "following error occured:"
+                            )
+                            traceback.print_exc()
+                            sys.exit(1)
 
                         for variable in variables_names:
                             if ii == 0:
@@ -981,7 +1007,7 @@ class ScenarioOutput(TechnoEconomicMixin):
                                     id=str(uuid.uuid4()),
                                 )
                                 # Assign quantity and units variable
-                                if variable in ["Heat_flow"]:
+                                if variable in ["Heat_flow", "Pump_power"]:
                                     profile_attributes.profileQuantityAndUnit = (
                                         esdl.esdl.QuantityAndUnitType(
                                             physicalQuantity=esdl.PhysicalQuantityEnum.POWER,
@@ -1051,13 +1077,13 @@ class ScenarioOutput(TechnoEconomicMixin):
                         field_names=influxdb_profile_manager.profile_header[1:],
                         tags=optim_simulation_tag,
                     )
-                    # -- Test tags -- # do not delete - to be used in test case
 
+                    # -- Test tags -- # do not delete - to be used in test case
                     # prof_loaded_from_influxdb = InfluxDBProfileManager(influxdb_conn_settings)
                     # dicts = [{"tag": "output_esdl_id", "value": energy_system.id}]
                     # prof_loaded_from_influxdb.load_influxdb(
                     #     # '"' + "ResidualHeatSource_72d7" + '"' ,
-                    #     '"' + asset_name + '"' ,
+                    #     asset_name,
                     #     variables_one_hydraulic_system,
                     #     # ["HeatIn.Q"],
                     #     # ["HeatIn.H"],
@@ -1066,6 +1092,7 @@ class ScenarioOutput(TechnoEconomicMixin):
                     #     profiles.end_datetime,
                     #     dicts,
                     # )
+                    # test = 0.0
 
                     # ------------------------------------------------------------------------------
                     # Do not delete the code below: is used in the development of profile viewer in
