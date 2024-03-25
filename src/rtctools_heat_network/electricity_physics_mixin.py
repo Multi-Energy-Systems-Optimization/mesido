@@ -41,7 +41,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         self._electricity_cable_topo_cable_class_map = {}
 
         # Boolean path-variable for the charging of storage assets
-        self.__storage_charging = {}
+        self.__storage_charging_var = {}
         self.__storage_charging_bounds = {}
         self.__storage_charging_map = {}
 
@@ -85,7 +85,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                 self.__asset_is_switched_on_var[var_name] = ca.MX.sym(var_name)
                 self.__asset_is_switched_on_bounds[var_name] = (0.0, 1.0)
 
-        for asset in [*self.energy_system_components.get("energy_storage", [])]:
+        for asset in [*self.energy_system_components.get("electricity_storage", [])]:
             var_name = f"{asset}__is_charging"
             self.__storage_charging_map[asset] = var_name
             self.__storage_charging_var[var_name] = ca.MX.sym(var_name)
@@ -430,16 +430,16 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             #TODO: still add the boolean for charging with bigm to determine if constraint is active
             constraints.append(((voltage - min_voltage) / min_voltage, 0.0, np.inf))
 
-            # is_charging is 1 if charging and powerin>0
-            big_m = self.bounds()[f"{asset}.ElectricityIn.Power"]
-            is_charging = self.state(f"{asset}__is_charging")
-            constraints.append((power_in + (1 - is_charging) * big_m, 0.0, np.inf))
-            constraints.append((power_in - is_charging * big_m, -np.inf, 0.0))
-
             power_nom = self.variable_nominal(f"{asset}.ElectricityIn.Power")
             curr_nom = self.variable_nominal(f"{asset}.ElectricityIn.I")
             power_in = self.state(f"{asset}.ElectricityIn.Power")
             current_in = self.state(f"{asset}.ElectricityIn.I")
+
+            # is_charging is 1 if charging and powerin>0
+            big_m = 2*self.bounds()[f"{asset}.ElectricityIn.Power"]
+            is_charging = self.state(f"{asset}__is_charging")
+            constraints.append((power_in + (1 - is_charging) * big_m, 0.0, np.inf))
+            constraints.append((power_in - is_charging * big_m, -np.inf, 0.0))
 
             constraints.append(
                 (

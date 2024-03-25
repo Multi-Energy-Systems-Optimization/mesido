@@ -231,17 +231,17 @@ class EmergeTest(
         # append this last priority's statistics here in post().
         # TODO: check if we still need this small part of code below
         success, _ = self.solver_success(self.solver_stats, False)
-        if not success:
-            time_taken = time.time() - self.__priority_timer
-            self._priorities_output.append(
-                (
-                    self.__priority,
-                    time_taken,
-                    False,
-                    self.objective_value,
-                    self.solver_stats,
-                )
-            )
+        # if not success:
+        #     time_taken = time.time() - self.__priority_timer
+        #     self._priorities_output.append(
+        #         (
+        #             self.__priority,
+        #             time_taken,
+        #             False,
+        #             self.objective_value,
+        #             self.solver_stats,
+        #         )
+        #     )
 
         super().post()
 
