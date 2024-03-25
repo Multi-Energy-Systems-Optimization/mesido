@@ -162,10 +162,11 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
     def __update_windpark_upper_bounds(self):
         t = self.times()
-        for wp in self.energy_system_components.get("wind_park", []):
+        for asset in [*self.energy_system_components.get("wind_park", []),
+                   *self.energy_system_components.get("solar_pv", [])]:
             lb = Timeseries(t, np.zeros(len(self.times())))
-            ub = self.get_timeseries(f"{wp}.maximum_electricity_source")
-            self.__windpark_upper_bounds[f"{wp}.Electricity_source"] = (lb, ub)
+            ub = self.get_timeseries(f"{asset}.maximum_electricity_source")
+            self.__windpark_upper_bounds[f"{asset}.Electricity_source"] = (lb, ub)
 
     def __wind_park_set_point_constraints(self, ensemble_member):
         """
@@ -175,15 +176,16 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         """
         constraints = []
 
-        for wp in self.energy_system_components.get("wind_park", []):
-            set_point = self.__state_vector_scaled(f"{wp}.Set_point", ensemble_member)
+        for asset in [*self.energy_system_components.get("wind_park", []),
+                      *self.energy_system_components.get("solar_pv", [])]:
+            set_point = self.__state_vector_scaled(f"{asset}.Set_point", ensemble_member)
             electricity_source = self.__state_vector_scaled(
-                f"{wp}.Electricity_source", ensemble_member
+                f"{asset}.Electricity_source", ensemble_member
             )
             # TODO: [: len(self.times())] should be removed once the emerge test is properly
             # time-sampled.
-            max = self.bounds()[f"{wp}.Electricity_source"][1].values[: len(self.times())]
-            nominal = (self.variable_nominal(f"{wp}.Electricity_source") * np.median(max)) ** 0.5
+            max = self.bounds()[f"{asset}.Electricity_source"][1].values[: len(self.times())]
+            nominal = (self.variable_nominal(f"{asset}.Electricity_source") * np.median(max)) ** 0.5
 
             constraints.append(((set_point * max - electricity_source) / nominal, 0.0, 0.0))
 
