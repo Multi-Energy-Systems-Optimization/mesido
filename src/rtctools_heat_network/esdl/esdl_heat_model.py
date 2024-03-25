@@ -1140,8 +1140,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
         v_min = asset.in_ports[0].carrier.voltage
         max_charge = asset.attributes.get("maxChargeRate", max_capacity/3600)
         max_discharge = asset.attributes.get("maxDischargeRate", max_capacity/3600)
+        discharge_efficiency = asset.attributes.get("dischargeEfficiency", 1)
+        charge_efficiency = asset.attributes.get("chargeEfficiency", 1)
 
         modifiers = dict(
+            charge_efficiency=charge_efficiency,
+            discharge_efficiency=discharge_efficiency,
             min_voltage=v_min,
             max_capacity=max_capacity,
             Stored_electricity=dict(min=0.0, max=max_capacity),
