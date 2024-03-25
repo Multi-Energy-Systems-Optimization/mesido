@@ -46,6 +46,11 @@ class TestHeadLoss(TestCase):
         ]:
             # Added for case where head loss is modelled via DW
             class SourcePipeSinkDW(SourcePipeSink):
+                # Do not delete: this is used to manualy check writing out of profile data
+                # def post(self):
+                #     super().post()
+                #     self._write_updated_esdl(self.get_energy_system_copy(), optimizer_sim=True)
+
                 def energy_system_options(self):
                     options = super().energy_system_options()
 
@@ -70,6 +75,17 @@ class TestHeadLoss(TestCase):
 
                     return options
 
+            # Do not delete kwargs: this is used to manualy check writing out of profile data
+            kwargs = {
+                "write_result_db_profiles": False,
+                "influxdb_host": "localhost",
+                "influxdb_port": 8086,
+                "influxdb_username": None,
+                "influxdb_password": None,
+                "influxdb_ssl": False,
+                "influxdb_verify_ssl": False,
+            }
+
             solution = run_optimization_problem(
                 SourcePipeSinkDW,
                 base_folder=base_folder,
@@ -77,6 +93,7 @@ class TestHeadLoss(TestCase):
                 esdl_parser=ESDLFileParser,
                 profile_reader=ProfileReaderFromFile,
                 input_timeseries_file="timeseries_import.csv",
+                **kwargs,
             )
             results = solution.extract_results()
 
