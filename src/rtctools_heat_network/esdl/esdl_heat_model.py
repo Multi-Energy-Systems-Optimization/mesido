@@ -31,6 +31,7 @@ from rtctools_heat_network.pycml.component_library.milp import (
     HeatSource,
     Node,
     Pump,
+    SolarPV,
     WindPark,
 )
 
@@ -1090,7 +1091,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         -------
         ElectricitySource class with modifiers
         """
-        assert asset.asset_type in {"ElectricityProducer", "WindPark"}
+        assert asset.asset_type in {"ElectricityProducer", "WindPark", "PVInstallation"}
 
         max_supply = asset.attributes.get(
             "power", math.inf
@@ -1113,6 +1114,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
             return ElectricitySource, modifiers
         if asset.asset_type == "WindPark":
             return WindPark, modifiers
+        if asset.asset_type == "PVInstallation":
+            return SolarPV, modifiers
 
     def convert_electricity_node(self, asset: Asset) -> Tuple[Type[ElectricityNode], MODIFIERS]:
         """

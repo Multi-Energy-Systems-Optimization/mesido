@@ -95,6 +95,7 @@ class _AssetToComponentBase:
         "Joint": "node",
         "Pipe": "heat_pipe",
         "Pump": "pump",
+        "PVInstallation": "electricity_source",
         "HeatStorage": "heat_buffer",
         "Sensor": "skip",
         "Valve": "control_valve",
