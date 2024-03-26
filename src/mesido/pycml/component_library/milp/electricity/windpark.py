@@ -1,5 +1,3 @@
-from mesido.pycml import Variable
-
 from .. import ElectricitySource
 
 

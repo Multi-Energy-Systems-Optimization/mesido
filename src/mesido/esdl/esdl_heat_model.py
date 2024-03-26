@@ -1117,7 +1117,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
         if asset.asset_type == "PVInstallation":
             return SolarPV, modifiers
 
-    def convert_electricity_storage(self, asset: Asset) -> Tuple[Type[ElectricityStorage], MODIFIERS]:
+    def convert_electricity_storage(
+        self, asset: Asset
+    ) -> Tuple[Type[ElectricityStorage], MODIFIERS]:
         """
         This function converts the ElectricityStorage object in esdl to a set of modifiers that can
         be used in a pycml object. Most important:
@@ -1137,8 +1139,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
         max_capacity = asset.attributes.get("capacity")
         i_max, i_nom = self._get_connected_i_nominal_and_max(asset)
         v_min = asset.in_ports[0].carrier.voltage
-        max_charge = asset.attributes.get("maxChargeRate", max_capacity/3600)
-        max_discharge = asset.attributes.get("maxDischargeRate", max_capacity/3600)
+        max_charge = asset.attributes.get("maxChargeRate", max_capacity / 3600)
+        max_discharge = asset.attributes.get("maxDischargeRate", max_capacity / 3600)
         discharge_efficiency = asset.attributes.get("dischargeEfficiency", 1)
         charge_efficiency = asset.attributes.get("chargeEfficiency", 1)
 
@@ -1193,8 +1195,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             if isinstance(x, esdl.esdl.OutPort):
                 sum_out += len(x.connectedTo)
 
-        modifiers = dict(voltage_nominal=nominal_voltage,
-                         n=sum_in + sum_out)
+        modifiers = dict(voltage_nominal=nominal_voltage, n=sum_in + sum_out)
 
         return ElectricityNode, modifiers
 

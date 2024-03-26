@@ -1,8 +1,8 @@
-from .electricity.electricity_storage import ElectricityStorage
 from .electricity.electricity_cable import ElectricityCable
 from .electricity.electricity_demand import ElectricityDemand
 from .electricity.electricity_node import ElectricityNode
 from .electricity.electricity_source import ElectricitySource
+from .electricity.electricity_storage import ElectricityStorage
 from .electricity.heat_pump_elec import HeatPumpElec
 from .electricity.solarpv import SolarPV
 from .electricity.windpark import WindPark
@@ -39,6 +39,7 @@ __all__ = [
     "ElectricityDemand",
     "ElectricityNode",
     "ElectricitySource",
+    "ElectricityStorage",
     "Electrolyzer",
     "GasDemand",
     "GasNode",

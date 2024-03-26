@@ -1,6 +1,6 @@
-from numpy import nan
-
 from mesido.pycml import Variable
+
+from numpy import nan
 
 from .electricity_base import ElectricityPort
 from .._internal import BaseAsset
@@ -27,9 +27,7 @@ class ElectricityStorage(ElectricityComponent, BaseAsset):
         self.add_variable(ElectricityPort, "ElectricityIn")
 
         self._typical_fill_time = 3600.0
-        self._nominal_stored_electricity = (
-            self.ElectricityIn.Power.max * self._typical_fill_time
-        )
+        self._nominal_stored_electricity = self.ElectricityIn.Power.max * self._typical_fill_time
         self.add_variable(
             Variable,
             "Stored_electricity",
@@ -37,11 +35,15 @@ class ElectricityStorage(ElectricityComponent, BaseAsset):
             max=self.max_capacity,
             nominal=self._nominal_stored_electricity,
         )
-        self.add_variable(Variable, "Effective_power_charging", nominal=self.ElectricityIn.Power.nominal)
+        self.add_variable(
+            Variable, "Effective_power_charging", nominal=self.ElectricityIn.Power.nominal
+        )
 
         self.add_equation(
-            ((self.der(self.Stored_electricity) - self.Effective_power_charging)
-             / self.ElectricityIn.Power.nominal)
+            (
+                (self.der(self.Stored_electricity) - self.Effective_power_charging)
+                / self.ElectricityIn.Power.nominal
+            )
         )
 
         self.add_initial_equation((self.Stored_electricity / self._nominal_stored_electricity))

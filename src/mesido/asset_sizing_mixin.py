@@ -1915,7 +1915,6 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 )
             )
 
-
         for d in self.energy_system_components.get("electrolyzer", []):
             max_var = self._asset_max_size_map[d]
             max_power = self.extra_variable(max_var, ensemble_member)

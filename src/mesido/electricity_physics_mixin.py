@@ -189,8 +189,10 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
     def __update_electricity_producer_upper_bounds(self):
         t = self.times()
-        for asset in [*self.energy_system_components.get("wind_park", []),
-                   *self.energy_system_components.get("solar_pv", [])]:
+        for asset in [
+            *self.energy_system_components.get("wind_park", []),
+            *self.energy_system_components.get("solar_pv", []),
+        ]:
             lb = Timeseries(t, np.zeros(len(self.times())))
             ub = self.get_timeseries(f"{asset}.maximum_electricity_source")
             self.__electricity_producer_upper_bounds[f"{asset}.Electricity_source"] = (lb, ub)
@@ -203,7 +205,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         """
         constraints = []
 
-        for asset in [*self.energy_system_components.get("electricity_source",[])]:
+        for asset in [*self.energy_system_components.get("electricity_source", [])]:
             if asset in self.__set_point_map.keys():
                 var_name = self.__set_point_map[asset]
                 set_point = self.__state_vector_scaled(var_name, ensemble_member)
@@ -213,7 +215,9 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                 # TODO: [: len(self.times())] should be removed once the emerge test is properly
                 # time-sampled.
                 max = self.bounds()[f"{asset}.Electricity_source"][1].values[: len(self.times())]
-                nominal = (self.variable_nominal(f"{asset}.Electricity_source") * np.median(max)) ** 0.5
+                nominal = (
+                    self.variable_nominal(f"{asset}.Electricity_source") * np.median(max)
+                ) ** 0.5
 
                 constraints.append(((set_point * max - electricity_source) / nominal, 0.0, 0.0))
 
@@ -438,7 +442,6 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
             # when charging act like a demand, when discharging act like a source
             # to ensure that voltage is equal or larger than the minimum voltage
-            #TODO: still add the boolean for charging with bigm to determine if constraint is active
             constraints.append(((voltage - min_voltage) / min_voltage, 0.0, np.inf))
 
             power_nom = self.variable_nominal(f"{asset}.ElectricityIn.Power")
@@ -447,67 +450,64 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             current_in = self.state(f"{asset}.ElectricityIn.I")
 
             # is_charging is 1 if charging and powerin>0
-            big_m = 2*self.bounds()[f"{asset}.ElectricityIn.Power"][1]
+            big_m = 2 * self.bounds()[f"{asset}.ElectricityIn.Power"][1]
             is_charging = self.state(f"{asset}__is_charging")
-            constraints.append(((power_in + (1 - is_charging) * big_m)/power_nom, 0.0, np.inf))
-            constraints.append(((power_in - is_charging * big_m)/power_nom, -np.inf, 0.0))
+            constraints.append(((power_in + (1 - is_charging) * big_m) / power_nom, 0.0, np.inf))
+            constraints.append(((power_in - is_charging * big_m) / power_nom, -np.inf, 0.0))
 
             constraints.append(
                 (
-                    (power_in - min_voltage * current_in
-                     + (1-is_charging) * big_m)
-                    / (power_nom * curr_nom * min_voltage) ** 0.5 ,
+                    (power_in - min_voltage * current_in + (1 - is_charging) * big_m)
+                    / (power_nom * curr_nom * min_voltage) ** 0.5,
                     0,
                     np.inf,
                 )
             )
             constraints.append(
                 (
-                    (power_in - min_voltage * current_in
-                     - (1 - is_charging) * big_m)
+                    (power_in - min_voltage * current_in - (1 - is_charging) * big_m)
                     / (power_nom * curr_nom * min_voltage) ** 0.5,
                     -np.inf,
                     0,
                 )
             )
 
-
-
-            #power charging using discharge/charge efficiency, needs boolean
+            # power charging using discharge/charge efficiency, needs boolean
             eff_power = self.state(f"{asset}.Effective_power_charging")
             discharge_eff = parameters[f"{asset}.discharge_efficiency"]
             charge_eff = parameters[f"{asset}.charge_efficiency"]
-            #charging
+            # charging
             constraints.append(
                 (
-                    (eff_power - charge_eff*power_in + (1-is_charging) * big_m)
-                    /power_nom, 0, np.inf,
+                    (eff_power - charge_eff * power_in + (1 - is_charging) * big_m) / power_nom,
+                    0,
+                    np.inf,
                 )
             )
             constraints.append(
                 (
-                    (eff_power - charge_eff * power_in - (1 - is_charging) * big_m)
-                    / power_nom, -np.inf, 0,
+                    (eff_power - charge_eff * power_in - (1 - is_charging) * big_m) / power_nom,
+                    -np.inf,
+                    0,
                 )
             )
             # discharging
             constraints.append(
                 (
-                    (eff_power - discharge_eff * power_in + is_charging * big_m)
-                    / power_nom, 0, np.inf,
+                    (eff_power - discharge_eff * power_in + is_charging * big_m) / power_nom,
+                    0,
+                    np.inf,
                 )
             )
             constraints.append(
                 (
-                    (eff_power - discharge_eff * power_in - is_charging * big_m)
-                    / power_nom, -np.inf, 0,
+                    (eff_power - discharge_eff * power_in - is_charging * big_m) / power_nom,
+                    -np.inf,
+                    0,
                 )
             )
 
-            #TODO: update battery storage change using charge/discharge efficiency requires charging/discharging boolean.
-
         return constraints
-
 
     def __get_electrolyzer_gas_mass_flow_out(
         self, coef_a, coef_b, coef_c, electrical_power_input
