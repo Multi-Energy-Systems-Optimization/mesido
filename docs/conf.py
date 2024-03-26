@@ -13,7 +13,7 @@
 import os
 import sys
 
-from rtctools_heat_network._version import get_versions
+from mesido._version import get_versions
 
 import sphinx_rtd_theme
 

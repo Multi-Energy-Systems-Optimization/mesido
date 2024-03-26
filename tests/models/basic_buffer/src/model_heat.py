@@ -1,5 +1,5 @@
-from rtctools_heat_network.pycml import ControlInput, Model as _Model, Variable
-from rtctools_heat_network.pycml.component_library.milp import (
+from mesido.pycml import ControlInput, Model as _Model, Variable
+from mesido.pycml.component_library.milp import (
     HeatBuffer,
     HeatDemand,
     HeatPipe,

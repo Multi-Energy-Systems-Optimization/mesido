@@ -6,10 +6,10 @@
 #
 # from rtctools.util import run_optimization_problem
 #
-# from rtctools_heat_network.util import run_heat_network_optimization
+# from mesido.util import run_heat_network_optimization
 #
 #
-# logger = logging.getLogger("rtctools_heat_network")
+# logger = logging.getLogger("mesido")
 #
 #
 # class TestArtificalHeadLoss(TestCase):
@@ -64,7 +64,7 @@
 #         cls.base_folder = Path(double_pipe_qth.__file__).resolve().parent.parent
 #
 #     def test_single_pipe_no_headloss(self):
-#         from rtctools_heat_network.qth_mixin import _MinimizeHeadLosses
+#         from mesido.qth_mixin import _MinimizeHeadLosses
 #
 #         from models.double_pipe_qth.src.single_pipe_no_headloss import SinglePipeQTHNoHeadLoss
 #

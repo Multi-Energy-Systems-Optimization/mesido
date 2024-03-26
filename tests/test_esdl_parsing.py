@@ -1,12 +1,12 @@
 import unittest
 from pathlib import Path
 
+from mesido.esdl.esdl_parser import ESDLFileParser, ESDLStringParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+
 import numpy as np
 
 from rtctools.util import run_optimization_problem
-
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser, ESDLStringParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 
 
 class TestESDLParsing(unittest.TestCase):

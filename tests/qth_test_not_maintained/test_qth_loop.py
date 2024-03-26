@@ -6,11 +6,11 @@
 #
 # from rtctools.util import run_optimization_problem
 #
-# from rtctools_heat_network.qth_loop_mixin import QTHLoopMixin
-# from rtctools_heat_network.util import run_heat_network_optimization
+# from mesido.qth_loop_mixin import QTHLoopMixin
+# from mesido.util import run_heat_network_optimization
 #
 #
-# logger = logging.getLogger("rtctools_heat_network")
+# logger = logging.getLogger("mesido")
 #
 #
 # class TestQTHLoop(TestCase):

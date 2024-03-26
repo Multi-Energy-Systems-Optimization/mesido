@@ -1,1 +1,1 @@
-src/rtctools_heat_network/_version.py export-subst
+src/mesido/_version.py export-subst

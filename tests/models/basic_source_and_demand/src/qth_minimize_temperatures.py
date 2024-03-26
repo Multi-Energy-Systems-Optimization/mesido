@@ -1,3 +1,10 @@
+from mesido.component_type_mixin import ModelicaComponentTypeMixin
+from mesido.pycml.pycml_mixin import PyCMLMixin
+from mesido.qth_not_maintained.bounds_to_pipe_flow_directions_mixin import (
+    BoundsToPipeFlowDirectionsMixin,
+)
+from mesido.qth_not_maintained.qth_mixin import DemandTemperatureOption, QTHMixin
+
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
@@ -6,13 +13,6 @@ from rtctools.optimization.goal_programming_mixin import Goal
 from rtctools.optimization.homotopy_mixin import HomotopyMixin
 from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
 from rtctools.util import run_optimization_problem
-
-from rtctools_heat_network.component_type_mixin import ModelicaComponentTypeMixin
-from rtctools_heat_network.pycml.pycml_mixin import PyCMLMixin
-from rtctools_heat_network.qth_not_maintained.bounds_to_pipe_flow_directions_mixin import (
-    BoundsToPipeFlowDirectionsMixin,
-)
-from rtctools_heat_network.qth_not_maintained.qth_mixin import DemandTemperatureOption, QTHMixin
 
 if __name__ == "__main__":
     from model_qth import Model

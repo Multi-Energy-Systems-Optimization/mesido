@@ -1,12 +1,12 @@
 from pathlib import Path
 from unittest import TestCase
 
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+
 import numpy as np
 
 from rtctools.util import run_optimization_problem
-
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 
 
 class TestEndScenarioSizingAnnualized(TestCase):
@@ -35,7 +35,7 @@ class TestEndScenarioSizingAnnualized(TestCase):
         from models.test_case_small_network_optional_assets_annualized.src import (
             run_annualized,
         )
-        from rtctools_heat_network.financial_mixin import calculate_annuity_factor
+        from mesido.financial_mixin import calculate_annuity_factor
 
         base_folder = Path(run_annualized.__file__).resolve().parent.parent
 

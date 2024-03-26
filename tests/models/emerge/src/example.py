@@ -1,7 +1,14 @@
 import os
-import time
 
 import casadi as ca
+
+from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
+from mesido.esdl.esdl_mixin import ESDLMixin
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.head_loss_class import HeadLossOption
+from mesido.techno_economic_mixin import TechnoEconomicMixin
+from mesido.workflows.io.write_output import ScenarioOutput
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
@@ -12,16 +19,6 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 )
 from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
 from rtctools.util import run_optimization_problem
-
-from rtctools_heat_network.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
-from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
-from rtctools_heat_network.head_loss_class import HeadLossOption
-from rtctools_heat_network.physics_mixin import PhysicsMixin
-from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
-from rtctools_heat_network.workflows.io.write_output import ScenarioOutput
-
 
 
 class MaxHydrogenProduction(Goal):
@@ -60,6 +57,33 @@ class MaxHydrogenProduction(Goal):
         The negative hydrogen production state of the optimization problem.
         """
         return -optimization_problem.state(f"{self.source}.Gas_mass_flow_out")
+
+
+class MaxElecProduction(Goal):
+    """
+    A maximization goal for the hydrogen production, note that we minimize the negative hydrogen
+    production to achieve this.
+    """
+
+    priority = 1
+
+    order = 1
+
+    def __init__(self, source: str):
+        """
+        The constructor of the goal.
+
+        Parameters
+        ----------
+        source : string of the source name that is going to be minimized
+        """
+        self.source = source
+
+    def function(
+        self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
+    ) -> ca.MX:
+
+        return -optimization_problem.state(f"{self.source}.Electricity_source")
 
 
 class MaxRevenue(Goal):
@@ -162,22 +186,29 @@ class EmergeTest(
     #     for s in self.energy_system_components["electrolyzer"]:
     #         goals.append(MaxHydrogenProduction(s))
     #
+    #     # for s in self.energy_system_components["electricity_source"]:
+    #     #     goals.append(MaxElecProduction(s))
+    #
     #     return goals
 
     def goals(self):
 
         goals = super().goals().copy()
 
-        for asset_name in [*self.energy_system_components.get("electricity_demand",[]),
-                           *self.energy_system_components.get("gas_demand",[])]:
+        for asset_name in [
+            *self.energy_system_components.get("electricity_demand", []),
+            *self.energy_system_components.get("gas_demand", []),
+        ]:
             goals.append(MaxRevenue(asset_name))
             goals.append(MinCost(asset_name))
 
-        for asset_name in [*self.energy_system_components.get("electricity_source", []),
-                           *self.energy_system_components.get("gas_tank_storage", []),
-                           #TODO: battery
-                           *self.energy_system_components.get("electrolyzer", []),
-                           *self.energy_system_components.get("heat_pump_elec", [])]:
+        for asset_name in [
+            *self.energy_system_components.get("electricity_source", []),
+            *self.energy_system_components.get("gas_tank_storage", []),
+            # TODO: battery
+            *self.energy_system_components.get("electrolyzer", []),
+            *self.energy_system_components.get("heat_pump_elec", []),
+        ]:
             goals.append(MinCost(asset_name))
 
         return goals
@@ -204,7 +235,7 @@ class EmergeTest(
         solver options dict
         """
         options = super().solver_options()
-        options["solver"] = "highs"
+        options["solver"] = "gurobi"
         return options
 
     def times(self, variable=None):
@@ -231,17 +262,17 @@ class EmergeTest(
         # append this last priority's statistics here in post().
         # TODO: check if we still need this small part of code below
         success, _ = self.solver_success(self.solver_stats, False)
-        if not success:
-            time_taken = time.time() - self.__priority_timer
-            self._priorities_output.append(
-                (
-                    self.__priority,
-                    time_taken,
-                    False,
-                    self.objective_value,
-                    self.solver_stats,
-                )
-            )
+        # if not success:
+        #     time_taken = time.time() - self.__priority_timer
+        #     self._priorities_output.append(
+        #         (
+        #             self.__priority,
+        #             time_taken,
+        #             False,
+        #             self.objective_value,
+        #             self.solver_stats,
+        #         )
+        #     )
 
         super().post()
 
@@ -260,27 +291,39 @@ class EmergeTest(
                 print("----------------------------------")
                 print(f"{asset} financials:")
                 try:
-                    print(f'revenue of {asset} in MEUR/day: ', results[f'{asset}__revenue']/1e6)
-                except:
-                    print(f'{asset} does not have a revenue')
+                    print(f"revenue of {asset} in MEUR/day: ", results[f"{asset}__revenue"] / 1e6)
+                except KeyError:
+                    print(f"{asset} does not have a revenue")
                     pass
                 try:
-                    print(f'fixed operational costs of {asset} in MEUR/yr : ', results[f'{asset}__fixed_operational_cost']/1e6)
-                    print(f'variable operational costs of {asset} : ', results[f'{asset}__variable_operational_cost']/1e6) # not yet all included in financialmixin
-                    print(f'max size of {asset} : ', results[f'{asset}__max_size'])
-                except:
-                    print(f'{asset} does not have a costs')
+                    print(
+                        f"fixed operational costs of {asset} in MEUR/yr : ",
+                        results[f"{asset}__fixed_operational_cost"] / 1e6,
+                    )
+                    print(
+                        f"variable operational costs of {asset} : ",
+                        results[f"{asset}__variable_operational_cost"] / 1e6,
+                    )  # not yet all included in financialmixin
+                    print(f"max size of {asset} : ", results[f"{asset}__max_size"])
+                except KeyError:
+                    print(f"{asset} does not have a costs")
                     pass
-
 
 
 if __name__ == "__main__":
     elect = run_optimization_problem(
         EmergeTest,
-        esdl_file_name="emerge.esdl",
+        esdl_file_name="emerge_solar_battery.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,
-        input_timeseries_file="timeseries.csv",
+        input_timeseries_file="timeseries_with_PV.csv",
     )
+    # elect = run_optimization_problem(
+    #     EmergeTest,
+    #     esdl_file_name="emerge.esdl",
+    #     esdl_parser=ESDLFileParser,
+    #     profile_reader=ProfileReaderFromFile,
+    #     input_timeseries_file="timeseries.csv",
+    # )
     results = elect.extract_results()
     a = 1

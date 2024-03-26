@@ -1,3 +1,7 @@
+from mesido.component_type_mixin import ModelicaComponentTypeMixin
+from mesido.pycml.pycml_mixin import PyCMLMixin
+from mesido.techno_economic_mixin import TechnoEconomicMixin
+
 import numpy as np
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
@@ -10,10 +14,6 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 )
 from rtctools.optimization.timeseries import Timeseries
 from rtctools.util import run_optimization_problem
-
-from rtctools_heat_network.component_type_mixin import ModelicaComponentTypeMixin
-from rtctools_heat_network.pycml.pycml_mixin import PyCMLMixin
-from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 if __name__ == "__main__":
     from model import Model

@@ -1,5 +1,5 @@
-from rtctools_heat_network.pycml import ControlInput, Model as _Model, SymbolicParameter
-from rtctools_heat_network.pycml.component_library.qth import Demand, Pipe, Pump, Source
+from mesido.pycml import ControlInput, Model as _Model, SymbolicParameter
+from mesido.pycml.component_library.qth import Demand, Pipe, Pump, Source
 
 
 class Model(_Model):

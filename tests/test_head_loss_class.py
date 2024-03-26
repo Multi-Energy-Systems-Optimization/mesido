@@ -1,12 +1,12 @@
 from pathlib import Path
 from unittest import TestCase
 
+from mesido.head_loss_class import HeadLossOption
+from mesido.network_common import NetworkSettings
+
 import numpy as np
 
 from rtctools.util import run_optimization_problem
-
-from rtctools_heat_network.head_loss_class import HeadLossOption
-from rtctools_heat_network.network_common import NetworkSettings
 
 
 class TestHeadLossCalculation(TestCase):

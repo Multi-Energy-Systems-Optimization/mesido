@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.workflows import EndScenarioSizingStagedHIGHS, run_end_scenario_sizing
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.workflows import EndScenarioSizingStagedHIGHS, run_end_scenario_sizing
 
 
 if __name__ == "__main__":

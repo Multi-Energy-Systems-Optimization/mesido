@@ -1,3 +1,8 @@
+from mesido.component_type_mixin import ModelicaComponentTypeMixin
+from mesido.esdl.esdl_mixin import ESDLMixin
+from mesido.physics_mixin import PhysicsMixin
+from mesido.pycml.pycml_mixin import PyCMLMixin
+
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
@@ -5,11 +10,6 @@ from rtctools.optimization.csv_mixin import CSVMixin
 from rtctools.optimization.goal_programming_mixin import Goal, GoalProgrammingMixin
 from rtctools.optimization.modelica_mixin import ModelicaMixin
 from rtctools.util import run_optimization_problem
-
-from rtctools_heat_network.component_type_mixin import ModelicaComponentTypeMixin
-from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
-from rtctools_heat_network.physics_mixin import PhysicsMixin
-from rtctools_heat_network.pycml.pycml_mixin import PyCMLMixin
 
 if __name__ == "__main__":
     from model_heat import Model

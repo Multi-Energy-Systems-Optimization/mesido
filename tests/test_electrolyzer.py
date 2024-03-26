@@ -1,12 +1,12 @@
 from pathlib import Path
 from unittest import TestCase
 
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+
 import numpy as np
 
 from rtctools.util import run_optimization_problem
-
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 
 
 # from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
@@ -89,7 +89,7 @@ class TestElectrolyzer(TestCase):
 
         # Check that the wind farm setpoint matches with the production
         np.testing.assert_allclose(
-            results["WindPark_7f14.ElectricityOut.Power"], ub * results["WindPark_7f14.Set_point"]
+            results["WindPark_7f14.ElectricityOut.Power"], ub * results["WindPark_7f14__set_point"]
         )
 
         # Checks on the storage
