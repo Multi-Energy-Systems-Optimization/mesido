@@ -1194,7 +1194,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
             if isinstance(x, esdl.esdl.OutPort):
                 sum_out += len(x.connectedTo)
 
-        modifiers = dict(voltage_nominal=nominal_voltage, n=sum_in + sum_out)
+        modifiers = dict(voltage_nominal=nominal_voltage,
+                         n=sum_in + sum_out)
 
         return ElectricityNode, modifiers
 
