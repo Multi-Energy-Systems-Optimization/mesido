@@ -79,6 +79,7 @@ class _AssetToComponentBase:
         "Electrolyzer": "electrolyzer",
         "Bus": "electricity_node",
         "GenericConsumer": "heat_demand",
+        "CoolingDemand": "cold_demand",
         "HeatExchange": "heat_exchanger",
         "HeatingDemand": "heat_demand",
         "HeatPump": "heat_pump",
@@ -89,6 +90,7 @@ class _AssetToComponentBase:
         "GasStorage": "gas_tank_storage",
         "GenericProducer": "heat_source",
         "GeothermalSource": "heat_source",
+        "Losses": "heat_demand",
         "HeatProducer": "heat_source",
         "ResidualHeatSource": "heat_source",
         "GenericConversion": "heat_exchanger",
@@ -256,6 +258,7 @@ class _AssetToComponentBase:
                 "ates",
                 "heat_exchanger",
                 "heat_pump",
+                "cold_demand",
             }
         }
 

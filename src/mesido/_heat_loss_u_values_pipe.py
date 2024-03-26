@@ -165,7 +165,7 @@ def pipe_heat_loss(
         + (length * u_2 * dtemp)
     )
 
-    if heat_loss < 0:
+    if heat_loss < 0 and temperature > temperature_ground:
         raise Exception(f"Heat loss of pipe {p} should be nonnegative.")
 
     return heat_loss

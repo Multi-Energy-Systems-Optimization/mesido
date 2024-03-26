@@ -1,5 +1,6 @@
 from .ates import ATES
 from .check_valve import CheckValve
+from .cold_demand import ColdDemand
 from .control_valve import ControlValve
 from .geothermal_source import GeothermalSource
 from .heat_buffer import HeatBuffer
@@ -18,6 +19,7 @@ __all__ = [
     "ATES",
     "HeatBuffer",
     "CheckValve",
+    "ColdDemand",
     "ControlValve",
     "HeatDemand",
     "GeothermalSource",

@@ -30,6 +30,7 @@ class _ProfileParserException(Exception):
 
 class BaseProfileReader:
     component_type_to_var_name_map: dict = {
+        "cold_demand": ".target_cold_demand",
         "heat_demand": ".target_heat_demand",
         "heat_source": ".maximum_heat_source",
         "electricity_demand": ".target_electricity_demand",
