@@ -45,6 +45,10 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         self.__storage_charging_bounds = {}
         self.__storage_charging_map = {}
 
+        self.__set_point_var = {}
+        self.__set_point_bounds = {}
+        self.__set_point_map = {}
+
     def energy_system_options(self):
         r"""
         Returns a dictionary of milp network specific options.
@@ -91,7 +95,12 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             self.__storage_charging_var[var_name] = ca.MX.sym(var_name)
             self.__storage_charging_bounds[var_name] = (0.0, 1.0)
 
-
+        for asset in [*self.energy_system_components.get("solar_pv", []),
+                      *self.energy_system_components.get("wind_park", [])]:
+            var_name = f"{asset}__set_point"
+            self.__set_point_map[asset] = var_name
+            self.__set_point_var[var_name] = ca.MX.sym(var_name)
+            self.__set_point_bounds[var_name] = (0.0, 1.0)
 
     @property
     def extra_variables(self):
@@ -114,6 +123,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
         variables.extend(self.__asset_is_switched_on_var.values())
         variables.extend(self.__storage_charging_var.values())
+        variables.extend(self.__set_point_var.values())
 
         return variables
 
@@ -146,6 +156,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         bounds.update(self.__asset_is_switched_on_bounds)
         bounds.update(self.__storage_charging_bounds)
         bounds.update(self.__electricity_producer_upper_bounds)
+        bounds.update(self.__set_point_bounds)
 
         return bounds
 
@@ -195,7 +206,8 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
         for asset in [*self.energy_system_components.get("wind_park", []),
                       *self.energy_system_components.get("solar_pv", [])]:
-            set_point = self.__state_vector_scaled(f"{asset}.Set_point", ensemble_member)
+            var_name = self.__set_point_map[asset]
+            set_point = self.__state_vector_scaled(var_name, ensemble_member)
             electricity_source = self.__state_vector_scaled(
                 f"{asset}.Electricity_source", ensemble_member
             )
