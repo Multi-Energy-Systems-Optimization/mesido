@@ -307,7 +307,7 @@ class EmergeTest(
 if __name__ == "__main__":
     elect = run_optimization_problem(
         EmergeTest,
-        esdl_file_name="emerge_solar.esdl",
+        esdl_file_name="emerge_solar_battery.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,
         input_timeseries_file="timeseries_with_PV.csv",
