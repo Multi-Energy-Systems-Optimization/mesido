@@ -2,6 +2,7 @@ from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.physics_mixin import PhysicsMixin
+from mesido.workflows.io.write_output import ScenarioOutput
 
 import numpy as np
 
@@ -91,6 +92,7 @@ class MinimizeElectricityGoal(Goal):
 
 
 class HeatProblem(
+    ScenarioOutput,
     _GoalsAndOptions,
     PhysicsMixin,
     LinearizedOrderGoalProgrammingMixin,

@@ -77,7 +77,7 @@ class TestHeadLoss(TestCase):
 
             # Do not delete kwargs: this is used to manualy check writing out of profile data
             kwargs = {
-                "write_result_db_profiles": False,
+                "write_result_db_profiles": True,
                 "influxdb_host": "localhost",
                 "influxdb_port": 8086,
                 "influxdb_username": None,
