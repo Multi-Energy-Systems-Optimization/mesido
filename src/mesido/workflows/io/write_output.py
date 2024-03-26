@@ -934,8 +934,9 @@ class ScenarioOutput(TechnoEconomicMixin):
                     variables_one_hydraulic_system.append("PostProc.Velocity")
                     variables_two_hydraulic_system.append("PostProc.Velocity")
                     # Velocity at the pipe outlet [m/s]
-                    post_processed_velocity = results[
-                        f"{asset_name}.HeatOut.Q"] / parameters[f"{asset_name}.area"]
+                    post_processed_velocity = (
+                        results[f"{asset_name}.HeatOut.Q"] / parameters[f"{asset_name}.area"]
+                    )
 
                 profiles = ProfileManager()
                 profiles.profile_type = "DATETIME_LIST"
