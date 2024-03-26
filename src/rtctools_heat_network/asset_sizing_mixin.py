@@ -252,16 +252,16 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             self._electricity_cable_topo_max_current_map[cable] = max_current_var_name
 
             if len(cable_classes) > 0:
-                self.__electricity_cable_topo_max_current_nominals[cable] = np.median(max_currents)
-                self.__electricity_cable_topo_max_current_var_bounds[cable] = (
+                self.__electricity_cable_topo_max_current_nominals[max_current_var_name] = np.median(max_currents)
+                self.__electricity_cable_topo_max_current_var_bounds[max_current_var_name] = (
                     -max(max_currents),
                     max(max_currents),
                 )
             else:
-                self.__electricity_cable_topo_max_current_nominals[cable] = parameters[
+                self.__electricity_cable_topo_max_current_nominals[max_current_var_name] = parameters[
                     f"{cable}.max_current"
                 ]
-                self.__electricity_cable_topo_max_current_var_bounds[cable] = (
+                self.__electricity_cable_topo_max_current_var_bounds[max_current_var_name] = (
                     -parameters[f"{cable}.max_current"],
                     parameters[f"{cable}.max_current"],
                 )
@@ -882,7 +882,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         Returns a dictionary of milp network specific options.
         """
 
-        options = {}
+        options = super().energy_system_options()
 
         return options
 
@@ -1744,12 +1744,12 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             current_sym = self.state(f"{cable}.I")
             nominal = self.variable_nominal(f"{cable}.I")
 
-            max_discharge = self.__electricity_cable_topo_max_current_var[
+            max_current_var = self.__electricity_cable_topo_max_current_var[
                 self._electricity_cable_topo_max_current_map[cable]
             ]
 
-            constraints.append(((max_discharge - current_sym) / nominal, 0.0, np.inf))
-            constraints.append(((-max_discharge - current_sym) / nominal, -np.inf, 0.0))
+            constraints.append(((max_current_var - current_sym) / nominal, 0.0, np.inf))
+            constraints.append(((-max_current_var - current_sym) / nominal, -np.inf, 0.0))
 
         return constraints
 
