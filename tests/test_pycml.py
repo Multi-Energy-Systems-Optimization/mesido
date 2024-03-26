@@ -1,8 +1,8 @@
 from unittest import TestCase
 
-import numpy as np
+from mesido.pycml import Model, Variable
 
-from rtctools_heat_network.pycml import Model, Variable
+import numpy as np
 
 
 class TestPyCML(TestCase):

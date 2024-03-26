@@ -1,10 +1,10 @@
 from pathlib import Path
 from unittest import TestCase
 
-from rtctools.util import run_optimization_problem
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
 
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
+from rtctools.util import run_optimization_problem
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 

@@ -3,16 +3,16 @@ from pathlib import Path
 from typing import Dict
 from unittest import TestCase
 
+from mesido._heat_loss_u_values_pipe import pipe_heat_loss
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.pipe_class import PipeClass
+from mesido.techno_economic_mixin import TechnoEconomicMixin
+
 import numpy as np
 import numpy.testing
 
 from rtctools.util import run_optimization_problem
-
-from rtctools_heat_network._heat_loss_u_values_pipe import pipe_heat_loss
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
-from rtctools_heat_network.pipe_class import PipeClass
-from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 
 MIP_TOLERANCE = 1e-8

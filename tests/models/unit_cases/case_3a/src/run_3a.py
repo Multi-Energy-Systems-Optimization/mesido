@@ -1,3 +1,10 @@
+from mesido.esdl.esdl_mixin import ESDLMixin
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.physics_mixin import PhysicsMixin
+from mesido.qth_not_maintained.qth_mixin import QTHMixin
+from mesido.techno_economic_mixin import TechnoEconomicMixin
+
 import numpy as np
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
@@ -9,13 +16,6 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
 )
 from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
-
-from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
-from rtctools_heat_network.physics_mixin import PhysicsMixin
-from rtctools_heat_network.qth_not_maintained.qth_mixin import QTHMixin
-from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 
 class TargetDemandGoal(Goal):
@@ -347,7 +347,7 @@ class QTHProblem(
 
     def energy_system_options(self):
         options = super().energy_system_options()
-        from rtctools_heat_network.head_loss_class import HeadLossOption
+        from mesido.head_loss_class import HeadLossOption
 
         self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
         return options

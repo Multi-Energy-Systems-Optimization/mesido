@@ -1,5 +1,11 @@
 import casadi as ca
 
+from mesido.esdl.esdl_mixin import ESDLMixin
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.pipe_class import CableClass
+from mesido.techno_economic_mixin import TechnoEconomicMixin
+
 import numpy as np
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
@@ -12,12 +18,6 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
 from rtctools.optimization.timeseries import Timeseries
 from rtctools.util import run_optimization_problem
-
-from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
-from rtctools_heat_network.pipe_class import CableClass
-from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 
 class TargetDemandGoal(Goal):

@@ -2,12 +2,12 @@ from typing import Any, Dict, List
 
 import esdl
 
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.workflows.goals.minimize_tco_goal import MinimizeTCO
+
 from rtctools.optimization.goal_programming_mixin import Goal
 from rtctools.util import run_optimization_problem
-
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
-from rtctools_heat_network.workflows.goals.minimize_tco_goal import MinimizeTCO
 
 try:
     from models.test_case_small_network_optional_assets_annualized.src.run_ates import (

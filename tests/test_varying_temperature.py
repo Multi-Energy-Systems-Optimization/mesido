@@ -1,13 +1,13 @@
 from pathlib import Path
 from unittest import TestCase
 
+from mesido._heat_loss_u_values_pipe import pipe_heat_loss
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+
 import numpy as np
 
 from rtctools.util import run_optimization_problem
-
-from rtctools_heat_network._heat_loss_u_values_pipe import pipe_heat_loss
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 

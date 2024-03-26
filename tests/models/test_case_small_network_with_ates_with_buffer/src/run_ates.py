@@ -1,5 +1,10 @@
 import esdl
 
+from mesido.esdl.esdl_mixin import ESDLMixin
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.techno_economic_mixin import TechnoEconomicMixin
+
 import numpy as np
 
 from rtctools.data.storage import DataStore
@@ -11,11 +16,6 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
 )
 from rtctools.util import run_optimization_problem
-
-from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
-from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 
 class TargetDemandGoal(Goal):

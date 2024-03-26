@@ -1,12 +1,12 @@
 from pathlib import Path
 from unittest import TestCase
 
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+
 import numpy as np
 
 from rtctools.util import run_optimization_problem
-
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
@@ -33,14 +33,39 @@ class TestHEX(TestCase):
         )
 
         base_folder = Path(run_heat_exchanger.__file__).resolve().parent.parent
+        # -----------------------------------------------------------------------------------------
+        # Do not delete: this is used to manualy check writing out of profile data
+
+        class HeatProblemPost(HeatProblem):
+            # def post(self):
+            #     super().post()
+            #     self._write_updated_esdl(self.get_energy_system_copy(), optimizer_sim=True)
+
+            def energy_system_options(self):
+                options = super().energy_system_options()
+                # self.heat_network_settings["minimize_head_losses"] = True  # used for manual tests
+                return options
+
+        # Do not delete kwargs: this is used to manualy check writing out of profile data
+        kwargs = {
+            "write_result_db_profiles": False,
+            "influxdb_host": "localhost",
+            "influxdb_port": 8086,
+            "influxdb_username": None,
+            "influxdb_password": None,
+            "influxdb_ssl": False,
+            "influxdb_verify_ssl": False,
+        }
+        # -----------------------------------------------------------------------------------------
 
         solution = run_optimization_problem(
-            HeatProblem,
+            HeatProblemPost,
             base_folder=base_folder,
             esdl_file_name="heat_exchanger.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_import.xml",
+            **kwargs,
         )
 
         results = solution.extract_results()
@@ -99,13 +124,39 @@ class TestHP(TestCase):
 
         base_folder = Path(run_heat_pump.__file__).resolve().parent.parent
 
+        # -----------------------------------------------------------------------------------------
+        # Do not delete: this is used to manualy check writing out of profile data
+
+        class HeatProblemPost(HeatProblem):
+            # def post(self):
+            #     super().post()
+            #     self._write_updated_esdl(self.get_energy_system_copy(), optimizer_sim=True)
+
+            def energy_system_options(self):
+                options = super().energy_system_options()
+                # self.heat_network_settings["minimize_head_losses"] = True  # used for manual tests
+                return options
+
+        # Do not delete kwargs: this is used to manualy check writing out of profile data
+        kwargs = {
+            "write_result_db_profiles": False,
+            "influxdb_host": "localhost",
+            "influxdb_port": 8086,
+            "influxdb_username": None,
+            "influxdb_password": None,
+            "influxdb_ssl": False,
+            "influxdb_verify_ssl": False,
+        }
+        # -----------------------------------------------------------------------------------------
+
         solution = run_optimization_problem(
-            HeatProblem,
+            HeatProblemPost,
             base_folder=base_folder,
             esdl_file_name="heat_pump.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_import.xml",
+            **kwargs,
         )
 
         results = solution.extract_results()
