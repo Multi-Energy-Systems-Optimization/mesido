@@ -290,7 +290,7 @@ class InfluxDBProfileReader(BaseProfileReader):
         time_series_data = InfluxDBProfileManager(conn_settings)
 
         time_series_data.load_influxdb(
-            '"' + profile.measurement + '"',
+            profile.measurement,
             [profile.field],
             profile.startDate,
             profile.endDate,
