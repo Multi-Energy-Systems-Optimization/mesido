@@ -176,41 +176,41 @@ class EmergeTest(
 
         self.gas_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
 
-    def path_goals(self):
-        """
-        This function adds the minimization goal for minimizing the heat production.
-
-        Returns
-        -------
-        The appended list of goals
-        """
-        goals = super().path_goals().copy()
-
-        for s in self.energy_system_components["electrolyzer"]:
-            goals.append(MaxHydrogenProduction(s))
-
-        # for s in self.energy_system_components["electricity_source"]:
-        #     goals.append(MaxElecProduction(s))
-
-        return goals
-
-    # def goals(self):
+    # def path_goals(self):
+    #     """
+    #     This function adds the minimization goal for minimizing the heat production.
     #
-    #     goals = super().goals().copy()
+    #     Returns
+    #     -------
+    #     The appended list of goals
+    #     """
+    #     goals = super().path_goals().copy()
     #
-    #     for asset_name in [*self.energy_system_components.get("electricity_demand",[]),
-    #                        *self.energy_system_components.get("gas_demand",[])]:
-    #         goals.append(MaxRevenue(asset_name))
-    #         goals.append(MinCost(asset_name))
+    #     for s in self.energy_system_components["electrolyzer"]:
+    #         goals.append(MaxHydrogenProduction(s))
     #
-    #     for asset_name in [*self.energy_system_components.get("electricity_source", []),
-    #                        *self.energy_system_components.get("gas_tank_storage", []),
-    #                        #TODO: battery
-    #                        *self.energy_system_components.get("electrolyzer", []),
-    #                        *self.energy_system_components.get("heat_pump_elec", [])]:
-    #         goals.append(MinCost(asset_name))
+    #     # for s in self.energy_system_components["electricity_source"]:
+    #     #     goals.append(MaxElecProduction(s))
     #
     #     return goals
+
+    def goals(self):
+
+        goals = super().goals().copy()
+
+        for asset_name in [*self.energy_system_components.get("electricity_demand",[]),
+                           *self.energy_system_components.get("gas_demand",[])]:
+            goals.append(MaxRevenue(asset_name))
+            goals.append(MinCost(asset_name))
+
+        for asset_name in [*self.energy_system_components.get("electricity_source", []),
+                           *self.energy_system_components.get("gas_tank_storage", []),
+                           #TODO: battery
+                           *self.energy_system_components.get("electrolyzer", []),
+                           *self.energy_system_components.get("heat_pump_elec", [])]:
+            goals.append(MinCost(asset_name))
+
+        return goals
 
     def constraints(self, ensemble_member):
         constraints = super().constraints(ensemble_member)
@@ -307,10 +307,10 @@ class EmergeTest(
 if __name__ == "__main__":
     elect = run_optimization_problem(
         EmergeTest,
-        esdl_file_name="emerge.esdl",
+        esdl_file_name="emerge_solar.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,
-        input_timeseries_file="timeseries.csv",
+        input_timeseries_file="timeseries_with_PV.csv",
     )
     # elect = run_optimization_problem(
     #     EmergeTest,
