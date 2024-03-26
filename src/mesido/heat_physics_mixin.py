@@ -362,6 +362,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             (_cold_pipe, _cold_pipe_orientation),
         ) in self.energy_system_topology.ates.items():
 
+            if ates in self.energy_system_components.get("low_temperature_ates", []):
+                continue
+
             ates_temp_disc_var_name = f"{ates}__temperature_ates_disc"
             self.__ates_temperature_disc_var[ates_temp_disc_var_name] = ca.MX.sym(
                 ates_temp_disc_var_name
@@ -1529,9 +1532,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     constraints.append(
                         (
                             (
-                                    heat_out
-                                    - discharge * cp * rho * sup_temperature
-                                    + (1.0 - sup_temperature_is_selected) * big_m
+                                heat_out
+                                - discharge * cp * rho * sup_temperature
+                                + (1.0 - sup_temperature_is_selected) * big_m
                             )
                             / heat_nominal,
                             0.0,
@@ -1541,9 +1544,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     constraints.append(
                         (
                             (
-                                    heat_out
-                                    - discharge * cp * rho * sup_temperature
-                                    - (1.0 - sup_temperature_is_selected) * big_m
+                                heat_out
+                                - discharge * cp * rho * sup_temperature
+                                - (1.0 - sup_temperature_is_selected) * big_m
                             )
                             / heat_nominal,
                             -np.inf,
@@ -1728,6 +1731,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         )
                     else:
                         for temperature in temperatures:
+                            temperature = max(temperature, parameters[f"{p}.T_ground"])
                             temperature_is_selected = self.state(f"{carrier}_{temperature}")
                             constraints.append(
                                 (
@@ -1776,6 +1780,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         )
                     elif len(temperatures) > 0:
                         for temperature in temperatures:
+                            temperature = max(temperature, parameters[f"{p}.T_ground"])
                             temperature_is_selected = self.state(f"{carrier}_{temperature}")
                             constraints.append(
                                 (
@@ -1855,6 +1860,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             (hot_pipe, _hot_pipe_orientation),
             (_cold_pipe, _cold_pipe_orientation),
         ) in {**self.energy_system_topology.ates}.items():
+
+            if ates_asset in self.energy_system_components.get("low_temperature_ates"):
+                continue
 
             flow_dir_var = self._pipe_to_flow_direct_map[hot_pipe]
             is_buffer_charging = self.state(flow_dir_var) * _hot_pipe_orientation
@@ -2124,6 +2132,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             (_cold_pipe, _cold_pipe_orientation),
         ) in {**self.energy_system_topology.ates}.items():
 
+            if ates in self.energy_system_components.get("low_temperature_ates", []):
+                continue
+
             ates_dt_charging = self.state(f"{ates}.Temperature_change_charging")
             ates_dt_loss = self.state(f"{ates}.Temperature_loss")
 
@@ -2271,7 +2282,10 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         bounds = self.bounds()
         options = self.energy_system_options()
 
-        for ates in self.energy_system_components.get("ates", []):
+        for ates in [
+            *self.energy_system_components.get("ates", []),
+            *self.energy_system_components.get("low_temperature_ates", []),
+        ]:
             heat_loss_nominal = self.variable_nominal(f"{ates}.Heat_loss")
             soil_temperature = parameters[f"{ates}.T_amb"]
             heat_stored_max = bounds[f"{ates}.Stored_heat"][1]
@@ -3289,7 +3303,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
     def __ates_max_stored_heat_constriants(self, ensemble_member):
         constraints = []
 
-        for ates in self.energy_system_components.get("ates", []):
+        for ates in [
+            *self.energy_system_components.get("ates", []),
+        ]:
             max_var_name = f"{ates}__max_stored_heat"
             max_var = self.extra_variable(max_var_name, ensemble_member)
             stored_heat = self.__state_vector_scaled(f"{ates}.Stored_heat", ensemble_member)

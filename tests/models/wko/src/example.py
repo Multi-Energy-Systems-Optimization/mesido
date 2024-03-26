@@ -220,7 +220,7 @@ if __name__ == "__main__":
     print(results["CoolingDemand_15e8.Cold_demand"])
     print(results["HeatingDemand_9b90.Heat_demand"])
     print(results["HeatPump_b97e.Heat_source"])
-    print(results["ATES_226d.Heat_ates"])
+    print(results["ATES_226d.Heat_low_temperature_ates"])
     for p in elect.energy_system_components.get("heat_pipe", []):
         print(p, results[f"{p}__hn_heat_loss"])
         print(p, elect.bounds()[f"{p}__hn_heat_loss"])

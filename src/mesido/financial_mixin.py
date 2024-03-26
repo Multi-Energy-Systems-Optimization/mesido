@@ -115,6 +115,12 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 nominal_fixed_operational = self.variable_nominal(f"{asset_name}.Heat_ates")
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
+            elif asset_name in [*self.energy_system_components.get("low_temperature_ates", [])]:
+                nominal_fixed_operational = self.variable_nominal(
+                    f"{asset_name}.Heat_low_temperature_ates"
+                )
+                nominal_variable_operational = nominal_fixed_operational
+                nominal_investment = nominal_fixed_operational
             elif asset_name in [*self.energy_system_components.get("heat_demand", [])]:
                 nominal_fixed_operational = (
                     bounds[f"{asset_name}.Heat_demand"][1]
@@ -342,6 +348,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             *self.energy_system_components.get("heat_source", []),
             *self.energy_system_components.get("heat_demand", []),
             *self.energy_system_components.get("ates", []),
+            *self.energy_system_components.get("low_temperature_ates", []),
             *self.energy_system_components.get("heat_buffer", []),
             *self.energy_system_components.get("heat_pipe", []),
             *self.energy_system_components.get("heat_exchanger", []),
@@ -367,6 +374,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 *self.energy_system_components.get("heat_source", []),
                 *self.energy_system_components.get("heat_demand", []),
                 *self.energy_system_components.get("ates", []),
+                *self.energy_system_components.get("low_temperature_ates", []),
                 *self.energy_system_components.get("heat_buffer", []),
                 *self.energy_system_components.get("heat_exchanger", []),
                 *self.energy_system_components.get("heat_pump", []),
@@ -784,6 +792,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
         for asset in [
             *self.energy_system_components.get("ates", []),
+            *self.energy_system_components.get("low_temperature_ates", []),
             *self.energy_system_components.get("heat_buffer", []),
             *self.energy_system_components.get("pump", []),
             *self.energy_system_components.get("heat_exchanger", []),
@@ -1051,6 +1060,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 *self.energy_system_components.get("heat_demand", []),
                 *self.energy_system_components.get("heat_source", []),
                 *self.energy_system_components.get("ates", []),
+                *self.energy_system_components.get("low_temperature_ates", []),
                 *self.energy_system_components.get("heat_buffer", []),
                 *self.energy_system_components.get("heat_exchanger", []),
                 *self.energy_system_components.get("heat_pump", []),
@@ -1158,6 +1168,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         asset_categories = [
             "heat_source",
             "ates",
+            "low_temperature_ates",
             "heat_buffer",
             "heat_pipe",
             "heat_exchanger",

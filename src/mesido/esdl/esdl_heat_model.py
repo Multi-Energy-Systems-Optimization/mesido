@@ -34,6 +34,7 @@ from mesido.pycml.component_library.milp import (
     HeatPump,
     HeatPumpElec,
     HeatSource,
+    LowTemperatureATES,
     Node,
     Pump,
     WindPark,
@@ -723,7 +724,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
         )
         return HeatExchanger, modifiers
 
-    def convert_heat_pump(self, asset: Asset) -> Tuple[Union[Type[HeatPump], Type[HeatSource]], MODIFIERS]:
+    def convert_heat_pump(
+        self, asset: Asset
+    ) -> Tuple[Union[Type[HeatPump], Type[HeatSource]], MODIFIERS]:
         """
         This function converts the HeatPump object in esdl to a set of modifiers that can be used in
         a pycml object. Most important:
@@ -934,12 +937,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         hfr_charge_max = asset.attributes.get("maxChargeRate", math.inf)
         hfr_discharge_max = asset.attributes.get("maxDischargeRate", math.inf)
-
-        try:
-            # TODO: this is depriciated it comes out of old integraal times. Should be removed.
-            single_doublet_power = asset.attributes["single_doublet_power"]
-        except KeyError:
-            single_doublet_power = hfr_discharge_max
+        single_doublet_power = hfr_discharge_max
 
         # We assume the efficiency is realized over a period of 100 days
         efficiency = asset.attributes["dischargeEfficiency"]
@@ -974,21 +972,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 max=q_max_ates * asset.attributes["aggregationCount"],
                 nominal=q_nominal,
             ),
-            T_amb=asset.attributes["aquiferMidTemperature"],
-            Temperature_ates=dict(
-                min=temperatures["T_return"],  # or potentially 0
-                max=temperatures["T_supply"],
-                nominal=temperatures["T_return"],
-            ),
             single_doublet_power=single_doublet_power,
             heat_loss_coeff=(1.0 - efficiency ** (1.0 / 100.0)) / (3600.0 * 24.0),
             state=self.get_state(asset),
             nr_of_doublets=asset.attributes["aggregationCount"],
-            Heat_ates=dict(
-                min=-hfr_charge_max * asset.attributes["aggregationCount"],
-                max=hfr_discharge_max * asset.attributes["aggregationCount"],
-                nominal=hfr_discharge_max / 2.0,
-            ),
             Stored_heat=dict(
                 min=0.0,
                 max=hfr_charge_max * asset.attributes["aggregationCount"] * 180.0 * 24 * 3600.0,
@@ -1001,7 +988,38 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._get_cost_figure_modifiers(asset),
         )
 
-        return ATES, modifiers
+        # if no maxStorageTemperature is specified we assume a "regular" HT ATES model
+        if (
+            asset.attributes["maxStorageTemperature"]
+            and asset.attributes["maxStorageTemperature"] <= 30.0
+        ):
+            modifiers.update(
+                dict(
+                    Heat_low_temperature_ates=dict(
+                        min=-hfr_charge_max * asset.attributes["aggregationCount"],
+                        max=hfr_discharge_max * asset.attributes["aggregationCount"],
+                        nominal=hfr_discharge_max / 2.0,
+                    )
+                )
+            )
+            return LowTemperatureATES, modifiers
+        else:
+            modifiers.update(
+                dict(
+                    Heat_ates=dict(
+                        min=-hfr_charge_max * asset.attributes["aggregationCount"],
+                        max=hfr_discharge_max * asset.attributes["aggregationCount"],
+                        nominal=hfr_discharge_max / 2.0,
+                    ),
+                    T_amb=asset.attributes["aquiferMidTemperature"],
+                    Temperature_ates=dict(
+                        min=temperatures["T_return"],  # or potentially 0
+                        max=temperatures["T_supply"],
+                        nominal=temperatures["T_return"],
+                    ),
+                )
+            )
+            return ATES, modifiers
 
     def convert_control_valve(self, asset: Asset) -> Tuple[Type[ControlValve], MODIFIERS]:
         """

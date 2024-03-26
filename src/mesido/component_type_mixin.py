@@ -33,7 +33,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
         busses = components.get("electricity_node", [])
         gas_nodes = components.get("gas_node", [])
         buffers = components.get("heat_buffer", [])
-        atess = components.get("ates", [])
+        atess = [*components.get("ates", []), *components.get("low_temperature_ates", [])]
         try:
             pipes = components["heat_pipe"]
             cables = components.get("electricity_cable", [])

@@ -607,7 +607,11 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     self._pipe_heat_loss_nominals[heat_loss_var_name] = abs(heat_loss)
                 else:
                     self._pipe_heat_loss_nominals[heat_loss_var_name] = max(
-                        abs(pipe_heat_loss(self, {"neglect_pipe_heat_losses": False}, parameters, pipe)),
+                        abs(
+                            pipe_heat_loss(
+                                self, {"neglect_pipe_heat_losses": False}, parameters, pipe
+                            )
+                        ),
                         1.0,
                     )
 
@@ -797,8 +801,14 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             lb = 0.0 if np.isinf(bounds[f"{asset_name}.Cold_demand"][1]) else ub
             _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
 
-        for asset_name in self.energy_system_components.get("ates", []):
-            ub = bounds[f"{asset_name}.Heat_ates"][1]
+        for asset_name in [
+            *self.energy_system_components.get("ates", []),
+            *self.energy_system_components.get("low_temperature_ates", []),
+        ]:
+            try:
+                ub = bounds[f"{asset_name}.Heat_ates"][1]
+            except KeyError:
+                ub = bounds[f"{asset_name}.Heat_low_temperature_ates"][1]
             lb = 0.0 if parameters[f"{asset_name}.state"] != 1 else ub
             _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
 
@@ -1849,11 +1859,20 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 )
             )
 
-        for a in self.energy_system_components.get("ates", []):
+        for a in [
+            *self.energy_system_components.get("ates", []),
+            *self.energy_system_components.get("low_temperature_ates", []),
+        ]:
             max_var = self._asset_max_size_map[a]
             max_heat = self.extra_variable(max_var, ensemble_member)
-            heat_ates = self.__state_vector_scaled(f"{a}.Heat_ates", ensemble_member)
-            constraint_nominal = bounds[f"{a}.Heat_ates"][1]
+            try:
+                heat_ates = self.__state_vector_scaled(f"{a}.Heat_ates", ensemble_member)
+                constraint_nominal = bounds[f"{a}.Heat_ates"][1]
+            except KeyError:
+                heat_ates = self.__state_vector_scaled(
+                    f"{a}.Heat_low_temperature_ates", ensemble_member
+                )
+                constraint_nominal = bounds[f"{a}.Heat_low_temperature_ates"][1]
 
             constraints.append(
                 (

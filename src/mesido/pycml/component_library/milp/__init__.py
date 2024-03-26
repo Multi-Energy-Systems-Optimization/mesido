@@ -24,6 +24,7 @@ from .heat.heat_port import HeatPort
 from .heat.heat_pump import HeatPump
 from .heat.heat_source import HeatSource
 from .heat.heat_two_port import HeatTwoPort
+from .heat.low_temperature_ates import LowTemperatureATES
 from .heat.node import Node
 from .heat.pump import Pump
 from .multicommodity.electrolyzer import Electrolyzer
@@ -49,12 +50,13 @@ __all__ = [
     "GeothermalSource",
     "HeatExchanger",
     "HeatFourPort",
+    "HeatPipe",
     "HeatPort",
     "HeatPump",
     "HeatPumpElec",
     "HeatTwoPort",
+    "LowTemperatureATES",
     "Node",
-    "HeatPipe",
     "Pump",
     "HeatSource",
     "WindPark",
