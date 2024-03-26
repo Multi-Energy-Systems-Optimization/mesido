@@ -95,12 +95,12 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             self.__storage_charging_var[var_name] = ca.MX.sym(var_name)
             self.__storage_charging_bounds[var_name] = (0.0, 1.0)
 
-        for asset in [*self.energy_system_components.get("solar_pv", []),
-                      *self.energy_system_components.get("wind_park", [])]:
-            var_name = f"{asset}__set_point"
-            self.__set_point_map[asset] = var_name
-            self.__set_point_var[var_name] = ca.MX.sym(var_name)
-            self.__set_point_bounds[var_name] = (0.0, 1.0)
+        for asset in [*self.energy_system_components.get("electricity_source", [])]:
+            if isinstance(self.bounds()[f"{asset}.Electricity_source"][1], Timeseries):
+                var_name = f"{asset}__set_point"
+                self.__set_point_map[asset] = var_name
+                self.__set_point_var[var_name] = ca.MX.sym(var_name)
+                self.__set_point_bounds[var_name] = (0.0, 1.0)
 
     @property
     def extra_variables(self):
@@ -204,19 +204,19 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         """
         constraints = []
 
-        for asset in [*self.energy_system_components.get("wind_park", []),
-                      *self.energy_system_components.get("solar_pv", [])]:
-            var_name = self.__set_point_map[asset]
-            set_point = self.__state_vector_scaled(var_name, ensemble_member)
-            electricity_source = self.__state_vector_scaled(
-                f"{asset}.Electricity_source", ensemble_member
-            )
-            # TODO: [: len(self.times())] should be removed once the emerge test is properly
-            # time-sampled.
-            max = self.bounds()[f"{asset}.Electricity_source"][1].values[: len(self.times())]
-            nominal = (self.variable_nominal(f"{asset}.Electricity_source") * np.median(max)) ** 0.5
+        for asset in [*self.energy_system_components.get("electricity_source",[])]:
+            if asset in self.__set_point_map.keys():
+                var_name = self.__set_point_map[asset]
+                set_point = self.__state_vector_scaled(var_name, ensemble_member)
+                electricity_source = self.__state_vector_scaled(
+                    f"{asset}.Electricity_source", ensemble_member
+                )
+                # TODO: [: len(self.times())] should be removed once the emerge test is properly
+                # time-sampled.
+                max = self.bounds()[f"{asset}.Electricity_source"][1].values[: len(self.times())]
+                nominal = (self.variable_nominal(f"{asset}.Electricity_source") * np.median(max)) ** 0.5
 
-            constraints.append(((set_point * max - electricity_source) / nominal, 0.0, 0.0))
+                constraints.append(((set_point * max - electricity_source) / nominal, 0.0, 0.0))
 
         return constraints
 
