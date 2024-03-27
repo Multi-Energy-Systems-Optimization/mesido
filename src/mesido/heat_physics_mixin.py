@@ -1861,7 +1861,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             (_cold_pipe, _cold_pipe_orientation),
         ) in {**self.energy_system_topology.ates}.items():
 
-            if ates_asset in self.energy_system_components.get("low_temperature_ates"):
+            if ates_asset in self.energy_system_components.get("low_temperature_ates", []):
                 continue
 
             flow_dir_var = self._pipe_to_flow_direct_map[hot_pipe]
