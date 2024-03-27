@@ -356,11 +356,18 @@ def energy_conservation_test(solution, results):
             )
             energy_sum -= results[f"{p}__hn_heat_loss"] * (1 - p_discon)
         else:
-            np.testing.assert_allclose(
-                results[f"{p}__hn_heat_loss"][0],
-                results[f"{p}.HeatIn.Heat"] - results[f"{p}.HeatOut.Heat"],
-                atol=1e-3,
-            )
+            if len(results[f"{p}__hn_heat_loss"]) == 1:
+                np.testing.assert_allclose(
+                    results[f"{p}__hn_heat_loss"][0],
+                    results[f"{p}.HeatIn.Heat"] - results[f"{p}.HeatOut.Heat"],
+                    atol=1e-3,
+                )
+            else:
+                np.testing.assert_allclose(
+                    results[f"{p}__hn_heat_loss"],
+                    results[f"{p}.HeatIn.Heat"] - results[f"{p}.HeatOut.Heat"],
+                    atol=1e-3,
+                )
             energy_sum -= results[f"{p}__hn_heat_loss"]
 
     np.testing.assert_allclose(energy_sum, 0.0, atol=1e-2)
