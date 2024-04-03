@@ -98,27 +98,27 @@ class TestHeadLoss(TestCase):
             results = solution.extract_results()
 
             pipes = ["Pipe1"]
-            for itime in range(len(results[f"{pipes[0]}.dH"])):
+            for itime in range(len(results[f"{pipe_1_id}.dH"])):
                 v_max = solution.heat_network_settings["maximum_velocity"]
-                pipe_diameter = solution.parameters(0)[f"{pipes[0]}.diameter"]
+                pipe_diameter = solution.parameters(0)[f"{pipe_1_id}.diameter"]
                 pipe_wall_roughness = solution.energy_system_options()["wall_roughness"]
-                temperature = solution.parameters(0)[f"{pipes[0]}.temperature"]
-                pipe_length = solution.parameters(0)[f"{pipes[0]}.length"]
+                temperature = solution.parameters(0)[f"{pipe_1_id}.temperature"]
+                pipe_length = solution.parameters(0)[f"{pipe_1_id}.length"]
                 v_points = np.linspace(
                     0.0,
                     v_max,
                     solution.heat_network_settings["n_linearization_lines"] + 1,
                 )
                 v_inspect = (
-                    results[f"{pipes[0]}.Q"][itime] / solution.parameters(0)[f"{pipes[0]}.area"]
+                    results[f"{pipe_1_id}.Q"][itime] / solution.parameters(0)[f"{pipe_1_id}.area"]
                 )
                 idx = []
                 linearized_idx = []
                 idx.append(
-                    (results["Pipe1.Q"][itime] / solution.parameters(0)["Pipe1.area"]) >= v_points
+                    (results[f"{pipe_1_id}.Q"][itime] / solution.parameters(0)[f"{pipe_1_id}.area"]) >= v_points
                 )
                 idx.append(
-                    (results["Pipe1.Q"][itime] / solution.parameters(0)["Pipe1.area"]) < v_points
+                    (results[f"{pipe_1_id}.Q"][itime] / solution.parameters(0)[f"{pipe_1_id}.area"]) < v_points
                 )
                 linearized_idx.append(np.where(idx[0])[0][-1])
                 linearized_idx.append(np.where(idx[1])[0][0])
@@ -207,11 +207,11 @@ class TestHeadLoss(TestCase):
                 results["demand.HeatOut.Hydraulic_power"] - results["demand.HeatIn.Hydraulic_power"]
             )
             sum_hp += (
-                results["Pipe1.HeatOut.Hydraulic_power"] - results["Pipe1.HeatIn.Hydraulic_power"]
+                results[f"{pipe_1_id}.HeatOut.Hydraulic_power"] - results[f"{pipe_1_id}.HeatIn.Hydraulic_power"]
             )
             sum_hp += (
-                results["Pipe1_ret.HeatOut.Hydraulic_power"]
-                - results["Pipe1_ret.HeatIn.Hydraulic_power"]
+                results[f"{pipe_1_id}_ret.HeatOut.Hydraulic_power"]
+                - results[f"{pipe_1_id}_ret.HeatIn.Hydraulic_power"]
             )
 
             np.testing.assert_allclose(abs(sum_hp), pump_power, atol=1.0e-3)
@@ -274,7 +274,7 @@ class TestHeadLoss(TestCase):
 
             demand_matching_test(solution, results)
 
-            pipes = ["Pipe1", "Pipe2", "Pipe3", "Pipe4"]
+            pipes = [f"{pipe_1_id}", "Pipe2", "Pipe3", "Pipe4"]
             # Only evaluate 1 pipe and 1 timestep for now to reduce the test case computational time
             ipipe = 0
             itime = 0
@@ -449,13 +449,15 @@ class TestHeadLoss(TestCase):
             )
             results = solution.extract_results()
 
+            pipe_4_id = solution.esdl_asset_name_to_id_map.get("Pipe_4abc")
+
             # Check the head loss variable
             np.testing.assert_allclose(
-                results["Pipe_4abc.GasOut.H"] - results["Pipe_4abc.GasIn.H"],
-                results["Pipe_4abc.dH"],
+                results[f"{pipe_4_id}.GasOut.H"] - results[f"{pipe_4_id}.GasIn.H"],
+                results[f"{pipe_4_id}.dH"],
             )
 
-            pipes = ["Pipe_4abc"]
+            pipes = [f"{pipe_4_id}"]
             v_max = solution.gas_network_settings["maximum_velocity"]
             pipe_diameter = solution.parameters(0)[f"{pipes[0]}.diameter"]
             pipe_wall_roughness = solution.energy_system_options()["wall_roughness"]
@@ -601,25 +603,27 @@ class TestHeadLoss(TestCase):
             )
             results = solution.extract_results()
 
+            pipe_1_id = solution.esdl_asset_name_to_id_map.get("Pipe1")
+
             # Check the head loss variable
             np.testing.assert_allclose(
-                results["Pipe1.GasOut.H"] - results["Pipe1.GasIn.H"],
-                results["Pipe1.dH"],
+                results[f"{pipe_1_id}.GasOut.H"] - results[f"{pipe_1_id}.GasIn.H"],
+                results[f"{pipe_1_id}.dH"],
             )
-            np.testing.assert_allclose(-results["Pipe1.dH"], results["Pipe1.__head_loss"])
+            np.testing.assert_allclose(-results[f"{pipe_1_id}.dH"], results[f"{pipe_1_id}.__head_loss"])
 
             pipes = ["Pipe1"]
             v_max = solution.gas_network_settings["maximum_velocity"]
-            pipe_diameter = solution.parameters(0)[f"{pipes[0]}.diameter"]
+            pipe_diameter = solution.parameters(0)[f"{pipe_1_id}.diameter"]
             pipe_wall_roughness = solution.energy_system_options()["wall_roughness"]
             temperature = 20.0
-            pipe_length = solution.parameters(0)[f"{pipes[0]}.length"]
+            pipe_length = solution.parameters(0)[f"{pipe_1_id}.length"]
             v_points = np.linspace(
                 0.0,
                 v_max,
                 solution.gas_network_settings["n_linearization_lines"] + 1,
             )
-            v_inspect = results[f"{pipes[0]}.GasOut.Q"] / solution.parameters(0)[f"{pipes[0]}.area"]
+            v_inspect = results[f"{pipe_1_id}.GasOut.Q"] / solution.parameters(0)[f"{pipe_1_id}.area"]
 
             # Approximate dH [m] vs Q [m3/s] with a linear line between between v_points
             # dH_manual_linear = a*Q + b
@@ -638,7 +642,7 @@ class TestHeadLoss(TestCase):
                         pipe_wall_roughness,
                         temperature,
                         network_type=NetworkSettings.NETWORK_TYPE_GAS,
-                        pressure=solution.parameters(0)[f"{pipes[0]}.pressure"],
+                        pressure=solution.parameters(0)[f"{pipe_1_id}.pressure"],
                     )
                     - darcy_weisbach.head_loss(
                         v_points[ii],
@@ -647,7 +651,7 @@ class TestHeadLoss(TestCase):
                         pipe_wall_roughness,
                         temperature,
                         network_type=NetworkSettings.NETWORK_TYPE_GAS,
-                        pressure=solution.parameters(0)[f"{pipes[0]}.pressure"],
+                        pressure=solution.parameters(0)[f"{pipe_1_id}.pressure"],
                     )
                 )
 
@@ -674,7 +678,7 @@ class TestHeadLoss(TestCase):
             # demand_matching_test(solution, results)  # TODO still to be updated for gas networks
 
             # Check that the aproximated head loss matches the maunally calculated value
-            np.testing.assert_allclose(dh_manual_linear, -results["Pipe1.dH"], atol=1e-6)
+            np.testing.assert_allclose(dh_manual_linear, -results[f"{pipe_1_id}.dH"], atol=1e-6)
 
             for pipe in pipes:
                 velocities = results[f"{pipe}.Q"] / solution.parameters(0)[f"{pipe}.area"]
@@ -738,7 +742,10 @@ class TestHeadLoss(TestCase):
         results = solution.extract_results()
         parameters = solution.parameters(0)
 
-        assert parameters["Pipe1.pressure"] != parameters["Pipe2.pressure"]
+        pipe_1_id = solution.esdl_asset_name_to_id_map.get("Pipe1")
+        pipe_2_id = solution.esdl_asset_name_to_id_map.get("Pipe2")
+
+        assert parameters[f"{pipe_1_id}.pressure"] != parameters[f"{pipe_2_id}.pressure"]
 
         for pipe in solution.energy_system_components.get("gas_pipe", []):
             dh = results[f"{pipe}.dH"]

@@ -40,7 +40,7 @@ class TestMILPGasSourceSink(TestCase):
                 self.heat_network_settings["pipe_minimum_pressure"] = 0.0
                 return options
 
-        soltion = run_optimization_problem(
+        solution = run_optimization_problem(
             GasProblem,
             base_folder=base_folder,
             esdl_file_name="source_sink.esdl",
@@ -48,15 +48,19 @@ class TestMILPGasSourceSink(TestCase):
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries.csv",
         )
-        results = soltion.extract_results()
+        results = solution.extract_results()
+
+        gas_prod_id = solution.esdl_asset_name_to_id_map.get("GasProducer_0876")
+        gas_demand_id = solution.esdl_asset_name_to_id_map.get("GasDemand_a2d8")
 
         # Test if mass conserved
         np.testing.assert_allclose(
-            results["GasProducer_0876.GasOut.Q"], results["GasDemand_a2d8.GasIn.Q"]
+            results[f"{gas_prod_id}.GasOut.Q"], results[f"{gas_demand_id}.GasIn.Q"]
         )
 
+        pipe_4 = solution.esdl_asset_name_to_id_map.get("Pipe_4abc")
         # Test if head is going down
-        np.testing.assert_array_less(results["Pipe_4abc.GasOut.H"], results["Pipe_4abc.GasIn.H"])
+        np.testing.assert_array_less(results[f"{pipe_4}.GasOut.H"], results[f"{pipe_4}.GasIn.H"])
 
 
 if __name__ == "__main__":

@@ -48,25 +48,33 @@ class TestMultiCommodityHeatPump(TestCase):
         energy_conservation_test(solution, results)
         heat_to_discharge_test(solution, results)
 
-        v_min_hp = solution.parameters(0)["GenericConversion_3d3f.min_voltage"]
-        i_max = solution.parameters(0)["ElectricityCable_9d3b.max_current"]
-        cop = solution.parameters(0)["GenericConversion_3d3f.COP"]
+        genconv_id = solution.esdl_asset_name_to_id_map.get("GenericConversion_3d3f")
+        cable_id = solution.esdl_asset_name_to_id_map.get("ElectricityCable_9d3b")
+        res_source_id = solution.esdl_asset_name_to_id_map.get("ResidualHeatSource_61b8")
+        res_source2_id = solution.esdl_asset_name_to_id_map.get("ResidualHeatSource_aec9")
+        heat_demand_id = solution.esdl_asset_name_to_id_map.get("HeatingDemand_18aa")
+        heat_demand2_id = solution.esdl_asset_name_to_id_map.get("HeatingDemand_3322")
+        elec_prod_id = solution.esdl_asset_name_to_id_map.get("ElectricityProducer_ac2e")
+
+        v_min_hp = solution.parameters(0)[f"{genconv_id}.min_voltage"]
+        i_max = solution.parameters(0)[f"{cable_id}.max_current"]
+        cop = solution.parameters(0)[f"{genconv_id}.COP"]
 
         demand_matching_test(solution, results)
         heat_to_discharge_test(solution, results)
         energy_conservation_test(solution, results)
 
-        heatsource_prim = results["ResidualHeatSource_61b8.Heat_source"]
-        heatsource_sec = results["ResidualHeatSource_aec9.Heat_source"]
-        heatpump_power = results["GenericConversion_3d3f.Power_elec"]
-        heatpump_heat_prim = results["GenericConversion_3d3f.Primary_heat"]
-        heatpump_heat_sec = results["GenericConversion_3d3f.Secondary_heat"]
-        heatdemand_sec = results["HeatingDemand_18aa.Heat_demand"]
-        heatdemand_prim = results["HeatingDemand_3322.Heat_demand"]
-        elec_prod_power = results["ElectricityProducer_ac2e.ElectricityOut.Power"]
+        heatsource_prim = results[f"{res_source_id}.Heat_source"]
+        heatsource_sec = results[f"{res_source2_id}.Heat_source"]
+        heatpump_power = results[f"{genconv_id}.Power_elec"]
+        heatpump_heat_prim = results[f"{genconv_id}.Primary_heat"]
+        heatpump_heat_sec = results[f"{genconv_id}.Secondary_heat"]
+        heatdemand_sec = results[f"{heat_demand_id}.Heat_demand"]
+        heatdemand_prim = results[f"{heat_demand2_id}.Heat_demand"]
+        elec_prod_power = results[f"{elec_prod_id}.ElectricityOut.Power"]
 
-        heatpump_voltage = results["GenericConversion_3d3f.ElectricityIn.V"]
-        heatpump_current = results["GenericConversion_3d3f.ElectricityIn.I"]
+        heatpump_voltage = results[f"{genconv_id}.ElectricityIn.V"]
+        heatpump_current = results[f"{genconv_id}.ElectricityIn.I"]
 
         np.testing.assert_allclose(heatsource_sec, 0.0, atol=1.0e-3)
 
@@ -118,21 +126,29 @@ class TestMultiCommodityHeatPump(TestCase):
         energy_conservation_test(solution, results)
         heat_to_discharge_test(solution, results)
 
-        v_min_hp = solution.parameters(0)["GenericConversion_3d3f.min_voltage"]
-        i_max = solution.parameters(0)["ElectricityCable_9d3b.max_current"]
-        cop = solution.parameters(0)["GenericConversion_3d3f.COP"]
+        genconv_id = solution.esdl_asset_name_to_id_map.get("GenericConversion_3d3f")
+        cable_id = solution.esdl_asset_name_to_id_map.get("ElectricityCable_9d3b")
+        res_source_id = solution.esdl_asset_name_to_id_map.get("ResidualHeatSource_61b8")
+        res_source2_id = solution.esdl_asset_name_to_id_map.get("ResidualHeatSource_aec9")
+        heat_demand_id = solution.esdl_asset_name_to_id_map.get("HeatingDemand_18aa")
+        heat_demand2_id = solution.esdl_asset_name_to_id_map.get("HeatingDemand_3322")
+        elec_prod_id = solution.esdl_asset_name_to_id_map.get("ElectricityProducer_ac2e")
 
-        heatsource_prim = results["ResidualHeatSource_61b8.Heat_source"]
-        heatsource_sec = results["ResidualHeatSource_aec9.Heat_source"]
-        heatpump_power = results["GenericConversion_3d3f.Power_elec"]
-        heatpump_heat_prim = results["GenericConversion_3d3f.Primary_heat"]
-        heatpump_heat_sec = results["GenericConversion_3d3f.Secondary_heat"]
-        heatdemand_sec = results["HeatingDemand_18aa.Heat_demand"]
-        heatdemand_prim = results["HeatingDemand_3322.Heat_demand"]
-        elec_prod_power = results["ElectricityProducer_ac2e.ElectricityOut.Power"]
+        v_min_hp = solution.parameters(0)[f"{genconv_id}.min_voltage"]
+        i_max = solution.parameters(0)[f"{cable_id}.max_current"]
+        cop = solution.parameters(0)[f"{genconv_id}.COP"]
 
-        heatpump_voltage = results["GenericConversion_3d3f.ElectricityIn.V"]
-        heatpump_current = results["GenericConversion_3d3f.ElectricityIn.I"]
+        heatsource_prim = results[f"{res_source_id}.Heat_source"]
+        heatsource_sec = results[f"{res_source2_id}.Heat_source"]
+        heatpump_power = results[f"{genconv_id}.Power_elec"]
+        heatpump_heat_prim = results[f"{genconv_id}.Primary_heat"]
+        heatpump_heat_sec = results[f"{genconv_id}.Secondary_heat"]
+        heatdemand_sec = results[f"{heat_demand_id}.Heat_demand"]
+        heatdemand_prim = results[f"{heat_demand2_id}.Heat_demand"]
+        elec_prod_power = results[f"{elec_prod_id}.ElectricityOut.Power"]
+
+        heatpump_voltage = results[f"{genconv_id}.ElectricityIn.V"]
+        heatpump_current = results[f"{genconv_id}.ElectricityIn.I"]
 
         # check that heatpump isnot providing enough energy to secondary side for demanded
         np.testing.assert_array_less(
@@ -190,16 +206,24 @@ class TestMultiCommodityHeatPump(TestCase):
         energy_conservation_test(solution, results)
         heat_to_discharge_test(solution, results)
 
+        genconv_id = solution.esdl_asset_name_to_id_map.get("GenericConversion_3d3f")
+        cable_id = solution.esdl_asset_name_to_id_map.get("ElectricityCable_9d3b")
+        res_source_id = solution.esdl_asset_name_to_id_map.get("ResidualHeatSource_61b8")
+        res_source2_id = solution.esdl_asset_name_to_id_map.get("ResidualHeatSource_aec9")
+        heat_demand_id = solution.esdl_asset_name_to_id_map.get("HeatingDemand_18aa")
+        heat_demand2_id = solution.esdl_asset_name_to_id_map.get("HeatingDemand_3322")
+        elec_prod_id = solution.esdl_asset_name_to_id_map.get("ElectricityProducer_ac2e")
+
         tol = 1e-6
-        heatsource_prim = results["ResidualHeatSource_61b8.Heat_source"]
-        # heatsource_sec = results["ResidualHeatSource_aec9.Heat_source"]
-        heatpump_power = results["GenericConversion_3d3f.Power_elec"]
-        heatpump_heat_prim = results["GenericConversion_3d3f.Primary_heat"]
-        heatpump_heat_sec = results["GenericConversion_3d3f.Secondary_heat"]
-        heatpump_disabled = results["GenericConversion_3d3f__disabled"]
-        # heatdemand_sec = results["HeatingDemand_18aa.Heat_demand"]
-        heatdemand_prim = results["HeatingDemand_3322.Heat_demand"]
-        elec_prod_power = results["ElectricityProducer_ac2e.ElectricityOut.Power"]
+        heatsource_prim = results[f"{res_source_id}.Heat_source"]
+        # heatsource_sec = results[f"{res_source2_id}.Heat_source"]
+        heatpump_power = results[f"{genconv_id}.Power_elec"]
+        heatpump_heat_prim = results[f"{genconv_id}.Primary_heat"]
+        heatpump_heat_sec = results[f"{genconv_id}.Secondary_heat"]
+        heatpump_disabled = results[f"{genconv_id}__disabled"]
+        # heatdemand_sec = results[f"{heat_demand_id}.Heat_demand"]
+        heatdemand_prim = results[f"{heat_demand2_id}.Heat_demand"]
+        elec_prod_power = results[f"{elec_prod_id}.ElectricityOut.Power"]
         # pipe_sec_out_hp_disconnected = results["Pipe_408e__is_disconnected"]
 
         # check that heatpump is not used:

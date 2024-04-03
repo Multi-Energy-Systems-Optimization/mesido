@@ -64,7 +64,7 @@ class _ESDLModelBase(_Model):
                     retry_assets.append(asset)
                     continue
 
-                self.add_variable(pycml_type, asset.name, **modifiers)
+                self.add_variable(pycml_type, asset.id, **modifiers)
 
             if not retry_assets:
                 break
@@ -130,7 +130,7 @@ class _ESDLModelBase(_Model):
         port_map = {}
 
         for asset in non_node_assets:
-            component = getattr(self, asset.name)
+            component = getattr(self, asset.id)
             # We assume that every component has 2 ports. Essentially meaning that we are dealing
             # with a single commodity for a component. Exceptions, assets that deal with multiple
             # have to be specifically specified what port configuration is expected in the model.
@@ -263,7 +263,7 @@ class _ESDLModelBase(_Model):
         connections = set()
 
         for asset in [*node_assets, *bus_assets, *gas_node_assets]:
-            component = getattr(self, asset.name)
+            component = getattr(self, asset.id)
 
             i = 1
             if len(asset.in_ports) != 1 or len(asset.out_ports) != 1:

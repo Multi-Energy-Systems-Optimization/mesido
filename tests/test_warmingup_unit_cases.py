@@ -156,11 +156,13 @@ class TestWarmingUpUnitCases(TestCase):
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
 
+        pipe_id = heat_problem.esdl_asset_name_to_id_map.get("Pipe_e53a")
+
         # We only check the flow directions for the time-steps that there is flow in the pipe.
-        inds = np.round(1 - results["Pipe_e53a__is_disconnected"]).astype(bool)
+        inds = np.round(1 - results[f"{pipe_id}__is_disconnected"]).astype(bool)
         np.testing.assert_allclose(
-            np.round(results["Pipe_e53a__flow_direct_var"][inds]) * 2.0 - 1.0,
-            np.sign(results["Pipe_e53a.Q"][inds]),
+            np.round(results[f"{pipe_id}__flow_direct_var"][inds]) * 2.0 - 1.0,
+            np.sign(results[f"{pipe_id}.Q"][inds]),
         )
 
         for buffer in heat_problem.energy_system_components.get("heat_buffer", []):

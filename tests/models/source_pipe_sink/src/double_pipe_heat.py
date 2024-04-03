@@ -24,13 +24,13 @@ class TargetDemandGoal(Goal):
     order = 2
 
     def __init__(self, optimization_problem):
-        self.target_min = optimization_problem.get_timeseries("demand.target_heat_demand")
-        self.target_max = optimization_problem.get_timeseries("demand.target_heat_demand")
+        self.target_min = optimization_problem.get_timeseries("f6d5923d-ba9a-409d-80a0-26f73b2a574b.target_heat_demand")
+        self.target_max = optimization_problem.get_timeseries("f6d5923d-ba9a-409d-80a0-26f73b2a574b.target_heat_demand")
         self.function_range = (0.0, 2e5)
         self.function_nominal = 1e5
 
     def function(self, optimization_problem, ensemble_member):
-        return optimization_problem.state("demand.Heat_demand")
+        return optimization_problem.state("f6d5923d-ba9a-409d-80a0-26f73b2a574b.Heat_demand")
 
 
 class MinimizeProduction(Goal):
@@ -42,7 +42,7 @@ class MinimizeProduction(Goal):
         self.function_nominal = 1e6
 
     def function(self, optimization_problem, ensemble_member):
-        return optimization_problem.state("source.Heat_source")
+        return optimization_problem.state("a479e4e6-6f75-460d-aeb2-d0e3e02314e0.Heat_source")
 
 
 class SourcePipeSink(

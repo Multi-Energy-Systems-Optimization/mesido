@@ -113,7 +113,7 @@ class BaseProfileReader:
                             f"No profile provided for {component=} and "
                             f"{ensemble_member=}, using the assets power value instead"
                         )
-                        asset_power = esdl_assets[esdl_asset_names_to_ids[component]].attributes[
+                        asset_power = esdl_assets[component].attributes[
                             "power"
                         ]
                         values = np.array([asset_power] * len(self._reference_datetimes))
@@ -524,7 +524,7 @@ class _ESDLInputDataConfig:
         location_id = pi_header.find("pi:locationId", self.ns).text
 
         try:
-            component_name = self.__id_map[location_id]
+            component_name = location_id#self.__id_map[location_id]
         except KeyError:
             parameter_id = pi_header.find("pi:parameterId", self.ns).text
             qualifiers = pi_header.findall("pi:qualifierId", self.ns)

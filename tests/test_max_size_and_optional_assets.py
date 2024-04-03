@@ -57,22 +57,28 @@ class TestMaxSizeAggregationCount(TestCase):
         results = solution.extract_results()
         parameters = solution.parameters(0)
 
+        prod_1_id = solution.esdl_asset_name_to_id_map.get("HeatProducer_1")
+        prod_2_id = solution.esdl_asset_name_to_id_map.get("HeatProducer_2")
+        ates_id = solution.esdl_asset_name_to_id_map.get("ATES_033c")
+        storage_id = solution.esdl_asset_name_to_id_map.get("HeatStorage_74c1")
+
+
         # Producer 1 should not produce due to higher cost
         # Producer 2 should produce
-        heat_1 = results["HeatProducer_1.Heat_source"]
-        heat_2 = results["HeatProducer_2.Heat_source"]
-        prod_1_placed = results["HeatProducer_1_aggregation_count"]
-        prod_2_placed = results["HeatProducer_2_aggregation_count"]
-        var_cost_1 = results["HeatProducer_1__variable_operational_cost"]
-        var_cost_2 = results["HeatProducer_2__variable_operational_cost"]
-        fix_cost_1 = results["HeatProducer_1__fixed_operational_cost"]
-        fix_cost_2 = results["HeatProducer_2__fixed_operational_cost"]
-        inst_cost_1 = results["HeatProducer_1__installation_cost"]
-        inst_cost_2 = results["HeatProducer_2__installation_cost"]
-        inv_cost_1 = results["HeatProducer_1__investment_cost"]
-        inv_cost_2 = results["HeatProducer_2__investment_cost"]
-        max_size_1 = results["HeatProducer_1__max_size"]
-        max_size_2 = results["HeatProducer_2__max_size"]
+        heat_1 = results[f"{prod_1_id}.Heat_source"]
+        heat_2 = results[f"{prod_2_id}.Heat_source"]
+        prod_1_placed = results[f"{prod_1_id}_aggregation_count"]
+        prod_2_placed = results[f"{prod_2_id}_aggregation_count"]
+        var_cost_1 = results[f"{prod_1_id}__variable_operational_cost"]
+        var_cost_2 = results[f"{prod_2_id}__variable_operational_cost"]
+        fix_cost_1 = results[f"{prod_1_id}__fixed_operational_cost"]
+        fix_cost_2 = results[f"{prod_2_id}__fixed_operational_cost"]
+        inst_cost_1 = results[f"{prod_1_id}__installation_cost"]
+        inst_cost_2 = results[f"{prod_2_id}__installation_cost"]
+        inv_cost_1 = results[f"{prod_1_id}__investment_cost"]
+        inv_cost_2 = results[f"{prod_2_id}__investment_cost"]
+        max_size_1 = results[f"{prod_1_id}__max_size"]
+        max_size_2 = results[f"{prod_2_id}__max_size"]
 
         # Test if source 1 is off and 2 is producing
         np.testing.assert_allclose(heat_1, 0.0, atol=1e-6)
@@ -90,7 +96,7 @@ class TestMaxSizeAggregationCount(TestCase):
         # Test that investmentcost is correctly linked to max size
         np.testing.assert_allclose(
             inv_cost_2,
-            solution.parameters(0)["HeatProducer_2.investment_cost_coefficient"] * max_size_2,
+            solution.parameters(0)[f"{prod_2_id}.investment_cost_coefficient"] * max_size_2,
         )
 
         # Test that cost only exist for 2 and not for 1. Note the tolerances
@@ -99,18 +105,18 @@ class TestMaxSizeAggregationCount(TestCase):
         np.testing.assert_allclose(
             var_cost_2,
             np.sum(
-                results["HeatProducer_2.Heat_source"][1:]
+                results[f"{prod_2_id}.Heat_source"][1:]
                 * (solution.times()[1:] - solution.times()[:-1])
                 / 3600
             )
-            * parameters["HeatProducer_2.variable_operational_cost_coefficient"],
+            * parameters[f"{prod_2_id}.variable_operational_cost_coefficient"],
             atol=1000.0,
             rtol=1.0e-2,
         )
         np.testing.assert_allclose(fix_cost_1, 0.0, atol=1.0e-6)
         np.testing.assert_allclose(
             fix_cost_2,
-            max_size_2 * parameters["HeatProducer_2.fixed_operational_cost_coefficient"],
+            max_size_2 * parameters[f"{prod_2_id}.fixed_operational_cost_coefficient"],
             atol=1.0e-6,
         )
         np.testing.assert_allclose(inst_cost_1, 0.0, atol=1e-9)
@@ -118,7 +124,7 @@ class TestMaxSizeAggregationCount(TestCase):
         np.testing.assert_allclose(inv_cost_1, 0.0, atol=1e-9)
         np.testing.assert_allclose(
             inv_cost_2,
-            max_size_2 * parameters["HeatProducer_2.investment_cost_coefficient"],
+            max_size_2 * parameters[f"{prod_2_id}.investment_cost_coefficient"],
             atol=1.0,
             rtol=1.0e-2,
         )
@@ -127,13 +133,13 @@ class TestMaxSizeAggregationCount(TestCase):
         # losses as the buffer has a minimum fraction volume of 5%.
         # Therefore, we can check the max_size constraint.
         np.testing.assert_allclose(
-            True, results["HeatStorage_74c1.Stored_heat"] <= results["HeatStorage_74c1__max_size"]
+            True, results[f"{storage_id}.Stored_heat"] <= results[f"{storage_id}__max_size"]
         )
         np.testing.assert_allclose(
-            True, abs(results["ATES_033c.Heat_ates"]) <= results["ATES_033c__max_size"]
+            True, abs(results[f"{ates_id}.Heat_ates"]) <= results[f"{ates_id}__max_size"]
         )
-        np.testing.assert_allclose(results["ATES_033c_aggregation_count"], 1.0)
-        np.testing.assert_allclose(results["HeatStorage_74c1_aggregation_count"], 1.0)
+        np.testing.assert_allclose(results[f"{ates_id}_aggregation_count"], 1.0)
+        np.testing.assert_allclose(results[f"{storage_id}_aggregation_count"], 1.0)
 
         import models.test_case_small_network_ates_buffer_optional_assets.src.run_ates as run_ates
         from models.test_case_small_network_ates_buffer_optional_assets.src.run_ates import (
@@ -156,10 +162,13 @@ class TestMaxSizeAggregationCount(TestCase):
 
         results = solution.extract_results()
 
-        np.testing.assert_allclose(results["ATES_033c.Heat_ates"], 0.0, atol=1.0e-6)
-        np.testing.assert_allclose(results["HeatStorage_74c1.Stored_heat"], 0.0, atol=1.0e-3)
-        np.testing.assert_allclose(results["ATES_033c_aggregation_count"], 0.0, atol=1.0e-6)
-        np.testing.assert_allclose(results["HeatStorage_74c1_aggregation_count"], 0.0, atol=1.0e-6)
+        ates_id = solution.esdl_asset_name_to_id_map.get("ATES_033c")
+        storage_id = solution.esdl_asset_name_to_id_map.get("HeatStorage_74c1")
+
+        np.testing.assert_allclose(results[f"{ates_id}.Heat_ates"], 0.0, atol=1.0e-6)
+        np.testing.assert_allclose(results[f"{storage_id}.Stored_heat"], 0.0, atol=1.0e-3)
+        np.testing.assert_allclose(results[f"{ates_id}_aggregation_count"], 0.0, atol=1.0e-6)
+        np.testing.assert_allclose(results[f"{storage_id}_aggregation_count"], 0.0, atol=1.0e-6)
 
         demand_matching_test(solution, results)
         energy_conservation_test(solution, results)

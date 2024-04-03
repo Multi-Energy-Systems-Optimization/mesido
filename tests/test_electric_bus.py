@@ -47,22 +47,28 @@ class TestMILPbus(TestCase):
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries.csv",
         )
+
         results = solution.extract_results()
-        v1 = results["Bus_f262.ElectricityConn[1].V"]
-        v2 = results["Bus_f262.ElectricityConn[2].V"]
-        v_outgoing_cable = results["ElectricityCable_de9a.ElectricityIn.V"]
-        v_incoming_cable = results["ElectricityCable_1ad0.ElectricityOut.V"]
-        v_demand = results["ElectricityDemand_e527.ElectricityIn.V"]
-        p_demand = results["ElectricityDemand_e527.ElectricityIn.Power"]
-        i_demand = results["ElectricityDemand_e527.ElectricityIn.I"]
-        p1 = results["Bus_f262.ElectricityConn[1].Power"]
-        p2 = results["Bus_f262.ElectricityConn[2].Power"]
-        p3 = results["Bus_f262.ElectricityConn[3].Power"]
-        p4 = results["Bus_f262.ElectricityConn[4].Power"]
-        i1 = results["Bus_f262.ElectricityConn[1].I"]
-        i2 = results["Bus_f262.ElectricityConn[2].I"]
-        i3 = results["Bus_f262.ElectricityConn[3].I"]
-        i4 = results["Bus_f262.ElectricityConn[4].I"]
+        bus_id = solution.esdl_asset_name_to_id_map.get("Bus_f262")
+        cable_1_id = solution.esdl_asset_name_to_id_map.get("ElectricityCable_de9a")
+        cable_2_id = solution.esdl_asset_name_to_id_map.get("ElectricityCable_1ad0")
+        elec_demand_id = solution.esdl_asset_name_to_id_map.get("ElectricityDemand_e527")
+
+        v1 = results[f"{bus_id}.ElectricityConn[1].V"]
+        v2 = results[f"{bus_id}.ElectricityConn[2].V"]
+        v_outgoing_cable = results[f"{cable_1_id}.ElectricityIn.V"]
+        v_incoming_cable = results[f"{cable_2_id}.ElectricityOut.V"]
+        v_demand = results[f"{elec_demand_id}.ElectricityIn.V"]
+        p_demand = results[f"{elec_demand_id}.ElectricityIn.Power"]
+        i_demand = results[f"{elec_demand_id}.ElectricityIn.I"]
+        p1 = results[f"{bus_id}.ElectricityConn[1].Power"]
+        p2 = results[f"{bus_id}.ElectricityConn[2].Power"]
+        p3 = results[f"{bus_id}.ElectricityConn[3].Power"]
+        p4 = results[f"{bus_id}.ElectricityConn[4].Power"]
+        i1 = results[f"{bus_id}.ElectricityConn[1].I"]
+        i2 = results[f"{bus_id}.ElectricityConn[2].I"]
+        i3 = results[f"{bus_id}.ElectricityConn[3].I"]
+        i4 = results[f"{bus_id}.ElectricityConn[4].I"]
 
         # Incoming voltage == outgoing voltage of bus
         self.assertTrue(all(v1 == v2))
@@ -76,7 +82,7 @@ class TestMILPbus(TestCase):
         np.testing.assert_allclose(i1 + i2 - i3 - i4, 0.0, rtol=1.0e-6, atol=1.0e-6)
         # check if minimum voltage is reached
         np.testing.assert_array_less(
-            solution.parameters(0)["ElectricityDemand_e527.min_voltage"] - 1.0e-3, v_demand
+            solution.parameters(0)[f"{elec_demand_id}.min_voltage"] - 1.0e-3, v_demand
         )
         # Check that current is high enough to carry the power
         np.testing.assert_array_less(p_demand - 1e-12, v_demand * i_demand)

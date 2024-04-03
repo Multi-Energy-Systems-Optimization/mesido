@@ -47,51 +47,54 @@ class TestAssetIsRealized(TestCase):
 
         results = solution.extract_results()
 
+        prod_1_id = solution.esdl_asset_name_to_id_map.get("HeatProducer_1")
+        prod_2_id = solution.esdl_asset_name_to_id_map.get("HeatProducer_2")
+
         # First we test whether the investments made are below cap
         cap = 2.5e5 + 1.0e-3  # some small tolerance, CBC...
         np.testing.assert_allclose(
-            True, np.diff(results["HeatProducer_1__cumulative_investments_made_in_eur"]) <= cap
+            True, np.diff(results[f"{prod_1_id}__cumulative_investments_made_in_eur"]) <= cap
         )
         np.testing.assert_allclose(
-            True, np.diff(results["HeatProducer_2__cumulative_investments_made_in_eur"]) <= cap
+            True, np.diff(results[f"{prod_2_id}__cumulative_investments_made_in_eur"]) <= cap
         )
 
         # Now we test if the investments made are greater then the needed investments once the
         # asset is realized
-        inds_1 = np.where(np.round(results["HeatProducer_1__asset_is_realized"]) == 1)
+        inds_1 = np.where(np.round(results[f"{prod_1_id}__asset_is_realized"]) == 1)
         np.testing.assert_allclose(
             True,
             (
-                results["HeatProducer_1__cumulative_investments_made_in_eur"][inds_1]
-                >= results["HeatProducer_1__investment_cost"]
-                + results["HeatProducer_1__installation_cost"]
+                results[f"{prod_1_id}__cumulative_investments_made_in_eur"][inds_1]
+                >= results[f"{prod_1_id}__investment_cost"]
+                + results[f"{prod_1_id}__installation_cost"]
                 - 1.0e-3
             ),
         )
-        inds_2 = np.where(np.round(results["HeatProducer_2__asset_is_realized"]) == 1)
+        inds_2 = np.where(np.round(results[f"{prod_2_id}__asset_is_realized"]) == 1)
         np.testing.assert_allclose(
             True,
             (
-                results["HeatProducer_2__cumulative_investments_made_in_eur"][inds_2]
-                >= results["HeatProducer_2__investment_cost"]
-                + results["HeatProducer_2__installation_cost"]
+                results[f"{prod_2_id}__cumulative_investments_made_in_eur"][inds_2]
+                >= results[f"{prod_2_id}__investment_cost"]
+                + results[f"{prod_2_id}__installation_cost"]
                 - 1.0e-3
             ),
         )
 
         # Here we test that the asset is not used until it is actually realized
-        inds_not_1 = np.where(np.round(results["HeatProducer_1__asset_is_realized"]) == 0)
+        inds_not_1 = np.where(np.round(results[f"{prod_1_id}__asset_is_realized"]) == 0)
         np.testing.assert_allclose(
-            results["HeatProducer_1.Heat_source"][inds_not_1], 0.0, atol=1e-6
+            results[f"{prod_1_id}.Heat_source"][inds_not_1], 0.0, atol=1e-6
         )
-        inds_not_2 = np.where(np.round(results["HeatProducer_2__asset_is_realized"]) == 0)
+        inds_not_2 = np.where(np.round(results[f"{prod_2_id}__asset_is_realized"]) == 0)
         np.testing.assert_allclose(
-            results["HeatProducer_1.Heat_source"][inds_not_2], 0.0, atol=1e-6
+            results[f"{prod_1_id}.Heat_source"][inds_not_2], 0.0, atol=1e-6
         )
 
         # Here we test that the asset is actually used once it is realized
-        np.testing.assert_allclose(results["HeatProducer_1.Heat_source"][inds_1] > 0.0, True)
-        np.testing.assert_allclose(results["HeatProducer_2.Heat_source"][inds_2] > 0.0, True)
+        np.testing.assert_allclose(results[f"{prod_1_id}.Heat_source"][inds_1] > 0.0, True)
+        np.testing.assert_allclose(results[f"{prod_2_id}.Heat_source"][inds_2] > 0.0, True)
 
 
 if __name__ == "__main__":

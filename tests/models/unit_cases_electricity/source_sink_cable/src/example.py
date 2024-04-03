@@ -124,9 +124,11 @@ class ElectricityProblemMaxCurr(
         Dict with the bounds.
         """
         bounds = super().bounds()
-        bounds["ElectricityProducer_b95d.Electricity_source"] = (0.0, 100000.0)
-        bounds["ElectricityCable_238f.ElectricityIn.Power"] = (0.0, 100000.0)
-        bounds["ElectricityCable_238f.ElectricityOut.Power"] = (0.0, 100000.0)
+        prod_id = self.esdl_asset_name_to_id_map.get("ElectricityProducer_b95d")
+        cable_id = self.esdl_asset_name_to_id_map.get("ElectricityCable_238f")
+        bounds[f"{prod_id}.Electricity_source"] = (0.0, 100000.0)
+        bounds[f"{cable_id}.ElectricityIn.Power"] = (0.0, 100000.0)
+        bounds[f"{cable_id}.ElectricityOut.Power"] = (0.0, 100000.0)
         return bounds
 
 

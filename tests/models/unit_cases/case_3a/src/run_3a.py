@@ -297,7 +297,7 @@ class HeatProblemProdProfile(
         super().read()
 
         for s in self.energy_system_components["heat_source"]:
-            demand_timeseries = self.get_timeseries("HeatingDemand_a3b8.target_heat_demand")
+            demand_timeseries = self.get_timeseries("a3b88fb6-b4a7-4986-8233-32ca05a5df9f.target_heat_demand")
             new_timeseries = np.ones(len(demand_timeseries.values)) * 1
             ind_hlf = int(len(demand_timeseries.values) / 2)
             new_timeseries[ind_hlf : ind_hlf + 4] = np.ones(4) * 0.10

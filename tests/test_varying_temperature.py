@@ -318,8 +318,9 @@ class TestVaryingTemperature(TestCase):
         # Check that the problem has an infeasible temperature for the hex
         np.testing.assert_allclose(results[f"{33638164429859421}_temperature"], 69.0)
         # Verify that the hex is disabled
-        np.testing.assert_allclose(results["HeatExchange_39ed__disabled"], 1.0)
-        np.testing.assert_allclose(results["HeatExchange_39ed.Primary_heat"], 0.0)
+        hex_id = heat_problem.esdl_asset_name_to_id_map.get("HeatExchange_39ed")
+        np.testing.assert_allclose(results[f"{hex_id}__disabled"], 1.0)
+        np.testing.assert_allclose(results[f"{hex_id}.Primary_heat"], 0.0)
 
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
@@ -395,16 +396,18 @@ class TestVaryingTemperature(TestCase):
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
 
+        genconv_id = heat_problem.esdl_asset_name_to_id_map.get("GenericConversion_3d3f")
+
         expected_cop = (
-            parameters["GenericConversion_3d3f.efficiency"]
+            parameters[f"{genconv_id}.efficiency"]
             * (273.15 + results[f"{7212673879469902607010}_temperature"])
             / (results[f"{7212673879469902607010}_temperature"] - 70.0)
         )
 
         np.testing.assert_allclose(
             expected_cop,
-            results["GenericConversion_3d3f.Secondary_heat"]
-            / results["GenericConversion_3d3f.Power_elec"],
+            results[f"{genconv_id}.Secondary_heat"]
+            / results[f"{genconv_id}.Power_elec"],
         )
 
     # Note that CBC struggles heavily and tends to crash, therefore excluded from pipeline

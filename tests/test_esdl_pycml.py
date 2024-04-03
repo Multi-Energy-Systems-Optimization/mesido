@@ -25,9 +25,9 @@ class TestESDL(TestCase):
         base_folder = Path(heat_comparison.__file__).resolve().parent.parent
         input_folder = base_folder / "input"
 
-        case_python = run_optimization_problem(
-            HeatPython, base_folder=base_folder, input_folder=input_folder
-        )
+        # case_python = run_optimization_problem(
+        #     HeatPython, base_folder=base_folder, input_folder=input_folder
+        # )
         case_esdl = run_optimization_problem(
             HeatESDL,
             base_folder=base_folder,

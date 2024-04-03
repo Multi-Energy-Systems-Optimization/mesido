@@ -62,37 +62,44 @@ class TestAtesTemperature(TestCase):
         energy_conservation_test(solution, results)
         heat_to_discharge_test(solution, results)
 
-        ates_charging = results["Pipe1__flow_direct_var"]  # =1 if charging
-        ates_temperature = results["ATES_cb47.Temperature_ates"]
-        ates_temperature_disc = results["ATES_cb47__temperature_ates_disc"]
+        ates_id = solution.esdl_asset_name_to_id_map.get("ATES_cb47")
+        pipe_id = solution.esdl_asset_name_to_id_map.get("Pipe1")
+        hex_id = solution.esdl_asset_name_to_id_map.get("HeatExchange_32ba")
+        hp_id = solution.esdl_asset_name_to_id_map.get("HeatPump_7f2c")
+        geo_id = solution.esdl_asset_name_to_id_map.get("GeothermalSource_4e5b")
+        peak_id = solution.esdl_asset_name_to_id_map.get("GenericProducer_4dfe")
+
+        ates_charging = results[f"{pipe_id}__flow_direct_var"]  # =1 if charging
+        ates_temperature = results[f"{ates_id}.Temperature_ates"]
+        ates_temperature_disc = results[f"{ates_id}__temperature_ates_disc"]
         carrier_temperature = results["41770304791669983859190_temperature"]
         temperature_regimes = solution.temperature_regimes(41770304791669983859190)
 
-        ates_temperature_loss = results["ATES_cb47.Temperature_loss"]
-        ates_temperature_change_charging = results["ATES_cb47.Temperature_change_charging"]
+        ates_temperature_loss = results[f"{ates_id}.Temperature_loss"]
+        ates_temperature_change_charging = results[f"{ates_id}.Temperature_change_charging"]
 
-        # heat_pump_sec = results["HeatPump_7f2c.Secondary_heat"]
-        heat_ates = results["ATES_cb47.Heat_ates"]
-        heat_loss_ates = results["ATES_cb47.Heat_loss"]
-        ates_stored_heat = results["ATES_cb47.Stored_heat"]
-        hex_disabled = results["HeatExchange_32ba__disabled"]
-        hp_disabled = results["HeatPump_7f2c__disabled"]
+        # heat_pump_sec = results[f"{hp_id}.Secondary_heat"]
+        heat_ates = results[f"{ates_id}.Heat_ates"]
+        heat_loss_ates = results[f"{ates_id}.Heat_loss"]
+        ates_stored_heat = results[f"{ates_id}.Stored_heat"]
+        hex_disabled = results[f"{hex_id}__disabled"]
+        hp_disabled = results[f"{hp_id}__disabled"]
 
-        # geo_source = results["GeothermalSource_4e5b.Heat_source"]
+        # geo_source = results[f"{geo_id}.Heat_source"]
         objective = solution.objective_value
 
         objective_calc = (
             sum(
-                parameters["GeothermalSource_4e5b.variable_operational_cost_coefficient"]
-                * results["GeothermalSource_4e5b.Heat_source"]
+                parameters[f"{geo_id}.variable_operational_cost_coefficient"]
+                * results[f"{geo_id}.Heat_source"]
             )
             + sum(
-                parameters["HeatPump_7f2c.variable_operational_cost_coefficient"]
-                * results["HeatPump_7f2c.Power_elec"]
+                parameters[f"{hp_id}.variable_operational_cost_coefficient"]
+                * results[f"{hp_id}.Power_elec"]
             )
             + sum(
-                parameters["GenericProducer_4dfe.variable_operational_cost_coefficient"]
-                * results["GenericProducer_4dfe.Heat_source"]
+                parameters[f"{peak_id}.variable_operational_cost_coefficient"]
+                * results[f"{peak_id}.Heat_source"]
             )
         )
 
@@ -107,7 +114,7 @@ class TestAtesTemperature(TestCase):
             ates_temperature_disc - tol,
             sum(
                 [
-                    results[f"ATES_cb47__temperature_disc_{temp}"] * temp
+                    results[f"{ates_id}__temperature_disc_{temp}"] * temp
                     for temp in temperature_regimes
                 ]
             ),
@@ -176,21 +183,29 @@ class TestAtesTemperature(TestCase):
         # energy_conservation_test(solution, results)
         # heat_to_discharge_test(solution, results)
 
-        ates_flow = results["ATES_cb47.Q"]
-        ates_flow_bound = bounds["ATES_cb47.Q"][1]
+        ates_id = solution.esdl_asset_name_to_id_map.get("ATES_cb47")
+        demand_id = solution.esdl_asset_name_to_id_map.get("HeatingDemand_1")
+        pipe_id = solution.esdl_asset_name_to_id_map.get("Pipe1")
+        hex_id = solution.esdl_asset_name_to_id_map.get("HeatExchange_32ba")
+        hp_id = solution.esdl_asset_name_to_id_map.get("HeatPump_7f2c")
+        geo_id = solution.esdl_asset_name_to_id_map.get("GeothermalSource_4e5b")
+        peak_id = solution.esdl_asset_name_to_id_map.get("GenericProducer_4dfe")
 
-        ates_heat = results["ATES_cb47.Heat_ates"]
-        ates_heat_bound = bounds["ATES_cb47.Heat_ates"][1]
+        ates_flow = results[f"{ates_id}.Q"]
+        ates_flow_bound = bounds[f"{ates_id}.Q"][1]
 
-        heat_demand = results["HeatingDemand_1.Heat_demand"]
-        target = solution.get_timeseries("HeatingDemand_1.target_heat_demand").values
+        ates_heat = results[f"{ates_id}.Heat_ates"]
+        ates_heat_bound = bounds[f"{ates_id}.Heat_ates"][1]
+
+        heat_demand = results[f"{demand_id}.Heat_demand"]
+        target = solution.get_timeseries(f"{demand_id}.target_heat_demand").values
 
         demand_not_matched = (heat_demand - target) < -1
 
-        ates_temperature = results["ATES_cb47.Temperature_ates"]
-        ates_temp_ret = parameters["ATES_cb47.T_return"]
-        cp = parameters["ATES_cb47.cp"]
-        rho = parameters["ATES_cb47.rho"]
+        ates_temperature = results[f"{ates_id}.Temperature_ates"]
+        ates_temp_ret = parameters[f"{ates_id}.T_return"]
+        cp = parameters[f"{ates_id}.cp"]
+        rho = parameters[f"{ates_id}.rho"]
 
         np.testing.assert_allclose(abs(ates_flow[demand_not_matched]), ates_flow_bound)
         np.testing.assert_array_less(abs(ates_heat[demand_not_matched]), ates_heat_bound)

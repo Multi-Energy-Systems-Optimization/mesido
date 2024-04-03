@@ -514,8 +514,8 @@ class ScenarioOutput(TechnoEconomicMixin):
             # part of the subarea.
             energy_breakdown = {}
             for asset in subarea.asset:
-                asset_name = asset.name
-                asset_type = self.get_asset_from_asset_name(asset_name).asset_type
+                asset_name = asset.id
+                asset_type = self.esdl_assets[asset_name].asset_type
 
                 asset_placement_var = self._asset_aggregation_count_var_map[asset.name]
                 placed = np.round(results[asset_placement_var][0]) >= 1.0

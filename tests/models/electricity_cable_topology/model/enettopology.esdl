@@ -2,15 +2,15 @@
 <esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" name="enettopology" version="1" id="fffa60a1-a848-4cb8-bc67-0244ecb08ed7" description="" esdlVersion="v2401">
   <instance xsi:type="esdl:Instance" id="4826ac7c-6a64-4206-a725-84c2bfa07862" name="Untitled instance">
     <area xsi:type="esdl:Area" id="d5b54bf0-0d2a-43a1-9088-3f09075457df" name="Untitled area">
-      <asset xsi:type="esdl:ElectricityDemand" name="demand3" id="f4761a60-b9ee-47de-bab0-a6507728f8cc" power="1000000.0">
+      <asset xsi:type="esdl:ElectricityDemand" name="demand3" id="demand3" power="1000000.0">
         <port xsi:type="esdl:InPort" id="c43006e7-fc35-42f3-88e8-5b247d025db9" carrier="e3716bdc-b30e-4dbb-ac96-1c8e86c29a79" name="In" connectedTo="9d931928-e054-4799-baee-7e69f40ed443"/>
         <geometry xsi:type="esdl:Point" lon="4.380025863647462" lat="51.9899016054132" CRS="WGS84"/>
       </asset>
-      <asset xsi:type="esdl:ElectricityDemand" name="demand1" id="c43a3eaf-85f4-4738-a84c-085e98442986" power="1000000.0">
+      <asset xsi:type="esdl:ElectricityDemand" name="demand1" id="demand1" power="1000000.0">
         <port xsi:type="esdl:InPort" id="cf578b10-bb8a-4514-8020-a0997d7da2ac" carrier="e3716bdc-b30e-4dbb-ac96-1c8e86c29a79" name="In" connectedTo="e16d09c3-6bc4-477e-8528-0e803b575576"/>
         <geometry xsi:type="esdl:Point" lon="4.379918575286866" lat="51.987860051179105" CRS="WGS84"/>
       </asset>
-      <asset xsi:type="esdl:ElectricityDemand" name="demand2" id="4af8944f-50b9-460b-9af0-b55a5f17dbba" power="1000000.0">
+      <asset xsi:type="esdl:ElectricityDemand" name="demand2" id="demand2" power="1000000.0">
         <port xsi:type="esdl:InPort" id="7ad4b512-df57-4f06-bbfa-3463732a0080" carrier="e3716bdc-b30e-4dbb-ac96-1c8e86c29a79" name="In" connectedTo="d208ce36-eb4c-4a32-9cfa-6670578af79a"/>
         <geometry xsi:type="esdl:Point" lon="4.379768371582032" lat="51.98570607753357" CRS="WGS84"/>
       </asset>

@@ -38,15 +38,17 @@ class TestProducerMaxProfile(TestCase):
         )
         results = solution.extract_results()
 
+        geo_source_id = solution.esdl_asset_name_to_id_map.get("GeothermalSource_b702")
+
         demand_matching_test(solution, results)
         energy_conservation_test(solution, results)
         heat_to_discharge_test(solution, results)
         tol = 1e-8
-        heat_producer = results["GeothermalSource_b702.Heat_source"]
-        size_producer = results["GeothermalSource_b702__max_size"]
+        heat_producer = results[f"{geo_source_id}.Heat_source"]
+        size_producer = results[f"{geo_source_id}__max_size"]
 
         heat_producer_profile_scaled = solution.get_timeseries(
-            "GeothermalSource_b702.maximum_heat_source"
+            f"{geo_source_id}.maximum_heat_source"
         ).values
         heat_producer_profile_full = heat_producer_profile_scaled * size_producer
 

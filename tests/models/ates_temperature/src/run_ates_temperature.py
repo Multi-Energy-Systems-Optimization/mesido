@@ -334,9 +334,10 @@ class HeatProblemMaxFlow(HeatProblem):
     def read(self):
         super().read()
 
-        demand_timeseries = self.get_timeseries("HeatingDemand_1.target_heat_demand")
-        demand_timeseries.values[2] = demand_timeseries.values[2] * 2
-        self.set_timeseries("HeatingDemand_1.target_heat_demand", demand_timeseries)
+        for demand in self.energy_system_components.get("heat_demand"):
+            demand_timeseries = self.get_timeseries(f"{demand}.target_heat_demand")
+            demand_timeseries.values[2] = demand_timeseries.values[2] * 2
+            self.set_timeseries(f"{demand}.target_heat_demand", demand_timeseries)
 
 
 if __name__ == "__main__":

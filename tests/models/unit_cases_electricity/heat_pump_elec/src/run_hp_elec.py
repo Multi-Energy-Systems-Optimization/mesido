@@ -139,9 +139,10 @@ class HeatProblem(
         parameters = super().parameters(ensemble_member)
         # all assets on same electricity grid should have same minimum voltage set by carrier,
         # these values also continue in the bounds, thus preferably this should be changed in ESDL
-        parameters["GenericConversion_3d3f.min_voltage"] = 230.0
-        parameters["ElectricityCable_9d3b.min_voltage"] = 230.0
-        parameters["ElectricityProducer_ac2e.min_voltage"] = 230.0
+
+        parameters[f"{self.esdl_asset_name_to_id_map['GenericConversion_3d3f']}.min_voltage"] = 230.0
+        parameters[f"{self.esdl_asset_name_to_id_map['ElectricityCable_9d3b']}.min_voltage"] = 230.0
+        parameters[f"{self.esdl_asset_name_to_id_map['ElectricityProducer_ac2e']}.min_voltage"] = 230.0
 
         return parameters
 
@@ -149,14 +150,17 @@ class HeatProblem(
         bounds = super().bounds()
         # all assets on same electricity grid should have same minimum voltage set by carrier,
         # these values also continue in the bounds, thus preferably this should be changed in ESDL
-        bound_conv = bounds["GenericConversion_3d3f.ElectricityIn.V"]
-        bounds["GenericConversion_3d3f.ElectricityIn.V"] = (230.0, bound_conv[1])
-        bound_cable_in = bounds["ElectricityCable_9d3b.ElectricityIn.V"]
-        bounds["ElectricityCable_9d3b.ElectricityIn.V"] = (230.0, bound_cable_in[1])
-        bound_cable_out = bounds["ElectricityCable_9d3b.ElectricityOut.V"]
-        bounds["ElectricityCable_9d3b.ElectricityOut.V"] = (230.0, bound_cable_out[1])
-        bound_prod_out = bounds["ElectricityProducer_ac2e.ElectricityOut.V"]
-        bounds["ElectricityProducer_ac2e.ElectricityOut.V"] = (230.0, bound_prod_out[1])
+        conv_id = self.esdl_asset_name_to_id_map['GenericConversion_3d3f']
+        cable_id = self.esdl_asset_name_to_id_map['ElectricityCable_9d3b']
+        prod_id = self.esdl_asset_name_to_id_map['ElectricityProducer_ac2e']
+        bound_conv = bounds[f"{conv_id}.ElectricityIn.V"]
+        bounds[f"{conv_id}.ElectricityIn.V"] = (230.0, bound_conv[1])
+        bound_cable_in = bounds[f"{cable_id}.ElectricityIn.V"]
+        bounds[f"{cable_id}.ElectricityIn.V"] = (230.0, bound_cable_in[1])
+        bound_cable_out = bounds[f"{cable_id}.ElectricityOut.V"]
+        bounds[f"{cable_id}.ElectricityOut.V"] = (230.0, bound_cable_out[1])
+        bound_prod_out = bounds[f"{prod_id}.ElectricityOut.V"]
+        bounds[f"{prod_id}.ElectricityOut.V"] = (230.0, bound_prod_out[1])
 
         return bounds
 

@@ -56,10 +56,13 @@ class TestMILPGasMultiDemandSourceNode(TestCase):
                 )
             np.testing.assert_allclose(discharge_sum, 0.0, atol=1.0e-12)
 
-        # Test if head is going down
+        total_demand = np.zeros(len(results[f"{node}.GasConn[{i_conn+1}].Q"]))
+        total_source = np.zeros(len(results[f"{node}.GasConn[{i_conn + 1}].Q"]))
+        for demand in heat_problem.energy_system_components.get("gas_demand"):
+            total_demand+= results[f"{demand}.Gas_demand_mass_flow"]
+        for source in heat_problem.energy_system_components.get("gas_source"):
+            total_source+= results[f"{source}.Gas_source_mass_flow"]
         np.testing.assert_allclose(
-            results["GasDemand_47d0.Gas_demand_mass_flow"]
-            + results["GasDemand_7978.Gas_demand_mass_flow"],
-            results["GasProducer_3573.Gas_source_mass_flow"]
-            + results["GasProducer_a977.Gas_source_mass_flow"],
+            total_demand,
+            total_source,
         )

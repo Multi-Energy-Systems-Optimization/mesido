@@ -100,9 +100,10 @@ class TestEndScenarioSizingAnnualized(TestCase):
         # Number of decimal positions for test accuracy
         decimal = 4
         for i in heat_producers:
+            prod_id = solution_annualized_cost.esdl_asset_name_to_id_map.get(f"HeatProducer_{i}")
             investment_and_installation_cost = (
-                results[f"HeatProducer_{i}__investment_cost"]
-                + results[f"HeatProducer_{i}__installation_cost"]
+                results[f"{prod_id}__investment_cost"]
+                + results[f"{prod_id}__installation_cost"]
             )
             # These are the same parameters used by the model from the ESDL file:
             asset_id = solution_annualized_cost.esdl_asset_name_to_id_map[f"HeatProducer_{i}"]
@@ -116,7 +117,7 @@ class TestEndScenarioSizingAnnualized(TestCase):
             ) / 100
             # TODO: Handle if NoneType
             discount_factor = calculate_annuity_factor(discount_rate, years_asset_life)
-            annualized_capex = results[f"HeatProducer_{i}__annualized_capex"]
+            annualized_capex = results[f"{prod_id}__annualized_capex"]
             # # Assertion 3: annualized capex matches the discounted investment
             # # and installation cost
             np.testing.assert_almost_equal(

@@ -47,20 +47,24 @@ class TestMILPElectricSourceSink(TestCase):
         results = solution.extract_results()
         parameters = solution.parameters(0)
 
-        max_ = solution.bounds()["ElectricityDemand_2af6__max_size"][0]
-        v_min = solution.parameters(0)["ElectricityCable_238f.min_voltage"]
+        elec_demand = solution.esdl_asset_name_to_id_map.get("ElectricityDemand_2af6")
+        elec_cable = solution.esdl_asset_name_to_id_map.get("ElectricityCable_238f")
+        elec_prod = solution.esdl_asset_name_to_id_map.get("ElectricityProducer_b95d")
+
+        max_ = solution.bounds()[f"{elec_demand}__max_size"][0]
+        v_min = solution.parameters(0)[f"{elec_cable}.min_voltage"]
 
         # Test if capping is ok
-        power_consumed = results["ElectricityDemand_2af6.ElectricityIn.Power"]
+        power_consumed = results[f"{elec_demand}.ElectricityIn.Power"]
         smallerthen = all(power_consumed <= np.ones(len(power_consumed)) * max_)
         self.assertTrue(smallerthen)
         biggerthen = all(power_consumed >= np.zeros(len(power_consumed)))
         self.assertTrue(biggerthen)
 
         # Test energy conservation
-        power_consumed = results["ElectricityDemand_2af6.ElectricityIn.Power"]
-        power_delivered = results["ElectricityProducer_b95d.ElectricityOut.Power"]
-        power_loss = results["ElectricityCable_238f.Power_loss"]
+        power_consumed = results[f"{elec_demand}.ElectricityIn.Power"]
+        power_delivered = results[f"{elec_prod}.ElectricityOut.Power"]
+        power_loss = results[f"{elec_cable}.Power_loss"]
         total_power_dissipation = power_consumed + power_loss
         self.assertIsNone(
             np.testing.assert_allclose(total_power_dissipation, power_delivered, rtol=1e-4),
@@ -70,8 +74,8 @@ class TestMILPElectricSourceSink(TestCase):
         self.assertTrue(biggerthen)
 
         # Test that voltage goes down
-        v_in = results["ElectricityCable_238f.ElectricityIn.V"]
-        v_out = results["ElectricityCable_238f.ElectricityOut.V"]
+        v_in = results[f"{elec_cable}.ElectricityIn.V"]
+        v_out = results[f"{elec_cable}.ElectricityOut.V"]
         np.testing.assert_array_less(v_out, v_in)
         biggerthen = all(v_out >= (v_min - tol) * np.ones(len(v_out)))
         self.assertTrue(biggerthen)
@@ -134,22 +138,26 @@ class TestMILPElectricSourceSink(TestCase):
         results = solution.extract_results()
         parameters = solution.parameters(0)
 
+        elec_cable = solution.esdl_asset_name_to_id_map.get("ElectricityCable_238f")
+        elec_demand = solution.esdl_asset_name_to_id_map.get("ElectricityDemand_2af6")
+        elec_prod = solution.esdl_asset_name_to_id_map.get("ElectricityProducer_b95d")
+
         max_power_transport = (
-            parameters["ElectricityCable_238f.min_voltage"]
-            * parameters["ElectricityCable_238f.max_current"]
+            parameters[f"{elec_cable}.min_voltage"]
+            * parameters[f"{elec_cable}.max_current"]
         )  # This max is based on max current and voltage requirement at consumer
-        v_min = parameters["ElectricityCable_238f.min_voltage"]  # set as minimum voltage for cables
+        v_min = parameters[f"{elec_cable}.min_voltage"]  # set as minimum voltage for cables
 
         tolerance = 1e-10  # due to computational comparison
 
         # Test if capping is ok (capping based on max power as result of v_min*Imax)
-        power_consumed = results["ElectricityDemand_2af6.ElectricityIn.Power"]
+        power_consumed = results[f"{elec_demand}.ElectricityIn.Power"]
         smallerthen = all(
             power_consumed - tolerance <= np.ones(len(power_consumed)) * max_power_transport
         )
         self.assertTrue(smallerthen)
         demand_target = solution.get_timeseries(
-            "ElectricityDemand_2af6.target_electricity_demand"
+            f"{elec_demand}.target_electricity_demand"
         ).values
         np.testing.assert_allclose(
             power_consumed,
@@ -159,9 +167,9 @@ class TestMILPElectricSourceSink(TestCase):
         self.assertTrue(biggerthen)
 
         # Test energy conservation
-        power_consumed = results["ElectricityDemand_2af6.ElectricityIn.Power"]
-        power_delivered = results["ElectricityProducer_b95d.ElectricityOut.Power"]
-        power_loss = results["ElectricityCable_238f.Power_loss"]
+        power_consumed = results[f"{elec_demand}.ElectricityIn.Power"]
+        power_delivered = results[f"{elec_prod}.ElectricityOut.Power"]
+        power_loss = results[f"{elec_cable}.Power_loss"]
         total_power_dissipation = power_consumed + power_loss
         self.assertIsNone(
             np.testing.assert_allclose(total_power_dissipation, power_delivered, rtol=1e-4),
@@ -171,20 +179,20 @@ class TestMILPElectricSourceSink(TestCase):
         self.assertTrue(biggerthen)
 
         # Test that voltage goes down
-        v_in = results["ElectricityCable_238f.ElectricityIn.V"]
-        v_out = results["ElectricityCable_238f.ElectricityOut.V"]
+        v_in = results[f"{elec_cable}.ElectricityIn.V"]
+        v_out = results[f"{elec_cable}.ElectricityOut.V"]
         np.testing.assert_array_less(v_out, v_in)
         biggerthen = all(v_out >= v_min * np.ones(len(v_out)) - tolerance)
         self.assertTrue(biggerthen)
 
         # Test that max current is not exceeded and is constant along path (since no nodes included)
-        current_demand = results["ElectricityDemand_2af6.ElectricityIn.I"]
-        current_producer = results["ElectricityProducer_b95d.ElectricityOut.I"]
-        current_cable = results["ElectricityCable_238f.ElectricityOut.I"]
+        current_demand = results[f"{elec_demand}.ElectricityIn.I"]
+        current_producer = results[f"{elec_prod}.ElectricityOut.I"]
+        current_cable = results[f"{elec_cable}.ElectricityOut.I"]
         np.testing.assert_allclose(current_demand, current_cable)
         np.testing.assert_allclose(current_cable, current_producer)
         biggerthen = all(
-            parameters["ElectricityCable_238f.max_current"] * np.ones(len(current_demand))
+            parameters[f"{elec_cable}.max_current"] * np.ones(len(current_demand))
             >= current_demand - tolerance
         )
         self.assertTrue(biggerthen)

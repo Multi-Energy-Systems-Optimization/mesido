@@ -8,7 +8,7 @@ model HeatModelica
     T_return=45.0,
     Q_nominal=Q_nominal
   );
-  WarmingUp.HeatNetwork.Heat.Demand demand(
+  WarmingUp.HeatNetwork.Heat.Demand 921eb017-927b-4789-98c8-41adbd70552c(
     Heat_in(max=2e5),
     T_supply=75.0,
     T_return=45.0,
@@ -43,8 +43,8 @@ model HeatModelica
    input Modelica.SIunits.Heat Heat_source(fixed=false) = source.Heat_source;
 equation
   connect(source.HeatOut, pipe_hot.HeatIn);
-  connect(pipe_hot.HeatOut, demand.HeatIn);
-  connect(demand.HeatOut, pipe_cold.HeatIn);
+  connect(pipe_hot.HeatOut, 921eb017-927b-4789-98c8-41adbd70552c.HeatIn);
+  connect(921eb017-927b-4789-98c8-41adbd70552c.HeatOut, pipe_cold.HeatIn);
   connect(pipe_cold.HeatOut, pump.HeatIn);
   connect(pump.HeatOut, source.HeatIn);
 end HeatModelica;

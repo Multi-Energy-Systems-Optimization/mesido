@@ -52,7 +52,8 @@ class TestProfileLoading(unittest.TestCase):
 
         # the three demands in the test ESDL
         for demand_name in ["HeatingDemand_2ab9", "HeatingDemand_6662", "HeatingDemand_506c"]:
-            profile_values = problem.get_timeseries(f"{demand_name}.target_heat_demand").values
+            demand_id = problem.esdl_asset_name_to_id_map.get(demand_name)
+            profile_values = problem.get_timeseries(f"{demand_id}.target_heat_demand").values
             self.assertEqual(profile_values[0], 0.0)
             self.assertEqual(len(profile_values), 26)
 
@@ -82,10 +83,12 @@ class TestProfileLoading(unittest.TestCase):
         )
         problem.pre()
 
+        windpark_id = problem.esdl_asset_name_to_id_map.get("WindPark_7f14")
+
         expected_array = np.array([1.0e8] * 3)
         np.testing.assert_equal(
             expected_array,
-            problem.get_timeseries("WindPark_7f14.maximum_electricity_source").values,
+            problem.get_timeseries(f"{windpark_id}.maximum_electricity_source").values,
         )
 
         expected_array = np.array([1.0] * 3)
@@ -116,9 +119,11 @@ class TestProfileLoading(unittest.TestCase):
         )
         problem.pre()
 
+        demand_id = problem.esdl_asset_name_to_id_map.get("demand")
+
         expected_array = np.array([1.5e5] * 16 + [1.0e5] * 13 + [0.5e5] * 16)
         np.testing.assert_equal(
-            expected_array, problem.get_timeseries("demand.target_heat_demand").values
+            expected_array, problem.get_timeseries(f"{demand_id}.target_heat_demand").values
         )
 
     def test_loading_from_csv_with_influx_profiles_given(self):
@@ -146,10 +151,12 @@ class TestProfileLoading(unittest.TestCase):
         )
         problem.pre()
 
+        windpark_id = problem.esdl_asset_name_to_id_map.get("WindPark_7f14")
+
         expected_array = np.array([1.0e8] * 3)
         np.testing.assert_equal(
             expected_array,
-            problem.get_timeseries("WindPark_7f14.maximum_electricity_source").values,
+            problem.get_timeseries(f"{windpark_id}.maximum_electricity_source").values,
         )
 
         expected_array = np.array([1.0] * 3)

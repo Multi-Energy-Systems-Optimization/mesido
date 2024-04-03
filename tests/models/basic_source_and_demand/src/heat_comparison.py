@@ -23,13 +23,13 @@ class TargetDemandGoal(Goal):
     order = 1
 
     def __init__(self, optimization_problem):
-        self.target_min = optimization_problem.get_timeseries("demand.target_heat_demand")
-        self.target_max = optimization_problem.get_timeseries("demand.target_heat_demand")
+        self.target_min = optimization_problem.get_timeseries("921eb017-927b-4789-98c8-41adbd70552c.target_heat_demand")
+        self.target_max = optimization_problem.get_timeseries("921eb017-927b-4789-98c8-41adbd70552c.target_heat_demand")
         self.function_range = (0.0, 2e5)
         self.function_nominal = 1e5
 
     def function(self, optimization_problem, ensemble_member):
-        return optimization_problem.state("demand.Heat_demand")
+        return optimization_problem.state("921eb017-927b-4789-98c8-41adbd70552c.Heat_demand")
 
 
 class _GoalsAndOptions:

@@ -14,12 +14,12 @@
         <port xsi:type="esdl:OutPort" id="9ba296fc-0130-47e9-99dd-55bd0919392b" connectedTo="d861f1de-aa92-45e1-ac46-882ea6b0b9b5" carrier="3b1b4141-7f46-44d6-9c87-6b0c467aebcf" name="Out"/>
         <port xsi:type="esdl:InPort" connectedTo="e176abfd-3921-4a11-b212-335063326008" id="30c16db1-ab68-4e0c-90c9-39603150e1d3" carrier="d49c7d21-b28c-4a36-a543-890c064d9acf" name="In"/>
       </asset>
-      <asset xsi:type="esdl:HeatingDemand" name="HeatingDemand_907a" id="907a5fbf-57ee-4a38-a316-77792cb1a76f" power="1000000.0">
+      <asset xsi:type="esdl:HeatingDemand" name="HeatingDemand_907a" id="HeatingDemand_907a" power="1000000.0">
         <geometry xsi:type="esdl:Point" lon="4.385529756546021" lat="51.98539883051918" CRS="WGS84"/>
         <port xsi:type="esdl:InPort" connectedTo="ad71e637-3cb2-487f-a593-179c5c467011" id="1b1bd6d5-2d10-4a29-b669-037a2e5a4e3e" carrier="3b1b4141-7f46-44d6-9c87-6b0c467aebcf" name="In"/>
         <port xsi:type="esdl:OutPort" id="5369a83e-8cc6-4a6e-8694-3878d5c80729" connectedTo="e03e86d3-6793-4006-9cdc-8e4cc305ed25" carrier="d49c7d21-b28c-4a36-a543-890c064d9acf" name="Out"/>
       </asset>
-      <asset xsi:type="esdl:HeatingDemand" name="HeatingDemand_6c8a" id="6c8a0d8b-1269-43ca-a090-60a1e192261a" power="1000000.0">
+      <asset xsi:type="esdl:HeatingDemand" name="HeatingDemand_6c8a" id="HeatingDemand_6c8a" power="1000000.0">
         <geometry xsi:type="esdl:Point" lon="4.385513663291932" lat="51.984040971699166" CRS="WGS84"/>
         <port xsi:type="esdl:InPort" connectedTo="1a96cb87-db5d-4bb8-8aa4-9a5a11799128" id="6af2dacb-546a-4747-ae8e-e63258b3fde9" carrier="3b1b4141-7f46-44d6-9c87-6b0c467aebcf" name="In"/>
         <port xsi:type="esdl:OutPort" id="ce3f606c-ed11-4584-b899-e8980ef9dab9" connectedTo="e222c7fd-5720-447e-87f3-c7a98018b044" carrier="d49c7d21-b28c-4a36-a543-890c064d9acf" name="Out"/>

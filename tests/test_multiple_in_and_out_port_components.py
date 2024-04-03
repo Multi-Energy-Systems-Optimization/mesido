@@ -71,12 +71,14 @@ class TestHEX(TestCase):
         results = solution.extract_results()
         parameters = solution.parameters(0)
 
-        prim_heat = results["HeatExchange_39ed.Primary_heat"]
-        sec_heat = results["HeatExchange_39ed.Secondary_heat"]
-        disabled = results["HeatExchange_39ed__disabled"]
+        hex_id = solution.esdl_asset_name_to_id_map.get("HeatExchange_39ed")
+
+        prim_heat = results[f"{hex_id}.Primary_heat"]
+        sec_heat = results[f"{hex_id}.Secondary_heat"]
+        disabled = results[f"{hex_id}__disabled"]
 
         # We check the energy converted betweeen the commodities
-        eff = parameters["HeatExchange_39ed.efficiency"]
+        eff = parameters[f"{hex_id}.efficiency"]
 
         demand_matching_test(solution, results)
         heat_to_discharge_test(solution, results)
@@ -94,12 +96,12 @@ class TestHEX(TestCase):
         np.testing.assert_array_less(-prim_heat[:-1], 0.0)
 
         np.testing.assert_array_less(
-            parameters["HeatExchange_39ed.Secondary.T_supply"],
-            parameters["HeatExchange_39ed.Primary.T_supply"],
+            parameters[f"{hex_id}.Secondary.T_supply"],
+            parameters[f"{hex_id}.Primary.T_supply"],
         )
         np.testing.assert_array_less(
-            parameters["HeatExchange_39ed.Secondary.T_return"],
-            parameters["HeatExchange_39ed.Primary.T_return"],
+            parameters[f"{hex_id}.Secondary.T_return"],
+            parameters[f"{hex_id}.Primary.T_return"],
         )
 
 
@@ -162,14 +164,18 @@ class TestHP(TestCase):
         results = solution.extract_results()
         parameters = solution.parameters(0)
 
-        prim_heat = results["GenericConversion_3d3f.Primary_heat"]
-        sec_heat = results["GenericConversion_3d3f.Secondary_heat"]
-        power_elec = results["GenericConversion_3d3f.Power_elec"]
+        genconv_id = solution.esdl_asset_name_to_id_map.get("GenericConversion_3d3f")
+        pipe_3_id = solution.esdl_asset_name_to_id_map.get("Pipe3")
+        res_source_id = solution.esdl_asset_name_to_id_map.get("ResidualHeatSource_aec9")
+
+        prim_heat = results[f"{genconv_id}.Primary_heat"]
+        sec_heat = results[f"{genconv_id}.Secondary_heat"]
+        power_elec = results[f"{genconv_id}.Power_elec"]
 
         # Check that only the minimum velocity is flowing through the secondary source.
-        cross_sectional_area = parameters["Pipe3.area"]
+        cross_sectional_area = parameters[f"{pipe_3_id}.area"]
         np.testing.assert_allclose(
-            results["ResidualHeatSource_aec9.Q"] / cross_sectional_area,
+            results[f"{res_source_id}.Q"] / cross_sectional_area,
             1.0e-3,
             atol=2.5e-5,
         )
@@ -179,7 +185,7 @@ class TestHP(TestCase):
         energy_conservation_test(solution, results)
 
         # We check the energy converted betweeen the commodities
-        np.testing.assert_allclose(power_elec * parameters["GenericConversion_3d3f.COP"], sec_heat)
+        np.testing.assert_allclose(power_elec * parameters[f"{genconv_id}.COP"], sec_heat)
         np.testing.assert_allclose(power_elec + prim_heat, sec_heat)
 
 
