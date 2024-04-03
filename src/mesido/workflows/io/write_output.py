@@ -311,7 +311,7 @@ class ScenarioOutput(TechnoEconomicMixin):
 
         def _name_to_asset(name):
             return next(
-                (x for x in energy_system.eAllContents() if hasattr(x, "name") and x.name == name)
+                (x for x in energy_system.eAllContents() if hasattr(x, "name") and x.id == name)
             )
 
         # ------------------------------------------------------------------------------------------
@@ -328,56 +328,56 @@ class ScenarioOutput(TechnoEconomicMixin):
         tot_fixed_opex_cost_euro = 0.0
 
         for _key, asset in self.esdl_assets.items():
-            asset_placement_var = self._asset_aggregation_count_var_map[asset.name]
+            asset_placement_var = self._asset_aggregation_count_var_map[asset.id]
             placed = np.round(results[asset_placement_var][0]) >= 1.0
             if placed:
                 try:
                     asset_capex_breakdown[asset.asset_type] += (
-                        results[f"{asset.name}__installation_cost"][0]
-                        + results[f"{asset.name}__investment_cost"][0]
+                        results[f"{asset.id}__installation_cost"][0]
+                        + results[f"{asset.id}__investment_cost"][0]
                     )
-                    tot_install_cost_euro += results[f"{asset.name}__installation_cost"][0]
-                    tot_invest_cost_euro += results[f"{asset.name}__investment_cost"][0]
+                    tot_install_cost_euro += results[f"{asset.id}__installation_cost"][0]
+                    tot_invest_cost_euro += results[f"{asset.id}__investment_cost"][0]
 
                     if (
-                        results[f"{asset.name}__variable_operational_cost"][0] > 0.0
-                        or results[f"{asset.name}__fixed_operational_cost"][0] > 0.0
+                        results[f"{asset.id}__variable_operational_cost"][0] > 0.0
+                        or results[f"{asset.id}__fixed_operational_cost"][0] > 0.0
                     ):
                         asset_opex_breakdown[asset.asset_type] += (
-                            results[f"{asset.name}__variable_operational_cost"][0]
-                            + results[f"{asset.name}__fixed_operational_cost"][0]
+                            results[f"{asset.id}__variable_operational_cost"][0]
+                            + results[f"{asset.id}__fixed_operational_cost"][0]
                         )
 
                         tot_variable_opex_cost_euro += results[
-                            f"{asset.name}__variable_operational_cost"
+                            f"{asset.id}__variable_operational_cost"
                         ][0]
                         tot_fixed_opex_cost_euro += results[
-                            f"{asset.name}__fixed_operational_cost"
+                            f"{asset.id}__fixed_operational_cost"
                         ][0]
 
                 except KeyError:
                     try:
                         asset_capex_breakdown[asset.asset_type] = (
-                            results[f"{asset.name}__installation_cost"][0]
-                            + results[f"{asset.name}__investment_cost"][0]
+                            results[f"{asset.id}__installation_cost"][0]
+                            + results[f"{asset.id}__investment_cost"][0]
                         )
-                        tot_install_cost_euro += results[f"{asset.name}__installation_cost"][0]
-                        tot_invest_cost_euro += results[f"{asset.name}__investment_cost"][0]
+                        tot_install_cost_euro += results[f"{asset.id}__installation_cost"][0]
+                        tot_invest_cost_euro += results[f"{asset.id}__investment_cost"][0]
 
                         if (
-                            results[f"{asset.name}__variable_operational_cost"][0] > 0.0
-                            or results[f"{asset.name}__fixed_operational_cost"][0] > 0.0
+                            results[f"{asset.id}__variable_operational_cost"][0] > 0.0
+                            or results[f"{asset.id}__fixed_operational_cost"][0] > 0.0
                         ):
                             asset_opex_breakdown[asset.asset_type] = (
-                                results[f"{asset.name}__variable_operational_cost"][0]
-                                + results[f"{asset.name}__fixed_operational_cost"][0]
+                                results[f"{asset.id}__variable_operational_cost"][0]
+                                + results[f"{asset.id}__fixed_operational_cost"][0]
                             )
 
                             tot_variable_opex_cost_euro += results[
-                                f"{asset.name}__variable_operational_cost"
+                                f"{asset.id}__variable_operational_cost"
                             ][0]
                             tot_fixed_opex_cost_euro += results[
-                                f"{asset.name}__fixed_operational_cost"
+                                f"{asset.id}__fixed_operational_cost"
                             ][0]
                     except KeyError:
                         # Do not add any costs. Items like joint
@@ -394,7 +394,7 @@ class ScenarioOutput(TechnoEconomicMixin):
                     or asset.asset_type == "GasHeater"
                 ):
                     heat_source_energy_wh[asset.name] = np.sum(
-                        results[f"{asset.name}.Heat_source"][1:]
+                        results[f"{asset.id}.Heat_source"][1:]
                         * (self.times()[1:] - self.times()[0:-1])
                         / 3600
                     )
@@ -405,7 +405,7 @@ class ScenarioOutput(TechnoEconomicMixin):
                 # elif Heat pump
                 # elif asset.asset_type == "HeatStorage":  # Heat discharged
                 #     heat_source_energy_wh[asset.name] = np.sum(
-                #         np.clip(results[f"{asset.name}.Heat_buffer"][1:], -np.inf, 0.0)
+                #         np.clip(results[f"{asset.id}.Heat_buffer"][1:], -np.inf, 0.0)
                 #         * (self.times()[1:] - self.times()[0:-1])
                 #         / 3600
                 #     )

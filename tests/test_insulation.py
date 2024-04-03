@@ -74,24 +74,31 @@ class TestInsulation(TestCase):
         test = TestCase()
         test.assertTrue(heat_problem.solver_stats["success"], msg="Optimisation did not succeed")
 
+        demand_1 = heat_problem.esdl_asset_name_to_id_map.get("HeatingDemand_e6b3")
+        demand_2 = heat_problem.esdl_asset_name_to_id_map.get("HeatingDemand_f15e")
+        res_source_1_id = heat_problem.esdl_asset_name_to_id_map.get("ResidualHeatSource_6783")
+        res_source_2_id = heat_problem.esdl_asset_name_to_id_map.get("ResidualHeatSource_4539")
+        hp_id = heat_problem.esdl_asset_name_to_id_map.get("HeatPump_cd41")
+        storage_id = heat_problem.esdl_asset_name_to_id_map.get("HeatStorage_bce7")
+
         # Check that only the demand for insulation A has been selected for every time step
         np.testing.assert_allclose(
             1.0,
-            results["HeatingDemand_f15e__demand_insulation_class_A"],
+            results[f"{demand_2}__demand_insulation_class_A"],
             err_msg="The lowest demand (insulation level A) has not been selected for every time"
             " step",
         )
         np.testing.assert_allclose(
             1.0,
-            results["HeatingDemand_e6b3__demand_insulation_class_A"],
+            results[f"{demand_1}__demand_insulation_class_A"],
             err_msg="The lowest demand (insulation level A) has not been selected for every time"
             " step",
         )
         other_demand_insulation_class = (
-            results["HeatingDemand_f15e__demand_insulation_class_B"]
-            + results["HeatingDemand_e6b3__demand_insulation_class_B"]
-            + results["HeatingDemand_f15e__demand_insulation_class_C"]
-            + results["HeatingDemand_e6b3__demand_insulation_class_C"]
+            results[f"{demand_2}__demand_insulation_class_B"]
+            + results[f"{demand_1}__demand_insulation_class_B"]
+            + results[f"{demand_2}__demand_insulation_class_C"]
+            + results[f"{demand_1}__demand_insulation_class_C"]
         )
         np.testing.assert_allclose(
             0.0,
@@ -100,13 +107,13 @@ class TestInsulation(TestCase):
         )
         # Check that the milp sources (not connected to HP) + HP secondary > demand
         tot_src = (
-            results["ResidualHeatSource_6783.Heat_source"]
-            + results["ResidualHeatSource_4539.Heat_source"]
-            + results["HeatPump_cd41.Secondary_heat"]
-            - results["HeatStorage_bce7.Heat_buffer"]
+            results[f"{res_source_1_id}.Heat_source"]
+            + results[f"{res_source_2_id}.Heat_source"]
+            + results[f"{hp_id}.Secondary_heat"]
+            - results[f"{storage_id}.Heat_buffer"]
         ) / 1.0e6
         tot_dmnd = (
-            results["HeatingDemand_f15e.Heat_demand"] + results["HeatingDemand_e6b3.Heat_demand"]
+            results[f"{demand_2}.Heat_demand"] + results[f"{demand_1}.Heat_demand"]
         ) / 1.0e6
         np.testing.assert_array_less(
             (tot_dmnd - tot_src), 0.0, err_msg="The milp source is not sufficient"
@@ -115,15 +122,15 @@ class TestInsulation(TestCase):
         # factor. Insulation level "A" should be active, which is index=0 in the insulation_levels
         # attributes index
         np.testing.assert_allclose(
-            heat_problem.base_demand_load("HeatingDemand_f15e")[0:5]
+            heat_problem.base_demand_load(f"{demand_2}")[0:5]
             * heat_problem.insulation_levels()["scaling_factor"][0],
-            results["HeatingDemand_f15e.Heat_demand"],
+            results[f"{demand_2}.Heat_demand"],
             err_msg="The scaled demand value is incorrect: HeatingDemand_f15e.Heat_demand",
         )
         np.testing.assert_allclose(
-            heat_problem.base_demand_load("HeatingDemand_e6b3")[0:5]
+            heat_problem.base_demand_load(f"{demand_1}")[0:5]
             * heat_problem.insulation_levels()["scaling_factor"][0],
-            results["HeatingDemand_e6b3.Heat_demand"],
+            results[f"{demand_1}.Heat_demand"],
             err_msg="The scaled demand value is incorrect: HeatingDemand_e6b3.Heat_demand",
         )
 
@@ -154,16 +161,19 @@ class TestInsulation(TestCase):
         test = TestCase()
         test.assertTrue(heat_problem.solver_stats["success"], msg="Optimisation did not succeed")
 
+        demand_1 = heat_problem.esdl_asset_name_to_id_map.get("HeatingDemand_e6b3")
+        demand_2 = heat_problem.esdl_asset_name_to_id_map.get("HeatingDemand_f15e")
+
         # Check that only the demand for insulation A has been selected for every time step
         np.testing.assert_allclose(
             1.0,
-            results["HeatingDemand_e6b3__demand_insulation_class_A"],
+            results[f"{demand_1}__demand_insulation_class_A"],
             err_msg="The lowest demand (insulation level A) has not been selected for every time"
             " step",
         )
         other_demand_insulation_class = (
-            abs(results["HeatingDemand_e6b3__demand_insulation_class_B"])
-            + results["HeatingDemand_e6b3__demand_insulation_class_C"]
+            abs(results[f"{demand_1}__demand_insulation_class_B"])
+            + results[f"{demand_1}__demand_insulation_class_C"]
         )
 
         np.testing.assert_allclose(
@@ -175,7 +185,7 @@ class TestInsulation(TestCase):
         # Check that insulation level C is active for HeatingDemand_f15e
         np.testing.assert_allclose(
             1.0,
-            results["HeatingDemand_f15e__demand_insulation_class_C"],
+            results[f"{demand_2}__demand_insulation_class_C"],
             err_msg="The lowest demand (insulation level C) has not been selected for every time"
             " step",
         )

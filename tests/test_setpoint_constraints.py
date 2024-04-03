@@ -31,6 +31,8 @@ class TestSetpointConstraints(TestCase):
 
         base_folder = Path(run_3a.__file__).resolve().parent.parent
 
+        geothermal_id = "b702bda3-632c-43ff-9867-72cda41f442f"
+
         _heat_problem_3 = run_optimization_problem(
             HeatProblemSetPointConstraints,
             base_folder=base_folder,
@@ -38,7 +40,7 @@ class TestSetpointConstraints(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_import.xml",
-            **{"timed_setpoints": {"GeothermalSource_b702": (45, 1)}},
+            **{"timed_setpoints": {geothermal_id: (45, 1)}},
         )
         results_3 = _heat_problem_3.extract_results()
 
@@ -49,7 +51,7 @@ class TestSetpointConstraints(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_import.xml",
-            **{"timed_setpoints": {"GeothermalSource_b702": (45, 0)}},
+            **{"timed_setpoints": {geothermal_id: (45, 0)}},
         )
         results_4 = _heat_problem_4.extract_results()
 
@@ -73,24 +75,24 @@ class TestSetpointConstraints(TestCase):
         esdl_results = sol_esdl_setpoints.extract_results()
         np.testing.assert_array_less(
             abs(
-                esdl_results["GeothermalSource_b702.Heat_source"][2:]
-                - esdl_results["GeothermalSource_b702.Heat_source"][1:-1]
+                esdl_results[f"{geothermal_id}.Heat_source"][2:]
+                - esdl_results[f"{geothermal_id}.Heat_source"][1:-1]
             ),
             1.0e-6,
         )
 
         # Check that solution has one setpoint change
         a = abs(
-            results_3["GeothermalSource_b702.Heat_source"][2:]
-            - results_3["GeothermalSource_b702.Heat_source"][1:-1]
+            results_3[f"{geothermal_id}.Heat_source"][2:]
+            - results_3[f"{geothermal_id}.Heat_source"][1:-1]
         )
         np.testing.assert_array_less((a >= 1.0).sum(), 2)  # the 1.0 value is a manual threshold
 
         # Check that solution has no setpoint change
         np.testing.assert_array_less(
             abs(
-                results_4["GeothermalSource_b702.Heat_source"][2:]
-                - results_4["GeothermalSource_b702.Heat_source"][1:-1]
+                results_4[f"{geothermal_id}.Heat_source"][2:]
+                - results_4[f"{geothermal_id}.Heat_source"][1:-1]
             ),
             1.0e-3,
         )
@@ -114,6 +116,8 @@ class TestSetpointConstraints(TestCase):
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
+        heatproducer_1_id = "324b0371-b738-4f55-a978-3306ee81638c"
+
         solution = run_optimization_problem(
             HeatProblemSetPoints,
             base_folder=base_folder,
@@ -121,11 +125,11 @@ class TestSetpointConstraints(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
-            **{"timed_setpoints": {"HeatProducer_1": (24 * 365, 2)}},
+            **{"timed_setpoints": {f"{heatproducer_1_id}": (24 * 365, 2)}},
         )
         results = solution.extract_results()
         check = abs(
-            results["HeatProducer_1.Heat_source"][2:] - results["HeatProducer_1.Heat_source"][1:-1]
+            results[f"{heatproducer_1_id}.Heat_source"][2:] - results[f"{heatproducer_1_id}.Heat_source"][1:-1]
         )
         # check if there are less than 3 switches, a solution might be found with less
         # than 2 switches
@@ -150,6 +154,8 @@ class TestSetpointConstraints(TestCase):
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
+        heatproducer_1_id = "324b0371-b738-4f55-a978-3306ee81638c"
+
         solution = run_optimization_problem(
             HeatProblemSetPoints,
             base_folder=base_folder,
@@ -157,11 +163,11 @@ class TestSetpointConstraints(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
-            **{"timed_setpoints": {"HeatProducer_1": (24 * 365, 0)}},  # not change at all - works
+            **{"timed_setpoints": {f"{heatproducer_1_id}": (24 * 365, 0)}},  # not change at all - works
         )
         results = solution.extract_results()
         check = abs(
-            results["HeatProducer_1.Heat_source"][2:] - results["HeatProducer_1.Heat_source"][1:-1]
+            results[f"{heatproducer_1_id}.Heat_source"][2:] - results[f"{heatproducer_1_id}.Heat_source"][1:-1]
         )
         np.testing.assert_array_less(check, 1.0e-6)
 
@@ -185,6 +191,8 @@ class TestSetpointConstraints(TestCase):
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
+        heatproducer_1_id = "324b0371-b738-4f55-a978-3306ee81638c"
+
         for ihrs in range(119, 122):
             solution = run_optimization_problem(
                 HeatProblemSetPoints,
@@ -193,18 +201,21 @@ class TestSetpointConstraints(TestCase):
                 esdl_parser=ESDLFileParser,
                 profile_reader=ProfileReaderFromFile,
                 input_timeseries_file="Warmte_test.csv",
-                **{"timed_setpoints": {"HeatProducer_1": (ihrs, 1)}},
+                **{"timed_setpoints": {f"{heatproducer_1_id}": (ihrs, 1)}},
             )
             results = solution.extract_results()
+
+            demand_id = solution.esdl_asset_name_to_id_map.get("HeatingDemand_1")
+
             diff = (
-                results["HeatProducer_1.Heat_source"][2:]
-                - results["HeatProducer_1.Heat_source"][1:-1]
+                results[f"{heatproducer_1_id}.Heat_source"][2:]
+                - results[f"{heatproducer_1_id}.Heat_source"][1:-1]
             )
             ires = [idx + 2 for idx, val in enumerate(diff) if abs(val) > 1e-6]
             for ii in range(1, len(ires)):
                 check = (
-                    solution.get_timeseries("HeatingDemand_1.target_heat_demand", 0).times[ires[ii]]
-                    - solution.get_timeseries("HeatingDemand_1.target_heat_demand", 0).times[
+                    solution.get_timeseries(f"{demand_id}.target_heat_demand", 0).times[ires[ii]]
+                    - solution.get_timeseries(f"{demand_id}.target_heat_demand", 0).times[
                         ires[ii - 1]
                     ]
                 )

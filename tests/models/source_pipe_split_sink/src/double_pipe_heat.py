@@ -17,14 +17,16 @@ class TargetDemandGoal(Goal):
 
     order = 2
 
-    def __init__(self, optimization_problem):
-        self.target_min = optimization_problem.get_timeseries("demand.target_heat_demand")
-        self.target_max = optimization_problem.get_timeseries("demand.target_heat_demand")
+    def __init__(self, state, target):
+        self.state = state
+
+        self.target_min = target
+        self.target_max = target
         self.function_range = (0.0, 2e5)
         self.function_nominal = 1e5
 
     def function(self, optimization_problem, ensemble_member):
-        return optimization_problem.state("demand.Heat_demand")
+        return optimization_problem.state(self.state)
 
 
 class MinimizeProduction(Goal):
@@ -47,8 +49,14 @@ class SourcePipeSink(
         super().__init__(*args, **kwargs)
 
     def path_goals(self):
-        # return [TargetDemandGoal(self), MinimizeProduction()]
-        return [TargetDemandGoal(self)]
+        goals = super().path_goals().copy()
+
+        for c in self.energy_system_components.get("heat_demand", []):
+            target = self.get_timeseries(f"{c}.target_heat_demand")
+            state = f"{c}.Heat_demand"
+            goals.append(TargetDemandGoal(state, target))
+
+        return goals
 
     def post(self):
         super().post()

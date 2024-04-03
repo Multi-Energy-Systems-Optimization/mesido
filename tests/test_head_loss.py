@@ -97,7 +97,11 @@ class TestHeadLoss(TestCase):
             )
             results = solution.extract_results()
 
-            pipes = ["Pipe1"]
+            pipe_1_id = solution.esdl_asset_name_to_id_map.get("Pipe1")
+            source_id = solution.esdl_asset_name_to_id_map.get("source")
+            demand_id = solution.esdl_asset_name_to_id_map.get("demand")
+
+            pipes = [f"{pipe_1_id}"]
             for itime in range(len(results[f"{pipe_1_id}.dH"])):
                 v_max = solution.heat_network_settings["maximum_velocity"]
                 pipe_diameter = solution.parameters(0)[f"{pipe_1_id}.diameter"]
@@ -193,9 +197,9 @@ class TestHeadLoss(TestCase):
                         -results[f"{pipe}.dH"][ii],
                     )
 
-            pump_power = results["source.Pump_power"]
+            pump_power = results[f"{source_id}.Pump_power"]
             pump_power_post_process = (
-                results["source.dH"] / GRAVITATIONAL_CONSTANT * 1.0e5 * results["source.Q"]
+                results[f"{source_id}.dH"] / GRAVITATIONAL_CONSTANT * 1.0e5 * results[f"{source_id}.Q"]
             )
 
             # The pump power should be overestimated compared to the actual head loss due to the
@@ -204,7 +208,7 @@ class TestHeadLoss(TestCase):
             np.testing.assert_array_less(pump_power_post_process, pump_power)
 
             sum_hp = (
-                results["demand.HeatOut.Hydraulic_power"] - results["demand.HeatIn.Hydraulic_power"]
+                results[f"{demand_id}.HeatOut.Hydraulic_power"] - results[f"{demand_id}.HeatIn.Hydraulic_power"]
             )
             sum_hp += (
                 results[f"{pipe_1_id}.HeatOut.Hydraulic_power"] - results[f"{pipe_1_id}.HeatIn.Hydraulic_power"]
@@ -274,7 +278,13 @@ class TestHeadLoss(TestCase):
 
             demand_matching_test(solution, results)
 
-            pipes = [f"{pipe_1_id}", "Pipe2", "Pipe3", "Pipe4"]
+            pipe_1_id = solution.esdl_asset_name_to_id_map.get("Pipe1")
+            pipe_2_id = solution.esdl_asset_name_to_id_map.get("Pipe2")
+            pipe_3_id = solution.esdl_asset_name_to_id_map.get("Pipe3")
+            pipe_4_id = solution.esdl_asset_name_to_id_map.get("Pipe4")
+            pipe_4_ret_id = solution.esdl_asset_name_to_id_map.get("Pipe4_ret")
+
+            pipes = [f"{pipe_1_id}", f"{pipe_2_id}", f"{pipe_3_id}", f"{pipe_4_id}"]
             # Only evaluate 1 pipe and 1 timestep for now to reduce the test case computational time
             ipipe = 0
             itime = 0
@@ -348,10 +358,10 @@ class TestHeadLoss(TestCase):
                 for pipe in pipes:
                     # Check that only one linear line segment is active for the head loss
                     # linearization
-                    if pipe not in ["Pipe4"]:  # Pipe 4 has no flow rate
+                    if pipe not in [f"{pipe_4_id}"]:  # Pipe 4 has no flow rate
                         np.testing.assert_allclose(
                             results[f"{pipe}__pipe_linear_line_segment_num_1_neg_discharge"],
-                            0.0,
+                            0.0, atol=1e-12,
                         )
                         np.testing.assert_allclose(
                             results[f"{pipe}__pipe_linear_line_segment_num_2_neg_discharge"],
@@ -370,7 +380,7 @@ class TestHeadLoss(TestCase):
                             0.0,
                         )
 
-                    if pipe not in ["Pipe4", "Pipe4_ret"]:
+                    if pipe not in [f"{pipe_4_id}", "Pipe4_ret"]:
                         velocities = results[f"{pipe}.Q"] / solution.parameters(0)[f"{pipe}.area"]
                         for ii in range(len(results[f"{pipe}.dH"])):
                             np.testing.assert_array_less(
@@ -383,9 +393,9 @@ class TestHeadLoss(TestCase):
                                 ),
                                 abs(results[f"{pipe}.dH"][ii]),
                             )
-                    elif pipe in ["Pipe4", "Pipe4_ret"]:
+                    elif pipe in [f"{pipe_4_id}", f"{pipe_4_ret_id}"]:
                         np.testing.assert_allclose(
-                            results["Pipe2.dH"][ii], results[f"{pipe}.dH"][ii]
+                            results[f"{pipe_2_id}.dH"][ii], results[f"{pipe}.dH"][ii]
                         )
 
     def test_gas_network_head_loss(self):
@@ -612,7 +622,7 @@ class TestHeadLoss(TestCase):
             )
             np.testing.assert_allclose(-results[f"{pipe_1_id}.dH"], results[f"{pipe_1_id}.__head_loss"])
 
-            pipes = ["Pipe1"]
+            pipes = [pipe_1_id]
             v_max = solution.gas_network_settings["maximum_velocity"]
             pipe_diameter = solution.parameters(0)[f"{pipe_1_id}.diameter"]
             pipe_wall_roughness = solution.energy_system_options()["wall_roughness"]

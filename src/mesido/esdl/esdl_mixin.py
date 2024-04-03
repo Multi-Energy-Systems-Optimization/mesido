@@ -476,7 +476,7 @@ class ESDLMixin(
         -------
         Returns true if the pipe is in the return network thus ends with "_ret"
         """
-        return f"{pipe}".endswith("_ret")
+        return f"{self.esdl_asset_id_to_name_map[pipe]}".endswith("_ret")
 
     def hot_to_cold_pipe(self, pipe: str) -> str:
         """
@@ -493,8 +493,8 @@ class ESDLMixin(
         string with the associated return pipe name.
         """
         pipe_cold = f"{self.esdl_asset_id_to_name_map[pipe]}_ret"
-        # return self.esdl_asset_name_to_id_map[pipe_cold] if pipe_cold in self.esdl_asset_name_to_id_map.keys() else f"{pipe}_ret"
-        return f"{pipe}_ret"
+        return self.esdl_asset_name_to_id_map[pipe_cold] if pipe_cold in self.esdl_asset_name_to_id_map.keys() else f"{pipe}_ret"
+        # return f"{pipe}_ret"
 
     def cold_to_hot_pipe(self, pipe: str) -> str:
         """
@@ -511,8 +511,8 @@ class ESDLMixin(
         string with the associated hot pipe name.
         """
         pipe_hot = self.esdl_asset_id_to_name_map[pipe][:-4]
-        # return self.esdl_asset_name_to_id_map[pipe_hot]
-        return pipe[:-4]
+        return self.esdl_asset_name_to_id_map[pipe_hot]
+        # return pipe[:-4]
 
     def pycml_model(self) -> _ESDLModelBase:
         """

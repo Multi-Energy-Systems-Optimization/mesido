@@ -71,8 +71,8 @@ class TestPipeDiameterSizingExample(TestCase):
             "More/less than 4 pipes have been removed",
         )
         # Check that the correct/specific 4 pipes on the left or 4 on the right have been removed
-        pipes_removed = ["Pipe_8592", "Pipe_2927", "Pipe_9a6f", "Pipe_a718"]
-        pipes_remained = ["Pipe_96bc", "Pipe_51e4", "Pipe_6b39", "Pipe_f9b0"]
+        pipes_removed = [problem.esdl_asset_name_to_id_map.get(p) for p in ["Pipe_8592", "Pipe_2927", "Pipe_9a6f", "Pipe_a718"]]
+        pipes_remained = [problem.esdl_asset_name_to_id_map.get(p) for p in ["Pipe_96bc", "Pipe_51e4", "Pipe_6b39", "Pipe_f9b0"]]
         self.assertTrue(
             all(
                 (elem in [k for k, d in diameters.items() if (d == 0.0)] for elem in pipes_remained)

@@ -178,7 +178,7 @@ class HeatProblemB(
             available_demand_insulation_classes.append(
                 DemandInsulationClass(
                     self.insulation_levels()["insulation_level"][ii],
-                    "HeatingDemand_e6b3",
+                    self.esdl_asset_name_to_id_map["HeatingDemand_e6b3"],
                     self.insulation_levels()["Tmin_deg"][ii],
                     self.insulation_levels()["scaling_factor"][ii],
                     self.insulation_levels()["insulation_cost_euro"][ii],
@@ -188,7 +188,7 @@ class HeatProblemB(
         available_demand_insulation_classes.append(
             DemandInsulationClass(
                 self.insulation_levels()["insulation_level"][2],
-                "HeatingDemand_f15e",
+                self.esdl_asset_name_to_id_map["HeatingDemand_f15e"],
                 self.insulation_levels()["Tmin_deg"][2],
                 self.insulation_levels()["scaling_factor"][2],
                 self.insulation_levels()["insulation_cost_euro"][2],
@@ -206,27 +206,25 @@ class HeatProblemB(
     def esdl_assets(self):
         assets = super().esdl_assets
 
-
-
-        asset = next(a for a in assets.values() if a.name == self.esdl_asset_name_to_id_map.get("Pipe6"))
+        asset = next(a for a in assets.values() if a.name == "Pipe6")
         asset.attributes["state"] = esdl.AssetStateEnum.OPTIONAL
-        asset = next(a for a in assets.values() if a.name == self.esdl_asset_name_to_id_map.get("Pipe6_ret"))
+        asset = next(a for a in assets.values() if a.name == "Pipe6_ret")
         asset.attributes["state"] = esdl.AssetStateEnum.OPTIONAL
-        asset = next(a for a in assets.values() if a.name == self.esdl_asset_name_to_id_map.get("Pipe5"))
+        asset = next(a for a in assets.values() if a.name == "Pipe5")
         asset.attributes["state"] = esdl.AssetStateEnum.OPTIONAL
-        asset = next(a for a in assets.values() if a.name == self.esdl_asset_name_to_id_map.get("Pipe5_ret"))
+        asset = next(a for a in assets.values() if a.name == "Pipe5_ret")
         asset.attributes["state"] = esdl.AssetStateEnum.OPTIONAL
-        asset = next(a for a in assets.values() if a.name == self.esdl_asset_name_to_id_map.get("Pipe21"))
+        asset = next(a for a in assets.values() if a.name == "Pipe21")
         asset.attributes["state"] = esdl.AssetStateEnum.OPTIONAL
-        asset = next(a for a in assets.values() if a.name == self.esdl_asset_name_to_id_map.get("Pipe21_ret"))
+        asset = next(a for a in assets.values() if a.name == "Pipe21_ret")
         asset.attributes["state"] = esdl.AssetStateEnum.OPTIONAL
-        asset = next(a for a in assets.values() if a.name == self.esdl_asset_name_to_id_map.get("Pipe22"))
+        asset = next(a for a in assets.values() if a.name == "Pipe22")
         asset.attributes["state"] = esdl.AssetStateEnum.OPTIONAL
-        asset = next(a for a in assets.values() if a.name == self.esdl_asset_name_to_id_map.get("Pipe22_ret"))
+        asset = next(a for a in assets.values() if a.name == "Pipe22_ret")
         asset.attributes["state"] = esdl.AssetStateEnum.OPTIONAL
-        asset = next(a for a in assets.values() if a.name == self.esdl_asset_name_to_id_map.get("Pipe8"))
+        asset = next(a for a in assets.values() if a.name == "Pipe8")
         asset.attributes["state"] = esdl.AssetStateEnum.OPTIONAL
-        asset = next(a for a in assets.values() if a.name == self.esdl_asset_name_to_id_map.get("Pipe8_ret"))
+        asset = next(a for a in assets.values() if a.name == "Pipe8_ret")
         asset.attributes["state"] = esdl.AssetStateEnum.OPTIONAL
 
         return assets

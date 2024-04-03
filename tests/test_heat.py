@@ -37,8 +37,10 @@ class TestHeat(TestCase):
         )
         results = case.extract_results()
 
-        source = results["source.Heat_source"]
-        demand = results["demand.Heat_demand"]
+        source_id = case.esdl_asset_name_to_id_map["source"]
+        demand_id = case.esdl_asset_name_to_id_map["demand"]
+        source = results[f"{source_id}.Heat_source"]
+        demand = results[f"{demand_id}.Heat_demand"]
 
         # With non-zero milp losses in pipes, the demand should always be
         # strictly lower than what is produced.
@@ -226,10 +228,12 @@ class TestMinMaxPressureOptions(TestCase):
         min_, max_ = _get_min_max_pressure(case_min_max_pressure)
         self.assertGreater(min_, self.min_pressure * 0.99)
         self.assertLess(max_, self.max_pressure * 1.01)
-        target = case_default.get_timeseries("demand.target_heat_demand").values
+
+        demand_id = case_default.esdl_asset_name_to_id_map["demand"]
+        target = case_default.get_timeseries(f"{demand_id}.target_heat_demand").values
         self.assertLess(
-            np.sum((case_default.extract_results()["demand.Heat_demand"] - target) ** 2),
-            np.sum((case_min_max_pressure.extract_results()["demand.Heat_demand"] - target) ** 2),
+            np.sum((case_default.extract_results()[f"{demand_id}.Heat_demand"] - target) ** 2),
+            np.sum((case_min_max_pressure.extract_results()[f"{demand_id}.Heat_demand"] - target) ** 2),
         )
 
 
