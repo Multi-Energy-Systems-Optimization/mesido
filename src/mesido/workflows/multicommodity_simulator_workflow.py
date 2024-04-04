@@ -188,7 +188,7 @@ class MultiCommoditySimulator(
         goals = super().path_goals().copy()
         #TODO: improve the assets_to_include and esdl_assets_to_include
         assets_to_include = ["electricity_source", "gas_source"]
-        esdl_assets_to_include = ["ElectricityProducer"]
+        esdl_assets_to_include = ["ElectricityProducer", "GasProducer"]
 
         number_of_source_producers = 0
         for prod_asset in assets_to_include:
@@ -197,6 +197,7 @@ class MultiCommoditySimulator(
             )
 
         producer_merit = self.producer_merit_controls(esdl_assets_to_include)
+        max_value_merit = max(producer_merit["merit_order"])
         for prod_asset_type in assets_to_include:
             # Priority 1 & 2 reserved for target demand goal & additional goal like matching
             # producer profile (without merit order)
@@ -205,7 +206,7 @@ class MultiCommoditySimulator(
                 index_s = producer_merit["producer_name"].index(f"{asset}")
                 producer_priority = (
                     index_start_of_priority
-                    + number_of_source_producers
+                    + max_value_merit
                     - producer_merit["merit_order"][index_s]
                 )
                 #TODO: make mapping of priorities such that their can be larger than number of producers
@@ -278,19 +279,26 @@ class MultiCommoditySimulator(
                     raise Exception(f"Producer: {a.name} does not have a merit order specified")
 
                 last_merit_order = attributes["merit_order"][-1]
-                if attributes["merit_order"][-1] % 1.0 != 0.0:
-                    raise Exception(
-                        "The specified producer usage merit order must be an "
-                        f"integer value, producer name:{a.name}, current specified "
-                        f"merit value: {last_merit_order}"
-                    )
-                elif attributes["merit_order"][-1] <= 0.0:
+                # if attributes["merit_order"][-1] % 1.0 != 0.0:
+                #     raise Exception(
+                #         "The specified producer usage merit order must be an "
+                #         f"integer value, producer name:{a.name}, current specified "
+                #         f"merit value: {last_merit_order}"
+                #     )
+                if attributes["merit_order"][-1] <= 0.0:
                     raise Exception(
                         "The specified producer usage merit order must be a "
                         f"positve integer value, producer name:{a.name}, current "
                         f"specified merit value: {last_merit_order}"
                     )
 
+        # update merit order to be integers and have maximumally one step in priority
+        set_merit = set(attributes["merit_order"])
+        order_prio = list(set_merit)
+        order_prio.sort()
+        map_prio = dict(zip(order_prio, list(range(1,len(set_merit)+1))))
+        a = [map_prio[v] for v in attributes["merit_order"]]
+        attributes["merit_order"] = a
         return attributes
 
     def solver_options(self):

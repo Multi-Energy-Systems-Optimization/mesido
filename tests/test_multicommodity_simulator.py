@@ -12,7 +12,7 @@ from mesido.workflows.multicommodity_simulator_workflow import MultiCommoditySim
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
-class TestNetworkSimulator(TestCase):
+class TestMultiCommoditySimulator(TestCase):
     """
     In this test case 2 milp producers and an ATES is used to supply 3 heating demands. A merit
     order (preference of 1st use) is given to the producers: Producer_1 = 2 and Producer_2 = 1.
@@ -25,7 +25,7 @@ class TestNetworkSimulator(TestCase):
     - Check that the ATES is not delivering any milp to the network during the 1st time step
     """
 
-    def test_network_simulator(self):
+    def test_multi_commodity_simulator(self):
         import models.unit_cases_electricity.bus_networks.src.example as example
 
         base_folder = Path(example.__file__).resolve().parent.parent
@@ -57,6 +57,7 @@ class TestNetworkSimulator(TestCase):
 
         # Check that producer 1 (merit oder = 2) is not used
         # and is does not contribute to the heating demands 1, 2 and 3
+        #TODO: these tests need to be updated for elec/gas
         np.testing.assert_allclose(
             results["HeatProducer_1.Heat_source"],
             0.0,

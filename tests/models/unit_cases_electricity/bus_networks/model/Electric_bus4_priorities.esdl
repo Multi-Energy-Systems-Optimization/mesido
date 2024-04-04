@@ -9,7 +9,7 @@
     <area xsi:type="esdl:Area" name="Untitled area" id="b6f69416-2004-45f3-af7b-b3884edfe599">
       <asset xsi:type="esdl:ElectricityProducer" id="ElectricityProducer_17a1" name="ElectricityProducer_17a1" power="1000.0">
         <costInformation xsi:type="esdl:CostInformation">
-          <marginalCosts xsi:type="esdl:SingleValue" id="eda111ea-4312-4ad8-8059-c4cb7a17d1d9" value="2.0" name="ElectricityProducer_17a1-MarginalCosts"/>
+          <marginalCosts xsi:type="esdl:SingleValue" id="eda111ea-4312-4ad8-8059-c4cb7a17d1d9" value="5.4" name="ElectricityProducer_17a1-MarginalCosts"/>
         </costInformation>
         <port xsi:type="esdl:OutPort" connectedTo="a9f61f0f-960b-432d-a880-a56acd2f013e" name="Out" id="3c904675-33f6-4d01-8ab0-427f25cb8eb8" carrier="48c94e57-26f7-4926-bf77-95437cebd000"/>
         <geometry xsi:type="esdl:Point" lon="5.119628906250001" CRS="WGS84" lat="52.08610776589893"/>
