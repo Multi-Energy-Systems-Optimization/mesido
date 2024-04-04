@@ -36,7 +36,7 @@ class TestMultiCommoditySimulator(TestCase):
             esdl_file_name="Electric_bus4_priorities.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries.csv",
+            input_timeseries_file="timeseries_2.csv",
         )
 
         results = solution.extract_results()

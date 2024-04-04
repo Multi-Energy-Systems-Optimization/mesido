@@ -57,6 +57,9 @@
       <asset xsi:type="esdl:ElectricityDemand" id="281a2820-4b07-4220-8c19-2285915e046c" name="ElectricityDemand_281a" power="1000.0">
         <port xsi:type="esdl:InPort" connectedTo="bf605d50-4031-4ea3-9b5b-e05073428f59" name="In" id="d316f24f-6de7-4fb2-9792-28ade7760c75" carrier="48c94e57-26f7-4926-bf77-95437cebd000"/>
         <geometry xsi:type="esdl:Point" lat="52.08571093544177" CRS="WGS84" lon="5.125368833541871"/>
+        <costInformation xsi:type="esdl:CostInformation">
+          <marginalCosts xsi:type="esdl:SingleValue" id="eda111ea-4312-4ad8-8059-c4cb7a17eed9" value="4.0" name="ElectricityDemand_281a-MarginalCosts"/>
+        </costInformation>
       </asset>
       <asset xsi:type="esdl:ElectricityCable" length="202.1" capacity="32660.0" id="58430b5f-0565-4e33-b636-7c6e8e4c34ab" name="ElectricityCable_5843">
         <port xsi:type="esdl:InPort" connectedTo="9f455f7a-d82d-4c50-9120-9442ef4af39b" name="In" id="c9f38195-7bdc-420a-83b5-e437a21764b9" carrier="48c94e57-26f7-4926-bf77-95437cebd000"/>
