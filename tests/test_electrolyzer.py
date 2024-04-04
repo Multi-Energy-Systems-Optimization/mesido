@@ -55,6 +55,7 @@ class TestElectrolyzer(TestCase):
         electrolyzer_id = solution.esdl_asset_name_to_id_map.get("Electrolyzer_fc66")
         windpark_id = solution.esdl_asset_name_to_id_map.get("WindPark_7f14")
         gast_storage_id = solution.esdl_asset_name_to_id_map.get("GasStorage_e492")
+        pipe_6_id = solution.esdl_asset_name_to_id_map.get("Pipe_6ba6")
 
 
         gas_price_profile = "gas.price_profile"
@@ -165,7 +166,7 @@ class TestElectrolyzer(TestCase):
                 - solution.get_timeseries(elec_price_profile).times[0:-1]
             )
             / 3600.0
-            * results["Pipe_6ba6.GasOut.mass_flow"][1:]
+            * results[f"{pipe_6_id}.GasOut.mass_flow"][1:]
             * 0.1,
         )
         np.testing.assert_allclose(

@@ -68,7 +68,7 @@ class Model(_Model):
         self.add_variable(ControlInput, "Heat_source", value=self.source.Heat_source)
 
         self.connect(self.source.HeatOut, self.pipe_hot.HeatIn)
-        self.connect(self.pipe_hot.HeatOut, self.demand.HeatIn)
-        self.connect(self.demand.HeatOut, self.pipe_cold.HeatIn)
+        self.connect(self.pipe_hot.HeatOut, self.variables["921eb017-927b-4789-98c8-41adbd70552c"].HeatIn)
+        self.connect(self.variables["921eb017-927b-4789-98c8-41adbd70552c"].HeatOut, self.pipe_cold.HeatIn)
         self.connect(self.pipe_cold.HeatOut, self.pump.HeatIn)
         self.connect(self.pump.HeatOut, self.source.HeatIn)

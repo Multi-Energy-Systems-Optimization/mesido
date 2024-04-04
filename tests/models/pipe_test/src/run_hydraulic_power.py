@@ -175,29 +175,33 @@ class HeatProblem(
         parameters = self.parameters(0)
         data_milp = {}  # Data storage
 
+        pipe_1_id = self.esdl_asset_name_to_id_map.get("Pipe1")
+        demand_1_id = self.esdl_asset_name_to_id_map.get("HeatingDemand_1")
+        source_id = self.esdl_asset_name_to_id_map.get("ResidualHeatSource_1")
+
         # Pressure drop [Pa]
-        data_milp = {"Pipe1_supply_dPress": results["Pipe1.dH"] * parameters["Pipe1.rho"] * 9.81}
+        data_milp = {"Pipe1_supply_dPress": results[f"{pipe_1_id}.dH"] * parameters[f"{pipe_1_id}.rho"] * 9.81}
         data_milp.update(
-            {"Pipe1_return_dPress": results["Pipe1_ret.dH"] * parameters["Pipe1_ret.rho"] * 9.81}
+            {"Pipe1_return_dPress": results[f"{pipe_1_id}_ret.dH"] * parameters[f"{pipe_1_id}_ret.rho"] * 9.81}
         )
 
         # Volumetric flow [m3/s]
-        data_milp.update({"Pipe1_supply_Q": results["Pipe1.HeatOut.Q"]})
-        data_milp.update({"Pipe1_return_Q": results["Pipe1_ret.HeatOut.Q"]})
+        data_milp.update({"Pipe1_supply_Q": results[f"{pipe_1_id}.HeatOut.Q"]})
+        data_milp.update({"Pipe1_return_Q": results[f"{pipe_1_id}_ret.HeatOut.Q"]})
 
         # Mass flow [kg/s]
         data_milp.update(
             {
-                "Pipe1_supply_mass_flow": results["HeatingDemand_1.Heat_demand"]
-                / parameters["HeatingDemand_1.cp"]
-                / parameters["HeatingDemand_1.dT"]
+                "Pipe1_supply_mass_flow": results[f"{demand_1_id}.Heat_demand"]
+                / parameters[f"{demand_1_id}.cp"]
+                / parameters[f"{demand_1_id}.dT"]
             }
         )
         data_milp.update(
             {
-                "Pipe1_return_mass_flow": results["HeatingDemand_1.Heat_demand"]
-                / parameters["HeatingDemand_1.cp"]
-                / parameters["HeatingDemand_1.dT"]
+                "Pipe1_return_mass_flow": results[f"{demand_1_id}.Heat_demand"]
+                / parameters[f"{demand_1_id}.cp"]
+                / parameters[f"{demand_1_id}.dT"]
             }
         )
 
@@ -205,35 +209,35 @@ class HeatProblem(
         data_milp.update(
             {
                 "Pipe1_supply_flow_vel": data_milp["Pipe1_supply_mass_flow"]
-                / parameters["Pipe1.rho"]
-                / parameters["Pipe1.area"]
+                / parameters[f"{pipe_1_id}.rho"]
+                / parameters[f"{pipe_1_id}.area"]
             }
         )
         data_milp.update(
             {
                 "Pipe1_return_flow_vel": data_milp["Pipe1_return_mass_flow"]
-                / parameters["Pipe1_ret.rho"]
-                / parameters["Pipe1_ret.area"]
+                / parameters[f"{pipe_1_id}_ret.rho"]
+                / parameters[f"{pipe_1_id}_ret.area"]
             }
         )
 
         # Pipe deltaT
-        data_milp.update({"Pipe1_supply_dT": parameters["Pipe1.dT"]})
-        data_milp.update({"Pipe1_return_dT": parameters["Pipe1_ret.dT"]})
+        data_milp.update({"Pipe1_supply_dT": parameters[f"{pipe_1_id}.dT"]})
+        data_milp.update({"Pipe1_return_dT": parameters[f"{pipe_1_id}_ret.dT"]})
 
         # Heat source, demand and loss [W]
-        data_milp.update({"Heat_source": results["ResidualHeatSource_1.Heat_source"]})
-        data_milp.update({"Heat_demand": results["HeatingDemand_1.Heat_demand"]})
+        data_milp.update({"Heat_source": results[f"{source_id}.Heat_source"]})
+        data_milp.update({"Heat_demand": results[f"{demand_1_id}.Heat_demand"]})
         data_milp.update(
             {
-                "Heat_loss": results["ResidualHeatSource_1.Heat_source"]
-                - results["HeatingDemand_1.Heat_demand"]
+                "Heat_loss": results[f"{source_id}.Heat_source"]
+                - results[f"{demand_1_id}.Heat_demand"]
             }
         )
 
         # Hydraulic power via linearized method in MILP [W]
-        data_milp.update({"Pipe1_supply_Hydraulic_power": results["Pipe1.Hydraulic_power"]})
-        data_milp.update({"Pipe1_return_Hydraulic_power": results["Pipe1_ret.Hydraulic_power"]})
+        data_milp.update({"Pipe1_supply_Hydraulic_power": results[f"{pipe_1_id}.Hydraulic_power"]})
+        data_milp.update({"Pipe1_return_Hydraulic_power": results[f"{pipe_1_id}_ret.Hydraulic_power"]})
 
         # Determine index to be used for row data that will be added to the dataframe
         if len(df_MILP) == 0:

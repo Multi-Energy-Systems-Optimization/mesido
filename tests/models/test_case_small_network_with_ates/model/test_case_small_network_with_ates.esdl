@@ -8,7 +8,7 @@
   </energySystemInformation>
   <instance xsi:type="esdl:Instance" id="f852b941-99fe-487b-a20d-01beff9e7c43" name="Untitled Instance">
     <area xsi:type="esdl:Area" id="f4acc7ef-a37d-43b7-87cb-8af5b82e3fed" name="Untitled Area">
-      <asset xsi:type="esdl:HeatingDemand" name="HeatingDemand_1" id="c2d77abc-1656-4722-8508-7c64574e04ef" power="10000000.0">
+      <asset xsi:type="esdl:HeatingDemand" name="HeatingDemand_1" id="HeatingDemand_1" power="10000000.0">
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="52.04198588944146" lon="4.3088722229003915"/>
         <port xsi:type="esdl:InPort" connectedTo="1dfdc172-9359-435a-8153-0a657932223a" id="2a873195-fa6b-4250-8519-046f040fedb7" carrier="7b32e287-d775-480c-b317-64ffdacf12c9" name="In"/>
         <port xsi:type="esdl:OutPort" id="ef74ea8c-89b4-42e0-a98c-411860876c1a" connectedTo="18ce6906-595c-45e4-acf0-e07f7d7648c6" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret" name="Out"/>
@@ -18,7 +18,7 @@
           </installationCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:HeatingDemand" name="HeatingDemand_2" id="9352d984-0e21-4af6-9c5f-91f984abfcfd" power="10000000.0">
+      <asset xsi:type="esdl:HeatingDemand" name="HeatingDemand_2" id="HeatingDemand_2" power="10000000.0">
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="52.04002590369568" lon="4.310610294342042"/>
         <port xsi:type="esdl:InPort" connectedTo="53a54448-abdb-41ab-a53e-498556062216" id="a4a7c23e-4d77-4bbe-b8b4-ddf2d2d6e97e" carrier="7b32e287-d775-480c-b317-64ffdacf12c9" name="In"/>
         <port xsi:type="esdl:OutPort" id="bf6e0b6b-baac-468b-a9ba-f8397babf5d6" connectedTo="d126f79e-c43e-4d9d-a7ce-8f58be634695" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret" name="Out"/>
@@ -28,7 +28,7 @@
           </installationCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:HeatingDemand" name="HeatingDemand_3" id="e295a155-3fab-4ab1-925d-7bdb50094f48" power="10000000.0">
+      <asset xsi:type="esdl:HeatingDemand" name="HeatingDemand_3" id="HeatingDemand_3" power="10000000.0">
         <geometry xsi:type="esdl:Point" lat="52.03796848613761" lon="4.312646090984345"/>
         <port xsi:type="esdl:InPort" connectedTo="16b1337c-5970-4eb4-90d3-e52d514a13df" id="770022e6-3e71-4e51-8544-0dba86c46a5b" carrier="7b32e287-d775-480c-b317-64ffdacf12c9" name="In"/>
         <port xsi:type="esdl:OutPort" id="9c025b19-57d1-43a8-b2e8-db3e684756f2" connectedTo="5cd0f2e0-d456-4909-a81c-4b312b1be857" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret" name="Out"/>
