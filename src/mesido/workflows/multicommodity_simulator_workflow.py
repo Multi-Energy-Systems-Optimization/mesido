@@ -190,6 +190,8 @@ class MultiCommoditySimulator(
         assets_to_include = ["electricity_source", "gas_source"]
         esdl_assets_to_include = ["ElectricityProducer", "GasProducer"]
 
+        #TODO also include other assets than producers, e.g. storage, conversion and possible demand for the ones without a profile
+        #TODO exclude producers from merit order if they have a profile, even if a marginal cost is set
         number_of_source_producers = 0
         for prod_asset in assets_to_include:
             number_of_source_producers = number_of_source_producers + len(
@@ -209,7 +211,6 @@ class MultiCommoditySimulator(
                     + max_value_merit
                     - producer_merit["merit_order"][index_s]
                 )
-                #TODO: make mapping of priorities such that their can be larger than number of producers
                 assert producer_priority >= index_start_of_priority, "Priorities assigned must be smaller than the total number of producers"
                 if asset in self.energy_system_components.get("electricity_source"):
                     source_variable = f"{asset}.Electricity_source"
