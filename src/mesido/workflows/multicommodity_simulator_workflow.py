@@ -93,8 +93,8 @@ class MinimizeSourcesGoalMerit(Goal):
     """
 
     def __init__(self, source_variable, prod_priority, func_range_bound, nominal, order=1):
-        self.target_max = 0.0
-        self.function_range = (0.0, func_range_bound)
+        self.target_max = func_range_bound[0]
+        self.function_range = func_range_bound
         self.source_variable = source_variable
         self.function_nominal = nominal
         self.priority = prod_priority
@@ -110,8 +110,8 @@ class MaximizeDemandGoalMerit(Goal):
     """
 
     def __init__(self, demand_variable, prod_priority, func_range_bound, nominal, order=1):
-        self.target_min = func_range_bound
-        self.function_range = (0.0, func_range_bound)
+        self.target_min = func_range_bound[1]
+        self.function_range = func_range_bound
         self.demand_variable = demand_variable
         self.function_nominal = nominal
         self.priority = prod_priority
@@ -209,28 +209,16 @@ class MultiCommoditySimulator(
 
         return assets
 
-    def path_goals(self):
-        goals = super().path_goals().copy()
-        #TODO: improve the asset_types_to_include and esdl_assets_to_include
-        # asset_types_to_include = ["electricity_source", "gas_source", "electricity_demand"]
-        asset_types_to_include = {
-            "source": ["electricity_source", "gas_source"],
-            "demand": ["electricity_demand", "gas_demand"],
-            "conversion": [],
-            "storage": [],
-        }
-        # esdl_assets_to_include = ["ElectricityProducer", "GasProducer", "ElectricityDemand"]
+    def __create_asset_list_controls(self, asset_types_to_include, assets_without_control):
         type_variable_map = {
+            "electricity_demand": "Electricity_demand",
             "electricity_source": "Electricity_source",
+            "gas_demand": "Gas_demand",
             "gas_source": "Gas_source",
             "gas_tank_storage": "Gas_tank_flow",
-            "electricity_demand": "Electricity_demand",
+            "electrolyzer": "Gas_mass_flow_out",
         }
-
-        #TODO also include other assets than producers, e.g. storage, conversion and possible demand for the ones without a profile
-        #TODO exclude producers from merit order if they have a profile, even if a marginal cost is set
-
-        #Storage: charge priority (1) higher than discharge priority (2)
+        #TODO: check if conversion priority needs to be set for production or consumption, currently it assumes production
 
         assets_to_include = {}
         asset_variable_map = {}
@@ -246,47 +234,122 @@ class MultiCommoditySimulator(
                     asset_variable_map[asset] = type_variable_map[asset_type]
 
         assets_list = [asset for a_type in assets_to_include.values() for asset in a_type]
-        assets_without_control =  ["Pipe", "ElectricityCable", "Joint", "Bus"]
-        unused_asset = [asset.asset_type for asset in self.esdl_assets.values() if asset.asset_type not in assets_without_control if asset.name not in assets_list if asset.name not in available_timeseries]
-        assert len(unused_asset) == 0, f"Asset types: {unused_asset} are not included in controls of the simulator"
+        unused_asset = [asset.asset_type for asset in self.esdl_assets.values() if
+                        asset.asset_type not in assets_without_control if
+                        asset.name not in assets_list if asset.name not in available_timeseries]
+        assert len(
+            unused_asset) == 0, f"Asset types: {unused_asset} are not included in controls of the simulator"
 
-        asset_merit = self.__merit_controls(assets_list)
-        max_value_merit = max(asset_merit["merit_order"])
+        asset_info = {"assets_to_include": assets_to_include,
+                      "assets_to_include_list": assets_list,
+                      "asset_variable_map": asset_variable_map,
+                      }
+        return asset_info
 
-        # Priority 1 & 2 reserved for target demand goal & additional goal like matching
-        # producer profile (without merit order)
-        index_start_of_priority = 3
+    def __create_merit_path_goals(self, asset_info, max_value_merit, index_start_of_priority):
+        goals = []
+        assets_to_include = asset_info["assets_to_include"]
+        assets_list = asset_info["assets_to_include_list"]
+        asset_merit = asset_info["asset_merit"]
+        asset_variable_map = asset_info["asset_variable_map"]
         for asset in assets_list:
             index_s = asset_merit["asset_name"].index(f"{asset}")
-            producer_priority = (
-                index_start_of_priority
-                + max_value_merit
-                - asset_merit["merit_order"][index_s]
+            marginal_priority = (
+                    index_start_of_priority
+                    + max_value_merit
+                    - asset_merit["merit_order"][index_s]
             )
-            assert producer_priority >= index_start_of_priority, "Priorities assigned must be smaller than the total number of producers"
+            assert marginal_priority >= index_start_of_priority, "Priorities assigned must be smaller than the total number of producers"
             variable_name = f"{asset}.{asset_variable_map[asset]}"
 
             # if asset not in self.energy_system_components.get("electricity_demand", []):
-            if asset in assets_to_include.get("source",[]):
+            if asset in [*assets_to_include.get("source",[]), *assets_to_include.get("conversion",[])]:
                 goals.append(
                     MinimizeSourcesGoalMerit(
                         variable_name,
-                        producer_priority,
-                        self.bounds()[variable_name][1],
+                        marginal_priority,
+                        self.bounds()[variable_name],
                         self.variable_nominal(variable_name),
                     )
                 )
-            elif asset in assets_to_include.get("demand",[]):
+            elif asset in assets_to_include.get("demand", []):
                 goals.append(
                     MaximizeDemandGoalMerit(
                         variable_name,
-                        producer_priority,
-                        self.bounds()[variable_name][1],
+                        marginal_priority,
+                        self.bounds()[variable_name],
+                        self.variable_nominal(variable_name),
+                    )
+                )
+            elif asset in assets_to_include.get("storage", []):
+                # charging acts as consumer
+                # Marginal costs for discharging > marginal cost for charging
+                goals.append(
+                    MaximizeDemandGoalMerit(
+                        variable_name,
+                        marginal_priority,
+                        self.bounds()[variable_name],
+                        self.variable_nominal(variable_name),
+                    )
+                )
+
+                # discharging acts as producer
+                # Marginal costs for discharging > marginal cost for charging
+                index_s = asset_merit["asset_name"].index(f"{asset}_discharge")
+                marginal_priority = (
+                        index_start_of_priority
+                        + max_value_merit
+                        - asset_merit["merit_order"][index_s]
+                )
+                assert marginal_priority >= index_start_of_priority, "Priorities assigned must be smaller than the total number of producers"
+                variable_name = f"{asset}.{asset_variable_map[asset]}"
+
+                goals.append(
+                    MinimizeSourcesGoalMerit(
+                        variable_name,
+                        marginal_priority,
+                        self.bounds()[variable_name],
                         self.variable_nominal(variable_name),
                     )
                 )
             else:
-                raise Exception(f"No goal was set for {asset}, while a priority was provided. This asset group still has to be added to the goals.")
+                raise Exception(
+                    f"No goal was set for {asset}, while a priority was provided. This asset group still has to be added to the goals.")
+        return goals
+
+    def __merit_path_goals(self):
+        # TODO: improve the asset_types_to_include and esdl_assets_to_include
+        asset_types_to_include = {
+            "source": ["electricity_source", "gas_source"],
+            "demand": ["electricity_demand", "gas_demand"],
+            "conversion": ["electrolyzer"],
+            "storage": ["gas_tank_storage"],
+        }
+
+        assets_without_control = ["Pipe", "ElectricityCable", "Joint", "Bus"]
+
+        # TODO also include other assets than producers, e.g. storage, conversion and possible demand for the ones without a profile
+        # TODO exclude producers from merit order if they have a profile, even if a marginal cost is set
+
+        # Storage: charge priority (1) higher than discharge priority (2)
+        #
+        asset_info = (
+            self.__create_asset_list_controls(asset_types_to_include, assets_without_control))
+
+        asset_info["asset_merit"] = self.__merit_controls(asset_info["assets_to_include_list"])
+        max_value_merit = max(asset_info["asset_merit"]["merit_order"])
+
+        # Priority 1 & 2 reserved for target demand goal & additional goal like matching
+        # producer profile (without merit order)
+        index_start_of_priority = 3
+
+        goals = self.__create_merit_path_goals(asset_info, max_value_merit, index_start_of_priority)
+
+        return goals
+    def path_goals(self):
+        goals = super().path_goals().copy()
+
+        goals.extend(self.__merit_path_goals())
 
         return goals
 
@@ -328,7 +391,16 @@ class MultiCommoditySimulator(
                         a.attributes["costInformation"].marginalCosts.value
                     )
                 except AttributeError:
-                    raise Exception(f"Asset: {a.name} does not have a merit order specified")
+                    try:
+                        attributes["merit_order"].append(
+                            a.attributes["costInformation"].marginalChargeCosts.value
+                        )
+                        attributes["merit_order"].append(
+                            a.attributes["costInformation"].marginalDischargeCosts.value
+                        )
+                        attributes["asset_name"].append(f"{a.name}_discharge")
+                    except AttributeError:
+                        raise Exception(f"Asset: {a.name} does not have a merit order specified")
 
                 last_merit_order = attributes["merit_order"][-1]
 
