@@ -126,28 +126,35 @@ class _GoalsAndOptions:
         goals = super().path_goals().copy()
 
         #Demand matching
-        for demand in self.energy_system_components.get("electricity_demand", []):
-            timeseries_name = f"{demand}.target_electricity_demand"
-            if timeseries_name in self.io.get_timeseries_names():
-                target = self.get_timeseries(f"{demand}.target_electricity_demand")
-                state = f"{demand}.Electricity_demand"
+        map_demand = {
+            "electricity_demand": {"target": "target_electricity_demand", "state": "Electricity_demand"},
+            "gas_demand": {"target": "target_gas_demand","state": "Gas_demand"},
+        }
+        map_prod = {
+            "electricity_source": {"target": "maximum_electricity_source",
+                                   "state": "Electricity_source"},
+            "gas_source": {"target": "maximum_gas_source", "state": "Gas_source"},
+        }
+        for type, type_values in [*map_demand.items(), *map_prod.items()]:
+            for asset in self.energy_system_components.get(type, []):
+                timeseries_name = f"{asset}.{type_values['target']}"
+                if timeseries_name in self.io.get_timeseries_names():
+                    target = self.get_timeseries(timeseries_name)
+                    state = f"{asset}.{type_values['state']}"
+                    if type in map_demand.keys():
+                        goals.append(TargetDemandGoal(state, target))
+                    else:
+                        goals.append(TargetProducerGoal(state, target))
 
-                goals.append(TargetDemandGoal(state, target))
-
-        for demand in self.energy_system_components.get("gas_demand", []):
-            target = self.get_timeseries(f"{demand}.target_gas_demand")
-            state = f"{demand}.Gas_demand"
-
-            goals.append(TargetDemandGoal(state, target))
 
         # Producer profile matching
-        for producer in self.energy_system_components.get("electricity_source", []):
-            bound = self.bounds()[f"{producer}.Electricity_source"][1]
-            if isinstance(bound, Timeseries):  #tobe replaced by: producer in self.__set_point_map.keys():
-                target = self.get_timeseries(f"{producer}.maximum_electricity_source")
-                state = f"{producer}.Electricity_source"
-
-                goals.append(TargetProducerGoal(state, target))
+        # for producer in self.energy_system_components.get("electricity_source", []):
+        #     bound = self.bounds()[f"{producer}.Electricity_source"][1]
+        #     if isinstance(bound, Timeseries):  #tobe replaced by: producer in self.__set_point_map.keys():
+        #         target = self.get_timeseries(f"{producer}.maximum_electricity_source")
+        #         state = f"{producer}.Electricity_source"
+        #
+        #         goals.append(TargetProducerGoal(state, target))
 
         return goals
 
@@ -206,20 +213,27 @@ class MultiCommoditySimulator(
         goals = super().path_goals().copy()
         #TODO: improve the asset_types_to_include and esdl_assets_to_include
         # asset_types_to_include = ["electricity_source", "gas_source", "electricity_demand"]
-        asset_types_to_include = {"source": ["electricity_source", "gas_source"],
-                                  "demand": ["electricity_demand"]}
+        asset_types_to_include = {
+            "source": ["electricity_source", "gas_source"],
+            "demand": ["electricity_demand", "gas_demand"],
+            "conversion": [],
+            "storage": [],
+        }
         # esdl_assets_to_include = ["ElectricityProducer", "GasProducer", "ElectricityDemand"]
+        type_variable_map = {
+            "electricity_source": "Electricity_source",
+            "gas_source": "Gas_source",
+            "gas_tank_storage": "Gas_tank_flow",
+            "electricity_demand": "Electricity_demand",
+        }
 
         #TODO also include other assets than producers, e.g. storage, conversion and possible demand for the ones without a profile
         #TODO exclude producers from merit order if they have a profile, even if a marginal cost is set
 
         #Storage: charge priority (1) higher than discharge priority (2)
-        # number_of_source_producers = 0
-        # for prod_asset in asset_types_to_include:
-        #     number_of_source_producers = number_of_source_producers + len(
-        #         self.energy_system_components.get(prod_asset, [])
-        #     )
-        assets_to_include = []
+
+        assets_to_include = {}
+        asset_variable_map = {}
         available_timeseries = [t.split('.')[0] for t in self.io.get_timeseries_names()]
         for group, asset_types in asset_types_to_include.items():
             for asset_type in asset_types:
@@ -229,32 +243,31 @@ class MultiCommoditySimulator(
                             assets_to_include[group].append(asset)
                         else:
                             assets_to_include[group] = [asset]
+                    asset_variable_map[asset] = type_variable_map[asset_type]
 
-        producer_merit = self.producer_merit_controls(assets_to_include)
-        max_value_merit = max(producer_merit["merit_order"])
-        # for prod_asset_type in asset_types_to_include:
-            # Priority 1 & 2 reserved for target demand goal & additional goal like matching
-            # producer profile (without merit order)
+        assets_list = [asset for a_type in assets_to_include.values() for asset in a_type]
+        assets_without_control =  ["Pipe", "ElectricityCable", "Joint", "Bus"]
+        unused_asset = [asset.asset_type for asset in self.esdl_assets.values() if asset.asset_type not in assets_without_control if asset.name not in assets_list if asset.name not in available_timeseries]
+        assert len(unused_asset) == 0, f"Asset types: {unused_asset} are not included in controls of the simulator"
+
+        asset_merit = self.__merit_controls(assets_list)
+        max_value_merit = max(asset_merit["merit_order"])
+
+        # Priority 1 & 2 reserved for target demand goal & additional goal like matching
+        # producer profile (without merit order)
         index_start_of_priority = 3
-        for asset in assets_to_include:
-            index_s = producer_merit["producer_name"].index(f"{asset}")
+        for asset in assets_list:
+            index_s = asset_merit["asset_name"].index(f"{asset}")
             producer_priority = (
                 index_start_of_priority
                 + max_value_merit
-                - producer_merit["merit_order"][index_s]
+                - asset_merit["merit_order"][index_s]
             )
             assert producer_priority >= index_start_of_priority, "Priorities assigned must be smaller than the total number of producers"
-            if asset in self.energy_system_components.get("electricity_source", []):
-                variable_name = f"{asset}.Electricity_source"
-            elif asset in self.energy_system_components.get("gas_source", []):
-                variable_name = f"{asset}.Gas_source"
-            elif asset in self.energy_system_components.get("gas_tank_storage", []):
-                variable_name = f"{asset}.Gas_tank_flow"
-            elif asset in self.energy_system_components.get("electricity_demand", []):
-                variable_name = f"{asset}.Electricity_demand"
-            else:
-                raise Exception("Asset is not in extension naming list")
-            if asset not in self.energy_system_components.get("electricity_demand", []):
+            variable_name = f"{asset}.{asset_variable_map[asset]}"
+
+            # if asset not in self.energy_system_components.get("electricity_demand", []):
+            if asset in assets_to_include.get("source",[]):
                 goals.append(
                     MinimizeSourcesGoalMerit(
                         variable_name,
@@ -263,7 +276,7 @@ class MultiCommoditySimulator(
                         self.variable_nominal(variable_name),
                     )
                 )
-            else:
+            elif asset in assets_to_include.get("demand",[]):
                 goals.append(
                     MaximizeDemandGoalMerit(
                         variable_name,
@@ -272,6 +285,8 @@ class MultiCommoditySimulator(
                         self.variable_nominal(variable_name),
                     )
                 )
+            else:
+                raise Exception(f"No goal was set for {asset}, while a priority was provided. This asset group still has to be added to the goals.")
 
         return goals
 
@@ -293,40 +308,27 @@ class MultiCommoditySimulator(
         """
         constraints = super().constraints(ensemble_member)
 
-        for ates in self.energy_system_components.get("ates", []):
-            stored_heat_joules = self.__state_vector_scaled(f"{ates}.Stored_heat", ensemble_member)
-            heat_ates_watts = self.__state_vector_scaled(f"{ates}.Heat_ates", ensemble_member)
-            constraints.append(
-                (
-                    (stored_heat_joules[-1] - stored_heat_joules[0])
-                    / self.variable_nominal(f"{ates}.Stored_heat"),
-                    0.0,
-                    0.0,
-                )
-            )
-            constraints.append(
-                (heat_ates_watts[0] / self.variable_nominal(f"{ates}.Heat_ates"), -np.inf, 0.0)
-            )
+        #TODO: cyclic constraints
 
         return constraints
 
-    def producer_merit_controls(self, assets_to_include):
+    def __merit_controls(self, assets_list):
         attributes = {
-            "producer_name": [],
+            "asset_name": [],
             "merit_order": [],
         }
 
         assets = self.esdl_assets
         for a in assets.values():
-            if a.name in assets_to_include:
+            if a.name in assets_list:
                 # if a.asset_type != "ElectricityDemand" or f"{a.name}.target_electricity_demand" not in self.io.get_timeseries_names():
-                attributes["producer_name"].append(a.name)
+                attributes["asset_name"].append(a.name)
                 try:
                     attributes["merit_order"].append(
                         a.attributes["costInformation"].marginalCosts.value
                     )
                 except AttributeError:
-                    raise Exception(f"Producer: {a.name} does not have a merit order specified")
+                    raise Exception(f"Asset: {a.name} does not have a merit order specified")
 
                 last_merit_order = attributes["merit_order"][-1]
 
