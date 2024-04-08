@@ -73,12 +73,14 @@ class _AssetToComponentBase:
     # A map of the esdl assets to the asset types in pycml
     component_map = {
         "ATES": "ates",
+        "Battery": "electricity_storage",
+        "Bus": "electricity_node",
         "ElectricityCable": "electricity_cable",
         "ElectricityDemand": "electricity_demand",
         "ElectricityProducer": "electricity_source",
         "Electrolyzer": "electrolyzer",
-        "Bus": "electricity_node",
         "GenericConsumer": "heat_demand",
+        "CoolingDemand": "cold_demand",
         "HeatExchange": "heat_exchanger",
         "HeatingDemand": "heat_demand",
         "HeatPump": "heat_pump",
@@ -89,12 +91,14 @@ class _AssetToComponentBase:
         "GasStorage": "gas_tank_storage",
         "GenericProducer": "heat_source",
         "GeothermalSource": "heat_source",
+        "Losses": "heat_demand",
         "HeatProducer": "heat_source",
         "ResidualHeatSource": "heat_source",
         "GenericConversion": "heat_exchanger",
         "Joint": "node",
         "Pipe": "heat_pipe",
         "Pump": "pump",
+        "PVInstallation": "electricity_source",
         "HeatStorage": "heat_buffer",
         "Sensor": "skip",
         "Valve": "control_valve",
@@ -256,6 +260,7 @@ class _AssetToComponentBase:
                 "ates",
                 "heat_exchanger",
                 "heat_pump",
+                "cold_demand",
             }
         }
 

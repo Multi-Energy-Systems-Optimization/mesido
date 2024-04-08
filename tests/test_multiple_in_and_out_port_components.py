@@ -14,15 +14,15 @@ from utils_tests import demand_matching_test, energy_conservation_test, heat_to_
 class TestHEX(TestCase):
     def test_heat_exchanger(self):
         """
-        Check the modelling of the milp exchanger component which allows two hydraulically
-        decoupled networks to exchange milp with each other. It is enforced that milp can only flow
-        from the primary side to the secondary side, and milp exchangers are allowed to be disabled
+        Check the modelling of the heat exchanger component which allows two hydraulically
+        decoupled networks to exchange heat with each other. It is enforced that heat can only flow
+        from the primary side to the secondary side, and heat exchangers are allowed to be disabled
         for timesteps in which they are not used. This is to allow for the temperature constraints
         (T_primary > T_secondary) to become deactivated.
 
         Checks:
-        - Standard checks for demand matching, milp to discharge and energy conservation
-        - That the efficiency is correclty implemented for milp from primary to secondary
+        - Standard checks for demand matching, heat to discharge and energy conservation
+        - That the efficiency is correclty implemented for heat from primary to secondary
         - Check that the is_disabled is set correctly.
         - Check if the temperatures provided are physically feasible.
 
@@ -90,7 +90,7 @@ class TestHEX(TestCase):
         np.testing.assert_allclose(prim_heat[-1], 0.0, atol=1e-5)
         np.testing.assert_allclose(disabled[-1], 1.0)
         np.testing.assert_allclose(disabled[:-1], 0.0)
-        # Check that milp is flowing through the hex
+        # Check that heat is flowing through the hex
         np.testing.assert_array_less(-prim_heat[:-1], 0.0)
 
         np.testing.assert_array_less(
@@ -106,13 +106,13 @@ class TestHEX(TestCase):
 class TestHP(TestCase):
     def test_heat_pump(self):
         """
-        Check the modelling of the milp pump component which has a constant COP with no energy loss.
+        Check the modelling of the heat pump component which has a constant COP with no energy loss.
         In this specific problem we expect the use of the secondary source to be maximised as
-        electrical milp from the HP is "free".
+        electrical heat from the HP is "free".
 
         Checks:
-        - Standard checks for demand matching, milp to discharge and energy conservation
-        - Check that the milp pump is producing according to its COP
+        - Standard checks for demand matching, heat to discharge and energy conservation
+        - Check that the heat pump is producing according to its COP
         - Check that Secondary source use in minimized
 
 

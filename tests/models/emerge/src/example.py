@@ -1,3 +1,5 @@
+import os
+
 import casadi as ca
 
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
@@ -6,6 +8,7 @@ from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
 from mesido.techno_economic_mixin import TechnoEconomicMixin
+from mesido.workflows.io.write_output import ScenarioOutput
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
@@ -56,6 +59,33 @@ class MaxHydrogenProduction(Goal):
         return -optimization_problem.state(f"{self.source}.Gas_mass_flow_out")
 
 
+class MaxElecProduction(Goal):
+    """
+    A maximization goal for the hydrogen production, note that we minimize the negative hydrogen
+    production to achieve this.
+    """
+
+    priority = 1
+
+    order = 1
+
+    def __init__(self, source: str):
+        """
+        The constructor of the goal.
+
+        Parameters
+        ----------
+        source : string of the source name that is going to be minimized
+        """
+        self.source = source
+
+    def function(
+        self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
+    ) -> ca.MX:
+
+        return -optimization_problem.state(f"{self.source}.Electricity_source")
+
+
 class MaxRevenue(Goal):
 
     priority = 1
@@ -102,9 +132,9 @@ class MinCost(Goal):
     order = 1
 
     def __init__(self, asset_name: str):
-        self.target_max = 0.0
-        self.function_range = (0.0, 1.0e9)
-        self.function_nominal = 1.0e7
+        # self.target_max = 0.0
+        # self.function_range = (0.0, 1.0e9)
+        # self.function_nominal = 1.0e7
 
         self.asset_name = asset_name
 
@@ -120,6 +150,7 @@ class MinCost(Goal):
 
 
 class EmergeTest(
+    ScenarioOutput,
     ESDLAdditionalVarsMixin,
     TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
@@ -155,26 +186,30 @@ class EmergeTest(
     #     for s in self.energy_system_components["electrolyzer"]:
     #         goals.append(MaxHydrogenProduction(s))
     #
+    #     # for s in self.energy_system_components["electricity_source"]:
+    #     #     goals.append(MaxElecProduction(s))
+    #
     #     return goals
 
     def goals(self):
 
         goals = super().goals().copy()
 
-        for asset_name in self.energy_system_components["electricity_demand"]:
+        for asset_name in [
+            *self.energy_system_components.get("electricity_demand", []),
+            *self.energy_system_components.get("gas_demand", []),
+        ]:
             goals.append(MaxRevenue(asset_name))
-            # goals.append(MinCost(asset_name))
+            goals.append(MinCost(asset_name))
 
-        for asset_name in self.energy_system_components["gas_demand"]:
-            goals.append(MaxRevenue(asset_name))
-            # goals.append(MinCost(asset_name))
-
-        # for asset_name in [*self.energy_system_components.get("electricity_source", []),
-        #                    *self.energy_system_components.get("gas_tank_storage", []),
-        #                    #TODO: battery
-        #                    *self.energy_system_components.get("electrolyzer", []),
-        #                    *self.energy_system_components.get("heat_pump_elec", [])]:
-        #     goals.append(MinCost(asset_name))
+        for asset_name in [
+            *self.energy_system_components.get("electricity_source", []),
+            *self.energy_system_components.get("gas_tank_storage", []),
+            # TODO: battery
+            *self.energy_system_components.get("electrolyzer", []),
+            *self.energy_system_components.get("heat_pump_elec", []),
+        ]:
+            goals.append(MinCost(asset_name))
 
         return goals
 
@@ -188,6 +223,11 @@ class EmergeTest(
             canonical, sign = self.alias_relation.canonical_signed(f"{gs}.Gas_tank_flow")
             gas_flow_t0 = sign * self.state_vector(canonical, ensemble_member)[0]
             constraints.append((gas_flow_t0, 0.0, 0.0))
+
+        for es in self.energy_system_components.get("electricity_storage", []):
+            canonical, sign = self.alias_relation.canonical_signed(f"{es}.Stored_electricity")
+            storage_t0 = sign * self.state_vector(canonical, ensemble_member)[0]
+            constraints.append((storage_t0, 0.0, 0.0))
 
         return constraints
 
@@ -222,14 +262,73 @@ class EmergeTest(
         options["include_electric_cable_power_loss"] = False
         return options
 
+    def post(self):
+        # In case the solver fails, we do not get in priority_completed(). We
+        # append this last priority's statistics here in post().
+        # TODO: check if we still need this small part of code below
+        success, _ = self.solver_success(self.solver_stats, False)
+        # if not success:
+        #     time_taken = time.time() - self.__priority_timer
+        #     self._priorities_output.append(
+        #         (
+        #             self.__priority,
+        #             time_taken,
+        #             False,
+        #             self.objective_value,
+        #             self.solver_stats,
+        #         )
+        #     )
+
+        super().post()
+
+        # Optimized ESDL
+        self._write_updated_esdl(self.get_energy_system_copy())
+
+        self._save_json = False
+
+        if os.path.exists(self.output_folder) and self._save_json:
+            self._write_json_output()
+
+        results = self.extract_results()
+
+        for _type, assets in self.energy_system_components.items():
+            for asset in assets:
+                print("----------------------------------")
+                print(f"{asset} financials:")
+                try:
+                    print(f"revenue of {asset} in MEUR/day: ", results[f"{asset}__revenue"] / 1e6)
+                except KeyError:
+                    print(f"{asset} does not have a revenue")
+                    pass
+                try:
+                    print(
+                        f"fixed operational costs of {asset} in MEUR/yr : ",
+                        results[f"{asset}__fixed_operational_cost"] / 1e6,
+                    )
+                    print(
+                        f"variable operational costs of {asset} : ",
+                        results[f"{asset}__variable_operational_cost"] / 1e6,
+                    )  # not yet all included in financialmixin
+                    print(f"max size of {asset} : ", results[f"{asset}__max_size"])
+                except KeyError:
+                    print(f"{asset} does not have a costs")
+                    pass
+
 
 if __name__ == "__main__":
     elect = run_optimization_problem(
         EmergeTest,
-        esdl_file_name="emerge.esdl",
+        esdl_file_name="emerge_solar_battery.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,
-        input_timeseries_file="timeseries.csv",
+        input_timeseries_file="timeseries_with_PV.csv",
     )
+    # elect = run_optimization_problem(
+    #     EmergeTest,
+    #     esdl_file_name="emerge.esdl",
+    #     esdl_parser=ESDLFileParser,
+    #     profile_reader=ProfileReaderFromFile,
+    #     input_timeseries_file="timeseries.csv",
+    # )
     results = elect.extract_results()
     a = 1

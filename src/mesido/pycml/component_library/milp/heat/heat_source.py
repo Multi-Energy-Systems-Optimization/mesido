@@ -9,10 +9,10 @@ class HeatSource(_NonStorageComponent):
     """
     The source component is there to insert thermal power (Heat) into the network.
 
-    The milp to discharge constraints are set in the HeatMixin. We enforce that the outgoing
+    The heat to discharge constraints are set in the HeatMixin. We enforce that the outgoing
     temperature of the source matches the absolute thermal power, Q * cp * rho * T_sup == Heat,
     similar as with the demands. This allows us to guarantee that the flow can always carry, as
-    the milp losses further downstream in the network are over-estimated with T_ret where in
+    the heat losses further downstream in the network are over-estimated with T_ret where in
     reality this temperature drops. It also implicitly assumes that the temperature drops in the
     network are small and thus satisfy minimum temperature requirements.
     """
@@ -35,7 +35,7 @@ class HeatSource(_NonStorageComponent):
         self.co2_coeff = 1.0
         self.pump_efficiency = 0.5
 
-        # Assumption: milp in/out and added is nonnegative
+        # Assumption: heat in/out and added is nonnegative
         # Heat in the return (i.e. cold) line is zero
         self.add_variable(Variable, "Heat_source", min=0.0, nominal=self.Heat_nominal)
         self.add_variable(Variable, "Emission", min=0.0, nominal=self.Heat_nominal)

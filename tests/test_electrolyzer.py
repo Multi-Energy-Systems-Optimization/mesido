@@ -89,7 +89,7 @@ class TestElectrolyzer(TestCase):
 
         # Check that the wind farm setpoint matches with the production
         np.testing.assert_allclose(
-            results["WindPark_7f14.ElectricityOut.Power"], ub * results["WindPark_7f14.Set_point"]
+            results["WindPark_7f14.ElectricityOut.Power"], ub * results["WindPark_7f14__set_point"]
         )
 
         # Checks on the storage

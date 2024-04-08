@@ -22,7 +22,7 @@ class TestPipeDiameterSizingExample(TestCase):
         the left source and the associated left pipes.
 
         Checks:
-        - Standard checks for demand matching, milp to discharge and energy conservation
+        - Standard checks for demand matching, heat to discharge and energy conservation
         - That expected pipes are removed
         - Check that the Q is under the max for the selected pipe class.
         - Check that head losses are as expected for the selected diameter

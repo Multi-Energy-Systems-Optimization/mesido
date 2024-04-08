@@ -8,13 +8,13 @@ from ._non_storage_component import _NonStorageComponent
 class HeatPipe(_NonStorageComponent):
     """
     The pipe component is to model the pressure drop (and optionally hydraulic power) and
-    milp losses over a pipe. Three options for head loss computation are available in the HeatMixin
+    heat losses over a pipe. Three options for head loss computation are available in the HeatMixin
     options: No_HeadLoss, Linear, DW_Linearized. The hydraulic power computation can only be done
     reasonably if DW_linearized is selected as otherwise head_losses are significantly
     over-estimated.
 
-    The milp to discharge constraints are set in the HeatMixin. Where we ensure that the milp must
-    be smaller than the flow can carry, as we overestimate the milp losses with the outgoing
+    The heat to discharge constraints are set in the HeatMixin. Where we ensure that the heat must
+    be smaller than the flow can carry, as we overestimate the heat losses with the outgoing
     temperature at the demand/source/storage assets where in reality this temperature drops
     throughout the network. Meaning that the flow does lose energy but not temperature. In this
     manner the energy losses will always be overestimated as in reality the
@@ -36,7 +36,7 @@ class HeatPipe(_NonStorageComponent):
         self.carrier_id = -1
         self.pressure = 16.0e5
 
-        # Parameters determining the milp loss
+        # Parameters determining the heat loss
         # All of these have default values in the library function
         self.insulation_thickness = nan
         self.conductivity_insulation = nan
@@ -69,4 +69,4 @@ class HeatPipe(_NonStorageComponent):
         self.add_equation(((self.Heat_flow - self.HeatIn.Heat) / self.Heat_nominal))
 
         # Note: Heat loss is added in the mixin, because it depends on the flow direction
-        # * milp loss equation: (HeatOut.Heat - (HeatIn.Heat +/- Heat_loss)) = 0.
+        # * heat loss equation: (HeatOut.Heat - (HeatIn.Heat +/- Heat_loss)) = 0.

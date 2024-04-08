@@ -1,29 +1,13 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" esdlVersion="v2401" name="Untitled EnergySystem" version="5" id="415d9426-dae2-4194-88ad-607793871425" description="">
+<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" esdlVersion="v2401" name="Untitled EnergySystem" version="7" id="415d9426-dae2-4194-88ad-607793871425" description="">
   <energySystemInformation xsi:type="esdl:EnergySystemInformation" id="7997daa8-8ded-4f31-96b2-6842510f43f2">
     <carriers xsi:type="esdl:Carriers" id="6e119417-37a2-4dfd-a493-95f4b68d0235">
-      <carrier xsi:type="esdl:ElectricityCommodity" id="e1077d81-b32a-4004-9a33-db65c96b5f4c" name="Elec" voltage="50000.0"/>
+      <carrier xsi:type="esdl:ElectricityCommodity" id="e1077d81-b32a-4004-9a33-db65c96b5f4c" voltage="50000.0" name="Elec"/>
       <carrier xsi:type="esdl:GasCommodity" id="14831e6c-c3bb-4763-8300-9658a365ee54" pressure="15.0" name="Hydrogen"/>
     </carriers>
   </energySystemInformation>
   <instance xsi:type="esdl:Instance" id="791c9938-3b6c-47b3-bcc5-0328ffd687bd" name="Untitled Instance">
     <area xsi:type="esdl:Area" id="3f8efe6b-ccda-4054-85d0-38cbcd6977da" name="Untitled Area">
-      <asset xsi:type="esdl:WindPark" name="WindPark_9074" surfaceArea="1294320493" id="90740caf-4fbd-45ed-8ea3-6af19c76256c" power="2000000000.0" technicalLifetime="20.0">
-        <costInformation xsi:type="esdl:CostInformation" id="cced62ec-db9f-476c-995b-9dae86ecc08f">
-          <fixedMaintenanceCosts xsi:type="esdl:SingleValue" id="0c34c932-7857-4f8f-b1b3-d7fbe04d300c" value="255000.0">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="9dc9c866-79ee-4a72-9982-8d3d7e04d3aa" unit="EURO" description="Cost in EUR/MW" perMultiplier="MEGA" physicalQuantity="COST" perUnit="WATT"/>
-          </fixedMaintenanceCosts>
-        </costInformation>
-        <port xsi:type="esdl:OutPort" id="fd1689e6-1339-4b77-8f8f-94acc57c752f" connectedTo="b0ed14ac-faa8-499f-aa98-53be98852d0f" carrier="e1077d81-b32a-4004-9a33-db65c96b5f4c" name="Out"/>
-        <geometry xsi:type="esdl:Polygon" CRS="WGS84">
-          <exterior xsi:type="esdl:SubPolygon">
-            <point xsi:type="esdl:Point" lat="52.311837071418886" lon="2.9498291015625004"/>
-            <point xsi:type="esdl:Point" lat="52.48612543090347" lon="3.8726806640625004"/>
-            <point xsi:type="esdl:Point" lat="52.68304276227743" lon="3.6694335937500004"/>
-            <point xsi:type="esdl:Point" lat="52.47274306920925" lon="2.9223632812500004"/>
-          </exterior>
-        </geometry>
-      </asset>
       <asset xsi:type="esdl:ElectricityDemand" name="ElectricityDemand_f833" id="f8339608-af60-4b32-945b-521e6f7b8098" power="2000000000.0" technicalLifetime="20.0">
         <port xsi:type="esdl:InPort" id="ac3fc355-1545-4b78-a46c-1b0908f5ccde" carrier="e1077d81-b32a-4004-9a33-db65c96b5f4c" name="In" connectedTo="69ba58df-cb90-4ebd-843e-d5b9865aeacd"/>
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="52.36553758871974" lon="4.872436523437501"/>
@@ -31,7 +15,7 @@
       <asset xsi:type="esdl:Electrolyzer" name="Electrolyzer_6327" effMaxLoad="69.0" maxLoad="200000000" efficiency="63.0" id="6327ee2b-9f17-432f-8d15-b034422eab79" power="200000000.0" technicalLifetime="20.0" effMinLoad="67.0" minLoad="20000000">
         <costInformation xsi:type="esdl:CostInformation" id="995670aa-a117-4569-a89b-e3a63935c829">
           <fixedMaintenanceCosts xsi:type="esdl:SingleValue" id="63836d94-a84b-4137-8274-e926ace66a9f" value="15000.0">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="1b39bf48-df74-4fcf-b94b-a23593fa965b" unit="EURO" description="Cost in EUR/MW" perMultiplier="MEGA" physicalQuantity="COST" perUnit="WATT"/>
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" unit="EURO" id="1b39bf48-df74-4fcf-b94b-a23593fa965b" description="Cost in EUR/MW" perMultiplier="MEGA" physicalQuantity="COST" perUnit="WATT"/>
           </fixedMaintenanceCosts>
         </costInformation>
         <port xsi:type="esdl:InPort" id="d81bb99d-1508-4b13-bc13-1f1a149d481d" carrier="e1077d81-b32a-4004-9a33-db65c96b5f4c" name="In" connectedTo="1e76b7b0-9f17-4ccc-b4c3-0089b3ff6a45"/>
@@ -40,7 +24,7 @@
       </asset>
       <asset xsi:type="esdl:GasDemand" name="GasDemand_4146" id="41466625-a14b-43a9-9a13-93d34a4ea6ff" power="500000000.0" technicalLifetime="20.0">
         <costInformation xsi:type="esdl:CostInformation" id="14964bd8-8eb0-4525-bcb4-0d03c1252a2b">
-          <variableOperationalCosts xsi:type="esdl:SingleValue" id="5c63dce1-8a70-44f3-b6b9-476587ff73bb" value="0.0">
+          <variableOperationalCosts xsi:type="esdl:SingleValue" id="5c63dce1-8a70-44f3-b6b9-476587ff73bb">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" unit="EURO" id="4a4516c3-372a-4a6c-b25a-dcc8dca30545" description="Cost in EUR/kg" physicalQuantity="COST" multiplier="KILO" perUnit="GRAM"/>
           </variableOperationalCosts>
         </costInformation>
@@ -49,7 +33,7 @@
       </asset>
       <asset xsi:type="esdl:GasStorage" name="GasStorage_9172" workingVolume="1000.0" id="9172f2eb-e1f4-4230-9495-396504f7c3c6" maxChargeRate="100000000.0" technicalLifetime="20.0" maxDischargeRate="100000000.0">
         <costInformation xsi:type="esdl:CostInformation" id="6f57c644-a1de-4c79-a707-76a6741c02b9">
-          <fixedOperationalCosts xsi:type="esdl:SingleValue" id="ee900804-4f57-4488-a932-5c2a7102b4e8" value="0.0">
+          <fixedOperationalCosts xsi:type="esdl:SingleValue" id="ee900804-4f57-4488-a932-5c2a7102b4e8">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" unit="EURO" id="6ae2e528-2275-47b0-81a9-97517e478150" description="Cost in EUR/kg/yr" physicalQuantity="COST" multiplier="KILO" perTimeUnit="YEAR" perUnit="GRAM"/>
           </fixedOperationalCosts>
         </costInformation>
@@ -62,7 +46,7 @@
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="52.466050361889515" lon="3.7298583984375004"/>
       </asset>
       <asset xsi:type="esdl:ElectricityCable" name="ElectricityCable_80a3" capacity="2000000000.0" length="23801.2" id="80a35550-3167-4240-a7ac-92c40248dae7" technicalLifetime="20.0">
-        <port xsi:type="esdl:InPort" id="b0ed14ac-faa8-499f-aa98-53be98852d0f" carrier="e1077d81-b32a-4004-9a33-db65c96b5f4c" name="In" connectedTo="fd1689e6-1339-4b77-8f8f-94acc57c752f"/>
+        <port xsi:type="esdl:InPort" id="b0ed14ac-faa8-499f-aa98-53be98852d0f" carrier="e1077d81-b32a-4004-9a33-db65c96b5f4c" name="In" connectedTo="fd7fab3b-9c6e-491d-b3c2-a39833edf0bf"/>
         <port xsi:type="esdl:OutPort" id="62807929-3c55-4545-8279-2f655ab7e943" connectedTo="8f93331f-7785-4213-a6e0-d120a8f0fba7" carrier="e1077d81-b32a-4004-9a33-db65c96b5f4c" name="Out"/>
         <geometry xsi:type="esdl:Line" CRS="WGS84">
           <point xsi:type="esdl:Point" lat="52.49203060725069" lon="3.381008869842488"/>
@@ -113,6 +97,15 @@
           <point xsi:type="esdl:Point" lat="52.5992941670283" lon="3.750457763671875"/>
           <point xsi:type="esdl:Point" lat="52.633062890594374" lon="4.707641601562501"/>
         </geometry>
+      </asset>
+      <asset xsi:type="esdl:PVInstallation" name="PVInstallation_2bcf" id="2bcf2f6d-6426-4f92-923a-ee1369bf5acd" power="2000000000.0">
+        <port xsi:type="esdl:OutPort" id="fd7fab3b-9c6e-491d-b3c2-a39833edf0bf" connectedTo="b0ed14ac-faa8-499f-aa98-53be98852d0f" carrier="e1077d81-b32a-4004-9a33-db65c96b5f4c" name="Out"/>
+        <geometry xsi:type="esdl:Point" CRS="WGS84" lat="52.492891564137324" lon="3.381034242066989"/>
+        <costInformation xsi:type="esdl:CostInformation" id="cced62ec-db9f-476c-995b-9dae86ecc08f">
+          <fixedMaintenanceCosts xsi:type="esdl:SingleValue" id="0c34c932-7857-4f8f-b1b3-d7fbe04d300c" value="255000.0">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="9dc9c866-79ee-4a72-9982-8d3d7e04d3aa" unit="EURO" description="Cost in EUR/MW" perMultiplier="MEGA" physicalQuantity="COST" perUnit="WATT"/>
+          </fixedMaintenanceCosts>
+        </costInformation>
       </asset>
     </area>
   </instance>

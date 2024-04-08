@@ -35,9 +35,18 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         self.__asset_is_switched_on_var = {}
         self.__asset_is_switched_on_bounds = {}
 
-        self.__windpark_upper_bounds = {}
+        self.__electricity_producer_upper_bounds = {}
 
         self._electricity_cable_topo_cable_class_map = {}
+
+        # Boolean path-variable for the charging of storage assets
+        self.__storage_charging_var = {}
+        self.__storage_charging_bounds = {}
+        self.__storage_charging_map = {}
+
+        self.__set_point_var = {}
+        self.__set_point_bounds = {}
+        self.__set_point_map = {}
 
     def energy_system_options(self):
         r"""
@@ -68,7 +77,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
         options = self.energy_system_options()
 
-        self.__update_windpark_upper_bounds()
+        self.__update_electricity_producer_upper_bounds()
 
         if options["include_asset_is_switched_on"]:
             for asset in [
@@ -78,6 +87,19 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                 self.__asset_is_switched_on_map[asset] = var_name
                 self.__asset_is_switched_on_var[var_name] = ca.MX.sym(var_name)
                 self.__asset_is_switched_on_bounds[var_name] = (0.0, 1.0)
+
+        for asset in [*self.energy_system_components.get("electricity_storage", [])]:
+            var_name = f"{asset}__is_charging"
+            self.__storage_charging_map[asset] = var_name
+            self.__storage_charging_var[var_name] = ca.MX.sym(var_name)
+            self.__storage_charging_bounds[var_name] = (0.0, 1.0)
+
+        for asset in [*self.energy_system_components.get("electricity_source", [])]:
+            if isinstance(self.bounds()[f"{asset}.Electricity_source"][1], Timeseries):
+                var_name = f"{asset}__set_point"
+                self.__set_point_map[asset] = var_name
+                self.__set_point_var[var_name] = ca.MX.sym(var_name)
+                self.__set_point_bounds[var_name] = (0.0, 1.0)
 
     @property
     def extra_variables(self):
@@ -99,6 +121,8 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         variables = super().path_variables.copy()
 
         variables.extend(self.__asset_is_switched_on_var.values())
+        variables.extend(self.__storage_charging_var.values())
+        variables.extend(self.__set_point_var.values())
 
         return variables
 
@@ -108,6 +132,8 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         """
 
         if variable in self.__asset_is_switched_on_var:
+            return True
+        if variable in self.__storage_charging_var:
             return True
         else:
             return super().variable_is_discrete(variable)
@@ -127,7 +153,9 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         bounds = super().bounds()
 
         bounds.update(self.__asset_is_switched_on_bounds)
-        bounds.update(self.__windpark_upper_bounds)
+        bounds.update(self.__storage_charging_bounds)
+        bounds.update(self.__electricity_producer_upper_bounds)
+        bounds.update(self.__set_point_bounds)
 
         return bounds
 
@@ -159,14 +187,17 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
         )
 
-    def __update_windpark_upper_bounds(self):
+    def __update_electricity_producer_upper_bounds(self):
         t = self.times()
-        for wp in self.energy_system_components.get("wind_park", []):
+        for asset in [
+            *self.energy_system_components.get("wind_park", []),
+            *self.energy_system_components.get("solar_pv", []),
+        ]:
             lb = Timeseries(t, np.zeros(len(self.times())))
-            ub = self.get_timeseries(f"{wp}.maximum_electricity_source")
-            self.__windpark_upper_bounds[f"{wp}.Electricity_source"] = (lb, ub)
+            ub = self.get_timeseries(f"{asset}.maximum_electricity_source")
+            self.__electricity_producer_upper_bounds[f"{asset}.Electricity_source"] = (lb, ub)
 
-    def __wind_park_set_point_constraints(self, ensemble_member):
+    def __electricity_producer_set_point_constraints(self, ensemble_member):
         """
         This function adds constraints for wind parks which generates electrical power. The
         produced electrical power is capped with a user specified percentage value of the maximum
@@ -174,17 +205,21 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         """
         constraints = []
 
-        for wp in self.energy_system_components.get("wind_park", []):
-            set_point = self.__state_vector_scaled(f"{wp}.Set_point", ensemble_member)
-            electricity_source = self.__state_vector_scaled(
-                f"{wp}.Electricity_source", ensemble_member
-            )
-            # TODO: [: len(self.times())] should be removed once the emerge test is properly
-            # time-sampled.
-            max = self.bounds()[f"{wp}.Electricity_source"][1].values[: len(self.times())]
-            nominal = (self.variable_nominal(f"{wp}.Electricity_source") * np.median(max)) ** 0.5
+        for asset in [*self.energy_system_components.get("electricity_source", [])]:
+            if asset in self.__set_point_map.keys():
+                var_name = self.__set_point_map[asset]
+                set_point = self.__state_vector_scaled(var_name, ensemble_member)
+                electricity_source = self.__state_vector_scaled(
+                    f"{asset}.Electricity_source", ensemble_member
+                )
+                # TODO: [: len(self.times())] should be removed once the emerge test is properly
+                # time-sampled.
+                max = self.bounds()[f"{asset}.Electricity_source"][1].values[: len(self.times())]
+                nominal = (
+                    self.variable_nominal(f"{asset}.Electricity_source") * np.median(max)
+                ) ** 0.5
 
-            constraints.append(((set_point * max - electricity_source) / nominal, 0.0, 0.0))
+                constraints.append(((set_point * max - electricity_source) / nominal, 0.0, 0.0))
 
         return constraints
 
@@ -388,6 +423,91 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
         return constraints
 
+    def __electricity_storage_path_constraints(self, ensemble_member):
+        """
+        This function adds the constraints for the electricity commodity at the storage assets.
+        When charging the electricity_storage acts as an electrcicity demand and during discharging
+        it acts as a electricity producer. The constraints are selected using the bigM method using
+        the boolean for charging and using a charging efficiency during charging.
+        """
+        constraints = []
+        parameters = self.parameters(ensemble_member)
+
+        for asset in [
+            *self.energy_system_components.get("electricity_storage", []),
+        ]:
+            min_voltage = parameters[f"{asset}.min_voltage"]
+            voltage = self.state(f"{asset}.ElectricityIn.V")
+
+            # when charging act like a demand, when discharging act like a source
+            # to ensure that voltage is equal or larger than the minimum voltage
+            constraints.append(((voltage - min_voltage) / min_voltage, 0.0, np.inf))
+
+            power_nom = self.variable_nominal(f"{asset}.ElectricityIn.Power")
+            curr_nom = self.variable_nominal(f"{asset}.ElectricityIn.I")
+            power_in = self.state(f"{asset}.ElectricityIn.Power")
+            current_in = self.state(f"{asset}.ElectricityIn.I")
+
+            # is_charging is 1 if charging and powerin>0
+            big_m = 2 * max(abs(self.bounds()[f"{asset}.ElectricityIn.Power"]))
+            is_charging = self.state(f"{asset}__is_charging")
+            constraints.append(((power_in + (1 - is_charging) * big_m) / power_nom, 0.0, np.inf))
+            constraints.append(((power_in - is_charging * big_m) / power_nom, -np.inf, 0.0))
+
+            constraints.append(
+                (
+                    (power_in - min_voltage * current_in + (1 - is_charging) * big_m)
+                    / (power_nom * curr_nom * min_voltage) ** 0.5,
+                    0,
+                    np.inf,
+                )
+            )
+            constraints.append(
+                (
+                    (power_in - min_voltage * current_in - (1 - is_charging) * big_m)
+                    / (power_nom * curr_nom * min_voltage) ** 0.5,
+                    -np.inf,
+                    0,
+                )
+            )
+
+            # power charging using discharge/charge efficiency, needs boolean
+            eff_power = self.state(f"{asset}.Effective_power_charging")
+            discharge_eff = parameters[f"{asset}.discharge_efficiency"]
+            charge_eff = parameters[f"{asset}.charge_efficiency"]
+            # charging
+            constraints.append(
+                (
+                    (eff_power - charge_eff * power_in + (1 - is_charging) * big_m) / power_nom,
+                    0,
+                    np.inf,
+                )
+            )
+            constraints.append(
+                (
+                    (eff_power - charge_eff * power_in - (1 - is_charging) * big_m) / power_nom,
+                    -np.inf,
+                    0,
+                )
+            )
+            # discharging
+            constraints.append(
+                (
+                    (eff_power - discharge_eff * power_in + is_charging * big_m) / power_nom,
+                    0,
+                    np.inf,
+                )
+            )
+            constraints.append(
+                (
+                    (eff_power - discharge_eff * power_in - is_charging * big_m) / power_nom,
+                    -np.inf,
+                    0,
+                )
+            )
+
+        return constraints
+
     def __get_electrolyzer_gas_mass_flow_out(
         self, coef_a, coef_b, coef_c, electrical_power_input
     ) -> float:
@@ -555,6 +675,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         constraints.extend(self.__electricity_cable_mixing_path_constraints(ensemble_member))
         constraints.extend(self.__voltage_loss_path_constraints(ensemble_member))
         constraints.extend(self.__electrolyzer_path_constaint(ensemble_member))
+        constraints.extend(self.__electricity_storage_path_constraints(ensemble_member))
 
         return constraints
 
@@ -567,7 +688,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         """
         constraints = super().constraints(ensemble_member)
 
-        constraints.extend(self.__wind_park_set_point_constraints(ensemble_member))
+        constraints.extend(self.__electricity_producer_set_point_constraints(ensemble_member))
 
         return constraints
 
