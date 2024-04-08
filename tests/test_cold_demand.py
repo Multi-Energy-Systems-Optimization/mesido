@@ -9,28 +9,28 @@ from rtctools.util import run_optimization_problem
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
-class TestAbsoluteHeat(TestCase):
-    def test_absolute_heat(self):
+class TestColdDemand(TestCase):
+    def test_cold_demand(self):
         """
-        This is a single line ring model, meaning that there are no dedicated supply or return
-        lines. This means that this model pipes are not related (no relation between hot and cold
-        pipes exists).
+        This test is to check the basic physics for a network which includes cold demand. In this
+        case we have a network with an air-water hp, a low temperature ates and both hot and cold
+        demand. In this case the demands are matched and the low temperature ates is utilized.
 
         Checks:
         1. demand is matched
         2. energy conservation in the network
-        3. heat to discharge
+        3. heat to discharge (note cold line is colder than T_ground)
 
         """
-        import models.absolute_heat.src.example as example
-        from models.absolute_heat.src.example import HeatProblem
+        import models.wko.src.example as example
+        from models.wko.src.example import HeatProblem
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
         heat_problem = run_optimization_problem(
             HeatProblem,
             base_folder=base_folder,
-            esdl_file_name="absolute_heat.esdl",
+            esdl_file_name="LT_wko.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries.csv",
@@ -42,9 +42,4 @@ class TestAbsoluteHeat(TestCase):
 
 
 if __name__ == "__main__":
-    import time
-
-    start_time = time.time()
-    a = TestAbsoluteHeat()
-    a.test_absolute_heat()
-    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
+    a = 1

@@ -26,10 +26,10 @@ class _NonStorageComponent(HeatTwoPort, BaseAsset):
         self.rho = 988.0
         self.nominal_pressure = 16.0e5
 
-        # NOTE: We move a factor of 100.0 of the milp to the state entry, to
-        # reduce the coefficient in front of the milp variables. This
+        # NOTE: We move a factor of 100.0 of the heat to the state entry, to
+        # reduce the coefficient in front of the heat variables. This
         # particularly helps the scaling/range of the constraints that relate
-        # the milp loss (if it is variable/optional) to the milp in- and out
+        # the milp loss (if it is variable/optional) to the heat in- and out
         # of a component.
         self.Heat_nominal = self.cp * self.rho * self.Q_nominal * 100.0
 

@@ -17,7 +17,7 @@ class TestProducerMaxProfile(TestCase):
     (reducing the profile value at a few time steps).
 
     Checks:
-    - Standard checks demand matching, energy conservation and milp to discharge
+    - Standard checks demand matching, energy conservation and heat to discharge
     - check that heat_source <= scaled_profile * size_source.
 
     """
@@ -50,6 +50,6 @@ class TestProducerMaxProfile(TestCase):
         ).values
         heat_producer_profile_full = heat_producer_profile_scaled * size_producer
 
-        # check that milp produced is smaller than the profile
+        # check that heat produced is smaller than the profile
         biggerthen = all(heat_producer_profile_full + tol >= heat_producer)
         self.assertTrue(biggerthen)

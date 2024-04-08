@@ -14,15 +14,15 @@ from utils_tests import demand_matching_test, energy_conservation_test, heat_to_
 
 class TestNetworkSimulator(TestCase):
     """
-    In this test case 2 milp producers and an ATES is used to supply 3 heating demands. A merit
+    In this test case 2 heat producers and an ATES is used to supply 3 heating demands. A merit
     order (preference of 1st use) is given to the producers: Producer_1 = 2 and Producer_2 = 1.
 
     Checks:
-    - General checks namely demand matching, energy conservation and asset milp variable vs
-      calculated milp (based on flow rate)
-    - Check that producer 1 (merit oder = 2) is only used for the supply of milp lossed in the
+    - General checks namely demand matching, energy conservation and asset heat variable vs
+      calculated heat (based on flow rate)
+    - Check that producer 1 (merit oder = 2) is only used for the supply of heat lossed in the
       connected and is does not contribute to the heating demands 1, 2 and 3
-    - Check that the ATES is not delivering any milp to the network during the 1st time step
+    - Check that the ATES is not delivering any heat to the network during the 1st time step
     """
 
     def test_network_simulator(self):
@@ -54,7 +54,7 @@ class TestNetworkSimulator(TestCase):
             0.0,
             err_msg="Heat producer 1 should be completely disabled "
             ", due to producer 2 being sufficient for "
-            "the total milp demand (incl. milp losses) and it has the 1st priority for usage",
+            "the total heat demand (incl. heat losses) and it has the 1st priority for usage",
             rtol=1.0e-3,
             atol=1.0e-3,
         )
@@ -62,7 +62,7 @@ class TestNetworkSimulator(TestCase):
         np.testing.assert_array_less(
             results["ATES_033c.Heat_ates"][0],
             0.0,
-            err_msg="ATES should not be delivering milp to the network in the 1st time step",
+            err_msg="ATES should not be delivering heat to the network in the 1st time step",
         )
 
 

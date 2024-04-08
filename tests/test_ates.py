@@ -15,11 +15,11 @@ class TestAtes(TestCase):
     def test_ates(self):
         """
         Checks the constraints concerning the milp to discharge and energy conservation
-        for the ates. The milp loss model used are tested and the typical cyclic constraint that
+        for the ates. The heat loss model used are tested and the typical cyclic constraint that
         will be applied in most use cases.
 
         Checks:
-        - the milp loss is computed as expected (loss coef * stored milp [J])
+        - the heat loss is computed as expected (loss coef * stored heat [J])
         - checks that the efficiency causes less energy discharged than charged
         - cyclic storage behaviour
         - standard energy conservation, etc.

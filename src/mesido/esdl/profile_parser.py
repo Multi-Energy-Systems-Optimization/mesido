@@ -30,6 +30,7 @@ class _ProfileParserException(Exception):
 
 class BaseProfileReader:
     component_type_to_var_name_map: dict = {
+        "cold_demand": ".target_cold_demand",
         "heat_demand": ".target_heat_demand",
         "heat_source": ".maximum_heat_source",
         "electricity_demand": ".target_electricity_demand",
@@ -386,10 +387,11 @@ class InfluxDBProfileReader(BaseProfileReader):
                 f"either power, energy values or euros per Wh, not "
                 f"{profile_quantity_and_unit.physicalQuantity}."
             )
-        return profile_time_series.apply(
-            func=lambda x: convert_to_unit(
-                value=x, source_unit=profile_quantity_and_unit, target_unit=target_unit
-            )
+        # The vectorized method below is used instead of profile_time_series.apply(), due to a
+        # computational cost reduction (order of 2000 times faster for a profile with 8760
+        # timesteps)
+        return profile_time_series * convert_to_unit(
+            value=1.0, source_unit=profile_quantity_and_unit, target_unit=target_unit
         )
 
     @staticmethod

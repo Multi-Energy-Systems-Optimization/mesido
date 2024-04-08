@@ -18,7 +18,7 @@ class TestHeat(TestCase):
         This is a test to check whether the network (pipes) are dissipating milp as we expect.
 
         Checks:
-        - Check that the produced milp is strictly higher than the consumed milp
+        - Check that the produced heat is strictly higher than the consumed heat
         - Check for energy conservation in the network
 
         """
@@ -50,11 +50,11 @@ class TestHeat(TestCase):
 
     def test_zero_heat_loss(self):
         """
-        Check the optimiziation function when the zero milp loss is used.
+        Check the optimiziation function when the zero heat loss is used.
 
         Checks:
         - Should check that produced equals consumed.
-        - Should check the milp loss variable being zero
+        - Should check the heat loss variable being zero
 
         """
         import models.source_pipe_sink.src.double_pipe_heat as double_pipe_heat
@@ -241,7 +241,7 @@ class TestDisconnectablePipe(TestCase):
 
     class ModelConnected(SourcePipeSink):
         # We allow the pipe to be disconnectable. We need to be sure that
-        # the solution is still feasible (source delivering no milp), so we
+        # the solution is still feasible (source delivering no heat), so we
         # lower the lower bound.
 
         def parameters(self, ensemble_member):

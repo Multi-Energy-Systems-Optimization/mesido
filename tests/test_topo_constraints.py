@@ -175,15 +175,15 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
                     np.testing.assert_almost_equal(
                         heat_loss_ordering_var,
                         0.0,
-                        err_msg=f"expected the milp loss order var for {p} and {pc=} to be 0.0, "
-                        f"since {chosen_pc=} with higher milp losses",
+                        err_msg=f"expected the heat loss order var for {p} and {pc=} to be 0.0, "
+                        f"since {chosen_pc=} with higher heat losses",
                     )
                 elif pc_heat_loss > chosen_pc_heat_loss:
                     np.testing.assert_almost_equal(
                         discharge_ordering_var,
                         1.0,
-                        err_msg=f"Expected the milp loss order var for {p} and {pc=} to be 1.0, "
-                        f"since {chosen_pc=} with lower milp losses",
+                        err_msg=f"Expected the heat loss order var for {p} and {pc=} to be 1.0, "
+                        f"since {chosen_pc=} with lower heat losses",
                     )
 
         for pc_name, total_count in pc_sums.items():
@@ -254,7 +254,7 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
 
     def get_heat_losses(self, pipe: str, pipe_class: PipeClass):
         """
-        This function computes the expected milp loss for a pipe class.
+        This function computes the expected heat loss for a pipe class.
 
         Parameters
         ----------
@@ -263,7 +263,7 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
 
         Returns
         -------
-        Pipe milp loss value.
+        Pipe heat loss value.
         """
         return pipe_heat_loss(
             self.problem,

@@ -595,15 +595,23 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             if not pipe_classes or options["neglect_pipe_heat_losses"]:
                 # No pipe class decision to make for this pipe w.r.t. milp loss
                 heat_loss = pipe_heat_loss(self, options, parameters, pipe)
+                if parameters[f"{pipe}.temperature"] > parameters[f"{pipe}.T_ground"]:
+                    lb = 0.0
+                else:
+                    lb = 2.0 * heat_loss
                 self._pipe_heat_loss_var_bounds[heat_loss_var_name] = (
-                    0.0,
-                    2.0 * heat_loss,
+                    lb,
+                    2.0 * abs(heat_loss),
                 )
                 if heat_loss > 0:
-                    self._pipe_heat_loss_nominals[heat_loss_var_name] = heat_loss
+                    self._pipe_heat_loss_nominals[heat_loss_var_name] = abs(heat_loss)
                 else:
                     self._pipe_heat_loss_nominals[heat_loss_var_name] = max(
-                        pipe_heat_loss(self, {"neglect_pipe_heat_losses": False}, parameters, pipe),
+                        abs(
+                            pipe_heat_loss(
+                                self, {"neglect_pipe_heat_losses": False}, parameters, pipe
+                            )
+                        ),
                         1.0,
                     )
 
@@ -782,8 +790,25 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             lb = 0.0 if np.isinf(bounds[f"{asset_name}.Heat_demand"][1]) else ub
             _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
 
-        for asset_name in self.energy_system_components.get("ates", []):
-            ub = bounds[f"{asset_name}.Heat_ates"][1]
+        for asset_name in self.energy_system_components.get("cold_demand", []):
+            ub = (
+                bounds[f"{asset_name}.Cold_demand"][1]
+                if not np.isinf(bounds[f"{asset_name}.Cold_demand"][1])
+                else bounds[f"{asset_name}.HeatIn.Heat"][1]
+            )
+            # Note that we only enforce the upper bound in state enabled if it was explicitly
+            # specified for the demand
+            lb = 0.0 if np.isinf(bounds[f"{asset_name}.Cold_demand"][1]) else ub
+            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
+
+        for asset_name in [
+            *self.energy_system_components.get("ates", []),
+            *self.energy_system_components.get("low_temperature_ates", []),
+        ]:
+            if asset_name in self.energy_system_components.get("ates", []):
+                ub = bounds[f"{asset_name}.Heat_ates"][1]
+            else:
+                ub = bounds[f"{asset_name}.Heat_low_temperature_ates"][1]
             lb = 0.0 if parameters[f"{asset_name}.state"] != 1 else ub
             _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
 
@@ -1843,11 +1868,20 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 )
             )
 
-        for a in self.energy_system_components.get("ates", []):
+        for a in [
+            *self.energy_system_components.get("ates", []),
+            *self.energy_system_components.get("low_temperature_ates", []),
+        ]:
             max_var = self._asset_max_size_map[a]
             max_heat = self.extra_variable(max_var, ensemble_member)
-            heat_ates = self.__state_vector_scaled(f"{a}.Heat_ates", ensemble_member)
-            constraint_nominal = bounds[f"{a}.Heat_ates"][1]
+            if a in self.energy_system_components.get("ates", []):
+                heat_ates = self.__state_vector_scaled(f"{a}.Heat_ates", ensemble_member)
+                constraint_nominal = bounds[f"{a}.Heat_ates"][1]
+            else:
+                heat_ates = self.__state_vector_scaled(
+                    f"{a}.Heat_low_temperature_ates", ensemble_member
+                )
+                constraint_nominal = bounds[f"{a}.Heat_low_temperature_ates"][1]
 
             constraints.append(
                 (
