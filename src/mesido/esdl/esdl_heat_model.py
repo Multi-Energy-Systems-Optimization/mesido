@@ -12,6 +12,7 @@ from mesido.esdl.esdl_model_base import _ESDLModelBase
 from mesido.network_common import NetworkSettings
 from mesido.pycml.component_library.milp import (
     ATES,
+    AirWaterHeatPump,
     CheckValve,
     ColdDemand,
     ControlValve,
@@ -753,7 +754,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         # In this case we only have the secondary side ports, here we assume a air-water HP
         if len(asset.in_ports) == 1 and len(asset.out_ports) == 1:
             _, modifiers = self.convert_heat_source(asset)
-            return HeatSource, modifiers
+            return AirWaterHeatPump, modifiers
 
         if not asset.attributes["power"]:
             raise _ESDLInputException(f"{asset.name} has no power specified")

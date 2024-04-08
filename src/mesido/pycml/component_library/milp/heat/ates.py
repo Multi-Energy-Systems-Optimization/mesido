@@ -8,17 +8,17 @@ from .heat_two_port import HeatTwoPort
 
 class ATES(HeatTwoPort, BaseAsset):
     """
-    An Ates is a storage component that is used to model milp storage underground. Typically, this
+    An Ates is a storage component that is used to model heat storage underground. Typically, this
     is done by storing hot water in an underground aquifier. We model this with an energy storage
     where the energy loss is modelled as a fraction of the Stored energy for each time-step.
 
-    Like all storage assets we enforce that they must be connected as a demand. The milp to
-    discharge constraints are set in the HeatMixin, where we use a big_m formulation to enforce the
-    correct constraints depending on whether the ates is charging or discharging.
+    Like all storage assets we enforce that they must be connected as a demand. The heat to
+    discharge constraints are set in the HeatPhysicsMixin, where we use a big_m formulation to
+    enforce the correct constraints depending on whether the ates is charging or discharging.
 
     Please note that:
     The user is responsible to implement the cyclic behaviour in their workflow constraints.
-    Meaning that the milp stored at the 1st and last time step should be equal. Furthermore, due
+    Meaning that the heat stored at the 1st and last time step should be equal. Furthermore, due
     to the implicit solving note that the energy out of the ATES should be 0 for the 1st time step.
     """
 
@@ -62,8 +62,8 @@ class ATES(HeatTwoPort, BaseAsset):
         # Meaning that they might always be, for e.g., 5% full.
         self.min_fraction_tank_volume = 0.05
 
-        # Stored_heat is the milp that is contained in the ates.
-        # Heat_ates is the amount of milp added to or extracted from the buffer
+        # Stored_heat is the heat that is contained in the ates.
+        # Heat_ates is the amount of heat added to or extracted from the buffer
         # per timestep.
         # Thus Heat_buffer = HeatHot = der(Stored_heat).
         # We connect an ATES as an demand, meaning that flow and Heat_ates are positive under

@@ -16,7 +16,7 @@ class TestAssetIsRealized(TestCase):
         asset is realized variable. We want the asset only to become available once sufficient
         investments are made.
 
-        In this specific test we optimize to match the milp demand. However, the sources are not
+        In this specific test we optimize to match the heat demand. However, the sources are not
         available from the start as the cumulative invesments made at timestep 0 is 0. Furthermore,
         there is a cap on the investments that can be done per timestep. We expect the optimizer
         to find a solution that releases the sources as soon as possible in order to match demand

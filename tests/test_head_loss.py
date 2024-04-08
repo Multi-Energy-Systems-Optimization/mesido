@@ -17,7 +17,7 @@ from utils_tests import demand_matching_test
 
 class TestHeadLoss(TestCase):
     """
-    Test case for a milp network and a gas network consisting out of a source, pipe(s) and a sink
+    Test case for a heat network and a gas network consisting out of a source, pipe(s) and a sink
     """
 
     def test_heat_network_head_loss(self):

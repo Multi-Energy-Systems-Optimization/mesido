@@ -13,7 +13,7 @@ class TestEndScenarioSizingAnnualized(TestCase):
     """
     Tests for end scenario sizing with annualized costs in a small network with optional assets.
 
-    This class tests two models for a milp network: with
+    This class tests two models for a heat network: with
     and without annualized costs. It asserts the following:
     1. Under some conditions, the objective value of the annualized model is equal to the solution
     from the non annualized one.

@@ -19,7 +19,7 @@ class TestAbsoluteHeat(TestCase):
         Checks:
         1. demand is matched
         2. energy conservation in the network
-        3. milp to discharge
+        3. heat to discharge
 
         """
         import models.absolute_heat.src.example as example

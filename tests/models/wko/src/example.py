@@ -47,7 +47,7 @@ class TargetDemandGoal(Goal):
         self.target_max = target
         self.function_range = (-2.0 * max(target.values), 2.0 * max(target.values))
         self.function_nominal = (
-            np.median(target.values) if np.median(target.values) else abs(max(target.values)) / 2.0
+            np.median(target.values) if np.median(target.values) else max(abs(target.values)) / 2.0
         )
 
     def function(

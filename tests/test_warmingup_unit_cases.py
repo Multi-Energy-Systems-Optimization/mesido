@@ -21,7 +21,7 @@ class TestWarmingUpUnitCases(TestCase):
         - Demand matching
         - Energy conservation
         - Heat to discharge
-        - Checks for conservation of flow and milp at the node
+        - Checks for conservation of flow and heat at the node
         - Check for equal head at all node connections
         - Checks that the minimum pressure-drop constraints at the demand are satisfied
         - Check that Heat_demand & Heat_source are set correctly and are linked to the Heat_flow
@@ -129,8 +129,8 @@ class TestWarmingUpUnitCases(TestCase):
         direction for the pipe connected to the buffer tank)
         - Check that the Heat_buffer & Heat_flow variable are set correctly
         - Check that the history for the buffer is set correctly at t=0
-        - Check that the milp loss is positive and as expected
-        - Check that the Stored milp is the sum of (dis)charge and losses
+        - Check that the heat loss is positive and as expected
+        - Check that the Stored heat is the sum of (dis)charge and losses
 
         """
         import models.unit_cases.case_3a.src.run_3a as run_3a
@@ -171,7 +171,7 @@ class TestWarmingUpUnitCases(TestCase):
                 results[f"{buffer}.HeatIn.Heat"] - results[f"{buffer}.HeatOut.Heat"],
                 results[f"{buffer}.Heat_buffer"],
             )
-            # buffer should have positive milp loss
+            # buffer should have positive heat loss
             assert parameters[f"{buffer}.heat_loss_coeff"] > 0.0
             np.testing.assert_allclose(
                 results[f"{buffer}.Stored_heat"] * parameters[f"{buffer}.heat_loss_coeff"],

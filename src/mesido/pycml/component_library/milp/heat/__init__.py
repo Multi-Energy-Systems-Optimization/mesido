@@ -1,3 +1,4 @@
+from .air_water_heat_pump import AirWaterHeatPump
 from .ates import ATES
 from .check_valve import CheckValve
 from .cold_demand import ColdDemand
@@ -17,6 +18,7 @@ from .node import Node
 from .pump import Pump
 
 __all__ = [
+    "AirWaterHeatPump",
     "ATES",
     "HeatBuffer",
     "CheckValve",

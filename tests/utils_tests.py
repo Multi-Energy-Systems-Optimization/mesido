@@ -13,6 +13,13 @@ def demand_matching_test(solution, results):
             len_times = len(solution.get_timeseries(f"{d}.target_heat_demand").values)
         target = solution.get_timeseries(f"{d}.target_heat_demand").values[0:len_times]
         np.testing.assert_allclose(target, results[f"{d}.Heat_demand"], atol=1.0e-3, rtol=1.0e-6)
+    for d in solution.energy_system_components.get("cold_demand", []):
+        if len(solution.times()) > 0:
+            len_times = len(solution.times())
+        else:
+            len_times = len(solution.get_timeseries(f"{d}.target_cold_demand").values)
+        target = solution.get_timeseries(f"{d}.target_cold_demand").values[0:len_times]
+        np.testing.assert_allclose(target, results[f"{d}.Cold_demand"], atol=1.0e-3, rtol=1.0e-6)
 
 
 def _get_component_temperatures(solution, results, component, side=None):

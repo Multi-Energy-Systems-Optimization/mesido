@@ -805,9 +805,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             *self.energy_system_components.get("ates", []),
             *self.energy_system_components.get("low_temperature_ates", []),
         ]:
-            try:
+            if asset_name in self.energy_system_components.get("ates", []):
                 ub = bounds[f"{asset_name}.Heat_ates"][1]
-            except KeyError:
+            else:
                 ub = bounds[f"{asset_name}.Heat_low_temperature_ates"][1]
             lb = 0.0 if parameters[f"{asset_name}.state"] != 1 else ub
             _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
@@ -1865,10 +1865,10 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         ]:
             max_var = self._asset_max_size_map[a]
             max_heat = self.extra_variable(max_var, ensemble_member)
-            try:
+            if a in self.energy_system_components.get("ates", []):
                 heat_ates = self.__state_vector_scaled(f"{a}.Heat_ates", ensemble_member)
                 constraint_nominal = bounds[f"{a}.Heat_ates"][1]
-            except KeyError:
+            else:
                 heat_ates = self.__state_vector_scaled(
                     f"{a}.Heat_low_temperature_ates", ensemble_member
                 )

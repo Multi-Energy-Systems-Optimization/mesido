@@ -8,10 +8,10 @@ class HeatDemand(_NonStorageComponent):
     The demand component is there to extract thermal power (Heat) out of the network. Typically,
     this component is used to model aggregated demands.
 
-    The milp to discharge constraints are set in the HeatMixin. We enforce that the outgoing
+    The heat to discharge constraints are set in the HeatPhysicsMixin. We enforce that the outgoing
     temperature of the demand matches the absolute thermal power, Q * cp * rho * T_ret == Heat,
     similar as with the sources. This allows us to guarantee that the flow can always carry the
-    milp and that thermal losses are always estimated conservatively, as the milp losses further
+    heatf and that thermal losses are always estimated conservatively, as the heat losses further
     downstream in the network are over-estimated with T_ret where in reality this temperature
     drops. It also implicitly assumes that the temperature drops in the network are small and thus
     satisfy minimum temperature requirements.
@@ -33,7 +33,7 @@ class HeatDemand(_NonStorageComponent):
 
         self.minimum_pressure_drop = 1.0e5  # 1 bar of pressure drop
 
-        # Assumption: milp in/out and extracted is nonnegative
+        # Assumption: heat in/out and extracted is nonnegative
         # Heat in the return (i.e. cold) line is zero
         self.add_variable(Variable, "Heat_demand", min=0.0, nominal=self.Heat_nominal)
         self.add_variable(Variable, "dH", max=0.0)
