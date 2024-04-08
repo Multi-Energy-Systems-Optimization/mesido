@@ -224,6 +224,11 @@ class EmergeTest(
             gas_flow_t0 = sign * self.state_vector(canonical, ensemble_member)[0]
             constraints.append((gas_flow_t0, 0.0, 0.0))
 
+        for es in self.energy_system_components.get("electricity_storage", []):
+            canonical, sign = self.alias_relation.canonical_signed(f"{es}.Stored_electricity")
+            storage_t0 = sign * self.state_vector(canonical, ensemble_member)[0]
+            constraints.append((storage_t0, 0.0, 0.0))
+
         return constraints
 
     def solver_options(self):

@@ -45,5 +45,3 @@ class ElectricityStorage(ElectricityComponent, BaseAsset):
                 / self.ElectricityIn.Power.nominal
             )
         )
-
-        self.add_initial_equation((self.Stored_electricity / self._nominal_stored_electricity))
