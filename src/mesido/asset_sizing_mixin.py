@@ -1900,7 +1900,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         for d in self.energy_system_components.get("electricity_storage", []):
             max_var = self._asset_max_size_map[d]
-            max_power = self.extra_variable(max_var, ensemble_member)
+            max_stored_energy = self.extra_variable(max_var, ensemble_member)
             electricity_stored = self.__state_vector_scaled(
                 f"{d}.Stored_electricity", ensemble_member
             )
@@ -1908,7 +1908,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             constraints.append(
                 (
-                    (np.ones(len(self.times())) * max_power - electricity_stored)
+                    (np.ones(len(self.times())) * max_stored_energy - electricity_stored)
                     / constraint_nominal,
                     0.0,
                     np.inf,

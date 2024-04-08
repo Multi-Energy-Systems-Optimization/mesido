@@ -425,11 +425,10 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
     def __electricity_storage_path_constraints(self, ensemble_member):
         """
-        This function adds the constraints for the electricity commodity at the demand assets. We
-        enforce that a minimum voltage is exactly met together with the power that is carried by
-        the current. By fixing the voltage at the demand we ensure that at the demands
-        P = U * I is met exactly at this point in the network and the power is conservatively
-        in the cables at all locations in the network.
+        This function adds the constraints for the electricity commodity at the storage assets.
+        When charging the electricity_storage acts as an electrcicity demand and during discharging
+        it acts as a electricity producer. The constraints are selected using the bigM method using
+        the boolean for charging and using a charging efficiency during charging.
         """
         constraints = []
         parameters = self.parameters(ensemble_member)
@@ -450,7 +449,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             current_in = self.state(f"{asset}.ElectricityIn.I")
 
             # is_charging is 1 if charging and powerin>0
-            big_m = 2 * self.bounds()[f"{asset}.ElectricityIn.Power"][1]
+            big_m = 2 * max(abs(self.bounds()[f"{asset}.ElectricityIn.Power"]))
             is_charging = self.state(f"{asset}__is_charging")
             constraints.append(((power_in + (1 - is_charging) * big_m) / power_nom, 0.0, np.inf))
             constraints.append(((power_in - is_charging * big_m) / power_nom, -np.inf, 0.0))
