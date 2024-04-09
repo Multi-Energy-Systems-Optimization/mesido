@@ -378,6 +378,8 @@ class _AssetToComponentBase:
             and asset.out_ports is not None
             and len(asset.in_ports) == 1
             and len(asset.out_ports) == 1
+            and isinstance(asset.in_ports[0].carrier, esdl.ElectricityCommodity)
+            and isinstance(asset.out_ports[0].carrier, esdl.ElectricityCommodity)
         ):  # Transformer
             connected_port = asset.out_ports[0].connectedTo[0]
             i_max_out = self._port_to_i_max.get(connected_port, None)

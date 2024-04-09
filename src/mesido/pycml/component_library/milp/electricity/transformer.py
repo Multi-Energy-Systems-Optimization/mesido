@@ -6,9 +6,8 @@ from .._internal import BaseAsset
 
 class Transformer(ElectricityTwoPort, BaseAsset):
     """
-    The electricity source component is used to generate electrical power and provide that to the
-    network. As we set the equality constraint on the demand side we do not have to set any
-    constraint at the source side.
+    The transformer component is used to change the voltage level of the network whilst conserving
+    the power.
     """
 
     def __init__(self, name, **modifiers):
