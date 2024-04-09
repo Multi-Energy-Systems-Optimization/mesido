@@ -5,6 +5,7 @@ from .electricity.electricity_source import ElectricitySource
 from .electricity.electricity_storage import ElectricityStorage
 from .electricity.heat_pump_elec import HeatPumpElec
 from .electricity.solarpv import SolarPV
+from .electricity.transformer import Transformer
 from .electricity.windpark import WindPark
 from .gas.compressor import Compressor
 from .gas.gas_demand import GasDemand
@@ -67,5 +68,6 @@ __all__ = [
     "Pump",
     "HeatSource",
     "SolarPV",
+    "Transformer",
     "WindPark",
 ]

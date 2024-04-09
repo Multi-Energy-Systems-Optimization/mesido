@@ -41,6 +41,7 @@ from mesido.pycml.component_library.milp import (
     Node,
     Pump,
     SolarPV,
+    Transformer,
     WindPark,
 )
 
@@ -1304,6 +1305,46 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._get_cost_figure_modifiers(asset),
         )
         return ElectricityCable, modifiers
+
+    def convert_transformer(self, asset: Asset) -> Tuple[Type[Transformer], MODIFIERS]:
+        """
+        This function converts the Transformer object in esdl to a set of modifiers that can be
+        used in a pycml object. Most important:
+
+        - Setting the length of the cable used for power loss computation.
+        - setting the min and max current.
+
+        Parameters
+        ----------
+        asset : The asset object with its properties.
+
+        Returns
+        -------
+        ElectricityCable class with modifiers
+        """
+        assert asset.asset_type in {"Transformer"}
+        self._get_connected_i_nominal_and_max(asset)
+        i_max_in, i_nom_in, i_max_out, i_nom_out = self._get_connected_i_nominal_and_max(asset)
+        min_voltage_in = asset.in_ports[0].carrier.voltage
+        min_voltage_out = asset.out_ports[0].carrier.voltage
+        max_power = min_voltage_in * i_max_in
+
+        modifiers = dict(
+            power_nominal=max_power / 2.0,
+            min_voltage=min_voltage_in,
+            ElectricityIn=dict(
+                V=dict(min=min_voltage_in, nominal=min_voltage_in),
+                I=dict(min=-i_max_in, max=i_max_in, nominal=i_nom_in),
+                Power=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
+            ),
+            ElectricityOut=dict(
+                V=dict(nominal=min_voltage_out),
+                I=dict(min=-i_max_out, max=i_max_out, nominal=i_nom_out),
+                Power=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
+            ),
+            **self._get_cost_figure_modifiers(asset),
+        )
+        return Transformer, modifiers
 
     def convert_gas_demand(self, asset: Asset) -> Tuple[Type[GasDemand], MODIFIERS]:
         """

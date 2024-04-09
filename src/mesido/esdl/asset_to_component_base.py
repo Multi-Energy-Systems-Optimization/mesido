@@ -105,6 +105,7 @@ class _AssetToComponentBase:
         "Sensor": "skip",
         "Valve": "control_valve",
         "WindPark": "electricity_source",
+        "Transformer": "transformer",
         "CheckValve": "check_valve",
     }
 
@@ -372,7 +373,31 @@ class _AssetToComponentBase:
                 )
 
     def _get_connected_i_nominal_and_max(self, asset: Asset) -> Tuple[float, float]:
-        if asset.in_ports is None:
+        if (
+            asset.in_ports is not None
+            and asset.out_ports is not None
+            and len(asset.in_ports) == 1
+            and len(asset.out_ports) == 1
+        ):  # Transformer
+            connected_port = asset.out_ports[0].connectedTo[0]
+            i_max_out = self._port_to_i_max.get(connected_port, None)
+            i_nom_out = self._port_to_i_nominal.get(connected_port, None)
+            connected_port = asset.in_ports[0].connectedTo[0]
+            i_max_in = self._port_to_i_max.get(connected_port, None)
+            i_nom_in = self._port_to_i_nominal.get(connected_port, None)
+            if i_nom_in is not None and i_nom_out is not None:
+                self._port_to_i_nominal[asset.in_ports[0]] = i_nom_in
+                self._port_to_i_max[asset.in_ports[0]] = i_max_in
+                self._port_to_i_nominal[asset.out_ports[0]] = i_nom_out
+                self._port_to_i_max[asset.out_ports[0]] = i_max_out
+                return i_max_in, i_nom_in, i_max_out, i_nom_out
+            else:
+                raise _RetryLaterException(
+                    f"Could not determine max and nominal current for {asset.asset_type}"
+                    " '{asset.name}'"
+                )
+
+        elif asset.in_ports is None:
             connected_port = asset.out_ports[0].connectedTo[0]
             i_max = self._port_to_i_max.get(connected_port, None)
             i_nom = self._port_to_i_nominal.get(connected_port, None)

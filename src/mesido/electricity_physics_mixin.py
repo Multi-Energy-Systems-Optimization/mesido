@@ -401,6 +401,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             *self.energy_system_components.get("electricity_demand", []),
             *self.energy_system_components.get("heat_pump_elec", []),
             *self.energy_system_components.get("electrolyzer", []),
+            *self.energy_system_components.get("transformer", []),
         ]:
             min_voltage = parameters[f"{elec_demand}.min_voltage"]
             voltage = self.state(f"{elec_demand}.ElectricityIn.V")
