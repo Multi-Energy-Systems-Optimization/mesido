@@ -12,6 +12,8 @@ class HeatPort(HeatComponent, Connector):
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
 
+        self.carrier_id = -1
+
         self.add_variable(Variable, "Heat")
         self.add_variable(Variable, "Q")
         self.add_variable(Variable, "H")

@@ -315,9 +315,9 @@ class HeatProblemTvarDisableHEX(
 if __name__ == "__main__":
     solution = run_optimization_problem(
         HeatProblem,
-        esdl_file_name="heat_exchanger.esdl",
+        esdl_file_name="network_with_parties.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,
-        input_timeseries_file="timeseries_import.xml",
+        input_timeseries_file="timeseries.csv",
     )
     results = solution.extract_results()

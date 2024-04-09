@@ -21,6 +21,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(**kwargs)
         self.__hn_component_types = None
+        self.__owners = None
 
     def pre(self):
         """
@@ -314,7 +315,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
 
             # Find the components in model, detection by string
             # (name.component_type: type)
-            component_types = sorted({v for k, v in string_parameters.items()})
+            component_types = sorted({v for k, v in string_parameters.items() if "component_type" in k})
 
             components = {}
             for c in component_types:
@@ -325,6 +326,28 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
             self.__hn_component_types = components
 
         return self.__hn_component_types
+
+    @property
+    def energy_system_owners(self):
+        if self.__owners is None:
+            # Create the dictionary once after that it will be available
+            string_parameters = self.string_parameters(0)
+
+            # Find the components in model, detection by string
+            # (name.component_type: type)
+            owners = sorted({v for k, v in string_parameters.items() if "owner" in k})
+
+            ownership_dict = {}
+            for c in owners:
+                ownership_dict[c] = sorted(
+                    {k.split(".")[0] for k, v in string_parameters.items() if v == c}
+                )
+
+            ownership_dict.pop("__", None)
+
+            self.__owners = ownership_dict
+
+        return self.__owners
 
     @property
     def energy_system_topology(self) -> Topology:

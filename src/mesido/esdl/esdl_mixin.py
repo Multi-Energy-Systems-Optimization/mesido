@@ -148,9 +148,14 @@ class ESDLMixin(
         self._override_gas_pipe_classes = dict()
         self.override_gas_pipe_classes()
 
+        self.__connections = self.__model.get_connections()
+
         self.name_to_esdl_id_map = dict()
 
         super().__init__(*args, **kwargs)
+
+    def get_connections(self):
+        return self.__connections
 
     @property
     def esdl_bytes_string(self) -> bytes:

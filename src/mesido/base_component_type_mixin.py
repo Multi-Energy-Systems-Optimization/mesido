@@ -20,6 +20,14 @@ class BaseComponentTypeMixin:
         """
         raise NotImplementedError
 
+    @property
+    @abstractmethod
+    def energy_system_owners(self) -> Dict[str, str]:
+        """
+        This method return a dict with the components structured by owner.
+        """
+        raise NotImplementedError
+
     def energy_system_components_get(self, list_types: list) -> list:
         components = []
         for component_type in list_types:

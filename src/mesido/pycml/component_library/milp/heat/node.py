@@ -20,6 +20,7 @@ class Node(HeatComponent, BaseAsset):
 
         self.n = 2
         assert self.n >= 2
+        self.carrier_id = -5
 
         self.add_variable(HeatPort, "HeatConn", self.n)
         self.add_variable(Variable, "H")
@@ -31,3 +32,6 @@ class Node(HeatComponent, BaseAsset):
         for i in range(1, self.n + 1):
             self.add_equation(self.HeatConn[i].H - self.H)
             # Q and Heat to be set in the mixin
+
+        for i in range(1, self.n + 1):
+            self.HeatConn[i].carrier_id = self.carrier_id
