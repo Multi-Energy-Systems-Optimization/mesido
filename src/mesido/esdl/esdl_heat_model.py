@@ -15,6 +15,7 @@ from mesido.pycml.component_library.milp import (
     AirWaterHeatPump,
     CheckValve,
     ColdDemand,
+    Compressor,
     ControlValve,
     ElectricityCable,
     ElectricityDemand,
@@ -1494,8 +1495,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
     def convert_gas_substation(self, asset: Asset) -> Tuple[Type[GasSubstation], MODIFIERS]:
         """
-        This function converts the GasTankStorage object in esdl to a set of modifiers that can be
-        used in a pycml object.
+        This function converts the PressureReducingValve object in esdl to a set of modifiers that
+        can be used in a pycml object.
 
         Parameters
         ----------
@@ -1505,11 +1506,13 @@ class AssetToHeatComponent(_AssetToComponentBase):
         -------
         GasTankStorage class with modifiers
         """
-        assert asset.asset_type in {"GasConversion"}
+        assert asset.asset_type in {"GasConversion", "PressureReducingValve"}
 
         q_nom_in, q_nom_out = self._get_connected_q_nominal(asset)
         density_in = self.get_density(asset.name, asset.in_ports[0].carrier)
         density_out = self.get_density(asset.name, asset.out_ports[0].carrier)
+
+        assert density_in >= density_out
 
         modifiers = dict(
             Q_nominal_in=q_nom_in,
@@ -1522,6 +1525,39 @@ class AssetToHeatComponent(_AssetToComponentBase):
         )
 
         return GasSubstation, modifiers
+
+    def convert_compressor(self, asset: Asset) -> Tuple[Type[Compressor], MODIFIERS]:
+        """
+        This function converts the Compressor object in esdl to a set of modifiers that can be
+        used in a pycml object.
+
+        Parameters
+        ----------
+        asset : The asset object with its properties.
+
+        Returns
+        -------
+        GasTankStorage class with modifiers
+        """
+        assert asset.asset_type in {"Compressor"}
+
+        q_nom_in, q_nom_out = self._get_connected_q_nominal(asset)
+        density_in = self.get_density(asset.name, asset.in_ports[0].carrier)
+        density_out = self.get_density(asset.name, asset.out_ports[0].carrier)
+
+        assert density_out >= density_in
+
+        modifiers = dict(
+            Q_nominal_in=q_nom_in,
+            Q_nominal_out=q_nom_out,
+            density_in=density_in,
+            density_out=density_out,
+            GasIn=dict(Q=dict(nominal=q_nom_in), mass_flow=dict(nominal=q_nom_in * density_in)),
+            GasOut=dict(Q=dict(nominal=q_nom_out), mass_flow=dict(nominal=q_nom_out * density_out)),
+            **self._get_cost_figure_modifiers(asset),
+        )
+
+        return Compressor, modifiers
 
 
 class ESDLHeatModel(_ESDLModelBase):

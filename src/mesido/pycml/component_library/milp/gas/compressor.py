@@ -4,16 +4,15 @@ from .gas_base import GasTwoPort
 from .._internal import BaseAsset
 
 
-class GasSubstation(GasTwoPort, BaseAsset):
+class Compressor(GasTwoPort, BaseAsset):
     """
-    A gas substation that reduces the pressure level of the flow
-    (basically pressure reducinng valve).
+    A gas compressor increases the pressure level of the flow.
     """
 
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
 
-        self.component_type = "gas_substation"
+        self.component_type = "compressor"
         self.min_head = 30.0
 
         self.Q_nominal_in = nan

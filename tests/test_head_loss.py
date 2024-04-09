@@ -738,7 +738,58 @@ class TestHeadLoss(TestCase):
         results = solution.extract_results()
         parameters = solution.parameters(0)
 
-        assert parameters["Pipe1.pressure"] != parameters["Pipe2.pressure"]
+        demand_matching_test(solution, results)
+
+        assert parameters["Pipe1.pressure"] >= parameters["Pipe2.pressure"]
+
+        for pipe in solution.energy_system_components.get("gas_pipe", []):
+            dh = results[f"{pipe}.dH"]
+            vel = results[f"{pipe}.Q"] / (np.pi * (parameters[f"{pipe}.diameter"] / 2.0) ** 2)
+            for i in range(len(solution.times())):
+                analytical_dh = (
+                    vel[i]
+                    / solution.gas_network_settings["maximum_velocity"]
+                    * darcy_weisbach.head_loss(
+                        solution.gas_network_settings["maximum_velocity"],
+                        parameters[f"{pipe}.diameter"],
+                        parameters[f"{pipe}.length"],
+                        solution.energy_system_options()["wall_roughness"],
+                        20.0,
+                        network_type=NetworkSettings.NETWORK_TYPE_GAS,
+                        pressure=parameters[f"{pipe}.pressure"],
+                    )
+                )
+                np.testing.assert_allclose(abs(dh[i]), abs(analytical_dh), atol=1.0e-6)
+
+    def test_compressor(self):
+        """
+        Test to check if the gas compressor increases the pressure and the head loss computation
+        are correctly performed at the two pressure levels.
+
+        Checks:
+        - Demand matching ensuring that there is flow
+        - That the two pipes are at two different pressure levels
+        _ That the pipes have the expected head loss given their reference pressures
+        """
+        import models.multiple_gas_carriers.src.run_multiple_gas_carriers as example
+        from models.multiple_gas_carriers.src.run_multiple_gas_carriers import GasProblem
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        solution = run_optimization_problem(
+            GasProblem,
+            base_folder=base_folder,
+            esdl_file_name="compressor.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries.csv",
+        )
+        results = solution.extract_results()
+        parameters = solution.parameters(0)
+
+        demand_matching_test(solution, results)
+
+        assert parameters["Pipe1.pressure"] <= parameters["Pipe2.pressure"]
 
         for pipe in solution.energy_system_components.get("gas_pipe", []):
             dh = results[f"{pipe}.dH"]

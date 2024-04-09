@@ -86,7 +86,7 @@ class GasProblem(
 if __name__ == "__main__":
     elect = run_optimization_problem(
         GasProblem,
-        esdl_file_name="multiple_carriers.esdl",
+        esdl_file_name="compressor.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,
         input_timeseries_file="timeseries.csv",

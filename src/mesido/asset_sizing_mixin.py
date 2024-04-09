@@ -863,6 +863,11 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             lb = 0.0 if parameters[f"{asset_name}.state"] == 2 else ub
             _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
 
+        for asset_name in self.energy_system_components.get("compressor", []):
+            ub = bounds[f"{asset_name}.GasIn.Q"][1]
+            lb = 0.0 if parameters[f"{asset_name}.state"] == 2 else ub
+            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
+
         for asset_name in self.energy_system_components.get("electrolyzer", []):
             ub = bounds[f"{asset_name}.ElectricityIn.Power"][1]
             lb = 0.0 if parameters[f"{asset_name}.state"] == 2 else ub
