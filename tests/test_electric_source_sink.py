@@ -200,3 +200,77 @@ class TestMILPElectricSourceSink(TestCase):
                 results[f"{demand}.ElectricityIn.Power"],
                 atol=1.0e-3,
             )
+
+    def test_transformer(self):
+        """
+
+
+        Checks:
+        -
+
+        """
+
+        import models.unit_cases_electricity.source_sink_cable.src.example as example
+        from models.unit_cases_electricity.source_sink_cable.src.example import (
+            ElectricityProblem,
+        )
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        solution = run_optimization_problem(
+            ElectricityProblem,
+            base_folder=base_folder,
+            esdl_file_name="transformer.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries.csv",
+        )
+        results = solution.extract_results()
+        parameters = solution.parameters(0)
+
+        # check power conservation in transformer
+        np.testing.assert_allclose(
+            results["Transformer_0185.ElectricityIn.Power"],
+            results["Transformer_0185.ElectricityOut.Power"],
+            atol=1.0e-3,
+        )
+
+        # Check that the cables have two different voltage levels
+        assert (
+            parameters["ElectricityDemand_2af6.min_voltage"]
+            != parameters["Transformer_0185.min_voltage"]
+        )
+
+        np.testing.assert_allclose(
+            parameters["Transformer_0185.min_voltage"],
+            results["ElectricityCable_1fe5.ElectricityOut.V"],
+            atol=-1.0e-3,
+        )
+        np.testing.assert_allclose(
+            parameters["ElectricityDemand_2af6.min_voltage"],
+            results["ElectricityCable_22c9.ElectricityOut.V"],
+            atol=1.0e-3,
+        )
+
+        for demand in solution.energy_system_components.get("electricity_demand", []):
+            np.testing.assert_allclose(
+                results[f"{demand}.ElectricityIn.V"],
+                parameters[f"{demand}.min_voltage"],
+                atol=1.0e-3,
+            )
+            np.testing.assert_allclose(
+                results[f"{demand}.ElectricityIn.V"] * results[f"{demand}.ElectricityIn.I"],
+                results[f"{demand}.ElectricityIn.Power"],
+                atol=1.0e-3,
+            )
+        for demand in solution.energy_system_components.get("transformer", []):
+            np.testing.assert_allclose(
+                results[f"{demand}.ElectricityIn.V"],
+                parameters[f"{demand}.min_voltage"],
+                atol=1.0e-3,
+            )
+            np.testing.assert_allclose(
+                results[f"{demand}.ElectricityIn.V"] * results[f"{demand}.ElectricityIn.I"],
+                results[f"{demand}.ElectricityIn.Power"],
+                atol=1.0e-3,
+            )

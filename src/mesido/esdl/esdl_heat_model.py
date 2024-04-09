@@ -1334,13 +1334,13 @@ class AssetToHeatComponent(_AssetToComponentBase):
             min_voltage=min_voltage_in,
             ElectricityIn=dict(
                 V=dict(min=min_voltage_in, nominal=min_voltage_in),
-                I=dict(min=-i_max_in, max=i_max_in, nominal=i_nom_in),
-                Power=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
+                I=dict(min=0.0, max=i_max_in, nominal=i_nom_in),
+                Power=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
             ),
             ElectricityOut=dict(
                 V=dict(nominal=min_voltage_out),
-                I=dict(min=-i_max_out, max=i_max_out, nominal=i_nom_out),
-                Power=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
+                I=dict(min=0.0, max=i_max_out, nominal=i_nom_out),
+                Power=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
             ),
             **self._get_cost_figure_modifiers(asset),
         )
