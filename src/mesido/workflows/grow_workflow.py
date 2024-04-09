@@ -304,7 +304,6 @@ class EndScenarioSizing(
 
         super().priority_started(priority)
 
-
     def priority_completed(self, priority):
         super().priority_completed(priority)
 
@@ -320,9 +319,8 @@ class EndScenarioSizing(
                 self.solver_stats,
             )
         )
-        if priority == 1 and self.objective_value>1e-12:
+        if priority == 1 and self.objective_value > 1e-12:
             raise RuntimeError("The heating demand is not matched")
-
 
     def post(self):
         # In case the solver fails, we do not get in priority_completed(). We
