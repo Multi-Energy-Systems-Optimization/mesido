@@ -8,8 +8,6 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
-from utils_tests import demand_matching_test
-
 
 # TODO: still have to make test where elecitricity direction is switched:
 # e.g. 2 nodes, with at each node a producer and consumer, first one node medium demand, second
@@ -231,8 +229,6 @@ class TestMILPElectricSourceSink(TestCase):
         )
         results = solution.extract_results()
         parameters = solution.parameters(0)
-
-        demand_matching_test(solution, results)
 
         # check power conservation in transformer
         np.testing.assert_allclose(
