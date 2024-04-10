@@ -24,6 +24,7 @@ class ElectricityNode(ElectricityComponent, BaseAsset):
 
         self.n = 2
         assert self.n >= 2
+        self.carrier_id = -1
 
         self.add_variable(ElectricityPort, "ElectricityConn", self.n)
         self.add_variable(Variable, "V", min=0.0, nominal=self.voltage_nominal)
@@ -33,3 +34,6 @@ class ElectricityNode(ElectricityComponent, BaseAsset):
 
         # Because the orientation of the connected cables are important to setup the energy
         # conservation, these constraints are added in the mixin.
+
+        for i in range(1, self.n + 1):
+            self.ElectricityConn[i].carrier_id = self.carrier_id

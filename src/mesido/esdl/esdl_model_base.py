@@ -302,16 +302,19 @@ class _ESDLModelBase(_Model):
                         continue
                     if isinstance(port.carrier, esdl.HeatCommodity):
                         self.connect(getattr(component, node_suf)[i], port_map[connected_to.id])
-                        model_connections.append([getattr(component, node_suf)[i].name, port_map[connected_to.id].name])
+                        model_connections.append(
+                            [getattr(component, node_suf)[i].name, port_map[connected_to.id].name]
+                        )
                         connections.add(conn)
                         i += 1
                     elif isinstance(port.carrier, esdl.ElectricityCommodity):
                         self.connect(
-                            getattr(component, elec_node_suf)[i].name, port_map[connected_to.id].name
+                            getattr(component, elec_node_suf)[i], port_map[connected_to.id]
                         )
                         model_connections.append(
                             [
-                                getattr(component, elec_node_suf)[i].name, port_map[connected_to.id].name
+                                getattr(component, elec_node_suf)[i].name,
+                                port_map[connected_to.id].name,
                             ]
                         )
                         connections.add(conn)
@@ -319,7 +322,10 @@ class _ESDLModelBase(_Model):
                     elif isinstance(port.carrier, esdl.GasCommodity):
                         self.connect(getattr(component, gas_node_suf)[i], port_map[connected_to.id])
                         model_connections.append(
-                            [getattr(component, gas_node_suf)[i].name, port_map[connected_to.id].name]
+                            [
+                                getattr(component, gas_node_suf)[i].name,
+                                port_map[connected_to.id].name,
+                            ]
                         )
                         connections.add(conn)
                         i += 1
@@ -361,7 +367,9 @@ class _ESDLModelBase(_Model):
                         continue
 
                     self.connect(port_map[port.id], port_map[connected_to.id])
-                    model_connections.append([port_map[port.id].name, port_map[connected_to.id].name])
+                    model_connections.append(
+                        [port_map[port.id].name, port_map[connected_to.id].name]
+                    )
                     connections.add(conn)
 
         self.__connections = model_connections

@@ -93,6 +93,26 @@ class AssetToHeatComponent(_AssetToComponentBase):
         """
         return dict(rho=self.rho, cp=self.cp)
 
+    def merge_modifiers(self, a: dict, b: dict):
+        """
+        Recursive (not in place) merge of dictionaries.
+
+        :param a: Base dictionary to merge.
+        :param b: Dictionary to merge on top of base dictionary.
+        :return: Merged dictionary
+        """
+        b = b.copy()
+
+        for k, v in a.items():
+            if isinstance(v, dict):
+                b_node = b.setdefault(k, {})
+                b[k] = self.merge_modifiers(v, b_node)
+            else:
+                if k not in b:
+                    b[k] = v
+
+        return b
+
     def get_density(self, asset_name, carrier):
         # TODO: gas carrier temperature still needs to be resolved.
         # The default of 20°C is also used in the head_loss_class. Thus, when updating ensure it
@@ -125,11 +145,22 @@ class AssetToHeatComponent(_AssetToComponentBase):
         return density * 1.0e3  # to convert from kg/m3 to g/m3
 
     def get_owner(self, asset):
-        return dict(owner=asset.attributes["isOwnedBy"].name if asset.attributes["isOwnedBy"] is not None else "NoOwner")
+        return dict(
+            owner=(
+                asset.attributes["isOwnedBy"].name
+                if asset.attributes["isOwnedBy"] is not None
+                else "NoOwner"
+            )
+        )
 
     def get_carrier_id(self, asset, node=False, n=0):
         if not node:
-            if asset.asset_type == "HeatExchange" or asset.asset_type == "HeatPump":
+            if (
+                asset.in_ports is not None
+                and asset.out_ports is not None
+                and len(asset.in_ports) >= 2
+                and len(asset.out_ports) >= 2
+            ):  ## heat pump and heat exchanger
                 carrier = asset.global_properties["carriers"][asset.in_ports[0].carrier.id]
                 if "Prim" in asset.in_ports[0].name:
                     prim_in_id = carrier["id_number_mapping"]
@@ -140,6 +171,11 @@ class AssetToHeatComponent(_AssetToComponentBase):
                     prim_in_id = carrier["id_number_mapping"]
                 else:
                     sec_in_id = carrier["id_number_mapping"]
+                if len(asset.in_ports) == 3:
+                    if "Prim" in asset.in_ports[1].name:
+                        prim_in_id = carrier["id_number_mapping"]
+                    else:
+                        sec_in_id = carrier["id_number_mapping"]
                 carrier = asset.global_properties["carriers"][asset.out_ports[0].carrier.id]
                 if "Prim" in asset.out_ports[0].name:
                     prim_out_id = carrier["id_number_mapping"]
@@ -151,15 +187,13 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 else:
                     sec_out_id = carrier["id_number_mapping"]
                 ids = dict(
-                        Primary=dict(
-                            HeatIn=dict(carrier_id=prim_in_id),
-                            HeatOut=dict(carrier_id=prim_out_id)
-                        ),
-                        Secondary=dict(
-                            HeatIn=dict(carrier_id=sec_in_id),
-                            HeatOut=dict(carrier_id=sec_out_id)
-                        ),
-                    )
+                    Primary=dict(
+                        HeatIn=dict(carrier_id=prim_in_id), HeatOut=dict(carrier_id=prim_out_id)
+                    ),
+                    Secondary=dict(
+                        HeatIn=dict(carrier_id=sec_in_id), HeatOut=dict(carrier_id=sec_out_id)
+                    ),
+                )
                 return ids
             else:
                 ids = dict()
@@ -172,11 +206,17 @@ class AssetToHeatComponent(_AssetToComponentBase):
                     id_number = carrier["id_number_mapping"]
                     port = f"{carrier['type'].capitalize()}Out"
                     ids[port] = dict(carrier_id=id_number)
-                except KeyError:
-                    carrier = asset.global_properties["carriers"][asset.in_ports[0].carrier.id]
-                    id_number = carrier["id_number_mapping"]
-                    port = f"{carrier['type'].capitalize()}In"
-                    ids[port] = dict(carrier_id=id_number)
+                except:
+                    try:
+                        carrier = asset.global_properties["carriers"][asset.in_ports[0].carrier.id]
+                        id_number = carrier["id_number_mapping"]
+                        port = f"{carrier['type'].capitalize()}In"
+                        ids[port] = dict(carrier_id=id_number)
+                    except:
+                        carrier = asset.global_properties["carriers"][asset.out_ports[0].carrier.id]
+                        id_number = carrier["id_number_mapping"]
+                        port = f"{carrier['type'].capitalize()}Out"
+                        ids[port] = dict(carrier_id=id_number)
                 return ids
         else:
             ids = dict()
@@ -579,7 +619,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 **self._get_cost_figure_modifiers(asset),
                 **self.get_owner(asset),
             )
-            modifiers.update(self.get_carrier_id(asset))
+            modifiers = self.merge_modifiers(modifiers, self.get_carrier_id(asset))
 
             return GasPipe, modifiers
 
@@ -640,7 +680,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         if "T_ground" in asset.attributes.keys():
             modifiers["T_ground"] = asset.attributes["T_ground"]
 
-        modifiers.update(self.get_carrier_id(asset))
+        modifiers = self.merge_modifiers(modifiers, self.get_carrier_id(asset))
 
         return HeatPipe, modifiers
 
@@ -684,7 +724,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._rho_cp_modifiers,
             **self.get_owner(asset),
         )
-        modifiers.update(self.get_carrier_id(asset))
+        modifiers = self.merge_modifiers(modifiers, self.get_carrier_id(asset))
 
         return Pump, modifiers
 
@@ -816,7 +856,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **params,
             **self.get_owner(asset),
         )
-        modifiers.update(self.get_carrier_id(asset))
+        modifiers = self.merge_modifiers(modifiers, self.get_carrier_id(asset))
         return HeatExchanger, modifiers
 
     def convert_heat_pump(
@@ -900,7 +940,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **params,
             **self.get_owner(asset),
         )
-        modifiers.update(self.get_carrier_id(asset))
+        modifiers = self.merge_modifiers(modifiers, self.get_carrier_id(asset))
         if len(asset.in_ports) == 2:
             return HeatPump, modifiers
         elif len(asset.in_ports) == 3:
@@ -975,7 +1015,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._get_cost_figure_modifiers(asset),
             **self.get_owner(asset),
         )
-        modifiers.update(self.get_carrier_id(asset))
+        modifiers = self.merge_modifiers(modifiers, self.get_carrier_id(asset))
 
         if asset.asset_type == "GeothermalSource":
             modifiers["nr_of_doublets"] = asset.attributes["aggregationCount"]
@@ -1087,7 +1127,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._get_cost_figure_modifiers(asset),
             **self.get_owner(asset),
         )
-        modifiers.update(self.get_carrier_id(asset))
+        modifiers = self.merge_modifiers(modifiers, self.get_carrier_id(asset))
 
         # if no maxStorageTemperature is specified we assume a "regular" HT ATES model
         if (
@@ -1162,7 +1202,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._rho_cp_modifiers,
             **self.get_owner(asset),
         )
-        modifiers.update(self.get_carrier_id(asset))
+        modifiers = self.merge_modifiers(modifiers, self.get_carrier_id(asset))
 
         return ControlValve, modifiers
 
@@ -1196,7 +1236,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._rho_cp_modifiers,
             **self.get_owner(asset),
         )
-        modifiers.update(self.get_carrier_id(asset))
+        modifiers = self.merge_modifiers(modifiers, self.get_carrier_id(asset))
 
         return CheckValve, modifiers
 
@@ -1238,7 +1278,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._get_cost_figure_modifiers(asset),
             **self.get_owner(asset),
         )
-        modifiers.update(self.get_carrier_id(asset))
+        modifiers = self.merge_modifiers(modifiers, self.get_carrier_id(asset))
 
         return ElectricityDemand, modifiers
 
@@ -1276,7 +1316,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._get_cost_figure_modifiers(asset),
             **self.get_owner(asset),
         )
-        modifiers.update(self.get_carrier_id(asset))
+        modifiers = self.merge_modifiers(modifiers, self.get_carrier_id(asset))
 
         if asset.asset_type == "ElectricityProducer":
             return ElectricitySource, modifiers
@@ -1326,7 +1366,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._get_cost_figure_modifiers(asset),
             **self.get_owner(asset),
         )
-        modifiers.update(self.get_carrier_id(asset))
+        modifiers = self.merge_modifiers(modifiers, self.get_carrier_id(asset))
 
         return ElectricityStorage, modifiers
 
@@ -1365,11 +1405,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
             if isinstance(x, esdl.esdl.OutPort):
                 sum_out += len(x.connectedTo)
 
+        try:
+            carrier = asset.global_properties["carriers"][asset.in_ports[0].carrier.id]
+        except:
+            carrier = asset.global_properties["carriers"][asset.out_ports[0].carrier.id]
+
         modifiers = dict(
             voltage_nominal=nominal_voltage,
+            carrier_id=carrier["id_number_mapping"],
             n=sum_in + sum_out,
             **self.get_owner(asset),
-            **self.get_carrier_id(asset, node=True, n=sum_in + sum_out)
         )
 
         return ElectricityNode, modifiers
@@ -1416,7 +1461,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._get_cost_figure_modifiers(asset),
             **self.get_owner(asset),
         )
-        modifiers.update(self.get_carrier_id(asset))
+        modifiers = self.merge_modifiers(modifiers, self.get_carrier_id(asset))
         return ElectricityCable, modifiers
 
     def convert_gas_demand(self, asset: Asset) -> Tuple[Type[GasDemand], MODIFIERS]:
@@ -1461,7 +1506,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._get_cost_figure_modifiers(asset),
             **self.get_owner(asset),
         )
-        modifiers.update(self.get_carrier_id(asset))
+        modifiers = self.merge_modifiers(modifiers, self.get_carrier_id(asset))
 
         return GasDemand, modifiers
 
@@ -1502,7 +1547,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._get_cost_figure_modifiers(asset),
             **self.get_owner(asset),
         )
-        modifiers.update(self.get_carrier_id(asset))
+        modifiers = self.merge_modifiers(modifiers, self.get_carrier_id(asset))
 
         return GasSource, modifiers
 
@@ -1571,7 +1616,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._get_cost_figure_modifiers(asset),
             **self.get_owner(asset),
         )
-        modifiers.update(self.get_carrier_id(asset))
+        modifiers = self.merge_modifiers(modifiers, self.get_carrier_id(asset))
 
         return Electrolyzer, modifiers
 
@@ -1611,7 +1656,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._get_cost_figure_modifiers(asset),
             **self.get_owner(asset),
         )
-        modifiers.update(self.get_carrier_id(asset))
+        modifiers = self.merge_modifiers(modifiers, self.get_carrier_id(asset))
 
         return GasTankStorage, modifiers
 
@@ -1644,7 +1689,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._get_cost_figure_modifiers(asset),
             **self.get_owner(asset),
         )
-        modifiers.update(self.get_carrier_id(asset))
+        modifiers = self.merge_modifiers(modifiers, self.get_carrier_id(asset))
 
         return GasSubstation, modifiers
 

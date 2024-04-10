@@ -20,7 +20,7 @@ class Node(HeatComponent, BaseAsset):
 
         self.n = 2
         assert self.n >= 2
-        self.carrier_id = -5
+        self.carrier_id = -1
 
         self.add_variable(HeatPort, "HeatConn", self.n)
         self.add_variable(Variable, "H")

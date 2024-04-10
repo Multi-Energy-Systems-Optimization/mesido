@@ -315,7 +315,9 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
 
             # Find the components in model, detection by string
             # (name.component_type: type)
-            component_types = sorted({v for k, v in string_parameters.items() if "component_type" in k})
+            component_types = sorted(
+                {v for k, v in string_parameters.items() if "component_type" in k}
+            )
 
             components = {}
             for c in component_types:

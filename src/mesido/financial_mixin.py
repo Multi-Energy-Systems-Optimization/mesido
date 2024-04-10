@@ -77,6 +77,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
         # Variable for realized revenue
         self._asset_revenue_map = {}
+        self._asset_revenue_variable_port_map = {}
         self._asset_cost_map = {}
         self.__asset_revenue_var = {}
         self.__asset_revenue_nominals = {}
@@ -102,44 +103,58 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
             # Create revenue variable for every demand type asset
             for asset in assets:
-                if asset in [*self.energy_system_components.get("heat_demand", []),
-                             *self.energy_system_components.get("gas_demand", []),
-                             *self.energy_system_components.get("electricity_demand", []),
-                             ]:
+                if asset in [
+                    *self.energy_system_components.get("heat_demand", []),
+                    *self.energy_system_components.get("gas_demand", []),
+                    *self.energy_system_components.get("electricity_demand", []),
+                ]:
                     var_name = f"{asset}__revenue"
                     self._asset_revenue_map[asset] = var_name
                     self.__asset_revenue_var[var_name] = ca.MX.sym(var_name)
                     nominal_power = None
                     for _id, attr in self.get_electricity_carriers().items():
-                        nominal_power = self.variable_nominal(f"{asset}.Electricity_demand")
                         if attr["id_number_mapping"] == parameters[f"{asset}.id_mapping_carrier"]:
                             carrier_name = attr["name"]
-                    for _id, attr in self.get_gas_carriers().items():
-                        nominal_power = self.variable_nominal(f"{asset}.Gas_demand")
-                        if attr["id_number_mapping"] == parameters[f"{asset}.id_mapping_carrier"]:
-                            carrier_name = attr["name"]
-                    for _id, attr in self.get_heat_carriers().items():
-                        nominal_power = self.variable_nominal(f"{asset}.Heat_demand")
-                        if attr["id_number_mapping"] == parameters[f"{asset}.id_mapping_carrier"]:
-                            carrier_name = attr["name"]
-                    self.__asset_revenue_nominals[var_name] = (
-                            max(
-                                np.mean(self.get_timeseries(f"{carrier_name}.price_profile").values)
-                                * nominal_power,
-                                1.0e2,
+                            nominal_power = self.variable_nominal(f"{asset}.Electricity_demand")
+                            self._asset_revenue_variable_port_map[var_name] = (
+                                f"{asset}.ElectricityIn.Power"
                             )
-                            if nominal_power is not None
-                            else 1.0e2
+                    for _id, attr in self.get_gas_carriers().items():
+                        if attr["id_number_mapping"] == parameters[f"{asset}.id_mapping_carrier"]:
+                            carrier_name = attr["name"]
+                            nominal_power = self.variable_nominal(f"{asset}.Gas_demand")
+                            self._asset_revenue_variable_port_map[var_name] = f"{asset}.GasIn.Q"
+                    for _id, attr in self.get_heat_carriers().items():
+                        if attr["id_number_mapping"] == parameters[f"{asset}.id_mapping_carrier"]:
+                            carrier_name = attr["name"]
+                            nominal_power = self.variable_nominal(f"{asset}.Heat_demand")
+                            self._asset_revenue_variable_port_map[var_name] = f"{asset}.HeatIn.Heat"
+                    self.__asset_revenue_nominals[var_name] = (
+                        max(
+                            np.mean(self.get_timeseries(f"{carrier_name}.price_profile").values)
+                            * nominal_power,
+                            1.0e2,
                         )
-                    self.__asset_revenue_bounds[var_name] = (0., np.inf)
+                        if nominal_power is not None
+                        else 1.0e2
+                    )
+                    self.__asset_revenue_bounds[var_name] = (0.0, np.inf)
 
             # Find the assets that exchange energy with other owners and create a revenue variable for them as well
             for asset in assets:
                 conn = self.get_connections()
                 for connection in conn:
                     if asset == connection[0].split(".")[0] or asset == connection[1].split(".")[0]:
-                        other_asset = connection[0].split(".")[0] if asset == connection[1].split(".")[0] else connection[1].split(".")[0]
-                        port = connection[1].split(".")[-1] if asset == connection[1].split(".")[0] else connection[0].split(".")[-1]
+                        other_asset = (
+                            connection[0].split(".")[0]
+                            if asset == connection[1].split(".")[0]
+                            else connection[1].split(".")[0]
+                        )
+                        port = (
+                            connection[1].split(".")[-1]
+                            if asset == connection[1].split(".")[0]
+                            else connection[0].split(".")[-1]
+                        )
                         if other_asset not in assets:
                             if "In" in port:
                                 var_name = f"{asset}__cost"
@@ -151,37 +166,47 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                             nominal_power = None
                             carrier_name = None
                             for _id, attr in self.get_electricity_carriers().items():
-                                nominal_power = self.variable_nominal(f"{asset}.Electricity_demand")
-                                if attr["id_number_mapping"] == parameters[
-                                    f"{asset}.id_mapping_carrier"]:
+                                self._asset_revenue_variable_port_map[var_name] = (
+                                    f"{asset}.{port}.Power"
+                                )
+                                if (
+                                    attr["id_number_mapping"]
+                                    == parameters[f"{asset}.{port}.carrier_id"]
+                                ):
+                                    nominal_power = self.variable_nominal(f"{asset}.{port}.Power")
                                     carrier_name = attr["name"]
                             for _id, attr in self.get_gas_carriers().items():
-                                nominal_power = self.variable_nominal(f"{asset}.Gas_demand")
-                                if attr["id_number_mapping"] == parameters[
-                                    f"{asset}.id_mapping_carrier"]:
+                                self._asset_revenue_variable_port_map[var_name] = (
+                                    f"{asset}.{port}.Q"
+                                )
+                                if (
+                                    attr["id_number_mapping"]
+                                    == parameters[f"{asset}.{port}.carrier_id"]
+                                ):
+                                    nominal_power = self.variable_nominal(f"{asset}.{port}.Q")
                                     carrier_name = attr["name"]
                             for _id, attr in self.get_heat_carriers().items():
-                                nominal_power = self.variable_nominal(f"{asset}.{port}.Heat")
-                                if attr["id_number_mapping"] == parameters[
-                                    f"{asset}.{port}.carrier_id"]:
+                                self._asset_revenue_variable_port_map[var_name] = (
+                                    f"{asset}.{port}.Heat"
+                                )
+                                if (
+                                    attr["id_number_mapping"]
+                                    == parameters[f"{asset}.{port}.carrier_id"]
+                                ):
+                                    nominal_power = self.variable_nominal(f"{asset}.{port}.Heat")
                                     carrier_name = attr["name"]
                             self.__asset_revenue_nominals[var_name] = (
                                 max(
                                     np.mean(
-                                        self.get_timeseries(f"{carrier_name}.price_profile").values)
+                                        self.get_timeseries(f"{carrier_name}.price_profile").values
+                                    )
                                     * nominal_power,
                                     1.0e2,
                                 )
-                                if nominal_power is not None and carrier_name is not None
+                                if nominal_power is not None
                                 else 1.0e2
                             )
-                            self.__asset_revenue_bounds[var_name] = (0., np.inf)
-
-
-
-
-
-
+                            self.__asset_revenue_bounds[var_name] = (0.0, np.inf)
 
         # Making the cost variables; fixed_operational_cost, variable_operational_cost,
         # installation_cost and investment_cost
@@ -1328,32 +1353,41 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         # TODO: add fixed price default from ESDL in case no price profile is defined.
         parameters = self.parameters(ensemble_member)
 
-        for demand in [
-            *self.energy_system_components.get("gas_demand", []),
-            *self.energy_system_components.get("electricity_demand", []),
-        ]:
+        for asset, variable_revenue_var in self._asset_revenue_map.items():
 
             carrier_name = None
+            port = None
             for _id, attr in self.get_electricity_carriers().items():
-                if attr["id_number_mapping"] == parameters[f"{demand}.id_mapping_carrier"]:
+                if (
+                    attr["id_number_mapping"]
+                    == parameters[
+                        f"{asset}.{self._asset_revenue_variable_port_map[variable_revenue_var].split('.')[-2]}.carrier_id"
+                    ]
+                ):
                     carrier_name = attr["name"]
+                    port = f"{self._asset_revenue_variable_port_map[variable_revenue_var]}"
             for _id, attr in self.get_gas_carriers().items():
-                if attr["id_number_mapping"] == parameters[f"{demand}.id_mapping_carrier"]:
+                if (
+                    attr["id_number_mapping"]
+                    == parameters[
+                        f"{asset}.{self._asset_revenue_variable_port_map[variable_revenue_var].split('.')[-2]}.carrier_id"
+                    ]
+                ):
                     carrier_name = attr["name"]
+                    port = f"{self._asset_revenue_variable_port_map[variable_revenue_var]}"
+            for _id, attr in self.get_heat_carriers().items():
+                if (
+                    attr["id_number_mapping"]
+                    == parameters[
+                        f"{asset}.{self._asset_revenue_variable_port_map[variable_revenue_var].split('.')[-2]}.carrier_id"
+                    ]
+                ):
+                    carrier_name = attr["name"]
+                    port = f"{self._asset_revenue_variable_port_map[variable_revenue_var]}"
             if carrier_name is not None:
                 price_profile = self.get_timeseries(f"{carrier_name}.price_profile").values
+                energy_flow = self.__state_vector_scaled(f"{port}", ensemble_member)
 
-                if demand in self.energy_system_components.get("gas_demand", []):
-                    energy_flow = self.__state_vector_scaled(
-                        f"{demand}.Gas_demand_mass_flow", ensemble_member  # g/s
-                    )
-
-                elif demand in self.energy_system_components.get("electricity_demand", []):
-                    energy_flow = self.__state_vector_scaled(
-                        f"{demand}.Electricity_demand", ensemble_member
-                    )
-
-                variable_revenue_var = self._asset_revenue_map[demand]
                 variable_revenue = self.extra_variable(variable_revenue_var, ensemble_member)
                 nominal = self.variable_nominal(variable_revenue_var)
 

@@ -449,7 +449,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             current_in = self.state(f"{asset}.ElectricityIn.I")
 
             # is_charging is 1 if charging and powerin>0
-            big_m = 2 * max(abs(self.bounds()[f"{asset}.ElectricityIn.Power"]))
+            big_m = 2 * max(abs(np.asarray(self.bounds()[f"{asset}.ElectricityIn.Power"])))
             is_charging = self.state(f"{asset}__is_charging")
             constraints.append(((power_in + (1 - is_charging) * big_m) / power_nom, 0.0, np.inf))
             constraints.append(((power_in - is_charging * big_m) / power_nom, -np.inf, 0.0))
