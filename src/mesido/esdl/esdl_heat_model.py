@@ -422,6 +422,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._get_cost_figure_modifiers(asset),
             **self.get_owner(asset),
         )
+        modifiers = self.merge_modifiers(modifiers, self.get_carrier_id(asset))
 
         return HeatBuffer, modifiers
 
@@ -461,6 +462,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._get_cost_figure_modifiers(asset),
             **self.get_owner(asset),
         )
+        modifiers = self.merge_modifiers(modifiers, self.get_carrier_id(asset))
 
         return HeatDemand, modifiers
 
@@ -497,6 +499,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._get_cost_figure_modifiers(asset),
             **self.get_owner(asset),
         )
+        modifiers = self.merge_modifiers(modifiers, self.get_carrier_id(asset))
 
         return ColdDemand, modifiers
 

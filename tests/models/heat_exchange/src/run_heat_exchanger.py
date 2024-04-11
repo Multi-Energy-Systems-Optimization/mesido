@@ -1,8 +1,10 @@
+from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
 from mesido.physics_mixin import PhysicsMixin
+from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.io.write_output import ScenarioOutput
 
 import numpy as np
@@ -70,7 +72,8 @@ class MinimizeSourcesHeatGoal(Goal):
 class HeatProblem(
     ScenarioOutput,
     _GoalsAndOptions,
-    PhysicsMixin,
+    ESDLAdditionalVarsMixin,
+    TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
     GoalProgrammingMixin,
     ESDLMixin,
@@ -208,7 +211,7 @@ class HeatProblemTvar(
 
 class HeatProblemTvarDisableHEX(
     _GoalsAndOptions,
-    PhysicsMixin,
+    TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
     GoalProgrammingMixin,
     ESDLMixin,
