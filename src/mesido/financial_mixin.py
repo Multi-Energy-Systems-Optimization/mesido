@@ -4,6 +4,7 @@ from abc import abstractmethod
 import casadi as ca
 
 from mesido.base_component_type_mixin import BaseComponentTypeMixin
+from mesido.heat_network_common import NodeConnectionDirection
 
 import numpy as np
 
@@ -1368,7 +1369,26 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     except KeyError:
                         price_profile = np.ones(len(self.times()))
                     energy_flow = self.__state_vector_scaled(f"{port}", ensemble_member)
-
+                    energy_flow_sign = 1.
+                    if "In" in port and asset not in [*self.energy_system_components.get("heat_demand", []),
+                                                      *self.energy_system_components.get("gas_demand", []),
+                                                      *self.energy_system_components.get("electricity_demand", [])]:
+                        energy_flow_sign = -1.
+                    if asset in self.energy_system_topology.nodes.keys():
+                        port_number = int([x for x in port if x.isdigit()][-1])
+                        if self.energy_system_topology.nodes[f"{asset}"][port_number][
+                            1] == NodeConnectionDirection.IN:
+                            energy_flow_sign = -1.
+                    if asset in self.energy_system_topology.gas_nodes.keys():
+                        port_number = int([x for x in port if x.isdigit()][-1])
+                        if self.energy_system_topology.gas_nodes[f"{asset}"][port_number][
+                            1] == NodeConnectionDirection.IN:
+                            energy_flow_sign = -1.
+                    if asset in self.energy_system_topology.busses.keys():
+                        port_number = int([x for x in port if x.isdigit()][-1])
+                        if self.energy_system_topology.busses[f"{asset}"][port_number][
+                            1] == NodeConnectionDirection.IN:
+                            energy_flow_sign = -1.
                     variable_revenue = self.extra_variable(variable_revenue_var, ensemble_member)
                     nominal = self.variable_nominal(variable_revenue_var)
 
@@ -1377,7 +1397,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     for i in range(1, len(self.times())):
                         sum += price_profile[i] * energy_flow[i] * timesteps[i - 1]
 
-                    constraints.append(((variable_revenue - sum) / (nominal), 0.0, 0.0))
+                    constraints.append(((variable_revenue - sum * energy_flow_sign) / (nominal), 0.0, 0.0))
 
         return constraints
 
