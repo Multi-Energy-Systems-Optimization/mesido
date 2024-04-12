@@ -61,6 +61,7 @@ class TargetDemandGoal(Goal):
     def function(self, optimization_problem, ensemble_member):
         return optimization_problem.state(self.state)
 
+
 # -------------------------------------------------------------------------------------------------
 # Step 2:
 # Match the maximum producer profiles
@@ -77,8 +78,6 @@ class TargetProducerGoal(Goal):
 
     def function(self, optimization_problem, ensemble_member):
         return optimization_problem.state(self.state)
-
-
 
 
 # -------------------------------------------------------------------------------------------------
@@ -120,19 +119,25 @@ class MaximizeDemandGoalMerit(Goal):
     def function(self, optimization_problem, ensemble_member):
         return optimization_problem.state(f"{self.demand_variable}")
 
+
 # -------------------------------------------------------------------------------------------------
 class _GoalsAndOptions:
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        #Demand matching
+        # Demand matching
         map_demand = {
-            "electricity_demand": {"target": "target_electricity_demand", "state": "Electricity_demand"},
-            "gas_demand": {"target": "target_gas_demand","state": "Gas_demand"},
+            "electricity_demand": {
+                "target": "target_electricity_demand",
+                "state": "Electricity_demand",
+            },
+            "gas_demand": {"target": "target_gas_demand", "state": "Gas_demand"},
         }
         map_prod = {
-            "electricity_source": {"target": "maximum_electricity_source",
-                                   "state": "Electricity_source"},
+            "electricity_source": {
+                "target": "maximum_electricity_source",
+                "state": "Electricity_source",
+            },
             "gas_source": {"target": "maximum_gas_source", "state": "Gas_source"},
         }
         for type, type_values in [*map_demand.items(), *map_prod.items()]:
@@ -145,7 +150,6 @@ class _GoalsAndOptions:
                         goals.append(TargetDemandGoal(state, target))
                     else:
                         goals.append(TargetProducerGoal(state, target))
-
 
         # Producer profile matching
         # for producer in self.energy_system_components.get("electricity_source", []):
@@ -218,11 +222,11 @@ class MultiCommoditySimulator(
             "gas_tank_storage": "Gas_tank_flow",
             "electrolyzer": "Gas_mass_flow_out",
         }
-        #TODO: check if conversion priority needs to be set for production or consumption, currently it assumes production
+        # TODO: check if conversion priority needs to be set for production or consumption, currently it assumes production
 
         assets_to_include = {}
         asset_variable_map = {}
-        available_timeseries = [t.split('.')[0] for t in self.io.get_timeseries_names()]
+        available_timeseries = [t.split(".")[0] for t in self.io.get_timeseries_names()]
         for group, asset_types in asset_types_to_include.items():
             for asset_type in asset_types:
                 for asset in self.energy_system_components.get(asset_type, []):
@@ -234,16 +238,22 @@ class MultiCommoditySimulator(
                     asset_variable_map[asset] = type_variable_map[asset_type]
 
         assets_list = [asset for a_type in assets_to_include.values() for asset in a_type]
-        unused_asset = [asset.asset_type for asset in self.esdl_assets.values() if
-                        asset.asset_type not in assets_without_control if
-                        asset.name not in assets_list if asset.name not in available_timeseries]
-        assert len(
-            unused_asset) == 0, f"Asset types: {unused_asset} are not included in controls of the simulator"
+        unused_asset = [
+            asset.asset_type
+            for asset in self.esdl_assets.values()
+            if asset.asset_type not in assets_without_control
+            if asset.name not in assets_list
+            if asset.name not in available_timeseries
+        ]
+        assert (
+            len(unused_asset) == 0
+        ), f"Asset types: {unused_asset} are not included in controls of the simulator"
 
-        asset_info = {"assets_to_include": assets_to_include,
-                      "assets_to_include_list": assets_list,
-                      "asset_variable_map": asset_variable_map,
-                      }
+        asset_info = {
+            "assets_to_include": assets_to_include,
+            "assets_to_include_list": assets_list,
+            "asset_variable_map": asset_variable_map,
+        }
         return asset_info
 
     def __create_merit_path_goals(self, asset_info, max_value_merit, index_start_of_priority):
@@ -255,15 +265,18 @@ class MultiCommoditySimulator(
         for asset in assets_list:
             index_s = asset_merit["asset_name"].index(f"{asset}")
             marginal_priority = (
-                    index_start_of_priority
-                    + max_value_merit
-                    - asset_merit["merit_order"][index_s]
+                index_start_of_priority + max_value_merit - asset_merit["merit_order"][index_s]
             )
-            assert marginal_priority >= index_start_of_priority, "Priorities assigned must be smaller than the total number of producers"
+            assert (
+                marginal_priority >= index_start_of_priority
+            ), "Priorities assigned must be smaller than the total number of producers"
             variable_name = f"{asset}.{asset_variable_map[asset]}"
 
             # if asset not in self.energy_system_components.get("electricity_demand", []):
-            if asset in [*assets_to_include.get("source",[]), *assets_to_include.get("conversion",[])]:
+            if asset in [
+                *assets_to_include.get("source", []),
+                *assets_to_include.get("conversion", []),
+            ]:
                 goals.append(
                     MinimizeSourcesGoalMerit(
                         variable_name,
@@ -297,11 +310,11 @@ class MultiCommoditySimulator(
                 # Marginal costs for discharging > marginal cost for charging
                 index_s = asset_merit["asset_name"].index(f"{asset}_discharge")
                 marginal_priority = (
-                        index_start_of_priority
-                        + max_value_merit
-                        - asset_merit["merit_order"][index_s]
+                    index_start_of_priority + max_value_merit - asset_merit["merit_order"][index_s]
                 )
-                assert marginal_priority >= index_start_of_priority, "Priorities assigned must be smaller than the total number of producers"
+                assert (
+                    marginal_priority >= index_start_of_priority
+                ), "Priorities assigned must be smaller than the total number of producers"
                 variable_name = f"{asset}.{asset_variable_map[asset]}"
 
                 goals.append(
@@ -314,7 +327,8 @@ class MultiCommoditySimulator(
                 )
             else:
                 raise Exception(
-                    f"No goal was set for {asset}, while a priority was provided. This asset group still has to be added to the goals.")
+                    f"No goal was set for {asset}, while a priority was provided. This asset group still has to be added to the goals."
+                )
         return goals
 
     def __merit_path_goals(self):
@@ -333,8 +347,9 @@ class MultiCommoditySimulator(
 
         # Storage: charge priority (1) higher than discharge priority (2)
         #
-        asset_info = (
-            self.__create_asset_list_controls(asset_types_to_include, assets_without_control))
+        asset_info = self.__create_asset_list_controls(
+            asset_types_to_include, assets_without_control
+        )
 
         asset_info["asset_merit"] = self.__merit_controls(asset_info["assets_to_include_list"])
         max_value_merit = max(asset_info["asset_merit"]["merit_order"])
@@ -346,6 +361,7 @@ class MultiCommoditySimulator(
         goals = self.__create_merit_path_goals(asset_info, max_value_merit, index_start_of_priority)
 
         return goals
+
     def path_goals(self):
         goals = super().path_goals().copy()
 
@@ -371,7 +387,7 @@ class MultiCommoditySimulator(
         """
         constraints = super().constraints(ensemble_member)
 
-        #TODO: cyclic constraints
+        # TODO: cyclic constraints
 
         return constraints
 
@@ -415,7 +431,7 @@ class MultiCommoditySimulator(
         set_merit = set(attributes["merit_order"])
         order_prio = list(set_merit)
         order_prio.sort()
-        map_prio = dict(zip(order_prio, list(range(1,len(set_merit)+1))))
+        map_prio = dict(zip(order_prio, list(range(1, len(set_merit) + 1))))
         a = [map_prio[v] for v in attributes["merit_order"]]
         attributes["merit_order"] = a
         return attributes
@@ -444,6 +460,7 @@ class MultiCommoditySimulatorHIGHS(MultiCommoditySimulator):
         options["solver"] = "highs"
 
         return options
+
 
 # -------------------------------------------------------------------------------------------------
 @main_decorator
