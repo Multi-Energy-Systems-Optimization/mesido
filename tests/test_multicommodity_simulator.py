@@ -3,13 +3,13 @@ from unittest import TestCase
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.workflows.multicommodity_simulator_workflow import MultiCommoditySimulator
 
 import numpy as np
 
 from rtctools.util import run_optimization_problem
 
-from mesido.workflows.multicommodity_simulator_workflow import MultiCommoditySimulator
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
+from utils_tests import demand_matching_test, energy_conservation_test
 
 
 def checks_all_mc_simulations(solution, results):
@@ -55,7 +55,7 @@ class TestMultiCommoditySimulator(TestCase):
         solution = run_optimization_problem(
             MultiCommoditySimulator,
             base_folder=base_folder,
-            esdl_file_name="Electric_bus4_priorities.esdl",
+            esdl_file_name="Electric_bus4_import_priorities.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_2.csv",
@@ -110,12 +110,19 @@ class TestMultiCommoditySimulator(TestCase):
         dem_2 = results["ElectricityDemand_281a.Electricity_demand"]
 
         # check producer with highest priority (lowest marginal costs is maximizing production) is
-        # producing at max capacity, except when demand profile + max demand of other demand is lower than prod_2 profile and max capacity prod_1
+        # producing at max capacity, except when demand profile + max demand of other demand is
+        # lower than prod_2 profile and max capacity prod_1
         np.testing.assert_allclose(
-            prod_1[1:], bounds["ElectricityProducer_a215.Electricity_source"][1], atol=1e-3, rtol=1e-6
+            prod_1[1:],
+            bounds["ElectricityProducer_a215.Electricity_source"][1],
+            atol=1e-3,
+            rtol=1e-6,
         )
         np.testing.assert_allclose(
-            prod_1[0], bounds["ElectricityDemand_281a.Electricity_demand"][1] + dem_1[0] - prod_2[0], atol=1e-3, rtol=1e-6
+            prod_1[0],
+            bounds["ElectricityDemand_281a.Electricity_demand"][1] + dem_1[0] - prod_2[0],
+            atol=1e-3,
+            rtol=1e-6,
         )
 
         # check demand with lowest marginal cost is only consuming if electricity left from producer
@@ -146,9 +153,10 @@ class TestMultiCommoditySimulator(TestCase):
         dem_1 = results["ElectricityDemand_e527.Electricity_demand"]
         dem_2 = results["ElectricityDemand_281a.Electricity_demand"]
 
-        # check producer with highest marginal cost (prod_2) is only producing to match demand profile, not for demand_2 (low marginal cost)
+        # check producer with highest marginal cost (prod_2) is only producing to match demand
+        # profile, not for demand_2 (low marginal cost)
         prod_2_target = dem_1 - prod_1
-        prod_2_target[prod_2_target<0] = 0
+        prod_2_target[prod_2_target < 0] = 0
         np.testing.assert_allclose(prod_2, prod_2_target, atol=1e-3, rtol=1e-6)
 
         # check demand with lowest marginal cost is only consuming if electricity left from producer

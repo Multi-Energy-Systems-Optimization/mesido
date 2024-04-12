@@ -7,9 +7,6 @@ from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.head_loss_class import HeadLossOption
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.io.write_output import ScenarioOutput
-from mesido.workflows.utils.adapt_profiles import (
-    adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
-)
 from mesido.workflows.utils.helpers import main_decorator
 
 import numpy as np
@@ -26,8 +23,6 @@ from rtctools.optimization.single_pass_goal_programming_mixin import (
     SinglePassGoalProgrammingMixin,
 )
 from rtctools.util import run_optimization_problem
-
-from rtctools.optimization.timeseries import Timeseries
 
 DB_HOST = "172.17.0.2"
 DB_PORT = 8086
@@ -125,7 +120,7 @@ class _GoalsAndOptions:
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        # Demand matching
+        # Demand and producer matching
         map_demand = {
             "electricity_demand": {
                 "target": "target_electricity_demand",
@@ -150,15 +145,6 @@ class _GoalsAndOptions:
                         goals.append(TargetDemandGoal(state, target))
                     else:
                         goals.append(TargetProducerGoal(state, target))
-
-        # Producer profile matching
-        # for producer in self.energy_system_components.get("electricity_source", []):
-        #     bound = self.bounds()[f"{producer}.Electricity_source"][1]
-        #     if isinstance(bound, Timeseries):  #tobe replaced by: producer in self.__set_point_map.keys():
-        #         target = self.get_timeseries(f"{producer}.maximum_electricity_source")
-        #         state = f"{producer}.Electricity_source"
-        #
-        #         goals.append(TargetProducerGoal(state, target))
 
         return goals
 
@@ -222,7 +208,8 @@ class MultiCommoditySimulator(
             "gas_tank_storage": "Gas_tank_flow",
             "electrolyzer": "Gas_mass_flow_out",
         }
-        # TODO: check if conversion priority needs to be set for production or consumption, currently it assumes production
+        # TODO: check if conversion priority needs to be set for production or consumption,
+        #  currently it assumes production
 
         assets_to_include = {}
         asset_variable_map = {}
@@ -327,7 +314,8 @@ class MultiCommoditySimulator(
                 )
             else:
                 raise Exception(
-                    f"No goal was set for {asset}, while a priority was provided. This asset group still has to be added to the goals."
+                    f"No goal was set for {asset}, while a priority was provided. This asset group "
+                    f"still has to be added to the goals."
                 )
         return goals
 
@@ -342,8 +330,10 @@ class MultiCommoditySimulator(
 
         assets_without_control = ["Pipe", "ElectricityCable", "Joint", "Bus"]
 
-        # TODO also include other assets than producers, e.g. storage, conversion and possible demand for the ones without a profile
-        # TODO exclude producers from merit order if they have a profile, even if a marginal cost is set
+        # TODO also include other assets than producers, e.g. storage, conversion and possible
+        #  demand for the ones without a profile
+        # TODO exclude producers from merit order if they have a profile, even if a marginal cost
+        #  is set
 
         # Storage: charge priority (1) higher than discharge priority (2)
         #
@@ -400,7 +390,8 @@ class MultiCommoditySimulator(
         assets = self.esdl_assets
         for a in assets.values():
             if a.name in assets_list:
-                # if a.asset_type != "ElectricityDemand" or f"{a.name}.target_electricity_demand" not in self.io.get_timeseries_names():
+                # if a.asset_type != "ElectricityDemand" or f"{a.name}.target_electricity_demand"
+                # not in self.io.get_timeseries_names():
                 attributes["asset_name"].append(a.name)
                 try:
                     attributes["merit_order"].append(
