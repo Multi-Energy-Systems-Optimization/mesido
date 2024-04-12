@@ -47,38 +47,31 @@ class TestMultiCommoditySimulator(TestCase):
         heat_to_discharge_test(solution, results)
 
         for prod in solution.energy_system_components.get("electricity_source"):
-            energy_demand = results[f"{prod}.Electricity_source"]
-            print(prod, energy_demand)
+            prod_profile_name = f"{prod}.maximum_electricity_source"
+            energy_prod = results[f"{prod}.Electricity_source"]
+            if prod_profile_name in solution.io.get_timeseries_names():
+                target = solution.get_timeseries(prod_profile_name)
+                np.testing.assert_allclose(target, energy_prod, atol=1.0e-3, rtol=1.0e-6)
+            print(prod, energy_prod)
 
         for demand in solution.energy_system_components.get("electricity_demand"):
-            target = solution.get_timeseries(f"{demand}.target_electricity_demand")
             energy_demand = results[f"{demand}.Electricity_demand"]
-            print(demand, target, energy_demand)
+            if f"{demand}.target_electricity_demand" in solution.io.get_timeseries_names():
+                target = solution.get_timeseries(f"{demand}.target_electricity_demand")
+                print(demand, target, energy_demand)
+            else:
+                print(demand, energy_demand)
+
 
         # Check that producer 1 (merit oder = 2) is not used
         # and is does not contribute to the heating demands 1, 2 and 3
         #TODO: these tests need to be updated for elec/gas
-        np.testing.assert_allclose(
-            results["HeatProducer_1.Heat_source"],
-            0.0,
-            err_msg="Heat producer 1 should be completely disabled "
-            ", due to producer 2 being sufficient for "
-            "the total milp demand (incl. milp losses) and it has the 1st priority for usage",
-            rtol=1.0e-3,
-            atol=1.0e-3,
-        )
-        # Check ATES
-        np.testing.assert_array_less(
-            results["ATES_033c.Heat_ates"][0],
-            0.0,
-            err_msg="ATES should not be delivering milp to the network in the 1st time step",
-        )
 
 
 if __name__ == "__main__":
     import time
 
     start_time = time.time()
-    a = TestNetworkSimulator()
-    a.test_network_simulator()
+    a = TestMultiCommoditySimulator()
+    a.test_multi_commodity_simulator()
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
