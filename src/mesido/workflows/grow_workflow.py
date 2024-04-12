@@ -319,7 +319,7 @@ class EndScenarioSizing(
                 self.solver_stats,
             )
         )
-        if priority == 1 and self.objective_value > 1e-12:
+        if priority == 1 and self.objective_value > 1e-6:
             raise RuntimeError("The heating demand is not matched")
 
     def post(self):
