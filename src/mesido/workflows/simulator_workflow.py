@@ -312,7 +312,9 @@ class NetworkSimulator(
 class NetworkSimulatorHIGHS(NetworkSimulator):
     def post(self):
         super().post()
-        self._write_updated_esdl(self.get_energy_system_copy(), optimizer_sim=True)
+        self._write_updated_esdl(
+            self._ESDLMixin__energy_system_handler.energy_system, optimizer_sim=True
+        )
 
     def solver_options(self):
         options = super().solver_options()

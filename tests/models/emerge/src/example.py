@@ -282,7 +282,7 @@ class EmergeTest(
         super().post()
 
         # Optimized ESDL
-        self._write_updated_esdl(self.get_energy_system_copy())
+        self._write_updated_esdl(self._ESDLMixin__energy_system_handler.energy_system)
 
         self._save_json = False
 

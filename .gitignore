@@ -27,6 +27,7 @@ src/*.egg-info
 
 # Kobus van Rooyen
 run_pipe_compare.py
+*_kvr_*
 .venv/
 # Ignore ESDL files created by workflows
 *_GrowOptimized.esdl 

@@ -39,7 +39,9 @@ class TestHEX(TestCase):
         class HeatProblemPost(HeatProblem):
             # def post(self):
             #     super().post()
-            #     self._write_updated_esdl(self.get_energy_system_copy(), optimizer_sim=True)
+            #     self._write_updated_esdl(
+            #         self._ESDLMixin__energy_system_handler.energy_system, optimizer_sim=True
+            #     )
 
             def energy_system_options(self):
                 options = super().energy_system_options()
@@ -130,7 +132,9 @@ class TestHP(TestCase):
         class HeatProblemPost(HeatProblem):
             # def post(self):
             #     super().post()
-            #     self._write_updated_esdl(self.get_energy_system_copy(), optimizer_sim=True)
+            #     self._write_updated_esdl(
+            #         self._ESDLMixin__energy_system_handler.energy_system, optimizer_sim=True
+            #     )
 
             def energy_system_options(self):
                 options = super().energy_system_options()

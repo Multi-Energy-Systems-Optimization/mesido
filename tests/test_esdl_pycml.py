@@ -56,3 +56,12 @@ class TestESDL(TestCase):
     #     np.testing.assert_allclose(
     #         case_python._objective_values[0], case_esdl._objective_values, rtol=1e-5, atol=1e-5
     #     )
+
+
+if __name__ == "__main__":
+    import time
+
+    start_time = time.time()
+    a = TestESDL()
+    a.test_basic_source_and_demand_heat()
+    temp = 0

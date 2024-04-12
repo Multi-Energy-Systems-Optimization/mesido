@@ -304,7 +304,15 @@ class InfluxDBProfileReader(BaseProfileReader):
                     "profile for each asset"
                 )
 
-        index = pd.DatetimeIndex(data=[x[0] for x in time_series_data.profile_data_list])
+        if not time_series_data.profile_data_list[0][0].tzinfo:
+            index = pd.DatetimeIndex(
+                data=[x[0] for x in time_series_data.profile_data_list],
+                tz=datetime.timezone.utc,
+            )
+            logger.warning("No timezone specified for the input profile: default UTC has been used")
+        else:
+            index = pd.DatetimeIndex(data=[x[0] for x in time_series_data.profile_data_list])
+
         data = [x[1] for x in time_series_data.profile_data_list]
         series = pd.Series(data=data, index=index)
         self._df[profile.id] = series
@@ -441,25 +449,34 @@ class ProfileReaderFromFile(BaseProfileReader):
         data = pd.read_csv(self._file_path)
         try:
             timeseries_import_times = [
-                datetime.datetime.strptime(entry.replace("Z", ""), "%Y-%m-%d %H:%M:%S")
+                datetime.datetime.strptime(entry.replace("Z", ""), "%Y-%m-%d %H:%M:%S").replace(
+                    tzinfo=datetime.timezone.utc
+                )
                 for entry in data["DateTime"].to_numpy()
             ]
         except ValueError:
             try:
                 timeseries_import_times = [
-                    datetime.datetime.strptime(entry.replace("Z", ""), "%Y-%m-%dT%H:%M:%S")
+                    datetime.datetime.strptime(entry.replace("Z", ""), "%Y-%m-%dT%H:%M:%S").replace(
+                        tzinfo=datetime.timezone.utc
+                    )
                     for entry in data["DateTime"].to_numpy()
                 ]
             except ValueError:
                 try:
                     timeseries_import_times = [
-                        datetime.datetime.strptime(entry.replace("Z", ""), "%d-%m-%Y %H:%M")
+                        datetime.datetime.strptime(
+                            entry.replace("Z", ""), "%d-%m-%Y %H:%M"
+                        ).replace(tzinfo=datetime.timezone.utc)
                         for entry in data["DateTime"].to_numpy()
                     ]
                 except ValueError:
                     raise _ProfileParserException("Date time string is not in a supported format")
 
+        logger.warning("Timezone specification not supported yet: default UTC has been used")
+
         self._reference_datetimes = timeseries_import_times
+
         for ensemble_member in range(ensemble_size):
             for component_type, var_name in self.component_type_to_var_name_map.items():
                 for component_name in energy_system_components.get(component_type, []):
@@ -500,6 +517,11 @@ class ProfileReaderFromFile(BaseProfileReader):
             )
 
         # Convert timeseries timestamps to seconds since t0 for internal use
+        if not data.times[0].tzinfo:
+            for ii in range(len(data.times)):
+                data.times[ii] = data.times[ii].replace(tzinfo=datetime.timezone.utc)
+            logger.warning("No timezone specified for the input profile: default UTC has been used")
+
         self._reference_datetimes = data.times
 
         # Offer input timeseries to IOMixin

@@ -1,3 +1,4 @@
+import datetime
 import json
 import logging
 import numbers
@@ -22,7 +23,6 @@ import numpy as np
 
 import pandas as pd
 
-import pytz
 
 from rtctools.optimization.timeseries import Timeseries
 
@@ -966,7 +966,7 @@ class ScenarioOutput(TechnoEconomicMixin):
 
                     for ii in range(len(self.times())):
                         if not self.io.datetimes[ii].tzinfo:
-                            data_row = [pytz.utc.localize(self.io.datetimes[ii])]
+                            data_row = [self.io.datetimes[ii].replace(tzinfo=datetime.timezone.utc)]
                         else:
                             data_row = [self.io.datetimes[ii]]
 
@@ -998,11 +998,19 @@ class ScenarioOutput(TechnoEconomicMixin):
                                 profiles.profile_header.append(variable)
                                 # Set profile database attributes for the esdl asset
                                 if not self.io.datetimes[0].tzinfo:
-                                    start_date_time = pytz.utc.localize(self.io.datetimes[0])
+                                    start_date_time = self.io.datetimes[0].replace(
+                                        tzinfo=datetime.timezone.utc
+                                    )
+                                    logger.warning(
+                                        "No timezone specified for the output profile: default UTC"
+                                        f"has been used for asset {asset_name} variable {variable}"
+                                    )
                                 else:
                                     start_date_time = self.io.datetimes[0]
                                 if not self.io.datetimes[-1].tzinfo:
-                                    end_date_time = pytz.utc.localize(self.io.datetimes[-1])
+                                    end_date_time = self.io.datetimes[-1].replace(
+                                        tzinfo=datetime.timezone.utc
+                                    )
                                 else:
                                     end_date_time = self.io.datetimes[-1]
 
