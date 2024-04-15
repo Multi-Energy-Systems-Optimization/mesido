@@ -72,6 +72,7 @@ class _AssetToComponentBase:
     }
     # A map of the esdl assets to the asset types in pycml
     component_map = {
+        "Airco": "airco",
         "ATES": "ates",
         "Battery": "electricity_storage",
         "Bus": "electricity_node",

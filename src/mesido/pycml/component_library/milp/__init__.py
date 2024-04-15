@@ -15,6 +15,7 @@ from .gas.gas_source import GasSource
 from .gas.gas_substation import GasSubstation
 from .gas.gas_tank_storage import GasTankStorage
 from .heat.air_water_heat_pump import AirWaterHeatPump
+from .heat.airco import Airco
 from .heat.ates import ATES
 from .heat.check_valve import CheckValve
 from .heat.cold_demand import ColdDemand
@@ -35,6 +36,7 @@ from .heat.pump import Pump
 from .multicommodity.electrolyzer import Electrolyzer
 
 __all__ = [
+    "Airco",
     "AirWaterHeatPump",
     "ATES",
     "HeatBuffer",
