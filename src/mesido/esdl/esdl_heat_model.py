@@ -485,6 +485,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 mass_flow=dict(
                     min=-q_max * density, max=q_max * density, nominal=q_nominal * density
                 ),
+                Hydraulic_power=dict(nominal=q_nominal * pressure),
             )
             modifiers = dict(
                 length=length,
@@ -1369,6 +1370,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         # DO not remove due usage in future
         # hydrogen_specfic_energy = 20.0 / 1.0e6
         density = self.get_density(asset.name, asset.in_ports[0].carrier)
+        pressure = asset.in_ports[0].carrier.pressure * 1.0e5
         q_nominal = self._get_connected_q_nominal(asset)
 
         modifiers = dict(
@@ -1384,6 +1386,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                     nominal=self._get_connected_q_nominal(asset),
                 ),
                 mass_flow=dict(nominal=density * q_nominal),
+                Hydraulic_power=dict(nominal=q_nominal * pressure)
             ),
             **self._get_cost_figure_modifiers(asset),
         )
@@ -1409,6 +1412,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         q_nominal = self._get_connected_q_nominal(asset)
         density_value = self.get_density(asset.name, asset.out_ports[0].carrier)
+        pressure = asset.out_ports[0].carrier.pressure * 1.0e5
 
         bounds_nominals_mass_flow = dict(
             min=0.0,
@@ -1423,6 +1427,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             GasOut=dict(
                 Q=dict(nominal=q_nominal),
                 mass_flow=bounds_nominals_mass_flow,
+                Hydraulic_power=dict(nominal=q_nominal * pressure),
             ),
             **self._get_cost_figure_modifiers(asset),
         )
@@ -1515,6 +1520,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         # hydrogen_specific_energy = 20.0 / 1.0e6  # kg/Wh
         q_nominal = self._get_connected_q_nominal(asset)
         density = self.get_density(asset.name, asset.in_ports[0].carrier)
+        pressure = asset.in_ports[0].carrier.pressure * 1.0e5
 
         modifiers = dict(
             Q_nominal=q_nominal,
@@ -1528,7 +1534,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
             #     min=-self._get_connected_q_max(asset), max=self._get_connected_q_max(asset),
             #     nominal=self._get_connected_q_nominal(asset),
             # )
-            GasIn=dict(Q=dict(nominal=q_nominal), mass_flow=dict(nominal=q_nominal * density)),
+            GasIn=dict(Q=dict(nominal=q_nominal),
+                       mass_flow=dict(nominal=q_nominal * density),
+                       Hydraulic_power=dict(nominal=q_nominal * pressure),
+                       ),
             **self._get_cost_figure_modifiers(asset),
         )
 
@@ -1552,6 +1561,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
         q_nom_in, q_nom_out = self._get_connected_q_nominal(asset)
         density_in = self.get_density(asset.name, asset.in_ports[0].carrier)
         density_out = self.get_density(asset.name, asset.out_ports[0].carrier)
+        pressure_in = asset.in_ports[0].carrier.pressure * 1.0e5
+        pressure_out = asset.out_ports[0].carrier.pressure * 1.0e5
 
         assert density_in >= density_out
 
@@ -1560,8 +1571,14 @@ class AssetToHeatComponent(_AssetToComponentBase):
             Q_nominal_out=q_nom_out,
             density_in=density_in,
             density_out=density_out,
-            GasIn=dict(Q=dict(nominal=q_nom_in), mass_flow=dict(nominal=q_nom_in * density_in)),
-            GasOut=dict(Q=dict(nominal=q_nom_out), mass_flow=dict(nominal=q_nom_out * density_out)),
+            GasIn=dict(Q=dict(nominal=q_nom_in),
+                       mass_flow=dict(nominal=q_nom_in * density_in),
+                       Hydraulic_power=dict(nominal=q_nom_in * pressure_in),
+                       ),
+            GasOut=dict(Q=dict(nominal=q_nom_out),
+                        mass_flow=dict(nominal=q_nom_out * density_out),
+                        Hydraulic_power=dict(nominal=q_nom_out * pressure_out),
+                        ),
             **self._get_cost_figure_modifiers(asset),
         )
 
@@ -1578,13 +1595,15 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         Returns
         -------
-        GasTankStorage class with modifiers
+        Compressor class with modifiers
         """
         assert asset.asset_type in {"Compressor"}
 
         q_nom_in, q_nom_out = self._get_connected_q_nominal(asset)
         density_in = self.get_density(asset.name, asset.in_ports[0].carrier)
         density_out = self.get_density(asset.name, asset.out_ports[0].carrier)
+        pressure_in = asset.in_ports[0].carrier.pressure * 1.0e5
+        pressure_out = asset.out_ports[0].carrier.pressure * 1.0e5
 
         assert density_out >= density_in
 
@@ -1593,8 +1612,14 @@ class AssetToHeatComponent(_AssetToComponentBase):
             Q_nominal_out=q_nom_out,
             density_in=density_in,
             density_out=density_out,
-            GasIn=dict(Q=dict(nominal=q_nom_in), mass_flow=dict(nominal=q_nom_in * density_in)),
-            GasOut=dict(Q=dict(nominal=q_nom_out), mass_flow=dict(nominal=q_nom_out * density_out)),
+            GasIn=dict(Q=dict(nominal=q_nom_in),
+                       mass_flow=dict(nominal=q_nom_in * density_in),
+                       Hydraulic_power=dict(nominal=q_nom_in * pressure_in),
+                       ),
+            GasOut=dict(Q=dict(nominal=q_nom_out),
+                        mass_flow=dict(nominal=q_nom_out * density_out),
+                        Hydraulic_power=dict(nominal=q_nom_out * pressure_out),
+                        ),
             **self._get_cost_figure_modifiers(asset),
         )
 
