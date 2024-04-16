@@ -1178,3 +1178,120 @@ class HeadLossClass:
             )
 
         return constraints
+
+    def _pipe_hydraulic_power_path_constraints(self, optimization_problem, _maximum_total_head_loss, network_settings,
+                                               ensemble_member):
+        """
+        This function adds constraints to compute the hydraulic power that is needed to realize the
+        flow, compensating the pressure drop through the pipe. Similar to the head loss constraints
+        we allow two supported methods. 1) a single linear line between 0 to max velocity. 2) A
+        multiple line inequality approach where one can use the minimize_head_losses == True option
+        to drag down the solution to the actual physical solution.
+
+        Note that the linearizations are made separately from the pressure drop constraints, this is
+        done to avoid "stacked" overestimations.
+        """
+        constraints = []
+        options = optimization_problem.energy_system_options()
+
+        if network_settings["network_type"] == "Heat":
+            pipe_type = "heat_pipe"
+        elif network_settings["network_type"] == "Gas":
+            pipe_type = "gas_pipe"
+        else:
+            raise Exception(f"hydraulic power can not be calculated for network type of {network_settings['network_type']}")
+
+        if network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
+            parameters = optimization_problem.parameters(ensemble_member)
+            components = optimization_problem.energy_system_components
+
+            for pipe in components.get(pipe_type, []):
+                if parameters[f"{pipe}.length"] == 0.0:
+                    # If the pipe does not have a control valve, the head loss is
+                    # forced to zero via bounds. If the pipe _does_ have a control
+                    # valve, then there still is no relationship between the
+                    # discharge and the hydraulic_power.
+                    continue
+
+                head_loss_option = optimization_problem._hn_get_pipe_head_loss_option(
+                    pipe, network_settings, parameters
+                )
+                assert (
+                    head_loss_option != HeadLossOption.NO_HEADLOSS
+                ), "This method should be skipped when NO_HEADLOSS is set."
+
+                discharge = optimization_problem.state(f"{pipe}.Q")
+                hydraulic_power = optimization_problem.state(f"{pipe}.Hydraulic_power")
+                rho = parameters[f"{pipe}.rho"]
+
+                # 0: pipe is connected, 1: pipe is disconnected
+                is_disconnected_var = optimization_problem._pipe_disconnect_map.get(pipe)
+                if is_disconnected_var is None:
+                    is_disconnected = 0.0
+                else:
+                    is_disconnected = optimization_problem.state(is_disconnected_var)
+
+                flow_dir_var = optimization_problem._pipe_to_flow_direct_map[pipe]
+                flow_dir = optimization_problem.state(flow_dir_var)  # 0/1: negative/positive flow direction
+
+                if pipe in optimization_problem._pipe_topo_pipe_class_map:
+                    # Multiple diameter options for this pipe
+                    pipe_classes = optimization_problem._pipe_topo_pipe_class_map[pipe]
+                    max_discharge = max(c.maximum_discharge for c in pipe_classes)
+                    for pc, pc_var_name in pipe_classes.items():
+                        if pc.inner_diameter == 0.0:
+                            continue
+
+                        # Calc max hydraulic power based on maximum_total_head_loss =
+                        # f(max_sum_dh_pipes, max_dh_network_options)
+                        max_total_hydraulic_power = 2.0 * (
+                            rho
+                            * GRAVITATIONAL_CONSTANT
+                            * _maximum_total_head_loss
+                            * max_discharge
+                        )
+
+                        # is_topo_disconnected - 0: pipe selected, 1: pipe disconnected/not selected
+                        # self.__pipe_topo_pipe_class_var - value 0: pipe is not selected, 1: pipe
+                        # is selected
+                        is_topo_disconnected = 1 - optimization_problem.variable(pc_var_name)
+
+                        constraints.extend(
+                            optimization_problem._hn_head_loss_class._hydraulic_power(
+                                pipe,
+                                optimization_problem,
+                                options,
+                                network_settings,
+                                parameters,
+                                discharge,
+                                hydraulic_power,
+                                is_disconnected=is_topo_disconnected + is_disconnected,
+                                big_m=max_total_hydraulic_power,
+                                pipe_class=pc,
+                                flow_dir=flow_dir,
+                            )
+                        )
+                else:
+                    is_topo_disconnected = int(parameters[f"{pipe}.diameter"] == 0.0)
+                    max_total_hydraulic_power = 2.0 * (
+                        rho
+                        * GRAVITATIONAL_CONSTANT
+                        * _maximum_total_head_loss
+                        * parameters[f"{pipe}.area"]
+                        * network_settings["maximum_velocity"]
+                    )
+                    constraints.extend(
+                        optimization_problem._hn_head_loss_class._hydraulic_power(
+                            pipe,
+                            optimization_problem,
+                            options,
+                            network_settings,
+                            parameters,
+                            discharge,
+                            hydraulic_power,
+                            is_disconnected=is_disconnected + is_topo_disconnected,
+                            big_m=max_total_hydraulic_power,
+                            flow_dir=flow_dir,
+                        )
+                    )
+        return constraints
