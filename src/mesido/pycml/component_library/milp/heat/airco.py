@@ -5,11 +5,11 @@ from ._non_storage_component import _NonStorageComponent
 
 class Airco(_NonStorageComponent):
     """
-    The airco component is there to extract thermal power (Heat) out of the network. Typically,
-    this component is used to model aggregated demands.
+    The airco component is there to extract thermal power (Heat) out of the network. This component
+    can also be used to model cold producers, e.g. dry coolers.
 
     The heat to discharge constraints are set in the HeatPhysicsMixin. We enforce that the outgoing
-    temperature of the demand matches the absolute thermal power, Q * cp * rho * T_ret == Heat,
+    temperature of the airco matches the absolute thermal power, Q * cp * rho * T_ret == Heat,
     similar as with the sources. This allows us to guarantee that the flow can always carry the
     heat and that thermal losses are always estimated conservatively, as the heat losses further
     downstream in the network are over-estimated with T_ret where in reality this temperature
