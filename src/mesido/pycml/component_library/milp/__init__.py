@@ -33,6 +33,7 @@ from .heat.low_temperature_ates import LowTemperatureATES
 from .heat.node import Node
 from .heat.pump import Pump
 from .multicommodity.electrolyzer import Electrolyzer
+from .multicommodity.gas_boiler import GasBoiler
 
 __all__ = [
     "AirWaterHeatPump",
@@ -49,6 +50,7 @@ __all__ = [
     "ElectricitySource",
     "ElectricityStorage",
     "Electrolyzer",
+    "GasBoiler",
     "GasDemand",
     "GasNode",
     "GasPipe",

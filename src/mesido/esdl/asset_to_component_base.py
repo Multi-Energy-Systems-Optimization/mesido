@@ -85,7 +85,7 @@ class _AssetToComponentBase:
         "HeatExchange": "heat_exchanger",
         "HeatingDemand": "heat_demand",
         "HeatPump": "heat_pump",
-        "GasHeater": "heat_source",
+        "GasHeater": "gas_boiler",
         "GasProducer": "gas_source",
         "GasDemand": "gas_demand",
         "GasConversion": "gas_substation",
@@ -504,6 +504,30 @@ class _AssetToComponentBase:
                 raise _RetryLaterException(
                     f"Could not determine nominal discharge for {asset.asset_type} '{asset.name}'"
                 )
+        elif len(asset.in_ports) == 2 and len(asset.out_ports) == 1:  # for gas_boiler
+            q_nominals = {}
+            try:
+                for port in asset.in_ports:
+                    connected_port = asset.in_ports[0].connectedTo[0]
+                    if isinstance(port.carrier, esdl.GasCommodity):
+                        q_nominals["Q_nominal_gas"] = self._port_to_q_nominal[connected_port]
+                        self._port_to_q_nominal[port] = q_nominals["Q_nominal_gas"]
+                    elif isinstance(port.carrier, esdl.HeatCommodity):
+                        q_nominals["Q_nominal"] = self._port_to_q_nominal[connected_port]
+                        self._port_to_q_nominal[port] = q_nominals["Q_nominal"]
+                    else:
+                        logger.error(f"{asset.name} has wrong carrier type specified on in port")
+            except KeyError:
+                connected_port = asset.out_ports[0].connectedTo[0]
+                q_nominals["Q_nominal"] = self._port_to_q_nominal.get(connected_port, None)
+
+            if q_nominals["Q_nominal"] is not None:
+                self._port_to_q_nominal[asset.out_ports[0]] = q_nominals["Q_nominal"]
+                return q_nominals
+            else:
+                raise _RetryLaterException(
+                    f"Could not determine nominal discharge for {asset.asset_type} '{asset.name}'"
+                )
         elif len(asset.in_ports) >= 2 and len(asset.out_ports) == 2:
             q_nominals = {}
             for p in asset.in_ports:
@@ -610,9 +634,11 @@ class _AssetToComponentBase:
         Tuple with the supply and return temperature.
         """
 
-        assert len(asset.in_ports) == 1 and len(asset.out_ports) == 1
+        assert len(asset.in_ports) <= 2 and len(asset.out_ports) == 1
 
-        in_carrier = asset.global_properties["carriers"][asset.in_ports[0].carrier.id]
+        for port in asset.in_ports:
+            if isinstance(port.carrier, esdl.HeatCommodity):
+                in_carrier = asset.global_properties["carriers"][port.carrier.id]
         out_carrier = asset.global_properties["carriers"][asset.out_ports[0].carrier.id]
 
         if in_carrier["id"] == out_carrier["id"]:
@@ -667,7 +693,7 @@ class _AssetToComponentBase:
         dict with all the temperatures.
         """
 
-        if len(asset.in_ports) == 1 and len(asset.out_ports) == 1:
+        if len(asset.in_ports) <= 2 and len(asset.out_ports) == 1:
             modifiers = self._get_supply_return_temperatures(asset)
             return modifiers
         elif len(asset.in_ports) >= 2 and len(asset.out_ports) == 2:
