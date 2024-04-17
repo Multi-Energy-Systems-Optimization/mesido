@@ -132,6 +132,10 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
         self._gas_pipe_topo_pipe_class_map = {}
 
+        self.__gas_pipe_disconnect_var = {}
+        self.__gas_pipe_disconnect_var_bounds = {}
+        self._gas_pipe_disconnect_map = {}
+
     def gas_carriers(self):
         """
         This function should be overwritten by the problem and should give a dict with the
@@ -164,6 +168,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                 return bound
 
         bounds = self.bounds()
+        parameters = self.parameters(0)
 
         for pipe_name in self.energy_system_components.get("gas_pipe", []):
             head_loss_var = f"{pipe_name}.__head_loss"
@@ -234,11 +239,11 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                 self.__gas_flow_direct_bounds[flow_dir_var] = (0.0, 1.0)
 
             # Still to be added in the future
-            # if parameters[f"{pipe_name}.disconnectable"]:
-            #     disconnected_var = f"{pipe_name}__is_disconnected"
-            #     self._gas_pipe_disconnect_map[pipe_name] = disconnected_var
-            #     self.__gas_pipe_disconnect_var[disconnected_var] = ca.MX.sym(disconnected_var)
-            #     self.__gas_pipe_disconnect_var_bounds[disconnected_var] = (0.0, 1.0)
+            if parameters[f"{pipe_name}.disconnectable"]:
+                disconnected_var = f"{pipe_name}__is_disconnected"
+                self._gas_pipe_disconnect_map[pipe_name] = disconnected_var
+                self.__gas_pipe_disconnect_var[disconnected_var] = ca.MX.sym(disconnected_var)
+                self.__gas_pipe_disconnect_var_bounds[disconnected_var] = (0.0, 1.0)
 
         self.__maximum_total_head_loss = self.__get_maximum_total_head_loss()
 
@@ -721,7 +726,10 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             constraints.extend(
                 self._gn_head_loss_class._pipe_head_loss_path_constraints(self, ensemble_member)
             )
-
+        constraints.extend(self._gn_head_loss_class._pipe_hydraulic_power_path_constraints(self,
+                                                                                           self.__maximum_total_head_loss,
+                                                                                           self.gas_network_settings,
+                                                                                           ensemble_member))
         constraints.extend(self.__flow_direction_path_constraints(ensemble_member))
 
         return constraints

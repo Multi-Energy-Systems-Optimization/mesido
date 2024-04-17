@@ -573,7 +573,7 @@ class HeadLossClass:
             maximum_velocity = network_settings["maximum_velocity"]
 
         try:
-            # Only milp networks have a temperature attribute in the pipes, otherwise we will use
+            # Only heat networks have a temperature attribute in the pipes, otherwise we will use
             # a default temperature for gas networks
             temperature = parameters[f"{pipe}.temperature"]
             for _id, attr in optimization_problem.temperature_carriers().items():
@@ -874,7 +874,6 @@ class HeadLossClass:
         big_m: Optional[float] = None,
         pipe_class: Optional[PipeClass] = None,
         flow_dir: Union[ca.MX, int] = 0,
-        network_type: NetworkSettings = NetworkSettings.NETWORK_TYPE_HEAT,
         pressure: float = 0.0,
     ) -> Union[List[Tuple[ca.MX, BT, BT]], float, np.ndarray]:
         """
@@ -903,6 +902,8 @@ class HeadLossClass:
         is passed, which can then be used with a big-M formulation. The big-M
         itself then also needs to be passed via the `big_m` keyword argument.
         """
+
+        network_type = network_settings["network_type"]
 
         if hydraulic_power is None:
             symbolic = False
@@ -943,16 +944,20 @@ class HeadLossClass:
             assert big_m != 0.0
 
         wall_roughness = energy_system_options["wall_roughness"]
-        temperature = parameters[f"{pipe}.temperature"]
-        for _id, attr in optimization_problem.temperature_carriers().items():
-            if (
-                parameters[f"{pipe}.carrier_id"] == attr["id_number_mapping"]
-                and len(optimization_problem.temperature_regimes(parameters[f"{pipe}.carrier_id"]))
-                > 0
-            ):
-                temperature = min(
-                    optimization_problem.temperature_regimes(parameters[f"{pipe}.carrier_id"])
-                )
+        if network_type == NetworkSettings.NETWORK_TYPE_HEAT:
+            temperature = parameters[f"{pipe}.temperature"]
+            for _id, attr in optimization_problem.temperature_carriers().items():
+                if (
+                    parameters[f"{pipe}.carrier_id"] == attr["id_number_mapping"]
+                    and len(optimization_problem.temperature_regimes(parameters[f"{pipe}.carrier_id"]))
+                    > 0
+                ):
+                    temperature = min(
+                        optimization_problem.temperature_regimes(parameters[f"{pipe}.carrier_id"])
+                    )
+        else:
+            # A default temperature of 20 degrees celcius is used for gas networks.
+            temperature = 20.0
         rho = parameters[f"{pipe}.rho"]
 
         if pipe_class is not None:
@@ -1194,12 +1199,15 @@ class HeadLossClass:
         constraints = []
         options = optimization_problem.energy_system_options()
 
-        if network_settings["network_type"] == "Heat":
-            pipe_type = "heat_pipe"
-        elif network_settings["network_type"] == "Gas":
-            pipe_type = "gas_pipe"
+        if network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_HEAT:
+            commodity = "heat"
+        elif network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_GAS:
+            commodity = "gas"
         else:
             raise Exception(f"hydraulic power can not be calculated for network type of {network_settings['network_type']}")
+        pipe_type = f"{commodity}_pipe"
+
+        pipe_topo_class_map = getattr(optimization_problem, f"_{commodity}_pipe_topo_pipe_class_map")
 
         if network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
             parameters = optimization_problem.parameters(ensemble_member)
@@ -1213,9 +1221,12 @@ class HeadLossClass:
                     # discharge and the hydraulic_power.
                     continue
 
-                head_loss_option = optimization_problem._hn_get_pipe_head_loss_option(
-                    pipe, network_settings, parameters
-                )
+                if pipe_type == "heat_pipe":
+                    head_loss_option = optimization_problem._hn_get_pipe_head_loss_option(
+                        pipe, network_settings, parameters
+                    )
+                else:
+                    head_loss_option = network_settings["head_loss_option"]
                 assert (
                     head_loss_option != HeadLossOption.NO_HEADLOSS
                 ), "This method should be skipped when NO_HEADLOSS is set."
@@ -1225,18 +1236,19 @@ class HeadLossClass:
                 rho = parameters[f"{pipe}.rho"]
 
                 # 0: pipe is connected, 1: pipe is disconnected
-                is_disconnected_var = optimization_problem._pipe_disconnect_map.get(pipe)
+                is_disconnected_var = getattr(optimization_problem, f"_{commodity}_pipe_disconnect_map").get(pipe)
+                    # optimization_problem._pipe_disconnect_map.get(pipe)
                 if is_disconnected_var is None:
                     is_disconnected = 0.0
                 else:
                     is_disconnected = optimization_problem.state(is_disconnected_var)
 
-                flow_dir_var = optimization_problem._pipe_to_flow_direct_map[pipe]
+                flow_dir_var = getattr(optimization_problem, f"_{commodity}_pipe_to_flow_direct_map").get(pipe)
                 flow_dir = optimization_problem.state(flow_dir_var)  # 0/1: negative/positive flow direction
 
-                if pipe in optimization_problem._pipe_topo_pipe_class_map:
+                if pipe in pipe_topo_class_map:
                     # Multiple diameter options for this pipe
-                    pipe_classes = optimization_problem._pipe_topo_pipe_class_map[pipe]
+                    pipe_classes = pipe_topo_class_map[pipe]
                     max_discharge = max(c.maximum_discharge for c in pipe_classes)
                     for pc, pc_var_name in pipe_classes.items():
                         if pc.inner_diameter == 0.0:

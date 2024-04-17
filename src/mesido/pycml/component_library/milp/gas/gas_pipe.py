@@ -20,6 +20,7 @@ class GasPipe(GasTwoPort, BaseAsset):
 
         self.v_max = 15.0
         self.density = 2.5e3  # [g/m3]
+        self.rho = self.density
         self.diameter = nan
         self.area = 0.25 * pi * self.diameter**2
         self.Q_nominal = self.v_max / 2.0 * self.area

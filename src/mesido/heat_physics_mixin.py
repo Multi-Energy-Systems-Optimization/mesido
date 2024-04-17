@@ -117,14 +117,14 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         self._hn_pipe_to_head_loss_map = {}
 
         # Boolean path-variable for the direction of the flow, inport to outport is positive flow.
-        self.__flow_direct_var = {}
-        self.__flow_direct_bounds = {}
-        self._pipe_to_flow_direct_map = {}
+        self.__heat_flow_direct_var = {}
+        self.__heat_flow_direct_bounds = {}
+        self._heat_pipe_to_flow_direct_map = {}
 
         # Boolean path-variable to determine whether flow is going through a pipe.
-        self.__pipe_disconnect_var = {}
-        self.__pipe_disconnect_var_bounds = {}
-        self._pipe_disconnect_map = {}
+        self.__heat_pipe_disconnect_var = {}
+        self.__heat_pipe_disconnect_var_bounds = {}
+        self._heat_pipe_disconnect_map = {}
 
         # Boolean path-variable for the status of the check valve
         self.__check_valve_status_var = {}
@@ -200,7 +200,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         # these variables do not exist here, we instead only instantiate the maps to allow the
         # physics mixin to have the logic in place. The creation of the actual variables and filling
         # of these maps is in the AssetSizingMixin.
-        self._pipe_topo_pipe_class_map = {}
+        self._heat_pipe_topo_pipe_class_map = {}
 
         super().__init__(*args, **kwargs)
 
@@ -296,8 +296,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             else:
                 flow_dir_var = f"{pipe_name}__flow_direct_var"
 
-            self._pipe_to_flow_direct_map[pipe_name] = flow_dir_var
-            self.__flow_direct_var[flow_dir_var] = ca.MX.sym(flow_dir_var)
+            self._heat_pipe_to_flow_direct_map[pipe_name] = flow_dir_var
+            self.__heat_flow_direct_var[flow_dir_var] = ca.MX.sym(flow_dir_var)
 
             # Fix the directions that are already implied by the bounds on heat
             # Nonnegative heat implies that flow direction Boolean is equal to one.
@@ -311,13 +311,13 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             if (heat_in_lb >= 0.0 and heat_in_ub >= 0.0) or (
                 heat_out_lb >= 0.0 and heat_out_ub >= 0.0
             ):
-                self.__flow_direct_bounds[flow_dir_var] = (1.0, 1.0)
+                self.__heat_flow_direct_bounds[flow_dir_var] = (1.0, 1.0)
             elif (heat_in_lb <= 0.0 and heat_in_ub <= 0.0) or (
                 heat_out_lb <= 0.0 and heat_out_ub <= 0.0
             ):
-                self.__flow_direct_bounds[flow_dir_var] = (0.0, 0.0)
+                self.__heat_flow_direct_bounds[flow_dir_var] = (0.0, 0.0)
             else:
-                self.__flow_direct_bounds[flow_dir_var] = (0.0, 1.0)
+                self.__heat_flow_direct_bounds[flow_dir_var] = (0.0, 1.0)
 
             if parameters[f"{pipe_name}.disconnectable"]:
                 neighbour = self.has_related_pipe(pipe_name)
@@ -326,9 +326,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 else:
                     disconnected_var = f"{pipe_name}__is_disconnected"
 
-                self._pipe_disconnect_map[pipe_name] = disconnected_var
-                self.__pipe_disconnect_var[disconnected_var] = ca.MX.sym(disconnected_var)
-                self.__pipe_disconnect_var_bounds[disconnected_var] = (0.0, 1.0)
+                self._heat_pipe_disconnect_map[pipe_name] = disconnected_var
+                self.__heat_pipe_disconnect_var[disconnected_var] = ca.MX.sym(disconnected_var)
+                self.__heat_pipe_disconnect_var_bounds[disconnected_var] = (0.0, 1.0)
 
             if heat_in_ub <= 0.0 and heat_out_lb >= 0.0:
                 raise Exception(f"Heat flow rate in/out of pipe '{pipe_name}' cannot be zero.")
@@ -636,8 +636,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         """
         variables = super().path_variables.copy()
         variables.extend(self.__pipe_head_loss_var.values())
-        variables.extend(self.__flow_direct_var.values())
-        variables.extend(self.__pipe_disconnect_var.values())
+        variables.extend(self.__heat_flow_direct_var.values())
+        variables.extend(self.__heat_pipe_disconnect_var.values())
         variables.extend(self.__check_valve_status_var.values())
         variables.extend(self.__control_valve_direction_var.values())
         variables.extend(self.__demand_insulation_class_var.values())
@@ -658,8 +658,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         All variables that only can take integer values should be added to this function.
         """
         if (
-            variable in self.__flow_direct_var
-            or variable in self.__pipe_disconnect_var
+            variable in self.__heat_flow_direct_var
+            or variable in self.__heat_pipe_disconnect_var
             or variable in self.__check_valve_status_var
             or variable in self.__control_valve_direction_var
             or variable in self.__demand_insulation_class_var
@@ -694,8 +694,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         the HeatMixin.
         """
         bounds = super().bounds()
-        bounds.update(self.__flow_direct_bounds)
-        bounds.update(self.__pipe_disconnect_var_bounds)
+        bounds.update(self.__heat_flow_direct_bounds)
+        bounds.update(self.__heat_pipe_disconnect_var_bounds)
         bounds.update(self.__check_valve_status_var_bounds)
         bounds.update(self.__control_valve_direction_var_bounds)
         bounds.update(self.__buffer_t0_bounds)
@@ -991,7 +991,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         if np.isfinite(t_change) and np.isfinite(q_change):
             assert (
-                not self._pipe_topo_pipe_class_map
+                not self._heat_pipe_topo_pipe_class_map
             ), "heat rate change constraints not allowed with topology optimization"
 
         for p in self.energy_system_components.get("heat_pipe", []):
@@ -1136,7 +1136,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 )
             )
 
-            is_disconnected_var = self._pipe_disconnect_map.get(p)
+            is_disconnected_var = self._heat_pipe_disconnect_map.get(p)
 
             if is_disconnected_var is None:
                 is_disconnected = 0.0
@@ -1225,10 +1225,10 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         # Also ensure that the discharge has the same sign as the heat.
         for p in self.energy_system_components.get("heat_pipe", []):
-            flow_dir_var = self._pipe_to_flow_direct_map[p]
+            flow_dir_var = self._heat_pipe_to_flow_direct_map[p]
             flow_dir = self.state(flow_dir_var)
 
-            is_disconnected_var = self._pipe_disconnect_map.get(p)
+            is_disconnected_var = self._heat_pipe_disconnect_map.get(p)
 
             if is_disconnected_var is None:
                 is_disconnected = 0.0
@@ -1240,9 +1240,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             heat_out = self.state(f"{p}.HeatOut.Heat")
 
             try:
-                pipe_classes = self._pipe_topo_pipe_class_map[p].keys()
+                pipe_classes = self._heat_pipe_topo_pipe_class_map[p].keys()
                 maximum_discharge = max([c.maximum_discharge for c in pipe_classes])
-                var_names = self._pipe_topo_pipe_class_map[p].values()
+                var_names = self._heat_pipe_topo_pipe_class_map[p].values()
                 dn_none = 0.0
                 for i, pc in enumerate(pipe_classes):
                     if pc.inner_diameter == 0.0:
@@ -1352,10 +1352,10 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 len({p for p in pipes if self.is_cold_pipe(p)}) == 0
             ), "Pipe series for Heat models should only contain hot pipes"
 
-            base_flow_dir_var = self.state(self._pipe_to_flow_direct_map[pipes[0]])
+            base_flow_dir_var = self.state(self._heat_pipe_to_flow_direct_map[pipes[0]])
 
             for p in pipes[1:]:
-                flow_dir_var = self.state(self._pipe_to_flow_direct_map[p])
+                flow_dir_var = self.state(self._heat_pipe_to_flow_direct_map[p])
                 constraints.append((base_flow_dir_var - flow_dir_var, 0.0, 0.0))
 
         return constraints
@@ -1702,7 +1702,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             # temperature instead, as the line can heat up to at maximum the ground temperature.
             temp = max(parameters[f"{p}.temperature"], parameters[f"{p}.T_ground"])
 
-            flow_dir_var = self._pipe_to_flow_direct_map[p]
+            flow_dir_var = self._heat_pipe_to_flow_direct_map[p]
             flow_dir = self.state(flow_dir_var)
             scaled_heat_in = self.state(f"{p}.HeatIn.Heat")  # * heat_to_discharge_fac
             scaled_heat_out = self.state(f"{p}.HeatOut.Heat")  # * heat_to_discharge_fac
@@ -1865,7 +1865,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             if ates_asset in self.energy_system_components.get("low_temperature_ates", []):
                 continue
 
-            flow_dir_var = self._pipe_to_flow_direct_map[hot_pipe]
+            flow_dir_var = self._heat_pipe_to_flow_direct_map[hot_pipe]
             is_buffer_charging = self.state(flow_dir_var) * _hot_pipe_orientation
 
             sup_carrier = parameters[f"{ates_asset}.T_supply_id"]
@@ -2149,7 +2149,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     f"{ates}.Temperature_change_charging"
                 )
 
-                flow_dir_var = self._pipe_to_flow_direct_map[hot_pipe]
+                flow_dir_var = self._heat_pipe_to_flow_direct_map[hot_pipe]
                 is_buffer_charging = self.state(flow_dir_var) * _hot_pipe_orientation
                 heat_stored_max = bounds[f"{ates}.Stored_heat"][1]
                 heat_ates_max = bounds[f"{ates}.Heat_ates"][1]
@@ -2392,7 +2392,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             # extracted from the buffer. We accomplish this by disabling one of
             # the constraints with a boolean. Note that `discharge` and `heat_hot`
             # are guaranteed to have the same sign.
-            flow_dir_var = self._pipe_to_flow_direct_map[hot_pipe]
+            flow_dir_var = self._heat_pipe_to_flow_direct_map[hot_pipe]
             is_buffer_charging = self.state(flow_dir_var)
 
             big_m = 2.0 * np.max(
@@ -2876,7 +2876,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         This functions returns a nominal for the discharge of pipes under topology optimization.
         """
         try:
-            pipe_classes = self._pipe_topo_pipe_class_map[pipe].keys()
+            pipe_classes = self._heat_pipe_topo_pipe_class_map[pipe].keys()
             area = np.median(c.area for c in pipe_classes)
         except KeyError:
             area = parameters[f"{pipe}.area"]
@@ -2943,7 +2943,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             # We need to make sure the dH is decoupled from the discharge when
             # the pipe is disconnected. Simply put, this means making the
             # below constraints trivial.
-            is_disconnected_var = self._pipe_disconnect_map.get(pipe)
+            is_disconnected_var = self._heat_pipe_disconnect_map.get(pipe)
 
             if is_disconnected_var is None:
                 is_disconnected = 0.0
@@ -2953,9 +2953,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             max_discharge = None
             max_head_loss = -np.inf
 
-            if pipe in self._pipe_topo_pipe_class_map:
+            if pipe in self._heat_pipe_topo_pipe_class_map:
                 # Multiple diameter options for this pipe
-                pipe_classes = self._pipe_topo_pipe_class_map[pipe]
+                pipe_classes = self._heat_pipe_topo_pipe_class_map[pipe]
                 max_discharge = max(c.maximum_discharge for c in pipe_classes)
 
                 for pc, pc_var_name in pipe_classes.items():
@@ -3048,7 +3048,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             # FIXME: Ugly hack. Cold pipes should be modelled completely with
             # their own integers as well.
             flow_dir = self.__state_vector_scaled(
-                self._pipe_to_flow_direct_map[pipe], ensemble_member
+                self._heat_pipe_to_flow_direct_map[pipe], ensemble_member
             )
 
             # Note that the Big-M should _at least_ cover the maximum
@@ -3099,7 +3099,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             for p in connected_pipes:
                 try:
-                    pipe_classes = self._pipe_topo_pipe_class_map[p].keys()
+                    pipe_classes = self._heat_pipe_topo_pipe_class_map[p].keys()
                     max_discharge_pipe = max(c.maximum_discharge for c in pipe_classes)
                 except KeyError:
                     max_discharge_pipe = maximum_velocity * parameters[f"{p}.area"]
@@ -3146,7 +3146,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             for p in connected_pipes:
                 try:
-                    pipe_classes = self._pipe_topo_pipe_class_map[p].keys()
+                    pipe_classes = self._heat_pipe_topo_pipe_class_map[p].keys()
                     max_discharge_pipe = max(c.maximum_discharge for c in pipe_classes)
                 except KeyError:
                     max_discharge_pipe = maximum_velocity * parameters[f"{p}.area"]
@@ -3197,7 +3197,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 heat_loss_sym = self.extra_variable(heat_loss_sym_name, ensemble_member)
                 try:
                     heat_losses = self._pipe_heat_losses[p]
-                    pipe_classes = self._pipe_topo_pipe_class_map[p]
+                    pipe_classes = self._heat_pipe_topo_pipe_class_map[p]
                     variables = [
                         self.extra_variable(var_name, ensemble_member)
                         for pc, var_name in pipe_classes.items()
@@ -3503,7 +3503,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             pump_power = self.state(f"{b}.Pump_power")
             min_dp = parameters[f"{b}.minimum_pressure_drop"]
 
-            flow_dir_var = self._pipe_to_flow_direct_map[hot_pipe]
+            flow_dir_var = self._heat_pipe_to_flow_direct_map[hot_pipe]
             is_buffer_charging = self.state(flow_dir_var) * hot_pipe_orientation
 
             big_m = (
@@ -3791,7 +3791,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     q = results[f"{p}.Q"]
 
                     try:
-                        is_disconnected = np.round(results[self._pipe_disconnect_map[p]])
+                        is_disconnected = np.round(results[self._heat_pipe_disconnect_map[p]])
                     except KeyError:
                         is_disconnected = np.zeros_like(q)
 
@@ -3811,9 +3811,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             q = results[f"{p}.Q"]
             v = q / area
-            flow_dir = np.round(results[self._pipe_to_flow_direct_map[p]])
+            flow_dir = np.round(results[self._heat_pipe_to_flow_direct_map[p]])
             try:
-                is_disconnected = np.round(results[self._pipe_disconnect_map[p]])
+                is_disconnected = np.round(results[self._heat_pipe_disconnect_map[p]])
             except KeyError:
                 is_disconnected = np.zeros_like(q)
 

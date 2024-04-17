@@ -665,7 +665,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 # No pipe class decision to make for this pipe
                 pass
             else:
-                self._pipe_topo_pipe_class_map[pipe] = {}
+                self._heat_pipe_topo_pipe_class_map[pipe] = {}
                 self.__pipe_topo_pipe_class_discharge_ordering_map[pipe] = {}
                 self.__pipe_topo_pipe_class_cost_ordering_map[pipe] = {}
                 self.__pipe_topo_pipe_class_heat_loss_ordering_map[pipe] = {}
@@ -696,7 +696,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                             f"{pipe}__hn_pipe_class_{c.name}_heat_loss_ordering"
                         )
 
-                    self._pipe_topo_pipe_class_map[pipe][c] = pipe_class_var_name
+                    self._heat_pipe_topo_pipe_class_map[pipe][c] = pipe_class_var_name
                     self.__pipe_topo_pipe_class_var[pipe_class_var_name] = ca.MX.sym(
                         pipe_class_var_name
                     )

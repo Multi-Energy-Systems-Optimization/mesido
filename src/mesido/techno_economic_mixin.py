@@ -54,7 +54,7 @@ class TechnoEconomicMixin(
         return self.bounds()[self._asset_aggregation_count_var_map[asset_name]][1]
 
     def get_pipe_class_map(self):
-        return self._pipe_topo_pipe_class_map
+        return self._heat_pipe_topo_pipe_class_map
 
     def get_gas_pipe_class_map(self):
         return self._gas_pipe_topo_pipe_class_map
