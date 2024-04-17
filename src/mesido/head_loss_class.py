@@ -1269,7 +1269,7 @@ class HeadLossClass:
                         is_topo_disconnected = 1 - optimization_problem.variable(pc_var_name)
 
                         constraints.extend(
-                            optimization_problem._hn_head_loss_class._hydraulic_power(
+                            self._hydraulic_power(
                                 pipe,
                                 optimization_problem,
                                 options,
@@ -1293,7 +1293,7 @@ class HeadLossClass:
                         * network_settings["maximum_velocity"]
                     )
                     constraints.extend(
-                        optimization_problem._hn_head_loss_class._hydraulic_power(
+                        self._hydraulic_power(
                             pipe,
                             optimization_problem,
                             options,

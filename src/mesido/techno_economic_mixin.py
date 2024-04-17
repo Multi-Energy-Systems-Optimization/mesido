@@ -63,7 +63,7 @@ class TechnoEconomicMixin(
         return self._electricity_cable_topo_cable_class_map
 
     def get_pipe_investment_cost_coefficient(self, asset_name, ensemble_member):
-        return self.extra_variable(self._pipe_topo_cost_map[asset_name], ensemble_member)
+        return self.extra_variable(self._heat_pipe_topo_cost_map[asset_name], ensemble_member)
 
     def get_electricity_carriers(self):
         return self.electricity_carriers()
