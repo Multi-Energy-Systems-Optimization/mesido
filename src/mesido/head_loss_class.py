@@ -1184,7 +1184,7 @@ class HeadLossClass:
 
         return constraints
 
-    def _pipe_hydraulic_power_path_constraints(self, optimization_problem, _maximum_total_head_loss, network_settings,
+    def _pipe_hydraulic_power_path_constraints(self, optimization_problem, _maximum_total_head_loss,
                                                ensemble_member):
         """
         This function adds constraints to compute the hydraulic power that is needed to realize the
@@ -1199,17 +1199,17 @@ class HeadLossClass:
         constraints = []
         options = optimization_problem.energy_system_options()
 
-        if network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_HEAT:
+        if self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_HEAT:
             commodity = "heat"
-        elif network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_GAS:
+        elif self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_GAS:
             commodity = "gas"
         else:
-            raise Exception(f"hydraulic power can not be calculated for network type of {network_settings['network_type']}")
+            raise Exception(f"hydraulic power can not be calculated for network type of {self.network_settings['network_type']}")
         pipe_type = f"{commodity}_pipe"
 
         pipe_topo_class_map = getattr(optimization_problem, f"_{commodity}_pipe_topo_pipe_class_map")
 
-        if network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
+        if self.network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
             parameters = optimization_problem.parameters(ensemble_member)
             components = optimization_problem.energy_system_components
 
@@ -1221,12 +1221,13 @@ class HeadLossClass:
                     # discharge and the hydraulic_power.
                     continue
 
+                #TODO: I think the upcomming 8 lines can be removed (e.g. head_loss_option)
                 if pipe_type == "heat_pipe":
                     head_loss_option = optimization_problem._hn_get_pipe_head_loss_option(
-                        pipe, network_settings, parameters
+                        pipe, self.network_settings, parameters
                     )
                 else:
-                    head_loss_option = network_settings["head_loss_option"]
+                    head_loss_option = self.network_settings["head_loss_option"]
                 assert (
                     head_loss_option != HeadLossOption.NO_HEADLOSS
                 ), "This method should be skipped when NO_HEADLOSS is set."
@@ -1273,7 +1274,7 @@ class HeadLossClass:
                                 pipe,
                                 optimization_problem,
                                 options,
-                                network_settings,
+                                self.network_settings,
                                 parameters,
                                 discharge,
                                 hydraulic_power,
@@ -1290,14 +1291,14 @@ class HeadLossClass:
                         * GRAVITATIONAL_CONSTANT
                         * _maximum_total_head_loss
                         * parameters[f"{pipe}.area"]
-                        * network_settings["maximum_velocity"]
+                        * self.network_settings["maximum_velocity"]
                     )
                     constraints.extend(
                         self._hydraulic_power(
                             pipe,
                             optimization_problem,
                             options,
-                            network_settings,
+                            self.network_settings,
                             parameters,
                             discharge,
                             hydraulic_power,
