@@ -75,6 +75,7 @@ class _AssetToComponentBase:
         "ATES": "ates",
         "Battery": "electricity_storage",
         "Bus": "electricity_node",
+        "ElectricBoiler": "elec_boiler",
         "ElectricityCable": "electricity_cable",
         "ElectricityDemand": "electricity_demand",
         "ElectricityProducer": "electricity_source",
@@ -411,8 +412,14 @@ class _AssetToComponentBase:
                     f"Could not determine max and nominal current for {asset.asset_type}"
                     " '{asset.name}'"
                 )
-        elif asset.out_ports is None or asset.asset_type == "Electrolyzer":
-            connected_port = asset.in_ports[0].connectedTo[0]
+        elif (
+            asset.out_ports is None
+            or asset.asset_type == "Electrolyzer"
+            or asset.asset_type == "ElectricBoiler"
+        ):
+            for port in asset.in_ports:
+                if isinstance(port.carrier, esdl.ElectricityCommodity):
+                    connected_port = port.connectedTo[0]
             i_max = self._port_to_i_max.get(connected_port, None)
             i_nom = self._port_to_i_nominal.get(connected_port, None)
             if i_max is not None:

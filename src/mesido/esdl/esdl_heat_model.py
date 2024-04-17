@@ -17,6 +17,7 @@ from mesido.pycml.component_library.milp import (
     ColdDemand,
     Compressor,
     ControlValve,
+    ElecBoiler,
     ElectricityCable,
     ElectricityDemand,
     ElectricityNode,
@@ -1699,6 +1700,80 @@ class AssetToHeatComponent(_AssetToComponentBase):
         )
 
         return GasBoiler, modifiers
+
+    def convert_elec_boiler(self, asset: Asset) -> Tuple[ElecBoiler, MODIFIERS]:
+        """
+        This function converts the ElectricBoiler object in esdl to a set of modifiers that can be
+        used in a pycml object.
+
+        Parameters
+        ----------
+        asset : The asset object with its properties.
+
+        Returns
+        -------
+        GasBoiler class with modifiers
+        """
+        assert asset.asset_type in {"ElectricBoiler"}
+
+        max_supply = asset.attributes["power"]
+
+        if not max_supply:
+            logger.error(f"{asset.asset_type} '{asset.name}' has no max power specified. ")
+        assert max_supply > 0.0
+
+        if len(asset.in_ports) == 1:
+            heat_source_object, modifiers = self.convert_heat_source(asset)
+            return heat_source_object, modifiers
+
+        id_mapping = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
+            "id_number_mapping"
+        ]
+
+        co2_coefficient = 1.0
+        if hasattr(asset.attributes["KPIs"], "kpi"):
+            co2_coefficient = asset.attributes["KPIs"].kpi.items[0].value
+
+        q_nominal = self._get_connected_q_nominal(asset)
+        for port in asset.in_ports:
+            if isinstance(port.carrier, esdl.ElectricityCommodity):
+                min_voltage = port.carrier.voltage
+        i_max, i_nom = self._get_connected_i_nominal_and_max(asset)
+        eff = asset.attributes["efficiency"] if asset.attributes["efficiency"] else 1.0
+
+        modifiers = dict(
+            technical_life=self.get_asset_attribute_value(
+                asset,
+                "technicalLifetime",
+                default_value=30.0,
+                min_value=1.0,
+                max_value=50.0,
+            ),
+            discount_rate=self.get_asset_attribute_value(
+                asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
+            ),
+            state=self.get_state(asset),
+            co2_coeff=co2_coefficient,
+            Heat_source=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
+            Heat_flow=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
+            HeatIn=dict(Hydraulic_power=dict(nominal=q_nominal["Q_nominal"] * 16.0e5)),
+            HeatOut=dict(Hydraulic_power=dict(nominal=q_nominal["Q_nominal"] * 16.0e5)),
+            id_mapping_carrier=id_mapping,
+            ElectricityIn=dict(
+                Power=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
+                I=dict(min=0.0, max=i_max, nominal=i_nom),
+                V=dict(min=min_voltage, nominal=min_voltage),
+            ),
+            min_voltage=min_voltage,
+            elec_power_nominal=max_supply,
+            efficiency=eff,
+            **q_nominal,
+            **self._supply_return_temperature_modifiers(asset),
+            **self._rho_cp_modifiers,
+            **self._get_cost_figure_modifiers(asset),
+        )
+
+        return ElecBoiler, modifiers
 
 
 class ESDLHeatModel(_ESDLModelBase):

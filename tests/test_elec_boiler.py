@@ -11,8 +11,8 @@ from rtctools.util import run_optimization_problem
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
-class TestGasBoiler(TestCase):
-    def test_gas_boiler(self):
+class TestElecBoiler(TestCase):
+    def test_elec_boiler(self):
         """
         This tests checks the gas boiler for the standard checks and the energy conservation over
         the commodity change.
@@ -22,7 +22,6 @@ class TestGasBoiler(TestCase):
         2. energy conservation in the network
         3. heat to discharge
         4. energy conservation over the commodity
-
         """
         import models.source_pipe_sink.src.double_pipe_heat as example
         from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
@@ -32,7 +31,7 @@ class TestGasBoiler(TestCase):
         heat_problem = run_optimization_problem(
             SourcePipeSink,
             base_folder=base_folder,
-            esdl_file_name="sourcesink_withgasboiler.esdl",
+            esdl_file_name="sourcesink_witheboiler.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_import.csv",
@@ -44,10 +43,10 @@ class TestGasBoiler(TestCase):
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
 
-        np.testing.assert_array_less(0.0, results["GasHeater_f713.Heat_source"])
-        np.testing.assert_array_less(0.0, results["GasProducer_82ec.Gas_source_mass_flow"])
+        np.testing.assert_array_less(0.0, results["ElectricBoiler_9aab.Heat_source"])
+        np.testing.assert_array_less(0.0, results["ElectricityProducer_4dde.ElectricityOut.Power"])
         np.testing.assert_array_less(
-            parameters["GasHeater_f713.internal_energy"]
-            * results["GasHeater_f713.GasIn.mass_flow"],
-            results["GasHeater_f713.Heat_source"] + 1.0e-6,
+            parameters["ElectricBoiler_9aab.efficiency"]
+            * results["ElectricBoiler_9aab.Power_consumed"],
+            results["ElectricBoiler_9aab.Heat_source"] + 1.0e-6,
         )

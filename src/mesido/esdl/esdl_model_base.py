@@ -232,6 +232,24 @@ class _ESDLModelBase(_Model):
                             f"{asset.name} has does not have 1 Heat in_port 1 gas in port and 1"
                             f"Heat out_ports "
                         )
+            elif (
+                asset.asset_type == "ElectricBoiler"
+                and len(asset.out_ports) == 1
+                and len(asset.in_ports) == 2
+            ):
+                for p in [*asset.in_ports, *asset.out_ports]:
+
+                    if isinstance(p, InPort) and isinstance(p.carrier, esdl.ElectricityCommodity):
+                        port_map[p.id] = getattr(component, elec_in_suf)
+                    elif isinstance(p, InPort) and isinstance(p.carrier, esdl.HeatCommodity):
+                        port_map[p.id] = getattr(component, in_suf)
+                    elif isinstance(p, OutPort):  # OutPort
+                        port_map[p.id] = getattr(component, out_suf)
+                    else:
+                        raise Exception(
+                            f"{asset.name} has does not have 1 electricity in_port 1 gas in port "
+                            f"and 1 Heat out_ports "
+                        )
             elif asset.asset_type == "Electrolyzer":
                 if len(asset.out_ports) == 1 and len(asset.in_ports) == 1:
                     if isinstance(asset.out_ports[0].carrier, esdl.GasCommodity):
