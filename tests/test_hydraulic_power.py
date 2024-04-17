@@ -304,9 +304,7 @@ class TestHydraulicPower(TestCase):
 
         # Initialize variables
         run_source_sink.ThermalDemand = run_source_sink.comp_vars_init["heat_demand"]
-        run_source_sink.manual_set_pipe_length = run_source_sink.comp_vars_init[
-            "pipe_length"
-        ]
+        run_source_sink.manual_set_pipe_length = run_source_sink.comp_vars_init["pipe_length"]
         run_source_sink.manual_set_pipe_DN_diam_MILP = run_source_sink.comp_vars_init[
             "pipe_DN_MILP"
         ]
@@ -322,10 +320,10 @@ class TestHydraulicPower(TestCase):
         run_source_sink.n_linearization_lines_setting = 1
 
         for val in range(0, len(run_source_sink.comp_vars_vals["pipe_length"])):
-            run_source_sink.manual_set_pipe_length = run_source_sink.comp_vars_vals[
-                "pipe_length"
-            ][val]
-            solution = run_optimization_problem(
+            run_source_sink.manual_set_pipe_length = run_source_sink.comp_vars_vals["pipe_length"][
+                val
+            ]
+            run_optimization_problem(
                 GasProblem,
                 base_folder=base_folder,
                 esdl_file_name="source_sink.esdl",
@@ -333,7 +331,7 @@ class TestHydraulicPower(TestCase):
                 profile_reader=ProfileReaderFromFile,
                 input_timeseries_file="timeseries.csv",
             )
-            results = solution.extract_results()
+            # results = solution.extract_results()
 
 
 if __name__ == "__main__":

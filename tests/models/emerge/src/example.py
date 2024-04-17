@@ -1,4 +1,3 @@
-import os
 import time
 
 import casadi as ca
@@ -318,8 +317,8 @@ class EmergeTest(
 
 if __name__ == "__main__":
 
-    tic=time.time()
-    for i in range(10):
+    tic = time.time()
+    for _ in range(10):
         elect = run_optimization_problem(
             EmergeTest,
             esdl_file_name="emerge_solar_battery.esdl",
@@ -327,7 +326,7 @@ if __name__ == "__main__":
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_with_PV.csv",
         )
-    print(time.time()-tic)
+    print(time.time() - tic)
     # elect = run_optimization_problem(
     #     EmergeTest,
     #     esdl_file_name="emerge.esdl",

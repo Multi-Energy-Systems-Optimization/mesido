@@ -949,7 +949,9 @@ class HeadLossClass:
             for _id, attr in optimization_problem.temperature_carriers().items():
                 if (
                     parameters[f"{pipe}.carrier_id"] == attr["id_number_mapping"]
-                    and len(optimization_problem.temperature_regimes(parameters[f"{pipe}.carrier_id"]))
+                    and len(
+                        optimization_problem.temperature_regimes(parameters[f"{pipe}.carrier_id"])
+                    )
                     > 0
                 ):
                     temperature = min(
@@ -1184,8 +1186,9 @@ class HeadLossClass:
 
         return constraints
 
-    def _pipe_hydraulic_power_path_constraints(self, optimization_problem, _maximum_total_head_loss,
-                                               ensemble_member):
+    def _pipe_hydraulic_power_path_constraints(
+        self, optimization_problem, _maximum_total_head_loss, ensemble_member
+    ):
         """
         This function adds constraints to compute the hydraulic power that is needed to realize the
         flow, compensating the pressure drop through the pipe. Similar to the head loss constraints
@@ -1204,10 +1207,15 @@ class HeadLossClass:
         elif self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_GAS:
             commodity = "gas"
         else:
-            raise Exception(f"hydraulic power can not be calculated for network type of {self.network_settings['network_type']}")
+            raise Exception(
+                f"hydraulic power can not be calculated for network type of "
+                f"{self.network_settings['network_type']}"
+            )
         pipe_type = f"{commodity}_pipe"
 
-        pipe_topo_class_map = getattr(optimization_problem, f"_{commodity}_pipe_topo_pipe_class_map")
+        pipe_topo_class_map = getattr(
+            optimization_problem, f"_{commodity}_pipe_topo_pipe_class_map"
+        )
 
         if self.network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
             parameters = optimization_problem.parameters(ensemble_member)
@@ -1221,7 +1229,7 @@ class HeadLossClass:
                     # discharge and the hydraulic_power.
                     continue
 
-                #TODO: I think the upcomming 8 lines can be removed (e.g. head_loss_option)
+                # TODO: I think the upcomming 8 lines can be removed (e.g. head_loss_option)
                 if pipe_type == "heat_pipe":
                     head_loss_option = optimization_problem._hn_get_pipe_head_loss_option(
                         pipe, self.network_settings, parameters
@@ -1237,15 +1245,21 @@ class HeadLossClass:
                 rho = parameters[f"{pipe}.rho"]
 
                 # 0: pipe is connected, 1: pipe is disconnected
-                is_disconnected_var = getattr(optimization_problem, f"_{commodity}_pipe_disconnect_map").get(pipe)
-                    # optimization_problem._pipe_disconnect_map.get(pipe)
+                is_disconnected_var = getattr(
+                    optimization_problem, f"_{commodity}_pipe_disconnect_map"
+                ).get(pipe)
+                # optimization_problem._pipe_disconnect_map.get(pipe)
                 if is_disconnected_var is None:
                     is_disconnected = 0.0
                 else:
                     is_disconnected = optimization_problem.state(is_disconnected_var)
 
-                flow_dir_var = getattr(optimization_problem, f"_{commodity}_pipe_to_flow_direct_map").get(pipe)
-                flow_dir = optimization_problem.state(flow_dir_var)  # 0/1: negative/positive flow direction
+                flow_dir_var = getattr(
+                    optimization_problem, f"_{commodity}_pipe_to_flow_direct_map"
+                ).get(pipe)
+                flow_dir = optimization_problem.state(
+                    flow_dir_var
+                )  # 0/1: negative/positive flow direction
 
                 if pipe in pipe_topo_class_map:
                     # Multiple diameter options for this pipe
@@ -1258,10 +1272,7 @@ class HeadLossClass:
                         # Calc max hydraulic power based on maximum_total_head_loss =
                         # f(max_sum_dh_pipes, max_dh_network_options)
                         max_total_hydraulic_power = 2.0 * (
-                            rho
-                            * GRAVITATIONAL_CONSTANT
-                            * _maximum_total_head_loss
-                            * max_discharge
+                            rho * GRAVITATIONAL_CONSTANT * _maximum_total_head_loss * max_discharge
                         )
 
                         # is_topo_disconnected - 0: pipe selected, 1: pipe disconnected/not selected

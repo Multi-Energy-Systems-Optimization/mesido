@@ -726,9 +726,11 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             constraints.extend(
                 self._gn_head_loss_class._pipe_head_loss_path_constraints(self, ensemble_member)
             )
-        constraints.extend(self._gn_head_loss_class._pipe_hydraulic_power_path_constraints(self,
-                                                                                           self.__maximum_total_head_loss,
-                                                                                           ensemble_member))
+        constraints.extend(
+            self._gn_head_loss_class._pipe_hydraulic_power_path_constraints(
+                self, self.__maximum_total_head_loss, ensemble_member
+            )
+        )
         constraints.extend(self.__flow_direction_path_constraints(ensemble_member))
 
         return constraints

@@ -1386,7 +1386,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                     nominal=self._get_connected_q_nominal(asset),
                 ),
                 mass_flow=dict(nominal=density * q_nominal),
-                Hydraulic_power=dict(nominal=q_nominal * pressure)
+                Hydraulic_power=dict(nominal=q_nominal * pressure),
             ),
             **self._get_cost_figure_modifiers(asset),
         )
@@ -1534,10 +1534,11 @@ class AssetToHeatComponent(_AssetToComponentBase):
             #     min=-self._get_connected_q_max(asset), max=self._get_connected_q_max(asset),
             #     nominal=self._get_connected_q_nominal(asset),
             # )
-            GasIn=dict(Q=dict(nominal=q_nominal),
-                       mass_flow=dict(nominal=q_nominal * density),
-                       Hydraulic_power=dict(nominal=q_nominal * pressure),
-                       ),
+            GasIn=dict(
+                Q=dict(nominal=q_nominal),
+                mass_flow=dict(nominal=q_nominal * density),
+                Hydraulic_power=dict(nominal=q_nominal * pressure),
+            ),
             **self._get_cost_figure_modifiers(asset),
         )
 
@@ -1571,14 +1572,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
             Q_nominal_out=q_nom_out,
             density_in=density_in,
             density_out=density_out,
-            GasIn=dict(Q=dict(nominal=q_nom_in),
-                       mass_flow=dict(nominal=q_nom_in * density_in),
-                       Hydraulic_power=dict(nominal=q_nom_in * pressure_in),
-                       ),
-            GasOut=dict(Q=dict(nominal=q_nom_out),
-                        mass_flow=dict(nominal=q_nom_out * density_out),
-                        Hydraulic_power=dict(nominal=q_nom_out * pressure_out),
-                        ),
+            GasIn=dict(
+                Q=dict(nominal=q_nom_in),
+                mass_flow=dict(nominal=q_nom_in * density_in),
+                Hydraulic_power=dict(nominal=q_nom_in * pressure_in),
+            ),
+            GasOut=dict(
+                Q=dict(nominal=q_nom_out),
+                mass_flow=dict(nominal=q_nom_out * density_out),
+                Hydraulic_power=dict(nominal=q_nom_out * pressure_out),
+            ),
             **self._get_cost_figure_modifiers(asset),
         )
 
@@ -1612,14 +1615,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
             Q_nominal_out=q_nom_out,
             density_in=density_in,
             density_out=density_out,
-            GasIn=dict(Q=dict(nominal=q_nom_in),
-                       mass_flow=dict(nominal=q_nom_in * density_in),
-                       Hydraulic_power=dict(nominal=q_nom_in * pressure_in),
-                       ),
-            GasOut=dict(Q=dict(nominal=q_nom_out),
-                        mass_flow=dict(nominal=q_nom_out * density_out),
-                        Hydraulic_power=dict(nominal=q_nom_out * pressure_out),
-                        ),
+            GasIn=dict(
+                Q=dict(nominal=q_nom_in),
+                mass_flow=dict(nominal=q_nom_in * density_in),
+                Hydraulic_power=dict(nominal=q_nom_in * pressure_in),
+            ),
+            GasOut=dict(
+                Q=dict(nominal=q_nom_out),
+                mass_flow=dict(nominal=q_nom_out * density_out),
+                Hydraulic_power=dict(nominal=q_nom_out * pressure_out),
+            ),
             **self._get_cost_figure_modifiers(asset),
         )
 
