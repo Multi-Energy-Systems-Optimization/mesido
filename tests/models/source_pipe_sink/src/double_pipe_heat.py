@@ -93,7 +93,7 @@ class HeatProblemHydraulic(ESDLAdditionalVarsMixin, SourcePipeSink):
 if __name__ == "__main__":
     sol = run_optimization_problem(
         SourcePipeSink,
-        esdl_file_name="sourcesink_witheboiler.esdl",
+        esdl_file_name="sourcesink_withHP.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,
         input_timeseries_file="timeseries_import.csv",
