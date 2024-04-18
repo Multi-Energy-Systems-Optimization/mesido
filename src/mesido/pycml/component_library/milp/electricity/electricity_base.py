@@ -12,6 +12,8 @@ class ElectricityPort(ElectricityComponent, Connector):
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
 
+        self.carrier_id = -1
+
         self.add_variable(Variable, "Power")
         self.add_variable(Variable, "V", min=0.0)
         self.add_variable(Variable, "I")

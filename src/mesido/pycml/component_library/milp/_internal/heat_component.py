@@ -22,6 +22,8 @@ class BaseAsset(Component):
         super().__init__(name, **modifiers)
         self.state = 1
 
+        self.owner = "__"
+
         self.variable_operational_cost_coefficient = 0.0
         self.fixed_operational_cost_coefficient = 0.0
         self.investment_cost_coefficient = 0.0
