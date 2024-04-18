@@ -1793,7 +1793,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         Returns
         -------
-        GasBoiler class with modifiers
+        AirWaterHeatPumpElec class with modifiers
         """
         assert asset.asset_type in {"HeatPump"}
 

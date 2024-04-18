@@ -194,7 +194,7 @@ class _ESDLModelBase(_Model):
                 elif (
                     asset.asset_type == "HeatPump"
                     and len(asset.out_ports) == 1
-                    and len(asset.in_ports) == 2
+                    and len(asset.in_ports) in [1, 2]
                 ):
                     for p in [*asset.in_ports, *asset.out_ports]:
 
@@ -208,24 +208,8 @@ class _ESDLModelBase(_Model):
                             port_map[p.id] = getattr(component, out_suf)
                         else:
                             raise Exception(
-                                f"{asset.name} has does not have 1 electricity in_port 1 gas "
+                                f"{asset.name} has does not have (1 electricity in_port) 1 heat "
                                 f"in port and 1 Heat out_ports "
-                            )
-                elif (
-                    len(asset.in_ports) == 1
-                    and len(asset.out_ports) == 1
-                    and asset.asset_type == "HeatPump"
-                ):
-                    for p in [*asset.in_ports, *asset.out_ports]:
-                        if isinstance(p.carrier, esdl.HeatCommodity):
-                            if isinstance(p, InPort):
-                                port_map[p.id] = getattr(component, in_suf)
-                            else:  # OutPort
-                                port_map[p.id] = getattr(component, out_suf)
-                        else:
-                            raise Exception(
-                                f"{asset.name} has does not have 1 Heat in_ports and 1 Heat "
-                                f"out_ports "
                             )
                 else:
                     raise Exception(

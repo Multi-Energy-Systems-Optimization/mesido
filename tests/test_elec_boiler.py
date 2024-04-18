@@ -14,7 +14,7 @@ from utils_tests import demand_matching_test, energy_conservation_test, heat_to_
 class TestElecBoiler(TestCase):
     def test_elec_boiler(self):
         """
-        This tests checks the gas boiler for the standard checks and the energy conservation over
+        This tests checks the elec boiler for the standard checks and the energy conservation over
         the commodity change.
 
         Checks:
@@ -51,10 +51,10 @@ class TestElecBoiler(TestCase):
             results["ElectricBoiler_9aab.Heat_source"] + 1.0e-6,
         )
 
-    def test_air_water_hp_elec_boiler(self):
+    def test_air_water_hp_elec(self):
         """
-        This tests checks the gas boiler for the standard checks and the energy conservation over
-        the commodity change.
+        This tests checks the air-water hp elec for the standard checks and the energy conservation
+        over the commodity change.
 
         Checks:
         1. demand is matched

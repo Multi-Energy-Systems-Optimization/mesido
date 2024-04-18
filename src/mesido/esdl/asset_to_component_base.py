@@ -512,7 +512,7 @@ class _AssetToComponentBase:
                 raise _RetryLaterException(
                     f"Could not determine nominal discharge for {asset.asset_type} '{asset.name}'"
                 )
-        elif len(asset.in_ports) == 2 and len(asset.out_ports) == 1:  # for gas_boiler
+        elif len(asset.in_ports) == 2 and len(asset.out_ports) == 1:  # for gas_boiler or e_boiler
             q_nominals = {}
             try:
                 for port in asset.in_ports:
@@ -524,10 +524,16 @@ class _AssetToComponentBase:
                         q_nominals["Q_nominal"] = self._port_to_q_nominal[connected_port]
                         self._port_to_q_nominal[port] = q_nominals["Q_nominal"]
                     else:
-                        logger.error(f"{asset.name} has wrong carrier type specified on in port")
+                        logger.error(
+                            f"{asset.name} should have at least gas or heat specified on"
+                            f"one of the in ports"
+                        )
             except KeyError:
-                connected_port = asset.out_ports[0].connectedTo[0]
-                q_nominals["Q_nominal"] = self._port_to_q_nominal.get(connected_port, None)
+                if isinstance(asset.out_ports[0].carrier, esdl.GasCommodity):
+                    connected_port = asset.out_ports[0].connectedTo[0]
+                    q_nominals["Q_nominal"] = self._port_to_q_nominal.get(connected_port, None)
+                else:
+                    logger.error(f"{asset.name} should have a heat carrier on out port")
 
             if q_nominals["Q_nominal"] is not None:
                 self._port_to_q_nominal[asset.out_ports[0]] = q_nominals["Q_nominal"]
