@@ -437,7 +437,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         """
         constraints = []
 
-        for node, connected_pipes in self.energy_system_topology.nodes.items():
+        for node, connected_pipes in self.energy_system_topology.gas_nodes.items():
             q_sum = 0.0
             q_nominals = []
 
@@ -732,6 +732,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             )
         )
         constraints.extend(self.__flow_direction_path_constraints(ensemble_member))
+        constraints.extend(self.__gas_node_hydraulic_power_mixing_path_constraints(ensemble_member))
 
         return constraints
 

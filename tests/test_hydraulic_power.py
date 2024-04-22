@@ -388,13 +388,24 @@ class TestHydraulicPower(TestCase):
                     np.testing.assert_array_less((pipe_hp[k] + 1e-6)* pipe_mass[k + 1] / pipe_mass[k],
                                                pipe_hp[k + 1])
                     ind_check += 1
-                elif v_inspect_line_ind[k] > v_inspect_line_ind[k + 1]:
-                    np.testing.assert_array_less(
-                        (pipe_hp[k + 1] + 1e-6) * pipe_mass[k] / pipe_mass[k+1],
-                        pipe_hp[k])
-                    ind_check += 1
+                else:
+                    raise RuntimeError("For this test to succeed the flow should increase over time")
             np.testing.assert_array_less(0.5, ind_check, f"{pipe} is not checked between multiple lines")
 
+        # balance of hydraulic power
+        pipes_demand = ["Pipe_7c53", "Pipe_c50f"]
+        pipes_source = ["Pipe_0e39", "Pipe_f1a4"]
+        balance = np.zeros(3)
+        for p in pipes_demand:
+            balance+=results[f"{p}.GasIn.Hydraulic_power"]
+        for p in pipes_source:
+            balance-=results[f"{p}.GasOut.Hydraulic_power"]
+        np.testing.assert_allclose(balance, 0.0, atol=1e-6)
+
+        for d in solution.energy_system_components.get("gas_demand"):
+            np.testing.assert_allclose(results[f"{d}.GasIn.Hydraulic_power"],0.0)
+        for d in solution.energy_system_components.get("gas_source"):
+            np.testing.assert_array_less(0.0,results[f"{d}.GasOut.Hydraulic_power"])
 
 
 if __name__ == "__main__":
