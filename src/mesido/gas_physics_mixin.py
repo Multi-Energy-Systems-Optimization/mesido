@@ -132,8 +132,8 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
         self._gas_pipe_topo_pipe_class_map = {}
 
-        self.__gas_pipe_disconnect_var = {}
-        self.__gas_pipe_disconnect_var_bounds = {}
+        # self.__gas_pipe_disconnect_var = {}
+        # self.__gas_pipe_disconnect_var_bounds = {}
         self._gas_pipe_disconnect_map = {}
 
     def gas_carriers(self):
@@ -238,12 +238,12 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             else:
                 self.__gas_flow_direct_bounds[flow_dir_var] = (0.0, 1.0)
 
-            # Still to be added in the future
-            if parameters[f"{pipe_name}.disconnectable"]:
-                disconnected_var = f"{pipe_name}__is_disconnected"
-                self._gas_pipe_disconnect_map[pipe_name] = disconnected_var
-                self.__gas_pipe_disconnect_var[disconnected_var] = ca.MX.sym(disconnected_var)
-                self.__gas_pipe_disconnect_var_bounds[disconnected_var] = (0.0, 1.0)
+            # # Still to be added in the future
+            # if parameters[f"{pipe_name}.disconnectable"]:
+            #     disconnected_var = f"{pipe_name}__is_disconnected"
+            #     self._gas_pipe_disconnect_map[pipe_name] = disconnected_var
+            #     self.__gas_pipe_disconnect_var[disconnected_var] = ca.MX.sym(disconnected_var)
+            #     self.__gas_pipe_disconnect_var_bounds[disconnected_var] = (0.0, 1.0)
 
         self.__maximum_total_head_loss = self.__get_maximum_total_head_loss()
 
