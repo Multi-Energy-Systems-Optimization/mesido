@@ -240,7 +240,11 @@ class TestHydraulicPower(TestCase):
 
     def test_hydraulic_power_gas(self):
         """
-
+        Checks the logic for the hydraulic power of gas pipes.
+        - checks if value on linearized lines, for multiple lines
+        - checks if hydraulic power is 0 at end of the pipe
+        - checks if differences of in/out port is equal to the added hydraulic power of that pipe
+        - checks absolutae value of the hydraulic power loss over a line
         """
         import models.unit_cases_gas.source_sink.src.run_source_sink as run_source_sink
         from models.unit_cases_gas.source_sink.src.run_source_sink import (
@@ -312,7 +316,11 @@ class TestHydraulicPower(TestCase):
 
     def test_hydraulic_power_gas_multi_demand(self):
         """
-
+        Checks the logic for the hydraulic power of gas pipes.
+        - checks if value on linearized lines, for multiple lines
+        - checks if hydraulic power is 0 at end of the pipe if connected to a demand
+        - checks if hydraulic power at start of line connected to a producers is larger than 0
+        - checks if differences of in/out port is equal to the added hydraulic power of that pipe
         """
         import models.unit_cases_gas.multi_demand_source_node.src.run_test as run_test
         from models.unit_cases_gas.multi_demand_source_node.src.run_test import (
