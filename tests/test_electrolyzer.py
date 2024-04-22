@@ -49,7 +49,7 @@ class TestElectrolyzer(TestCase):
 
         results = solution.extract_results()
 
-        gas_price_profile = "gas.price_profile"
+        gas_price_profile = "Hydrogen.price_profile"
         state = "GasDemand_0cf3.Gas_demand_mass_flow"
         nominal = solution.variable_nominal(state) * np.median(
             solution.get_timeseries(gas_price_profile).values

@@ -118,7 +118,10 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     carrier_name = None
                     for _id, attr in self.get_electricity_carriers().items():
                         # check if we can find the carried id
-                        if attr["id_number_mapping"] == parameters[f"{asset}.ElectricityIn.carrier_id"]:
+                        if (
+                            attr["id_number_mapping"]
+                            == parameters[f"{asset}.ElectricityIn.carrier_id"]
+                        ):
                             # Note that we are including the port name at the end as we can have multiple revenue
                             # variables for a single asset as there can be multiple connections with different
                             # organizations over the different ports.
@@ -148,13 +151,13 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                         self._asset_revenue_map[asset] = [var_name]
                         self.__asset_revenue_var[var_name] = ca.MX.sym(var_name)
                         try:
-                            price_profile = self.get_timeseries(f"{carrier_name}.price_profile").values
+                            price_profile = self.get_timeseries(
+                                f"{carrier_name}.price_profile"
+                            ).values
                         except KeyError:
                             price_profile = np.ones(len(self.times()))
-                        self.__asset_revenue_nominals[var_name] = (
-                                np.mean(price_profile)
-                                * nominal_power
-                        )
+                        avg_price = np.mean(price_profile) if np.mean(price_profile) else 1.0
+                        self.__asset_revenue_nominals[var_name] = avg_price * nominal_power
                         self.__asset_revenue_bounds[var_name] = (0.0, np.inf)
 
             # Find the assets that exchange energy with other owners and create a revenue variable for them as well
@@ -232,12 +235,17 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                                 self.__asset_revenue_var[var_name] = ca.MX.sym(var_name)
                                 try:
                                     price_profile = self.get_timeseries(
-                                        f"{carrier_name}.price_profile").values
+                                        f"{carrier_name}.price_profile"
+                                    ).values
                                 except NameError or KeyError:
                                     price_profile = np.ones(len(self.times()))
+                                avg_price = (
+                                    np.mean(price_profile) if np.mean(price_profile) else 1.0
+                                )
                                 self.__asset_revenue_nominals[var_name] = (
-                                    np.mean(price_profile)
-                                    * nominal_power if nominal_power is not None else 1.e2
+                                    avg_price * nominal_power
+                                    if nominal_power is not None
+                                    else 1.0e2
                                 )
                                 self.__asset_revenue_bounds[var_name] = (-np.inf, np.inf)
 
@@ -1381,16 +1389,11 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                         carrier_name = attr["name"]
                         port = f"{self._asset_revenue_variable_port_map[variable_revenue_var]}"
                 for _id, attr in self.get_heat_carriers().items():
-                    temp = self._asset_revenue_variable_port_map[variable_revenue_var].split('.')
+                    temp = self._asset_revenue_variable_port_map[variable_revenue_var].split(".")
                     full_port = temp[1]
                     for x in temp[2:-1]:
                         full_port = full_port + "." + x
-                    if (
-                        attr["id_number_mapping"]
-                        == parameters[
-                            f"{asset}.{full_port}.carrier_id"
-                        ]
-                    ):
+                    if attr["id_number_mapping"] == parameters[f"{asset}.{full_port}.carrier_id"]:
                         carrier_name = attr["name"]
                         port = f"{self._asset_revenue_variable_port_map[variable_revenue_var]}"
 
@@ -1403,30 +1406,38 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     energy_flow = self.__state_vector_scaled(f"{port}", ensemble_member)
                     # Here we find the sign of the flow, meaning that energy going into the asset is
                     # negative revenue.
-                    energy_flow_sign = 1.
-                    if "In" in port and asset not in [*self.energy_system_components.get("heat_demand", []),
-                                                      *self.energy_system_components.get("gas_demand", []),
-                                                      *self.energy_system_components.get("electricity_demand", [])]:
-                        energy_flow_sign = -1.
+                    energy_flow_sign = 1.0
+                    if "In" in port and asset not in [
+                        *self.energy_system_components.get("heat_demand", []),
+                        *self.energy_system_components.get("gas_demand", []),
+                        *self.energy_system_components.get("electricity_demand", []),
+                    ]:
+                        energy_flow_sign = -1.0
                     # For nodes/busses we do this by checking the type of port in the topology object
                     # It is a bit of a hassle as we need to find the index of the port of the node
                     # for that we find the last digit (which by definition is the port index) in the
                     # port name string.
                     if asset in self.energy_system_topology.nodes.keys():
                         port_number = int([x for x in port if x.isdigit()][-1])
-                        if self.energy_system_topology.nodes[f"{asset}"][port_number][
-                            1] == NodeConnectionDirection.IN:
-                            energy_flow_sign = -1.
+                        if (
+                            self.energy_system_topology.nodes[f"{asset}"][port_number][1]
+                            == NodeConnectionDirection.IN
+                        ):
+                            energy_flow_sign = -1.0
                     if asset in self.energy_system_topology.gas_nodes.keys():
                         port_number = int([x for x in port if x.isdigit()][-1])
-                        if self.energy_system_topology.gas_nodes[f"{asset}"][port_number][
-                            1] == NodeConnectionDirection.IN:
-                            energy_flow_sign = -1.
+                        if (
+                            self.energy_system_topology.gas_nodes[f"{asset}"][port_number][1]
+                            == NodeConnectionDirection.IN
+                        ):
+                            energy_flow_sign = -1.0
                     if asset in self.energy_system_topology.busses.keys():
                         port_number = int([x for x in port if x.isdigit()][-1])
-                        if self.energy_system_topology.busses[f"{asset}"][port_number][
-                            1] == NodeConnectionDirection.IN:
-                            energy_flow_sign = -1.
+                        if (
+                            self.energy_system_topology.busses[f"{asset}"][port_number][1]
+                            == NodeConnectionDirection.IN
+                        ):
+                            energy_flow_sign = -1.0
                     variable_revenue = self.extra_variable(variable_revenue_var, ensemble_member)
                     nominal = self.variable_nominal(variable_revenue_var)
 
@@ -1435,7 +1446,9 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     for i in range(1, len(self.times())):
                         sum += price_profile[i] * energy_flow[i] * timesteps[i - 1]
 
-                    constraints.append(((variable_revenue - sum * energy_flow_sign) / (nominal), 0.0, 0.0))
+                    constraints.append(
+                        ((variable_revenue - sum * energy_flow_sign) / (nominal), 0.0, 0.0)
+                    )
 
         return constraints
 

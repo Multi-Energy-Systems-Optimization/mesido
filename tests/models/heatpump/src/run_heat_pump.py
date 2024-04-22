@@ -127,6 +127,9 @@ class HeatProblemTvar(HeatProblem):
         highs_options["mip_rel_gap"] = 0.01
         return options
 
+    def times(self, variable=None) -> np.ndarray:
+        return super().times(variable=variable)[:5]
+
     def temperature_carriers(self):
         return self.esdl_carriers  # geeft terug de carriers met multiple temperature options
 
