@@ -1372,7 +1372,10 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints = []
         parameters = self.parameters(ensemble_member)
 
-        for d in self.energy_system_components.get("heat_demand", []):
+        for d in [
+            *self.energy_system_components.get("heat_demand", []),
+            *self.energy_system_components.get("airco", []),
+        ]:
             heat_nominal = parameters[f"{d}.Heat_nominal"]
             cp = parameters[f"{d}.cp"]
             rho = parameters[f"{d}.rho"]

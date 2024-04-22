@@ -33,7 +33,12 @@ build:
 py37:linux:
   stage: test
   script:
-    - tox -vv
+    - echo "Demo" > Demo.txt
+  artifacts: 
+    paths: 
+      - ./Demo.txt
+      # - ./PoC Tutorial_GrowOptimized.esdl
+    expire_in: 1 week
   image: python:3.7
   variables:
     TOXENV: py37
