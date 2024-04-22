@@ -890,10 +890,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         # get price per unit of energy,
         # assume cost of 1. if nothing is given (effectively milp loss minimization)
-
-        co2_coefficient = 1.0
-        if hasattr(asset.attributes["KPIs"], "kpi"):
-            co2_coefficient = asset.attributes["KPIs"].kpi.items[0].value
+        # TODO: Use an attribute or use and KPI for CO2 coefficient of a source
 
         q_nominal = self._get_connected_q_nominal(asset)
 
@@ -910,7 +907,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
             ),
             Q_nominal=q_nominal,
             state=self.get_state(asset),
-            co2_coeff=co2_coefficient,
             Heat_source=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
             Heat_flow=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
             HeatIn=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
@@ -1671,9 +1667,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 density = self.get_density(asset.name, port.carrier)
                 internal_energy = self.get_internal_energy(asset.name, port.carrier)
 
-        co2_coefficient = 1.0
-        if hasattr(asset.attributes["KPIs"], "kpi"):
-            co2_coefficient = asset.attributes["KPIs"].kpi.items[0].value
+        # TODO: CO2 coefficient
 
         q_nominals = self._get_connected_q_nominal(asset)
 
@@ -1689,7 +1683,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
             ),
             state=self.get_state(asset),
-            co2_coeff=co2_coefficient,
             Heat_source=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
             Heat_flow=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
             HeatIn=dict(Hydraulic_power=dict(nominal=q_nominals["Q_nominal"] * 16.0e5)),
@@ -1735,9 +1728,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             "id_number_mapping"
         ]
 
-        co2_coefficient = 1.0
-        if hasattr(asset.attributes["KPIs"], "kpi"):
-            co2_coefficient = asset.attributes["KPIs"].kpi.items[0].value
+        # TODO: CO2 coefficient
 
         q_nominal = self._get_connected_q_nominal(asset)
         for port in asset.in_ports:
@@ -1758,7 +1749,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
             ),
             state=self.get_state(asset),
-            co2_coeff=co2_coefficient,
             Heat_source=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
             Heat_flow=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
             HeatIn=dict(Hydraulic_power=dict(nominal=q_nominal["Q_nominal"] * 16.0e5)),
@@ -1807,9 +1797,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             "id_number_mapping"
         ]
 
-        co2_coefficient = 1.0
-        if hasattr(asset.attributes["KPIs"], "kpi"):
-            co2_coefficient = asset.attributes["KPIs"].kpi.items[0].value
+        # TODO: CO2 coefficient
 
         q_nominal = self._get_connected_q_nominal(asset)
         for port in asset.in_ports:
@@ -1830,7 +1818,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
             ),
             state=self.get_state(asset),
-            co2_coeff=co2_coefficient,
             Heat_source=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
             Heat_flow=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
             HeatIn=dict(Hydraulic_power=dict(nominal=q_nominal["Q_nominal"] * 16.0e5)),
