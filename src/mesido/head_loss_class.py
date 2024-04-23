@@ -160,7 +160,7 @@ class _MinimizeHeadLosses(Goal):
         elif self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_GAS:
             for p in optimization_problem.energy_system_components.get("gas_pipe", []):
                 if not parameters[f"{p}.length"] == 0.0:
-                    sym_name = optimization_problem._hn_gas_pipe_to_head_loss_map[p]
+                    sym_name = optimization_problem._gn_pipe_to_head_loss_map[p]
                     sum_ += optimization_problem.state(sym_name)
 
         return sum_

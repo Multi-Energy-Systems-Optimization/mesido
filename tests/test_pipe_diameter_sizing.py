@@ -58,8 +58,8 @@ class TestPipeDiameterSizingExample(TestCase):
             input_timeseries_file="timeseries_import.xml",
         )
 
-        # feasibility = problem.solver_stats["return_status"]
-        # self.assertTrue((feasibility == "Optimal"))
+        feasibility = problem.solver_stats["return_status"]
+        self.assertTrue((feasibility == "Optimal"))
 
         parameters = problem.parameters(0)
         diameters = {p: parameters[f"{p}.diameter"] for p in problem.hot_pipes}

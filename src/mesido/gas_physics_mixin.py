@@ -109,7 +109,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         self.__gas_pipe_head_loss_bounds = {}
         self.__gas_pipe_head_loss_nominals = {}
         self.__gas_pipe_head_loss_zero_bounds = {}
-        self._hn_gas_pipe_to_head_loss_map = {}
+        self._gn_pipe_to_head_loss_map = {}
 
         # Boolean path-variable for the direction of the flow, inport to outport is positive flow.
         self.__gas_flow_direct_var = {}
@@ -188,7 +188,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             if initialized_vars[2] != {}:
                 self.__gas_pipe_head_loss_zero_bounds[f"{pipe_name}.dH"] = initialized_vars[2]
             if initialized_vars[3] != {}:
-                self._hn_gas_pipe_to_head_loss_map[pipe_name] = initialized_vars[3]
+                self._gn_pipe_to_head_loss_map[pipe_name] = initialized_vars[3]
             if initialized_vars[4] != {}:
                 self.__gas_pipe_head_loss_var[head_loss_var] = initialized_vars[4]
             if initialized_vars[5] != {}:
@@ -556,7 +556,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                 # discharge and the head loss/dH.
                 continue
 
-            head_loss_sym = self._hn_gas_pipe_to_head_loss_map[pipe]
+            head_loss_sym = self._gn_pipe_to_head_loss_map[pipe]
 
             dh = self.__state_vector_scaled(f"{pipe}.dH", ensemble_member)
             head_loss = self.__state_vector_scaled(head_loss_sym, ensemble_member)
@@ -746,7 +746,8 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         constraints = super().constraints(ensemble_member)
 
         if self.gas_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
-            constraints.extend(self._hn_gas_pipe_head_loss_constraints(ensemble_member))
+            # constraints.extend(self._hn_gas_pipe_head_loss_constraints(ensemble_member))
+            constraints.extend(self._gn_head_loss_class._pipe_head_loss_constraints(self, self.__maximum_total_head_loss, ensemble_member))
 
         return constraints
 
@@ -834,7 +835,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                     ):
                         head_loss = np.abs(results[f"{pipe}.dH"][inds])
                     else:
-                        head_loss = results[self._hn_gas_pipe_to_head_loss_map[pipe]][inds]
+                        head_loss = results[self._gn_pipe_to_head_loss_map[pipe]][inds]
 
                     if not np.allclose(head_loss, head_loss_target, rtol=rtol, atol=atol):
                         logger.warning(
