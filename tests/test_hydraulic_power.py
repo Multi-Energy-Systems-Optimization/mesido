@@ -259,12 +259,15 @@ class TestHydraulicPower(TestCase):
                 super().read()
 
                 for d in self.energy_system_components["gas_demand"]:
-                    new_timeseries = self.get_timeseries(f"{d}.target_gas_demand").values*4e4
+                    new_timeseries = self.get_timeseries(f"{d}.target_gas_demand").values * 4e4
                     self.set_timeseries(f"{d}.target_gas_demand", new_timeseries)
+
             def energy_system_options(self):
                 options = super().energy_system_options()
 
-                self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
+                self.gas_network_settings["head_loss_option"] = (
+                    HeadLossOption.LINEARIZED_N_LINES_EQUALITY
+                )
                 self.gas_network_settings["n_linearization_lines"] = 3
                 self.gas_network_settings["minimum_velocity"] = 0.0
                 self.gas_network_settings["minimize_head_losses"] = True
@@ -280,7 +283,7 @@ class TestHydraulicPower(TestCase):
             input_timeseries_file="timeseries.csv",
         )
 
-        #TODO: add check on values for hydraulic power.
+        # TODO: add check on values for hydraulic power.
         results = solution.extract_results()
 
         pipe = "Pipe_4abc"
@@ -289,30 +292,35 @@ class TestHydraulicPower(TestCase):
         pipe_hp = results[f"{pipe}.Hydraulic_power"]
 
         pipe_mass = results["Pipe_4abc.GasIn.mass_flow"]
-        pipe_vol_flow = results[f"{pipe}.GasOut.Q"]
 
-        # due to non linearity, every timestep on new linearized line, a doubled mass flow should result in more than doubled hydraulic power
-        np.testing.assert_array_less((pipe_hp[0]+1e-6) * (pipe_mass[1]/pipe_mass[0]), pipe_hp[1])
-        np.testing.assert_array_less((pipe_hp[1] + 1e-6) * (pipe_mass[2]/pipe_mass[1]), pipe_hp[2])
+        # due to non linearity, every timestep on new linearized line, a doubled mass flow should
+        # result in more than doubled hydraulic power
+        np.testing.assert_array_less(
+            (pipe_hp[0] + 1e-6) * (pipe_mass[1] / pipe_mass[0]), pipe_hp[1]
+        )
+        np.testing.assert_array_less(
+            (pipe_hp[1] + 1e-6) * (pipe_mass[2] / pipe_mass[1]), pipe_hp[2]
+        )
 
-
-        np.testing.assert_allclose(pipe_hp, pipe_hp_in-pipe_hp_out)
+        np.testing.assert_allclose(pipe_hp, pipe_hp_in - pipe_hp_out)
         np.testing.assert_allclose(0, pipe_hp_out)
 
-        #TODO: use mass flow to get calculated hydraulic power
+        # TODO: use mass flow to get calculated hydraulic power
 
-        v_max = solution.gas_network_settings["maximum_velocity"]
-        pipe_diameter = solution.parameters(0)[f"{pipe}.diameter"]
-        pipe_wall_roughness = solution.energy_system_options()["wall_roughness"]
-
-        temperature = 20.0
-        pipe_length = solution.parameters(0)[f"{pipe}.length"]
-
-        v_inspect = results[f"{pipe}.GasOut.Q"] / solution.parameters(0)[f"{pipe}.area"]
-        v_points = [i * v_max / solution.gas_network_settings["n_linearization_lines"] for i in
-         range(solution.gas_network_settings["n_linearization_lines"] + 1)]
-
-        v_volumetric_flow = (np.asarray(v_points) * np.pi * pipe_diameter ** 2 / 4.0)
+        # v_max = solution.gas_network_settings["maximum_velocity"]
+        # pipe_diameter = solution.parameters(0)[f"{pipe}.diameter"]
+        # pipe_wall_roughness = solution.energy_system_options()["wall_roughness"]
+        #
+        # temperature = 20.0
+        # pipe_length = solution.parameters(0)[f"{pipe}.length"]
+        #
+        # v_inspect = results[f"{pipe}.GasOut.Q"] / solution.parameters(0)[f"{pipe}.area"]
+        # v_points = [
+        #     i * v_max / solution.gas_network_settings["n_linearization_lines"]
+        #     for i in range(solution.gas_network_settings["n_linearization_lines"] + 1)
+        # ]
+        #
+        # v_volumetric_flow = np.asarray(v_points) * np.pi * pipe_diameter**2 / 4.0
 
     def test_hydraulic_power_gas_multi_demand(self):
         """
@@ -335,14 +343,15 @@ class TestHydraulicPower(TestCase):
                 super().read()
 
                 for d in self.energy_system_components["gas_demand"]:
-                    new_timeseries = self.get_timeseries(f"{d}.target_gas_demand").values*1.5
+                    new_timeseries = self.get_timeseries(f"{d}.target_gas_demand").values * 1.5
                     self.set_timeseries(f"{d}.target_gas_demand", new_timeseries)
 
             def energy_system_options(self):
                 options = super().energy_system_options()
 
-                self.gas_network_settings[
-                    "head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
+                self.gas_network_settings["head_loss_option"] = (
+                    HeadLossOption.LINEARIZED_N_LINES_EQUALITY
+                )
                 self.gas_network_settings["n_linearization_lines"] = 3
                 self.gas_network_settings["minimum_velocity"] = 0.0
                 self.gas_network_settings["minimize_head_losses"] = True
@@ -368,52 +377,60 @@ class TestHydraulicPower(TestCase):
             pipe_hp = results[f"{pipe}.Hydraulic_power"]
 
             pipe_mass = results[f"{pipe}.GasIn.mass_flow"]
-            pipe_vol_flow = results[f"{pipe}.GasOut.Q"]
 
             np.testing.assert_allclose(pipe_hp, pipe_hp_in - pipe_hp_out)
             if pipe in ["Pipe_7c53", "Pipe_c50f"]:
                 # connected to demand, thus hydraulic_power should be 0
                 np.testing.assert_allclose(0, pipe_hp_out)
 
-
             v_max = solution.gas_network_settings["maximum_velocity"]
 
             v_inspect = results[f"{pipe}.GasOut.Q"] / solution.parameters(0)[f"{pipe}.area"]
-            v_points = [i * v_max / solution.gas_network_settings["n_linearization_lines"] for i in
-                        range(solution.gas_network_settings["n_linearization_lines"] + 1)]
+            v_points = [
+                i * v_max / solution.gas_network_settings["n_linearization_lines"]
+                for i in range(solution.gas_network_settings["n_linearization_lines"] + 1)
+            ]
 
-            # due to non linearity, every timestep on new linearized line, a doubled mass flow should result in more than doubled hydraulic power
+            # due to non linearity, every timestep on new linearized line, a doubled mass flow
+            # should result in more than doubled hydraulic power
             v_inspect_line_ind = []
             for k in range(len(v_inspect)):
                 for i in range(len(v_points)):
-                    if v_points[i]+1e-6< v_inspect[k] <=v_points[i+1]+1e-6:
+                    if v_points[i] + 1e-6 < v_inspect[k] <= v_points[i + 1] + 1e-6:
                         v_inspect_line_ind.append(i)
             ind_check = 0
-            for k in range(len(v_inspect)-1):
-                if v_inspect_line_ind[k] == v_inspect_line_ind[k+1]:
-                    np.testing.assert_allclose(pipe_hp[k] * pipe_mass[k+1] / pipe_mass[k], pipe_hp[k+1])
-                elif v_inspect_line_ind[k] < v_inspect_line_ind[k+1]:
-                    np.testing.assert_array_less((pipe_hp[k] + 1e-6)* pipe_mass[k + 1] / pipe_mass[k],
-                                               pipe_hp[k + 1])
+            for k in range(len(v_inspect) - 1):
+                if v_inspect_line_ind[k] == v_inspect_line_ind[k + 1]:
+                    np.testing.assert_allclose(
+                        pipe_hp[k] * pipe_mass[k + 1] / pipe_mass[k], pipe_hp[k + 1]
+                    )
+                elif v_inspect_line_ind[k] < v_inspect_line_ind[k + 1]:
+                    np.testing.assert_array_less(
+                        (pipe_hp[k] + 1e-6) * pipe_mass[k + 1] / pipe_mass[k], pipe_hp[k + 1]
+                    )
                     ind_check += 1
                 else:
-                    raise RuntimeError("For this test to succeed the flow should increase over time")
-            np.testing.assert_array_less(0.5, ind_check, f"{pipe} is not checked between multiple lines")
+                    raise RuntimeError(
+                        "For this test to succeed the flow should increase over time"
+                    )
+            np.testing.assert_array_less(
+                0.5, ind_check, f"{pipe} is not checked between multiple lines"
+            )
 
         # balance of hydraulic power
         pipes_demand = ["Pipe_7c53", "Pipe_c50f"]
         pipes_source = ["Pipe_0e39", "Pipe_f1a4"]
         balance = np.zeros(3)
         for p in pipes_demand:
-            balance+=results[f"{p}.GasIn.Hydraulic_power"]
+            balance += results[f"{p}.GasIn.Hydraulic_power"]
         for p in pipes_source:
-            balance-=results[f"{p}.GasOut.Hydraulic_power"]
+            balance -= results[f"{p}.GasOut.Hydraulic_power"]
         np.testing.assert_allclose(balance, 0.0, atol=1e-6)
 
         for d in solution.energy_system_components.get("gas_demand"):
-            np.testing.assert_allclose(results[f"{d}.GasIn.Hydraulic_power"],0.0)
+            np.testing.assert_allclose(results[f"{d}.GasIn.Hydraulic_power"], 0.0)
         for d in solution.energy_system_components.get("gas_source"):
-            np.testing.assert_array_less(0.0,results[f"{d}.GasOut.Hydraulic_power"])
+            np.testing.assert_array_less(0.0, results[f"{d}.GasOut.Hydraulic_power"])
 
 
 if __name__ == "__main__":

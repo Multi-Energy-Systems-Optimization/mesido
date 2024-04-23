@@ -1386,7 +1386,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                     nominal=self._get_connected_q_nominal(asset),
                 ),
                 mass_flow=dict(nominal=density * q_nominal),
-                Hydraulic_power=dict(min=0., max=0., nominal=q_nominal * pressure),
+                Hydraulic_power=dict(min=0.0, max=0.0, nominal=q_nominal * pressure),
             ),
             **self._get_cost_figure_modifiers(asset),
         )
