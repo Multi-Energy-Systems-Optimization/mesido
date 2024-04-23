@@ -380,7 +380,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                     self.gas_network_settings,
                     parameters,
                     max_discharge,
-                    network_type=self.gas_network_settings["network_type"],
+                    # network_type=self.gas_network_settings["network_type"],
                     pressure=parameters[f"{pipe}.pressure"],
                 )
 
@@ -595,7 +595,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                         parameters,
                         max_discharge,
                         pipe_class=pc,
-                        network_type=self.gas_network_settings["network_type"],
+                        # network_type=self.gas_network_settings["network_type"],
                         pressure=parameters[f"{pipe}.pressure"],
                     )
 
@@ -625,7 +625,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                             is_disconnected + is_topo_disconnected,
                             big_m,
                             pc,
-                            network_type=self.gas_network_settings["network_type"],
+                            # network_type=self.gas_network_settings["network_type"],
                             pressure=parameters[f"{pipe}.pressure"],
                         )
                     )
@@ -644,7 +644,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                             parameters,
                             pc.maximum_discharge,
                             pipe_class=pc,
-                            network_type=self.gas_network_settings["network_type"],
+                            # network_type=self.gas_network_settings["network_type"],
                             pressure=parameters[f"{pipe}.pressure"],
                         ),
                     )
@@ -669,7 +669,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                         dh,
                         is_disconnected + is_topo_disconnected,
                         2.0 * 2.0 * self.__maximum_total_head_loss,
-                        network_type=self.gas_network_settings["network_type"],
+                        # network_type=self.gas_network_settings["network_type"],
                         pressure=parameters[f"{pipe}.pressure"],
                     )
                 )
@@ -681,7 +681,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                     self.gas_network_settings,
                     parameters,
                     max_discharge,
-                    network_type=self.gas_network_settings["network_type"],
+                    # network_type=self.gas_network_settings["network_type"],
                     pressure=parameters[f"{pipe}.pressure"],
                 )
 
@@ -825,7 +825,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                         parameters,
                         q,
                         None,
-                        network_type=self.gas_network_settings["network_type"],
+                        # network_type=self.gas_network_settings["network_type"],
                         pressure=parameters[f"{pipe}.pressure"],
                     )
                     if (

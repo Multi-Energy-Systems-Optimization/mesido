@@ -19,6 +19,17 @@ from rtctools.optimization.optimization_problem import BT
 logger = logging.getLogger("mesido")
 
 
+
+def _state_vector_scaled(optimization_problem, variable, ensemble_member):
+    """
+    This functions returns the casadi symbols scaled with their nominal for the entire time
+    horizon.
+    """
+    canonical, sign = optimization_problem.alias_relation.canonical_signed(variable)
+    return (
+        optimization_problem.state_vector(canonical, ensemble_member) * optimization_problem.variable_nominal(canonical) * sign
+    )
+
 class HeadLossOption(IntEnum):
     r"""
     Enumeration for the possible options to take head loss in pipes into account.
@@ -369,7 +380,7 @@ class HeadLossClass:
                 network_settings,
                 parameters,
                 q_nominal,
-                network_type=self.network_settings["network_type"],
+                # network_type=self.network_settings["network_type"],
                 pressure=parameters[f"{pipe_name}.pressure"],
             )
 
@@ -495,7 +506,7 @@ class HeadLossClass:
         is_disconnected: Union[ca.MX, int] = 0,
         big_m: Optional[float] = None,
         pipe_class: Optional[PipeClass] = None,
-        network_type: NetworkSettings = NetworkSettings.NETWORK_TYPE_HEAT,
+        # network_type: NetworkSettings = NetworkSettings.NETWORK_TYPE_HEAT,
         pressure: float = 0.0,
     ) -> Union[List[Tuple[ca.MX, BT, BT]], float, np.ndarray]:
         """
@@ -521,6 +532,8 @@ class HeadLossClass:
         is passed, which can then be used with a big-M formulation. The big-M
         itself then also needs to be passed via the `big_m` keyword argument.
         """
+
+        network_type = network_settings["network_type"]
 
         if head_loss is None and dh is None:
             symbolic = False
@@ -1193,7 +1206,7 @@ class HeadLossClass:
 
         return constraints
 
-    def _pipe_head_loss_constraints(self, optimization_problem, ensemble_member):
+    def _pipe_head_loss_constraints(self, optimization_problem, _maximum_total_head_loss, ensemble_member):
         """
         This function adds the head loss constraints for pipes. There are two options namely with
         and without pipe class optimization. In both cases we assume that disconnected pipes, pipes
@@ -1240,9 +1253,10 @@ class HeadLossClass:
         pipe_topo_class_map = getattr(
             optimization_problem, f"_{commodity}_pipe_topo_pipe_class_map"
         )
+        pipe_to_flow_direct_map = getattr(optimization_problem, f"_{commodity}_pipe_to_flow_direct_map")
 
 
-        for pipe in components.get("heat_pipe", []):
+        for pipe in components.get(pipe_type, []):
             if parameters[f"{pipe}.length"] == 0.0:
                 # If the pipe does not have a control valve, the head loss is
                 # forced to zero via bounds. If the pipe _does_ have a control
@@ -1252,9 +1266,9 @@ class HeadLossClass:
 
             head_loss_sym = pipe_head_loss_map[pipe]
 
-            dh = optimization_problem.__state_vector_scaled(f"{pipe}.dH", ensemble_member)
-            head_loss = optimization_problem.__state_vector_scaled(head_loss_sym, ensemble_member)
-            discharge = optimization_problem.__state_vector_scaled(f"{pipe}.Q", ensemble_member)
+            dh = _state_vector_scaled(optimization_problem, f"{pipe}.dH", ensemble_member)
+            head_loss = _state_vector_scaled(optimization_problem, head_loss_sym, ensemble_member)
+            discharge = _state_vector_scaled(optimization_problem, f"{pipe}.Q", ensemble_member)
 
             # We need to make sure the dH is decoupled from the discharge when
             # the pipe is disconnected. Simply put, this means making the
@@ -1264,7 +1278,7 @@ class HeadLossClass:
             if is_disconnected_var is None:
                 is_disconnected = 0.0
             else:
-                is_disconnected = optimization_problem.__state_vector_scaled(is_disconnected_var, ensemble_member)
+                is_disconnected = _state_vector_scaled(optimization_problem, is_disconnected_var, ensemble_member)
 
             max_discharge = None
             max_head_loss = -np.inf
@@ -1278,19 +1292,20 @@ class HeadLossClass:
                     if pc.inner_diameter == 0.0:
                         continue
 
-                    head_loss_max_discharge = self._hn_head_loss_class._hn_pipe_head_loss(
+                    head_loss_max_discharge = self._hn_pipe_head_loss(
                         pipe,
-                        self,
+                        optimization_problem,
                         options,
-                        self.heat_network_settings,
+                        self.network_settings,
                         parameters,
                         max_discharge,
                         pipe_class=pc,
+                        pressure=parameters[f"{pipe}.pressure"],
                     )
 
-                    big_m = max(1.1 * self.__maximum_total_head_loss, 2 * head_loss_max_discharge)
+                    big_m = max(1.1 * _maximum_total_head_loss, 2 * head_loss_max_discharge)
 
-                    is_topo_disconnected = 1 - self.extra_variable(pc_var_name, ensemble_member)
+                    is_topo_disconnected = 1 - optimization_problem.extra_variable(pc_var_name, ensemble_member)
                     is_topo_disconnected = ca.repmat(is_topo_disconnected, dh.size1())
 
                     # Note that we add the two booleans `is_disconnected` and
@@ -1300,11 +1315,11 @@ class HeadLossClass:
                     # booleans) is either 0 when the pipe is connected, or >= 1 when it
                     # is disconnected.
                     constraints.extend(
-                        self._hn_head_loss_class._hn_pipe_head_loss(
+                        self._hn_pipe_head_loss(
                             pipe,
-                            self,
+                            optimization_problem,
                             options,
-                            self.heat_network_settings,
+                            self.network_settings,
                             parameters,
                             discharge,
                             head_loss,
@@ -1312,6 +1327,7 @@ class HeadLossClass:
                             is_disconnected + is_topo_disconnected,
                             big_m,
                             pc,
+                            pressure=parameters[f"{pipe}.pressure"],
                         )
                     )
 
@@ -1321,14 +1337,15 @@ class HeadLossClass:
                     # we pass the current pipe class's maximum discharge.
                     max_head_loss = max(
                         max_head_loss,
-                        self._hn_head_loss_class._hn_pipe_head_loss(
+                        self._hn_pipe_head_loss(
                             pipe,
-                            self,
+                            optimization_problem,
                             options,
-                            self.heat_network_settings,
+                            self.network_settings,
                             parameters,
                             pc.maximum_discharge,
                             pipe_class=pc,
+                            pressure=parameters[f"{pipe}.pressure"],
                         ),
                     )
             else:
@@ -1336,35 +1353,36 @@ class HeadLossClass:
                 # the diameter parameter being overridden automatically if a
                 # single pipe class is set by the user.
                 area = parameters[f"{pipe}.area"]
-                max_discharge = self.heat_network_settings["maximum_velocity"] * area
+                max_discharge = self.network_settings["maximum_velocity"] * area
 
                 is_topo_disconnected = int(parameters[f"{pipe}.diameter"] == 0.0)
 
                 constraints.extend(
-                    self._hn_head_loss_class._hn_pipe_head_loss(
+                    self._hn_pipe_head_loss(
                         pipe,
-                        self,
+                        optimization_problem,
                         options,
-                        self.heat_network_settings,
+                        self.network_settings,
                         parameters,
                         discharge,
                         head_loss,
                         dh,
                         is_disconnected + is_topo_disconnected,
-                        1.1 * self.__maximum_total_head_loss,
+                        1.1 * _maximum_total_head_loss,
+                        pressure=parameters[f"{pipe}.pressure"],
                     )
                 )
 
-                max_head_loss = self._hn_head_loss_class._hn_pipe_head_loss(
-                    pipe, self, options, self.heat_network_settings, parameters, max_discharge
+                max_head_loss = self._hn_pipe_head_loss(
+                    pipe, optimization_problem, options, self.network_settings, parameters, max_discharge, pressure=parameters[f"{pipe}.pressure"]
                 )
 
             # Relate the head loss symbol to the pipe's dH symbol.
 
             # FIXME: Ugly hack. Cold pipes should be modelled completely with
             # their own integers as well.
-            flow_dir = self.__state_vector_scaled(
-                self._heat_pipe_to_flow_direct_map[pipe], ensemble_member
+            flow_dir = _state_vector_scaled(optimization_problem,
+                pipe_to_flow_direct_map[pipe], ensemble_member
             )
 
             # Note that the Big-M should _at least_ cover the maximum
