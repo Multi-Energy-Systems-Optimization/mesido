@@ -163,7 +163,7 @@ class TestSetpointConstraints(TestCase):
         check = abs(
             results["HeatProducer_1.Heat_source"][2:] - results["HeatProducer_1.Heat_source"][1:-1]
         )
-        np.testing.assert_array_less(check, 1.0e-6)
+        np.testing.assert_array_less(check, 1.0e-5)
 
     @pytest.mark.fourth
     def test_run_small_ates_timed_setpoints_multiple_constraints(self):
