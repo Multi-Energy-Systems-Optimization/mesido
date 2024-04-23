@@ -986,14 +986,11 @@ class HeadLossClass:
             area = parameters[f"{pipe}.area"]
             maximum_velocity = network_settings["maximum_velocity"]
 
-        constraint_nominal = (
-            abs(
-                parameters[f"{pipe}.rho"]
-                * GRAVITATIONAL_CONSTANT
-                * optimization_problem.variable_nominal(f"{pipe}.dH")
-                * optimization_problem.variable_nominal(f"{pipe}.Q")
-            )
-            * 10
+        constraint_nominal = abs(
+            parameters[f"{pipe}.rho"]
+            * GRAVITATIONAL_CONSTANT
+            * optimization_problem.variable_nominal(f"{pipe}.dH")
+            * optimization_problem.variable_nominal(f"{pipe}.Q")
         )
 
         if head_loss_option == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY:
@@ -1308,7 +1305,17 @@ class HeadLossClass:
                         pressure=parameters[f"{pipe}.pressure"],
                     )
 
-                    big_m = max(1.1 * _maximum_total_head_loss, 2 * head_loss_max_discharge)
+                    if self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_HEAT:
+                        big_m = max(1.1 * _maximum_total_head_loss, 2 * head_loss_max_discharge)
+                    elif self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_GAS:
+                        big_m = max(
+                            2.0 * 2.0 * _maximum_total_head_loss, 2 * head_loss_max_discharge
+                        )
+                    else:
+                        raise RuntimeError(
+                            f"{self.network_settings['network_type']} is not of type Gas or Heat "
+                            f"thus no maximum total headloss is given"
+                        )
 
                     is_topo_disconnected = 1 - optimization_problem.extra_variable(
                         pc_var_name, ensemble_member
@@ -1364,6 +1371,16 @@ class HeadLossClass:
 
                 is_topo_disconnected = int(parameters[f"{pipe}.diameter"] == 0.0)
 
+                if self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_HEAT:
+                    big_m = 1.1 * _maximum_total_head_loss
+                elif self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_GAS:
+                    big_m = 2.0 * 2.0 * _maximum_total_head_loss
+                else:
+                    raise RuntimeError(
+                        f"{self.network_settings['network_type']} is not of type Gas or Heat thus "
+                        f"no maximum total headloss is given"
+                    )
+
                 constraints.extend(
                     self._hn_pipe_head_loss(
                         pipe,
@@ -1375,7 +1392,7 @@ class HeadLossClass:
                         head_loss,
                         dh,
                         is_disconnected + is_topo_disconnected,
-                        1.1 * _maximum_total_head_loss,
+                        big_m=big_m,
                         pressure=parameters[f"{pipe}.pressure"],
                     )
                 )
