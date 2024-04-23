@@ -989,7 +989,7 @@ class HeadLossClass:
             * GRAVITATIONAL_CONSTANT
             * optimization_problem.variable_nominal(f"{pipe}.dH")
             * optimization_problem.variable_nominal(f"{pipe}.Q")
-        )
+        )*10
 
         if head_loss_option == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY:
             # Uitlized maximum_velocity instead of estimated_velocity (used in head loss linear
@@ -1510,6 +1510,7 @@ class HeadLossClass:
                                 big_m=max_total_hydraulic_power,
                                 pipe_class=pc,
                                 flow_dir=flow_dir,
+                                pressure=parameters[f"{pipe}.pressure"]
                             )
                         )
                 else:
@@ -1533,6 +1534,7 @@ class HeadLossClass:
                             is_disconnected=is_disconnected + is_topo_disconnected,
                             big_m=max_total_hydraulic_power,
                             flow_dir=flow_dir,
+                            pressure=parameters[f"{pipe}.pressure"]
                         )
                     )
         return constraints
