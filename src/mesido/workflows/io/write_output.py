@@ -487,6 +487,9 @@ class ScenarioOutput(TechnoEconomicMixin):
                         for key, value in heat_source_energy_wh.items()
                     ]
                 ),
+                quantityAndUnit=esdl.esdl.QuantityAndUnitType(
+                    physicalQuantity=esdl.PhysicalQuantityEnum.ENERGY, unit=esdl.UnitEnum.WATTHOUR
+                ),
             )
         )
         energy_system.instance[0].area.KPIs = kpis_top_level
