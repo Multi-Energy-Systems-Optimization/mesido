@@ -472,6 +472,14 @@ class TestHydraulicPower(TestCase):
             balance -= results[f"{p}.GasOut.Hydraulic_power"]
         np.testing.assert_allclose(balance, 0.0, atol=1e-6)
 
+        for node, connected_pipes in solution.energy_system_topology.gas_nodes.items():
+            hydraulic_sum = 0.0
+
+            for i_conn, (_pipe, orientation) in connected_pipes.items():
+                hydraulic_sum += results[f"{node}.GasConn[{i_conn+1}].Q"] * orientation
+
+            np.testing.assert_allclose(hydraulic_sum, 0.0, atol=1.0e-3)
+
         for d in solution.energy_system_components.get("gas_demand"):
             np.testing.assert_allclose(results[f"{d}.GasIn.Hydraulic_power"], 0.0)
         for d in solution.energy_system_components.get("gas_source"):
