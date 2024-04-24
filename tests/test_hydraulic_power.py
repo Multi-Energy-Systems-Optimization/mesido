@@ -1,10 +1,12 @@
 from pathlib import Path
 from unittest import TestCase
 
+from mesido._darcy_weisbach import head_loss
+from mesido.constants import GRAVITATIONAL_CONSTANT
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
-
+from mesido.network_common import NetworkSettings
 
 import numpy as np
 
@@ -285,6 +287,7 @@ class TestHydraulicPower(TestCase):
 
         # TODO: add check on values for hydraulic power.
         results = solution.extract_results()
+        parameters = solution.parameters(0)
 
         pipe = "Pipe_4abc"
         pipe_hp_in = results[f"{pipe}.GasIn.Hydraulic_power"]
@@ -307,20 +310,62 @@ class TestHydraulicPower(TestCase):
 
         # TODO: use mass flow to get calculated hydraulic power
 
-        # v_max = solution.gas_network_settings["maximum_velocity"]
-        # pipe_diameter = solution.parameters(0)[f"{pipe}.diameter"]
-        # pipe_wall_roughness = solution.energy_system_options()["wall_roughness"]
-        #
-        # temperature = 20.0
-        # pipe_length = solution.parameters(0)[f"{pipe}.length"]
-        #
-        # v_inspect = results[f"{pipe}.GasOut.Q"] / solution.parameters(0)[f"{pipe}.area"]
-        # v_points = [
-        #     i * v_max / solution.gas_network_settings["n_linearization_lines"]
-        #     for i in range(solution.gas_network_settings["n_linearization_lines"] + 1)
-        # ]
-        #
-        # v_volumetric_flow = np.asarray(v_points) * np.pi * pipe_diameter**2 / 4.0
+        rho = parameters[f"{pipe}.rho"]
+        d = parameters[f"{pipe}.diameter"]
+        area = parameters[f"{pipe}.area"]
+        length = parameters[f"{pipe}.length"]
+        pressure = parameters[f"{pipe}.pressure"]
+        wall_roughness = solution.energy_system_options()["wall_roughness"]
+        v_max = solution.gas_network_settings["maximum_velocity"]
+        temperature = 20.0
+
+        v_inspect = results[f"{pipe}.GasOut.Q"] / solution.parameters(0)[f"{pipe}.area"]
+
+        calc_hp_accurate = [
+            rho
+            * GRAVITATIONAL_CONSTANT
+            * v
+            * area
+            * head_loss(
+                v,
+                d,
+                length,
+                wall_roughness,
+                temperature,
+                network_type=NetworkSettings.NETWORK_TYPE_GAS,
+                pressure=pressure,
+            )
+            for v in v_inspect
+        ]
+        np.testing.assert_array_less(calc_hp_accurate, pipe_hp)
+
+        v_points = [
+            i * v_max / solution.gas_network_settings["n_linearization_lines"]
+            for i in range(solution.gas_network_settings["n_linearization_lines"] + 1)
+        ]
+        calc_hp_v_points = [
+            rho
+            * GRAVITATIONAL_CONSTANT
+            * v
+            * area
+            * head_loss(
+                v,
+                d,
+                length,
+                wall_roughness,
+                temperature,
+                network_type=NetworkSettings.NETWORK_TYPE_GAS,
+                pressure=pressure,
+            )
+            for v in v_points
+        ]
+        v_points_volumetric = np.asarray(v_points) * np.pi * d**2 / 4.0
+        a = np.diff(calc_hp_v_points) / np.diff(v_points_volumetric)
+        b = calc_hp_v_points[1:] - a * v_points_volumetric[1:]
+
+        np.testing.assert_allclose(pipe_hp[0], a[0] * results[f"{pipe}.GasOut.Q"][0] + b[0])
+        np.testing.assert_allclose(pipe_hp[1], a[1] * results[f"{pipe}.GasOut.Q"][1] + b[1])
+        np.testing.assert_allclose(pipe_hp[2], a[2] * results[f"{pipe}.GasOut.Q"][2] + b[2])
 
     def test_hydraulic_power_gas_multi_demand(self):
         """
