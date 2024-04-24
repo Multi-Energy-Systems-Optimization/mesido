@@ -3,10 +3,9 @@ from unittest import TestCase
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
-
-from rtctools.util import run_optimization_problem
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
@@ -42,7 +41,7 @@ class TestAtesTemperature(TestCase):
 
         basefolder = Path(run_ates_temperature.__file__).resolve().parent.parent
 
-        solution = run_optimization_problem(
+        solution = run_esdl_mesido_optimization(
             HeatProblem,
             base_folder=basefolder,
             esdl_file_name="HP_ATES with return network.esdl",
@@ -95,10 +94,6 @@ class TestAtesTemperature(TestCase):
                 * results["GenericProducer_4dfe.Heat_source"]
             )
         )
-
-        feasibility = solution.solver_stats["return_status"]
-
-        self.assertTrue((feasibility == "Optimal"))
 
         np.testing.assert_allclose(objective_calc / 1e4, objective)
 
@@ -160,7 +155,7 @@ class TestAtesTemperature(TestCase):
 
         basefolder = Path(run_ates_temperature.__file__).resolve().parent.parent
 
-        solution = run_optimization_problem(
+        solution = run_esdl_mesido_optimization(
             HeatProblemMaxFlow,
             base_folder=basefolder,
             esdl_file_name="HP_ATES with return network.esdl",

@@ -5,10 +5,9 @@ from unittest import TestCase
 from mesido._darcy_weisbach import friction_factor
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
-
-from rtctools.util import run_optimization_problem
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
@@ -49,7 +48,7 @@ class TestPipeDiameterSizingExample(TestCase):
         del root_folder
         sys.path.pop(1)
 
-        problem = run_optimization_problem(
+        problem = run_esdl_mesido_optimization(
             PipeDiameterSizingProblem,
             base_folder=base_folder,
             esdl_file_name="2a.esdl",

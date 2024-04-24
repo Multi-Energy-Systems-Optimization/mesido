@@ -4,10 +4,9 @@ from unittest import TestCase
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
+from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
-
-from rtctools.util import run_optimization_problem
 
 
 class TestGasNetwork(TestCase):
@@ -36,7 +35,7 @@ class TestGasNetwork(TestCase):
                 self.gas_network_settings["minimize_head_losses"] = True
                 return options
 
-        solution = run_optimization_problem(
+        solution = run_esdl_mesido_optimization(
             GasNetworkProblem,
             base_folder=base_folder,
             esdl_file_name="2a_gas.esdl",

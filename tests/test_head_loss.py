@@ -7,10 +7,9 @@ from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
 from mesido.network_common import NetworkSettings
+from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
-
-from rtctools.util import run_optimization_problem
 
 from utils_tests import demand_matching_test
 
@@ -88,7 +87,7 @@ class TestHeadLoss(TestCase):
                 "influxdb_verify_ssl": False,
             }
 
-            solution = run_optimization_problem(
+            solution = run_esdl_mesido_optimization(
                 SourcePipeSinkDW,
                 base_folder=base_folder,
                 esdl_file_name="sourcesink.esdl",
@@ -264,7 +263,7 @@ class TestHeadLoss(TestCase):
 
                     return options
 
-            solution = run_optimization_problem(
+            solution = run_esdl_mesido_optimization(
                 SourcePipeSinkDW,
                 base_folder=base_folder,
                 esdl_file_name="sourcesink.esdl",
@@ -441,7 +440,7 @@ class TestHeadLoss(TestCase):
 
                     return options
 
-            solution = run_optimization_problem(
+            solution = run_esdl_mesido_optimization(
                 TestSourceSink,
                 base_folder=base_folder,
                 esdl_file_name="source_sink.esdl",
@@ -593,7 +592,7 @@ class TestHeadLoss(TestCase):
 
                     return options
 
-            solution = run_optimization_problem(
+            solution = run_esdl_mesido_optimization(
                 TestSourceSink,
                 base_folder=base_folder,
                 esdl_file_name="source_sink.esdl",
@@ -729,7 +728,7 @@ class TestHeadLoss(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
-        solution = run_optimization_problem(
+        solution = run_esdl_mesido_optimization(
             GasProblem,
             base_folder=base_folder,
             esdl_file_name="multiple_carriers.esdl",
@@ -778,7 +777,7 @@ class TestHeadLoss(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
-        solution = run_optimization_problem(
+        solution = run_esdl_mesido_optimization(
             GasProblem,
             base_folder=base_folder,
             esdl_file_name="compressor.esdl",
