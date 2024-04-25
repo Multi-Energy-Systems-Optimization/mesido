@@ -901,52 +901,54 @@ class ScenarioOutput(TechnoEconomicMixin):
                 *self.energy_system_components.get("heat_exchanger", []),
                 *self.energy_system_components.get("heat_pump", []),
             ]:
-                # Note: when adding new variables to variables_one_hydraulic_system or"
-                # variables_two_hydraulic_system also add quantity and units to the ESDL for the new
-                # variables in the code lower down
-                # These variables exist for all the assets. Variables that only exist for specific
-                # assets are only added later, like Pump_power
-                variables_one_hydraulic_system = ["HeatIn.Q", "Heat_flow"]
-                variables_two_hydraulic_system = [
-                    "Primary.HeatIn.Q",
-                    "Secondary.HeatIn.Q",
-                    "Heat_flow",
-                ]
-
-                # Update/overwrite each asset variable list due to:
-                # - the addition of head loss minimization: head variable and pump power
-                # - only a specific variable required for a specific asset: pump power
-                # - addition of post processed variables: pipe velocity
-                if self.heat_network_settings["minimize_head_losses"]:
-                    variables_one_hydraulic_system.append("HeatIn.H")
-                    variables_two_hydraulic_system.append("Primary.HeatIn.H")
-                    variables_two_hydraulic_system.append("Secondary.HeatIn.H")
-                    if asset_name in [
-                        *self.energy_system_components.get("heat_source", []),
-                        *self.energy_system_components.get("heat_buffer", []),
-                        *self.energy_system_components.get("ates", []),
-                        *self.energy_system_components.get("heat_exchanger", []),
-                        *self.energy_system_components.get("heat_pump", []),
-                    ]:
-                        variables_one_hydraulic_system.append("Pump_power")
-                        variables_two_hydraulic_system.append("Pump_power")
-                    elif asset_name in [*self.energy_system_components.get("pump", [])]:
-                        variables_one_hydraulic_system = ["Pump_power"]
-                        variables_two_hydraulic_system = ["Pump_power"]
-                if asset_name in [*self.energy_system_components.get("heat_pipe", [])]:
-                    variables_one_hydraulic_system.append("PostProc.Velocity")
-                    variables_two_hydraulic_system.append("PostProc.Velocity")
-                    # Velocity at the pipe outlet [m/s]
-                    post_processed_velocity = (
-                        results[f"{asset_name}.HeatOut.Q"] / parameters[f"{asset_name}.area"]
-                    )
-
-                profiles = ProfileManager()
-                profiles.profile_type = "DATETIME_LIST"
-                profiles.profile_header = ["datetime"]
                 try:
                     # If the asset has been placed
                     asset = _name_to_asset(asset_name)
+
+                    # Note: when adding new variables to variables_one_hydraulic_system or"
+                    # variables_two_hydraulic_system also add quantity and units to the ESDL for
+                    # the new variables in the code lower down
+                    # These variables exist for all the assets. Variables that only exist for
+                    # specific
+                    # assets are only added later, like Pump_power
+                    variables_one_hydraulic_system = ["HeatIn.Q", "Heat_flow"]
+                    variables_two_hydraulic_system = [
+                        "Primary.HeatIn.Q",
+                        "Secondary.HeatIn.Q",
+                        "Heat_flow",
+                    ]
+
+                    # Update/overwrite each asset variable list due to:
+                    # - the addition of head loss minimization: head variable and pump power
+                    # - only a specific variable required for a specific asset: pump power
+                    # - addition of post processed variables: pipe velocity
+                    if self.heat_network_settings["minimize_head_losses"]:
+                        variables_one_hydraulic_system.append("HeatIn.H")
+                        variables_two_hydraulic_system.append("Primary.HeatIn.H")
+                        variables_two_hydraulic_system.append("Secondary.HeatIn.H")
+                        if asset_name in [
+                            *self.energy_system_components.get("heat_source", []),
+                            *self.energy_system_components.get("heat_buffer", []),
+                            *self.energy_system_components.get("ates", []),
+                            *self.energy_system_components.get("heat_exchanger", []),
+                            *self.energy_system_components.get("heat_pump", []),
+                        ]:
+                            variables_one_hydraulic_system.append("Pump_power")
+                            variables_two_hydraulic_system.append("Pump_power")
+                        elif asset_name in [*self.energy_system_components.get("pump", [])]:
+                            variables_one_hydraulic_system = ["Pump_power"]
+                            variables_two_hydraulic_system = ["Pump_power"]
+                    if asset_name in [*self.energy_system_components.get("heat_pipe", [])]:
+                        variables_one_hydraulic_system.append("PostProc.Velocity")
+                        variables_two_hydraulic_system.append("PostProc.Velocity")
+                        # Velocity at the pipe outlet [m/s]
+                        post_processed_velocity = (
+                            results[f"{asset_name}.HeatOut.Q"] / parameters[f"{asset_name}.area"]
+                        )
+
+                    profiles = ProfileManager()
+                    profiles.profile_type = "DATETIME_LIST"
+                    profiles.profile_header = ["datetime"]
 
                     # Get index of outport which will be used to assign the profile data to
                     index_outport = -1
