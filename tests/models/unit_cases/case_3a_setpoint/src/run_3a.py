@@ -62,7 +62,7 @@ class _GoalsAndOptions:
 
     def solver_options(self):
         options = super().solver_options()
-        options["solver"] = "gurobi"
+        options["solver"] = "highs"
         # highs_options = options["highs"] = {}
         # highs_options["mip_rel_gap"] = 0.0025
         # options["gurobi"] = gurobi_options = {}
@@ -94,14 +94,6 @@ class HeatProblem(
 
         return goals
 
-    def solver_options(self):
-        options = super().solver_options()
-        options["solver"] = "highs"
-        # highs_options = options["highs"] = {}
-        # highs_options["mip_rel_gap"] = 0.0025
-        # options["gurobi"] = gurobi_options = {}
-        # gurobi_options["MIPgap"] = 0.0001
-        return options
 
 
 if __name__ == "__main__":
