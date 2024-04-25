@@ -95,7 +95,6 @@ class HeatProblem(
         return goals
 
 
-
 if __name__ == "__main__":
     from rtctools.util import run_optimization_problem
 

@@ -276,7 +276,7 @@ class TestHydraulicPower(TestCase):
 
                 return options
 
-        solution = run_optimization_problem(
+        solution = run_esdl_mesido_optimization(
             GasProblemHydraulic,
             base_folder=base_folder,
             esdl_file_name="source_sink.esdl",
@@ -403,7 +403,7 @@ class TestHydraulicPower(TestCase):
 
                 return options
 
-        solution = run_optimization_problem(
+        solution = run_esdl_mesido_optimization(
             GasProblemHydraulic,
             base_folder=base_folder,
             esdl_file_name="test.esdl",
