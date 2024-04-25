@@ -3,8 +3,7 @@ from unittest import TestCase
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
-
-from rtctools.util import run_optimization_problem
+from mesido.util import run_esdl_mesido_optimization
 
 
 class TestEmerge(TestCase):
@@ -21,8 +20,7 @@ class TestEmerge(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
-        # TODO: use the new run_esdl_mesido_optimization function
-        _ = run_optimization_problem(
+        _ = run_esdl_mesido_optimization(
             EmergeWorkFlow,
             base_folder=base_folder,
             esdl_file_name="emerge.esdl",
