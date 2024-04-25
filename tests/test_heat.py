@@ -4,10 +4,9 @@ from unittest import TestCase
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
+from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
-
-from rtctools.util import run_optimization_problem
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
@@ -27,7 +26,7 @@ class TestHeat(TestCase):
 
         base_folder = Path(double_pipe_heat.__file__).resolve().parent.parent
 
-        case = run_optimization_problem(
+        case = run_esdl_mesido_optimization(
             SourcePipeSink,
             base_folder=base_folder,
             esdl_file_name="sourcesink.esdl",
@@ -69,7 +68,7 @@ class TestHeat(TestCase):
 
         base_folder = Path(double_pipe_heat.__file__).resolve().parent.parent
 
-        case = run_optimization_problem(
+        case = run_esdl_mesido_optimization(
             Model,
             base_folder=base_folder,
             esdl_file_name="sourcesink.esdl",
@@ -160,7 +159,7 @@ class TestMinMaxPressureOptions(TestCase):
         - max pressure
 
         """
-        case_default = run_optimization_problem(
+        case_default = run_esdl_mesido_optimization(
             self.SmallerPipes,
             base_folder=self.base_folder,
             esdl_file_name=self.esdl_file,
@@ -168,7 +167,7 @@ class TestMinMaxPressureOptions(TestCase):
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file=self.input_time_series_file,
         )
-        case_min_pressure = run_optimization_problem(
+        case_min_pressure = run_esdl_mesido_optimization(
             self.MinPressure,
             base_folder=self.base_folder,
             esdl_file_name=self.esdl_file,
@@ -176,7 +175,7 @@ class TestMinMaxPressureOptions(TestCase):
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file=self.input_time_series_file,
         )
-        case_max_pressure = run_optimization_problem(
+        case_max_pressure = run_esdl_mesido_optimization(
             self.MaxPressure,
             base_folder=self.base_folder,
             esdl_file_name=self.esdl_file,
@@ -184,7 +183,7 @@ class TestMinMaxPressureOptions(TestCase):
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file=self.input_time_series_file,
         )
-        case_min_max_pressure = run_optimization_problem(
+        case_min_max_pressure = run_esdl_mesido_optimization(
             self.MinMaxPressure,
             base_folder=self.base_folder,
             esdl_file_name=self.esdl_file,
@@ -293,7 +292,7 @@ class TestDisconnectablePipe(TestCase):
         - Check that pipe becomes disconnected when flow is forced to zero
 
         """
-        case_connected = run_optimization_problem(
+        case_connected = run_esdl_mesido_optimization(
             self.ModelConnected,
             base_folder=self.base_folder,
             esdl_file_name="sourcesink.esdl",
@@ -304,7 +303,7 @@ class TestDisconnectablePipe(TestCase):
         results_connected = case_connected.extract_results()
         q_connected = results_connected["Pipe1.Q"]
 
-        case_disconnected = run_optimization_problem(
+        case_disconnected = run_esdl_mesido_optimization(
             self.ModelDisconnected,
             base_folder=self.base_folder,
             esdl_file_name="sourcesink.esdl",
@@ -346,7 +345,7 @@ class TestDisconnectablePipe(TestCase):
 
         """
 
-        case_linear = run_optimization_problem(
+        case_linear = run_esdl_mesido_optimization(
             self.ModelDisconnected,
             base_folder=self.base_folder,
             esdl_file_name="sourcesink.esdl",
@@ -357,7 +356,7 @@ class TestDisconnectablePipe(TestCase):
         results_linear = case_linear.extract_results()
         q_linear = results_linear["Pipe1.Q"]
 
-        case_dw = run_optimization_problem(
+        case_dw = run_esdl_mesido_optimization(
             self.ModelDisconnectedDarcyWeisbach,
             base_folder=self.base_folder,
             esdl_file_name="sourcesink.esdl",

@@ -4,10 +4,9 @@ from unittest import TestCase
 from mesido._heat_loss_u_values_pipe import pipe_heat_loss
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
-
-from rtctools.util import run_optimization_problem
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
@@ -33,7 +32,7 @@ class TestVaryingTemperature(TestCase):
 
         base_folder = Path(run_1a.__file__).resolve().parent.parent
 
-        heat_problem = run_optimization_problem(
+        heat_problem = run_esdl_mesido_optimization(
             HeatProblemTvar,
             base_folder=base_folder,
             esdl_file_name="1a.esdl",
@@ -97,7 +96,7 @@ class TestVaryingTemperature(TestCase):
 
         base_folder = Path(run_3a.__file__).resolve().parent.parent
 
-        heat_problem = run_optimization_problem(
+        heat_problem = run_esdl_mesido_optimization(
             HeatProblemTvarsup,
             base_folder=base_folder,
             esdl_file_name="3a.esdl",
@@ -169,7 +168,7 @@ class TestVaryingTemperature(TestCase):
 
         base_folder = Path(run_3a.__file__).resolve().parent.parent
 
-        heat_problem = run_optimization_problem(
+        heat_problem = run_esdl_mesido_optimization(
             HeatProblemTvarret,
             base_folder=base_folder,
             esdl_file_name="3a.esdl",
@@ -233,7 +232,7 @@ class TestVaryingTemperature(TestCase):
 
         base_folder = Path(run_heat_exchanger.__file__).resolve().parent.parent
 
-        heat_problem = run_optimization_problem(
+        heat_problem = run_esdl_mesido_optimization(
             HeatProblemTvar,
             base_folder=base_folder,
             esdl_file_name="heat_exchanger.esdl",
@@ -299,7 +298,7 @@ class TestVaryingTemperature(TestCase):
 
         base_folder = Path(run_heat_exchanger.__file__).resolve().parent.parent
 
-        heat_problem = run_optimization_problem(
+        heat_problem = run_esdl_mesido_optimization(
             HeatProblemTvarDisableHEX,
             base_folder=base_folder,
             esdl_file_name="heat_exchanger.esdl",
@@ -341,7 +340,7 @@ class TestVaryingTemperature(TestCase):
 
         base_folder = Path(run_heat_exchanger.__file__).resolve().parent.parent
 
-        heat_problem = run_optimization_problem(
+        heat_problem = run_esdl_mesido_optimization(
             HeatProblemTvarSecondary,
             base_folder=base_folder,
             esdl_file_name="heat_exchanger.esdl",
@@ -379,7 +378,7 @@ class TestVaryingTemperature(TestCase):
 
         base_folder = Path(run_heat_pump.__file__).resolve().parent.parent
 
-        heat_problem = run_optimization_problem(
+        heat_problem = run_esdl_mesido_optimization(
             HeatProblemTvar,
             base_folder=base_folder,
             esdl_file_name="heat_pump.esdl",

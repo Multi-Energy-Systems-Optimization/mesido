@@ -20,7 +20,7 @@
       </asset>
       <asset xsi:type="esdl:GeothermalSource" flowRate="5.0" maxTemperature="80.0" id="b702bda3-632c-43ff-9867-72cda41f442f" minTemperature="80.0" power="1000000.0" name="GeothermalSource_b702">
         <constraint xsi:type="esdl:RangedConstraint" name="setpointconstraint" id="86ddf8ca-2241-4f4e-b2ab-e6b9ff944067">
-          <range xsi:type="esdl:Range" id="fc3d32df-a615-490d-a957-7509a58ab6d9" name="NewRange">
+          <range xsi:type="esdl:Range" id="fc3d32df-a615-490d-a957-7509a58ab6d9" name="NewRange" maxValue="0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perTimeUnit="DAY" id="47bca11d-8286-411f-be06-dd2e4e888e89"/>
           </range>
         </constraint>

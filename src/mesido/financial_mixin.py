@@ -1066,7 +1066,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         options = self.energy_system_options()
         if options["include_asset_is_realized"]:
             for asset in [
-                *self.energy_system_components.get("heat_demand", []),
+                # *self.energy_system_components.get("heat_demand", []),
                 *self.energy_system_components.get("heat_source", []),
                 *self.energy_system_components.get("ates", []),
                 *self.energy_system_components.get("low_temperature_ates", []),
@@ -1079,12 +1079,8 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 nominal = self.variable_nominal(var_name)
                 var_name = self.__asset_is_realized_map[asset]
                 asset_is_realized = self.state(var_name)
-                installation_cost_sym = self.__asset_installation_cost_var[
-                    self._asset_installation_cost_map[asset]
-                ]
-                investment_cost_sym = self.__asset_investment_cost_var[
-                    self._asset_investment_cost_map[asset]
-                ]
+                installation_cost_sym = self.variable(self._asset_installation_cost_map[asset])
+                investment_cost_sym = self.variable(self._asset_investment_cost_map[asset])
                 # TODO: add insulation class cost to the investments made.
                 # if asset in self.heat_network_components.get("demand", []):
                 #     for insulation_class in self.__get_insulation_classes(asset):

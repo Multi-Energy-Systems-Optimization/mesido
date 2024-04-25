@@ -3,10 +3,9 @@ from unittest import TestCase
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
-
-from rtctools.util import run_optimization_problem
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
@@ -33,7 +32,7 @@ class TestAtes(TestCase):
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
         # This is an optimization done over a full year with 365 day timesteps
-        solution = run_optimization_problem(
+        solution = run_esdl_mesido_optimization(
             HeatProblem,
             base_folder=base_folder,
             esdl_file_name="test_case_small_network_with_ates.esdl",

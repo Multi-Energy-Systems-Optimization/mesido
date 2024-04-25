@@ -7,12 +7,12 @@ from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
 from mesido.network_common import NetworkSettings
+from mesido.util import run_esdl_mesido_optimization
+
 
 import numpy as np
 
 import pandas as pd
-
-from rtctools.util import run_optimization_problem
 
 
 class TestHydraulicPower(TestCase):
@@ -103,7 +103,7 @@ class TestHydraulicPower(TestCase):
             run_hydraulic_power.manual_set_pipe_length = run_hydraulic_power.comp_vars_vals[
                 "pipe_length"
             ][val]
-            run_optimization_problem(
+            run_esdl_mesido_optimization(
                 HeatProblem,
                 base_folder=base_folder,
                 esdl_file_name="test_simple.esdl",
@@ -146,7 +146,7 @@ class TestHydraulicPower(TestCase):
             run_hydraulic_power.manual_set_pipe_length = run_hydraulic_power.comp_vars_vals[
                 "pipe_length"
             ][val]
-            run_optimization_problem(
+            run_esdl_mesido_optimization(
                 HeatProblem,
                 base_folder=base_folder,
                 esdl_file_name="test_simple.esdl",
@@ -197,7 +197,7 @@ class TestHydraulicPower(TestCase):
             run_hydraulic_power.manual_set_pipe_length = run_hydraulic_power.comp_vars_vals[
                 "pipe_length"
             ][val]
-            run_optimization_problem(
+            run_esdl_mesido_optimization(
                 HeatProblem,
                 base_folder=base_folder,
                 esdl_file_name="test_simple.esdl",
@@ -276,7 +276,7 @@ class TestHydraulicPower(TestCase):
 
                 return options
 
-        solution = run_optimization_problem(
+        solution = run_esdl_mesido_optimization(
             GasProblemHydraulic,
             base_folder=base_folder,
             esdl_file_name="source_sink.esdl",
@@ -403,7 +403,7 @@ class TestHydraulicPower(TestCase):
 
                 return options
 
-        solution = run_optimization_problem(
+        solution = run_esdl_mesido_optimization(
             GasProblemHydraulic,
             base_folder=base_folder,
             esdl_file_name="test.esdl",

@@ -8,12 +8,10 @@ from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.pipe_class import PipeClass
 from mesido.techno_economic_mixin import TechnoEconomicMixin
+from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 import numpy.testing
-
-from rtctools.util import run_optimization_problem
-
 
 MIP_TOLERANCE = 1e-8
 
@@ -43,7 +41,7 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
         del root_folder
         sys.path.pop(1)
 
-        cls.problem = run_optimization_problem(
+        cls.problem = run_esdl_mesido_optimization(
             PipeDiameterSizingProblem,
             base_folder=base_folder,
             esdl_file_name="2a.esdl",

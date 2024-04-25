@@ -3,10 +3,9 @@ from unittest import TestCase
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
-
-from rtctools.util import run_optimization_problem
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
@@ -28,7 +27,7 @@ class TestElecBoiler(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
-        heat_problem = run_optimization_problem(
+        heat_problem = run_esdl_mesido_optimization(
             SourcePipeSink,
             base_folder=base_folder,
             esdl_file_name="sourcesink_witheboiler.esdl",
@@ -67,7 +66,7 @@ class TestElecBoiler(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
-        heat_problem = run_optimization_problem(
+        heat_problem = run_esdl_mesido_optimization(
             SourcePipeSink,
             base_folder=base_folder,
             esdl_file_name="sourcesink_withHP.esdl",

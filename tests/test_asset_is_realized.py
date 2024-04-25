@@ -3,10 +3,9 @@ from unittest import TestCase
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
-
-from rtctools.util import run_optimization_problem
 
 
 class TestAssetIsRealized(TestCase):
@@ -36,7 +35,7 @@ class TestAssetIsRealized(TestCase):
 
         # This is an optimization done over 25 timesteps with a cap on how quickly the cost
         # for the 2 producers can be realized
-        solution = run_optimization_problem(
+        solution = run_esdl_mesido_optimization(
             HeatProblemPlacingOverTime,
             base_folder=base_folder,
             esdl_file_name="test_case_small_network_with_ates.esdl",
