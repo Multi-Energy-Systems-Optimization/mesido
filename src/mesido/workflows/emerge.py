@@ -1,3 +1,4 @@
+import os
 import time
 
 import casadi as ca
@@ -34,9 +35,6 @@ class MaxRevenue(Goal):
         ----------
         source : string of the source name that is going to be minimized
         """
-        # self.target_max = 0
-        # self.function_range = (-1.0e9, 1.0e9)
-        # self.function_nominal = 1.0e7
 
         self.asset_name = asset_name
 
@@ -53,9 +51,8 @@ class MaxRevenue(Goal):
 
         Returns
         -------
-        The negative hydrogen production state of the optimization problem.
+        The negative revenue var of the optimization problem.
         """
-        # TODO: not yet scaled
         return -optimization_problem.extra_variable(f"{self.asset_name}__revenue", ensemble_member)
 
 
@@ -120,7 +117,7 @@ class EmergeWorkFlow(
         for asset_name in [
             *self.energy_system_components.get("electricity_source", []),
             *self.energy_system_components.get("gas_tank_storage", []),
-            # TODO: battery
+            *self.energy_system_components.get("electricity_storage", []),
             *self.energy_system_components.get("electrolyzer", []),
             *self.energy_system_components.get("heat_pump_elec", []),
         ]:
@@ -197,50 +194,49 @@ class EmergeWorkFlow(
         super().post()
 
         # Optimized ESDL
-        # self._write_updated_esdl(self._ESDLMixin__energy_system_handler.energy_system)
-        #
-        # self._save_json = False
-        #
-        # if os.path.exists(self.output_folder) and self._save_json:
-        #     self._write_json_output()
-        #
-        # results = self.extract_results()
-        #
-        # for _type, assets in self.energy_system_components.items():
-        #     for asset in assets:
-        #         print("----------------------------------")
-        #         print(f"{asset} financials:")
-        #         try:
-        #             print(f"revenue of {asset} in MEUR/day: ", results[f"{asset}__revenue"] / 1e6)
-        #         except KeyError:
-        #             print(f"{asset} does not have a revenue")
-        #             pass
-        #         try:
-        #             print(
-        #                 f"fixed operational costs of {asset} in MEUR/yr : ",
-        #                 results[f"{asset}__fixed_operational_cost"] / 1e6,
-        #             )
-        #             print(
-        #                 f"variable operational costs of {asset} : ",
-        #                 results[f"{asset}__variable_operational_cost"] / 1e6,
-        #             )  # not yet all included in financialmixin
-        #             print(f"max size of {asset} : ", results[f"{asset}__max_size"])
-        #         except KeyError:
-        #             print(f"{asset} does not have a costs")
-        #             pass
+        self._write_updated_esdl(self._ESDLMixin__energy_system_handler.energy_system)
+
+        self._save_json = False
+
+        if os.path.exists(self.output_folder) and self._save_json:
+            self._write_json_output()
+
+        results = self.extract_results()
+
+        for _type, assets in self.energy_system_components.items():
+            for asset in assets:
+                print("----------------------------------")
+                print(f"{asset} financials:")
+                try:
+                    print(f"revenue of {asset} in MEUR/day: ", results[f"{asset}__revenue"] / 1e6)
+                except KeyError:
+                    print(f"{asset} does not have a revenue")
+                    pass
+                try:
+                    print(
+                        f"fixed operational costs of {asset} in MEUR/yr : ",
+                        results[f"{asset}__fixed_operational_cost"] / 1e6,
+                    )
+                    print(
+                        f"variable operational costs of {asset} : ",
+                        results[f"{asset}__variable_operational_cost"] / 1e6,
+                    )  # not yet all included in financialmixin
+                    print(f"max size of {asset} : ", results[f"{asset}__max_size"])
+                except KeyError:
+                    print(f"{asset} does not have a costs")
+                    pass
 
 
 if __name__ == "__main__":
 
     tic = time.time()
-    for _ in range(10):
-        elect = run_optimization_problem(
-            EmergeWorkFlow,
-            esdl_file_name="emerge_solar_battery.esdl",
-            esdl_parser=ESDLFileParser,
-            profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries_with_PV.csv",
-        )
+    elect = run_optimization_problem(
+        EmergeWorkFlow,
+        esdl_file_name="emerge_solar_battery.esdl",
+        esdl_parser=ESDLFileParser,
+        profile_reader=ProfileReaderFromFile,
+        input_timeseries_file="timeseries_with_PV.csv",
+    )
     print(time.time() - tic)
     results = elect.extract_results()
     a = 1
