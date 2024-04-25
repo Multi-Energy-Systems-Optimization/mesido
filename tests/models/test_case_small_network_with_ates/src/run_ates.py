@@ -111,7 +111,7 @@ class HeatProblem(
 
     def energy_system_options(self):
         options = super().energy_system_options()
-        # self.heat_network_settings["minimum_velocity"] = 0.0001
+        self.heat_network_settings["minimum_velocity"] = 0.0001
         return options
 
     def solver_options(self):
