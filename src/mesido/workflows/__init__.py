@@ -1,6 +1,7 @@
 from .grow_workflow import (
     EndScenarioSizing,
     EndScenarioSizingDiscountedHIGHS,
+    EndScenarioSizingDiscountedStagedHIGHS,
     EndScenarioSizingHIGHS,
     EndScenarioSizingStaged,
     EndScenarioSizingStagedHIGHS,
@@ -20,6 +21,7 @@ from .simulator_workflow import (
 __all__ = [
     "EndScenarioSizing",
     "EndScenarioSizingDiscountedHIGHS",
+    "EndScenarioSizingDiscountedStagedHIGHS",
     "EndScenarioSizingHIGHS",
     "EndScenarioSizingStaged",
     "EndScenarioSizingStagedHIGHS",
