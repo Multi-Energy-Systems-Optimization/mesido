@@ -910,7 +910,12 @@ class ScenarioOutput(TechnoEconomicMixin):
                 try:
                     # If the asset has been placed
                     asset = _name_to_asset(asset_name)
-                    port = [port for port in asset.port if isinstance(port, esdl.InPort)][0]
+                    if isinstance(asset, esdl.Transport) or isinstance(asset, esdl.Consumer):
+                        port = [port for port in asset.port if isinstance(port, esdl.InPort)][0]
+                    elif isinstance(asset, esdl.Producer):
+                        port = [port for port in asset.port if isinstance(port, esdl.OutPort)][0]
+                    else:
+                        NotImplementedError(f"influxdb not yet included for assets of type {type(asset)}")
                     carrier_id = port.carrier.id
 
                     # Note: when adding new variables to variables_one_hydraulic_system or"
@@ -919,6 +924,7 @@ class ScenarioOutput(TechnoEconomicMixin):
                     # These variables exist for all the assets. Variables that only exist for
                     # specific
                     # assets are only added later, like Pump_power
+                    # general_headers = ["assetClass", "assetId", "assetName", "capability"]
                     variables_one_hydraulic_system = ["HeatIn.Q", "Heat_flow"]
                     variables_two_hydraulic_system = [
                         "Primary.HeatIn.Q",
@@ -956,7 +962,7 @@ class ScenarioOutput(TechnoEconomicMixin):
 
                     profiles = ProfileManager()
                     profiles.profile_type = "DATETIME_LIST"
-                    profiles.profile_header = ["datetime"]
+                    profiles.profile_header = ["datetime"] #+ general_headers
 
                     # Get index of outport which will be used to assign the profile data to
                     index_outport = -1
@@ -977,11 +983,18 @@ class ScenarioOutput(TechnoEconomicMixin):
                         )
                         sys.exit(1)
 
+                    assetClass = asset.__class__.__name__
+                    assetId = asset.id
+                    capabilities = [esdl.Transport, esdl.Conversion, esdl.Consumer, esdl.Producer]
+                    capability = [c for c in capabilities if c in asset.__class__.__mro__][0].__name__
                     for ii in range(len(self.times())):
+                        #TODO: add the general information of assets here.
                         if not self.io.datetimes[ii].tzinfo:
                             data_row = [self.io.datetimes[ii].replace(tzinfo=datetime.timezone.utc)]
                         else:
                             data_row = [self.io.datetimes[ii]]
+                        # ["assetClass", "assetId", "assetName"]
+                        # data_row.extend([assetClass, assetId, asset_name, capability])
 
                         try:
                             # For all components dealing with one hydraulic system
@@ -1117,17 +1130,18 @@ class ScenarioOutput(TechnoEconomicMixin):
                         influxdb_conn_settings, profiles
                     )
 
-                    optim_simulation_tag = {"output_esdl_id": energy_system.id}
+                    optim_simulation_tag = {"output_esdl_id": energy_system.id, "assetId": assetId, "assetName": asset_name, "assetClass": assetClass, "capability":  capability}
                     if asset_name in [*self.energy_system_components.get("heat_pipe")]:
-                        if profile_managers_carriers[carrier_id]:
-                            profile_managers_carriers[carrier_id].profile_data_list.extend(profiles.profile_data_list)
-                        else:
-                            profile_managers_carriers[carrier_id] = profiles
-                        # _ = influxdb_profile_manager.save_influxdb(
-                        #     measurement=carrier_id,
-                        #     field_names=influxdb_profile_manager.profile_header[1:],
-                        #     tags=optim_simulation_tag,
-                        # )
+                        # if profile_managers_carriers[carrier_id]:
+                        #     profile_managers_carriers[carrier_id].profile_data_list.extend(profiles.profile_data_list)
+                        #     profile_managers_carriers[carrier_id].num_profile_items = len(profile_managers_carriers[carrier_id].profile_data_list)
+                        # else:
+                        #     profile_managers_carriers[carrier_id] = profiles
+                        _ = influxdb_profile_manager.save_influxdb(
+                            measurement=carrier_id,
+                            field_names=influxdb_profile_manager.profile_header[1:],
+                            tags=optim_simulation_tag,
+                        )
                     else:
                         _ = influxdb_profile_manager.save_influxdb(
                             measurement=asset_name,
@@ -1195,16 +1209,16 @@ class ScenarioOutput(TechnoEconomicMixin):
                     )
                     traceback.print_exc()
                     sys.exit(1)
-            for carrier in energy_system.energySystemInformation.carriers.carrier:
-                carrier_id = carrier.id
-                influxdb_profile_manager = InfluxDBProfileManager(
-                    influxdb_conn_settings, profile_managers_carriers[carrier_id]
-                )
-                _ = influxdb_profile_manager.save_influxdb(
-                    measurement=carrier_id,
-                    field_names=influxdb_profile_manager.profile_header[1:],
-                    tags=optim_simulation_tag,
-                )
+            # for carrier in energy_system.energySystemInformation.carriers.carrier:
+            #     carrier_id = carrier.id
+            #     influxdb_profile_manager = InfluxDBProfileManager(
+            #         influxdb_conn_settings, profile_managers_carriers[carrier_id]
+            #     )
+            #     _ = influxdb_profile_manager.save_influxdb(
+            #         measurement=carrier_id,
+            #         field_names=influxdb_profile_manager.profile_header[1:],
+            #         tags=optim_simulation_tag,
+            #     )
 
             # TODO: create test case
             # Code that can be used to remove a specific measurment from the database
