@@ -892,6 +892,12 @@ class ScenarioOutput(TechnoEconomicMixin):
             #     verify_ssl=self.influxdb_verify_ssl,
             # )
 
+            profile_managers_carriers = {}
+            carriers = energy_system.energySystemInformation.carriers
+            for carrier in carriers.carrier:
+                profile_managers_carriers[carrier.id] = None
+
+
             for asset_name in [
                 *self.energy_system_components.get("heat_source", []),
                 *self.energy_system_components.get("heat_demand", []),
@@ -904,6 +910,8 @@ class ScenarioOutput(TechnoEconomicMixin):
                 try:
                     # If the asset has been placed
                     asset = _name_to_asset(asset_name)
+                    port = [port for port in asset.port if isinstance(port, esdl.InPort)][0]
+                    carrier_id = port.carrier.id
 
                     # Note: when adding new variables to variables_one_hydraulic_system or"
                     # variables_two_hydraulic_system also add quantity and units to the ESDL for
@@ -1108,12 +1116,25 @@ class ScenarioOutput(TechnoEconomicMixin):
                     influxdb_profile_manager = InfluxDBProfileManager(
                         influxdb_conn_settings, profiles
                     )
+
                     optim_simulation_tag = {"output_esdl_id": energy_system.id}
-                    _ = influxdb_profile_manager.save_influxdb(
-                        measurement=asset_name,
-                        field_names=influxdb_profile_manager.profile_header[1:],
-                        tags=optim_simulation_tag,
-                    )
+                    if asset_name in [*self.energy_system_components.get("heat_pipe")]:
+                        if profile_managers_carriers[carrier_id]:
+                            profile_managers_carriers[carrier_id].profile_data_list.extend(profiles.profile_data_list)
+                        else:
+                            profile_managers_carriers[carrier_id] = profiles
+                        # _ = influxdb_profile_manager.save_influxdb(
+                        #     measurement=carrier_id,
+                        #     field_names=influxdb_profile_manager.profile_header[1:],
+                        #     tags=optim_simulation_tag,
+                        # )
+                    else:
+                        _ = influxdb_profile_manager.save_influxdb(
+                            measurement=asset_name,
+                            field_names=influxdb_profile_manager.profile_header[1:],
+                            tags=optim_simulation_tag,
+                        )
+                    print('a')
 
                     # -- Test tags -- # do not delete - to be used in test case
                     # prof_loaded_from_influxdb = InfluxDBProfileManager(influxdb_conn_settings)
@@ -1174,6 +1195,16 @@ class ScenarioOutput(TechnoEconomicMixin):
                     )
                     traceback.print_exc()
                     sys.exit(1)
+            for carrier in energy_system.energySystemInformation.carriers.carrier:
+                carrier_id = carrier.id
+                influxdb_profile_manager = InfluxDBProfileManager(
+                    influxdb_conn_settings, profile_managers_carriers[carrier_id]
+                )
+                _ = influxdb_profile_manager.save_influxdb(
+                    measurement=carrier_id,
+                    field_names=influxdb_profile_manager.profile_header[1:],
+                    tags=optim_simulation_tag,
+                )
 
             # TODO: create test case
             # Code that can be used to remove a specific measurment from the database
