@@ -137,8 +137,12 @@ for network_type in ['Tree']:  # code used to manually check specific cases
             # CP value in MESIDO = 4200J/kgK
 
             # Enforce mass flow rate instead of cacluting it from Q = m_dot...
-            # 297.83213455 149.02261074  74.61784883  12.11784883
+            mesido_demand_flow_kg_s = [297.83213455, 149.02261074, 74.61784883, 12.11784883]
             demand_flow = np.array([297.83] * len(demand_power))  # [kg/s] 
+            demand_flow[0] = mesido_demand_flow_kg_s[0]
+            demand_flow[1] = mesido_demand_flow_kg_s[1]
+            demand_flow[2] = mesido_demand_flow_kg_s[2]
+            demand_flow[3] = mesido_demand_flow_kg_s[3]
             # demand_flow = np.array([149.02261074] * len(demand_power))  # [kg/s]
             # demand_flow = np.array([74.61784883] * len(demand_power))  # [kg/s]
             # demand_flow = np.array([12.11784883] * len(demand_power))  # [kg/s]
@@ -279,7 +283,7 @@ for network_type in ['Tree']:  # code used to manually check specific cases
                 continue
             # run_timeseries(net, time_steps, mode='all')
 
-            print(net.res_pipe.p_from_bar.values - net.res_pipe.p_to_bar.values)
+            print((net.res_pipe.p_from_bar.values - net.res_pipe.p_to_bar.values) * 100e3 / 1e3)
             loop_elapsed = time.time() - t
             print('simulation done' + ':' + str(loop_elapsed))
 
