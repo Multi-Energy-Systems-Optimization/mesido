@@ -137,7 +137,11 @@ for network_type in ['Tree']:  # code used to manually check specific cases
             # CP value in MESIDO = 4200J/kgK
 
             # Enforce mass flow rate instead of cacluting it from Q = m_dot...
-            demand_flow = np.array([297.83] * len(demand_power))  # [kg/s]
+            # 297.83213455 149.02261074  74.61784883  12.11784883
+            demand_flow = np.array([297.83] * len(demand_power))  # [kg/s] 
+            # demand_flow = np.array([149.02261074] * len(demand_power))  # [kg/s]
+            # demand_flow = np.array([74.61784883] * len(demand_power))  # [kg/s]
+            # demand_flow = np.array([12.11784883] * len(demand_power))  # [kg/s]
             # demand_flow = (demand_power) / (Cp_J_kgK * dT)
             supply_flow = demand_flow * Ndemand / Nsupply 
 

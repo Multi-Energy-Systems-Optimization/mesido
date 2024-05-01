@@ -100,6 +100,12 @@ if __name__ == "__main__":
     )
     results = solution.extract_results()
 
-    print(results[f"Pipe1.dH"] * 988.0 * 9.81 / 100e3)  # pressure in bar
-    print(results[f"Pipe1_ret.dH"] * 988.0 * 9.81 / 100e3)  # pressure in bar
+    print(-results[f"Pipe1.dH"] * 988.0 * 9.81 / 100e3)  # pressure in bar
+    print(-results[f"Pipe1_ret.dH"] * 988.0 * 9.81 / 100e3)  # pressure in bar
+
+    print(-results[f"Pipe1.dH"] * 988.0 * 9.81 / 1e3)  # kPa
+    print(-results[f"Pipe1_ret.dH"] * 988.0 * 9.81 / 1e3)  # kPa
+
+    print(results[f"Pipe1.Q"][0:6] * 988.0)
+
     a = 1
