@@ -897,7 +897,6 @@ class ScenarioOutput(TechnoEconomicMixin):
             for carrier in carriers.carrier:
                 profile_managers_carriers[carrier.id] = None
 
-
             for asset_name in [
                 *self.energy_system_components.get("heat_source", []),
                 *self.energy_system_components.get("heat_demand", []),
@@ -910,17 +909,26 @@ class ScenarioOutput(TechnoEconomicMixin):
                 try:
                     # If the asset has been placed
                     asset = _name_to_asset(asset_name)
-                    port, port_prim, port_sec = 3*[None]
+                    port, port_prim, port_sec = 3 * [None]
                     if isinstance(asset, esdl.Transport) or isinstance(asset, esdl.Consumer):
                         port = [port for port in asset.port if isinstance(port, esdl.InPort)][0]
                     elif isinstance(asset, esdl.Producer):
                         port = [port for port in asset.port if isinstance(port, esdl.OutPort)][0]
                     elif isinstance(asset, esdl.Conversion):
-                        port_prim = [port for port in asset.port if isinstance(port, esdl.InPort) and 'Prim' in port.name][0]
-                        port_sec = [port for port in asset.port if
-                                     isinstance(port, esdl.OutPort) and 'Sec' in port.name][0]
-                        NotImplementedError(f"influxdb not yet included for assets of type {type(asset)}, still need to think of a nice way to propegate this information down")
-                        #TODO: probably would want to loop to create the profile database twice, separately for prim and sec.
+                        port_prim = [
+                            port
+                            for port in asset.port
+                            if isinstance(port, esdl.InPort) and "Prim" in port.name
+                        ][0]
+                        port_sec = [
+                            port
+                            for port in asset.port
+                            if isinstance(port, esdl.OutPort) and "Sec" in port.name
+                        ][0]
+                    else:
+                        NotImplementedError(
+                            f"influxdb not included for assets of type {type(asset)}"
+                        )
 
                     # Note: when adding new variables to variables_one_hydraulic_system or"
                     # variables_two_hydraulic_system also add quantity and units to the ESDL for
@@ -928,7 +936,6 @@ class ScenarioOutput(TechnoEconomicMixin):
                     # These variables exist for all the assets. Variables that only exist for
                     # specific
                     # assets are only added later, like Pump_power
-                    # general_headers = ["assetClass", "assetId", "assetName", "capability"]
                     variables_one_hydraulic_system = ["HeatIn.Q", "Heat_flow"]
                     variables_two_hydraulic_system = [
                         "Primary.HeatIn.Q",
@@ -967,27 +974,31 @@ class ScenarioOutput(TechnoEconomicMixin):
                     if port:
                         carrier_id_dict = {"carrier": port.carrier.id}
                     elif port_prim and port_sec:
-                        carrier_id_dict = {"Primary": port_prim.carrier.id, "Secondary": port_sec.carrier.id}
+                        carrier_id_dict = {
+                            "Primary": port_prim.carrier.id,
+                            "Secondary": port_sec.carrier.id,
+                        }
                     else:
-                        NotImplementedError("Unsuported types for the different port carrier combinations")
+                        NotImplementedError(
+                            "Unsuported types for the different port carrier combinations"
+                        )
 
                     variables_two_hydraulic_system_org = variables_two_hydraulic_system.copy()
                     for asset_side, carrier_id in carrier_id_dict.items():
                         variables_two_hydraulic_system = variables_two_hydraulic_system_org.copy()
                         var_pops = []
                         if asset_side == "Primary":
-                            var_pops = [v for v in variables_two_hydraulic_system if
-                                        'Secondary' in v]
+                            var_pops = [
+                                v for v in variables_two_hydraulic_system if "Secondary" in v
+                            ]
                         elif asset_side == "Secondary":
-                            var_pops = [v for v in variables_two_hydraulic_system if
-                                        'Primary' in v]
+                            var_pops = [v for v in variables_two_hydraulic_system if "Primary" in v]
                         for v in var_pops:
                             variables_two_hydraulic_system.remove(v)
 
-
                         profiles = ProfileManager()
                         profiles.profile_type = "DATETIME_LIST"
-                        profiles.profile_header = ["datetime"] #+ general_headers
+                        profiles.profile_header = ["datetime"]  # + general_headers
 
                         # Get index of outport which will be used to assign the profile data to
                         index_outport = -1
@@ -1004,41 +1015,52 @@ class ScenarioOutput(TechnoEconomicMixin):
 
                         if index_outport == -1:
                             logger.error(
-                                f"Variable {index_outport} has not been assigned to the asset OutPort"
+                                f"Variable {index_outport} has not been assigned to the asset "
+                                f"OutPort"
                             )
                             sys.exit(1)
 
-                        assetClass = asset.__class__.__name__
-                        assetId = asset.id
-                        capabilities = [esdl.Transport, esdl.Conversion, esdl.Consumer, esdl.Producer]
-                        capability = [c for c in capabilities if c in asset.__class__.__mro__][0].__name__
+                        asset_class = asset.__class__.__name__
+                        asset_id = asset.id
+                        capabilities = [
+                            esdl.Transport,
+                            esdl.Conversion,
+                            esdl.Consumer,
+                            esdl.Producer,
+                        ]
+                        capability = [c for c in capabilities if c in asset.__class__.__mro__][
+                            0
+                        ].__name__
                         for ii in range(len(self.times())):
-                            #TODO: add the general information of assets here.
                             if not self.io.datetimes[ii].tzinfo:
-                                data_row = [self.io.datetimes[ii].replace(tzinfo=datetime.timezone.utc)]
+                                data_row = [
+                                    self.io.datetimes[ii].replace(tzinfo=datetime.timezone.utc)
+                                ]
                             else:
                                 data_row = [self.io.datetimes[ii]]
-                            # ["assetClass", "assetId", "assetName"]
-                            # data_row.extend([assetClass, assetId, asset_name, capability])
 
                             try:
                                 # For all components dealing with one hydraulic system
                                 if isinstance(
-                                    results[f"{asset_name}." + variables_one_hydraulic_system[0]][ii],
+                                    results[f"{asset_name}." + variables_one_hydraulic_system[0]][
+                                        ii
+                                    ],
                                     numbers.Number,
                                 ):
                                     variables_names = variables_one_hydraulic_system
                             except KeyError:
                                 # For all components dealing with two hydraulic system
                                 if isinstance(
-                                    results[f"{asset_name}." + variables_two_hydraulic_system[0]][ii],
+                                    results[f"{asset_name}." + variables_two_hydraulic_system[0]][
+                                        ii
+                                    ],
                                     numbers.Number,
                                 ):
                                     variables_names = variables_two_hydraulic_system
                             except Exception:
                                 logger.error(
-                                    f"During the influxDB profile writing for asset: {asset_name}, the "
-                                    "following error occured:"
+                                    f"During the influxDB profile writing for asset: {asset_name},"
+                                    f" the following error occured:"
                                 )
                                 traceback.print_exc()
                                 sys.exit(1)
@@ -1053,8 +1075,9 @@ class ScenarioOutput(TechnoEconomicMixin):
                                             tzinfo=datetime.timezone.utc
                                         )
                                         logger.warning(
-                                            "No timezone specified for the output profile: default UTC"
-                                            f"has been used for asset {asset_name} variable {variable}"
+                                            f"No timezone specified for the output profile: "
+                                            f"default UTC has been used for asset {asset_name} "
+                                            f"variable {variable}"
                                         )
                                     else:
                                         start_date_time = self.io.datetimes[0]
@@ -1140,8 +1163,8 @@ class ScenarioOutput(TechnoEconomicMixin):
                                     data_row.append(
                                         results[f"{asset_name}." + variable][ii] * conversion_factor
                                     )
-                                # The variable evaluation below seems unnecessary, but it would be used
-                                # we expand the list of post process type variables
+                                # The variable evaluation below seems unnecessary, but it would be
+                                # used we expand the list of post process type variables
                                 elif variable in ["PostProc.Velocity"]:
                                     data_row.append(post_processed_velocity[ii])
 
@@ -1155,13 +1178,18 @@ class ScenarioOutput(TechnoEconomicMixin):
                             influxdb_conn_settings, profiles
                         )
 
-                        optim_simulation_tag = {"output_esdl_id": energy_system.id, "assetId": assetId, "assetName": asset_name, "assetClass": assetClass, "capability":  capability}
+                        optim_simulation_tag = {
+                            "output_esdl_id": energy_system.id,
+                            "assetId": asset_id,
+                            "assetName": asset_name,
+                            "assetClass": asset_class,
+                            "capability": capability,
+                        }
                         _ = influxdb_profile_manager.save_influxdb(
                             measurement=carrier_id,
                             field_names=influxdb_profile_manager.profile_header[1:],
                             tags=optim_simulation_tag,
                         )
-
 
                     # -- Test tags -- # do not delete - to be used in test case
                     # prof_loaded_from_influxdb = InfluxDBProfileManager(influxdb_conn_settings)
