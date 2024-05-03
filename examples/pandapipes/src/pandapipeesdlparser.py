@@ -158,7 +158,27 @@ class PandapipeEsdlParserClass(object):
                 Return temperature
         """
 
+        # specify water properties
+        print("\nNote that the water properties have been hardcoded\n")
+
+        import pandapipes.properties.fluids as fl
+        water_const = fl.Fluid("water_const", "liquid")
+
+        density_mesido = 988
+        density_const = fl.FluidPropertyConstant(density_mesido)
+        kinematic_viscosity_mesido = 3.6437149167588743e-07  # @ T=80 degrees
+        viscosity_const = fl.FluidPropertyConstant(kinematic_viscosity_mesido * density_mesido) 
+        heat_capacity_const = fl.FluidPropertyConstant(4200)
+
+        water_const.add_property(property_name="density", prop=density_const)
+        water_const.add_property(property_name="viscosity", prop=viscosity_const)
+        water_const.add_property(property_name="heat_capacity", prop=heat_capacity_const)
+
         net = pp.create_empty_network(fluid="water")
+
+        fl._add_fluid_to_net(net, water_const)  # checl fluid used -->> net.fluid
+
+
         net_asset = {'DemandCluster': [], 'ProductionCluster': [], 'Buffer': [], 'ATES': [], 'Heatpump': [], 'Pump': [],
                               'HeatExchanger': [], 'Pipe': []}
 

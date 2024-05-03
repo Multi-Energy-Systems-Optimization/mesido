@@ -137,12 +137,15 @@ for network_type in ['Tree']:  # code used to manually check specific cases
             # CP value in MESIDO = 4200J/kgK
 
             # Enforce mass flow rate instead of cacluting it from Q = m_dot...
-            mesido_demand_flow_kg_s = [297.83213455, 149.02261074, 74.61784883, 12.11784883]
+            # mesido_demand_flow_kg_s = [297.83213455, 149.02261074, 74.61784883, 12.11784883]
+            mesido_demand_flow_kg_s = [
+                297.83213455, 264.76334883, 231.69456907, 198.62578336, 165.5570036, 132.48821788,
+                99.41943812, 66.35065241, 33.28187264, 0.60168371
+            ]
             demand_flow = np.array([297.83] * len(demand_power))  # [kg/s] 
-            demand_flow[0] = mesido_demand_flow_kg_s[0]
-            demand_flow[1] = mesido_demand_flow_kg_s[1]
-            demand_flow[2] = mesido_demand_flow_kg_s[2]
-            demand_flow[3] = mesido_demand_flow_kg_s[3]
+            for ii in range(len(mesido_demand_flow_kg_s)):
+                demand_flow[ii] = mesido_demand_flow_kg_s[ii]
+
             # demand_flow = np.array([149.02261074] * len(demand_power))  # [kg/s]
             # demand_flow = np.array([74.61784883] * len(demand_power))  # [kg/s]
             # demand_flow = np.array([12.11784883] * len(demand_power))  # [kg/s]
@@ -265,12 +268,13 @@ for network_type in ['Tree']:  # code used to manually check specific cases
                 ('res_pipe', 't_to_k'),
                 ('res_pipe', 'mdot_from_kg_per_s'),
                 ('res_pipe', 'mdot_to_kg_per_s'),
+                ('res_pipe', 'lambda'),
                 ('heat_exchanger', 'qext_w'),
                 ('circ_pump_mass', 'mdot_flow_kg_per_s'),
                 ('circ_pump_mass', 't_flow_k')
             ]
             ow = OutputWriter(net, time_steps, output_path=None, log_variables=log_variables)
-
+        
             # run_timeseries(net, time_steps, mode='hydraulics')
             try:
                 run_timeseries(net, time_steps, mode='all', friction_model='colebrook')
@@ -283,7 +287,6 @@ for network_type in ['Tree']:  # code used to manually check specific cases
                 continue
             # run_timeseries(net, time_steps, mode='all')
 
-            print((net.res_pipe.p_from_bar.values - net.res_pipe.p_to_bar.values) * 100e3 / 1e3)
             loop_elapsed = time.time() - t
             print('simulation done' + ':' + str(loop_elapsed))
 
@@ -293,6 +296,37 @@ for network_type in ['Tree']:  # code used to manually check specific cases
             net = esdlparser.correcting_pressure_return(net)
 
             ow.np_results["heat_exchanger.qext_w"]
+
+
+            # results for the paper
+            mdata_points = len(mesido_demand_flow_kg_s)
+            print("dP, kPa")
+            print(
+                (
+                    -ow.np_results["res_pipe.p_to_bar"][0:mdata_points] + ow.np_results["res_pipe.p_from_bar"][0:mdata_points]
+                ) * 100e3 / 1e3
+            )
+
+            # ow.np_results["res_pipe.t_from_k"]
+            density = ow.np_results["res_pipe.mdot_from_kg_per_s"][0:mdata_points] / ow.np_results["res_pipe.v_mean_m_per_s"][0:mdata_points] / (np.pi * net.pipe.diameter_m[0] * net.pipe.diameter_m[0] / 4.0)
+
+            dH = -(
+                    ow.np_results["res_pipe.p_to_bar"][0:mdata_points] - ow.np_results["res_pipe.p_from_bar"][0:mdata_points]
+                ) * 100e3 / density[0][0] / 9.81
+            print("dP, m")
+            print(dH)
+            
+            print("v, m/s")
+            print(
+                ow.np_results["res_pipe.v_mean_m_per_s"][0:mdata_points]
+            )
+
+            # Hydraulic power
+            print("Hydraulic powr, W")
+            dPh = ow.np_results["res_pipe.vdot_norm_m3_per_s"][0:mdata_points] * density[0][0] * 9.81 * dH
+            print(dPh)
+
+            # --------------------------------------
 
             results_file_columns = [
                 "Time_step_index",
