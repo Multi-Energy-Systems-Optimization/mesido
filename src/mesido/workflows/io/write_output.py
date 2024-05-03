@@ -861,13 +861,17 @@ class ScenarioOutput(TechnoEconomicMixin):
         # Important: This code below must be placed after the "Placement" code. Reason: it relies
         # on unplaced assets being deleted.
         # ------------------------------------------------------------------------------------------
-        # Write asset result profile data to database. The datbase is setup as follows:
-        #   - The each time step is represented by a row of data, with columns datetime, field
+        # Write asset result profile data to database. The database is setup as follows:
+        #   - The each time step is represented by a row of data, with columns; datetime, field
         #     values
+        #   - The database contains columns based on the carrier connected for visualisation
+        #   purposes
+        #   - Assets with more than 1 carrier are looped over the time steps as many times as there
+        #   are different carriers connected, to ensure the correct data is written to each carrier.
         #   - Database name: input esdl id
-        #   - Measurment: asset name
+        #   - Measurment: carrier id
         #   - Fields: profile value for the specific variable
-        #   - Tags used as filters: output esdl id
+        #   - Tags used as filters: simulationRun, assetClass, assetName, assetId, capability
 
         if self.write_result_db_profiles:
             logger.info("Writing asset result profile data to influxDB")
@@ -892,10 +896,12 @@ class ScenarioOutput(TechnoEconomicMixin):
             #     verify_ssl=self.influxdb_verify_ssl,
             # )
 
-            profile_managers_carriers = {}
-            carriers = energy_system.energySystemInformation.carriers
-            for carrier in carriers.carrier:
-                profile_managers_carriers[carrier.id] = None
+            capabilities = [
+                esdl.Transport,
+                esdl.Conversion,
+                esdl.Consumer,
+                esdl.Producer,
+            ]
 
             for asset_name in [
                 *self.energy_system_components.get("heat_source", []),
@@ -909,6 +915,12 @@ class ScenarioOutput(TechnoEconomicMixin):
                 try:
                     # If the asset has been placed
                     asset = _name_to_asset(asset_name)
+                    asset_class = asset.__class__.__name__
+                    asset_id = asset.id
+                    capability = [c for c in capabilities if c in asset.__class__.__mro__][
+                        0
+                    ].__name__
+
                     port, port_prim, port_sec = 3 * [None]
                     if isinstance(asset, esdl.Transport) or isinstance(asset, esdl.Consumer):
                         port = [port for port in asset.port if isinstance(port, esdl.InPort)][0]
@@ -972,11 +984,11 @@ class ScenarioOutput(TechnoEconomicMixin):
                         )
 
                     if port:
-                        carrier_id_dict = {"carrier": port.carrier.id}
+                        carrier_id_dict = {"single_carrier_id": port.carrier.id}
                     elif port_prim and port_sec:
                         carrier_id_dict = {
-                            "Primary": port_prim.carrier.id,
-                            "Secondary": port_sec.carrier.id,
+                            "primary_carrier_id": port_prim.carrier.id,
+                            "secondary_carrier_id": port_sec.carrier.id,
                         }
                     else:
                         NotImplementedError(
@@ -987,11 +999,11 @@ class ScenarioOutput(TechnoEconomicMixin):
                     for asset_side, carrier_id in carrier_id_dict.items():
                         variables_two_hydraulic_system = variables_two_hydraulic_system_org.copy()
                         var_pops = []
-                        if asset_side == "Primary":
+                        if asset_side == "primary_carrier_id":
                             var_pops = [
                                 v for v in variables_two_hydraulic_system if "Secondary" in v
                             ]
-                        elif asset_side == "Secondary":
+                        elif asset_side == "secondary_carrier_id":
                             var_pops = [v for v in variables_two_hydraulic_system if "Primary" in v]
                         for v in var_pops:
                             variables_two_hydraulic_system.remove(v)
@@ -1020,17 +1032,6 @@ class ScenarioOutput(TechnoEconomicMixin):
                             )
                             sys.exit(1)
 
-                        asset_class = asset.__class__.__name__
-                        asset_id = asset.id
-                        capabilities = [
-                            esdl.Transport,
-                            esdl.Conversion,
-                            esdl.Consumer,
-                            esdl.Producer,
-                        ]
-                        capability = [c for c in capabilities if c in asset.__class__.__mro__][
-                            0
-                        ].__name__
                         for ii in range(len(self.times())):
                             if not self.io.datetimes[ii].tzinfo:
                                 data_row = [
@@ -1179,7 +1180,8 @@ class ScenarioOutput(TechnoEconomicMixin):
                         )
 
                         optim_simulation_tag = {
-                            "output_esdl_id": energy_system.id,
+                            "simulationRun": energy_system.id,
+                            "simulation_type": type(self).__name__,
                             "assetId": asset_id,
                             "assetName": asset_name,
                             "assetClass": asset_class,
