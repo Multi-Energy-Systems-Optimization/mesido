@@ -75,6 +75,8 @@ class HeatProblemHydraulic(SourcePipeSink):
             HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
         )
         self.heat_network_settings["n_linearization_lines"] = 3
+        # self.heat_network_settings["n_linearization_lines"] = 5
+        # self.heat_network_settings["n_linearization_lines"] = 10
         self.heat_network_settings["minimize_head_losses"] = True
 
     def energy_system_options(self):
@@ -121,6 +123,6 @@ if __name__ == "__main__":
     print(results[f"Pipe1_ret.Q"][0:mdata_points] / solution.parameters(0)[f"Pipe1_ret.area"])
 
     print("dHP, W")
-    print(results["source.Pump_power"])
+    print(results["Pipe1_ret.Hydraulic_power"][0:mdata_points])
 
     a = 1
