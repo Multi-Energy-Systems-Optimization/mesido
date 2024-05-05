@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 import esdl.esdl_handler
-from esdl.resources.xmlresource import XMLResource
 
 from mesido.component_type_mixin import (
     ModelicaComponentTypeMixin,
@@ -363,9 +362,10 @@ class ESDLMixin(
         -------
         An XML string representing the energy system
         """
-        esh = esdl.esdl_handler.EnergySystemHandler(energy_system=energy_system)
-        esh.resource = XMLResource(uri=esdl.esdl_handler.StringURI("to_string.esdl"))
-        return esh.to_string()
+
+        uri = esdl.esdl_handler.StringURI("to_string.esdl")
+        energy_system.eResource.save(uri)
+        return uri.getvalue()
 
     @staticmethod
     def save_energy_system_to_file(energy_system: esdl.esdl.EnergySystem, file_path: Path) -> None:
