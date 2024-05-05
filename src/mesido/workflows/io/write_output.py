@@ -921,6 +921,14 @@ class ScenarioOutput(TechnoEconomicMixin):
                         0
                     ].__name__
 
+                    # Generate three empty variables,
+                    # For transport and consumer assets, 'port' is filled with the inport
+                    # For producer assets, 'port' is filled with outport as this is linked to the
+                    # same carrier as the inport of consumers (thus all info in one carrier)
+                    # For conversion assets, the primary side is acting like a consumer, the
+                    # secondary side as a producer, thus a similar port structure is assumed, but
+                    # now port_prim and port_sec variable are set, such that data can be saved for
+                    # both carriers.
                     port, port_prim, port_sec = 3 * [None]
                     if isinstance(asset, esdl.Transport) or isinstance(asset, esdl.Consumer):
                         port = [port for port in asset.port if isinstance(port, esdl.InPort)][0]
@@ -983,6 +991,7 @@ class ScenarioOutput(TechnoEconomicMixin):
                             results[f"{asset_name}.HeatOut.Q"] / parameters[f"{asset_name}.area"]
                         )
 
+                    # Depending on the port set, different carriers are assigned
                     if port:
                         carrier_id_dict = {"single_carrier_id": port.carrier.id}
                     elif port_prim and port_sec:
@@ -995,6 +1004,10 @@ class ScenarioOutput(TechnoEconomicMixin):
                             "Unsuported types for the different port carrier combinations"
                         )
 
+                    # Looping over the carrier_ids relevant for the asset
+                    # If primary or secondary port are set, variables_to_hydraulic_system will be
+                    # used, variable names linking to the secondary port are popped from the list
+                    # when the primary port is selected and vice versa
                     variables_two_hydraulic_system_org = variables_two_hydraulic_system.copy()
                     for asset_side, carrier_id in carrier_id_dict.items():
                         variables_two_hydraulic_system = variables_two_hydraulic_system_org.copy()
