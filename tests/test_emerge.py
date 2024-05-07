@@ -27,4 +27,8 @@ class TestEmerge(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries.csv",
+            __init_gas_storage_mass=1.0e3,
+            __init_battery_storage_elec=1.0e3,
         )
+        results = _.extract_results()
+        print(results['GasStorage_9172.Stored_gas_mass'])

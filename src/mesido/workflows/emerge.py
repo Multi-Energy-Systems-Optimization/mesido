@@ -104,6 +104,8 @@ class EmergeWorkFlow(
         super().__init__(*args, **kwargs)
 
         self.gas_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+        self.__init_gas_storage_mass = kwargs["__init_gas_storage_mass"] if "__init_gas_storage_mass" in kwargs.keys() else 0.0
+        self.__init_battery_storage_elec = kwargs["__init_battery_storage_elec"] if "__init_battery_storage_elec" in kwargs.keys() else 0.0
 
     def goals(self):
 
@@ -131,19 +133,25 @@ class EmergeWorkFlow(
         constraints = super().constraints(ensemble_member)
 
         for gs in self.energy_system_components.get("gas_tank_storage", []):
-            canonical, sign = self.alias_relation.canonical_signed(f"{gs}.Stored_gas_mass")
-            storage_t0 = sign * self.state_vector(canonical, ensemble_member)[0]
-            constraints.append((storage_t0, 0.0, 0.0))
+            storage_t0 = self.__state_vector_scaled(f"{gs}.Stored_gas_mass", ensemble_member)[0]
+            nominal = self.variable_nominal(f"{gs}.Stored_gas_mass")
+            constraints.append(((storage_t0-self.__init_gas_storage_mass)/nominal,0.0, 0.0))
             canonical, sign = self.alias_relation.canonical_signed(f"{gs}.Gas_tank_flow")
             gas_flow_t0 = sign * self.state_vector(canonical, ensemble_member)[0]
             constraints.append((gas_flow_t0, 0.0, 0.0))
 
         for es in self.energy_system_components.get("electricity_storage", []):
-            canonical, sign = self.alias_relation.canonical_signed(f"{es}.Stored_electricity")
-            storage_t0 = sign * self.state_vector(canonical, ensemble_member)[0]
-            constraints.append((storage_t0, 0.0, 0.0))
+            storage_t0 = self.__state_vector_scaled(f"{gs}.Stored_electricity", ensemble_member)[0]
+            nominal = self.variable_nominal(f"{gs}.Stored_electricity")
+            constraints.append(((storage_t0 - self.__init_battery_storage_elec)/ nominal, 0.0, 0.0))
 
         return constraints
+
+    def __state_vector_scaled(self, variable, ensemble_member):
+        canonical, sign = self.alias_relation.canonical_signed(variable)
+        return (
+            self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
+        )
 
     def solver_options(self):
         """

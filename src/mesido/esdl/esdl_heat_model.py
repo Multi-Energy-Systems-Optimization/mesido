@@ -1590,14 +1590,18 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         # DO not remove due usage in future
         # hydrogen_specific_energy = 20.0 / 1.0e6  # kg/Wh
-        q_nominal = self._get_connected_q_nominal(asset)
+        volume = asset.attributes["workingVolume"]
+        typical_fill_time = 3600.0
+        q_nominal = min(self._get_connected_q_nominal(asset), volume/typical_fill_time)
         density = self.get_density(asset.name, asset.in_ports[0].carrier)
         pressure = asset.in_ports[0].carrier.pressure * 1.0e5
+        nominal_stored_gas = q_nominal*density*typical_fill_time
 
         modifiers = dict(
             Q_nominal=q_nominal,
             density=density,
-            volume=asset.attributes["workingVolume"],
+            volume=volume,
+            _nominal_stored_gas=nominal_stored_gas,
             # Gas_tank_flow=dict(min=-hydrogen_specific_energy*asset.attributes["maxDischargeRate"],
             # max=hydrogen_specific_energy*asset.attributes["maxChargeRate"]),
             # TODO: Fix -> Gas network is currenlty non-limiting, mass flow is decoupled from the
@@ -1610,6 +1614,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 Q=dict(nominal=q_nominal),
                 mass_flow=dict(nominal=q_nominal * density),
                 Hydraulic_power=dict(nominal=q_nominal * pressure),
+            ),
+            Stored_gas_mass=dict(
+                min=0.0, max=density*volume, nominal=nominal_stored_gas,
             ),
             **self._get_cost_figure_modifiers(asset),
         )

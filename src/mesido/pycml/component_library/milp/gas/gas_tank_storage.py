@@ -27,9 +27,9 @@ class GasTankStorage(GasComponent, BaseAsset):
         self.add_variable(Variable, "Gas_tank_flow", nominal=self.Q_nominal * self.density)
 
         self._typical_fill_time = 3600.0
-        self._nominal_stored_gas = (
-            self.Q_nominal * self.density_max_storage * self._typical_fill_time
-        )
+        self._nominal_stored_gas = nan #(
+        #     self.Q_nominal * self.density_max_storage * self._typical_fill_time
+        # ) #for the nominal if you take flow from the pipe, you should also use the pressure of the pipe to get the density and thus the mass.
         self.add_variable(
             Variable,
             "Stored_gas_mass",
@@ -49,4 +49,4 @@ class GasTankStorage(GasComponent, BaseAsset):
             )
         )
 
-        self.add_initial_equation((self.Stored_gas_mass / self._nominal_stored_gas))
+        # self.add_initial_equation((self.Stored_gas_mass / self._nominal_stored_gas))
