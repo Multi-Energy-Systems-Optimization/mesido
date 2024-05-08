@@ -719,6 +719,8 @@ class HeadLossClass:
         ):
             n_linear_lines = network_settings["n_linearization_lines"]
             n_timesteps = len(optimization_problem.times())
+            if length<100:
+                n_linear_lines = 1
 
             a, b = darcy_weisbach.get_linear_pipe_dh_vs_q_fit(
                 diameter,

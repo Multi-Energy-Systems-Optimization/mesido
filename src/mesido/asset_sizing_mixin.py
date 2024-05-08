@@ -1367,7 +1367,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     )
                 )
 
-        # These are the constraints to order the milp loss of the pipe classes.
+        # These are the constraints to order the heat loss of the pipe classes.
         if not self.energy_system_options()["neglect_pipe_heat_losses"]:
             for (
                 pipe,
