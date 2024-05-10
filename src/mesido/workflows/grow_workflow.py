@@ -421,8 +421,8 @@ class EndScenarioSizingHeadLoss(EndScenarioSizing):
         self.heat_network_settings["head_loss_option"] = (
             HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
         )
-        if self._stage == 3:
-            self.heat_network_settings["minimize_head_losses"] = True
+        # if self._stage == 3:
+        self.heat_network_settings["minimize_head_losses"] = True
         self.heat_network_settings["pipe_minimum_pressure"] = 4
         self.heat_network_settings["pipe_maximum_pressure"] = 25
         self.heat_network_settings["n_linearization_lines"] = 1
@@ -752,20 +752,20 @@ def run_end_scenario_sizing(
         **kwargs,
     )
 
-    if issubclass(end_scenario_problem_class, EndScenarioSizingHeadLoss):
-        results = solution.extract_results()
-        parameters = solution.parameters(0)
-        bounds = solution.bounds()
-
-        boolean_bounds, priorities_output = create_staged_bounds(solution, results, parameters,
-                                                                 bounds, new_stage=3)
-        solution = run_optimization_problem(
-            end_scenario_problem_class,
-            stage=3,
-            boolean_bounds=boolean_bounds,
-            priorities_output=priorities_output,
-            **kwargs,
-        )
+    # if issubclass(end_scenario_problem_class, EndScenarioSizingHeadLoss):
+    #     results = solution.extract_results()
+    #     parameters = solution.parameters(0)
+    #     bounds = solution.bounds()
+    #
+    #     boolean_bounds, priorities_output = create_staged_bounds(solution, results, parameters,
+    #                                                              bounds, new_stage=3)
+    #     solution = run_optimization_problem(
+    #         end_scenario_problem_class,
+    #         stage=3,
+    #         boolean_bounds=boolean_bounds,
+    #         priorities_output=priorities_output,
+    #         **kwargs,
+    #     )
 
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
