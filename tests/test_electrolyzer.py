@@ -3,10 +3,9 @@ from unittest import TestCase
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
-
-from rtctools.util import run_optimization_problem
 
 
 # from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
@@ -38,7 +37,7 @@ class TestElectrolyzer(TestCase):
                 self.gas_network_settings["pipe_minimum_pressure"] = 0.0
                 return options
 
-        solution = run_optimization_problem(
+        solution = run_esdl_mesido_optimization(
             MILPProblem,
             base_folder=base_folder,
             esdl_file_name="h2.esdl",

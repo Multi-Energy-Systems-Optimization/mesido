@@ -4,10 +4,9 @@ from unittest import TestCase
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
+from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
-
-from rtctools.util import run_optimization_problem
 
 
 class TestGasNetwork(TestCase):
@@ -36,7 +35,7 @@ class TestGasNetwork(TestCase):
                 self.gas_network_settings["minimize_head_losses"] = True
                 return options
 
-        solution = run_optimization_problem(
+        solution = run_esdl_mesido_optimization(
             GasNetworkProblem,
             base_folder=base_folder,
             esdl_file_name="2a_gas.esdl",
@@ -51,8 +50,8 @@ class TestGasNetwork(TestCase):
             target = solution.get_timeseries(f"{demand}.target_gas_demand").values
             np.testing.assert_allclose(target, results[f"{demand}.Gas_demand_mass_flow"])
 
-        removed_pipes = ["Pipe_a718", "Pipe_9a6f", "Pipe_2927"]
-        remained_pipes = ["Pipe_51e4", "Pipe_6b39", "Pipe_f9b0"]
+        removed_pipes = ["Pipe_a718", "Pipe_9a6f", "Pipe_2927", "Pipe_8592"]
+        remained_pipes = ["Pipe_51e4", "Pipe_6b39", "Pipe_f9b0", "Pipe_96bc"]
         for pipe in removed_pipes:
             np.testing.assert_allclose(results[f"{pipe}__gn_diameter"], 0.0, atol=1.0e-6)
             np.testing.assert_allclose(results[f"{pipe}__investment_cost"], 0.0, atol=1.0e-6)

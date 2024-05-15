@@ -3,10 +3,9 @@ from unittest import TestCase
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
-
-from rtctools.util import run_optimization_problem
 
 
 # TODO: still have to make test where elecitricity direction is switched:
@@ -36,7 +35,7 @@ class TestMILPElectricSourceSink(TestCase):
         base_folder = Path(example.__file__).resolve().parent.parent
         tol = 1e-10
 
-        solution = run_optimization_problem(
+        solution = run_esdl_mesido_optimization(
             ElectricityProblem,
             base_folder=base_folder,
             esdl_file_name="case1_elec.esdl",
@@ -123,7 +122,7 @@ class TestMILPElectricSourceSink(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
-        solution = run_optimization_problem(
+        solution = run_esdl_mesido_optimization(
             ElectricityProblemMaxCurr,
             base_folder=base_folder,
             esdl_file_name="case1_elec.esdl",
@@ -219,7 +218,7 @@ class TestMILPElectricSourceSink(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
-        solution = run_optimization_problem(
+        solution = run_esdl_mesido_optimization(
             ElectricityProblem,
             base_folder=base_folder,
             esdl_file_name="transformer.esdl",

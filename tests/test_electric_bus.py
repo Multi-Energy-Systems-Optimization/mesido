@@ -12,11 +12,9 @@ from unittest import TestCase
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
-
-
-from rtctools.util import run_optimization_problem
 
 
 class TestMILPbus(TestCase):
@@ -39,7 +37,7 @@ class TestMILPbus(TestCase):
         base_folder = Path(example.__file__).resolve().parent.parent
 
         # Run the problem
-        solution = run_optimization_problem(
+        solution = run_esdl_mesido_optimization(
             ElectricityProblem,
             base_folder=base_folder,
             esdl_file_name="Electric_bus3.esdl",

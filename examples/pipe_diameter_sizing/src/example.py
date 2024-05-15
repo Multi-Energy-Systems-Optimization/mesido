@@ -53,7 +53,7 @@ class MinimizeLDGoal(Goal):
             length = parameters[f"{p}.length"]
             var_name = optimization_problem.pipe_diameter_symbol_name(p)
 
-            nominal += length * optimization_problem.variable_nominal(var_name)
+            nominal += length * optimization_problem.variable_nominal(var_name) * 2.0
 
             obj += optimization_problem.extra_variable(var_name, ensemble_member) * length
 

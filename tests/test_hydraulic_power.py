@@ -1,20 +1,22 @@
 from pathlib import Path
 from unittest import TestCase
 
+from mesido._darcy_weisbach import head_loss
+from mesido.constants import GRAVITATIONAL_CONSTANT
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
+from mesido.network_common import NetworkSettings
+from mesido.util import run_esdl_mesido_optimization
 
 
 import numpy as np
 
 import pandas as pd
 
-from rtctools.util import run_optimization_problem
-
 
 class TestHydraulicPower(TestCase):
-    def test_hydraulic_power(self):
+    def test_hydraulic_power_heat(self):
         """
         Check the workings for the hydraulic power variable.
 
@@ -101,7 +103,7 @@ class TestHydraulicPower(TestCase):
             run_hydraulic_power.manual_set_pipe_length = run_hydraulic_power.comp_vars_vals[
                 "pipe_length"
             ][val]
-            run_optimization_problem(
+            run_esdl_mesido_optimization(
                 HeatProblem,
                 base_folder=base_folder,
                 esdl_file_name="test_simple.esdl",
@@ -144,7 +146,7 @@ class TestHydraulicPower(TestCase):
             run_hydraulic_power.manual_set_pipe_length = run_hydraulic_power.comp_vars_vals[
                 "pipe_length"
             ][val]
-            run_optimization_problem(
+            run_esdl_mesido_optimization(
                 HeatProblem,
                 base_folder=base_folder,
                 esdl_file_name="test_simple.esdl",
@@ -195,7 +197,7 @@ class TestHydraulicPower(TestCase):
             run_hydraulic_power.manual_set_pipe_length = run_hydraulic_power.comp_vars_vals[
                 "pipe_length"
             ][val]
-            run_optimization_problem(
+            run_esdl_mesido_optimization(
                 HeatProblem,
                 base_folder=base_folder,
                 esdl_file_name="test_simple.esdl",
@@ -237,6 +239,251 @@ class TestHydraulicPower(TestCase):
             hydraulic_power_dw,
             atol=10.0,
         )
+
+    def test_hydraulic_power_gas(self):
+        """
+        Checks the logic for the hydraulic power of gas pipes.
+        - checks if value on linearized lines, for multiple lines
+        - checks if hydraulic power is 0 at end of the pipe
+        - checks if differences of in/out port is equal to the added hydraulic power of that pipe
+        - checks absolutae value of the hydraulic power loss over a line
+        """
+        import models.unit_cases_gas.source_sink.src.run_source_sink as run_source_sink
+        from models.unit_cases_gas.source_sink.src.run_source_sink import (
+            GasProblem,
+        )
+
+        # Settings
+        base_folder = Path(run_source_sink.__file__).resolve().parent.parent
+
+        class GasProblemHydraulic(GasProblem):
+            def read(self):
+                super().read()
+
+                for d in self.energy_system_components["gas_demand"]:
+                    new_timeseries = self.get_timeseries(f"{d}.target_gas_demand").values * 4e4
+                    self.set_timeseries(f"{d}.target_gas_demand", new_timeseries)
+
+            def energy_system_options(self):
+                options = super().energy_system_options()
+
+                self.gas_network_settings["head_loss_option"] = (
+                    HeadLossOption.LINEARIZED_N_LINES_EQUALITY
+                )
+                self.gas_network_settings["n_linearization_lines"] = 3
+                self.gas_network_settings["minimum_velocity"] = 0.0
+                self.gas_network_settings["minimize_head_losses"] = True
+
+                return options
+
+        solution = run_esdl_mesido_optimization(
+            GasProblemHydraulic,
+            base_folder=base_folder,
+            esdl_file_name="source_sink.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries.csv",
+        )
+
+        # TODO: add check on values for hydraulic power.
+        results = solution.extract_results()
+        parameters = solution.parameters(0)
+
+        pipe = "Pipe_4abc"
+        pipe_hp_in = results[f"{pipe}.GasIn.Hydraulic_power"]
+        pipe_hp_out = results[f"{pipe}.GasOut.Hydraulic_power"]
+        pipe_hp = results[f"{pipe}.Hydraulic_power"]
+
+        pipe_mass = results["Pipe_4abc.GasIn.mass_flow"]
+
+        # due to non linearity, every timestep on new linearized line, a doubled mass flow should
+        # result in more than doubled hydraulic power
+        np.testing.assert_array_less(
+            (pipe_hp[0] + 1e-6) * (pipe_mass[1] / pipe_mass[0]), pipe_hp[1]
+        )
+        np.testing.assert_array_less(
+            (pipe_hp[1] + 1e-6) * (pipe_mass[2] / pipe_mass[1]), pipe_hp[2]
+        )
+
+        np.testing.assert_allclose(pipe_hp, pipe_hp_in - pipe_hp_out)
+        np.testing.assert_allclose(0, pipe_hp_out)
+
+        # TODO: use mass flow to get calculated hydraulic power
+
+        rho = parameters[f"{pipe}.rho"]
+        d = parameters[f"{pipe}.diameter"]
+        area = parameters[f"{pipe}.area"]
+        length = parameters[f"{pipe}.length"]
+        pressure = parameters[f"{pipe}.pressure"]
+        wall_roughness = solution.energy_system_options()["wall_roughness"]
+        v_max = solution.gas_network_settings["maximum_velocity"]
+        temperature = 20.0
+
+        v_inspect = results[f"{pipe}.GasOut.Q"] / solution.parameters(0)[f"{pipe}.area"]
+
+        calc_hp_accurate = [
+            rho
+            * GRAVITATIONAL_CONSTANT
+            * v
+            * area
+            * head_loss(
+                v,
+                d,
+                length,
+                wall_roughness,
+                temperature,
+                network_type=NetworkSettings.NETWORK_TYPE_GAS,
+                pressure=pressure,
+            )
+            for v in v_inspect
+        ]
+        np.testing.assert_array_less(calc_hp_accurate, pipe_hp)
+
+        v_points = [
+            i * v_max / solution.gas_network_settings["n_linearization_lines"]
+            for i in range(solution.gas_network_settings["n_linearization_lines"] + 1)
+        ]
+        calc_hp_v_points = [
+            rho
+            * GRAVITATIONAL_CONSTANT
+            * v
+            * area
+            * head_loss(
+                v,
+                d,
+                length,
+                wall_roughness,
+                temperature,
+                network_type=NetworkSettings.NETWORK_TYPE_GAS,
+                pressure=pressure,
+            )
+            for v in v_points
+        ]
+        v_points_volumetric = np.asarray(v_points) * np.pi * d**2 / 4.0
+        a = np.diff(calc_hp_v_points) / np.diff(v_points_volumetric)
+        b = calc_hp_v_points[1:] - a * v_points_volumetric[1:]
+
+        np.testing.assert_allclose(pipe_hp[0], a[0] * results[f"{pipe}.GasOut.Q"][0] + b[0])
+        np.testing.assert_allclose(pipe_hp[1], a[1] * results[f"{pipe}.GasOut.Q"][1] + b[1])
+        np.testing.assert_allclose(pipe_hp[2], a[2] * results[f"{pipe}.GasOut.Q"][2] + b[2])
+
+    def test_hydraulic_power_gas_multi_demand(self):
+        """
+        Checks the logic for the hydraulic power of gas pipes.
+        - checks if value on linearized lines, for multiple lines
+        - checks if hydraulic power is 0 at end of the pipe if connected to a demand
+        - checks if hydraulic power at start of line connected to a producers is larger than 0
+        - checks if differences of in/out port is equal to the added hydraulic power of that pipe
+        """
+        import models.unit_cases_gas.multi_demand_source_node.src.run_test as run_test
+        from models.unit_cases_gas.multi_demand_source_node.src.run_test import (
+            GasProblem,
+        )
+
+        # Settings
+        base_folder = Path(run_test.__file__).resolve().parent.parent
+
+        class GasProblemHydraulic(GasProblem):
+            def read(self):
+                super().read()
+
+                for d in self.energy_system_components["gas_demand"]:
+                    new_timeseries = self.get_timeseries(f"{d}.target_gas_demand").values * 1.5
+                    self.set_timeseries(f"{d}.target_gas_demand", new_timeseries)
+
+            def energy_system_options(self):
+                options = super().energy_system_options()
+
+                self.gas_network_settings["head_loss_option"] = (
+                    HeadLossOption.LINEARIZED_N_LINES_EQUALITY
+                )
+                self.gas_network_settings["n_linearization_lines"] = 3
+                self.gas_network_settings["minimum_velocity"] = 0.0
+                self.gas_network_settings["minimize_head_losses"] = True
+
+                return options
+
+        solution = run_esdl_mesido_optimization(
+            GasProblemHydraulic,
+            base_folder=base_folder,
+            esdl_file_name="test.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries.csv",
+        )
+
+        # TODO: add check on values for hydraulic power.
+        results = solution.extract_results()
+
+        pipes = ["Pipe_7c53", "Pipe_f1a4", "Pipe_0e39", "Pipe_c50f"]
+        for pipe in pipes:
+            pipe_hp_in = results[f"{pipe}.GasIn.Hydraulic_power"]
+            pipe_hp_out = results[f"{pipe}.GasOut.Hydraulic_power"]
+            pipe_hp = results[f"{pipe}.Hydraulic_power"]
+
+            pipe_mass = results[f"{pipe}.GasIn.mass_flow"]
+
+            np.testing.assert_allclose(pipe_hp, pipe_hp_in - pipe_hp_out)
+            if pipe in ["Pipe_7c53", "Pipe_c50f"]:
+                # connected to demand, thus hydraulic_power should be 0
+                np.testing.assert_allclose(0, pipe_hp_out)
+
+            v_max = solution.gas_network_settings["maximum_velocity"]
+
+            v_inspect = results[f"{pipe}.GasOut.Q"] / solution.parameters(0)[f"{pipe}.area"]
+            v_points = [
+                i * v_max / solution.gas_network_settings["n_linearization_lines"]
+                for i in range(solution.gas_network_settings["n_linearization_lines"] + 1)
+            ]
+
+            # due to non linearity, every timestep on new linearized line, a doubled mass flow
+            # should result in more than doubled hydraulic power
+            v_inspect_line_ind = []
+            for k in range(len(v_inspect)):
+                for i in range(len(v_points)):
+                    if v_points[i] + 1e-6 < v_inspect[k] <= v_points[i + 1] + 1e-6:
+                        v_inspect_line_ind.append(i)
+            ind_check = 0
+            for k in range(len(v_inspect) - 1):
+                if v_inspect_line_ind[k] == v_inspect_line_ind[k + 1]:
+                    np.testing.assert_allclose(
+                        pipe_hp[k] * pipe_mass[k + 1] / pipe_mass[k], pipe_hp[k + 1]
+                    )
+                elif v_inspect_line_ind[k] < v_inspect_line_ind[k + 1]:
+                    np.testing.assert_array_less(
+                        (pipe_hp[k] + 1e-6) * pipe_mass[k + 1] / pipe_mass[k], pipe_hp[k + 1]
+                    )
+                    ind_check += 1
+                else:
+                    raise RuntimeError(
+                        "For this test to succeed the flow should increase over time"
+                    )
+            np.testing.assert_array_less(
+                0.5, ind_check, f"{pipe} is not checked between multiple lines"
+            )
+
+        # balance of hydraulic power
+        pipes_demand = ["Pipe_7c53", "Pipe_c50f"]
+        pipes_source = ["Pipe_0e39", "Pipe_f1a4"]
+        balance = np.zeros(3)
+        for p in pipes_demand:
+            balance += results[f"{p}.GasIn.Hydraulic_power"]
+        for p in pipes_source:
+            balance -= results[f"{p}.GasOut.Hydraulic_power"]
+        np.testing.assert_allclose(balance, 0.0, atol=1e-6)
+
+        for node, connected_pipes in solution.energy_system_topology.gas_nodes.items():
+            hydraulic_sum = 0.0
+
+            for i_conn, (_pipe, orientation) in connected_pipes.items():
+                hydraulic_sum += results[f"{node}.GasConn[{i_conn+1}].Q"] * orientation
+
+            np.testing.assert_allclose(hydraulic_sum, 0.0, atol=1.0e-3)
+
+        for d in solution.energy_system_components.get("gas_demand"):
+            np.testing.assert_allclose(results[f"{d}.GasIn.Hydraulic_power"], 0.0)
+        for d in solution.energy_system_components.get("gas_source"):
+            np.testing.assert_array_less(0.0, results[f"{d}.GasOut.Hydraulic_power"])
 
 
 if __name__ == "__main__":
