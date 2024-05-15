@@ -1,5 +1,6 @@
 import locale
 import logging
+import time
 from pathlib import Path
 
 import esdl
@@ -90,7 +91,7 @@ class MinimizeSourcesGoalMerit(Goal):
     """
 
     def __init__(self, source_variable, prod_priority, func_range_bound, nominal, order=2):
-        self.target_max = func_range_bound[0]
+        self.target_max = 0.0 #func_range_bound[0]
         self.function_range = func_range_bound
         self.source_variable = source_variable
         self.function_nominal = nominal
@@ -117,6 +118,40 @@ class MaximizeDemandGoalMerit(Goal):
     def function(self, optimization_problem, ensemble_member):
         return optimization_problem.state(f"{self.demand_variable}")
 
+
+class MinimizeStorageGoalMerit(Goal):
+    """
+    Apply constraints to enforce esdl specified milp producer merit order usage
+    """
+
+    def __init__(self, source_variable, prod_priority, func_range_bound, nominal, order=2):
+        self.target_min = 0.0  # func_range_bound[0]
+        self.target_max = func_range_bound[1]*.999
+        self.function_range = func_range_bound
+        self.source_variable = source_variable
+        self.function_nominal = nominal
+        self.priority = prod_priority
+        self.order = order
+
+    def function(self, optimization_problem, ensemble_member):
+        return optimization_problem.state(f"{self.source_variable}")
+
+
+class MaximizeStorageGoalMerit(Goal):
+    """
+    Apply constraints to enforce esdl specified milp producer merit order usage
+    """
+
+    def __init__(self, demand_variable, prod_priority, func_range_bound, nominal, order=2):
+        self.target_min = func_range_bound[1]
+        self.function_range = func_range_bound
+        self.demand_variable = demand_variable
+        self.function_nominal = nominal
+        self.priority = prod_priority+1
+        self.order = order
+
+    def function(self, optimization_problem, ensemble_member):
+        return optimization_problem.state(f"{self.demand_variable}")
 
 # -------------------------------------------------------------------------------------------------
 class _GoalsAndOptions:
@@ -180,6 +215,7 @@ class MultiCommoditySimulator(
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._qpsol = None
+        self._priorities_output = []
 
     def pre(self):
         self._qpsol = CachingQPSol()
@@ -275,6 +311,16 @@ class MultiCommoditySimulator(
                         self.variable_nominal(variable_name),
                     )
                 )
+                if asset in self.energy_system_components.get("electrolyzer"):
+                    variable_name= f"{asset}.Gas_mass_flow_out"
+                    goals.append(
+                        MaximizeDemandGoalMerit(
+                            variable_name,
+                            marginal_priority+1,
+                            self.bounds()[variable_name],
+                            self.variable_nominal(variable_name),
+                        )
+                    )
             elif asset in assets_to_include.get("demand", []):
                 goals.append(
                     MaximizeDemandGoalMerit(
@@ -288,7 +334,8 @@ class MultiCommoditySimulator(
                 # charging acts as consumer
                 # Marginal costs for discharging > marginal cost for charging
                 goals.append(
-                    MaximizeDemandGoalMerit(
+                    # MaximizeDemandGoalMerit(
+                    MaximizeStorageGoalMerit(
                         variable_name,
                         marginal_priority,
                         self.bounds()[variable_name],
@@ -308,7 +355,8 @@ class MultiCommoditySimulator(
                 variable_name = f"{asset}.{asset_variable_map[asset]}"
 
                 goals.append(
-                    MinimizeSourcesGoalMerit(
+                    # MinimizeSourcesGoalMerit(
+                    MinimizeStorageGoalMerit(
                         variable_name,
                         marginal_priority,
                         self.bounds()[variable_name],
@@ -404,10 +452,10 @@ class MultiCommoditySimulator(
                 except AttributeError:
                     try:
                         attributes["merit_order"].append(
-                            a.attributes["costInformation"].marginalChargeCosts.value
+                            a.attributes["controlStrategy"].marginalChargeCosts.value
                         )
                         attributes["merit_order"].append(
-                            a.attributes["costInformation"].marginalDischargeCosts.value
+                            a.attributes["controlStrategy"].marginalDischargeCosts.value
                         )
                         attributes["asset_name"].append(f"{a.name}_discharge")
                     except AttributeError:
@@ -436,6 +484,35 @@ class MultiCommoditySimulator(
         options["casadi_solver"] = self._qpsol
 
         return options
+
+    def priority_started(self, priority):
+        goals_print = set()
+        for goal in [*self.path_goals(), *self.goals()]:
+            if goal.priority == priority:
+                goals_print.update([str(type(goal))])
+        logger.info(f"{goals_print}")
+        self.__priority = priority
+        self.__priority_timer = time.time()
+
+        super().priority_started(priority)
+
+    def priority_completed(self, priority):
+        super().priority_completed(priority)
+
+        self._hot_start = True
+        
+        time_taken = time.time() - self.__priority_timer
+        self._priorities_output.append(
+            (
+                priority,
+                time_taken,
+                True,
+                self.objective_value,
+                self.solver_stats,
+            )
+        )
+        if priority == 1 and self.objective_value > 1e-6:
+            raise RuntimeError("The heating demand is not matched")
 
     def __state_vector_scaled(self, variable, ensemble_member):
         canonical, sign = self.alias_relation.canonical_signed(variable)
@@ -505,7 +582,7 @@ if __name__ == "__main__":
     solution = run_optimization_problem(
         MultiCommoditySimulatorNoLosses,
         base_folder=base_folder,
-        esdl_file_name="emerge_priorities_withoutstorage.esdl",
+        esdl_file_name="emerge_priorities.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,
         input_timeseries_file="timeseries.csv",
