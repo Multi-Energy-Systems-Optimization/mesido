@@ -532,7 +532,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
         if not isclose(electrical_power_input, 0.0):
             eff = (coef_a / electrical_power_input) + (coef_b * electrical_power_input) + coef_c
-            gas_mass_flow_out = (1.0 / eff) * electrical_power_input
+            gas_mass_flow_out = (1.0 / eff) * electrical_power_input/3600
         else:
             gas_mass_flow_out = 0.0
 
@@ -631,6 +631,20 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                     ),
                 ]
             )
+            # constraints.extend(
+            #     [
+            #         (
+            #             (
+            #                     gas_mass_flow_out_vect
+            #                     - gass_mass_out_linearized_vect
+            #                     + (1 - asset_is_switched_on) * big_m
+            #             )
+            #             / nominal,
+            #             0.0,
+            #             np.inf,
+            #         ),
+            #     ]
+            # )
             constraints.append(
                 ((gas_mass_flow_out + asset_is_switched_on * big_m) / big_m, 0.0, np.inf)
             )

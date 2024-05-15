@@ -3,7 +3,8 @@ from unittest import TestCase
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
-from mesido.workflows.multicommodity_simulator_workflow import MultiCommoditySimulator
+from mesido.workflows.multicommodity_simulator_workflow import MultiCommoditySimulator, \
+    MultiCommoditySimulatorNoLosses
 
 import numpy as np
 
@@ -35,6 +36,7 @@ def checks_all_mc_simulations(solution, results):
 
 
 class TestMultiCommoditySimulator(TestCase):
+    #TODO: update docstring
     """
     In this test case 2 milp producers and an ATES is used to supply 3 heating demands. A merit
     order (preference of 1st use) is given to the producers: Producer_1 = 2 and Producer_2 = 1.
@@ -165,6 +167,51 @@ class TestMultiCommoditySimulator(TestCase):
         demand_2_target[demand_2_target < 0] = 0
         np.testing.assert_allclose(dem_2, demand_2_target, atol=1e-3, rtol=1e-6)
 
+    def test_multi_commodity_simulator_emerge(self):
+        import models.emerge.src.example as example
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        solution = run_optimization_problem(
+            MultiCommoditySimulatorNoLosses,
+            base_folder=base_folder,
+            esdl_file_name="emerge_priorities_withoutstorage.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries.csv",
+        )
+
+        bounds = solution.bounds()
+        results = solution.extract_results()
+
+        checks_all_mc_simulations(solution, results)
+
+        demand_gas = results[f"GasDemand_4146.Gas_demand_mass_flow"][4:10]
+        demand_el = results[f"ElectricityDemand_f833.Electricity_demand"][4:10]
+        electrolyzer_power = results[f"Electrolyzer_6327.Power_consumed"][4:10]
+        electrolyzer_gas = results[f"Electrolyzer_6327.Gas_mass_flow_out"][4:10]
+
+        # check producer with highest priority (lowest marginal costs is maximizing production) is
+        # producing at max capacity, except when demand profile + max demand of other demand is
+        # lower than prod_2 profile and max capacity prod_1
+        # np.testing.assert_allclose(
+        #     prod_1[1:],
+        #     bounds["ElectricityProducer_a215.Electricity_source"][1],
+        #     atol=1e-3,
+        #     rtol=1e-6,
+        # )
+        # np.testing.assert_allclose(
+        #     prod_1[0],
+        #     bounds["ElectricityDemand_281a.Electricity_demand"][1] + dem_1[0] - prod_2[0],
+        #     atol=1e-3,
+        #     rtol=1e-6,
+        # )
+        #
+        # # check demand with lowest marginal cost is only consuming if electricity left from producer
+        # # with highest priority and producer with profile, after the matching of demand profile
+        # demand_2_target = prod_1 + prod_2 - dem_1
+        # demand_2_target[demand_2_target < 0] = 0
+        # np.testing.assert_allclose(dem_2, demand_2_target, atol=1e-3, rtol=1e-6)
 
 if __name__ == "__main__":
     import time

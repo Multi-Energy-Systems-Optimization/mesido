@@ -1,9 +1,12 @@
 import locale
 import logging
+from pathlib import Path
 
 import esdl
 
 from mesido.esdl.esdl_mixin import ESDLMixin
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.io.write_output import ScenarioOutput
@@ -86,7 +89,7 @@ class MinimizeSourcesGoalMerit(Goal):
     Apply constraints to enforce esdl specified milp producer merit order usage
     """
 
-    def __init__(self, source_variable, prod_priority, func_range_bound, nominal, order=1):
+    def __init__(self, source_variable, prod_priority, func_range_bound, nominal, order=2):
         self.target_max = func_range_bound[0]
         self.function_range = func_range_bound
         self.source_variable = source_variable
@@ -103,7 +106,7 @@ class MaximizeDemandGoalMerit(Goal):
     Apply constraints to enforce esdl specified milp producer merit order usage
     """
 
-    def __init__(self, demand_variable, prod_priority, func_range_bound, nominal, order=1):
+    def __init__(self, demand_variable, prod_priority, func_range_bound, nominal, order=2):
         self.target_min = func_range_bound[1]
         self.function_range = func_range_bound
         self.demand_variable = demand_variable
@@ -203,10 +206,10 @@ class MultiCommoditySimulator(
         type_variable_map = {
             "electricity_demand": "Electricity_demand",
             "electricity_source": "Electricity_source",
-            "gas_demand": "Gas_demand",
+            "gas_demand": "Gas_demand_mass_flow",
             "gas_source": "Gas_source",
             "gas_tank_storage": "Gas_tank_flow",
-            "electrolyzer": "Gas_mass_flow_out",
+            "electrolyzer": "Power_consumed",#"Gas_mass_flow_out",
         }
         # TODO: check if conversion priority needs to be set for production or consumption,
         #  currently it assumes production
@@ -362,10 +365,11 @@ class MultiCommoditySimulator(
     def energy_system_options(self):
         options = super().energy_system_options()
 
-        self.heat_network_settings["head_loss_option"] = (
+        self.gas_network_settings["head_loss_option"] = (
             HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
         )
-        self.heat_network_settings["minimize_head_losses"] = True
+        self.gas_network_settings["minimize_head_losses"] = True
+        options["include_asset_is_switched_on"] = True
 
         return options
 
@@ -453,6 +457,23 @@ class MultiCommoditySimulatorHIGHS(MultiCommoditySimulator):
         return options
 
 
+
+class MultiCommoditySimulatorNoLosses(MultiCommoditySimulator):
+    def energy_system_options(self):
+        options = super().energy_system_options()
+
+        self.gas_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+        self.gas_network_settings["minimize_head_losses"] = False
+        options["include_electric_cable_power_loss"] = False
+
+        return options
+
+    def solver_options(self):
+        options = super().solver_options()
+        options["solver"] = "gurobi"
+
+        return options
+
 # -------------------------------------------------------------------------------------------------
 @main_decorator
 def main(runinfo_path, log_level):
@@ -477,4 +498,16 @@ def main(runinfo_path, log_level):
 
 
 if __name__ == "__main__":
-    main()
+    # main()
+    import tests.models.emerge.src.example as example
+
+    base_folder = Path(example.__file__).resolve().parent.parent
+    solution = run_optimization_problem(
+        MultiCommoditySimulatorNoLosses,
+        base_folder=base_folder,
+        esdl_file_name="emerge_priorities_withoutstorage.esdl",
+        esdl_parser=ESDLFileParser,
+        profile_reader=ProfileReaderFromFile,
+        input_timeseries_file="timeseries.csv",
+    )
+    print('a')
