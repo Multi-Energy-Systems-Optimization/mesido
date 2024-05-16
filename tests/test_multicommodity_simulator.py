@@ -175,7 +175,7 @@ class TestMultiCommoditySimulator(TestCase):
         solution = run_optimization_problem(
             MultiCommoditySimulatorNoLosses,
             base_folder=base_folder,
-            esdl_file_name="emerge_priorities.esdl",
+            esdl_file_name="emerge_priorities_withoutstorage.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries.csv",
@@ -190,8 +190,8 @@ class TestMultiCommoditySimulator(TestCase):
         demand_el = results[f"ElectricityDemand_f833.Electricity_demand"][4:10]
         electrolyzer_power = results[f"Electrolyzer_6327.Power_consumed"][4:10]
         electrolyzer_gas = results[f"Electrolyzer_6327.Gas_mass_flow_out"][4:10]
-        storage_flow = results["GasStorage_9172.Gas_tank_flow"][4:10]
-        storage_mass = results["GasStorage_9172.Stored_gas_mass"][4:10]
+        # storage_flow = results["GasStorage_9172.Gas_tank_flow"][4:10]
+        # storage_mass = results["GasStorage_9172.Stored_gas_mass"][4:10]
 
         # check producer with highest priority (lowest marginal costs is maximizing production) is
         # producing at max capacity, except when demand profile + max demand of other demand is

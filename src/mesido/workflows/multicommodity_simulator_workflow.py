@@ -64,7 +64,7 @@ class TargetDemandGoal(Goal):
 # -------------------------------------------------------------------------------------------------
 # Step 2:
 # Match the maximum producer profiles
-class TargetProducerGoal(Goal):
+class TargetProducerGoal(Goal): #TODO: highs doesn't like this goal
     def __init__(self, state, target, priority=2, order=2):
         self.state = state
 
@@ -500,7 +500,7 @@ class MultiCommoditySimulator(
         super().priority_completed(priority)
 
         self._hot_start = True
-        
+
         time_taken = time.time() - self.__priority_timer
         self._priorities_output.append(
             (
@@ -547,7 +547,7 @@ class MultiCommoditySimulatorNoLosses(MultiCommoditySimulator):
 
     def solver_options(self):
         options = super().solver_options()
-        options["solver"] = "gurobi"
+        options["solver"] = "highs"
 
         return options
 
@@ -582,7 +582,7 @@ if __name__ == "__main__":
     solution = run_optimization_problem(
         MultiCommoditySimulatorNoLosses,
         base_folder=base_folder,
-        esdl_file_name="emerge_priorities.esdl",
+        esdl_file_name="emerge_priorities_withoutstorage.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,
         input_timeseries_file="timeseries.csv",

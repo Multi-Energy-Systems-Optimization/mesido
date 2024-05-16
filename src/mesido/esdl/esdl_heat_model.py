@@ -1467,11 +1467,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
         ]
         # DO not remove due usage in future
         # hydrogen_specfic_energy = 20.0 / 1.0e6
-        specific_energy = self.get_internal_energy(asset.name, asset.in_ports[0].carrier) #J/g #TODO: is not the HHV for hydrogen, so is off
+        specific_energy = self.get_internal_energy(asset.name, asset.in_ports[0].carrier)/10 #J/g #TODO: is not the HHV for hydrogen, so is off
         density = self.get_density(asset.name, asset.in_ports[0].carrier)
         pressure = asset.in_ports[0].carrier.pressure * 1.0e5
         q_nominal = self._get_connected_q_nominal(asset)
         max_mass_flow = asset.attributes['power']/specific_energy
+        mass_flow_nominal = min(q_nominal*density, max_mass_flow/2)
 
         modifiers = dict(
             Q_nominal=q_nominal,
@@ -1485,7 +1486,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                     max=self._get_connected_q_max(asset),
                     nominal=self._get_connected_q_nominal(asset),
                 ),
-                mass_flow=dict(nominal=density * q_nominal, max=max_mass_flow),
+                mass_flow=dict(nominal=mass_flow_nominal, max=max_mass_flow),
                 Hydraulic_power=dict(min=0.0, max=0.0, nominal=q_nominal * pressure),
             ),
             **self._get_cost_figure_modifiers(asset),
@@ -1573,6 +1574,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         q_nominal = self._get_connected_q_nominal(asset)
         density = self.get_density(asset.name, asset.out_ports[0].carrier)
+        mass_flow_max = eff_max_load*max_power/3600
+        mass_flow_nominal = min(density*q_nominal, mass_flow_max/2)
 
         modifiers = dict(
             min_voltage=v_min,
@@ -1589,7 +1592,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                     max=self._get_connected_q_max(asset),
                     nominal=q_nominal,
                 ),
-                mass_flow=dict(nominal=q_nominal * density),
+                mass_flow=dict(nominal=mass_flow_nominal, max=mass_flow_max),
             ),
             ElectricityIn=dict(
                 Power=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
