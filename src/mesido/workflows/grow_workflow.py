@@ -157,7 +157,7 @@ class EndScenarioSizing(
         self.__heat_demand_bounds = dict()
         self.__heat_demand_nominal = dict()
 
-        self._save_json = True
+        self._save_json = False
 
     def parameters(self, ensemble_member):
         parameters = super().parameters(ensemble_member)
@@ -421,11 +421,10 @@ class EndScenarioSizingHeadLoss(EndScenarioSizing):
         self.heat_network_settings["head_loss_option"] = (
             HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
         )
-        # if self._stage == 3:
         self.heat_network_settings["minimize_head_losses"] = True
-        self.heat_network_settings["pipe_minimum_pressure"] = 4
-        self.heat_network_settings["pipe_maximum_pressure"] = 25
-        self.heat_network_settings["n_linearization_lines"] = 1
+        #TODO: check with we want to set a default minimum and maximum pressure for this workflow
+        # self.heat_network_settings["pipe_minimum_pressure"] = 4
+        # self.heat_network_settings["pipe_maximum_pressure"] = 25
 
 
 class EndScenarioSizingHeadLossDiscounted(EndScenarioSizingHeadLoss, EndScenarioSizingDiscounted):
@@ -565,6 +564,13 @@ def run_end_scenario_sizing_no_heat_losses(
 
 
 def create_staged_bounds(solution, results, parameters, bounds, new_stage):
+    """
+    The additional bounds required for the staged approach are added here.
+
+    new_stage: passes the new stage number that will be started after these bounds are added. This
+    parameter can be used to select additional/different bounds for different stages
+
+    """
     boolean_bounds = {}
     # We give bounds for stage 2 by allowing one DN sizes larger than what was found in the
     # stage 1 optimization.
@@ -628,8 +634,7 @@ def create_staged_bounds(solution, results, parameters, bounds, new_stage):
             except KeyError:
                 pass
 
-    priorities_output = solution._priorities_output
-    return boolean_bounds, priorities_output
+    return boolean_bounds
 
 def run_end_scenario_sizing(
     end_scenario_problem_class,
@@ -671,8 +676,8 @@ def run_end_scenario_sizing(
         parameters = solution.parameters(0)
         bounds = solution.bounds()
 
-        boolean_bounds, priorities_output = create_staged_bounds(solution, results, parameters, bounds, new_stage=2)
-
+        boolean_bounds = create_staged_bounds(solution, results, parameters, bounds, new_stage=2)
+        priorities_output = solution._priorities_output
 
     solution = run_optimization_problem(
         end_scenario_problem_class,
