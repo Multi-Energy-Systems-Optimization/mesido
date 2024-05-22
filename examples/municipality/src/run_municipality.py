@@ -2,9 +2,7 @@ from pathlib import Path
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
-from mesido.workflows import EndScenarioSizingStagedHIGHS, run_end_scenario_sizing
-from mesido.workflows.grow_workflow import EndScenarioSizingHeadLossStagedGurobi, \
-    EndScenarioSizingStagedGurobi, EndScenarioSizingHeadLossStaged
+from mesido.workflows import EndScenarioSizingHeadLossStaged, run_end_scenario_sizing
 
 if __name__ == "__main__":
     import time

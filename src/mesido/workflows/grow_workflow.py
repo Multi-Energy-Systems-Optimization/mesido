@@ -422,9 +422,13 @@ class EndScenarioSizingHeadLoss(EndScenarioSizing):
             HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
         )
         self.heat_network_settings["minimize_head_losses"] = True
-        #TODO: check with we want to set a default minimum and maximum pressure for this workflow
+        # TODO: check with we want to set a default minimum and maximum pressure for this workflow
         # self.heat_network_settings["pipe_minimum_pressure"] = 4
         # self.heat_network_settings["pipe_maximum_pressure"] = 25
+
+    # TODO: if headloss and thus also hydraulic power is included we might want to use some default
+    # costs for electricity profile as otherwise the minimisation of hydraulic power as a separate
+    # goal might be cmputationally intensive.
 
 
 class EndScenarioSizingHeadLossDiscounted(EndScenarioSizingHeadLoss, EndScenarioSizingDiscounted):
@@ -619,12 +623,20 @@ def create_staged_bounds(solution, results, parameters, bounds, new_stage):
                 lb.append(
                     r
                     if abs(results[f"{p}.Q"][i] / parameters[f"{p}.area"]) > 2.5e-1
-                    else bounds_pipe[0] if not isinstance(bounds_pipe[0], Timeseries) else bounds_pipe[0].values[i]
+                    else (
+                        bounds_pipe[0]
+                        if not isinstance(bounds_pipe[0], Timeseries)
+                        else bounds_pipe[0].values[i]
+                    )
                 )
                 ub.append(
                     r
                     if abs(results[f"{p}.Q"][i] / parameters[f"{p}.area"]) > 2.5e-1
-                    else bounds_pipe[1] if not isinstance(bounds_pipe[1], Timeseries) else bounds_pipe[1].values[i]
+                    else (
+                        bounds_pipe[1]
+                        if not isinstance(bounds_pipe[1], Timeseries)
+                        else bounds_pipe[1].values[i]
+                    )
                 )
 
             boolean_bounds[f"{p}__flow_direct_var"] = (Timeseries(t, lb), Timeseries(t, ub))
@@ -635,6 +647,7 @@ def create_staged_bounds(solution, results, parameters, bounds, new_stage):
                 pass
 
     return boolean_bounds
+
 
 def run_end_scenario_sizing(
     end_scenario_problem_class,
@@ -701,7 +714,6 @@ def run_end_scenario_sizing(
     #         priorities_output=priorities_output,
     #         **kwargs,
     #     )
-
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
 

@@ -719,7 +719,7 @@ class HeadLossClass:
         ):
             n_linear_lines = network_settings["n_linearization_lines"]
             n_timesteps = len(optimization_problem.times())
-            #TODO: check if we want to add a simplification for the linearisation of headloss when
+            # TODO: check if we want to add a simplification for the linearisation of headloss when
             # the pipe is relatively short compared to other pipes, thus with relatively small
             # effects.
             # if length<100:
