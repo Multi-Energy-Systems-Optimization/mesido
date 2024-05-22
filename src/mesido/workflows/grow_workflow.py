@@ -601,8 +601,6 @@ def create_staged_bounds(solution, results, parameters, bounds, new_stage):
     t = solution.times()
     from rtctools.optimization.timeseries import Timeseries
 
-    print(f"number of boolean bounds for stage 2 before flow directions: {len(boolean_bounds)}")
-
     for p in solution.energy_system_components.get("heat_pipe", []):
         if p in solution.hot_pipes and parameters[f"{p}.area"] > 0.0:
             lb = []
@@ -610,7 +608,8 @@ def create_staged_bounds(solution, results, parameters, bounds, new_stage):
             bounds_pipe = bounds[f"{p}__flow_direct_var"]
             for i in range(len(t)):
                 r = results[f"{p}__flow_direct_var"][i]
-                # bound to roughly represent 4km of heat losses in pipes
+                # bound to roughly represent 40km of heat losses in pipes as other new producers
+                # might also be required and change the direction
                 lb.append(
                     r
                     if abs(results[f"{p}.Q"][i] / parameters[f"{p}.area"]) > 2.5e-1
@@ -628,7 +627,7 @@ def create_staged_bounds(solution, results, parameters, bounds, new_stage):
                 boolean_bounds[f"{p}__is_disconnected"] = (Timeseries(t, r), Timeseries(t, r))
             except KeyError:
                 pass
-    print(f"number of boolean bounds for stage 2 after flow directions: {len(boolean_bounds)}")
+
     priorities_output = solution._priorities_output
     return boolean_bounds, priorities_output
 
@@ -674,75 +673,6 @@ def run_end_scenario_sizing(
 
         boolean_bounds, priorities_output = create_staged_bounds(solution, results, parameters, bounds, new_stage=2)
 
-        # # We give bounds for stage 2 by allowing one DN sizes larger than what was found in the
-        # # stage 1 optimization.
-        # pc_map = solution.get_pipe_class_map()
-        # for pipe_classes in pc_map.values():
-        #     v_prev = 0.0
-        #     v_prev_2 = 0.0
-        #     v_prev_3 = 0.0
-        #     first_pipe_class = True
-        #     for var_name in pipe_classes.values():
-        #         v = results[var_name][0]
-        #         if first_pipe_class and abs(v) == 1.0:
-        #             boolean_bounds[var_name] = (abs(v), abs(v))
-        #         elif abs(v) == 1.0:
-        #             boolean_bounds[var_name] = (0.0, abs(v))
-        #         elif v_prev == 1.0:
-        #             boolean_bounds[var_name] = (0.0, 1.0)
-        #         elif v_prev_2 == 1.0:
-        #             boolean_bounds[var_name] = (0.0, 1.0)
-        #         # elif v_prev_3 == 1.0:
-        #         #     boolean_bounds[var_name] = (0.0, 1.0)
-        #         else:
-        #             boolean_bounds[var_name] = (abs(v), abs(v))
-        #         v_prev = v
-        #         v_prev_2 = v_prev
-        #         v_prev_3 = v_prev_2
-        #         first_pipe_class = False
-        #
-        # for asset in [
-        #     *solution.energy_system_components.get("heat_source", []),
-        #     *solution.energy_system_components.get("heat_buffer", []),
-        # ]:
-        #     var_name = f"{asset}_aggregation_count"
-        #     lb = results[var_name][0]
-        #     ub = solution.bounds()[var_name][1]
-        #     if round(lb) >= 1:
-        #         boolean_bounds[var_name] = (lb, ub)
-        #
-        # t = solution.times()
-        # from rtctools.optimization.timeseries import Timeseries
-        #
-        # print(f"number of boolean bounds for stage 2 before flow directions: {len(boolean_bounds)}")
-        #
-        # for p in solution.energy_system_components.get("heat_pipe", []):
-        #     if p in solution.hot_pipes and parameters[f"{p}.area"] > 0.0:
-        #         lb = []
-        #         ub = []
-        #         bounds_pipe = bounds[f"{p}__flow_direct_var"]
-        #         for i in range(len(t)):
-        #             r = results[f"{p}__flow_direct_var"][i]
-        #             # bound to roughly represent 4km of heat losses in pipes
-        #             lb.append(
-        #                 r
-        #                 if abs(results[f"{p}.Q"][i] / parameters[f"{p}.area"]) > 2.5e-1
-        #                 else bounds_pipe[0]
-        #             )
-        #             ub.append(
-        #                 r
-        #                 if abs(results[f"{p}.Q"][i] / parameters[f"{p}.area"]) > 2.5e-1
-        #                 else bounds_pipe[1]
-        #             )
-        #
-        #         boolean_bounds[f"{p}__flow_direct_var"] = (Timeseries(t, lb), Timeseries(t, ub))
-        #         try:
-        #             r = results[f"{p}__is_disconnected"]
-        #             boolean_bounds[f"{p}__is_disconnected"] = (Timeseries(t, r), Timeseries(t, r))
-        #         except KeyError:
-        #             pass
-        # print(f"number of boolean bounds for stage 2 after flow directions: {len(boolean_bounds)}")
-        # priorities_output = solution._priorities_output
 
     solution = run_optimization_problem(
         end_scenario_problem_class,

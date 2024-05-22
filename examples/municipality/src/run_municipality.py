@@ -13,7 +13,7 @@ if __name__ == "__main__":
     base_folder = Path(__file__).resolve().parent.parent
 
     solution = run_end_scenario_sizing(
-        EndScenarioSizingHeadLossStagedGurobi,
+        EndScenarioSizingHeadLossStaged,
         base_folder=base_folder,
         esdl_file_name="GROW_withATES_Prod_install.esdl",
         esdl_parser=ESDLFileParser,
