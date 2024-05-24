@@ -301,7 +301,7 @@ class MultiCommoditySimulator(
             # if asset not in self.energy_system_components.get("electricity_demand", []):
             if asset in [
                 *assets_to_include.get("source", []),
-                *assets_to_include.get("conversion", []),
+                # *assets_to_include.get("conversion", []),
             ]:
                 goals.append(
                     MinimizeSourcesGoalMerit(
@@ -311,16 +311,24 @@ class MultiCommoditySimulator(
                         self.variable_nominal(variable_name),
                     )
                 )
-                if asset in self.energy_system_components.get("electrolyzer"):
-                    variable_name= f"{asset}.Gas_mass_flow_out"
-                    goals.append(
-                        MaximizeDemandGoalMerit(
-                            variable_name,
-                            marginal_priority+1,
-                            self.bounds()[variable_name],
-                            self.variable_nominal(variable_name),
-                        )
+            if asset in assets_to_include.get("conversion", []):
+                goals.append(
+                    MinimizeSourcesGoalMerit(
+                        variable_name,
+                        marginal_priority+1,
+                        self.bounds()[variable_name],
+                        self.variable_nominal(variable_name),
                     )
+                )
+                variable_name= f"{asset}.Gas_mass_flow_out"
+                goals.append(
+                    MaximizeDemandGoalMerit(
+                        variable_name,
+                        marginal_priority,
+                        self.bounds()[variable_name],
+                        self.variable_nominal(variable_name),
+                    )
+                )
             elif asset in assets_to_include.get("demand", []):
                 goals.append(
                     MaximizeDemandGoalMerit(
@@ -331,6 +339,8 @@ class MultiCommoditySimulator(
                     )
                 )
             elif asset in assets_to_include.get("storage", []):
+                #TODO: should use separate variable for charging and discharging
+
                 # charging acts as consumer
                 # Marginal costs for discharging > marginal cost for charging
                 goals.append(
