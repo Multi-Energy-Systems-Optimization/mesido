@@ -271,7 +271,7 @@ class EndScenarioSizing(
         if options["solver"] == "highs":
             highs_options = options["highs"]
             if self.__priority == 1:
-                highs_options["time_limit"] = 100
+                highs_options["time_limit"] = 1000
             else:
                 highs_options["time_limit"] = 100000
         return options
@@ -422,6 +422,13 @@ class EndScenarioSizingHeadLoss(EndScenarioSizing):
             HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
         )
         self.heat_network_settings["minimize_head_losses"] = True
+        # TODO: check with we want to set a default minimum and maximum pressure for this workflow
+        # self.heat_network_settings["pipe_minimum_pressure"] = 4
+        # self.heat_network_settings["pipe_maximum_pressure"] = 25
+
+    # TODO: if headloss and thus also hydraulic power is included we might want to use some default
+    # costs for electricity profile as otherwise the minimisation of hydraulic power as a separate
+    # goal might be cmputationally intensive.
 
 
 class EndScenarioSizingHeadLossDiscounted(EndScenarioSizingHeadLoss, EndScenarioSizingDiscounted):
@@ -448,9 +455,11 @@ class SettingsStaged:
         *args,
         **kwargs,
     ):
+        # _stage needs to be set before the super to ensure that the correct stage is passed on
+        # to the other classes.
+        self._stage = stage
         super().__init__(*args, **kwargs)
 
-        self._stage = stage
         self.__boolean_bounds = boolean_bounds
 
         if self._stage == 1:
@@ -458,7 +467,7 @@ class SettingsStaged:
             self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
             self.heat_network_settings["minimize_head_losses"] = False
 
-        if self._stage == 2 and priorities_output:
+        if self._stage != 1 and priorities_output:
             self._priorities_output = priorities_output
 
     def energy_system_options(self):
@@ -472,7 +481,7 @@ class SettingsStaged:
     def bounds(self):
         bounds = super().bounds()
 
-        if self._stage == 2:
+        if self._stage != 1:
             bounds.update(self.__boolean_bounds)
 
         return bounds
@@ -558,6 +567,88 @@ def run_end_scenario_sizing_no_heat_losses(
     return solution
 
 
+def create_staged_bounds(solution, results, parameters, bounds, new_stage):
+    """
+    The additional bounds required for the staged approach are added here.
+
+    new_stage: passes the new stage number that will be started after these bounds are added. This
+    parameter can be used to select additional/different bounds for different stages
+
+    """
+    boolean_bounds = {}
+    # We give bounds for stage 2 by allowing one DN sizes larger than what was found in the
+    # stage 1 optimization.
+    pc_map = solution.get_pipe_class_map()
+    for pipe_classes in pc_map.values():
+        v_prev = 0.0
+        first_pipe_class = True
+        for var_name in pipe_classes.values():
+            v = results[var_name][0]
+            if new_stage == 2:
+                if first_pipe_class and abs(v) == 1.0:
+                    boolean_bounds[var_name] = (abs(v), abs(v))
+                elif abs(v) == 1.0:
+                    boolean_bounds[var_name] = (0.0, abs(v))
+                elif v_prev == 1.0:
+                    boolean_bounds[var_name] = (0.0, 1.0)
+                else:
+                    boolean_bounds[var_name] = (abs(v), abs(v))
+            else:
+                boolean_bounds[var_name] = (abs(v), abs(v))
+            v_prev = v
+            first_pipe_class = False
+
+    for asset in [
+        *solution.energy_system_components.get("heat_source", []),
+        *solution.energy_system_components.get("heat_buffer", []),
+    ]:
+        var_name = f"{asset}_aggregation_count"
+        lb = results[var_name][0]
+        ub = solution.bounds()[var_name][1]
+        if round(lb) >= 1:
+            boolean_bounds[var_name] = (lb, ub)
+
+    t = solution.times()
+    from rtctools.optimization.timeseries import Timeseries
+
+    for p in solution.energy_system_components.get("heat_pipe", []):
+        if p in solution.hot_pipes and parameters[f"{p}.area"] > 0.0:
+            lb = []
+            ub = []
+            bounds_pipe = bounds[f"{p}__flow_direct_var"]
+            for i in range(len(t)):
+                r = results[f"{p}__flow_direct_var"][i]
+                # bound to roughly represent 40km of heat losses in pipes as other new producers
+                # might also be required and change the direction
+                lb.append(
+                    r
+                    if abs(results[f"{p}.Q"][i] / parameters[f"{p}.area"]) > 2.5e-1
+                    else (
+                        bounds_pipe[0]
+                        if not isinstance(bounds_pipe[0], Timeseries)
+                        else bounds_pipe[0].values[i]
+                    )
+                )
+                ub.append(
+                    r
+                    if abs(results[f"{p}.Q"][i] / parameters[f"{p}.area"]) > 2.5e-1
+                    else (
+                        bounds_pipe[1]
+                        if not isinstance(bounds_pipe[1], Timeseries)
+                        else bounds_pipe[1].values[i]
+                    )
+                )
+
+            boolean_bounds[f"{p}__flow_direct_var"] = (Timeseries(t, lb), Timeseries(t, ub))
+            try:
+                r = results[f"{p}__is_disconnected"]
+                boolean_bounds[f"{p}__is_disconnected"] = (Timeseries(t, r), Timeseries(t, r))
+            except KeyError:
+                pass
+
+    return boolean_bounds
+
+
 def run_end_scenario_sizing(
     end_scenario_problem_class,
     staged_pipe_optimization=True,
@@ -598,63 +689,7 @@ def run_end_scenario_sizing(
         parameters = solution.parameters(0)
         bounds = solution.bounds()
 
-        # We give bounds for stage 2 by allowing one DN sizes larger than what was found in the
-        # stage 1 optimization.
-        pc_map = solution.get_pipe_class_map()
-        for pipe_classes in pc_map.values():
-            v_prev = 0.0
-            first_pipe_class = True
-            for var_name in pipe_classes.values():
-                v = results[var_name][0]
-                if first_pipe_class and abs(v) == 1.0:
-                    boolean_bounds[var_name] = (abs(v), abs(v))
-                elif abs(v) == 1.0:
-                    boolean_bounds[var_name] = (0.0, abs(v))
-                elif v_prev == 1.0:
-                    boolean_bounds[var_name] = (0.0, 1.0)
-                else:
-                    boolean_bounds[var_name] = (abs(v), abs(v))
-                v_prev = v
-                first_pipe_class = False
-
-        for asset in [
-            *solution.energy_system_components.get("heat_source", []),
-            *solution.energy_system_components.get("heat_buffer", []),
-        ]:
-            var_name = f"{asset}_aggregation_count"
-            lb = results[var_name][0]
-            ub = solution.bounds()[var_name][1]
-            if round(lb) >= 1:
-                boolean_bounds[var_name] = (lb, ub)
-
-        t = solution.times()
-        from rtctools.optimization.timeseries import Timeseries
-
-        for p in solution.energy_system_components.get("heat_pipe", []):
-            if p in solution.hot_pipes and parameters[f"{p}.area"] > 0.0:
-                lb = []
-                ub = []
-                bounds_pipe = bounds[f"{p}__flow_direct_var"]
-                for i in range(len(t)):
-                    r = results[f"{p}__flow_direct_var"][i]
-                    # bound to roughly represent 4km of milp losses in pipes
-                    lb.append(
-                        r
-                        if abs(results[f"{p}.Q"][i] / parameters[f"{p}.area"]) > 2.5e-2
-                        else bounds_pipe[0]
-                    )
-                    ub.append(
-                        r
-                        if abs(results[f"{p}.Q"][i] / parameters[f"{p}.area"]) > 2.5e-2
-                        else bounds_pipe[1]
-                    )
-
-                boolean_bounds[f"{p}__flow_direct_var"] = (Timeseries(t, lb), Timeseries(t, ub))
-                try:
-                    r = results[f"{p}__is_disconnected"]
-                    boolean_bounds[f"{p}__is_disconnected"] = (Timeseries(t, r), Timeseries(t, r))
-                except KeyError:
-                    pass
+        boolean_bounds = create_staged_bounds(solution, results, parameters, bounds, new_stage=2)
         priorities_output = solution._priorities_output
 
     solution = run_optimization_problem(
@@ -664,6 +699,21 @@ def run_end_scenario_sizing(
         priorities_output=priorities_output,
         **kwargs,
     )
+
+    # if issubclass(end_scenario_problem_class, EndScenarioSizingHeadLoss):
+    #     results = solution.extract_results()
+    #     parameters = solution.parameters(0)
+    #     bounds = solution.bounds()
+    #
+    #     boolean_bounds, priorities_output = create_staged_bounds(solution, results, parameters,
+    #                                                              bounds, new_stage=3)
+    #     solution = run_optimization_problem(
+    #         end_scenario_problem_class,
+    #         stage=3,
+    #         boolean_bounds=boolean_bounds,
+    #         priorities_output=priorities_output,
+    #         **kwargs,
+    #     )
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
 
