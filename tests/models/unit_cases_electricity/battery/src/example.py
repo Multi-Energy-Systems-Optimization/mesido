@@ -77,6 +77,8 @@ class ElectricityProblem(
 
     #TODO: add constraint battery at timestep 0
 
+    #TODO: change electricity battery constraint for discharging to eff_power*efficiency - powerin ==0
+
     pass
 
 
