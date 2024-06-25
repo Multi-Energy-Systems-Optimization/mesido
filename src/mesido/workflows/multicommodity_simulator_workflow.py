@@ -108,15 +108,20 @@ class MaximizeDemandGoalMerit(Goal):
     """
 
     def __init__(self, demand_variable, prod_priority, func_range_bound, nominal, order=2):
-        self.target_min = func_range_bound[1]
-        self.function_range = func_range_bound
+        # self.target_min = func_range_bound[1]*27 #TODO: probably this needs to be multiplied with the number of timesteps
+        # self.function_range = (func_range_bound[0]*27, func_range_bound[1]*27)
+        # self.demand_variable = demand_variable
+        # self.function_nominal = nominal
+        # self.priority = prod_priority
+        # self.order = order
+
         self.demand_variable = demand_variable
         self.function_nominal = nominal
         self.priority = prod_priority
-        self.order = order
+        self.order = 1
 
     def function(self, optimization_problem, ensemble_member):
-        return optimization_problem.state(f"{self.demand_variable}")
+        return -optimization_problem.state(f"{self.demand_variable}")
 
 
 class MinimizeStorageGoalMerit(Goal):
@@ -183,6 +188,7 @@ class _GoalsAndOptions:
                         goals.append(TargetDemandGoal(state, target))
                     else:
                         goals.append(TargetProducerGoal(state, target))
+                        # continue
 
         return goals
 
@@ -311,7 +317,7 @@ class MultiCommoditySimulator(
                         self.variable_nominal(variable_name),
                     )
                 )
-            if asset in assets_to_include.get("conversion", []):
+            elif asset in assets_to_include.get("conversion", []):
                 goals.append(
                     MinimizeSourcesGoalMerit(
                         variable_name,
@@ -521,6 +527,7 @@ class MultiCommoditySimulator(
                 self.solver_stats,
             )
         )
+        logger.info(f"Goal with priority {priority} has completed")
         if priority == 1 and self.objective_value > 1e-6:
             raise RuntimeError("The heating demand is not matched")
 
@@ -557,7 +564,7 @@ class MultiCommoditySimulatorNoLosses(MultiCommoditySimulator):
 
     def solver_options(self):
         options = super().solver_options()
-        options["solver"] = "highs"
+        options["solver"] = "gurobi"
 
         return options
 

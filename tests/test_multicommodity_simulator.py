@@ -34,6 +34,14 @@ def checks_all_mc_simulations(solution, results):
         else:
             print(demand, energy_demand)
 
+    for demand in solution.energy_system_components.get("gas_demand", []):
+        energy_demand = results[f"{demand}.Gas_demand_mass_flow"]
+        if f"{demand}.target_gas_demand" in solution.io.get_timeseries_names():
+            target = solution.get_timeseries(f"{demand}.target_gas_demand")
+            print(demand, target, energy_demand)
+        else:
+            print(demand, energy_demand)
+
 
 class TestMultiCommoditySimulator(TestCase):
     #TODO: update docstring
@@ -49,7 +57,7 @@ class TestMultiCommoditySimulator(TestCase):
     - Check that the ATES is not delivering any milp to the network during the 1st time step
     """
 
-    def test_multi_commodity_simulator_priorities(self):
+    def test_multi_commodity_simulator_priorities_el(self):
         import models.unit_cases_electricity.bus_networks.src.example as example
 
         base_folder = Path(example.__file__).resolve().parent.parent
@@ -57,7 +65,7 @@ class TestMultiCommoditySimulator(TestCase):
         solution = run_optimization_problem(
             MultiCommoditySimulator,
             base_folder=base_folder,
-            esdl_file_name="Electric_bus4_import_priorities.esdl",
+            esdl_file_name="Electric_bus4_priorities.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_2.csv",
@@ -172,15 +180,20 @@ class TestMultiCommoditySimulator(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
+        class MCSimulatorShort(MultiCommoditySimulatorNoLosses):
+            def times(self, variable=None):
+                return super().times(variable)
+
         solution = run_optimization_problem(
-            MultiCommoditySimulatorNoLosses,
+            MCSimulatorShort,
             base_folder=base_folder,
             esdl_file_name="emerge_priorities_withoutstorage.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries.csv",
+            input_timeseries_file="timeseries_short.csv",
         )
 
+        #TODO: gas and/or electrolyzer gives issues when using highs as solver.
         bounds = solution.bounds()
         results = solution.extract_results()
 
