@@ -1,7 +1,6 @@
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
-from mesido.physics_mixin import PhysicsMixin
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 
 import numpy as np
@@ -75,25 +74,22 @@ class ElectricityProblem(
     Problem to check the behaviour of a simple source, cable, demand network.
     """
 
-    #TODO: add constraint battery at timestep 0, set generic intitial value.
+    # TODO: add constraint battery at timestep 0, set generic intitial value.
     def constraints(self, ensemble_member):
         constraints = super().constraints(ensemble_member)
 
         for bat in self.energy_system_components.get("electricity_storage", []):
             stored_elec = self.state_vector(f"{bat}.Stored_electricity")
-            nominal = self.variable_nominal(f"{bat}.Stored_electricity")
             constraints.append((stored_elec[0], 0.0, 0.0))
 
         return constraints
 
     def solver_options(self):
         options = super().solver_options()
-        options["solver"] = "gurobi"
+        options["solver"] = "highs"
         return options
 
     pass
-
-
 
 
 if __name__ == "__main__":
