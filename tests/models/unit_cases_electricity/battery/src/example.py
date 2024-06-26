@@ -86,8 +86,6 @@ class ElectricityProblem(
 
         return constraints
 
-    # TODO: change electricity battery constraint for discharging to eff_power*efficiency - powerin ==0
-
     def solver_options(self):
         options = super().solver_options()
         options["solver"] = "gurobi"
@@ -107,11 +105,3 @@ if __name__ == "__main__":
         input_timeseries_file="timeseries.csv",
     )
     r = elect.extract_results()
-    print(r["Battery_71a6.Effective_power_charging"])
-    print(r["Battery_71a6.ElectricityIn.Power"])
-    print(r["Battery_71a6.Stored_electricity"])
-    print(r["ElectricityProducer_b95d.Electricity_source"])
-    print(r["ElectricityDemand_2af6.Electricity_demand"])
-    print(r["ElectricityDemand_2af6.ElectricityIn.Power"])
-    print(r["ElectricityDemand_2af6.ElectricityIn.V"])
-    print(r["ElectricityDemand_2af6.ElectricityIn.I"])
