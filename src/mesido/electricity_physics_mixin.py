@@ -494,14 +494,14 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             # discharging
             constraints.append(
                 (
-                    (eff_power - discharge_eff * power_in + is_charging * big_m) / power_nom,
+                    (eff_power * discharge_eff - power_in + is_charging * big_m) / power_nom,
                     0,
                     np.inf,
                 )
             )
             constraints.append(
                 (
-                    (eff_power - discharge_eff * power_in - is_charging * big_m) / power_nom,
+                    (eff_power * discharge_eff - power_in - is_charging * big_m) / power_nom,
                     -np.inf,
                     0,
                 )
