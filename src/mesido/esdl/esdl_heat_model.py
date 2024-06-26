@@ -1514,10 +1514,13 @@ class AssetToHeatComponent(_AssetToComponentBase):
         q_nominal = self._get_connected_q_nominal(asset)
         density_value = self.get_density(asset.name, asset.out_ports[0].carrier)
         pressure = asset.out_ports[0].carrier.pressure * 1.0e5
+        specific_energy = self.get_internal_energy(asset.name, asset.out_ports[0].carrier) / 10  # J/g #TODO: is not the HHV for hydrogen, so is off
+        max_mass_flow = asset.attributes['power'] / specific_energy
 
         bounds_nominals_mass_flow = dict(
             min=0.0,
-            max=self._get_connected_q_max(asset) * density_value,
+            max=min(self._get_connected_q_max(asset) * density_value,
+                    max_mass_flow),
             nominal=q_nominal * density_value,
         )
 
