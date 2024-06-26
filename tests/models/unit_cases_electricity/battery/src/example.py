@@ -57,7 +57,7 @@ class _GoalsAndOptions:
 
     def energy_system_options(self):
         options = super().energy_system_options()
-        options["include_electric_cable_power_loss"] = True
+        options["include_electric_cable_power_loss"] = False
 
         return options
 
@@ -71,10 +71,9 @@ class ElectricityProblem(
     CollocatedIntegratedOptimizationProblem,
 ):
     """
-    Problem to check the behaviour of a simple source, cable, demand network.
+    Problem to check the behaviour of a simple source, cable, demand network and a battery.
     """
 
-    # TODO: add constraint battery at timestep 0, set generic intitial value.
     def constraints(self, ensemble_member):
         constraints = super().constraints(ensemble_member)
 
