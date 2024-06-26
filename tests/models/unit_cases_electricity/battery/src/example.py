@@ -75,9 +75,23 @@ class ElectricityProblem(
     Problem to check the behaviour of a simple source, cable, demand network.
     """
 
-    #TODO: add constraint battery at timestep 0
+    #TODO: add constraint battery at timestep 0, set generic intitial value.
+    def constraints(self, ensemble_member):
+        constraints = super().constraints(ensemble_member)
 
-    #TODO: change electricity battery constraint for discharging to eff_power*efficiency - powerin ==0
+        for bat in self.energy_system_components.get("electricity_storage", []):
+            stored_elec = self.state_vector(f"{bat}.Stored_electricity")
+            nominal = self.variable_nominal(f"{bat}.Stored_electricity")
+            constraints.append((stored_elec[0], 0.0, 0.0))
+
+        return constraints
+
+    # TODO: change electricity battery constraint for discharging to eff_power*efficiency - powerin ==0
+
+    def solver_options(self):
+        options = super().solver_options()
+        options["solver"] = "gurobi"
+        return options
 
     pass
 
@@ -93,6 +107,10 @@ if __name__ == "__main__":
         input_timeseries_file="timeseries.csv",
     )
     r = elect.extract_results()
+    print(r["Battery_71a6.Effective_power_charging"])
+    print(r["Battery_71a6.ElectricityIn.Power"])
+    print(r["Battery_71a6.Stored_electricity"])
+    print(r["ElectricityProducer_b95d.Electricity_source"])
     print(r["ElectricityDemand_2af6.Electricity_demand"])
     print(r["ElectricityDemand_2af6.ElectricityIn.Power"])
     print(r["ElectricityDemand_2af6.ElectricityIn.V"])

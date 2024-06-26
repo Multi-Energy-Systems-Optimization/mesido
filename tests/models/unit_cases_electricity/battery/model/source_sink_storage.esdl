@@ -7,11 +7,11 @@
   </energySystemInformation>
   <instance xsi:type="esdl:Instance" id="67052ed2-f139-4936-9cd8-b4c419bf2cfa" name="Untitled instance">
     <area xsi:type="esdl:Area" id="960acb90-32e0-4754-821d-f53e5567974b" name="Untitled area">
-      <asset xsi:type="esdl:PVInstallation" name="ElectricityProducer_b95d" power="1000.0" id="b95dc1f7-e189-4745-8c12-3d626faf4d44">
+      <asset xsi:type="esdl:PVInstallation" name="ElectricityProducer_b95d" power="1500.0" id="b95dc1f7-e189-4745-8c12-3d626faf4d44">
         <port xsi:type="esdl:OutPort" name="Out" carrier="a04bdbac-5198-477b-9989-d99c3c001eaf" connectedTo="86f5473a-c2de-488f-9193-7aa8fe14edad" id="ee8afa6b-b78b-42fc-acaa-8b47e8680c19"/>
         <geometry xsi:type="esdl:Point" lon="4.416246414184571" lat="51.96451418555131" CRS="WGS84"/>
       </asset>
-      <asset xsi:type="esdl:ElectricityDemand" name="ElectricityDemand_2af6" power="1000.0" id="2af646f3-f6ec-4086-baf6-df08a225c7d9">
+      <asset xsi:type="esdl:ElectricityDemand" name="ElectricityDemand_2af6" power="10000.0" id="2af646f3-f6ec-4086-baf6-df08a225c7d9">
         <port xsi:type="esdl:InPort" name="In" carrier="a04bdbac-5198-477b-9989-d99c3c001eaf" connectedTo="d0d25328-6989-4933-ba30-7f9e1b47b8a0" id="3f5a40fd-1a3e-4bd0-a0da-7bca9f891328"/>
         <geometry xsi:type="esdl:Point" lon="4.421074390411378" lat="51.96619321496721" CRS="WGS84"/>
       </asset>
