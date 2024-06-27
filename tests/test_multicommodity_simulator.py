@@ -180,7 +180,7 @@ class TestMultiCommoditySimulator(TestCase):
 
         # check demand 1 is matching the profile (in check_all_mc_simulations) and that demand 2 is maxed out
         checks_all_mc_simulations(solution, results)
-        np.testing.assert_allclose(dem_2, dem_2_bound, atol=1e-3, rtol=1e-6)
+        np.testing.assert_allclose(dem_2, dem_2_bound[1], atol=1e-3, rtol=1e-6)
 
     def test_multi_commodity_simulator_emerge(self):
         import models.emerge.src.example as example
