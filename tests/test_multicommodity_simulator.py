@@ -18,7 +18,7 @@ def checks_all_mc_simulations(solution, results):
     demand_matching_test(solution, results)
     energy_conservation_test(solution, results)
 
-    for prod in solution.energy_system_components.get("electricity_source"):
+    for prod in solution.energy_system_components.get("electricity_source", []):
         prod_profile_name = f"{prod}.maximum_electricity_source"
         energy_prod = results[f"{prod}.Electricity_source"]
         if prod_profile_name in solution.io.get_timeseries_names():
@@ -26,7 +26,7 @@ def checks_all_mc_simulations(solution, results):
             np.testing.assert_allclose(target, energy_prod, atol=1.0e-3, rtol=1.0e-6)
         print(prod, energy_prod)
 
-    for demand in solution.energy_system_components.get("electricity_demand"):
+    for demand in solution.energy_system_components.get("electricity_demand", []):
         energy_demand = results[f"{demand}.Electricity_demand"]
         if f"{demand}.target_electricity_demand" in solution.io.get_timeseries_names():
             target = solution.get_timeseries(f"{demand}.target_electricity_demand")
@@ -145,35 +145,42 @@ class TestMultiCommoditySimulator(TestCase):
         # and is does not contribute to the heating demands 1, 2 and 3
         # TODO: these tests need to be updated for elec/gas
 
+        import models.unit_cases_gas.multi_demand_source_node.src.run_test as example
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
         solution = run_optimization_problem(
             MultiCommoditySimulator,
             base_folder=base_folder,
-            esdl_file_name="Electric_bus4_priorities.esdl",
+            esdl_file_name="test_priorities.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries_2_prod_2.csv",
+            input_timeseries_file="timeseries.csv",
         )
 
         results = solution.extract_results()
+        bounds = solution.bounds()
 
         checks_all_mc_simulations(solution, results)
 
-        prod_1 = results["ElectricityProducer_a215.Electricity_source"]
-        prod_2 = results["ElectricityProducer_17a1.Electricity_source"]
-        dem_1 = results["ElectricityDemand_e527.Electricity_demand"]
-        dem_2 = results["ElectricityDemand_281a.Electricity_demand"]
+        prod_1 = results["GasProducer_3573.Gas_source_mass_flow"]
+        prod_2 = results["GasProducer_a977.Gas_source_mass_flow"]
+        dem_1 = results["GasDemand_47d0.Gas_demand_mass_flow"]
+        dem_2 = results["GasDemand_7979.Gas_demand_mass_flow"]
+        prod_1_bound = bounds["GasProducer_3573.Gas_source_mass_flow"][1]
+        dem_2_bound = bounds["GasDemand_7979.Gas_demand_mass_flow"]
 
         # check producer with highest marginal cost (prod_2) is only producing to match demand
-        # profile, not for demand_2 (low marginal cost)
-        prod_2_target = dem_1 - prod_1
+        # profile of dem_1 + the max of dem_2,
+        # check producer_1 is maxed out
+        prod_2_target = dem_1 + dem_2 - prod_1
         prod_2_target[prod_2_target < 0] = 0
         np.testing.assert_allclose(prod_2, prod_2_target, atol=1e-3, rtol=1e-6)
+        np.testing.assert_allclose(prod_1, prod_1_bound)
 
-        # check demand with lowest marginal cost is only consuming if electricity left from producer
-        # with producer profile (prod_1), after the matching of demand profile
-        demand_2_target = prod_1 - dem_1
-        demand_2_target[demand_2_target < 0] = 0
-        np.testing.assert_allclose(dem_2, demand_2_target, atol=1e-3, rtol=1e-6)
+        # check demand 1 is matching the profile (in check_all_mc_simulations) and that demand 2 is maxed out
+        checks_all_mc_simulations(solution, results)
+        np.testing.assert_allclose(dem_2, dem_2_bound, atol=1e-3, rtol=1e-6)
 
     def test_multi_commodity_simulator_emerge(self):
         import models.emerge.src.example as example

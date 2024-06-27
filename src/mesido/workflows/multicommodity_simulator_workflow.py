@@ -169,14 +169,14 @@ class _GoalsAndOptions:
                 "target": "target_electricity_demand",
                 "state": "Electricity_demand",
             },
-            "gas_demand": {"target": "target_gas_demand", "state": "Gas_demand"},
+            "gas_demand": {"target": "target_gas_demand", "state": "Gas_demand_mass_flow"},
         }
         map_prod = {
             "electricity_source": {
                 "target": "maximum_electricity_source",
                 "state": "Electricity_source",
             },
-            "gas_source": {"target": "maximum_gas_source", "state": "Gas_source"},
+            "gas_source": {"target": "maximum_gas_source", "state": "Gas_source_mass_flow"},
         }
         for type, type_values in [*map_demand.items(), *map_prod.items()]:
             for asset in self.energy_system_components.get(type, []):
@@ -249,7 +249,7 @@ class MultiCommoditySimulator(
             "electricity_demand": "Electricity_demand",
             "electricity_source": "Electricity_source",
             "gas_demand": "Gas_demand_mass_flow",
-            "gas_source": "Gas_source",
+            "gas_source": "Gas_source_mass_flow",
             "gas_tank_storage": "Gas_tank_flow",
             "electrolyzer": "Power_consumed",#"Gas_mass_flow_out",
         }
