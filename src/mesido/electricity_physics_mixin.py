@@ -531,8 +531,8 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         """
 
         if not isclose(electrical_power_input, 0.0):
-            eff = (coef_a / electrical_power_input) + (coef_b * electrical_power_input) + coef_c
-            gas_mass_flow_out = (1.0 / eff) * electrical_power_input/3600
+            eff = (coef_a / electrical_power_input) + (coef_b * electrical_power_input) + coef_c #Wh/g
+            gas_mass_flow_out = (1.0 / (eff*3600)) * electrical_power_input
         else:
             gas_mass_flow_out = 0.0
 

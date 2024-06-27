@@ -1577,7 +1577,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         q_nominal = self._get_connected_q_nominal(asset)
         density = self.get_density(asset.name, asset.out_ports[0].carrier)
-        mass_flow_max = eff_max_load*max_power/3600
+        mass_flow_max = max_power/eff_max_load/3600
         mass_flow_nominal = min(density*q_nominal, mass_flow_max/2)
 
         modifiers = dict(
@@ -1587,6 +1587,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             c_eff_coefficient=c,
             minimum_load=min_load,
             nominal_power_consumed=max_power / 2.0,
+            nominal_gass_mass_out=mass_flow_nominal,
             Q_nominal=q_nominal,
             density=density,
             GasOut=dict(
