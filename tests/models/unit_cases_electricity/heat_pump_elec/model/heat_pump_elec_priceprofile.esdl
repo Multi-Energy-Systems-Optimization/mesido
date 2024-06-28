@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" esdlVersion="v2207" id="0735d19f-39a4-463d-bf28-cf0b28b88bef_with_return_network" version="8" description="" name="Untitled EnergySystem with return network">
+<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" esdlVersion="v2207" id="0735d19f-39a4-463d-bf28-cf0b28b88bef_with_return_network" version="11" description="" name="Untitled EnergySystem with return network">
   <energySystemInformation xsi:type="esdl:EnergySystemInformation" id="b7ebaafe-597c-4055-bc88-b47cdfa84e34">
     <carriers xsi:type="esdl:Carriers" id="5d5909a4-18ec-4aa3-a08a-1e9539a20be2">
       <carrier xsi:type="esdl:HeatCommodity" name="heat1" supplyTemperature="70.0" id="d336e381-ca6f-442e-985e-9f4c2bec1efe"/>
@@ -29,11 +29,21 @@
         <port xsi:type="esdl:OutPort" name="Out" carrier="d336e381-ca6f-442e-985e-9f4c2bec1efe" connectedTo="309f0881-e58e-4a63-a3c2-c9ca971d2150" id="c932c77b-d5e5-40eb-b9c8-c67b8d0e25e9"/>
         <port xsi:type="esdl:InPort" name="In" carrier="d336e381-ca6f-442e-985e-9f4c2bec1efe_ret" connectedTo="167022d9-0487-4acf-80ae-c7268c44724a" id="7c3e792b-9c73-49af-9845-1ee16dcb2a27"/>
         <geometry xsi:type="esdl:Point" lon="4.400968551635743" lat="52.09084554299605" CRS="WGS84"/>
+        <costInformation xsi:type="esdl:CostInformation" id="1648b6b8-c0de-4cbb-a2b5-8ddd82af3892">
+          <variableOperationalCosts xsi:type="esdl:SingleValue" value="100.0" id="d5fd9cc9-c7e3-4a47-850b-c32b12a96d04">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="WATTHOUR" id="73f099b4-80c1-4824-8b95-7f0b44c3ef16" unit="EURO" description="Cost in EUR/MWh" physicalQuantity="COST" perMultiplier="MEGA"/>
+          </variableOperationalCosts>
+        </costInformation>
       </asset>
       <asset xsi:type="esdl:ResidualHeatSource" name="ResidualHeatSource_aec9" power="10000000.0" id="aec9bf5f-ce40-4a6e-b2d6-d64e566ce147">
         <port xsi:type="esdl:OutPort" name="Out" carrier="72126c73-87e9-4bf6-99cf-d02a6c07010c" connectedTo="5692ae05-f9c4-4f28-8a53-21bcafedf9a9" id="b466eb33-ed48-4685-bd88-63499e8e36db"/>
         <port xsi:type="esdl:InPort" name="In" carrier="72126c73-87e9-4bf6-99cf-d02a6c07010c_ret" connectedTo="5f1b694c-4562-469e-a8b8-531cc9ea143b" id="12e2b556-699f-497e-aa86-2284936c3658"/>
         <geometry xsi:type="esdl:Point" lon="4.400711059570313" lat="52.08245983569832" CRS="WGS84"/>
+        <costInformation xsi:type="esdl:CostInformation" id="9050657d-1544-486c-9bf8-12859688c085">
+          <variableOperationalCosts xsi:type="esdl:SingleValue" value="300.0" id="4d5a57e1-016e-4577-9026-4fe1d4e95ce6">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="WATTHOUR" id="4db62a39-e2af-4c76-8b73-f2f7f4cdb225" unit="EURO" description="Cost in EUR/MWh" physicalQuantity="COST" perMultiplier="MEGA"/>
+          </variableOperationalCosts>
+        </costInformation>
       </asset>
       <asset xsi:type="esdl:Joint" name="Joint_7ffe" id="7ffe304e-0363-4634-aef5-a5da3343d7f5">
         <port xsi:type="esdl:InPort" name="In" carrier="72126c73-87e9-4bf6-99cf-d02a6c07010c" connectedTo="28a0d33d-8b5e-431c-8e2a-c78a6fca3c31 1fb45b83-fc31-475f-9ced-0f9f17a2c454" id="5d0f5b7b-53b9-4999-82d1-0eee38a37791"/>
@@ -293,6 +303,11 @@
         <port xsi:type="esdl:InPort" name="HeatInSecondary" carrier="72126c73-87e9-4bf6-99cf-d02a6c07010c_ret" connectedTo="96a5a980-06b9-4519-bc9b-c61e2f86537d" id="0500e037-457c-418b-9a55-d7ed0d34a98a"/>
         <port xsi:type="esdl:OutPort" name="HeatOutPrimary" carrier="d336e381-ca6f-442e-985e-9f4c2bec1efe_ret" connectedTo="ef6d471c-ead8-4541-853e-f85dea09e2be" id="76ab7560-39a3-4095-81a2-6afd87603fcd"/>
         <port xsi:type="esdl:OutPort" name="HeatOutSecondary" carrier="72126c73-87e9-4bf6-99cf-d02a6c07010c" connectedTo="5a64ebd4-90d9-471e-b413-5948c25cf9c8" id="80cfef3d-79d3-4d2c-b78d-701264cf3313"/>
+        <costInformation xsi:type="esdl:CostInformation" id="5ea5b708-df14-4b4a-a50b-d7761bdc208a">
+          <variableOperationalCosts xsi:type="esdl:SingleValue" value="1.0" id="38971794-4d8d-46db-9cda-31e865fb9484">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="WATTHOUR" id="dc9d53c1-7160-410c-8871-6d1933cd781f" unit="EURO" description="Cost in EUR/MWh" physicalQuantity="COST" perMultiplier="MEGA"/>
+          </variableOperationalCosts>
+        </costInformation>
       </asset>
     </area>
   </instance>
