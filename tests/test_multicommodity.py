@@ -217,7 +217,8 @@ class TestMultiCommodityHeatPump(TestCase):
 
         Checks:
         - Standard checks for demand matching, heat to discharge and energy conservation
-        - Check that the producer not connected to the heat pump is only used when electricity prices of HP are high
+        - Check that the producer not connected to the heat pump is only used when electricity
+        prices of HP are high
         - Check calculation of variable operational costs which include the electricity prices
 
         """
@@ -251,16 +252,17 @@ class TestMultiCommodityHeatPump(TestCase):
         # pipe_sec_out_hp_disconnected = results["Pipe_408e__is_disconnected"]
 
         # check that heatpump is not used when electricity price is high:
-        price_profile = solution.get_timeseries(f"Electr.price_profile").values
-        price_profile_max = (price_profile==max(price_profile))
+        price_profile = solution.get_timeseries("Electr.price_profile").values
+        price_profile_max = price_profile == max(price_profile)
         self.assertTrue(all(price_profile_max >= heatpump_disabled))
-        self.assertTrue(all(price_profile_max[1:]*heatpump_power[1:]==0))
+        self.assertTrue(all(price_profile_max[1:] * heatpump_power[1:] == 0))
 
-        #check that heatpump is producing all heat for the heatdemand on the secondary side when electricity price is low
-        ind_hp = np.asarray(1-price_profile_max).nonzero()
-        np.testing.assert_allclose(heatpump_heat_sec[ind_hp],heatdemand_sec[ind_hp])
+        # check that heatpump is producing all heat for the heatdemand on the secondary side when
+        # electricity price is low
+        ind_hp = np.asarray(1 - price_profile_max).nonzero()
+        np.testing.assert_allclose(heatpump_heat_sec[ind_hp], heatdemand_sec[ind_hp])
 
         # check variable_operational_cost for heat pump including the price_profile of electricity
-        var_opex_hp_non_el = 1e-6 #var_opex in ESDL for HP
-        var_opex_hp_calc = sum((price_profile[1:]+var_opex_hp_non_el)*heatpump_power[1:])
+        var_opex_hp_non_el = 1e-6  # var_opex in ESDL for HP
+        var_opex_hp_calc = sum((price_profile[1:] + var_opex_hp_non_el) * heatpump_power[1:])
         np.testing.assert_allclose(var_opex_hp_calc, var_opex_hp)

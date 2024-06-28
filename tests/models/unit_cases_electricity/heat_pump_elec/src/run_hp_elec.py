@@ -6,6 +6,9 @@ from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
 from mesido.physics_mixin import PhysicsMixin
+from mesido.techno_economic_mixin import TechnoEconomicMixin
+from mesido.workflows.goals.minimize_tco_goal import MinimizeTCO
+
 
 import numpy as np
 
@@ -17,9 +20,6 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
 )
 from rtctools.util import run_optimization_problem
-
-from mesido.techno_economic_mixin import TechnoEconomicMixin
-from mesido.workflows.goals.minimize_tco_goal import MinimizeTCO
 
 
 # TODO: check if this run script is still valid as test case for electric heatpump and update with
@@ -264,6 +264,7 @@ class ElectricityProblem(
 
         return options
 
+
 class ElectricityProblemPriceProfile(
     _GoalsAndOptions,
     ESDLAdditionalVarsMixin,
@@ -291,10 +292,11 @@ class ElectricityProblemPriceProfile(
         options = super().energy_system_options()
         self.heat_network_settings["minimum_velocity"] = 0.0001
         options["heat_loss_disconnected_pipe"] = False
-        options["neglect_pipe_heat_losses"]=True
+        options["neglect_pipe_heat_losses"] = True
         self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
 
         return options
+
 
 if __name__ == "__main__":
     sol = run_optimization_problem(
