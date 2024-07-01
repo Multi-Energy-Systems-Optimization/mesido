@@ -264,5 +264,8 @@ class TestMultiCommodityHeatPump(TestCase):
 
         # check variable_operational_cost for heat pump including the price_profile of electricity
         var_opex_hp_non_el = 1e-6  # var_opex in ESDL for HP
-        var_opex_hp_calc = sum((price_profile[1:] + var_opex_hp_non_el) * heatpump_power[1:])
+        timestep = 1.0  # hr
+        var_opex_hp_calc = sum(
+            (price_profile[1:] + var_opex_hp_non_el) * heatpump_power[1:] * timestep
+        )
         np.testing.assert_allclose(var_opex_hp_calc, var_opex_hp)
