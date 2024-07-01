@@ -190,7 +190,9 @@ class TestElectrolyzer(TestCase):
 
         """
         import models.unit_cases_electricity.electrolyzer.src.example as example
-        from models.unit_cases_electricity.electrolyzer.src.example import MILPProblemConstantEfficiency
+        from models.unit_cases_electricity.electrolyzer.src.example import (
+            MILPProblemConstantEfficiency,
+        )
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
@@ -280,7 +282,7 @@ class TestElectrolyzer(TestCase):
         # Electrolyser
         efficiency = solution.parameters(0)["Electrolyzer_fc66.efficiency"]
         np.testing.assert_allclose(
-            results["Electrolyzer_fc66.Gas_mass_flow_out"]*efficiency,
+            results["Electrolyzer_fc66.Gas_mass_flow_out"] * efficiency,
             results["Electrolyzer_fc66.ElectricityIn.Power"],
         )
 

@@ -1,8 +1,8 @@
+from mesido.electricity_physics_mixin import ElectrolyzerOption
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.techno_economic_mixin import TechnoEconomicMixin
-from mesido.electricity_physics_mixin import ElectrolyzerOption
 
 import numpy as np
 
@@ -156,17 +156,15 @@ class MILPProblemInequality(
     # def times(self, variable=None) -> np.ndarray:
     #     return super().times(variable)[:5]
 
-class MILPProblemConstantEfficiency(
-    MILPProblemInequality
-):
+
+class MILPProblemConstantEfficiency(MILPProblemInequality):
 
     def energy_system_options(self):
         options = super().energy_system_options()
-        options["electrolyzer_efficiency"] = (
-            ElectrolyzerOption.CONSTANT_EFFICIENCY
-        )
+        options["electrolyzer_efficiency"] = ElectrolyzerOption.CONSTANT_EFFICIENCY
 
         return options
+
 
 if __name__ == "__main__":
     elect = run_optimization_problem(
