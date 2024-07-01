@@ -623,6 +623,11 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                                   self.variable_nominal(f"{asset}.Gas_mass_flow_out")
                                   * self.variable_nominal(f"{asset}.Power_consumed")
                           ) ** 0.5
+                var_name = self.__asset_is_switched_on_map[asset]
+                asset_is_switched_on = self.state(var_name)
+                big_m = (
+                    self.bounds()[f"{asset}.Power_consumed"][1] / parameters[f"{asset}.efficiency"]
+                ) * 2
                 constraints.extend(
                     [
                         (
@@ -654,18 +659,18 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                 power_consumed_vect = ca.repmat(power_consumed, len(linear_coef_a))
                 gas_mass_flow_out_vect = ca.repmat(gas_mass_flow_out, len(linear_coef_a))
                 gass_mass_out_linearized_vect = linear_coef_a * power_consumed_vect + linear_coef_b
-                var_name = self.__asset_is_switched_on_map[asset]
-                asset_is_switched_on = self.state(var_name)
 
                 gass_mass_out_max = (
                     linear_coef_a[-1] * self.bounds()[f"{asset}.Power_consumed"][1] + linear_coef_b[-1]
                 )
-                big_m = gass_mass_out_max * 2
                 nominal = (
                     self.variable_nominal(f"{asset}.Gas_mass_flow_out")
                     * min(linear_coef_a)
                     * self.variable_nominal(f"{asset}.Power_consumed")
                 ) ** 0.5
+                var_name = self.__asset_is_switched_on_map[asset]
+                asset_is_switched_on = self.state(var_name)
+                big_m = gass_mass_out_max * 2
                 constraints.extend(
                     [
                         (
@@ -680,38 +685,39 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                         ),
                     ]
                 )
-                constraints.append(
-                    ((gas_mass_flow_out + asset_is_switched_on * big_m) / big_m, 0.0, np.inf)
-                )
-                constraints.append(
-                    ((gas_mass_flow_out - asset_is_switched_on * big_m) / big_m, -np.inf, 0.0)
-                )
-
-                # Add constraints to ensure the electrolyzer is switched off when it reaches a power
-                # input below the minimum operating value
-
-                big_m = self.bounds()[f"{asset}.ElectricityIn.Power"][1] * 1.5 * 10.0
-                constraints.append(
-                    (
-                        (
-                            power_consumed
-                            - parameters[f"{asset}.minimum_load"]
-                            + (1.0 - asset_is_switched_on) * big_m
-                        )
-                        / self.variable_nominal(f"{asset}.Power_consumed"),
-                        0.0,
-                        np.inf,
-                    )
-                )
-                constraints.append(
-                    ((power_consumed + asset_is_switched_on * big_m) / big_m, 0.0, np.inf)
-                )
-                constraints.append(
-                    ((power_consumed - asset_is_switched_on * big_m) / big_m, -np.inf, 0.0)
-                )
             elif (options["electrolyzer_efficiency"] ==
                   ElectrolyzerOption.LINEARIZED_THREE_LINES_EQUALITY):
                 pass
+
+            constraints.append(
+                ((gas_mass_flow_out + asset_is_switched_on * big_m) / big_m, 0.0, np.inf)
+            )
+            constraints.append(
+                ((gas_mass_flow_out - asset_is_switched_on * big_m) / big_m, -np.inf, 0.0)
+            )
+
+            # Add constraints to ensure the electrolyzer is switched off when it reaches a power
+            # input below the minimum operating value
+
+            big_m = self.bounds()[f"{asset}.ElectricityIn.Power"][1] * 1.5 * 10.0
+            constraints.append(
+                (
+                    (
+                            power_consumed
+                            - parameters[f"{asset}.minimum_load"]
+                            + (1.0 - asset_is_switched_on) * big_m
+                    )
+                    / self.variable_nominal(f"{asset}.Power_consumed"),
+                    0.0,
+                    np.inf,
+                )
+            )
+            constraints.append(
+                ((power_consumed + asset_is_switched_on * big_m) / big_m, 0.0, np.inf)
+            )
+            constraints.append(
+                ((power_consumed - asset_is_switched_on * big_m) / big_m, -np.inf, 0.0)
+            )
 
 
         return constraints
