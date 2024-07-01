@@ -7,6 +7,8 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
+from utils_tests import electric_power_conservation_test
+
 
 # TODO: still have to make test where elecitricity direction is switched:
 # e.g. 2 nodes, with at each node a producer and consumer, first one node medium demand, second
@@ -45,6 +47,8 @@ class TestMILPElectricSourceSink(TestCase):
         )
         results = solution.extract_results()
         parameters = solution.parameters(0)
+
+        electric_power_conservation_test(solution, results)
 
         max_ = solution.bounds()["ElectricityDemand_2af6__max_size"][0]
         v_min = solution.parameters(0)["ElectricityCable_238f.min_voltage"]

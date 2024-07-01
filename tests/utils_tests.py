@@ -356,6 +356,31 @@ def heat_to_discharge_test(solution, results):
             err_msg=f"{p} has mismatch in milp to discharge",
         )
 
+def electric_power_conservation_test(solution, results):
+    """
+    Test to check if the electric power is conserved at every timestep
+    """
+    energy_sum = np.zeros(len(solution.times()))
+
+    consumers = solution.energy_system_components_get(["electricity_demand", "electrolyzer"])
+    producers = solution.energy_system_components_get(["electricity_source"])
+    cables = solution.energy_system_components_get(["electricity_cable"])
+
+    for asset in consumers:
+        energy_sum -= results[f"{asset}.ElectricityIn.Power"]
+
+    for asset in producers:
+        energy_sum += results[f"{asset}.ElectricityOut.Power"]
+
+    for asset in cables:
+        energy_sum -= results[f"{asset}.Power_loss"]
+        np.testing.assert_allclose(
+            results[f"{asset}.Power_loss"],
+            results[f"{asset}.ElectricityIn.Power"] - results[f"{asset}.ElectricityOut.Power"],
+        )
+
+    np.testing.assert_allclose(energy_sum, 0.0, atol=1e-6)
+
 
 def energy_conservation_test(solution, results):
     """Test to check if the energy is conserved at each timestep"""
