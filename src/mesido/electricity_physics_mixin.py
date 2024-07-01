@@ -26,18 +26,18 @@ class ElectrolyzerOption(IntEnum):
     CONSTANT_EFFICIENCY
         A constant efficiency is used to determine the H2 produced per energy electricity entering
 
-    LINEARIZED_INEQUALITY
+    LINEARIZED_THREE_LINES_WEAK_INEQUALITY
         The efficiency curve is linearized in 3 lines, which are all inequalities and with proper
         goals will move towards these lines
 
-    PIECE_WISE_LINEAR_EQUALITY
+    LINEARIZED_THREE_LINES_EQUALITY
         The efficiency curve is linearized in 3 lines, which are all equalities using binary
         variables and the big-M method to select the relevant lines.
     """
 
     CONSTANT_EFFICIENCY = 1
-    LINEARIZED_INEQUALITY = 2
-    PIECE_WISE_LINEAR_EQUALITY = 3
+    LINEARIZED_THREE_LINES_WEAK_INEQUALITY = 2
+    LINEARIZED_THREE_LINES_EQUALITY = 3
 
 
 class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
