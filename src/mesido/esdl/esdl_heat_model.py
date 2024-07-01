@@ -1303,6 +1303,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
                     )
                 )
             )
+            logger.warning(
+                "ATES in use: WKO (koude-warmteopslag, cold and heat storage) since the"
+                " maximum temperature has been specified to be <= 30 degrees Celcius"
+            )
             return LowTemperatureATES, modifiers
         else:
             modifiers.update(
@@ -1319,6 +1323,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
                         nominal=temperatures["T_return"],
                     ),
                 )
+            )
+            logger.warning(
+                "ATES in use: High Temperature ATES since the maximum temperature has"
+                " been specified to be > 30 degrees Celcius or not specified at all"
             )
             return ATES, modifiers
 
