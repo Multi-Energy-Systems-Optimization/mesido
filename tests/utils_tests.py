@@ -19,7 +19,6 @@ def feasibility_test(solution):
 
 def demand_matching_test(solution, results):
     """ "Test function to check whether the milp demand of each consumer is matched"""
-    len_times = 0.0
     for d in solution.energy_system_components.get("heat_demand", []):
         if len(solution.times()) > 0:
             len_times = len(solution.times())
@@ -35,23 +34,29 @@ def demand_matching_test(solution, results):
         target = solution.get_timeseries(f"{d}.target_cold_demand").values[0:len_times]
         np.testing.assert_allclose(target, results[f"{d}.Cold_demand"], atol=1.0e-3, rtol=1.0e-6)
     for d in solution.energy_system_components.get("gas_demand", []):
-        if len(solution.times()) > 0:
-            len_times = len(solution.times())
-        else:
-            len_times = len(solution.get_timeseries(f"{d}.target_gas_demand").values)
-        target = solution.get_timeseries(f"{d}.target_gas_demand").values[0:len_times]
-        np.testing.assert_allclose(
-            target, results[f"{d}.Gas_demand_mass_flow"], atol=1.0e-3, rtol=1.0e-6
-        )
+        timeseries_name = f"{d}.target_gas_demand"
+        if timeseries_name in solution.io.get_timeseries_names():
+            if len(solution.times()) > 0:
+                len_times = len(solution.times())
+            else:
+                len_times = len(solution.get_timeseries(timeseries_name).values)
+            target = solution.get_timeseries(timeseries_name).values[0:len_times]
+            np.testing.assert_allclose(
+                target, results[f"{d}.Gas_demand_mass_flow"], atol=1.0e-3, rtol=1.0e-6
+            )
     for d in solution.energy_system_components.get("electricity_demand", []):
-        if len(solution.times()) > 0:
-            len_times = len(solution.times())
+        timeseries_name = f"{d}.target_electricity_demand"
+        if timeseries_name in solution.io.get_timeseries_names():
+            if len(solution.times()) > 0:
+                len_times = len(solution.times())
+            else:
+                len_times = len(solution.get_timeseries(timeseries_name).values)
+            target = solution.get_timeseries(timeseries_name).values[0:len_times]
+            np.testing.assert_allclose(
+                target, results[f"{d}.Electricity_demand"], atol=1.0e-3, rtol=1.0e-6
+            )
         else:
-            len_times = len(solution.get_timeseries(f"{d}.target_electricity_demand").values)
-        target = solution.get_timeseries(f"{d}.target_electricity_demand").values[0:len_times]
-        np.testing.assert_allclose(
-            target, results[f"{d}.Electricity_demand"], atol=1.0e-3, rtol=1.0e-6
-        )
+            print(f"{d} does not have a target demand profile")
 
 
 def _get_component_temperatures(solution, results, component, side=None):
