@@ -241,7 +241,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                 # TODO: [: len(self.times())] should be removed once the emerge test is properly
                 # time-sampled.
                 max = self.bounds()[f"{asset}.Electricity_source"][1].values[: len(self.times())]
-                nominal = (
+                nominal = 1e-3*(
                     self.variable_nominal(f"{asset}.Electricity_source") * np.median(max)
                 ) ** 0.5
 
@@ -557,8 +557,8 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         """
 
         if not isclose(electrical_power_input, 0.0):
-            eff = (coef_a / electrical_power_input) + (coef_b * electrical_power_input) + coef_c
-            gas_mass_flow_out = (1.0 / eff) * electrical_power_input
+            eff = (coef_a / electrical_power_input) + (coef_b * electrical_power_input) + coef_c #Wh/g
+            gas_mass_flow_out = (1.0 / (eff*3600)) * electrical_power_input
         else:
             gas_mass_flow_out = 0.0
 
@@ -657,6 +657,20 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                     ),
                 ]
             )
+            # constraints.extend(
+            #     [
+            #         (
+            #             (
+            #                     gas_mass_flow_out_vect
+            #                     - gass_mass_out_linearized_vect
+            #                     + (1 - asset_is_switched_on) * big_m
+            #             )
+            #             / nominal,
+            #             0.0,
+            #             np.inf,
+            #         ),
+            #     ]
+            # )
             constraints.append(
                 ((gas_mass_flow_out + asset_is_switched_on * big_m) / big_m, 0.0, np.inf)
             )

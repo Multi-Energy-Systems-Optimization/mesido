@@ -1481,7 +1481,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         -------
         ElectricityDemand class with modifiers
         """
-        assert asset.asset_type in {"ElectricityDemand"}
+        assert asset.asset_type in {"ElectricityDemand", "Export"}
 
         max_demand = asset.attributes.get("power", math.inf)
         min_voltage = asset.in_ports[0].carrier.voltage
@@ -1505,6 +1505,32 @@ class AssetToHeatComponent(_AssetToComponentBase):
         )
 
         return ElectricityDemand, modifiers
+
+    def convert_import(self, asset: Asset):
+        assert asset.asset_type in {"Import"}
+
+        if isinstance(asset.out_ports[0].carrier, esdl.esdl.GasCommodity):
+            return self.convert_gas_source(asset)
+        elif isinstance(asset.out_ports[0].carrier, esdl.esdl.ElectricityCommodity):
+            return self.convert_electricity_source(asset)
+        else:
+            raise RuntimeError(
+                f"Commodity of type {type(asset.out_ports[0].carrier)} for asset Import "
+                f"{asset.name} cannot be converted"
+            )
+
+    def convert_export(self, asset: Asset):
+        assert asset.asset_type in {"Export"}
+
+        if isinstance(asset.in_ports[0].carrier, esdl.esdl.GasCommodity):
+            return self.convert_gas_demand(asset)
+        elif isinstance(asset.in_ports[0].carrier, esdl.esdl.ElectricityCommodity):
+            return self.convert_electricity_demand(asset)
+        else:
+            raise RuntimeError(
+                f"Commodity of type {type(asset.in_ports[0].carrier)} for asset Export "
+                f"{asset.name} cannot be converted"
+            )
 
     def convert_electricity_source(self, asset: Asset) -> Tuple[Type[ElectricitySource], MODIFIERS]:
         """
@@ -1545,7 +1571,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         -------
         ElectricitySource class with modifiers
         """
-        assert asset.asset_type in {"ElectricityProducer", "WindPark", "PVInstallation"}
+        assert asset.asset_type in {"ElectricityProducer", "WindPark", "PVInstallation", "Import"}
 
         max_supply = asset.attributes.get(
             "power", math.inf
@@ -1564,7 +1590,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._get_cost_figure_modifiers(asset),
         )
 
-        if asset.asset_type == "ElectricityProducer":
+        if asset.asset_type in ["ElectricityProducer", "Import"]:
             return ElectricitySource, modifiers
         if asset.asset_type == "WindPark":
             return WindPark, modifiers
@@ -1822,16 +1848,19 @@ class AssetToHeatComponent(_AssetToComponentBase):
         -------
         GasDemand class with modifiers
         """
-        assert asset.asset_type in {"GasDemand"}
+        assert asset.asset_type in {"GasDemand", "Export"}
 
         id_mapping = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
             "id_number_mapping"
         ]
         # DO not remove due usage in future
         # hydrogen_specfic_energy = 20.0 / 1.0e6
+        specific_energy = self.get_internal_energy(asset.name, asset.in_ports[0].carrier)/10 #J/g #TODO: is not the HHV for hydrogen, so is off
         density = self.get_density(asset.name, asset.in_ports[0].carrier)
         pressure = asset.in_ports[0].carrier.pressure * 1.0e5
         q_nominal = self._get_connected_q_nominal(asset)
+        max_mass_flow = asset.attributes['power']/specific_energy
+        mass_flow_nominal = min(q_nominal*density, max_mass_flow/2)
 
         modifiers = dict(
             Q_nominal=q_nominal,
@@ -1845,7 +1874,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                     max=self._get_connected_q_max(asset),
                     nominal=self._get_connected_q_nominal(asset),
                 ),
-                mass_flow=dict(nominal=density * q_nominal),
+                mass_flow=dict(nominal=mass_flow_nominal, max=max_mass_flow),
                 Hydraulic_power=dict(min=0.0, max=0.0, nominal=q_nominal * pressure),
             ),
             **self._get_cost_figure_modifiers(asset),
@@ -1891,15 +1920,18 @@ class AssetToHeatComponent(_AssetToComponentBase):
         -------
         GasDemand class with modifiers
         """
-        assert asset.asset_type in {"GasProducer"}
+        assert asset.asset_type in {"GasProducer", "Import"}
 
         q_nominal = self._get_connected_q_nominal(asset)
         density_value = self.get_density(asset.name, asset.out_ports[0].carrier)
         pressure = asset.out_ports[0].carrier.pressure * 1.0e5
+        specific_energy = self.get_internal_energy(asset.name, asset.out_ports[0].carrier) / 10  # J/g #TODO: is not the HHV for hydrogen, so is off
+        max_mass_flow = asset.attributes['power'] / specific_energy
 
         bounds_nominals_mass_flow = dict(
             min=0.0,
-            max=self._get_connected_q_max(asset) * density_value,
+            max=min(self._get_connected_q_max(asset) * density_value,
+                    max_mass_flow),
             nominal=q_nominal * density_value,
         )
 
@@ -1985,6 +2017,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         q_nominal = self._get_connected_q_nominal(asset)
         density = self.get_density(asset.name, asset.out_ports[0].carrier)
+        mass_flow_max = max_power/eff_max_load/3600
+        mass_flow_nominal = min(density*q_nominal, mass_flow_max/2)
 
         modifiers = dict(
             min_voltage=v_min,
@@ -1993,6 +2027,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             c_eff_coefficient=c,
             minimum_load=min_load,
             nominal_power_consumed=max_power / 2.0,
+            nominal_gass_mass_out=mass_flow_nominal,
             Q_nominal=q_nominal,
             density=density,
             GasOut=dict(
@@ -2001,7 +2036,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                     max=self._get_connected_q_max(asset),
                     nominal=q_nominal,
                 ),
-                mass_flow=dict(nominal=q_nominal * density),
+                mass_flow=dict(nominal=mass_flow_nominal, max=mass_flow_max),
             ),
             ElectricityIn=dict(
                 Power=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
