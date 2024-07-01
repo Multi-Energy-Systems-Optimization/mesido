@@ -80,7 +80,9 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
         options["include_asset_is_switched_on"] = False
         options["include_electric_cable_power_loss"] = False
-        options["electrolyzer_efficiency"] = ElectrolyzerOption.LINEARIZED_INEQUALITY
+        options["electrolyzer_efficiency"] = (
+            ElectrolyzerOption.LINEARIZED_THREE_LINES_WEAK_INEQUALITY
+        )
 
         return options
 
