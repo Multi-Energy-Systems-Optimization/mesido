@@ -196,24 +196,74 @@ class InfluxDBProfileReader(BaseProfileReader):
         profiles: Dict[str, np.ndarray] = dict()
         logger.info("Reading profiles from InfluxDB")
         self._reference_datetimes = None
+
+        # Get list of unique profiles and associated series based on specific profile attributes
+        unique_profiles = []
+        unique_profiles_attributes = []  # a list containning lists of attributes
+        unique_series = []
         for profile in [
             x for x in self._energy_system.eAllContents() if isinstance(x, esdl.InfluxDBProfile)
         ]:
-            series = self._load_profile_timeseries_from_database(profile=profile)
+            if [
+                profile.database,
+                profile.field,
+                profile.host,
+                profile.startDate,
+                profile.endDate,
+                profile.measurement,
+                profile.port,
+            ] not in unique_profiles_attributes:
+                unique_profiles_attributes.append(
+                    [
+                        profile.database,
+                        profile.field,
+                        profile.host,
+                        profile.startDate,
+                        profile.endDate,
+                        profile.measurement,
+                        profile.port,
+                    ]
+                )
+                unique_profiles.append(profile)
+
+                unique_series.append(
+                    self._load_profile_timeseries_from_database(profile=unique_profiles[-1])
+                )
+                self._check_profile_time_series(
+                    profile_time_series=unique_series[-1], profile=unique_profiles[-1]
+                )
+                if self._reference_datetimes is None:
+                    # TODO: since the previous function ensures it's a date time index, I'm not sure
+                    #  how to get rid of this type checking warning
+                    self._reference_datetimes = unique_series[-1].index
+                else:
+                    if not all(unique_series[-1].index == self._reference_datetimes):
+                        raise RuntimeError(
+                            f"Obtained a profile for asset {profile.field} with a "
+                            f"timeseries index that doesn't match the timeseries of "
+                            f"other assets. Please ensure that the profile that is "
+                            f"specified to be loaded for each asset covers exactly the "
+                            f"same timeseries. "
+                        )
+        # Loop trough all the requried profiles in the energy system and assign the profile data:
+        # - series: use the unique series data, without reading from the database again
+        # - other profile info: get it from the specific profile
+        for profile in [
+            x for x in self._energy_system.eAllContents() if isinstance(x, esdl.InfluxDBProfile)
+        ]:
+            index_of_unique_profile = unique_profiles_attributes.index(
+                [
+                    profile.database,
+                    profile.field,
+                    profile.host,
+                    profile.startDate,
+                    profile.endDate,
+                    profile.measurement,
+                    profile.port,
+                ]
+            )
+            series = unique_series[index_of_unique_profile]
             self._check_profile_time_series(profile_time_series=series, profile=profile)
-            if self._reference_datetimes is None:
-                # TODO: since the previous function ensures it's a date time index, I'm not sure
-                #  how to get rid of this type checking warning
-                self._reference_datetimes = series.index
-            else:
-                if not all(series.index == self._reference_datetimes):
-                    raise RuntimeError(
-                        f"Obtained a profile for asset {profile.field} with a "
-                        f"timeseries index that doesn't match the timeseries of "
-                        f"other assets. Please ensure that the profile that is "
-                        f"specified to be loaded for each asset covers exactly the "
-                        f"same timeseries. "
-                    )
             converted_dataframe = self._convert_profile_to_correct_unit(
                 profile_time_series=series, profile=profile
             )

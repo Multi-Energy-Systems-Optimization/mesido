@@ -210,3 +210,62 @@ class TestMultiCommodityHeatPump(TestCase):
 
         # check that prim producer is providing more energy to heatpump and primary demand
         np.testing.assert_array_less(heatdemand_prim - (heatsource_prim - heatpump_heat_prim), 0)
+
+    def test_heat_pump_elec_price_profile(self):
+        """
+        Verify that minimisation of the electricity power used when price of electricity is high.
+
+        Checks:
+        - Standard checks for demand matching, heat to discharge and energy conservation
+        - Check that the producer not connected to the heat pump is only used when electricity
+        prices of HP are high
+        - Check calculation of variable operational costs which include the electricity prices
+
+        """
+        import models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec as run_hp_elec
+        from models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec import (
+            ElectricityProblemPriceProfile,
+        )
+
+        base_folder = Path(run_hp_elec.__file__).resolve().parent.parent
+
+        solution = run_esdl_mesido_optimization(
+            ElectricityProblemPriceProfile,
+            base_folder=base_folder,
+            esdl_file_name="heat_pump_elec_priceprofile.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_elec.csv",
+        )
+
+        results = solution.extract_results()
+
+        demand_matching_test(solution, results)
+        energy_conservation_test(solution, results)
+        heat_to_discharge_test(solution, results)
+
+        heatpump_power = results["GenericConversion_3d3f.Power_elec"]
+        heatpump_heat_sec = results["GenericConversion_3d3f.Secondary_heat"]
+        heatpump_disabled = results["GenericConversion_3d3f__disabled"]
+        heatdemand_sec = results["HeatingDemand_18aa.Heat_demand"]
+        var_opex_hp = results["GenericConversion_3d3f__variable_operational_cost"]
+        # pipe_sec_out_hp_disconnected = results["Pipe_408e__is_disconnected"]
+
+        # check that heatpump is not used when electricity price is high:
+        price_profile = solution.get_timeseries("Electr.price_profile").values
+        price_profile_max = price_profile == max(price_profile)
+        self.assertTrue(all(price_profile_max >= heatpump_disabled))
+        self.assertTrue(all(price_profile_max[1:] * heatpump_power[1:] == 0))
+
+        # check that heatpump is producing all heat for the heatdemand on the secondary side when
+        # electricity price is low
+        ind_hp = np.asarray(1 - price_profile_max).nonzero()
+        np.testing.assert_allclose(heatpump_heat_sec[ind_hp], heatdemand_sec[ind_hp])
+
+        # check variable_operational_cost for heat pump including the price_profile of electricity
+        var_opex_hp_non_el = 1e-6  # var_opex in ESDL for HP
+        timestep = 1.0  # hr
+        var_opex_hp_calc = sum(
+            (price_profile[1:] + var_opex_hp_non_el) * heatpump_power[1:] * timestep
+        )
+        np.testing.assert_allclose(var_opex_hp_calc, var_opex_hp)

@@ -491,6 +491,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                             pipe_class_cost_ordering_name
                         ] = (0.0, 1.0)
 
+        set_self_hot_pipes = set(self.hot_pipes)
         for pipe in self.energy_system_components.get("heat_pipe", []):
             pipe_classes = self.pipe_classes(pipe)
             # cold_pipe = self.hot_to_cold_pipe(pipe)
@@ -679,7 +680,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
                 for c in pipe_classes:
                     neighbour = self.has_related_pipe(pipe)
-                    if neighbour and pipe not in self.hot_pipes:
+                    if neighbour and pipe not in set_self_hot_pipes:
                         cold_pipe = self.cold_to_hot_pipe(pipe)
                         pipe_class_var_name = f"{cold_pipe}__hn_pipe_class_{c.name}"
                         pipe_class_ordering_name = (
@@ -1282,6 +1283,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         unique_pipe_classes = self.get_unique_pipe_classes()
         pipe_class_count_sum = {pc.name: 0 for pc in unique_pipe_classes}
 
+        set_self_hot_pipes = set(self.hot_pipes)
         for p in self.energy_system_components.get("heat_pipe", []):
             try:
                 pipe_classes = self._heat_pipe_topo_pipe_class_map[p]
@@ -1290,7 +1292,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             else:
                 for pc in pipe_classes:
                     neighbour = self.has_related_pipe(p)
-                    if neighbour and p not in self.hot_pipes:
+                    if neighbour and p not in set_self_hot_pipes:
                         var_name = f"{self.cold_to_hot_pipe(p)}__hn_pipe_class_{pc.name}"
                     else:
                         var_name = f"{p}__hn_pipe_class_{pc.name}"
@@ -1373,7 +1375,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 pipe,
                 pipe_classes,
             ) in self.__heat_pipe_topo_pipe_class_heat_loss_ordering_map.items():
-                if pipe in self.hot_pipes and self.has_related_pipe(pipe):
+                if pipe in set_self_hot_pipes and self.has_related_pipe(pipe):
                     heat_loss_sym_name = self._pipe_heat_loss_map[pipe]
                     heat_loss_sym = self.extra_variable(heat_loss_sym_name, ensemble_member)
                     cold_name = self._pipe_heat_loss_map[self.hot_to_cold_pipe(pipe)]
@@ -1385,7 +1387,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                             self._pipe_heat_losses[self.hot_to_cold_pipe(pipe)],
                         )
                     ]
-                elif pipe in self.hot_pipes and not self.has_related_pipe(pipe):
+                elif pipe in set_self_hot_pipes and not self.has_related_pipe(pipe):
                     heat_loss_sym_name = self._pipe_heat_loss_map[pipe]
                     heat_loss_sym = self.extra_variable(heat_loss_sym_name, ensemble_member)
 

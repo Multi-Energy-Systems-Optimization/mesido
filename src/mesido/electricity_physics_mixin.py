@@ -1,4 +1,5 @@
 import logging
+from enum import IntEnum
 from math import isclose
 from typing import Tuple
 
@@ -15,6 +16,28 @@ from rtctools.optimization.timeseries import Timeseries
 
 
 logger = logging.getLogger("mesido")
+
+
+class ElectrolyzerOption(IntEnum):
+    """
+    Enumeration for the possible options to model the electrolyzer.
+    For detailed calculations related to these options, see the equations themselves.
+
+    CONSTANT_EFFICIENCY
+        A constant efficiency is used to determine the H2 produced per energy electricity entering
+
+    LINEARIZED_THREE_LINES_WEAK_INEQUALITY
+        The efficiency curve is linearized in 3 lines, which are all inequalities and with proper
+        goals will move towards these lines
+
+    LINEARIZED_THREE_LINES_EQUALITY
+        The efficiency curve is linearized in 3 lines, which are all equalities using binary
+        variables and the big-M method to select the relevant lines.
+    """
+
+    CONSTANT_EFFICIENCY = 1
+    LINEARIZED_THREE_LINES_WEAK_INEQUALITY = 2
+    LINEARIZED_THREE_LINES_EQUALITY = 3
 
 
 class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
@@ -57,6 +80,9 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
         options["include_asset_is_switched_on"] = False
         options["include_electric_cable_power_loss"] = False
+        options["electrolyzer_efficiency"] = (
+            ElectrolyzerOption.LINEARIZED_THREE_LINES_WEAK_INEQUALITY
+        )
 
         return options
 
@@ -450,7 +476,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             current_in = self.state(f"{asset}.ElectricityIn.I")
 
             # is_charging is 1 if charging and powerin>0
-            big_m = 2 * max(abs(self.bounds()[f"{asset}.ElectricityIn.Power"]))
+            big_m = 2 * max(np.abs(self.bounds()[f"{asset}.ElectricityIn.Power"]))
             is_charging = self.state(f"{asset}__is_charging")
             constraints.append(((power_in + (1 - is_charging) * big_m) / power_nom, 0.0, np.inf))
             constraints.append(((power_in - is_charging * big_m) / power_nom, -np.inf, 0.0))
@@ -494,14 +520,14 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             # discharging
             constraints.append(
                 (
-                    (eff_power - discharge_eff * power_in + is_charging * big_m) / power_nom,
+                    (eff_power * discharge_eff - power_in + is_charging * big_m) / power_nom,
                     0,
                     np.inf,
                 )
             )
             constraints.append(
                 (
-                    (eff_power - discharge_eff * power_in - is_charging * big_m) / power_nom,
+                    (eff_power * discharge_eff - power_in - is_charging * big_m) / power_nom,
                     -np.inf,
                     0,
                 )
