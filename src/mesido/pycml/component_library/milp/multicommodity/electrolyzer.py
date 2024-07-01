@@ -40,6 +40,8 @@ class Electrolyzer(ElectricityComponent, BaseAsset):
         self.Q_nominal = nan
         self.min_voltage = nan
 
+        self.efficiency = nan
+
         self.nominal_gass_mass_out = self.Q_nominal * self.density
         self.nominal_power_consumed = nan
 

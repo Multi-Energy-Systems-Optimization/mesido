@@ -1,3 +1,4 @@
+from mesido.electricity_physics_mixin import ElectrolyzerOption
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
@@ -124,7 +125,7 @@ class _GoalsAndOptions:
         return constraints
 
 
-class MILPProblem(
+class MILPProblemInequality(
     _GoalsAndOptions,
     TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
@@ -156,9 +157,18 @@ class MILPProblem(
     #     return super().times(variable)[:5]
 
 
+class MILPProblemConstantEfficiency(MILPProblemInequality):
+
+    def energy_system_options(self):
+        options = super().energy_system_options()
+        options["electrolyzer_efficiency"] = ElectrolyzerOption.CONSTANT_EFFICIENCY
+
+        return options
+
+
 if __name__ == "__main__":
     elect = run_optimization_problem(
-        MILPProblem,
+        MILPProblemInequality,
         esdl_file_name="h2.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,

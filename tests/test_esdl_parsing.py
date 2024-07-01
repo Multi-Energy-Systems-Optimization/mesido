@@ -17,12 +17,12 @@ class TestESDLParsing(unittest.TestCase):
         from using either the file or the string as input are the same.
         """
         import models.unit_cases_electricity.electrolyzer.src.example as example
-        from models.unit_cases_electricity.electrolyzer.src.example import MILPProblem
+        from models.unit_cases_electricity.electrolyzer.src.example import MILPProblemInequality
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
         solution_from_file = run_optimization_problem(
-            MILPProblem,
+            MILPProblemInequality,
             base_folder=base_folder,
             esdl_file_name="h2.esdl",
             esdl_parser=ESDLFileParser,
@@ -34,7 +34,7 @@ class TestESDLParsing(unittest.TestCase):
 
         esdl_string = solution_from_file.esdl_bytes_string
         solution_from_string = run_optimization_problem(
-            MILPProblem,
+            MILPProblemInequality,
             base_folder=base_folder,
             esdl_string=esdl_string,
             esdl_parser=ESDLStringParser,
