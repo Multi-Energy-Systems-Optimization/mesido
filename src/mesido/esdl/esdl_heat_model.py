@@ -1995,6 +1995,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             nominal_power_consumed=max_power / 2.0,
             Q_nominal=q_nominal,
             density=density,
+            efficiency=eff_max,
             GasOut=dict(
                 Q=dict(
                     min=0.0,
