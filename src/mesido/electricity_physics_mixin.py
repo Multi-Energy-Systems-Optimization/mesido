@@ -1,4 +1,5 @@
 import logging
+from enum import IntEnum
 from math import isclose
 from typing import Tuple
 
@@ -15,6 +16,28 @@ from rtctools.optimization.timeseries import Timeseries
 
 
 logger = logging.getLogger("mesido")
+
+
+class ElectrolyzerOption(IntEnum):
+    """
+    Enumeration for the possible options to model the electrolyzer.
+    For detailed calculations related to these options, see the equations themselves.
+
+    CONSTANT_EFFICIENCY
+        A constant efficiency is used to determine the H2 produced per energy electricity entering
+
+    LINEARIZED_INEQUALITY
+        The efficiency curve is linearized in 3 lines, which are all inequalities and with proper
+        goals will move towards these lines
+
+    PIECE_WISE_LINEAR_EQUALITY
+        The efficiency curve is linearized in 3 lines, which are all equalities using binary
+        variables and the big-M method to select the relevant lines.
+    """
+
+    CONSTANT_EFFICIENCY = 1
+    LINEARIZED_INEQUALITY = 2
+    PIECE_WISE_LINEAR_EQUALITY = 3
 
 
 class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
@@ -57,6 +80,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
         options["include_asset_is_switched_on"] = False
         options["include_electric_cable_power_loss"] = False
+        options["electrolyzer_efficiency"] = ElectrolyzerOption.LINEARIZED_INEQUALITY
 
         return options
 
