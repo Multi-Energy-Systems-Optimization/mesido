@@ -915,7 +915,10 @@ class ScenarioOutput(TechnoEconomicMixin):
         # end KPIs
 
     def _write_updated_esdl(
-        self, energy_system, optimizer_sim: bool = False, add_kpis: bool = True
+        self,
+        energy_system,
+        optimizer_sim: bool = False,
+        add_kpis: bool = True,
     ):
         from esdl.esdl_handler import EnergySystemHandler
 
@@ -945,6 +948,7 @@ class ScenarioOutput(TechnoEconomicMixin):
 
         # ------------------------------------------------------------------------------------------
         # Placement
+        heat_pipes = set(self.energy_system_components.get("heat_pipe", []))
         for _, attributes in self.esdl_assets.items():
             name = attributes.name
             if name in [
@@ -970,13 +974,16 @@ class ScenarioOutput(TechnoEconomicMixin):
                     asset.delete(recursive=True)
                 else:
                     asset.state = esdl.AssetStateEnum.ENABLED
+            elif name not in heat_pipes:  # because heat pipes are updated below
+                logger.warning(f"ESDL update: asset {name} has not updated")
 
         # Pipes:
         edr_pipe_properties_to_copy = ["innerDiameter", "outerDiameter", "diameter", "material"]
 
         esh_edr = EnergySystemHandler()
 
-        for pipe in self.hot_pipes:
+        for pipe in self.energy_system_components.get("heat_pipe", []):
+
             pipe_classes = self.pipe_classes(pipe)
             # When a pipe has not been optimized, enforce pipe to be shown in the simulator
             # ESDL.
@@ -988,7 +995,6 @@ class ScenarioOutput(TechnoEconomicMixin):
 
             if not optimizer_sim:
                 pipe_class = self.get_optimized_pipe_class(pipe)
-            cold_pipe = self.hot_to_cold_pipe(pipe)
 
             if parameters[f"{pipe}.diameter"] != 0.0 or any(np.abs(results[f"{pipe}.Q"]) > 1.0e-9):
                 # if not isinstance(pipe_class, EDRPipeClass):
@@ -1000,29 +1006,26 @@ class ScenarioOutput(TechnoEconomicMixin):
 
                 if not optimizer_sim:
                     assert isinstance(pipe_class, EDRPipeClass)
-
                     asset_edr = esh_edr.load_from_string(pipe_class.xml_string)
 
-                for p in [pipe, cold_pipe]:
-                    asset = _name_to_asset(p)
-                    asset.state = esdl.AssetStateEnum.ENABLED
+                asset = _name_to_asset(pipe)
+                asset.state = esdl.AssetStateEnum.ENABLED
 
-                    try:
-                        asset.costInformation.investmentCosts.value = pipe_class.investment_costs
-                    except AttributeError:
-                        pass
-                        # do nothing, in the case that no costs have been specified for the return
-                        # pipe in the mapeditor
-                    except UnboundLocalError:
-                        pass
+                try:
+                    asset.costInformation.investmentCosts.value = pipe_class.investment_costs
+                except AttributeError:
+                    pass
+                    # do nothing, in the case that no costs have been specified for the return
+                    # pipe in the mapeditor
+                except UnboundLocalError:
+                    pass
 
-                    if not optimizer_sim:
-                        for prop in edr_pipe_properties_to_copy:
-                            setattr(asset, prop, getattr(asset_edr, prop))
+                if not optimizer_sim:
+                    for prop in edr_pipe_properties_to_copy:
+                        setattr(asset, prop, getattr(asset_edr, prop))
             else:
-                for p in [pipe, cold_pipe]:
-                    asset = _name_to_asset(p)
-                    asset.delete(recursive=True)
+                asset = _name_to_asset(pipe)
+                asset.delete(recursive=True)
 
         # ------------------------------------------------------------------------------------------
         # Important: This code below must be placed after the "Placement" code. Reason: it relies

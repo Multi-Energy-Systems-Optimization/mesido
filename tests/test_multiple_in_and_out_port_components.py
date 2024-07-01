@@ -39,7 +39,8 @@ class TestHEX(TestCase):
             # def post(self):
             #     super().post()
             #     self._write_updated_esdl(
-            #         self._ESDLMixin__energy_system_handler.energy_system, optimizer_sim=True
+            #         self._ESDLMixin__energy_system_handler.energy_system,
+            #         optimizer_sim=True,
             #     )
 
             def energy_system_options(self):
@@ -132,7 +133,8 @@ class TestHP(TestCase):
             # def post(self):
             #     super().post()
             #     self._write_updated_esdl(
-            #         self._ESDLMixin__energy_system_handler.energy_system, optimizer_sim=True
+            #         self._ESDLMixin__energy_system_handler.energy_system,
+            #         optimizer_sim=True,
             #     )
 
             def energy_system_options(self):
