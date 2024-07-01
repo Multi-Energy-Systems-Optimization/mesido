@@ -1481,7 +1481,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         -------
         ElectricityDemand class with modifiers
         """
-        assert asset.asset_type in {"ElectricityDemand"}
+        assert asset.asset_type in {"ElectricityDemand", "Export"}
 
         max_demand = asset.attributes.get("power", math.inf)
         min_voltage = asset.in_ports[0].carrier.voltage
@@ -1505,6 +1505,32 @@ class AssetToHeatComponent(_AssetToComponentBase):
         )
 
         return ElectricityDemand, modifiers
+
+    def convert_import(self, asset: Asset):
+        assert asset.asset_type in {"Import"}
+
+        if isinstance(asset.out_ports[0].carrier, esdl.esdl.GasCommodity):
+            return self.convert_gas_source(asset)
+        elif isinstance(asset.out_ports[0].carrier, esdl.esdl.ElectricityCommodity):
+            return self.convert_electricity_source(asset)
+        else:
+            raise RuntimeError(
+                f"Commodity of type {type(asset.out_ports[0].carrier)} for asset Import "
+                f"{asset.name} cannot be converted"
+            )
+
+    def convert_export(self, asset: Asset):
+        assert asset.asset_type in {"Export"}
+
+        if isinstance(asset.in_ports[0].carrier, esdl.esdl.GasCommodity):
+            return self.convert_gas_demand(asset)
+        elif isinstance(asset.in_ports[0].carrier, esdl.esdl.ElectricityCommodity):
+            return self.convert_electricity_demand(asset)
+        else:
+            raise RuntimeError(
+                f"Commodity of type {type(asset.in_ports[0].carrier)} for asset Export "
+                f"{asset.name} cannot be converted"
+            )
 
     def convert_electricity_source(self, asset: Asset) -> Tuple[Type[ElectricitySource], MODIFIERS]:
         """
@@ -1545,7 +1571,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         -------
         ElectricitySource class with modifiers
         """
-        assert asset.asset_type in {"ElectricityProducer", "WindPark", "PVInstallation"}
+        assert asset.asset_type in {"ElectricityProducer", "WindPark", "PVInstallation", "Import"}
 
         max_supply = asset.attributes.get(
             "power", math.inf
@@ -1564,7 +1590,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._get_cost_figure_modifiers(asset),
         )
 
-        if asset.asset_type == "ElectricityProducer":
+        if asset.asset_type in ["ElectricityProducer", "Import"]:
             return ElectricitySource, modifiers
         if asset.asset_type == "WindPark":
             return WindPark, modifiers
@@ -1822,7 +1848,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         -------
         GasDemand class with modifiers
         """
-        assert asset.asset_type in {"GasDemand"}
+        assert asset.asset_type in {"GasDemand", "Export"}
 
         id_mapping = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
             "id_number_mapping"
@@ -1891,7 +1917,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         -------
         GasDemand class with modifiers
         """
-        assert asset.asset_type in {"GasProducer"}
+        assert asset.asset_type in {"GasProducer", "Import"}
 
         q_nominal = self._get_connected_q_nominal(asset)
         density_value = self.get_density(asset.name, asset.out_ports[0].carrier)
