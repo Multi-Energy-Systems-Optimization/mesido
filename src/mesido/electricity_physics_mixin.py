@@ -612,6 +612,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         constraints = []
         parameters = self.parameters(ensemble_member)
         options = self.energy_system_options()
+        # TODO: CHECK UNITS MASSFLOW
         for asset in self.energy_system_components.get("electrolyzer", []):
             gas_mass_flow_out = self.state(f"{asset}.Gas_mass_flow_out")
             power_consumed = self.state(f"{asset}.Power_consumed")

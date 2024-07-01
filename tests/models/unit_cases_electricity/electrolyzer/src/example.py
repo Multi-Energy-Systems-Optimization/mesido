@@ -125,7 +125,7 @@ class _GoalsAndOptions:
         return constraints
 
 
-class MILPProblemConstantEfficiency(
+class MILPProblemInequality(
     _GoalsAndOptions,
     TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
@@ -150,19 +150,27 @@ class MILPProblemConstantEfficiency(
         options = super().energy_system_options()
         options["include_asset_is_switched_on"] = True
         options["include_electric_cable_power_loss"] = False
-        options["electrolyzer_efficiency"] = (
-            ElectrolyzerOption.CONSTANT_EFFICIENCY
-        )
 
         return options
 
     # def times(self, variable=None) -> np.ndarray:
     #     return super().times(variable)[:5]
 
+class MILPProblemConstantEfficiency(
+    MILPProblemInequality
+):
+
+    def energy_system_options(self):
+        options = super().energy_system_options()
+        options["electrolyzer_efficiency"] = (
+            ElectrolyzerOption.CONSTANT_EFFICIENCY
+        )
+
+        return options
 
 if __name__ == "__main__":
     elect = run_optimization_problem(
-        MILPProblemConstantEfficiency,
+        MILPProblemInequality,
         esdl_file_name="h2.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,

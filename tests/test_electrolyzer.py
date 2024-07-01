@@ -8,9 +8,6 @@ from mesido.util import run_esdl_mesido_optimization
 import numpy as np
 
 
-# from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
-
-
 class TestElectrolyzer(TestCase):
     def test_electrolyzer_inequality(self):
         """
@@ -26,8 +23,8 @@ class TestElectrolyzer(TestCase):
         - Check the electrolyzer inequality constraints formulation
 
         """
-        import models.unit_cases_electricity.electrolyzer.src.example_inequality as example
-        from models.unit_cases_electricity.electrolyzer.src.example_inequality import MILPProblemInequality
+        import models.unit_cases_electricity.electrolyzer.src.example as example
+        from models.unit_cases_electricity.electrolyzer.src.example import MILPProblemInequality
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
@@ -137,9 +134,6 @@ class TestElectrolyzer(TestCase):
                 results["Electrolyzer_fc66.ElectricityIn.Power"] * a[i] + b[i] + 1.0e-3,
             )
 
-        # print(results["Electrolyzer_fc66.ElectricityIn.Power"])
-        # print(results["Electrolyzer_fc66.Gas_mass_flow_out"])
-
         #  -----------------------------------------------------------------------------------------
         # Do cost checks
 
@@ -195,8 +189,8 @@ class TestElectrolyzer(TestCase):
         - Check the electrolyzer inequality constraints formulation
 
         """
-        import models.unit_cases_electricity.electrolyzer.src.example_constant_efficiency as example
-        from models.unit_cases_electricity.electrolyzer.src.example_constant_efficiency import MILPProblemConstantEfficiency
+        import models.unit_cases_electricity.electrolyzer.src.example as example
+        from models.unit_cases_electricity.electrolyzer.src.example import MILPProblemConstantEfficiency
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
@@ -289,9 +283,6 @@ class TestElectrolyzer(TestCase):
             results["Electrolyzer_fc66.Gas_mass_flow_out"]*efficiency,
             results["Electrolyzer_fc66.ElectricityIn.Power"],
         )
-
-        # print(results["Electrolyzer_fc66.ElectricityIn.Power"])
-        # print(results["Electrolyzer_fc66.Gas_mass_flow_out"])
 
         #  -----------------------------------------------------------------------------------------
         # Do cost checks

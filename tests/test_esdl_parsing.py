@@ -16,8 +16,8 @@ class TestESDLParsing(unittest.TestCase):
         from the file and convert this to an ESDL string, that the results
         from using either the file or the string as input are the same.
         """
-        import models.unit_cases_electricity.electrolyzer.src.example_inequality as example
-        from models.unit_cases_electricity.electrolyzer.src.example_inequality import MILPProblem
+        import models.unit_cases_electricity.electrolyzer.src.example as example
+        from models.unit_cases_electricity.electrolyzer.src.example import MILPProblem
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
