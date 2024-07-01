@@ -75,8 +75,8 @@ class TestProfileLoading(unittest.TestCase):
         The test checks if the profiles read match the profiles from the CVS file and that the
         default UTC timezone has been set.
         """
-        import models.unit_cases_electricity.electrolyzer.src.example as example
-        from models.unit_cases_electricity.electrolyzer.src.example import MILPProblem
+        import models.unit_cases_electricity.electrolyzer.src.example_inequality as example
+        from models.unit_cases_electricity.electrolyzer.src.example_inequality import MILPProblem
 
         base_folder = Path(example.__file__).resolve().parent.parent
         model_folder = base_folder / "model"
@@ -144,8 +144,8 @@ class TestProfileLoading(unittest.TestCase):
         from the csv instead of trying to get them from influxDB. The test check
         if the loaded profiles match those specified in the csv.
         """
-        import models.unit_cases_electricity.electrolyzer.src.example as example
-        from models.unit_cases_electricity.electrolyzer.src.example import MILPProblem
+        import models.unit_cases_electricity.electrolyzer.src.example_inequality as example
+        from models.unit_cases_electricity.electrolyzer.src.example_inequality import MILPProblem
 
         base_folder = Path(example.__file__).resolve().parent.parent
         model_folder = base_folder / "model"

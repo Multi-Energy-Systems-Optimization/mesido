@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-examples = list((Path(__file__).resolve().parent.parent / "examples").glob("**/src/example.py"))
+examples = list((Path(__file__).resolve().parent.parent / "examples").glob("**/src/example_inequality.py"))
 
 
 @pytest.mark.parametrize("example", examples, ids=[x.parent.parent.name for x in examples])

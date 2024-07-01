@@ -2,6 +2,7 @@ from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.techno_economic_mixin import TechnoEconomicMixin
+from mesido.electricity_physics_mixin import ElectrolyzerOption
 
 import numpy as np
 
@@ -124,7 +125,7 @@ class _GoalsAndOptions:
         return constraints
 
 
-class MILPProblem(
+class MILPProblemConstantEfficiency(
     _GoalsAndOptions,
     TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
@@ -149,6 +150,9 @@ class MILPProblem(
         options = super().energy_system_options()
         options["include_asset_is_switched_on"] = True
         options["include_electric_cable_power_loss"] = False
+        options["electrolyzer_efficiency"] = (
+            ElectrolyzerOption.CONSTANT_EFFICIENCY
+        )
 
         return options
 
@@ -158,7 +162,7 @@ class MILPProblem(
 
 if __name__ == "__main__":
     elect = run_optimization_problem(
-        MILPProblem,
+        MILPProblemConstantEfficiency,
         esdl_file_name="h2.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,

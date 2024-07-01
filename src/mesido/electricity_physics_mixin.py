@@ -637,7 +637,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                 )
 
             elif (options["electrolyzer_efficiency"] ==
-                    ElectrolyzerOption.LINEARIZED_INEQUALITY):
+                    ElectrolyzerOption.LINEARIZED_THREE_LINES_WEAK_INEQUALITY):
                 curve_fit_number_of_lines = 3
                 linear_coef_a, linear_coef_b = self._get_linear_coef_electrolyzer_mass_vs_epower_fit(
                     parameters[f"{asset}.a_eff_coefficient"],
@@ -709,7 +709,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                     ((power_consumed - asset_is_switched_on * big_m) / big_m, -np.inf, 0.0)
                 )
             elif (options["electrolyzer_efficiency"] ==
-                  ElectrolyzerOption.PIECE_WISE_LINEAR_EQUALITY):
+                  ElectrolyzerOption.LINEARIZED_THREE_LINES_EQUALITY):
                 pass
 
 
