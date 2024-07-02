@@ -253,5 +253,3 @@ class TestElectrolyzer(TestCase):
             results["Electrolyzer_fc66.Gas_mass_flow_out"] * efficiency,
             results["Electrolyzer_fc66.ElectricityIn.Power"],
         )
-
-
