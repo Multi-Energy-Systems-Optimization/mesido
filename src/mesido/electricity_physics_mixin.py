@@ -622,14 +622,14 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                 nominal = (
                     self.variable_nominal(f"{asset}.Gas_mass_flow_out")
                     * self.variable_nominal(f"{asset}.Power_consumed")
-                ) ** 0.5
+                ) ** 0.5 *3600
                 big_m = (
-                    self.bounds()[f"{asset}.Power_consumed"][1] / parameters[f"{asset}.efficiency"]
+                    self.bounds()[f"{asset}.Power_consumed"][1] / parameters[f"{asset}.efficiency"] /3600
                 ) * 2
                 constraints.extend(
                     [
                         (
-                            (gas_mass_flow_out * parameters[f"{asset}.efficiency"] - power_consumed)
+                            (gas_mass_flow_out * parameters[f"{asset}.efficiency"]*3600 - power_consumed)
                             / nominal,
                             0.0,
                             0.0,

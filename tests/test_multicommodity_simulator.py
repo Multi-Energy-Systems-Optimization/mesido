@@ -1,6 +1,7 @@
 from pathlib import Path
 from unittest import TestCase
 
+from mesido.electricity_physics_mixin import ElectrolyzerOption
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.workflows.multicommodity_simulator_workflow import MultiCommoditySimulator, \
@@ -251,8 +252,14 @@ class TestMultiCommoditySimulator(TestCase):
                     new_timeseries = self.get_timeseries(f"{asset}.maximum_electricity_source").values * 0.5
                     self.set_timeseries(f"{asset}.maximum_electricity_source", new_timeseries)
 
+            def energy_system_options(self):
+                options = super().energy_system_options()
 
+                options["electrolyzer_efficiency"] = ElectrolyzerOption.CONSTANT_EFFICIENCY
 
+                return options
+
+        #TODO: somehow highs always says it is in feasible
         solution = run_optimization_problem(
             MCSimulatorShortSmallProd,
             base_folder=base_folder,
