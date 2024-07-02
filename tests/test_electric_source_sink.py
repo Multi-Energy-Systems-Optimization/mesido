@@ -7,7 +7,7 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
-from utils_tests import electric_power_conservation_test, demand_matching_test
+from utils_tests import electric_power_conservation_test
 
 
 # TODO: still have to make test where elecitricity direction is switched:
@@ -60,7 +60,6 @@ class TestMILPElectricSourceSink(TestCase):
         self.assertTrue(smallerthen)
         biggerthen = all(power_consumed >= np.zeros(len(power_consumed)))
         self.assertTrue(biggerthen)
-
 
         power_loss = results["ElectricityCable_238f.Power_loss"]
         biggerthen = all(power_loss >= np.zeros(len(power_loss)))

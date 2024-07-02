@@ -356,6 +356,7 @@ def heat_to_discharge_test(solution, results):
             err_msg=f"{p} has mismatch in milp to discharge",
         )
 
+
 def electric_power_conservation_test(solution, results):
     """
     Test to check if the electric power is conserved at every timestep
@@ -363,7 +364,16 @@ def electric_power_conservation_test(solution, results):
     tol = 1e-6
     energy_sum = np.zeros(len(solution.times()))
 
-    consumers = solution.energy_system_components_get(["electricity_demand", "electrolyzer", "electricity_storage", "elec_boiler", "heat_pump_elec", "air_water_heat_pump_elec"])
+    consumers = solution.energy_system_components_get(
+        [
+            "electricity_demand",
+            "electrolyzer",
+            "electricity_storage",
+            "elec_boiler",
+            "heat_pump_elec",
+            "air_water_heat_pump_elec",
+        ]
+    )
     producers = solution.energy_system_components_get(["electricity_source"])
     cables = solution.energy_system_components_get(["electricity_cable"])
     transformers = solution.energy_system_components.get("transformer", [])
@@ -379,7 +389,7 @@ def electric_power_conservation_test(solution, results):
         np.testing.assert_allclose(
             results[f"{asset}.Power_loss"],
             results[f"{asset}.ElectricityIn.Power"] - results[f"{asset}.ElectricityOut.Power"],
-            atol=tol
+            atol=tol,
         )
 
     for asset, connected_cables in solution.energy_system_topology.busses.items():
@@ -393,7 +403,8 @@ def electric_power_conservation_test(solution, results):
 
     for asset in transformers:
         np.testing.assert_allclose(
-            results[f"{asset}.ElectricityIn.Power"], results[f"{asset}.ElectricityOut.Power"],
+            results[f"{asset}.ElectricityIn.Power"],
+            results[f"{asset}.ElectricityOut.Power"],
         )
 
     np.testing.assert_allclose(energy_sum, 0.0, atol=tol)
