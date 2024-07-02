@@ -20,4 +20,4 @@ sphinx:
 python:
   install:
   - path: .
-  - requirements: docs/requirements_amg_.txt
+  - requirements: docs/requirements.txt
