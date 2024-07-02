@@ -1507,6 +1507,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
         return ElectricityDemand, modifiers
 
     def convert_import(self, asset: Asset):
+        """
+        The definition of an Import asset, is an asset that imports energy, thus adds energy to
+        the network, thereby it acts as a consumer"
+        """
         assert asset.asset_type in {"Import"}
 
         if isinstance(asset.out_ports[0].carrier, esdl.esdl.GasCommodity):
@@ -1520,6 +1524,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
             )
 
     def convert_export(self, asset: Asset):
+        """
+        The definition of an Export asset, is an asset that exports energy from the network, thus
+        extracts energy to the network, thereby it acts as a consumer"
+        """
         assert asset.asset_type in {"Export"}
 
         if isinstance(asset.in_ports[0].carrier, esdl.esdl.GasCommodity):
