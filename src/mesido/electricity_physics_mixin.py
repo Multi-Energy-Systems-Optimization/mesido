@@ -71,6 +71,12 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         self.__set_point_bounds = {}
         self.__set_point_map = {}
 
+        # Boolean path-variable for the equality constraint of the electrolyzer
+        # TODO: if the option of equality constraints is selected?
+        self.__electrolyzer_linear_line_segment_map = {}
+        self.__electrolyzer_linear_line_segment_var = {}
+        self.__electrolyzer_linear_line_segment_bounds = {}
+
     def energy_system_options(self):
         r"""
         Returns a dictionary of milp network specific options.
@@ -113,6 +119,20 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                 self.__asset_is_switched_on_map[asset] = var_name
                 self.__asset_is_switched_on_var[var_name] = ca.MX.sym(var_name)
                 self.__asset_is_switched_on_bounds[var_name] = (0.0, 1.0)
+
+        if options["electrolyzer_efficiency"] == 'LINEARIZED_THREE_LINES_EQUALITY':
+            n_lines = 3
+            for n_line in range(n_lines):
+                self.__electrolyzer_linear_line_segment_map[f'line_{n_line}'] = {}
+                self.__asset_is_switched_on_var[f'line_{n_line}'] = {}
+                self.__asset_is_switched_on_bounds[f'line_{n_line}'] = {}
+                for asset in [
+                    *self.energy_system_components.get("electrolyzer", []),
+                ]:
+                    var_name = f"{asset}_line_{n_line}__segment_active"
+                    self.__electrolyzer_linear_line_segment_map[f'line_{n_line}'][asset] = var_name
+                    self.__asset_is_switched_on_var[f'line_{n_line}'][var_name] = ca.MX.sym(var_name)
+                    self.__asset_is_switched_on_bounds[f'line_{n_line}'][var_name] = (0.0, 1.0)
 
         for asset in [*self.energy_system_components.get("electricity_storage", [])]:
             var_name = f"{asset}__is_charging"
@@ -687,6 +707,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                 options["electrolyzer_efficiency"]
                 == ElectrolyzerOption.LINEARIZED_THREE_LINES_EQUALITY
             ):
+                # Think if inequality weak constraints are also needed here
                 raise NotImplementedError
 
             constraints.append(
