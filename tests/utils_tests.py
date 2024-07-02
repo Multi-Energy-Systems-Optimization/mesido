@@ -3,6 +3,20 @@ from unittest import TestCase
 import numpy as np
 
 
+def feasibility_test(solution):
+    feasibility = solution.solver_stats["return_status"]
+
+    if solution.solver_options()["solver"] == "highs":
+        assert feasibility.lower() == "optimal"
+    elif solution.solver_options()["solver"] == "gurobi":
+        assert feasibility.lower() == "optimal"
+    else:
+        RuntimeError(
+            f"The solver {solution.solver_options()['solver']} is not used in test to check for "
+            f"optimality, please use highs or gurobi"
+        )
+
+
 def demand_matching_test(solution, results):
     """ "Test function to check whether the milp demand of each consumer is matched"""
     len_times = 0.0

@@ -1,4 +1,5 @@
 import logging
+from enum import IntEnum
 from math import isclose
 from typing import Tuple
 
@@ -15,6 +16,28 @@ from rtctools.optimization.timeseries import Timeseries
 
 
 logger = logging.getLogger("mesido")
+
+
+class ElectrolyzerOption(IntEnum):
+    """
+    Enumeration for the possible options to model the electrolyzer.
+    For detailed calculations related to these options, see the equations themselves.
+
+    CONSTANT_EFFICIENCY
+        A constant efficiency is used to determine the H2 produced per energy electricity entering
+
+    LINEARIZED_THREE_LINES_WEAK_INEQUALITY
+        The efficiency curve is linearized in 3 lines, which are all inequalities and with proper
+        goals will move towards these lines
+
+    LINEARIZED_THREE_LINES_EQUALITY
+        The efficiency curve is linearized in 3 lines, which are all equalities using binary
+        variables and the big-M method to select the relevant lines.
+    """
+
+    CONSTANT_EFFICIENCY = 1
+    LINEARIZED_THREE_LINES_WEAK_INEQUALITY = 2
+    LINEARIZED_THREE_LINES_EQUALITY = 3
 
 
 class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
@@ -57,6 +80,9 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
         options["include_asset_is_switched_on"] = False
         options["include_electric_cable_power_loss"] = False
+        options["electrolyzer_efficiency"] = (
+            ElectrolyzerOption.LINEARIZED_THREE_LINES_WEAK_INEQUALITY
+        )
 
         return options
 
@@ -450,7 +476,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             current_in = self.state(f"{asset}.ElectricityIn.I")
 
             # is_charging is 1 if charging and powerin>0
-            big_m = 2 * max(abs(self.bounds()[f"{asset}.ElectricityIn.Power"]))
+            big_m = 2 * max(np.abs(self.bounds()[f"{asset}.ElectricityIn.Power"]))
             is_charging = self.state(f"{asset}__is_charging")
             constraints.append(((power_in + (1 - is_charging) * big_m) / power_nom, 0.0, np.inf))
             constraints.append(((power_in - is_charging * big_m) / power_nom, -np.inf, 0.0))
@@ -494,14 +520,14 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             # discharging
             constraints.append(
                 (
-                    (eff_power - discharge_eff * power_in + is_charging * big_m) / power_nom,
+                    (eff_power * discharge_eff - power_in + is_charging * big_m) / power_nom,
                     0,
                     np.inf,
                 )
             )
             constraints.append(
                 (
-                    (eff_power - discharge_eff * power_in - is_charging * big_m) / power_nom,
+                    (eff_power * discharge_eff - power_in - is_charging * big_m) / power_nom,
                     -np.inf,
                     0,
                 )
@@ -585,66 +611,84 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         """
         constraints = []
         parameters = self.parameters(ensemble_member)
+        options = self.energy_system_options()
+        # TODO: CHECK UNITS MASSFLOW
         for asset in self.energy_system_components.get("electrolyzer", []):
             gas_mass_flow_out = self.state(f"{asset}.Gas_mass_flow_out")
             power_consumed = self.state(f"{asset}.Power_consumed")
-
-            # Multiple linear lines
-            curve_fit_number_of_lines = 3
-            linear_coef_a, linear_coef_b = self._get_linear_coef_electrolyzer_mass_vs_epower_fit(
-                parameters[f"{asset}.a_eff_coefficient"],
-                parameters[f"{asset}.b_eff_coefficient"],
-                parameters[f"{asset}.c_eff_coefficient"],
-                n_lines=curve_fit_number_of_lines,
-                electrical_power_min=max(
-                    parameters[f"{asset}.minimum_load"],
-                    0.01 * self.bounds()[f"{asset}.ElectricityIn.Power"][1],
-                ),
-                electrical_power_max=self.bounds()[f"{asset}.ElectricityIn.Power"][1],
-            )
-            power_consumed_vect = ca.repmat(power_consumed, len(linear_coef_a))
-            gas_mass_flow_out_vect = ca.repmat(gas_mass_flow_out, len(linear_coef_a))
-            gass_mass_out_linearized_vect = linear_coef_a * power_consumed_vect + linear_coef_b
             var_name = self.__asset_is_switched_on_map[asset]
             asset_is_switched_on = self.state(var_name)
-
-            gass_mass_out_max = (
-                linear_coef_a[-1] * self.bounds()[f"{asset}.Power_consumed"][1] + linear_coef_b[-1]
-            )
-            big_m = gass_mass_out_max * 2
-            nominal = (
-                self.variable_nominal(f"{asset}.Gas_mass_flow_out")
-                * min(linear_coef_a)
-                * self.variable_nominal(f"{asset}.Power_consumed")
-            ) ** 0.5
-            constraints.extend(
-                [
-                    (
+            if options["electrolyzer_efficiency"] == ElectrolyzerOption.CONSTANT_EFFICIENCY:
+                nominal = (
+                    self.variable_nominal(f"{asset}.Gas_mass_flow_out")
+                    * self.variable_nominal(f"{asset}.Power_consumed")
+                ) ** 0.5
+                big_m = (
+                    self.bounds()[f"{asset}.Power_consumed"][1] / parameters[f"{asset}.efficiency"]
+                ) * 2
+                constraints.extend(
+                    [
                         (
-                            gas_mass_flow_out_vect
-                            - gass_mass_out_linearized_vect
-                            - (1 - asset_is_switched_on) * big_m
-                        )
-                        / nominal,
-                        -np.inf,
-                        0.0,
-                    ),
-                ]
-            )
-            # constraints.extend(
-            #     [
-            #         (
-            #             (
-            #                     gas_mass_flow_out_vect
-            #                     - gass_mass_out_linearized_vect
-            #                     + (1 - asset_is_switched_on) * big_m
-            #             )
-            #             / nominal,
-            #             0.0,
-            #             np.inf,
-            #         ),
-            #     ]
-            # )
+                            (gas_mass_flow_out * parameters[f"{asset}.efficiency"] - power_consumed)
+                            / nominal,
+                            0.0,
+                            0.0,
+                        ),
+                    ]
+                )
+
+            elif (
+                options["electrolyzer_efficiency"]
+                == ElectrolyzerOption.LINEARIZED_THREE_LINES_WEAK_INEQUALITY
+            ):
+                curve_fit_number_of_lines = 3
+                linear_coef_a, linear_coef_b = (
+                    self._get_linear_coef_electrolyzer_mass_vs_epower_fit(
+                        parameters[f"{asset}.a_eff_coefficient"],
+                        parameters[f"{asset}.b_eff_coefficient"],
+                        parameters[f"{asset}.c_eff_coefficient"],
+                        n_lines=curve_fit_number_of_lines,
+                        electrical_power_min=max(
+                            parameters[f"{asset}.minimum_load"],
+                            0.01 * self.bounds()[f"{asset}.ElectricityIn.Power"][1],
+                        ),
+                        electrical_power_max=self.bounds()[f"{asset}.ElectricityIn.Power"][1],
+                    )
+                )
+                power_consumed_vect = ca.repmat(power_consumed, len(linear_coef_a))
+                gas_mass_flow_out_vect = ca.repmat(gas_mass_flow_out, len(linear_coef_a))
+                gass_mass_out_linearized_vect = linear_coef_a * power_consumed_vect + linear_coef_b
+
+                gass_mass_out_max = (
+                    linear_coef_a[-1] * self.bounds()[f"{asset}.Power_consumed"][1]
+                    + linear_coef_b[-1]
+                )
+                nominal = (
+                    self.variable_nominal(f"{asset}.Gas_mass_flow_out")
+                    * min(linear_coef_a)
+                    * self.variable_nominal(f"{asset}.Power_consumed")
+                ) ** 0.5
+                big_m = gass_mass_out_max * 2
+                constraints.extend(
+                    [
+                        (
+                            (
+                                gas_mass_flow_out_vect
+                                - gass_mass_out_linearized_vect
+                                - (1 - asset_is_switched_on) * big_m
+                            )
+                            / nominal,
+                            -np.inf,
+                            0.0,
+                        ),
+                    ]
+                )
+            elif (
+                options["electrolyzer_efficiency"]
+                == ElectrolyzerOption.LINEARIZED_THREE_LINES_EQUALITY
+            ):
+                raise NotImplementedError
+
             constraints.append(
                 ((gas_mass_flow_out + asset_is_switched_on * big_m) / big_m, 0.0, np.inf)
             )

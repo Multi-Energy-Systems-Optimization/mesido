@@ -29,6 +29,11 @@ src/*.egg-info
 run_pipe_compare.py
 *_kvr_*
 .venv/
+# Femke Janssen
+*_fj_*
 # Ignore ESDL files created by workflows
 *_GrowOptimized.esdl 
+*_GrowOptimized_esdl_string.esdl 
 *_Simulation.esdl
+# Alejandro Martin
+*_amg_*

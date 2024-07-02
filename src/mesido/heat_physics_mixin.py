@@ -245,6 +245,10 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         bounds = self.bounds()
 
+        # Set structure used instead of list. Purpose: to make lookup faster when there are many
+        # pipes in the network.
+        set_self_hot_pipes = set(self.hot_pipes)
+
         for pipe_name in self.energy_system_components.get("heat_pipe", []):
             head_loss_var = f"{pipe_name}.__head_loss"
             initialized_vars = self._hn_head_loss_class.initialize_variables_nominals_and_bounds(
@@ -290,7 +294,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     ] = initialized_vars[10][pipe_linear_line_segment_var_name]
 
             neighbour = self.has_related_pipe(pipe_name)
-            if neighbour and pipe_name not in self.hot_pipes:
+            if neighbour and pipe_name not in set_self_hot_pipes:
                 flow_dir_var = f"{self.cold_to_hot_pipe(pipe_name)}__flow_direct_var"
             else:
                 flow_dir_var = f"{pipe_name}__flow_direct_var"
@@ -320,7 +324,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             if parameters[f"{pipe_name}.disconnectable"]:
                 neighbour = self.has_related_pipe(pipe_name)
-                if neighbour and pipe_name not in self.hot_pipes:
+                if neighbour and pipe_name not in set_self_hot_pipes:
                     disconnected_var = f"{self.cold_to_hot_pipe(pipe_name)}__is_disconnected"
                 else:
                     disconnected_var = f"{pipe_name}__is_disconnected"

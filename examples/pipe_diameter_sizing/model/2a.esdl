@@ -49,7 +49,7 @@
         <port xsi:type="esdl:InPort" name="In" id="b0b62b87-f41f-4a13-9806-185d06390d72" carrier="76160f2d-374c-4df5-9bee-20ff805124f8" connectedTo="40f3eac1-4f91-4d7f-8424-2aad687412ed"/>
         <port xsi:type="esdl:OutPort" name="Out" connectedTo="5721f9a7-ac9a-492b-a5ac-aedd8367163a" id="5f124c30-06d9-496a-82f0-d06afcd312e6" carrier="76160f2d-374c-4df5-9bee-20ff805124f8"/>
       </asset>
-      <asset xsi:type="esdl:Pipe" name="Pipe_6b39" id="6b39bb76-cc92-4c35-ad89-81b9f18581fc" innerDiameter="0.1603" length="242.6088250579639" outerDiameter="0.25">
+      <asset xsi:type="esdl:Pipe" name="Pipe_6b39" id="6b39bb76-cc92-4c35-ad89-81b9f18581fc" innerDiameter="0.1603" length="222.6088250579639" outerDiameter="0.25">
         <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
           <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.004">
             <matter xsi:type="esdl:Material" id="5d4601b4-12cc-4da9-956a-f58d746f870c" thermalConductivity="52.15" name="steel"/>
@@ -345,7 +345,7 @@
         <port xsi:type="esdl:InPort" name="In" id="41ca1e9a-d112-419a-90fc-8fa5e01fc07a" carrier="76160f2d-374c-4df5-9bee-20ff805124f8_ret" connectedTo="c7ce4f71-bfbe-4168-9ed8-6f2932e53e59"/>
         <port xsi:type="esdl:OutPort" name="Out" connectedTo="318839fd-89d8-488e-b4e6-4dcb4a4ced2a" id="0a6a08d6-3271-42e5-814c-74081a0423cc" carrier="76160f2d-374c-4df5-9bee-20ff805124f8_ret"/>
       </asset>
-      <asset xsi:type="esdl:Pipe" name="Pipe_6b39_ret" id="8ef48aeb-50af-4f04-baae-ea8ced21ec13" innerDiameter="0.1603" length="242.6088250579639" outerDiameter="0.25">
+      <asset xsi:type="esdl:Pipe" name="Pipe_6b39_ret" id="8ef48aeb-50af-4f04-baae-ea8ced21ec13" innerDiameter="0.1603" length="222.6088250579639" outerDiameter="0.25">
         <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
           <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.004">
             <matter xsi:type="esdl:Material" id="5d4601b4-12cc-4da9-956a-f58d746f870c" thermalConductivity="52.15" name="steel"/>

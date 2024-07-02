@@ -1,3 +1,5 @@
+.. _chp_introduction:
+
 Introduction
 ============
 

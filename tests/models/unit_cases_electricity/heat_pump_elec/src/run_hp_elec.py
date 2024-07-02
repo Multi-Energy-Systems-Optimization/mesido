@@ -1,9 +1,14 @@
 import esdl
 
+from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.head_loss_class import HeadLossOption
 from mesido.physics_mixin import PhysicsMixin
+from mesido.techno_economic_mixin import TechnoEconomicMixin
+from mesido.workflows.goals.minimize_tco_goal import MinimizeTCO
+
 
 import numpy as np
 
@@ -260,16 +265,50 @@ class ElectricityProblem(
         return options
 
 
+class ElectricityProblemPriceProfile(
+    _GoalsAndOptions,
+    ESDLAdditionalVarsMixin,
+    TechnoEconomicMixin,
+    LinearizedOrderGoalProgrammingMixin,
+    GoalProgrammingMixin,
+    ESDLMixin,
+    CollocatedIntegratedOptimizationProblem,
+):
+    def read(self):
+        super().read()
+
+        for d in self.energy_system_components["heat_demand"]:
+            new_timeseries = self.get_timeseries(f"{d}.target_heat_demand").values * 0.01
+            self.set_timeseries(f"{d}.target_heat_demand", new_timeseries)
+
+    def goals(self):
+        goals = super().goals().copy()
+
+        goals.append(MinimizeTCO(priority=2))
+
+        return goals
+
+    def energy_system_options(self):
+        options = super().energy_system_options()
+        self.heat_network_settings["minimum_velocity"] = 0.0001
+        options["heat_loss_disconnected_pipe"] = False
+        options["neglect_pipe_heat_losses"] = True
+        self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+
+        return options
+
+
 if __name__ == "__main__":
     sol = run_optimization_problem(
-        HeatProblem2,
-        esdl_file_name="heat_pump_elec.esdl",
+        ElectricityProblemPriceProfile,
+        esdl_file_name="heat_pump_elec_priceprofile.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,
-        input_timeseries_file="timeseries_import.xml",
+        input_timeseries_file="timeseries_elec.csv",
     )
     results = sol.extract_results()
     print(results["GenericConversion_3d3f.Power_elec"])
+    print(results["GenericConversion_3d3f__variable_operational_cost"])
     print(results["ResidualHeatSource_aec9.Heat_source"])
     # print(results["Pipe3__hn_diameter"])
     # print(sol.bounds()["Pipe3__hn_diameter"])
