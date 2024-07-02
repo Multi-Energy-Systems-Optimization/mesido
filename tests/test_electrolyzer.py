@@ -214,7 +214,10 @@ class TestElectrolyzer(TestCase):
             np.zeros(len(results["Electrolyzer_fc66.Gas_mass_flow_out"])),
         )
         # Check that the electrolyzer is switched off
-
+        np.testing.assert_allclose(
+            results["Electrolyzer_fc66__asset_is_switched_on"],
+            np.zeros(len(results["Electrolyzer_fc66__asset_is_switched_on"])),
+        )
 
     def test_electrolyzer_constant_efficiency(self):
         """
