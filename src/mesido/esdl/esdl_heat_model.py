@@ -1509,7 +1509,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
     def convert_import(self, asset: Asset):
         """
         The definition of an Import asset, is an asset that imports energy, thus adds energy to
-        the network, thereby it acts as a consumer"
+        the network, thereby it acts as a producer."
         """
         assert asset.asset_type in {"Import"}
 
@@ -1526,7 +1526,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
     def convert_export(self, asset: Asset):
         """
         The definition of an Export asset, is an asset that exports energy from the network, thus
-        extracts energy to the network, thereby it acts as a consumer"
+        extracts energy to the network, thereby it acts as a consumer."
         """
         assert asset.asset_type in {"Export"}
 
