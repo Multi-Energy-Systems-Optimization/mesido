@@ -360,12 +360,13 @@ def electric_power_conservation_test(solution, results):
     """
     Test to check if the electric power is conserved at every timestep
     """
+    tol = 1e-6
     energy_sum = np.zeros(len(solution.times()))
 
-    consumers = solution.energy_system_components_get(["electricity_demand", "electrolyzer"])
+    consumers = solution.energy_system_components_get(["electricity_demand", "electrolyzer", "electricity_storage", "elec_boiler", "heat_pump_elec", "air_water_heat_pump_elec"])
     producers = solution.energy_system_components_get(["electricity_source"])
     cables = solution.energy_system_components_get(["electricity_cable"])
-    busses = solution.energy_system_components.get("electricity_node")
+    transformers = solution.energy_system_components.get("transformer", [])
 
     for asset in consumers:
         energy_sum -= results[f"{asset}.ElectricityIn.Power"]
@@ -378,19 +379,24 @@ def electric_power_conservation_test(solution, results):
         np.testing.assert_allclose(
             results[f"{asset}.Power_loss"],
             results[f"{asset}.ElectricityIn.Power"] - results[f"{asset}.ElectricityOut.Power"],
+            atol=tol
         )
 
     for asset, connected_cables in solution.energy_system_topology.busses.items():
         sum_bus_power = np.zeros(len(solution.times()))
         sum_bus_current = np.zeros(len(solution.times()))
-        n = solution.parameters(0)[f"{asset}.n"]
         for i_conn, (_cable, orientation) in connected_cables.items():
             sum_bus_power += orientation * results[f"{asset}.ElectricityConn[{i_conn + 1}].Power"]
             sum_bus_current += orientation * results[f"{asset}.ElectricityConn[{i_conn + 1}].I"]
-        np.testing.assert_allclose(sum_bus_power, 0.0, atol=1e-6)
-        np.testing.assert_allclose(sum_bus_current, 0.0, atol=1e-6)
+        np.testing.assert_allclose(sum_bus_power, 0.0, atol=tol)
+        np.testing.assert_allclose(sum_bus_current, 0.0, atol=tol)
 
-    np.testing.assert_allclose(energy_sum, 0.0, atol=1e-6)
+    for asset in transformers:
+        np.testing.assert_allclose(
+            results[f"{asset}.ElectricityIn.Power"], results[f"{asset}.ElectricityOut.Power"],
+        )
+
+    np.testing.assert_allclose(energy_sum, 0.0, atol=tol)
 
 
 def energy_conservation_test(solution, results):

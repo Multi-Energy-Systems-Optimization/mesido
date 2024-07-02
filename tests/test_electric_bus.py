@@ -16,7 +16,7 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
-from utils_tests import electric_power_conservation_test
+from utils_tests import electric_power_conservation_test, demand_matching_test
 
 
 class TestMILPbus(TestCase):

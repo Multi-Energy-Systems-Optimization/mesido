@@ -7,7 +7,7 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
-from utils_tests import demand_matching_test, feasibility_test
+from utils_tests import demand_matching_test, feasibility_test, electric_power_conservation_test
 
 
 class TestMILPElectricSourceSink(TestCase):
@@ -46,6 +46,7 @@ class TestMILPElectricSourceSink(TestCase):
         feasibility_test(solution)
 
         demand_matching_test(solution, results)
+        electric_power_conservation_test(solution, results)
 
         storage_name = solution.energy_system_components.get("electricity_storage")[0]
         charge_eff = parameters[f"{storage_name}.charge_efficiency"]

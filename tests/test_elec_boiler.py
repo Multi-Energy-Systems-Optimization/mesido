@@ -7,7 +7,8 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
+from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test, \
+    electric_power_conservation_test
 
 
 class TestElecBoiler(TestCase):
@@ -41,6 +42,7 @@ class TestElecBoiler(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
+        electric_power_conservation_test(heat_problem, results)
 
         np.testing.assert_array_less(0.0, results["ElectricBoiler_9aab.Heat_source"])
         np.testing.assert_array_less(0.0, results["ElectricityProducer_4dde.ElectricityOut.Power"])
@@ -80,6 +82,7 @@ class TestElecBoiler(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
+        electric_power_conservation_test(heat_problem, results)
 
         np.testing.assert_array_less(0.0, results["HeatPump_d8fd.Heat_source"])
         np.testing.assert_array_less(0.0, results["ElectricityProducer_4dde.ElectricityOut.Power"])
