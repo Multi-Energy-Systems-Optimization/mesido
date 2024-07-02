@@ -204,12 +204,20 @@ class TestMultiCommoditySimulator(TestCase):
         bounds = solution.bounds()
         results = solution.extract_results()
 
-        checks_all_mc_simulations(solution, results)
+        # all_mc_checks cannot be used because max electricity production of windfarm is larger
+        # than the max electricity take off at electrolyzer (due to mas gas demand) and the max
+        # electricity demand.
+        # checks_all_mc_simulations(solution, results)
 
         demand_gas = results[f"GasDemand_4146.Gas_demand_mass_flow"][4:10]
         demand_el = results[f"ElectricityDemand_f833.Electricity_demand"][4:10]
         electrolyzer_power = results[f"Electrolyzer_6327.Power_consumed"][4:10]
         electrolyzer_gas = results[f"Electrolyzer_6327.Gas_mass_flow_out"][4:10]
+        windfarm_power = results[f"WindPark_9074.Electricity_source"]
+        windfarm_target = solution.get_timeseries("WindPark_9074.maximum_electricity_source").values
+        windfarm_target = np.minimum(np.ones(len(windfarm_target))*1.744880e9, windfarm_target)
+        np.testing.assert_allclose(windfarm_target, windfarm_power, atol=1.0e-3, rtol=1.0e-6)
+
         # storage_flow = results["GasStorage_9172.Gas_tank_flow"][4:10]
         # storage_mass = results["GasStorage_9172.Stored_gas_mass"][4:10]
 
@@ -234,6 +242,30 @@ class TestMultiCommoditySimulator(TestCase):
         # demand_2_target = prod_1 + prod_2 - dem_1
         # demand_2_target[demand_2_target < 0] = 0
         # np.testing.assert_allclose(dem_2, demand_2_target, atol=1e-3, rtol=1e-6)
+
+        class MCSimulatorShortSmallProd(MCSimulatorShort):
+            def read(self, variable=None):
+                super().read()
+
+                for asset in self.energy_system_components["wind_park"]:
+                    new_timeseries = self.get_timeseries(f"{asset}.maximum_electricity_source").values * 0.5
+                    self.set_timeseries(f"{asset}.maximum_electricity_source", new_timeseries)
+
+
+
+        solution = run_optimization_problem(
+            MCSimulatorShortSmallProd,
+            base_folder=base_folder,
+            esdl_file_name="emerge_priorities_withoutstorage.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_short.csv",
+        )
+
+        bounds = solution.bounds()
+        results = solution.extract_results()
+
+        checks_all_mc_simulations(solution, results)
 
 if __name__ == "__main__":
     import time

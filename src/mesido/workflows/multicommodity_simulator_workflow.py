@@ -65,7 +65,7 @@ class TargetDemandGoal(Goal):
 # Step 2:
 # Match the maximum producer profiles
 class TargetProducerGoal(Goal): #TODO: highs doesn't like this goal
-    def __init__(self, state, target, priority=2, order=2):
+    def __init__(self, state, target, priority=20, order=2):
         self.state = state
 
         self.target_min = target
@@ -437,6 +437,16 @@ class MultiCommoditySimulator(
 
         return options
 
+    def path_constraints(self, ensemble_member):
+        """
+        Constraints to limit producer production in case timeseries for the production exist,
+        relevant when the first goals is not to match profile.
+        """
+        constraints = super().path_constraints(ensemble_member)
+
+
+        return constraints
+
     def constraints(self, ensemble_member):
         """
         Add equality constraints to enforce a cyclic energy balance [J] between the end and the
@@ -564,7 +574,7 @@ class MultiCommoditySimulatorNoLosses(MultiCommoditySimulator):
 
     def solver_options(self):
         options = super().solver_options()
-        options["solver"] = "gurobi"
+        options["solver"] = "highs"
 
         return options
 
