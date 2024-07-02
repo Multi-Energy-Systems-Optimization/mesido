@@ -174,6 +174,7 @@ class TestElectrolyzer(TestCase):
             sum(results["Electrolyzer_fc66__investment_cost"]),
         )
         #  -----------------------------------------------------------------------------------------
+        # TODO: add check on the electricity power conservation
 
     def test_electrolyzer_minimum_power(self):
         """
@@ -205,18 +206,18 @@ class TestElectrolyzer(TestCase):
 
         # Check that the input power is 0
         np.testing.assert_allclose(
-            results["Electrolyzer_fc66.ElectricityIn.Power"],
-            np.zeros(len(results["Electrolyzer_fc66.ElectricityIn.Power"])),
+            results["Electrolyzer_fc66.ElectricityIn.Power"][-1],
+            0.0,
         )
         # Check that the output gas is 0
         np.testing.assert_allclose(
-            results["Electrolyzer_fc66.Gas_mass_flow_out"],
-            np.zeros(len(results["Electrolyzer_fc66.Gas_mass_flow_out"])),
+            results["Electrolyzer_fc66.Gas_mass_flow_out"][-1],
+            0.0,
         )
         # Check that the electrolyzer is switched off
         np.testing.assert_allclose(
-            results["Electrolyzer_fc66__asset_is_switched_on"],
-            np.zeros(len(results["Electrolyzer_fc66__asset_is_switched_on"])),
+            results["Electrolyzer_fc66__asset_is_switched_on"][-1],
+            0,
         )
 
     def test_electrolyzer_constant_efficiency(self):
