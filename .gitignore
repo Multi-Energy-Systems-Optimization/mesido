@@ -36,4 +36,4 @@ run_pipe_compare.py
 *_GrowOptimized_esdl_string.esdl 
 *_Simulation.esdl
 # Alejandro Martin
-requirements.txt
+*_amg_*

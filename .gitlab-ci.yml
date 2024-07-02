@@ -51,7 +51,7 @@ pages:
   script:
     - pip install -e .
     - cd docs
-    - pip install -r requirements.txt
+    - pip install -r requirements_amg_.txt
     - make html
     - mv _build/html ../public
     - cd ..

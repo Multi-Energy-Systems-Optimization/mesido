@@ -616,14 +616,13 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         for asset in self.energy_system_components.get("electrolyzer", []):
             gas_mass_flow_out = self.state(f"{asset}.Gas_mass_flow_out")
             power_consumed = self.state(f"{asset}.Power_consumed")
-
+            var_name = self.__asset_is_switched_on_map[asset]
+            asset_is_switched_on = self.state(var_name)
             if options["electrolyzer_efficiency"] == ElectrolyzerOption.CONSTANT_EFFICIENCY:
                 nominal = (
                     self.variable_nominal(f"{asset}.Gas_mass_flow_out")
                     * self.variable_nominal(f"{asset}.Power_consumed")
                 ) ** 0.5
-                var_name = self.__asset_is_switched_on_map[asset]
-                asset_is_switched_on = self.state(var_name)
                 big_m = (
                     self.bounds()[f"{asset}.Power_consumed"][1] / parameters[f"{asset}.efficiency"]
                 ) * 2
@@ -669,8 +668,6 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                     * min(linear_coef_a)
                     * self.variable_nominal(f"{asset}.Power_consumed")
                 ) ** 0.5
-                var_name = self.__asset_is_switched_on_map[asset]
-                asset_is_switched_on = self.state(var_name)
                 big_m = gass_mass_out_max * 2
                 constraints.extend(
                     [
@@ -690,7 +687,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                 options["electrolyzer_efficiency"]
                 == ElectrolyzerOption.LINEARIZED_THREE_LINES_EQUALITY
             ):
-                pass
+                raise NotImplementedError
 
             constraints.append(
                 ((gas_mass_flow_out + asset_is_switched_on * big_m) / big_m, 0.0, np.inf)
