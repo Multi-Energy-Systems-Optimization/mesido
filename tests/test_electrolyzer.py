@@ -329,7 +329,10 @@ class TestElectrolyzer(TestCase):
             coef_b,
             coef_c,
             n_lines=3,
-            electrical_power_min=0.0,
+            electrical_power_min=max(
+                            solution.parameters(0)[f"Electrolyzer_fc66.minimum_load"],
+                            0.01 * solution.bounds()["Electrolyzer_fc66.ElectricityIn.Power"][1],
+                        ),
             electrical_power_max=solution.bounds()["Electrolyzer_fc66.ElectricityIn.Power"][1],
         )
         for idx in range(3):
