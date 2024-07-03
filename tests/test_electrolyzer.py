@@ -335,5 +335,5 @@ class TestElectrolyzer(TestCase):
         for idx in range(3):
             np.testing.assert_allclose(
                 results["Electrolyzer_fc66.Gas_mass_flow_out"][idx],
-                results["Electrolyzer_fc66.ElectricityIn.Power"] * a[idx] + b[idx],
+                results["Electrolyzer_fc66.ElectricityIn.Power"][idx] * a[idx] + b[idx],
             )
