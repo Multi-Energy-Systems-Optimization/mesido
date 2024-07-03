@@ -64,7 +64,7 @@ class TargetDemandGoal(Goal):
 # -------------------------------------------------------------------------------------------------
 # Step 2:
 # Match the maximum producer profiles
-class TargetProducerGoal(Goal): #TODO: highs doesn't like this goal
+class TargetProducerGoal(Goal):  # TODO: highs doesn't like this goal
     def __init__(self, state, target, priority=20, order=2):
         self.state = state
 
@@ -91,7 +91,7 @@ class MinimizeSourcesGoalMerit(Goal):
     """
 
     def __init__(self, source_variable, prod_priority, func_range_bound, nominal, order=2):
-        self.target_max = 0.0 #func_range_bound[0]
+        self.target_max = 0.0  # func_range_bound[0]
         self.function_range = func_range_bound
         self.source_variable = source_variable
         self.function_nominal = nominal
@@ -108,12 +108,6 @@ class MaximizeDemandGoalMerit(Goal):
     """
 
     def __init__(self, demand_variable, prod_priority, func_range_bound, nominal, order=2):
-        # self.target_min = func_range_bound[1]*27 #TODO: probably this needs to be multiplied with the number of timesteps
-        # self.function_range = (func_range_bound[0]*27, func_range_bound[1]*27)
-        # self.demand_variable = demand_variable
-        # self.function_nominal = nominal
-        # self.priority = prod_priority
-        # self.order = order
 
         self.demand_variable = demand_variable
         self.function_nominal = nominal
@@ -131,7 +125,7 @@ class MinimizeStorageGoalMerit(Goal):
 
     def __init__(self, source_variable, prod_priority, func_range_bound, nominal, order=2):
         self.target_min = 0.0  # func_range_bound[0]
-        self.target_max = func_range_bound[1]*.999
+        self.target_max = func_range_bound[1] * 0.999
         self.function_range = func_range_bound
         self.source_variable = source_variable
         self.function_nominal = nominal
@@ -152,11 +146,12 @@ class MaximizeStorageGoalMerit(Goal):
         self.function_range = func_range_bound
         self.demand_variable = demand_variable
         self.function_nominal = nominal
-        self.priority = prod_priority+1
+        self.priority = prod_priority + 1
         self.order = order
 
     def function(self, optimization_problem, ensemble_member):
         return optimization_problem.state(f"{self.demand_variable}")
+
 
 # -------------------------------------------------------------------------------------------------
 class _GoalsAndOptions:
@@ -251,7 +246,7 @@ class MultiCommoditySimulator(
             "gas_demand": "Gas_demand_mass_flow",
             "gas_source": "Gas_source_mass_flow",
             "gas_tank_storage": "Gas_tank_flow",
-            "electrolyzer": "Power_consumed",#"Gas_mass_flow_out",
+            "electrolyzer": "Power_consumed",  # "Gas_mass_flow_out",
         }
         # TODO: check if conversion priority needs to be set for production or consumption,
         #  currently it assumes production
@@ -321,12 +316,12 @@ class MultiCommoditySimulator(
                 goals.append(
                     MinimizeSourcesGoalMerit(
                         variable_name,
-                        marginal_priority+1,
+                        marginal_priority + 1,
                         self.bounds()[variable_name],
                         self.variable_nominal(variable_name),
                     )
                 )
-                variable_name= f"{asset}.Gas_mass_flow_out"
+                variable_name = f"{asset}.Gas_mass_flow_out"
                 goals.append(
                     MaximizeDemandGoalMerit(
                         variable_name,
@@ -345,7 +340,7 @@ class MultiCommoditySimulator(
                     )
                 )
             elif asset in assets_to_include.get("storage", []):
-                #TODO: should use separate variable for charging and discharging
+                # TODO: should use separate variable for charging and discharging
 
                 # charging acts as consumer
                 # Marginal costs for discharging > marginal cost for charging
@@ -443,7 +438,6 @@ class MultiCommoditySimulator(
         relevant when the first goals is not to match profile.
         """
         constraints = super().path_constraints(ensemble_member)
-
 
         return constraints
 
@@ -561,7 +555,6 @@ class MultiCommoditySimulatorHIGHS(MultiCommoditySimulator):
         return options
 
 
-
 class MultiCommoditySimulatorNoLosses(MultiCommoditySimulator):
     def energy_system_options(self):
         options = super().energy_system_options()
@@ -581,6 +574,7 @@ class MultiCommoditySimulatorNoLosses(MultiCommoditySimulator):
         highs_options["presolve"] = "off"
 
         return options
+
 
 # -------------------------------------------------------------------------------------------------
 @main_decorator
@@ -618,4 +612,4 @@ if __name__ == "__main__":
         profile_reader=ProfileReaderFromFile,
         input_timeseries_file="timeseries.csv",
     )
-    print('a')
+    print("a")

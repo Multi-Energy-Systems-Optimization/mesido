@@ -29,5 +29,4 @@ class TestEmerge(TestCase):
             input_timeseries_file="timeseries.csv",
         )
 
-        #TODO: checks on values need to be added
-        results = _.extract_results()
+        # TODO: checks on values need to be added

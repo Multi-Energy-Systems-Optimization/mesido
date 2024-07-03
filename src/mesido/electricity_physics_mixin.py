@@ -241,9 +241,10 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                 # TODO: [: len(self.times())] should be removed once the emerge test is properly
                 # time-sampled.
                 max = self.bounds()[f"{asset}.Electricity_source"][1].values[: len(self.times())]
-                nominal = 1e-3*(
-                    self.variable_nominal(f"{asset}.Electricity_source") * np.median(max)
-                ) ** 0.5
+                nominal = (
+                    1e-3
+                    * (self.variable_nominal(f"{asset}.Electricity_source") * np.median(max)) ** 0.5
+                )
 
                 constraints.append(((set_point * max - electricity_source) / nominal, 0.0, 0.0))
 
@@ -557,8 +558,10 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         """
 
         if not isclose(electrical_power_input, 0.0):
-            eff = (coef_a / electrical_power_input) + (coef_b * electrical_power_input) + coef_c #Wh/g
-            gas_mass_flow_out = (1.0 / (eff*3600)) * electrical_power_input
+            eff = (
+                (coef_a / electrical_power_input) + (coef_b * electrical_power_input) + coef_c
+            )  # Wh/g
+            gas_mass_flow_out = (1.0 / (eff * 3600)) * electrical_power_input
         else:
             gas_mass_flow_out = 0.0
 
@@ -622,14 +625,19 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                 nominal = (
                     self.variable_nominal(f"{asset}.Gas_mass_flow_out")
                     * self.variable_nominal(f"{asset}.Power_consumed")
-                ) ** 0.5 *3600
+                ) ** 0.5 * 3600
                 big_m = (
-                    self.bounds()[f"{asset}.Power_consumed"][1] / parameters[f"{asset}.efficiency"] /3600
+                    self.bounds()[f"{asset}.Power_consumed"][1]
+                    / parameters[f"{asset}.efficiency"]
+                    / 3600
                 ) * 2
                 constraints.extend(
                     [
                         (
-                            (gas_mass_flow_out * parameters[f"{asset}.efficiency"]*3600 - power_consumed)
+                            (
+                                gas_mass_flow_out * parameters[f"{asset}.efficiency"] * 3600
+                                - power_consumed
+                            )
                             / nominal,
                             0.0,
                             0.0,
