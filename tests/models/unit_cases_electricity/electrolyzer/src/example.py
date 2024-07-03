@@ -164,6 +164,13 @@ class MILPProblemConstantEfficiency(MILPProblemInequality):
         options["electrolyzer_efficiency"] = ElectrolyzerOption.CONSTANT_EFFICIENCY
 
         return options
+class MILPProblemEquality(MILPProblemInequality):
+
+    def energy_system_options(self):
+        options = super().energy_system_options()
+        options["electrolyzer_efficiency"] = ElectrolyzerOption.LINEARIZED_THREE_LINES_EQUALITY
+
+        return options
 
 
 if __name__ == "__main__":

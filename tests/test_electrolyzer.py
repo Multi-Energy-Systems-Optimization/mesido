@@ -271,3 +271,69 @@ class TestElectrolyzer(TestCase):
             results["Electrolyzer_fc66.Gas_mass_flow_out"] * efficiency,
             results["Electrolyzer_fc66.ElectricityIn.Power"],
         )
+
+    def test_electrolyzer_equality_constraint(self):
+        """
+        This test is to check the functioning the example with an offshore wind farm in combination
+        with an electrolyzer and hydrogen storage. The electrolyzer is modelled as the option
+        LINEARIZED_THREE_LINES_EQUALITY.
+
+        Checks:
+        - Check that only one line is activated
+        - Check that the expected lines are activated, depending on the input power
+        - Check that the output massflow lies on the line segment
+
+        """
+        import models.unit_cases_electricity.electrolyzer.src.example as example
+        from models.unit_cases_electricity.electrolyzer.src.example import (
+            MILPProblemEquality,
+        )
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        solution = run_esdl_mesido_optimization(
+            MILPProblemEquality,
+            base_folder=base_folder,
+            esdl_file_name="h2.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_equality_constraints.csv",
+        )
+
+        results = solution.extract_results()
+
+        # Check that there is only one activated line per timestep
+        for timestep in range(len(results["Electrolyzer_fc66__line_0_active"])):
+            np.testing.assert_allclose(
+                (
+                    results["Electrolyzer_fc66__line_0_active"][timestep] +
+                    results["Electrolyzer_fc66__line_1_active"][timestep] +
+                    results["Electrolyzer_fc66__line_2_active"][timestep]
+                ),
+                1.0,
+            )
+        # Check that for the first, second and third timesteps, only the lines
+        # 0, 1 and 2 are activated (respectively), being the wind power 100, 300
+        # and 400 MW.
+        for idx in range(3):
+            np.testing.assert_allclose(
+                (results[f"Electrolyzer_fc66__line_{idx}_active"][idx]),
+                1.0,
+            )
+        # Check that the output massflow lies on the line segment
+        coef_a = solution.parameters(0)["Electrolyzer_fc66.a_eff_coefficient"]
+        coef_b = solution.parameters(0)["Electrolyzer_fc66.b_eff_coefficient"]
+        coef_c = solution.parameters(0)["Electrolyzer_fc66.c_eff_coefficient"]
+        a, b = solution._get_linear_coef_electrolyzer_mass_vs_epower_fit(
+            coef_a,
+            coef_b,
+            coef_c,
+            n_lines=3,
+            electrical_power_min=0.0,
+            electrical_power_max=solution.bounds()["Electrolyzer_fc66.ElectricityIn.Power"][1],
+        )
+        for idx in range(3):
+            np.testing.assert_allclose(
+                results["Electrolyzer_fc66.Gas_mass_flow_out"][idx],
+                results["Electrolyzer_fc66.ElectricityIn.Power"] * a[idx] + b[idx],
+            )
