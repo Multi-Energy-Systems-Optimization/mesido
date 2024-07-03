@@ -574,7 +574,7 @@ class MultiCommoditySimulatorNoLosses(MultiCommoditySimulator):
 
     def solver_options(self):
         options = super().solver_options()
-        options["solver"] = "highs"
+        options["solver"] = "cbc"
 
         return options
 

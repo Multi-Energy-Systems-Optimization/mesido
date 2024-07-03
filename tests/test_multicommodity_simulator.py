@@ -210,10 +210,10 @@ class TestMultiCommoditySimulator(TestCase):
         # electricity demand.
         # checks_all_mc_simulations(solution, results)
 
-        demand_gas = results[f"GasDemand_4146.Gas_demand_mass_flow"][4:10]
-        demand_el = results[f"ElectricityDemand_f833.Electricity_demand"][4:10]
-        electrolyzer_power = results[f"Electrolyzer_6327.Power_consumed"][4:10]
-        electrolyzer_gas = results[f"Electrolyzer_6327.Gas_mass_flow_out"][4:10]
+        demand_gas = results[f"GasDemand_4146.Gas_demand_mass_flow"]
+        demand_el = results[f"ElectricityDemand_f833.Electricity_demand"]
+        electrolyzer_power = results[f"Electrolyzer_6327.Power_consumed"]
+        electrolyzer_gas = results[f"Electrolyzer_6327.Gas_mass_flow_out"]
         windfarm_power = results[f"WindPark_9074.Electricity_source"]
         windfarm_target = solution.get_timeseries("WindPark_9074.maximum_electricity_source").values
         windfarm_target = np.minimum(np.ones(len(windfarm_target))*1.744880e9, windfarm_target)
@@ -244,7 +244,11 @@ class TestMultiCommoditySimulator(TestCase):
         # demand_2_target[demand_2_target < 0] = 0
         # np.testing.assert_allclose(dem_2, demand_2_target, atol=1e-3, rtol=1e-6)
 
-        class MCSimulatorShortSmallProd(MCSimulatorShort):
+    def test_multi_commodity_simulator_emerge_lowprod(self):
+        import models.emerge.src.example as example
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+        class MCSimulatorShortSmallProd(MultiCommoditySimulatorNoLosses):
             def read(self, variable=None):
                 super().read()
 
@@ -255,7 +259,7 @@ class TestMultiCommoditySimulator(TestCase):
             def energy_system_options(self):
                 options = super().energy_system_options()
 
-                options["electrolyzer_efficiency"] = ElectrolyzerOption.CONSTANT_EFFICIENCY
+                options["electrolyzer_efficiency"] = ElectrolyzerOption.LINEARIZED_THREE_LINES_WEAK_INEQUALITY
 
                 return options
 
@@ -273,6 +277,12 @@ class TestMultiCommoditySimulator(TestCase):
         results = solution.extract_results()
 
         checks_all_mc_simulations(solution, results)
+
+        demand_gas = results[f"GasDemand_4146.Gas_demand_mass_flow"][4:10]
+        demand_el = results[f"ElectricityDemand_f833.Electricity_demand"][4:10]
+        electrolyzer_power = results[f"Electrolyzer_6327.Power_consumed"][4:10]
+        electrolyzer_gas = results[f"Electrolyzer_6327.Gas_mass_flow_out"][4:10]
+        windfarm_power = results[f"WindPark_9074.Electricity_source"]
 
 if __name__ == "__main__":
     import time
