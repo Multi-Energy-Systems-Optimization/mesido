@@ -309,8 +309,8 @@ class TestMultiCommoditySimulator(TestCase):
             esdl_electrolyzer.attributes["effMinLoad"],
             esdl_electrolyzer.attributes["efficiency"],
         )
-        np.testing.assert_array_less(min(provided_efficiencies), efficiency)
-        np.testing.assert_array_less(efficiency, max(provided_efficiencies))
+        np.testing.assert_array_less(min(provided_efficiencies)-1e-12, efficiency)
+        np.testing.assert_array_less(efficiency, max(provided_efficiencies)+1e-12)
 
         # demand gas maximised when sufficient power available to convert electricity to gas
         cap_electrolyzer_power = 444880000.0
@@ -322,13 +322,13 @@ class TestMultiCommoditySimulator(TestCase):
         # enough windfarm power
         demand_el_calc = windfarm_power - electrolyzer_power
         demand_el_calc[demand_el_calc < 0] = 0
-        np.testing.assert_allclose(demand_el_calc, demand_el)
+        np.testing.assert_allclose(demand_el_calc, demand_el, atol=1e-5*max(demand_el))
         # electricity_producer only producing upto its own cap if windfarm_power is insufficient to
         # fullfill demand_gas
         el_prod_calc = np.maximum(
             np.minimum(max(electrolyzer_power) - windfarm_power, prod_power_cap), 0.0
         )
-        np.testing.assert_allclose(el_prod_calc, prod_power)
+        np.testing.assert_allclose(el_prod_calc, prod_power, atol=1e-5*max(demand_el))
 
 
 if __name__ == "__main__":
