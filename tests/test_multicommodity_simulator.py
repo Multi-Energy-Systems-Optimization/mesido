@@ -25,7 +25,7 @@ def checks_all_mc_simulations(solution, results):
         prod_profile_name = f"{prod}.maximum_electricity_source"
         energy_prod = results[f"{prod}.Electricity_source"]
         if prod_profile_name in solution.io.get_timeseries_names():
-            target = solution.get_timeseries(prod_profile_name).values
+            target = solution.get_timeseries(prod_profile_name).values[:len(energy_prod)]
             np.testing.assert_allclose(target, energy_prod, atol=1.0e-3, rtol=1.0e-6)
         print(prod, energy_prod)
 
@@ -191,12 +191,8 @@ class TestMultiCommoditySimulator(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
-        class MCSimulatorShort(MultiCommoditySimulatorNoLosses):
-            def times(self, variable=None):
-                return super().times(variable)
-
         solution = run_optimization_problem(
-            MCSimulatorShort,
+            MultiCommoditySimulatorNoLosses,
             base_folder=base_folder,
             esdl_file_name="emerge_priorities_withoutstorage.esdl",
             esdl_parser=ESDLFileParser,
@@ -220,7 +216,7 @@ class TestMultiCommoditySimulator(TestCase):
         electrolyzer_power = results["Electrolyzer_6327.Power_consumed"]
         electrolyzer_gas = results["Electrolyzer_6327.Gas_mass_flow_out"]
         windfarm_power = results["WindPark_9074.Electricity_source"]
-        windfarm_target = solution.get_timeseries("WindPark_9074.maximum_electricity_source").values
+        windfarm_target = solution.get_timeseries("WindPark_9074.maximum_electricity_source").values[:len(windfarm_power)]
         # cap on el consumption by electricity_demand (due to cap, 1.3GW) and by electrolyzer
         # (due to cap of gas demand)
         cap_el_consumption = 1.744880e9
@@ -259,6 +255,7 @@ class TestMultiCommoditySimulator(TestCase):
         base_folder = Path(example.__file__).resolve().parent.parent
 
         class MCSimulatorShortSmallProd(MultiCommoditySimulatorNoLosses):
+
             def read(self, variable=None):
                 super().read()
 
@@ -276,6 +273,8 @@ class TestMultiCommoditySimulator(TestCase):
                 )
 
                 return options
+
+
 
         # TODO: somehow highs always says it is in feasible
         solution = run_optimization_problem(
