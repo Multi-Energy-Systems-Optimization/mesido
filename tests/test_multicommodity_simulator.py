@@ -201,7 +201,6 @@ class TestMultiCommoditySimulator(TestCase):
             input_timeseries_file="timeseries_short.csv",
         )
 
-        #TODO: gas and/or electrolyzer gives issues when using highs as solver.
         bounds = solution.bounds()
         results = solution.extract_results()
 
@@ -210,39 +209,35 @@ class TestMultiCommoditySimulator(TestCase):
         # electricity demand.
         # checks_all_mc_simulations(solution, results)
 
+        esdl_electrolyzer = solution._esdl_assets[
+            solution.esdl_asset_name_to_id_map["Electrolyzer_6327"]]
         demand_gas = results[f"GasDemand_4146.Gas_demand_mass_flow"]
         demand_el = results[f"ElectricityDemand_f833.Electricity_demand"]
         electrolyzer_power = results[f"Electrolyzer_6327.Power_consumed"]
         electrolyzer_gas = results[f"Electrolyzer_6327.Gas_mass_flow_out"]
         windfarm_power = results[f"WindPark_9074.Electricity_source"]
         windfarm_target = solution.get_timeseries("WindPark_9074.maximum_electricity_source").values
-        windfarm_target = np.minimum(np.ones(len(windfarm_target))*1.744880e9, windfarm_target)
+        # cap on el consumption by electricity_demand (due to cap, 1.3GW) and by electrolyzer (due to cap of gas demand)
+        cap_el_consumption = 1.744880e9
+        windfarm_target = np.minimum(np.ones(len(windfarm_target)) * cap_el_consumption, windfarm_target)
         np.testing.assert_allclose(windfarm_target, windfarm_power, atol=1.0e-3, rtol=1.0e-6)
 
-        # storage_flow = results["GasStorage_9172.Gas_tank_flow"][4:10]
-        # storage_mass = results["GasStorage_9172.Stored_gas_mass"][4:10]
+        efficiency = electrolyzer_power / electrolyzer_gas  # W/(g/s) = Ws/g
+        efficiency = efficiency / 3600  # Wh/g
+        provided_efficiencies = (esdl_electrolyzer.attributes["effMaxLoad"],
+                                 esdl_electrolyzer.attributes["effMinLoad"],
+                                 esdl_electrolyzer.attributes["efficiency"])
+        np.testing.assert_array_less(min(provided_efficiencies), efficiency[electrolyzer_power>0])
+        np.testing.assert_array_less(efficiency[electrolyzer_power>0], max(provided_efficiencies))
 
-        # check producer with highest priority (lowest marginal costs is maximizing production) is
-        # producing at max capacity, except when demand profile + max demand of other demand is
-        # lower than prod_2 profile and max capacity prod_1
-        # np.testing.assert_allclose(
-        #     prod_1[1:],
-        #     bounds["ElectricityProducer_a215.Electricity_source"][1],
-        #     atol=1e-3,
-        #     rtol=1e-6,
-        # )
-        # np.testing.assert_allclose(
-        #     prod_1[0],
-        #     bounds["ElectricityDemand_281a.Electricity_demand"][1] + dem_1[0] - prod_2[0],
-        #     atol=1e-3,
-        #     rtol=1e-6,
-        # )
-        #
-        # # check demand with lowest marginal cost is only consuming if electricity left from producer
-        # # with highest priority and producer with profile, after the matching of demand profile
-        # demand_2_target = prod_1 + prod_2 - dem_1
-        # demand_2_target[demand_2_target < 0] = 0
-        # np.testing.assert_allclose(dem_2, demand_2_target, atol=1e-3, rtol=1e-6)
+        # demand gas maximised when sufficient power available to convert electricity to gas
+        cap_electrolyzer_power = cap_el_consumption - bounds["ElectricityDemand_f833.Electricity_demand"][1]
+        index_gas_max = windfarm_power>= cap_electrolyzer_power
+        np.testing.assert_allclose(demand_gas[index_gas_max], bounds["GasDemand_4146.Gas_demand_mass_flow"][1])
+        # due to priority settings, electricity demand only consuming if demand_gas maximised and enough windfarm power
+        demand_el_calc = windfarm_power - electrolyzer_power
+        demand_el_calc[demand_el_calc < 0] = 0
+        np.testing.assert_allclose(demand_el_calc, demand_el)
 
     def test_multi_commodity_simulator_emerge_lowprod(self):
         import models.emerge.src.example as example
@@ -259,7 +254,7 @@ class TestMultiCommoditySimulator(TestCase):
             def energy_system_options(self):
                 options = super().energy_system_options()
 
-                options["electrolyzer_efficiency"] = ElectrolyzerOption.CONSTANT_EFFICIENCY
+                options["electrolyzer_efficiency"] = ElectrolyzerOption.LINEARIZED_THREE_LINES_WEAK_INEQUALITY
 
                 return options
 
@@ -267,22 +262,47 @@ class TestMultiCommoditySimulator(TestCase):
         solution = run_optimization_problem(
             MCSimulatorShortSmallProd,
             base_folder=base_folder,
-            esdl_file_name="emerge_priorities_withoutstorage.esdl",
+            esdl_file_name="emerge_priorities_withoutstorage_2prod.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_short.csv",
         )
 
-        bounds = solution.bounds()
         results = solution.extract_results()
+        bounds = solution.bounds()
 
         checks_all_mc_simulations(solution, results)
 
-        demand_gas = results[f"GasDemand_4146.Gas_demand_mass_flow"][4:10]
-        demand_el = results[f"ElectricityDemand_f833.Electricity_demand"][4:10]
-        electrolyzer_power = results[f"Electrolyzer_6327.Power_consumed"][4:10]
-        electrolyzer_gas = results[f"Electrolyzer_6327.Gas_mass_flow_out"][4:10]
+        esdl_electrolyzer = solution._esdl_assets[solution.esdl_asset_name_to_id_map["Electrolyzer_6327"]]
+        demand_gas = results[f"GasDemand_4146.Gas_demand_mass_flow"]
+        demand_el = results[f"ElectricityDemand_f833.Electricity_demand"]
+        electrolyzer_power = results[f"Electrolyzer_6327.Power_consumed"]
+        electrolyzer_gas = results[f"Electrolyzer_6327.Gas_mass_flow_out"]
         windfarm_power = results[f"WindPark_9074.Electricity_source"]
+        prod_power = results[f"ElectricityProducer_4850.Electricity_source"]
+        prod_power_cap = 3e8 # W
+
+        efficiency = electrolyzer_power/electrolyzer_gas #W/(g/s) = Ws/g
+        efficiency = efficiency / 3600 #Wh/g
+        provided_efficiencies = (esdl_electrolyzer.attributes["effMaxLoad"],
+                                 esdl_electrolyzer.attributes["effMinLoad"],
+                esdl_electrolyzer.attributes["efficiency"])
+        np.testing.assert_array_less(min(provided_efficiencies), efficiency)
+        np.testing.assert_array_less(efficiency, max(provided_efficiencies))
+
+        # demand gas maximised when sufficient power available to convert electricity to gas
+        cap_electrolyzer_power = 444880000.0
+        index_gas_max = windfarm_power >= cap_electrolyzer_power
+        np.testing.assert_allclose(demand_gas[index_gas_max],
+                                   bounds["GasDemand_4146.Gas_demand_mass_flow"][1])
+        # due to priority settings, electricity demand only consuming if demand_gas maximised and enough windfarm power
+        demand_el_calc = windfarm_power - electrolyzer_power
+        demand_el_calc[demand_el_calc < 0] = 0
+        np.testing.assert_allclose(demand_el_calc, demand_el)
+        # electricity_producer only producing upto its own cap if windfarm_power is insufficient to fullfill demand_gas
+        el_prod_calc = np.maximum(np.minimum(max(electrolyzer_power)-windfarm_power, prod_power_cap), 0.0)
+        np.testing.assert_allclose(el_prod_calc, prod_power)
+
 
 if __name__ == "__main__":
     import time

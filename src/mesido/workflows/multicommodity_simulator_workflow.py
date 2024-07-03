@@ -573,8 +573,12 @@ class MultiCommoditySimulatorNoLosses(MultiCommoditySimulator):
         return options
 
     def solver_options(self):
+        # For some cases the presolve of the HIGHS solver makes this problem infeasible, therefore
+        # the presolve is turned off.
         options = super().solver_options()
-        options["solver"] = "cbc"
+        options["solver"] = "highs"
+        highs_options = options["highs"] = {}
+        highs_options["presolve"] = "off"
 
         return options
 
