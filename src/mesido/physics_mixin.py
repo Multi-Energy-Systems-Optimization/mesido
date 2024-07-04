@@ -65,7 +65,6 @@ class PhysicsMixin(
         options = HeatPhysicsMixin.energy_system_options(self)
         options.update(ElectricityPhysicsMixin.energy_system_options(self))
         options.update(GasPhysicsMixin.energy_system_options(self))
-        options["storage_discharge_variables"] = False
 
         return options
 

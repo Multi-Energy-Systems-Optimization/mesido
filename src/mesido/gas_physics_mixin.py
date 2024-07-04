@@ -253,25 +253,30 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
         self.__maximum_total_head_loss = self.__get_maximum_total_head_loss()
 
-        if options["storage_discharge_variables"]:
+        if options["gas_storage_discharge_variables"]:
             for storage in self.energy_system_components.get("gas_storage", []):
-                bound_storage_Q = self.bounds()[f"{storage}.GasIn.Q"][0]
+                bound_storage_q = self.bounds()[f"{storage}.GasIn.Q"][0]
                 var_name = f"{storage}__Q_discharge"
                 self.__gas_storage_discharge_map[storage] = var_name
                 self.__gas_storage_discharge_var[var_name] = ca.MX.sym(var_name)
-                self.__gas_storage_discharge_bounds[var_name] = (0, -bound_storage_Q)
-                self.__gas_storage_discharge_nominals[var_name] = self.variable_nominal(f"{storage}.GasIn.Q")
-
+                self.__gas_storage_discharge_bounds[var_name] = (0, -bound_storage_q)
+                self.__gas_storage_discharge_nominals[var_name] = self.variable_nominal(
+                    f"{storage}.GasIn.Q"
+                )
 
     def energy_system_options(self):
         r"""
         Returns a dictionary of milp network specific options.
 
+        gas_storage_discharge_variables: creates separate variables for the discharge of the
+        gas_storages, only required when using the multicommodity simulator as this requires
+        separate variables to create goals with.
         """
 
         options = self._gn_head_loss_class.head_loss_network_options()
 
         options["minimum_pressure_far_point"] = 1.0
+        options["gas_storage_discharge_variables"] = False
 
         return options
 
@@ -563,11 +568,11 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         the discharging and afterwards an maximisation of the charging without conflicting goals or
         constraints.
         """
-        #TODO: still add test
+        # TODO: still add test
         constraints = []
         options = self.energy_system_options()
 
-        if options["storage_discharge_variables"]:
+        if options["gas_storage_discharge_variables"]:
             for storage in self.energy_system_components.get("gas_storage"):
                 storage_charge_var = self.state(f"{storage}.GasIn.Q")
                 storage_discharge_var_name = f"{storage}__Q_discharge"
@@ -575,9 +580,9 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                 nominal = self.variable_nominal(storage_discharge_var_name)
 
                 # Q_discharge >= -Q
-                constraints.append(((storage_discharge_var+storage_charge_var)/nominal, 0.0, np.inf))
-
-
+                constraints.append(
+                    ((storage_discharge_var + storage_charge_var) / nominal, 0.0, np.inf)
+                )
 
     def path_constraints(self, ensemble_member):
         """
