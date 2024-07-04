@@ -71,6 +71,11 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         self.__set_point_bounds = {}
         self.__set_point_map = {}
 
+        self.__electricity_storage_discharge_var = {}
+        self.__electricity_storage_discharge_bounds = {}
+        self.__electricity_storage_discharge_nominals = {}
+        self.__electricity_storage_discharge_map = {}
+
     def energy_system_options(self):
         r"""
         Returns a dictionary of milp network specific options.
@@ -83,6 +88,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         options["electrolyzer_efficiency"] = (
             ElectrolyzerOption.LINEARIZED_THREE_LINES_WEAK_INEQUALITY
         )
+        options["electricity_storage_discharge_variables"] = False
 
         return options
 
@@ -120,6 +126,15 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             self.__storage_charging_var[var_name] = ca.MX.sym(var_name)
             self.__storage_charging_bounds[var_name] = (0.0, 1.0)
 
+            if options["electricity_storage_discharge_variables"]:
+                bound_storage = self.bounds()[f"{asset}.Effective_power_charging"][0]
+                var_name = f"{asset}__effective_power_discharge"
+                self.__electricity_storage_discharge_map[asset] = var_name
+                self.__electricity_storage_discharge_var[var_name] = ca.MX.sym(var_name)
+                self.__electricity_storage_discharge_bounds[var_name] = (0, -bound_storage)
+                self.__electricity_storage_discharge_nominals[var_name] = self.variable_nominal(f"{asset}.Effective_power_charging")
+
+
         for asset in [*self.energy_system_components.get("electricity_source", [])]:
             if isinstance(self.bounds()[f"{asset}.Electricity_source"][1], Timeseries):
                 var_name = f"{asset}__set_point"
@@ -149,6 +164,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         variables.extend(self.__asset_is_switched_on_var.values())
         variables.extend(self.__storage_charging_var.values())
         variables.extend(self.__set_point_var.values())
+        variables.extend(self.__electricity_storage_discharge_var.values())
 
         return variables
 
@@ -168,6 +184,8 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         """
         In this function we add all the nominals for the variables defined/added in the HeatMixin.
         """
+        if variable in self.__electricity_storage_discharge_nominals:
+            return self.__electricity_storage_discharge_nominals[variable]
 
         return super().variable_nominal(variable)
 
@@ -182,6 +200,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         bounds.update(self.__storage_charging_bounds)
         bounds.update(self.__electricity_producer_upper_bounds)
         bounds.update(self.__set_point_bounds)
+        bounds.update(self.__electricity_storage_discharge_bounds)
 
         return bounds
 
