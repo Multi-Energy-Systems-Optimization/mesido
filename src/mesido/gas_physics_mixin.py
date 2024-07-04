@@ -337,6 +337,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         bounds.update(self.__gas_pipe_head_loss_bounds)
         bounds.update(self.__gas_pipe_head_loss_zero_bounds)
         bounds.update(self.__gas_pipe_linear_line_segment_var_bounds)
+        bounds.update(self.__gas_storage_discharge_bounds)
 
         for k, v in self.__gas_pipe_head_bounds.items():
             bounds[k] = self.merge_bounds(bounds[k], v)
@@ -553,6 +554,30 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                 constraints.append((base_flow_dir_var - flow_dir_var, 0.0, 0.0))
 
         return constraints
+
+    def __gas_storage_discharge_path_constraints(self):
+        """
+        The discharge variables are added such that two separate goals for charging and discharging
+        can be created. The discharging variable has a lower bound of 0 and should always be larger
+        or equal to the negative of the inflow variable. This allows for first a minimization of
+        the discharging and afterwards an maximisation of the charging without conflicting goals or
+        constraints.
+        """
+        #TODO: still add test
+        constraints = []
+        options = self.energy_system_options()
+
+        if options["storage_discharge_variables"]:
+            for storage in self.energy_system_components.get("gas_storage"):
+                storage_charge_var = self.state(f"{storage}.GasIn.Q")
+                storage_discharge_var_name = f"{storage}__Q_discharge"
+                storage_discharge_var = self.state(storage_discharge_var_name)
+                nominal = self.variable_nominal(storage_discharge_var_name)
+
+                # Q_discharge >= -Q
+                constraints.append(((storage_discharge_var+storage_charge_var)/nominal, 0.0, np.inf))
+
+
 
     def path_constraints(self, ensemble_member):
         """
