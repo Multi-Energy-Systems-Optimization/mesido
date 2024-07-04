@@ -136,6 +136,11 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         # self.__gas_pipe_disconnect_var_bounds = {}
         self._gas_pipe_disconnect_map = {}
 
+        self.__gas_storage_discharge_var = {}
+        self.__gas_storage_discharge_bounds = {}
+        self.__gas_storage_discharge_nominals = {}
+        self.__gas_storage_discharge_map = {}
+
     def gas_carriers(self):
         """
         This function should be overwritten by the problem and should give a dict with the
@@ -150,6 +155,8 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         retrieving of the variables.
         """
         super().pre()
+
+        options = self.energy_system_options()
 
         def _get_max_bound(bound):
             if isinstance(bound, np.ndarray):
@@ -246,6 +253,16 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
         self.__maximum_total_head_loss = self.__get_maximum_total_head_loss()
 
+        if options["storage_discharge_variables"]:
+            for storage in self.energy_system_components.get("gas_storage", []):
+                bound_storage_Q = self.bounds()[f"{storage}.GasIn.Q"][0]
+                var_name = f"{storage}__Q_discharge"
+                self.__gas_storage_discharge_map[storage] = var_name
+                self.__gas_storage_discharge_var[var_name] = ca.MX.sym(var_name)
+                self.__gas_storage_discharge_bounds[var_name] = (0, -bound_storage_Q)
+                self.__gas_storage_discharge_nominals[var_name] = self.variable_nominal(f"{storage}.GasIn.Q")
+
+
     def energy_system_options(self):
         r"""
         Returns a dictionary of milp network specific options.
@@ -280,6 +297,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         variables.extend(self.__gas_flow_direct_var.values())
         # variables.extend(self.__gas_pipe_disconnect_var.values())  # still to be implemented
         variables.extend(self.__gas_pipe_linear_line_segment_var.values())
+        variables.extend(self.__gas_storage_discharge_var.values())
 
         return variables
 
@@ -302,6 +320,8 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
         if variable in self.__gas_pipe_head_loss_nominals:
             return self.__gas_pipe_head_loss_nominals[variable]
+        elif variable in self.__gas_storage_discharge_nominals:
+            return self.__gas_storage_discharge_nominals[variable]
         else:
             return super().variable_nominal(variable)
 
