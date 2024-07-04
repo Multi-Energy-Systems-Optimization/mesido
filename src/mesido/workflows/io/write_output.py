@@ -31,7 +31,7 @@ from rtctools.optimization.timeseries import Timeseries
 logger = logging.getLogger("mesido")
 
 
-class ScenarioOutput(TechnoEconomicMixin):
+class ScenarioOutput():
     __optimized_energy_system_handler = None
 
     def __init__(self, **kwargs):

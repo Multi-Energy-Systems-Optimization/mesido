@@ -9,7 +9,7 @@ from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
-from mesido.techno_economic_mixin import TechnoEconomicMixin
+from mesido.physics_mixin import PhysicsMixin
 from mesido.workflows.io.write_output import ScenarioOutput
 from mesido.workflows.utils.helpers import main_decorator
 
@@ -192,7 +192,7 @@ class _GoalsAndOptions:
 class MultiCommoditySimulator(
     ScenarioOutput,
     _GoalsAndOptions,
-    TechnoEconomicMixin,
+    PhysicsMixin,
     LinearizedOrderGoalProgrammingMixin,
     SinglePassGoalProgrammingMixin,
     ESDLMixin,
@@ -541,12 +541,13 @@ class MultiCommoditySimulator(
             self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
         )
 
+    # def post(self):
+    #     super().post()
+    #     self._write_updated_esdl(self.get_energy_system_copy(), optimizer_sim=True)
+
 
 # -------------------------------------------------------------------------------------------------
 class MultiCommoditySimulatorHIGHS(MultiCommoditySimulator):
-    def post(self):
-        super().post()
-        self._write_updated_esdl(self.get_energy_system_copy(), optimizer_sim=True)
 
     def solver_options(self):
         options = super().solver_options()
