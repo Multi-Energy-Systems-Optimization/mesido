@@ -45,15 +45,15 @@ class TestElectrolyzer(TestCase):
         # Compare the head loss to hard-coded values. Difference expected if an error
         # occours in the calculation of the gas kinematic viscosity.
         v_inspect = results["Pipe_6ba6.GasOut.Q"][1] / solution.parameters(0)["Pipe_6ba6.area"]
-        # head_loss_v_inspect = darcy_weisbach.head_loss(
-        #     v_inspect,
-        #     solution.parameters(0)["Pipe_6ba6.diameter"],
-        #     solution.parameters(0)["Pipe_6ba6.length"],
-        #     solution.energy_system_options()["wall_roughness"],
-        #     20.0,
-        #     network_type=NetworkSettings.NETWORK_TYPE_HYDROGEN,
-        #     pressure=solution.parameters(0)["Pipe_6ba6.pressure"],
-        # )
+        head_loss_v_inspect = darcy_weisbach.head_loss(
+            v_inspect,
+            solution.parameters(0)["Pipe_6ba6.diameter"],
+            solution.parameters(0)["Pipe_6ba6.length"],
+            solution.energy_system_options()["wall_roughness"],
+            20.0,
+            network_type=NetworkSettings.NETWORK_TYPE_HYDROGEN,
+            pressure=solution.parameters(0)["Pipe_6ba6.pressure"],
+        )
         # np.testing.assert_allclose(head_loss_v_inspect, 104.06961666355383)
 
         gas_price_profile = "Hydrogen.price_profile"

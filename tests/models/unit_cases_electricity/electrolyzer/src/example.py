@@ -2,6 +2,7 @@ from mesido.electricity_physics_mixin import ElectrolyzerOption
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.network_common import NetworkSettings
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 
 import numpy as np
@@ -134,6 +135,7 @@ class MILPProblemInequality(
         options = super().energy_system_options()
         options["include_asset_is_switched_on"] = True
         options["include_electric_cable_power_loss"] = False
+        self.gas_network_settings["network_type"] = NetworkSettings.NETWORK_TYPE_HYDROGEN
 
         return options
 
