@@ -56,7 +56,7 @@ class TestElectrolyzer(TestCase):
         )
         np.testing.assert_allclose(head_loss_v_inspect, 104.06961666355383)
 
-        gas_price_profile = "gas.price_profile"
+        gas_price_profile = "Hydrogen.price_profile"
         state = "GasDemand_0cf3.Gas_demand_mass_flow"
         nominal = solution.variable_nominal(state) * np.median(
             solution.get_timeseries(gas_price_profile).values

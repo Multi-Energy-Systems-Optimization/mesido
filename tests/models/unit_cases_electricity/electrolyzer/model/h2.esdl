@@ -3,7 +3,7 @@
   <energySystemInformation xsi:type="esdl:EnergySystemInformation" id="268b080c-6ee2-4498-9e7e-2c0105376c39">
     <carriers xsi:type="esdl:Carriers" id="3ef72f2f-98da-4818-a63b-ac13b04c897c">
       <carrier xsi:type="esdl:ElectricityCommodity" voltage="50000.0" name="elec" id="d7bfb1ae-b0ea-4d66-98a2-b7cf2b0f094d"/>
-      <carrier xsi:type="esdl:GasCommodity" name="gas" pressure="15.0" id="68904785-3ba5-4894-8751-78d5883dc372"/>
+      <carrier xsi:type="esdl:GasCommodity" name="Hydrogen" pressure="15.0" id="68904785-3ba5-4894-8751-78d5883dc372"/>
     </carriers>
   </energySystemInformation>
   <instance xsi:type="esdl:Instance" name="Untitled instance" id="cea2b988-2dbc-4f9b-b816-685f307d174c">
