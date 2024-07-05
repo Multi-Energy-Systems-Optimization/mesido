@@ -33,7 +33,6 @@ class RevenueGoal(Goal):
         symbols = (
             sign
             * optimization_problem.state_vector(canonical, ensemble_member)
-            * optimization_problem.variable_nominal(self.state)
         )
         price_profile = optimization_problem.get_timeseries(self.price_profile).values
         sum = 0.0
@@ -93,7 +92,7 @@ class _GoalsAndOptions:
                 self.get_timeseries(price_profile).values
             )
 
-            # goals.append(RevenueGoal(state, price_profile, nominal))
+            goals.append(RevenueGoal(state, price_profile, nominal))
 
         for demand in self.energy_system_components.get("gas_demand", []):
             # Code below: When profile is assigned to carrier instead of using .csv file
@@ -107,7 +106,7 @@ class _GoalsAndOptions:
                 self.get_timeseries(price_profile).values
             )
 
-            # goals.append(RevenueGoal(state, price_profile, nominal))
+            goals.append(RevenueGoal(state, price_profile, nominal))
 
         return goals
 
@@ -136,7 +135,7 @@ class MILPProblemInequality(
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        goals.append(MaxH2Goal())
+        # goals.append(MaxH2Goal())
 
         return goals
 

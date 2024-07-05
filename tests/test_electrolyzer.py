@@ -268,7 +268,7 @@ class TestElectrolyzer(TestCase):
         # Electrolyser
         efficiency = solution.parameters(0)["Electrolyzer_fc66.efficiency"]
         np.testing.assert_allclose(
-            results["Electrolyzer_fc66.Gas_mass_flow_out"] * efficiency * 1e3 * 3600,
+            results["Electrolyzer_fc66.Gas_mass_flow_out"] * efficiency * 3600,
             results["Electrolyzer_fc66.ElectricityIn.Power"],
         )
 

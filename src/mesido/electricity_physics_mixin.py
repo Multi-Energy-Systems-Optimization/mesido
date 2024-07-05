@@ -591,7 +591,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
         if not isclose(electrical_power_input, 0.0):
             eff = (coef_a / electrical_power_input) + (coef_b * electrical_power_input) + coef_c
-            gas_mass_flow_out = (1.0 / eff) * electrical_power_input * (1/(1e3*3600)) #kg/s
+            gas_mass_flow_out = (1.0 / eff) * electrical_power_input * (1/(3600)) #kg/s
         else:
             gas_mass_flow_out = 0.0
 
@@ -662,7 +662,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                 constraints.extend(
                     [
                         (
-                            (gas_mass_flow_out * parameters[f"{asset}.efficiency"] * 1e3 * 3600 - power_consumed)
+                            (gas_mass_flow_out * parameters[f"{asset}.efficiency"] * 3600 - power_consumed)
                             / nominal,
                             0.0,
                             0.0,
