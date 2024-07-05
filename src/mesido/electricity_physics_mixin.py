@@ -770,7 +770,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                     is_line_segment_active_sum += is_line_segment_active
                 # Constraint to ensure that only one line is active
                 constraints.append(
-                    (is_line_segment_active_sum, 1.0, 1.0),
+                    (is_line_segment_active_sum + (1-asset_is_switched_on), 1.0, 1.0),
                 )
 
 
