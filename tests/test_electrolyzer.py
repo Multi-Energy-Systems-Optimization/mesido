@@ -24,7 +24,7 @@ class TestElectrolyzer(TestCase):
         - Check the max production profile of the windfarm
         - Check the electrolyzer inequality constraints formulation
         - The water kinematic viscosity of hydrogen by comparing head loss to a hard-coded value
-
+        - The pipe head loss constraint for a hydrogen network
         """
         import models.unit_cases_electricity.electrolyzer.src.example as example
         from models.unit_cases_electricity.electrolyzer.src.example import MILPProblemInequality
@@ -42,11 +42,16 @@ class TestElectrolyzer(TestCase):
 
         results = solution.extract_results()
 
-        # Compare the head loss to hard-coded values. Difference expected if an error
+        # TODO: potential move this code to the head loss test case (does not contain a hydrogen
+        # network optimization). For now this was not done, because it would imply adding a
+        # hydrogen network solve purely for the checks below which seems unnecessary
+        # Check:
+        # - Compare the head loss to hard-coded values. Difference expected if an error
         # occours in the calculation of the gas kinematic viscosity.
-        v_inspect = results["Pipe_6ba6.GasOut.Q"][1] / solution.parameters(0)["Pipe_6ba6.area"]
-        head_loss_v_inspect = darcy_weisbach.head_loss(
-            v_inspect,
+        # - Check head loss contraint
+        v_inspect = results["Pipe_6ba6.GasOut.Q"] / solution.parameters(0)["Pipe_6ba6.area"]
+        head_loss_max = darcy_weisbach.head_loss(
+            solution.gas_network_settings["maximum_velocity"],
             solution.parameters(0)["Pipe_6ba6.diameter"],
             solution.parameters(0)["Pipe_6ba6.length"],
             solution.energy_system_options()["wall_roughness"],
@@ -54,7 +59,28 @@ class TestElectrolyzer(TestCase):
             network_type=NetworkSettings.NETWORK_TYPE_HYDROGEN,
             pressure=solution.parameters(0)["Pipe_6ba6.pressure"],
         )
-        # np.testing.assert_allclose(head_loss_v_inspect, 104.06961666355383)
+        for iv in range(len(v_inspect)):
+            if iv == 0:
+                np.testing.assert_allclose(
+                    v_inspect[iv] / solution.gas_network_settings["maximum_velocity"]
+                    * head_loss_max,
+                    2.173724632
+                )
+                np.testing.assert_allclose(-results["Pipe_6ba6.dH"][iv], 2.173724632)
+            elif iv == 1:
+                np.testing.assert_allclose(
+                    v_inspect[iv] / solution.gas_network_settings["maximum_velocity"]
+                    * head_loss_max,
+                    0.0
+                )
+                np.testing.assert_allclose(-results["Pipe_6ba6.dH"][iv], 0.0)
+            elif iv == 2:
+                np.testing.assert_allclose(
+                    v_inspect[iv] / solution.gas_network_settings["maximum_velocity"]
+                    * head_loss_max,
+                    4.347449263
+                )
+                np.testing.assert_allclose(-results["Pipe_6ba6.dH"][iv], 4.347449263)
 
         gas_price_profile = "Hydrogen.price_profile"
         state = "GasDemand_0cf3.Gas_demand_mass_flow"
@@ -271,3 +297,12 @@ class TestElectrolyzer(TestCase):
             results["Electrolyzer_fc66.Gas_mass_flow_out"] * efficiency * 3600,
             results["Electrolyzer_fc66.ElectricityIn.Power"],
         )
+
+
+if __name__ == "__main__":
+    import time
+
+    start_time = time.time()
+    a = TestElectrolyzer()
+    a.test_electrolyzer_inequality()
+    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
