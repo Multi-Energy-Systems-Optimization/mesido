@@ -2,7 +2,7 @@
 <esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" name="Untitled EnergySystem" id="47475692-1016-4d52-9898-416270c3d943" description="" esdlVersion="v2207" version="1">
   <energySystemInformation xsi:type="esdl:EnergySystemInformation" id="29011ed8-60de-4b61-bb59-910356c1417b">
     <carriers xsi:type="esdl:Carriers" id="689cb14a-8325-4c43-ab2d-8755a4b9de1f">
-      <carrier xsi:type="esdl:GasCommodity" pressure="8.0" id="aebcaaae-484a-4a61-a91a-6b83c663aa48" name="gas"/>
+      <carrier xsi:type="esdl:GasCommodity" pressure="8.0" id="aebcaaae-484a-4a61-a91a-6b83c663aa48" name="Hydrogen"/>
     </carriers>
     <quantityAndUnits xsi:type="esdl:QuantityAndUnits" id="0e2ff04d-b867-4551-8922-2c39377a9a03">
       <quantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="e9405fc8-5e57-4df5-8584-4babee7cdf1b" description="Power in MW" physicalQuantity="POWER" multiplier="MEGA" unit="WATT"/>
