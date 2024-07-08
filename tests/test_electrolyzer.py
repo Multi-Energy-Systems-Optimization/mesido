@@ -406,3 +406,41 @@ class TestElectrolyzer(TestCase):
             [ 431.367058  , 1285.95625642, 1673.61498453],
             atol=1e-4,
         )
+
+    def test_electrolyzer_equality_constraint_inactive_line(self):
+        """
+        This test is to check the functioning the example with an offshore wind farm in combination
+        with an electrolyzer and hydrogen storage. The electrolyzer is modelled as the option
+        LINEARIZED_THREE_LINES_EQUALITY.
+
+        Checks:
+        - Check that no line is active when the electrolyzer is switched off
+
+        """
+        import models.unit_cases_electricity.electrolyzer.src.example as example
+        from models.unit_cases_electricity.electrolyzer.src.example import (
+            MILPProblemEquality,
+        )
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        solution = run_esdl_mesido_optimization(
+            MILPProblemEquality,
+            base_folder=base_folder,
+            esdl_file_name="h2.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_minimum_electrolyzer_power.csv",
+        )
+
+        results = solution.extract_results()
+
+        # Input power to the electrolyzer is below the minimum one, such that no line should be active
+        np.testing.assert_allclose(
+            (
+                    results["Electrolyzer_fc66__line_0_active"][-1] +
+                    results["Electrolyzer_fc66__line_1_active"][-1] +
+                    results["Electrolyzer_fc66__line_2_active"][-1]
+            ),
+            0.0,
+        )
