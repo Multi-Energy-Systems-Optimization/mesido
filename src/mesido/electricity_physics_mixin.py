@@ -787,7 +787,9 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         constraints.extend(self.__voltage_loss_path_constraints(ensemble_member))
         constraints.extend(self.__electrolyzer_path_constaint(ensemble_member))
         constraints.extend(self.__electricity_storage_path_constraints(ensemble_member))
-        constraints.extend(self.__electricity_storage_discharge_var_path_constraints(ensemble_member))
+        constraints.extend(
+            self.__electricity_storage_discharge_var_path_constraints(ensemble_member)
+        )
 
         return constraints
 
