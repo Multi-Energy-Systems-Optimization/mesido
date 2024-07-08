@@ -127,7 +127,6 @@ class TestElectrolyzer(TestCase):
 
         # Checks on the storage
         timestep = 3600.0
-        rho = solution.parameters(0)["GasStorage_e492.density_max_storage"]
         np.testing.assert_allclose(
             np.diff(results["GasStorage_e492.Stored_gas_mass"]),
             results["GasStorage_e492.Gas_tank_flow"][1:] * timestep,
