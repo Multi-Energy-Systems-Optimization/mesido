@@ -307,7 +307,7 @@ def heat_to_discharge_test(solution, results):
         test.assertTrue(
             expr=all(
                 results[f"{p}.HeatIn.Heat"][indices]
-                <= (results[f"{p}.Q"][indices]+1e-7) * rho * cp * temperature
+                <= (results[f"{p}.Q"][indices] + 1e-7) * rho * cp * temperature
             )
         )
         test.assertTrue(
