@@ -1942,7 +1942,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         # [g/s] = [J/s] * [J/kg]^-1 *1000
         max_mass_flow_g_per_s = asset.attributes["power"] / specific_energy * 1000.0
 
-        bounds_nominals_mass_flow = dict(
+        bounds_nominals_mass_flow_g_per_s = dict(
             min=0.0,
             max=min(self._get_connected_q_max(asset) * density_value, max_mass_flow_g_per_s),
             nominal=q_nominal * density_value,
@@ -1951,10 +1951,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
         modifiers = dict(
             Q_nominal=q_nominal,
             density=density_value,
-            Gas_source_mass_flow=bounds_nominals_mass_flow,
+            Gas_source_mass_flow=bounds_nominals_mass_flow_g_per_s,
             GasOut=dict(
                 Q=dict(nominal=q_nominal),
-                mass_flow=bounds_nominals_mass_flow,
+                mass_flow=bounds_nominals_mass_flow_g_per_s,
                 Hydraulic_power=dict(nominal=q_nominal * pressure),
             ),
             **self._get_cost_figure_modifiers(asset),
