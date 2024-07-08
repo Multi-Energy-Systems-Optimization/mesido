@@ -4,6 +4,7 @@ from unittest import TestCase
 # import mesido._darcy_weisbach as darcy_weisbach
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
+
 # from mesido.network_common import NetworkSettings
 from mesido.util import run_esdl_mesido_optimization
 
@@ -137,7 +138,10 @@ class TestElectrolyzer(TestCase):
             coef_b,
             coef_c,
             n_lines=3,
-            electrical_power_min=0.0,
+            electrical_power_min=max(
+                solution.parameters(0)["Electrolyzer_fc66.minimum_load"],
+                0.01 * solution.bounds()["Electrolyzer_fc66.ElectricityIn.Power"][1],
+            ),
             electrical_power_max=solution.bounds()["Electrolyzer_fc66.ElectricityIn.Power"][1],
         )
         # TODO: Add test below once the mass flow is coupled to the volumetric flow rate. Currently
