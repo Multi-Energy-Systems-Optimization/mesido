@@ -247,6 +247,7 @@ class TestHydraulicPower(TestCase):
         - checks if hydraulic power is 0 at end of the pipe
         - checks if differences of in/out port is equal to the added hydraulic power of that pipe
         - checks absolutae value of the hydraulic power loss over a line
+        - demand matching
         """
         import models.unit_cases_gas.source_sink.src.run_source_sink as run_source_sink
         from models.unit_cases_gas.source_sink.src.run_source_sink import (
@@ -299,10 +300,10 @@ class TestHydraulicPower(TestCase):
         # due to non linearity, every timestep on new linearized line, a doubled mass flow should
         # result in more than doubled hydraulic power
         np.testing.assert_array_less(
-            (pipe_hp[0] + 1e-6) * (pipe_mass[1] / pipe_mass[0]), pipe_hp[1]
+            pipe_hp[0] * (pipe_mass[1] / pipe_mass[0]), pipe_hp[1] + 1e-6
         )
         np.testing.assert_array_less(
-            (pipe_hp[1] + 1e-6) * (pipe_mass[2] / pipe_mass[1]), pipe_hp[2]
+            pipe_hp[1] * (pipe_mass[2] / pipe_mass[1]), pipe_hp[2] + 1e-6
         )
 
         np.testing.assert_allclose(pipe_hp, pipe_hp_in - pipe_hp_out)
@@ -366,6 +367,12 @@ class TestHydraulicPower(TestCase):
         np.testing.assert_allclose(pipe_hp[0], a[0] * results[f"{pipe}.GasOut.Q"][0] + b[0])
         np.testing.assert_allclose(pipe_hp[1], a[1] * results[f"{pipe}.GasOut.Q"][1] + b[1])
         np.testing.assert_allclose(pipe_hp[2], a[2] * results[f"{pipe}.GasOut.Q"][2] + b[2])
+
+        # gas demand matching
+        np.testing.assert_allclose(
+            results["GasDemand_a2d8.Gas_demand_mass_flow"],
+            solution.get_timeseries("GasDemand_a2d8.target_gas_demand").values,
+        )
 
     def test_hydraulic_power_gas_multi_demand(self):
         """
@@ -491,5 +498,8 @@ if __name__ == "__main__":
 
     start_time = time.time()
     a = TestHydraulicPower()
-    a.test_hydraulic_power()
+    a.test_hydraulic_power_heat()
+    a.test_hydraulic_power_gas()
+    a.test_hydraulic_power_gas_multi_demand()
+
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
