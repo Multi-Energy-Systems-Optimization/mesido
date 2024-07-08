@@ -54,7 +54,7 @@ class TestElectrolyzer(TestCase):
             network_type=NetworkSettings.NETWORK_TYPE_HYDROGEN,
             pressure=solution.parameters(0)["Pipe_6ba6.pressure"],
         )
-        # np.testing.assert_allclose(head_loss_v_inspect, 104.06961666355383)
+        np.testing.assert_allclose(head_loss_v_inspect, 104.06961666355383)
 
         gas_price_profile = "Hydrogen.price_profile"
         state = "GasDemand_0cf3.Gas_demand_mass_flow"
@@ -101,7 +101,6 @@ class TestElectrolyzer(TestCase):
 
         # Checks on the storage
         timestep = 3600.0
-        rho = solution.parameters(0)["GasStorage_e492.density_max_storage"]
         np.testing.assert_allclose(
             np.diff(results["GasStorage_e492.Stored_gas_mass"]),
             results["GasStorage_e492.Gas_tank_flow"][1:] * timestep,

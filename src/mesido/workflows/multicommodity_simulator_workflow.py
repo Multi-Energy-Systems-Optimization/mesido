@@ -64,7 +64,7 @@ class TargetDemandGoal(Goal):
 # -------------------------------------------------------------------------------------------------
 # Step 2:
 # Match the maximum producer profiles
-class TargetProducerGoal(Goal):  # TODO: highs doesn't like this goal
+class TargetProducerGoal(Goal):
     def __init__(self, state, target, priority=20, order=2):
         self.state = state
 
@@ -182,8 +182,8 @@ class _GoalsAndOptions:
                     if type in map_demand.keys():
                         goals.append(TargetDemandGoal(state, target))
                     else:
-                        goals.append(TargetProducerGoal(state, target))
-                        # continue
+                        priority = 2 * len(self._esdl_assets)
+                        goals.append(TargetProducerGoal(state, target, priority))
 
         return goals
 
@@ -201,16 +201,17 @@ class MultiCommoditySimulator(
     """
     Goal priorities are:
     1. Match target demand specified
-    2. Optional (default = excluded): minimize total milp produced by all producers
-    3. Minimize producer usage based on merit order specified. First use producer with order 1, then
-       use producer with order 2 etc.
+    2. Producers with highest marginal costs are minimised and Consumers with highest marginal
+    costs are maximised first, working back towards the lower marginal costs.
+    3. Producers with a production profile will be matched at end. This goal should be obsolete, as
+     the bound is set towards the production profile and other producers are first minimised.
 
     Notes:
-    - Currently only yearly milp demand profiles (hourly) can be used, which is then converted to
-      dialy averages
-    - Currently the ATES does not have a merit order assigned.
-    - The ATES has a time horizon cyclic contraints specified, and it is not allowed to deliver milp
-      in the 1st time step
+    - Currently only yearly demand profiles (hourly) can be used.
+    - No cyclic constraints are yet applied to storages as this workflow solely functions as a
+    simulator.
+    - When the number of assets is larger, the simulator might be applied in stages with
+    consecutive parts of the time horizon. TODO
     """
 
     def __init__(self, *args, **kwargs):
@@ -248,8 +249,6 @@ class MultiCommoditySimulator(
             "gas_tank_storage": "Gas_tank_flow",
             "electrolyzer": "Power_consumed",  # "Gas_mass_flow_out",
         }
-        # TODO: check if conversion priority needs to be set for production or consumption,
-        #  currently it assumes production
 
         assets_to_include = {}
         asset_variable_map = {}
