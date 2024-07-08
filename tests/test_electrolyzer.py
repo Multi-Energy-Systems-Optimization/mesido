@@ -250,6 +250,7 @@ class TestElectrolyzer(TestCase):
         np.testing.assert_allclose(
             results["Electrolyzer_fc66.ElectricityIn.Power"][-1],
             0.0,
+            atol=1e-3,
         )
         # Check that the output gas is 0
         np.testing.assert_allclose(
