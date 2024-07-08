@@ -199,6 +199,15 @@ class MultiCommoditySimulator(
     CollocatedIntegratedOptimizationProblem,
 ):
     """
+    This workflow allows for the simulation of (combined) hydrogen and electricity networks,
+    containing consumers, producers and conversion assets.
+    The priority of the consumers, producers and conversion assets is set using the marginal costs
+    in the ESDL file, allowing for flexible customised operation. Producers with the lowest marginal
+    costs are maximised in operation before other consumers are used, while consumers with the
+    highest marginal costs are maximised before other consumers are satisfied. Producer or consumer
+    profiles always are preferred over the marginal costs. To obtain this workflow the objective
+    functions are setup according to the scheme described below.
+
     Goal priorities are:
     1. Match target demand specified
     2. Producers with highest marginal costs are minimised and Consumers with highest marginal

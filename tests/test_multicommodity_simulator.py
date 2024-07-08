@@ -49,8 +49,10 @@ def checks_all_mc_simulations(solution, results):
 class TestMultiCommoditySimulator(TestCase):
     # TODO: update docstring
     """
-    In this test case 2 milp producers and an ATES is used to supply 3 heating demands. A merit
-    order (preference of 1st use) is given to the producers: Producer_1 = 2 and Producer_2 = 1.
+    In this test case several producers and consumers as well as conversion assets are applied, for
+    the two commodities Hydrogen and electricity.
+    The priority of the consumers, producers and conversion assets is set using the marginal costs
+    in the ESDL file, allowing for flexible customised operation.
 
     Checks:
     - General checks namely demand matching, energy conservation and asset milp variable vs
