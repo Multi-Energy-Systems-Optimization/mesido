@@ -2030,7 +2030,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         q_nominal = self._get_connected_q_nominal(asset)
         density = self.get_density(asset.name, asset.out_ports[0].carrier)
-        mass_flow_max_g_per_s = max_power / eff_max_load / 3600 * 1000.0  # This looks weird? Femke? Also should this not be * 1000.0 -> to get to [g/s]?
+        mass_flow_max_g_per_s = max_power / eff_max_load / 3600 * 1000.0  # Femke check this please
         mass_flow_nominal_g_per_s = min(density * q_nominal, mass_flow_max_g_per_s / 2)
 
         modifiers = dict(

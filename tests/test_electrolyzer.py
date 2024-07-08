@@ -62,23 +62,26 @@ class TestElectrolyzer(TestCase):
         for iv in range(len(v_inspect)):
             if iv == 0:
                 np.testing.assert_allclose(
-                    v_inspect[iv] / solution.gas_network_settings["maximum_velocity"]
+                    v_inspect[iv]
+                    / solution.gas_network_settings["maximum_velocity"]
                     * head_loss_max,
-                    2.173724632
+                    2.173724632,
                 )
                 np.testing.assert_allclose(-results["Pipe_6ba6.dH"][iv], 2.173724632)
             elif iv == 1:
                 np.testing.assert_allclose(
-                    v_inspect[iv] / solution.gas_network_settings["maximum_velocity"]
+                    v_inspect[iv]
+                    / solution.gas_network_settings["maximum_velocity"]
                     * head_loss_max,
-                    0.0
+                    0.0,
                 )
                 np.testing.assert_allclose(-results["Pipe_6ba6.dH"][iv], 0.0)
             elif iv == 2:
                 np.testing.assert_allclose(
-                    v_inspect[iv] / solution.gas_network_settings["maximum_velocity"]
+                    v_inspect[iv]
+                    / solution.gas_network_settings["maximum_velocity"]
                     * head_loss_max,
-                    4.347449263
+                    4.347449263,
                 )
                 np.testing.assert_allclose(-results["Pipe_6ba6.dH"][iv], 4.347449263)
 
@@ -304,4 +307,6 @@ if __name__ == "__main__":
     start_time = time.time()
     a = TestElectrolyzer()
     a.test_electrolyzer_inequality()
+    a.test_electrolyzer_minimum_power()
+    a.test_electrolyzer_constant_efficiency()
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

@@ -338,5 +338,9 @@ if __name__ == "__main__":
 
     start_time = time.time()
     a = TestMultiCommoditySimulator()
-    a.test_multi_commodity_simulator()
+    a.test_multi_commodity_simulator_priorities_el()
+    a.test_multi_commodity_simulator_prod_profile()
+    a.test_multi_commodity_simulator_emerge()
+    a.test_multi_commodity_simulator_emerge_lowprod()
+
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

@@ -299,12 +299,8 @@ class TestHydraulicPower(TestCase):
 
         # due to non linearity, every timestep on new linearized line, a doubled mass flow should
         # result in more than doubled hydraulic power
-        np.testing.assert_array_less(
-            pipe_hp[0] * (pipe_mass[1] / pipe_mass[0]), pipe_hp[1] + 1e-6
-        )
-        np.testing.assert_array_less(
-            pipe_hp[1] * (pipe_mass[2] / pipe_mass[1]), pipe_hp[2] + 1e-6
-        )
+        np.testing.assert_array_less(pipe_hp[0] * (pipe_mass[1] / pipe_mass[0]), pipe_hp[1] + 1e-6)
+        np.testing.assert_array_less(pipe_hp[1] * (pipe_mass[2] / pipe_mass[1]), pipe_hp[2] + 1e-6)
 
         np.testing.assert_allclose(pipe_hp, pipe_hp_in - pipe_hp_out)
         np.testing.assert_allclose(0, pipe_hp_out)
