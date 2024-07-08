@@ -673,8 +673,16 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             elif (
                 options["electrolyzer_efficiency"]
                 == ElectrolyzerOption.LINEARIZED_THREE_LINES_WEAK_INEQUALITY
+                or
+                options["electrolyzer_efficiency"]
+                == ElectrolyzerOption.LINEARIZED_THREE_LINES_EQUALITY
             ):
-                curve_fit_number_of_lines = 3
+                if (options["electrolyzer_efficiency"]
+                == ElectrolyzerOption.LINEARIZED_THREE_LINES_WEAK_INEQUALITY):
+                    curve_fit_number_of_lines = 3
+                else:
+                    curve_fit_number_of_lines = len(self.__electrolyzer_is_active_linear_segment_map)
+
                 linear_coef_a, linear_coef_b = (
                     self._get_linear_coef_electrolyzer_mass_vs_epower_fit(
                         parameters[f"{asset}.a_eff_coefficient"],
@@ -716,90 +724,43 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                         ),
                     ]
                 )
-            elif (
-                options["electrolyzer_efficiency"]
-                == ElectrolyzerOption.LINEARIZED_THREE_LINES_EQUALITY
-            ):
-                # TODO: think of combining this with the inequality category, once this passes the tests
-                curve_fit_number_of_lines = len(self.__electrolyzer_is_active_linear_segment_map)
-                linear_coef_a, linear_coef_b = (
-                    self._get_linear_coef_electrolyzer_mass_vs_epower_fit(
-                        parameters[f"{asset}.a_eff_coefficient"],
-                        parameters[f"{asset}.b_eff_coefficient"],
-                        parameters[f"{asset}.c_eff_coefficient"],
-                        n_lines=curve_fit_number_of_lines,
-                        electrical_power_min=max(
-                            parameters[f"{asset}.minimum_load"],
-                            0.01 * self.bounds()[f"{asset}.ElectricityIn.Power"][1],
-                        ),
-                        electrical_power_max=self.bounds()[f"{asset}.ElectricityIn.Power"][1],
-                    )
-                )
-                power_consumed_vect = ca.repmat(power_consumed, len(linear_coef_a))
-                gas_mass_flow_out_vect = ca.repmat(gas_mass_flow_out, len(linear_coef_a))
-                gass_mass_out_linearized_vect = linear_coef_a * power_consumed_vect + linear_coef_b
-
-                gass_mass_out_max = (
-                    linear_coef_a[-1] * self.bounds()[f"{asset}.Power_consumed"][1]
-                    + linear_coef_b[-1]
-                )
-                nominal = (
-                    self.variable_nominal(f"{asset}.Gas_mass_flow_out")
-                    * min(linear_coef_a)
-                    * self.variable_nominal(f"{asset}.Power_consumed")
-                ) ** 0.5
-                big_m = gass_mass_out_max * 2
-                # Inequality constraint is still needed
-                constraints.extend(
-                    [
-                        (
+                if (options["electrolyzer_efficiency"]
+                == ElectrolyzerOption.LINEARIZED_THREE_LINES_EQUALITY) :
+                    is_line_segment_active_sum = 0.0
+                    for n_line in range(curve_fit_number_of_lines):
+                        var_name = self.__electrolyzer_is_active_linear_segment_map[f'line_{n_line}'][asset]
+                        is_line_segment_active = self.state(var_name)
+                        # Equality constraint to map the input power to the output massflow of the electrolyzer
+                        constraints.append(
                             (
-                                    gas_mass_flow_out_vect
-                                    - gass_mass_out_linearized_vect
-                                    - (1 - asset_is_switched_on) * big_m
-                            )
-                            / nominal,
-                            -np.inf,
-                            0.0,
-                        ),
-                    ]
-                )
-                is_line_segment_active_sum = 0.0
-                for n_line in range(curve_fit_number_of_lines):
-                    var_name = self.__electrolyzer_is_active_linear_segment_map[f'line_{n_line}'][asset]
-                    is_line_segment_active = self.state(var_name)
-                    # Equality constraint to map the input power to the output massflow of the electrolyzer
+                                (
+                                        gas_mass_flow_out_vect[n_line]
+                                        - gass_mass_out_linearized_vect[n_line]
+                                        - (1 - is_line_segment_active) * big_m
+                                )
+                                / nominal,
+                                -np.inf,
+                                0.0,
+                            ),
+                        )
+                        #
+                        constraints.append(
+                            (
+                                (
+                                        gas_mass_flow_out_vect[n_line]
+                                        - gass_mass_out_linearized_vect[n_line]
+                                        + (1 - is_line_segment_active) * big_m
+                                )
+                                / nominal,
+                                0.0,
+                                np.inf,
+                            ),
+                        )
+                        is_line_segment_active_sum += is_line_segment_active
+                    # Constraint to ensure that only one line is active, if the electrolyzer is switched on
                     constraints.append(
-                        (
-                            (
-                                    gas_mass_flow_out_vect[n_line]
-                                    - gass_mass_out_linearized_vect[n_line]
-                                    - (1 - is_line_segment_active) * big_m
-                            )
-                            / nominal,
-                            -np.inf,
-                            0.0,
-                        ),
+                        (is_line_segment_active_sum + (1 - asset_is_switched_on), 1.0, 1.0),
                     )
-                    #
-                    constraints.append(
-                        (
-                            (
-                                    gas_mass_flow_out_vect[n_line]
-                                    - gass_mass_out_linearized_vect[n_line]
-                                    + (1 - is_line_segment_active) * big_m
-                            )
-                            / nominal,
-                            0.0,
-                            np.inf,
-                        ),
-                    )
-                    is_line_segment_active_sum += is_line_segment_active
-                # Constraint to ensure that only one line is active, if the electrolyzer is switched on
-                constraints.append(
-                    (is_line_segment_active_sum + (1-asset_is_switched_on), 1.0, 1.0),
-                )
-
 
             constraints.append(
                 ((gas_mass_flow_out + asset_is_switched_on * big_m) / big_m, 0.0, np.inf)
