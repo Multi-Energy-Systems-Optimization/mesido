@@ -749,6 +749,20 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                     * self.variable_nominal(f"{asset}.Power_consumed")
                 ) ** 0.5
                 big_m = gass_mass_out_max * 2
+                constraints.extend(
+                    [
+                        (
+                            (
+                                    gas_mass_flow_out_vect
+                                    - gass_mass_out_linearized_vect
+                                    - (1 - asset_is_switched_on) * big_m
+                            )
+                            / nominal,
+                            -np.inf,
+                            0.0,
+                        ),
+                    ]
+                )
                 is_line_segment_active_sum = 0.0
                 for n_line in range(curve_fit_number_of_lines):
                     var_name = self.__electrolyzer_is_active_linear_segment_map[f'line_{n_line}'][asset]
@@ -767,11 +781,28 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                             0.0,
                         ),
                     )
+                    #
+                    constraints.append(
+                        (
+                            (
+                                    gas_mass_flow_out_vect[n_line]
+                                    - gass_mass_out_linearized_vect[n_line]
+                                    + (1 - asset_is_switched_on) * big_m
+                                    + (1 - is_line_segment_active) * big_m
+                            )
+                            / nominal,
+                            0.0,
+                            np.inf,
+                        ),
+                    )
                     is_line_segment_active_sum += is_line_segment_active
                 # Constraint to ensure that only one line is active
                 constraints.append(
                     (is_line_segment_active_sum + (1-asset_is_switched_on), 1.0, 1.0),
                 )
+                # constraints.append(
+                #     (is_line_segment_active_sum + (1-asset_is_switched_on), 1.0, 1.0),
+                # )
 
 
             constraints.append(
