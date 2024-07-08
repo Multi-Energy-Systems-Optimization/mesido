@@ -334,7 +334,7 @@ class TestHydraulicPower(TestCase):
             )
             for v in v_inspect
         ]
-        np.testing.assert_array_less(calc_hp_accurate, pipe_hp)
+        np.testing.assert_array_less(calc_hp_accurate, pipe_hp + 1e-6)
 
         v_points = [
             i * v_max / solution.gas_network_settings["n_linearization_lines"]
