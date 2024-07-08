@@ -1,10 +1,10 @@
 from pathlib import Path
 from unittest import TestCase
 
-import mesido._darcy_weisbach as darcy_weisbach
+# import mesido._darcy_weisbach as darcy_weisbach
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
-from mesido.network_common import NetworkSettings
+# from mesido.network_common import NetworkSettings
 from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
@@ -44,16 +44,16 @@ class TestElectrolyzer(TestCase):
 
         # Compare the head loss to hard-coded values. Difference expected if an error
         # occours in the calculation of the gas kinematic viscosity.
-        v_inspect = results["Pipe_6ba6.GasOut.Q"][1] / solution.parameters(0)["Pipe_6ba6.area"]
-        head_loss_v_inspect = darcy_weisbach.head_loss(
-            v_inspect,
-            solution.parameters(0)["Pipe_6ba6.diameter"],
-            solution.parameters(0)["Pipe_6ba6.length"],
-            solution.energy_system_options()["wall_roughness"],
-            20.0,
-            network_type=NetworkSettings.NETWORK_TYPE_HYDROGEN,
-            pressure=solution.parameters(0)["Pipe_6ba6.pressure"],
-        )
+        # v_inspect = results["Pipe_6ba6.GasOut.Q"][1] / solution.parameters(0)["Pipe_6ba6.area"]
+        # head_loss_v_inspect = darcy_weisbach.head_loss(
+        #     v_inspect,
+        #     solution.parameters(0)["Pipe_6ba6.diameter"],
+        #     solution.parameters(0)["Pipe_6ba6.length"],
+        #     solution.energy_system_options()["wall_roughness"],
+        #     20.0,
+        #     network_type=NetworkSettings.NETWORK_TYPE_HYDROGEN,
+        #     pressure=solution.parameters(0)["Pipe_6ba6.pressure"],
+        # )
         # np.testing.assert_allclose(head_loss_v_inspect, 104.06961666355383)
 
         gas_price_profile = "Hydrogen.price_profile"
@@ -154,7 +154,7 @@ class TestElectrolyzer(TestCase):
         # Check electrolyzer input power
         np.testing.assert_allclose(
             results["Electrolyzer_fc66.ElectricityIn.Power"],
-            [1.00000000e+08, 1.00000000e+08, 1.00000000e+08],
+            [1.00000000e08, 1.00000000e08, 1.00000000e08],
             atol=1e-4,
         )
         # Check electrolyzer output massflow
@@ -366,9 +366,9 @@ class TestElectrolyzer(TestCase):
         for timestep in range(len(results["Electrolyzer_fc66__line_0_active"])):
             np.testing.assert_allclose(
                 (
-                    results["Electrolyzer_fc66__line_0_active"][timestep] +
-                    results["Electrolyzer_fc66__line_1_active"][timestep] +
-                    results["Electrolyzer_fc66__line_2_active"][timestep]
+                    results["Electrolyzer_fc66__line_0_active"][timestep]
+                    + results["Electrolyzer_fc66__line_1_active"][timestep]
+                    + results["Electrolyzer_fc66__line_2_active"][timestep]
                 ),
                 1.0,
             )
@@ -390,9 +390,9 @@ class TestElectrolyzer(TestCase):
             coef_c,
             n_lines=3,
             electrical_power_min=max(
-                            solution.parameters(0)[f"Electrolyzer_fc66.minimum_load"],
-                            0.01 * solution.bounds()["Electrolyzer_fc66.ElectricityIn.Power"][1],
-                        ),
+                solution.parameters(0)["Electrolyzer_fc66.minimum_load"],
+                0.01 * solution.bounds()["Electrolyzer_fc66.ElectricityIn.Power"][1],
+            ),
             electrical_power_max=solution.bounds()["Electrolyzer_fc66.ElectricityIn.Power"][1],
         )
         for idx in range(3):
@@ -403,7 +403,7 @@ class TestElectrolyzer(TestCase):
         # Check hardcoded values
         np.testing.assert_allclose(
             results["Electrolyzer_fc66.Gas_mass_flow_out"],
-            [ 431.367058  , 1285.95625642, 1673.61498453],
+            [431.367058, 1285.95625642, 1673.61498453],
             atol=1e-4,
         )
 
@@ -435,12 +435,13 @@ class TestElectrolyzer(TestCase):
 
         results = solution.extract_results()
 
-        # Input power to the electrolyzer is below the minimum one, such that no line should be active
+        # Input power to the electrolyzer is below the minimum one,
+        # such that no line should be active
         np.testing.assert_allclose(
             (
-                    results["Electrolyzer_fc66__line_0_active"][-1] +
-                    results["Electrolyzer_fc66__line_1_active"][-1] +
-                    results["Electrolyzer_fc66__line_2_active"][-1]
+                results["Electrolyzer_fc66__line_0_active"][-1]
+                + results["Electrolyzer_fc66__line_1_active"][-1]
+                + results["Electrolyzer_fc66__line_2_active"][-1]
             ),
             0.0,
         )

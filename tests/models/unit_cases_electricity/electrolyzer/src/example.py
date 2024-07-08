@@ -30,10 +30,7 @@ class RevenueGoal(Goal):
 
     def function(self, optimization_problem, ensemble_member):
         canonical, sign = optimization_problem.alias_relation.canonical_signed(self.state)
-        symbols = (
-            sign
-            * optimization_problem.state_vector(canonical, ensemble_member)
-        )
+        symbols = sign * optimization_problem.state_vector(canonical, ensemble_member)
         price_profile = optimization_problem.get_timeseries(self.price_profile).values
         sum = 0.0
         for i in range(len(price_profile)):
@@ -163,6 +160,8 @@ class MILPProblemConstantEfficiency(MILPProblemInequality):
         options["electrolyzer_efficiency"] = ElectrolyzerOption.CONSTANT_EFFICIENCY
 
         return options
+
+
 class MILPProblemEquality(MILPProblemInequality):
 
     def energy_system_options(self):
