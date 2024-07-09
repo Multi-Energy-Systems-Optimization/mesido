@@ -174,10 +174,8 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         variables.extend(self.__asset_is_switched_on_var.values())
         variables.extend(self.__storage_charging_var.values())
         variables.extend(self.__set_point_var.values())
-        options = self.energy_system_options()
-        if options["electrolyzer_efficiency"] == ElectrolyzerOption.LINEARIZED_THREE_LINES_EQUALITY:
-            for line in self.__electrolyzer_is_active_linear_segment_var.keys():
-                variables.extend(self.__electrolyzer_is_active_linear_segment_var[line].values())
+        for line in self.__electrolyzer_is_active_linear_segment_var.keys():
+            variables.extend(self.__electrolyzer_is_active_linear_segment_var[line].values())
 
         return variables
 
@@ -185,11 +183,10 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         """
         All variables that only can take integer values should be added to this function.
         """
-        options = self.energy_system_options()
-        if options["electrolyzer_efficiency"] == ElectrolyzerOption.LINEARIZED_THREE_LINES_EQUALITY:
-            for line in self.__electrolyzer_is_active_linear_segment_var.keys():
-                if variable in self.__electrolyzer_is_active_linear_segment_var[line]:
-                    return True
+
+        for line in self.__electrolyzer_is_active_linear_segment_var.keys():
+            if variable in self.__electrolyzer_is_active_linear_segment_var[line]:
+                return True
         if variable in self.__asset_is_switched_on_var:
             return True
         if variable in self.__storage_charging_var:
