@@ -262,7 +262,7 @@ class TestHydraulicPower(TestCase):
                 super().read()
 
                 for d in self.energy_system_components["gas_demand"]:
-                    new_timeseries = self.get_timeseries(f"{d}.target_gas_demand").values * 4e4
+                    new_timeseries = self.get_timeseries(f"{d}.target_gas_demand").values * 5e3
                     self.set_timeseries(f"{d}.target_gas_demand", new_timeseries)
 
             def energy_system_options(self):
@@ -494,8 +494,8 @@ if __name__ == "__main__":
 
     start_time = time.time()
     a = TestHydraulicPower()
-    a.test_hydraulic_power_heat()
+    # a.test_hydraulic_power_heat()
     a.test_hydraulic_power_gas()
-    a.test_hydraulic_power_gas_multi_demand()
+    # a.test_hydraulic_power_gas_multi_demand()
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
