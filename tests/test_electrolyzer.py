@@ -373,7 +373,7 @@ class TestElectrolyzer(TestCase):
                     results["Electrolyzer_fc66__line_0_active"][timestep]
                     + results["Electrolyzer_fc66__line_1_active"][timestep]
                     + results["Electrolyzer_fc66__line_2_active"][timestep]
-                    + results["Electrolyzer_fc66__asset_is_switched_on"][timestep]
+                    + (1 - results["Electrolyzer_fc66__asset_is_switched_on"][timestep])
                 ),
                 1.0,
             )
@@ -384,7 +384,7 @@ class TestElectrolyzer(TestCase):
             np.testing.assert_allclose(
                 (
                     results[f"Electrolyzer_fc66__line_{idx}_active"][idx]
-                    + results["Electrolyzer_fc66__asset_is_switched_on"][idx]
+                    + (1 - results["Electrolyzer_fc66__asset_is_switched_on"][idx])
                 ),
                 1.0,
             )
@@ -452,9 +452,9 @@ class TestElectrolyzer(TestCase):
                 results["Electrolyzer_fc66__line_0_active"][-1]
                 + results["Electrolyzer_fc66__line_1_active"][-1]
                 + results["Electrolyzer_fc66__line_2_active"][-1]
-                + results["Electrolyzer_fc66__asset_is_switched_on"][-1]
+                + (1 - results["Electrolyzer_fc66__asset_is_switched_on"][-1])
             ),
-            0.0,
+            1.0,
         )
         # Check that the input power is 0
         np.testing.assert_allclose(
