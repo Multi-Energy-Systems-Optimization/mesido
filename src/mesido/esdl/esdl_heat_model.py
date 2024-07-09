@@ -1869,8 +1869,11 @@ class AssetToHeatComponent(_AssetToComponentBase):
         density = self.get_density(asset.name, asset.in_ports[0].carrier)
         pressure = asset.in_ports[0].carrier.pressure * 1.0e5
         q_nominal = self._get_connected_q_nominal(asset)
+        q_max = self._get_connected_q_max(asset)
         # [g/s] = [J/s] * [J/kg]^-1 *1000
-        max_mass_flow_g_per_s = asset.attributes["power"] / specific_energy * 1000.0
+        max_mass_flow_g_per_s = min(
+            asset.attributes["power"] / specific_energy * 1000.0, q_max * density
+        )
         mass_flow_nominal_g_per_s = min(q_nominal * density, max_mass_flow_g_per_s / 2)
 
         modifiers = dict(
@@ -1880,11 +1883,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             # *hydrogen_specfic_energy),
             density=density,
             GasIn=dict(
-                Q=dict(
-                    min=0.0,
-                    max=self._get_connected_q_max(asset),
-                    nominal=self._get_connected_q_nominal(asset),
-                ),
+                Q=dict(min=0.0, max=q_max, nominal=q_nominal),
                 mass_flow=dict(nominal=mass_flow_nominal_g_per_s, max=max_mass_flow_g_per_s),
                 Hydraulic_power=dict(min=0.0, max=0.0, nominal=q_nominal * pressure),
             ),

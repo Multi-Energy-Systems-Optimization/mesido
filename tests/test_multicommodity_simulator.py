@@ -209,6 +209,7 @@ class TestMultiCommoditySimulator(TestCase):
         # than the max electricity take off at electrolyzer (due to mas gas demand) and the max
         # electricity demand.
         # checks_all_mc_simulations(solution, results)
+        tol = 1.0e-6
 
         esdl_electrolyzer = solution._esdl_assets[
             solution.esdl_asset_name_to_id_map["Electrolyzer_6327"]
@@ -223,11 +224,11 @@ class TestMultiCommoditySimulator(TestCase):
         ).values[: len(windfarm_power)]
         # cap on el consumption by electricity_demand (due to cap, 1.3GW) and by electrolyzer
         # (due to cap of gas demand)
-        cap_el_consumption = 1.744880e9
+        cap_el_consumption = 2.0e9
         windfarm_target = np.minimum(
             np.ones(len(windfarm_target)) * cap_el_consumption, windfarm_target
         )
-        np.testing.assert_allclose(windfarm_target, windfarm_power, atol=1.0e-3, rtol=1.0e-6)
+        np.testing.assert_allclose(windfarm_target, windfarm_power, atol=1.0e-3, rtol=tol)
 
         efficiency = electrolyzer_power / electrolyzer_gas  # W/(g/s) = Ws/g
         efficiency = efficiency / 3600  # Wh/g
@@ -237,7 +238,9 @@ class TestMultiCommoditySimulator(TestCase):
             esdl_electrolyzer.attributes["efficiency"],
         )
         np.testing.assert_array_less(min(provided_efficiencies), efficiency[electrolyzer_power > 0])
-        np.testing.assert_array_less(efficiency[electrolyzer_power > 0], max(provided_efficiencies))
+        np.testing.assert_array_less(
+            efficiency[electrolyzer_power > 0], max(provided_efficiencies) + tol
+        )
 
         # demand gas maximised when sufficient power available to convert electricity to gas
         cap_electrolyzer_power = (
@@ -245,7 +248,7 @@ class TestMultiCommoditySimulator(TestCase):
         )
         index_gas_max = windfarm_power >= cap_electrolyzer_power
         np.testing.assert_allclose(
-            demand_gas[index_gas_max], bounds["GasDemand_4146.Gas_demand_mass_flow"][1]
+            demand_gas[index_gas_max], bounds["Electrolyzer_6327.Gas_mass_flow_out"][1]
         )
         # due to priority settings, electricity demand only consuming if demand_gas maximised and
         # enough windfarm power
@@ -318,7 +321,7 @@ class TestMultiCommoditySimulator(TestCase):
         cap_electrolyzer_power = 444880000.0
         index_gas_max = windfarm_power >= cap_electrolyzer_power
         np.testing.assert_allclose(
-            demand_gas[index_gas_max], bounds["GasDemand_4146.Gas_demand_mass_flow"][1]
+            demand_gas[index_gas_max], bounds["Electrolyzer_6327.Gas_mass_flow_out"][1]
         )
         # due to priority settings, electricity demand only consuming if demand_gas maximised and
         # enough windfarm power
