@@ -60,30 +60,11 @@ class TestElectrolyzer(TestCase):
             pressure=solution.parameters(0)["Pipe_6ba6.pressure"],
         )
         for iv in range(len(v_inspect)):
-            if iv == 0:
-                np.testing.assert_allclose(
-                    v_inspect[iv]
-                    / solution.gas_network_settings["maximum_velocity"]
-                    * head_loss_max,
-                    2.173724632,
-                )
-                np.testing.assert_allclose(-results["Pipe_6ba6.dH"][iv], 2.173724632)
-            elif iv == 1:
-                np.testing.assert_allclose(
-                    v_inspect[iv]
-                    / solution.gas_network_settings["maximum_velocity"]
-                    * head_loss_max,
-                    0.0,
-                )
-                np.testing.assert_allclose(-results["Pipe_6ba6.dH"][iv], 0.0)
-            elif iv == 2:
-                np.testing.assert_allclose(
-                    v_inspect[iv]
-                    / solution.gas_network_settings["maximum_velocity"]
-                    * head_loss_max,
-                    4.347449263,
-                )
-                np.testing.assert_allclose(-results["Pipe_6ba6.dH"][iv], 4.347449263)
+            np.testing.assert_allclose(
+                v_inspect[iv] / solution.gas_network_settings["maximum_velocity"] * head_loss_max,
+                2.173724632,
+            )
+            np.testing.assert_allclose(-results["Pipe_6ba6.dH"][iv], 2.173724632)
 
         gas_price_profile = "Hydrogen.price_profile"
         state = "GasDemand_0cf3.Gas_demand_mass_flow"
@@ -253,7 +234,7 @@ class TestElectrolyzer(TestCase):
         np.testing.assert_allclose(
             results["Electrolyzer_fc66.ElectricityIn.Power"][-1],
             0.0,
-            atol=1e-3,
+            atol=5e-5,
         )
         # Check that the output gas is 0
         np.testing.assert_allclose(
@@ -308,4 +289,6 @@ if __name__ == "__main__":
     start_time = time.time()
     a = TestElectrolyzer()
     a.test_electrolyzer_inequality()
+    a.test_electrolyzer_minimum_power()
+    a.test_electrolyzer_constant_efficiency()
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
