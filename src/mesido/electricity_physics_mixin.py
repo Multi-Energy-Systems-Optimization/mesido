@@ -128,12 +128,11 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                 for n_line in range(n_lines):
                     var_name = f"{asset}__line_{n_line}_active"
 
-                    self.__electrolyzer_is_active_linear_segment_map[asset][f"line_{n_line}"] = var_name
-                    self.__electrolyzer_is_active_linear_segment_var[var_name] = (
-                        ca.MX.sym(var_name)
-                    )
+                    self.__electrolyzer_is_active_linear_segment_map[asset][
+                        f"line_{n_line}"
+                    ] = var_name
+                    self.__electrolyzer_is_active_linear_segment_var[var_name] = ca.MX.sym(var_name)
                     self.__electrolyzer_is_active_linear_segment_bounds[var_name] = (0.0, 1.0)
-
 
         for asset in [*self.energy_system_components.get("electricity_storage", [])]:
             var_name = f"{asset}__is_charging"
@@ -728,9 +727,9 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                 ):
                     is_line_segment_active_sum = 0.0
                     for n_line in range(curve_fit_number_of_lines):
-                        var_name = self.__electrolyzer_is_active_linear_segment_map[
-                            asset
-                        ][f"line_{n_line}"]
+                        var_name = self.__electrolyzer_is_active_linear_segment_map[asset][
+                            f"line_{n_line}"
+                        ]
                         is_line_segment_active = self.state(var_name)
                         # Equality constraint to map the input power to the output massflow
                         # of the electrolyzer
