@@ -120,24 +120,20 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                 self.__asset_is_switched_on_bounds[var_name] = (0.0, 1.0)
 
         if options["electrolyzer_efficiency"] == ElectrolyzerOption.LINEARIZED_THREE_LINES_EQUALITY:
-            n_lines = 3
-            for n_line in range(n_lines):
-                self.__electrolyzer_is_active_linear_segment_map[f"line_{n_line}"] = {}
-                self.__electrolyzer_is_active_linear_segment_var[f"line_{n_line}"] = {}
-                self.__electrolyzer_is_active_linear_segment_bounds[f"line_{n_line}"] = {}
-                for asset in [
-                    *self.energy_system_components.get("electrolyzer", []),
-                ]:
+            for asset in [
+                *self.energy_system_components.get("electrolyzer", []),
+            ]:
+                self.__electrolyzer_is_active_linear_segment_map[asset] = {}
+                n_lines = 3
+                for n_line in range(n_lines):
                     var_name = f"{asset}__line_{n_line}_active"
-                    self.__electrolyzer_is_active_linear_segment_map[f"line_{n_line}"][
-                        asset
-                    ] = var_name
-                    self.__electrolyzer_is_active_linear_segment_var[f"line_{n_line}"][var_name] = (
+
+                    self.__electrolyzer_is_active_linear_segment_map[asset][f"line_{n_line}"] = var_name
+                    self.__electrolyzer_is_active_linear_segment_var[var_name] = (
                         ca.MX.sym(var_name)
                     )
-                    self.__electrolyzer_is_active_linear_segment_bounds[f"line_{n_line}"][
-                        var_name
-                    ] = (0.0, 1.0)
+                    self.__electrolyzer_is_active_linear_segment_bounds[var_name] = (0.0, 1.0)
+
 
         for asset in [*self.energy_system_components.get("electricity_storage", [])]:
             var_name = f"{asset}__is_charging"
@@ -174,8 +170,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         variables.extend(self.__asset_is_switched_on_var.values())
         variables.extend(self.__storage_charging_var.values())
         variables.extend(self.__set_point_var.values())
-        for line in self.__electrolyzer_is_active_linear_segment_var.keys():
-            variables.extend(self.__electrolyzer_is_active_linear_segment_var[line].values())
+        variables.extend(self.__electrolyzer_is_active_linear_segment_var.values())
 
         return variables
 
@@ -184,9 +179,8 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         All variables that only can take integer values should be added to this function.
         """
 
-        for line in self.__electrolyzer_is_active_linear_segment_var.keys():
-            if variable in self.__electrolyzer_is_active_linear_segment_var[line]:
-                return True
+        if variable in self.__electrolyzer_is_active_linear_segment_var:
+            return True
         if variable in self.__asset_is_switched_on_var:
             return True
         if variable in self.__storage_charging_var:
@@ -208,11 +202,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         """
         bounds = super().bounds()
 
-        options = self.energy_system_options()
-        if options["electrolyzer_efficiency"] == ElectrolyzerOption.LINEARIZED_THREE_LINES_EQUALITY:
-            for line in self.__electrolyzer_is_active_linear_segment_bounds.keys():
-                bounds.update(self.__electrolyzer_is_active_linear_segment_bounds[line])
-
+        bounds.update(self.__electrolyzer_is_active_linear_segment_bounds)
         bounds.update(self.__asset_is_switched_on_bounds)
         bounds.update(self.__storage_charging_bounds)
         bounds.update(self.__electricity_producer_upper_bounds)
@@ -688,7 +678,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                     curve_fit_number_of_lines = 3
                 else:
                     curve_fit_number_of_lines = len(
-                        self.__electrolyzer_is_active_linear_segment_map
+                        self.__electrolyzer_is_active_linear_segment_map[asset]
                     )
 
                 linear_coef_a, linear_coef_b = (
@@ -739,8 +729,8 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                     is_line_segment_active_sum = 0.0
                     for n_line in range(curve_fit_number_of_lines):
                         var_name = self.__electrolyzer_is_active_linear_segment_map[
-                            f"line_{n_line}"
-                        ][asset]
+                            asset
+                        ][f"line_{n_line}"]
                         is_line_segment_active = self.state(var_name)
                         # Equality constraint to map the input power to the output massflow
                         # of the electrolyzer
