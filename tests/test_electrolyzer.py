@@ -158,14 +158,12 @@ class TestElectrolyzer(TestCase):
         # Check electrolyzer input power
         np.testing.assert_allclose(
             results["Electrolyzer_fc66.ElectricityIn.Power"],
-            [1.00000000e08, 1.00000000e08, 1.00000000e08],
-            atol=1e-4,
+            [1.00000000e08, 1.00000000e08, 1.00000000e08]
         )
         # Check electrolyzer output massflow
         np.testing.assert_allclose(
             results["Electrolyzer_fc66.Gas_mass_flow_out"],
-            [431.367058, 431.367058, 431.367058],
-            atol=1e-4,
+            [431.367058, 431.367058, 431.367058]
         )
 
         #  -----------------------------------------------------------------------------------------
@@ -217,9 +215,12 @@ class TestElectrolyzer(TestCase):
         LINEARIZED_THREE_LINES_WEAK_INEQUALITY.
 
         Checks:
-        - Input power to the electrolyzer is 0 when available wind power is 49MW
-        - Output gas is 0 when available wind power is 49MW
-        - Electrolyzer is switched off when available wind power is 49MW
+        - Input power to the electrolyzer is 0 when available wind power is 49MW, as the threshold for the
+        electrolyzer is 50MW
+        - Output gas is 0 when available wind power is 49MW, as the threshold for the
+        electrolyzer is 50MW
+        - Electrolyzer is switched off when available wind power is 49MW, as the threshold for the
+        electrolyzer is 50MW
         - Input power is greater than 0 when available power is greater than 50MW
         - Output gas is greater than 0 when available power is greater than 50MW
         - Electrolyzer is switched on when available power is greater than 50MW
@@ -373,6 +374,7 @@ class TestElectrolyzer(TestCase):
                     results["Electrolyzer_fc66__line_0_active"][timestep]
                     + results["Electrolyzer_fc66__line_1_active"][timestep]
                     + results["Electrolyzer_fc66__line_2_active"][timestep]
+                    + results["Electrolyzer_fc66__asset_is_switched_on"][timestep]
                 ),
                 1.0,
             )
@@ -381,7 +383,8 @@ class TestElectrolyzer(TestCase):
         # and 400 MW.
         for idx in range(3):
             np.testing.assert_allclose(
-                (results[f"Electrolyzer_fc66__line_{idx}_active"][idx]),
+                (results[f"Electrolyzer_fc66__line_{idx}_active"][idx]
+                + results["Electrolyzer_fc66__asset_is_switched_on"][idx]),
                 1.0,
             )
         # Check that the output massflow lies on the line segment
@@ -419,6 +422,8 @@ class TestElectrolyzer(TestCase):
 
         Checks:
         - Check that no line is active when the electrolyzer is switched off
+        - Check that the input power is 0 when the electrolyzer is switched off
+        - Check that the output massflow is 0 when the electrolyzer is switched off
 
         """
         import models.unit_cases_electricity.electrolyzer.src.example as example
@@ -446,6 +451,19 @@ class TestElectrolyzer(TestCase):
                 results["Electrolyzer_fc66__line_0_active"][-1]
                 + results["Electrolyzer_fc66__line_1_active"][-1]
                 + results["Electrolyzer_fc66__line_2_active"][-1]
+                + results["Electrolyzer_fc66__asset_is_switched_on"][-1]
             ),
             0.0,
+        )
+        # Check that the input power is 0
+        np.testing.assert_allclose(
+            results["Electrolyzer_fc66.ElectricityIn.Power"][-1],
+            0.0,
+            atol=1e-4,
+        )
+        # Check that the output gas is 0
+        np.testing.assert_allclose(
+            results["Electrolyzer_fc66.Gas_mass_flow_out"][-1],
+            0.0,
+            atol=1e-4,
         )

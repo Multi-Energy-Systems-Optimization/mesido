@@ -564,7 +564,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         self, coef_a, coef_b, coef_c, electrical_power_input
     ) -> float:
         """
-        This function returns the gas mass flow rate [kg/s] out of an electrolyzer based on the
+        This function returns the gas mass flow rate [g/s] out of an electrolyzer based on the
         theoretical efficiency curve:
         energy [Ws] / gas mass [kg] =
         (coef_a / electrical_power_input) + (b * electrical_power_input) + coef_c
@@ -578,12 +578,12 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
         Returns
         -------
-        gas mass flow rate produced by the electrolyzer [kg/s]
+        gas mass flow rate produced by the electrolyzer [g/s]
         """
 
         if not isclose(electrical_power_input, 0.0):
             eff = (coef_a / electrical_power_input) + (coef_b * electrical_power_input) + coef_c
-            gas_mass_flow_out = (1.0 / eff) * electrical_power_input * (1 / (3600))  # kg/s
+            gas_mass_flow_out = (1.0 / eff) * electrical_power_input * (1 / (3600))  # g/s
         else:
             gas_mass_flow_out = 0.0
 
@@ -594,14 +594,14 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
     ) -> Tuple[np.array, np.array]:
         """
         This function returns a set of coefficients to approximate a gas mass flow rate curve with
-        linear functions in the form of: gass mass flow rate [kg/s] = b + (a * electrical_power)
+        linear functions in the form of: gass mass flow rate [g/s] = b + (a * electrical_power)
 
         Parameters
         ----------
         coef_a: electrolyzer efficience curve coefficent
         coef_b: electrolyzer efficience curve coefficent
         coef_c: electrolyzer efficience curve coefficent
-        n_lines: numebr of linear lines used to approximate the non-linear curve
+        n_lines: number of linear lines used to approximate the non-linear curve
         electrical_power_min: minimum electrical power consumed [W]
         electrical_power_max: maximum electrical power consumed [W]
 
