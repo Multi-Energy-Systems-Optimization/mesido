@@ -61,9 +61,7 @@ class TestElectrolyzer(TestCase):
         )
         for iv in range(len(v_inspect)):
             np.testing.assert_allclose(
-                v_inspect[iv]
-                / solution.gas_network_settings["maximum_velocity"]
-                * head_loss_max,
+                v_inspect[iv] / solution.gas_network_settings["maximum_velocity"] * head_loss_max,
                 2.173724632,
             )
             np.testing.assert_allclose(-results["Pipe_6ba6.dH"][iv], 2.173724632)
