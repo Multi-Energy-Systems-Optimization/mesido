@@ -55,8 +55,6 @@ def demand_matching_test(solution, results):
             np.testing.assert_allclose(
                 target, results[f"{d}.Electricity_demand"], atol=1.0e-3, rtol=1.0e-6
             )
-        else:
-            print(f"{d} does not have a target demand profile")
 
 
 def _get_component_temperatures(solution, results, component, side=None):
@@ -359,7 +357,12 @@ def heat_to_discharge_test(solution, results):
 
 def electric_power_conservation_test(solution, results):
     """
-    Test to check if the electric power is conserved at every timestep
+    Test to check if the electric power is conserved at every timestep.
+    High level checks:
+    - Network power conservation
+    - Power conservation when including power losses in cables.
+    - Power and current conservation in busses.
+    - Power conservation in transformers, upto now no losses in transformer.
     """
     tol = 1e-6
     energy_sum = np.zeros(len(solution.times()))

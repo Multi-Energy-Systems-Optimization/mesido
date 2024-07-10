@@ -25,7 +25,7 @@ class TestElecBoiler(TestCase):
         1. demand is matched
         2. energy conservation in the network
         3. heat to discharge
-        4. energy conservation over the commodity
+        4. energy conservation over the heat and electricity commodity
         """
         import models.source_pipe_sink.src.double_pipe_heat as example
         from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
