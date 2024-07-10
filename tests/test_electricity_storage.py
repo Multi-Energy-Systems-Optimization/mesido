@@ -104,5 +104,6 @@ class TestMILPElectricSourceSink(TestCase):
         # of the charge variable and bigger then zero. The zero should only occur if battery is
         # charging. When a goal would be set to minimise discharge it should match the charge power,
         # however now this goal is not turned on.
+        # TODO: when the new goal is included create test, this will end up in the mc_simulator
         np.testing.assert_array_less(-eff_power_change_bat, eff_power_change_discharge_bat + tol)
         self.assertTrue(all(eff_power_change_discharge_bat >= 0.0))
