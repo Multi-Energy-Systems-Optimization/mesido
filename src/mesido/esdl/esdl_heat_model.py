@@ -1643,6 +1643,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 I=dict(min=-i_max, max=i_max, nominal=i_nom),
                 Power=dict(min=-max_discharge, max=max_charge, nominal=max_charge / 2.0),
             ),
+            Effective_power_charging=dict(min=-max_discharge, max=max_charge, nominal=max_charge / 2.0),
             **self._get_cost_figure_modifiers(asset),
         )
 
@@ -2013,6 +2014,11 @@ class AssetToHeatComponent(_AssetToComponentBase):
         max_power = asset.attributes.get("power", math.inf)
         min_load = float(asset.attributes["minLoad"])
         max_load = float(asset.attributes["maxLoad"])
+        if not max_power == max_load:
+            max_power = max_load
+            logger.warning(f"The maximum load and the power of the electrolyzer did not match for "
+                           f"{asset.name}. The maximum load of {max_load}W is now used as maximum "
+                           f"power.")
         eff_min_load = asset.attributes["effMinLoad"]  # Wh/g
         eff_max_load = asset.attributes["effMaxLoad"]  # Wh/g
         eff_max = asset.attributes["efficiency"]  # Wh/g
