@@ -1249,11 +1249,11 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             for _id, attr in self.get_electricity_carriers().items():
                 if attr["id_number_mapping"] == parameters[f"{demand}.id_mapping_carrier"]:
                     carrier_name = attr["name"]
-                    multiplier = 1 / 3600.0  # priceprofile electricity is EUR/Wh
+                    cost_multiplier = 1 / 3600.0  # priceprofile electricity is EUR/Wh
             for _id, attr in self.get_gas_carriers().items():
                 if attr["id_number_mapping"] == parameters[f"{demand}.id_mapping_carrier"]:
                     carrier_name = attr["name"]
-                    multiplier = 1.0  # priceprofile gas is in EUR/g
+                    cost_multiplier = 1.0  # priceprofile gas is in EUR/g
             if carrier_name is not None:
                 price_profile = self.get_timeseries(f"{carrier_name}.price_profile").values
 
@@ -1272,7 +1272,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 nominal = self.variable_nominal(variable_revenue_var)
 
                 sum = 0.0
-                timesteps = np.diff(self.times()) * multiplier  # / 3600.0
+                timesteps = np.diff(self.times()) * cost_multiplier
                 for i in range(1, len(self.times())):
                     sum += price_profile[i] * energy_flow[i] * timesteps[i - 1]
 

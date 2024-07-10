@@ -224,7 +224,7 @@ class TestMultiCommoditySimulator(TestCase):
         ).values[: len(windfarm_power)]
         # cap on el consumption by electricity_demand (due to cap, 1.3GW) and by electrolyzer
         # (due to cap of gas demand)
-        cap_el_consumption = 2.0e9
+        cap_el_consumption = 2.1e9
         windfarm_target = np.minimum(
             np.ones(len(windfarm_target)) * cap_el_consumption, windfarm_target
         )

@@ -1865,7 +1865,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
         # hydrogen_specfic_energy = 20.0 / 1.0e6
         specific_energy = (
             self.get_internal_energy(asset.name, asset.in_ports[0].carrier) / 10
-        )  # J/g #TODO: is not the HHV for hydrogen, so is off
+        )  # J/g
+        # TODO: the value being used is the internal energy and not the HHV (higher
+        #  heating value) for hydrogen, therefore it does not represent the energy per weight.
+        #  This still needs to be updated
         density = self.get_density(asset.name, asset.in_ports[0].carrier)
         pressure = asset.in_ports[0].carrier.pressure * 1.0e5
         q_nominal = self._get_connected_q_nominal(asset)
