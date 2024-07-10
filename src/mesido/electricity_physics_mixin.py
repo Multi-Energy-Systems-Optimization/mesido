@@ -1,7 +1,7 @@
 import logging
 from enum import IntEnum
 from math import isclose
-from typing import Tuple
+from typing import List, Tuple
 
 import casadi as ca
 
@@ -71,6 +71,11 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         self.__set_point_bounds = {}
         self.__set_point_map = {}
 
+        self.__electricity_storage_discharge_var = {}
+        self.__electricity_storage_discharge_bounds = {}
+        self.__electricity_storage_discharge_nominals = {}
+        self.__electricity_storage_discharge_map = {}
+
     def energy_system_options(self):
         r"""
         Returns a dictionary of milp network specific options.
@@ -83,6 +88,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         options["electrolyzer_efficiency"] = (
             ElectrolyzerOption.LINEARIZED_THREE_LINES_WEAK_INEQUALITY
         )
+        options["electricity_storage_discharge_variables"] = False
 
         return options
 
@@ -120,6 +126,16 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             self.__storage_charging_var[var_name] = ca.MX.sym(var_name)
             self.__storage_charging_bounds[var_name] = (0.0, 1.0)
 
+            if options["electricity_storage_discharge_variables"]:
+                bound_storage = self.bounds()[f"{asset}.Effective_power_charging"][0]
+                var_name = f"{asset}__effective_power_discharging"
+                self.__electricity_storage_discharge_map[asset] = var_name
+                self.__electricity_storage_discharge_var[var_name] = ca.MX.sym(var_name)
+                self.__electricity_storage_discharge_bounds[var_name] = (0, -bound_storage)
+                self.__electricity_storage_discharge_nominals[var_name] = self.variable_nominal(
+                    f"{asset}.Effective_power_charging"
+                )
+
         for asset in [*self.energy_system_components.get("electricity_source", [])]:
             if isinstance(self.bounds()[f"{asset}.Electricity_source"][1], Timeseries):
                 var_name = f"{asset}__set_point"
@@ -149,6 +165,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         variables.extend(self.__asset_is_switched_on_var.values())
         variables.extend(self.__storage_charging_var.values())
         variables.extend(self.__set_point_var.values())
+        variables.extend(self.__electricity_storage_discharge_var.values())
 
         return variables
 
@@ -168,6 +185,8 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         """
         In this function we add all the nominals for the variables defined/added in the HeatMixin.
         """
+        if variable in self.__electricity_storage_discharge_nominals:
+            return self.__electricity_storage_discharge_nominals[variable]
 
         return super().variable_nominal(variable)
 
@@ -182,6 +201,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         bounds.update(self.__storage_charging_bounds)
         bounds.update(self.__electricity_producer_upper_bounds)
         bounds.update(self.__set_point_bounds)
+        bounds.update(self.__electricity_storage_discharge_bounds)
 
         return bounds
 
@@ -535,6 +555,38 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
         return constraints
 
+    def __electricity_storage_discharge_var_path_constraints(
+        self, ensemble_member: int
+    ) -> List[Tuple[ca.MX, float, float]]:
+        """
+        The discharge variables are added such that two separate goals for charging and discharging
+        can be created. The discharging variable has a lower bound of 0 and should always be larger
+        or equal to the negative of the inflow variable. This allows for first a minimization of
+        the discharging and afterwards a maximisation of the charging without conflicting goals or
+        constraints.
+
+        :param ensemble_member:
+        :return: list of the additional constraints that are created
+        """
+
+        constraints = []
+        options = self.energy_system_options()
+
+        if options["electricity_storage_discharge_variables"]:
+            for storage in self.energy_system_components.get("electricity_storage", []):
+                storage_eff_power_charge_var = self.state(f"{storage}.Effective_power_charging")
+                discharge_var_name = self.__electricity_storage_discharge_map[storage]
+                storage_discharge_var = self.__electricity_storage_discharge_var[discharge_var_name]
+                nominal = self.variable_nominal(discharge_var_name)
+
+                # P_effective_charge represents both charging and discharing based on the sign.
+                # P_discharge >= -P_effective_charge
+                constraints.append(
+                    ((storage_discharge_var + storage_eff_power_charge_var) / nominal, 0.0, np.inf)
+                )
+
+        return constraints
+
     def __get_electrolyzer_gas_mass_flow_out(
         self, coef_a, coef_b, coef_c, electrical_power_input
     ) -> float:
@@ -742,6 +794,9 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         constraints.extend(self.__voltage_loss_path_constraints(ensemble_member))
         constraints.extend(self.__electrolyzer_path_constaint(ensemble_member))
         constraints.extend(self.__electricity_storage_path_constraints(ensemble_member))
+        constraints.extend(
+            self.__electricity_storage_discharge_var_path_constraints(ensemble_member)
+        )
 
         return constraints
 

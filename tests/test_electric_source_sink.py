@@ -7,6 +7,8 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
+from utils_tests import electric_power_conservation_test
+
 
 # TODO: still have to make test where elecitricity direction is switched:
 # e.g. 2 nodes, with at each node a producer and consumer, first one node medium demand, second
@@ -46,6 +48,9 @@ class TestMILPElectricSourceSink(TestCase):
         results = solution.extract_results()
         parameters = solution.parameters(0)
 
+        # Test energy conservation
+        electric_power_conservation_test(solution, results)
+
         max_ = solution.bounds()["ElectricityDemand_2af6__max_size"][0]
         v_min = solution.parameters(0)["ElectricityCable_238f.min_voltage"]
 
@@ -56,15 +61,7 @@ class TestMILPElectricSourceSink(TestCase):
         biggerthen = all(power_consumed >= np.zeros(len(power_consumed)))
         self.assertTrue(biggerthen)
 
-        # Test energy conservation
-        power_consumed = results["ElectricityDemand_2af6.ElectricityIn.Power"]
-        power_delivered = results["ElectricityProducer_b95d.ElectricityOut.Power"]
         power_loss = results["ElectricityCable_238f.Power_loss"]
-        total_power_dissipation = power_consumed + power_loss
-        self.assertIsNone(
-            np.testing.assert_allclose(total_power_dissipation, power_delivered, rtol=1e-4),
-            msg="No energy conservation. Total demand is not equal to total delivery.",
-        )
         biggerthen = all(power_loss >= np.zeros(len(power_loss)))
         self.assertTrue(biggerthen)
 
@@ -133,6 +130,9 @@ class TestMILPElectricSourceSink(TestCase):
         results = solution.extract_results()
         parameters = solution.parameters(0)
 
+        # Test energy conservation
+        electric_power_conservation_test(solution, results)
+
         max_power_transport = (
             parameters["ElectricityCable_238f.min_voltage"]
             * parameters["ElectricityCable_238f.max_current"]
@@ -157,15 +157,7 @@ class TestMILPElectricSourceSink(TestCase):
         biggerthen = all(power_consumed >= np.zeros(len(power_consumed)))
         self.assertTrue(biggerthen)
 
-        # Test energy conservation
-        power_consumed = results["ElectricityDemand_2af6.ElectricityIn.Power"]
-        power_delivered = results["ElectricityProducer_b95d.ElectricityOut.Power"]
         power_loss = results["ElectricityCable_238f.Power_loss"]
-        total_power_dissipation = power_consumed + power_loss
-        self.assertIsNone(
-            np.testing.assert_allclose(total_power_dissipation, power_delivered, rtol=1e-4),
-            msg="No energy conservation. Total demand is not equal to total delivery.",
-        )
         biggerthen = all(power_loss >= np.zeros(len(power_loss)))
         self.assertTrue(biggerthen)
 
@@ -229,12 +221,8 @@ class TestMILPElectricSourceSink(TestCase):
         results = solution.extract_results()
         parameters = solution.parameters(0)
 
-        # check power conservation in transformer
-        np.testing.assert_allclose(
-            results["Transformer_0185.ElectricityIn.Power"],
-            results["Transformer_0185.ElectricityOut.Power"],
-            atol=1.0e-3,
-        )
+        # Check power conservation including power conservation in transformer
+        electric_power_conservation_test(solution, results)
 
         # Check that the cables have two different voltage levels
         assert (
@@ -253,18 +241,7 @@ class TestMILPElectricSourceSink(TestCase):
             atol=1.0e-3,
         )
 
-        for demand in solution.energy_system_components.get("electricity_demand", []):
-            np.testing.assert_allclose(
-                results[f"{demand}.ElectricityIn.V"],
-                parameters[f"{demand}.min_voltage"],
-                atol=1.0e-3,
-            )
-            np.testing.assert_allclose(
-                results[f"{demand}.ElectricityIn.V"] * results[f"{demand}.ElectricityIn.I"],
-                results[f"{demand}.ElectricityIn.Power"],
-                atol=1.0e-3,
-            )
-        for demand in solution.energy_system_components.get("transformer", []):
+        for demand in solution.energy_system_components_get(["electricity_demand", "transformer"]):
             np.testing.assert_allclose(
                 results[f"{demand}.ElectricityIn.V"],
                 parameters[f"{demand}.min_voltage"],

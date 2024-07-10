@@ -1,3 +1,10 @@
+In accordance with LGPLv3, a combined work should also contain a copy of the GPLv3 license.
+A copy may be found below. This is added as a reference and this does NOT license this library
+as GPLv3.
+
+
+A copy of GPLv3 as reference (copied from https://www.gnu.org/licenses/gpl-3.0.txt):
+
                     GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
 
