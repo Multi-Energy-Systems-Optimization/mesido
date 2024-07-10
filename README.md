@@ -86,3 +86,12 @@ In order to release this package:
 6. Check [Github](https://github.com/Multi-Energy-Systems-Optimization/mesido/actions) to confirm the release is
    processed without errors.
 7. Once the release has finished, confirm the new version is available on [pypi](https://pypi.org/project/mesido/).
+
+
+License
+=======
+
+This code base is licensed as LGPLv3 as specified in `LICENSE`. However, the LGPLv3 license
+references the GPLv3 license. As such, we have added a copy of GPLv3 as a reference in the file
+`additional_info_for_license.txt`. This does NOT entail that this code base is licensed as `GPLv3`.
+The copy of the `GPLv3` license is only added as a reference.

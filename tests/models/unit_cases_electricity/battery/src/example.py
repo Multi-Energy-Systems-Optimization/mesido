@@ -58,6 +58,7 @@ class _GoalsAndOptions:
     def energy_system_options(self):
         options = super().energy_system_options()
         options["include_electric_cable_power_loss"] = False
+        options["electricity_storage_discharge_variables"] = True
 
         return options
 
