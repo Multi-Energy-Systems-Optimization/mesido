@@ -108,7 +108,8 @@ class MinimizeSourcesGoalMerit(Goal):
 
 class MaximizeDemandGoalMerit(Goal):
     """
-    Apply constraints to enforce maximisation of consumption, priority is based on the marginal costs
+    Apply constraints to enforce maximisation of consumption, priority is based on the marginal
+    costs
     """
 
     def __init__(self, demand_variable, prod_priority, func_range_bound, nominal, order=2):
@@ -571,7 +572,7 @@ class MultiCommoditySimulator(
             self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
         )
 
-    #TODO: post will be created later
+    # TODO: post will be created later
     # def post(self):
     #     super().post()
     #     self._write_updated_esdl(self.get_energy_system_copy(), optimizer_sim=True)
