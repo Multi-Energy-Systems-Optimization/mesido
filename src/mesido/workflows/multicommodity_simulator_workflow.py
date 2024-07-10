@@ -275,7 +275,7 @@ class MultiCommoditySimulator(
             "electricity_source": "Electricity_source",
             "gas_demand": "Gas_demand_mass_flow",
             "gas_source": "Gas_source_mass_flow",
-            "gas_tank_storage": "Gas_tank_flow",
+            "gas_tank_storage": {"charge": "Gas_tank_flow", "discharge": "Gas_tank_flow"},
             "electrolyzer": "Power_consumed",
         }
 
@@ -334,11 +334,11 @@ class MultiCommoditySimulator(
             assert (
                 marginal_priority >= index_start_of_priority
             ), "Priorities assigned must be smaller than the total number of producers"
-            variable_name = f"{asset}.{asset_variable_map[asset]}"
 
             if asset in [
                 *assets_to_include.get("source", []),
             ]:
+                variable_name = f"{asset}.{asset_variable_map[asset]}"
                 goals.append(
                     MinimizeSourcesGoalMerit(
                         variable_name,
@@ -348,6 +348,7 @@ class MultiCommoditySimulator(
                     )
                 )
             elif asset in assets_to_include.get("conversion", []):
+                variable_name = f"{asset}.{asset_variable_map[asset]}"
                 goals.append(
                     MinimizeSourcesGoalMerit(
                         variable_name,
@@ -366,6 +367,7 @@ class MultiCommoditySimulator(
                     )
                 )
             elif asset in assets_to_include.get("demand", []):
+                variable_name = f"{asset}.{asset_variable_map[asset]}"
                 goals.append(
                     MaximizeDemandGoalMerit(
                         variable_name,
@@ -379,6 +381,7 @@ class MultiCommoditySimulator(
 
                 # charging acts as consumer
                 # Marginal costs for discharging > marginal cost for charging
+                variable_name = f"{asset}.{asset_variable_map[asset]['charge']}"
                 goals.append(
                     MaximizeStorageGoalMerit(
                         variable_name,
@@ -398,8 +401,8 @@ class MultiCommoditySimulator(
                 assert (
                     marginal_priority >= index_start_of_priority
                 ), "Priorities assigned must be smaller than the total number of producers"
-                variable_name = f"{asset}.{asset_variable_map[asset]}"
 
+                variable_name = f"{asset}.{asset_variable_map[asset]['discharge']}"
                 goals.append(
                     MinimizeStorageGoalMerit(
                         variable_name,
