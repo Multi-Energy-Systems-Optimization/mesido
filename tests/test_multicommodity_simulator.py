@@ -13,7 +13,9 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
-from utils_tests import demand_matching_test, energy_conservation_test, feasibility_test
+from utils_tests import demand_matching_test, electric_power_conservation_test, \
+    energy_conservation_test, feasibility_test
+
 
 
 def checks_all_mc_simulations(solution, results):
@@ -355,11 +357,9 @@ class TestMultiCommoditySimulator(TestCase):
         results = solution.extract_results()
 
         feasibility_test(solution)
+        electric_power_conservation_test(solution, results)
 
-        # all_mc_checks cannot be used because max electricity production of windfarm is larger
-        # than the max electricity take off at electrolyzer (due to mas gas demand) and the max
-        # electricity demand.
-        # checks_all_mc_simulations(solution, results)
+        checks_all_mc_simulations(solution, results)
         tol = 1.0e-6
 
         esdl_electrolyzer = solution._esdl_assets[
@@ -374,39 +374,20 @@ class TestMultiCommoditySimulator(TestCase):
             "WindPark_9074.maximum_electricity_source"
         ).values[: len(windfarm_power)]
         storage_gas_mass_flow = results["GasStorage_9172.Gas_tank_flow"]
-        # cap on el consumption by electricity_demand (due to cap, 1.3GW) and by electrolyzer
-        # (due to cap of gas demand)
-        cap_el_consumption = 2.1e9
-        windfarm_target = np.minimum(
-            np.ones(len(windfarm_target)) * cap_el_consumption, windfarm_target
-        )
-        np.testing.assert_allclose(windfarm_target, windfarm_power, atol=1.0e-3, rtol=tol)
+        storage_gas_mass = results["GasStorage_9172.Stored_gas_mass"]
 
-        efficiency = electrolyzer_power / electrolyzer_gas  # W/(g/s) = Ws/g
-        efficiency = efficiency / 3600  # Wh/g
-        provided_efficiencies = (
-            esdl_electrolyzer.attributes["effMaxLoad"],
-            esdl_electrolyzer.attributes["effMinLoad"],
-            esdl_electrolyzer.attributes["efficiency"],
-        )
-        np.testing.assert_array_less(min(provided_efficiencies), efficiency[electrolyzer_power > 0])
-        np.testing.assert_array_less(
-            efficiency[electrolyzer_power > 0], max(provided_efficiencies) + tol
-        )
-
-        # demand gas maximised when sufficient power available to convert electricity to gas
-        cap_electrolyzer_power = (
-            cap_el_consumption - bounds["ElectricityDemand_f833.Electricity_demand"][1]
-        )
-        index_gas_max = windfarm_power >= cap_electrolyzer_power
-        np.testing.assert_allclose(
-            demand_gas[index_gas_max], bounds["Electrolyzer_6327.Gas_mass_flow_out"][1]
-        )
-        # due to priority settings, electricity demand only consuming if demand_gas maximised and
-        # enough windfarm power
-        demand_el_calc = windfarm_power - electrolyzer_power
-        demand_el_calc[demand_el_calc < 0] = 0
-        np.testing.assert_allclose(demand_el_calc, demand_el)
+        # gas mass balance including storage
+        np.testing.assert_allclose(electrolyzer_gas - storage_gas_mass_flow, demand_gas, rtol=tol,
+                                   atol=tol)
+        #timestep 7 & 8 electrolyzer should be producing more hydrogen then the demand can take.
+        # gas_demand is limited by pipe size.
+        # storage is not charging if gas demand is not maximisedd at bound
+        # storage is charging if electrolyzer produces more gas than max of demand.
+        gas_demand_bound = solution.bounds()["GasDemand_4146.Gas_demand_mass_flow"]
+        storage_not_charging = demand_gas != gas_demand_bound[1]
+        np.testing.assert_array_less(storage_gas_mass_flow[storage_not_charging], 0.0 + tol)
+        storage_charging = electrolyzer_gas >= gas_demand_bound[1]
+        np.testing.assert_array_less(0.0-tol, storage_gas_mass_flow[storage_charging])
 
 if __name__ == "__main__":
     import time
