@@ -32,7 +32,7 @@ def checks_all_mc_simulations(solution, results):
     for demand in solution.energy_system_components.get("electricity_demand", []):
         energy_demand = results[f"{demand}.Electricity_demand"]
         if f"{demand}.target_electricity_demand" in solution.io.get_timeseries_names():
-            target = solution.get_timeseries(f"{demand}.target_electricity_demand")
+            target = solution.get_timeseries(f"{demand}.target_electricity_demand").values
             np.testing.assert_allclose(target, energy_demand, atol=1.0e-3, rtol=1.0e-6)
         #     print(demand, target, energy_demand)
         # else:
@@ -41,7 +41,7 @@ def checks_all_mc_simulations(solution, results):
     for demand in solution.energy_system_components.get("gas_demand", []):
         energy_demand = results[f"{demand}.Gas_demand_mass_flow"]
         if f"{demand}.target_gas_demand" in solution.io.get_timeseries_names():
-            target = solution.get_timeseries(f"{demand}.target_gas_demand")
+            target = solution.get_timeseries(f"{demand}.target_gas_demand").values
             np.testing.assert_allclose(target, energy_demand, atol=1.0e-3, rtol=1.0e-6)
         #     print(demand, target, energy_demand)
         # else:
