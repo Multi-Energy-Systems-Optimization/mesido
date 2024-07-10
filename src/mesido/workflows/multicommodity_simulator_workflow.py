@@ -81,10 +81,14 @@ class TargetProducerGoal(Goal):
 
 # -------------------------------------------------------------------------------------------------
 # Step 3:
-# After an optim has been done with all availabe milp source (optional, default excluded), then use
-# the merit order of milp source (something like [3, 1, 2]), which is the order of priority per
-# milp source available for use. Minimize then milp source use with lowest priority 3, then milp
-# source with prioity 2 etc
+# The merit order of the sources and consumers (something like [3, 1, 2]), determine the priority
+# in which the source is available for use and the consumer to consume.
+# The priorities are determined based on the marginal costs provided in ESDL. For producer, the
+# lower the marginal costs, the more the producer should be used (e.g. cheap to use). For consumers
+# the opposite is true, the higher the marginal costs (e.g. more revenue), the more energy should
+# be delivered to that consumer.
+# Minimize the source use with lowest priority 3 (highest marginal costs), then the source with
+# priority 2 etc, while the consumers are maximised starting with the highest marginal costs.
 class MinimizeSourcesGoalMerit(Goal):
     """
     Apply constraints to enforce esdl specified milp producer merit order usage
@@ -104,7 +108,7 @@ class MinimizeSourcesGoalMerit(Goal):
 
 class MaximizeDemandGoalMerit(Goal):
     """
-    Apply constraints to enforce esdl specified milp producer merit order usage
+    Apply constraints to enforce maximisation of consumption, priority is based on the marginal costs
     """
 
     def __init__(self, demand_variable, prod_priority, func_range_bound, nominal, order=2):
@@ -120,7 +124,8 @@ class MaximizeDemandGoalMerit(Goal):
 
 class MinimizeStorageGoalMerit(Goal):
     """
-    Apply constraints to enforce esdl specified milp producer merit order usage
+    Apply constraints to enforce minimisation of charging of storage, priority is based on the
+    marginal costs
     """
 
     def __init__(self, source_variable, prod_priority, func_range_bound, nominal, order=2):
@@ -138,7 +143,8 @@ class MinimizeStorageGoalMerit(Goal):
 
 class MaximizeStorageGoalMerit(Goal):
     """
-    Apply constraints to enforce esdl specified milp producer merit order usage
+    Apply constraints to enforce maximisation of discharging of storage, priority is based on the
+    marginal costs
     """
 
     def __init__(self, demand_variable, prod_priority, func_range_bound, nominal, order=2):
@@ -204,9 +210,11 @@ class MultiCommoditySimulator(
     The priority of the consumers, producers and conversion assets is set using the marginal costs
     in the ESDL file, allowing for flexible customised operation. Producers with the lowest marginal
     costs are maximised in operation before other consumers are used, while consumers with the
-    highest marginal costs are maximised before other consumers are satisfied. Producer or consumer
-    profiles always are preferred over the marginal costs. To obtain this workflow the objective
-    functions are setup according to the scheme described below.
+    highest marginal costs are maximised before other consumers are satisfied. In case both profiles
+    and marginal costs are provided for producers or consumers, then the marginal costs are ignored
+    and the profiles will be matched. always are preferred over the
+    To obtain this workflow the objective functions are setup according to the scheme described
+    below.
 
     Goal priorities are:
     1. Match target demand specified
@@ -216,11 +224,13 @@ class MultiCommoditySimulator(
      the bound is set towards the production profile and other producers are first minimised.
 
     Notes:
-    - Currently only yearly demand profiles (hourly) can be used.
+    - Currently all demand profiles can be used, however the length of the simulation is based on
+    the length and timestep of these profiles. Too long timehorizons might results in too big
+    problems for the solver.
     - No cyclic constraints are yet applied to storages as this workflow solely functions as a
     simulator.
-    - When the number of assets is larger, the simulator might be applied in stages with
-    consecutive parts of the time horizon. TODO
+    - TODO: When the number of assets become larger, the simulator might be applied in stages with
+    consecutive parts of the time horizon.
     """
 
     def __init__(self, *args, **kwargs):
@@ -250,13 +260,22 @@ class MultiCommoditySimulator(
         return assets
 
     def __create_asset_list_controls(self, asset_types_to_include, assets_without_control):
+        """
+        This function creates the lists and dictionaries of assets to include in the optimization
+        based on the marginal costs, e.g. priorities. It excludes the assets who already have
+        assigned timeseries for demand or production.
+        Furthermore, it creates a map of the variables that are required for every asset.
+        :param asset_types_to_include:
+        :param assets_without_control:
+        :return:
+        """
         type_variable_map = {
             "electricity_demand": "Electricity_demand",
             "electricity_source": "Electricity_source",
             "gas_demand": "Gas_demand_mass_flow",
             "gas_source": "Gas_source_mass_flow",
             "gas_tank_storage": "Gas_tank_flow",
-            "electrolyzer": "Power_consumed",  # "Gas_mass_flow_out",
+            "electrolyzer": "Power_consumed",
         }
 
         assets_to_include = {}
@@ -292,6 +311,15 @@ class MultiCommoditySimulator(
         return asset_info
 
     def __create_merit_path_goals(self, asset_info, max_value_merit, index_start_of_priority):
+        """
+        This method creates the goals for every asset that is based on the marginal cost and the
+        relevant variable for that asset. Depending on the type of asset, the goal is a minimisation
+        or maximisation.
+        :param asset_info:
+        :param max_value_merit:
+        :param index_start_of_priority:
+        :return:
+        """
         goals = []
         assets_to_include = asset_info["assets_to_include"]
         assets_list = asset_info["assets_to_include_list"]
@@ -307,10 +335,8 @@ class MultiCommoditySimulator(
             ), "Priorities assigned must be smaller than the total number of producers"
             variable_name = f"{asset}.{asset_variable_map[asset]}"
 
-            # if asset not in self.energy_system_components.get("electricity_demand", []):
             if asset in [
                 *assets_to_include.get("source", []),
-                # *assets_to_include.get("conversion", []),
             ]:
                 goals.append(
                     MinimizeSourcesGoalMerit(
@@ -353,7 +379,6 @@ class MultiCommoditySimulator(
                 # charging acts as consumer
                 # Marginal costs for discharging > marginal cost for charging
                 goals.append(
-                    # MaximizeDemandGoalMerit(
                     MaximizeStorageGoalMerit(
                         variable_name,
                         marginal_priority,
@@ -363,7 +388,8 @@ class MultiCommoditySimulator(
                 )
 
                 # discharging acts as producer
-                # Marginal costs for discharging > marginal cost for charging
+                # Marginal costs for discharging should be larger than marginal cost for charging
+                # TODO: add check on the marginal costs for charging/discharging
                 index_s = asset_merit["asset_name"].index(f"{asset}_discharge")
                 marginal_priority = (
                     index_start_of_priority + max_value_merit - asset_merit["merit_order"][index_s]
@@ -374,7 +400,6 @@ class MultiCommoditySimulator(
                 variable_name = f"{asset}.{asset_variable_map[asset]}"
 
                 goals.append(
-                    # MinimizeSourcesGoalMerit(
                     MinimizeStorageGoalMerit(
                         variable_name,
                         marginal_priority,
@@ -405,8 +430,7 @@ class MultiCommoditySimulator(
         # TODO exclude producers from merit order if they have a profile, even if a marginal cost
         #  is set
 
-        # Storage: charge priority (1) higher than discharge priority (2)
-        #
+        # Storage: charge priority should be higher than discharge priority
         asset_info = self.__create_asset_list_controls(
             asset_types_to_include, assets_without_control
         )
@@ -470,8 +494,6 @@ class MultiCommoditySimulator(
         assets = self.esdl_assets
         for a in assets.values():
             if a.name in assets_list:
-                # if a.asset_type != "ElectricityDemand" or f"{a.name}.target_electricity_demand"
-                # not in self.io.get_timeseries_names():
                 attributes["asset_name"].append(a.name)
                 try:
                     attributes["merit_order"].append(
@@ -539,7 +561,7 @@ class MultiCommoditySimulator(
                 self.solver_stats,
             )
         )
-        logger.info(f"Goal with priority {priority} has completed")
+        logger.info(f"Goal with priority {priority} has been completed")
         if priority == 1 and self.objective_value > 1e-6:
             raise RuntimeError("The heating demand is not matched")
 
@@ -549,6 +571,7 @@ class MultiCommoditySimulator(
             self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
         )
 
+    #TODO: post will be created later
     # def post(self):
     #     super().post()
     #     self._write_updated_esdl(self.get_energy_system_copy(), optimizer_sim=True)
@@ -621,4 +644,3 @@ if __name__ == "__main__":
         profile_reader=ProfileReaderFromFile,
         input_timeseries_file="timeseries.csv",
     )
-    print("a")

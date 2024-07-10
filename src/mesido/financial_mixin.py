@@ -1253,7 +1253,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             for _id, attr in self.get_gas_carriers().items():
                 if attr["id_number_mapping"] == parameters[f"{demand}.id_mapping_carrier"]:
                     carrier_name = attr["name"]
-                    multiplier = 1.0  # priceprofile gas is in EUR/kg
+                    multiplier = 1.0  # priceprofile gas is in EUR/g
             if carrier_name is not None:
                 price_profile = self.get_timeseries(f"{carrier_name}.price_profile").values
 
