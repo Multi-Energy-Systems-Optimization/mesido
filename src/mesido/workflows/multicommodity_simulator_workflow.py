@@ -130,8 +130,8 @@ class MinimizeStorageGoalMerit(Goal):
     """
 
     def __init__(self, source_variable, prod_priority, func_range_bound, nominal, order=2):
-        self.target_min = 0.0  # func_range_bound[0]
-        self.target_max = func_range_bound[1] * 0.999
+        # self.target_min = 0.0  # func_range_bound[0]
+        self.target_max = 0.0
         self.function_range = func_range_bound
         self.source_variable = source_variable
         self.function_nominal = nominal
@@ -275,7 +275,7 @@ class MultiCommoditySimulator(
             "electricity_source": "Electricity_source",
             "gas_demand": "Gas_demand_mass_flow",
             "gas_source": "Gas_source_mass_flow",
-            "gas_tank_storage": {"charge": "Gas_tank_flow", "discharge": "Gas_tank_flow"},
+            "gas_tank_storage": {"charge": "Gas_tank_flow", "discharge": "__Q_discharge"},
             "electrolyzer": "Power_consumed",
         }
 
@@ -402,7 +402,7 @@ class MultiCommoditySimulator(
                     marginal_priority >= index_start_of_priority
                 ), "Priorities assigned must be smaller than the total number of producers"
 
-                variable_name = f"{asset}.{asset_variable_map[asset]['discharge']}"
+                variable_name = f"{asset}{asset_variable_map[asset]['discharge']}"
                 goals.append(
                     MinimizeStorageGoalMerit(
                         variable_name,
@@ -598,6 +598,7 @@ class MultiCommoditySimulatorNoLosses(MultiCommoditySimulator):
         self.gas_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
         self.gas_network_settings["minimize_head_losses"] = False
         options["include_electric_cable_power_loss"] = False
+        options["gas_storage_discharge_variables"] = True
 
         return options
 
