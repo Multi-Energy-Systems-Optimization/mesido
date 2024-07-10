@@ -13,8 +13,13 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
-from utils_tests import demand_matching_test, electric_power_conservation_test, \
-    energy_conservation_test, feasibility_test
+from utils_tests import (
+    demand_matching_test,
+    electric_power_conservation_test,
+    energy_conservation_test,
+    feasibility_test,
+)
+
 
 def check_electrolyzer_efficiency(tol, electrolyzer_gas, electrolyzer_power, esdl_electrolyzer):
     efficiency = electrolyzer_power / electrolyzer_gas  # W/(g/s) = Ws/g
@@ -28,6 +33,7 @@ def check_electrolyzer_efficiency(tol, electrolyzer_gas, electrolyzer_power, esd
     np.testing.assert_array_less(
         efficiency[electrolyzer_power > 0], max(provided_efficiencies) + tol
     )
+
 
 def checks_all_mc_simulations(solution, results):
     # General checks
@@ -286,7 +292,6 @@ class TestMultiCommoditySimulator(TestCase):
 
                 return options
 
-        # TODO: somehow highs always says it is in feasible
         solution = run_optimization_problem(
             MCSimulatorShortSmallProd,
             base_folder=base_folder,
@@ -335,6 +340,17 @@ class TestMultiCommoditySimulator(TestCase):
         np.testing.assert_allclose(el_prod_calc, prod_power, atol=1e-5 * max(demand_el))
 
     def test_multi_commodity_simulator_emerge_storage(self):
+        """
+        Test to run the multicommodity simulator including a gas_storage.
+        Checks:
+        - feasibility
+        - power conservation
+        - efficiency of electrolyzer
+        - gas mass balance
+        - gas storage charges when additional production of hydrogen is possible and discharges
+        when no production is possible.
+        """
+
         import models.emerge.src.example as example
 
         base_folder = Path(example.__file__).resolve().parent.parent
@@ -348,7 +364,6 @@ class TestMultiCommoditySimulator(TestCase):
             input_timeseries_file="timeseries_short.csv",
         )
 
-        bounds = solution.bounds()
         results = solution.extract_results()
 
         feasibility_test(solution)
@@ -361,22 +376,17 @@ class TestMultiCommoditySimulator(TestCase):
             solution.esdl_asset_name_to_id_map["Electrolyzer_6327"]
         ]
         demand_gas = results["GasDemand_4146.Gas_demand_mass_flow"]
-        demand_el = results["ElectricityDemand_f833.Electricity_demand"]
         electrolyzer_power = results["Electrolyzer_6327.Power_consumed"]
         electrolyzer_gas = results["Electrolyzer_6327.Gas_mass_flow_out"]
-        windfarm_power = results["WindPark_9074.Electricity_source"]
-        windfarm_target = solution.get_timeseries(
-            "WindPark_9074.maximum_electricity_source"
-        ).values[: len(windfarm_power)]
         storage_gas_mass_flow = results["GasStorage_9172.Gas_tank_flow"]
-        storage_gas_mass = results["GasStorage_9172.Stored_gas_mass"]
 
         check_electrolyzer_efficiency(tol, electrolyzer_gas, electrolyzer_power, esdl_electrolyzer)
 
         # gas mass balance including storage
-        np.testing.assert_allclose(electrolyzer_gas - storage_gas_mass_flow, demand_gas, rtol=tol,
-                                   atol=tol)
-        #timestep 7 & 8 electrolyzer should be producing more hydrogen then the demand can take.
+        np.testing.assert_allclose(
+            electrolyzer_gas - storage_gas_mass_flow, demand_gas, rtol=tol, atol=tol
+        )
+        # timestep 7 & 8 electrolyzer should be producing more hydrogen then the demand can take.
         # gas_demand is limited by pipe size.
         # storage is not charging if gas demand is not maximisedd at bound
         # storage is charging if electrolyzer produces more gas than max of demand.
@@ -384,9 +394,20 @@ class TestMultiCommoditySimulator(TestCase):
         storage_not_charging = demand_gas != gas_demand_bound[1]
         np.testing.assert_array_less(storage_gas_mass_flow[storage_not_charging], 0.0 + tol)
         storage_charging = electrolyzer_gas >= gas_demand_bound[1]
-        np.testing.assert_array_less(0.0-tol, storage_gas_mass_flow[storage_charging])
+        np.testing.assert_array_less(0.0 - tol, storage_gas_mass_flow[storage_charging])
 
     def test_multi_commodity_simulator_emerge_battery(self):
+        """
+        Test to run the multicommodity simulator including a battery and gas storage.
+        Checks:
+        - feasibility
+        - power conservation
+        - efficiency of electrolyzer
+        - gas mass balance
+        - battery charges when over production of electricity and discharges when not enough
+        electrical power is produced for the electrolyzer.
+        - gas storage is not charged/discharged due to priority level.
+        """
         import models.emerge.src.example as example
 
         base_folder = Path(example.__file__).resolve().parent.parent
@@ -400,7 +421,6 @@ class TestMultiCommoditySimulator(TestCase):
             input_timeseries_file="timeseries_short.csv",
         )
 
-        bounds = solution.bounds()
         results = solution.extract_results()
 
         feasibility_test(solution)
@@ -413,7 +433,6 @@ class TestMultiCommoditySimulator(TestCase):
             solution.esdl_asset_name_to_id_map["Electrolyzer_6327"]
         ]
         demand_gas = results["GasDemand_4146.Gas_demand_mass_flow"]
-        demand_el = results["ElectricityDemand_f833.Electricity_demand"]
         electrolyzer_power = results["Electrolyzer_6327.Power_consumed"]
         electrolyzer_power_bound = solution.bounds()["Electrolyzer_6327.Power_consumed"][1]
         electrolyzer_gas = results["Electrolyzer_6327.Gas_mass_flow_out"]
@@ -423,15 +442,19 @@ class TestMultiCommoditySimulator(TestCase):
 
         check_electrolyzer_efficiency(tol, electrolyzer_gas, electrolyzer_power, esdl_electrolyzer)
 
+        # gas mass balance including storage
+        np.testing.assert_allclose(
+            electrolyzer_gas - storage_gas_mass_flow, demand_gas, rtol=tol, atol=tol
+        )
+
         # check battery only discharged if not enough windpower for electrolyzer
-        discharge_battery = windfarm_power<electrolyzer_power_bound
+        discharge_battery = windfarm_power < electrolyzer_power_bound
         np.testing.assert_array_less(battery_power[discharge_battery], 0.0 + tol)
-        charge_battery = windfarm_power>electrolyzer_power_bound
-        np.testing.assert_array_less(0.0,battery_power[charge_battery])
+        charge_battery = windfarm_power > electrolyzer_power_bound
+        np.testing.assert_array_less(0.0, battery_power[charge_battery])
 
         # gas_storage not used due to low priority
         np.testing.assert_allclose(storage_gas_mass_flow[1:], 0.0)
-
 
 
 if __name__ == "__main__":
