@@ -416,6 +416,12 @@ class MultiCommoditySimulator(
         return goals
 
     def __merit_path_goals(self):
+        """
+        This method organizes the goals and assigns their priorities
+        The first two priorities are reserved for matching of demand. Thereby the priorities of the
+         other goals to maximize specific producers and minimize demand, start at priority 3.
+        :return:
+        """
         # TODO: improve the asset_types_to_include and esdl_assets_to_include
         asset_types_to_include = {
             "source": ["electricity_source", "gas_source"],
