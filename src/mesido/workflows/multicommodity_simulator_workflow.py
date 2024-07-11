@@ -469,10 +469,13 @@ class MultiCommoditySimulator(
         options = super().energy_system_options()
 
         self.gas_network_settings["head_loss_option"] = (
-            HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
+            HeadLossOption.LINEARIZED_N_LINES_EQUALITY
         )
         self.gas_network_settings["minimize_head_losses"] = True
         options["include_asset_is_switched_on"] = True
+
+        options["gas_storage_discharge_variables"] = True
+        options["electricity_storage_discharge_variables"] = True
 
         return options
 
@@ -553,6 +556,11 @@ class MultiCommoditySimulator(
         options = super().solver_options()
         options["casadi_solver"] = self._qpsol
 
+        options = super().solver_options()
+        options["solver"] = "highs"
+        highs_options = options["highs"] = {}
+        highs_options["presolve"] = "off"
+
         return options
 
     def priority_started(self, priority):
@@ -614,9 +622,6 @@ class MultiCommoditySimulatorNoLosses(MultiCommoditySimulator):
         self.gas_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
         self.gas_network_settings["minimize_head_losses"] = False
         options["include_electric_cable_power_loss"] = False
-
-        options["gas_storage_discharge_variables"] = True
-        options["electricity_storage_discharge_variables"] = True
 
         return options
 

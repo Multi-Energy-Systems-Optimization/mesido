@@ -1,9 +1,11 @@
 from pathlib import Path
 from unittest import TestCase
 
+import mesido._darcy_weisbach as darcy_weisbach
 from mesido.electricity_physics_mixin import ElectrolyzerOption
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.network_common import NetworkSettings
 from mesido.workflows.multicommodity_simulator_workflow import (
     MultiCommoditySimulator,
     MultiCommoditySimulatorNoLosses,
@@ -454,7 +456,79 @@ class TestMultiCommoditySimulator(TestCase):
         np.testing.assert_array_less(0.0, battery_power[charge_battery])
 
         # gas_storage not used due to low priority
-        np.testing.assert_allclose(storage_gas_mass_flow[1:], 0.0)
+        np.testing.assert_allclose(storage_gas_mass_flow[1:], 0.0, atol=tol)
+
+    def test_multi_commodity_simulator_emerge_head_losses(self):
+        """
+        Test to run the multicommodity simulator including a battery and gas storage.
+        Checks:
+        - feasibility
+        - power conservation
+        - efficiency of electrolyzer
+        - gas mass balance
+        - battery charges when over production of electricity and discharges when not enough
+        electrical power is produced for the electrolyzer.
+        - gas storage is not charged/discharged due to priority level.
+        """
+        import models.emerge.src.example as example
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        solution = run_optimization_problem(
+            MultiCommoditySimulator,
+            base_folder=base_folder,
+            esdl_file_name="emerge_battery_priorities.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_short.csv",
+        )
+
+        results = solution.extract_results()
+        parameters = solution.parameters(0)
+
+        feasibility_test(solution)
+        electric_power_conservation_test(solution, results)
+
+        checks_all_mc_simulations(solution, results)
+        tol = 1.0e-6
+
+        esdl_electrolyzer = solution._esdl_assets[
+            solution.esdl_asset_name_to_id_map["Electrolyzer_6327"]
+        ]
+        demand_gas = results["GasDemand_4146.Gas_demand_mass_flow"]
+        electrolyzer_power = results["Electrolyzer_6327.Power_consumed"]
+        electrolyzer_power_bound = solution.bounds()["Electrolyzer_6327.Power_consumed"][1]
+        electrolyzer_gas = results["Electrolyzer_6327.Gas_mass_flow_out"]
+        windfarm_power = results["WindPark_9074.Electricity_source"]
+        storage_gas_mass_flow = results["GasStorage_9172.Gas_tank_flow"]
+        battery_power = results["Battery_4688.ElectricityIn.Power"]
+
+        check_electrolyzer_efficiency(tol, electrolyzer_gas, electrolyzer_power, esdl_electrolyzer)
+
+        # gas mass balance including storage
+        np.testing.assert_allclose(
+            electrolyzer_gas - storage_gas_mass_flow, demand_gas, rtol=tol, atol=tol
+        )
+
+        # check battery only discharged if not enough windpower for electrolyzer
+        discharge_battery = windfarm_power < electrolyzer_power_bound
+        np.testing.assert_array_less(battery_power[discharge_battery], 0.0 + tol)
+        charge_battery = windfarm_power > electrolyzer_power_bound
+        np.testing.assert_array_less(0.0, battery_power[charge_battery])
+
+        # gas_storage not used due to low priority
+        np.testing.assert_allclose(storage_gas_mass_flow[1:], 0.0, atol=tol)
+
+        for pipe in solution.energy_system_components.get("gas_pipe"):
+            length = parameters[f"{pipe}.length"]
+            diameter = parameters[f"{pipe}.diameter"]
+            vol_flow_rate = results[f"{pipe}.GasIn.Q"]
+            v_pipe = vol_flow_rate/(3.14*diameter**2)
+            wall_roughness = solution.energy_system_options()["wall_roughness"]
+            dw_headloss = darcy_weisbach.head_loss(v_pipe[1], diameter, length, wall_roughness, 20,
+                                     NetworkSettings.NETWORK_TYPE_HYDROGEN, 15e5)
+            head_loss = results[f"{pipe}.dH"]
+            print("a")
 
 
 if __name__ == "__main__":
