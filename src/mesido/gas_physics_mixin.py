@@ -181,7 +181,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             # Note we always use the gas network type for the naming of variables, independent of
             # the gas mixture used.
             initialized_vars = self._gn_head_loss_class.initialize_variables_nominals_and_bounds(
-                self, NetworkSettings.NETWORK_TYPE_GAS, pipe_name, self.gas_network_settings
+                self, self.gas_network_settings["network_type"], pipe_name, self.gas_network_settings
             )
             if initialized_vars[0] != {}:
                 self.__gas_pipe_head_bounds[

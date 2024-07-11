@@ -523,7 +523,7 @@ class TestMultiCommoditySimulator(TestCase):
             length = parameters[f"{pipe}.length"]
             diameter = parameters[f"{pipe}.diameter"]
             vol_flow_rate = results[f"{pipe}.GasIn.Q"]
-            v_pipe = vol_flow_rate/(3.14*diameter**2)
+            v_pipe = vol_flow_rate/(3.14*(diameter/2)**2)
             wall_roughness = solution.energy_system_options()["wall_roughness"]
             dw_headloss = darcy_weisbach.head_loss(v_pipe[1], diameter, length, wall_roughness, 20,
                                      NetworkSettings.NETWORK_TYPE_HYDROGEN, 15e5)

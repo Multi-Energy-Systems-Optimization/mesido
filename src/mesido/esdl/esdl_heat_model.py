@@ -643,6 +643,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
             conductivies_insulation,
         ) = self._pipe_get_diameter_and_insulation(asset)
 
+        id_mapping = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
+            "id_number_mapping"
+        ]
+
         if isinstance(asset.in_ports[0].carrier, esdl.esdl.GasCommodity):
             q_nominal = math.pi * diameter**2 / 4.0 * self.v_max_gas / 2.0
             self._set_q_nominal(asset, q_nominal)
@@ -658,6 +662,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 Hydraulic_power=dict(nominal=q_nominal * pressure),
             )
             modifiers = dict(
+                id_mapping_carrier=id_mapping,
                 length=length,
                 density=density,
                 diameter=diameter,
