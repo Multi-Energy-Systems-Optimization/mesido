@@ -9,7 +9,10 @@ from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
+<<<<<<< HEAD
 from mesido.network_common import NetworkSettings
+=======
+>>>>>>> main
 from mesido.physics_mixin import PhysicsMixin
 from mesido.workflows.io.write_output import ScenarioOutput
 from mesido.workflows.utils.helpers import main_decorator
@@ -340,10 +343,12 @@ class MultiCommoditySimulator(
                 marginal_priority >= index_start_of_priority
             ), "Priorities assigned must be smaller than the total number of producers"
 
+
             if asset in [
                 *assets_to_include.get("source", []),
             ]:
                 variable_name = f"{asset}.{asset_variable_map[asset]}"
+
                 goals.append(
                     MinimizeSourcesGoalMerit(
                         variable_name,
@@ -377,6 +382,7 @@ class MultiCommoditySimulator(
                 )
             elif asset in assets_to_include.get("demand", []):
                 variable_name = f"{asset}.{asset_variable_map[asset]}"
+
                 goals.append(
                     MaximizeDemandGoalMerit(
                         variable_name,
@@ -391,6 +397,7 @@ class MultiCommoditySimulator(
                 # charging acts as consumer
                 # Marginal costs for discharging > marginal cost for charging
                 variable_name = f"{asset}.{asset_variable_map[asset]['charge']}"
+
                 goals.append(
                     MaximizeStorageGoalMerit(
                         variable_name,
@@ -412,6 +419,7 @@ class MultiCommoditySimulator(
                 ), "Priorities assigned must be smaller than the total number of producers"
 
                 variable_name = f"{asset}{asset_variable_map[asset]['discharge']}"
+
                 goals.append(
                     MinimizeStorageGoalMerit(
                         variable_name,
@@ -428,6 +436,13 @@ class MultiCommoditySimulator(
         return goals
 
     def __merit_path_goals(self):
+        """
+        This method organizes the goals and assigns their priorities
+        The first two priorities are reserved for matching of demand. Thereby the priorities of the
+         other goals to maximize specific producers and minimize demand, start at priority 3.
+        :return:
+        """
+
         # TODO: improve the asset_types_to_include and esdl_assets_to_include
         asset_types_to_include = {
             "source": ["electricity_source", "gas_source"],
@@ -522,6 +537,7 @@ class MultiCommoditySimulator(
                         attributes["merit_order"].append(
                             a.attributes["costInformation"].marginalCosts.value - 1e-6
                         )
+
                 except AttributeError:
                     try:
                         attributes["merit_order"].append(
@@ -556,7 +572,6 @@ class MultiCommoditySimulator(
         options = super().solver_options()
         options["casadi_solver"] = self._qpsol
 
-        options = super().solver_options()
         options["solver"] = "highs"
         highs_options = options["highs"] = {}
         highs_options["presolve"] = "off"
