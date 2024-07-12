@@ -26,6 +26,7 @@ from rtctools.optimization.single_pass_goal_programming_mixin import (
     CachingQPSol,
     SinglePassGoalProgrammingMixin,
 )
+from rtctools.optimization.timeseries import Timeseries
 from rtctools.util import run_optimization_problem
 
 DB_HOST = "172.17.0.2"
@@ -613,6 +614,75 @@ class MultiCommoditySimulatorNoLosses(MultiCommoditySimulator):
         highs_options["presolve"] = "off"
 
         return options
+
+
+class MultiCommoditySimulatorNoLossesStagedTimeSequential(MultiCommoditySimulatorNoLosses):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.__start_time_index = kwargs.get("start_index", None)
+        self.__end_time_index = kwargs.get("end_index", None)
+        self._full_time_series = None
+
+        self.__storage_initial_state_bounds = kwargs.get("storage_initial_state_bounds", {})
+
+    def times(self, variable=None) -> np.ndarray:
+        if self._full_time_series is None:
+            self._full_time_series = super().times(variable)
+
+        if self.__start_time_index is not None and self.__end_time_index is not None:
+            return super().times(variable)[self.__start_time_index:self.__end_time_index]
+        elif self.__start_time_index is not None:
+            return super().times(variable)[self.__start_time_index:]
+        elif self.__end_time_index is not None:
+            return super().times(variable)[:self.__end_time_index]
+        else:
+            return super().times(variable)
+
+    def bounds(self):
+        bounds = super().bounds()
+        bounds.update(self.__storage_initial_state_bounds)
+        return bounds
+
+def run_sequatially_staged_simulation(simulation_window_size=1, *args, **kwargs):
+    tic = time.time()
+    end_time = 2*20
+    end_time_confirmed = False
+    storage_initial_state_bounds = {}
+    constrained_assets = {
+        "electricity_demand": ["Electricity_demand"],
+        # "battery": ["Stored_electricity", "Effective_power_charging"],
+    }
+
+    for simulated_window in range(0, end_time, simulation_window_size):
+        sub_end_time = min(end_time, simulated_window + simulation_window_size)
+        solution = run_optimization_problem(
+            MultiCommoditySimulatorNoLossesStagedTimeSequential,
+            start_index=simulated_window,
+            end_index=simulated_window + simulation_window_size,
+            storage_initial_state_bounds=storage_initial_state_bounds,
+            **kwargs,
+        )
+        if not end_time_confirmed:
+            end_time = len(solution._full_time_series)
+            end_time_confirmed = True
+        results = solution.extract_results()
+        if sub_end_time < end_time:
+            for asset_type, variables in constrained_assets.items():
+                for asset in solution.energy_system_components.get(asset_type, []):
+                    sub_time_series = solution._full_time_series[
+                                      simulated_window + simulation_window_size:min(end_time,
+                                                                                    simulated_window + 2 * simulation_window_size)]
+                    lb_values = [-np.inf] * len(sub_time_series)
+                    ub_values = [-np.inf] * len(sub_time_series)
+                    for variable in variables:
+                        lb_values[0] = ub_values[0] = results[f"{asset}.{variable}"][-1]
+                        lb = Timeseries(sub_time_series, lb_values)
+                        ub = Timeseries(sub_time_series, ub_values)
+                        storage_initial_state_bounds[f"{asset}.{variable}"] = (lb, ub)
+
+    print(time.time() - tic)
 
 
 # -------------------------------------------------------------------------------------------------

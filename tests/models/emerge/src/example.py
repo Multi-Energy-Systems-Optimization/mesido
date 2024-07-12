@@ -2,6 +2,8 @@ import time
 
 import casadi as ca
 
+import numpy as np
+
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
@@ -19,6 +21,8 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 )
 from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
 from rtctools.util import run_optimization_problem
+
+from mesido.workflows.multicommodity_simulator_workflow import MultiCommoditySimulatorNoLossesStagedTimeSequential, run_sequatially_staged_simulation
 
 
 class MaxHydrogenProduction(Goal):
@@ -318,14 +322,48 @@ class EmergeTest(
 if __name__ == "__main__":
 
     tic = time.time()
-    for _ in range(10):
-        elect = run_optimization_problem(
-            EmergeTest,
-            esdl_file_name="emerge_solar_battery.esdl",
+    # for _ in range(10):
+    #     elect = run_optimization_problem(
+    #         EmergeTest,
+    #         esdl_file_name="emerge_solar_battery.esdl",
+    #         esdl_parser=ESDLFileParser,
+    #         profile_reader=ProfileReaderFromFile,
+    #         input_timeseries_file="timeseries_with_PV.csv",
+    #     )
+
+    from rtctools.optimization.timeseries import Timeseries
+
+    simulation_window_size = 20
+    end_time = 27
+    storage_initial_state_bounds = {}
+    constrained_assets = {
+        "electricity_demand": ["Electricity_demand"],
+        # "battery": ["Stored_electricity", "Effective_power_charging"],
+    }
+
+
+    for simulated_window in range(0, end_time, simulation_window_size):
+        sub_end_time = min(end_time, simulated_window + simulation_window_size)
+        solution = run_sequatially_staged_simulation(
+            simulation_window_size=20,
+            esdl_file_name="emerge_priorities_withoutstorage.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries_with_PV.csv",
-        )
+            input_timeseries_file="timeseries_short.csv",)
+        # results = solution.extract_results()
+        # if sub_end_time < end_time:
+        #     for asset_type, variables in constrained_assets.items():
+        #         for asset in solution.energy_system_components.get(asset_type, []):
+        #             sub_time_series = solution._full_time_series[simulated_window+simulation_window_size:min(end_time, simulated_window + 2 * simulation_window_size)]
+        #             lb_values = [-np.inf]*len(sub_time_series)
+        #             ub_values = [-np.inf] * len(sub_time_series)
+        #             for variable in variables:
+        #                 lb_values[0] = ub_values[0] = results[f"{asset}.{variable}"][-1]
+        #                 lb = Timeseries(sub_time_series, lb_values)
+        #                 ub = Timeseries(sub_time_series, ub_values)
+        #                 storage_initial_state_bounds[f"{asset}.{variable}"] = (lb, ub)
+
+
     print(time.time() - tic)
     # elect = run_optimization_problem(
     #     EmergeTest,
@@ -334,5 +372,5 @@ if __name__ == "__main__":
     #     profile_reader=ProfileReaderFromFile,
     #     input_timeseries_file="timeseries.csv",
     # )
-    results = elect.extract_results()
-    a = 1
+    # results = elect.extract_results()
+    # a = 1
