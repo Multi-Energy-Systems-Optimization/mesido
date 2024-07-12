@@ -643,6 +643,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
             conductivies_insulation,
         ) = self._pipe_get_diameter_and_insulation(asset)
 
+        id_mapping = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
+            "id_number_mapping"
+        ]
+
         if isinstance(asset.in_ports[0].carrier, esdl.esdl.GasCommodity):
             q_nominal = math.pi * diameter**2 / 4.0 * self.v_max_gas / 2.0
             self._set_q_nominal(asset, q_nominal)
@@ -658,6 +662,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 Hydraulic_power=dict(nominal=q_nominal * pressure),
             )
             modifiers = dict(
+                id_mapping_carrier=id_mapping,
                 length=length,
                 density=density,
                 diameter=diameter,
@@ -1643,6 +1648,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 I=dict(min=-i_max, max=i_max, nominal=i_nom),
                 Power=dict(min=-max_discharge, max=max_charge, nominal=max_charge / 2.0),
             ),
+            Effective_power_charging=dict(
+                min=-max_discharge, max=max_charge, nominal=max_charge / 2.0
+            ),
             **self._get_cost_figure_modifiers(asset),
         )
 
@@ -2013,6 +2021,13 @@ class AssetToHeatComponent(_AssetToComponentBase):
         max_power = asset.attributes.get("power", math.inf)
         min_load = float(asset.attributes["minLoad"])
         max_load = float(asset.attributes["maxLoad"])
+        if not max_power == max_load:
+            max_power = max_load
+            logger.warning(
+                f"The maximum load and the power of the electrolyzer did not match for "
+                f"{asset.name}. The maximum load of {max_load}W is now used as maximum "
+                f"power."
+            )
         eff_min_load = asset.attributes["effMinLoad"]  # Wh/g
         eff_max_load = asset.attributes["effMaxLoad"]  # Wh/g
         eff_max = asset.attributes["efficiency"]  # Wh/g

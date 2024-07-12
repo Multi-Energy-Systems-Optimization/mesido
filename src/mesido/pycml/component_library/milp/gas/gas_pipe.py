@@ -25,6 +25,7 @@ class GasPipe(GasTwoPort, BaseAsset):
         self.area = 0.25 * pi * self.diameter**2
         self.Q_nominal = self.v_max / 2.0 * self.area
         self.pressure = 16.0e5
+        self.id_mapping_carrier = -1
 
         self.nominal_head = 30.0
         self.length = nan

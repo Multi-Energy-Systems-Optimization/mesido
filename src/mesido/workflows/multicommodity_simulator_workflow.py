@@ -9,6 +9,7 @@ from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
+from mesido.network_common import NetworkSettings
 from mesido.physics_mixin import PhysicsMixin
 from mesido.workflows.io.write_output import ScenarioOutput
 from mesido.workflows.utils.helpers import main_decorator
@@ -131,8 +132,7 @@ class MinimizeStorageGoalMerit(Goal):
     """
 
     def __init__(self, source_variable, prod_priority, func_range_bound, nominal, order=2):
-        self.target_min = 0.0  # func_range_bound[0]
-        self.target_max = func_range_bound[1] * 0.999
+        self.target_max = 0.0
         self.function_range = func_range_bound
         self.source_variable = source_variable
         self.function_nominal = nominal
@@ -154,7 +154,7 @@ class MaximizeStorageGoalMerit(Goal):
         self.function_range = func_range_bound
         self.demand_variable = demand_variable
         self.function_nominal = nominal
-        self.priority = prod_priority + 1
+        self.priority = prod_priority
         self.order = order
 
     def function(self, optimization_problem, ensemble_member):
@@ -276,7 +276,11 @@ class MultiCommoditySimulator(
             "electricity_source": "Electricity_source",
             "gas_demand": "Gas_demand_mass_flow",
             "gas_source": "Gas_source_mass_flow",
-            "gas_tank_storage": "Gas_tank_flow",
+            "gas_tank_storage": {"charge": "Gas_tank_flow", "discharge": "__Q_discharge"},
+            "electricity_storage": {
+                "charge": "Effective_power_charging",
+                "discharge": "__effective_power_discharging",
+            },
             "electrolyzer": "Power_consumed",
         }
 
@@ -335,11 +339,12 @@ class MultiCommoditySimulator(
             assert (
                 marginal_priority >= index_start_of_priority
             ), "Priorities assigned must be smaller than the total number of producers"
-            variable_name = f"{asset}.{asset_variable_map[asset]}"
 
             if asset in [
                 *assets_to_include.get("source", []),
             ]:
+                variable_name = f"{asset}.{asset_variable_map[asset]}"
+
                 goals.append(
                     MinimizeSourcesGoalMerit(
                         variable_name,
@@ -349,10 +354,15 @@ class MultiCommoditySimulator(
                     )
                 )
             elif asset in assets_to_include.get("conversion", []):
+                variable_name = f"{asset}.{asset_variable_map[asset]}"
+                index_s = asset_merit["asset_name"].index(f"{asset}_prod")
+                marginal_priority_source = (
+                    index_start_of_priority + max_value_merit - asset_merit["merit_order"][index_s]
+                )
                 goals.append(
                     MinimizeSourcesGoalMerit(
                         variable_name,
-                        marginal_priority + 1,
+                        marginal_priority_source,
                         self.bounds()[variable_name],
                         self.variable_nominal(variable_name),
                     )
@@ -367,6 +377,8 @@ class MultiCommoditySimulator(
                     )
                 )
             elif asset in assets_to_include.get("demand", []):
+                variable_name = f"{asset}.{asset_variable_map[asset]}"
+
                 goals.append(
                     MaximizeDemandGoalMerit(
                         variable_name,
@@ -380,6 +392,8 @@ class MultiCommoditySimulator(
 
                 # charging acts as consumer
                 # Marginal costs for discharging > marginal cost for charging
+                variable_name = f"{asset}.{asset_variable_map[asset]['charge']}"
+
                 goals.append(
                     MaximizeStorageGoalMerit(
                         variable_name,
@@ -399,7 +413,8 @@ class MultiCommoditySimulator(
                 assert (
                     marginal_priority >= index_start_of_priority
                 ), "Priorities assigned must be smaller than the total number of producers"
-                variable_name = f"{asset}.{asset_variable_map[asset]}"
+
+                variable_name = f"{asset}{asset_variable_map[asset]['discharge']}"
 
                 goals.append(
                     MinimizeStorageGoalMerit(
@@ -423,12 +438,13 @@ class MultiCommoditySimulator(
          other goals to maximize specific producers and minimize demand, start at priority 3.
         :return:
         """
+
         # TODO: improve the asset_types_to_include and esdl_assets_to_include
         asset_types_to_include = {
             "source": ["electricity_source", "gas_source"],
             "demand": ["electricity_demand", "gas_demand"],
             "conversion": ["electrolyzer"],
-            "storage": ["gas_tank_storage"],
+            "storage": ["gas_tank_storage", "electricity_storage"],
         }
 
         assets_without_control = ["Pipe", "ElectricityCable", "Joint", "Bus"]
@@ -464,11 +480,13 @@ class MultiCommoditySimulator(
     def energy_system_options(self):
         options = super().energy_system_options()
 
-        self.gas_network_settings["head_loss_option"] = (
-            HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
-        )
+        self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
+        self.gas_network_settings["network_type"] = NetworkSettings.NETWORK_TYPE_HYDROGEN
         self.gas_network_settings["minimize_head_losses"] = True
         options["include_asset_is_switched_on"] = True
+
+        options["gas_storage_discharge_variables"] = True
+        options["electricity_storage_discharge_variables"] = True
 
         return options
 
@@ -507,6 +525,17 @@ class MultiCommoditySimulator(
                     attributes["merit_order"].append(
                         a.attributes["costInformation"].marginalCosts.value
                     )
+                    if (
+                        a.asset_type == "Electrolyzer"
+                    ):  # electrolyzer would require minimisation of electricity right after
+                        # maximisation gas, therefore a merit_order with a very small adjusted
+                        # value is used (e.g. 1e-6) to ensure these goals are right after each
+                        # other and no other goals are in between.
+                        attributes["asset_name"].append(f"{a.name}_prod")
+                        attributes["merit_order"].append(
+                            a.attributes["costInformation"].marginalCosts.value - 1e-6
+                        )
+
                 except AttributeError:
                     try:
                         attributes["merit_order"].append(
@@ -540,6 +569,10 @@ class MultiCommoditySimulator(
     def solver_options(self):
         options = super().solver_options()
         options["casadi_solver"] = self._qpsol
+
+        options["solver"] = "highs"
+        highs_options = options["highs"] = {}
+        highs_options["presolve"] = "off"
 
         return options
 

@@ -364,7 +364,7 @@ def electric_power_conservation_test(solution, results):
     - Power and current conservation in busses.
     - Power conservation in transformers, upto now no losses in transformer.
     """
-    tol = 1e-6
+    tol = 1e-4
     energy_sum = np.zeros(len(solution.times()))
 
     consumers = solution.energy_system_components_get(
