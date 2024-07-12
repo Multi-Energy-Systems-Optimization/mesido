@@ -9,10 +9,7 @@ from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
-<<<<<<< HEAD
 from mesido.network_common import NetworkSettings
-=======
->>>>>>> main
 from mesido.physics_mixin import PhysicsMixin
 from mesido.workflows.io.write_output import ScenarioOutput
 from mesido.workflows.utils.helpers import main_decorator
@@ -342,7 +339,6 @@ class MultiCommoditySimulator(
             assert (
                 marginal_priority >= index_start_of_priority
             ), "Priorities assigned must be smaller than the total number of producers"
-
 
             if asset in [
                 *assets_to_include.get("source", []),

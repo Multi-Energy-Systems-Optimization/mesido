@@ -294,7 +294,6 @@ class TestMultiCommoditySimulator(TestCase):
 
                 return options
 
-
         solution = run_optimization_problem(
             MCSimulatorShortSmallProd,
             base_folder=base_folder,
@@ -341,7 +340,6 @@ class TestMultiCommoditySimulator(TestCase):
             np.minimum(max(electrolyzer_power) - windfarm_power, prod_power_cap), 0.0
         )
         np.testing.assert_allclose(el_prod_calc, prod_power, atol=1e-5 * max(demand_el))
-
 
     def test_multi_commodity_simulator_emerge_storage(self):
         """
