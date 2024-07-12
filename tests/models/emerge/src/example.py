@@ -346,22 +346,10 @@ if __name__ == "__main__":
         sub_end_time = min(end_time, simulated_window + simulation_window_size)
         solution = run_sequatially_staged_simulation(
             simulation_window_size=20,
-            esdl_file_name="emerge_priorities_withoutstorage.esdl",
+            esdl_file_name="emerge_battery_priorities.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_short.csv",)
-        # results = solution.extract_results()
-        # if sub_end_time < end_time:
-        #     for asset_type, variables in constrained_assets.items():
-        #         for asset in solution.energy_system_components.get(asset_type, []):
-        #             sub_time_series = solution._full_time_series[simulated_window+simulation_window_size:min(end_time, simulated_window + 2 * simulation_window_size)]
-        #             lb_values = [-np.inf]*len(sub_time_series)
-        #             ub_values = [-np.inf] * len(sub_time_series)
-        #             for variable in variables:
-        #                 lb_values[0] = ub_values[0] = results[f"{asset}.{variable}"][-1]
-        #                 lb = Timeseries(sub_time_series, lb_values)
-        #                 ub = Timeseries(sub_time_series, ub_values)
-        #                 storage_initial_state_bounds[f"{asset}.{variable}"] = (lb, ub)
 
 
     print(time.time() - tic)

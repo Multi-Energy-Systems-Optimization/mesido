@@ -678,22 +678,31 @@ class MultiCommoditySimulatorNoLossesStagedTimeSequential(MultiCommoditySimulato
         bounds.update(self.__storage_initial_state_bounds)
         return bounds
 
-def run_sequatially_staged_simulation(simulation_window_size=1, *args, **kwargs):
+def run_sequatially_staged_simulation(simulation_window_size=2, *args, **kwargs):
+    """
+    ...
+    """
+
+
+    assert simulation_window_size >= 2
+
     tic = time.time()
-    end_time = 2*20
+    end_time = 2*simulation_window_size
     end_time_confirmed = False
     storage_initial_state_bounds = {}
     constrained_assets = {
-        "electricity_demand": ["Electricity_demand"],
-        # "battery": ["Stored_electricity", "Effective_power_charging"],
+        "battery": ["Stored_electricity", "Effective_power_charging"],
     }
 
+    total_results = None
+
+    #TODO: check the indexing for overlap which might be needed.
     for simulated_window in range(0, end_time, simulation_window_size):
         sub_end_time = min(end_time, simulated_window + simulation_window_size)
         solution = run_optimization_problem(
             MultiCommoditySimulatorNoLossesStagedTimeSequential,
-            start_index=simulated_window,
-            end_index=simulated_window + simulation_window_size,
+            start_index=max(simulated_window-1, 0),
+            end_index=sub_end_time,
             storage_initial_state_bounds=storage_initial_state_bounds,
             **kwargs,
         )
@@ -701,6 +710,15 @@ def run_sequatially_staged_simulation(simulation_window_size=1, *args, **kwargs)
             end_time = len(solution._full_time_series)
             end_time_confirmed = True
         results = solution.extract_results()
+
+        #TODO: check if we now capture all relevant variables.
+        if total_results is None:
+            total_results = results
+        else:
+            for key, data in results.items():
+                if len(total_results[key]) > 1:
+                    total_results[key] = np.concatenate((total_results[key], data[1:]))
+
         if sub_end_time < end_time:
             for asset_type, variables in constrained_assets.items():
                 for asset in solution.energy_system_components.get(asset_type, []):
@@ -708,7 +726,7 @@ def run_sequatially_staged_simulation(simulation_window_size=1, *args, **kwargs)
                                       simulated_window + simulation_window_size:min(end_time,
                                                                                     simulated_window + 2 * simulation_window_size)]
                     lb_values = [-np.inf] * len(sub_time_series)
-                    ub_values = [-np.inf] * len(sub_time_series)
+                    ub_values = [np.inf] * len(sub_time_series)
                     for variable in variables:
                         lb_values[0] = ub_values[0] = results[f"{asset}.{variable}"][-1]
                         lb = Timeseries(sub_time_series, lb_values)
@@ -716,6 +734,8 @@ def run_sequatially_staged_simulation(simulation_window_size=1, *args, **kwargs)
                         storage_initial_state_bounds[f"{asset}.{variable}"] = (lb, ub)
 
     print(time.time() - tic)
+
+    return total_results
 
 
 # -------------------------------------------------------------------------------------------------
