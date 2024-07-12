@@ -798,21 +798,6 @@ class HeadLossClass:
                     area = diameter**2 / 4 * 3.14
                     q_max = maximum_velocity * area
                     pipe_linear_line_segment = self._pipe_linear_line_segment_map[pipe]
-                    min_vol_velocities = np.asarray(
-                        [
-                            i * q_max / (1 + len(pipe_linear_line_segment))
-                            for i in range(n_linear_lines)
-                        ]
-                    )
-                    max_vol_velocities = np.asarray(
-                        [(i + 1) * q_max / (1 + n_linear_lines) for i in range(n_linear_lines)]
-                    )
-                    low_bound_vol_velocities = np.concatenate(
-                        (-max_vol_velocities, min_vol_velocities)
-                    )
-                    up_bound_vol_velocities = np.concatenate(
-                        (-min_vol_velocities, max_vol_velocities)
-                    )
                     is_line_segment_active = []
 
                     big_m_discharge = 2 * q_max
@@ -826,21 +811,6 @@ class HeadLossClass:
                         # profile
                         is_line_segment_active.append(is_line_segment_active_var)
 
-                        # create activation of lines based on volumetric velocities
-                        constraints.append(
-                            (
-                                (discharge - (1 - is_line_segment_active_var) * big_m_discharge),
-                                -np.inf,
-                                up_bound_vol_velocities[ii],
-                            )
-                        )
-                        constraints.append(
-                            (
-                                (discharge + (1 - is_line_segment_active_var) * big_m_discharge),
-                                low_bound_vol_velocities[ii],
-                                np.inf,
-                            )
-                        )
 
                     # Calculate constraint to enforce that only 1 linear line segment can be active
                     # per time step for the current pipe for the entire time horizon
