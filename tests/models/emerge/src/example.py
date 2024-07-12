@@ -2,8 +2,6 @@ import time
 
 import casadi as ca
 
-import numpy as np
-
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
@@ -11,6 +9,10 @@ from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.io.write_output import ScenarioOutput
+from mesido.workflows.multicommodity_simulator_workflow import (
+    MultiCommoditySimulatorNoLossesStagedTimeSequential,
+    run_sequatially_staged_simulation,
+)
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
@@ -20,9 +22,6 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
 )
 from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
-from rtctools.util import run_optimization_problem
-
-from mesido.workflows.multicommodity_simulator_workflow import MultiCommoditySimulatorNoLossesStagedTimeSequential, run_sequatially_staged_simulation
 
 
 class MaxHydrogenProduction(Goal):
@@ -331,8 +330,6 @@ if __name__ == "__main__":
     #         input_timeseries_file="timeseries_with_PV.csv",
     #     )
 
-    from rtctools.optimization.timeseries import Timeseries
-
     simulation_window_size = 20
     end_time = 27
     storage_initial_state_bounds = {}
@@ -341,16 +338,16 @@ if __name__ == "__main__":
         # "battery": ["Stored_electricity", "Effective_power_charging"],
     }
 
-
     for simulated_window in range(0, end_time, simulation_window_size):
         sub_end_time = min(end_time, simulated_window + simulation_window_size)
         solution = run_sequatially_staged_simulation(
+            multi_commodity_simulator_class=MultiCommoditySimulatorNoLossesStagedTimeSequential,
             simulation_window_size=20,
             esdl_file_name="emerge_battery_priorities.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries_short.csv",)
-
+            input_timeseries_file="timeseries_short.csv",
+        )
 
     print(time.time() - tic)
     # elect = run_optimization_problem(

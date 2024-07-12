@@ -665,11 +665,11 @@ class MultiCommoditySimulatorNoLossesStagedTimeSequential(MultiCommoditySimulato
             self._full_time_series = super().times(variable)
 
         if self.__start_time_index is not None and self.__end_time_index is not None:
-            return super().times(variable)[self.__start_time_index:self.__end_time_index]
+            return super().times(variable)[self.__start_time_index : self.__end_time_index]
         elif self.__start_time_index is not None:
-            return super().times(variable)[self.__start_time_index:]
+            return super().times(variable)[self.__start_time_index :]
         elif self.__end_time_index is not None:
-            return super().times(variable)[:self.__end_time_index]
+            return super().times(variable)[: self.__end_time_index]
         else:
             return super().times(variable)
 
@@ -678,30 +678,52 @@ class MultiCommoditySimulatorNoLossesStagedTimeSequential(MultiCommoditySimulato
         bounds.update(self.__storage_initial_state_bounds)
         return bounds
 
-def run_sequatially_staged_simulation(simulation_window_size=2, *args, **kwargs):
+
+def run_sequatially_staged_simulation(
+    multi_commodity_simulator_class, simulation_window_size=2, *args, **kwargs
+):
     """
-    ...
+    This function is to run the MultiCommoditySimulator class in a staged manner where the stages
+    are sequantial parts of the time horizon. This is done to make the problem smaller and allow
+    for quicker run of the optimization/simulation. To ensure a physically sound result the
+    variables that affect the outcome of the next stage are constrained by setting bounds, e.g. the
+    amount of stored energy in a storage.
+
+    Parameters
+    ----------
+    multi_commodity_simulator_class : The problem class to run
+    simulation_window_size : The amount of indices to run in a single stage
+
+    Returns
+    -------
+    The results dict where all the time results are concatenated.
     """
 
-
+    # Note that the window size should be larger than 1 otherwise this function is has no
+    # benefit and the writing of the results dict will fail.
     assert simulation_window_size >= 2
 
-    tic = time.time()
-    end_time = 2*simulation_window_size
+    total_results = None
+    # This is an initial value for end_time, will be corrected after the first stage
+    end_time = 2 * simulation_window_size
     end_time_confirmed = False
     storage_initial_state_bounds = {}
+
+    # TODO: make this dict complete for all relevant assets and their associated variables.
     constrained_assets = {
         "battery": ["Stored_electricity", "Effective_power_charging"],
     }
 
-    total_results = None
-
-    #TODO: check the indexing for overlap which might be needed.
+    tic = time.time()
     for simulated_window in range(0, end_time, simulation_window_size):
+
+        # Note that the end time is not necessarily a multiple of simulation_window_size
         sub_end_time = min(end_time, simulated_window + simulation_window_size)
+
+        # max operation for start_index to avoid the overlap function in the first stage
         solution = run_optimization_problem(
-            MultiCommoditySimulatorNoLossesStagedTimeSequential,
-            start_index=max(simulated_window-1, 0),
+            multi_commodity_simulator_class,
+            start_index=max(simulated_window - 1, 0),
             end_index=sub_end_time,
             storage_initial_state_bounds=storage_initial_state_bounds,
             **kwargs,
@@ -711,7 +733,7 @@ def run_sequatially_staged_simulation(simulation_window_size=2, *args, **kwargs)
             end_time_confirmed = True
         results = solution.extract_results()
 
-        #TODO: check if we now capture all relevant variables.
+        # TODO: check if we now capture all relevant variables.
         if total_results is None:
             total_results = results
         else:
@@ -723,8 +745,11 @@ def run_sequatially_staged_simulation(simulation_window_size=2, *args, **kwargs)
             for asset_type, variables in constrained_assets.items():
                 for asset in solution.energy_system_components.get(asset_type, []):
                     sub_time_series = solution._full_time_series[
-                                      simulated_window + simulation_window_size:min(end_time,
-                                                                                    simulated_window + 2 * simulation_window_size)]
+                        simulated_window
+                        + simulation_window_size : min(
+                            end_time, simulated_window + 2 * simulation_window_size
+                        )
+                    ]
                     lb_values = [-np.inf] * len(sub_time_series)
                     ub_values = [np.inf] * len(sub_time_series)
                     for variable in variables:
