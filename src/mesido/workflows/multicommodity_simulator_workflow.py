@@ -131,7 +131,6 @@ class MinimizeStorageGoalMerit(Goal):
     """
 
     def __init__(self, source_variable, prod_priority, func_range_bound, nominal, order=2):
-        # self.target_min = 0.0  # func_range_bound[0]
         self.target_max = 0.0
         self.function_range = func_range_bound
         self.source_variable = source_variable

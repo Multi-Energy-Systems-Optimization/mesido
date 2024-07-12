@@ -571,7 +571,6 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         the discharging and afterwards an maximisation of the charging without conflicting goals or
         constraints.
         """
-        # TODO: still add test
         constraints = []
         options = self.energy_system_options()
 

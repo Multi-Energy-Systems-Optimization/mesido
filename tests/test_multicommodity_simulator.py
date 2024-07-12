@@ -390,7 +390,7 @@ class TestMultiCommoditySimulator(TestCase):
         )
         # timestep 7 & 8 electrolyzer should be producing more hydrogen then the demand can take.
         # gas_demand is limited by pipe size.
-        # storage is not charging if gas demand is not maximisedd at bound
+        # storage is not charging if gas demand is not maximised at bound
         # storage is charging if electrolyzer produces more gas than max of demand.
         gas_demand_bound = solution.bounds()["GasDemand_4146.Gas_demand_mass_flow"]
         storage_not_charging = demand_gas != gas_demand_bound[1]
@@ -402,6 +402,7 @@ class TestMultiCommoditySimulator(TestCase):
         """
         Test to run the multicommodity simulator including a battery and gas storage.
         Checks:
+        - matching of profiles consumer and producers (checks_all_mc_simulations)
         - feasibility
         - power conservation
         - efficiency of electrolyzer
@@ -487,7 +488,7 @@ class TestMultiCommoditySimulator(TestCase):
         parameters = solution.parameters(0)
 
         feasibility_test(solution)
-        # electric_power_conservation_test(solution, results)
+        electric_power_conservation_test(solution, results)
 
         checks_all_mc_simulations(solution, results)
         tol = 1.0e-6
@@ -537,16 +538,6 @@ class TestMultiCommoditySimulator(TestCase):
                 v = v_pipe[i]
                 line_num = velocities.searchsorted(abs(v))
                 if abs(v) > 1e-8:
-                    # if v < 0:
-                    #     linear_line_active = results[
-                    #         f"{pipe}__pipe_linear_line_segment_num_{line_num}_neg_discharge"
-                    #     ][i]
-                    # else:
-                    #     # positive line
-                    #     linear_line_active = results[
-                    #         f"{pipe}__pipe_linear_line_segment_num_{line_num}_pos_discharge"
-                    #     ][i]
-                    # np.testing.assert_allclose(linear_line_active, 1.0)
                     dw_headloss_max = darcy_weisbach.head_loss(
                         velocities[line_num],
                         diameter,
@@ -573,11 +564,6 @@ class TestMultiCommoditySimulator(TestCase):
                     np.testing.assert_allclose(abs(head_loss[i]), headloss_calc, 0.1)
                 # else:
                 #     np.testing.assert_allclose(abs(head_loss[i]), 0.0)
-
-            # wrong line segment seems active
-            results[
-                f"{pipe}__pipe_linear_line_segment_num_3_pos_discharge"
-            ]  # instead of segment 1 since that one is upto 3m/s
 
             print("a")
 
