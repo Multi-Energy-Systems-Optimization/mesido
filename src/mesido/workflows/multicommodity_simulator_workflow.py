@@ -469,9 +469,7 @@ class MultiCommoditySimulator(
     def energy_system_options(self):
         options = super().energy_system_options()
 
-        self.gas_network_settings["head_loss_option"] = (
-            HeadLossOption.LINEARIZED_N_LINES_EQUALITY
-        )
+        self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
         self.gas_network_settings["network_type"] = NetworkSettings.NETWORK_TYPE_HYDROGEN
         self.gas_network_settings["minimize_head_losses"] = True
         options["include_asset_is_switched_on"] = True

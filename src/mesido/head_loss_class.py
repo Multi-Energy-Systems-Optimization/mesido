@@ -795,10 +795,30 @@ class HeadLossClass:
                     # Order of linear line variables:
                     #  - negative discharge line_1, line_2
                     #  - positve discharge line_1, line_2
+                    # TODO there needs to be a link between the slection of the headloss binary linesegment variable and the current velocity.
+                    area = diameter**2 / 4 * 3.14
+                    q_max = maximum_velocity * area
                     pipe_linear_line_segment = self._pipe_linear_line_segment_map[pipe]
+                    min_vol_velocities = np.asarray(
+                        [
+                            i * q_max / (1 + len(pipe_linear_line_segment))
+                            for i in range(n_linear_lines)
+                        ]
+                    )
+                    max_vol_velocities = np.asarray(
+                        [(i + 1) * q_max / (1 + n_linear_lines) for i in range(n_linear_lines)]
+                    )
+                    low_bound_vol_velocities = np.concatenate(
+                        (-max_vol_velocities, min_vol_velocities)
+                    )
+                    up_bound_vol_velocities = np.concatenate(
+                        (-min_vol_velocities, max_vol_velocities)
+                    )
                     is_line_segment_active = []
 
-                    for _, ii_line_var in pipe_linear_line_segment.items():
+                    big_m_discharge = 2 * q_max
+
+                    for ii, ii_line_var in pipe_linear_line_segment.items():
                         # Create integer variable to activate/deactivate (1/0) a linear line
                         # segment
                         is_line_segment_active_var = optimization_problem.state_vector(ii_line_var)
@@ -806,6 +826,22 @@ class HeadLossClass:
                         # Linear line segment activation variable for each time step of demand
                         # profile
                         is_line_segment_active.append(is_line_segment_active_var)
+
+                        # create activation of lines based on volumetric velocities
+                        constraints.append(
+                            (
+                                (discharge - (1 - is_line_segment_active_var) * big_m_discharge),
+                                -np.inf,
+                                up_bound_vol_velocities[ii],
+                            )
+                        )
+                        constraints.append(
+                            (
+                                (discharge + (1 - is_line_segment_active_var) * big_m_discharge),
+                                low_bound_vol_velocities[ii],
+                                np.inf,
+                            )
+                        )
 
                     # Calculate constraint to enforce that only 1 linear line segment can be active
                     # per time step for the current pipe for the entire time horizon
