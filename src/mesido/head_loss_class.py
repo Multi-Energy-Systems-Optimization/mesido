@@ -795,7 +795,6 @@ class HeadLossClass:
                     # Order of linear line variables:
                     #  - negative discharge line_1, line_2
                     #  - positve discharge line_1, line_2
-                    # TODO there needs to be a link between the slection of the headloss binary linesegment variable and the current velocity.
                     area = diameter**2 / 4 * 3.14
                     q_max = maximum_velocity * area
                     pipe_linear_line_segment = self._pipe_linear_line_segment_map[pipe]
