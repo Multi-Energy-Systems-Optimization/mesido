@@ -527,7 +527,9 @@ class MultiCommoditySimulator(
                     if (
                         a.asset_type == "Electrolyzer"
                     ):  # electrolyzer would require minimisation of electricity right after
-                        # maximisation gas
+                        # maximisation gas, therefore a merit_order with a very small adjusted
+                        # value is used (e.g. 1e-6) to ensure these goals are right after each
+                        # other and no other goals are in between.
                         attributes["asset_name"].append(f"{a.name}_prod")
                         attributes["merit_order"].append(
                             a.attributes["costInformation"].marginalCosts.value - 1e-6
