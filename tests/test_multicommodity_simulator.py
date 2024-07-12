@@ -531,21 +531,21 @@ class TestMultiCommoditySimulator(TestCase):
             wall_roughness = solution.energy_system_options()["wall_roughness"]
             head_loss = results[f"{pipe}.dH"]
             head_loss_full_var = results[f"{pipe}.__head_loss"]
-            #If this test fails there is most likely a scaling issue.
+            # If this test fails there is most likely a scaling issue.
             np.testing.assert_allclose(np.abs(np.asarray(head_loss)), head_loss_full_var)
             for i in range(1, len(v_pipe)):
                 v = v_pipe[i]
                 line_num = velocities.searchsorted(abs(v))
                 if abs(v) > 1e-8:
-                    if v < 0:
-                        linear_line_active = results[
-                            f"{pipe}__pipe_linear_line_segment_num_{line_num}_neg_discharge"
-                        ][i]
-                    else:
-                        # positive line
-                        linear_line_active = results[
-                            f"{pipe}__pipe_linear_line_segment_num_{line_num}_pos_discharge"
-                        ][i]
+                    # if v < 0:
+                    #     linear_line_active = results[
+                    #         f"{pipe}__pipe_linear_line_segment_num_{line_num}_neg_discharge"
+                    #     ][i]
+                    # else:
+                    #     # positive line
+                    #     linear_line_active = results[
+                    #         f"{pipe}__pipe_linear_line_segment_num_{line_num}_pos_discharge"
+                    #     ][i]
                     # np.testing.assert_allclose(linear_line_active, 1.0)
                     dw_headloss_max = darcy_weisbach.head_loss(
                         velocities[line_num],

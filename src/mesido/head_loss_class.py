@@ -795,14 +795,10 @@ class HeadLossClass:
                     # Order of linear line variables:
                     #  - negative discharge line_1, line_2
                     #  - positve discharge line_1, line_2
-                    area = diameter**2 / 4 * 3.14
-                    q_max = maximum_velocity * area
                     pipe_linear_line_segment = self._pipe_linear_line_segment_map[pipe]
                     is_line_segment_active = []
 
-                    big_m_discharge = 2 * q_max
-
-                    for ii, ii_line_var in pipe_linear_line_segment.items():
+                    for _, ii_line_var in pipe_linear_line_segment.items():
                         # Create integer variable to activate/deactivate (1/0) a linear line
                         # segment
                         is_line_segment_active_var = optimization_problem.state_vector(ii_line_var)
@@ -810,7 +806,6 @@ class HeadLossClass:
                         # Linear line segment activation variable for each time step of demand
                         # profile
                         is_line_segment_active.append(is_line_segment_active_var)
-
 
                     # Calculate constraint to enforce that only 1 linear line segment can be active
                     # per time step for the current pipe for the entire time horizon
