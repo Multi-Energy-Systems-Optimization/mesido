@@ -45,6 +45,16 @@ WATT_TO_MEGA_WATT = 1.0e6
 WATT_TO_KILO_WATT = 1.0e3
 
 
+def _extract_values_timeseries(v, type_r=None):
+    if isinstance(v, Timeseries):
+        v = v.values
+        if type_r == "min":
+            v = min(v)
+        elif type_r == "max":
+            v = max(v)
+    return v
+
+
 # -------------------------------------------------------------------------------------------------
 # Step 1:
 # Match the target demand specified
@@ -394,11 +404,16 @@ class MultiCommoditySimulator(
                 # Marginal costs for discharging > marginal cost for charging
                 variable_name = f"{asset}.{asset_variable_map[asset]['charge']}"
 
+                func_range = self.bounds()[variable_name]
+                v1 = _extract_values_timeseries(func_range[0], "min")
+                v2 = _extract_values_timeseries(func_range[1], "max")
+                func_range = (v1, v2)
+
                 goals.append(
                     MaximizeStorageGoalMerit(
                         variable_name,
                         marginal_priority,
-                        self.bounds()[variable_name],
+                        func_range,
                         self.variable_nominal(variable_name),
                     )
                 )
@@ -416,11 +431,18 @@ class MultiCommoditySimulator(
 
                 variable_name = f"{asset}{asset_variable_map[asset]['discharge']}"
 
+                func_range = self.bounds()[variable_name]
+                v1 = _extract_values_timeseries(func_range[0], "min")
+                v2 = _extract_values_timeseries(
+                    func_range[1], "max"
+                )
+                func_range = (v1, v2)
+
                 goals.append(
                     MinimizeStorageGoalMerit(
                         variable_name,
                         marginal_priority,
-                        self.bounds()[variable_name],
+                        func_range,
                         self.variable_nominal(variable_name),
                     )
                 )
@@ -570,9 +592,9 @@ class MultiCommoditySimulator(
         options = super().solver_options()
         options["casadi_solver"] = self._qpsol
 
-        options["solver"] = "highs"
-        highs_options = options["highs"] = {}
-        highs_options["presolve"] = "off"
+        # options["solver"] = "highs"
+        # highs_options = options["highs"] = {}
+        # highs_options["presolve"] = "off"
 
         return options
 
@@ -642,9 +664,9 @@ class MultiCommoditySimulatorNoLosses(MultiCommoditySimulator):
         # For some cases the presolve of the HIGHS solver makes this problem infeasible, therefore
         # the presolve is turned off.
         options = super().solver_options()
-        options["solver"] = "highs"
-        highs_options = options["highs"] = {}
-        highs_options["presolve"] = "off"
+        options["solver"] = "cplex"
+        # highs_options = options["highs"] = {}
+        # highs_options["presolve"] = "off"
 
         return options
 
@@ -711,7 +733,8 @@ def run_sequatially_staged_simulation(
 
     # TODO: make this dict complete for all relevant assets and their associated variables.
     constrained_assets = {
-        "battery": ["Stored_electricity", "Effective_power_charging"],
+        "electricity_storage": ["Stored_electricity", "Effective_power_charging"],
+        "gas_tank_storage": ["Stored_gas_mass", "Gas_tank_flow"],
     }
 
     tic = time.time()
@@ -746,13 +769,20 @@ def run_sequatially_staged_simulation(
                 for asset in solution.energy_system_components.get(asset_type, []):
                     sub_time_series = solution._full_time_series[
                         simulated_window
+                        - 1
                         + simulation_window_size : min(
                             end_time, simulated_window + 2 * simulation_window_size
                         )
                     ]
-                    lb_values = [-np.inf] * len(sub_time_series)
-                    ub_values = [np.inf] * len(sub_time_series)
                     for variable in variables:
+                        lb_value = _extract_values_timeseries(
+                            solution.bounds()[f"{asset}.{variable}"][0], "min"
+                        )
+                        ub_value = _extract_values_timeseries(
+                            solution.bounds()[f"{asset}.{variable}"][1], "max"
+                        )
+                        lb_values = [lb_value] * len(sub_time_series)
+                        ub_values = [ub_value] * len(sub_time_series)
                         lb_values[0] = ub_values[0] = results[f"{asset}.{variable}"][-1]
                         lb = Timeseries(sub_time_series, lb_values)
                         ub = Timeseries(sub_time_series, ub_values)

@@ -1,3 +1,4 @@
+import copy
 import logging
 
 import casadi as ca
@@ -258,11 +259,14 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
         if options["gas_storage_discharge_variables"]:
             for storage in self.energy_system_components.get("gas_tank_storage", []):
-                bound_storage_q = self.bounds()[f"{storage}.GasIn.Q"][0]
+                bound_storage_q = -self.bounds()[f"{storage}.GasIn.Q"][0]
+                if isinstance(bound_storage_q, Timeseries):
+                    bound_storage_q = copy.deepcopy(bound_storage_q)
+                    bound_storage_q.values[bound_storage_q.values < 0] = 0.0
                 var_name = f"{storage}__Q_discharge"
                 self.__gas_storage_discharge_map[storage] = var_name
                 self.__gas_storage_discharge_var[var_name] = ca.MX.sym(var_name)
-                self.__gas_storage_discharge_bounds[var_name] = (0, -bound_storage_q)
+                self.__gas_storage_discharge_bounds[var_name] = (0, bound_storage_q)
                 self.__gas_storage_discharge_nominals[var_name] = self.variable_nominal(
                     f"{storage}.GasIn.Q"
                 )

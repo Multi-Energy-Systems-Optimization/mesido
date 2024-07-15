@@ -330,24 +330,14 @@ if __name__ == "__main__":
     #         input_timeseries_file="timeseries_with_PV.csv",
     #     )
 
-    simulation_window_size = 20
-    end_time = 27
-    storage_initial_state_bounds = {}
-    constrained_assets = {
-        "electricity_demand": ["Electricity_demand"],
-        # "battery": ["Stored_electricity", "Effective_power_charging"],
-    }
-
-    for simulated_window in range(0, end_time, simulation_window_size):
-        sub_end_time = min(end_time, simulated_window + simulation_window_size)
-        solution = run_sequatially_staged_simulation(
-            multi_commodity_simulator_class=MultiCommoditySimulatorNoLossesStagedTimeSequential,
-            simulation_window_size=20,
-            esdl_file_name="emerge_battery_priorities.esdl",
-            esdl_parser=ESDLFileParser,
-            profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries_short.csv",
-        )
+    solution = run_sequatially_staged_simulation(
+        multi_commodity_simulator_class=MultiCommoditySimulatorNoLossesStagedTimeSequential,
+        simulation_window_size=20,
+        esdl_file_name="emerge_battery_priorities.esdl",
+        esdl_parser=ESDLFileParser,
+        profile_reader=ProfileReaderFromFile,
+        input_timeseries_file="timeseries_short.csv",
+    )
 
     print(time.time() - tic)
     # elect = run_optimization_problem(
