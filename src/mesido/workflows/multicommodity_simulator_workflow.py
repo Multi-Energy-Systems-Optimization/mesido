@@ -433,9 +433,7 @@ class MultiCommoditySimulator(
 
                 func_range = self.bounds()[variable_name]
                 v1 = _extract_values_timeseries(func_range[0], "min")
-                v2 = _extract_values_timeseries(
-                    func_range[1], "max"
-                )
+                v2 = _extract_values_timeseries(func_range[1], "max")
                 func_range = (v1, v2)
 
                 goals.append(
@@ -664,9 +662,9 @@ class MultiCommoditySimulatorNoLosses(MultiCommoditySimulator):
         # For some cases the presolve of the HIGHS solver makes this problem infeasible, therefore
         # the presolve is turned off.
         options = super().solver_options()
-        options["solver"] = "cplex"
-        # highs_options = options["highs"] = {}
-        # highs_options["presolve"] = "off"
+        options["solver"] = "highs"
+        highs_options = options["highs"] = {}
+        highs_options["presolve"] = "off"
 
         return options
 
@@ -759,6 +757,9 @@ def run_sequatially_staged_simulation(
         # TODO: check if we now capture all relevant variables.
         if total_results is None:
             total_results = results
+            aliases = solution.alias_relation._canonical_variables_map
+            bounds = solution.bounds()
+            parameters = solution.parameters(0)
         else:
             for key, data in results.items():
                 if len(total_results[key]) > 1:
@@ -790,7 +791,14 @@ def run_sequatially_staged_simulation(
 
     print(time.time() - tic)
 
-    return total_results
+    class OptimisationOverview:
+        def __init__(self, total_results, bounds, parameters, aliases):
+            self.results = total_results
+            self.bounds = bounds
+            self.parameters = parameters
+            self.aliases = aliases
+
+    return OptimisationOverview(total_results, bounds, parameters, aliases)
 
 
 # -------------------------------------------------------------------------------------------------

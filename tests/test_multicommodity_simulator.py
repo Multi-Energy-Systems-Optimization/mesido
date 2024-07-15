@@ -9,6 +9,8 @@ from mesido.network_common import NetworkSettings
 from mesido.workflows.multicommodity_simulator_workflow import (
     MultiCommoditySimulator,
     MultiCommoditySimulatorNoLosses,
+    MultiCommoditySimulatorNoLossesStagedTimeSequential,
+    run_sequatially_staged_simulation,
 )
 
 import numpy as np
@@ -566,6 +568,44 @@ class TestMultiCommoditySimulator(TestCase):
                 #     np.testing.assert_allclose(abs(head_loss[i]), 0.0)
 
             print("a")
+
+    def test_multi_commodity_simulator_sequential_staged(self):
+        """
+        Test to run the multicommodity simulator including a battery and gas storage using
+        the sequential staged optimization approach.
+        Checks:
+        - that the staged approach results in same values as the unstaged approach
+        """
+        import models.emerge.src.example as example
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        solution = run_sequatially_staged_simulation(
+            multi_commodity_simulator_class=MultiCommoditySimulatorNoLossesStagedTimeSequential,
+            simulation_window_size=20,
+            base_folder=base_folder,
+            esdl_file_name="emerge_battery_priorities.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_short.csv",
+        )
+
+        results_staged = solution.results
+
+        solution_unstaged = run_optimization_problem(
+            MultiCommoditySimulatorNoLosses,
+            base_folder=base_folder,
+            esdl_file_name="emerge_battery_priorities.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_short.csv",
+        )
+
+        results_unstaged = solution_unstaged.extract_results()
+
+        for key, value in results_unstaged.items():
+            value_staged = results_staged[key]
+            np.testing.assert_allclose(value, value_staged)
 
 
 if __name__ == "__main__":
