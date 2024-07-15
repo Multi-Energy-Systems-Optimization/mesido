@@ -1264,13 +1264,14 @@ class ScenarioOutput:
 
                                     profile_attributes = esdl.InfluxDBProfile(
                                         database=output_energy_system_id,
-                                        measurement=asset_name,
+                                        measurement=carrier_id,
                                         field=profiles.profile_header[-1],
                                         port=self.influxdb_port,
                                         host=self.influxdb_host,
                                         startDate=start_date_time,
                                         endDate=end_date_time,
                                         id=str(uuid.uuid4()),
+                                        filters=f"&quot;assetId&quot;='{asset_id}'"
                                     )
                                     # Assign quantity and units variable
                                     if variable in ["Heat_flow", "Pump_power"]:
