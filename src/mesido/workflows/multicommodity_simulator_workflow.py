@@ -590,9 +590,9 @@ class MultiCommoditySimulator(
         options = super().solver_options()
         options["casadi_solver"] = self._qpsol
 
-        # options["solver"] = "highs"
-        # highs_options = options["highs"] = {}
-        # highs_options["presolve"] = "off"
+        options["solver"] = "highs"
+        highs_options = options["highs"] = {}
+        highs_options["presolve"] = "off"
 
         return options
 

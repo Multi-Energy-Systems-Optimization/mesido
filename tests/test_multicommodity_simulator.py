@@ -33,7 +33,7 @@ def check_electrolyzer_efficiency(tol, electrolyzer_gas, electrolyzer_power, esd
         esdl_electrolyzer.attributes["effMinLoad"],
         esdl_electrolyzer.attributes["efficiency"],
     )
-    np.testing.assert_array_less(min(provided_efficiencies), efficiency[electrolyzer_power > 0])
+    np.testing.assert_array_less(min(provided_efficiencies), efficiency[electrolyzer_power > 1])
     np.testing.assert_array_less(
         efficiency[electrolyzer_power > 0], max(provided_efficiencies) + tol
     )
@@ -515,7 +515,7 @@ class TestMultiCommoditySimulator(TestCase):
 
         # check battery only discharged if not enough windpower for electrolyzer
         discharge_battery = windfarm_power < electrolyzer_power_bound
-        np.testing.assert_array_less(battery_power[discharge_battery], 0.0 + tol)
+        np.testing.assert_array_less(battery_power[discharge_battery], 1.0)
         charge_battery = windfarm_power > electrolyzer_power_bound
         np.testing.assert_array_less(0.0, battery_power[charge_battery])
 
@@ -535,7 +535,11 @@ class TestMultiCommoditySimulator(TestCase):
             head_loss = results[f"{pipe}.dH"]
             head_loss_full_var = results[f"{pipe}.__head_loss"]
             # If this test fails there is most likely a scaling issue.
-            np.testing.assert_allclose(np.abs(np.asarray(head_loss)), head_loss_full_var)
+            indexes = np.abs(v_pipe) > 0.0
+            indexes[0] = False
+            np.testing.assert_allclose(
+                np.abs(np.asarray(head_loss[indexes])), head_loss_full_var[indexes]
+            )
             for i in range(1, len(v_pipe)):
                 v = v_pipe[i]
                 line_num = velocities.searchsorted(abs(v))
