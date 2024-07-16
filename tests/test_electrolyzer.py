@@ -4,7 +4,6 @@ from unittest import TestCase
 import mesido._darcy_weisbach as darcy_weisbach
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
-
 from mesido.network_common import NetworkSettings
 from mesido.util import run_esdl_mesido_optimization
 
@@ -479,4 +478,3 @@ class TestElectrolyzer(TestCase):
             0.0,
             atol=1e-4,
         )
-

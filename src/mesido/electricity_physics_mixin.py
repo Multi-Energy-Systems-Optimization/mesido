@@ -80,7 +80,6 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         self.__electricity_storage_discharge_nominals = {}
         self.__electricity_storage_discharge_map = {}
 
-
     def energy_system_options(self):
         r"""
         Returns a dictionary of milp network specific options.
@@ -187,7 +186,6 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         variables.extend(self.__set_point_var.values())
         variables.extend(self.__electrolyzer_is_active_linear_segment_var.values())
         variables.extend(self.__electricity_storage_discharge_var.values())
-
 
         return variables
 
