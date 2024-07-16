@@ -37,7 +37,7 @@ class TestElectrolyzer(TestCase):
             esdl_file_name="h2.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries.csv",
+            input_timeseries_file="timeseries_electrolyzer_general.csv",
         )
 
         results = solution.extract_results()
@@ -320,7 +320,7 @@ class TestElectrolyzer(TestCase):
             esdl_file_name="h2.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries.csv",
+            input_timeseries_file="timeseries_electrolyzer_general.csv",
         )
 
         results = solution.extract_results()
