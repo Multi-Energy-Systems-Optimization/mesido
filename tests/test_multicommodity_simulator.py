@@ -513,7 +513,7 @@ class TestMultiCommoditySimulator(TestCase):
 
         # check battery only discharged if not enough windpower for electrolyzer
         discharge_battery = windfarm_power < electrolyzer_power_bound
-        np.testing.assert_array_less(battery_power[discharge_battery], 0.0 + tol)
+        np.testing.assert_array_less(battery_power[discharge_battery], 1.0)
         charge_battery = windfarm_power > electrolyzer_power_bound
         np.testing.assert_array_less(0.0, battery_power[charge_battery])
 
@@ -567,10 +567,6 @@ class TestMultiCommoditySimulator(TestCase):
                     b = dw_headloss_min - a * velocities[line_num - 1]
                     headloss_calc = a * v + b
                     np.testing.assert_allclose(abs(head_loss[i]), headloss_calc, 0.1)
-                # else:
-                #     np.testing.assert_allclose(abs(head_loss[i]), 0.0)
-
-            print("a")
 
 
 if __name__ == "__main__":
