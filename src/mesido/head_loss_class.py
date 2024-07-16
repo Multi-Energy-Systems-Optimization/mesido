@@ -159,7 +159,10 @@ class _MinimizeHeadLosses(Goal):
                 ):
                     sym_name = optimization_problem._hn_pipe_to_head_loss_map[p]
                     sum_ += optimization_problem.state(sym_name)
-        elif self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_GAS:
+        elif (
+            self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_GAS
+            or self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_HYDROGEN
+        ):
             for p in optimization_problem.energy_system_components.get("gas_pipe", []):
                 if not parameters[f"{p}.length"] == 0.0:
                     sym_name = optimization_problem._gn_pipe_to_head_loss_map[p]
@@ -1159,7 +1162,10 @@ class HeadLossClass:
         if self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_HEAT:
             commodity = "Heat"
             pipe_type = "heat_pipe"
-        elif self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_GAS:
+        elif (
+            self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_GAS
+            or self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_HYDROGEN
+        ):
             commodity = "Gas"
             pipe_type = "gas_pipe"
         else:
@@ -1237,7 +1243,10 @@ class HeadLossClass:
         if self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_HEAT:
             commodity = "heat"
             n_type = "hn"
-        elif self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_GAS:
+        elif (
+            self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_GAS
+            or self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_HYDROGEN
+        ):
             commodity = "gas"
             n_type = "gn"
         else:
@@ -1307,7 +1316,11 @@ class HeadLossClass:
 
                     if self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_HEAT:
                         big_m = max(1.1 * _maximum_total_head_loss, 2 * head_loss_max_discharge)
-                    elif self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_GAS:
+                    elif (
+                        self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_GAS
+                        or self.network_settings["network_type"]
+                        == NetworkSettings.NETWORK_TYPE_HYDROGEN
+                    ):
                         big_m = max(
                             2.0 * 2.0 * _maximum_total_head_loss, 2 * head_loss_max_discharge
                         )
@@ -1373,7 +1386,11 @@ class HeadLossClass:
 
                 if self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_HEAT:
                     big_m = 1.1 * _maximum_total_head_loss
-                elif self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_GAS:
+                elif (
+                    self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_GAS
+                    or self.network_settings["network_type"]
+                    == NetworkSettings.NETWORK_TYPE_HYDROGEN
+                ):
                     big_m = 2.0 * 2.0 * _maximum_total_head_loss
                 else:
                     raise RuntimeError(
@@ -1451,7 +1468,10 @@ class HeadLossClass:
 
         if self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_HEAT:
             commodity = "heat"
-        elif self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_GAS:
+        elif (
+            self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_GAS
+            or self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_HYDROGEN
+        ):
             commodity = "gas"
         else:
             raise Exception(

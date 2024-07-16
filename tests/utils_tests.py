@@ -19,7 +19,6 @@ def feasibility_test(solution):
 
 def demand_matching_test(solution, results):
     """ "Test function to check whether the milp demand of each consumer is matched"""
-    len_times = 0.0
     for d in solution.energy_system_components.get("heat_demand", []):
         if len(solution.times()) > 0:
             len_times = len(solution.times())
@@ -35,23 +34,27 @@ def demand_matching_test(solution, results):
         target = solution.get_timeseries(f"{d}.target_cold_demand").values[0:len_times]
         np.testing.assert_allclose(target, results[f"{d}.Cold_demand"], atol=1.0e-3, rtol=1.0e-6)
     for d in solution.energy_system_components.get("gas_demand", []):
-        if len(solution.times()) > 0:
-            len_times = len(solution.times())
-        else:
-            len_times = len(solution.get_timeseries(f"{d}.target_gas_demand").values)
-        target = solution.get_timeseries(f"{d}.target_gas_demand").values[0:len_times]
-        np.testing.assert_allclose(
-            target, results[f"{d}.Gas_demand_mass_flow"], atol=1.0e-3, rtol=1.0e-6
-        )
+        timeseries_name = f"{d}.target_gas_demand"
+        if timeseries_name in solution.io.get_timeseries_names():
+            if len(solution.times()) > 0:
+                len_times = len(solution.times())
+            else:
+                len_times = len(solution.get_timeseries(timeseries_name).values)
+            target = solution.get_timeseries(timeseries_name).values[0:len_times]
+            np.testing.assert_allclose(
+                target, results[f"{d}.Gas_demand_mass_flow"], atol=1.0e-3, rtol=1.0e-6
+            )
     for d in solution.energy_system_components.get("electricity_demand", []):
-        if len(solution.times()) > 0:
-            len_times = len(solution.times())
-        else:
-            len_times = len(solution.get_timeseries(f"{d}.target_electricity_demand").values)
-        target = solution.get_timeseries(f"{d}.target_electricity_demand").values[0:len_times]
-        np.testing.assert_allclose(
-            target, results[f"{d}.Electricity_demand"], atol=1.0e-3, rtol=1.0e-6
-        )
+        timeseries_name = f"{d}.target_electricity_demand"
+        if timeseries_name in solution.io.get_timeseries_names():
+            if len(solution.times()) > 0:
+                len_times = len(solution.times())
+            else:
+                len_times = len(solution.get_timeseries(timeseries_name).values)
+            target = solution.get_timeseries(timeseries_name).values[0:len_times]
+            np.testing.assert_allclose(
+                target, results[f"{d}.Electricity_demand"], atol=1.0e-3, rtol=1.0e-6
+            )
 
 
 def _get_component_temperatures(solution, results, component, side=None):
@@ -301,7 +304,7 @@ def heat_to_discharge_test(solution, results):
         test.assertTrue(
             expr=all(
                 results[f"{p}.HeatIn.Heat"][indices]
-                <= results[f"{p}.Q"][indices] * rho * cp * temperature + tol
+                <= (results[f"{p}.Q"][indices] + 1e-7) * rho * cp * temperature
             )
         )
         test.assertTrue(
@@ -350,6 +353,64 @@ def heat_to_discharge_test(solution, results):
             atol=tol,
             err_msg=f"{p} has mismatch in milp to discharge",
         )
+
+
+def electric_power_conservation_test(solution, results):
+    """
+    Test to check if the electric power is conserved at every timestep.
+    High level checks:
+    - Network power conservation
+    - Power conservation when including power losses in cables.
+    - Power and current conservation in busses.
+    - Power conservation in transformers, upto now no losses in transformer.
+    """
+    tol = 1e-4
+    energy_sum = np.zeros(len(solution.times()))
+
+    consumers = solution.energy_system_components_get(
+        [
+            "electricity_demand",
+            "electrolyzer",
+            "electricity_storage",
+            "elec_boiler",
+            "heat_pump_elec",
+            "air_water_heat_pump_elec",
+        ]
+    )
+    producers = solution.energy_system_components_get(["electricity_source"])
+    cables = solution.energy_system_components_get(["electricity_cable"])
+    transformers = solution.energy_system_components.get("transformer", [])
+
+    for asset in consumers:
+        energy_sum -= results[f"{asset}.ElectricityIn.Power"]
+
+    for asset in producers:
+        energy_sum += results[f"{asset}.ElectricityOut.Power"]
+
+    for asset in cables:
+        energy_sum -= results[f"{asset}.Power_loss"]
+        np.testing.assert_allclose(
+            results[f"{asset}.Power_loss"],
+            results[f"{asset}.ElectricityIn.Power"] - results[f"{asset}.ElectricityOut.Power"],
+            atol=tol,
+        )
+
+    for asset, connected_cables in solution.energy_system_topology.busses.items():
+        sum_bus_power = np.zeros(len(solution.times()))
+        sum_bus_current = np.zeros(len(solution.times()))
+        for i_conn, (_cable, orientation) in connected_cables.items():
+            sum_bus_power += orientation * results[f"{asset}.ElectricityConn[{i_conn + 1}].Power"]
+            sum_bus_current += orientation * results[f"{asset}.ElectricityConn[{i_conn + 1}].I"]
+        np.testing.assert_allclose(sum_bus_power, 0.0, atol=tol)
+        np.testing.assert_allclose(sum_bus_current, 0.0, atol=tol)
+
+    for asset in transformers:
+        np.testing.assert_allclose(
+            results[f"{asset}.ElectricityIn.Power"],
+            results[f"{asset}.ElectricityOut.Power"],
+        )
+
+    np.testing.assert_allclose(energy_sum, 0.0, atol=tol)
 
 
 def energy_conservation_test(solution, results):

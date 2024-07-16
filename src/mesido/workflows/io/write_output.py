@@ -17,7 +17,6 @@ from esdl.profiles.profilemanager import ProfileManager
 import mesido.esdl.esdl_parser
 from mesido.constants import GRAVITATIONAL_CONSTANT
 from mesido.esdl.edr_pipe_class import EDRPipeClass
-from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.utils.helpers import _sort_numbered
 
 import numpy as np
@@ -31,7 +30,7 @@ from rtctools.optimization.timeseries import Timeseries
 logger = logging.getLogger("mesido")
 
 
-class ScenarioOutput(TechnoEconomicMixin):
+class ScenarioOutput:
     __optimized_energy_system_handler = None
 
     def __init__(self, **kwargs):

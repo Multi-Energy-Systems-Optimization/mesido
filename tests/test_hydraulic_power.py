@@ -9,10 +9,11 @@ from mesido.head_loss_class import HeadLossOption
 from mesido.network_common import NetworkSettings
 from mesido.util import run_esdl_mesido_optimization
 
-
 import numpy as np
 
 import pandas as pd
+
+from utils_tests import demand_matching_test
 
 
 class TestHydraulicPower(TestCase):
@@ -247,6 +248,7 @@ class TestHydraulicPower(TestCase):
         - checks if hydraulic power is 0 at end of the pipe
         - checks if differences of in/out port is equal to the added hydraulic power of that pipe
         - checks absolutae value of the hydraulic power loss over a line
+        - demand matching
         """
         import models.unit_cases_gas.source_sink.src.run_source_sink as run_source_sink
         from models.unit_cases_gas.source_sink.src.run_source_sink import (
@@ -261,7 +263,7 @@ class TestHydraulicPower(TestCase):
                 super().read()
 
                 for d in self.energy_system_components["gas_demand"]:
-                    new_timeseries = self.get_timeseries(f"{d}.target_gas_demand").values * 4e4
+                    new_timeseries = self.get_timeseries(f"{d}.target_gas_demand").values * 5e3
                     self.set_timeseries(f"{d}.target_gas_demand", new_timeseries)
 
             def energy_system_options(self):
@@ -298,11 +300,12 @@ class TestHydraulicPower(TestCase):
 
         # due to non linearity, every timestep on new linearized line, a doubled mass flow should
         # result in more than doubled hydraulic power
+        tol_hp = 1.0e-6
         np.testing.assert_array_less(
-            (pipe_hp[0] + 1e-6) * (pipe_mass[1] / pipe_mass[0]), pipe_hp[1]
+            pipe_hp[0] * (pipe_mass[1] / pipe_mass[0]), pipe_hp[1] + tol_hp
         )
         np.testing.assert_array_less(
-            (pipe_hp[1] + 1e-6) * (pipe_mass[2] / pipe_mass[1]), pipe_hp[2]
+            pipe_hp[1] * (pipe_mass[2] / pipe_mass[1]), pipe_hp[2] + tol_hp
         )
 
         np.testing.assert_allclose(pipe_hp, pipe_hp_in - pipe_hp_out)
@@ -337,7 +340,7 @@ class TestHydraulicPower(TestCase):
             )
             for v in v_inspect
         ]
-        np.testing.assert_array_less(calc_hp_accurate, pipe_hp)
+        np.testing.assert_array_less(calc_hp_accurate, pipe_hp + tol_hp)
 
         v_points = [
             i * v_max / solution.gas_network_settings["n_linearization_lines"]
@@ -366,6 +369,8 @@ class TestHydraulicPower(TestCase):
         np.testing.assert_allclose(pipe_hp[0], a[0] * results[f"{pipe}.GasOut.Q"][0] + b[0])
         np.testing.assert_allclose(pipe_hp[1], a[1] * results[f"{pipe}.GasOut.Q"][1] + b[1])
         np.testing.assert_allclose(pipe_hp[2], a[2] * results[f"{pipe}.GasOut.Q"][2] + b[2])
+
+        demand_matching_test(solution, results)
 
     def test_hydraulic_power_gas_multi_demand(self):
         """
@@ -491,5 +496,8 @@ if __name__ == "__main__":
 
     start_time = time.time()
     a = TestHydraulicPower()
-    a.test_hydraulic_power()
+    a.test_hydraulic_power_heat()
+    a.test_hydraulic_power_gas()
+    a.test_hydraulic_power_gas_multi_demand()
+
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

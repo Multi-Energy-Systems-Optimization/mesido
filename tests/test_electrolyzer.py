@@ -1,11 +1,11 @@
 from pathlib import Path
 from unittest import TestCase
 
-# import mesido._darcy_weisbach as darcy_weisbach
+import mesido._darcy_weisbach as darcy_weisbach
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 
-# from mesido.network_common import NetworkSettings
+from mesido.network_common import NetworkSettings
 from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
@@ -25,7 +25,7 @@ class TestElectrolyzer(TestCase):
         - Check the max production profile of the windfarm
         - Check the electrolyzer inequality constraints formulation
         - The water kinematic viscosity of hydrogen by comparing head loss to a hard-coded value
-
+        - The pipe head loss constraint for a hydrogen network
         """
         import models.unit_cases_electricity.electrolyzer.src.example as example
         from models.unit_cases_electricity.electrolyzer.src.example import MILPProblemInequality
@@ -43,19 +43,30 @@ class TestElectrolyzer(TestCase):
 
         results = solution.extract_results()
 
-        # Compare the head loss to hard-coded values. Difference expected if an error
+        # TODO: potential move this code to the head loss test case (does not contain a hydrogen
+        # network optimization). For now this was not done, because it would imply adding a
+        # hydrogen network solve purely for the checks below which seems unnecessary
+        # Check:
+        # - Compare the head loss to hard-coded values. Difference expected if an error
         # occours in the calculation of the gas kinematic viscosity.
-        # v_inspect = results["Pipe_6ba6.GasOut.Q"][1] / solution.parameters(0)["Pipe_6ba6.area"]
-        # head_loss_v_inspect = darcy_weisbach.head_loss(
-        #     v_inspect,
-        #     solution.parameters(0)["Pipe_6ba6.diameter"],
-        #     solution.parameters(0)["Pipe_6ba6.length"],
-        #     solution.energy_system_options()["wall_roughness"],
-        #     20.0,
-        #     network_type=NetworkSettings.NETWORK_TYPE_HYDROGEN,
-        #     pressure=solution.parameters(0)["Pipe_6ba6.pressure"],
-        # )
-        # np.testing.assert_allclose(head_loss_v_inspect, 104.06961666355383)
+
+        # - Check head loss contraint
+        v_inspect = results["Pipe_6ba6.GasOut.Q"] / solution.parameters(0)["Pipe_6ba6.area"]
+        head_loss_max = darcy_weisbach.head_loss(
+            solution.gas_network_settings["maximum_velocity"],
+            solution.parameters(0)["Pipe_6ba6.diameter"],
+            solution.parameters(0)["Pipe_6ba6.length"],
+            solution.energy_system_options()["wall_roughness"],
+            20.0,
+            network_type=NetworkSettings.NETWORK_TYPE_HYDROGEN,
+            pressure=solution.parameters(0)["Pipe_6ba6.pressure"],
+        )
+        for iv in range(len(v_inspect)):
+            np.testing.assert_allclose(
+                v_inspect[iv] / solution.gas_network_settings["maximum_velocity"] * head_loss_max,
+                2.173724632,
+            )
+            np.testing.assert_allclose(-results["Pipe_6ba6.dH"][iv], 2.173724632)
 
         gas_price_profile = "Hydrogen.price_profile"
         state = "GasDemand_0cf3.Gas_demand_mass_flow"
@@ -102,10 +113,9 @@ class TestElectrolyzer(TestCase):
 
         # Checks on the storage
         timestep = 3600.0
-        rho = solution.parameters(0)["GasStorage_e492.density_max_storage"]
         np.testing.assert_allclose(
             np.diff(results["GasStorage_e492.Stored_gas_mass"]),
-            results["GasStorage_e492.Gas_tank_flow"][1:] * rho * timestep,
+            results["GasStorage_e492.Gas_tank_flow"][1:] * timestep,
             rtol=1e-6,
             atol=1e-8,
         )
@@ -247,7 +257,7 @@ class TestElectrolyzer(TestCase):
         np.testing.assert_allclose(
             results["Electrolyzer_fc66.ElectricityIn.Power"][-1],
             0.0,
-            atol=1e-4,
+            atol=5e-5,
         )
         # Check that the output gas is 0
         np.testing.assert_allclose(
@@ -322,6 +332,7 @@ class TestElectrolyzer(TestCase):
             results["Electrolyzer_fc66.Gas_mass_flow_out"] * efficiency * 3600,
             results["Electrolyzer_fc66.ElectricityIn.Power"],
         )
+
         # Check input power values. Not really needed since the massflow check is equivalent
         # np.testing.assert_allclose(
         #     results["Electrolyzer_fc66.ElectricityIn.Power"],
@@ -468,3 +479,4 @@ class TestElectrolyzer(TestCase):
             0.0,
             atol=1e-4,
         )
+

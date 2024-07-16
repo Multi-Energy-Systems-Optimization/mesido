@@ -182,6 +182,10 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 nominal_fixed_operational = bounds[f"{asset_name}.Stored_electricity"][1]
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
+            elif asset_name in [*self.energy_system_components.get("gas_demand", [])]:
+                nominal_fixed_operational = bounds[f"{asset_name}.Gas_demand_mass_flow"][1]
+                nominal_variable_operational = nominal_fixed_operational
+                nominal_investment = nominal_fixed_operational
             else:
                 logger.warning(
                     f"Asset {asset_name} has type for which "
@@ -1245,9 +1249,11 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             for _id, attr in self.get_electricity_carriers().items():
                 if attr["id_number_mapping"] == parameters[f"{demand}.id_mapping_carrier"]:
                     carrier_name = attr["name"]
+                    cost_multiplier = 1 / 3600.0  # priceprofile electricity is EUR/Wh
             for _id, attr in self.get_gas_carriers().items():
                 if attr["id_number_mapping"] == parameters[f"{demand}.id_mapping_carrier"]:
                     carrier_name = attr["name"]
+                    cost_multiplier = 1.0  # priceprofile gas is in EUR/g
             if carrier_name is not None:
                 price_profile = self.get_timeseries(f"{carrier_name}.price_profile").values
 
@@ -1266,7 +1272,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 nominal = self.variable_nominal(variable_revenue_var)
 
                 sum = 0.0
-                timesteps = np.diff(self.times()) / 3600.0
+                timesteps = np.diff(self.times()) * cost_multiplier
                 for i in range(1, len(self.times())):
                     sum += price_profile[i] * energy_flow[i] * timesteps[i - 1]
 

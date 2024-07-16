@@ -6,6 +6,12 @@
       <carrier xsi:type="esdl:GasCommodity" id="14831e6c-c3bb-4763-8300-9658a365ee54" pressure="15.0" name="Hydrogen"/>
     </carriers>
   </energySystemInformation>
+  <services xsi:type="esdl:Services">
+    <service xsi:type="esdl:StorageStrategy" energyAsset="9172f2eb-e1f4-4230-9495-396504f7c3c6" name="StorageStrategy for GasStorage_9172" id="5551d29c-62c4-4509-bcad-4c2366b77be6">
+      <marginalDischargeCosts xsi:type="esdl:SingleValue" value="4.5" id="d13b412a-89a4-4a7c-a9b8-73ed3d100524" name="marginalDischargeCosts for GasStorage_9172"/>
+      <marginalChargeCosts xsi:type="esdl:SingleValue" value="4.0" id="5f3340ff-fce0-456b-9616-b2b2a078d270" name="marginalChargeCosts for GasStorage_9172"/>
+    </service>
+  </services>
   <instance xsi:type="esdl:Instance" id="791c9938-3b6c-47b3-bcc5-0328ffd687bd" name="Untitled Instance">
     <area xsi:type="esdl:Area" id="3f8efe6b-ccda-4054-85d0-38cbcd6977da" name="Untitled Area">
       <asset xsi:type="esdl:WindPark" name="WindPark_9074" surfaceArea="1294320493" id="90740caf-4fbd-45ed-8ea3-6af19c76256c" power="2000000000.0" technicalLifetime="20.0">
@@ -24,15 +30,19 @@
           </exterior>
         </geometry>
       </asset>
-      <asset xsi:type="esdl:ElectricityDemand" name="ElectricityDemand_f833" id="f8339608-af60-4b32-945b-521e6f7b8098" power="2000000000.0" technicalLifetime="20.0">
+      <asset xsi:type="esdl:ElectricityDemand" name="ElectricityDemand_f833" id="f8339608-af60-4b32-945b-521e6f7b8098" power="1300000000.0" technicalLifetime="20.0">
         <port xsi:type="esdl:InPort" id="ac3fc355-1545-4b78-a46c-1b0908f5ccde" carrier="e1077d81-b32a-4004-9a33-db65c96b5f4c" name="In" connectedTo="69ba58df-cb90-4ebd-843e-d5b9865aeacd"/>
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="52.36553758871974" lon="4.872436523437501"/>
+        <costInformation xsi:type="esdl:CostInformation">
+          <marginalCosts xsi:type="esdl:SingleValue" value="2.0" name="ElectricityDemand_f833-MarginalCosts" id="d18bb16f-094c-451d-bb74-943b7d6ddad0"/>
+        </costInformation>
       </asset>
-      <asset xsi:type="esdl:Electrolyzer" name="Electrolyzer_6327" effMaxLoad="69.0" maxLoad="200000000" efficiency="63.0" id="6327ee2b-9f17-432f-8d15-b034422eab79" power="200000000.0" technicalLifetime="20.0" effMinLoad="67.0" minLoad="20000000">
+      <asset xsi:type="esdl:Electrolyzer" name="Electrolyzer_6327" effMaxLoad="69.0" maxLoad="1000000000" efficiency="63.0" id="6327ee2b-9f17-432f-8d15-b034422eab79" power="1000000000.0" technicalLifetime="20.0" effMinLoad="67.0" minLoad="20000000">
         <costInformation xsi:type="esdl:CostInformation" id="995670aa-a117-4569-a89b-e3a63935c829">
           <fixedMaintenanceCosts xsi:type="esdl:SingleValue" id="63836d94-a84b-4137-8274-e926ace66a9f" value="15000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="1b39bf48-df74-4fcf-b94b-a23593fa965b" unit="EURO" description="Cost in EUR/MW" perMultiplier="MEGA" physicalQuantity="COST" perUnit="WATT"/>
           </fixedMaintenanceCosts>
+          <marginalCosts xsi:type="esdl:SingleValue" id="d18bb16f-094c-451d-bb74-943b7d6ddad1" value="1.9" name="Electrolyzer_6327-MarginalCosts"/>
         </costInformation>
         <port xsi:type="esdl:InPort" id="d81bb99d-1508-4b13-bc13-1f1a149d481d" carrier="e1077d81-b32a-4004-9a33-db65c96b5f4c" name="In" connectedTo="1e76b7b0-9f17-4ccc-b4c3-0089b3ff6a45"/>
         <port xsi:type="esdl:OutPort" id="5e58c0e2-5db4-4f6a-8aab-2c880d499c14" connectedTo="5e660a4f-e8ca-4e9d-8568-6292d36b5994" carrier="14831e6c-c3bb-4763-8300-9658a365ee54" name="Out"/>
@@ -43,6 +53,7 @@
           <variableOperationalCosts xsi:type="esdl:SingleValue" id="5c63dce1-8a70-44f3-b6b9-476587ff73bb" value="0.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" unit="EURO" id="4a4516c3-372a-4a6c-b25a-dcc8dca30545" description="Cost in EUR/kg" physicalQuantity="COST" multiplier="KILO" perUnit="GRAM"/>
           </variableOperationalCosts>
+          <marginalCosts xsi:type="esdl:SingleValue" id="d18bb16f-094c-451d-bb74-943b7d6ddad2" value="5.0" name="GasDemand_4146-MarginalCosts"/>
         </costInformation>
         <port xsi:type="esdl:InPort" id="121a1b8d-758b-4b35-92fa-894435965e85" carrier="14831e6c-c3bb-4763-8300-9658a365ee54" name="In" connectedTo="f0b7ab61-b983-45ed-9274-887ccaadfce0"/>
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="52.633062890594374" lon="4.707641601562501"/>
@@ -90,7 +101,7 @@
         <port xsi:type="esdl:OutPort" id="c3a78fa8-b482-4bcd-bad2-fd4c971b2565" connectedTo="f613dd95-9882-45a3-a569-4cd723444c90 1ab8ab85-2824-4606-a2ac-709596d8367b" carrier="14831e6c-c3bb-4763-8300-9658a365ee54" name="Out"/>
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="52.5992941670283" lon="3.750457763671875"/>
       </asset>
-      <asset xsi:type="esdl:Pipe" name="Pipe_ec1a" id="ec1a89cf-c7fb-4574-a93b-048b9d06640a" diameter="DN400" length="7646.2">
+      <asset xsi:type="esdl:Pipe" name="Pipe_ec1a" id="ec1a89cf-c7fb-4574-a93b-048b9d06640a" diameter="DN1200" length="7646.2">
         <port xsi:type="esdl:InPort" id="5e660a4f-e8ca-4e9d-8568-6292d36b5994" carrier="14831e6c-c3bb-4763-8300-9658a365ee54" name="In" connectedTo="5e58c0e2-5db4-4f6a-8aab-2c880d499c14"/>
         <port xsi:type="esdl:OutPort" id="73a0c91a-a167-4a3d-b7e3-7603d32db9ac" connectedTo="272d0690-117e-4f69-bd34-ed24b2dc6f0b" carrier="14831e6c-c3bb-4763-8300-9658a365ee54" name="Out"/>
         <geometry xsi:type="esdl:Line" CRS="WGS84">
@@ -98,7 +109,7 @@
           <point xsi:type="esdl:Point" lat="52.5992941670283" lon="3.750457763671875"/>
         </geometry>
       </asset>
-      <asset xsi:type="esdl:Pipe" name="Pipe_97ee" id="97ee0a46-1a47-4bec-b131-c0a13246f298" diameter="DN400" length="5839.7">
+      <asset xsi:type="esdl:Pipe" name="Pipe_97ee" id="97ee0a46-1a47-4bec-b131-c0a13246f298" diameter="DN1200" length="5839.7">
         <port xsi:type="esdl:InPort" id="f613dd95-9882-45a3-a569-4cd723444c90" carrier="14831e6c-c3bb-4763-8300-9658a365ee54" name="In" connectedTo="c3a78fa8-b482-4bcd-bad2-fd4c971b2565"/>
         <port xsi:type="esdl:OutPort" id="0e6e6a7d-5b9a-42ff-8902-4e8db530b248" connectedTo="b2bd6049-3e2e-443c-aa36-ba893135cf82" carrier="14831e6c-c3bb-4763-8300-9658a365ee54" name="Out"/>
         <geometry xsi:type="esdl:Line" CRS="WGS84">
@@ -106,7 +117,7 @@
           <point xsi:type="esdl:Point" lat="52.566334145326486" lon="3.8177490234375004"/>
         </geometry>
       </asset>
-      <asset xsi:type="esdl:Pipe" name="Pipe_910d" id="910d3cd0-715a-423c-b67a-52fb967c85b4" diameter="DN400" length="64730.1">
+      <asset xsi:type="esdl:Pipe" name="Pipe_910d" id="910d3cd0-715a-423c-b67a-52fb967c85b4" diameter="DN300" length="64730.1">
         <port xsi:type="esdl:InPort" id="1ab8ab85-2824-4606-a2ac-709596d8367b" carrier="14831e6c-c3bb-4763-8300-9658a365ee54" name="In" connectedTo="c3a78fa8-b482-4bcd-bad2-fd4c971b2565"/>
         <port xsi:type="esdl:OutPort" id="f0b7ab61-b983-45ed-9274-887ccaadfce0" connectedTo="121a1b8d-758b-4b35-92fa-894435965e85" carrier="14831e6c-c3bb-4763-8300-9658a365ee54" name="Out"/>
         <geometry xsi:type="esdl:Line" CRS="WGS84">

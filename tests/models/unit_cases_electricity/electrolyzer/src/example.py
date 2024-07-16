@@ -2,6 +2,7 @@ from mesido.electricity_physics_mixin import ElectrolyzerOption
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.network_common import NetworkSettings
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 
 import numpy as np
@@ -30,27 +31,12 @@ class RevenueGoal(Goal):
 
     def function(self, optimization_problem, ensemble_member):
         canonical, sign = optimization_problem.alias_relation.canonical_signed(self.state)
+
         symbols = sign * optimization_problem.state_vector(canonical, ensemble_member)
         price_profile = optimization_problem.get_timeseries(self.price_profile).values
         sum = 0.0
         for i in range(len(price_profile)):
             sum += symbols[i] * price_profile[i]
-
-        for asset in [
-            *optimization_problem.energy_system_components.get("gas_demand", []),
-            *optimization_problem.energy_system_components.get("gas_source", []),
-            *optimization_problem.energy_system_components.get("electrolyzer", []),
-            *optimization_problem.energy_system_components.get("gas_tank_storage", []),
-            *optimization_problem.energy_system_components.get("wind_park", []),
-            *optimization_problem.energy_system_components.get("electricity_demand", []),
-            *optimization_problem.energy_system_components.get("electricity_source", []),
-        ]:
-            sum -= optimization_problem.extra_variable(
-                f"{asset}__variable_operational_cost", ensemble_member
-            )
-            sum -= optimization_problem.extra_variable(
-                f"{asset}__fixed_operational_cost", ensemble_member
-            )
 
         return -sum
 
@@ -146,6 +132,7 @@ class MILPProblemInequality(
         options = super().energy_system_options()
         options["include_asset_is_switched_on"] = True
         options["include_electric_cable_power_loss"] = False
+        self.gas_network_settings["network_type"] = NetworkSettings.NETWORK_TYPE_HYDROGEN
 
         return options
 

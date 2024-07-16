@@ -64,7 +64,6 @@ setup(
         "casadi == 3.6.3",
         "StrEnum == 0.4.15",
         "CoolProp==6.6.0",
-        "iapws==1.5.3",
     ],
     tests_require=["pytest", "pytest-runner", "numpy"],
     include_package_data=True,
