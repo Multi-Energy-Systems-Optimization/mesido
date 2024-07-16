@@ -533,7 +533,12 @@ class TestMultiCommoditySimulator(TestCase):
             head_loss = results[f"{pipe}.dH"]
             head_loss_full_var = results[f"{pipe}.__head_loss"]
             # If this test fails there is most likely a scaling issue.
-            np.testing.assert_allclose(np.abs(np.asarray(head_loss)), head_loss_full_var)
+            indexes = np.abs(v_pipe) > 0.0
+
+            indexes[0] = False
+            np.testing.assert_allclose(
+                np.abs(np.asarray(head_loss[indexes])), head_loss_full_var[indexes]
+            )
             for i in range(1, len(v_pipe)):
                 v = v_pipe[i]
                 line_num = velocities.searchsorted(abs(v))

@@ -483,6 +483,7 @@ class MultiCommoditySimulator(
         self.gas_network_settings["network_type"] = NetworkSettings.NETWORK_TYPE_HYDROGEN
         self.gas_network_settings["minimize_head_losses"] = True
         options["include_asset_is_switched_on"] = True
+        options["estimated_velocity"] = 7.5
 
         options["gas_storage_discharge_variables"] = True
         options["electricity_storage_discharge_variables"] = True
