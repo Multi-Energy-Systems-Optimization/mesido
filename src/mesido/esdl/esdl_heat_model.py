@@ -848,6 +848,11 @@ class AssetToHeatComponent(_AssetToComponentBase):
             "HeatExchange",
         }
 
+        if (isinstance(asset.in_ports[0].carrier, esdl.ElectricityCommodity)
+        and
+        isinstance(asset.out_ports[0].carrier, esdl.ElectricityCommodity)):
+            return self.convert_electricity_node(asset)
+
         params_t = self._supply_return_temperature_modifiers(asset)
         params_q = self._get_connected_q_nominal(asset)
         params = {}
@@ -1584,7 +1589,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         -------
         ElectricitySource class with modifiers
         """
-        assert asset.asset_type in {"ElectricityProducer", "WindPark", "PVInstallation", "Import"}
+        assert asset.asset_type in {"ElectricityProducer", "WindPark", "WindTurbine","PVInstallation", "Import"}
 
         max_supply = asset.attributes.get(
             "power", math.inf
@@ -1694,7 +1699,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         -------
         ElectricityNode class with modifiers
         """
-        assert asset.asset_type in {"Bus"}
+        assert asset.asset_type in {"Bus","GenericConversion"}
 
         sum_in = 0
         sum_out = 0

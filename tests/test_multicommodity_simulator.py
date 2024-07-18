@@ -568,6 +568,25 @@ class TestMultiCommoditySimulator(TestCase):
                     headloss_calc = a * v + b
                     np.testing.assert_allclose(abs(head_loss[i]), headloss_calc, 0.1)
 
+    def test_multi_commodity_simulator_NS(self):
+        """
+        Test NSE5
+        """
+        # import models.NS.src.example as example
+
+        base_folder = r'C:\Git\NSE5\mesido\tests\models\NS'
+
+        solution = run_optimization_problem(
+            MultiCommoditySimulatorNoLosses,
+            base_folder=base_folder,
+            esdl_file_name="Sprint2.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_mesido.csv",
+        )
+
+        results = solution.extract_results()
+
 
 if __name__ == "__main__":
     import time

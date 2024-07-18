@@ -109,6 +109,7 @@ class _AssetToComponentBase:
         "Sensor": "skip",
         "Valve": "control_valve",
         "WindPark": "electricity_source",
+        "WindTurbine": "electricity_source",
         "Transformer": "transformer",
         "CheckValve": "check_valve",
     }
