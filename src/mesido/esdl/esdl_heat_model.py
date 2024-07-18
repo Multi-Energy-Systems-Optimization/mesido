@@ -1610,7 +1610,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         if asset.asset_type in ["ElectricityProducer", "Import"]:
             return ElectricitySource, modifiers
-        if asset.asset_type == "WindPark":
+        if asset.asset_type in ["WindPark", "WindTurbine"]:
             return WindPark, modifiers
         if asset.asset_type == "PVInstallation":
             return SolarPV, modifiers

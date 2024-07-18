@@ -211,6 +211,13 @@ class _ESDLModelBase(_Model):
                                 f"{asset.name} has does not have (1 electricity in_port) 1 heat "
                                 f"in port and 1 Heat out_ports "
                             )
+                elif (asset.asset_type == "GenericConversion"
+                and isinstance(asset.out_ports[0].carrier, esdl.ElectricityCommodity)
+                and isinstance(asset.in_ports[0].carrier, esdl.ElectricityCommodity)
+                and len(asset.out_ports) == 1
+                and len(asset.in_ports) == 1
+            ): #generic conversion used between two electricitycommodities
+                    pass
                 else:
                     raise Exception(
                         f"{asset.name} has incorrect number of in/out ports. HeatPumps are allows "
