@@ -446,7 +446,7 @@ class MultiCommoditySimulator(
             "storage": ["gas_tank_storage", "electricity_storage"],
         }
 
-        assets_without_control = ["Pipe", "ElectricityCable", "Joint", "Bus"]
+        assets_without_control = ["Pipe", "ElectricityCable", "Joint", "Bus", "GenericConversion"]
 
         # TODO also include other assets than producers, e.g. storage, conversion and possible
         #  demand for the ones without a profile
@@ -570,9 +570,9 @@ class MultiCommoditySimulator(
         options = super().solver_options()
         options["casadi_solver"] = self._qpsol
 
-        options["solver"] = "highs"
-        highs_options = options["highs"] = {}
-        highs_options["presolve"] = "off"
+        # options["solver"] = "highs"
+        # highs_options = options["highs"] = {}
+        # highs_options["presolve"] = "off"
 
         return options
 
@@ -642,9 +642,9 @@ class MultiCommoditySimulatorNoLosses(MultiCommoditySimulator):
         # For some cases the presolve of the HIGHS solver makes this problem infeasible, therefore
         # the presolve is turned off.
         options = super().solver_options()
-        options["solver"] = "highs"
-        highs_options = options["highs"] = {}
-        highs_options["presolve"] = "off"
+        options["solver"] = "cplex"
+        # highs_options = options["highs"] = {}
+        # highs_options["presolve"] = "off"
 
         return options
 

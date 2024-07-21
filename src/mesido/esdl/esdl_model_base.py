@@ -217,7 +217,8 @@ class _ESDLModelBase(_Model):
                 and len(asset.out_ports) == 1
                 and len(asset.in_ports) == 1
             ): #generic conversion used between two electricitycommodities
-                    pass
+                    port_map[asset.in_ports[0].id] = getattr(component, elec_in_suf)
+                    port_map[asset.out_ports[0].id] = getattr(component, elec_out_suf)
                 else:
                     raise Exception(
                         f"{asset.name} has incorrect number of in/out ports. HeatPumps are allows "
