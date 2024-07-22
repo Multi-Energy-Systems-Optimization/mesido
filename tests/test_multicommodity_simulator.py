@@ -570,7 +570,7 @@ class TestMultiCommoditySimulator(TestCase):
 
     def test_multi_commodity_simulator_NS(self):
         """
-        Test NSE5
+        Test NS5
         """
         # import models.NS.src.example as example
 
