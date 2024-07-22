@@ -55,6 +55,19 @@ def _extract_values_timeseries(v, type_r=None):
     return v
 
 
+class OptimisationOverview:
+    """
+    This class is used to combine the optimisation results, bounds, parameters and aliases
+    needed for post-processing and visualisation.
+    """
+
+    def __init__(self, total_results, bounds, parameters, aliases):
+        self.results = total_results
+        self.bounds = bounds
+        self.parameters = parameters
+        self.aliases = aliases
+
+
 # -------------------------------------------------------------------------------------------------
 # Step 1:
 # Match the target demand specified
@@ -670,36 +683,6 @@ class MultiCommoditySimulatorNoLosses(MultiCommoditySimulator):
         return options
 
 
-class MultiCommoditySimulatorNoLossesStagedTimeSequential(MultiCommoditySimulatorNoLosses):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.__start_time_index = kwargs.get("start_index", None)
-        self.__end_time_index = kwargs.get("end_index", None)
-        self._full_time_series = None
-
-        self.__storage_initial_state_bounds = kwargs.get("storage_initial_state_bounds", {})
-
-    def times(self, variable=None) -> np.ndarray:
-        if self._full_time_series is None:
-            self._full_time_series = super().times(variable)
-
-        if self.__start_time_index is not None and self.__end_time_index is not None:
-            return super().times(variable)[self.__start_time_index : self.__end_time_index]
-        elif self.__start_time_index is not None:
-            return super().times(variable)[self.__start_time_index :]
-        elif self.__end_time_index is not None:
-            return super().times(variable)[: self.__end_time_index]
-        else:
-            return super().times(variable)
-
-    def bounds(self):
-        bounds = super().bounds()
-        bounds.update(self.__storage_initial_state_bounds)
-        return bounds
-
-
 def run_sequatially_staged_simulation(
     multi_commodity_simulator_class, simulation_window_size=2, *args, **kwargs
 ):
@@ -719,6 +702,49 @@ def run_sequatially_staged_simulation(
     -------
     The results dict where all the time results are concatenated.
     """
+
+    class MultiCommoditySimulatorTimeSequential(multi_commodity_simulator_class):
+        """
+        This Problem class is used to run the MultiCommoditySimulator class in a sequantial manner
+        to reduce computational time. This class enables this by allowing to run a part of the
+        timeseries and setting bounds on the (initial-)state variables.
+        """
+
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+
+            self.__start_time_index = kwargs.get("start_index", None)
+            self.__end_time_index = kwargs.get("end_index", None)
+            self._full_time_series = None
+
+            self.__storage_initial_state_bounds = kwargs.get("storage_initial_state_bounds", {})
+
+        def times(self, variable=None) -> np.ndarray:
+            """
+            In this function the part of the time-horizon is enforced. Note that the full
+            time-horizon is also set to an internal member for enabling setting bounds to the next
+            sequantial optimization.
+            """
+            if self._full_time_series is None:
+                self._full_time_series = super().times(variable)
+
+            if self.__start_time_index is not None and self.__end_time_index is not None:
+                return super().times(variable)[self.__start_time_index : self.__end_time_index]
+            elif self.__start_time_index is not None:
+                return super().times(variable)[self.__start_time_index :]
+            elif self.__end_time_index is not None:
+                return super().times(variable)[: self.__end_time_index]
+            else:
+                return super().times(variable)
+
+        def bounds(self):
+            """
+            Here we set bounds on the initial state to ensure that the sequantial simulation is a
+            physcially valid.
+            """
+            bounds = super().bounds()
+            bounds.update(self.__storage_initial_state_bounds)
+            return bounds
 
     # Note that the window size should be larger than 1 otherwise this function is has no
     # benefit and the writing of the results dict will fail.
@@ -744,7 +770,7 @@ def run_sequatially_staged_simulation(
 
         # max operation for start_index to avoid the overlap function in the first stage
         solution = run_optimization_problem(
-            multi_commodity_simulator_class,
+            MultiCommoditySimulatorTimeSequential,
             start_index=max(simulated_window - 1, 0),
             end_index=sub_end_time,
             storage_initial_state_bounds=storage_initial_state_bounds,
@@ -791,13 +817,6 @@ def run_sequatially_staged_simulation(
                         storage_initial_state_bounds[f"{asset}.{variable}"] = (lb, ub)
 
     print(time.time() - tic)
-
-    class OptimisationOverview:
-        def __init__(self, total_results, bounds, parameters, aliases):
-            self.results = total_results
-            self.bounds = bounds
-            self.parameters = parameters
-            self.aliases = aliases
 
     return OptimisationOverview(total_results, bounds, parameters, aliases)
 

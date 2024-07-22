@@ -10,7 +10,7 @@ from mesido.head_loss_class import HeadLossOption
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.io.write_output import ScenarioOutput
 from mesido.workflows.multicommodity_simulator_workflow import (
-    MultiCommoditySimulatorNoLossesStagedTimeSequential,
+    MultiCommoditySimulatorNoLosses,
     run_sequatially_staged_simulation,
 )
 
@@ -331,7 +331,7 @@ if __name__ == "__main__":
     #     )
 
     solution = run_sequatially_staged_simulation(
-        multi_commodity_simulator_class=MultiCommoditySimulatorNoLossesStagedTimeSequential,
+        multi_commodity_simulator_class=MultiCommoditySimulatorNoLosses,
         simulation_window_size=20,
         esdl_file_name="emerge_battery_priorities.esdl",
         esdl_parser=ESDLFileParser,

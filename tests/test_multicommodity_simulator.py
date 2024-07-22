@@ -9,7 +9,6 @@ from mesido.network_common import NetworkSettings
 from mesido.workflows.multicommodity_simulator_workflow import (
     MultiCommoditySimulator,
     MultiCommoditySimulatorNoLosses,
-    MultiCommoditySimulatorNoLossesStagedTimeSequential,
     run_sequatially_staged_simulation,
 )
 
@@ -581,7 +580,7 @@ class TestMultiCommoditySimulator(TestCase):
         base_folder = Path(example.__file__).resolve().parent.parent
 
         solution = run_sequatially_staged_simulation(
-            multi_commodity_simulator_class=MultiCommoditySimulatorNoLossesStagedTimeSequential,
+            multi_commodity_simulator_class=MultiCommoditySimulatorNoLosses,
             simulation_window_size=20,
             base_folder=base_folder,
             esdl_file_name="emerge_battery_priorities.esdl",
