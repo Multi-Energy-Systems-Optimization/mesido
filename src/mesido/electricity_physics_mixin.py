@@ -72,6 +72,10 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         self.__set_point_bounds = {}
         self.__set_point_map = {}
 
+        # Boolean path-variable for the equality constraint of the electrolyzer
+        self.__electrolyzer_is_active_linear_segment_map = {}
+        self.__electrolyzer_is_active_linear_segment_var = {}
+        self.__electrolyzer_is_active_linear_segment_bounds = {}
         self.__electricity_storage_discharge_var = {}
         self.__electricity_storage_discharge_bounds = {}
         self.__electricity_storage_discharge_nominals = {}
@@ -121,6 +125,21 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                 self.__asset_is_switched_on_var[var_name] = ca.MX.sym(var_name)
                 self.__asset_is_switched_on_bounds[var_name] = (0.0, 1.0)
 
+        if options["electrolyzer_efficiency"] == ElectrolyzerOption.LINEARIZED_THREE_LINES_EQUALITY:
+            for asset in [
+                *self.energy_system_components.get("electrolyzer", []),
+            ]:
+                self.__electrolyzer_is_active_linear_segment_map[asset] = {}
+                n_lines = 3
+                for n_line in range(n_lines):
+                    var_name = f"{asset}__line_{n_line}_active"
+
+                    self.__electrolyzer_is_active_linear_segment_map[asset][
+                        f"line_{n_line}"
+                    ] = var_name
+                    self.__electrolyzer_is_active_linear_segment_var[var_name] = ca.MX.sym(var_name)
+                    self.__electrolyzer_is_active_linear_segment_bounds[var_name] = (0.0, 1.0)
+
         for asset in [*self.energy_system_components.get("electricity_storage", [])]:
             var_name = f"{asset}__is_charging"
             self.__storage_charging_map[asset] = var_name
@@ -169,6 +188,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         variables.extend(self.__asset_is_switched_on_var.values())
         variables.extend(self.__storage_charging_var.values())
         variables.extend(self.__set_point_var.values())
+        variables.extend(self.__electrolyzer_is_active_linear_segment_var.values())
         variables.extend(self.__electricity_storage_discharge_var.values())
 
         return variables
@@ -178,6 +198,8 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         All variables that only can take integer values should be added to this function.
         """
 
+        if variable in self.__electrolyzer_is_active_linear_segment_var:
+            return True
         if variable in self.__asset_is_switched_on_var:
             return True
         if variable in self.__storage_charging_var:
@@ -201,6 +223,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         """
         bounds = super().bounds()
 
+        bounds.update(self.__electrolyzer_is_active_linear_segment_bounds)
         bounds.update(self.__asset_is_switched_on_bounds)
         bounds.update(self.__storage_charging_bounds)
         bounds.update(self.__electricity_producer_upper_bounds)
@@ -598,7 +621,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         self, coef_a, coef_b, coef_c, electrical_power_input
     ) -> float:
         """
-        This function returns the gas mass flow rate [kg/s] out of an electrolyzer based on the
+        This function returns the gas mass flow rate [g/s] out of an electrolyzer based on the
         theoretical efficiency curve:
         energy [Ws] / gas mass [kg] =
         (coef_a / electrical_power_input) + (b * electrical_power_input) + coef_c
@@ -612,14 +635,13 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
         Returns
         -------
-        gas mass flow rate produced by the electrolyzer [kg/s]
+        gas mass flow rate produced by the electrolyzer [g/s]
         """
 
         if not isclose(electrical_power_input, 0.0):
-            eff = (
-                (coef_a / electrical_power_input) + (coef_b * electrical_power_input) + coef_c
-            )  # Wh/g
-            gas_mass_flow_out = (1.0 / (eff * 3600)) * electrical_power_input
+            eff = (coef_a / electrical_power_input) + (coef_b * electrical_power_input) + coef_c
+            gas_mass_flow_out = (1.0 / eff) * electrical_power_input * (1 / (3600))  # g/s
+
         else:
             gas_mass_flow_out = 0.0
 
@@ -630,14 +652,14 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
     ) -> Tuple[np.array, np.array]:
         """
         This function returns a set of coefficients to approximate a gas mass flow rate curve with
-        linear functions in the form of: gass mass flow rate [kg/s] = b + (a * electrical_power)
+        linear functions in the form of: gass mass flow rate [g/s] = b + (a * electrical_power)
 
         Parameters
         ----------
         coef_a: electrolyzer efficience curve coefficent
         coef_b: electrolyzer efficience curve coefficent
         coef_c: electrolyzer efficience curve coefficent
-        n_lines: numebr of linear lines used to approximate the non-linear curve
+        n_lines: number of linear lines used to approximate the non-linear curve
         electrical_power_min: minimum electrical power consumed [W]
         electrical_power_max: maximum electrical power consumed [W]
 
@@ -666,7 +688,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         """
         This functions add the constraints for the gas mass flow production based as a functions of
         electrical power input. This production is approximated by an electrolyzer efficience curve
-        (energy/gas mass vs electrical power input, [Ws/kg] vs [W]) which is then linearized. If
+        (energy/gas mass vs electrical power input, [KWh/kg] vs [W]) which is then linearized. If
         the load becomes lower than the minimum load both the gass_mass_flow and the electricity
         power should be 0.
         """
@@ -706,8 +728,19 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             elif (
                 options["electrolyzer_efficiency"]
                 == ElectrolyzerOption.LINEARIZED_THREE_LINES_WEAK_INEQUALITY
+                or options["electrolyzer_efficiency"]
+                == ElectrolyzerOption.LINEARIZED_THREE_LINES_EQUALITY
             ):
-                curve_fit_number_of_lines = 3
+                if (
+                    options["electrolyzer_efficiency"]
+                    == ElectrolyzerOption.LINEARIZED_THREE_LINES_WEAK_INEQUALITY
+                ):
+                    curve_fit_number_of_lines = 3
+                else:
+                    curve_fit_number_of_lines = len(
+                        self.__electrolyzer_is_active_linear_segment_map[asset]
+                    )
+
                 linear_coef_a, linear_coef_b = (
                     self._get_linear_coef_electrolyzer_mass_vs_epower_fit(
                         parameters[f"{asset}.a_eff_coefficient"],
@@ -749,11 +782,49 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                         ),
                     ]
                 )
-            elif (
-                options["electrolyzer_efficiency"]
-                == ElectrolyzerOption.LINEARIZED_THREE_LINES_EQUALITY
-            ):
-                raise NotImplementedError
+                if (
+                    options["electrolyzer_efficiency"]
+                    == ElectrolyzerOption.LINEARIZED_THREE_LINES_EQUALITY
+                ):
+                    is_line_segment_active_sum = 0.0
+                    for n_line in range(curve_fit_number_of_lines):
+                        var_name = self.__electrolyzer_is_active_linear_segment_map[asset][
+                            f"line_{n_line}"
+                        ]
+                        is_line_segment_active = self.state(var_name)
+                        # Equality constraint to map the input power to the output massflow
+                        # of the electrolyzer
+                        constraints.append(
+                            (
+                                (
+                                    gas_mass_flow_out_vect[n_line]
+                                    - gass_mass_out_linearized_vect[n_line]
+                                    - (1 - is_line_segment_active) * big_m
+                                )
+                                / nominal,
+                                -np.inf,
+                                0.0,
+                            ),
+                        )
+                        #
+                        constraints.append(
+                            (
+                                (
+                                    gas_mass_flow_out_vect[n_line]
+                                    - gass_mass_out_linearized_vect[n_line]
+                                    + (1 - is_line_segment_active) * big_m
+                                )
+                                / nominal,
+                                0.0,
+                                np.inf,
+                            ),
+                        )
+                        is_line_segment_active_sum += is_line_segment_active
+                    # Constraint to ensure that only one line is active, if the electrolyzer
+                    # is switched on
+                    constraints.append(
+                        (is_line_segment_active_sum + (1 - asset_is_switched_on), 1.0, 1.0),
+                    )
 
             constraints.append(
                 ((gas_mass_flow_out + asset_is_switched_on * big_m) / big_m, 0.0, np.inf)

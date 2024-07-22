@@ -568,10 +568,6 @@ class TestMultiCommoditySimulator(TestCase):
                     b = dw_headloss_min - a * velocities[line_num - 1]
                     headloss_calc = a * v + b
                     np.testing.assert_allclose(abs(head_loss[i]), headloss_calc, 0.1)
-                # else:
-                #     np.testing.assert_allclose(abs(head_loss[i]), 0.0)
-
-            print("a")
 
     def test_multi_commodity_simulator_sequential_staged(self):
         """

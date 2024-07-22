@@ -32,7 +32,7 @@ class GasPipe(GasTwoPort, BaseAsset):
         self.r = 1.0e-6 * self.length  # TODO: temporary value
         self.nominal_head_loss = (self.Q_nominal * self.r * self.nominal_head) ** 0.5
 
-        self.add_variable(Variable, "dH", nominal=self.Q_nominal * self.r)
+        self.add_variable(Variable, "dH")
         self.add_variable(Variable, "Q", nominal=self.Q_nominal)
 
         # Flow should be preserved
