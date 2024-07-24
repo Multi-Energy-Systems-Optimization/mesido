@@ -848,6 +848,11 @@ class AssetToHeatComponent(_AssetToComponentBase):
             "HeatExchange",
         }
 
+        if isinstance(asset.in_ports[0].carrier, esdl.ElectricityCommodity) and isinstance(
+            asset.out_ports[0].carrier, esdl.ElectricityCommodity
+        ):
+            return self.convert_transformer(asset)
+
         params_t = self._supply_return_temperature_modifiers(asset)
         params_q = self._get_connected_q_nominal(asset)
         params = {}
@@ -1584,7 +1589,13 @@ class AssetToHeatComponent(_AssetToComponentBase):
         -------
         ElectricitySource class with modifiers
         """
-        assert asset.asset_type in {"ElectricityProducer", "WindPark", "PVInstallation", "Import"}
+        assert asset.asset_type in {
+            "ElectricityProducer",
+            "WindPark",
+            "WindTurbine",
+            "PVInstallation",
+            "Import",
+        }
 
         max_supply = asset.attributes.get(
             "power", math.inf
@@ -1605,7 +1616,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         if asset.asset_type in ["ElectricityProducer", "Import"]:
             return ElectricitySource, modifiers
-        if asset.asset_type == "WindPark":
+        if asset.asset_type in ["WindPark", "WindTurbine"]:
             return WindPark, modifiers
         if asset.asset_type == "PVInstallation":
             return SolarPV, modifiers
@@ -1771,7 +1782,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             min_voltage=min_voltage,
             nominal_current=max_current / 2.0,
             nominal_voltage=min_voltage,
-            length=asset.attributes["length"],
+            length=asset.attributes["length"] if asset.attributes["length"] != 0.0 else 10.0,
             ElectricityOut=dict(
                 V=dict(min=min_voltage, nominal=min_voltage),
                 I=dict(min=-max_current, max=max_current, nominal=max_current / 2.0),
@@ -1802,7 +1813,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         -------
         ElectricityCable class with modifiers
         """
-        assert asset.asset_type in {"Transformer"}
+        assert asset.asset_type in {"Transformer", "GenericConversion"}
         self._get_connected_i_nominal_and_max(asset)
         i_max_in, i_nom_in, i_max_out, i_nom_out = self._get_connected_i_nominal_and_max(asset)
         min_voltage_in = asset.in_ports[0].carrier.voltage
@@ -2021,13 +2032,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
         max_power = asset.attributes.get("power", math.inf)
         min_load = float(asset.attributes["minLoad"])
         max_load = float(asset.attributes["maxLoad"])
-        if not max_power == max_load:
+        if not max_power == max_load and max_load != 0.0:
             max_power = max_load
             logger.warning(
                 f"The maximum load and the power of the electrolyzer did not match for "
                 f"{asset.name}. The maximum load of {max_load}W is now used as maximum "
                 f"power."
             )
+        max_load = max_power
+        if min_load == 0.0:
+            min_load = 0.01 * max_load  # 1% of maxload
         eff_min_load = asset.attributes["effMinLoad"]  # Wh/g
         eff_max_load = asset.attributes["effMaxLoad"]  # Wh/g
         eff_max = asset.attributes["efficiency"]  # Wh/g
