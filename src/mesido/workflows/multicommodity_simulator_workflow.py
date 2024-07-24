@@ -1,5 +1,6 @@
 import locale
 import logging
+import os
 import time
 from pathlib import Path
 
@@ -262,6 +263,7 @@ class MultiCommoditySimulator(
         super().__init__(*args, **kwargs)
         self._qpsol = None
         self._priorities_output = []
+        self._save_json = kwargs.get('_save_json', False)
 
     def pre(self):
         self._qpsol = CachingQPSol()
@@ -678,9 +680,9 @@ class MultiCommoditySimulatorNoLosses(MultiCommoditySimulator):
         # For some cases the presolve of the HIGHS solver makes this problem infeasible, therefore
         # the presolve is turned off.
         options = super().solver_options()
-        options["solver"] = "highs"
-        highs_options = options["highs"] = {}
-        highs_options["presolve"] = "off"
+        options["solver"] = "gurobi"
+        # highs_options = options["highs"] = {}
+        # highs_options["presolve"] = "off"
 
         return options
 
@@ -819,6 +821,9 @@ def run_sequatially_staged_simulation(
                         storage_initial_state_bounds[f"{asset}.{variable}"] = (lb, ub)
 
     print(time.time() - tic)
+
+    if os.path.exists(solution.output_folder) and solution._save_json:
+        solution._write_json_output(results, parameters, bounds, aliases)
 
     return OptimisationOverview(total_results, bounds, parameters, aliases)
 
