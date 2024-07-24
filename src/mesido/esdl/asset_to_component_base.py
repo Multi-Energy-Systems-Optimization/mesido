@@ -230,6 +230,33 @@ class _AssetToComponentBase:
 
         return inner_diameter, insulation_thicknesses, conductivies_insulation
 
+    def _cable_get_resistance(self, asset: Asset) -> Tuple:
+        """
+        Determines the resistance in ohm/m defined by the inverse of the electrical conductivity
+        in the cable's material properties. If no material is defined a default resistance of
+        1e-6 ohm/m is used.
+
+        Parameters
+        ----------
+        asset : Asset cable object with it's properties from ESDL
+
+        Returns
+        -------
+        resistance
+        """
+        material = asset.attributes["material"]
+        el_conductivity = None
+        if material:
+            el_conductivity = material.electricalConductivity
+        if not el_conductivity:
+            logger.warning(
+                f"Cable {asset.name} does not have a material with conductivity assigned,"
+                f" using default resistance"
+            )
+        res_ohm_per_m = 1 / el_conductivity if el_conductivity else 1e-6
+
+        return res_ohm_per_m
+
     def _is_disconnectable_pipe(self, asset: Asset) -> bool:
         """
         This function checks if the pipe is connected to specific assets (e.g. source) and if so

@@ -1776,13 +1776,17 @@ class AssetToHeatComponent(_AssetToComponentBase):
         min_voltage = asset.in_ports[0].carrier.voltage
         max_current = max_power / min_voltage
         self._set_electricity_current_nominal_and_max(asset, max_current / 2.0, max_current)
+        length = asset.attributes["length"] if asset.attributes["length"] != 0.0 else 10.0
+        res_ohm_per_m = self._cable_get_resistance(asset)
+        res_ohm = res_ohm_per_m * length
 
         modifiers = dict(
             max_current=max_current,
             min_voltage=min_voltage,
             nominal_current=max_current / 2.0,
             nominal_voltage=min_voltage,
-            length=asset.attributes["length"] if asset.attributes["length"] != 0.0 else 10.0,
+            length=length,
+            r=res_ohm,
             ElectricityOut=dict(
                 V=dict(min=min_voltage, nominal=min_voltage),
                 I=dict(min=-max_current, max=max_current, nominal=max_current / 2.0),
