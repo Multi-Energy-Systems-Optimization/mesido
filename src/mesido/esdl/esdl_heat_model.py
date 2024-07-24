@@ -848,9 +848,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
             "HeatExchange",
         }
 
-        if (isinstance(asset.in_ports[0].carrier, esdl.ElectricityCommodity)
-        and
-        isinstance(asset.out_ports[0].carrier, esdl.ElectricityCommodity)):
+        if isinstance(asset.in_ports[0].carrier, esdl.ElectricityCommodity) and isinstance(
+            asset.out_ports[0].carrier, esdl.ElectricityCommodity
+        ):
             return self.convert_transformer(asset)
 
         params_t = self._supply_return_temperature_modifiers(asset)
@@ -1589,7 +1589,13 @@ class AssetToHeatComponent(_AssetToComponentBase):
         -------
         ElectricitySource class with modifiers
         """
-        assert asset.asset_type in {"ElectricityProducer", "WindPark", "WindTurbine","PVInstallation", "Import"}
+        assert asset.asset_type in {
+            "ElectricityProducer",
+            "WindPark",
+            "WindTurbine",
+            "PVInstallation",
+            "Import",
+        }
 
         max_supply = asset.attributes.get(
             "power", math.inf
@@ -1776,7 +1782,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             min_voltage=min_voltage,
             nominal_current=max_current / 2.0,
             nominal_voltage=min_voltage,
-            length=asset.attributes["length"] if asset.attributes["length"]!=0.0 else 10.0,
+            length=asset.attributes["length"] if asset.attributes["length"] != 0.0 else 10.0,
             ElectricityOut=dict(
                 V=dict(min=min_voltage, nominal=min_voltage),
                 I=dict(min=-max_current, max=max_current, nominal=max_current / 2.0),
@@ -2026,7 +2032,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         max_power = asset.attributes.get("power", math.inf)
         min_load = float(asset.attributes["minLoad"])
         max_load = float(asset.attributes["maxLoad"])
-        if not max_power == max_load and max_load!= 0.0:
+        if not max_power == max_load and max_load != 0.0:
             max_power = max_load
             logger.warning(
                 f"The maximum load and the power of the electrolyzer did not match for "
@@ -2035,9 +2041,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
             )
         max_load = max_power
         if min_load == 0.0:
-            min_load = 0.01 * max_load # 1% of maxload
+            min_load = 0.01 * max_load  # 1% of maxload
         eff_min_load = asset.attributes["effMinLoad"]  # Wh/g
-        eff_max_load = asset.attributes["effMaxLoad"] # Wh/g
+        eff_max_load = asset.attributes["effMaxLoad"]  # Wh/g
         eff_max = asset.attributes["efficiency"]  # Wh/g
 
         def equations(x):

@@ -8,6 +8,7 @@ from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.network_common import NetworkSettings
 from mesido.workflows.multicommodity_simulator_workflow import (
     MultiCommoditySimulator,
+    MultiCommoditySimulatorHIGHS,
     MultiCommoditySimulatorNoLosses,
 )
 
@@ -476,7 +477,7 @@ class TestMultiCommoditySimulator(TestCase):
         base_folder = Path(example.__file__).resolve().parent.parent
 
         solution = run_optimization_problem(
-            MultiCommoditySimulator,
+            MultiCommoditySimulatorHIGHS,
             base_folder=base_folder,
             esdl_file_name="emerge_battery_priorities.esdl",
             esdl_parser=ESDLFileParser,
@@ -567,7 +568,6 @@ class TestMultiCommoditySimulator(TestCase):
                     b = dw_headloss_min - a * velocities[line_num - 1]
                     headloss_calc = a * v + b
                     np.testing.assert_allclose(abs(head_loss[i]), headloss_calc, 0.1)
-
 
 
 if __name__ == "__main__":

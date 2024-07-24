@@ -529,7 +529,9 @@ class ProfileReaderFromFile(BaseProfileReader):
                             for entry in data["DateTime"].to_numpy()
                         ]
                     except ValueError:
-                        raise _ProfileParserException("Date time string is not in a supported format")
+                        raise _ProfileParserException(
+                            "Date time string is not in a supported format"
+                        )
 
         logger.warning("Timezone specification not supported yet: default UTC has been used")
 
