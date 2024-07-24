@@ -250,7 +250,8 @@ class _AssetToComponentBase:
         if not el_conductivity:
             logger.warning(
                 f"Cable {asset.name} does not have a material with conductivity assigned,"
-                f" using default resistance")
+                f" using default resistance"
+            )
         res_ohm_per_m = 1 / el_conductivity if el_conductivity else 1e-6
 
         return res_ohm_per_m
