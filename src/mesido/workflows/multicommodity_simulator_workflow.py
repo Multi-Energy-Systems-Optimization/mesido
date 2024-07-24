@@ -1,5 +1,6 @@
 import locale
 import logging
+import os
 import time
 from pathlib import Path
 
@@ -262,6 +263,7 @@ class MultiCommoditySimulator(
         super().__init__(*args, **kwargs)
         self._qpsol = None
         self._priorities_output = []
+        self._save_json = kwargs.get("_save_json", False)
 
     def pre(self):
         self._qpsol = CachingQPSol()
@@ -685,6 +687,83 @@ class MultiCommoditySimulatorNoLosses(MultiCommoditySimulator):
         return options
 
 
+def staged_approach(
+    end_time,
+    simulated_window,
+    simulation_window_size,
+    storage_initial_state_bounds,
+    end_time_confirmed,
+    total_results,
+    constrained_assets,
+    multicommodity_sequential_simulator_class,
+    kwargs,
+):
+    sub_end_time = min(end_time, simulated_window + simulation_window_size)
+
+    # max operation for start_index to avoid the overlap function in the first stage
+    solution = run_optimization_problem(
+        multicommodity_sequential_simulator_class,
+        start_index=max(simulated_window - 1, 0),
+        end_index=sub_end_time,
+        storage_initial_state_bounds=storage_initial_state_bounds,
+        **kwargs,
+    )
+    if not end_time_confirmed:
+        end_time = len(solution._full_time_series)
+        end_time_confirmed = True
+    results = solution.extract_results()
+
+    aliases, bounds, parameters = [None] * 3
+
+    # TODO: check if we now capture all relevant variables.
+    if total_results is None:
+        total_results = results
+        aliases = solution.alias_relation._canonical_variables_map
+        bounds = solution.bounds()
+        parameters = solution.parameters(0)
+    else:
+        for key, data in results.items():
+            if len(total_results[key]) > 1:
+                total_results[key] = np.concatenate((total_results[key], data[1:]))
+
+    if sub_end_time < end_time:
+        for asset_type, variables in constrained_assets.items():
+            for asset in solution.energy_system_components.get(asset_type, []):
+                sub_time_series = solution._full_time_series[
+                    simulated_window
+                    - 1
+                    + simulation_window_size : min(
+                        end_time, simulated_window + 2 * simulation_window_size
+                    )
+                ]
+                for variable in variables:
+                    lb_value = _extract_values_timeseries(
+                        solution.bounds()[f"{asset}.{variable}"][0], "min"
+                    )
+                    ub_value = _extract_values_timeseries(
+                        solution.bounds()[f"{asset}.{variable}"][1], "max"
+                    )
+                    lb_values = [lb_value] * len(sub_time_series)
+                    ub_values = [ub_value] * len(sub_time_series)
+                    lb_values[0] = ub_values[0] = results[f"{asset}.{variable}"][-1]
+                    lb = Timeseries(sub_time_series, lb_values)
+                    ub = Timeseries(sub_time_series, ub_values)
+                    storage_initial_state_bounds[f"{asset}.{variable}"] = (lb, ub)
+
+    return (
+        solution,
+        end_time,
+        simulated_window,
+        simulation_window_size,
+        storage_initial_state_bounds,
+        end_time_confirmed,
+        total_results,
+        aliases,
+        bounds,
+        parameters,
+    )
+
+
 def run_sequatially_staged_simulation(
     multi_commodity_simulator_class, simulation_window_size=2, *args, **kwargs
 ):
@@ -720,6 +799,10 @@ def run_sequatially_staged_simulation(
             self._full_time_series = None
 
             self.__storage_initial_state_bounds = kwargs.get("storage_initial_state_bounds", {})
+
+            logger.warning(
+                f"Optimising timestep {self.__start_time_index} to {self.__end_time_index}"
+            )
 
         def times(self, variable=None) -> np.ndarray:
             """
@@ -764,61 +847,108 @@ def run_sequatially_staged_simulation(
         "gas_tank_storage": ["Stored_gas_mass", "Gas_tank_flow"],
     }
 
+    (
+        solution,
+        end_time,
+        simulated_window,
+        simulation_window_size,
+        storage_initial_state_bounds,
+        end_time_confirmed,
+        total_results,
+        aliases,
+        bounds,
+        parameters,
+    ) = staged_approach(
+        end_time,
+        0,
+        simulation_window_size,
+        storage_initial_state_bounds,
+        end_time_confirmed,
+        total_results,
+        constrained_assets,
+        MultiCommoditySimulatorTimeSequential,
+        kwargs,
+    )
+
     tic = time.time()
-    for simulated_window in range(0, end_time, simulation_window_size):
-
+    for simulated_window in range(simulation_window_size, end_time, simulation_window_size):
         # Note that the end time is not necessarily a multiple of simulation_window_size
-        sub_end_time = min(end_time, simulated_window + simulation_window_size)
-
-        # max operation for start_index to avoid the overlap function in the first stage
-        solution = run_optimization_problem(
+        (
+            solution,
+            end_time,
+            simulated_window,
+            simulation_window_size,
+            storage_initial_state_bounds,
+            end_time_confirmed,
+            total_results,
+            _,
+            _,
+            _,
+        ) = staged_approach(
+            end_time,
+            simulated_window,
+            simulation_window_size,
+            storage_initial_state_bounds,
+            end_time_confirmed,
+            total_results,
+            constrained_assets,
             MultiCommoditySimulatorTimeSequential,
-            start_index=max(simulated_window - 1, 0),
-            end_index=sub_end_time,
-            storage_initial_state_bounds=storage_initial_state_bounds,
-            **kwargs,
+            kwargs,
         )
-        if not end_time_confirmed:
-            end_time = len(solution._full_time_series)
-            end_time_confirmed = True
-        results = solution.extract_results()
-
-        # TODO: check if we now capture all relevant variables.
-        if total_results is None:
-            total_results = results
-            aliases = solution.alias_relation._canonical_variables_map
-            bounds = solution.bounds()
-            parameters = solution.parameters(0)
-        else:
-            for key, data in results.items():
-                if len(total_results[key]) > 1:
-                    total_results[key] = np.concatenate((total_results[key], data[1:]))
-
-        if sub_end_time < end_time:
-            for asset_type, variables in constrained_assets.items():
-                for asset in solution.energy_system_components.get(asset_type, []):
-                    sub_time_series = solution._full_time_series[
-                        simulated_window
-                        - 1
-                        + simulation_window_size : min(
-                            end_time, simulated_window + 2 * simulation_window_size
-                        )
-                    ]
-                    for variable in variables:
-                        lb_value = _extract_values_timeseries(
-                            solution.bounds()[f"{asset}.{variable}"][0], "min"
-                        )
-                        ub_value = _extract_values_timeseries(
-                            solution.bounds()[f"{asset}.{variable}"][1], "max"
-                        )
-                        lb_values = [lb_value] * len(sub_time_series)
-                        ub_values = [ub_value] * len(sub_time_series)
-                        lb_values[0] = ub_values[0] = results[f"{asset}.{variable}"][-1]
-                        lb = Timeseries(sub_time_series, lb_values)
-                        ub = Timeseries(sub_time_series, ub_values)
-                        storage_initial_state_bounds[f"{asset}.{variable}"] = (lb, ub)
+        # sub_end_time = min(end_time, simulated_window + simulation_window_size)
+        #
+        # # max operation for start_index to avoid the overlap function in the first stage
+        # solution = run_optimization_problem(
+        #     MultiCommoditySimulatorTimeSequential,
+        #     start_index=max(simulated_window - 1, 0),
+        #     end_index=sub_end_time,
+        #     storage_initial_state_bounds=storage_initial_state_bounds,
+        #     **kwargs,
+        # )
+        # if not end_time_confirmed:
+        #     end_time = len(solution._full_time_series)
+        #     end_time_confirmed = True
+        # results = solution.extract_results()
+        #
+        # # TODO: check if we now capture all relevant variables.
+        # if total_results is None:
+        #     total_results = results
+        #     aliases = solution.alias_relation._canonical_variables_map
+        #     bounds = solution.bounds()
+        #     parameters = solution.parameters(0)
+        # else:
+        #     for key, data in results.items():
+        #         if len(total_results[key]) > 1:
+        #             total_results[key] = np.concatenate((total_results[key], data[1:]))
+        #
+        # if sub_end_time < end_time:
+        #     for asset_type, variables in constrained_assets.items():
+        #         for asset in solution.energy_system_components.get(asset_type, []):
+        #             sub_time_series = solution._full_time_series[
+        #                 simulated_window
+        #                 - 1
+        #                 + simulation_window_size : min(
+        #                     end_time, simulated_window + 2 * simulation_window_size
+        #                 )
+        #             ]
+        #             for variable in variables:
+        #                 lb_value = _extract_values_timeseries(
+        #                     solution.bounds()[f"{asset}.{variable}"][0], "min"
+        #                 )
+        #                 ub_value = _extract_values_timeseries(
+        #                     solution.bounds()[f"{asset}.{variable}"][1], "max"
+        #                 )
+        #                 lb_values = [lb_value] * len(sub_time_series)
+        #                 ub_values = [ub_value] * len(sub_time_series)
+        #                 lb_values[0] = ub_values[0] = results[f"{asset}.{variable}"][-1]
+        #                 lb = Timeseries(sub_time_series, lb_values)
+        #                 ub = Timeseries(sub_time_series, ub_values)
+        #                 storage_initial_state_bounds[f"{asset}.{variable}"] = (lb, ub)
 
     print(time.time() - tic)
+
+    if os.path.exists(solution.output_folder) and solution._save_json:
+        solution._write_json_output(total_results, parameters, bounds, aliases)
 
     return OptimisationOverview(total_results, bounds, parameters, aliases)
 

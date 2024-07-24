@@ -1489,12 +1489,10 @@ class ScenarioOutput:
         #         )
         #     esh.save(str(filename))
 
-    def _write_json_output(self):
+    def _write_json_output(self, results, parameters, bounds, aliases):
         # TODO: still add solver stats as json output
-        results = self.extract_results()
         workdir = self.output_folder
 
-        parameters = self.parameters(0)
         parameters_dict = dict()
         parameter_path = os.path.join(workdir, "parameters.json")
         for key, value in parameters.items():
@@ -1503,7 +1501,6 @@ class ScenarioOutput:
         with open(parameter_path, "w") as file:
             json.dump(parameters_dict, fp=file)
 
-        bounds = self.bounds()
         bounds_dict = dict()
         bounds_path = os.path.join(workdir, "bounds.json")
         for key, value in bounds.items():
@@ -1529,7 +1526,6 @@ class ScenarioOutput:
 
         # save aliases
         alias_dict = {}
-        aliases = self.alias_relation._canonical_variables_map
         for key, values in aliases.items():
             new_value = values
             alias_dict[key] = new_value

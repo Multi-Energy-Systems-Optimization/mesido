@@ -382,7 +382,11 @@ class EndScenarioSizing(
                 logger.warning(f"For demand {d} the target is not matched by {delta_energy} GJ")
 
         if os.path.exists(self.output_folder) and self._save_json:
-            self._write_json_output()
+            results = self.extract_results()
+            parameters = self.parameters(0)
+            bounds = self.bounds()
+            aliases = self.alias_relation._canonical_variables_map
+            self._write_json_output(results, parameters, bounds, aliases)
 
 
 class EndScenarioSizingHIGHS(EndScenarioSizing):
