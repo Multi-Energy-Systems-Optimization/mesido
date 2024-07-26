@@ -355,28 +355,47 @@ class _AssetToComponentBase:
             pass
 
     def _get_connected_q_max(self, asset: Asset) -> float:
-        if asset.in_ports is None or asset.asset_type == "Electrolyzer":
-            connected_port = asset.out_ports[0].connectedTo[0]
-            q_max = self._port_to_q_max.get(connected_port, None)
-            if q_max is not None:
-                self._set_q_nominal(asset, q_max)
+        if asset.in_ports is not None:
+            for port in asset.in_ports:
+                connected_port = port.connectedTo[0]
+                q_max = self._port_to_q_max.get(connected_port, None)
+                if q_max is not None:
+                    self._set_q_nominal(asset, q_max)
                 return q_max
-            else:
-                raise _RetryLaterException(
-                    f"Could not determine max discharge for {asset.asset_type} '{asset.name}'"
-                )
-        elif asset.out_ports is None:
-            connected_port = asset.in_ports[0].connectedTo[0]
-            q_max = self._port_to_q_max.get(connected_port, None)
-            if q_max is not None:
-                self._set_q_max(asset, q_max)
+        elif asset.out_ports is not None:
+            for port in asset.out_ports:
+                connected_port = port.connectedTo[0]
+                q_max = self._port_to_q_max.get(connected_port, None)
+                if q_max is not None:
+                    self._set_q_nominal(asset, q_max)
                 return q_max
-            else:
-                raise _RetryLaterException(
-                    f"Could not determine max discharge for {asset.asset_type} '{asset.name}'"
-                )
+        else:
+            logger.error(f"Tried to get the maximum flow for {asset.name}, however this was never set")
+
+
+        # if asset.in_ports is None or asset.asset_type == "Electrolyzer":
+        #     connected_port = asset.out_ports[0].connectedTo[0]
+        #     q_max = self._port_to_q_max.get(connected_port, None)
+        #     if q_max is not None:
+        #         self._set_q_nominal(asset, q_max)
+        #         return q_max
+        #     else:
+        #         raise _RetryLaterException(
+        #             f"Could not determine max discharge for {asset.asset_type} '{asset.name}'"
+        #         )
+        # elif asset.out_ports is None:
+        #     connected_port = asset.in_ports[0].connectedTo[0]
+        #     q_max = self._port_to_q_max.get(connected_port, None)
+        #     if q_max is not None:
+        #         self._set_q_max(asset, q_max)
+        #         return q_max
+        #     else:
+        #         raise _RetryLaterException(
+        #             f"Could not determine max discharge for {asset.asset_type} '{asset.name}'"
+        #         )
 
     def _get_connected_i_nominal_and_max(self, asset: Asset) -> Tuple[float, float]:
+
         if (
             asset.in_ports is not None
             and asset.out_ports is not None
@@ -386,32 +405,32 @@ class _AssetToComponentBase:
             and isinstance(asset.out_ports[0].carrier, esdl.ElectricityCommodity)
         ):  # Transformer
             connected_port = asset.out_ports[0].connectedTo[0]
-            i_max_out = self._port_to_i_max.get(connected_port, None)
-            i_nom_out = self._port_to_i_nominal.get(connected_port, None)
+            i_max_out = self._port_to_i_max.get(connected_port, None) if self._port_to_i_max.get(connected_port, False) else asset.attributes["power"]
+            i_nom_out = self._port_to_i_nominal.get(connected_port, None) if self._port_to_i_nominal.get(connected_port, False) else asset.attributes["power"]
             connected_port = asset.in_ports[0].connectedTo[0]
-            i_max_in = self._port_to_i_max.get(connected_port, None)
-            i_nom_in = self._port_to_i_nominal.get(connected_port, None)
-            if i_nom_in is not None and i_nom_out is not None:
+            i_max_in = self._port_to_i_max.get(connected_port, None) if self._port_to_i_max.get(connected_port, False) else asset.attributes["power"]
+            i_nom_in = self._port_to_i_nominal.get(connected_port, None) if self._port_to_i_nominal.get(connected_port, False) else asset.attributes["power"]
+            if i_nom_in > 0. and i_nom_out > 0.:
                 self._port_to_i_nominal[asset.in_ports[0]] = i_nom_in
                 self._port_to_i_max[asset.in_ports[0]] = i_max_in
                 self._port_to_i_nominal[asset.out_ports[0]] = i_nom_out
                 self._port_to_i_max[asset.out_ports[0]] = i_max_out
                 return i_max_in, i_nom_in, i_max_out, i_nom_out
             else:
-                raise _RetryLaterException(
+                raise logger.error(
                     f"Could not determine max and nominal current for {asset.asset_type}"
                     " '{asset.name}'"
                 )
 
         elif asset.in_ports is None:
             connected_port = asset.out_ports[0].connectedTo[0]
-            i_max = self._port_to_i_max.get(connected_port, None)
-            i_nom = self._port_to_i_nominal.get(connected_port, None)
-            if i_max is not None:
+            i_max = self._port_to_i_max.get(connected_port, None) if self._port_to_i_max.get(connected_port, False) else asset.attributes["power"]
+            i_nom = self._port_to_i_nominal.get(connected_port, None) if self._port_to_i_nominal.get(connected_port, False) else asset.attributes["power"]
+            if i_max > 0.:
                 self._set_electricity_current_nominal_and_max(asset, i_max, i_nom)
                 return i_max, i_nom
             else:
-                raise _RetryLaterException(
+                raise logger.error(
                     f"Could not determine max and nominal current for {asset.asset_type}"
                     " '{asset.name}'"
                 )
@@ -424,16 +443,16 @@ class _AssetToComponentBase:
             for port in asset.in_ports:
                 if isinstance(port.carrier, esdl.ElectricityCommodity):
                     connected_port = port.connectedTo[0]
-            i_max = self._port_to_i_max.get(connected_port, None)
-            i_nom = self._port_to_i_nominal.get(connected_port, None)
-            if i_max is not None:
-                self._set_electricity_current_nominal_and_max(asset, i_max, i_nom)
-                return i_max, i_nom
-            else:
-                raise _RetryLaterException(
-                    f"Could not determine max and nominal current for {asset.asset_type}"
-                    f" '{asset.name}'"
-                )
+                    i_max = self._port_to_i_max.get(connected_port, None) if self._port_to_i_max.get(connected_port, False) else asset.attributes["power"]
+                    i_nom = self._port_to_i_nominal.get(connected_port, None) if self._port_to_i_nominal.get(connected_port, False) else asset.attributes["power"]
+                    if i_max > 0.:
+                        self._set_electricity_current_nominal_and_max(asset, i_max, i_nom)
+                        return i_max, i_nom
+                    else:
+                        raise logger.error(
+                            f"Could not determine max and nominal current for {asset.asset_type}"
+                            f" '{asset.name}'"
+                        )
 
     def _get_connected_q_nominal(self, asset: Asset) -> Union[float, Dict]:
         """
@@ -451,70 +470,23 @@ class _AssetToComponentBase:
         Either the connected nominal flow [m3/s] if it is only connected to one hydraulic system,
         otherwise a dict with the flow nominals of both the primary and secondary side.
         """
-        if asset.in_ports is None:
-            connected_port = asset.out_ports[0].connectedTo[0]
-            q_nominal = self._port_to_q_nominal.get(connected_port, None)
-            if q_nominal is not None:
-                self._set_q_nominal(asset, q_nominal)
-                return q_nominal
-            else:
-                raise _RetryLaterException(
-                    f"Could not determine nominal discharge for {asset.asset_type} '{asset.name}'"
-                )
-        elif asset.out_ports is None:
-            connected_port = asset.in_ports[0].connectedTo[0]
-            q_nominal = self._port_to_q_nominal.get(connected_port, None)
-            if q_nominal is not None:
-                self._set_q_nominal(asset, q_nominal)
-                return q_nominal
-            else:
-                raise _RetryLaterException(
-                    f"Could not determine nominal discharge for {asset.asset_type} '{asset.name}'"
-                )
-        elif (
+
+        if (
             len(asset.in_ports) == 1
             and len(asset.out_ports) == 1
             and asset.in_ports[0].carrier.id != asset.out_ports[0].carrier.id
             and isinstance(asset.in_ports[0].carrier, esdl.GasCommodity)
             and isinstance(asset.out_ports[0].carrier, esdl.GasCommodity)
         ):  # Cater for gas substation
-            try:
-                connected_port = asset.in_ports[0].connectedTo[0]
-                q_nominal_in = self._port_to_q_nominal[connected_port]
-            except KeyError:
-                connected_port = asset.out_ports[0].connectedTo[0]
-                q_nominal_out = self._port_to_q_nominal.get(connected_port, None)
+            connected_port = asset.in_ports[0].connectedTo[0]
+            q_nominal_in = self._port_to_q_nominal.get(connected_port, None) if self._port_to_q_nominal.get(connected_port, False) else 0.
+            connected_port = asset.out_ports[0].connectedTo[0]
+            q_nominal_out = self._port_to_q_nominal.get(connected_port, None) if self._port_to_q_nominal.get(connected_port, False) else 0.
 
-            try:
-                connected_port = asset.out_ports[0].connectedTo[0]
-                q_nominal_out = self._port_to_q_nominal[connected_port]
-            except KeyError:
-                connected_port = asset.in_ports[0].connectedTo[0]
-                q_nominal_in = self._port_to_q_nominal.get(connected_port, None)
-
-            if q_nominal_in is not None and q_nominal_out is not None:
+            if q_nominal_in > 0. and q_nominal_out > 0.:
                 self._port_to_q_nominal[asset.in_ports[0]] = q_nominal_in
                 self._port_to_q_nominal[asset.out_ports[0]] = q_nominal_out
                 return q_nominal_in, q_nominal_out
-            else:
-                raise _RetryLaterException(
-                    f"Could not determine nominal discharge for {asset.asset_type} '{asset.name}'"
-                )
-        elif len(asset.in_ports) == 1 and len(asset.out_ports) == 1:
-            try:
-                connected_port = asset.in_ports[0].connectedTo[0]
-                q_nominal = self._port_to_q_nominal[connected_port]
-            except KeyError:
-                connected_port = asset.out_ports[0].connectedTo[0]
-                q_nominal = self._port_to_q_nominal.get(connected_port, None)
-
-            if q_nominal is not None:
-                self._set_q_nominal(asset, q_nominal)
-                return q_nominal
-            else:
-                raise _RetryLaterException(
-                    f"Could not determine nominal discharge for {asset.asset_type} '{asset.name}'"
-                )
         elif len(asset.in_ports) == 2 and len(asset.out_ports) == 1:  # for gas_boiler or e_boiler
             q_nominals = {}
             try:
@@ -541,10 +513,6 @@ class _AssetToComponentBase:
             if q_nominals["Q_nominal"] is not None:
                 self._port_to_q_nominal[asset.out_ports[0]] = q_nominals["Q_nominal"]
                 return q_nominals
-            else:
-                raise _RetryLaterException(
-                    f"Could not determine nominal discharge for {asset.asset_type} '{asset.name}'"
-                )
         elif len(asset.in_ports) >= 2 and len(asset.out_ports) == 2:
             q_nominals = {}
             for p in asset.in_ports:
@@ -568,12 +536,28 @@ class _AssetToComponentBase:
                             q_nominals["Secondary"] = {"Q_nominal": q_nominal}
                         else:
                             q_nominals["Primary"] = {"Q_nominal": q_nominal}
-                    else:
-                        raise _RetryLaterException(
-                            f"Could not determine nominal discharge for {asset.asset_type} "
-                            f"{asset.name}"
-                        )
+
             return q_nominals
+        elif asset.in_ports is not None:
+            for port in asset.in_ports:
+                if (isinstance(port.carrier, esdl.GasCommodity) or isinstance(port.carrier, esdl.HeatCommodity)):
+                    connected_port = port.connectedTo[0]
+                    q_nominal = self._port_to_q_nominal.get(connected_port, None)
+                    if q_nominal is not None:
+                        self._set_q_nominal(asset, q_nominal)
+                        return q_nominal
+        elif asset.out_ports is not None:
+            for port in asset.out_ports:
+                if (isinstance(port.carrier, esdl.GasCommodity) or isinstance(port.carrier,
+                                                                              esdl.HeatCommodity)):
+                    connected_port = port.connectedTo[0]
+                    q_nominal = self._port_to_q_nominal.get(connected_port, None)
+                    if q_nominal is not None:
+                        self._set_q_nominal(asset, q_nominal)
+                        return q_nominal
+
+
+
 
     def _get_cost_figure_modifiers(self, asset: Asset) -> Dict:
         """

@@ -2579,4 +2579,4 @@ class ESDLHeatModel(_ESDLModelBase):
             }
         )
 
-        self._esdl_convert(converter, assets, "Heat")
+        self._esdl_convert(converter, assets, "MILP")

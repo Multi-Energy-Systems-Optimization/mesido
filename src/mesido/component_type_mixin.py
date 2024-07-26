@@ -34,25 +34,12 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
         gas_nodes = components.get("gas_node", [])
         buffers = components.get("heat_buffer", [])
         atess = [*components.get("ates", []), *components.get("low_temperature_ates", [])]
-        try:
-            pipes = components["heat_pipe"]
-            cables = components.get("electricity_cable", [])
-            gas_pipes = components.get("gas_pipe", [])
-        except KeyError:
-            try:
-                cables = components["electricity_cable"]
-                gas_pipes = components.get("gas_pipe", [])
-                pipes = []
-            except KeyError:
-                try:
-                    cables = []
-                    gas_pipes = components["gas_pipe"]
-                    pipes = []
-                except KeyError:
-                    logger.error(
-                        "A valid network should have at least one pipe/cable, "
-                        "assets cannot be connected directly"
-                    )
+        pipes = components.get("heat_pipe", [])
+        cables = components.get("electricity_cable", [])
+        gas_pipes = components.get("gas_pipe", [])
+
+        # An energy system should have at least one asset.
+        assert len(components) > 1
 
         # Figure out which pipes are connected to which nodes, which pipes
         # are connected in series, and which pipes are connected to which buffers.
@@ -65,15 +52,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
         bus_connections = {}
         gas_node_connections = {}
 
-        # Figure out if we are dealing with a Heat model, or a QTH model
-        try:
-            if len(pipes):
-                _ = self.variable(f"{pipes[0]}.HeatIn.Heat")
-                heat_network_model_type = "Heat"
-            else:
-                heat_network_model_type = "Heat"
-        except KeyError:
-            heat_network_model_type = "QTH"
+        heat_network_model_type = "Heat"
 
         for n in [*nodes, *busses, *gas_nodes]:
             n_connections = [ens_params[f"{n}.n"] for ens_params in parameters]
@@ -138,11 +117,11 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                         NodeConnectionDirection.OUT,
                     )
 
-                assert (
-                    pipe_w_orientation[0] in pipes_set
-                    or pipe_w_orientation[0] in cables_set
-                    or pipe_w_orientation[0] in gas_pipes_set
-                )
+                # assert (
+                #     pipe_w_orientation[0] in pipes_set
+                #     or pipe_w_orientation[0] in cables_set
+                #     or pipe_w_orientation[0] in gas_pipes_set
+                # )
 
                 connected_pipes[i] = pipe_w_orientation
 

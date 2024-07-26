@@ -50,26 +50,22 @@ class _ESDLModelBase(_Model):
         retry_assets = list(assets.values())
         skip_assets = list()
 
-        for _ in range(RETRY_LOOP_LIMIT):
-            current_assets = retry_assets
-            retry_assets = []
+        transport_asset_types = ["Pipe", "ElectricityCable"]
+        assets_transport = {}
+        assets_other = {}
+        assets_sorted = {}
 
-            for asset in current_assets:
-                try:
-                    pycml_type, modifiers = converter.convert(asset)
-                except _SkipAssetException:
-                    skip_assets.append(asset)
-                    continue
-                except _RetryLaterException:
-                    retry_assets.append(asset)
-                    continue
+        for name, properties in assets.items():
+            if properties.asset_type in transport_asset_types:
+                assets_transport[name] = properties
+            else:
+                assets_other[name] = properties
 
-                self.add_variable(pycml_type, asset.name, **modifiers)
+        assets_sorted = assets_transport | assets_other
 
-            if not retry_assets:
-                break
-        else:
-            raise Exception("Parsing of assets exceeded maximum iteration limit.")
+        for asset in list(assets_sorted.values()):
+            pycml_type, modifiers = converter.convert(asset)
+            self.add_variable(pycml_type, asset.name, **modifiers)
 
         in_suf = f"{prefix}In"
         out_suf = f"{prefix}Out"
