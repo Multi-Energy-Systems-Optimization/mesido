@@ -2045,7 +2045,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             )
         max_load = max_power
         if min_load == 0.0:
-            min_load = 0.01 * max_load  # 1% of maxload
+            min_load = 0.1 * max_load  # 10% of maxload
         eff_min_load = asset.attributes["effMinLoad"]  # Wh/g
         eff_max_load = asset.attributes["effMaxLoad"]  # Wh/g
         eff_max = asset.attributes["efficiency"]  # Wh/g

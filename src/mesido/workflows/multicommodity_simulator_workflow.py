@@ -6,6 +6,7 @@ from pathlib import Path
 
 import esdl
 
+from mesido.electricity_physics_mixin import ElectrolyzerOption
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
@@ -673,6 +674,7 @@ class MultiCommoditySimulatorNoLosses(MultiCommoditySimulator):
         self.gas_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
         self.gas_network_settings["minimize_head_losses"] = False
         options["include_electric_cable_power_loss"] = False
+        options["electrolyzer_efficiency"] = ElectrolyzerOption.LINEARIZED_THREE_LINES_EQUALITY
 
         return options
 
