@@ -136,6 +136,25 @@ class _AssetToComponentBase:
         With more descriptive variable names the return type would be:
             Tuple[pycml_heat_component_type, Dict[component_attribute, new_attribute_value]]
         """
+
+        dispatch_method_name = f"convert_{self.component_map[asset.asset_type]}"
+        return getattr(self, dispatch_method_name)(asset)
+
+    def port_asset_type_connections(self, asset):
+        """
+        Here we populate a map between ports and asset types that we need before we can convert
+        the individual assets. This is because for the parsing of some assets we need to know if
+        they are connected to a certain type of asset, like a is disconnectable depending on which
+        asset type it is connected.
+
+        Parameters
+        ----------
+        asset : Asset pipe object with it's properties from ESDL
+
+        Returns
+        -------
+        None
+        """
         ports = []
         if asset.in_ports is not None:
             ports.extend(asset.in_ports)
@@ -145,9 +164,6 @@ class _AssetToComponentBase:
 
         for port in ports:
             self._port_to_esdl_component_type[port] = asset.asset_type
-
-        dispatch_method_name = f"convert_{self.component_map[asset.asset_type]}"
-        return getattr(self, dispatch_method_name)(asset)
 
     def _pipe_get_diameter_and_insulation(self, asset: Asset) -> Tuple[float, list, list]:
         """

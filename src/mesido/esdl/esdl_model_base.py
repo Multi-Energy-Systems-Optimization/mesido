@@ -53,7 +53,6 @@ class _ESDLModelBase(_Model):
         transport_asset_types = ["Pipe", "ElectricityCable"]
         assets_transport = {}
         assets_other = {}
-        assets_sorted = {}
 
         for name, properties in assets.items():
             if properties.asset_type in transport_asset_types:
@@ -63,13 +62,16 @@ class _ESDLModelBase(_Model):
 
         assets_sorted = assets_transport | assets_other
 
+        for asset in list(assets.values()):
+            converter.port_asset_type_connections(asset)
+
         for asset in list(assets_sorted.values()):
             pycml_type, modifiers = converter.convert(asset)
             self.add_variable(pycml_type, asset.name, **modifiers)
 
-        in_suf = f"{prefix}In"
-        out_suf = f"{prefix}Out"
-        node_suf = f"{prefix}Conn"
+        in_suf = f"HeatIn"
+        out_suf = f"HeatOut"
+        node_suf = f"HeatConn"
         elec_in_suf = "ElectricityIn"
         elec_out_suf = "ElectricityOut"
         elec_node_suf = "ElectricityConn"
@@ -77,16 +79,9 @@ class _ESDLModelBase(_Model):
         gas_out_suf = "GasOut"
         gas_node_suf = "GasConn"
 
+        # TODO: check but I think the skip_assets is no longer needed
         skip_asset_ids = {a.id for a in skip_assets}
-        # pipe_assets = [
-        #     a
-        #     for a in assets.values()
-        #     if (
-        #         a.asset_type == "heat_pipe"
-        #         and a.id not in skip_asset_ids
-        #         and isinstance(a.in_ports[0].carrier, esdl.HeatCommodity)
-        #     )
-        # ]
+
         node_assets = [
             a
             for a in assets.values()
