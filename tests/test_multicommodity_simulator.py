@@ -8,7 +8,6 @@ from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.network_common import NetworkSettings
 from mesido.workflows.multicommodity_simulator_workflow import (
     MultiCommoditySimulator,
-    MultiCommoditySimulatorHIGHS,
     MultiCommoditySimulatorNoLosses,
     run_sequatially_staged_simulation,
 )
@@ -478,7 +477,7 @@ class TestMultiCommoditySimulator(TestCase):
         base_folder = Path(example.__file__).resolve().parent.parent
 
         solution = run_optimization_problem(
-            MultiCommoditySimulatorHIGHS,
+            MultiCommoditySimulator,
             base_folder=base_folder,
             esdl_file_name="emerge_battery_priorities.esdl",
             esdl_parser=ESDLFileParser,
@@ -524,7 +523,7 @@ class TestMultiCommoditySimulator(TestCase):
 
         # linearized dw_headloss calculations
         linear_lines = 5
-        velocities = np.linspace(0, 15, linear_lines + 1)
+        velocities = np.linspace(0, 60, linear_lines + 1)
 
         for pipe in solution.energy_system_components.get("gas_pipe"):
             length = parameters[f"{pipe}.length"]
