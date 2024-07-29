@@ -70,8 +70,6 @@ class OptimisationOverview:
         self.aliases = aliases
 
 
-
-
 class SolverHIGHS:
     def solver_options(self):
         options = super().solver_options()
@@ -102,6 +100,7 @@ class SolverGurobi:
 
         return options
 
+
 class SolverCPLEX:
     def solver_options(self):
         options = super().solver_options()
@@ -114,6 +113,8 @@ class SolverCPLEX:
         options["gurobi"] = None
 
         return options
+
+
 # -------------------------------------------------------------------------------------------------
 # Step 1:
 # Match the target demand specified
@@ -566,7 +567,9 @@ class MultiCommoditySimulator(
         self.gas_network_settings["maximum_velocity"] = 60.0
         options["include_asset_is_switched_on"] = True
         options["estimated_velocity"] = 7.5
-        options["electrolyzer_efficiency"] = ElectrolyzerOption.LINEARIZED_THREE_LINES_WEAK_INEQUALITY
+        options["electrolyzer_efficiency"] = (
+            ElectrolyzerOption.LINEARIZED_THREE_LINES_WEAK_INEQUALITY
+        )
 
         options["gas_storage_discharge_variables"] = True
         options["electricity_storage_discharge_variables"] = True
@@ -797,7 +800,11 @@ def staged_approach(
 
 
 def run_sequatially_staged_simulation(
-    multi_commodity_simulator_class, simulation_window_size=2, solver_class=SolverHIGHS, *args, **kwargs
+    multi_commodity_simulator_class,
+    simulation_window_size=2,
+    solver_class=SolverHIGHS,
+    *args,
+    **kwargs,
 ):
     """
     This function is to run the MultiCommoditySimulator class in a staged manner where the stages
