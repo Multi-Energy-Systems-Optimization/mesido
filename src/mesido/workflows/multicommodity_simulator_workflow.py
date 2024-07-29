@@ -519,6 +519,7 @@ class MultiCommoditySimulator(
         self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
         self.gas_network_settings["network_type"] = NetworkSettings.NETWORK_TYPE_HYDROGEN
         self.gas_network_settings["minimize_head_losses"] = True
+        self.gas_network_settings["maximum_velocity"] = 60.0
         options["include_asset_is_switched_on"] = True
         options["estimated_velocity"] = 7.5
 
@@ -682,9 +683,9 @@ class MultiCommoditySimulatorNoLosses(MultiCommoditySimulator):
         # For some cases the presolve of the HIGHS solver makes this problem infeasible, therefore
         # the presolve is turned off.
         options = super().solver_options()
-        options["solver"] = "highs"
-        highs_options = options["highs"] = {}
-        highs_options["presolve"] = "off"
+        options["solver"] = "cplex"
+        # highs_options = options["highs"] = {}
+        # highs_options["presolve"] = "off"
 
         return options
 

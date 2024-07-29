@@ -367,6 +367,8 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         if (
             self.gas_network_settings["minimize_head_losses"]
             and self.gas_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS
+            and self.gas_network_settings["head_loss_option"]
+            != HeadLossOption.LINEARIZED_N_LINES_EQUALITY
         ):
             g.append(
                 self._gn_head_loss_class._hn_minimization_goal_class(
