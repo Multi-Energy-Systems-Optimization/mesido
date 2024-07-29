@@ -6,6 +6,7 @@ import time
 from pathlib import Path
 
 import esdl
+from rtctools.util import run_optimization_problem
 
 from mesido import __version__
 
@@ -132,3 +133,16 @@ def get_cost_value_and_unit(cost_info: esdl.SingleValue):
     cost_value /= MULTI_ENUM_NAME_TO_FACTOR[per_multiplier]
 
     return cost_value, unit, per_unit, per_time_uni
+
+
+def run_optimization_problem_solver(solver_class,
+                                    scenario_problem_class,
+                                    **kwargs,):
+
+    class ProblemSolverClass(solver_class, scenario_problem_class):
+        pass
+
+    solution = run_optimization_problem(ProblemSolverClass, **kwargs)
+
+    return solution
+
