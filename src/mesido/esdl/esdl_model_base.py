@@ -27,7 +27,7 @@ class _ESDLModelBase(_Model):
     primary_port_name_convention = "prim"
     secondary_port_name_convention = "sec"
 
-    def _esdl_convert(self, converter: _AssetToComponentBase, assets: Dict, prefix: str) -> None:
+    def _esdl_convert(self, converter: _AssetToComponentBase, assets: Dict, name_to_id_map: Dict, prefix: str) -> None:
         """
         In this function we convert the esdl parsed assets and instantiate the pycml objects for
         those assets. We use the converter to create those pycml objects and the same time we look
@@ -330,17 +330,34 @@ class _ESDLModelBase(_Model):
                     if conn in connections or tuple(reversed(conn)) in connections:
                         continue
                     if isinstance(port.carrier, esdl.HeatCommodity):
-                        self.connect(getattr(component, node_suf)[i], port_map[connected_to.id])
+                        if (assets[name_to_id_map[
+                            port_map[connected_to.id].name.split(".")[0]]] == "Pipe"):
+                            self.connect(getattr(component, node_suf)[i], port_map[connected_to.id])
+                        else:
+                            self.connect_logical_links(
+                                getattr(component, node_suf)[i], port_map[connected_to.id]
+                            )
                         connections.add(conn)
                         i += 1
                     elif isinstance(port.carrier, esdl.ElectricityCommodity):
-                        self.connect(
-                            getattr(component, elec_node_suf)[i], port_map[connected_to.id]
-                        )
+                        if (assets[name_to_id_map[port_map[connected_to.id].name.split(".")[0]]] == "ElectricityCable"):
+                            self.connect(
+                                getattr(component, elec_node_suf)[i], port_map[connected_to.id]
+                            )
+                        else:
+                            self.connect_logical_links(
+                                getattr(component, elec_node_suf)[i], port_map[connected_to.id]
+                            )
                         connections.add(conn)
                         i += 1
                     elif isinstance(port.carrier, esdl.GasCommodity):
-                        self.connect(getattr(component, gas_node_suf)[i], port_map[connected_to.id])
+                        if (assets[name_to_id_map[
+                            port_map[connected_to.id].name.split(".")[0]]] == "Pipe"):
+                            self.connect(getattr(component, gas_node_suf)[i], port_map[connected_to.id])
+                        else:
+                            self.connect_logical_links(
+                                getattr(component, gas_node_suf)[i], port_map[connected_to.id]
+                            )
                         connections.add(conn)
                         i += 1
                     else:
@@ -379,6 +396,12 @@ class _ESDLModelBase(_Model):
                     conn = (port.id, connected_to.id)
                     if conn in connections or tuple(reversed(conn)) in connections:
                         continue
-
-                    self.connect(port_map[port.id], port_map[connected_to.id])
+                    if (asset.asset_type =="Pipe" or asset.asset_type == "ElectricityCable" or
+                            assets[name_to_id_map[
+                        port_map[connected_to.id].name.split(".")[0]]] == "Pipe" or
+                            assets[name_to_id_map[
+                                port_map[connected_to.id].name.split(".")[0]]] == "ElectricityCable"):
+                        self.connect(port_map[port.id], port_map[connected_to.id])
+                    else:
+                        self.connect_logical_links(port_map[port.id], port_map[connected_to.id])
                     connections.add(conn)

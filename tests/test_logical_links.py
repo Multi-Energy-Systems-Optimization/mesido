@@ -36,6 +36,6 @@ class TestLogicalLinks(TestCase):
 
         np.testing.assert_allclose(results["ElectricityDemand_281a.Electricity_demand"] +
                                    results["ElectricityDemand_e527.Electricity_demand"],
-                                   results["ElectricityProducer_17a1.Electricity_source"] + 
+                                   results["ElectricityProducer_17a1.Electricity_source"] +
                                    results["ElectricityProducer_a215.Electricity_source"])
 

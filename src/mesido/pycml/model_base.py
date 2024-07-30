@@ -233,6 +233,15 @@ class Model:
 
         self._equations.extend([a.variables[k] - b.variables[k] for k in a.variables.keys()])
 
+    def connect_logical_links(self, a: "Connector", b: "Connector"):
+        if not a.variables.keys() == b.variables.keys():
+            raise Exception(
+                f"Cannot connect port {a} of type {type(a)} to port {b} "
+                f"of type {type(b)} as they have different variables."
+            )
+
+        self._equations.extend([a.variables[k] - b.variables[k] for k in a.variables.keys() if (k != "H" and k != "Hydraulic_power" and k != "V")])
+
     def der(self, var: Variable):
         return var.der()
 

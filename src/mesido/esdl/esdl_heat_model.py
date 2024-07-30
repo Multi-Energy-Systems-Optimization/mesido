@@ -2566,7 +2566,7 @@ class ESDLHeatModel(_ESDLModelBase):
     This probably could be standardized in that case this class would become obsolete.
     """
 
-    def __init__(self, assets: Dict[str, Asset], converter_class=AssetToHeatComponent, **kwargs):
+    def __init__(self, assets: Dict[str, Asset], name_to_id_map: Dict[str, str], converter_class=AssetToHeatComponent, **kwargs):
         super().__init__(None)
 
         converter = converter_class(
@@ -2579,4 +2579,4 @@ class ESDLHeatModel(_ESDLModelBase):
             }
         )
 
-        self._esdl_convert(converter, assets, "MILP")
+        self._esdl_convert(converter, assets, name_to_id_map, "MILP")
