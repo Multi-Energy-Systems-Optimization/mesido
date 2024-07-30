@@ -137,14 +137,27 @@ def get_cost_value_and_unit(cost_info: esdl.SingleValue):
 
 
 def run_optimization_problem_solver(
-    solver_class,
     scenario_problem_class,
+    solver_class=None,
     **kwargs,
 ):
+    """
+    This method runs the optimisation problem based on the scenario_problem_class. An additional
+    solver_class can be added to substitute the default solver options of the problem definition
+    class.
+    :param scenario_problem_class: Class defining the optimization problem
+    :param solver_class: Class defining the solver settings.
+    :param kwargs:
+    :return:
+    """
 
-    class ProblemSolverClass(solver_class, scenario_problem_class):
-        pass
+    if solver_class:
 
-    solution = run_optimization_problem(ProblemSolverClass, **kwargs)
+        class ProblemSolverClass(solver_class, scenario_problem_class):
+            pass
+
+        solution = run_optimization_problem(ProblemSolverClass, **kwargs)
+    else:
+        solution = run_optimization_problem(scenario_problem_class, **kwargs)
 
     return solution

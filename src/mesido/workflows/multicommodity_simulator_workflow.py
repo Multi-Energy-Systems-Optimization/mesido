@@ -71,6 +71,13 @@ class OptimisationOverview:
 
 
 class SolverHIGHS:
+    """
+    Class setting the solver options to use highs in the multicommodity_simulator, which can be
+    inherited by a class describing the optimization problem.
+    Presolve is turned off as in some cases in resulted in an infeasible problem and the relative
+    MIP gap is set to 0.01%
+    """
+
     def solver_options(self):
         options = super().solver_options()
         options["casadi_solver"] = self._qpsol
@@ -86,6 +93,12 @@ class SolverHIGHS:
 
 
 class SolverGurobi:
+    """
+    Class setting the solver options to use Gurobi in the multicommodity_simulator, which can be
+    inherited by a class describing the optimization problem.
+    The relative MIP gap is set to 0.01% and 4 threads are used to sole the problem.
+    """
+
     def solver_options(self):
         options = super().solver_options()
         options["casadi_solver"] = self._qpsol
@@ -102,6 +115,12 @@ class SolverGurobi:
 
 
 class SolverCPLEX:
+    """
+    Class setting the solver options to use CPLEX in the multicommodity_simulator, which can be
+    inherited by a class describing the optimization problem.
+    The relative MIP gap is set to 0.01%.
+    """
+
     def solver_options(self):
         options = super().solver_options()
         options["casadi_solver"] = self._qpsol
@@ -730,14 +749,31 @@ def staged_approach(
     constrained_assets,
     multicommodity_sequential_simulator_class,
     solver_class,
-    kwargs,
+    **kwargs,
 ):
+    """
+    This function is the actual execution of a stage in a sequantial staged approach.
+    :param end_time: The end simulation time of the staged approach
+    :param simulated_window: The start index of the simulated window
+    :param simulation_window_size: The size of the simulated stage
+    :param storage_initial_state_bounds: The inital state (at start time of this window) bounds
+    for storages
+    :param end_time_confirmed: Boolean if the end time is already properly set.
+    :param total_results: Dict in which the results of all stages are saved and added to.
+    :param constrained_assets: Assets which have some intial state boundary that needs to be
+    implemented at every stage.
+    :param multicommodity_sequential_simulator_class: The class that describes the optimization
+    problem
+    :param solver_class: The class describing the solver settings.
+    :param kwargs:
+    :return:
+    """
     sub_end_time = min(end_time, simulated_window + simulation_window_size)
 
     # max operation for start_index to avoid the overlap function in the first stage
     solution = run_optimization_problem_solver(
-        solver_class,
         multicommodity_sequential_simulator_class,
+        solver_class,
         start_index=max(simulated_window - 1, 0),
         end_index=sub_end_time,
         storage_initial_state_bounds=storage_initial_state_bounds,
@@ -961,8 +997,8 @@ def main(runinfo_path, log_level):
     }
 
     _ = run_optimization_problem_solver(
-        SolverHIGHS,
         MultiCommoditySimulator,
+        SolverHIGHS,
         esdl_run_info_path=runinfo_path,
         log_level=log_level,
         **kwargs,
