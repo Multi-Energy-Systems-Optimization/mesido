@@ -348,6 +348,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             power_in = self.state(f"{cable}.ElectricityIn.Power")
             power_out = self.state(f"{cable}.ElectricityOut.Power")
             power_loss = self.state(f"{cable}.Power_loss")
+            power_loss_nominal = self.variable_nominal(f"{cable}.Power_loss")
             # v_loss = self.state(f"{cable}.V_loss")
             r = parameters[f"{cable}.r"]
             i_max = parameters[f"{cable}.max_current"]
@@ -395,7 +396,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                         ((power_loss - current * r * i_max) / (i_max * v_nom * r), 0.0, 0.0)
                     )
             else:
-                constraints.append(((power_loss) / (i_max * v_nom * r), 0.0, 0.0))
+                constraints.append(((power_loss) / power_loss_nominal, 0.0, 0.0))
 
         return constraints
 
@@ -425,7 +426,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             v_nom = parameters[f"{cable}.nominal_voltage"]
             c_length = parameters[f"{cable}.length"]
 
-            constraint_nominal = self.variable_nominal(v_loss)
+            constraint_nominal = self.variable_nominal(f"{cable}.V_loss")
 
             # TODO: still have to check for proper scaling
             if cable in self._electricity_cable_topo_cable_class_map.keys():
@@ -887,7 +888,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         """
         constraints = super().constraints(ensemble_member)
 
-        constraints.extend(self.__electricity_producer_set_point_constraints(ensemble_member))
+        # constraints.extend(self.__electricity_producer_set_point_constraints(ensemble_member))
 
         return constraints
 

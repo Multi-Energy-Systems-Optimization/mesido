@@ -758,7 +758,7 @@ class HeadLossClass:
                 a_vec = np.repeat(a, discharge.size1())
                 b_vec = np.repeat(b, discharge.size1())
 
-                constraint_nominal = np.abs(head_loss_nominal * a_vec * q_nominal) ** 0.5
+                constraint_nominal = np.abs(head_loss_nominal * (a_vec * q_nominal + b_vec)) ** 0.5
 
                 if big_m is None:
                     # We write the equation such that big_m is always used, even if
@@ -768,6 +768,8 @@ class HeadLossClass:
                 else:
                     big_m_lin = big_m
                     constraint_nominal = (constraint_nominal * big_m_lin) ** 0.5
+                    constraint_nominal = np.abs(
+                        head_loss_nominal * (a_vec * q_nominal + b_vec) * big_m) ** (1./3.)
 
                 constraints = []
 
