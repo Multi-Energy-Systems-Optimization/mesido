@@ -14,7 +14,7 @@ from mesido.head_loss_class import HeadLossOption
 from mesido.network_common import NetworkSettings
 from mesido.physics_mixin import PhysicsMixin
 from mesido.workflows.io.write_output import ScenarioOutput
-from mesido.workflows.utils.helpers import main_decorator
+from mesido.workflows.utils.helpers import main_decorator, run_optimization_problem_solver
 
 import numpy as np
 
@@ -68,6 +68,70 @@ class OptimisationOverview:
         self.bounds = bounds
         self.parameters = parameters
         self.aliases = aliases
+
+
+class SolverHIGHS:
+    """
+    Class setting the solver options to use highs in the multicommodity_simulator, which can be
+    inherited by a class describing the optimization problem.
+    Presolve is turned off as in some cases in resulted in an infeasible problem and the relative
+    MIP gap is set to 0.01%
+    """
+
+    def solver_options(self):
+        options = super().solver_options()
+        options["casadi_solver"] = self._qpsol
+        options["solver"] = "highs"
+        highs_options = options["highs"] = {}
+        highs_options["mip_rel_gap"] = 0.0001
+        highs_options["presolve"] = "off"
+
+        options["gurobi"] = None
+        options["cplex"] = None
+
+        return options
+
+
+class SolverGurobi:
+    """
+    Class setting the solver options to use Gurobi in the multicommodity_simulator, which can be
+    inherited by a class describing the optimization problem.
+    The relative MIP gap is set to 0.01% and 4 threads are used to sole the problem.
+    """
+
+    def solver_options(self):
+        options = super().solver_options()
+        options["casadi_solver"] = self._qpsol
+        options["solver"] = "gurobi"
+        gurobi_options = options["gurobi"] = {}
+        gurobi_options["MIPgap"] = 0.0001
+        gurobi_options["threads"] = 4
+        gurobi_options["LPWarmStart"] = 2
+
+        options["highs"] = None
+        options["cplex"] = None
+
+        return options
+
+
+class SolverCPLEX:
+    """
+    Class setting the solver options to use CPLEX in the multicommodity_simulator, which can be
+    inherited by a class describing the optimization problem.
+    The relative MIP gap is set to 0.01%.
+    """
+
+    def solver_options(self):
+        options = super().solver_options()
+        options["casadi_solver"] = self._qpsol
+        options["solver"] = "cplex"
+        cplex_options = options["cplex"] = {}
+        cplex_options["CPX_PARAM_EPGAP"] = 0.0001
+
+        options["highs"] = None
+        options["gurobi"] = None
+
+        return options
 
 
 # -------------------------------------------------------------------------------------------------
@@ -518,10 +582,13 @@ class MultiCommoditySimulator(
 
         self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
         self.gas_network_settings["network_type"] = NetworkSettings.NETWORK_TYPE_HYDROGEN
-        self.gas_network_settings["minimize_head_losses"] = True
+        self.gas_network_settings["minimize_head_losses"] = False
         self.gas_network_settings["maximum_velocity"] = 60.0
         options["include_asset_is_switched_on"] = True
         options["estimated_velocity"] = 7.5
+        options["electrolyzer_efficiency"] = (
+            ElectrolyzerOption.LINEARIZED_THREE_LINES_WEAK_INEQUALITY
+        )
 
         options["gas_storage_discharge_variables"] = True
         options["electricity_storage_discharge_variables"] = True
@@ -608,9 +675,9 @@ class MultiCommoditySimulator(
         options = super().solver_options()
         options["casadi_solver"] = self._qpsol
 
-        # options["solver"] = "highs"
-        # highs_options = options["highs"] = {}
-        # highs_options["presolve"] = "off"
+        options["solver"] = "highs"
+        highs_options = options["highs"] = {}
+        highs_options["presolve"] = "off"
 
         return options
 
@@ -657,15 +724,8 @@ class MultiCommoditySimulator(
 
 
 # -------------------------------------------------------------------------------------------------
-class MultiCommoditySimulatorHIGHS(MultiCommoditySimulator):
-
-    def solver_options(self):
-        options = super().solver_options()
-        options["solver"] = "highs"
-        highs_options = options["highs"] = {}
-        highs_options["presolve"] = "off"
-
-        return options
+class MultiCommoditySimulatorHIGHS(SolverHIGHS, MultiCommoditySimulator):
+    pass
 
 
 class MultiCommoditySimulatorNoLosses(MultiCommoditySimulator):
@@ -675,17 +735,6 @@ class MultiCommoditySimulatorNoLosses(MultiCommoditySimulator):
         self.gas_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
         self.gas_network_settings["minimize_head_losses"] = False
         options["include_electric_cable_power_loss"] = False
-        options["electrolyzer_efficiency"] = ElectrolyzerOption.LINEARIZED_THREE_LINES_EQUALITY
-
-        return options
-
-    def solver_options(self):
-        # For some cases the presolve of the HIGHS solver makes this problem infeasible, therefore
-        # the presolve is turned off.
-        options = super().solver_options()
-        options["solver"] = "cplex"
-        # highs_options = options["highs"] = {}
-        # highs_options["presolve"] = "off"
 
         return options
 
@@ -699,13 +748,32 @@ def staged_approach(
     total_results,
     constrained_assets,
     multicommodity_sequential_simulator_class,
-    kwargs,
+    solver_class,
+    **kwargs,
 ):
+    """
+    This function is the actual execution of a stage in a sequantial staged approach.
+    :param end_time: The end simulation time of the staged approach
+    :param simulated_window: The start index of the simulated window
+    :param simulation_window_size: The size of the simulated stage
+    :param storage_initial_state_bounds: The inital state (at start time of this window) bounds
+    for storages
+    :param end_time_confirmed: Boolean if the end time is already properly set.
+    :param total_results: Dict in which the results of all stages are saved and added to.
+    :param constrained_assets: Assets which have some intial state boundary that needs to be
+    implemented at every stage.
+    :param multicommodity_sequential_simulator_class: The class that describes the optimization
+    problem
+    :param solver_class: The class describing the solver settings.
+    :param kwargs:
+    :return:
+    """
     sub_end_time = min(end_time, simulated_window + simulation_window_size)
 
     # max operation for start_index to avoid the overlap function in the first stage
-    solution = run_optimization_problem(
+    solution = run_optimization_problem_solver(
         multicommodity_sequential_simulator_class,
+        solver_class,
         start_index=max(simulated_window - 1, 0),
         end_index=sub_end_time,
         storage_initial_state_bounds=storage_initial_state_bounds,
@@ -768,7 +836,11 @@ def staged_approach(
 
 
 def run_sequatially_staged_simulation(
-    multi_commodity_simulator_class, simulation_window_size=2, *args, **kwargs
+    multi_commodity_simulator_class,
+    simulation_window_size=2,
+    solver_class=SolverHIGHS,
+    *args,
+    **kwargs,
 ):
     """
     This function is to run the MultiCommoditySimulator class in a staged manner where the stages
@@ -870,6 +942,7 @@ def run_sequatially_staged_simulation(
         total_results,
         constrained_assets,
         MultiCommoditySimulatorTimeSequential,
+        solver_class,
         kwargs,
     )
 
@@ -896,57 +969,9 @@ def run_sequatially_staged_simulation(
             total_results,
             constrained_assets,
             MultiCommoditySimulatorTimeSequential,
+            solver_class,
             kwargs,
         )
-        # sub_end_time = min(end_time, simulated_window + simulation_window_size)
-        #
-        # # max operation for start_index to avoid the overlap function in the first stage
-        # solution = run_optimization_problem(
-        #     MultiCommoditySimulatorTimeSequential,
-        #     start_index=max(simulated_window - 1, 0),
-        #     end_index=sub_end_time,
-        #     storage_initial_state_bounds=storage_initial_state_bounds,
-        #     **kwargs,
-        # )
-        # if not end_time_confirmed:
-        #     end_time = len(solution._full_time_series)
-        #     end_time_confirmed = True
-        # results = solution.extract_results()
-        #
-        # # TODO: check if we now capture all relevant variables.
-        # if total_results is None:
-        #     total_results = results
-        #     aliases = solution.alias_relation._canonical_variables_map
-        #     bounds = solution.bounds()
-        #     parameters = solution.parameters(0)
-        # else:
-        #     for key, data in results.items():
-        #         if len(total_results[key]) > 1:
-        #             total_results[key] = np.concatenate((total_results[key], data[1:]))
-        #
-        # if sub_end_time < end_time:
-        #     for asset_type, variables in constrained_assets.items():
-        #         for asset in solution.energy_system_components.get(asset_type, []):
-        #             sub_time_series = solution._full_time_series[
-        #                 simulated_window
-        #                 - 1
-        #                 + simulation_window_size : min(
-        #                     end_time, simulated_window + 2 * simulation_window_size
-        #                 )
-        #             ]
-        #             for variable in variables:
-        #                 lb_value = _extract_values_timeseries(
-        #                     solution.bounds()[f"{asset}.{variable}"][0], "min"
-        #                 )
-        #                 ub_value = _extract_values_timeseries(
-        #                     solution.bounds()[f"{asset}.{variable}"][1], "max"
-        #                 )
-        #                 lb_values = [lb_value] * len(sub_time_series)
-        #                 ub_values = [ub_value] * len(sub_time_series)
-        #                 lb_values[0] = ub_values[0] = results[f"{asset}.{variable}"][-1]
-        #                 lb = Timeseries(sub_time_series, lb_values)
-        #                 ub = Timeseries(sub_time_series, ub_values)
-        #                 storage_initial_state_bounds[f"{asset}.{variable}"] = (lb, ub)
 
     print(time.time() - tic)
 
@@ -971,8 +996,9 @@ def main(runinfo_path, log_level):
         "influxdb_verify_ssl": False,
     }
 
-    _ = run_optimization_problem(
-        MultiCommoditySimulatorHIGHS,
+    _ = run_optimization_problem_solver(
+        MultiCommoditySimulator,
+        SolverHIGHS,
         esdl_run_info_path=runinfo_path,
         log_level=log_level,
         **kwargs,
