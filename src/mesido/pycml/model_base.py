@@ -240,7 +240,13 @@ class Model:
                 f"of type {type(b)} as they have different variables."
             )
 
-        self._equations.extend([a.variables[k] - b.variables[k] for k in a.variables.keys() if (k != "H" and k != "Hydraulic_power" and k != "V")])
+        self._equations.extend(
+            [
+                a.variables[k] - b.variables[k]
+                for k in a.variables.keys()
+                if (k != "H" and k != "Hydraulic_power" and k != "V")
+            ]
+        )
 
     def der(self, var: Variable):
         return var.der()

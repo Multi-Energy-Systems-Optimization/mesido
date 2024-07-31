@@ -35,8 +35,6 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
         buffers = components.get("heat_buffer", [])
         atess = [*components.get("ates", []), *components.get("low_temperature_ates", [])]
         pipes = components.get("heat_pipe", [])
-        cables = components.get("electricity_cable", [])
-        gas_pipes = components.get("gas_pipe", [])
 
         # An energy system should have at least one asset.
         assert len(components) > 1
@@ -45,85 +43,12 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
         # are connected in series, and which pipes are connected to which buffers.
 
         pipes_set = set(pipes)
-        cables_set = set(cables)
-        gas_pipes_set = set(gas_pipes)
         parameters = [self.parameters(e) for e in range(self.ensemble_size)]
         node_connections = {}
         bus_connections = {}
         gas_node_connections = {}
 
         heat_network_model_type = "Heat"
-
-        for n in [*nodes, *busses, *gas_nodes]:
-            n_connections = [ens_params[f"{n}.n"] for ens_params in parameters]
-
-            if len(set(n_connections)) > 1:
-                raise Exception(
-                    "Nodes and busses cannot have differing number of connections per "
-                    "ensemble member"
-                )
-
-            n_connections = n_connections[0]
-
-            # Note that we do this based on temperature, because discharge may
-            # be an alias of yet some other further away connected pipe.
-            if n in nodes:
-                node_connections[n] = connected_pipes = {}
-            elif n in busses:
-                bus_connections[n] = connected_pipes = {}
-            elif n in gas_nodes:
-                gas_node_connections[n] = connected_pipes = {}
-
-            for i in range(n_connections):
-                if n in nodes:
-                    cur_port = f"{n}.{heat_network_model_type}Conn[{i + 1}]"
-                    prop = "T" if heat_network_model_type == "QTH" else "Heat"
-                    in_suffix = ".QTHIn.T" if heat_network_model_type == "QTH" else ".HeatIn.Heat"
-                    out_suffix = (
-                        ".QTHOut.T" if heat_network_model_type == "QTH" else ".HeatOut.Heat"
-                    )
-                elif n in busses:
-                    cur_port = f"{n}.ElectricityConn[{i + 1}]"
-                    prop = "Power"
-                    in_suffix = ".ElectricityIn.Power"
-                    out_suffix = ".ElectricityOut.Power"
-                elif n in gas_nodes:
-                    # TODO: Ideally a temporary variable would be created to make the connections
-                    #  map that is not passed to the problem
-                    cur_port = f"{n}.GasConn[{i + 1}]"
-                    prop = "Q_shadow"
-                    in_suffix = ".GasIn.Q_shadow"
-                    out_suffix = ".GasOut.Q_shadow"
-                aliases = [
-                    x
-                    for x in self.alias_relation.aliases(f"{cur_port}.{prop}")
-                    if not x.startswith(n) and x.endswith(f".{prop}")
-                ]
-
-                if len(aliases) > 1:
-                    raise Exception(f"More than one connection to {cur_port}")
-                elif len(aliases) == 0:
-                    raise Exception(f"Found no connection to {cur_port}")
-
-                if aliases[0].endswith(out_suffix):
-                    pipe_w_orientation = (
-                        aliases[0][: -len(out_suffix)],
-                        NodeConnectionDirection.IN,
-                    )
-                else:
-                    assert aliases[0].endswith(in_suffix)
-                    pipe_w_orientation = (
-                        aliases[0][: -len(in_suffix)],
-                        NodeConnectionDirection.OUT,
-                    )
-
-                # assert (
-                #     pipe_w_orientation[0] in pipes_set
-                #     or pipe_w_orientation[0] in cables_set
-                #     or pipe_w_orientation[0] in gas_pipes_set
-                # )
-
-                connected_pipes[i] = pipe_w_orientation
 
         # Note that a pipe series can include both hot and cold pipes for
         # QTH models. It is only about figuring out which pipes are
@@ -163,6 +88,69 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                         other_pipe = pipes_map[other_pipe_port]
                         if f"{other_pipe}.Q" not in alias_relation.canonical_variables:
                             alias_relation.add(f"{p}.Q", f"{sign_prefix}{other_pipe}.Q")
+
+        for n in [*nodes, *busses, *gas_nodes]:
+            n_connections = [ens_params[f"{n}.n"] for ens_params in parameters]
+
+            if len(set(n_connections)) > 1:
+                raise Exception(
+                    "Nodes and busses cannot have differing number of connections per "
+                    "ensemble member"
+                )
+
+            n_connections = n_connections[0]
+
+            # Note that we do this based on temperature, because discharge may
+            # be an alias of yet some other further away connected pipe.
+            if n in nodes:
+                node_connections[n] = connected_pipes = {}
+            elif n in busses:
+                bus_connections[n] = connected_pipes = {}
+            elif n in gas_nodes:
+                gas_node_connections[n] = connected_pipes = {}
+
+            for i in range(n_connections):
+                if n in nodes:
+                    cur_port = f"{n}.{heat_network_model_type}Conn[{i + 1}]"
+                    prop = "T" if heat_network_model_type == "QTH" else "Heat"
+                    in_suffix = ".QTHIn.T" if heat_network_model_type == "QTH" else ".HeatIn.Heat"
+                    out_suffix = (
+                        ".QTHOut.T" if heat_network_model_type == "QTH" else ".HeatOut.Heat"
+                    )
+                elif n in busses:
+                    cur_port = f"{n}.ElectricityConn[{i + 1}]"
+                    prop = "Power"
+                    in_suffix = ".ElectricityIn.Power"
+                    out_suffix = ".ElectricityOut.Power"
+                elif n in gas_nodes:
+                    # TODO: Ideally a temporary variable would be created to make the connections
+                    #  map that is not passed to the problem
+                    cur_port = f"{n}.GasConn[{i + 1}]"
+                    prop = "Q"
+                    in_suffix = ".GasIn.Q"
+                    out_suffix = ".GasOut.Q"
+                aliases = [
+                    x
+                    for x in self.alias_relation.aliases(f"{cur_port}.{prop}")
+                    if not x.startswith(n) and x.endswith(f".{prop}")
+                ]
+
+                if len(aliases) == 0:
+                    raise Exception(f"Found no connection to {cur_port}")
+
+                if aliases[0].endswith(out_suffix):
+                    asset_w_orientation = (
+                        aliases[0][: -len(out_suffix)],
+                        NodeConnectionDirection.IN,
+                    )
+                else:
+                    # assert aliases[0].endswith(in_suffix)
+                    asset_w_orientation = (
+                        aliases[0][: -len(in_suffix)],
+                        NodeConnectionDirection.OUT,
+                    )
+
+                connected_pipes[i] = asset_w_orientation
 
         canonical_pipe_qs = {p: alias_relation.canonical_signed(f"{p}.Q") for p in pipes}
         # Move sign from canonical to alias
@@ -204,25 +192,25 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                 out_suffix = ".QTHOut.T" if heat_network_model_type == "QTH" else ".HeatOut.Heat"
                 alias = aliases[0]
                 if alias.endswith(out_suffix):
-                    pipe_w_orientation = (
+                    asset_w_orientation = (
                         alias[: -len(out_suffix)],
                         NodeConnectionDirection.IN,
                     )
                 else:
                     assert alias.endswith(in_suffix)
-                    pipe_w_orientation = (
+                    asset_w_orientation = (
                         alias[: -len(in_suffix)],
                         NodeConnectionDirection.OUT,
                     )
 
-                assert pipe_w_orientation[0] in pipes_set
+                assert asset_w_orientation[0] in pipes_set
 
                 if k == "In":
-                    assert self.is_hot_pipe(pipe_w_orientation[0])
+                    assert self.is_hot_pipe(asset_w_orientation[0])
                 else:
-                    assert self.is_cold_pipe(pipe_w_orientation[0])
+                    assert self.is_cold_pipe(asset_w_orientation[0])
 
-                buffer_connections[b].append(pipe_w_orientation)
+                buffer_connections[b].append(asset_w_orientation)
 
             buffer_connections[b] = tuple(buffer_connections[b])
 
@@ -249,25 +237,25 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                 out_suffix = ".QTHOut.T" if heat_network_model_type == "QTH" else ".HeatOut.Heat"
 
                 if aliases[0].endswith(out_suffix):
-                    pipe_w_orientation = (
+                    asset_w_orientation = (
                         aliases[0][: -len(out_suffix)],
                         NodeConnectionDirection.IN,
                     )
                 else:
                     assert aliases[0].endswith(in_suffix)
-                    pipe_w_orientation = (
+                    asset_w_orientation = (
                         aliases[0][: -len(in_suffix)],
                         NodeConnectionDirection.OUT,
                     )
 
-                assert pipe_w_orientation[0] in pipes_set
+                assert asset_w_orientation[0] in pipes_set
 
                 if k == "Out":
-                    assert self.is_cold_pipe(pipe_w_orientation[0])
+                    assert self.is_cold_pipe(asset_w_orientation[0])
                 else:
-                    assert self.is_hot_pipe(pipe_w_orientation[0])
+                    assert self.is_hot_pipe(asset_w_orientation[0])
 
-                ates_connections[a].append(pipe_w_orientation)
+                ates_connections[a].append(asset_w_orientation)
 
             ates_connections[a] = tuple(ates_connections[a])
 

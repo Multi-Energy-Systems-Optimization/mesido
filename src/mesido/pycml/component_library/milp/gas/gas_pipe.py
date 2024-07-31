@@ -45,7 +45,7 @@ class GasPipe(GasTwoPort, BaseAsset):
             ((self.GasIn.mass_flow - self.GasOut.mass_flow) / (self.Q_nominal * self.density))
         )
         # # shadow Q for aliases
-        self.add_equation(((self.GasOut.Q_shadow - (self.GasIn.Q_shadow - 1.0e-3))))
+        # self.add_equation(((self.GasOut.Q_shadow - (self.GasIn.Q_shadow - 1.0e-3))))
 
         # Hydraulic power
         # TODO replace value

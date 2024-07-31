@@ -463,13 +463,13 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             q_sum = 0.0
             q_nominals = []
 
-            for i_conn, (_pipe, orientation) in connected_pipes.items():
-                gas_conn = f"{node}.GasConn[{i_conn + 1}].Q_shadow"
-                q_sum += orientation * self.state(gas_conn)
-                q_nominals.append(self.variable_nominal(gas_conn))
+            # for i_conn, (_pipe, orientation) in connected_pipes.items():
+            #     gas_conn = f"{node}.GasConn[{i_conn + 1}].Q_shadow"
+            #     q_sum += orientation * self.state(gas_conn)
+            #     q_nominals.append(self.variable_nominal(gas_conn))
 
-            q_nominal = np.median(q_nominals)
-            constraints.append((q_sum / q_nominal, 0.0, 0.0))
+            # q_nominal = np.median(q_nominals)
+            # constraints.append((q_sum / q_nominal, 0.0, 0.0))
 
         return constraints
 
@@ -592,6 +592,26 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
         return constraints
 
+    def __q_shadow_path_constraints(self, ensemble_member):
+        constraints = []
+
+        # for gas_pipe in self.energy_system_components.get("gas_pipe", []):
+        #     q_shadow_in = self.state(f"{gas_pipe}.GasIn.Q_shadow")
+        #     q_shadow_out = self.state(f"{gas_pipe}.GasOut.Q_shadow")
+        #     constraints.append((q_shadow_out - (q_shadow_in - 1.e-3), -np.inf, 0.))
+        #
+        # if len(self.energy_system_components.get("gas_pipe", [])) == 0.:
+        #     for asset in self.energy_system_components.get("gas_demand", []):
+        #         q_shadow_in = self.state(f"{asset}.GasIn.Q_shadow")
+        #         q = self.state(f"{asset}.GasIn.Q")
+        #         constraints.append(((q_shadow_in - q - 1.e-3), -np.inf, 0.))
+        #     for asset in self.energy_system_components.get("gas_source", []):
+        #         q_shadow_in = self.state(f"{asset}.GasOut.Q_shadow")
+        #         q = self.state(f"{asset}.GasOut.Q")
+        #         constraints.append(((q_shadow_in - q + 1.e-3), -np.inf, 0.))
+
+        return constraints
+
     def path_constraints(self, ensemble_member):
         """
         Here we add all the path constraints to the optimization problem. Please note that the
@@ -615,6 +635,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         constraints.extend(self.__flow_direction_path_constraints(ensemble_member))
         constraints.extend(self.__gas_node_hydraulic_power_mixing_path_constraints(ensemble_member))
         constraints.extend(self.__gas_storage_discharge_path_constraints(ensemble_member))
+        constraints.extend(self.__q_shadow_path_constraints(ensemble_member))
 
         return constraints
 
