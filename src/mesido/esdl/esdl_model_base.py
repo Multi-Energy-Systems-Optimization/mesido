@@ -330,7 +330,9 @@ class _ESDLModelBase(_Model):
                         continue
                     if isinstance(port.carrier, esdl.HeatCommodity):
                         if (
-                            assets[name_to_id_map[port_map[connected_to.id].name.split(".")[0]]]
+                            assets[
+                                name_to_id_map[port_map[connected_to.id].name.split(".")[0]]
+                            ].asset_type
                             == "Pipe"
                         ):
                             self.connect(getattr(component, node_suf)[i], port_map[connected_to.id])
@@ -342,7 +344,9 @@ class _ESDLModelBase(_Model):
                         i += 1
                     elif isinstance(port.carrier, esdl.ElectricityCommodity):
                         if (
-                            assets[name_to_id_map[port_map[connected_to.id].name.split(".")[0]]]
+                            assets[
+                                name_to_id_map[port_map[connected_to.id].name.split(".")[0]]
+                            ].asset_type
                             == "ElectricityCable"
                         ):
                             self.connect(
@@ -350,7 +354,8 @@ class _ESDLModelBase(_Model):
                             )
                         else:
                             self.connect_logical_links(
-                                getattr(component, elec_node_suf)[i], port_map[connected_to.id]
+                                getattr(component, elec_node_suf)[i],
+                                port_map[connected_to.id].asset_type,
                             )
                         connections.add(conn)
                         i += 1

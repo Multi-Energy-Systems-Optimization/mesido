@@ -107,7 +107,7 @@ def get_density(asset_name, carrier):
             273.15 + temperature,
             "P",
             16.0e5,
-            cP.CoolProp.PropsSI("D", "T", 273.15 + 20, "P", 16.0e5, "INCOMP::Water"),
+            "INCOMP::Water",
         )
         return density  # to convert from kg/m3
     else:
@@ -624,7 +624,12 @@ class _AssetToComponentBase:
         otherwise a dict with the flow nominals of both the primary and secondary side.
         """
 
-        if asset.in_ports is not None:
+        if (
+            asset.in_ports is not None
+            and asset.out_ports is not None
+            and len(asset.in_ports) == 1
+            and len(asset.out_ports) == 1
+        ):
             for port in asset.in_ports:
                 if isinstance(port.carrier, esdl.GasCommodity) or isinstance(
                     port.carrier, esdl.HeatCommodity
@@ -632,7 +637,7 @@ class _AssetToComponentBase:
                     connected_port = port.connectedTo[0]
                     q_nominal = (
                         self._port_to_q_nominal.get(connected_port, None)
-                        if self._port_to_q_max.get(connected_port, False)
+                        if self._port_to_q_nominal.get(connected_port, False)
                         else asset.attributes["power"]
                         / (
                             get_density(asset.name, port.carrier)
@@ -643,7 +648,26 @@ class _AssetToComponentBase:
                     if q_nominal is not None:
                         self._set_q_nominal(asset, q_nominal)
                         return q_nominal
-        elif asset.out_ports is not None:
+        elif asset.in_ports is not None and asset.out_ports is None and len(asset.in_ports) == 1:
+            for port in asset.in_ports:
+                if isinstance(port.carrier, esdl.GasCommodity) or isinstance(
+                    port.carrier, esdl.HeatCommodity
+                ):
+                    connected_port = port.connectedTo[0]
+                    q_nominal = (
+                        self._port_to_q_nominal.get(connected_port, None)
+                        if self._port_to_q_nominal.get(connected_port, False)
+                        else asset.attributes["power"]
+                        / (
+                            get_density(asset.name, port.carrier)
+                            * get_internal_energy(asset.name, port.carrier)
+                            / 1.0e3
+                        )
+                    )
+                    if q_nominal is not None:
+                        self._set_q_nominal(asset, q_nominal)
+                        return q_nominal
+        elif asset.out_ports is not None and asset.in_ports is None and len(asset.out_ports) == 1:
             for port in asset.out_ports:
                 if isinstance(port.carrier, esdl.GasCommodity) or isinstance(
                     port.carrier, esdl.HeatCommodity
@@ -651,7 +675,7 @@ class _AssetToComponentBase:
                     connected_port = port.connectedTo[0]
                     q_nominal = (
                         self._port_to_q_nominal.get(connected_port, None)
-                        if self._port_to_q_max.get(connected_port, False)
+                        if self._port_to_q_nominal.get(connected_port, False)
                         else asset.attributes["power"]
                         / (
                             get_density(asset.name, port.carrier)

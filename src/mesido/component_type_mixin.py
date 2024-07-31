@@ -5,6 +5,8 @@ from mesido.base_component_type_mixin import BaseComponentTypeMixin
 from mesido.heat_network_common import NodeConnectionDirection
 from mesido.topology import Topology
 
+import numpy as np
+
 from pymoca.backends.casadi.alias_relation import AliasRelation
 
 logger = logging.getLogger("mesido")
@@ -138,13 +140,15 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                 if len(aliases) == 0:
                     raise Exception(f"Found no connection to {cur_port}")
 
-                if aliases[0].endswith(out_suffix):
+                in_suffix_count = np.sum([0 if x.endswith(in_suffix) else 1 for x in aliases])
+                out_suffix_count = np.sum([0 if x.endswith(out_suffix) else 1 for x in aliases])
+
+                if out_suffix_count > in_suffix_count:
                     asset_w_orientation = (
                         aliases[0][: -len(out_suffix)],
                         NodeConnectionDirection.IN,
                     )
                 else:
-                    # assert aliases[0].endswith(in_suffix)
                     asset_w_orientation = (
                         aliases[0][: -len(in_suffix)],
                         NodeConnectionDirection.OUT,
