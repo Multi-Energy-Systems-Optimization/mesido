@@ -192,6 +192,8 @@ class _AssetToComponentBase:
     primary_port_name_convention = "primary"
     secondary_port_name_convention = "secondary"
 
+    __power_keys = ["power", "maxDischargeRate", "maxChargeRate"]
+
     def __init__(self, **kwargs):
         """
         In this init we initialize some dicts and we load the edr pipes.
@@ -453,7 +455,7 @@ class _AssetToComponentBase:
                 q_max = (
                     self._port_to_q_max.get(connected_port, None)
                     if self._port_to_q_max.get(connected_port, False)
-                    else asset.attributes["power"]
+                    else max([asset.attributes.get(key, -1) for key in self.__power_keys])
                     / (
                         get_density(asset.name, port.carrier)
                         * get_internal_energy(asset.name, port.carrier)
@@ -474,7 +476,7 @@ class _AssetToComponentBase:
                 q_max = (
                     self._port_to_q_max.get(connected_port, None)
                     if self._port_to_q_max.get(connected_port, False)
-                    else asset.attributes["power"]
+                    else max([asset.attributes.get(key, -1) for key in self.__power_keys])
                     / (
                         get_density(asset.name, port.carrier)
                         * get_internal_energy(asset.name, port.carrier)
@@ -529,23 +531,23 @@ class _AssetToComponentBase:
             i_max_out = (
                 self._port_to_i_max.get(connected_port, None)
                 if self._port_to_i_max.get(connected_port, False)
-                else asset.attributes["power"]
+                else max([asset.attributes.get(key, -1) for key in self.__power_keys])
             )
             i_nom_out = (
                 self._port_to_i_nominal.get(connected_port, None)
                 if self._port_to_i_nominal.get(connected_port, False)
-                else asset.attributes["power"]
+                else max([asset.attributes.get(key, -1) for key in self.__power_keys])
             )
             connected_port = asset.in_ports[0].connectedTo[0]
             i_max_in = (
                 self._port_to_i_max.get(connected_port, None)
                 if self._port_to_i_max.get(connected_port, False)
-                else asset.attributes["power"]
+                else max([asset.attributes.get(key, -1) for key in self.__power_keys])
             )
             i_nom_in = (
                 self._port_to_i_nominal.get(connected_port, None)
                 if self._port_to_i_nominal.get(connected_port, False)
-                else asset.attributes["power"]
+                else max([asset.attributes.get(key, -1) for key in self.__power_keys])
             )
             if i_nom_in > 0.0 and i_nom_out > 0.0:
                 self._port_to_i_nominal[asset.in_ports[0]] = i_nom_in
@@ -564,12 +566,12 @@ class _AssetToComponentBase:
             i_max = (
                 self._port_to_i_max.get(connected_port, None)
                 if self._port_to_i_max.get(connected_port, False)
-                else asset.attributes["power"]
+                else max([asset.attributes.get(key, -1) for key in self.__power_keys])
             )
             i_nom = (
                 self._port_to_i_nominal.get(connected_port, None)
                 if self._port_to_i_nominal.get(connected_port, False)
-                else asset.attributes["power"]
+                else max([asset.attributes.get(key, -1) for key in self.__power_keys])
             )
             if i_max > 0.0:
                 self._set_electricity_current_nominal_and_max(asset, i_max, i_nom)
@@ -591,12 +593,12 @@ class _AssetToComponentBase:
                     i_max = (
                         self._port_to_i_max.get(connected_port, None)
                         if self._port_to_i_max.get(connected_port, False)
-                        else asset.attributes["power"]
+                        else max([asset.attributes.get(key, -1) for key in self.__power_keys])
                     )
                     i_nom = (
                         self._port_to_i_nominal.get(connected_port, None)
                         if self._port_to_i_nominal.get(connected_port, False)
-                        else asset.attributes["power"]
+                        else max([asset.attributes.get(key, -1) for key in self.__power_keys])
                     )
                     if i_max > 0.0:
                         self._set_electricity_current_nominal_and_max(asset, i_max, i_nom)
@@ -630,7 +632,7 @@ class _AssetToComponentBase:
             and len(asset.in_ports) == 1
             and len(asset.out_ports) == 1
         ):
-            for port in asset.in_ports:
+            for port in [*asset.in_ports, *asset.out_ports]:
                 if isinstance(port.carrier, esdl.GasCommodity) or isinstance(
                     port.carrier, esdl.HeatCommodity
                 ):
@@ -638,7 +640,7 @@ class _AssetToComponentBase:
                     q_nominal = (
                         self._port_to_q_nominal.get(connected_port, None)
                         if self._port_to_q_nominal.get(connected_port, False)
-                        else asset.attributes["power"]
+                        else max([asset.attributes.get(key, -1) for key in self.__power_keys])
                         / (
                             get_density(asset.name, port.carrier)
                             * get_internal_energy(asset.name, port.carrier)
@@ -657,7 +659,7 @@ class _AssetToComponentBase:
                     q_nominal = (
                         self._port_to_q_nominal.get(connected_port, None)
                         if self._port_to_q_nominal.get(connected_port, False)
-                        else asset.attributes["power"]
+                        else max([asset.attributes.get(key, -1) for key in self.__power_keys])
                         / (
                             get_density(asset.name, port.carrier)
                             * get_internal_energy(asset.name, port.carrier)
@@ -676,7 +678,7 @@ class _AssetToComponentBase:
                     q_nominal = (
                         self._port_to_q_nominal.get(connected_port, None)
                         if self._port_to_q_nominal.get(connected_port, False)
-                        else asset.attributes["power"]
+                        else max([asset.attributes.get(key, -1) for key in self.__power_keys])
                         / (
                             get_density(asset.name, port.carrier)
                             * get_internal_energy(asset.name, port.carrier)
@@ -732,7 +734,7 @@ class _AssetToComponentBase:
                     q_nominals["Q_nominal"] = (
                         self._port_to_q_nominal.get(connected_port, None)
                         if self._port_to_q_max.get(connected_port, False)
-                        else asset.attributes["power"]
+                        else max([asset.attributes.get(key, -1) for key in self.__power_keys])
                         / (
                             get_density(asset.name, port.carrier)
                             * get_internal_energy(asset.name, port.carrier)
@@ -763,7 +765,7 @@ class _AssetToComponentBase:
                         q_nominal = (
                             self._port_to_q_nominal.get(connected_port, None)
                             if self._port_to_q_max.get(connected_port, False)
-                            else asset.attributes["power"]
+                            else max([asset.attributes.get(key, -1) for key in self.__power_keys])
                             / (
                                 get_density(asset.name, p.carrier)
                                 * get_internal_energy(asset.name, p.carrier)

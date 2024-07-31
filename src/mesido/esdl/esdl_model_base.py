@@ -355,7 +355,7 @@ class _ESDLModelBase(_Model):
                         else:
                             self.connect_logical_links(
                                 getattr(component, elec_node_suf)[i],
-                                port_map[connected_to.id].asset_type,
+                                port_map[connected_to.id],
                             )
                         connections.add(conn)
                         i += 1
