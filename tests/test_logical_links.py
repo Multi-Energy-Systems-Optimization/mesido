@@ -72,3 +72,43 @@ class TestLogicalLinks(TestCase):
             results["GasProducer_a977.Gas_source_mass_flow"]
             + results["GasProducer_3573.Gas_source_mass_flow"],
         )
+
+    def test_logical_links_network_hybrid(self):
+        """
+        This test checks if the logic implemented for logically linked energy system, Meaning an
+        energy system where assets are directly connected to each other without a network
+        (transport asset(s)) in between.
+
+        Checks:
+        1. Check that energy is conserved
+
+        """
+        import models.emerge.src.example as example
+        from models.emerge.src.example import EmergeTest
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        problem = run_esdl_mesido_optimization(
+            EmergeTest,
+            base_folder=base_folder,
+            esdl_file_name="emerge_with_logical_links.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_short.csv",
+        )
+        results = problem.extract_results()
+
+        assert all(
+            results["ElectricityCable_e388.ElectricityIn.V"]
+            == results["Bus_24cf.ElectricityConn[3].V"]
+        )
+
+        assert (
+            np.sum(
+                np.abs(
+                    results["WindPark_9074.ElectricityOut.V"]
+                    - results["Bus_24cf.ElectricityConn[3].V"]
+                )
+            )
+            != 0.0
+        )
