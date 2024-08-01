@@ -626,7 +626,6 @@ class _AssetToComponentBase:
         otherwise a dict with the flow nominals of both the primary and secondary side.
         """
 
-
         if (
             asset.in_ports is not None
             and asset.out_ports is not None
