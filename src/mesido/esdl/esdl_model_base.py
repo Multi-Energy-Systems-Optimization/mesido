@@ -62,7 +62,7 @@ class _ESDLModelBase(_Model):
         assets_sorted = {}
         assets_sorted.update(assets_transport)
         assets_sorted.update(assets_other)
-        #TODO: replace when python 3.8 is no longer supported
+        # TODO: replace when python 3.8 is no longer supported
         # assets_sorted = assets_transport | assets_other
 
         for asset in list(assets.values()):
