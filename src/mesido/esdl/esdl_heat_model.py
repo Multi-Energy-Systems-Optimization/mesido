@@ -2120,7 +2120,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         Returns
         -------
-        GasTankStorage class with modifiers
+        GasSubstation class with modifiers
         """
         assert asset.asset_type in {"GasConversion", "PressureReducingValve"}
 

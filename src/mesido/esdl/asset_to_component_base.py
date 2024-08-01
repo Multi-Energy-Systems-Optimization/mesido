@@ -449,7 +449,7 @@ class _AssetToComponentBase:
             pass
 
     def _get_connected_q_max(self, asset: Asset) -> float:
-        if asset.in_ports is not None:
+        if asset.in_ports is not None and asset.asset_type != "Electrolyzer":
             for port in asset.in_ports:
                 connected_port = port.connectedTo[0]
                 q_max = (
@@ -463,7 +463,7 @@ class _AssetToComponentBase:
                     )
                 )
                 if q_max is not None:
-                    self._set_q_nominal(asset, q_max)
+                    self._set_q_max(asset, q_max)
                     return q_max
                 else:
                     logger.error(
@@ -484,7 +484,7 @@ class _AssetToComponentBase:
                     )
                 )
                 if q_max is not None:
-                    self._set_q_nominal(asset, q_max)
+                    self._set_q_max(asset, q_max)
                     return q_max
                 else:
                     logger.error(
@@ -626,7 +626,34 @@ class _AssetToComponentBase:
         otherwise a dict with the flow nominals of both the primary and secondary side.
         """
 
+
         if (
+            asset.in_ports is not None
+            and asset.out_ports is not None
+            and len(asset.in_ports) == 1
+            and len(asset.out_ports) == 1
+            and asset.in_ports[0].carrier.id != asset.out_ports[0].carrier.id
+            and isinstance(asset.in_ports[0].carrier, esdl.GasCommodity)
+            and isinstance(asset.out_ports[0].carrier, esdl.GasCommodity)
+        ):  # Cater for gas substation
+            connected_port = asset.in_ports[0].connectedTo[0]
+            q_nominal_in = (
+                self._port_to_q_nominal.get(connected_port, None)
+                if self._port_to_q_nominal.get(connected_port, False)
+                else 0.0
+            )
+            connected_port = asset.out_ports[0].connectedTo[0]
+            q_nominal_out = (
+                self._port_to_q_nominal.get(connected_port, None)
+                if self._port_to_q_nominal.get(connected_port, False)
+                else 0.0
+            )
+
+            if q_nominal_in > 0.0 and q_nominal_out > 0.0:
+                self._port_to_q_nominal[asset.in_ports[0]] = q_nominal_in
+                self._port_to_q_nominal[asset.out_ports[0]] = q_nominal_out
+                return q_nominal_in, q_nominal_out
+        elif (
             asset.in_ports is not None
             and asset.out_ports is not None
             and len(asset.in_ports) == 1
@@ -688,30 +715,6 @@ class _AssetToComponentBase:
                     if q_nominal is not None:
                         self._set_q_nominal(asset, q_nominal)
                         return q_nominal
-        elif (
-            len(asset.in_ports) == 1
-            and len(asset.out_ports) == 1
-            and asset.in_ports[0].carrier.id != asset.out_ports[0].carrier.id
-            and isinstance(asset.in_ports[0].carrier, esdl.GasCommodity)
-            and isinstance(asset.out_ports[0].carrier, esdl.GasCommodity)
-        ):  # Cater for gas substation
-            connected_port = asset.in_ports[0].connectedTo[0]
-            q_nominal_in = (
-                self._port_to_q_nominal.get(connected_port, None)
-                if self._port_to_q_nominal.get(connected_port, False)
-                else 0.0
-            )
-            connected_port = asset.out_ports[0].connectedTo[0]
-            q_nominal_out = (
-                self._port_to_q_nominal.get(connected_port, None)
-                if self._port_to_q_nominal.get(connected_port, False)
-                else 0.0
-            )
-
-            if q_nominal_in > 0.0 and q_nominal_out > 0.0:
-                self._port_to_q_nominal[asset.in_ports[0]] = q_nominal_in
-                self._port_to_q_nominal[asset.out_ports[0]] = q_nominal_out
-                return q_nominal_in, q_nominal_out
         elif len(asset.in_ports) == 2 and len(asset.out_ports) == 1:  # for gas_boiler or e_boiler
             q_nominals = {}
             try:
