@@ -133,7 +133,7 @@ class _ESDLModelBase(_Model):
                 or asset.asset_type == "HeatExchange"
                 or asset.asset_type == "HeatPump"
             ):
-                if prefix != "Heat":
+                if prefix != "MILP":
                     raise Exception(
                         "Hydraulically decoulpled systems are not yet supported for nonlinear (QTH)"
                         "optimization"
