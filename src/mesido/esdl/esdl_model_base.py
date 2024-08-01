@@ -59,7 +59,11 @@ class _ESDLModelBase(_Model):
             else:
                 assets_other[name] = properties
 
-        assets_sorted = assets_transport | assets_other
+        assets_sorted = {}
+        assets_sorted.update(assets_transport)
+        assets_sorted.update(assets_other)
+        #TODO: replace when python 3.8 is no longer supported
+        # assets_sorted = assets_transport | assets_other
 
         for asset in list(assets.values()):
             converter.port_asset_type_connections(asset)
