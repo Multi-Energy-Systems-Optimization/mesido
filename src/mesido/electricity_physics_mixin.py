@@ -888,7 +888,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         """
         constraints = super().constraints(ensemble_member)
 
-        # constraints.extend(self.__electricity_producer_set_point_constraints(ensemble_member))
+        constraints.extend(self.__electricity_producer_set_point_constraints(ensemble_member))
 
         return constraints
 
