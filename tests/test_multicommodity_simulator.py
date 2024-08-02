@@ -16,6 +16,8 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
+from utils_test_scaling import check_scaling_problem, create_scaling_problem_check
+
 from utils_tests import (
     demand_matching_test,
     electric_power_conservation_test,
@@ -91,8 +93,12 @@ class TestMultiCommoditySimulator(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
+        multicommoditysimulatorscaling, logger, logs_list = create_scaling_problem_check(
+            MultiCommoditySimulator
+        )
+
         solution = run_optimization_problem(
-            MultiCommoditySimulator,
+            multicommoditysimulatorscaling,
             base_folder=base_folder,
             esdl_file_name="Electric_bus4_priorities.esdl",
             esdl_parser=ESDLFileParser,
@@ -100,6 +106,7 @@ class TestMultiCommoditySimulator(TestCase):
             input_timeseries_file="timeseries_2.csv",
         )
 
+        check_scaling_problem(logs_list, logger)
         bounds = solution.bounds()
         results = solution.extract_results()
 
@@ -416,15 +423,19 @@ class TestMultiCommoditySimulator(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
+        multicommoditysimulatornolossesscaling, logger, logs_list = create_scaling_problem_check(
+            MultiCommoditySimulatorNoLosses
+        )
+
         solution = run_optimization_problem(
-            MultiCommoditySimulatorNoLosses,
+            multicommoditysimulatornolossesscaling,
             base_folder=base_folder,
             esdl_file_name="emerge_battery_priorities.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_short.csv",
         )
-
+        check_scaling_problem(logs_list, logger, order_diff=1e7)
         results = solution.extract_results()
 
         feasibility_test(solution)
