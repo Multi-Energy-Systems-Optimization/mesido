@@ -26,7 +26,6 @@ def create_log_list_scaling():
 
     logs_list = []
 
-    # logger = logging.getLogger("WarmingUP-MPC")
     logger = logging.getLogger("rtctools")
     logger.setLevel(logging.INFO)
 
@@ -35,14 +34,14 @@ def create_log_list_scaling():
     return logger, logs_list
 
 
-def create_scaling_problem_check(problem_class):
+def create_problem_with_debug_info(problem_class):
     """
-    The problem optimization class that needs to be executed is updated with a debuglevel to
+    The problem class that needs to be executed is updated with a debuglevel to
     ensure that the information about the scaling is logged. Furthermore, the logging list is
     created to allow for backtracking and check scaling information.
-    :param problem_class: The problem optimization class that should be executed
+    :param problem_class: The problem class that should be executed
     :return:
-    The problem optimization class including its debuglevel and the logging list and logger.
+    The problem class including its debuglevel and the logging list and logger.
     """
     # TODO: currently only the default settings can be used to check the scaling.
     logger, logs_list = create_log_list_scaling()
@@ -53,13 +52,13 @@ def create_scaling_problem_check(problem_class):
     return ProblemClassScaling, logger, logs_list
 
 
-def check_order(dict_values, order_diff):
+def check_order(dict_values, maximum_order_diff):
     """
     Checks the difference in order between the lower and upperbound of several problem settings;
-    objective, matrix and rhs.
+    objective, matrix and right hand side.
     :param dict_values: dictionary with the different problem settings and their respective lower
     and upperbound
-    :param order_diff: the maximum difference that is allowed.
+    :param maximum_order_diff: the maximum difference that is allowed.
     :return:
     """
     msg_order = {}
@@ -68,22 +67,23 @@ def check_order(dict_values, order_diff):
             order = value[1] / value[0]
         else:
             order = value[1]
-        if order > order_diff:
+        if order > maximum_order_diff:
             order_wrong = math.floor(math.log(order, 10))
             msg_order[key] = (
                 f"The scaling of this problem is not great, for the {key}, the values are {value} "
-                f"which is of the order {order_wrong}, {order_diff} is the maximum allowed order "
-                f"difference"
+                f"which is of the order {order_wrong}, {maximum_order_diff} is the maximum allowed "
+                f"order difference."
             )
     assert len(msg_order) == 0, msg_order
 
 
-def check_scaling_problem(logs_list, logger, order_diff=1e6):
+def problem_scaling_check(logs_list, logger, order_diff=1e6):
     """
      Checks the difference in order between the lower and upperbound of several problem settings;
     objective, matrix and rhs.
     These settings are first to be extracted from the logging information.
     :param logs_list: The list containing all the logs.
+    :param logger: The logger that logs information, warnings and errors depending on the level set.
     :param order_diff: The maximum difference between the lower and upperbound.
     :return:
     """
