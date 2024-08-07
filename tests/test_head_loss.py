@@ -447,7 +447,7 @@ class TestHeadLoss(TestCase):
                         self.gas_network_settings["minimize_head_losses"] = True
                     elif head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
                         self.gas_network_settings["n_linearization_lines"] = 2
-                        self.gas_network_settings["minimize_head_losses"] = False
+                        self.gas_network_settings["minimize_head_losses"] = True
                         self.gas_network_settings["minimum_velocity"] = 0.0
 
                     return options
