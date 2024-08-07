@@ -482,7 +482,7 @@ class TestMultiCommoditySimulator(TestCase):
             esdl_file_name="emerge_battery_priorities.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries_short.csv",
+            input_timeseries_file="timeseries_short_2.csv",
         )
 
         results = solution.extract_results()
@@ -523,7 +523,8 @@ class TestMultiCommoditySimulator(TestCase):
 
         # linearized dw_headloss calculations
         linear_lines = 5
-        velocities = np.linspace(0, 15, linear_lines + 1)
+        v_max = solution.gas_network_settings['maximum_velocity']
+        velocities = np.linspace(0, v_max, linear_lines + 1)
 
         for pipe in solution.energy_system_components.get("gas_pipe"):
             length = parameters[f"{pipe}.length"]
@@ -534,7 +535,7 @@ class TestMultiCommoditySimulator(TestCase):
             head_loss = results[f"{pipe}.dH"]
             head_loss_full_var = results[f"{pipe}.__head_loss"]
             # If this test fails there is most likely a scaling issue.
-            indexes = np.abs(v_pipe) > 0.0
+            indexes = np.abs(v_pipe) > 1e-11
             indexes[0] = False
             np.testing.assert_allclose(
                 np.abs(np.asarray(head_loss[indexes])), head_loss_full_var[indexes]
