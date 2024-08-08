@@ -523,7 +523,7 @@ class TestMultiCommoditySimulator(TestCase):
 
         # linearized dw_headloss calculations
         linear_lines = 5
-        v_max = solution.gas_network_settings['maximum_velocity']
+        v_max = solution.gas_network_settings["maximum_velocity"]
         velocities = np.linspace(0, v_max, linear_lines + 1)
 
         for pipe in solution.energy_system_components.get("gas_pipe"):
