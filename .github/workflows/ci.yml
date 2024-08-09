@@ -16,7 +16,7 @@ jobs:
 
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
+          python-version: "3.8"
 
       - name: deps
         run: python -m pip install -U tox
@@ -32,7 +32,7 @@ jobs:
 
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
+          python-version: "3.8"
 
       - name: deps
         run: python -m pip install -U wheel setuptools build
@@ -45,13 +45,13 @@ jobs:
     name: Test main
     runs-on: ubuntu-latest
     env:
-      TOXENV: py39
+      TOXENV: py38
     steps:
       - uses: actions/checkout@v3
 
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
+          python-version: "3.8"
 
       - name: deps
         run: python -m pip install -U tox
@@ -64,13 +64,13 @@ jobs:
     name: Test pre-processing
     runs-on: ubuntu-latest
     env:
-      TOXENV: py39
+      TOXENV: py38
     steps:
       - uses: actions/checkout@v3
 
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
+          python-version: "3.8"
 
       - name: deps
         run: python -m pip install -U tox
@@ -99,13 +99,13 @@ jobs:
     needs: test_pre_processing
     runs-on: ubuntu-latest
     env:
-      TOXENV: py39
+      TOXENV: py38
     steps:
       - uses: actions/checkout@v3
 
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
+          python-version: "3.8"
 
       - name: deps
         run: python -m pip install -U tox
@@ -132,7 +132,7 @@ jobs:
 
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
+          python-version: "3.8"
 
       - name: Generate documentation
         run: |
