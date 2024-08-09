@@ -236,7 +236,6 @@ class TestMultiCommodityHeatPump(TestCase):
                 options["solver"] = "cbc"
                 return options
 
-
         solution = run_esdl_mesido_optimization(
             TestProblem,
             base_folder=base_folder,

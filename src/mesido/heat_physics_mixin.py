@@ -2273,6 +2273,10 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             (hot_pipe, _hot_pipe_orientation),
             (_cold_pipe, _cold_pipe_orientation),
         ) in {**self.energy_system_topology.buffers, **self.energy_system_topology.ates}.items():
+            if hot_pipe not in self.energy_system_components.get("heat_pipe", []):
+                # We skip the constraints in case their is a logical link to the storage.
+                continue
+
             heat_nominal = parameters[f"{b}.Heat_nominal"]
             q_nominal = self.variable_nominal(f"{b}.Q")
             cp = parameters[f"{b}.cp"]
