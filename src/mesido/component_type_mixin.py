@@ -140,10 +140,28 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                 if len(aliases) == 0:
                     raise Exception(f"Found no connection to {cur_port}")
 
-                in_suffix_count = np.sum([0 if x.endswith(in_suffix) else 1 for x in aliases])
-                out_suffix_count = np.sum([0 if x.endswith(out_suffix) else 1 for x in aliases])
+                in_suffix_count = np.sum([1 if x.endswith(in_suffix) else 0 for x in aliases])
+                out_suffix_count = np.sum([1 if x.endswith(out_suffix) else 0 for x in aliases])
 
-                if out_suffix_count > in_suffix_count:
+                aliases_h = [
+                    x
+                    for x in self.alias_relation.aliases(f"{cur_port}.H")
+                    if not x.startswith(n) and x.endswith(".H")
+                ]
+                pipe_out_port = False
+                for k in range(len(aliases)):
+                    pipe_name = aliases[k].split(".")[0]
+                    if pipe_name + ".GasOut.H" in aliases_h:
+                        pipe_out_port = True
+
+                if pipe_out_port:
+                    # This is only for when a pipe is connected to a gas node to determine direction
+                    asset_w_orientation = (
+                        pipe_name,
+                        NodeConnectionDirection.IN,
+                    )
+                elif out_suffix_count > in_suffix_count:
+
                     asset_w_orientation = (
                         aliases[0][: -len(out_suffix)],
                         NodeConnectionDirection.IN,

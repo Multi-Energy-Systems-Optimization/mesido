@@ -365,7 +365,9 @@ class _ESDLModelBase(_Model):
                         i += 1
                     elif isinstance(port.carrier, esdl.GasCommodity):
                         if (
-                            assets[name_to_id_map[port_map[connected_to.id].name.split(".")[0]]]
+                            assets[
+                                name_to_id_map[port_map[connected_to.id].name.split(".")[0]]
+                            ].asset_type
                             == "Pipe"
                         ):
                             self.connect(
@@ -416,9 +418,13 @@ class _ESDLModelBase(_Model):
                     if (
                         asset.asset_type == "Pipe"
                         or asset.asset_type == "ElectricityCable"
-                        or assets[name_to_id_map[port_map[connected_to.id].name.split(".")[0]]]
+                        or assets[
+                            name_to_id_map[port_map[connected_to.id].name.split(".")[0]]
+                        ].asset_type
                         == "Pipe"
-                        or assets[name_to_id_map[port_map[connected_to.id].name.split(".")[0]]]
+                        or assets[
+                            name_to_id_map[port_map[connected_to.id].name.split(".")[0]]
+                        ].asset_type
                         == "ElectricityCable"
                     ):
                         self.connect(port_map[port.id], port_map[connected_to.id])
