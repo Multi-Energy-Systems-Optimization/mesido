@@ -52,6 +52,9 @@ def run_esdl_mesido_optimization(
 
     feasibility = solution.solver_stats["return_status"]
 
-    assert feasibility.lower() == "optimal"
+    if solution.solver_options()["solver"] == "cplex":
+        assert feasibility.lower() == "integer optimal solution"
+    else:
+        assert feasibility.lower() == "optimal"
 
     return solution

@@ -584,6 +584,7 @@ class MultiCommoditySimulator(
         self.gas_network_settings["network_type"] = NetworkSettings.NETWORK_TYPE_HYDROGEN
         self.gas_network_settings["minimize_head_losses"] = False
         self.gas_network_settings["maximum_velocity"] = 60.0
+        self.gas_network_settings["n_linearization_lines"] = 5
         options["include_asset_is_switched_on"] = True
         options["estimated_velocity"] = 7.5
         options["electrolyzer_efficiency"] = (
@@ -943,7 +944,7 @@ def run_sequatially_staged_simulation(
         constrained_assets,
         MultiCommoditySimulatorTimeSequential,
         solver_class,
-        kwargs,
+        **kwargs,
     )
 
     tic = time.time()
@@ -970,7 +971,7 @@ def run_sequatially_staged_simulation(
             constrained_assets,
             MultiCommoditySimulatorTimeSequential,
             solver_class,
-            kwargs,
+            **kwargs,
         )
 
     print(time.time() - tic)
