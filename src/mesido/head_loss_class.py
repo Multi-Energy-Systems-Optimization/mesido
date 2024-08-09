@@ -417,20 +417,20 @@ class HeadLossClass:
                         dtype = discharge_type[1]
                         line_number = ii_line + 1 - network_settings["n_linearization_lines"]
 
-                        # start line segment numbering from 1 up to "n_linearization_lines"
-                        pipe_linear_line_segment_var_name = (
-                            f"{pipe_name}__pipe_linear_line_segment_num_{line_number}_{dtype}"
-                        )
+                    # start line segment numbering from 1 up to "n_linearization_lines"
+                    pipe_linear_line_segment_var_name = (
+                        f"{pipe_name}__pipe_linear_line_segment_num_{line_number}_{dtype}"
+                    )
 
-                        self._pipe_linear_line_segment_map[pipe_name][
-                            ii_line
-                        ] = pipe_linear_line_segment_var_name
-                        self.__pipe_linear_line_segment_var[pipe_name][
-                            pipe_linear_line_segment_var_name
-                        ] = ca.MX.sym(pipe_linear_line_segment_var_name)
-                        self.__pipe_linear_line_segment_var_bounds[pipe_name][
-                            pipe_linear_line_segment_var_name
-                        ] = (0.0, 1.0)
+                    self._pipe_linear_line_segment_map[pipe_name][
+                        ii_line
+                    ] = pipe_linear_line_segment_var_name
+                    self.__pipe_linear_line_segment_var[pipe_name][
+                        pipe_linear_line_segment_var_name
+                    ] = ca.MX.sym(pipe_linear_line_segment_var_name)
+                    self.__pipe_linear_line_segment_var_bounds[pipe_name][
+                        pipe_linear_line_segment_var_name
+                    ] = (0.0, 1.0)
 
         return (
             (
