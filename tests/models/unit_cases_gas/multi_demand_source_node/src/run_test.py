@@ -1,7 +1,8 @@
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
-from mesido.techno_economic_mixin import TechnoEconomicMixin
+from mesido.head_loss_class import HeadLossOption
+from mesido.physics_mixin import PhysicsMixin
 
 import numpy as np
 
@@ -58,7 +59,7 @@ class _GoalsAndOptions:
 
 class GasProblem(
     _GoalsAndOptions,
-    TechnoEconomicMixin,
+    PhysicsMixin,
     LinearizedOrderGoalProgrammingMixin,
     GoalProgrammingMixin,
     ESDLMixin,
@@ -67,6 +68,11 @@ class GasProblem(
     """
     This is a problem to check the behaviour of a gas network with a node.
     """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.gas_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
 
     def times(self, variable=None) -> np.ndarray:
         """
@@ -86,10 +92,12 @@ class GasProblem(
 if __name__ == "__main__":
     elect = run_optimization_problem(
         GasProblem,
-        esdl_file_name="test.esdl",
+        esdl_file_name="test_logical_links.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,
         input_timeseries_file="timeseries.csv",
     )
     r = elect.extract_results()
+    print(r["GasProducer_3573.GasOut.Q"])
+    print(r["GasDemand_47d0.Gas_demand_mass_flow"])
     a = 1

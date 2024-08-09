@@ -74,7 +74,7 @@ class ElectricityProblem(
 if __name__ == "__main__":
     elect = run_optimization_problem(
         ElectricityProblem,
-        esdl_file_name="Electric_bus3.esdl",
+        esdl_file_name="Electric_bus4_logical_links.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,
         input_timeseries_file="timeseries.csv",

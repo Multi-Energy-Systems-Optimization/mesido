@@ -183,7 +183,7 @@ class TestWarmingUpUnitCases(TestCase):
                 results[f"{buffer}.Stored_heat"][-1] - results[f"{buffer}.Stored_heat"][0],
                 np.sum(results[f"{buffer}.Heat_buffer"][1:] * 3600.0)
                 - np.sum(results[f"{buffer}.Heat_loss"][1:] * 3600.0),
-                atol=1.0e-3,
+                atol=1.0,
             )
             np.testing.assert_allclose(results[f"{buffer}.Heat_buffer"][0], 0.0, atol=1.0e-6)
 

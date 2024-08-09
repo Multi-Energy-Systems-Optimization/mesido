@@ -7,8 +7,6 @@ from esdl import InPort, OutPort
 from mesido.esdl.asset_to_component_base import _AssetToComponentBase
 from mesido.pycml import Model as _Model
 
-from ._exceptions import _RetryLaterException, _SkipAssetException
-
 logger = logging.getLogger("mesido")
 
 
@@ -27,7 +25,9 @@ class _ESDLModelBase(_Model):
     primary_port_name_convention = "prim"
     secondary_port_name_convention = "sec"
 
-    def _esdl_convert(self, converter: _AssetToComponentBase, assets: Dict, prefix: str) -> None:
+    def _esdl_convert(
+        self, converter: _AssetToComponentBase, assets: Dict, name_to_id_map: Dict, prefix: str
+    ) -> None:
         """
         In this function we convert the esdl parsed assets and instantiate the pycml objects for
         those assets. We use the converter to create those pycml objects and the same time we look
@@ -47,33 +47,34 @@ class _ESDLModelBase(_Model):
         # Sometimes we need information of one component in order to convert
         # another. For example, the nominal discharge of a pipe is used to set
         # the nominal discharge of its connected components.
-        retry_assets = list(assets.values())
         skip_assets = list()
 
-        for _ in range(RETRY_LOOP_LIMIT):
-            current_assets = retry_assets
-            retry_assets = []
+        transport_asset_types = ["Pipe", "ElectricityCable"]
+        assets_transport = {}
+        assets_other = {}
 
-            for asset in current_assets:
-                try:
-                    pycml_type, modifiers = converter.convert(asset)
-                except _SkipAssetException:
-                    skip_assets.append(asset)
-                    continue
-                except _RetryLaterException:
-                    retry_assets.append(asset)
-                    continue
+        for name, properties in assets.items():
+            if properties.asset_type in transport_asset_types:
+                assets_transport[name] = properties
+            else:
+                assets_other[name] = properties
 
-                self.add_variable(pycml_type, asset.name, **modifiers)
+        assets_sorted = {}
+        assets_sorted.update(assets_transport)
+        assets_sorted.update(assets_other)
+        # TODO: replace when python 3.8 is no longer supported
+        # assets_sorted = assets_transport | assets_other
 
-            if not retry_assets:
-                break
-        else:
-            raise Exception("Parsing of assets exceeded maximum iteration limit.")
+        for asset in list(assets.values()):
+            converter.port_asset_type_connections(asset)
 
-        in_suf = f"{prefix}In"
-        out_suf = f"{prefix}Out"
-        node_suf = f"{prefix}Conn"
+        for asset in list(assets_sorted.values()):
+            pycml_type, modifiers = converter.convert(asset)
+            self.add_variable(pycml_type, asset.name, **modifiers)
+
+        in_suf = "HeatIn"
+        out_suf = "HeatOut"
+        node_suf = "HeatConn"
         elec_in_suf = "ElectricityIn"
         elec_out_suf = "ElectricityOut"
         elec_node_suf = "ElectricityConn"
@@ -81,16 +82,9 @@ class _ESDLModelBase(_Model):
         gas_out_suf = "GasOut"
         gas_node_suf = "GasConn"
 
+        # TODO: check but I think the skip_assets is no longer needed
         skip_asset_ids = {a.id for a in skip_assets}
-        # pipe_assets = [
-        #     a
-        #     for a in assets.values()
-        #     if (
-        #         a.asset_type == "heat_pipe"
-        #         and a.id not in skip_asset_ids
-        #         and isinstance(a.in_ports[0].carrier, esdl.HeatCommodity)
-        #     )
-        # ]
+
         node_assets = [
             a
             for a in assets.values()
@@ -139,7 +133,7 @@ class _ESDLModelBase(_Model):
                 or asset.asset_type == "HeatExchange"
                 or asset.asset_type == "HeatPump"
             ):
-                if prefix != "Heat":
+                if prefix != "MILP":
                     raise Exception(
                         "Hydraulically decoulpled systems are not yet supported for nonlinear (QTH)"
                         "optimization"
@@ -339,17 +333,50 @@ class _ESDLModelBase(_Model):
                     if conn in connections or tuple(reversed(conn)) in connections:
                         continue
                     if isinstance(port.carrier, esdl.HeatCommodity):
-                        self.connect(getattr(component, node_suf)[i], port_map[connected_to.id])
+                        if (
+                            assets[
+                                name_to_id_map[port_map[connected_to.id].name.split(".")[0]]
+                            ].asset_type
+                            == "Pipe"
+                        ):
+                            self.connect(getattr(component, node_suf)[i], port_map[connected_to.id])
+                        else:
+                            self.connect_logical_links(
+                                getattr(component, node_suf)[i], port_map[connected_to.id]
+                            )
                         connections.add(conn)
                         i += 1
                     elif isinstance(port.carrier, esdl.ElectricityCommodity):
-                        self.connect(
-                            getattr(component, elec_node_suf)[i], port_map[connected_to.id]
-                        )
+                        if (
+                            assets[
+                                name_to_id_map[port_map[connected_to.id].name.split(".")[0]]
+                            ].asset_type
+                            == "ElectricityCable"
+                        ):
+                            self.connect(
+                                getattr(component, elec_node_suf)[i], port_map[connected_to.id]
+                            )
+                        else:
+                            self.connect_logical_links(
+                                getattr(component, elec_node_suf)[i],
+                                port_map[connected_to.id],
+                            )
                         connections.add(conn)
                         i += 1
                     elif isinstance(port.carrier, esdl.GasCommodity):
-                        self.connect(getattr(component, gas_node_suf)[i], port_map[connected_to.id])
+                        if (
+                            assets[
+                                name_to_id_map[port_map[connected_to.id].name.split(".")[0]]
+                            ].asset_type
+                            == "Pipe"
+                        ):
+                            self.connect(
+                                getattr(component, gas_node_suf)[i], port_map[connected_to.id]
+                            )
+                        else:
+                            self.connect_logical_links(
+                                getattr(component, gas_node_suf)[i], port_map[connected_to.id]
+                            )
                         connections.add(conn)
                         i += 1
                     else:
@@ -388,6 +415,19 @@ class _ESDLModelBase(_Model):
                     conn = (port.id, connected_to.id)
                     if conn in connections or tuple(reversed(conn)) in connections:
                         continue
-
-                    self.connect(port_map[port.id], port_map[connected_to.id])
+                    if (
+                        asset.asset_type == "Pipe"
+                        or asset.asset_type == "ElectricityCable"
+                        or assets[
+                            name_to_id_map[port_map[connected_to.id].name.split(".")[0]]
+                        ].asset_type
+                        == "Pipe"
+                        or assets[
+                            name_to_id_map[port_map[connected_to.id].name.split(".")[0]]
+                        ].asset_type
+                        == "ElectricityCable"
+                    ):
+                        self.connect(port_map[port.id], port_map[connected_to.id])
+                    else:
+                        self.connect_logical_links(port_map[port.id], port_map[connected_to.id])
                     connections.add(conn)

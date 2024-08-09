@@ -94,7 +94,7 @@ class TestMinMaxPressureOptions(TestCase):
     from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
 
     base_folder = Path(double_pipe_heat.__file__).resolve().parent.parent
-    min_pressure = 4.0
+    min_pressure = 5.0
     max_pressure = 12.0
     esdl_file = "sourcesink.esdl"
     input_time_series_file = "timeseries_import.csv"

@@ -52,6 +52,6 @@ def run_esdl_mesido_optimization(
 
     feasibility = solution.solver_stats["return_status"]
 
-    assert feasibility.lower() == "optimal"
+    assert feasibility.lower() == "optimal" or feasibility.lower() == "finished"
 
     return solution

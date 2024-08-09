@@ -229,8 +229,15 @@ class TestMultiCommodityHeatPump(TestCase):
 
         base_folder = Path(run_hp_elec.__file__).resolve().parent.parent
 
+        class TestProblem(ElectricityProblemPriceProfile):
+            def solver_options(self):
+                options = super().solver_options()
+                # For some reason the test requires cbc, highs fails for strange reasons
+                options["solver"] = "cbc"
+                return options
+
         solution = run_esdl_mesido_optimization(
-            ElectricityProblemPriceProfile,
+            TestProblem,
             base_folder=base_folder,
             esdl_file_name="heat_pump_elec_priceprofile.esdl",
             esdl_parser=ESDLFileParser,
