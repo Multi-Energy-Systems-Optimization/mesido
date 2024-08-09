@@ -73,7 +73,7 @@ class TestHeadLoss(TestCase):
                         self.heat_network_settings["head_loss_option"] = (
                             HeadLossOption.LINEARIZED_N_LINES_EQUALITY
                         )
-                        self.heat_network_settings["minimize_head_losses"] = True
+                        self.heat_network_settings["minimize_head_losses"] = False
                         self.heat_network_settings["minimum_velocity"] = 1.0e-6
 
                     return options
@@ -267,7 +267,10 @@ class TestHeadLoss(TestCase):
 
                     self.heat_network_settings["n_linearization_lines"] = 2
                     self.heat_network_settings["minimum_velocity"] = 0.0
-                    self.heat_network_settings["minimize_head_losses"] = True
+                    if head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
+                        self.heat_network_settings["minimize_head_losses"] = False
+                    else:
+                        self.heat_network_settings["minimize_head_losses"] = True
 
                     return options
 
@@ -442,7 +445,7 @@ class TestHeadLoss(TestCase):
                     ):
                         self.gas_network_settings["n_linearization_lines"] = 2
                         self.gas_network_settings["minimize_head_losses"] = True
-                    if head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
+                    elif head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
                         self.gas_network_settings["n_linearization_lines"] = 2
                         self.gas_network_settings["minimize_head_losses"] = True
                         self.gas_network_settings["minimum_velocity"] = 0.0
@@ -593,7 +596,7 @@ class TestHeadLoss(TestCase):
                     if head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
                         # do not change in value below, see notes above
                         self.gas_network_settings["n_linearization_lines"] = 2
-                        self.gas_network_settings["minimize_head_losses"] = True
+                        self.gas_network_settings["minimize_head_losses"] = False
                     # if statements below are currently not used, potential use in the future
                     elif head_loss_option_setting == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY:
                         self.gas_network_settings["minimize_head_losses"] = True

@@ -274,7 +274,7 @@ class TestHydraulicPower(TestCase):
                 )
                 self.gas_network_settings["n_linearization_lines"] = 3
                 self.gas_network_settings["minimum_velocity"] = 0.0
-                self.gas_network_settings["minimize_head_losses"] = True
+                self.gas_network_settings["minimize_head_losses"] = False
 
                 return options
 
@@ -404,7 +404,7 @@ class TestHydraulicPower(TestCase):
                 )
                 self.gas_network_settings["n_linearization_lines"] = 3
                 self.gas_network_settings["minimum_velocity"] = 0.0
-                self.gas_network_settings["minimize_head_losses"] = True
+                self.gas_network_settings["minimize_head_losses"] = False
 
                 return options
 

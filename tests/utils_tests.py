@@ -145,18 +145,6 @@ def heat_to_discharge_test(solution, results):
     for d in solution.energy_system_components.get("cold_demand", []):
         cp = solution.parameters(0)[f"{d}.cp"]
         rho = solution.parameters(0)[f"{d}.rho"]
-        # return_id = solution.parameters(0)[f"{d}.T_return_id"]
-        # if f"{return_id}_temperature" in results.keys():
-        #     return_t = results[f"{return_id}_temperature"]
-        # else:
-        #     return_t = solution.parameters(0)[f"{d}.T_return"]
-        # supply_id = solution.parameters(0)[f"{d}.T_supply_id"]
-        # if f"{supply_id}_temperature" in results.keys():
-        #     supply_t = results[f"{supply_id}_temperature"]
-        # else:
-        #     supply_t = solution.parameters(0)[f"{d}.T_supply"]
-        # dt = supply_t - return_t
-        # dt = solution.parameters(0)[f"{d}.dT"]
         supply_t, return_t, dt = _get_component_temperatures(solution, results, d)
         np.testing.assert_allclose(
             results[f"{d}.Cold_demand"],

@@ -16,6 +16,8 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
+from utils_test_scaling import create_problem_with_debug_info, problem_scaling_check
+
 from utils_tests import (
     demand_matching_test,
     electric_power_conservation_test,
@@ -91,8 +93,12 @@ class TestMultiCommoditySimulator(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
+        multicommoditysimulatorscaling, logger, logs_list = create_problem_with_debug_info(
+            MultiCommoditySimulator
+        )
+
         solution = run_optimization_problem(
-            MultiCommoditySimulator,
+            multicommoditysimulatorscaling,
             base_folder=base_folder,
             esdl_file_name="Electric_bus4_priorities.esdl",
             esdl_parser=ESDLFileParser,
@@ -100,6 +106,7 @@ class TestMultiCommoditySimulator(TestCase):
             input_timeseries_file="timeseries_2.csv",
         )
 
+        problem_scaling_check(logs_list, logger)
         bounds = solution.bounds()
         results = solution.extract_results()
 
@@ -416,15 +423,19 @@ class TestMultiCommoditySimulator(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
+        multicommoditysimulatornolossesscaling, logger, logs_list = create_problem_with_debug_info(
+            MultiCommoditySimulatorNoLosses
+        )
+
         solution = run_optimization_problem(
-            MultiCommoditySimulatorNoLosses,
+            multicommoditysimulatornolossesscaling,
             base_folder=base_folder,
             esdl_file_name="emerge_battery_priorities.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_short.csv",
         )
-
+        problem_scaling_check(logs_list, logger, order_diff=1e7)
         results = solution.extract_results()
 
         feasibility_test(solution)
@@ -482,7 +493,7 @@ class TestMultiCommoditySimulator(TestCase):
             esdl_file_name="emerge_battery_priorities.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries_short.csv",
+            input_timeseries_file="timeseries_short_2.csv",
         )
 
         results = solution.extract_results()
@@ -523,7 +534,8 @@ class TestMultiCommoditySimulator(TestCase):
 
         # linearized dw_headloss calculations
         linear_lines = 5
-        velocities = np.linspace(0, 15, linear_lines + 1)
+        v_max = solution.gas_network_settings["maximum_velocity"]
+        velocities = np.linspace(0, v_max, linear_lines + 1)
 
         for pipe in solution.energy_system_components.get("gas_pipe"):
             length = parameters[f"{pipe}.length"]
@@ -534,7 +546,7 @@ class TestMultiCommoditySimulator(TestCase):
             head_loss = results[f"{pipe}.dH"]
             head_loss_full_var = results[f"{pipe}.__head_loss"]
             # If this test fails there is most likely a scaling issue.
-            indexes = np.abs(v_pipe) > 0.0
+            indexes = np.abs(v_pipe) > 1e-11
             indexes[0] = False
             np.testing.assert_allclose(
                 np.abs(np.asarray(head_loss[indexes])), head_loss_full_var[indexes]
