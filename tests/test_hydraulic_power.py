@@ -389,11 +389,12 @@ class TestHydraulicPower(TestCase):
         base_folder = Path(run_test.__file__).resolve().parent.parent
 
         class GasProblemHydraulic(GasProblem):
+
             def read(self):
                 super().read()
 
                 for d in self.energy_system_components["gas_demand"]:
-                    new_timeseries = self.get_timeseries(f"{d}.target_gas_demand").values * 1.5
+                    new_timeseries = self.get_timeseries(f"{d}.target_gas_demand").values * 3
                     self.set_timeseries(f"{d}.target_gas_demand", new_timeseries)
 
             def energy_system_options(self):
@@ -460,7 +461,7 @@ class TestHydraulicPower(TestCase):
                     )
                     ind_check += 1
                 else:
-                    raise RuntimeError(
+                    raise RuntimeWarning(
                         "For this test to succeed the flow should increase over time"
                     )
             np.testing.assert_array_less(

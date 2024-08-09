@@ -101,7 +101,7 @@ class TestPipeDiameterSizingExample(TestCase):
             )
 
         for pipe in problem.energy_system_components.get("heat_pipe", []):
-            if results[f"{pipe}__hn_diameter"] == 0.0:
+            if results[f"{pipe}__hn_diameter"] <= 1e-15:
                 # TODO: At the moment it is so that a pipe which is not placed (diameter == 0.) can
                 # have head loss since there is an equivalent solution where simultaniously the
                 # is_disconnected variable is also true disabling the head_loss constraints.

@@ -31,8 +31,17 @@ class TestElectrolyzer(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
+        class MILPProblemInequalityWithoutPresolve(MILPProblemInequality):
+            def solver_options(self):
+                options = super().solver_options()
+                options["solver"] = "highs"
+                highs_options = options["highs"] = {}
+                highs_options["presolve"] = "off"
+
+                return options
+
         solution = run_esdl_mesido_optimization(
-            MILPProblemInequality,
+            MILPProblemInequalityWithoutPresolve,
             base_folder=base_folder,
             esdl_file_name="h2.esdl",
             esdl_parser=ESDLFileParser,
@@ -241,8 +250,17 @@ class TestElectrolyzer(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
+        class MILPProblemInequalityWithoutPresolve(MILPProblemInequality):
+            def solver_options(self):
+                options = super().solver_options()
+                options["solver"] = "highs"
+                highs_options = options["highs"] = {}
+                highs_options["presolve"] = "off"
+
+                return options
+
         solution = run_esdl_mesido_optimization(
-            MILPProblemInequality,
+            MILPProblemInequalityWithoutPresolve,
             base_folder=base_folder,
             esdl_file_name="h2.esdl",
             esdl_parser=ESDLFileParser,

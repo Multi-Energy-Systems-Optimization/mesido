@@ -409,30 +409,28 @@ class HeadLossClass:
                 # We need to creat linear line segments for the - and + volumetric flow rate
                 # possibilites. Line number 1, 2, N for the - & + side is created
                 discharge_type = ["neg_discharge", "pos_discharge"]
-                line_number = 0
-                for dtype in discharge_type:
-                    for ii_line in range(network_settings["n_linearization_lines"] * 2):
-                        if ii_line < network_settings["n_linearization_lines"]:
-                            dtype = discharge_type[0]
-                            line_number = ii_line + 1
-                        else:
-                            dtype = discharge_type[1]
-                            line_number = ii_line + 1 - network_settings["n_linearization_lines"]
+                for ii_line in range(network_settings["n_linearization_lines"] * 2):
+                    if ii_line < network_settings["n_linearization_lines"]:
+                        dtype = discharge_type[0]
+                        line_number = ii_line + 1
+                    else:
+                        dtype = discharge_type[1]
+                        line_number = ii_line + 1 - network_settings["n_linearization_lines"]
 
-                        # start line segment numbering from 1 up to "n_linearization_lines"
-                        pipe_linear_line_segment_var_name = (
-                            f"{pipe_name}__pipe_linear_line_segment_num_{line_number}_{dtype}"
-                        )
+                    # start line segment numbering from 1 up to "n_linearization_lines"
+                    pipe_linear_line_segment_var_name = (
+                        f"{pipe_name}__pipe_linear_line_segment_num_{line_number}_{dtype}"
+                    )
 
-                        self._pipe_linear_line_segment_map[pipe_name][
-                            ii_line
-                        ] = pipe_linear_line_segment_var_name
-                        self.__pipe_linear_line_segment_var[pipe_name][
-                            pipe_linear_line_segment_var_name
-                        ] = ca.MX.sym(pipe_linear_line_segment_var_name)
-                        self.__pipe_linear_line_segment_var_bounds[pipe_name][
-                            pipe_linear_line_segment_var_name
-                        ] = (0.0, 1.0)
+                    self._pipe_linear_line_segment_map[pipe_name][
+                        ii_line
+                    ] = pipe_linear_line_segment_var_name
+                    self.__pipe_linear_line_segment_var[pipe_name][
+                        pipe_linear_line_segment_var_name
+                    ] = ca.MX.sym(pipe_linear_line_segment_var_name)
+                    self.__pipe_linear_line_segment_var_bounds[pipe_name][
+                        pipe_linear_line_segment_var_name
+                    ] = (0.0, 1.0)
 
         return (
             (
@@ -767,7 +765,9 @@ class HeadLossClass:
                     big_m_lin = 0.0
                 else:
                     big_m_lin = big_m
-                    constraint_nominal = (constraint_nominal * big_m_lin) ** 0.5
+                    constraint_nominal = np.abs(
+                        head_loss_nominal * (a_vec * q_nominal + b_vec) * big_m
+                    ) ** (1.0 / 3.0)
 
                 constraints = []
 
@@ -1435,6 +1435,15 @@ class HeadLossClass:
                 )
             )
             constraints.append(((dh - head_loss + flow_dir * big_m) / big_m, 0.0, np.inf))
+
+            constraints.append(
+                (
+                    (-dh - head_loss - (1 - flow_dir) * big_m) / big_m,
+                    -np.inf,
+                    0.0,
+                )
+            )
+            constraints.append(((dh - head_loss - flow_dir * big_m) / big_m, -np.inf, 0.0))
 
         return constraints
 
