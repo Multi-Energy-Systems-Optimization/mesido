@@ -91,6 +91,8 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                         if f"{other_pipe}.Q" not in alias_relation.canonical_variables:
                             alias_relation.add(f"{p}.Q", f"{sign_prefix}{other_pipe}.Q")
 
+        node_to_node_logical_link_map = {}
+
         for n in [*nodes, *busses, *gas_nodes]:
             n_connections = [ens_params[f"{n}.n"] for ens_params in parameters]
 
@@ -119,11 +121,13 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                     out_suffix = (
                         ".QTHOut.T" if heat_network_model_type == "QTH" else ".HeatOut.Heat"
                     )
+                    node_suffix = ".HeatConn[1].Heat"
                 elif n in busses:
                     cur_port = f"{n}.ElectricityConn[{i + 1}]"
                     prop = "Power"
                     in_suffix = ".ElectricityIn.Power"
                     out_suffix = ".ElectricityOut.Power"
+                    node_suffix = ".ElectricityConn[1].Power"
                 elif n in gas_nodes:
                     # TODO: Ideally a temporary variable would be created to make the connections
                     #  map that is not passed to the problem
@@ -131,6 +135,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                     prop = "Q"
                     in_suffix = ".GasIn.Q"
                     out_suffix = ".GasOut.Q"
+                    node_suffix = ".GasConn[1].Q"
                 aliases = [
                     x
                     for x in self.alias_relation.aliases(f"{cur_port}.{prop}")
@@ -153,24 +158,41 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                     pipe_name = aliases[k].split(".")[0]
                     if pipe_name + ".GasOut.H" in aliases_h:
                         pipe_out_port = True
+                        node_connection_direction = NodeConnectionDirection.IN
+                    elif pipe_name + ".GasIn.H" in aliases_h:
+                        pipe_out_port = True
+                        node_connection_direction = NodeConnectionDirection.OUT
 
                 if pipe_out_port:
                     # This is only for when a pipe is connected to a gas node to determine direction
                     asset_w_orientation = (
                         pipe_name,
-                        NodeConnectionDirection.IN,
+                        node_connection_direction,
                     )
                 elif out_suffix_count > in_suffix_count:
-
                     asset_w_orientation = (
                         aliases[0][: -len(out_suffix)],
                         NodeConnectionDirection.IN,
                     )
-                else:
+                elif out_suffix_count < in_suffix_count:
                     asset_w_orientation = (
                         aliases[0][: -len(in_suffix)],
                         NodeConnectionDirection.OUT,
                     )
+                elif out_suffix_count == in_suffix_count:
+                    if n not in list(node_to_node_logical_link_map.values()):
+                        node_to_node_logical_link_map[n] = aliases[0][: -len(node_suffix)]
+                        asset_w_orientation = (
+                            aliases[0][: -len(node_suffix)],
+                            NodeConnectionDirection.IN,
+                        )
+                    else:
+                        asset_w_orientation = (
+                            aliases[0][: -len(node_suffix)],
+                            NodeConnectionDirection.OUT,
+                        )
+                else:
+                    logger.error("connections are not properly matched")
 
                 connected_pipes[i] = asset_w_orientation
 

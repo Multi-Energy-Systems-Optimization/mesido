@@ -330,16 +330,36 @@ class _ESDLModelBase(_Model):
             for port in (asset.in_ports[0], asset.out_ports[0]):
                 for connected_to in port.connectedTo.items:
                     conn = (port.id, connected_to.id)
-                    if conn in connections or tuple(reversed(conn)) in connections:
+                    if connected_to.id in list(port_map.keys()) and (
+                        conn in connections or tuple(reversed(conn)) in connections
+                    ):
                         continue
                     if isinstance(port.carrier, esdl.HeatCommodity):
                         if (
-                            assets[
+                            connected_to.id in list(port_map.keys())
+                            and assets[
                                 name_to_id_map[port_map[connected_to.id].name.split(".")[0]]
                             ].asset_type
                             == "Pipe"
                         ):
                             self.connect(getattr(component, node_suf)[i], port_map[connected_to.id])
+                        elif connected_to.id not in list(port_map.keys()):
+                            for node in node_assets:
+                                if connected_to.id in [node.in_ports[0].id, node.out_ports[0].id]:
+                                    connected_node_asset = node
+                                    count = 1
+                                    for ct in [
+                                        *list(node.in_ports[0].connectedTo),
+                                        *list(node.out_ports[0].connectedTo),
+                                    ]:
+                                        if ct.id == port.id:
+                                            idx = count
+                                        else:
+                                            count += 1
+                            self.connect_logical_links(
+                                getattr(component, node_suf)[i],
+                                getattr(getattr(self, connected_node_asset.name), node_suf)[idx],
+                            )
                         else:
                             self.connect_logical_links(
                                 getattr(component, node_suf)[i], port_map[connected_to.id]
@@ -348,13 +368,33 @@ class _ESDLModelBase(_Model):
                         i += 1
                     elif isinstance(port.carrier, esdl.ElectricityCommodity):
                         if (
-                            assets[
+                            connected_to.id in list(port_map.keys())
+                            and assets[
                                 name_to_id_map[port_map[connected_to.id].name.split(".")[0]]
                             ].asset_type
                             == "ElectricityCable"
                         ):
                             self.connect(
                                 getattr(component, elec_node_suf)[i], port_map[connected_to.id]
+                            )
+                        elif connected_to.id not in list(port_map.keys()):
+                            for node in bus_assets:
+                                if connected_to.id in [node.in_ports[0].id, node.out_ports[0].id]:
+                                    connected_node_asset = node
+                                    count = 1
+                                    for ct in [
+                                        *list(node.in_ports[0].connectedTo),
+                                        *list(node.out_ports[0].connectedTo),
+                                    ]:
+                                        if ct.id == port.id:
+                                            idx = count
+                                        else:
+                                            count += 1
+                            self.connect_logical_links(
+                                getattr(component, elec_node_suf)[i],
+                                getattr(getattr(self, connected_node_asset.name), elec_node_suf)[
+                                    idx
+                                ],
                             )
                         else:
                             self.connect_logical_links(
@@ -365,13 +405,33 @@ class _ESDLModelBase(_Model):
                         i += 1
                     elif isinstance(port.carrier, esdl.GasCommodity):
                         if (
-                            assets[
+                            connected_to.id in list(port_map.keys())
+                            and assets[
                                 name_to_id_map[port_map[connected_to.id].name.split(".")[0]]
                             ].asset_type
                             == "Pipe"
                         ):
                             self.connect(
                                 getattr(component, gas_node_suf)[i], port_map[connected_to.id]
+                            )
+                        elif connected_to.id not in list(port_map.keys()):
+                            for node in gas_node_assets:
+                                if connected_to.id in [node.in_ports[0].id, node.out_ports[0].id]:
+                                    connected_node_asset = node
+                                    count = 1
+                                    for ct in [
+                                        *list(node.in_ports[0].connectedTo),
+                                        *list(node.out_ports[0].connectedTo),
+                                    ]:
+                                        if ct.id == port.id:
+                                            idx = count
+                                        else:
+                                            count += 1
+                            self.connect_logical_links(
+                                getattr(component, gas_node_suf)[i],
+                                getattr(getattr(self, connected_node_asset.name), gas_node_suf)[
+                                    idx
+                                ],
                             )
                         else:
                             self.connect_logical_links(

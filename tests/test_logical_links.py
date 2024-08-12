@@ -73,6 +73,23 @@ class TestLogicalLinks(TestCase):
             + results["GasProducer_3573.Gas_source_mass_flow"],
         )
 
+    def test_logical_links_nodes(self):
+
+        import models.unit_cases_gas.source_pipe_split_sink.src.run_source_sink as example
+        from models.unit_cases_gas.source_pipe_split_sink.src.run_source_sink import GasProblem
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        problem = run_esdl_mesido_optimization(
+            GasProblem,
+            esdl_file_name="split_with_logical_link.esdl",
+            base_folder=base_folder,
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries.csv",
+        )
+        _ = problem.extract_results()
+
     def test_logical_links_network_hybrid(self):
         """
         This test checks if the logic implemented for logically linked energy system, Meaning an
