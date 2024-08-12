@@ -88,7 +88,23 @@ class TestLogicalLinks(TestCase):
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries.csv",
         )
-        _ = problem.extract_results()
+        results = problem.extract_results()
+
+        # We check that no artificial gas in created
+        np.testing.assert_allclose(
+            results["GasProducer_0876.GasOut.Q"], results["GasDemand_a2d8.GasIn.Q"]
+        )
+
+        # We test conservaiton of flow at the nodes
+        for node, connected_pipes in problem.energy_system_topology.gas_nodes.items():
+            discharge_sum = 0.0
+
+            for i_conn, (_pipe, orientation) in connected_pipes.items():
+                discharge_sum += results[f"{node}.GasConn[{i_conn+1}].Q"] * orientation
+                np.testing.assert_allclose(
+                    results[f"{node}.GasConn[{i_conn+1}].H"], results[f"{node}.H"], atol=1.0e-6
+                )
+            np.testing.assert_allclose(discharge_sum, 0.0, atol=1.0e-12)
 
     def test_logical_links_network_hybrid(self):
         """
