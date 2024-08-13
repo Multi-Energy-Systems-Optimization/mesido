@@ -76,6 +76,9 @@ class PipeDiameterSizingProblem(
         return options
 
     def pipe_classes(self, pipe):
+        # Do not delete pipeclass DN40, locally it runs with DN40, but in pipeline it seems
+        # that scaling is a bit too much off resulting in infeasibility probably because of
+        # machine accuracy. If scaling can be improved DN40 can be included again.
         return [
             PipeClass("None", 0.0, 0.0, (0.0, 0.0), 0.0),
             # PipeClass("DN40", 0.0431, 1.5, (0.179091, 0.005049), 1.0),
