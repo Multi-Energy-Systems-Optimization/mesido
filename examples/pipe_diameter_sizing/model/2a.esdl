@@ -182,7 +182,7 @@
         <port xsi:type="esdl:InPort" name="In" id="1ae4c886-3078-4a01-a126-43e5a5738eac" carrier="76160f2d-374c-4df5-9bee-20ff805124f8" connectedTo="01b0f5de-4f35-496b-88c9-d0ae8c59aec7"/>
         <port xsi:type="esdl:OutPort" name="Out" connectedTo="874dc021-09f4-46ec-bb5a-c3276916fbfd" id="3f7958f8-88e8-47f3-ae8d-b5cd4ce92093" carrier="76160f2d-374c-4df5-9bee-20ff805124f8"/>
       </asset>
-      <asset xsi:type="esdl:HeatingDemand" minTemperature="70.0" name="HeatingDemand_7484" id="74846440-61d9-4f57-9bce-77e3664ba832" power="1000000.0">
+      <asset xsi:type="esdl:HeatingDemand" minTemperature="70.0" name="HeatingDemand_7484" id="74846440-61d9-4f57-9bce-77e3664ba832" power="10000000.0">
         <geometry xsi:type="esdl:Point" lat="51.9894259117724" lon="4.382386207580567"/>
         <port xsi:type="esdl:InPort" name="In" id="b145eba8-612d-42b7-bea7-7e22a2440509" carrier="76160f2d-374c-4df5-9bee-20ff805124f8" connectedTo="00f134de-804f-4ac4-b829-5e44fc433791">
           <profile xsi:type="esdl:SingleValue" id="5317d120-2e6e-415d-a3bc-bdd6268997d3" value="0.3">
@@ -191,7 +191,7 @@
         </port>
         <port xsi:type="esdl:OutPort" name="Out" connectedTo="acbb3410-c6a6-4495-bf02-2c2f259d40ca" id="a77a0773-d214-40bf-b424-9dfcb7b26667" carrier="76160f2d-374c-4df5-9bee-20ff805124f8_ret"/>
       </asset>
-      <asset xsi:type="esdl:HeatingDemand" minTemperature="70.0" name="HeatingDemand_c6c8" id="c6c8d8f7-b6ae-4e8b-be9a-72282a5c3f1e" power="1000000.0">
+      <asset xsi:type="esdl:HeatingDemand" minTemperature="70.0" name="HeatingDemand_c6c8" id="c6c8d8f7-b6ae-4e8b-be9a-72282a5c3f1e" power="10000000.0">
         <geometry xsi:type="esdl:Point" lat="51.988144156533934" CRS="WGS84" lon="4.382386207580567"/>
         <port xsi:type="esdl:InPort" name="In" id="874dc021-09f4-46ec-bb5a-c3276916fbfd" carrier="76160f2d-374c-4df5-9bee-20ff805124f8" connectedTo="3f7958f8-88e8-47f3-ae8d-b5cd4ce92093">
           <profile xsi:type="esdl:SingleValue" id="5317d120-2e6e-415d-a3bc-bdd6268997d3" value="0.3">
@@ -200,7 +200,7 @@
         </port>
         <port xsi:type="esdl:OutPort" name="Out" connectedTo="b43e5090-a0f4-4cfa-877f-c2e75afc2c2f" id="fc3a02e2-fe94-4641-b94b-99161215f0a8" carrier="76160f2d-374c-4df5-9bee-20ff805124f8_ret"/>
       </asset>
-      <asset xsi:type="esdl:HeatingDemand" minTemperature="70.0" name="HeatingDemand_6f99" id="6f99424a-004e-4fb4-8edb-17c374d5be6b" power="1000000.0">
+      <asset xsi:type="esdl:HeatingDemand" minTemperature="70.0" name="HeatingDemand_6f99" id="6f99424a-004e-4fb4-8edb-17c374d5be6b" power="10000000.0">
         <geometry xsi:type="esdl:Point" lat="51.984576191039736" lon="4.382514953613282"/>
         <port xsi:type="esdl:InPort" name="In" id="30713528-878b-46fd-82e2-9da8eb95075e" carrier="76160f2d-374c-4df5-9bee-20ff805124f8" connectedTo="3b1e06ac-9998-4c62-8764-7e582bd478bc">
           <profile xsi:type="esdl:SingleValue" id="5317d120-2e6e-415d-a3bc-bdd6268997d3" value="0.3">
