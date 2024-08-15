@@ -160,6 +160,8 @@ class EndScenarioSizing(
 
         self._save_json = False
 
+        self._asset_potential_errors = dict()
+
     def parameters(self, ensemble_member):
         parameters = super().parameters(ensemble_member)
         parameters["peak_day_index"] = self.__indx_max_peak
@@ -178,6 +180,18 @@ class EndScenarioSizing(
         except for the day with the peak demand.
         """
         super().read()
+
+        # Error checking:
+        # - installed capacity/power of a heating demand is sufficient for the specified heat
+        #   demand profile
+        for key, vals in self._asset_potential_errors.items():
+            if "heat_demand.power" in key:
+                for val in vals:
+                    print(val)
+                logger.error(
+                    "Heating demand insufficient installed capacity: please increase the installed"
+                    "power or reduce the demand profile peak value of the demands listed.")
+                exit(1)
 
         (
             self.__indx_max_peak,
