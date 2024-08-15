@@ -190,7 +190,8 @@ class EndScenarioSizing(
                     print(val)
                 logger.error(
                     "Heating demand insufficient installed capacity: please increase the installed"
-                    "power or reduce the demand profile peak value of the demands listed.")
+                    " power or reduce the demand profile peak value of the demands listed."
+                )
                 exit(1)
 
         (
