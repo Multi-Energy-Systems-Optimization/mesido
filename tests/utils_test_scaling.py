@@ -5,7 +5,7 @@ import re
 from rtctools._internal.debug_check_helpers import DebugLevel
 
 
-def create_log_list_scaling():
+def create_log_list_scaling(logger_name):
     """
     Creation of a list for the logs which will be filled with the logging information of the
     problem.
@@ -26,7 +26,7 @@ def create_log_list_scaling():
 
     logs_list = []
 
-    logger = logging.getLogger("rtctools")
+    logger = logging.getLogger(logger_name)
     logger.setLevel(logging.INFO)
 
     logger.addHandler(LogRecordsListHandler(logs_list))
@@ -44,7 +44,7 @@ def create_problem_with_debug_info(problem_class):
     The problem class including its debuglevel and the logging list and logger.
     """
     # TODO: currently only the default settings can be used to check the scaling.
-    logger, logs_list = create_log_list_scaling()
+    logger, logs_list = create_log_list_scaling("rtctools")
 
     class ProblemClassScaling(problem_class):
         _debug_check_level = DebugLevel.VERYHIGH
