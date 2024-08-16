@@ -184,15 +184,17 @@ class EndScenarioSizing(
         # Error checking:
         # - installed capacity/power of a heating demand is sufficient for the specified heat
         #   demand profile
-        for key, vals in self._asset_potential_errors.items():
-            if "heat_demand.power" in key:
-                for val in vals:
-                    print(val)
-                logger.error(
-                    "Heating demand insufficient installed capacity: please increase the installed"
-                    " power or reduce the demand profile peak value of the demands listed."
-                )
-                exit(1)
+        for error_type, errors in self._asset_potential_errors.items():
+            if "heat_demand.power" in error_type:
+                if len(errors) > 0:
+                    for asset_name in errors:
+                        print(self._asset_potential_errors[error_type][asset_name])
+                    logger.error(
+                        "Heating demand insufficient installed capacity: please increase the"
+                        "installed power or reduce the demand profile peak value of the demands"
+                        " listed."
+                    )
+                    exit(1)
 
         (
             self.__indx_max_peak,

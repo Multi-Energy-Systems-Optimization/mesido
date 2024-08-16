@@ -101,7 +101,9 @@ class BaseProfileReader:
         )
 
         # Define variable containing potential error information
-        asset_potential_errors = {"heat_demand.power": []}
+        asset_potential_errors = {
+            "heat_demand.power": {},  # error type, heat demand name, error message
+        }
 
         for ensemble_member in range(ensemble_size):
             for component_type, var_name in self.component_type_to_var_name_map.items():
@@ -129,13 +131,14 @@ class BaseProfileReader:
                         ensemble_member=ensemble_member,
                     )
                     # Check if the installed heat demand capacity is sufficient
-                    if "heat_demand" in component_type:
+                    if "heat_demand" == component_type:
                         max_profile_value = max(values)
                         if asset_power < max_profile_value:
-                            asset_potential_errors[f"{component_type}.power"].append(
-                                f"{component}: The installed capacity of {asset_power}[W] should be"
-                                " larger than the maximum of the heat demand profile "
-                                f"{round(max_profile_value,1)}[W]"
+                            asset_potential_errors[f"{component_type}.power"][component] = (
+                                f"{component}: The installed capacity of"
+                                f" {round(asset_power / 1.0e6, 3)} MW should be larger than the"
+                                " maximum of the heat demand profile "
+                                f"{round(max_profile_value / 1.0e6, 3)}MW"
                             )
             for properties in carrier_properties.values():
                 carrier_name = properties["name"]
