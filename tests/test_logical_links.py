@@ -7,7 +7,7 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
-from utils_tests import demand_matching_test
+from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
 class TestLogicalLinks(TestCase):
@@ -113,6 +113,56 @@ class TestLogicalLinks(TestCase):
                 discharge_sum += results[f"{node}.GasConn[{i_conn+1}].Q"] * orientation
                 np.testing.assert_allclose(
                     results[f"{node}.GasConn[{i_conn+1}].H"], results[f"{node}.H"], atol=1.0e-6
+                )
+            np.testing.assert_allclose(discharge_sum, 0.0, atol=1.0e-12)
+
+    def test_logical_links_nodes_heat(self):
+        """
+        This test checks if the logic implemented for a partially logically linked energy system.
+        Meaning an energy system where assets are directly connected to each other without a network
+        (transport asset(s)) in between. This specific test covers the logical connection between
+        two nodes in a heat network. Please note that due to the closed system constraints we need
+        to set the minimum velocity to zero to avoid backflow in the solution.
+        """
+
+        import models.source_pipe_split_sink.src.double_pipe_heat as example
+        from models.source_pipe_split_sink.src.double_pipe_heat import SourcePipeSink
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        class TestClass(SourcePipeSink):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.heat_network_settings["minimum_velocity"] = 0.
+
+            def path_constraints(self, ensemble_member):
+                constraints = super().path_constraints(ensemble_member)
+                # for debugging
+                constraints.append((self.state("Pipe4.Q"), 0., 0.))
+                return constraints
+
+        problem = run_esdl_mesido_optimization(
+            TestClass,
+            esdl_file_name="sourcesinksplit_with_logical_link.esdl",
+            base_folder=base_folder,
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.csv",
+        )
+        results = problem.extract_results()
+
+        demand_matching_test(problem, results)
+        energy_conservation_test(problem, results)
+        heat_to_discharge_test(problem, results)
+
+        # We test conservaiton of flow at the nodes
+        for node, connected_pipes in problem.energy_system_topology.nodes.items():
+            discharge_sum = 0.0
+
+            for i_conn, (_pipe, orientation) in connected_pipes.items():
+                discharge_sum += results[f"{node}.HeatConn[{i_conn+1}].Q"] * orientation
+                np.testing.assert_allclose(
+                    results[f"{node}.HeatConn[{i_conn+1}].H"], results[f"{node}.H"], atol=1.0e-6
                 )
             np.testing.assert_allclose(discharge_sum, 0.0, atol=1.0e-12)
 
