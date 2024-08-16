@@ -133,12 +133,12 @@ class TestLogicalLinks(TestCase):
         class TestClass(SourcePipeSink):
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
-                self.heat_network_settings["minimum_velocity"] = 0.
+                self.heat_network_settings["minimum_velocity"] = 0.0
 
             def path_constraints(self, ensemble_member):
                 constraints = super().path_constraints(ensemble_member)
                 # for debugging
-                constraints.append((self.state("Pipe4.Q"), 0., 0.))
+                constraints.append((self.state("Pipe4.Q"), 0.0, 0.0))
                 return constraints
 
         problem = run_esdl_mesido_optimization(
