@@ -496,27 +496,6 @@ class _AssetToComponentBase:
                 f"Tried to get the maximum flow for {asset.name}, however this was never set"
             )
 
-        # if asset.in_ports is None or asset.asset_type == "Electrolyzer":
-        #     connected_port = asset.out_ports[0].connectedTo[0]
-        #     q_max = self._port_to_q_max.get(connected_port, None)
-        #     if q_max is not None:
-        #         self._set_q_nominal(asset, q_max)
-        #         return q_max
-        #     else:
-        #         raise _RetryLaterException(
-        #             f"Could not determine max discharge for {asset.asset_type} '{asset.name}'"
-        #         )
-        # elif asset.out_ports is None:
-        #     connected_port = asset.in_ports[0].connectedTo[0]
-        #     q_max = self._port_to_q_max.get(connected_port, None)
-        #     if q_max is not None:
-        #         self._set_q_max(asset, q_max)
-        #         return q_max
-        #     else:
-        #         raise _RetryLaterException(
-        #             f"Could not determine max discharge for {asset.asset_type} '{asset.name}'"
-        #         )
-
     def _get_connected_i_nominal_and_max(self, asset: Asset) -> Tuple[float, float]:
 
         if (

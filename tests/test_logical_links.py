@@ -76,6 +76,12 @@ class TestLogicalLinks(TestCase):
         )
 
     def test_logical_links_nodes(self):
+        """
+        This test checks if the logic implemented for a partially logically linked energy system.
+        Meaning an energy system where assets are directly connected to each other without a network
+        (transport asset(s)) in between. This specific test covers the logical connection between
+        two nodes.
+        """
 
         import models.unit_cases_gas.source_pipe_split_sink.src.run_source_sink as example
         from models.unit_cases_gas.source_pipe_split_sink.src.run_source_sink import GasProblem
@@ -114,7 +120,8 @@ class TestLogicalLinks(TestCase):
         """
         This test checks if the logic implemented for logically linked energy system, Meaning an
         energy system where assets are directly connected to each other without a network
-        (transport asset(s)) in between.
+        (transport asset(s)) in between. This test uses the emerge use-case and the logic is both
+        checked for the gas and heat commodity.
 
         Checks:
         1. Check that energy is conserved
