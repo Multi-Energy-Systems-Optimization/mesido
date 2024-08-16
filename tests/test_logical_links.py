@@ -7,6 +7,8 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
+from utils_tests import demand_matching_test
+
 
 class TestLogicalLinks(TestCase):
     def test_logical_links_electricity(self):
@@ -89,6 +91,8 @@ class TestLogicalLinks(TestCase):
             input_timeseries_file="timeseries.csv",
         )
         results = problem.extract_results()
+
+        demand_matching_test(problem, results)
 
         # We check that no artificial gas in created
         np.testing.assert_allclose(

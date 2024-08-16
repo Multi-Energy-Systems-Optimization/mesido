@@ -117,24 +117,33 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                 if n in nodes:
                     cur_port = f"{n}.{heat_network_model_type}Conn[{i + 1}]"
                     prop = "T" if heat_network_model_type == "QTH" else "Heat"
+                    prop_h = "H"
                     in_suffix = ".QTHIn.T" if heat_network_model_type == "QTH" else ".HeatIn.Heat"
                     out_suffix = (
                         ".QTHOut.T" if heat_network_model_type == "QTH" else ".HeatOut.Heat"
                     )
+                    in_suffix_h = ".HeatIn.H"
+                    out_suffix_h = ".HeatOut.H"
                     node_suffix = ".HeatConn[1].Heat"
                 elif n in busses:
                     cur_port = f"{n}.ElectricityConn[{i + 1}]"
                     prop = "Power"
+                    prop_h = "V"
                     in_suffix = ".ElectricityIn.Power"
                     out_suffix = ".ElectricityOut.Power"
+                    in_suffix_h = ".ElectricityIn.V"
+                    out_suffix_h = ".ElectricityOut.V"
                     node_suffix = ".ElectricityConn[1].Power"
                 elif n in gas_nodes:
                     # TODO: Ideally a temporary variable would be created to make the connections
                     #  map that is not passed to the problem
                     cur_port = f"{n}.GasConn[{i + 1}]"
                     prop = "Q"
+                    prop_h = "H"
                     in_suffix = ".GasIn.Q"
                     out_suffix = ".GasOut.Q"
+                    in_suffix_h = ".GasIn.H"
+                    out_suffix_h = ".GasOut.H"
                     node_suffix = ".GasConn[1].Q"
                 aliases = [
                     x
@@ -145,21 +154,28 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                 if len(aliases) == 0:
                     raise Exception(f"Found no connection to {cur_port}")
 
+                # Here we make a count of the amount of in and out port aliases.
                 in_suffix_count = np.sum([1 if x.endswith(in_suffix) else 0 for x in aliases])
                 out_suffix_count = np.sum([1 if x.endswith(out_suffix) else 0 for x in aliases])
 
+                # Here we gather the aliases for a property that is equal for all node ports.
                 aliases_h = [
                     x
-                    for x in self.alias_relation.aliases(f"{cur_port}.H")
-                    if not x.startswith(n) and x.endswith(".H")
+                    for x in self.alias_relation.aliases(f"{cur_port}.{prop_h}")
+                    if not x.startswith(n) and x.endswith(f".{prop_h}")
                 ]
                 pipe_out_port = False
+                # We can have multiple aliases, specifically when a pipe is connected to a port the
+                # direction of that pipe matters. To determine if the connected alias is a pipe and
+                # which direction it has we look for the overlap between the prop and prop_h in the
+                # aliases. This means that if a pipe is both in the aliases and in the aliases_h,
+                # then that must be the pipe connected to the port of the node.
                 for k in range(len(aliases)):
                     pipe_name = aliases[k].split(".")[0]
-                    if pipe_name + ".GasOut.H" in aliases_h:
+                    if pipe_name + out_suffix_h in aliases_h:
                         pipe_out_port = True
                         node_connection_direction = NodeConnectionDirection.IN
-                    elif pipe_name + ".GasIn.H" in aliases_h:
+                    elif pipe_name + in_suffix_h in aliases_h:
                         pipe_out_port = True
                         node_connection_direction = NodeConnectionDirection.OUT
 
@@ -170,16 +186,22 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                         node_connection_direction,
                     )
                 elif out_suffix_count > in_suffix_count:
+                    # This is for the case of Non pipe asset is logically linked to a node
                     asset_w_orientation = (
                         aliases[0][: -len(out_suffix)],
                         NodeConnectionDirection.IN,
                     )
                 elif out_suffix_count < in_suffix_count:
+                    # This is for the case of Non pipe asset is logically linked to a node
                     asset_w_orientation = (
                         aliases[0][: -len(in_suffix)],
                         NodeConnectionDirection.OUT,
                     )
                 elif out_suffix_count == in_suffix_count:
+                    # This is for the case of logical links between node to node
+                    # Note that we cannot determine the direction of node to node logical links, we
+                    # therefore, always take the first node with an in port and the second node with
+                    # and out port.
                     if n not in list(node_to_node_logical_link_map.values()):
                         node_to_node_logical_link_map[n] = aliases[0][: -len(node_suffix)]
                         asset_w_orientation = (

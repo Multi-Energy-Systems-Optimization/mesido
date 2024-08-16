@@ -59,6 +59,9 @@ class _ESDLModelBase(_Model):
             else:
                 assets_other[name] = properties
 
+        # We create an assets sorted to first loop over specific assets (the transport assets),
+        # before parsing the other assets. This is because the properties of the transport assets
+        # are used to set nominals for other assets that are then parsed later.
         assets_sorted = {}
         assets_sorted.update(assets_transport)
         assets_sorted.update(assets_other)
@@ -330,11 +333,18 @@ class _ESDLModelBase(_Model):
             for port in (asset.in_ports[0], asset.out_ports[0]):
                 for connected_to in port.connectedTo.items:
                     conn = (port.id, connected_to.id)
+                    # Here we skip the adding of the connection if we already had the reverse
+                    # connection. Note that we don't do that for logical links between nodes, as we
+                    # need both connections in order to make the topology object in
+                    # component_type_mixin.py.
                     if connected_to.id in list(port_map.keys()) and (
                         conn in connections or tuple(reversed(conn)) in connections
                     ):
                         continue
                     if isinstance(port.carrier, esdl.HeatCommodity):
+                        # First we check if the connected_to.id is in the port_map and if the
+                        # connected aasset is of type Pipe. In this case we want to fully connect
+                        # the model with head losses and hydraulic power.
                         if (
                             connected_to.id in list(port_map.keys())
                             and assets[
@@ -344,6 +354,10 @@ class _ESDLModelBase(_Model):
                         ):
                             self.connect(getattr(component, node_suf)[i], port_map[connected_to.id])
                         elif connected_to.id not in list(port_map.keys()):
+                            # If The asset is not in the
+                            # port map means that there is a direct node to node connection with a
+                            # logical link. Here we need to do some tricks to recover the correct
+                            # port index of the node.
                             for node in node_assets:
                                 if connected_to.id in [node.in_ports[0].id, node.out_ports[0].id]:
                                     connected_node_asset = node
@@ -361,12 +375,15 @@ class _ESDLModelBase(_Model):
                                 getattr(getattr(self, connected_node_asset.name), node_suf)[idx],
                             )
                         else:
+                            # If the Connected asset is not of type pipe, there might be
+                            # logical link like source to node.
                             self.connect_logical_links(
                                 getattr(component, node_suf)[i], port_map[connected_to.id]
                             )
                         connections.add(conn)
                         i += 1
                     elif isinstance(port.carrier, esdl.ElectricityCommodity):
+                        # Same logic as for heat see comments there
                         if (
                             connected_to.id in list(port_map.keys())
                             and assets[
@@ -404,6 +421,7 @@ class _ESDLModelBase(_Model):
                         connections.add(conn)
                         i += 1
                     elif isinstance(port.carrier, esdl.GasCommodity):
+                        # Same logic as for heat see comments there
                         if (
                             connected_to.id in list(port_map.keys())
                             and assets[
