@@ -130,20 +130,9 @@ class TestLogicalLinks(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
-        class TestClass(SourcePipeSink):
-            def __init__(self, *args, **kwargs):
-                super().__init__(*args, **kwargs)
-                self.heat_network_settings["minimum_velocity"] = 0.0
-
-            def path_constraints(self, ensemble_member):
-                constraints = super().path_constraints(ensemble_member)
-                # for debugging
-                constraints.append((self.state("Pipe4.Q"), 0.0, 0.0))
-                return constraints
-
         problem = run_esdl_mesido_optimization(
-            TestClass,
-            esdl_file_name="sourcesinksplit_with_logical_link.esdl",
+            SourcePipeSink,
+            esdl_file_name="sourcesink_with_node2node_logical_link.esdl",
             base_folder=base_folder,
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
