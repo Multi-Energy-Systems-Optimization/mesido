@@ -17,7 +17,7 @@
   </energySystemInformation>
   <instance xsi:type="esdl:Instance" id="22cf0465-ceef-486a-b8d0-278c131cbece" name="Untitled Instance">
     <area xsi:type="esdl:Area" name="Untitled Area" id="a5845d28-ed01-4f32-91dc-654632ecc997">
-      <asset xsi:type="esdl:HeatingDemand" minTemperature="70.0" power="6000000000.0" name="HeatingDemand_2ab9" id="2ab92324-f86e-4976-9a6e-f7454b77ba3c">
+      <asset xsi:type="esdl:HeatingDemand" minTemperature="70.0" power="6000000.0" name="HeatingDemand_2ab9" id="2ab92324-f86e-4976-9a6e-f7454b77ba3c">
         <geometry xsi:type="esdl:Point" lon="4.38157081604004" lat="51.98612564800895"/>
         <port xsi:type="esdl:InPort" connectedTo="95f46ccf-bac8-4a44-a854-2bbe2fb3c5e6" id="3f514c6b-fd11-4821-9e6c-4a4d13d46762" carrier="c362f53a-3eaf-4d96-8ee6-944e77359fed" name="In">
           <profile xsi:type="esdl:InfluxDBProfile" endDate="2019-01-03T01:00:00.000000+0000" field="demand1_MW" measurement="Unittests profiledata" database="energy_profiles" id="6ebbcb9b-aafa-4890-bda8-0d3f97ea5d17" multiplier="1.0" startDate="2019-01-01T01:00:00.000000+0000" filters="" host="wu-profiles.esdl-beta.hesi.energy" port="443">
@@ -26,7 +26,7 @@
         </port>
         <port xsi:type="esdl:OutPort" id="d86d3ed7-77d8-4766-bfa1-ed9209edf0b6" connectedTo="75a9a056-987d-41dc-9ecf-ca3edfef31d8" carrier="c362f53a-3eaf-4d96-8ee6-944e77359fed_ret" name="Out"/>
       </asset>
-      <asset xsi:type="esdl:HeatingDemand" minTemperature="70.0" power="2000000000.0" name="HeatingDemand_6662" id="6662aebb-f85e-4df3-9f7e-c58993586fba">
+      <asset xsi:type="esdl:HeatingDemand" minTemperature="70.0" power="2000000.0" name="HeatingDemand_6662" id="6662aebb-f85e-4df3-9f7e-c58993586fba">
         <geometry xsi:type="esdl:Point" lon="4.381640553474427" lat="51.985484727746204" CRS="WGS84"/>
         <port xsi:type="esdl:InPort" connectedTo="99e5f517-4fbb-4e1e-89e2-606f1121adeb" id="5f607bc1-31a6-4bc8-8911-aefd4d2cfc4d" carrier="c362f53a-3eaf-4d96-8ee6-944e77359fed" name="In">
           <profile xsi:type="esdl:InfluxDBProfile" endDate="2019-01-03T01:00:00.000000+0000" field="demand3_MW" measurement="Unittests profiledata" database="energy_profiles" id="00f2273a-6e8f-4d92-b61b-8b938367480c" multiplier="1.0" startDate="2019-01-01T01:00:00.000000+0000" filters="" host="wu-profiles.esdl-beta.hesi.energy" port="443">
@@ -126,7 +126,7 @@
         <port xsi:type="esdl:InPort" connectedTo="061f1df2-f724-4b08-aa5f-6f19b06c2f92" id="df318cbd-81f2-467c-a081-7feb4256dbfa" carrier="c362f53a-3eaf-4d96-8ee6-944e77359fed" name="In"/>
         <port xsi:type="esdl:OutPort" id="c9d98764-3e85-4676-9504-73f7eeb242f5" connectedTo="ee56b88f-a264-4389-ba57-6f2b52a05e1c" carrier="c362f53a-3eaf-4d96-8ee6-944e77359fed" name="Out"/>
       </asset>
-      <asset xsi:type="esdl:HeatingDemand" minTemperature="70.0" power="2000000000.0" name="HeatingDemand_506c" id="506c41ac-d415-4482-bf10-bf12f17aeac6">
+      <asset xsi:type="esdl:HeatingDemand" minTemperature="70.0" power="2000000.0" name="HeatingDemand_506c" id="506c41ac-d415-4482-bf10-bf12f17aeac6">
         <geometry xsi:type="esdl:Point" lon="4.381629824638368" lat="51.98578206302921" CRS="WGS84"/>
         <port xsi:type="esdl:InPort" connectedTo="c9d98764-3e85-4676-9504-73f7eeb242f5" id="ee56b88f-a264-4389-ba57-6f2b52a05e1c" carrier="c362f53a-3eaf-4d96-8ee6-944e77359fed" name="In">
           <profile xsi:type="esdl:InfluxDBProfile" endDate="2019-01-03T01:00:00.000000+0000" field="demand2_MW" measurement="Unittests profiledata" database="energy_profiles" id="1b52c372-f877-437d-b2e3-fa9f35ef6093" multiplier="1.0" startDate="2019-01-01T01:00:00.000000+0000" filters="" host="wu-profiles.esdl-beta.hesi.energy" port="443">

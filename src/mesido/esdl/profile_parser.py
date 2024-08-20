@@ -100,10 +100,19 @@ class BaseProfileReader:
             zip(esdl_asset_id_to_name_map.values(), esdl_asset_id_to_name_map.keys())
         )
 
+        # Define variable containing potential error information
+        asset_potential_errors = {
+            "heat_demand.power": {},  # error type, heat demand name, error message
+            "cold_demand.power": {},  # error type, cold demand name, error message
+        }
+
         for ensemble_member in range(ensemble_size):
             for component_type, var_name in self.component_type_to_var_name_map.items():
                 for component in energy_system_components.get(component_type, []):
                     profile = self._profiles[ensemble_member].get(component + var_name, None)
+                    asset_power = esdl_assets[esdl_asset_names_to_ids[component]].attributes[
+                        "power"
+                    ]
                     if profile is not None:
                         values = profile
                     else:
@@ -114,9 +123,6 @@ class BaseProfileReader:
                             f"No profile provided for {component=} and "
                             f"{ensemble_member=}, using the assets power value instead"
                         )
-                        asset_power = esdl_assets[esdl_asset_names_to_ids[component]].attributes[
-                            "power"
-                        ]
                         values = np.array([asset_power] * len(self._reference_datetimes))
 
                     io.set_timeseries(
@@ -125,6 +131,17 @@ class BaseProfileReader:
                         values=values,
                         ensemble_member=ensemble_member,
                     )
+                    # Check if that the installed heat/cool demand capacity is sufficient
+                    if component_type in ["heat_demand", "cold_demand"]:
+                        max_profile_value = max(values)
+                        if asset_power < max_profile_value:
+                            asset_potential_errors[f"{component_type}.power"][component] = (
+                                f"{component}: The installed capacity of"
+                                f" {round(asset_power / 1.0e6, 3)}MW should be larger than the"
+                                " maximum of the heat demand profile "
+                                f"{round(max_profile_value / 1.0e6, 3)}MW"
+                            )
+
             for properties in carrier_properties.values():
                 carrier_name = properties["name"]
                 profile = self._profiles[ensemble_member].get(
@@ -140,6 +157,7 @@ class BaseProfileReader:
                         values=profile,
                         ensemble_member=ensemble_member,
                     )
+        return asset_potential_errors
 
     def _load_profiles_from_source(
         self,

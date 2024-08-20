@@ -7,10 +7,54 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
+from utils_test_scaling import create_log_list_scaling
+
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
 class TestColdDemand(TestCase):
+
+    def test_insufficient_capacity(self):
+        """
+        This test checks that the error checks in the code for sufficient installed cool/heatig
+        capacity of a cold/heat demand is sufficient (grow_workflow not used)
+
+        Checks:
+        1. SystemExit is raised
+        2. That the error is due to insufficient heat/cold specified capacities
+
+        """
+        import models.wko.src.example as example
+        from models.wko.src.example import HeatProblem
+
+        logger, logs_list = create_log_list_scaling("WarmingUP-MPC")
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        with self.assertRaises(SystemExit) as cm:
+            _ = run_esdl_mesido_optimization(
+                HeatProblem,
+                base_folder=base_folder,
+                esdl_file_name="LT_wko_error_check.esdl",
+                esdl_parser=ESDLFileParser,
+                profile_reader=ProfileReaderFromFile,
+                input_timeseries_file="timeseries.csv",
+            )
+        # Is SystemExit is raised
+        np.testing.assert_array_equal(cm.exception.code, 1)
+
+        # Check that the heat & cold demand had an error
+        np.testing.assert_equal(
+            logs_list[0].msg == "HeatingDemand_9b90: The installed capacity of 0.05MW should be"
+            " larger than the maximum of the heat demand profile 0.15MW",
+            True,
+        )
+        np.testing.assert_equal(
+            logs_list[2].msg == "CoolingDemand_15e8: The installed capacity of 0.05MW should be"
+            " larger than the maximum of the heat demand profile 0.15MW",
+            True,
+        )
+
     def test_cold_demand(self):
         """
         This test is to check the basic physics for a network which includes cold demand. In this
@@ -208,4 +252,6 @@ class TestColdDemand(TestCase):
 
 if __name__ == "__main__":
     test_cold_demand = TestColdDemand()
+    test_cold_demand.test_insufficient_capacity()
+    test_cold_demand.test_cold_demand()
     test_cold_demand.test_wko()
