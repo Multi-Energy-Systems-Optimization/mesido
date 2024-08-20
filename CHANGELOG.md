@@ -1,10 +1,10 @@
-# [Unreleased] - 2024-08-16
+# [Unreleased] - 2024-08-20
 
 ## Added
-- xxxx 
+- Functionality to connect assets with logical links 
 
 ## Changed
-- xxxx 
+- Replaced Retry loop to connect all assets and apply the correct modifiers of the linked assets
  
 ## Fixed
 - xxxx 
