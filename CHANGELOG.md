@@ -5,7 +5,6 @@
 - Functionality to connect assets with logical links 
 
 ## Changed
-- Test cases
 - Increased time limit for stage 1, priority 1
 - Replaced Retry loop to connect all assets and apply the correct modifiers of the linked assets
  
