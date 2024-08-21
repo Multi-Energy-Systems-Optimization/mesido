@@ -460,17 +460,6 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             q_nominal = np.median(q_nominals)
             constraints.append((q_sum / q_nominal, 0.0, 0.0))
 
-            q_sum = 0.0
-            q_nominals = []
-
-            for i_conn, (_pipe, orientation) in connected_pipes.items():
-                gas_conn = f"{node}.GasConn[{i_conn + 1}].Q_shadow"
-                q_sum += orientation * self.state(gas_conn)
-                q_nominals.append(self.variable_nominal(gas_conn))
-
-            q_nominal = np.median(q_nominals)
-            constraints.append((q_sum / q_nominal, 0.0, 0.0))
-
         return constraints
 
     def __gas_node_hydraulic_power_mixing_path_constraints(self, ensemble_member):

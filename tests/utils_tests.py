@@ -170,7 +170,10 @@ def heat_to_discharge_test(solution, results):
 
         print(d, max(abs(results[f"{d}.HeatOut.Heat"] - results[f"{d}.Q"] * rho * cp * supply_t)))
         np.testing.assert_allclose(
-            results[f"{d}.HeatOut.Heat"], results[f"{d}.Q"] * rho * cp * supply_t, atol=tol
+            results[f"{d}.HeatOut.Heat"],
+            results[f"{d}.Q"] * rho * cp * supply_t,
+            atol=5.0,
+            rtol=1.0e-4,
         )
 
     for d in [

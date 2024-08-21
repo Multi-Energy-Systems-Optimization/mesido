@@ -13,8 +13,8 @@ class ElectricityPort(ElectricityComponent, Connector):
         super().__init__(name, **modifiers)
 
         self.add_variable(Variable, "Power")
-        self.add_variable(Variable, "V", min=0.0)
         self.add_variable(Variable, "I")
+        self.add_variable(Variable, "V", min=0.0)
 
 
 class ElectricityTwoPort(ElectricityComponent):
