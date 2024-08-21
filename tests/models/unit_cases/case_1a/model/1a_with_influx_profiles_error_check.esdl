@@ -17,7 +17,7 @@
   </energySystemInformation>
   <instance xsi:type="esdl:Instance" id="22cf0465-ceef-486a-b8d0-278c131cbece" name="Untitled Instance">
     <area xsi:type="esdl:Area" name="Untitled Area" id="a5845d28-ed01-4f32-91dc-654632ecc997">
-      <asset xsi:type="esdl:HeatingDemand" minTemperature="70.0" power="6000000.0" name="HeatingDemand_2ab9" id="2ab92324-f86e-4976-9a6e-f7454b77ba3c">
+      <asset xsi:type="esdl:GenericConsumer" minTemperature="70.0" power="6000000.0" name="HeatingDemand_2ab9" id="2ab92324-f86e-4976-9a6e-f7454b77ba3c">
         <geometry xsi:type="esdl:Point" lon="4.38157081604004" lat="51.98612564800895"/>
         <port xsi:type="esdl:InPort" connectedTo="95f46ccf-bac8-4a44-a854-2bbe2fb3c5e6" id="3f514c6b-fd11-4821-9e6c-4a4d13d46762" carrier="c362f53a-3eaf-4d96-8ee6-944e77359fed" name="In">
           <profile xsi:type="esdl:InfluxDBProfile" endDate="2019-01-03T01:00:00.000000+0000" field="demand1_MW" measurement="Unittests profiledata" database="energy_profiles" id="6ebbcb9b-aafa-4890-bda8-0d3f97ea5d17" multiplier="1.0" startDate="2019-01-01T01:00:00.000000+0000" filters="" host="wu-profiles.esdl-beta.hesi.energy" port="443">

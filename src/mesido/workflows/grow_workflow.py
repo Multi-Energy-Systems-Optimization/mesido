@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 import time
+from typing import Dict
 
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
@@ -160,7 +161,7 @@ class EndScenarioSizing(
 
         self._save_json = False
 
-        self._asset_potential_errors = dict()
+        self._asset_potential_errors = Dict[str, Dict]
 
     def parameters(self, ensemble_member):
         parameters = super().parameters(ensemble_member)
@@ -196,6 +197,13 @@ class EndScenarioSizing(
                         " listed."
                     )
                     is_error = True
+            elif error_type in ["heat_demand.type"]:
+                if len(errors) > 0:
+                    for asset_name in errors:
+                        logger.error(self._asset_potential_errors[error_type][asset_name])
+                    logger.error("Incorrect asset type: please update.")
+                    is_error = True
+
         if is_error:
             exit(1)
         # end error checking
@@ -232,13 +240,14 @@ class EndScenarioSizing(
         bounds = self.bounds()
 
         for demand in self.energy_system_components["heat_demand"]:
-            # target = self.get_timeseries(f"{demand}.target_heat_demand_peak")
             target = self.get_timeseries(f"{demand}.target_heat_demand")
             if bounds[f"{demand}.HeatIn.Heat"][1] < max(target.values):
                 logger.warning(
                     f"{demand} has a flow limit, {bounds[f'{demand}.HeatIn.Heat'][1]}, "
                     f"lower that wat is required for the maximum demand {max(target.values)}"
                 )
+            # TODO: update this caclulation to bounds[f"{demand}.HeatIn.Heat"][1]/ dT * Tsup & move
+            # to potential_errors variable
             state = f"{demand}.Heat_demand"
 
             goals.append(TargetHeatGoal(state, target))
@@ -293,7 +302,7 @@ class EndScenarioSizing(
         if options["solver"] == "highs":
             highs_options = options["highs"]
             if self.__priority == 1:
-                highs_options["time_limit"] = 100
+                highs_options["time_limit"] = 600
             else:
                 highs_options["time_limit"] = 100000
         return options
@@ -646,6 +655,20 @@ def run_end_scenario_sizing(
             total_stages=2,
             **kwargs,
         )
+        # Error checking
+        solver_success, _ = solution.solver_success(solution.solver_stats, False)
+        if not solver_success:
+            if (
+                solution.solver_stats["return_status"] == "Time limit reached"
+                and solution.objective_value > 1e-6
+                and solution._stage == 1
+            ):
+                logger.error("Optimization maximum allowed time limit reached for stage_1, goal_1")
+                exit(1)
+            else:
+                logger.error("Unsuccessful: unexpected error for stage_1, goal_1")
+                exit(1)
+
         results = solution.extract_results()
         parameters = solution.parameters(0)
         bounds = solution.bounds()
