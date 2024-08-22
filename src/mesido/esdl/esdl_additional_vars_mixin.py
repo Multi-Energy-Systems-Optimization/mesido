@@ -24,6 +24,9 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
         parameters = self.parameters(0)
         bounds = self.bounds()
 
+        # Here we do a check between the available pipe classes and the demand profiles. This is to
+        # ensure that we don't have unneeded large amount of available pipe classes for pipes
+        # connected to smaller demands.
         for asset, (connected_asset, _orientation) in self.energy_system_topology.demands.items():
             if asset in self.energy_system_components.get("gas_demand", []):
                 max_demand = min(
@@ -59,6 +62,7 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
                 if not self.is_hot_pipe(self.hot_to_cold_pipe(connected_asset)):
                     self._override_pipe_classes[self.hot_to_cold_pipe(connected_asset)] = new_pcs
 
+        # Here we do the same for sources as for demands.
         for asset, (connected_asset, _orientation) in self.energy_system_topology.sources.items():
             if asset in self.energy_system_components.get("gas_source", []):
                 max_prod = min(
