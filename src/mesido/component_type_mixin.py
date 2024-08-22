@@ -36,6 +36,11 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
         gas_nodes = components.get("gas_node", [])
         buffers = components.get("heat_buffer", [])
         atess = [*components.get("ates", []), *components.get("low_temperature_ates", [])]
+        demands = [
+            *components.get("heat_demand", []),
+            *components.get("electricity_demand", []),
+            *components.get("gas_demand", []),
+        ]
         pipes = components.get("heat_pipe", [])
 
         # An energy system should have at least one asset.
@@ -325,6 +330,60 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
 
             ates_connections[a] = tuple(ates_connections[a])
 
+        demand_connections = {}
+
+        for a in demands:
+
+            for k in ["In"]:
+                if a in components.get("heat_demand", []):
+                    network_type = "Heat"
+                    prop = "Heat"
+                elif a in components.get("electricity_demand", []):
+                    network_type = "Electricity"
+                    prop = "Power"
+                elif a in components.get("gas_demand", []):
+                    network_type = "Gas"
+                    prop = "H"
+                else:
+                    logger.error(f"{a} cannot be modelled with heat, gas or electricity")
+                a_conn = f"{a}.{network_type}{k}"
+                if k == "Out" and network_type != "Heat":
+                    continue
+                aliases = [
+                    x
+                    for x in self.alias_relation.aliases(f"{a_conn}.{prop}")
+                    if not x.startswith(a) and x.endswith(f".{prop}")
+                ]
+
+                if len(aliases) > 1:
+                    raise Exception(f"More than one connection to {a_conn}")
+                elif len(aliases) == 0:
+                    raise Exception(f"Found no connection to {a_conn}")
+
+                in_suffix = f".{network_type}In.{prop}"
+                out_suffix = f".{network_type}Out.{prop}"
+
+                if aliases[0].endswith(out_suffix):
+                    asset_w_orientation = (
+                        aliases[0][: -len(out_suffix)],
+                        NodeConnectionDirection.IN,
+                    )
+                else:
+                    assert aliases[0].endswith(in_suffix)
+                    asset_w_orientation = (
+                        aliases[0][: -len(in_suffix)],
+                        NodeConnectionDirection.OUT,
+                    )
+
+                if asset_w_orientation[0] in [
+                    *components.get("heat_pipe", []),
+                    *components.get("gas_pipe", []),
+                    *components.get("electricity_cable", []),
+                ]:
+                    demand_connections[a] = asset_w_orientation
+
+            # demand_connections[a] = demand_connections[a]
+
         self.__topology = Topology(
             node_connections,
             gas_node_connections,
@@ -332,6 +391,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
             buffer_connections,
             ates_connections,
             bus_connections,
+            demand_connections,
         )
 
         super().pre()

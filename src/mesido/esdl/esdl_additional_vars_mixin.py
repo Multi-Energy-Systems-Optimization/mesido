@@ -16,8 +16,41 @@ logger = logging.getLogger("mesido")
 class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
     __temperature_options = {}
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     def read(self):
         super().read()
+        parameters = self.parameters(0)
+
+        for asset, (connected_asset, _orientation) in self.energy_system_topology.demands.items():
+            if asset in self.energy_system_components.get("gas_demand", []):
+                max_demand = max(self.get_timeseries(f"{asset}.target_gas_demand").values)
+                new_pcs = []
+                found_pc_large_enough = False
+                for pc in self.gas_pipe_classes(connected_asset):
+                    if not found_pc_large_enough:
+                        new_pcs.append(pc)
+                        if new_pcs[-1].maximum_discharge >= max_demand:
+                            found_pc_large_enough = True
+                self._override_gas_pipe_classes[connected_asset] = new_pcs
+            if asset in self.energy_system_components.get("heat_demand", []):
+                max_demand = max(self.get_timeseries(f"{asset}.target_heat_demand").values)
+                new_pcs = []
+                found_pc_large_enough = False
+                for pc in self.pipe_classes(connected_asset):
+                    if not found_pc_large_enough:
+                        new_pcs.append(pc)
+                    if (
+                        new_pcs[-1].maximum_discharge
+                        * parameters[f"{asset}.cp"]
+                        * parameters[f"{asset}.rho"]
+                        * (parameters[f"{asset}.T_supply"] - parameters[f"{asset}.T_return"])
+                    ) >= max_demand:
+                        found_pc_large_enough = True
+                self._override_pipe_classes[connected_asset] = new_pcs
+                if not self.is_hot_pipe(self.hot_to_cold_pipe(connected_asset)):
+                    self._override_pipe_classes[self.hot_to_cold_pipe(connected_asset)] = new_pcs
 
         for asset in [
             *self.energy_system_components.get("heat_source", []),
@@ -51,6 +84,9 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
 
     def pipe_classes(self, p):
         return self._override_pipe_classes.get(p, [])
+
+    def gas_pipe_classes(self, p):
+        return self._override_gas_pipe_classes.get(p, [])
 
     def esdl_heat_model_options(self):
         """Overwrites the fraction of the minimum tank volume"""
