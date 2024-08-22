@@ -66,6 +66,9 @@ class TestEndScenarioSizing(TestCase):
         # Check whehter the heat demand is matched
         demand_matching_test(self.solution, self.results)
 
+        # Check that indeed the available pipe classes were adapted based on demand profile
+        assert self.solution.pipe_classes("Pipe2")[-1].name == "DN200"
+
         # Check whether cyclic ates constraint is working
         for a in self.solution.energy_system_components.get("ates", []):
             stored_heat = self.results[f"{a}.Stored_heat"]

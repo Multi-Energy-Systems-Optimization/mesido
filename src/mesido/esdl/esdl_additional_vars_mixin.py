@@ -27,6 +27,7 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
         # Here we do a check between the available pipe classes and the demand profiles. This is to
         # ensure that we don't have unneeded large amount of available pipe classes for pipes
         # connected to smaller demands.
+        # TODO: add the same for electricity ones we have proper support for that in the ESDLMixin
         for asset, (connected_asset, _orientation) in self.energy_system_topology.demands.items():
             if asset in self.energy_system_components.get("gas_demand", []):
                 max_demand = min(
