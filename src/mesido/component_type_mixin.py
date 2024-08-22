@@ -359,7 +359,8 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
             if len(aliases) > 1:
                 raise Exception(f"More than one connection to {a_conn}")
             elif len(aliases) == 0:
-                raise Exception(f"Found no connection to {a_conn}")
+                # the connection was a logical link to a node
+                continue
 
             in_suffix = f".{network_type}In.{prop}"
             out_suffix = f".{network_type}Out.{prop}"
@@ -370,7 +371,6 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                     NodeConnectionDirection.IN,
                 )
             else:
-                assert aliases[0].endswith(in_suffix)
                 asset_w_orientation = (
                     aliases[0][: -len(in_suffix)],
                     NodeConnectionDirection.OUT,
@@ -407,7 +407,8 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
             if len(aliases) > 1:
                 raise Exception(f"More than one connection to {a_conn}")
             elif len(aliases) == 0:
-                raise Exception(f"Found no connection to {a_conn}")
+                # the connection was a logical link to a node
+                continue
 
             in_suffix = f".{network_type}In.{prop}"
             out_suffix = f".{network_type}Out.{prop}"
@@ -418,7 +419,6 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                     NodeConnectionDirection.IN,
                 )
             else:
-                assert aliases[0].endswith(in_suffix)
                 asset_w_orientation = (
                     aliases[0][: -len(in_suffix)],
                     NodeConnectionDirection.OUT,
