@@ -41,6 +41,11 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
             *components.get("electricity_demand", []),
             *components.get("gas_demand", []),
         ]
+        sources = [
+            *components.get("heat_source", []),
+            *components.get("electricity_source", []),
+            *components.get("gas_source", []),
+        ]
         pipes = components.get("heat_pipe", [])
 
         # An energy system should have at least one asset.
@@ -380,7 +385,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
 
         source_connections = {}
 
-        for a in demands:
+        for a in sources:
             if a in components.get("heat_source", []):
                 network_type = "Heat"
                 prop = "Heat"
@@ -392,7 +397,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                 prop = "H"
             else:
                 logger.error(f"{a} cannot be modelled with heat, gas or electricity")
-            a_conn = f"{a}.{network_type}In"
+            a_conn = f"{a}.{network_type}Out"
             aliases = [
                 x
                 for x in self.alias_relation.aliases(f"{a_conn}.{prop}")

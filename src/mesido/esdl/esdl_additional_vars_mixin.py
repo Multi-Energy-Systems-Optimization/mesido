@@ -30,10 +30,13 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
         # TODO: add the same for electricity ones we have proper support for that in the ESDLMixin
         for asset, (connected_asset, _orientation) in self.energy_system_topology.demands.items():
             if asset in self.energy_system_components.get("gas_demand", []):
-                max_demand = min(
-                    max(self.get_timeseries(f"{asset}.target_gas_demand").values),
-                    bounds[f"{asset}.Gas_demand_mass_flow"][1],
-                )
+                try:
+                    max_demand = min(
+                        max(self.get_timeseries(f"{asset}.target_gas_demand").values),
+                        bounds[f"{asset}.Gas_demand_mass_flow"][1],
+                    )
+                except KeyError:
+                    max_demand = bounds[f"{asset}.Gas_demand_mass_flow"][1]
                 new_pcs = []
                 found_pc_large_enough = False
                 for pc in self.gas_pipe_classes(connected_asset):
@@ -43,10 +46,13 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
                             found_pc_large_enough = True
                 self._override_gas_pipe_classes[connected_asset] = new_pcs
             if asset in self.energy_system_components.get("heat_demand", []):
-                max_demand = min(
-                    max(self.get_timeseries(f"{asset}.target_heat_demand").values),
-                    bounds[f"{asset}.Heat_demand"][1],
-                )
+                try:
+                    max_demand = min(
+                        max(self.get_timeseries(f"{asset}.target_heat_demand").values),
+                        bounds[f"{asset}.Heat_demand"][1],
+                    )
+                except KeyError:
+                    max_demand = bounds[f"{asset}.Heat_demand"][1]
                 new_pcs = []
                 found_pc_large_enough = False
                 for pc in self.pipe_classes(connected_asset):
@@ -66,10 +72,13 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
         # Here we do the same for sources as for demands.
         for asset, (connected_asset, _orientation) in self.energy_system_topology.sources.items():
             if asset in self.energy_system_components.get("gas_source", []):
-                max_prod = min(
-                    max(self.get_timeseries(f"{asset}.maximum_gas_source").values),
-                    bounds[f"{asset}.Gas_source_mass_flow"][1],
-                )
+                try:
+                    max_prod = min(
+                        max(self.get_timeseries(f"{asset}.maximum_gas_source").values),
+                        bounds[f"{asset}.Gas_source_mass_flow"][1],
+                    )
+                except KeyError:
+                    max_prod = bounds[f"{asset}.Gas_source_mass_flow"][1]
                 new_pcs = []
                 found_pc_large_enough = False
                 for pc in self.gas_pipe_classes(connected_asset):
@@ -79,10 +88,13 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
                             found_pc_large_enough = True
                 self._override_gas_pipe_classes[connected_asset] = new_pcs
             if asset in self.energy_system_components.get("heat_source", []):
-                max_prod = min(
-                    max(self.get_timeseries(f"{asset}.maximum_heat_source").values),
-                    bounds[f"{asset}.Heat_source"][1],
-                )
+                try:
+                    max_prod = min(
+                        max(self.get_timeseries(f"{asset}.maximum_heat_source").values),
+                        bounds[f"{asset}.Heat_source"][1],
+                    )
+                except KeyError:
+                    max_prod = bounds[f"{asset}.Heat_source"][1]
                 new_pcs = []
                 found_pc_large_enough = False
                 for pc in self.pipe_classes(connected_asset):
