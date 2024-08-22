@@ -22,10 +22,14 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
     def read(self):
         super().read()
         parameters = self.parameters(0)
+        bounds = self.bounds()
 
         for asset, (connected_asset, _orientation) in self.energy_system_topology.demands.items():
             if asset in self.energy_system_components.get("gas_demand", []):
-                max_demand = max(self.get_timeseries(f"{asset}.target_gas_demand").values)
+                max_demand = min(
+                    max(self.get_timeseries(f"{asset}.target_gas_demand").values),
+                    bounds[f"{asset}.Gas_demand_mass_flow"][1],
+                )
                 new_pcs = []
                 found_pc_large_enough = False
                 for pc in self.gas_pipe_classes(connected_asset):
@@ -35,7 +39,10 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
                             found_pc_large_enough = True
                 self._override_gas_pipe_classes[connected_asset] = new_pcs
             if asset in self.energy_system_components.get("heat_demand", []):
-                max_demand = max(self.get_timeseries(f"{asset}.target_heat_demand").values)
+                max_demand = min(
+                    max(self.get_timeseries(f"{asset}.target_heat_demand").values),
+                    bounds[f"{asset}.Heat_demand"][1],
+                )
                 new_pcs = []
                 found_pc_large_enough = False
                 for pc in self.pipe_classes(connected_asset):
@@ -47,6 +54,41 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
                         * parameters[f"{asset}.rho"]
                         * (parameters[f"{asset}.T_supply"] - parameters[f"{asset}.T_return"])
                     ) >= max_demand:
+                        found_pc_large_enough = True
+                self._override_pipe_classes[connected_asset] = new_pcs
+                if not self.is_hot_pipe(self.hot_to_cold_pipe(connected_asset)):
+                    self._override_pipe_classes[self.hot_to_cold_pipe(connected_asset)] = new_pcs
+
+        for asset, (connected_asset, _orientation) in self.energy_system_topology.sources.items():
+            if asset in self.energy_system_components.get("gas_source", []):
+                max_prod = min(
+                    max(self.get_timeseries(f"{asset}.maximum_gas_source").values),
+                    bounds[f"{asset}.Gas_source_mass_flow"][1],
+                )
+                new_pcs = []
+                found_pc_large_enough = False
+                for pc in self.gas_pipe_classes(connected_asset):
+                    if not found_pc_large_enough:
+                        new_pcs.append(pc)
+                        if new_pcs[-1].maximum_discharge >= max_prod:
+                            found_pc_large_enough = True
+                self._override_gas_pipe_classes[connected_asset] = new_pcs
+            if asset in self.energy_system_components.get("heat_source", []):
+                max_prod = min(
+                    max(self.get_timeseries(f"{asset}.maximum_heat_source").values),
+                    bounds[f"{asset}.Heat_source"][1],
+                )
+                new_pcs = []
+                found_pc_large_enough = False
+                for pc in self.pipe_classes(connected_asset):
+                    if not found_pc_large_enough:
+                        new_pcs.append(pc)
+                    if (
+                        new_pcs[-1].maximum_discharge
+                        * parameters[f"{asset}.cp"]
+                        * parameters[f"{asset}.rho"]
+                        * (parameters[f"{asset}.T_supply"] - parameters[f"{asset}.T_return"])
+                    ) >= max_prod:
                         found_pc_large_enough = True
                 self._override_pipe_classes[connected_asset] = new_pcs
                 if not self.is_hot_pipe(self.hot_to_cold_pipe(connected_asset)):

@@ -13,6 +13,7 @@ class Topology:
         atess=None,
         busses=None,
         demands=None,
+        sources=None,
     ):
         if nodes is not None:
             self._nodes = nodes
@@ -28,6 +29,8 @@ class Topology:
             self._atess = atess
         if demands is not None:
             self._demands = demands
+        if sources is not None:
+            self._sources = sources
 
     @property
     def nodes(self) -> Dict[str, Dict[int, Tuple[str, NodeConnectionDirection]]]:
@@ -114,10 +117,23 @@ class Topology:
         """
         Maps an demand name to a dictionary of its in/out connections. Written out using
         descriptive variable names the return type would be:
-            Dict[demand_name, Tuple[Tuple[hot_pipe, hot_pipe_orientation],
-                                    Tuple[cold_pipe, cold_pipe_orientation]]]
+            Dict[demand_name, Tuple[pipe/cable, orientation]
         """
         try:
             return self._demands
+        except AttributeError:
+            raise NotImplementedError
+
+    @property
+    def sources(
+        self,
+    ) -> Dict[str, Tuple[str, NodeConnectionDirection]]:
+        """
+        Maps a source name to a dictionary of its in/out connections. Written out using
+        descriptive variable names the return type would be:
+            Dict[source_name, Tuple[pipe/cable, orientation]
+        """
+        try:
+            return self._sources
         except AttributeError:
             raise NotImplementedError
