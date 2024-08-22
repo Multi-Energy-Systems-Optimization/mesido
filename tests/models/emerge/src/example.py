@@ -243,7 +243,7 @@ class EmergeTest(
         solver options dict
         """
         options = super().solver_options()
-        options["solver"] = "gurobi"
+        options["solver"] = "highs"
         return options
 
     def times(self, variable=None):

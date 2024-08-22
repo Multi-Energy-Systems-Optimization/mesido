@@ -29,3 +29,10 @@ class GasSubstation(GasTwoPort, BaseAsset):
                 ** 0.5
             )
         )
+
+        self.add_equation(
+            ((self.GasIn.Q - self.GasIn.mass_flow / self.density_in) / self.Q_nominal_in)
+        )
+        self.add_equation(
+            ((self.GasOut.Q - self.GasOut.mass_flow / self.density_out) / self.Q_nominal_out)
+        )
