@@ -120,7 +120,9 @@ class ESDLMixin(
         name_to_id_map = {a.name: a.id for a in assets.values()}
 
         if isinstance(self, PhysicsMixin):
-            self.__model = ESDLHeatModel(assets, name_to_id_map, **self.esdl_heat_model_options(), **kwargs)
+            self.__model = ESDLHeatModel(
+                assets, name_to_id_map, **self.esdl_heat_model_options(), **kwargs
+            )
         else:
             assert isinstance(self, QTHMixin)
 
