@@ -57,7 +57,7 @@ class GasPipe(GasTwoPort, BaseAsset):
             Variable, "Hydraulic_power", min=0.0, nominal=self.Hydraulic_power_nominal
         )  # [W]
 
-        self.add_equation(
-            (self.Hydraulic_power - (self.GasIn.Hydraulic_power - self.GasOut.Hydraulic_power))
-            / (self.pressure * self.Q_nominal * self.Hydraulic_power_nominal) ** 0.5
-        )
+        # self.add_equation(
+        #     (self.Hydraulic_power - (self.GasIn.Hydraulic_power - self.GasOut.Hydraulic_power))
+        #     / (self.pressure * self.Q_nominal * self.Hydraulic_power_nominal) ** 0.5
+        # )

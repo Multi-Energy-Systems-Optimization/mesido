@@ -17,7 +17,7 @@ class GasPort(GasComponent, Connector):
         self.add_variable(Variable, "Q")  # [m3/s]
         self.add_variable(Variable, "mass_flow")  # [g/s]
         self.add_variable(Variable, "H")  # [m]
-        self.add_variable(Variable, "Hydraulic_power")  # [W]
+        self.add_variable(Variable, "Hydraulic_power", nominal=6*70.e5)  # [W]
 
 
 class GasTwoPort(GasComponent):

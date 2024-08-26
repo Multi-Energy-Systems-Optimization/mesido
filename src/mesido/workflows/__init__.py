@@ -16,6 +16,11 @@ from .simulator_workflow import (
     NetworkSimulatorHIGHSTestCase,
     NetworkSimulatorHIGHSWeeklyTimeStep,
 )
+from .multicommodity_simulator_workflow import (
+    SolverGurobi,
+    SolverHIGHS,
+    SolverCPLEX,
+)
 
 
 __all__ = [
@@ -33,4 +38,7 @@ __all__ = [
     "NetworkSimulatorHIGHS",
     "NetworkSimulatorHIGHSTestCase",
     "NetworkSimulatorHIGHSWeeklyTimeStep",
+    "SolverCPLEX",
+    "SolverGurobi",
+    "SolverHIGHS",
 ]

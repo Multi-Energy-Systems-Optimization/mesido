@@ -3,6 +3,7 @@ import math
 from typing import Dict, Tuple, Type, Union
 
 import esdl
+import numpy as np
 
 from mesido.esdl.asset_to_component_base import (
     MODIFIERS,
@@ -1734,6 +1735,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         modifiers = dict(
             max_current=max_current,
             min_voltage=min_voltage,
+            max_power=max_power,
             nominal_current=max_current / 2.0,
             nominal_voltage=min_voltage,
             length=length,
