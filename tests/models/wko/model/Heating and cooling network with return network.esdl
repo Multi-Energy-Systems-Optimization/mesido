@@ -13,7 +13,7 @@
         <port xsi:type="esdl:OutPort" id="b87783a5-9683-4bf6-86d9-0a82e26e3313" connectedTo="c0b27ede-d8da-4894-a288-291e2dcde7b3" carrier="001521ea-9f10-4745-ac3b-6e0c767e16b2" name="Port"/>
         <geometry xsi:type="esdl:Point" lat="51.98810497931513" lon="4.3792702277458915" CRS="WGS84"/>
       </asset>
-      <asset xsi:type="esdl:ATES" maxChargeRate="1000000.0" name="ATES_1" maxStorageTemperature="26.0" minStorageTemperature="6.0" id="b2219730-9197-4057-9b99-93b32756886a" maxDischargeRate="1000000.0">
+      <asset xsi:type="esdl:ATES" maxChargeRate="5000000.0" name="ATES_1" maxStorageTemperature="26.0" minStorageTemperature="6.0" id="b2219730-9197-4057-9b99-93b32756886a" maxDischargeRate="5000000.0">
         <port xsi:type="esdl:InPort" id="abeb79f8-9d78-406d-87fc-f71553c15a69" carrier="001521ea-9f10-4745-ac3b-6e0c767e16b2" name="In" connectedTo="7f008df3-cc20-4fc7-852d-e2375dd1eae7"/>
         <port xsi:type="esdl:OutPort" id="3c7b1a2a-87df-41e3-8823-4100495f52ff" connectedTo="ed220d84-039a-4432-b5a1-39cc412e3400" carrier="001521ea-9f10-4745-ac3b-6e0c767e16b2_ret" name="ret_port"/>
         <geometry xsi:type="esdl:Point" lat="51.989426621710344" lon="4.321046005483394" CRS="WGS84"/>

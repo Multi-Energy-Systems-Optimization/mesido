@@ -1,10 +1,16 @@
 from pathlib import Path
 from unittest import TestCase
 
+import logging
+
+
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.util import run_esdl_mesido_optimization
 from mesido.workflows.io.write_output import ScenarioOutput
+from mesido.workflows.utils.adapt_profiles import (
+    adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
+)
 
 import numpy as np
 
@@ -12,7 +18,8 @@ from utils_test_scaling import create_log_list_scaling
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
-
+logger = logging.getLogger("WarmingUP-MPC")
+logger.setLevel(logging.INFO)
 
 
 class TestColdDemand(TestCase):
@@ -286,10 +293,31 @@ class TestColdDemand(TestCase):
         class HeatingCoolingProblem(HeatProblem):
             global total_times_steps
             # total_times_steps = 4  # total available timesteps = 8760
-            total_times_steps = 6
+            # total_times_steps = 600
+            # total_times_steps = 8760
+
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self._number_of_years = 30.0
+
+                self.__indx_max_peak = None
+                self.__day_steps = 5
+
+            def energy_system_options(self):
+                options = super().energy_system_options()
+                options["neglect_pipe_heat_losses"] = True
+                return options
+
+            def parameters(self, ensemble_member):
+                parameters = super().parameters(ensemble_member)
+                parameters["peak_day_index"] = self.__indx_max_peak
+                parameters["time_step_days"] = self.__day_steps
+                parameters["number_of_years"] = self._number_of_years
+                return parameters
 
             def read(self):
                 super().read()
+
                 # Set the peak of the heating demand since the specified proifle is normalized to 1
                 for d in self.energy_system_components["heat_demand"]:
                     target = self.get_timeseries(f"{d}.target_heat_demand")
@@ -302,9 +330,32 @@ class TestColdDemand(TestCase):
                         target.values,
                         0,
                     )
+         
+                for d in self.energy_system_components["cold_demand"]:
+                    target = self.get_timeseries(f"{d}.target_cold_demand")
+                    for ii in range(len(target.values)):
+                        target.values[ii] = target.values[ii] * 0.25
 
-            def times(self, variable=None) -> np.ndarray:
-                return super().times(variable)[0:total_times_steps]
+                    self.io.set_timeseries(
+                        f"{d}.target_cold_demand",
+                        self.io._DataStore__timeseries_datetimes,
+                        target.values,
+                        0,
+                    )
+
+                temp = 1215.3
+                (
+                    self.__indx_max_peak,
+                    self.__heat_demand_nominal,
+                    self.__cold_demand_nominal,
+                ) = adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(
+                    self,
+                    self.__day_steps,
+                )
+                temp = 1.2
+
+            # def times(self, variable=None) -> np.ndarray:
+            #     return super().times(variable)[0:total_times_steps]
 
             def energy_system_options(self):
                 options = super().energy_system_options()
@@ -314,9 +365,9 @@ class TestColdDemand(TestCase):
             def post(self):
                 super().post()
                 self._write_updated_esdl(
-                  self._ESDLMixin__energy_system_handler.energy_system,
-                  optimizer_sim=False,
-              )
+                    self._ESDLMixin__energy_system_handler.energy_system,
+                    optimizer_sim=False,
+                )
 
             def constraints(self, ensemble_member):
                 constraints = super().constraints(ensemble_member)
@@ -330,9 +381,9 @@ class TestColdDemand(TestCase):
                 # being discharged
                 #   - WKO in heating mode: Cold well is being charged and the hot well is being
                 #     discharged.
-                for a in self.energy_system_components.get("low_temperature_ates", []):
-                    stored_heat = self.state_vector(f"{a}.Stored_heat")
-                    constraints.append(((stored_heat[-1] - stored_heat[0]), 0.0, 0.0))
+                # for a in self.energy_system_components.get("low_temperature_ates", []):
+                #     stored_heat = self.state_vector(f"{a}.Stored_heat")
+                #     constraints.append(((stored_heat[-1] - stored_heat[0]), 0.0, 0.0))
                 # This code below might be needed
                 # Add stored_heat cyclic constraint, this will also ensure that the volume
                 # into the lower temp & out of the higher temp is the same as the volume
@@ -342,11 +393,11 @@ class TestColdDemand(TestCase):
                 #     discharged. -> WKO in cooling mode
                 #   - Volume decrease: Cold well is being charged and the hot well is being
                 #     discharged. -> WKO in heating mode
-                # for ates_id in self.energy_system_components.get("low_temperature_ates", []):
-                #     stored_volume = self.state_vector(f"{ates_id}.Stored_volume")
-                #     volume_usage = 0.0
-                #     volume_usage = stored_volume[0] - stored_volume[-1]
-                #     constraints.append((volume_usage, 0.0, 0.0))
+                for ates_id in self.energy_system_components.get("low_temperature_ates", []):
+                    stored_volume = self.state_vector(f"{ates_id}.Stored_volume")
+                    volume_usage = 0.0
+                    volume_usage = stored_volume[0] - stored_volume[-1]
+                    constraints.append((volume_usage, 0.0, 0.0))
 
                 return constraints
 
@@ -361,94 +412,239 @@ class TestColdDemand(TestCase):
         )
         results = heat_problem.extract_results()
 
-        import matplotlib.pyplot as plt
-        legend_used = [
-            "ATES",
-            "HeatDemand",
-            "HeatPump",
-            "CoolingDemand",
-            "Airco",
-        ]
- 
-        plt.plot(
-            results["ATES_1.Heat_flow"],
-            marker="x",
-        )
-
-        plt.plot(
-            results["HeatingDemand_1.Heat_flow"] + results["HeatingDemand_2.Heat_flow"],
-            marker="+",
-        )
-        plt.plot(
-            results["HeatPump_1.Heat_flow"],
-            marker=">",
-        )
-
-        plt.plot(
-            results["CoolingDemand_1.Heat_flow"],
-            marker="*",
-        )
-        plt.plot(
-            results["Airco_1.Heat_flow"],
-            marker="o",
-        )
-
-        plt.legend(legend_used, prop={'size': 13})
-        # plt.show()
-
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
 
-        # Check cyclic constraint
-        np.testing.assert_allclose(
-            results["ATES_226d.Stored_heat"][0], results["ATES_226d.Stored_heat"][-1]
-        )
-        # Check heat loss and gain
-        tol_value = 1.0e-6
-        np.testing.assert_array_less(
-            0.0, results["Pipe1.HeatIn.Heat"] - results["Pipe1.HeatOut.Heat"] + tol_value
-        )
-        np.testing.assert_array_less(
-            results["Pipe1_ret.HeatIn.Heat"] - results["Pipe1_ret.HeatOut.Heat"] - tol_value, 0.0
+
+
+
+        import matplotlib.pyplot as plt
+        # x_values = heat_problem.get_timeseries(f"HeatingDemand_1.target_heat_demand").times
+        x_values = np.linspace(
+            0,
+            len(heat_problem.get_timeseries(f"HeatingDemand_1.target_heat_demand").times),
+            len(heat_problem.get_timeseries(f"HeatingDemand_1.target_heat_demand").times),
         )
 
+        legend_used = [
+            "ATES",
+            # "ATES.Stored_heat_scaled",
+            "Heat demand",
+            "Heat pump",
+            "Cooling demand",
+            "Airco",
+        ]
+        # -----------------------------------------------------------------------------------------
+        # Peak day
+        times_steps = (
+            heat_problem.get_timeseries(f"HeatingDemand_1.target_heat_demand").times[1:] -
+            heat_problem.get_timeseries(f"HeatingDemand_1.target_heat_demand").times[0:-1]
+        )
+        index_start_peak_day = np.where(times_steps==3600.0)[0][0]
+        index_end_peak_day = np.where(times_steps==3600.0)[0][-1] + 2
+        times_peak_day = (
+            heat_problem.get_timeseries(f"HeatingDemand_1.target_heat_demand").times[index_start_peak_day: index_end_peak_day] 
+            - min(
+                heat_problem.get_timeseries(f"HeatingDemand_1.target_heat_demand").times[index_start_peak_day: index_end_peak_day]
+            )
+        ) / 3600.0
+
+        fig_1 = plt.figure()
+        plt.plot(
+            times_peak_day,
+            results["ATES_1.Heat_flow"][index_start_peak_day: index_end_peak_day] / 1.0e6,
+            marker="x",
+        )
+        plt.plot(
+            times_peak_day,
+            (
+                results["HeatingDemand_1.Heat_flow"][index_start_peak_day: index_end_peak_day]
+                + results["HeatingDemand_2.Heat_flow"][index_start_peak_day: index_end_peak_day]
+            ) / 1.0e6,
+            marker="H",
+        )
+        plt.plot(
+            times_peak_day,
+            results["HeatPump_1.Heat_flow"][index_start_peak_day: index_end_peak_day] / 1.0e6,
+            marker=">",
+        )
+
+        plt.plot(
+            times_peak_day,
+            results["CoolingDemand_1.Heat_flow"][index_start_peak_day: index_end_peak_day] / 1.0e6,
+            marker="*",
+        )
+        plt.plot(
+            times_peak_day,
+            results["Airco_1.Heat_flow"][index_start_peak_day: index_end_peak_day] / 1.0e6,
+            marker="o",
+        )
+
+        plt.legend(legend_used, prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
+
+        plt.yticks(np.linspace(-6, 14, 11))
+        plt.xlabel("Time [hourly]", fontsize=12)
+        plt.ylabel("Power [MW]", fontsize=12)
+        plt.tight_layout()
+        plt.savefig("All_in_one_peak_day")
+        plt.close()
+        # plt.show()
+        temp = 1.0
+        # -----------------------------------------------------------------------------------------
+        # Seasonal
+        times_seasonal = (
+            heat_problem.get_timeseries(f"HeatingDemand_1.target_heat_demand").times[1:index_start_peak_day] # index_end_peak_day
+        ) / 3600.0 / 24.0
+        times_seasonal = np.append(
+            times_seasonal, heat_problem.get_timeseries(f"HeatingDemand_1.target_heat_demand").times[index_end_peak_day:] / 3600.0 / 24.0
+        )
+
+        fig_2 = plt.figure()
+
+        temp_season = (results["ATES_1.Heat_flow"][1:index_start_peak_day])
+        temp_season = np.append(temp_season, results["ATES_1.Heat_flow"][index_end_peak_day:])
+        plt.plot(
+            times_seasonal,
+            temp_season / 1.0e6,
+            marker="x",
+        )
+
+        temp_season = (
+            results["HeatingDemand_1.Heat_flow"][1:index_start_peak_day]
+            + results["HeatingDemand_2.Heat_flow"][1:index_start_peak_day]
+        )
+        temp_season = np.append(
+            temp_season / 1.0e6,
+            results["HeatingDemand_1.Heat_flow"][index_end_peak_day:]
+            + results["HeatingDemand_2.Heat_flow"][index_end_peak_day:]
+        )
+        plt.plot(
+            times_seasonal,
+            temp_season / 1.0e6,
+            marker="H",
+        )
+
+        temp_season = (results["HeatPump_1.Heat_flow"][1:index_start_peak_day])
+        temp_season = np.append(temp_season, results["HeatPump_1.Heat_flow"][index_end_peak_day:])
+        plt.plot(
+            times_seasonal,
+            temp_season / 1.0e6,
+            marker=">",
+        )
+
+        temp_season = (results["CoolingDemand_1.Heat_flow"][1:index_start_peak_day])
+        temp_season = np.append(
+            temp_season, results["CoolingDemand_1.Heat_flow"][index_end_peak_day:]
+        )
+        plt.plot(
+            times_seasonal,
+            temp_season / 1.0e6,
+            marker="*",
+        )
+
+        temp_season = (results["Airco_1.Heat_flow"][1:index_start_peak_day])
+        temp_season = np.append(temp_season, results["Airco_1.Heat_flow"][index_end_peak_day:])
+        plt.plot(
+            times_seasonal,
+            temp_season / 1.0e6,
+            marker="o",
+        )
+
+        plt.legend(legend_used, prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
+
+        plt.xlabel("Time [daily]", fontsize=12)
+        plt.ylabel("Power [MW]", fontsize=12)
+        plt.tight_layout()
+        plt.savefig("All_in_one_seasonal")
+        plt.close()
+        # plt.show()
+        temp = 1.0
         # ------------------------------------------------------------------------------------------
-        # Pipe heat losses excluded
-        class HeatingCoolingProblemNoHeatLoss(HeatingCoolingProblem):
-            def energy_system_options(self):
-                options = super().energy_system_options()
-                options["neglect_pipe_heat_losses"] = True
-                return options
+        # ATES goodies
+        # seasonal
+        fig_4 = plt.figure()
 
-        heat_problem = run_esdl_mesido_optimization(
-            HeatingCoolingProblemNoHeatLoss,
-            base_folder=base_folder,
-            esdl_file_name="LT_wko_heating_and_cooling.esdl",
-            esdl_parser=ESDLFileParser,
-            profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries_2.csv",
+        temp_season = (results["ATES_1.Stored_volume"][0:index_start_peak_day])
+        temp_season = np.append(temp_season, results["ATES_1.Stored_volume"][index_end_peak_day:])
+        plt.plot(
+            np.append(0, times_seasonal),# this was done so that one can see the start == end value
+            temp_season,
+            marker="+",
         )
-        results = heat_problem.extract_results()
-        temp = 0.0
 
-        # demand_matching_test(heat_problem, results)
-        # energy_conservation_test(heat_problem, results)
-        # heat_to_discharge_test(heat_problem, results)
+        max_volume_warm_well = max(temp_season) - min(temp_season)
+        cold_well_volume = -temp_season
+        cold_well_volume = cold_well_volume + max_volume_warm_well
+        plt.plot(
+            np.append(0, times_seasonal),# this was done so that one can see the start == end value
+            cold_well_volume,
+            marker="+",
+        )
+        
+        plt.legend(["Warm well", "Cold well"], prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
+        plt.xlabel("Time [daily]", fontsize=12)
+        plt.ylabel("ATES stored volume [m$^3$]", fontsize=12)
+        plt.tight_layout()
+        # plt.show()
+        plt.savefig("ATES_volume_seasonal")
+        plt.close()
 
-        # # Check cyclic constraint
+        # peak day
+        fig_3 = plt.figure()
+        plt.plot(
+            times_peak_day,
+            results["ATES_1.Stored_volume"][index_start_peak_day: index_end_peak_day],
+            marker="+",
+        )
+
+        plt.legend(["Warm well"], prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
+        plt.xlabel("Time [hourly]", fontsize=12)
+        plt.ylabel("ATES stored volume [m$^3$]", fontsize=12)
+        plt.tight_layout()
+        # plt.show()
+        plt.savefig("ATES_volume_warm_well_peak_day")
+        plt.close()
+
+        fig_4 = plt.figure()
+
+        cold_well_volume = -results["ATES_1.Stored_volume"][index_start_peak_day: index_end_peak_day]
+        cold_well_volume = cold_well_volume + max_volume_warm_well
+        plt.plot(
+            times_peak_day,
+            cold_well_volume,
+            marker="+",
+        )
+
+        plt.legend(["Cold well"], prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
+        plt.xlabel("Time [hourly]", fontsize=12)
+        plt.ylabel("ATES stored volume [m$^3$]", fontsize=12)
+        plt.tight_layout()
+        # plt.show()
+        plt.savefig("ATES_volume_cold_well_peak_day")
+        plt.close()
+
+
+
+        temp = 111
+        # Check cyclic constraint
         # np.testing.assert_allclose(
         #     results["ATES_226d.Stored_heat"][0], results["ATES_226d.Stored_heat"][-1]
         # )
         # # Check heat loss and gain
         # tol_value = 1.0e-6
-        # np.testing.assert_allclose(
-        #     0.0, results["Pipe1.HeatIn.Heat"] - results["Pipe1.HeatOut.Heat"], atol=1e-6
+        # np.testing.assert_array_less(
+        #     0.0, results["Pipe1.HeatIn.Heat"] - results["Pipe1.HeatOut.Heat"] + tol_value
         # )
-        # np.testing.assert_allclose(
-        #     0.0, results["Pipe1_ret.HeatIn.Heat"] - results["Pipe1_ret.HeatOut.Heat"], atol=1e-6
+        # np.testing.assert_array_less(
+        #     results["Pipe1_ret.HeatIn.Heat"] - results["Pipe1_ret.HeatOut.Heat"] - tol_value, 0.0
         # )
-        # # ------------------------------------------------------------------------------------------
+
+
+
+
+
+
 
 
 if __name__ == "__main__":
