@@ -32,7 +32,10 @@ class ElectricityCable(ElectricityTwoPort, BaseAsset):
         self.nominal_voltage = nan
         self.r = nan
         self.nominal_voltage_loss = (self.nominal_current * self.r * self.nominal_voltage) ** 0.5
-        self.add_variable(Variable, "Power_loss", min=0.0, nominal=self.r * self.max_current * self.nominal_current)
+        self.loss_nominal = self.r * self.max_current * self.nominal_current
+        if (self.loss_nominal / self.ElectricityIn.Power.nominal < 1.e-4):
+            self.loss_nominal = self.ElectricityIn.Power.nominal * 1.e-4
+        self.add_variable(Variable, "Power_loss", min=0.0, nominal=self.loss_nominal)
         self.add_variable(Variable, "I", nominal=self.nominal_current)
         self.add_variable(Variable, "V_loss", nominal=self.nominal_voltage_loss)
 

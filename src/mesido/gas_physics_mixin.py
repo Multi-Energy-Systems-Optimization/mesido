@@ -277,17 +277,25 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         for node, connected_assets in self.energy_system_topology.gas_nodes.items():
             capacity = []
             for _, (asset, _orientation) in connected_assets.items():
-                try:
-                    capacity.append(self.variable_nominal(f"{asset}.GasOut.Hydraulic_power"))
-                except:
-                    try:
-                        capacity.append(self.variable_nominal(f"{asset}.GasIn.Hydraulic_power"))
-                    except:
-                        pass
+                var_nom= self.variable_nominal(f"{asset}.GasOut.Hydraulic_power")
+                if var_nom != 1:
+                    capacity.append(var_nom)
+                elif self.variable_nominal(f"{asset}.GasIn.Hydraulic_power") !=1:
+                    capacity.append(self.variable_nominal(f"{asset}.GasIn.Hydraulic_power"))
+                else:
+                    capacity.append(1)
+                    # try:
+                    #     capacity.append(self.variable_nominal(f"{asset}.GasIn.Hydraulic_power"))
+                    # except:
+                    #     pass
 
             for i in range(len(connected_assets)):
                 if (self.variable_nominal(f"{node}.GasConn[{i+1}].Hydraulic_power") == 1):
-                    self.__node_variable_nominal[f"{node}.GasConn[{i}].Hydraulic_power"] = np.median(capacity)
+                    if capacity[i]!=1:
+                        self.__node_variable_nominal[
+                            f"{node}.GasConn[{i + 1}].Hydraulic_power"] = capacity[i]
+                    else:
+                        self.__node_variable_nominal[f"{node}.GasConn[{i+1}].Hydraulic_power"] = np.median(capacity)
 
     def energy_system_options(self):
         r"""
