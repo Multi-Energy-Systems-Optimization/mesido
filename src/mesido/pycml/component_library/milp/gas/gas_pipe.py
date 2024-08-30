@@ -50,14 +50,14 @@ class GasPipe(GasTwoPort, BaseAsset):
         # rho * ff * length * area / 2 / diameter * velocity**3
         ff = 0.02  # Order of magnitude expected with 0.05-2.5m/s in 20mm-1200mm diameter pipe
         velo = self.Q_nominal / self.area
-        self.Hydraulic_power_nominal = (
-            self.rho * ff * max(self.length, 1.0) * pi * self.area / self.diameter / 2.0 * velo**3
-        )
+        # self.Hydraulic_power_nominal = (
+        #     self.rho * ff * max(self.length, 1.0) * pi * self.area / self.diameter / 2.0 * velo**3
+        # )
         self.add_variable(
-            Variable, "Hydraulic_power", min=0.0, nominal=self.Hydraulic_power_nominal
+            Variable, "Hydraulic_power", min=0.0, nominal=self.GasIn.Hydraulic_power.nominal
         )  # [W]
 
-        # self.add_equation(
-        #     (self.Hydraulic_power - (self.GasIn.Hydraulic_power - self.GasOut.Hydraulic_power))
-        #     / (self.pressure * self.Q_nominal * self.Hydraulic_power_nominal) ** 0.5
-        # )
+        self.add_equation(
+            (self.Hydraulic_power - (self.GasIn.Hydraulic_power - self.GasOut.Hydraulic_power))
+            / self.GasIn.Hydraulic_power.nominal
+        )

@@ -293,8 +293,8 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                 max_ = self.bounds()[f"{asset}.Electricity_source"][1].values[: len(self.times())]
                 a = [x for x in max_ if abs(x) > 0.]
                 nominal = (
-                    self.variable_nominal(f"{asset}.Electricity_source") * min(a)
-                ) ** 0.5
+                    self.variable_nominal(f"{asset}.Electricity_source") * min(a) * np.median(a)
+                ) ** (1. / 3.)
 
                 constraints.append(((set_point * max_ - electricity_source) / nominal, 0.0, 0.0))
 

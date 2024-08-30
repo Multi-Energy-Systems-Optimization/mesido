@@ -518,6 +518,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         ):
             modifiers = dict(
                 n=sum_in + sum_out,
+
             )
             return GasNode, modifiers
 
@@ -1735,7 +1736,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
         modifiers = dict(
             max_current=max_current,
             min_voltage=min_voltage,
-            max_power=max_power,
             nominal_current=max_current / 2.0,
             nominal_voltage=min_voltage,
             length=length,

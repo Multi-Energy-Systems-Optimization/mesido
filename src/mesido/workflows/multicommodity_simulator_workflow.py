@@ -98,6 +98,9 @@ class SolverGurobi:
     inherited by a class describing the optimization problem.
     The relative MIP gap is set to 0.01% and 4 threads are used to sole the problem.
     """
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
+    #     self.__mip
 
     def solver_options(self):
         options = super().solver_options()

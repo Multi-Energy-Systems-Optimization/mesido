@@ -142,6 +142,8 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         self.__gas_storage_discharge_nominals = {}
         self.__gas_storage_discharge_map = {}
 
+        self.__node_variable_nominal = {}
+
     def gas_carriers(self):
         """
         This function should be overwritten by the problem and should give a dict with the
@@ -271,6 +273,22 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                     f"{storage}.GasIn.Q"
                 )
 
+
+        for node, connected_assets in self.energy_system_topology.gas_nodes.items():
+            capacity = []
+            for _, (asset, _orientation) in connected_assets.items():
+                try:
+                    capacity.append(self.variable_nominal(f"{asset}.GasOut.Hydraulic_power"))
+                except:
+                    try:
+                        capacity.append(self.variable_nominal(f"{asset}.GasIn.Hydraulic_power"))
+                    except:
+                        pass
+
+            for i in range(len(connected_assets)):
+                if (self.variable_nominal(f"{node}.GasConn[{i+1}].Hydraulic_power") == 1):
+                    self.__node_variable_nominal[f"{node}.GasConn[{i}].Hydraulic_power"] = np.median(capacity)
+
     def energy_system_options(self):
         r"""
         Returns a dictionary of milp network specific options.
@@ -334,6 +352,8 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             return self.__gas_pipe_head_loss_nominals[variable]
         elif variable in self.__gas_storage_discharge_nominals:
             return self.__gas_storage_discharge_nominals[variable]
+        elif variable in self.__node_variable_nominal:
+            return self.__node_variable_nominal[variable]
         else:
             return super().variable_nominal(variable)
 
@@ -598,11 +618,11 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             constraints.extend(
                 self._gn_head_loss_class._pipe_head_loss_path_constraints(self, ensemble_member)
             )
-        constraints.extend(
-            self._gn_head_loss_class._pipe_hydraulic_power_path_constraints(
-                self, self.__maximum_total_head_loss, ensemble_member
+            constraints.extend(
+                self._gn_head_loss_class._pipe_hydraulic_power_path_constraints(
+                    self, self.__maximum_total_head_loss, ensemble_member
+                )
             )
-        )
         constraints.extend(self.__flow_direction_path_constraints(ensemble_member))
         constraints.extend(self.__gas_node_hydraulic_power_mixing_path_constraints(ensemble_member))
         constraints.extend(self.__gas_storage_discharge_path_constraints(ensemble_member))

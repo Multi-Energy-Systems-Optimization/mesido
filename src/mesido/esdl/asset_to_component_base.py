@@ -193,7 +193,7 @@ class _AssetToComponentBase:
     primary_port_name_convention = "primary"
     secondary_port_name_convention = "secondary"
 
-    __power_keys = ["power", "maxDischargeRate", "maxChargeRate"]
+    __power_keys = ["power", "maxDischargeRate", "maxChargeRate", "capacity"]
 
     def __init__(self, **kwargs):
         """
