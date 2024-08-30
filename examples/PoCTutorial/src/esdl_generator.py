@@ -63,8 +63,12 @@ if __name__ == "__main__":
     prod_2_coord = [51.99543, 4.36457]
     joint_1_coord = [52.00045, 4.36724]
     joint_2_coord = [51.99596, 4.36951]
-    pipe_1_elbow = [52.00359, 4.36629]
-    pipe_3_elbow = [51.99009, 4.37153]
+    joint_1ret_coord = [52.00033, 4.36646]
+    joint_2ret_coord = [51.99537, 4.36895]
+    pipe_1_elbow_coord = [52.00359, 4.36629]
+    pipe_1ret_elbow_coord = [52.00383, 4.36552]
+    pipe_3_elbow_coord = [51.99009, 4.37153]
+    pipe_3ret_elbow_coord = [51.98948, 4.37123]
     area_1_coord = [[52.00207, 4.36814], [51.99792, 4.36994], [51.9989, 4.3787], [52.00365, 4.37728]]
     area_2_coord = [[51.99714, 4.37028], [51.99189, 4.37239], [51.99239, 4.3805], [51.99799, 4.37904]]
     area_3_coord = [[51.99178, 4.37561], [51.98903, 4.37638], [51.98903, 4.38316], [51.99186, 4.38196]]
@@ -84,7 +88,6 @@ if __name__ == "__main__":
     heat_demand_1.geometry = demand_1_point
     create_in_out_ports(heat_demand_1)
     
-
     # Area 2 (demand 2)
     area_2 = esdl.Area(name = 'Area_demand_2')
     define_area(area_2, area_2_coord)
@@ -117,7 +120,7 @@ if __name__ == "__main__":
     create_in_out_ports(heat_source_1)
     create_in_out_ports(heat_source_2)
 
-    # Create joints
+    # Main netowrk joints joints
     joint_1 = esdl.Joint(id = str(uuid4()), name = 'Joint_1') # Can attach multiple pipes to a single inport.
     create_in_out_ports(joint_1)
     add_geometry_point(joint_1, joint_1_coord)
@@ -128,14 +131,14 @@ if __name__ == "__main__":
     add_geometry_point(joint_2, joint_2_coord)
     main_area.asset.append(joint_2)
 
-    # Pipes
-    pipe_d = esdl.PipeDiameterEnum.from_string("DN400")
+    # Main network pipes
+    pipe_d = esdl.PipeDiameterEnum.from_string("DN400")     # Pipe diameters
     
     pipe_1 = esdl.Pipe(id = str(uuid4()), diameter = pipe_d, name = "Pipe_1", state = 'OPTIONAL')
     create_in_out_ports(pipe_1)
     pipe_from = heat_source_1
     pipe_to = joint_1
-    define_pipe(pipe_1, pipe_from, pipe_to, pipe_1_elbow)
+    define_pipe(pipe_1, pipe_from, pipe_to, elbow_point = pipe_1_elbow_coord)
     main_area.asset.append(pipe_1)    
     
     pipe_2 = esdl.Pipe(id = str(uuid4()), diameter = pipe_d, name = "Pipe_2")
@@ -149,7 +152,7 @@ if __name__ == "__main__":
     create_in_out_ports(pipe_3)
     pipe_from = joint_2
     pipe_to = heat_demand_3
-    define_pipe(pipe_3, pipe_from, pipe_to, pipe_3_elbow)
+    define_pipe(pipe_3, pipe_from, pipe_to, elbow_point = pipe_3_elbow_coord)
     main_area.asset.append(pipe_3) 
 
     pipe_4 = esdl.Pipe(id = str(uuid4()), diameter = pipe_d, name = "Pipe_4")
@@ -168,11 +171,68 @@ if __name__ == "__main__":
     
     pipe_6 = esdl.Pipe(id = str(uuid4()), diameter = pipe_d, name = "Pipe_6", state = 'OPTIONAL')
     create_in_out_ports(pipe_6)
-    pipe_from = joint_2
-    pipe_to = heat_source_2
+    pipe_from = heat_source_2
+    pipe_to = joint_2
     define_pipe(pipe_6, pipe_from, pipe_to)
     main_area.asset.append(pipe_6)  
 
+    # Return network joints
+    joint_1ret = esdl.Joint(id = str(uuid4()), name = 'Joint_1ret') # Can attach multiple pipes to a single inport.
+    create_in_out_ports(joint_1ret)
+    add_geometry_point(joint_1ret, joint_1ret_coord)
+    main_area.asset.append(joint_1ret)
+    
+    joint_2ret = esdl.Joint(id = str(uuid4()), name = 'Joint_2ret') # Can attach multiple pipes to a single inport.
+    create_in_out_ports(joint_2ret)
+    add_geometry_point(joint_2ret, joint_2ret_coord)
+    main_area.asset.append(joint_2ret)
+
+    # Return network pipes.
+    pipe_ret_d = esdl.PipeDiameterEnum.from_string("DN400")     # Pipe diameters
+
+    pipe_1ret = esdl.Pipe(id = str(uuid4()), diameter = pipe_ret_d, name = "Pipe_1ret", state = 'OPTIONAL')
+    create_in_out_ports(pipe_1ret)
+    pipe_from = joint_1ret
+    pipe_to = heat_source_1
+    define_pipe(pipe_1ret, pipe_from, pipe_to, elbow_point = pipe_1ret_elbow_coord)
+    main_area.asset.append(pipe_1ret)
+
+    pipe_2ret = esdl.Pipe(id = str(uuid4()), diameter = pipe_ret_d, name = "Pipe_2ret")
+    create_in_out_ports(pipe_2ret)
+    pipe_from = joint_2ret
+    pipe_to = joint_1ret
+    define_pipe(pipe_2ret, pipe_from, pipe_to)
+    main_area.asset.append(pipe_2ret)
+
+    pipe_3ret = esdl.Pipe(id = str(uuid4()), diameter = pipe_ret_d, name = "Pipe_3ret")
+    create_in_out_ports(pipe_3ret)
+    pipe_from = heat_demand_3
+    pipe_to = joint_2ret
+    define_pipe(pipe_3ret, pipe_from, pipe_to, elbow_point = pipe_3ret_elbow_coord)
+    main_area.asset.append(pipe_3ret)
+
+    pipe_4ret = esdl.Pipe(id = str(uuid4()), diameter = pipe_ret_d, name = "Pipe_4ret")
+    create_in_out_ports(pipe_4ret)
+    pipe_from = heat_demand_1
+    pipe_to = joint_1ret
+    define_pipe(pipe_4ret, pipe_from, pipe_to)
+    main_area.asset.append(pipe_4ret)
+
+    pipe_5ret = esdl.Pipe(id = str(uuid4()), diameter = pipe_ret_d, name = "Pipe_5ret")
+    create_in_out_ports(pipe_5ret)
+    pipe_from = heat_demand_2
+    pipe_to = joint_2ret
+    define_pipe(pipe_5ret, pipe_from, pipe_to)
+    main_area.asset.append(pipe_5ret)
+
+    pipe_6ret = esdl.Pipe(id = str(uuid4()), diameter = pipe_ret_d, name = "Pipe_6ret", state = 'OPTIONAL')
+    create_in_out_ports(pipe_6ret)
+    pipe_from = joint_2ret
+    pipe_to = heat_source_2
+    define_pipe(pipe_6ret, pipe_from, pipe_to)
+    main_area.asset.append(pipe_6ret)
+
+    # File export and saving
     save_dir = save_folder
     os.chdir(save_dir)
     esh.save(filename = esdl_file_name)
