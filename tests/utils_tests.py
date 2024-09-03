@@ -303,6 +303,7 @@ def heat_to_discharge_test(solution, results):
                 results[f"{p}.HeatOut.Heat"][indices]
                 <= results[f"{p}.Q"][indices] * rho * cp * temperature + tol
             )
+
         )
         indices = results[f"{p}.Q"] < 0
         if f"{carrier_id}_temperature" in results.keys():

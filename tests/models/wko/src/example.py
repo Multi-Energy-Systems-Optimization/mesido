@@ -112,6 +112,52 @@ class MinimizeSourcesHeatGoal(Goal):
         """
         return optimization_problem.state(f"{self.source}.Heat_source")
 
+# class MinimizeSourcesColdGoal(Goal):
+#     """
+#     A minimization goal for source milp production. We use order 1 here as we want to minimize milp
+#     over the full horizon and not per time-step.
+#     """
+
+#     priority = 4
+
+#     order = 2
+
+#     def __init__(self, source: str):
+#         """
+#         The constructor of the goal.
+
+#         Parameters
+#         ----------
+#         source : string of the source name that is going to be minimized
+#         """
+#         self.target_min = 0.0
+#         self.target_max = 10e6
+#         self.function_range = (-2.0 * 10.0e6, 2.0 * 10.0e6)
+#         self.function_nominal = (
+#             10.0e6 / 2.0
+#         )
+
+#         self.source = source
+
+
+#     def function(
+#         self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
+#     ) -> ca.MX:
+#         """
+#         This function returns the state variable to which should to be matched to the target
+#         specified in the __init__.
+
+#         Parameters
+#         ----------
+#         optimization_problem : The optimization class containing the variables'.
+#         ensemble_member : the ensemble member.
+
+#         Returns
+#         -------
+#         The Heat_source state of the optimization problem.
+#         """
+#         return optimization_problem.state(f"{self.source}.Heat_airco")
+
 
 class _GoalsAndOptions:
     """
@@ -202,6 +248,9 @@ class HeatProblem(
 
         for s in self.energy_system_components["heat_source"]:
             goals.append(MinimizeSourcesHeatGoal(s))
+
+        # for s in self.energy_system_components["airco"]:
+        #     goals.append(MinimizeSourcesColdGoal(s))
 
         return goals
 

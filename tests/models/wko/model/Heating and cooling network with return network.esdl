@@ -18,12 +18,12 @@
         <port xsi:type="esdl:OutPort" id="3c7b1a2a-87df-41e3-8823-4100495f52ff" connectedTo="ed220d84-039a-4432-b5a1-39cc412e3400" carrier="001521ea-9f10-4745-ac3b-6e0c767e16b2_ret" name="ret_port"/>
         <geometry xsi:type="esdl:Point" lat="51.989426621710344" lon="4.321046005483394" CRS="WGS84"/>
       </asset>
-      <asset xsi:type="esdl:HeatPump" name="HeatPump_1" power="20000000.0" id="bfb2beda-2612-4358-bb2e-810096d2f219" COP="4.0">
+      <asset xsi:type="esdl:HeatPump" name="HeatPump_1" power="15000000.0" id="bfb2beda-2612-4358-bb2e-810096d2f219" COP="4.0">
         <port xsi:type="esdl:InPort" id="7fab37db-27ff-4772-a284-059f2c0de2b5" carrier="001521ea-9f10-4745-ac3b-6e0c767e16b2_ret" name="In" connectedTo="d894f0db-1638-4520-b4f7-6576d1f76056"/>
         <port xsi:type="esdl:OutPort" id="e9e2f0a8-c7d8-4246-b4a2-c45b171cc9e7" connectedTo="f3cac062-81ae-44e6-a06c-212f1986b2f9" carrier="001521ea-9f10-4745-ac3b-6e0c767e16b2" name="Out"/>
         <geometry xsi:type="esdl:Point" lat="51.99782979186225" lon="4.3632351591223815" CRS="WGS84"/>
       </asset>
-      <asset xsi:type="esdl:Airco" name="Airco_1" power="20000000.0" id="2c26c88b-22a1-47cd-abe3-4929f3423d93">
+      <asset xsi:type="esdl:Airco" name="Airco_1" power="6000000.0" id="2c26c88b-22a1-47cd-abe3-4929f3423d93">
         <port xsi:type="esdl:InPort" id="49a54630-f420-49e0-a357-37330260f6cf" carrier="001521ea-9f10-4745-ac3b-6e0c767e16b2" name="In" connectedTo="4289b88c-21c6-4e4f-b545-2d464ddca524"/>
         <port xsi:type="esdl:OutPort" id="bb467777-7816-4a96-9ad0-af7e276808cb" connectedTo="5bf6808a-f633-446f-90db-4c43fd8b7d30" carrier="001521ea-9f10-4745-ac3b-6e0c767e16b2_ret" name="Out"/>
         <geometry xsi:type="esdl:Point" lat="51.99666733844491" lon="4.363750086499999" CRS="WGS84"/>
