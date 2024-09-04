@@ -566,7 +566,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     if self.variable_nominal(f"{node}.HeatConn[{i + 1}].{var}") == 1:
                         if nominals[var][i] != 1:
                             # Here we set a nominal based directly on the connected asset.
-                            self.__node_variable_nominal[f"{node}.HeatConn[{i + 1}].{var}"] = (
+                            self.__heat_node_variable_nominal[f"{node}.HeatConn[{i + 1}].{var}"] = (
                                 nominals[var][i]
                             )
                         else:

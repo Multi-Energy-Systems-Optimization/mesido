@@ -187,7 +187,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                     if self.variable_nominal(f"{node}.ElectricityConn[{i + 1}].{var}") == 1:
                         if nominals[var][i] != 1:
                             # Here we set a nominal based directly on the connected asset.
-                            self.__node_variable_nominal[
+                            self.__bus_variable_nominal[
                                 f"{node}.ElectricityConn[{i + 1}].{var}"
                             ] = nominals[var][i]
                         else:
@@ -196,7 +196,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                             # node to node. In this case we cannot set the nominal based on the
                             # connected node, hence we assume a node has at least one not node
                             # asset connected to it.
-                            self.__heat_node_variable_nominal[
+                            self.__bus_variable_nominal[
                                 f"{node}.ElectricityConn[{i + 1}].{var}"
                             ] = np.median(nominals[var])
 

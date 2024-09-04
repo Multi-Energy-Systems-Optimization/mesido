@@ -144,7 +144,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
         # Map for setting port variable nominals in the case they were not set during the model
         # parsing (logical links).
-        self.__gas_node_variable_nominal
+        self.__gas_node_variable_nominal = {}
 
     def gas_carriers(self):
         """
