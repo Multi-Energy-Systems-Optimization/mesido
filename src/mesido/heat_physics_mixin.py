@@ -201,6 +201,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         # of these maps is in the AssetSizingMixin.
         self._heat_pipe_topo_pipe_class_map = {}
 
+        # Map for setting node nominals in case of logical links.
+        self.__heat_node_variable_nominal = {}
+
         super().__init__(*args, **kwargs)
 
     def temperature_carriers(self):
@@ -545,6 +548,37 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         self.__maximum_total_head_loss = self.__get_maximum_total_head_loss()
 
+        # Setting the node nominals using the connected assets.
+        for node, connected_assets in self.energy_system_topology.nodes.items():
+            nominals = {}
+            for var in ["Q", "H", "Heat", "Hydraulic_power"]:
+                nominals[var] = []
+                for _, (asset, _orientation) in connected_assets.items():
+                    var_nom = self.variable_nominal(f"{asset}.HeatOut.{var}")
+                    if var_nom != 1:
+                        nominals[var].append(var_nom)
+                    elif self.variable_nominal(f"{asset}.HeatIn.{var}") != 1:
+                        nominals[var].append(self.variable_nominal(f"{asset}.HeatIn.{var}"))
+                    else:
+                        nominals[var].append(1)
+
+                for i in range(len(connected_assets)):
+                    if self.variable_nominal(f"{node}.HeatConn[{i + 1}].{var}") == 1:
+                        if nominals[var][i] != 1:
+                            # Here we set a nominal based directly on the connected asset.
+                            self.__node_variable_nominal[f"{node}.HeatConn[{i + 1}].{var}"] = (
+                                nominals[var][i]
+                            )
+                        else:
+                            # Here we set a nominal based on median of all the connected assets to
+                            # the node. This is specifically done when we have a logical link for
+                            # node to node. In this case we cannot set the nominal based on the
+                            # connected node, hence we assume a node has at least one not node
+                            # asset connected to it.
+                            self.__heat_node_variable_nominal[f"{node}.HeatConn[{i + 1}].{var}"] = (
+                                np.median(nominals[var])
+                            )
+
     def energy_system_options(self):
         r"""
         Returns a dictionary of heat network physics specific options.
@@ -688,6 +722,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             return self.__pipe_head_loss_nominals[variable]
         elif variable in self.__ates_max_stored_heat_nominals:
             return self.__ates_max_stored_heat_nominals[variable]
+        elif variable in self.__heat_node_variable_nominal:
+            return self.__heat_node_variable_nominal[variable]
         else:
             return super().variable_nominal(variable)
 

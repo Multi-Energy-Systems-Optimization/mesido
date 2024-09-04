@@ -510,23 +510,43 @@ class _AssetToComponentBase:
             i_max_out = (
                 self._port_to_i_max.get(connected_port, None)
                 if self._port_to_i_max.get(connected_port, False)
-                else max([asset.attributes.get(key, -1) / connected_port.carrier.voltage for key in self.__power_keys])
+                else max(
+                    [
+                        asset.attributes.get(key, -1) / connected_port.carrier.voltage
+                        for key in self.__power_keys
+                    ]
+                )
             )
             i_nom_out = (
                 self._port_to_i_nominal.get(connected_port, None)
                 if self._port_to_i_nominal.get(connected_port, False)
-                else max([asset.attributes.get(key, -1) / connected_port.carrier.voltage for key in self.__power_keys])
+                else max(
+                    [
+                        asset.attributes.get(key, -1) / connected_port.carrier.voltage
+                        for key in self.__power_keys
+                    ]
+                )
             )
             connected_port = asset.in_ports[0].connectedTo[0]
             i_max_in = (
                 self._port_to_i_max.get(connected_port, None)
                 if self._port_to_i_max.get(connected_port, False)
-                else max([asset.attributes.get(key, -1) / connected_port.carrier.voltage for key in self.__power_keys])
+                else max(
+                    [
+                        asset.attributes.get(key, -1) / connected_port.carrier.voltage
+                        for key in self.__power_keys
+                    ]
+                )
             )
             i_nom_in = (
                 self._port_to_i_nominal.get(connected_port, None)
                 if self._port_to_i_nominal.get(connected_port, False)
-                else max([asset.attributes.get(key, -1) / connected_port.carrier.voltage for key in self.__power_keys])
+                else max(
+                    [
+                        asset.attributes.get(key, -1) / connected_port.carrier.voltage
+                        for key in self.__power_keys
+                    ]
+                )
             )
             if i_nom_in > 0.0 and i_nom_out > 0.0:
                 self._port_to_i_nominal[asset.in_ports[0]] = i_nom_in
@@ -545,12 +565,22 @@ class _AssetToComponentBase:
             i_max = (
                 self._port_to_i_max.get(connected_port, None)
                 if self._port_to_i_max.get(connected_port, False)
-                else max([asset.attributes.get(key, -1) / connected_port.carrier.voltage for key in self.__power_keys])
+                else max(
+                    [
+                        asset.attributes.get(key, -1) / connected_port.carrier.voltage
+                        for key in self.__power_keys
+                    ]
+                )
             )
             i_nom = (
                 self._port_to_i_nominal.get(connected_port, None)
                 if self._port_to_i_nominal.get(connected_port, False)
-                else max([asset.attributes.get(key, -1) / connected_port.carrier.voltage for key in self.__power_keys])
+                else max(
+                    [
+                        asset.attributes.get(key, -1) / connected_port.carrier.voltage
+                        for key in self.__power_keys
+                    ]
+                )
             )
             if i_max > 0.0:
                 self._set_electricity_current_nominal_and_max(asset, i_max, i_nom)
@@ -572,12 +602,22 @@ class _AssetToComponentBase:
                     i_max = (
                         self._port_to_i_max.get(connected_port, None)
                         if self._port_to_i_max.get(connected_port, False)
-                        else max([asset.attributes.get(key, -1) / connected_port.carrier.voltage for key in self.__power_keys])
+                        else max(
+                            [
+                                asset.attributes.get(key, -1) / connected_port.carrier.voltage
+                                for key in self.__power_keys
+                            ]
+                        )
                     )
                     i_nom = (
                         self._port_to_i_nominal.get(connected_port, None)
                         if self._port_to_i_nominal.get(connected_port, False)
-                        else max([asset.attributes.get(key, -1) / connected_port.carrier.voltage for key in self.__power_keys])
+                        else max(
+                            [
+                                asset.attributes.get(key, -1) / connected_port.carrier.voltage
+                                for key in self.__power_keys
+                            ]
+                        )
                     )
                     if i_max > 0.0:
                         self._set_electricity_current_nominal_and_max(asset, i_max, i_nom)
