@@ -290,12 +290,14 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                 )
                 # TODO: [: len(self.times())] should be removed once the emerge test is properly
                 # time-sampled.
-                max = self.bounds()[f"{asset}.Electricity_source"][1].values[: len(self.times())]
+                max_ = self.bounds()[f"{asset}.Electricity_source"][1].values[: len(self.times())]
+                a = [x for x in max_ if abs(x) > 0.]
                 nominal = (
-                    self.variable_nominal(f"{asset}.Electricity_source") * np.median(max)
-                ) ** 0.5
+                                  self.variable_nominal(f"{asset}.Electricity_source") * min(
+                              a) * np.median(a)
+                          ) ** (1. / 3.)
 
-                constraints.append(((set_point * max - electricity_source) / nominal, 0.0, 0.0))
+                constraints.append(((set_point * max_ - electricity_source) / nominal, 0.0, 0.0))
 
         return constraints
 
