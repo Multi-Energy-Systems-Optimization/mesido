@@ -719,7 +719,6 @@ class HeadLossClass:
             or head_loss_option == HeadLossOption.LINEARIZED_N_LINES_EQUALITY
         ):
             n_linear_lines = network_settings["n_linearization_lines"]
-            n_timesteps = len(optimization_problem.times())
 
             a, b = darcy_weisbach.get_linear_pipe_dh_vs_q_fit(
                 diameter,
@@ -740,6 +739,7 @@ class HeadLossClass:
 
             # Vectorize constraint for speed
             if symbolic:
+                n_timesteps = len(optimization_problem.times())
                 q_nominal = optimization_problem.variable_nominal(f"{pipe}.Q")
                 head_loss_nominal = optimization_problem.variable_nominal(f"{pipe}.dH")
                 head_loss_vec = ca.repmat(head_loss, len(a))
@@ -757,6 +757,18 @@ class HeadLossClass:
                 b_vec = np.repeat(b, discharge.size1())
 
                 constraint_nominal = np.abs(head_loss_nominal * (a_vec * q_nominal + b_vec)) ** 0.5
+
+                max_discharge = network_settings["maximum_velocity"] * area
+                big_m = 2* self._hn_pipe_head_loss(
+                    pipe,
+                    self,
+                    energy_system_options,
+                    network_settings,
+                    parameters,
+                    max_discharge,
+                    # network_type=self.gas_network_settings["network_type"],
+                    pressure=parameters[f"{pipe}.pressure"],
+                )
 
                 if big_m is None:
                     # We write the equation such that big_m is always used, even if
