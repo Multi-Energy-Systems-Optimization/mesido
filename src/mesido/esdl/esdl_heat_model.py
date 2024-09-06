@@ -128,7 +128,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 and asset.out_ports is not None
                 and len(asset.in_ports) >= 2
                 and len(asset.out_ports) >= 2
-            ):  ## heat pump and heat exchanger
+            ):  # heat pump and heat exchanger
                 carrier = asset.global_properties["carriers"][asset.in_ports[0].carrier.id]
                 if "Prim" in asset.in_ports[0].name:
                     prim_in_id = carrier["id_number_mapping"]
@@ -174,13 +174,13 @@ class AssetToHeatComponent(_AssetToComponentBase):
                     id_number = carrier["id_number_mapping"]
                     port = f"{carrier['type'].capitalize()}Out"
                     ids[port] = dict(carrier_id=id_number)
-                except:
+                except KeyError:
                     try:
                         carrier = asset.global_properties["carriers"][asset.in_ports[0].carrier.id]
                         id_number = carrier["id_number_mapping"]
                         port = f"{carrier['type'].capitalize()}In"
                         ids[port] = dict(carrier_id=id_number)
-                    except:
+                    except KeyError:
                         carrier = asset.global_properties["carriers"][asset.out_ports[0].carrier.id]
                         id_number = carrier["id_number_mapping"]
                         port = f"{carrier['type'].capitalize()}Out"
@@ -194,14 +194,14 @@ class AssetToHeatComponent(_AssetToComponentBase):
                     id_number = carrier["id_number_mapping"]
                     port = f"{carrier['type'].capitalize()}Conn[{k+1}]"
                     ids[port] = dict(carrier_id=id_number)
-                except:
+                except KeyError:
                     pass
                 try:
                     carrier = asset.global_properties["carriers"][asset.out_ports[0].carrier.id]
                     id_number = carrier["id_number_mapping"]
                     port = f"{carrier['type'].capitalize()}Conn[{k+1}]"
                     ids[port] = dict(carrier_id=id_number)
-                except:
+                except KeyError:
                     pass
             return ids
 
@@ -619,7 +619,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         try:
             carrier = asset.global_properties["carriers"][asset.in_ports[0].carrier.id]
-        except:
+        except KeyError:
             carrier = asset.global_properties["carriers"][asset.out_ports[0].carrier.id]
 
         modifiers = dict(
@@ -1809,7 +1809,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         try:
             carrier = asset.global_properties["carriers"][asset.in_ports[0].carrier.id]
-        except:
+        except KeyError:
             carrier = asset.global_properties["carriers"][asset.out_ports[0].carrier.id]
 
         modifiers = dict(

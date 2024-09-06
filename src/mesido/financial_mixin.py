@@ -97,9 +97,10 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         parameters = self.parameters(0)
         bounds = self.bounds()
 
-        for owner, assets in self.energy_system_owners.items():
+        for _owner, assets in self.energy_system_owners.items():
             # All assets already have individual costs that can be used for the business cases
-            # Here we create revenue variables for the locations where energy is consumed or exhanged between owners
+            # Here we create revenue variables for the locations where energy is consumed or
+            # exhanged between owners
 
             # Create revenue variable for every demand type asset
             # The assumption is that if an organizational asset own the demand asset it has the
@@ -111,8 +112,8 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     *self.energy_system_components.get("electricity_demand", []),
                 ]:
                     # We check if we can find the carrier information used for that demand
-                    # Note that we thus assume that the get_{commodity}_carriers() functions are set.
-                    # In most practical cases this means using the ESDLExtraVarsMixin
+                    # Note that we thus assume that the get_{commodity}_carriers() functions are
+                    # set. In most practical cases this means using the ESDLExtraVarsMixin
                     var_name = None
                     nominal_power = None
                     carrier_name = None
@@ -122,14 +123,15 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                             attr["id_number_mapping"]
                             == parameters[f"{asset}.ElectricityIn.carrier_id"]
                         ):
-                            # Note that we are including the port name at the end as we can have multiple revenue
-                            # variables for a single asset as there can be multiple connections with different
-                            # organizations over the different ports.
+                            # Note that we are including the port name at the end as we can have
+                            # multiple revenue variables for a single asset as there can be
+                            # multiple connections with different organizations over the different
+                            # ports.
                             var_name = f"{asset}__revenue_ElectricityIn"
                             carrier_name = attr["name"]
                             nominal_power = self.variable_nominal(f"{asset}.Electricity_demand")
-                            # Here we same the variable which should be used for the energy flow between
-                            # the organizations and thus for computing the revenue.
+                            # Here we same the variable which should be used for the energy flow
+                            # between the organizations and thus for computing the revenue.
                             self._asset_revenue_variable_port_map[var_name] = (
                                 f"{asset}.ElectricityIn.Power"
                             )
@@ -160,15 +162,16 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                         self.__asset_revenue_nominals[var_name] = avg_price * nominal_power
                         self.__asset_revenue_bounds[var_name] = (0.0, np.inf)
 
-            # Find the assets that exchange energy with other owners and create a revenue variable for them as well
-            # We loop over the assets
+            # Find the assets that exchange energy with other owners and create a revenue variable
+            # for them as well We loop over the assets
             for asset in assets:
                 # This is something extra I created. It is a nested list in the form of:
                 # [[asset1.HeatIn, asset2.HeatOut], [asset3.HeatIn, asset4.HeatOut], ...]
                 conn = self.get_connections()
                 # We loop over the connections (yes this is inefficient)
                 for connection in conn:
-                    # Here we check if our asset is in the connection hence we find a connected asset
+                    # Here we check if our asset is in the connection hence we find a connected
+                    # asset
                     if asset == connection[0].split(".")[0] or asset == connection[1].split(".")[0]:
                         other_asset = (
                             connection[0].split(".")[0]
@@ -186,10 +189,10 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                         for x in temp[1:]:
                             port = port + "." + x
 
-                        # Here we check that the connected asset is not also owned by the same entity.
-                        # If the other asset belongs to an organization we create a revenue variable
-                        # to represent the cashflow associated with the energy exchanged between the two
-                        # organizations.
+                        # Here we check that the connected asset is not also owned by the same
+                        # entity. If the other asset belongs to an organization we create a
+                        # revenue variable to represent the cashflow associated with the energy
+                        # exchanged between the two organizations.
                         if other_asset not in assets:
                             var_name = f"{asset}__revenue_{port}"
                             nominal_power = None
@@ -226,8 +229,8 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                                     carrier_name = attr["name"]
                             if carrier_name is not None:
                                 # Please note that we create a dict mapping with a list. As a single
-                                # asset can have multiple revenue variables as it can have connections with
-                                # other organizations on different ports.
+                                # asset can have multiple revenue variables as it can have
+                                # connections with other organizations on different ports.
                                 try:
                                     self._asset_revenue_map[asset].append(var_name)
                                 except KeyError:
@@ -237,7 +240,9 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                                     price_profile = self.get_timeseries(
                                         f"{carrier_name}.price_profile"
                                     ).values
-                                except NameError or KeyError:
+                                except NameError:
+                                    price_profile = np.ones(len(self.times()))
+                                except KeyError:
                                     price_profile = np.ones(len(self.times()))
                                 avg_price = (
                                     np.mean(price_profile) if np.mean(price_profile) else 1.0
@@ -1434,22 +1439,20 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             for variable_revenue_var in variable_revenue_vars:
                 carrier_name = None
                 port = None
-                # We find the associated carrier and port (is the full string with asset name included)
+                # We find the associated carrier and port (is the full string with asset name
+                # included)
+                port_name = self._asset_revenue_variable_port_map[variable_revenue_var]
                 for _id, attr in self.get_electricity_carriers().items():
                     if (
                         attr["id_number_mapping"]
-                        == parameters[
-                            f"{asset}.{self._asset_revenue_variable_port_map[variable_revenue_var].split('.')[-2]}.carrier_id"
-                        ]
+                        == parameters[f"{asset}.{port_name.split('.')[-2]}.carrier_id"]
                     ):
                         carrier_name = attr["name"]
                         port = f"{self._asset_revenue_variable_port_map[variable_revenue_var]}"
                 for _id, attr in self.get_gas_carriers().items():
                     if (
                         attr["id_number_mapping"]
-                        == parameters[
-                            f"{asset}.{self._asset_revenue_variable_port_map[variable_revenue_var].split('.')[-2]}.carrier_id"
-                        ]
+                        == parameters[f"{asset}.{port_name.split('.')[-2]}.carrier_id"]
                     ):
                         carrier_name = attr["name"]
                         port = f"{self._asset_revenue_variable_port_map[variable_revenue_var]}"
@@ -1478,10 +1481,10 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                         *self.energy_system_components.get("electricity_demand", []),
                     ]:
                         energy_flow_sign = -1.0
-                    # For nodes/busses we do this by checking the type of port in the topology object
-                    # It is a bit of a hassle as we need to find the index of the port of the node
-                    # for that we find the last digit (which by definition is the port index) in the
-                    # port name string.
+                    # For nodes/busses we do this by checking the type of port in the topology
+                    # object. It is a bit of a hassle as we need to find the index of the port of
+                    # the node for that we find the last digit (which by definition is the port
+                    # index) in the port name string.
                     if asset in self.energy_system_topology.nodes.keys():
                         port_number = int([x for x in port if x.isdigit()][-1])
                         if (

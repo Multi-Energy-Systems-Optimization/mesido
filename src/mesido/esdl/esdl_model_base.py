@@ -356,8 +356,10 @@ class _ESDLModelBase(_Model):
                         ):
                             self.connect(getattr(component, node_suf)[i], port_map[connected_to.id])
                             model_connections.append(
-                                [getattr(component, node_suf)[i].name,
-                                 port_map[connected_to.id].name]
+                                [
+                                    getattr(component, node_suf)[i].name,
+                                    port_map[connected_to.id].name,
+                                ]
                             )
                         elif connected_to.id not in list(port_map.keys()):
                             # If The asset is not in the
@@ -381,8 +383,12 @@ class _ESDLModelBase(_Model):
                                 getattr(getattr(self, connected_node_asset.name), node_suf)[idx],
                             )
                             model_connections.append(
-                                [getattr(component, node_suf)[i],
-                                getattr(getattr(self, connected_node_asset.name), node_suf)[idx]]
+                                [
+                                    getattr(component, node_suf)[i],
+                                    getattr(getattr(self, connected_node_asset.name), node_suf)[
+                                        idx
+                                    ],
+                                ]
                             )
                         else:
                             # If the Connected asset is not of type pipe, there might be
@@ -430,10 +436,12 @@ class _ESDLModelBase(_Model):
                                 ],
                             )
                             model_connections.append(
-                                [getattr(component, elec_node_suf)[i],
-                                getattr(getattr(self, connected_node_asset.name), elec_node_suf)[
-                                    idx
-                                ]]
+                                [
+                                    getattr(component, elec_node_suf)[i],
+                                    getattr(
+                                        getattr(self, connected_node_asset.name), elec_node_suf
+                                    )[idx],
+                                ]
                             )
                         else:
                             self.connect_logical_links(
@@ -441,8 +449,7 @@ class _ESDLModelBase(_Model):
                                 port_map[connected_to.id],
                             )
                             model_connections.append(
-                                [getattr(component, elec_node_suf)[i],
-                                port_map[connected_to.id]]
+                                [getattr(component, elec_node_suf)[i], port_map[connected_to.id]]
                             )
                         connections.add(conn)
                         i += 1
@@ -481,10 +488,12 @@ class _ESDLModelBase(_Model):
                                 ],
                             )
                             model_connections.append(
-                                [getattr(component, gas_node_suf)[i],
-                                getattr(getattr(self, connected_node_asset.name), gas_node_suf)[
-                                    idx
-                                ]]
+                                [
+                                    getattr(component, gas_node_suf)[i],
+                                    getattr(getattr(self, connected_node_asset.name), gas_node_suf)[
+                                        idx
+                                    ],
+                                ]
                             )
                         else:
                             self.connect_logical_links(
