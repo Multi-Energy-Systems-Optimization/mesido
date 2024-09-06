@@ -431,9 +431,9 @@ class TestColdDemand(TestCase):
             "ATES",
             # "ATES.Stored_heat_scaled",
             "Heat demand",
-            "Heat pump",
+            "Heat prodcuer",  #"Heat pump",
             "Cooling demand",
-            "Airco",
+            "Cold producer", #"Airco",
         ]
         # -----------------------------------------------------------------------------------------
         # Peak day
@@ -452,32 +452,32 @@ class TestColdDemand(TestCase):
 
         fig_1 = plt.figure()
         plt.plot(
-            times_peak_day,
-            results["ATES_1.Heat_flow"][index_start_peak_day: index_end_peak_day] / 1.0e6,
+            times_peak_day[1:],
+            results["ATES_1.Heat_flow"][index_start_peak_day + 1: index_end_peak_day] / 1.0e6,
             marker="x",
         )
         plt.plot(
-            times_peak_day,
+            times_peak_day[1:],
             (
-                results["HeatingDemand_1.Heat_flow"][index_start_peak_day: index_end_peak_day]
-                + results["HeatingDemand_2.Heat_flow"][index_start_peak_day: index_end_peak_day]
+                results["HeatingDemand_1.Heat_flow"][index_start_peak_day + 1: index_end_peak_day]
+                + results["HeatingDemand_2.Heat_flow"][index_start_peak_day + 1: index_end_peak_day]
             ) / 1.0e6,
             marker="H",
         )
         plt.plot(
-            times_peak_day,
-            results["HeatPump_1.Heat_flow"][index_start_peak_day: index_end_peak_day] / 1.0e6,
+            times_peak_day[1:],
+            results["HeatPump_1.Heat_flow"][index_start_peak_day + 1: index_end_peak_day] / 1.0e6,
             marker=">",
         )
 
         plt.plot(
-            times_peak_day,
-            results["CoolingDemand_1.Heat_flow"][index_start_peak_day: index_end_peak_day] / 1.0e6,
+            times_peak_day[1:],
+            results["CoolingDemand_1.Heat_flow"][index_start_peak_day + 1: index_end_peak_day] / 1.0e6,
             marker="*",
         )
         plt.plot(
-            times_peak_day,
-            results["Airco_1.Heat_flow"][index_start_peak_day: index_end_peak_day] / 1.0e6,
+            times_peak_day[1:],
+            results["Airco_1.Heat_flow"][index_start_peak_day + 1: index_end_peak_day] / 1.0e6,
             marker="o",
         )
 
@@ -570,7 +570,7 @@ class TestColdDemand(TestCase):
         plt.plot(
             np.append(0, times_seasonal),# this was done so that one can see the start == end value
             temp_season,
-            marker="+",
+            # marker="+",
             color='red',
         )
 
@@ -580,7 +580,7 @@ class TestColdDemand(TestCase):
         plt.plot(
             np.append(0, times_seasonal),# this was done so that one can see the start == end value
             cold_well_volume,
-            marker="x",
+            # marker="x",
             color='cyan',
         )
         
@@ -623,10 +623,10 @@ class TestColdDemand(TestCase):
 
         fig_tot_heat_demand_peak_day = plt.figure()
         plt.plot(
-            times_peak_day,
+            times_peak_day[1:],
             (
-                results["HeatingDemand_1.Heat_flow"][index_start_peak_day: index_end_peak_day]
-                + results["HeatingDemand_2.Heat_flow"][index_start_peak_day: index_end_peak_day]
+                results["HeatingDemand_1.Heat_flow"][index_start_peak_day + 1: index_end_peak_day]
+                + results["HeatingDemand_2.Heat_flow"][index_start_peak_day + 1: index_end_peak_day]
             ) / 1.0e6,
             marker="H",
             color='red',
@@ -656,7 +656,7 @@ class TestColdDemand(TestCase):
         plt.plot(
             times_seasonal,
             temp_season / 1.0e6,
-            marker="H",
+            # marker="H",
             color='red',
         )
 
