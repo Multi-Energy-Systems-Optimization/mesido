@@ -15,8 +15,8 @@ class ElectricityPort(ElectricityComponent, Connector):
         self.carrier_id = -1
 
         self.add_variable(Variable, "Power")
-        self.add_variable(Variable, "V", min=0.0)
         self.add_variable(Variable, "I")
+        self.add_variable(Variable, "V", min=0.0)
 
 
 class ElectricityTwoPort(ElectricityComponent):

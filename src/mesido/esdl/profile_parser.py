@@ -38,6 +38,7 @@ class BaseProfileReader:
         "gas_demand": ".target_gas_demand",
         "gas_source": ".maximum_gas_source",
     }
+
     carrier_profile_var_name: str = ".price_profile"
 
     def __init__(self, energy_system: esdl.EnergySystem, file_path: Optional[Path]):
@@ -45,6 +46,11 @@ class BaseProfileReader:
         self._energy_system: esdl.EnergySystem = energy_system
         self._file_path: Optional[Path] = file_path
         self._reference_datetimes: Optional[pd.DatetimeIndex] = None
+        self._asset_potential_errors_identified: Dict[str, Dict] = {
+            "heat_demand.power": {},  # error type, heat demand name, error message
+            "cold_demand.power": {},  # error type, cold demand name, error message
+            "heat_demand.type": {},  # error type, heat demand name, error message
+        }
 
     def read_profiles(
         self,
@@ -54,7 +60,7 @@ class BaseProfileReader:
         esdl_assets: Dict[str, Asset],
         carrier_properties: Dict[str, Dict],
         ensemble_size: int,
-    ) -> None:
+    ) -> Dict[str, Dict]:
         """
         This function takes a datastore and a dictionary of milp network components and loads a
         profile for each demand and source in the provided milp network components into the
@@ -104,6 +110,9 @@ class BaseProfileReader:
             for component_type, var_name in self.component_type_to_var_name_map.items():
                 for component in energy_system_components.get(component_type, []):
                     profile = self._profiles[ensemble_member].get(component + var_name, None)
+                    asset_power = esdl_assets[esdl_asset_names_to_ids[component]].attributes[
+                        "power"
+                    ]
                     if profile is not None:
                         values = profile
                     else:
@@ -114,9 +123,6 @@ class BaseProfileReader:
                             f"No profile provided for {component=} and "
                             f"{ensemble_member=}, using the assets power value instead"
                         )
-                        asset_power = esdl_assets[esdl_asset_names_to_ids[component]].attributes[
-                            "power"
-                        ]
                         values = np.array([asset_power] * len(self._reference_datetimes))
 
                     io.set_timeseries(
@@ -125,6 +131,19 @@ class BaseProfileReader:
                         values=values,
                         ensemble_member=ensemble_member,
                     )
+                    # Check if that the installed heat/cool demand capacity is sufficient
+                    if component_type in ["heat_demand", "cold_demand"]:
+                        max_profile_value = max(values)
+                        if asset_power < max_profile_value:
+                            self._asset_potential_errors_identified[f"{component_type}.power"][
+                                component
+                            ] = (
+                                f"{component}: The installed capacity of"
+                                f" {round(asset_power / 1.0e6, 3)}MW should be larger than the"
+                                " maximum of the heat demand profile "
+                                f"{round(max_profile_value / 1.0e6, 3)}MW"
+                            )
+
             for properties in carrier_properties.values():
                 carrier_name = properties["name"]
                 profile = self._profiles[ensemble_member].get(
@@ -140,6 +159,7 @@ class BaseProfileReader:
                         values=profile,
                         ensemble_member=ensemble_member,
                     )
+        return self._asset_potential_errors_identified
 
     def _load_profiles_from_source(
         self,
@@ -175,6 +195,7 @@ class BaseProfileReader:
 class InfluxDBProfileReader(BaseProfileReader):
     asset_type_to_variable_name_conversion = {
         esdl.esdl.HeatingDemand: ".target_heat_demand",
+        esdl.esdl.GenericConsumer: ".target_heat_demand",
         esdl.esdl.HeatProducer: ".maximum_heat_source",
         esdl.esdl.ElectricityDemand: ".target_electricity_demand",
         esdl.esdl.ElectricityProducer: ".maximum_electricity_source",
@@ -196,24 +217,74 @@ class InfluxDBProfileReader(BaseProfileReader):
         profiles: Dict[str, np.ndarray] = dict()
         logger.info("Reading profiles from InfluxDB")
         self._reference_datetimes = None
+
+        # Get list of unique profiles and associated series based on specific profile attributes
+        unique_profiles = []
+        unique_profiles_attributes = []  # a list containning lists of attributes
+        unique_series = []
         for profile in [
             x for x in self._energy_system.eAllContents() if isinstance(x, esdl.InfluxDBProfile)
         ]:
-            series = self._load_profile_timeseries_from_database(profile=profile)
+            if [
+                profile.database,
+                profile.field,
+                profile.host,
+                profile.startDate,
+                profile.endDate,
+                profile.measurement,
+                profile.port,
+            ] not in unique_profiles_attributes:
+                unique_profiles_attributes.append(
+                    [
+                        profile.database,
+                        profile.field,
+                        profile.host,
+                        profile.startDate,
+                        profile.endDate,
+                        profile.measurement,
+                        profile.port,
+                    ]
+                )
+                unique_profiles.append(profile)
+
+                unique_series.append(
+                    self._load_profile_timeseries_from_database(profile=unique_profiles[-1])
+                )
+                self._check_profile_time_series(
+                    profile_time_series=unique_series[-1], profile=unique_profiles[-1]
+                )
+                if self._reference_datetimes is None:
+                    # TODO: since the previous function ensures it's a date time index, I'm not sure
+                    #  how to get rid of this type checking warning
+                    self._reference_datetimes = unique_series[-1].index
+                else:
+                    if not all(unique_series[-1].index == self._reference_datetimes):
+                        raise RuntimeError(
+                            f"Obtained a profile for asset {profile.field} with a "
+                            f"timeseries index that doesn't match the timeseries of "
+                            f"other assets. Please ensure that the profile that is "
+                            f"specified to be loaded for each asset covers exactly the "
+                            f"same timeseries. "
+                        )
+        # Loop trough all the requried profiles in the energy system and assign the profile data:
+        # - series: use the unique series data, without reading from the database again
+        # - other profile info: get it from the specific profile
+        for profile in [
+            x for x in self._energy_system.eAllContents() if isinstance(x, esdl.InfluxDBProfile)
+        ]:
+            index_of_unique_profile = unique_profiles_attributes.index(
+                [
+                    profile.database,
+                    profile.field,
+                    profile.host,
+                    profile.startDate,
+                    profile.endDate,
+                    profile.measurement,
+                    profile.port,
+                ]
+            )
+            series = unique_series[index_of_unique_profile]
             self._check_profile_time_series(profile_time_series=series, profile=profile)
-            if self._reference_datetimes is None:
-                # TODO: since the previous function ensures it's a date time index, I'm not sure
-                #  how to get rid of this type checking warning
-                self._reference_datetimes = series.index
-            else:
-                if not all(series.index == self._reference_datetimes):
-                    raise RuntimeError(
-                        f"Obtained a profile for asset {profile.field} with a "
-                        f"timeseries index that doesn't match the timeseries of "
-                        f"other assets. Please ensure that the profile that is "
-                        f"specified to be loaded for each asset covers exactly the "
-                        f"same timeseries. "
-                    )
             converted_dataframe = self._convert_profile_to_correct_unit(
                 profile_time_series=series, profile=profile
             )
@@ -227,12 +298,21 @@ class InfluxDBProfileReader(BaseProfileReader):
                 var_base_name = asset.name
                 try:
                     variable_suffix = self.asset_type_to_variable_name_conversion[type(asset)]
+                    # For multicommidity work profiles need to be assigned to GenericConsumer, but
+                    # not for heat network (this asset_potential_errors is used in grow_workflow)
+                    if type(asset) is esdl.GenericConsumer:
+                        # asset_potential_errors
+                        self._asset_potential_errors_identified["heat_demand.type"][asset.name] = (
+                            f"Asset {asset.name}: This asset is currently a GenericConsumer please"
+                            " change it to a HeatingDemand"
+                        )
                 except KeyError:
                     raise RuntimeError(
                         f"The asset {profile.field} is of type {type(asset)} which is "
                         f"currently not supported to have a profile to be loaded "
                         f"from the database."
                     )
+                    exit(1)
             else:
                 raise RuntimeError(
                     f"Got a profile for a {container}. Currently only profiles "
@@ -304,7 +384,15 @@ class InfluxDBProfileReader(BaseProfileReader):
                     "profile for each asset"
                 )
 
-        index = pd.DatetimeIndex(data=[x[0] for x in time_series_data.profile_data_list])
+        if not time_series_data.profile_data_list[0][0].tzinfo:
+            index = pd.DatetimeIndex(
+                data=[x[0] for x in time_series_data.profile_data_list],
+                tz=datetime.timezone.utc,
+            )
+            logger.warning("No timezone specified for the input profile: default UTC has been used")
+        else:
+            index = pd.DatetimeIndex(data=[x[0] for x in time_series_data.profile_data_list])
+
         data = [x[1] for x in time_series_data.profile_data_list]
         series = pd.Series(data=data, index=index)
         self._df[profile.id] = series
@@ -441,25 +529,34 @@ class ProfileReaderFromFile(BaseProfileReader):
         data = pd.read_csv(self._file_path)
         try:
             timeseries_import_times = [
-                datetime.datetime.strptime(entry.replace("Z", ""), "%Y-%m-%d %H:%M:%S")
+                datetime.datetime.strptime(entry.replace("Z", ""), "%Y-%m-%d %H:%M:%S").replace(
+                    tzinfo=datetime.timezone.utc
+                )
                 for entry in data["DateTime"].to_numpy()
             ]
         except ValueError:
             try:
                 timeseries_import_times = [
-                    datetime.datetime.strptime(entry.replace("Z", ""), "%Y-%m-%dT%H:%M:%S")
+                    datetime.datetime.strptime(entry.replace("Z", ""), "%Y-%m-%dT%H:%M:%S").replace(
+                        tzinfo=datetime.timezone.utc
+                    )
                     for entry in data["DateTime"].to_numpy()
                 ]
             except ValueError:
                 try:
                     timeseries_import_times = [
-                        datetime.datetime.strptime(entry.replace("Z", ""), "%d-%m-%Y %H:%M")
+                        datetime.datetime.strptime(
+                            entry.replace("Z", ""), "%d-%m-%Y %H:%M"
+                        ).replace(tzinfo=datetime.timezone.utc)
                         for entry in data["DateTime"].to_numpy()
                     ]
                 except ValueError:
                     raise _ProfileParserException("Date time string is not in a supported format")
 
+        logger.warning("Timezone specification not supported yet: default UTC has been used")
+
         self._reference_datetimes = timeseries_import_times
+
         for ensemble_member in range(ensemble_size):
             for component_type, var_name in self.component_type_to_var_name_map.items():
                 for component_name in energy_system_components.get(component_type, []):
@@ -500,6 +597,11 @@ class ProfileReaderFromFile(BaseProfileReader):
             )
 
         # Convert timeseries timestamps to seconds since t0 for internal use
+        if not data.times[0].tzinfo:
+            for ii in range(len(data.times)):
+                data.times[ii] = data.times[ii].replace(tzinfo=datetime.timezone.utc)
+            logger.warning("No timezone specified for the input profile: default UTC has been used")
+
         self._reference_datetimes = data.times
 
         # Offer input timeseries to IOMixin

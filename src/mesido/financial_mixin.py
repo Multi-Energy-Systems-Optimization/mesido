@@ -267,11 +267,21 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 continue
             elif asset_name in [*self.energy_system_components.get("ates", [])]:
                 nominal_fixed_operational = self.variable_nominal(f"{asset_name}.Heat_ates")
+                nominal_fixed_operational = (
+                    nominal_fixed_operational
+                    if isinstance(nominal_fixed_operational, float)
+                    else max(nominal_fixed_operational.values)
+                )
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
             elif asset_name in [*self.energy_system_components.get("low_temperature_ates", [])]:
                 nominal_fixed_operational = self.variable_nominal(
                     f"{asset_name}.Heat_low_temperature_ates"
+                )
+                nominal_fixed_operational = (
+                    nominal_fixed_operational
+                    if isinstance(nominal_fixed_operational, float)
+                    else max(nominal_fixed_operational.values)
                 )
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
@@ -281,26 +291,56 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     if not np.isinf(bounds[f"{asset_name}.Heat_demand"][1])
                     else bounds[f"{asset_name}.HeatIn.Heat"][1]
                 )
+                nominal_fixed_operational = (
+                    nominal_fixed_operational
+                    if isinstance(nominal_fixed_operational, float)
+                    else max(nominal_fixed_operational.values)
+                )
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
             elif asset_name in [*self.energy_system_components.get("heat_source", [])]:
                 nominal_fixed_operational = self.variable_nominal(f"{asset_name}.Heat_source")
+                nominal_fixed_operational = (
+                    nominal_fixed_operational
+                    if isinstance(nominal_fixed_operational, float)
+                    else max(nominal_fixed_operational.values)
+                )
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
             elif asset_name in [*self.energy_system_components.get("heat_pipe", [])]:
                 nominal_fixed_operational = max(parameters[f"{asset_name}.length"], 1.0)
+                nominal_fixed_operational = (
+                    nominal_fixed_operational
+                    if isinstance(nominal_fixed_operational, float)
+                    else max(nominal_fixed_operational.values)
+                )
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
             elif asset_name in [*self.energy_system_components.get("electricity_cable", [])]:
                 nominal_fixed_operational = max(parameters[f"{asset_name}.length"], 1.0)
+                nominal_fixed_operational = (
+                    nominal_fixed_operational
+                    if isinstance(nominal_fixed_operational, float)
+                    else max(nominal_fixed_operational.values)
+                )
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
             elif asset_name in [*self.energy_system_components.get("gas_pipe", [])]:
                 nominal_fixed_operational = max(parameters[f"{asset_name}.length"], 1.0)
+                nominal_fixed_operational = (
+                    nominal_fixed_operational
+                    if isinstance(nominal_fixed_operational, float)
+                    else max(nominal_fixed_operational.values)
+                )
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
             elif asset_name in [*self.energy_system_components.get("heat_buffer", [])]:
                 nominal_fixed_operational = self.variable_nominal(f"{asset_name}.Stored_heat")
+                nominal_fixed_operational = (
+                    nominal_fixed_operational
+                    if isinstance(nominal_fixed_operational, float)
+                    else max(nominal_fixed_operational.values)
+                )
                 nominal_variable_operational = self.variable_nominal(f"{asset_name}.Heat_buffer")
                 nominal_investment = nominal_fixed_operational
             elif asset_name in [
@@ -313,14 +353,29 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             # TODO: set the nominal values below
             elif asset_name in [*self.energy_system_components.get("gas_tank_storage", [])]:
                 nominal_fixed_operational = bounds[f"{asset_name}.Stored_gas_mass"][1]
+                nominal_fixed_operational = (
+                    nominal_fixed_operational
+                    if isinstance(nominal_fixed_operational, float)
+                    else max(nominal_fixed_operational.values)
+                )
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
             elif asset_name in [*self.energy_system_components.get("electricity_demand", [])]:
                 nominal_fixed_operational = bounds[f"{asset_name}.Electricity_demand"][1]
+                nominal_fixed_operational = (
+                    nominal_fixed_operational
+                    if isinstance(nominal_fixed_operational, float)
+                    else max(nominal_fixed_operational.values)
+                )
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
             elif asset_name in [*self.energy_system_components.get("electrolyzer", [])]:
                 nominal_fixed_operational = bounds[f"{asset_name}.Power_consumed"][1]
+                nominal_fixed_operational = (
+                    nominal_fixed_operational
+                    if isinstance(nominal_fixed_operational, float)
+                    else max(nominal_fixed_operational.values)
+                )
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
             elif asset_name in [*self.energy_system_components.get("electricity_source", [])]:
@@ -334,6 +389,20 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 nominal_investment = nominal_fixed_operational
             elif asset_name in [*self.energy_system_components.get("electricity_storage", [])]:
                 nominal_fixed_operational = bounds[f"{asset_name}.Stored_electricity"][1]
+                nominal_fixed_operational = (
+                    nominal_fixed_operational
+                    if isinstance(nominal_fixed_operational, float)
+                    else max(nominal_fixed_operational.values)
+                )
+                nominal_variable_operational = nominal_fixed_operational
+                nominal_investment = nominal_fixed_operational
+            elif asset_name in [*self.energy_system_components.get("gas_demand", [])]:
+                nominal_fixed_operational = bounds[f"{asset_name}.Gas_demand_mass_flow"][1]
+                nominal_fixed_operational = (
+                    nominal_fixed_operational
+                    if isinstance(nominal_fixed_operational, float)
+                    else max(nominal_fixed_operational.values)
+                )
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
             else:
@@ -1189,7 +1258,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         options = self.energy_system_options()
         if options["include_asset_is_realized"]:
             for asset in [
-                *self.energy_system_components.get("heat_demand", []),
+                # *self.energy_system_components.get("heat_demand", []),
                 *self.energy_system_components.get("heat_source", []),
                 *self.energy_system_components.get("ates", []),
                 *self.energy_system_components.get("low_temperature_ates", []),
@@ -1202,12 +1271,8 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 nominal = self.variable_nominal(var_name)
                 var_name = self.__asset_is_realized_map[asset]
                 asset_is_realized = self.state(var_name)
-                installation_cost_sym = self.__asset_installation_cost_var[
-                    self._asset_installation_cost_map[asset]
-                ]
-                investment_cost_sym = self.__asset_investment_cost_var[
-                    self._asset_investment_cost_map[asset]
-                ]
+                installation_cost_sym = self.variable(self._asset_installation_cost_map[asset])
+                investment_cost_sym = self.variable(self._asset_investment_cost_map[asset])
                 # TODO: add insulation class cost to the investments made.
                 # if asset in self.heat_network_components.get("demand", []):
                 #     for insulation_class in self.__get_insulation_classes(asset):

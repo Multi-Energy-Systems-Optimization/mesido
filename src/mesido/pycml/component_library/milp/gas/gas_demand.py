@@ -20,7 +20,7 @@ class GasDemand(GasComponent, BaseAsset):
 
         self.Q_nominal = nan
 
-        self.density = 2.5e3  # H2 density [kg/m3] at 30bar
+        self.density = 2.5e3  # H2 density [g/m3] at 30bar
 
         self.id_mapping_carrier = -1
 
@@ -32,3 +32,5 @@ class GasDemand(GasComponent, BaseAsset):
         self.add_equation(
             ((self.GasIn.mass_flow - self.Gas_demand_mass_flow) / (self.Q_nominal * self.density))
         )
+
+        self.add_equation(((self.GasIn.Q - self.GasIn.mass_flow / self.density) / self.Q_nominal))

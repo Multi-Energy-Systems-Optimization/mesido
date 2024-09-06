@@ -1,3 +1,5 @@
+import logging
+
 import casadi as ca
 
 from mesido.esdl.esdl_mixin import ESDLMixin
@@ -18,6 +20,9 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
 from rtctools.optimization.timeseries import Timeseries
 from rtctools.util import run_optimization_problem
+
+logger = logging.getLogger("WarmingUP-MPC")
+logger.setLevel(logging.INFO)
 
 
 class TargetDemandGoal(Goal):
@@ -157,6 +162,32 @@ class HeatProblem(
         self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
         self.heat_network_settings["minimum_velocity"] = 0.0
 
+    def read(self):
+        """
+        Reads the yearly profile with hourly time steps and adapt to a daily averaged profile
+        except for the day with the peak demand.
+        """
+        super().read()
+
+        # Error checking:
+        # - installed capacity/power of a heating/cooling demand is sufficient for the specified
+        #   demand profile
+        is_error = False
+        for error_type, errors in self._asset_potential_errors.items():
+            if error_type in ["heat_demand.power", "cold_demand.power"]:
+                if len(errors) > 0:
+                    for asset_name in errors:
+                        logger.error(self._asset_potential_errors[error_type][asset_name])
+                    logger.error(
+                        "Asset insufficient installed capacity: please increase the"
+                        " installed power or reduce the demand profile peak value of the demand(s)"
+                        " listed."
+                    )
+                    is_error = True
+        if is_error:
+            exit(1)
+        # end error checking
+
     def path_goals(self):
         """
         This function adds the minimization goal for minimizing the milp production.
@@ -211,18 +242,18 @@ class HeatProblem(
 if __name__ == "__main__":
     elect = run_optimization_problem(
         HeatProblem,
-        esdl_file_name="LT_wko.esdl",
+        esdl_file_name="airco.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,
         input_timeseries_file="timeseries.csv",
     )
     results = elect.extract_results()
-    print(results["CoolingDemand_15e8.Cold_demand"])
-    print(results["HeatingDemand_9b90.Heat_demand"])
-    print(results["HeatPump_b97e.Heat_source"])
-    print(results["ATES_226d.Heat_low_temperature_ates"])
-    for p in elect.energy_system_components.get("heat_pipe", []):
-        print(p, results[f"{p}__hn_heat_loss"])
-        print(p, elect.bounds()[f"{p}__hn_heat_loss"])
+    # print(results["CoolingDemand_15e8.Cold_demand"])
+    # print(results["HeatingDemand_9b90.Heat_demand"])
+    # print(results["HeatPump_b97e.Heat_source"])
+    # print(results["ATES_226d.Heat_low_temperature_ates"])
+    # for p in elect.energy_system_components.get("heat_pipe", []):
+    #     print(p, results[f"{p}__hn_heat_loss"])
+    #     print(p, elect.bounds()[f"{p}__hn_heat_loss"])
 
     a = 1

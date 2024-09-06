@@ -77,7 +77,10 @@ class HeatProblem(
         self.heat_network_settings["head_loss_option"] = head_loss_setting
         if head_loss_setting == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY:
             self.heat_network_settings["n_linearization_lines"] = n_linearization_lines_setting
-        self.heat_network_settings["minimize_head_losses"] = True
+        if head_loss_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
+            self.heat_network_settings["minimize_head_losses"] = False
+        else:
+            self.heat_network_settings["minimize_head_losses"] = True
 
     def pre(self):
         super().pre()
@@ -104,7 +107,10 @@ class HeatProblem(
         self.heat_network_settings["head_loss_option"] = head_loss_setting
         if head_loss_setting == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY:
             self.heat_network_settings["n_linearization_lines"] = n_linearization_lines_setting
-        self.heat_network_settings["minimize_head_losses"] = True
+        if head_loss_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
+            self.heat_network_settings["minimize_head_losses"] = False
+        else:
+            self.heat_network_settings["minimize_head_losses"] = True
 
         return options
 

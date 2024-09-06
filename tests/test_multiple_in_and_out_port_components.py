@@ -3,10 +3,9 @@ from unittest import TestCase
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
-
-from rtctools.util import run_optimization_problem
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
@@ -39,7 +38,10 @@ class TestHEX(TestCase):
         class HeatProblemPost(HeatProblem):
             # def post(self):
             #     super().post()
-            #     self._write_updated_esdl(self.get_energy_system_copy(), optimizer_sim=True)
+            #     self._write_updated_esdl(
+            #         self._ESDLMixin__energy_system_handler.energy_system,
+            #         optimizer_sim=True,
+            #     )
 
             def energy_system_options(self):
                 options = super().energy_system_options()
@@ -58,7 +60,7 @@ class TestHEX(TestCase):
         }
         # -----------------------------------------------------------------------------------------
 
-        solution = run_optimization_problem(
+        solution = run_esdl_mesido_optimization(
             HeatProblemPost,
             base_folder=base_folder,
             esdl_file_name="heat_exchanger.esdl",
@@ -130,7 +132,10 @@ class TestHP(TestCase):
         class HeatProblemPost(HeatProblem):
             # def post(self):
             #     super().post()
-            #     self._write_updated_esdl(self.get_energy_system_copy(), optimizer_sim=True)
+            #     self._write_updated_esdl(
+            #         self._ESDLMixin__energy_system_handler.energy_system,
+            #         optimizer_sim=True,
+            #     )
 
             def energy_system_options(self):
                 options = super().energy_system_options()
@@ -149,7 +154,7 @@ class TestHP(TestCase):
         }
         # -----------------------------------------------------------------------------------------
 
-        solution = run_optimization_problem(
+        solution = run_esdl_mesido_optimization(
             HeatProblemPost,
             base_folder=base_folder,
             esdl_file_name="heat_pump.esdl",

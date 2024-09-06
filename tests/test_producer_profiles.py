@@ -3,8 +3,7 @@ from unittest import TestCase
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
-
-from rtctools.util import run_optimization_problem
+from mesido.util import run_esdl_mesido_optimization
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
@@ -28,7 +27,7 @@ class TestProducerMaxProfile(TestCase):
 
         base_folder = Path(run_3a.__file__).resolve().parent.parent
 
-        solution = run_optimization_problem(
+        solution = run_esdl_mesido_optimization(
             HeatProblemProdProfile,
             base_folder=base_folder,
             esdl_file_name="3a.esdl",

@@ -3,10 +3,9 @@ from unittest import TestCase
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
-
-from rtctools.util import run_optimization_problem
 
 
 class TestInsulation(TestCase):
@@ -61,7 +60,7 @@ class TestInsulation(TestCase):
         from models.insulation.src.run_insulation import HeatProblem
 
         base_folder = Path(run_insulation.__file__).resolve().parent.parent
-        heat_problem = run_optimization_problem(
+        heat_problem = run_esdl_mesido_optimization(
             HeatProblem,
             base_folder=base_folder,
             esdl_file_name="Insulation.esdl",
@@ -141,7 +140,7 @@ class TestInsulation(TestCase):
         from models.insulation.src.run_insulation import HeatProblemB
 
         base_folder = Path(run_insulation.__file__).resolve().parent.parent
-        heat_problem = run_optimization_problem(
+        heat_problem = run_esdl_mesido_optimization(
             HeatProblemB,
             base_folder=base_folder,
             esdl_file_name="Insulation.esdl",

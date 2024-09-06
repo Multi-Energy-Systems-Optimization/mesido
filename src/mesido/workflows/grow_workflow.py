@@ -1,7 +1,9 @@
 import locale
 import logging
 import os
+import sys
 import time
+from typing import Dict
 
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
@@ -159,6 +161,8 @@ class EndScenarioSizing(
 
         self._save_json = False
 
+        self._asset_potential_errors = Dict[str, Dict]
+
     def parameters(self, ensemble_member):
         parameters = super().parameters(ensemble_member)
         parameters["peak_day_index"] = self.__indx_max_peak
@@ -177,6 +181,32 @@ class EndScenarioSizing(
         except for the day with the peak demand.
         """
         super().read()
+
+        # Error checking:
+        # - installed capacity/power of a heating/cooling demand is sufficient for the specified
+        #   demand profile
+        is_error = False
+        for error_type, errors in self._asset_potential_errors.items():
+            if error_type in ["heat_demand.power", "cold_demand.power"]:
+                if len(errors) > 0:
+                    for asset_name in errors:
+                        logger.error(self._asset_potential_errors[error_type][asset_name])
+                    logger.error(
+                        "Asset insufficient installed capacity: please increase the"
+                        " installed power or reduce the demand profile peak value of the demand(s)"
+                        " listed."
+                    )
+                    is_error = True
+            elif error_type in ["heat_demand.type"]:
+                if len(errors) > 0:
+                    for asset_name in errors:
+                        logger.error(self._asset_potential_errors[error_type][asset_name])
+                    logger.error("Incorrect asset type: please update.")
+                    is_error = True
+
+        if is_error:
+            exit(1)
+        # end error checking
 
         (
             self.__indx_max_peak,
@@ -210,13 +240,14 @@ class EndScenarioSizing(
         bounds = self.bounds()
 
         for demand in self.energy_system_components["heat_demand"]:
-            # target = self.get_timeseries(f"{demand}.target_heat_demand_peak")
             target = self.get_timeseries(f"{demand}.target_heat_demand")
             if bounds[f"{demand}.HeatIn.Heat"][1] < max(target.values):
                 logger.warning(
                     f"{demand} has a flow limit, {bounds[f'{demand}.HeatIn.Heat'][1]}, "
                     f"lower that wat is required for the maximum demand {max(target.values)}"
                 )
+            # TODO: update this caclulation to bounds[f"{demand}.HeatIn.Heat"][1]/ dT * Tsup & move
+            # to potential_errors variable
             state = f"{demand}.Heat_demand"
 
             goals.append(TargetHeatGoal(state, target))
@@ -266,6 +297,16 @@ class EndScenarioSizing(
             self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
         )
 
+    def solver_options(self):
+        options = super().solver_options()
+        if options["solver"] == "highs":
+            highs_options = options["highs"]
+            if self.__priority == 1:
+                highs_options["time_limit"] = 600
+            else:
+                highs_options["time_limit"] = 100000
+        return options
+
     def solver_success(self, solver_stats, log_solver_failure_as_error):
         success, log_level = super().solver_success(solver_stats, log_solver_failure_as_error)
 
@@ -309,6 +350,8 @@ class EndScenarioSizing(
                 self.solver_stats,
             )
         )
+        if priority == 1 and self.objective_value > 1e-6:
+            raise RuntimeError("The heating demand is not matched")
 
     def post(self):
         # In case the solver fails, we do not get in priority_completed(). We
@@ -332,7 +375,32 @@ class EndScenarioSizing(
         parameters = self.parameters(0)
         # bounds = self.bounds()
         # Optimized ESDL
-        self._write_updated_esdl(self.get_energy_system_copy())
+        # Assume there are either no stages (write updated ESDL) or a maximum of 2 stages
+        # (only write final results when the stage number is the final stage)
+        # TODO: once database testing has been added, check that the results have only been written
+        # once.
+        try:
+            if self._stage == 0:
+                logger.error(
+                    f"The stage number is: {self._stage} and it is excpected that the"
+                    " stage numbering starts at 1 instead"
+                )
+                sys.exit(1)
+            if self._total_stages == self._stage:  # When staging does exists
+                self._write_updated_esdl(self._ESDLMixin__energy_system_handler.energy_system)
+            elif self._total_stages < self._stage:
+                logger.error(
+                    f"The stage number: {self._stage} is higher then the total stages"
+                    " expected: {self._total_stages}. Assuming the stage numbering starts at 1"
+                )
+                sys.exit(1)
+
+        except AttributeError:
+            # Staging does not exist
+            self._write_updated_esdl(self._ESDLMixin__energy_system_handler.energy_system)
+        except Exception:
+            logger.error("Unkown error occured when evaluating self._stage for _write_updated_esdl")
+            sys.exit(1)
 
         for d in self.energy_system_components.get("heat_demand", []):
             realized_demand = results[f"{d}.Heat_demand"]
@@ -426,11 +494,13 @@ class SettingsStaged:
     sizes and flow directions.
     """
 
-    _stage = 0
+    _stage = 0  # current stage that is being used
+    _total_stages = 0  # total number of stages to be used
 
     def __init__(
         self,
         stage=None,
+        total_stages=None,
         boolean_bounds: list = None,
         priorities_output: list = None,
         *args,
@@ -439,6 +509,7 @@ class SettingsStaged:
         super().__init__(*args, **kwargs)
 
         self._stage = stage
+        self._total_stages = total_stages
         self.__boolean_bounds = boolean_bounds
 
         if self._stage == 1:
@@ -538,6 +609,7 @@ def run_end_scenario_sizing_no_heat_losses(
     solution = run_optimization_problem(
         end_scenario_problem_class,
         stage=1,
+        total_stages=1,
         **kwargs,
     )
 
@@ -580,8 +652,23 @@ def run_end_scenario_sizing(
         solution = run_optimization_problem(
             end_scenario_problem_class,
             stage=1,
+            total_stages=2,
             **kwargs,
         )
+        # Error checking
+        solver_success, _ = solution.solver_success(solution.solver_stats, False)
+        if not solver_success:
+            if (
+                solution.solver_stats["return_status"] == "Time limit reached"
+                and solution.objective_value > 1e-6
+                and solution._stage == 1
+            ):
+                logger.error("Optimization maximum allowed time limit reached for stage_1, goal_1")
+                exit(1)
+            else:
+                logger.error("Unsuccessful: unexpected error for stage_1, goal_1")
+                exit(1)
+
         results = solution.extract_results()
         parameters = solution.parameters(0)
         bounds = solution.bounds()
@@ -648,6 +735,7 @@ def run_end_scenario_sizing(
     solution = run_optimization_problem(
         end_scenario_problem_class,
         stage=2,
+        total_stages=2,
         boolean_bounds=boolean_bounds,
         priorities_output=priorities_output,
         **kwargs,

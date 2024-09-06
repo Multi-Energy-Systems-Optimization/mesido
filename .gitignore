@@ -25,9 +25,11 @@ src/*.egg-info
 .ipynb_checkpoints
 .vscode
 
-# Kobus van Rooyen
-run_pipe_compare.py
-.venv/
+# Abbreviation to be added to files/folders name
+# Meaning of abbreviation: exclude from version control
+*_efvc_*
+
 # Ignore ESDL files created by workflows
 *_GrowOptimized.esdl 
+*_GrowOptimized_esdl_string.esdl 
 *_Simulation.esdl

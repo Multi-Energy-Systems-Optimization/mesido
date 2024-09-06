@@ -36,7 +36,10 @@ class ElectricityStorage(ElectricityComponent, BaseAsset):
             nominal=self._nominal_stored_electricity,
         )
         self.add_variable(
-            Variable, "Effective_power_charging", nominal=self.ElectricityIn.Power.nominal
+            Variable,
+            "Effective_power_charging",
+            nominal=self.ElectricityIn.Power.nominal,
+            max=self.ElectricityIn.Power.max,
         )
 
         self.add_equation(

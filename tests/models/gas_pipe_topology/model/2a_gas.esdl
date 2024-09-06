@@ -40,7 +40,7 @@
           <point xsi:type="esdl:Point" lon="4.381785392761231" lat="51.988540579598386"/>
         </geometry>
       </asset>
-      <asset xsi:type="esdl:Pipe" length="242.6088250579639" state="OPTIONAL" id="6b39bb76-cc92-4c35-ad89-81b9f18581fc" diameter="DN300" name="Pipe_6b39">
+      <asset xsi:type="esdl:Pipe" length="222.6088250579639" state="OPTIONAL" id="6b39bb76-cc92-4c35-ad89-81b9f18581fc" diameter="DN300" name="Pipe_6b39">
         <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
           <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.004">
             <matter xsi:type="esdl:Material" name="steel" thermalConductivity="52.15" id="5d4601b4-12cc-4da9-956a-f58d746f870c"/>

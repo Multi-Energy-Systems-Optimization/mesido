@@ -42,7 +42,10 @@ class MinimizeProduction(Goal):
         self.function_nominal = 1e6
 
     def function(self, optimization_problem, ensemble_member):
-        return optimization_problem.state("source.Heat_source")
+        sum = 0
+        for source in optimization_problem.energy_system_components.get("heat_source", []):
+            sum = optimization_problem.state(f"{source}.Heat_source")
+        return sum
 
 
 class SourcePipeSink(
@@ -89,8 +92,8 @@ class HeatProblemHydraulic(ESDLAdditionalVarsMixin, SourcePipeSink):
 
 if __name__ == "__main__":
     sol = run_optimization_problem(
-        HeatProblemHydraulic,
-        esdl_file_name="sourcesink.esdl",
+        SourcePipeSink,
+        esdl_file_name="sourcesink_witheboiler.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,
         input_timeseries_file="timeseries_import.csv",

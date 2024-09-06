@@ -21,9 +21,10 @@ sys.path.insert(0, os.path.abspath('../src'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'Nieuwe Warmte Nu - Design Toolkit'
-author = 'Kelbij Star, Teresa Piovesan, et al.'
-review = 'Jesus Andres Rodriguez Sarasty, Ivo Pothof, Mike van Meerkerk'
+project = 'Multi-Energy-Systems Integrated Design and Operations'
+html_title = 'MESIDO'
+author = 'Jim Rojer, Kobus van Rooyen and Femke Janssen'
+review = 'Kobus van Rooyen and Femke Janssen'
 
 
 # -- General configuration ---------------------------------------------------
@@ -79,8 +80,31 @@ version = '.'.join(release.split('.')[:2])
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
+
+
 html_theme = 'sphinx_rtd_theme'
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+# html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+html_theme_options = {
+    'analytics_id': 'G-XXXXXXXXXX',  #  Provided by Google in your dashboard
+    'analytics_anonymize_ip': False,
+    'logo_only': False,
+    'display_version': True,
+    'prev_next_buttons_location': 'bottom',
+    'style_external_links': False,
+    'vcs_pageview_mode': '',
+    # 'style_nav_header_background': 'ba',
+    # Toc options
+    'collapse_navigation': False,
+    'sticky_navigation': False,
+    'navigation_depth': 3,
+    'includehidden': False,
+    'titles_only': False
+}
+
+# html_theme_options = {
+#     'navigation_depth': -1,
+#
+# }
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -90,6 +114,3 @@ html_static_path = ['_static']
 html_css_files = [
     'css/custom.css',
 ]
-
-# Intersphinx: refer to the RTC-Tools standard library.
-# intersphinx_mapping = {'rtctools': ('https://rtc-tools.readthedocs.io/en/latest/', None)}

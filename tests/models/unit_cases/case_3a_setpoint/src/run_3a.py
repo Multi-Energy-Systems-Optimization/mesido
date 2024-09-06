@@ -1,5 +1,7 @@
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 
 import numpy as np
@@ -24,7 +26,7 @@ class TargetDemandGoal(Goal):
 
         self.target_min = target
         self.target_max = target
-        self.function_range = (0.0, 2.0 * max(target.values))
+        self.function_range = (-1.0, 2.0 * max(target.values))
         self.function_nominal = np.median(target.values)
 
     def function(self, optimization_problem, ensemble_member):
@@ -37,8 +39,8 @@ class MinimizeSourcesHeatGoal(Goal):
     order = 1
 
     def __init__(self, source):
-        self.target_max = 0.0
-        self.function_range = (0.0, 10e6)
+        # self.target_max = 0.0
+        # self.function_range = (0.0, 10e6)
         self.source = source
         self.function_nominal = 1e6
 
@@ -67,17 +69,17 @@ class _GoalsAndOptions:
         # gurobi_options["MIPgap"] = 0.001
         return options
 
-    def heat_network_options(self):
-        options = super().heat_network_options()
-        options["minimum_velocity"] = 0.0001
-        # options["heat_loss_disconnected_pipe"] = False
-        # options["neglect_pipe_heat_losses"] = False
+    def energy_system_options(self):
+        options = super().energy_system_options()
+        # options["minimum_velocity"] = 0.0001
+        options["heat_loss_disconnected_pipe"] = False
+        options["neglect_pipe_heat_losses"] = True
         return options
 
 
 class HeatProblem(
-    _GoalsAndOptions,
     ESDLAdditionalVarsMixin,
+    _GoalsAndOptions,
     TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
     SinglePassGoalProgrammingMixin,
@@ -92,20 +94,18 @@ class HeatProblem(
 
         return goals
 
-    def solver_options(self):
-        options = super().solver_options()
-        options["solver"] = "highs"
-        # highs_options = options["highs"] = {}
-        # highs_options["mip_rel_gap"] = 0.0025
-        # options["gurobi"] = gurobi_options = {}
-        # gurobi_options["MIPgap"] = 0.0001
-        return options
-
 
 if __name__ == "__main__":
     from rtctools.util import run_optimization_problem
 
-    sol = run_optimization_problem(HeatProblem)
+    sol = run_optimization_problem(
+        HeatProblem,
+        # base_folder=base_folder,
+        esdl_file_name="3a.esdl",
+        esdl_parser=ESDLFileParser,
+        profile_reader=ProfileReaderFromFile,
+        input_timeseries_file="timeseries_import.xml",
+    )
 
     results = sol.extract_results()
     print(results["GeothermalSource_b702.Heat_source"])

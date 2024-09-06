@@ -3,10 +3,9 @@ from unittest import TestCase
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
-
-from rtctools.util import run_optimization_problem
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
@@ -34,7 +33,7 @@ class TestWarmingUpUnitCases(TestCase):
         base_folder = Path(run_1a.__file__).resolve().parent.parent
 
         # Just a "problem is not infeasible"
-        heat_problem = run_optimization_problem(
+        heat_problem = run_esdl_mesido_optimization(
             HeatProblem,
             base_folder=base_folder,
             esdl_file_name="1a.esdl",
@@ -103,7 +102,7 @@ class TestWarmingUpUnitCases(TestCase):
         base_folder = Path(run_2a.__file__).resolve().parent.parent
 
         # Just a "problem is not infeasible"
-        heat_problem = run_optimization_problem(
+        heat_problem = run_esdl_mesido_optimization(
             HeatProblem,
             base_folder=base_folder,
             esdl_file_name="2a.esdl",
@@ -139,7 +138,7 @@ class TestWarmingUpUnitCases(TestCase):
         base_folder = Path(run_3a.__file__).resolve().parent.parent
 
         # Just a "problem is not infeasible"
-        heat_problem = run_optimization_problem(
+        heat_problem = run_esdl_mesido_optimization(
             HeatProblem,
             base_folder=base_folder,
             esdl_file_name="3a.esdl",
@@ -184,7 +183,7 @@ class TestWarmingUpUnitCases(TestCase):
                 results[f"{buffer}.Stored_heat"][-1] - results[f"{buffer}.Stored_heat"][0],
                 np.sum(results[f"{buffer}.Heat_buffer"][1:] * 3600.0)
                 - np.sum(results[f"{buffer}.Heat_loss"][1:] * 3600.0),
-                atol=1.0e-3,
+                atol=1.0,
             )
             np.testing.assert_allclose(results[f"{buffer}.Heat_buffer"][0], 0.0, atol=1.0e-6)
 

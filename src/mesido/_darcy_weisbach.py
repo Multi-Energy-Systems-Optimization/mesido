@@ -2,8 +2,6 @@ import math
 
 import CoolProp as cP
 
-from iapws import IAPWS95
-
 from mesido.constants import GRAVITATIONAL_CONSTANT
 from mesido.network_common import NetworkSettings
 
@@ -20,15 +18,28 @@ def _kinematic_viscosity(temperature, network_type=NetworkSettings.NETWORK_TYPE_
     which the pressure [Pa] and temperature [K] are provided as inputs.
     The gas composition is based on Groninger gas.
     """
+
+    # Kinematic viscosity [m2/s] = Dynamic viscosity [Pa-s] / density [kg/m3]
     if network_type == NetworkSettings.NETWORK_TYPE_HEAT:
-        return IAPWS95(T=273.15 + temperature, P=0.5).nu
+        return cP.CoolProp.PropsSI(
+            "V", "T", 273.15 + temperature, "P", 0.5 * 10**6, "WATER"
+        ) / cP.CoolProp.PropsSI("D", "T", 273.15 + temperature, "P", 0.5 * 10**6, "WATER")
     elif network_type == NetworkSettings.NETWORK_TYPE_HYDROGEN:
         pressure = pressure if pressure else 101325
-        return cP.CoolProp.PropsSI("V", "T", 273.15 + temperature, "P", pressure, "HYDROGEN")
+        return cP.CoolProp.PropsSI(
+            "V", "T", 273.15 + temperature, "P", pressure, "HYDROGEN"
+        ) / cP.CoolProp.PropsSI("D", "T", 273.15 + temperature, "P", pressure, "HYDROGEN")
     elif network_type == NetworkSettings.NETWORK_TYPE_GAS:
         pressure = pressure if pressure else 101325
         return cP.CoolProp.PropsSI(
             "V",
+            "T",
+            273.15 + temperature,
+            "P",
+            pressure,
+            NetworkSettings.NETWORK_COMPOSITION_GAS,
+        ) / cP.CoolProp.PropsSI(
+            "D",
             "T",
             273.15 + temperature,
             "P",
