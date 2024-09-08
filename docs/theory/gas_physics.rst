@@ -16,8 +16,8 @@ For readability, the variables and equations of the model, given below, are defi
 indexing the variables and sets for each timestep.
 The equations below are assumed to hold for every timestep, unless otherwise specified.
 
-By modelling these variables the gaseaus system can be closely approximated. The method will show
-that for the modelling assumptions a feasible conservative solution will be garuanteed.
+By modelling these variables the gaseous system can be closely approximated. The method will show
+that for the modelling assumptions a feasible conservative solution will be guaranteed.
 
 Incompressible Flow
 -------------------
@@ -27,12 +27,12 @@ Under incompressible flow assumption the volumetric- and mass flow for every ass
 .. math::
     :label: eq:Q_balance
 
-    \sum_{i \in I} \dot{V}_i + \dot{V}^a_{consumed} = 0 \;\; \forall a \in
+    \sum_{i \in I} \dot{V}_i + \dot{V}^a_{consumed} = 0 \;\; \forall a \in A.
 
 .. math::
     :label: eq:m_balance
 
-    \sum_{i \in I} \dot{m}_i + \dot{m}^a_{consumed} = 0 \;\; \forall a \in
+    \sum_{i \in I} \dot{m}_i + \dot{m}^a_{consumed} = 0 \;\; \forall a \in A.
 
 :math:`\dot{V}^a_{consumed}` and :math:`\dot{m}^a_{consumed}` are the volumetric- and mass flow consumed by asset :math:`a`.
 
