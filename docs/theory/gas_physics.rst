@@ -191,15 +191,15 @@ Storage assets add time flexibility with the production and consumption of gas. 
 intra-day periods this capability is provided by tanks, alternatively storage over seasons is done
 with underground storage like salt caverns.
 
-:math:`\dot{m}^{a}_{consumed}` can be defined by the thermal power substracted from or added to the
+:math:`\dot{m}^{a}_{consumed}` can be defined by the gas mass substracted from or added to the
 network, where the internal losses of the storage are subtracted:
 
 .. math::
     :label: eq:change_stored_gas
 
-    \dot{m}^{a}_{consumed} =  \sum_{i \in I^a_{in}} \dot{m}^{a}_{i} -  \sum_{i \in I^a_{out}} \dot{Q}^{a}_{i} - \dot{m}^{a}_{loss} \;\; \forall a \in A_{storage}.
+    \dot{m}^{a}_{consumed} =  \sum_{i \in I^a_{in}} \dot{m}^{a}_{i} -  \sum_{i \in I^a_{out}} \dot{m}^{a}_{i} - \dot{m}^{a}_{loss} \;\; \forall a \in A_{storage}.
 
-The consumed heat of the storage assets is equated to the change in stored heat, :math:`\dot{m}^{a}_{stored}`:
+The consumed mass of the storage assets is equated to the change in stored gas mass, :math:`\dot{m}^{a}_{stored}`:
 
 .. math::
     :label: eq:stored_gas

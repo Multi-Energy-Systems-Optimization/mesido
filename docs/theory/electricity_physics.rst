@@ -64,10 +64,53 @@ electrically feasible solution the voltages of all these ports should be equal (
 .. math::
     :label: eq:bus_V
 
-    V_i = V^a \;\; \forall i \in I^a \;\; a \in A_{busses},
-
+    V_i = V^a \;\; \forall i \in I^a \;\; a \in A_{busses}
 
 
 Asset Physics
 -------------
+
+Electricity Source
+~~~~~~~~~~~~~~~~~~
+
+The function of an electricity source is to add electrical power to the network.
+The power balance is given by :eq:`eq:P_balance` where :math:`\dot{Q}_consumed` is equal to the
+(negative) produced power of the source.
+
+Electricity Demand
+~~~~~~~~~~~~~~~~~~
+
+The function of an electricity demand is to subtract electrical power from the network.
+The power balance is given by :eq:`eq:P_balance` where :math:`\dot{Q}_consumed` is equal to the
+consumed power of the demand.
+
+Furthermore, demands typically consume their power at a prescribed voltage.
+
+.. math::
+    :label: eq:V_min
+
+    V^a_i = V_min \;\; \forall i \in I^a \;\; a \in A_{electricity demands}
+
+Electricity storage
+~~~~~~~~~~~~~~~~~~~
+
+Storage assets add time flexibility with the production and consumption of electrical power.
+Batteries are typically used for the storage of electrical energy.
+
+:math:`\dot{Q}^{a}_{consumed}` can be defined by the electical power substracted from or added to the
+network, where the internal losses of the storage are subtracted:
+
+.. math::
+    :label: eq:change_stored_gas
+
+    \dot{Q}^{a}_{consumed} =  \sum_{i \in I^a_{in}} \dot{Q}^{a}_{i} -  \sum_{i \in I^a_{out}} \dot{Q}^{a}_{i} - \dot{Q}^{a}_{loss} \;\; \forall a \in A_{storage}.
+
+The consumed power of the storage assets is equated to the change in stored energy, :math:`\dot{Q}^{a}_{stored}`:
+
+.. math::
+    :label: eq:stored_gas
+
+    \dot{Q}^{a}_{consumed} = \dot{Q}^{a}_{stored} \;\; \forall a \in A_{storage}
+
+ADD THE ENERGY LOSS MODEL
 
