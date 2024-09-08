@@ -121,88 +121,69 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         return b
 
-    def get_carrier_id(self, asset, node=False, n=0):
-        if not node:
-            if (
-                asset.in_ports is not None
-                and asset.out_ports is not None
-                and len(asset.in_ports) >= 2
-                and len(asset.out_ports) >= 2
-            ):  # heat pump and heat exchanger
-                carrier = asset.global_properties["carriers"][asset.in_ports[0].carrier.id]
-                if "Prim" in asset.in_ports[0].name:
-                    prim_in_id = carrier["id_number_mapping"]
-                else:
-                    sec_in_id = carrier["id_number_mapping"]
-                carrier = asset.global_properties["carriers"][asset.in_ports[1].carrier.id]
+    def get_carrier_id(self, asset, n=0):
+        if (
+            asset.in_ports is not None
+            and asset.out_ports is not None
+            and len(asset.in_ports) >= 2
+            and len(asset.out_ports) >= 2
+        ):  # heat pump and heat exchanger
+            carrier = asset.global_properties["carriers"][asset.in_ports[0].carrier.id]
+            if "Prim" in asset.in_ports[0].name:
+                prim_in_id = carrier["id_number_mapping"]
+            else:
+                sec_in_id = carrier["id_number_mapping"]
+            carrier = asset.global_properties["carriers"][asset.in_ports[1].carrier.id]
+            if "Prim" in asset.in_ports[1].name:
+                prim_in_id = carrier["id_number_mapping"]
+            else:
+                sec_in_id = carrier["id_number_mapping"]
+            if len(asset.in_ports) == 3:
                 if "Prim" in asset.in_ports[1].name:
                     prim_in_id = carrier["id_number_mapping"]
                 else:
                     sec_in_id = carrier["id_number_mapping"]
-                if len(asset.in_ports) == 3:
-                    if "Prim" in asset.in_ports[1].name:
-                        prim_in_id = carrier["id_number_mapping"]
-                    else:
-                        sec_in_id = carrier["id_number_mapping"]
-                carrier = asset.global_properties["carriers"][asset.out_ports[0].carrier.id]
-                if "Prim" in asset.out_ports[0].name:
-                    prim_out_id = carrier["id_number_mapping"]
-                else:
-                    sec_out_id = carrier["id_number_mapping"]
-                carrier = asset.global_properties["carriers"][asset.out_ports[1].carrier.id]
-                if "Prim" in asset.out_ports[1].name:
-                    prim_out_id = carrier["id_number_mapping"]
-                else:
-                    sec_out_id = carrier["id_number_mapping"]
-                ids = dict(
-                    Primary=dict(
-                        HeatIn=dict(carrier_id=prim_in_id), HeatOut=dict(carrier_id=prim_out_id)
-                    ),
-                    Secondary=dict(
-                        HeatIn=dict(carrier_id=sec_in_id), HeatOut=dict(carrier_id=sec_out_id)
-                    ),
-                )
-                return ids
+            carrier = asset.global_properties["carriers"][asset.out_ports[0].carrier.id]
+            if "Prim" in asset.out_ports[0].name:
+                prim_out_id = carrier["id_number_mapping"]
             else:
-                ids = dict()
+                sec_out_id = carrier["id_number_mapping"]
+            carrier = asset.global_properties["carriers"][asset.out_ports[1].carrier.id]
+            if "Prim" in asset.out_ports[1].name:
+                prim_out_id = carrier["id_number_mapping"]
+            else:
+                sec_out_id = carrier["id_number_mapping"]
+            ids = dict(
+                Primary=dict(
+                    HeatIn=dict(carrier_id=prim_in_id), HeatOut=dict(carrier_id=prim_out_id)
+                ),
+                Secondary=dict(
+                    HeatIn=dict(carrier_id=sec_in_id), HeatOut=dict(carrier_id=sec_out_id)
+                ),
+            )
+            return ids
+        else:
+            ids = dict()
+            try:
+                carrier = asset.global_properties["carriers"][asset.in_ports[0].carrier.id]
+                id_number = carrier["id_number_mapping"]
+                port = f"{carrier['type'].capitalize()}In"
+                ids[port] = dict(carrier_id=id_number)
+                carrier = asset.global_properties["carriers"][asset.out_ports[0].carrier.id]
+                id_number = carrier["id_number_mapping"]
+                port = f"{carrier['type'].capitalize()}Out"
+                ids[port] = dict(carrier_id=id_number)
+            except KeyError:
                 try:
                     carrier = asset.global_properties["carriers"][asset.in_ports[0].carrier.id]
                     id_number = carrier["id_number_mapping"]
                     port = f"{carrier['type'].capitalize()}In"
                     ids[port] = dict(carrier_id=id_number)
+                except KeyError:
                     carrier = asset.global_properties["carriers"][asset.out_ports[0].carrier.id]
                     id_number = carrier["id_number_mapping"]
                     port = f"{carrier['type'].capitalize()}Out"
                     ids[port] = dict(carrier_id=id_number)
-                except KeyError:
-                    try:
-                        carrier = asset.global_properties["carriers"][asset.in_ports[0].carrier.id]
-                        id_number = carrier["id_number_mapping"]
-                        port = f"{carrier['type'].capitalize()}In"
-                        ids[port] = dict(carrier_id=id_number)
-                    except KeyError:
-                        carrier = asset.global_properties["carriers"][asset.out_ports[0].carrier.id]
-                        id_number = carrier["id_number_mapping"]
-                        port = f"{carrier['type'].capitalize()}Out"
-                        ids[port] = dict(carrier_id=id_number)
-                return ids
-        else:
-            ids = dict()
-            for k in range(0, n):
-                try:
-                    carrier = asset.global_properties["carriers"][asset.in_ports[0].carrier.id]
-                    id_number = carrier["id_number_mapping"]
-                    port = f"{carrier['type'].capitalize()}Conn[{k+1}]"
-                    ids[port] = dict(carrier_id=id_number)
-                except KeyError:
-                    pass
-                try:
-                    carrier = asset.global_properties["carriers"][asset.out_ports[0].carrier.id]
-                    id_number = carrier["id_number_mapping"]
-                    port = f"{carrier['type'].capitalize()}Conn[{k+1}]"
-                    ids[port] = dict(carrier_id=id_number)
-                except KeyError:
-                    pass
             return ids
 
     def get_asset_attribute_value(
