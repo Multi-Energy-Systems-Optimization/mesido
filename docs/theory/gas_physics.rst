@@ -147,3 +147,74 @@ The head of all pipes connected to the node must be equal to ensure a hydraulica
 
 where :math:`A_{nodes}` is the set of all nodes and :math:`H^a` is the headloss for node :math:`a`.
 
+
+Asset Physics
+-------------
+
+Source
+~~~~~~
+
+The source adds gas mass to the network.
+The volumetric- and mass flow balance is given by :eq:`eq:Q_balance` and :eq:`eq:m_balance` where
+:math:`\dot{V}^a_{consumed}` :math:`\dot{\m}^a_{consumed}` is equal to the (negative) value of the
+supplied gas to the network.
+
+A source is modelled with a pump to reach its desired flow rate and head:
+
+.. math::
+    :label: eq:gas_source_pump_dh
+
+    H^a_{pump} = H^a_{out} \;\; \forall a \in A_{prod}.
+
+Demand
+~~~~~~
+
+A demand extracts gas from the network, defined by :eq:`eq:Q_balance` and :eq:`eq:m_balance` where
+:math:`\dot{V}^a_{consumed}` and :math:`\dot{m}^a_{consumed}` is the consumed gas from the network.
+
+Similar to the source, no constraints are required at the in-going supply side of the demand, and
+an equality constraint relates outgoing thermal power with volumetric flow:
+
+Every demand is modelled with a control valve to regulate its flow. In reality a minimum head loss is often maintained:
+
+.. math::
+    :label: eq:gas_demand_head
+
+    H_{connected} - dH_{valve} = H^a_{out} \;\; \forall a \in A_{demand}.
+
+Where :math:`H_{connected}` is the head at the port of the connected asset (normally a pipe).
+
+Storage
+~~~~~~~
+
+Storage assets add time flexibility with the production and consumption of gas. For shorter
+intra-day periods this capability is provided by tanks, alternatively storage over seasons is done
+with underground storage like salt caverns.
+
+:math:`\dot{m}^{a}_{consumed}` can be defined by the thermal power substracted from or added to the
+network, where the internal losses of the storage are subtracted:
+
+.. math::
+    :label: eq:change_stored_gas
+
+    \dot{m}^{a}_{consumed} =  \sum_{i \in I^a_{in}} \dot{m}^{a}_{i} -  \sum_{i \in I^a_{out}} \dot{Q}^{a}_{i} - \dot{m}^{a}_{loss} \;\; \forall a \in A_{storage}.
+
+The consumed heat of the storage assets is equated to the change in stored heat, :math:`\dot{m}^{a}_{stored}`:
+
+.. math::
+    :label: eq:stored_gas
+
+    \dot{m}^{a}_{consumed} = \dot{m}^{a}_{stored} \;\; \forall a \in A_{storage}
+
+Compressor and Sub-station/control-valve
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The compressor and sub-station are used to change from nominal pressure level in the system.
+This means that these assets will have a different pressure level and thus density on their in port
+w.r.t. their out port.
+It is assumed that mass and is maintained over the pressure step.
+
+.. math::
+    :label: eq:mass_balance_pressure_level
+
+    \sum_{i \in I^a_{in}} \dot{m}^{a} = \sum_{i \in I^a_{in}} \dot{m}^{a}\;\; \forall a \in A_{Compressor, sub-station}
+
