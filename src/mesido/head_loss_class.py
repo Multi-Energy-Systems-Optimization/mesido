@@ -871,6 +871,59 @@ class HeadLossClass:
                                 0.0,
                             ),
                         )
+                else:
+                    ff = darcy_weisbach.friction_factor(
+                        maximum_velocity,
+                        diameter,
+                        wall_roughness,
+                        temperature,
+                        network_type=network_type,
+                        pressure=pressure,
+                    )
+
+                    # Compute c_v constant (where |dH| ~ c_v * v^2)
+                    c_v = length * ff / (2 * GRAVITATIONAL_CONSTANT) / diameter
+
+                    a,b = darcy_weisbach.get_linear_pipe_dh_vs_q_fit(
+                        diameter,
+                        length,
+                        wall_roughness,
+                        temperature=temperature,
+                        n_lines=1,
+                        v_max=maximum_velocity,
+                        network_type=self.network_settings["network_type"],
+                        pressure=parameters[f"{pipe}.pressure"],
+                    )
+
+                    # linearization_velocity = maximum_velocity
+                    # linearization_head_loss = c_v * linearization_velocity ** 2
+                    # linearization_discharge = linearization_velocity * area
+
+                    expr = a*discharge+a
+
+                    if symbolic:
+                        # constraint_nominal = c_v * maximum_velocity ** 2
+                        # Interior point solvers, like IPOPT, do not like linearly dependent
+                        # tight inequality constraints. For this reason, we split the
+                        # constraints depending whether the Big-M formulation is used or not.
+                        if big_m is None:
+                            return RuntimeError
+                        else:
+                            constraint_nominal = (head_loss_nominal * big_m) ** 0.5
+                            constraints.append(
+                                (
+                                    (head_loss - expr - is_disconnected * big_m) / constraint_nominal,
+                                    -np.inf,
+                                    0.0,
+                                ),)
+                            # constraints.append(
+                            #     (
+                            #         (
+                            #                     dh - expr - is_disconnected * big_m) / constraint_nominal,
+                            #         -np.inf,
+                            #         0.0,
+                            #     ), )
+
                 return constraints
             else:
                 ret = np.amax(a * np.tile(discharge, (len(a), 1)).transpose() + b, axis=1)

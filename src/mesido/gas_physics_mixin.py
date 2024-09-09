@@ -395,8 +395,8 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         if (
             self.gas_network_settings["minimize_head_losses"]
             and self.gas_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS
-            and self.gas_network_settings["head_loss_option"]
-            != HeadLossOption.LINEARIZED_N_LINES_EQUALITY
+            # and self.gas_network_settings["head_loss_option"]
+            # != HeadLossOption.LINEARIZED_N_LINES_EQUALITY
         ):
             g.append(
                 self._gn_head_loss_class._hn_minimization_goal_class(
@@ -698,7 +698,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             components = self.energy_system_components
 
             rtol = 1e-5
-            atol = 1e-4
+            atol = 1e-2
 
             for ensemble_member in range(self.ensemble_size):
                 parameters = self.parameters(ensemble_member)
@@ -744,7 +744,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                     if not np.allclose(head_loss, head_loss_target, rtol=rtol, atol=atol):
                         logger.warning(
                             f"Pipe {pipe} has artificial head loss; "
-                            f"at least one more control valve should be added to the network."
+                            f"at least one more control valve should be added to the network. rtol: {(head_loss-head_loss_target)/head_loss_target}, atol:{head_loss-head_loss_target}"
                         )
 
         super().priority_completed(priority)

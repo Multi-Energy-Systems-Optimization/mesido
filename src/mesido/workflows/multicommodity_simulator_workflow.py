@@ -98,9 +98,9 @@ class SolverGurobi:
     inherited by a class describing the optimization problem.
     The relative MIP gap is set to 0.01% and 4 threads are used to sole the problem.
     """
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
-    #     self.__mip
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._priority = None
 
     def solver_options(self):
         options = super().solver_options()
@@ -110,6 +110,9 @@ class SolverGurobi:
         gurobi_options["MIPgap"] = 0.0001
         gurobi_options["threads"] = 4
         gurobi_options["LPWarmStart"] = 2
+        if self._priority:
+            if self._priority>1e4:
+                gurobi_options["MIPgap"] = 0.05
 
         options["highs"] = None
         options["cplex"] = None
@@ -146,8 +149,8 @@ class TargetDemandGoal(Goal):
 
         self.target_min = target
         self.target_max = target
-        self.function_range = (-2.0 * max(target.values), 2.0 * max(target.values))
-        self.function_nominal = np.median(target.values)
+        self.function_range = (-2.0 * max(target.values), 2.0 * max(target.values)) if max(target.values)!=0.0 else (-1.0,1.0)
+        self.function_nominal = np.median(target.values) if np.median(target.values)!=0.0 else 1.0
         self.priority = priority
         self.order = order
 
@@ -283,7 +286,7 @@ class _GoalsAndOptions:
                         goals.append(TargetDemandGoal(state, target))
                     else:
                         priority = 2 * len(self._esdl_assets)
-                        goals.append(TargetProducerGoal(state, target, priority))
+                        # goals.append(TargetProducerGoal(state, target, priority))
 
         return goals
 
@@ -335,6 +338,9 @@ class MultiCommoditySimulator(
 
     def pre(self):
         self._qpsol = CachingQPSol()
+
+        self.gas_network_settings["pipe_maximum_pressure"] = 8.0e3  # [bar]
+        self.gas_network_settings["pipe_minimum_pressure"] = 50.0  # [bar]
 
         super().pre()
 
@@ -424,6 +430,7 @@ class MultiCommoditySimulator(
         assets_list = asset_info["assets_to_include_list"]
         asset_merit = asset_info["asset_merit"]
         asset_variable_map = asset_info["asset_variable_map"]
+
         for asset in assets_list:
             index_s = asset_merit["asset_name"].index(f"{asset}")
             marginal_priority = (
@@ -438,37 +445,82 @@ class MultiCommoditySimulator(
             ]:
                 variable_name = f"{asset}.{asset_variable_map[asset]}"
 
-                goals.append(
-                    MinimizeSourcesGoalMerit(
-                        variable_name,
-                        marginal_priority,
-                        self.bounds()[variable_name],
-                        self.variable_nominal(variable_name),
-                    )
-                )
+
+                func_range = self.bounds()[variable_name]
+                v1 = _extract_values_timeseries(func_range[0])
+                v2 = _extract_values_timeseries(func_range[1])
+                func_range = (v1,v2)
+
+                add_goal = True
+                if isinstance(v1, np.ndarray) and isinstance(v2, np.ndarray):
+                    if (v1 == v2).all():
+                        add_goal = False
+                if add_goal:
+                    if "import" in asset.lower():
+                        goals.append(
+                            MinimizeSourcesGoalMerit(
+                                variable_name,
+                                marginal_priority,
+                                func_range,
+                                self.variable_nominal(variable_name),
+                                order=1
+                            )
+                        )
+                    else:
+                        goals.append(
+                            MinimizeSourcesGoalMerit(
+                                variable_name,
+                                marginal_priority,
+                                func_range,
+                                self.variable_nominal(variable_name),
+                            )
+                        )
             elif asset in assets_to_include.get("conversion", []):
                 variable_name = f"{asset}.{asset_variable_map[asset]}"
                 index_s = asset_merit["asset_name"].index(f"{asset}_prod")
                 marginal_priority_source = (
                     index_start_of_priority + max_value_merit - asset_merit["merit_order"][index_s]
                 )
-                goals.append(
-                    MinimizeSourcesGoalMerit(
-                        variable_name,
-                        marginal_priority_source,
-                        self.bounds()[variable_name],
-                        self.variable_nominal(variable_name),
-                    )
-                )
+
+                if self.energy_system_options()["electrolyzer_efficiency"]!= ElectrolyzerOption.LINEARIZED_THREE_LINES_EQUALITY:
+                    func_range = self.bounds()[variable_name]
+                    v1 = _extract_values_timeseries(func_range[0])
+                    v2 = _extract_values_timeseries(func_range[1])
+                    func_range = (v1, v2)
+                    add_goal = True
+
+                    if isinstance(v1, np.ndarray) and isinstance(v2, np.ndarray):
+                        if (v1 == v2).all():
+                            add_goal = False
+                    if add_goal:
+                        goals.append(
+                            MinimizeSourcesGoalMerit(
+                                variable_name,
+                                marginal_priority_source,
+                                func_range,
+                                self.variable_nominal(variable_name),
+                            )
+                        )
                 variable_name = f"{asset}.Gas_mass_flow_out"
-                goals.append(
-                    MaximizeDemandGoalMerit(
-                        variable_name,
-                        marginal_priority,
-                        self.bounds()[variable_name],
-                        self.variable_nominal(variable_name),
+
+                func_range = self.bounds()[variable_name]
+                v1 = _extract_values_timeseries(func_range[0])
+                v2 = _extract_values_timeseries(func_range[1])
+                func_range = (v1, v2)
+
+                add_goal = True
+                if isinstance(v1, np.ndarray) and isinstance(v2, np.ndarray):
+                    if (v1 == v2).all():
+                        add_goal = False
+                if add_goal:
+                    goals.append(
+                        MaximizeDemandGoalMerit(
+                            variable_name,
+                            marginal_priority,
+                            func_range,
+                            self.variable_nominal(variable_name),
+                        )
                     )
-                )
             elif asset in assets_to_include.get("demand", []):
                 variable_name = f"{asset}.{asset_variable_map[asset]}"
 
@@ -550,7 +602,7 @@ class MultiCommoditySimulator(
             "storage": ["gas_tank_storage", "electricity_storage"],
         }
 
-        assets_without_control = ["Pipe", "ElectricityCable", "Joint", "Bus", "GenericConversion"]
+        assets_without_control = ["Pipe", "ElectricityCable", "Joint", "Bus", "GenericConversion", "GasConversion"]
 
         # TODO also include other assets than producers, e.g. storage, conversion and possible
         #  demand for the ones without a profile
@@ -691,7 +743,7 @@ class MultiCommoditySimulator(
             if goal.priority == priority:
                 goals_print.update([str(type(goal))])
         logger.info(f"{goals_print}")
-        self.__priority = priority
+        self._priority = priority
         self.__priority_timer = time.time()
 
         super().priority_started(priority)
@@ -783,6 +835,184 @@ def staged_approach(
         storage_initial_state_bounds=storage_initial_state_bounds,
         **kwargs,
     )
+    if not end_time_confirmed:
+        end_time = len(solution._full_time_series)
+        end_time_confirmed = True
+    results = solution.extract_results()
+
+    aliases, bounds, parameters = [None] * 3
+
+    # TODO: check if we now capture all relevant variables.
+    if total_results is None:
+        total_results = results
+        aliases = solution.alias_relation._canonical_variables_map
+        bounds = solution.bounds()
+        parameters = solution.parameters(0)
+    else:
+        for key, data in results.items():
+            try:
+                if len(total_results[key]) > 1:
+                    total_results[key] = np.concatenate((total_results[key], data[1:]))
+            except KeyError:
+                try:
+                    print(f"{key} got an error thus saved separately in time {sub_end_time}")
+                    total_results[key] = data[1:]
+                except:
+                    print(key)
+                    continue
+
+
+    if sub_end_time < end_time:
+        for asset_type, variables in constrained_assets.items():
+            for asset in solution.energy_system_components.get(asset_type, []):
+                sub_time_series = solution._full_time_series[
+                    simulated_window
+                    - 1
+                    + simulation_window_size : min(
+                        end_time, simulated_window + 2 * simulation_window_size
+                    )
+                ]
+                for variable in variables:
+                    lb_value = _extract_values_timeseries(
+                        solution.bounds()[f"{asset}.{variable}"][0], "min"
+                    )
+                    ub_value = _extract_values_timeseries(
+                        solution.bounds()[f"{asset}.{variable}"][1], "max"
+                    )
+                    lb_values = [lb_value] * len(sub_time_series)
+                    ub_values = [ub_value] * len(sub_time_series)
+                    lb_values[0] = ub_values[0] = results[f"{asset}.{variable}"][-1]
+                    lb = Timeseries(sub_time_series, lb_values)
+                    ub = Timeseries(sub_time_series, ub_values)
+                    storage_initial_state_bounds[f"{asset}.{variable}"] = (lb, ub)
+
+    return (
+        solution,
+        end_time,
+        simulated_window,
+        simulation_window_size,
+        storage_initial_state_bounds,
+        end_time_confirmed,
+        total_results,
+        aliases,
+        bounds,
+        parameters,
+    )
+
+
+def staged_approach_extended(
+    end_time,
+    simulated_window,
+    simulation_window_size,
+    storage_initial_state_bounds,
+    end_time_confirmed,
+    total_results,
+    constrained_assets,
+    multicommodity_sequential_simulator_class,
+    solver_class,
+    **kwargs,
+):
+    """
+    This function is the actual execution of a stage in a sequantial staged approach.
+    :param end_time: The end simulation time of the staged approach
+    :param simulated_window: The start index of the simulated window
+    :param simulation_window_size: The size of the simulated stage
+    :param storage_initial_state_bounds: The inital state (at start time of this window) bounds
+    for storages
+    :param end_time_confirmed: Boolean if the end time is already properly set.
+    :param total_results: Dict in which the results of all stages are saved and added to.
+    :param constrained_assets: Assets which have some intial state boundary that needs to be
+    implemented at every stage.
+    :param multicommodity_sequential_simulator_class: The class that describes the optimization
+    problem
+    :param solver_class: The class describing the solver settings.
+    :param kwargs:
+    :return:
+    """
+    sub_end_time = min(end_time, simulated_window + simulation_window_size)
+
+
+    class MCSimulatorTimeSequentialNoHeadloss(multicommodity_sequential_simulator_class):
+        """
+        This Problem class is used to run the MultiCommoditySimulator class in a sequantial manner
+        to reduce computational time. This class enables this by allowing to run a part of the
+        timeseries and setting bounds on the (initial-)state variables.
+        """
+
+        def energy_system_options(self):
+            options = super().energy_system_options()
+
+            self.gas_network_settings[
+                "head_loss_option"] = HeadLossOption.NO_HEADLOSS
+            self.gas_network_settings["minimize_head_losses"] = False
+            return options
+
+
+    # max operation for start_index to avoid the overlap function in the first stage
+    solution = run_optimization_problem_solver(
+        MCSimulatorTimeSequentialNoHeadloss,
+        solver_class,
+        start_index=max(simulated_window - 1, 0),
+        end_index=sub_end_time,
+        storage_initial_state_bounds=storage_initial_state_bounds,
+        **kwargs,
+    )
+
+    results = solution.extract_results()
+    #TODO: change constrained assets
+    prod_bounds = {}
+
+    constrained_assets_prod = {
+        "wind_park": ["Electricity_source"],
+        "electrolyzer": ["Gas_mass_flow_out"],# ["Power_consumed", "Gas_mass_flow_out"],
+    }
+
+    for asset_type, variables in constrained_assets_prod.items():
+        for asset in solution.energy_system_components.get(asset_type, []):
+            sub_time_series = solution._full_time_series[
+                              simulated_window
+                              : min(
+                                  end_time, simulated_window + 1 * simulation_window_size
+                              )
+                              ]
+            for variable in variables:
+                lb_values = results[f"{asset}.{variable}"]
+                ub_values = results[f"{asset}.{variable}"]
+                lb = Timeseries(sub_time_series, lb_values)
+                ub = Timeseries(sub_time_series, ub_values)
+                prod_bounds[f"{asset}.{variable}"] = (lb, ub)
+
+    class MCSimulatorTimeSequentialHeadloss(multicommodity_sequential_simulator_class):
+        """
+        This Problem class is used to run the MultiCommoditySimulator class in a sequantial manner
+        to reduce computational time. This class enables this by allowing to run a part of the
+        timeseries and setting bounds on the (initial-)state variables.
+        """
+
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+
+            self.__prod_bounds = kwargs.get("prod_bounds", {})
+
+        def bounds(self):
+            """
+            Here we set bounds on the initial state to ensure that the sequantial simulation is a
+            physcially valid.
+            """
+            bounds = super().bounds()
+            bounds.update(self.__prod_bounds)
+            return bounds
+
+    solution = run_optimization_problem_solver(
+        MCSimulatorTimeSequentialHeadloss,
+        solver_class,
+        start_index=max(simulated_window - 1, 0),
+        end_index=sub_end_time,
+        storage_initial_state_bounds=storage_initial_state_bounds,
+        prod_bounds=prod_bounds,
+        **kwargs,
+    )
+
     if not end_time_confirmed:
         end_time = len(solution._full_time_series)
         end_time_confirmed = True

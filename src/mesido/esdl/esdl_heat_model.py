@@ -2168,13 +2168,13 @@ class AssetToHeatComponent(_AssetToComponentBase):
             density_in=density_in,
             density_out=density_out,
             GasIn=dict(
-                Q=dict(nominal=q_nom_in),
-                mass_flow=dict(nominal=q_nom_in * density_in),
+                Q=dict(min=0, nominal=q_nom_in),
+                mass_flow=dict(min=0, nominal=q_nom_in * density_in),
                 Hydraulic_power=dict(nominal=q_nom_in * pressure_in),
             ),
             GasOut=dict(
-                Q=dict(nominal=q_nom_out),
-                mass_flow=dict(nominal=q_nom_out * density_out),
+                Q=dict(min=0, nominal=q_nom_out),
+                mass_flow=dict(min=0, nominal=q_nom_out * density_out),
                 Hydraulic_power=dict(nominal=q_nom_out * pressure_out),
             ),
             **self._get_cost_figure_modifiers(asset),
