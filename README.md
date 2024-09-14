@@ -9,12 +9,13 @@ The main supported method for defining your Energy system is ESDL (Energy System
 With ESDL you can define assets like demands, sources, pipes, etc. and fill in their attributes. The ESDLMixin class
 will parse the ESDL file and utilize the attributes to build up the model representation.
 
-The documentation on the mathematical modelling and workflow application can be found on: `readthedocs <https://mesido.readthedocs.io/en/latest/>`.
+The documentation on the mathematical modelling and workflow application can be found on: 
+readthedocs: https://mesido.readthedocs.io/en/latest/.
 
 Installation
 ============
 
-Installation of the RTC-Tools Heat Network library is as simple as::
+Installation of the MESIDO library is as simple as::
 
     # 1a. Use pip to install directly
     pip install mesido
@@ -25,7 +26,7 @@ If you are going to develop and change the source code, you probably want to do 
 	git clone https://github.com/Multi-Energy-Systems-Optimization/mesido
 	pip install -e mesido
 
-RTC-Tools Heat Network depends on `RTC-Tools <https://gitlab.com/deltares/rtc-tools.git>`_, which is automatically installed as one of its dependencies.
+MESIDO depends on `RTC-Tools <https://gitlab.com/deltares/rtc-tools.git>`_, which is automatically installed as one of its dependencies.
 
 Running an example
 ==================
@@ -42,7 +43,7 @@ These do not come with the installation, and need to be downloaded separately::
     # 3. Run the example
     python example.py
 
-You will see the progress of RTC-Tools in your shell.
+You will see the progress in your shell.
 If all is well, you should see something like the following output:
 
 ![img.png](img.png)
