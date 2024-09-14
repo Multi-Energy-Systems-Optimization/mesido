@@ -121,6 +121,15 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         return b
 
+    def get_owner(self, asset):
+        return dict(
+            owner=(
+                asset.attributes["isOwnedBy"].name
+                if asset.attributes["isOwnedBy"] is not None
+                else "NoOwner"
+            )
+        )
+
     def get_carrier_id(self, asset, n=0):
         if (
             asset.in_ports is not None
