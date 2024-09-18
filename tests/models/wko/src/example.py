@@ -7,7 +7,6 @@ from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
 from mesido.techno_economic_mixin import TechnoEconomicMixin
-from mesido.workflows.io.write_output import ScenarioOutput
 
 import numpy as np
 
@@ -190,7 +189,6 @@ class _GoalsAndOptions:
 
 
 class HeatProblem(
-    ScenarioOutput,
     _GoalsAndOptions,
     TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,

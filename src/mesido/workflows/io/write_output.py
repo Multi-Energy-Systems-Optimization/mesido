@@ -942,8 +942,8 @@ class ScenarioOutput:
                 (x for x in energy_system.eAllContents() if hasattr(x, "name") and x.name == name)
             )
 
-        # if add_kpis:
-        #     self._add_kpis_to_energy_system(energy_system, optimizer_sim)
+        if add_kpis:
+            self._add_kpis_to_energy_system(energy_system, optimizer_sim)
 
         # ------------------------------------------------------------------------------------------
         # Placement

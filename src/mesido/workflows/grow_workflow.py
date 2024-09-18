@@ -211,6 +211,7 @@ class EndScenarioSizing(
         (
             self.__indx_max_peak,
             self.__heat_demand_nominal,
+            _,
         ) = adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(self, self.__day_steps)
 
         logger.info("HeatProblem read")
