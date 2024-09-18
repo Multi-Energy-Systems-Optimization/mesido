@@ -1,19 +1,13 @@
+import logging
 from pathlib import Path
 from unittest import TestCase
-
-import logging
-
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.util import run_esdl_mesido_optimization
-from mesido.workflows.io.write_output import ScenarioOutput
 from mesido.workflows.utils.adapt_profiles import (
     adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
 )
-
-import numpy as np
-
 
 logger = logging.getLogger("WarmingUP-MPC")
 logger.setLevel(logging.INFO)
@@ -29,12 +23,12 @@ class HeatColdDemand(TestCase):
         """
         import os
         import sys
+
         root_folder = os.path.join(Path(__file__).resolve().parent.parent.parent.parent, "tests")
         sys.path.insert(1, root_folder)
 
         from models.wko.src.example import HeatProblem
         from utils_tests import demand_matching_test, energy_conservation_test
-
 
         base_folder = Path(__file__).resolve().parent.parent
 
