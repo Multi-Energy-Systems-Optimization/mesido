@@ -5,7 +5,7 @@ operation of Energy Systems with the current main focus on District Heating Syst
 All physics, placement, sizing and financial models are combined in the TechnoEconomicMixin class. When inherited this class can be combined with objective functions (that typically incorporate the financial aspects) and interface methods to create an
 optimization workflow (see also running an example).
 
-The main supported method for defining your Energy system is ESDL (Energy System Description Language), which is a modelling language for energy systems. See also:https://github.com/EnergyTransition/ESDL.
+The main supported method for defining your Energy system is ESDL (Energy System Description Language), which is a modelling language for energy systems. See also: https://github.com/EnergyTransition/ESDL.
 With ESDL you can define assets like demands, sources, pipes, etc. and fill in their attributes. The ESDLMixin class
 will parse the ESDL file and utilize the attributes to build up the model representation.
 
