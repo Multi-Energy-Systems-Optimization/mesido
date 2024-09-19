@@ -1,3 +1,6 @@
+# THIS CODE DOES NOT MEET THE CODE FORMATTING STANDARD
+# Reason: this is only used to parse the esdl for the pandapipes validation test case
+
 """
 PandapipeEsdlParser
 ====================================
