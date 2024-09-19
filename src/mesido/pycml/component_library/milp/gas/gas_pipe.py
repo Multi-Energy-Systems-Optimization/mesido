@@ -25,13 +25,14 @@ class GasPipe(GasTwoPort, BaseAsset):
         self.area = 0.25 * pi * self.diameter**2
         self.Q_nominal = self.v_max / 2.0 * self.area
         self.pressure = 16.0e5
+        self.id_mapping_carrier = -1
 
         self.nominal_head = 30.0
         self.length = nan
         self.r = 1.0e-6 * self.length  # TODO: temporary value
         self.nominal_head_loss = (self.Q_nominal * self.r * self.nominal_head) ** 0.5
 
-        self.add_variable(Variable, "dH", nominal=self.Q_nominal * self.r)
+        self.add_variable(Variable, "dH")
         self.add_variable(Variable, "Q", nominal=self.Q_nominal)
 
         # Flow should be preserved
@@ -43,8 +44,6 @@ class GasPipe(GasTwoPort, BaseAsset):
         self.add_equation(
             ((self.GasIn.mass_flow - self.GasOut.mass_flow) / (self.Q_nominal * self.density))
         )
-        # # shadow Q for aliases
-        self.add_equation(((self.GasOut.Q_shadow - (self.GasIn.Q_shadow - 1.0e-3))))
 
         # Hydraulic power
         # TODO replace value

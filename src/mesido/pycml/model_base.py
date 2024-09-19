@@ -225,6 +225,16 @@ class Model:
             self._initial_inequalities.append((equation, lb, ub))
 
     def connect(self, a: "Connector", b: "Connector"):
+        """
+        This function sets equality constraints to the variables of the two (connected) ports.
+
+        Params:
+        a: port 1
+        b: port 2
+
+        Return:
+        None
+        """
         if not a.variables.keys() == b.variables.keys():
             raise Exception(
                 f"Cannot connect port {a} of type {type(a)} to port {b} "
@@ -232,6 +242,35 @@ class Model:
             )
 
         self._equations.extend([a.variables[k] - b.variables[k] for k in a.variables.keys()])
+
+    def connect_logical_links(self, a: "Connector", b: "Connector"):
+        """
+        This function sets equality constraints to the variables of the two (connected) ports. Note
+        that this function is used for logical links, meaning that we only use this function for
+        models where the user defined direct connection between assets without the use of
+        "transport" assets in between. For that purpose we do not make equality constraints for
+        head, voltage and hydrualic power as these are inherent for the transport modelling.
+
+        Params:
+        a: port 1
+        b: port 2
+
+        Return:
+        None
+        """
+        if not a.variables.keys() == b.variables.keys():
+            raise Exception(
+                f"Cannot connect port {a} of type {type(a)} to port {b} "
+                f"of type {type(b)} as they have different variables."
+            )
+
+        self._equations.extend(
+            [
+                a.variables[k] - b.variables[k]
+                for k in a.variables.keys()
+                if (k != "H" and k != "Hydraulic_power" and k != "V")
+            ]
+        )
 
     def der(self, var: Variable):
         return var.der()

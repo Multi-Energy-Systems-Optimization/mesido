@@ -2,14 +2,16 @@ import logging
 import math
 from typing import Dict, Tuple, Type, Union
 
-import CoolProp as cP
-
 import esdl
 
-from mesido.esdl.asset_to_component_base import MODIFIERS, _AssetToComponentBase
+from mesido.esdl.asset_to_component_base import (
+    MODIFIERS,
+    _AssetToComponentBase,
+    get_density,
+    get_internal_energy,
+)
 from mesido.esdl.common import Asset
 from mesido.esdl.esdl_model_base import _ESDLModelBase
-from mesido.network_common import NetworkSettings
 from mesido.pycml.component_library.milp import (
     ATES,
     AirWaterHeatPump,
@@ -99,67 +101,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
         """
         return dict(rho=self.rho, cp=self.cp)
 
-    def get_internal_energy(self, asset_name, carrier):
-        # The default of 20°C is also used in the head_loss_class. Thus, when updating ensure it
-        # is also updated in the head_loss_class.
-        temperature = 20.0
-
-        if NetworkSettings.NETWORK_TYPE_GAS in carrier.name:
-            internal_energy = cP.CoolProp.PropsSI(
-                "U",
-                "T",
-                273.15 + temperature,
-                "P",
-                carrier.pressure * 1.0e5,
-                NetworkSettings.NETWORK_COMPOSITION_GAS,
-            )
-        elif NetworkSettings.NETWORK_TYPE_HYDROGEN in carrier.name:
-            internal_energy = cP.CoolProp.PropsSI(
-                "U",
-                "T",
-                273.15 + temperature,
-                "P",
-                carrier.pressure * 1.0e5,
-                str(NetworkSettings.NETWORK_TYPE_HYDROGEN).upper(),
-            )
-        else:
-            logger.warning(
-                f"Neither gas or hydrogen was used in the carrier " f"name of pipe {asset_name}"
-            )
-            internal_energy = 46.0e6  # natural gas at about 8 bar
-        return internal_energy  # we use gram per second and coolprop gives results in kJ per kg
-
-    def get_density(self, asset_name, carrier):
-        # TODO: gas carrier temperature still needs to be resolved.
-        # The default of 20°C is also used in the head_loss_class. Thus, when updating ensure it
-        # is also updated in the head_loss_class.
-        temperature = 20.0
-
-        if NetworkSettings.NETWORK_TYPE_GAS in carrier.name:
-            density = cP.CoolProp.PropsSI(
-                "D",
-                "T",
-                273.15 + temperature,
-                "P",
-                carrier.pressure * 1.0e5,
-                NetworkSettings.NETWORK_COMPOSITION_GAS,
-            )
-        elif NetworkSettings.NETWORK_TYPE_HYDROGEN in carrier.name:
-            density = cP.CoolProp.PropsSI(
-                "D",
-                "T",
-                273.15 + temperature,
-                "P",
-                carrier.pressure * 1.0e5,
-                str(NetworkSettings.NETWORK_TYPE_HYDROGEN).upper(),
-            )
-        else:
-            logger.warning(
-                f"Neither gas or hydrogen was used in the carrier " f"name of pipe {asset_name}"
-            )
-            density = 6.2  # natural gas at about 8 bar
-        return density * 1.0e3  # to convert from kg/m3 to g/m3
-
     def get_asset_attribute_value(
         self,
         asset: Asset,
@@ -246,6 +187,31 @@ class AssetToHeatComponent(_AssetToComponentBase):
         - Setting the state (enabled, disabled, optional)
         - Setting the relevant temperatures.
         - Setting the relevant cost figures.
+
+        Required ESDL fields:
+        ---------------------
+        - volume/capacity
+        - id (this id must be unique)
+        - name (this name must be unique)
+        - xsi:type
+        - State
+        - InPort and OutPort with:
+            - xsi:type
+            - id
+            - name
+            - connectedTo
+            - carrier with temperature specified
+
+        Optional ESDL fields:
+        ---------------------
+        - max(Dis)ChargeRate
+        - technicalLifetime
+        - CostInformation: discountRate
+        - CostInformation: marginalCost
+        - CostInformation: installationCost
+        - CostInformation: investmentCost
+        - CostInformation: fixedOperationalCost
+        - CostInformation: variableOperationalCost
 
         Parameters
         ----------
@@ -357,6 +323,30 @@ class AssetToHeatComponent(_AssetToComponentBase):
         - Setting the relevant temperatures.
         - Setting the relevant cost figures.
 
+        Required ESDL fields:
+        ---------------------
+        - id (this id must be unique)
+        - name (this name must be unique)
+        - xsi:type
+        - State
+        - InPort and OutPort with:
+            - xsi:type
+            - id
+            - name
+            - connectedTo
+            - carrier with temperature specified
+
+        Optional ESDL fields:
+        ---------------------
+        - power
+        - technicalLifetime
+        - CostInformation: discountRate
+        - CostInformation: marginalCost
+        - CostInformation: installationCost
+        - CostInformation: investmentCost
+        - CostInformation: fixedOperationalCost
+        - CostInformation: variableOperationalCost
+
         Parameters
         ----------
         asset : The asset object with its properties.
@@ -465,6 +455,29 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         - Setting the amount of connections
 
+        Required ESDL fields:
+        ---------------------
+        - id (this id must be unique)
+        - name (this name must be unique)
+        - xsi:type
+        - State
+        - InPort and OutPort with (note only one inport and one outport):
+            - xsi:type
+            - id
+            - name
+            - connectedTo (allowed to have multiple connections)
+            - carrier with temperature specified
+
+        Optional ESDL fields:
+        ---------------------
+        - technicalLifetime
+        - CostInformation: discountRate
+        - CostInformation: marginalCost
+        - CostInformation: installationCost
+        - CostInformation: investmentCost
+        - CostInformation: fixedOperationalCost
+        - CostInformation: variableOperationalCost
+
         Parameters
         ----------
         asset : The asset object with its properties.
@@ -525,6 +538,32 @@ class AssetToHeatComponent(_AssetToComponentBase):
         - Setting the relevant temperatures.
         - Setting the relevant cost figures.
 
+        Required ESDL fields:
+        ---------------------
+        - Diameter/inner_diameter
+        - length
+        - id (this id must be unique)
+        - name (this name must be unique)
+        - xsi:type
+        - State
+        - InPort and OutPort with (note only one inport and one outport):
+            - xsi:type
+            - id
+            - name
+            - connectedTo
+            - carrier with temperature specified
+
+        Optional ESDL fields:
+        ---------------------
+        - Material (for insulation)
+        - technicalLifetime
+        - CostInformation: discountRate
+        - CostInformation: marginalCost
+        - CostInformation: installationCost
+        - CostInformation: investmentCost
+        - CostInformation: fixedOperationalCost
+        - CostInformation: variableOperationalCost
+
         Parameters
         ----------
         asset : The asset object with its properties.
@@ -545,13 +584,17 @@ class AssetToHeatComponent(_AssetToComponentBase):
             conductivies_insulation,
         ) = self._pipe_get_diameter_and_insulation(asset)
 
+        id_mapping = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
+            "id_number_mapping"
+        ]
+
         if isinstance(asset.in_ports[0].carrier, esdl.esdl.GasCommodity):
             q_nominal = math.pi * diameter**2 / 4.0 * self.v_max_gas / 2.0
             self._set_q_nominal(asset, q_nominal)
             q_max = math.pi * diameter**2 / 4.0 * self.v_max_gas
             self._set_q_max(asset, q_max)
             pressure = asset.in_ports[0].carrier.pressure * 1.0e5
-            density = self.get_density(asset.name, asset.in_ports[0].carrier)
+            density = get_density(asset.name, asset.in_ports[0].carrier)
             bounds_nominals = dict(
                 Q=dict(min=-q_max, max=q_max, nominal=q_nominal),
                 mass_flow=dict(
@@ -560,6 +603,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 Hydraulic_power=dict(nominal=q_nominal * pressure),
             )
             modifiers = dict(
+                id_mapping_carrier=id_mapping,
                 length=length,
                 density=density,
                 diameter=diameter,
@@ -640,6 +684,29 @@ class AssetToHeatComponent(_AssetToComponentBase):
         - Setting the relevant temperatures.
         - Setting the relevant cost figures.
 
+        Required ESDL fields:
+        ---------------------
+        - id (this id must be unique)
+        - name (this name must be unique)
+        - xsi:type
+        - State
+        - InPort and OutPort with (note only one inport and one outport):
+            - xsi:type
+            - id
+            - name
+            - connectedTo
+            - carrier with temperature specified
+
+        Optional ESDL fields:
+        ---------------------
+        - technicalLifetime
+        - CostInformation: discountRate
+        - CostInformation: marginalCost
+        - CostInformation: installationCost
+        - CostInformation: investmentCost
+        - CostInformation: fixedOperationalCost
+        - CostInformation: variableOperationalCost
+
         Parameters
         ----------
         asset : The asset object with its properties.
@@ -683,6 +750,31 @@ class AssetToHeatComponent(_AssetToComponentBase):
         - Setting the state (enabled, disabled, optional)
         - Setting the relevant temperatures (also checked for making sense physically).
         - Setting the relevant cost figures.
+
+        Required ESDL fields:
+        ---------------------
+        - heatTransferCoefficient/power
+        - id (this id must be unique)
+        - name (this name must be unique)
+        - xsi:type
+        - State
+        - 2 InPorts and 2 OutPorts with:
+            - xsi:type
+            - id
+            - name
+            - connectedTo
+            - carrier with temperature specified
+
+        Optional ESDL fields:
+        ---------------------
+        - efficiency
+        - technicalLifetime
+        - CostInformation: discountRate
+        - CostInformation: marginalCost
+        - CostInformation: installationCost
+        - CostInformation: investmentCost
+        - CostInformation: fixedOperationalCost
+        - CostInformation: variableOperationalCost
 
         Parameters
         ----------
@@ -816,6 +908,32 @@ class AssetToHeatComponent(_AssetToComponentBase):
         - Setting the relevant temperatures.
         - Setting the relevant cost figures.
 
+        Required ESDL fields:
+        ---------------------
+        - power
+        - COP
+        - id (this id must be unique)
+        - name (this name must be unique)
+        - xsi:type
+        - State
+        - 2 InPorts and 2 OutPorts with:
+            - xsi:type
+            - id
+            - name
+            - connectedTo
+            - carrier with temperature specified
+
+        Optional ESDL fields:
+        ---------------------
+        - efficiency
+        - technicalLifetime
+        - CostInformation: discountRate
+        - CostInformation: marginalCost
+        - CostInformation: installationCost
+        - CostInformation: investmentCost
+        - CostInformation: fixedOperationalCost
+        - CostInformation: variableOperationalCost
+
         Parameters
         ----------
         asset : The asset object with its properties.
@@ -830,6 +948,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         # In this case we only have the secondary side ports, here we assume a air-water HP
         if len(asset.in_ports) == 1 and len(asset.out_ports) == 1:
+            # TODO: the power filled in at the heatpmp should always be the electric power, thus,
+            # the max heat supply should be power*cop
             _, modifiers = self.convert_heat_source(asset)
             return AirWaterHeatPump, modifiers
         # In this case we only have the secondary side ports, here we assume a air-water HP elec
@@ -904,6 +1024,31 @@ class AssetToHeatComponent(_AssetToComponentBase):
         - Setting the state (enabled, disabled, optional)
         - Setting the relevant temperatures.
         - Setting the relevant cost figures.
+
+        Required ESDL fields:
+        ---------------------
+        - power
+        - id (this id must be unique)
+        - name (this name must be unique)
+        - xsi:type
+        - State
+        - InPort and OutPort with:
+            - xsi:type
+            - id
+            - name
+            - connectedTo
+            - carrier with temperature specified
+
+        Optional ESDL fields:
+        ---------------------
+        - aggregationCount
+        - technicalLifetime
+        - CostInformation: discountRate
+        - CostInformation: marginalCost
+        - CostInformation: installationCost
+        - CostInformation: investmentCost
+        - CostInformation: fixedOperationalCost
+        - CostInformation: variableOperationalCost
 
         Parameters
         ----------
@@ -1001,6 +1146,32 @@ class AssetToHeatComponent(_AssetToComponentBase):
         - Setting the relevant temperatures.
         - Setting the relevant cost figures.
 
+        Required ESDL fields:
+        ---------------------
+        - id (this id must be unique)
+        - name (this name must be unique)
+        - xsi:type
+        - State
+        - InPort and OutPort with:
+            - xsi:type
+            - id
+            - name
+            - connectedTo
+            - carrier with temperature specified
+
+        Optional ESDL fields:
+        ---------------------
+        - max(Dis)ChargeRate
+        - aquiferMidTemperature
+        - aggregationCount
+        - technicalLifetime
+        - CostInformation: discountRate
+        - CostInformation: marginalCost
+        - CostInformation: installationCost
+        - CostInformation: investmentCost
+        - CostInformation: fixedOperationalCost
+        - CostInformation: variableOperationalCost
+
         Parameters
         ----------
         asset : The asset object with its properties.
@@ -1080,6 +1251,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
                     )
                 )
             )
+            logger.warning(
+                "ATES in use: WKO (koude-warmteopslag, cold and heat storage) since the"
+                " maximum temperature has been specified to be <= 30 degrees Celcius"
+            )
             return LowTemperatureATES, modifiers
         else:
             modifiers.update(
@@ -1097,6 +1272,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
                     ),
                 )
             )
+            logger.warning(
+                "ATES in use: High Temperature ATES since the maximum temperature has"
+                " been specified to be > 30 degrees Celcius or not specified at all"
+            )
             return ATES, modifiers
 
     def convert_control_valve(self, asset: Asset) -> Tuple[Type[ControlValve], MODIFIERS]:
@@ -1107,6 +1286,29 @@ class AssetToHeatComponent(_AssetToComponentBase):
         - Setting the state (enabled, disabled, optional)
         - Setting the relevant temperatures.
         - Setting the relevant cost figures.
+
+        Required ESDL fields:
+        ---------------------
+        - id (this id must be unique)
+        - name (this name must be unique)
+        - xsi:type
+        - State
+        - InPort and OutPort with:
+            - xsi:type
+            - id
+            - name
+            - connectedTo
+            - carrier with temperature specified
+
+        Optional ESDL fields:
+        ---------------------
+        - technicalLifetime
+        - CostInformation: discountRate
+        - CostInformation: marginalCost
+        - CostInformation: installationCost
+        - CostInformation: investmentCost
+        - CostInformation: fixedOperationalCost
+        - CostInformation: variableOperationalCost
 
         Parameters
         ----------
@@ -1150,6 +1352,29 @@ class AssetToHeatComponent(_AssetToComponentBase):
         - Setting the relevant temperatures.
         - Setting the relevant cost figures.
 
+        Required ESDL fields:
+        ---------------------
+        - id (this id must be unique)
+        - name (this name must be unique)
+        - xsi:type
+        - State
+        - InPort and OutPort with:
+            - xsi:type
+            - id
+            - name
+            - connectedTo
+            - carrier with temperature specified
+
+        Optional ESDL fields:
+        ---------------------
+        - technicalLifetime
+        - CostInformation: discountRate
+        - CostInformation: marginalCost
+        - CostInformation: installationCost
+        - CostInformation: investmentCost
+        - CostInformation: fixedOperationalCost
+        - CostInformation: variableOperationalCost
+
         Parameters
         ----------
         asset : The asset object with its properties.
@@ -1180,6 +1405,30 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         - Setting the electrical power caps
 
+        Required ESDL fields:
+        ---------------------
+        - power
+        - id (this id must be unique)
+        - name (this name must be unique)
+        - xsi:type
+        - State
+        - InPort and OutPort with:
+            - xsi:type
+            - id
+            - name
+            - connectedTo
+            - carrier with voltage specified
+
+        Optional ESDL fields:
+        ---------------------
+        - technicalLifetime
+        - CostInformation: discountRate
+        - CostInformation: marginalCost
+        - CostInformation: installationCost
+        - CostInformation: investmentCost
+        - CostInformation: fixedOperationalCost
+        - CostInformation: variableOperationalCost
+
         Parameters
         ----------
         asset : The asset object with its properties.
@@ -1188,7 +1437,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         -------
         ElectricityDemand class with modifiers
         """
-        assert asset.asset_type in {"ElectricityDemand"}
+        assert asset.asset_type in {"ElectricityDemand", "Export"}
 
         max_demand = asset.attributes.get("power", math.inf)
         min_voltage = asset.in_ports[0].carrier.voltage
@@ -1213,12 +1462,70 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         return ElectricityDemand, modifiers
 
+    def convert_import(self, asset: Asset):
+        """
+        The definition of an Import asset, is an asset that imports energy, thus adds energy to
+        the network, thereby it acts as a producer."
+        """
+        assert asset.asset_type in {"Import"}
+
+        if isinstance(asset.out_ports[0].carrier, esdl.esdl.GasCommodity):
+            return self.convert_gas_source(asset)
+        elif isinstance(asset.out_ports[0].carrier, esdl.esdl.ElectricityCommodity):
+            return self.convert_electricity_source(asset)
+        else:
+            raise RuntimeError(
+                f"Commodity of type {type(asset.out_ports[0].carrier)} for asset Import "
+                f"{asset.name} cannot be converted"
+            )
+
+    def convert_export(self, asset: Asset):
+        """
+        The definition of an Export asset, is an asset that exports energy from the network, thus
+        extracts energy to the network, thereby it acts as a consumer."
+        """
+        assert asset.asset_type in {"Export"}
+
+        if isinstance(asset.in_ports[0].carrier, esdl.esdl.GasCommodity):
+            return self.convert_gas_demand(asset)
+        elif isinstance(asset.in_ports[0].carrier, esdl.esdl.ElectricityCommodity):
+            return self.convert_electricity_demand(asset)
+        else:
+            raise RuntimeError(
+                f"Commodity of type {type(asset.in_ports[0].carrier)} for asset Export "
+                f"{asset.name} cannot be converted"
+            )
+
     def convert_electricity_source(self, asset: Asset) -> Tuple[Type[ElectricitySource], MODIFIERS]:
         """
         This function converts the ElectricitySource object in esdl to a set of modifiers that can
         be used in a pycml object. Most important:
 
         - Setting the electrical power caps
+
+        Required ESDL fields:
+        ---------------------
+        - power
+        - id (this id must be unique)
+        - name (this name must be unique)
+        - xsi:type
+        - State
+        - InPort and OutPort with:
+            - xsi:type
+            - id
+            - name
+            - connectedTo
+            - carrier with voltage specified
+
+        Optional ESDL fields:
+        ---------------------
+        - technicalLifetime
+        - CostInformation: discountRate
+        - CostInformation: marginalCost
+        - CostInformation: installationCost
+        - CostInformation: investmentCost
+        - CostInformation: fixedOperationalCost
+        - CostInformation: variableOperationalCost
 
         Parameters
         ----------
@@ -1228,7 +1535,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         -------
         ElectricitySource class with modifiers
         """
-        assert asset.asset_type in {"ElectricityProducer", "WindPark", "PVInstallation"}
+        assert asset.asset_type in {"ElectricityProducer", "WindPark", "PVInstallation", "Import"}
 
         max_supply = asset.attributes.get(
             "power", math.inf
@@ -1247,7 +1554,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._get_cost_figure_modifiers(asset),
         )
 
-        if asset.asset_type == "ElectricityProducer":
+        if asset.asset_type in ["ElectricityProducer", "Import"]:
             return ElectricitySource, modifiers
         if asset.asset_type == "WindPark":
             return WindPark, modifiers
@@ -1292,6 +1599,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 I=dict(min=-i_max, max=i_max, nominal=i_nom),
                 Power=dict(min=-max_discharge, max=max_charge, nominal=max_charge / 2.0),
             ),
+            Effective_power_charging=dict(
+                min=-max_discharge, max=max_charge, nominal=max_charge / 2.0
+            ),
             **self._get_cost_figure_modifiers(asset),
         )
 
@@ -1303,6 +1613,29 @@ class AssetToHeatComponent(_AssetToComponentBase):
         used in a pycml object. Most important:
 
         - Setting the number of connections
+
+        Required ESDL fields:
+        ---------------------
+        - id (this id must be unique)
+        - name (this name must be unique)
+        - xsi:type
+        - State
+        - InPort and OutPort with:
+            - xsi:type
+            - id
+            - name
+            - connectedTo (allowed to have multiple connections)
+            - carrier with voltage specified
+
+        Optional ESDL fields:
+        ---------------------
+        - technicalLifetime
+        - CostInformation: discountRate
+        - CostInformation: marginalCost
+        - CostInformation: installationCost
+        - CostInformation: investmentCost
+        - CostInformation: fixedOperationalCost
+        - CostInformation: variableOperationalCost
 
         Parameters
         ----------
@@ -1343,6 +1676,31 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         - Setting the length of the cable used for power loss computation.
         - setting the min and max current.
+
+        Required ESDL fields:
+        ---------------------
+        - length
+        - capacity
+        - id (this id must be unique)
+        - name (this name must be unique)
+        - xsi:type
+        - State
+        - InPort and OutPort with:
+            - xsi:type
+            - id
+            - name
+            - connectedTo
+            - carrier with voltage specified
+
+        Optional ESDL fields:
+        ---------------------
+        - technicalLifetime
+        - CostInformation: discountRate
+        - CostInformation: marginalCost
+        - CostInformation: installationCost
+        - CostInformation: investmentCost
+        - CostInformation: fixedOperationalCost
+        - CostInformation: variableOperationalCost
 
         Parameters
         ----------
@@ -1426,6 +1784,29 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         - ...
 
+        Required ESDL fields:
+        ---------------------
+        - id (this id must be unique)
+        - name (this name must be unique)
+        - xsi:type
+        - State
+        - InPort and OutPort with:
+            - xsi:type
+            - id
+            - name
+            - connectedTo
+            - carrier with pressure specified
+
+        Optional ESDL fields:
+        ---------------------
+        - technicalLifetime
+        - CostInformation: discountRate
+        - CostInformation: marginalCost
+        - CostInformation: installationCost
+        - CostInformation: investmentCost
+        - CostInformation: fixedOperationalCost
+        - CostInformation: variableOperationalCost
+
         Parameters
         ----------
         asset : The asset object with its properties.
@@ -1434,16 +1815,26 @@ class AssetToHeatComponent(_AssetToComponentBase):
         -------
         GasDemand class with modifiers
         """
-        assert asset.asset_type in {"GasDemand"}
+        assert asset.asset_type in {"GasDemand", "Export"}
 
         id_mapping = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
             "id_number_mapping"
         ]
         # DO not remove due usage in future
         # hydrogen_specfic_energy = 20.0 / 1.0e6
-        density = self.get_density(asset.name, asset.in_ports[0].carrier)
+        specific_energy = get_internal_energy(asset.name, asset.in_ports[0].carrier) / 10  # J/g
+        # TODO: the value being used is the internal energy and not the HHV (higher
+        #  heating value) for hydrogen, therefore it does not represent the energy per weight.
+        #  This still needs to be updated
+        density = get_density(asset.name, asset.in_ports[0].carrier)
         pressure = asset.in_ports[0].carrier.pressure * 1.0e5
         q_nominal = self._get_connected_q_nominal(asset)
+        q_max = self._get_connected_q_max(asset)
+        # [g/s] = [J/s] * [J/kg]^-1 *1000
+        max_mass_flow_g_per_s = min(
+            asset.attributes["power"] / specific_energy * 1000.0, q_max * density
+        )
+        mass_flow_nominal_g_per_s = min(q_nominal * density, max_mass_flow_g_per_s / 2)
 
         modifiers = dict(
             Q_nominal=q_nominal,
@@ -1452,12 +1843,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
             # *hydrogen_specfic_energy),
             density=density,
             GasIn=dict(
-                Q=dict(
-                    min=0.0,
-                    max=self._get_connected_q_max(asset),
-                    nominal=self._get_connected_q_nominal(asset),
-                ),
-                mass_flow=dict(nominal=density * q_nominal),
+                Q=dict(min=0.0, nominal=q_nominal),
+                mass_flow=dict(nominal=mass_flow_nominal_g_per_s, max=max_mass_flow_g_per_s),
                 Hydraulic_power=dict(min=0.0, max=0.0, nominal=q_nominal * pressure),
             ),
             **self._get_cost_figure_modifiers(asset),
@@ -1472,6 +1859,29 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         - ...
 
+        Required ESDL fields:
+        ---------------------
+        - id (this id must be unique)
+        - name (this name must be unique)
+        - xsi:type
+        - State
+        - InPort and OutPort with:
+            - xsi:type
+            - id
+            - name
+            - connectedTo
+            - carrier with pressure specified
+
+        Optional ESDL fields:
+        ---------------------
+        - technicalLifetime
+        - CostInformation: discountRate
+        - CostInformation: marginalCost
+        - CostInformation: installationCost
+        - CostInformation: investmentCost
+        - CostInformation: fixedOperationalCost
+        - CostInformation: variableOperationalCost
+
         Parameters
         ----------
         asset : The asset object with its properties.
@@ -1480,25 +1890,30 @@ class AssetToHeatComponent(_AssetToComponentBase):
         -------
         GasDemand class with modifiers
         """
-        assert asset.asset_type in {"GasProducer"}
+        assert asset.asset_type in {"GasProducer", "Import"}
 
         q_nominal = self._get_connected_q_nominal(asset)
-        density_value = self.get_density(asset.name, asset.out_ports[0].carrier)
+        density_value = get_density(asset.name, asset.out_ports[0].carrier)
         pressure = asset.out_ports[0].carrier.pressure * 1.0e5
+        specific_energy = (
+            get_internal_energy(asset.name, asset.out_ports[0].carrier) / 10
+        )  # J/g #TODO: is not the HHV for hydrogen, so is off
+        # [g/s] = [J/s] * [J/kg]^-1 *1000
+        max_mass_flow_g_per_s = asset.attributes["power"] / specific_energy * 1000.0
 
-        bounds_nominals_mass_flow = dict(
+        bounds_nominals_mass_flow_g_per_s = dict(
             min=0.0,
-            max=self._get_connected_q_max(asset) * density_value,
+            max=min(self._get_connected_q_max(asset) * density_value, max_mass_flow_g_per_s),
             nominal=q_nominal * density_value,
         )
 
         modifiers = dict(
             Q_nominal=q_nominal,
             density=density_value,
-            Gas_source_mass_flow=bounds_nominals_mass_flow,
+            Gas_source_mass_flow=bounds_nominals_mass_flow_g_per_s,
             GasOut=dict(
                 Q=dict(nominal=q_nominal),
-                mass_flow=bounds_nominals_mass_flow,
+                mass_flow=bounds_nominals_mass_flow_g_per_s,
                 Hydraulic_power=dict(nominal=q_nominal * pressure),
             ),
             **self._get_cost_figure_modifiers(asset),
@@ -1510,6 +1925,35 @@ class AssetToHeatComponent(_AssetToComponentBase):
         """
         This function converts the Electrolyzer object in esdl to a set of modifiers that can be
         used in a pycml object.
+
+        Required ESDL fields:
+        ---------------------
+        - power
+        - minLoad
+        - maxLoad
+        - effMinLoad
+        - effMaxLoad
+        - efficiency
+        - id (this id must be unique)
+        - name (this name must be unique)
+        - xsi:type
+        - State
+        - InPort and OutPort with:
+            - xsi:type
+            - id
+            - name
+            - connectedTo
+            - carrier with voltage/pressure specified
+
+        Optional ESDL fields:
+        ---------------------
+        - technicalLifetime
+        - CostInformation: discountRate
+        - CostInformation: marginalCost
+        - CostInformation: installationCost
+        - CostInformation: investmentCost
+        - CostInformation: fixedOperationalCost
+        - CostInformation: variableOperationalCost
 
         Parameters
         ----------
@@ -1526,6 +1970,13 @@ class AssetToHeatComponent(_AssetToComponentBase):
         max_power = asset.attributes.get("power", math.inf)
         min_load = float(asset.attributes["minLoad"])
         max_load = float(asset.attributes["maxLoad"])
+        if not max_power == max_load:
+            max_power = max_load
+            logger.warning(
+                f"The maximum load and the power of the electrolyzer did not match for "
+                f"{asset.name}. The maximum load of {max_load}W is now used as maximum "
+                f"power."
+            )
         eff_min_load = asset.attributes["effMinLoad"]  # Wh/g
         eff_max_load = asset.attributes["effMaxLoad"]  # Wh/g
         eff_max = asset.attributes["efficiency"]  # Wh/g
@@ -1544,7 +1995,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
         a, b, c = fsolve(equations, (0, 0, 0))
 
         q_nominal = self._get_connected_q_nominal(asset)
-        density = self.get_density(asset.name, asset.out_ports[0].carrier)
+        density = get_density(asset.name, asset.out_ports[0].carrier)
+        # [g/s] = [W] * [kWh/kg]^-1 * 1/3600 = [g/h] * 1/3600
+        mass_flow_max_g_per_s = max_power / eff_max_load / 3600
+        mass_flow_nominal_g_per_s = min(density * q_nominal, mass_flow_max_g_per_s / 2)
 
         modifiers = dict(
             min_voltage=v_min,
@@ -1553,15 +2007,17 @@ class AssetToHeatComponent(_AssetToComponentBase):
             c_eff_coefficient=c,
             minimum_load=min_load,
             nominal_power_consumed=max_power / 2.0,
+            nominal_gass_mass_out=mass_flow_nominal_g_per_s,
             Q_nominal=q_nominal,
             density=density,
+            efficiency=eff_max,
             GasOut=dict(
                 Q=dict(
                     min=0.0,
                     max=self._get_connected_q_max(asset),
                     nominal=q_nominal,
                 ),
-                mass_flow=dict(nominal=q_nominal * density),
+                mass_flow=dict(nominal=mass_flow_nominal_g_per_s, max=mass_flow_max_g_per_s),
             ),
             ElectricityIn=dict(
                 Power=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
@@ -1578,6 +2034,30 @@ class AssetToHeatComponent(_AssetToComponentBase):
         This function converts the GasTankStorage object in esdl to a set of modifiers that can be
         used in a pycml object.
 
+        Required ESDL fields:
+        ---------------------
+        - workingVolume
+        - id (this id must be unique)
+        - name (this name must be unique)
+        - xsi:type
+        - State
+        - InPort and OutPort with:
+            - xsi:type
+            - id
+            - name
+            - connectedTo
+            - carrier with pressure specified
+
+        Optional ESDL fields:
+        ---------------------
+        - technicalLifetime
+        - CostInformation: discountRate
+        - CostInformation: marginalCost
+        - CostInformation: installationCost
+        - CostInformation: investmentCost
+        - CostInformation: fixedOperationalCost
+        - CostInformation: variableOperationalCost
+
         Parameters
         ----------
         asset : The asset object with its properties.
@@ -1591,7 +2071,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         # DO not remove due usage in future
         # hydrogen_specific_energy = 20.0 / 1.0e6  # kg/Wh
         q_nominal = self._get_connected_q_nominal(asset)
-        density = self.get_density(asset.name, asset.in_ports[0].carrier)
+        density = get_density(asset.name, asset.in_ports[0].carrier)
         pressure = asset.in_ports[0].carrier.pressure * 1.0e5
 
         modifiers = dict(
@@ -1621,19 +2101,42 @@ class AssetToHeatComponent(_AssetToComponentBase):
         This function converts the PressureReducingValve object in esdl to a set of modifiers that
         can be used in a pycml object.
 
+        Required ESDL fields:
+        ---------------------
+        - id (this id must be unique)
+        - name (this name must be unique)
+        - xsi:type
+        - State
+        - InPort and OutPort with:
+            - xsi:type
+            - id
+            - name
+            - connectedTo
+            - carrier with pressure specified
+
+        Optional ESDL fields:
+        ---------------------
+        - technicalLifetime
+        - CostInformation: discountRate
+        - CostInformation: marginalCost
+        - CostInformation: installationCost
+        - CostInformation: investmentCost
+        - CostInformation: fixedOperationalCost
+        - CostInformation: variableOperationalCost
+
         Parameters
         ----------
         asset : The asset object with its properties.
 
         Returns
         -------
-        GasTankStorage class with modifiers
+        GasSubstation class with modifiers
         """
         assert asset.asset_type in {"GasConversion", "PressureReducingValve"}
 
         q_nom_in, q_nom_out = self._get_connected_q_nominal(asset)
-        density_in = self.get_density(asset.name, asset.in_ports[0].carrier)
-        density_out = self.get_density(asset.name, asset.out_ports[0].carrier)
+        density_in = get_density(asset.name, asset.in_ports[0].carrier)
+        density_out = get_density(asset.name, asset.out_ports[0].carrier)
         pressure_in = asset.in_ports[0].carrier.pressure * 1.0e5
         pressure_out = asset.out_ports[0].carrier.pressure * 1.0e5
 
@@ -1664,6 +2167,29 @@ class AssetToHeatComponent(_AssetToComponentBase):
         This function converts the Compressor object in esdl to a set of modifiers that can be
         used in a pycml object.
 
+        Required ESDL fields:
+        ---------------------
+        - id (this id must be unique)
+        - name (this name must be unique)
+        - xsi:type
+        - State
+        - InPort and OutPort with:
+            - xsi:type
+            - id
+            - name
+            - connectedTo
+            - carrier with pressure specified
+
+        Optional ESDL fields:
+        ---------------------
+        - technicalLifetime
+        - CostInformation: discountRate
+        - CostInformation: marginalCost
+        - CostInformation: installationCost
+        - CostInformation: investmentCost
+        - CostInformation: fixedOperationalCost
+        - CostInformation: variableOperationalCost
+
         Parameters
         ----------
         asset : The asset object with its properties.
@@ -1675,8 +2201,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
         assert asset.asset_type in {"Compressor"}
 
         q_nom_in, q_nom_out = self._get_connected_q_nominal(asset)
-        density_in = self.get_density(asset.name, asset.in_ports[0].carrier)
-        density_out = self.get_density(asset.name, asset.out_ports[0].carrier)
+        density_in = get_density(asset.name, asset.in_ports[0].carrier)
+        density_out = get_density(asset.name, asset.out_ports[0].carrier)
         pressure_in = asset.in_ports[0].carrier.pressure * 1.0e5
         pressure_out = asset.out_ports[0].carrier.pressure * 1.0e5
 
@@ -1707,6 +2233,30 @@ class AssetToHeatComponent(_AssetToComponentBase):
         This function converts the GasHeater object in esdl to a set of modifiers that can be
         used in a pycml object.
 
+        Required ESDL fields:
+        ---------------------
+        - power
+        - id (this id must be unique)
+        - name (this name must be unique)
+        - xsi:type
+        - State
+        - InPort and OutPort with:
+            - xsi:type
+            - id
+            - name
+            - connectedTo
+            - carrier with pressure/temperature specified
+
+        Optional ESDL fields:
+        ---------------------
+        - technicalLifetime
+        - CostInformation: discountRate
+        - CostInformation: marginalCost
+        - CostInformation: installationCost
+        - CostInformation: investmentCost
+        - CostInformation: fixedOperationalCost
+        - CostInformation: variableOperationalCost
+
         Parameters
         ----------
         asset : The asset object with its properties.
@@ -1733,8 +2283,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         for port in asset.in_ports:
             if isinstance(port.carrier, esdl.GasCommodity):
-                density = self.get_density(asset.name, port.carrier)
-                internal_energy = self.get_internal_energy(asset.name, port.carrier)
+                density = get_density(asset.name, port.carrier)
+                internal_energy = get_internal_energy(asset.name, port.carrier)
 
         # TODO: CO2 coefficient
 
@@ -1772,6 +2322,30 @@ class AssetToHeatComponent(_AssetToComponentBase):
         """
         This function converts the ElectricBoiler object in esdl to a set of modifiers that can be
         used in a pycml object.
+
+        Required ESDL fields:
+        ---------------------
+        - power
+        - id (this id must be unique)
+        - name (this name must be unique)
+        - xsi:type
+        - State
+        - InPort and OutPort with:
+            - xsi:type
+            - id
+            - name
+            - connectedTo
+            - carrier with voltage/temperature specified
+
+        Optional ESDL fields:
+        ---------------------
+        - technicalLifetime
+        - CostInformation: discountRate
+        - CostInformation: marginalCost
+        - CostInformation: installationCost
+        - CostInformation: investmentCost
+        - CostInformation: fixedOperationalCost
+        - CostInformation: variableOperationalCost
 
         Parameters
         ----------
@@ -1846,6 +2420,31 @@ class AssetToHeatComponent(_AssetToComponentBase):
         This function converts the ElectricBoiler object in esdl to a set of modifiers that can be
         used in a pycml object.
 
+        Required ESDL fields:
+        ---------------------
+        - power
+        - id (this id must be unique)
+        - name (this name must be unique)
+        - xsi:type
+        - State
+        - InPort and OutPort with:
+            - xsi:type
+            - id
+            - name
+            - connectedTo
+            - carrier with voltage/temperature specified
+
+        Optional ESDL fields:
+        ---------------------
+        - COP
+        - technicalLifetime
+        - CostInformation: discountRate
+        - CostInformation: marginalCost
+        - CostInformation: installationCost
+        - CostInformation: investmentCost
+        - CostInformation: fixedOperationalCost
+        - CostInformation: variableOperationalCost
+
         Parameters
         ----------
         asset : The asset object with its properties.
@@ -1916,7 +2515,13 @@ class ESDLHeatModel(_ESDLModelBase):
     This probably could be standardized in that case this class would become obsolete.
     """
 
-    def __init__(self, assets: Dict[str, Asset], converter_class=AssetToHeatComponent, **kwargs):
+    def __init__(
+        self,
+        assets: Dict[str, Asset],
+        name_to_id_map: Dict[str, str],
+        converter_class=AssetToHeatComponent,
+        **kwargs,
+    ):
         super().__init__(None)
 
         converter = converter_class(
@@ -1929,4 +2534,4 @@ class ESDLHeatModel(_ESDLModelBase):
             }
         )
 
-        self._esdl_convert(converter, assets, "Heat")
+        self._esdl_convert(converter, assets, name_to_id_map, "MILP")

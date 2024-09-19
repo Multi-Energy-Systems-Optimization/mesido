@@ -68,8 +68,8 @@ class ATES(HeatTwoPort, BaseAsset):
         # Thus Heat_buffer = HeatHot = der(Stored_heat).
         # We connect an ATES as an demand, meaning that flow and Heat_ates are positive under
         # charging and negative under discharge
-        self.add_variable(Variable, "Heat_ates", nominal=self.Heat_nominal)
-        self.add_variable(Variable, "Heat_flow", nominal=self.Heat_nominal)
+        self.add_variable(Variable, "Heat_ates", nominal=self.Heat_nominal)  # [W]
+        self.add_variable(Variable, "Heat_flow", nominal=self.Heat_nominal)  # [W]
         # Assume the storage fills in about 3 months at typical rate
         self._typical_fill_time = 3600.0 * 24.0 * 90.0
         self._nominal_stored_heat = self.Heat_nominal * self._typical_fill_time

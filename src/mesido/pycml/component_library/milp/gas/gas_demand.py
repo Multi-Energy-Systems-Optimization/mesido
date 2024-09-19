@@ -32,3 +32,5 @@ class GasDemand(GasComponent, BaseAsset):
         self.add_equation(
             ((self.GasIn.mass_flow - self.Gas_demand_mass_flow) / (self.Q_nominal * self.density))
         )
+
+        self.add_equation(((self.GasIn.Q - self.GasIn.mass_flow / self.density) / self.Q_nominal))

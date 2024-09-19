@@ -245,6 +245,10 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         bounds = self.bounds()
 
+        # Set structure used instead of list. Purpose: to make lookup faster when there are many
+        # pipes in the network.
+        set_self_hot_pipes = set(self.hot_pipes)
+
         for pipe_name in self.energy_system_components.get("heat_pipe", []):
             head_loss_var = f"{pipe_name}.__head_loss"
             initialized_vars = self._hn_head_loss_class.initialize_variables_nominals_and_bounds(
@@ -290,7 +294,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     ] = initialized_vars[10][pipe_linear_line_segment_var_name]
 
             neighbour = self.has_related_pipe(pipe_name)
-            if neighbour and pipe_name not in self.hot_pipes:
+            if neighbour and pipe_name not in set_self_hot_pipes:
                 flow_dir_var = f"{self.cold_to_hot_pipe(pipe_name)}__flow_direct_var"
             else:
                 flow_dir_var = f"{pipe_name}__flow_direct_var"
@@ -320,7 +324,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             if parameters[f"{pipe_name}.disconnectable"]:
                 neighbour = self.has_related_pipe(pipe_name)
-                if neighbour and pipe_name not in self.hot_pipes:
+                if neighbour and pipe_name not in set_self_hot_pipes:
                     disconnected_var = f"{self.cold_to_hot_pipe(pipe_name)}__is_disconnected"
                 else:
                     disconnected_var = f"{pipe_name}__is_disconnected"
@@ -1590,10 +1594,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         for p in self.energy_system_components.get("heat_pipe", []):
             cp = parameters[f"{p}.cp"]
             rho = parameters[f"{p}.rho"]
-            # Note that during cold delivery the line can be colder than the ground temperature.
-            # In this case we have to bound the heat flowing in the line with the ground
-            # temperature instead, as the line can heat up to at maximum the ground temperature.
-            temp = max(parameters[f"{p}.temperature"], parameters[f"{p}.T_ground"])
 
             flow_dir_var = self._heat_pipe_to_flow_direct_map[p]
             flow_dir = self.state(flow_dir_var)
@@ -1615,6 +1615,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             for heat in [scaled_heat_in, scaled_heat_out]:
                 if self.energy_system_options()["neglect_pipe_heat_losses"]:
+                    temp = parameters[f"{p}.temperature"]
                     if len(temperatures) == 0:
                         constraints.append(
                             (
@@ -1626,7 +1627,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     else:
                         for temperature in temperatures:
                             temperature_is_selected = self.state(f"{carrier}_{temperature}")
-                            temperature = max(temperature, parameters[f"{p}.T_ground"])
                             constraints.append(
                                 (
                                     (
@@ -1652,6 +1652,12 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                                 )
                             )
                 else:
+                    # Note that during cold delivery the line can be colder than the ground
+                    # temperature.
+                    # In this case we have to bound the heat flowing in the line with the ground
+                    # temperature instead, as the line can heat up to at maximum the ground
+                    # temperature.
+                    temp = max(parameters[f"{p}.temperature"], parameters[f"{p}.T_ground"])
                     assert big_m > 0.0
 
                     carrier = parameters[f"{p}.carrier_id"]
@@ -2267,6 +2273,10 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             (hot_pipe, _hot_pipe_orientation),
             (_cold_pipe, _cold_pipe_orientation),
         ) in {**self.energy_system_topology.buffers, **self.energy_system_topology.ates}.items():
+            if hot_pipe not in self.energy_system_components.get("heat_pipe", []):
+                # We skip the constraints in case their is a logical link to the storage.
+                continue
+
             heat_nominal = parameters[f"{b}.Heat_nominal"]
             q_nominal = self.variable_nominal(f"{b}.Q")
             cp = parameters[f"{b}.cp"]
@@ -3504,15 +3514,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         results = self.extract_results()
         parameters = self.parameters(0)
         options = self.energy_system_options()
-
-        # The flow directions are the same as the heat directions if the
-        # return (i.e. cold) line has zero heat throughout. Here we check that
-        # this is indeed the case.
-        for p in self.cold_pipes:
-            heat_in = results[f"{p}.HeatIn.Heat"]
-            heat_out = results[f"{p}.HeatOut.Heat"]
-            if np.any(heat_in > 1.0) or np.any(heat_out > 1.0):
-                logger.warning(f"Heat directions of pipes might be wrong. Check {p}.")
 
         if self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
             for p in self.energy_system_components.get("heat_pipe", []):

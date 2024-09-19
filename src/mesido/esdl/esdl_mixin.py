@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 import esdl.esdl_handler
-from esdl.resources.xmlresource import XMLResource
 
 from mesido.component_type_mixin import (
     ModelicaComponentTypeMixin,
@@ -118,9 +117,10 @@ class ESDLMixin(
 
         # Although we work with the names, the FEWS import data uses the component IDs
         self.__timeseries_id_map = {a.id: a.name for a in assets.values()}
+        name_to_id_map = {a.name: a.id for a in assets.values()}
 
         if isinstance(self, PhysicsMixin):
-            self.__model = ESDLHeatModel(assets, **self.esdl_heat_model_options())
+            self.__model = ESDLHeatModel(assets, name_to_id_map, **self.esdl_heat_model_options())
         else:
             assert isinstance(self, QTHMixin)
 
@@ -363,9 +363,10 @@ class ESDLMixin(
         -------
         An XML string representing the energy system
         """
-        esh = esdl.esdl_handler.EnergySystemHandler(energy_system=energy_system)
-        esh.resource = XMLResource(uri=esdl.esdl_handler.StringURI("to_string.esdl"))
-        return esh.to_string()
+
+        uri = esdl.esdl_handler.StringURI("to_string.esdl")
+        energy_system.eResource.save(uri)
+        return uri.getvalue()
 
     @staticmethod
     def save_energy_system_to_file(energy_system: esdl.esdl.EnergySystem, file_path: Path) -> None:
@@ -535,7 +536,7 @@ class ESDLMixin(
         energy_system_components = self.energy_system_components
         esdl_carriers = self.esdl_carriers
         io = self.io
-        self.__profile_reader.read_profiles(
+        self._asset_potential_errors = self.__profile_reader.read_profiles(
             energy_system_components=energy_system_components,
             io=io,
             esdl_asset_id_to_name_map=self.esdl_asset_id_to_name_map,

@@ -84,6 +84,14 @@ jobs:
           name: updated_esdl_file
           path: examples/PoCTutorial/model/PoC Tutorial_GrowOptimized.esdl
           retention-days: 5
+      
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: updated_esdl_string_file
+          path: examples/PoCTutorial/model/PoC Tutorial_GrowOptimized_esdl_string.esdl
+          retention-days: 5
+
   
   # Post processing testing dependant on pre-processing
   test_post_processing:
@@ -106,7 +114,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: updated_esdl_file
-          path: examples/PoCTutorial/model/      
+          path: examples/PoCTutorial/model/     
+      - name: Archive test artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: updated_esdl_string_file
+          path: examples/PoCTutorial/model/  
       
       - name: Check test
         run: tox -vv -etest_env_post

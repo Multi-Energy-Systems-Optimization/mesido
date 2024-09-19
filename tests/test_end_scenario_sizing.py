@@ -341,6 +341,9 @@ if __name__ == "__main__":
 
     start_time = time.time()
     a = TestEndScenarioSizing()
-    # a.test_end_scenario_sizing()
+    a.setUpClass()
+    a.test_end_scenario_sizing()
+    a.test_end_scenario_sizing_staged()
+    a.test_end_scenario_sizing_discounted()
     a.test_end_scenario_sizing_head_loss()
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
