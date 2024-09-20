@@ -7,7 +7,7 @@
 - xxx
  
 ## Fixed
-- xxx
+- bug fix in grow_workflow (heat networks), changed minimum velocity from 0 to default value
 
 
 # [0.1.7] - 2024-08-23
