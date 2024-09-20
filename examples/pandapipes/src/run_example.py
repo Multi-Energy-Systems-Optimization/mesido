@@ -75,8 +75,6 @@ class HeatProblemHydraulic(SourcePipeSink):
             HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
         )
         self.heat_network_settings["n_linearization_lines"] = 3
-        # self.heat_network_settings["n_linearization_lines"] = 5
-        # self.heat_network_settings["n_linearization_lines"] = 10
         self.heat_network_settings["minimize_head_losses"] = True
 
     def energy_system_options(self):
@@ -93,7 +91,6 @@ class HeatProblemHydraulic(SourcePipeSink):
 
 if __name__ == "__main__":
     solution = run_optimization_problem(
-        # SourcePipeSink,
         HeatProblemHydraulic,
         esdl_file_name="Test_Tree_S1C1.esdl",
         esdl_parser=ESDLFileParser,
@@ -102,27 +99,27 @@ if __name__ == "__main__":
     )
     results = solution.extract_results()
 
-    mdata_points = 10 
-    print("dP, bar")
-    print(-results[f"Pipe1.dH"] * 988.0 * 9.81 / 100e3)  # pressure in bar
-    print(-results[f"Pipe1_ret.dH"] * 988.0 * 9.81 / 100e3)  # pressure in bar
-    
-    print("dP, kPa")
-    print(-results[f"Pipe1.dH"] * 988.0 * 9.81 / 1e3)  # kPa
-    print(-results[f"Pipe1_ret.dH"] * 988.0 * 9.81 / 1e3)  # kPa
-    
-    print("dH, m")
-    print(-results[f"Pipe1.dH"])  # m
-    print(-results[f"Pipe1_ret.dH"])  # m
+    # mdata_points = 10
+    # print("dP, bar")
+    # print(-results[f"Pipe1.dH"] * 988.0 * 9.81 / 100e3)  # pressure in bar
+    # print(-results[f"Pipe1_ret.dH"] * 988.0 * 9.81 / 100e3)  # pressure in bar
 
-    print("mass flow, kg/s")
-    print(results[f"Pipe1.Q"][0:mdata_points] * 988.0)
+    # print("dP, kPa")
+    # print(-results[f"Pipe1.dH"] * 988.0 * 9.81 / 1e3)  # kPa
+    # print(-results[f"Pipe1_ret.dH"] * 988.0 * 9.81 / 1e3)  # kPa
 
-    print("v, m/s")
-    print(results[f"Pipe1.Q"][0:mdata_points] / solution.parameters(0)[f"Pipe1.area"])
-    print(results[f"Pipe1_ret.Q"][0:mdata_points] / solution.parameters(0)[f"Pipe1_ret.area"])
+    # print("dH, m")
+    # print(-results[f"Pipe1.dH"])  # m
+    # print(-results[f"Pipe1_ret.dH"])  # m
 
-    print("dHP, W")
-    print(results["Pipe1_ret.Hydraulic_power"][0:mdata_points])
+    # print("mass flow, kg/s")
+    # print(results[f"Pipe1.Q"][0:mdata_points] * 988.0)
 
-    a = 1
+    # print("v, m/s")
+    # print(results[f"Pipe1.Q"][0:mdata_points] / solution.parameters(0)[f"Pipe1.area"])
+    # print(results[f"Pipe1_ret.Q"][0:mdata_points] / solution.parameters(0)[f"Pipe1_ret.area"])
+
+    # print("dHP, W")
+    # print(results["Pipe1_ret.Hydraulic_power"][0:mdata_points])
+
+    # a = 1

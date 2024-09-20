@@ -1476,7 +1476,7 @@ class ScenarioOutput:
         self.optimized_esdl_string = self.convert_energy_system_to_string(
             energy_system=energy_system
         )
-        
+
         # self.__optimized_energy_system_handler = esh
         # self.optimized_esdl_string = esh.to_string()
         #

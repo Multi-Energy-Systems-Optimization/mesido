@@ -101,13 +101,11 @@ class ValidateWithPandaPipes(TestCase):
         # ------------------------------------------------------------------------------
         # ------------------------------------------------------------------------------
         # Setup scenario
-        total_producers = len(esdlparser.esdl_asset['heat']['producer'])
-        total_consumers = len(esdlparser.esdl_asset['heat']['consumer'])
+        total_producers = len(esdlparser.esdl_asset["heat"]["producer"])
+        total_consumers = len(esdlparser.esdl_asset["heat"]["consumer"])
 
         # Create panda_pipes network
-        net, net_asset, supply_temperature, return_temperature = (
-            esdlparser.createpandapipenet()
-        )
+        net, net_asset, supply_temperature, return_temperature = esdlparser.createpandapipenet()
 
         # Setup profile data
         raw_profile_demand_load_watt = pd.read_csv(
@@ -120,12 +118,8 @@ class ValidateWithPandaPipes(TestCase):
         profile_demand_load_watt = pd.DataFrame(results["demand_1.Heat_demand"])
 
         # Setup supply mass flow for panda_pipes
-        average_temperature_kelvin = (
-            (supply_temperature + return_temperature) / 2.0 + 273.15
-        )
-        cp_joule_kgkelvin = pp.get_fluid(net).get_heat_capacity(
-            average_temperature_kelvin
-        )
+        average_temperature_kelvin = (supply_temperature + return_temperature) / 2.0 + 273.15
+        cp_joule_kgkelvin = pp.get_fluid(net).get_heat_capacity(average_temperature_kelvin)
 
         # Enforce mass flow rate instead of cacluting it from Q = m_dot...
         mesido_demand_flow_kg_s = results["Pipe1.Q"] * 988.0
@@ -138,65 +132,65 @@ class ValidateWithPandaPipes(TestCase):
 
         # Producer
         isupply = 0
-        supply_flow_kg_s = pd.DataFrame(supply_flow, columns=[f'{isupply}'])
+        supply_flow_kg_s = pd.DataFrame(supply_flow, columns=[f"{isupply}"])
         ds_supply_pump_flow_kg_s = DFData(supply_flow_kg_s)
         control.ConstControl(
             net,
-            element='circ_pump_mass',
-            variable='mdot_flow_kg_per_s',
+            element="circ_pump_mass",
+            variable="mdot_flow_kg_per_s",
             element_index=net.circ_pump_mass.index.values[isupply],
             data_source=ds_supply_pump_flow_kg_s,
-            profile_name=net.circ_pump_mass.index.values[isupply].astype(str)
+            profile_name=net.circ_pump_mass.index.values[isupply].astype(str),
         )
         supply_temp_kelvin = pd.DataFrame(
             [supply_temperature + 273.15] * len(profile_demand_load_watt),
-            columns=[f'{isupply}'],
+            columns=[f"{isupply}"],
         )
         df_supply_pump_temperature_kelvin = DFData(supply_temp_kelvin)
         control.ConstControl(
             net,
-            element='circ_pump_mass',
-            variable='t_flow_k',
+            element="circ_pump_mass",
+            variable="t_flow_k",
             element_index=net.circ_pump_mass.index.values[isupply],
             data_source=df_supply_pump_temperature_kelvin,
-            profile_name=net.circ_pump_mass.index.values[isupply].astype(str)
+            profile_name=net.circ_pump_mass.index.values[isupply].astype(str),
         )
-        supply_flow_kgs_s = pd.DataFrame(supply_flow, columns=[f'{isupply}'])
+        supply_flow_kgs_s = pd.DataFrame(supply_flow, columns=[f"{isupply}"])
         ds_supply_control_flow_kgs_s = DFData(supply_flow_kgs_s)
         control.ConstControl(
-            net, element='flow_control',
-            variable='controlled_mdot_kg_per_s',
+            net,
+            element="flow_control",
+            variable="controlled_mdot_kg_per_s",
             element_index=net.flow_control.index.values[isupply],
             data_source=ds_supply_control_flow_kgs_s,
-            profile_name=net.flow_control.index.values[isupply].astype(str)
+            profile_name=net.flow_control.index.values[isupply].astype(str),
         )
 
         # Demand settings
         idemand = 0
-        demand_power_watt = pd.DataFrame(demand_power, columns=[f'{idemand}'])
+        demand_power_watt = pd.DataFrame(demand_power, columns=[f"{idemand}"])
         ds_demand_power_watt = DFData(demand_power_watt)
         control.ConstControl(
             net,
-            element='heat_exchanger',
-            variable='qext_w',
+            element="heat_exchanger",
+            variable="qext_w",
             element_index=net.heat_exchanger.index.values[idemand],
             data_source=ds_demand_power_watt,
-            profile_name=net.heat_exchanger.index.values[idemand].astype(str)
+            profile_name=net.heat_exchanger.index.values[idemand].astype(str),
         )
 
         demand_flow_kgs_s = pd.DataFrame(
             demand_flow,
-            columns=[f'{idemand + total_producers}'],
+            columns=[f"{idemand + total_producers}"],
         )
         ds_demand_control_flow_kgs_s = DFData(demand_flow_kgs_s)
         control.ConstControl(
-            net, element='flow_control',
-            variable='controlled_mdot_kg_per_s',
+            net,
+            element="flow_control",
+            variable="controlled_mdot_kg_per_s",
             element_index=net.flow_control.index.values[idemand + total_producers],
             data_source=ds_demand_control_flow_kgs_s,
-            profile_name=net.flow_control.index.values[
-                idemand + total_producers
-            ].astype(str)
+            profile_name=net.flow_control.index.values[idemand + total_producers].astype(str),
         )
 
         if profile_demand_load_watt.shape[0] != supply_flow_kg_s.shape[0]:
@@ -208,11 +202,11 @@ class ValidateWithPandaPipes(TestCase):
         # Run panda_pipes simulation
         time_steps = range(profile_demand_load_watt.shape[0])
         log_variables = [
-            ('res_pipe', 'v_mean_m_per_s'),
-            ('res_pipe', 'p_from_bar'),
-            ('res_pipe', 'p_to_bar'),
-            ('res_pipe', 'mdot_from_kg_per_s'),
-            ('heat_exchanger', 'qext_w'),
+            ("res_pipe", "v_mean_m_per_s"),
+            ("res_pipe", "p_from_bar"),
+            ("res_pipe", "p_to_bar"),
+            ("res_pipe", "mdot_from_kg_per_s"),
+            ("heat_exchanger", "qext_w"),
         ]
         ow = OutputWriter(
             net,
@@ -239,9 +233,14 @@ class ValidateWithPandaPipes(TestCase):
             / (np.pi * net.pipe.diameter_m[0] * net.pipe.diameter_m[0] / 4.0)
         )
         pandapipes_head_loss_m = (
-            ow.np_results["res_pipe.p_to_bar"][0:mdata_points]
-            - ow.np_results["res_pipe.p_from_bar"][0:mdata_points]
-        ) * 100e3 / density[0][0] / GRAVITATIONAL_CONSTANT
+            (
+                ow.np_results["res_pipe.p_to_bar"][0:mdata_points]
+                - ow.np_results["res_pipe.p_from_bar"][0:mdata_points]
+            )
+            * 100.0e3
+            / density[0][0]
+            / GRAVITATIONAL_CONSTANT
+        )
 
         # Compare head losses
         for ii in range(len(results["Pipe1.dH"])):
