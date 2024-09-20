@@ -45,9 +45,10 @@ class TestEndScenarioSizing(TestCase):
         day.
 
         Checks:
+        - demand matching
+        - minimum velocity setting
         - Cyclic behaviour for ATES
         - That buffer tank is only used on peak day
-        - demand matching
         - Check if TCO goal included the desired cost components.
 
 
@@ -65,6 +66,10 @@ class TestEndScenarioSizing(TestCase):
 
         # Check whehter the heat demand is matched
         demand_matching_test(self.solution, self.results)
+
+        # Check the minimum velocity setting==default value. Keep the default value hard-coded to
+        # prevent future coding bugs
+        np.testing.assert_equal(0.005, self.solution.heat_network_settings["minimum_velocity"])
 
         # Check whether cyclic ates constraint is working
         for a in self.solution.energy_system_components.get("ates", []):
