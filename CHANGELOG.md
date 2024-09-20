@@ -8,6 +8,7 @@
  
 ## Fixed
 - bug fix in grow_workflow (heat networks), changed minimum velocity from 0 to default value
+- addition to tests checking the minimum velocity setting in a workflow
 
 
 # [0.1.7] - 2024-08-23
