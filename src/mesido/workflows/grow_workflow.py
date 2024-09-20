@@ -133,7 +133,6 @@ class EndScenarioSizing(
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.heat_network_settings["minimum_velocity"] = 0.0  # 0.001
         self.heat_network_settings["maximum_velocity"] = 3.0
         self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
 
