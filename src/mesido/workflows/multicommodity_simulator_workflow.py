@@ -463,7 +463,7 @@ class MultiCommoditySimulator(
                                 marginal_priority,
                                 func_range,
                                 self.variable_nominal(variable_name),
-                                order=1
+                                order=2
                             )
                         )
                     else:
@@ -635,7 +635,7 @@ class MultiCommoditySimulator(
     def energy_system_options(self):
         options = super().energy_system_options()
 
-        self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
+        self.gas_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
         self.gas_network_settings["network_type"] = NetworkSettings.NETWORK_TYPE_HYDROGEN
         self.gas_network_settings["minimize_head_losses"] = True
         self.gas_network_settings["maximum_velocity"] = 60.0
