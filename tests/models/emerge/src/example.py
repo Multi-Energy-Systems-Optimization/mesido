@@ -9,6 +9,10 @@ from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.io.write_output import ScenarioOutput
+from mesido.workflows.multicommodity_simulator_workflow import (
+    MultiCommoditySimulatorNoLosses,
+    run_sequatially_staged_simulation,
+)
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
@@ -18,7 +22,6 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
 )
 from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
-from rtctools.util import run_optimization_problem
 
 
 class MaxHydrogenProduction(Goal):
@@ -240,7 +243,7 @@ class EmergeTest(
         solver options dict
         """
         options = super().solver_options()
-        options["solver"] = "gurobi"
+        options["solver"] = "highs"
         return options
 
     def times(self, variable=None):
@@ -318,14 +321,24 @@ class EmergeTest(
 if __name__ == "__main__":
 
     tic = time.time()
-    for _ in range(10):
-        elect = run_optimization_problem(
-            EmergeTest,
-            esdl_file_name="emerge_solar_battery.esdl",
-            esdl_parser=ESDLFileParser,
-            profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries_with_PV.csv",
-        )
+    # for _ in range(10):
+    #     elect = run_optimization_problem(
+    #         EmergeTest,
+    #         esdl_file_name="emerge_solar_battery.esdl",
+    #         esdl_parser=ESDLFileParser,
+    #         profile_reader=ProfileReaderFromFile,
+    #         input_timeseries_file="timeseries_with_PV.csv",
+    #     )
+
+    solution = run_sequatially_staged_simulation(
+        multi_commodity_simulator_class=MultiCommoditySimulatorNoLosses,
+        simulation_window_size=20,
+        esdl_file_name="emerge_battery_priorities.esdl",
+        esdl_parser=ESDLFileParser,
+        profile_reader=ProfileReaderFromFile,
+        input_timeseries_file="timeseries_short.csv",
+    )
+
     print(time.time() - tic)
     # elect = run_optimization_problem(
     #     EmergeTest,
@@ -334,5 +347,5 @@ if __name__ == "__main__":
     #     profile_reader=ProfileReaderFromFile,
     #     input_timeseries_file="timeseries.csv",
     # )
-    results = elect.extract_results()
-    a = 1
+    # results = elect.extract_results()
+    # a = 1

@@ -15,7 +15,6 @@ class GasPort(GasComponent, Connector):
         # TODO: think of more elegant approach for Q_shadow, currently required to ensure that
         #  every port has a unique variable to make the correct port mapping
         self.add_variable(Variable, "Q")  # [m3/s]
-        self.add_variable(Variable, "Q_shadow")
         self.add_variable(Variable, "mass_flow")  # [g/s]
         self.add_variable(Variable, "H")  # [m]
         self.add_variable(Variable, "Hydraulic_power")  # [W]

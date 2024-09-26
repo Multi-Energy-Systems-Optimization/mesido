@@ -124,7 +124,7 @@ class HeatProblemTvar(HeatProblem):
         options = super().solver_options()
         options["solver"] = "highs"
         highs_options = options["highs"] = {}
-        highs_options["mip_rel_gap"] = 0.01
+        highs_options["mip_rel_gap"] = 0.001
         return options
 
     def temperature_carriers(self):

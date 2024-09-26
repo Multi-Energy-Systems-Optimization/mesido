@@ -13,6 +13,8 @@ import numpy as np
 
 import pandas as pd
 
+from utils_test_scaling import create_log_list_scaling
+
 
 class MockInfluxDBProfileReader(InfluxDBProfileReader):
     def __init__(self, energy_system: esdl.EnergySystem, file_path: Optional[Path]):
@@ -27,7 +29,73 @@ class MockInfluxDBProfileReader(InfluxDBProfileReader):
         return self._loaded_profiles[profile.id]
 
 
+class TestPotentialErros(unittest.TestCase):
+    def test_asset_potential_errors(self):
+        """
+        This test checks that the error checks in the code for sufficient installed cool/heatig
+        capacity of a cold/heat demand is sufficient (grow_workflow)
+
+        Checks:
+        1. SystemExit is raised
+        2. That the error is due to insufficient heat specified capacities
+        """
+        import models.unit_cases.case_1a.src.run_1a as run_1a
+
+        base_folder = Path(run_1a.__file__).resolve().parent.parent
+        model_folder = base_folder / "model"
+        input_folder = base_folder / "input"
+
+        logger, logs_list = create_log_list_scaling("WarmingUP-MPC")
+
+        with self.assertRaises(SystemExit) as cm:
+            problem = EndScenarioSizingStagedHIGHS(
+                esdl_parser=ESDLFileParser,
+                base_folder=base_folder,
+                model_folder=model_folder,
+                input_folder=input_folder,
+                esdl_file_name="1a_with_influx_profiles_error_check.esdl",
+                profile_reader=MockInfluxDBProfileReader,
+                input_timeseries_file="influx_mock.csv",
+            )
+            problem.pre()
+        # Is SystemExit is raised
+        np.testing.assert_array_equal(cm.exception.code, 1)
+
+        # Check that the heat demand had an error
+        np.testing.assert_equal(
+            logs_list[0].msg == "HeatingDemand_2ab9: The installed capacity of 6.0MW should be"
+            " larger than the maximum of the heat demand profile 5175.717MW",
+            True,
+        )
+        np.testing.assert_equal(
+            logs_list[1].msg == "HeatingDemand_506c: The installed capacity of 2.0MW should be"
+            " larger than the maximum of the heat demand profile 1957.931MW",
+            True,
+        )
+        np.testing.assert_equal(
+            logs_list[2].msg == "HeatingDemand_6662: The installed capacity of 2.0MW should be"
+            " larger than the maximum of the heat demand profile 1957.931MW",
+            True,
+        )
+        np.testing.assert_equal(
+            logs_list[3].msg == "Asset insufficient installed capacity: please increase the"
+            " installed power or reduce the demand profile peak value of the demand(s) listed.",
+            True,
+        )
+        # d
+        np.testing.assert_equal(
+            logs_list[4].msg == "Asset HeatingDemand_2ab9: This asset is currently a"
+            " GenericConsumer please change it to a HeatingDemand",
+            True,
+        )
+        np.testing.assert_equal(
+            logs_list[5].msg == "Incorrect asset type: please update.",
+            True,
+        )
+
+
 class TestProfileLoading(unittest.TestCase):
+
     def test_loading_from_influx(self):
         """
         This test checks if loading an ESDL with influxDB profiles works. Since
@@ -76,12 +144,12 @@ class TestProfileLoading(unittest.TestCase):
         default UTC timezone has been set.
         """
         import models.unit_cases_electricity.electrolyzer.src.example as example
-        from models.unit_cases_electricity.electrolyzer.src.example import MILPProblem
+        from models.unit_cases_electricity.electrolyzer.src.example import MILPProblemInequality
 
         base_folder = Path(example.__file__).resolve().parent.parent
         model_folder = base_folder / "model"
         input_folder = base_folder / "input"
-        problem = MILPProblem(
+        problem = MILPProblemInequality(
             esdl_parser=ESDLFileParser,
             base_folder=base_folder,
             model_folder=model_folder,
@@ -104,7 +172,9 @@ class TestProfileLoading(unittest.TestCase):
         np.testing.assert_equal(expected_array, problem.get_timeseries("elec.price_profile").values)
 
         expected_array = np.array([1.0e6] * 3)
-        np.testing.assert_equal(expected_array, problem.get_timeseries("gas.price_profile").values)
+        np.testing.assert_equal(
+            expected_array, problem.get_timeseries("Hydrogen.price_profile").values
+        )
 
     def test_loading_from_xml(self):
         """
@@ -145,12 +215,12 @@ class TestProfileLoading(unittest.TestCase):
         if the loaded profiles match those specified in the csv.
         """
         import models.unit_cases_electricity.electrolyzer.src.example as example
-        from models.unit_cases_electricity.electrolyzer.src.example import MILPProblem
+        from models.unit_cases_electricity.electrolyzer.src.example import MILPProblemInequality
 
         base_folder = Path(example.__file__).resolve().parent.parent
         model_folder = base_folder / "model"
         input_folder = base_folder / "input"
-        problem = MILPProblem(
+        problem = MILPProblemInequality(
             esdl_parser=ESDLFileParser,
             base_folder=base_folder,
             model_folder=model_folder,
@@ -173,8 +243,17 @@ class TestProfileLoading(unittest.TestCase):
         np.testing.assert_equal(expected_array, problem.get_timeseries("elec.price_profile").values)
 
         expected_array = np.array([1.0e6] * 3)
-        np.testing.assert_equal(expected_array, problem.get_timeseries("gas.price_profile").values)
+        np.testing.assert_equal(
+            expected_array, problem.get_timeseries("Hydrogen.price_profile").values
+        )
 
 
 if __name__ == "__main__":
-    unittest.main()
+    # unittest.main()
+    a = TestProfileLoading()
+    b = TestPotentialErros()
+    b.test_asset_potential_errors()
+    a.test_loading_from_influx()
+    a.test_loading_from_csv()
+    a.test_loading_from_xml()
+    a.test_loading_from_csv_with_influx_profiles_given()

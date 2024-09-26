@@ -13,8 +13,8 @@
             <missVal>-999.0</missVal>
             <units>W</units>
         </header>
-        <event date="2013-05-19" time="22:00:00" value="300000.0" flag="0"/>
-        <event date="2013-05-19" time="23:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-19" time="22:00:00" value="3000000.0" flag="0"/>
+        <event date="2013-05-19" time="23:00:00" value="3000000.0" flag="0"/>
     </series>
     <series>
         <header>
@@ -28,8 +28,8 @@
             <missVal>-999.0</missVal>
             <units>W</units>
         </header>
-        <event date="2013-05-19" time="22:00:00" value="300000.0" flag="0"/>
-        <event date="2013-05-19" time="23:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-19" time="22:00:00" value="3000000.0" flag="0"/>
+        <event date="2013-05-19" time="23:00:00" value="3000000.0" flag="0"/>
     </series>
     <series>
         <header>
@@ -43,7 +43,7 @@
             <missVal>-999.0</missVal>
             <units>W</units>
         </header>
-        <event date="2013-05-19" time="22:00:00" value="300000.0" flag="0"/>
-        <event date="2013-05-19" time="23:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-19" time="22:00:00" value="3000000.0" flag="0"/>
+        <event date="2013-05-19" time="23:00:00" value="3000000.0" flag="0"/>
     </series>
 </TimeSeries>

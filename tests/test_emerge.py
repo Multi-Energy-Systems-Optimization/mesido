@@ -30,5 +30,6 @@ class TestEmerge(TestCase):
             __init_gas_storage_mass=1.0e3, #g
             __init_battery_storage_elec=1.0e3, #J
         )
-        results = _.extract_results()
-        print(results['GasStorage_9172.Stored_gas_mass'])
+
+        # TODO: checks on values need to be added, not sure if cost values now make sense, scaling
+        #  is not too bad, but if presolve of HIGHS is on, it becomes infeasible.

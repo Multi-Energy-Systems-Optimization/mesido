@@ -11,7 +11,7 @@
           <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="WATTHOUR" id="c78634b5-3876-4b8d-8ee8-d145b37b8215" unit="EURO" description="Cost in EUR/Wh" physicalQuantity="COST"/>
         </cost>
       </carrier>
-      <carrier xsi:type="esdl:GasCommodity" name="gas" pressure="15.0" id="68904785-3ba5-4894-8751-78d5883dc372">
+      <carrier xsi:type="esdl:GasCommodity" name="Hydrogen" pressure="15.0" id="68904785-3ba5-4894-8751-78d5883dc372">
         <cost xsi:type="esdl:InfluxDBProfile" startDate="2019-01-01T00:00:00.000000+0000" filters="" host="omotes-poc-test.hesi.energy" port="8086" endDate="2019-01-01T02:00:00.000000+0000" field="gas_price" measurement="GasDemand_dummy_values" database="multicommodity_test" id="84f3ea22-7325-4d9d-a124-6012e3f65186">
           <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="CUBIC_METRE" id="ede3b53e-7d9f-45f6-9c69-9d8ef3647561" unit="EURO" description="Cost in EUR/m3" physicalQuantity="COST"/>
         </cost>

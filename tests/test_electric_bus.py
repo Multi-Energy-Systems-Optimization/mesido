@@ -16,6 +16,8 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
+from utils_tests import electric_power_conservation_test
+
 
 class TestMILPbus(TestCase):
     def test_voltages_and_power_network1(self):
@@ -46,6 +48,10 @@ class TestMILPbus(TestCase):
             input_timeseries_file="timeseries.csv",
         )
         results = solution.extract_results()
+
+        # electric power conservation system and no dissipation of power and current in bus
+        electric_power_conservation_test(solution, results)
+
         v1 = results["Bus_f262.ElectricityConn[1].V"]
         v2 = results["Bus_f262.ElectricityConn[2].V"]
         v_outgoing_cable = results["ElectricityCable_de9a.ElectricityIn.V"]
@@ -53,14 +59,6 @@ class TestMILPbus(TestCase):
         v_demand = results["ElectricityDemand_e527.ElectricityIn.V"]
         p_demand = results["ElectricityDemand_e527.ElectricityIn.Power"]
         i_demand = results["ElectricityDemand_e527.ElectricityIn.I"]
-        p1 = results["Bus_f262.ElectricityConn[1].Power"]
-        p2 = results["Bus_f262.ElectricityConn[2].Power"]
-        p3 = results["Bus_f262.ElectricityConn[3].Power"]
-        p4 = results["Bus_f262.ElectricityConn[4].Power"]
-        i1 = results["Bus_f262.ElectricityConn[1].I"]
-        i2 = results["Bus_f262.ElectricityConn[2].I"]
-        i3 = results["Bus_f262.ElectricityConn[3].I"]
-        i4 = results["Bus_f262.ElectricityConn[4].I"]
 
         # Incoming voltage == outgoing voltage of bus
         self.assertTrue(all(v1 == v2))
@@ -68,10 +66,7 @@ class TestMILPbus(TestCase):
         self.assertTrue(all(v1 == v_incoming_cable))
         # Outgoing voltage of bus == voltage of outgoing cable
         self.assertTrue(all(v1 == v_outgoing_cable))
-        # Power in == power out = no dissipation of power
-        np.testing.assert_allclose(p1 + p2 - p3 - p4, 0.0, rtol=1.0e-6, atol=1.0e-6)
-        # Current in == current out = no dissipation of power
-        np.testing.assert_allclose(i1 + i2 - i3 - i4, 0.0, rtol=1.0e-6, atol=1.0e-6)
+
         # check if minimum voltage is reached
         np.testing.assert_array_less(
             solution.parameters(0)["ElectricityDemand_e527.min_voltage"] - 1.0e-3, v_demand

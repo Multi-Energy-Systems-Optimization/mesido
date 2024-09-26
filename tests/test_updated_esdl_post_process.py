@@ -26,6 +26,8 @@ class TestUpdatedESDL(TestCase):
         Checks:
         - That the esdl saving method (direct ESDL file and ESDL string)
         - That the correct number of KPIs have been added
+        - Check that the OPEX costs for an asset with a 15 year lifetime == OPEX over optim time
+        horizon
         - That the correct assets have been removed
         - That all the assets have a state=ENABLED
         - The diameter of all the pipes are as expected
@@ -73,18 +75,21 @@ class TestUpdatedESDL(TestCase):
             # Test KPIs in optimized ESDL
 
             # High level checks of KPIs
-            number_of_kpis_top_level_in_esdl = 8
+            number_of_kpis_top_level_in_esdl = 11
             high_level_kpis_euro = [
-                "High level cost breakdown [EUR]",
-                "Overall cost breakdown [EUR]",
-                "CAPEX breakdown [EUR]",
-                "OPEX breakdown [EUR]",
+                "High level cost breakdown [EUR] (yearly averaged)",
+                "High level cost breakdown [EUR] (30.0 year period)",
+                "Overall cost breakdown [EUR] (yearly averaged)",
+                "Overall cost breakdown [EUR] (30.0 year period)",
+                "CAPEX breakdown [EUR] (30.0 year period)",
+                "OPEX breakdown [EUR] (yearly averaged)",
+                "OPEX breakdown [EUR] (30.0 year period)",
                 "Area_76a7: Asset cost breakdown [EUR]",
                 "Area_9d0f: Asset cost breakdown [EUR]",
                 "Area_a58a: Asset cost breakdown [EUR]",
             ]
             high_level_kpis_wh = [
-                "Energy production [Wh]",
+                "Energy production [Wh] (yearly averaged)",
             ]
             all_high_level_kpis = []
             all_high_level_kpis = high_level_kpis_euro + high_level_kpis_wh
@@ -92,6 +97,50 @@ class TestUpdatedESDL(TestCase):
             np.testing.assert_allclose(
                 len(energy_system.instance[0].area.KPIs.kpi), number_of_kpis_top_level_in_esdl
             )
+            np.testing.assert_allclose(
+                len(energy_system.instance[0].area.KPIs.kpi), len(all_high_level_kpis)
+            )
+
+            # Assign kpi info that has to be used for compairing optim time horizon vs yearly values
+            # kpi_name_list and kpi_label_list should be the same length and in the same order of
+            # which the comparison is done
+            compare_yearly_lifetime_kpis = {
+                # lists of 2 kpis that have to be compared
+                "kpi_name_list": [
+                    [
+                        "High level cost breakdown [EUR] (yearly averaged)",
+                        "High level cost breakdown [EUR] (30.0 year period)",
+                    ],
+                    [
+                        "Overall cost breakdown [EUR] (yearly averaged)",
+                        "Overall cost breakdown [EUR] (30.0 year period)",
+                    ],
+                    [
+                        "Overall cost breakdown [EUR] (yearly averaged)",
+                        "Overall cost breakdown [EUR] (30.0 year period)",
+                    ],
+                    [
+                        "OPEX breakdown [EUR] (yearly averaged)",
+                        "OPEX breakdown [EUR] (30.0 year period)",
+                    ],
+                ],
+                # lists of which kpi label has to be compared for kpi_name_list
+                "kpi_label_list": [
+                    ["OPEX"],
+                    ["Variable OPEX"],
+                    ["Fixed OPEX"],
+                    ["ResidualHeatSource"],
+                ],
+                "index_high_level_cost_list": [],  # leave this empty, this list length is set below
+            }
+            for _ in range(len(compare_yearly_lifetime_kpis["kpi_name_list"])):
+                compare_yearly_lifetime_kpis["index_high_level_cost_list"].append([])
+            if len(compare_yearly_lifetime_kpis["kpi_name_list"]) != len(
+                compare_yearly_lifetime_kpis["kpi_label_list"]
+            ):
+                print("List should be the same length")
+                exit(1)
+
             for ii in range(len(energy_system.instance[0].area.KPIs.kpi)):
                 kpi_name = energy_system.instance[0].area.KPIs.kpi[ii].name
                 np.testing.assert_array_equal(
@@ -111,6 +160,76 @@ class TestUpdatedESDL(TestCase):
                     )
                 else:
                     exit(f"Unexpected KPI name: {kpi_name}")
+
+                # Check optim time horizon vs yearly cost when the lifetime value is
+                # 15 years
+                for il in range(len(compare_yearly_lifetime_kpis["kpi_name_list"])):
+
+                    if kpi_name in compare_yearly_lifetime_kpis["kpi_name_list"][il]:
+                        compare_yearly_lifetime_kpis["index_high_level_cost_list"][il].append(ii)
+                        if len(compare_yearly_lifetime_kpis["index_high_level_cost_list"][il]) == 2:
+                            for iitem in range(
+                                len(
+                                    energy_system.instance[0]
+                                    .area.KPIs.kpi[ii]
+                                    .distribution.stringItem.items
+                                )
+                            ):
+                                if (
+                                    energy_system.instance[0]
+                                    .area.KPIs.kpi[
+                                        compare_yearly_lifetime_kpis["index_high_level_cost_list"][
+                                            il
+                                        ][0]
+                                    ]
+                                    .distribution.stringItem.items[iitem]
+                                    .label
+                                    in compare_yearly_lifetime_kpis["kpi_label_list"][il]
+                                ):
+
+                                    max_value = max(
+                                        energy_system.instance[0]
+                                        .area.KPIs.kpi[
+                                            compare_yearly_lifetime_kpis[
+                                                "index_high_level_cost_list"
+                                            ][il][0]
+                                        ]
+                                        .distribution.stringItem.items[iitem]
+                                        .value,
+                                        energy_system.instance[0]
+                                        .area.KPIs.kpi[
+                                            compare_yearly_lifetime_kpis[
+                                                "index_high_level_cost_list"
+                                            ][il][1]
+                                        ]
+                                        .distribution.stringItem.items[iitem]
+                                        .value,
+                                    )
+                                    min_value = min(
+                                        energy_system.instance[0]
+                                        .area.KPIs.kpi[
+                                            compare_yearly_lifetime_kpis[
+                                                "index_high_level_cost_list"
+                                            ][il][0]
+                                        ]
+                                        .distribution.stringItem.items[iitem]
+                                        .value,
+                                        energy_system.instance[0]
+                                        .area.KPIs.kpi[
+                                            compare_yearly_lifetime_kpis[
+                                                "index_high_level_cost_list"
+                                            ][il][1]
+                                        ]
+                                        .distribution.stringItem.items[iitem]
+                                        .value,
+                                    )
+                                    # Lifetime of 15 years and the optim time horizon is 30 years
+                                    np.testing.assert_allclose(min_value * 15.0 * 2.0, max_value)
+            # make ssure that all the items in kpi_name_list was checked
+            for il in range(len(compare_yearly_lifetime_kpis["kpi_name_list"])):
+                np.testing.assert_equal(
+                    len(compare_yearly_lifetime_kpis["index_high_level_cost_list"][il]), 2
+                )
 
             # Check the asset quantity
             number_of_assets_in_esdl = 15
@@ -139,16 +258,20 @@ class TestUpdatedESDL(TestCase):
 
                 # Check pipe diameter
                 if len(fnmatch.filter([energy_system.instance[0].area.asset[ii].id], "Pipe*")) == 1:
-                    if asset_name not in ["Pipe4", "Pipe4_ret", "Pipe5", "Pipe5_ret"]:
+                    if asset_name in ["Pipe1", "Pipe1_cold_pipe", "Pipe4", "Pipe4_ret"]:
+                        np.testing.assert_array_equal(
+                            energy_system.instance[0].area.asset[ii].diameter.name, "DN150"
+                        )  # original pipe DN400 being sized
+                    elif asset_name not in ["Pipe5", "Pipe5_ret"]:
                         np.testing.assert_array_equal(
                             energy_system.instance[0].area.asset[ii].diameter.name, "DN400"
-                        )
+                        )  # pipe DN was not sized and should be the same as specified in the ESDL
                     else:
                         np.testing.assert_array_equal(
                             energy_system.instance[0].area.asset[ii].diameter.name,
                             "DN300",
                             err_msg=f"Asset name {asset_name} was not expected in the ESDL",
-                        )
+                        )  # pipe DN was not sized and should be the same as specified in the ESDL
                     # Check aggregation count
                     np.testing.assert_array_equal(
                         energy_system.instance[0].area.asset[ii].aggregationCount,

@@ -19,7 +19,7 @@ def run_esdl_mesido_optimization(
     **kwargs,
 ):
     """
-    This function is used to execute an optimization on a mesido defined problem. Compared to the
+    This function is used to execute an optimization on a MESIDO defined problem. Compared to the
     standard rtc-tools run_optimization_problem() method extra checks can be included here.
 
     params:
@@ -52,6 +52,6 @@ def run_esdl_mesido_optimization(
 
     feasibility = solution.solver_stats["return_status"]
 
-    assert feasibility.lower() == "optimal"
+    assert feasibility.lower() == "optimal" or feasibility.lower() == "finished"
 
     return solution

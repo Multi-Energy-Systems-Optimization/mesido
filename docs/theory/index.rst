@@ -1,8 +1,15 @@
 .. toctree::
    :maxdepth: 3
+   :numbered:
 
    introduction
    code_structure
-   approach
-   Validation_pipe_diameter_sizing
-   pipe_classes
+   philosophy
+   Workflows
+   financial
+   asset_sizing
+   physics
+   heat_physics
+   electricity_physics
+   gas_physics
+

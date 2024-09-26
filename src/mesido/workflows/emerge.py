@@ -163,6 +163,9 @@ class EmergeWorkFlow(
         """
         options = super().solver_options()
         options["solver"] = "highs"
+        highs_options = options["highs"] = {}
+        highs_options["presolve"] = "off"
+
         return options
 
     def times(self, variable=None):
@@ -204,7 +207,9 @@ class EmergeWorkFlow(
         super().post()
 
         # Optimized ESDL
-        self._write_updated_esdl(self._ESDLMixin__energy_system_handler.energy_system)
+        self._write_updated_esdl(
+            self._ESDLMixin__energy_system_handler.energy_system, add_kpis=False
+        )
 
         self._save_json = False
 

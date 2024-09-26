@@ -159,7 +159,10 @@ class _MinimizeHeadLosses(Goal):
                 ):
                     sym_name = optimization_problem._hn_pipe_to_head_loss_map[p]
                     sum_ += optimization_problem.state(sym_name)
-        elif self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_GAS:
+        elif (
+            self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_GAS
+            or self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_HYDROGEN
+        ):
             for p in optimization_problem.energy_system_components.get("gas_pipe", []):
                 if not parameters[f"{p}.length"] == 0.0:
                     sym_name = optimization_problem._gn_pipe_to_head_loss_map[p]
@@ -406,30 +409,28 @@ class HeadLossClass:
                 # We need to creat linear line segments for the - and + volumetric flow rate
                 # possibilites. Line number 1, 2, N for the - & + side is created
                 discharge_type = ["neg_discharge", "pos_discharge"]
-                line_number = 0
-                for dtype in discharge_type:
-                    for ii_line in range(network_settings["n_linearization_lines"] * 2):
-                        if ii_line < network_settings["n_linearization_lines"]:
-                            dtype = discharge_type[0]
-                            line_number = ii_line + 1
-                        else:
-                            dtype = discharge_type[1]
-                            line_number = ii_line + 1 - network_settings["n_linearization_lines"]
+                for ii_line in range(network_settings["n_linearization_lines"] * 2):
+                    if ii_line < network_settings["n_linearization_lines"]:
+                        dtype = discharge_type[0]
+                        line_number = ii_line + 1
+                    else:
+                        dtype = discharge_type[1]
+                        line_number = ii_line + 1 - network_settings["n_linearization_lines"]
 
-                        # start line segment numbering from 1 up to "n_linearization_lines"
-                        pipe_linear_line_segment_var_name = (
-                            f"{pipe_name}__pipe_linear_line_segment_num_{line_number}_{dtype}"
-                        )
+                    # start line segment numbering from 1 up to "n_linearization_lines"
+                    pipe_linear_line_segment_var_name = (
+                        f"{pipe_name}__pipe_linear_line_segment_num_{line_number}_{dtype}"
+                    )
 
-                        self._pipe_linear_line_segment_map[pipe_name][
-                            ii_line
-                        ] = pipe_linear_line_segment_var_name
-                        self.__pipe_linear_line_segment_var[pipe_name][
-                            pipe_linear_line_segment_var_name
-                        ] = ca.MX.sym(pipe_linear_line_segment_var_name)
-                        self.__pipe_linear_line_segment_var_bounds[pipe_name][
-                            pipe_linear_line_segment_var_name
-                        ] = (0.0, 1.0)
+                    self._pipe_linear_line_segment_map[pipe_name][
+                        ii_line
+                    ] = pipe_linear_line_segment_var_name
+                    self.__pipe_linear_line_segment_var[pipe_name][
+                        pipe_linear_line_segment_var_name
+                    ] = ca.MX.sym(pipe_linear_line_segment_var_name)
+                    self.__pipe_linear_line_segment_var_bounds[pipe_name][
+                        pipe_linear_line_segment_var_name
+                    ] = (0.0, 1.0)
 
         return (
             (
@@ -764,7 +765,9 @@ class HeadLossClass:
                     big_m_lin = 0.0
                 else:
                     big_m_lin = big_m
-                    constraint_nominal = (constraint_nominal * big_m_lin) ** 0.5
+                    constraint_nominal = np.abs(
+                        head_loss_nominal * (a_vec * q_nominal + b_vec) * big_m
+                    ) ** (1.0 / 3.0)
 
                 constraints = []
 
@@ -819,55 +822,43 @@ class HeadLossClass:
                         )
 
                     # Add equality constraint, value == 0.0 for all linear lines
-                    # Loop twice due to linear lines exsiting for negative and positive discharge
-                    # ii==0: this is the linear lines for the negative discharge possibility
-                    # ii==1: this is the linear lines for the postive discharge possibility
-                    for ii in range(2):
-                        for ii_line in range(n_linear_lines):
-                            ii_line_used = (ii * 2) + ii_line
-
-                            ii_start = (ii_line + 2 * ii) * n_timesteps
-                            ii_end = ii_start + n_timesteps
-                            constraints.append(
+                    for ii_line_used in range(len(pipe_linear_line_segment)):
+                        ii_start = ii_line_used * n_timesteps
+                        ii_end = ii_start + n_timesteps
+                        constraints.append(
+                            (
                                 (
-                                    (
-                                        head_loss_vec[ii_start:ii_end]
-                                        - (
-                                            a_vec[ii_start:ii_end] * discharge_vec[ii_start:ii_end]
-                                            + b_vec[ii_start:ii_end]
-                                        )
-                                        + is_disconnected_vec[ii_start:ii_end] * big_m_lin
-                                        + big_m_lin
-                                        * (1 - is_line_segment_active[ii_line_used][0:n_timesteps])
+                                    head_loss_vec[ii_start:ii_end]
+                                    - (
+                                        a_vec[ii_start:ii_end] * discharge_vec[ii_start:ii_end]
+                                        + b_vec[ii_start:ii_end]
                                     )
-                                    / constraint_nominal[ii_start:ii_end],
-                                    0.0,
-                                    np.inf,
-                                ),
-                            )
-                    for ii in range(2):
-                        for ii_line in range(n_linear_lines):
-                            ii_line_used = (ii * 2) + ii_line
-
-                            ii_start = (ii_line + 2 * ii) * n_timesteps
-                            ii_end = ii_start + n_timesteps
-                            constraints.append(
+                                    + is_disconnected_vec[ii_start:ii_end] * big_m_lin
+                                    + big_m_lin
+                                    * (1 - is_line_segment_active[ii_line_used][0:n_timesteps])
+                                )
+                                / constraint_nominal[ii_start:ii_end],
+                                0.0,
+                                np.inf,
+                            ),
+                        )
+                        constraints.append(
+                            (
                                 (
-                                    (
-                                        head_loss_vec[ii_start:ii_end]
-                                        - (
-                                            a_vec[ii_start:ii_end] * discharge_vec[ii_start:ii_end]
-                                            + b_vec[ii_start:ii_end]
-                                        )
-                                        - is_disconnected_vec[ii_start:ii_end] * big_m_lin
-                                        - big_m_lin
-                                        * (1 - is_line_segment_active[ii_line_used][0:n_timesteps])
+                                    head_loss_vec[ii_start:ii_end]
+                                    - (
+                                        a_vec[ii_start:ii_end] * discharge_vec[ii_start:ii_end]
+                                        + b_vec[ii_start:ii_end]
                                     )
-                                    / constraint_nominal[ii_start:ii_end],
-                                    -np.inf,
-                                    0.0,
-                                ),
-                            )
+                                    - is_disconnected_vec[ii_start:ii_end] * big_m_lin
+                                    - big_m_lin
+                                    * (1 - is_line_segment_active[ii_line_used][0:n_timesteps])
+                                )
+                                / constraint_nominal[ii_start:ii_end],
+                                -np.inf,
+                                0.0,
+                            ),
+                        )
                 return constraints
             else:
                 ret = np.amax(a * np.tile(discharge, (len(a), 1)).transpose() + b, axis=1)
@@ -1159,7 +1150,10 @@ class HeadLossClass:
         if self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_HEAT:
             commodity = "Heat"
             pipe_type = "heat_pipe"
-        elif self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_GAS:
+        elif (
+            self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_GAS
+            or self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_HYDROGEN
+        ):
             commodity = "Gas"
             pipe_type = "gas_pipe"
         else:
@@ -1237,7 +1231,10 @@ class HeadLossClass:
         if self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_HEAT:
             commodity = "heat"
             n_type = "hn"
-        elif self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_GAS:
+        elif (
+            self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_GAS
+            or self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_HYDROGEN
+        ):
             commodity = "gas"
             n_type = "gn"
         else:
@@ -1307,7 +1304,11 @@ class HeadLossClass:
 
                     if self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_HEAT:
                         big_m = max(1.1 * _maximum_total_head_loss, 2 * head_loss_max_discharge)
-                    elif self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_GAS:
+                    elif (
+                        self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_GAS
+                        or self.network_settings["network_type"]
+                        == NetworkSettings.NETWORK_TYPE_HYDROGEN
+                    ):
                         big_m = max(
                             2.0 * 2.0 * _maximum_total_head_loss, 2 * head_loss_max_discharge
                         )
@@ -1373,7 +1374,11 @@ class HeadLossClass:
 
                 if self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_HEAT:
                     big_m = 1.1 * _maximum_total_head_loss
-                elif self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_GAS:
+                elif (
+                    self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_GAS
+                    or self.network_settings["network_type"]
+                    == NetworkSettings.NETWORK_TYPE_HYDROGEN
+                ):
                     big_m = 2.0 * 2.0 * _maximum_total_head_loss
                 else:
                     raise RuntimeError(
@@ -1431,6 +1436,15 @@ class HeadLossClass:
             )
             constraints.append(((dh - head_loss + flow_dir * big_m) / big_m, 0.0, np.inf))
 
+            constraints.append(
+                (
+                    (-dh - head_loss - (1 - flow_dir) * big_m) / big_m,
+                    -np.inf,
+                    0.0,
+                )
+            )
+            constraints.append(((dh - head_loss - flow_dir * big_m) / big_m, -np.inf, 0.0))
+
         return constraints
 
     def _pipe_hydraulic_power_path_constraints(
@@ -1451,7 +1465,10 @@ class HeadLossClass:
 
         if self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_HEAT:
             commodity = "heat"
-        elif self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_GAS:
+        elif (
+            self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_GAS
+            or self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_HYDROGEN
+        ):
             commodity = "gas"
         else:
             raise Exception(

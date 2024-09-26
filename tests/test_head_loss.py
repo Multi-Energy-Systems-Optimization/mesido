@@ -33,6 +33,7 @@ class TestHeadLoss(TestCase):
         - That for the dH value approximated by the code is conservative, in other word greater
         than the theoretical value
         - That the pump power is conservative
+        - The water kinematic viscosity of water by comparing head loss to a hard-coded value
         """
         import models.source_pipe_sink.src.double_pipe_heat as example
         from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
@@ -49,7 +50,8 @@ class TestHeadLoss(TestCase):
                 # def post(self):
                 #     super().post()
                 #     self._write_updated_esdl(
-                #       self._ESDLMixin__energy_system_handler.energy_system, optimizer_sim=True
+                #       self._ESDLMixin__energy_system_handler.energy_system,
+                #       optimizer_sim=True,
                 #   )
 
                 def energy_system_options(self):
@@ -71,7 +73,7 @@ class TestHeadLoss(TestCase):
                         self.heat_network_settings["head_loss_option"] = (
                             HeadLossOption.LINEARIZED_N_LINES_EQUALITY
                         )
-                        self.heat_network_settings["minimize_head_losses"] = True
+                        self.heat_network_settings["minimize_head_losses"] = False
                         self.heat_network_settings["minimum_velocity"] = 1.0e-6
 
                     return options
@@ -168,6 +170,12 @@ class TestHeadLoss(TestCase):
                     v_inspect, pipe_diameter, pipe_length, pipe_wall_roughness, temperature
                 )
 
+                # Compare the head loss to hard-coded values. Difference expected if an error
+                # occours in the calculation of the gas kinematic viscosity.
+                if head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY:
+                    if itime == 3:  # this index was chosen randomly
+                        np.testing.assert_allclose(dh_milp_head_loss_function, 0.001690727020401069)
+
                 np.testing.assert_allclose(dh_theory, dh_milp_head_loss_function)
                 np.testing.assert_array_less(dh_milp_head_loss_function, dh_manual_linear)
 
@@ -259,7 +267,10 @@ class TestHeadLoss(TestCase):
 
                     self.heat_network_settings["n_linearization_lines"] = 2
                     self.heat_network_settings["minimum_velocity"] = 0.0
-                    self.heat_network_settings["minimize_head_losses"] = True
+                    if head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
+                        self.heat_network_settings["minimize_head_losses"] = False
+                    else:
+                        self.heat_network_settings["minimize_head_losses"] = True
 
                     return options
 
@@ -398,6 +409,7 @@ class TestHeadLoss(TestCase):
         - that the approximated head loss matches the manually calculated value
         - that linearized dH satisfies the specified constraint
         - that only one linear line segment is active for the head loss linearization
+        - the kinematic viscosity of natural gas by comparing head loss to a hard-coded value
         """
 
         import models.unit_cases_gas.source_sink.src.run_source_sink as example
@@ -433,7 +445,7 @@ class TestHeadLoss(TestCase):
                     ):
                         self.gas_network_settings["n_linearization_lines"] = 2
                         self.gas_network_settings["minimize_head_losses"] = True
-                    if head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
+                    elif head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
                         self.gas_network_settings["n_linearization_lines"] = 2
                         self.gas_network_settings["minimize_head_losses"] = True
                         self.gas_network_settings["minimum_velocity"] = 0.0
@@ -469,7 +481,7 @@ class TestHeadLoss(TestCase):
             # Approximate dH [m] vs Q [m3/s] with a linear line between between v_points
             # dH_manual_linear = a*Q + b
             # Then use this linear function to calculate the head loss
-            delta_dh_theory = darcy_weisbach.head_loss(
+            head_loss_v_point_1 = darcy_weisbach.head_loss(
                 v_points[1],
                 pipe_diameter,
                 pipe_length,
@@ -477,7 +489,8 @@ class TestHeadLoss(TestCase):
                 temperature,
                 network_type=NetworkSettings.NETWORK_TYPE_GAS,
                 pressure=solution.parameters(0)[f"{pipes[0]}.pressure"],
-            ) - darcy_weisbach.head_loss(
+            )
+            delta_dh_theory = head_loss_v_point_1 - darcy_weisbach.head_loss(
                 v_points[0],
                 pipe_diameter,
                 pipe_length,
@@ -486,6 +499,10 @@ class TestHeadLoss(TestCase):
                 network_type=NetworkSettings.NETWORK_TYPE_GAS,
                 pressure=solution.parameters(0)[f"{pipes[0]}.pressure"],
             )
+            # Compare the hydraulic power to hard-coded values. Difference expected if an error
+            # occours in the calculation of the gas kinematic viscosity.
+            if head_loss_option_setting == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY:
+                np.testing.assert_allclose(head_loss_v_point_1, 1298.1537098750562)
 
             delta_volumetric_flow = (v_points[1] * np.pi * pipe_diameter**2 / 4.0) - (
                 v_points[0] * np.pi * pipe_diameter**2 / 4.0
@@ -579,7 +596,7 @@ class TestHeadLoss(TestCase):
                     if head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
                         # do not change in value below, see notes above
                         self.gas_network_settings["n_linearization_lines"] = 2
-                        self.gas_network_settings["minimize_head_losses"] = True
+                        self.gas_network_settings["minimize_head_losses"] = False
                     # if statements below are currently not used, potential use in the future
                     elif head_loss_option_setting == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY:
                         self.gas_network_settings["minimize_head_losses"] = True
