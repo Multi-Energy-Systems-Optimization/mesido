@@ -133,6 +133,8 @@ class EndScenarioSizing(
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self.heat_network_settings["minimum_velocity"] = 1.0e-4
+
         self.heat_network_settings["maximum_velocity"] = 3.0
         self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
 
@@ -230,7 +232,8 @@ class EndScenarioSizing(
         #  constraints in the ESDL e.g. min max pressure
         options = super().energy_system_options()
         options["maximum_temperature_der"] = np.inf
-        options["heat_loss_disconnected_pipe"] = True
+        # options["heat_loss_disconnected_pipe"] = True
+        options["heat_loss_disconnected_pipe"] = False
         # options.update(self._override_hn_options)
         return options
 
