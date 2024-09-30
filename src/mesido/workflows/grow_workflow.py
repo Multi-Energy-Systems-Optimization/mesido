@@ -580,7 +580,7 @@ def run_end_scenario_sizing_no_heat_losses(
 
 def run_end_scenario_sizing(
     end_scenario_problem_class,
-    solver_class=SolverHIGHS,
+    solver_class=None,
     staged_pipe_optimization=True,
     **kwargs,
 ):

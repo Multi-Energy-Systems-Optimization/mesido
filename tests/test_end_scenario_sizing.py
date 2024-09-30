@@ -5,8 +5,8 @@ import mesido._darcy_weisbach as darcy_weisbach
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.workflows import (
-    EndScenarioSizingDiscounted,
     EndScenarioSizing,
+    EndScenarioSizingDiscounted,
     EndScenarioSizingStaged,
     run_end_scenario_sizing,
 )

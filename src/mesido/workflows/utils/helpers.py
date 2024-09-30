@@ -151,13 +151,20 @@ def run_optimization_problem_solver(
     :return:
     """
 
+    new_solver = False
     if solver_class:
 
-        class ProblemSolverClass(solver_class, scenario_problem_class):
-            pass
+        if not issubclass(scenario_problem_class, solver_class):
+            # if solver_class is already a subclass of the problem class, then these settings are
+            # already used and it should not be added to the inheritance structure.
+            class ProblemSolverClass(solver_class, scenario_problem_class):
+                pass
 
-        solution = run_optimization_problem(ProblemSolverClass, **kwargs)
-    else:
+            solution = run_optimization_problem(ProblemSolverClass, **kwargs)
+
+            new_solver = True
+
+    if not new_solver:
         solution = run_optimization_problem(scenario_problem_class, **kwargs)
 
     return solution
