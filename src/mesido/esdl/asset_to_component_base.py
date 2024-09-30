@@ -339,6 +339,12 @@ class _AssetToComponentBase:
         A bool that specifies whether we should have a disconnectable variable for this
         pipe.
         """
+        # TODO: this functionality combined with heat_loss_disconnected_pipe is not functioning as
+        # intended anymore. When heat_loss_disconnected_pipe = True, then a pipe should be able to
+        # be disconnected but still include head losses for a pipe (with v=0m/s in the pipe).
+        # Currently if heat_loss_disconnected_pipe = True then a pipe cannot be disconnected
+        # anymore. This was checked with PoC tutorial example while trying to use this
+        # functionality on a pipe connected to a heating demand.
         assert asset.asset_type == "Pipe"
         if len(asset.in_ports) == 1 and len(asset.out_ports) == 1:
             connected_type_in = self._port_to_esdl_component_type.get(

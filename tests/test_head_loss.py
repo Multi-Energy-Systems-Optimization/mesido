@@ -898,9 +898,9 @@ if __name__ == "__main__":
 
     start_time = time.time()
     a = TestHeadLoss()
-    # a.test_heat_network_head_loss()
+    a.test_heat_network_head_loss()
     a.test_heat_network_pipe_split_head_loss()
-    # a.test_gas_network_head_loss()
-    # a.test_gas_network_pipe_split_head_loss()
-    # a.test_gas_substation()
+    a.test_gas_network_head_loss()
+    a.test_gas_network_pipe_split_head_loss()
+    a.test_gas_substation()
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
