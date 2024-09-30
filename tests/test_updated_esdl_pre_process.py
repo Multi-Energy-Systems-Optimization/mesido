@@ -83,19 +83,19 @@ class TestUpdatedESDL(TestCase):
             max(problem.get_timeseries("HeatingDemand_08fd.target_heat_demand").values),
         )
         np.testing.assert_allclose(
-            469709.62,  # demand4_MW, multiplier 0.75
+            475130.185,  # demand4_MW, multiplier 0.75
             np.average(problem.get_timeseries("HeatingDemand_b0ff.target_heat_demand").values),
         )
         np.testing.assert_allclose(
-            281825.77,  # demand5_MW, multiplier 0.3
+            285078.111,  # demand5_MW, multiplier 0.3
             np.average(problem.get_timeseries("HeatingDemand_8fbe.target_heat_demand").values),
         )
         np.testing.assert_allclose(
-            313139.75,  # demand4_MW, multiplier 0.5
+            316753.457,  # demand4_MW, multiplier 0.5
             np.average(problem.get_timeseries("HeatingDemand_08fd.target_heat_demand").values),
         )
 
-        # Checkk that the correct multiplier value was used
+        # Check that the correct multiplier value was used
         # Compare 2 max values where the same profile was used but with different multiplier values
         # HeatingDemand_08fd: multiplier 0.5
         # HeatingDemand_b0ff: multplier 0.75

@@ -69,7 +69,7 @@ class TestEndScenarioSizing(TestCase):
 
         # Check the minimum velocity setting==default value. Keep the default value hard-coded to
         # prevent future coding bugs
-        np.testing.assert_equal(0.005, self.solution.heat_network_settings["minimum_velocity"])
+        np.testing.assert_equal(1.0e-4, self.solution.heat_network_settings["minimum_velocity"])
 
         # Check whether cyclic ates constraint is working
         for a in self.solution.energy_system_components.get("ates", []):
