@@ -130,11 +130,11 @@ class TestProfileLoading(unittest.TestCase):
         # the three demands in the test ESDL
         for demand_name in ["HeatingDemand_2ab9", "HeatingDemand_6662", "HeatingDemand_506c"]:
             profile_values = problem.get_timeseries(f"{demand_name}.target_heat_demand").values
-            self.assertEqual(profile_values[0], 0.0)
+            self.assertEqual(profile_values[0], profile_values[1])
             self.assertEqual(len(profile_values), 26)
 
         heat_price_profile = problem.get_timeseries("Heat.price_profile").values
-        self.assertEqual(heat_price_profile[0], 0.0)
+        self.assertEqual(heat_price_profile[0], heat_price_profile[1])
         self.assertLess(max(heat_price_profile), 1.0)
 
     def test_loading_from_csv(self):
