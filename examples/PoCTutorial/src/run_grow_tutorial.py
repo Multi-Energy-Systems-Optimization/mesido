@@ -1,10 +1,10 @@
 from pathlib import Path
 
 from mesido.esdl.esdl_parser import ESDLFileParser
-from mesido.workflows import EndScenarioSizingStagedHIGHS, run_end_scenario_sizing
+from mesido.workflows import EndScenarioSizingStaged, run_end_scenario_sizing
 
 
-class EndScenarioSizingStagedHighs(EndScenarioSizingStagedHIGHS):
+class EndScenarioSizingStagedHighs(EndScenarioSizingStaged):
     pass
 
 

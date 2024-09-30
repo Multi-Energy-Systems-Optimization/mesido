@@ -444,10 +444,6 @@ class EndScenarioSizingDiscounted(EndScenarioSizing):
         return options
 
 
-class EndScenarioSizingDiscountedHIGHS(EndScenarioSizingDiscounted):
-    pass
-
-
 class EndScenarioSizingHeadLoss(EndScenarioSizing):
     """
     EndScenarioSizing optimisation including the linearised inequality DarcyWeisbach Head loss
