@@ -2039,9 +2039,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             ates_dt_loss = self.state(f"{ates}.Temperature_loss")
 
             ates_temperature_loss_nominal = self.variable_nominal(f"{ates}.Temperature_loss")
-            ates_dt_charging_nominal = self.variable_nominal(
-                f"{ates}.Temperature_change_charging"
-            )
+            ates_dt_charging_nominal = self.variable_nominal(f"{ates}.Temperature_change_charging")
 
             sup_carrier = parameters[f"{ates}.T_supply_id"]
             supply_temperatures = self.temperature_regimes(sup_carrier)
@@ -2163,8 +2161,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                             )
                         )
             else:
-                constraints.append((ates_dt_charging/ates_dt_charging_nominal, 0.0, 0.0))
-                constraints.append((ates_dt_loss/ates_temperature_loss_nominal, 0.0, 0.0))
+                constraints.append((ates_dt_charging / ates_dt_charging_nominal, 0.0, 0.0))
+                constraints.append((ates_dt_loss / ates_temperature_loss_nominal, 0.0, 0.0))
         return constraints
 
     def __ates_heat_losses_path_constraints(self, ensemble_member):
