@@ -24,131 +24,159 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
         parameters = self.parameters(0)
         bounds = self.bounds()
 
+        # ------------------------------------------------------------------------------------------
+        # Limit available pipe classes
+        # TODO: cater for varying temperature when limiting pipe classes below
         # Here we do a check between the available pipe classes and the demand profiles. This is to
         # ensure that we don't have unneeded large amount of available pipe classes for pipes
         # connected to smaller demands.
         # TODO: add the same for electricity ones we have proper support for that in the ESDLMixin
-        for asset, (connected_asset, _orientation) in self.energy_system_topology.demands.items():
-            if asset in self.energy_system_components.get("gas_demand", []):
-                try:
-                    max_demand = min(
-                        max(self.get_timeseries(f"{asset}.target_gas_demand").values),
-                        bounds[f"{asset}.Gas_demand_mass_flow"][1],
-                    )
-                except KeyError:
-                    max_demand = bounds[f"{asset}.Gas_demand_mass_flow"][1]
-                is_pipe_dn0_needed = True
-                try:
-                    if min(self.get_timeseries(f"{asset}.target_gas_demand").values) > 0.0:
-                        is_pipe_dn0_needed = False
-                except KeyError:
+        if len(self.temperature_carriers().items()) == 0:
+            for asset, (
+                connected_asset,
+                _orientation,
+            ) in self.energy_system_topology.demands.items():
+                # TODO: add test case for gas once optional gas pipes are used
+                if asset in self.energy_system_components.get("gas_demand", []):
+                    try:
+                        max_demand_g_s = min(
+                            max(self.get_timeseries(f"{asset}.target_gas_demand").values),
+                            bounds[f"{asset}.Gas_demand_mass_flow"][1],
+                        )
+                    except KeyError:
+                        max_demand_g_s = bounds[f"{asset}.Gas_demand_mass_flow"][1]
                     is_pipe_dn0_needed = True
+                    try:
+                        if min(self.get_timeseries(f"{asset}.target_gas_demand").values) > 0.0:
+                            is_pipe_dn0_needed = False
+                    except KeyError:
+                        is_pipe_dn0_needed = True
 
-                new_pcs = []
-                found_pc_large_enough = False
-                for pc in self.gas_pipe_classes(connected_asset):
-                    if not found_pc_large_enough:
-                        new_pcs.append(pc)
-                        if new_pcs[-1].maximum_discharge >= max_demand:
-                            found_pc_large_enough = True
-                # Remove pipe DN0 from the available pipe list, if there is always flow required
-                # TODO: Bug to be resolved. Currently the solution is infeasible when onle 1 pipe
-                # class is available, bit it should be able to working. Then remove the need for
-                # having 2 pipes classes available in new_pcs.
-                if (
-                    not is_pipe_dn0_needed
-                    and len(new_pcs) > 2
-                    and new_pcs[0].maximum_discharge == 0.0
-                ):
-                    new_pcs.remove(new_pcs[0])
+                    new_pcs = []
+                    found_pc_large_enough = False
+                    for pc in self.gas_pipe_classes(connected_asset):
+                        if not found_pc_large_enough:
+                            new_pcs.append(pc)
+                            if (
+                                new_pcs[-1].maximum_discharge
+                                * self.parameters(0)[f"{connected_asset}.rho"]
+                                / 1000.00
+                                >= max_demand_g_s
+                            ):  # m3/s * kg/m3 / 1000.0 = g/s
+                                found_pc_large_enough = True
+                    # Remove pipe DN0 from the available pipe list, if there is always flow required
+                    # TODO: Bug to be resolved. Currently the solution is infeasible when only
+                    # 1 pipe class is available, bit it should be able to working.
+                    # Then remove the need for having 2 pipes classes available in new_pcs.
+                    if (
+                        not is_pipe_dn0_needed
+                        and len(new_pcs) > 2
+                        and new_pcs[0].maximum_discharge == 0.0
+                    ):
+                        new_pcs.remove(new_pcs[0])
 
-                self._override_gas_pipe_classes[connected_asset] = new_pcs
-            if asset in self.energy_system_components.get("heat_demand", []):
-                try:
-                    max_demand = min(
-                        max(self.get_timeseries(f"{asset}.target_heat_demand").values),
-                        bounds[f"{asset}.Heat_demand"][1],
-                    )
-                except KeyError:
-                    max_demand = bounds[f"{asset}.Heat_demand"][1]
-                is_pipe_dn0_needed = True
-                try:
-                    if min(self.get_timeseries(f"{asset}.target_heat_demand").values) > 0.0:
-                        is_pipe_dn0_needed = False
-                except KeyError:
+                    self._override_gas_pipe_classes[connected_asset] = new_pcs
+                if asset in self.energy_system_components.get("heat_demand", []):
+                    try:
+                        max_demand = min(
+                            max(self.get_timeseries(f"{asset}.target_heat_demand").values),
+                            bounds[f"{asset}.Heat_demand"][1],
+                        )
+                    except KeyError:
+                        max_demand = bounds[f"{asset}.Heat_demand"][1]
                     is_pipe_dn0_needed = True
+                    try:
+                        if min(self.get_timeseries(f"{asset}.target_heat_demand").values) > 0.0:
+                            is_pipe_dn0_needed = False
+                    except KeyError:
+                        is_pipe_dn0_needed = True
 
-                max_demand *= 1.3  # 30% added for expected worst case heat losses
+                    max_demand *= 1.3  # 30% added for expected worst case heat losses
 
-                new_pcs = []
-                found_pc_large_enough = False
-                for pc in self.pipe_classes(connected_asset):
-                    if not found_pc_large_enough:
-                        new_pcs.append(pc)
-                    if (
-                        new_pcs[-1].maximum_discharge
-                        * parameters[f"{asset}.cp"]
-                        * parameters[f"{asset}.rho"]
-                        * (parameters[f"{asset}.T_supply"] - parameters[f"{asset}.T_return"])
-                    ) >= max_demand:
-                        found_pc_large_enough = True
-
-                # Remove pipe DN0 from the available pipe list, if there is always flow required
-                # TODO: Bug to be resolved. Currently the solution is infeasible when onle 1 pipe
-                # class is available, bit it should be able to working. Then remove the need for
-                # having 2 pipes classes available in new_pcs.
-                if (
-                    not is_pipe_dn0_needed
-                    and len(new_pcs) > 2
-                    and new_pcs[0].maximum_discharge == 0.0
-                ):
-                    new_pcs.remove(new_pcs[0])
-
-                self._override_pipe_classes[connected_asset] = new_pcs
-                if not self.is_hot_pipe(self.hot_to_cold_pipe(connected_asset)):
-                    self._override_pipe_classes[self.hot_to_cold_pipe(connected_asset)] = new_pcs
-
-        # Here we do the same for sources as for the sources.
-        for asset, (connected_asset, _orientation) in self.energy_system_topology.sources.items():
-            if asset in self.energy_system_components.get("gas_source", []):
-                try:
-                    max_prod = min(
-                        max(self.get_timeseries(f"{asset}.maximum_gas_source").values),
-                        bounds[f"{asset}.Gas_source_mass_flow"][1],
-                    )
-                except KeyError:
-                    max_prod = bounds[f"{asset}.Gas_source_mass_flow"][1]
-                new_pcs = []
-                found_pc_large_enough = False
-                for pc in self.gas_pipe_classes(connected_asset):
-                    if not found_pc_large_enough:
-                        new_pcs.append(pc)
-                        if new_pcs[-1].maximum_discharge >= max_prod:
+                    new_pcs = []
+                    found_pc_large_enough = False
+                    for pc in self.pipe_classes(connected_asset):
+                        if not found_pc_large_enough:
+                            new_pcs.append(pc)
+                        if (
+                            new_pcs[-1].maximum_discharge
+                            * parameters[f"{asset}.cp"]
+                            * parameters[f"{asset}.rho"]
+                            * (parameters[f"{asset}.T_supply"] - parameters[f"{asset}.T_return"])
+                        ) >= max_demand:
                             found_pc_large_enough = True
-                self._override_gas_pipe_classes[connected_asset] = new_pcs
-            if asset in self.energy_system_components.get("heat_source", []):
-                try:
-                    max_prod = min(
-                        max(self.get_timeseries(f"{asset}.maximum_heat_source").values),
-                        bounds[f"{asset}.Heat_source"][1],
-                    )
-                except KeyError:
-                    max_prod = bounds[f"{asset}.Heat_source"][1]
-                new_pcs = []
-                found_pc_large_enough = False
-                for pc in self.pipe_classes(connected_asset):
-                    if not found_pc_large_enough:
-                        new_pcs.append(pc)
+
+                    # Remove pipe DN0 from the available pipe list, if there is always flow required
+                    # TODO: Bug to be resolved. Currently the solution is infeasible when
+                    # only 1 pipe class is available, bit it should be able to working. Then remove
+                    # the need for having 2 pipes classes available in new_pcs.
                     if (
-                        new_pcs[-1].maximum_discharge
-                        * parameters[f"{asset}.cp"]
-                        * parameters[f"{asset}.rho"]
-                        * (parameters[f"{asset}.T_supply"] - parameters[f"{asset}.T_return"])
-                    ) >= max_prod:
-                        found_pc_large_enough = True
-                self._override_pipe_classes[connected_asset] = new_pcs
-                if not self.is_hot_pipe(self.hot_to_cold_pipe(connected_asset)):
-                    self._override_pipe_classes[self.hot_to_cold_pipe(connected_asset)] = new_pcs
+                        not is_pipe_dn0_needed
+                        and len(new_pcs) > 2
+                        and new_pcs[0].maximum_discharge == 0.0
+                    ):
+                        new_pcs.remove(new_pcs[0])
+
+                    self._override_pipe_classes[connected_asset] = new_pcs
+                    if not self.is_hot_pipe(self.hot_to_cold_pipe(connected_asset)):
+                        self._override_pipe_classes[self.hot_to_cold_pipe(connected_asset)] = (
+                            new_pcs
+                        )
+
+            # Here we do the same for sources as for the sources.
+            for asset, (
+                connected_asset,
+                _orientation,
+            ) in self.energy_system_topology.sources.items():
+                if asset in self.energy_system_components.get("gas_source", []):
+                    try:
+                        max_prod_g_s = min(
+                            max(self.get_timeseries(f"{asset}.maximum_gas_source").values),
+                            bounds[f"{asset}.Gas_source_mass_flow"][1],
+                        )
+                    except KeyError:
+                        max_prod_g_s = bounds[f"{asset}.Gas_source_mass_flow"][1]
+                    new_pcs = []
+                    found_pc_large_enough = False
+                    for pc in self.gas_pipe_classes(connected_asset):
+                        if not found_pc_large_enough:
+                            new_pcs.append(pc)
+                            if (
+                                new_pcs[-1].maximum_discharge
+                                * self.parameters(0)[f"{connected_asset}.rho"]
+                                / 1000.00
+                                >= max_prod_g_s
+                            ):
+                                found_pc_large_enough = True
+                    self._override_gas_pipe_classes[connected_asset] = new_pcs
+                if asset in self.energy_system_components.get("heat_source", []):
+                    try:
+                        max_prod = min(
+                            max(self.get_timeseries(f"{asset}.maximum_heat_source").values),
+                            bounds[f"{asset}.Heat_source"][1],
+                        )
+                    except KeyError:
+                        max_prod = bounds[f"{asset}.Heat_source"][1]
+                    new_pcs = []
+                    found_pc_large_enough = False
+                    for pc in self.pipe_classes(connected_asset):
+                        if not found_pc_large_enough:
+                            new_pcs.append(pc)
+                        if (
+                            new_pcs[-1].maximum_discharge
+                            * parameters[f"{asset}.cp"]
+                            * parameters[f"{asset}.rho"]
+                            * (parameters[f"{asset}.T_supply"] - parameters[f"{asset}.T_return"])
+                        ) >= max_prod:
+                            found_pc_large_enough = True
+                    self._override_pipe_classes[connected_asset] = new_pcs
+                    if not self.is_hot_pipe(self.hot_to_cold_pipe(connected_asset)):
+                        self._override_pipe_classes[self.hot_to_cold_pipe(connected_asset)] = (
+                            new_pcs
+                        )
+        else:
+            logger.warning("Limiting pipe classes do not cater for varying temperature yet")
+        # ------------------------------------------------------------------------------------------
 
         for asset in [
             *self.energy_system_components.get("heat_source", []),
