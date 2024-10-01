@@ -67,9 +67,7 @@ def define_pipe(pipe, from_asset, to_asset, elbow_point=None):
     pipe.geometry.point.append(pipe_end)
 
 
-def create_cost_value_profile(
-        cost_value, unit, per_unit=None, per_multiplier=None
-):
+def create_cost_value_profile(cost_value, unit, per_unit=None, per_multiplier=None):
     # Creates a cost profile with a single constant value that can be used to be assigned
     #  to any asset.
     qua_per = esdl.QuantityAndUnitType(id=str(uuid4()))
