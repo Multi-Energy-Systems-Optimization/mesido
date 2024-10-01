@@ -3,6 +3,7 @@ from typing import Dict, Set
 
 from mesido.base_component_type_mixin import BaseComponentTypeMixin
 from mesido.heat_network_common import NodeConnectionDirection
+from mesido.network_common import NetworkSettings
 from mesido.topology import Topology
 
 import numpy as np
@@ -60,7 +61,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
         bus_connections = {}
         gas_node_connections = {}
 
-        heat_network_model_type = "Heat"
+        heat_network_model_type = NetworkSettings.NETWORK_TYPE_HEAT
 
         # Note that a pipe series can include both hot and cold pipes for
         # QTH models. It is only about figuring out which pipes are
@@ -69,7 +70,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
         # series, as the cold part is zero milp by construction.
         if heat_network_model_type == "QTH":
             alias_relation = self.alias_relation
-        elif heat_network_model_type == "Heat":
+        elif heat_network_model_type == NetworkSettings.NETWORK_TYPE_HEAT:
             # There is no proper AliasRelation yet (because there is milp loss in pipes).
             # So we build one, as that is the easiest way to figure out which pipes are
             # connected to each other in series. We do this by making a temporary/shadow
@@ -126,7 +127,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
             for i in range(n_connections):
                 if n in nodes:
                     cur_port = f"{n}.{heat_network_model_type}Conn[{i + 1}]"
-                    prop = "T" if heat_network_model_type == "QTH" else "Heat"
+                    prop = "T" if heat_network_model_type == "QTH" else NetworkSettings.NETWORK_TYPE_HEAT
                     prop_h = "H"
                     in_suffix = ".QTHIn.T" if heat_network_model_type == "QTH" else ".HeatIn.Heat"
                     out_suffix = (
@@ -252,7 +253,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
 
             for k in ["In", "Out"]:
                 b_conn = f"{b}.{heat_network_model_type}{k}"
-                prop = "T" if heat_network_model_type == "QTH" else "Heat"
+                prop = "T" if heat_network_model_type == "QTH" else NetworkSettings.NETWORK_TYPE_HEAT
                 aliases = [
                     x
                     for x in self.alias_relation.aliases(f"{b_conn}.{prop}")
@@ -297,7 +298,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
 
             for k in ["In", "Out"]:
                 a_conn = f"{a}.{heat_network_model_type}{k}"
-                prop = "T" if heat_network_model_type == "QTH" else "Heat"
+                prop = "T" if heat_network_model_type == "QTH" else NetworkSettings.NETWORK_TYPE_HEAT
                 aliases = [
                     x
                     for x in self.alias_relation.aliases(f"{a_conn}.{prop}")
@@ -339,13 +340,13 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
 
         for a in demands:
             if a in components.get("heat_demand", []):
-                network_type = "Heat"
-                prop = "Heat"
+                network_type = NetworkSettings.NETWORK_TYPE_HEAT
+                prop = NetworkSettings.NETWORK_TYPE_HEAT
             elif a in components.get("electricity_demand", []):
                 network_type = "Electricity"
                 prop = "Power"
             elif a in components.get("gas_demand", []):
-                network_type = "Gas"
+                network_type = NetworkSettings.NETWORK_TYPE_GAS
                 prop = "H"
             else:
                 logger.error(f"{a} cannot be modelled with heat, gas or electricity")
@@ -387,13 +388,13 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
 
         for a in sources:
             if a in components.get("heat_source", []):
-                network_type = "Heat"
-                prop = "Heat"
+                network_type = NetworkSettings.NETWORK_TYPE_HEAT
+                prop = NetworkSettings.NETWORK_TYPE_HEAT
             elif a in components.get("electricity_source", []):
                 network_type = "Electricity"
                 prop = "Power"
             elif a in components.get("gas_source", []):
-                network_type = "Gas"
+                network_type = NetworkSettings.NETWORK_TYPE_GAS
                 prop = "H"
             else:
                 logger.error(f"{a} cannot be modelled with heat, gas or electricity")
