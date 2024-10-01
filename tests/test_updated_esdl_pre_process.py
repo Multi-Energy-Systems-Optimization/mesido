@@ -20,6 +20,7 @@ class TestUpdatedESDL(TestCase):
          - Check that the unique profile identification in profile_parser assigns the correct
          profile
          - Check that the correct mulitpler value has been used
+         - Test limiting the pipe classes for a pipe connected to a heat demand
 
         """
 
@@ -53,7 +54,7 @@ class TestUpdatedESDL(TestCase):
         # demand profiles are the adapted profiles (peak-hourly, rest-5daily). Therefore the
         # expected max and average hard-coded values are compared to the problem values.
         np.testing.assert_allclose(
-            1207800,
+            8857200.0,
             max(problem.get_timeseries("HeatingDemand_b0ff.target_heat_demand").values),
             # demand4_MW, multiplier 0.75, same demand profile as demand HeatingDemand_08fd, but
             # with a different multiplier. So one would expect that this value differs from
@@ -68,7 +69,7 @@ class TestUpdatedESDL(TestCase):
             max(problem.get_timeseries("HeatingDemand_08fd.target_heat_demand").values),
         )
         np.testing.assert_allclose(
-            469709.62,  # demand4_MW, multiplier 0.75
+            3444537.28,  # demand4_MW, multiplier 5.5
             np.average(problem.get_timeseries("HeatingDemand_b0ff.target_heat_demand").values),
         )
         np.testing.assert_allclose(
@@ -83,17 +84,24 @@ class TestUpdatedESDL(TestCase):
         # Checkk that the correct multiplier value was used
         # Compare 2 max values where the same profile was used but with different multiplier values
         # HeatingDemand_08fd: multiplier 0.5
-        # HeatingDemand_b0ff: multplier 0.75
+        # HeatingDemand_b0ff: multplier 5.5
         np.testing.assert_allclose(
             max(problem.get_timeseries("HeatingDemand_08fd.target_heat_demand").values) / 0.5,
-            max(problem.get_timeseries("HeatingDemand_b0ff.target_heat_demand").values) / 0.75,
+            max(problem.get_timeseries("HeatingDemand_b0ff.target_heat_demand").values) / 5.5,
         )
         np.testing.assert_allclose(
             np.average(problem.get_timeseries("HeatingDemand_08fd.target_heat_demand").values)
             / 0.5,
             np.average(problem.get_timeseries("HeatingDemand_b0ff.target_heat_demand").values)
-            / 0.75,
+            / 5.5,
         )
+
+        # Test limiting the pipe classes for a pipe connected to a heat demand
+        # Check that Pipe4 has 2 of pipe classes available, and that DN0 has not been
+        # included in the list of avialbel pipe classes. Pipe4 started as an optioanl pipe with
+        # DN900 as the starting point for the upper limit.
+        for key in problem._heat_pipe_topo_pipe_class_map["Pipe4"].keys():
+            np.testing.assert_equal(key.name in ["DN150", "DN200"], True)
 
 
 if __name__ == "__main__":
