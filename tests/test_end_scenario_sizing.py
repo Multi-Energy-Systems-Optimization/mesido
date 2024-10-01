@@ -46,7 +46,7 @@ class TestEndScenarioSizing(TestCase):
 
         Checks:
         - demand matching
-        - that the availabnle pipe classes were adapted
+        - that the available pipe classes were adapted
         - Cyclic behaviour for ATES
         - That buffer tank is only used on peak day
         - Check if TCO goal included the desired cost components.
