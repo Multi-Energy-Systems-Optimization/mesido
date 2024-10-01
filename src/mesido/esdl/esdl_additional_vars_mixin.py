@@ -37,6 +37,13 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
                     )
                 except KeyError:
                     max_demand = bounds[f"{asset}.Gas_demand_mass_flow"][1]
+                is_pipe_dn0_needed = True
+                try:
+                    if min(self.get_timeseries(f"{asset}.target_gas_demand").values) > 0.0:
+                        is_pipe_dn0_needed = False
+                except KeyError:
+                    is_pipe_dn0_needed = True
+
                 new_pcs = []
                 found_pc_large_enough = False
                 for pc in self.gas_pipe_classes(connected_asset):
@@ -44,6 +51,17 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
                         new_pcs.append(pc)
                         if new_pcs[-1].maximum_discharge >= max_demand:
                             found_pc_large_enough = True
+                # Remove pipe DN0 from the available pipe list, if there is always flow required
+                # TODO: Bug to be resolved. Currently the solution is infeasible when onle 1 pipe
+                # class is available, bit it should be able to working. Then remove the need for
+                # having 2 pipes classes available in new_pcs.
+                if (
+                    not is_pipe_dn0_needed
+                    and len(new_pcs) > 2
+                    and new_pcs[0].maximum_discharge == 0.0
+                ):
+                    new_pcs.remove(new_pcs[0])
+
                 self._override_gas_pipe_classes[connected_asset] = new_pcs
             if asset in self.energy_system_components.get("heat_demand", []):
                 try:
@@ -75,7 +93,7 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
                     ) >= max_demand:
                         found_pc_large_enough = True
 
-                # Remove pipe DN0 from the availble pipe list, if there is always flow required
+                # Remove pipe DN0 from the available pipe list, if there is always flow required
                 # TODO: Bug to be resolved. Currently the solution is infeasible when onle 1 pipe
                 # class is available, bit it should be able to working. Then remove the need for
                 # having 2 pipes classes available in new_pcs.
@@ -90,7 +108,7 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
                 if not self.is_hot_pipe(self.hot_to_cold_pipe(connected_asset)):
                     self._override_pipe_classes[self.hot_to_cold_pipe(connected_asset)] = new_pcs
 
-        # Here we do the same for sources as for demands.
+        # Here we do the same for sources as for the sources.
         for asset, (connected_asset, _orientation) in self.energy_system_topology.sources.items():
             if asset in self.energy_system_components.get("gas_source", []):
                 try:
