@@ -1,12 +1,13 @@
-import esdl
-from esdl.esdl_handler import EnergySystemHandler
 import os
 from uuid import uuid4
+
+import esdl
+from esdl.esdl_handler import EnergySystemHandler
+
 from pyecore.ecore import EDate
-from pyecore.ecore import EReference
 
 
-def create_in_out_ports(asset, in_carrier, out_carrier, demand_profile = None):
+def create_in_out_ports(asset, in_carrier, out_carrier, demand_profile=None):
     # Adds in an out ports to an assets and assigns them the corresponding carriers.
     in_port = esdl.InPort(id=str(uuid4()), name="In_port", carrier=in_carrier)
     out_port = esdl.OutPort(id=str(uuid4()), name="Out_port", carrier=out_carrier)
@@ -15,31 +16,22 @@ def create_in_out_ports(asset, in_carrier, out_carrier, demand_profile = None):
     asset.port.append(in_port)
     asset.port.append(out_port)
 
-def create_in_out_ports_influxdb_test(asset, in_carrier, out_carrier):
-    # Adds in an out ports to an assets and assigns them the corresponding carriers.
-    in_port = esdl.InPort(id=str(uuid4()), name="In_port", carrier=in_carrier)
-    out_port = esdl.OutPort(id=str(uuid4()), name="Out_port", carrier=out_carrier)
-    asset.port.append(in_port)
-    asset.port.append(out_port)
-    demand_profile = esdl.InfluxDBProfile(
-        id=str(uuid4())
-    )
-    in_port.profile.append(demand_profile)
 
 def get_in_out_ports(asset):
     # Gets the ports of an asset and sorts them as in and out.
     for port in asset.port:
         if isinstance(port, esdl.InPort):
-            in_Port = port
+            in_port = port
         else:
-            out_Port = port
-    return in_Port, out_Port
+            out_port = port
+    return in_port, out_port
 
 
 def add_geometry_point(asset, lat_lon_list):
     # Adds an esdl point to an asset.
     point = esdl.Point(lat=lat_lon_list[0], lon=lat_lon_list[1])
     asset.geometry = point
+
 
 def define_area(area, points):
     # Creates a polygon given a series of points and assigns it to the given area.
@@ -50,8 +42,10 @@ def define_area(area, points):
         area_shape.point.append(point_add)
     area.geometry.exterior = area_shape
 
+
 def define_pipe(pipe, from_asset, to_asset, elbow_point=None):
-    # Connects the ports of the pipe to its corresponding assetsand assigns it its geometry.
+    # Connects the ports of the pipe to its corresponding assets and assigns it its geometry.
+
     # Collect relevant ports for this pipe
     _, connect_from = get_in_out_ports(from_asset)
     connect_to, _ = get_in_out_ports(to_asset)
@@ -72,8 +66,12 @@ def define_pipe(pipe, from_asset, to_asset, elbow_point=None):
         pipe.geometry.point.append(pipe_elbow)
     pipe.geometry.point.append(pipe_end)
 
-def create_cost_value_profile(cost_value, unit, per_unit=None, per_multiplier=None):
-    # Creates a cost profile with a single constant value that can be used to be assigned to any asset cost type.
+
+def create_cost_value_profile(
+        cost_value, unit, per_unit=None, per_multiplier=None
+):
+    # Creates a cost profile with a single constant value that can be used to be assigned
+    #  to any asset.
     qua_per = esdl.QuantityAndUnitType(id=str(uuid4()))
     qua_per.unit = esdl.UnitEnum.from_string(unit)
     if per_unit is not None:
@@ -87,26 +85,26 @@ def create_cost_value_profile(cost_value, unit, per_unit=None, per_multiplier=No
 
     return esdl_cost_profile
 
+
 def import_demand_profile(demand_profile_parameters, profile_quantity):
-    
-    # Imports the demand profile from InfluxDB and creates the demand object
+    # Imports the demand profile from InfluxDB and creates the demand object.
     # demand_profile_parameters is a dictionary (see below) and the profile quantity
     # must be an esdl.QuantityAndUnitType object.
 
     demand_profile = esdl.InfluxDBProfile(
         id=str(uuid4()),
-        multiplier = demand_profile_parameters['multiplier'],
-        database = demand_profile_parameters['database'],
-        measurement = demand_profile_parameters['measurement'],
-        host = demand_profile_parameters['host'],
-        field = demand_profile_parameters['field'],
-        port = demand_profile_parameters['port'],
-        startDate = demand_profile_parameters['startDate'],
-        endDate = demand_profile_parameters['endDate']
+        multiplier=demand_profile_parameters["multiplier"],
+        database=demand_profile_parameters["database"],
+        measurement=demand_profile_parameters["measurement"],
+        host=demand_profile_parameters["host"],
+        field=demand_profile_parameters["field"],
+        port=demand_profile_parameters["port"],
+        startDate=demand_profile_parameters["startDate"],
+        endDate=demand_profile_parameters["endDate"],
     )
 
     demand_profile.profileQuantityAndUnit = esdl.QuantityAndUnitReference(
-        reference = profile_quantity
+        reference=profile_quantity
     )
 
     return demand_profile
@@ -114,9 +112,9 @@ def import_demand_profile(demand_profile_parameters, profile_quantity):
 
 if __name__ == "__main__":
 
-    ######################################################
-    ##                      INPUT                       ##
-    ######################################################
+    # -------------------------------------------------- #
+    #                       INPUT                        #
+    # -------------------------------------------------- #
 
     esdl_file_name = "tutorial_generated.esdl"  # Name of the output esdl file.
     save_folder = "examples/PoCTutorial/model"  # Folder to output the esdl to.
@@ -141,14 +139,14 @@ if __name__ == "__main__":
     ]
     demand_1_coord = [52.00107, 4.37353]
     demand_1_profile_params = {
-        'multiplier': 0.75,
-        'database' : 'energy_profiles',
-        'measurement' : "WarmingUp default profiles",
-        'host' : "profiles.warmingup.info",
-        'field' : "demand4_MW",
-        'port' : 443,
-        'startDate' : EDate.from_string("2018-12-31T23:00:00.000000+0000"),
-        'endDate' : EDate.from_string("2019-12-31T22:00:00.000000+0000")
+        "multiplier": 0.75,
+        "database": "energy_profiles",
+        "measurement": "WarmingUp default profiles",
+        "host": "profiles.warmingup.info",
+        "field": "demand4_MW",
+        "port": 443,
+        "startDate": EDate.from_string("2018-12-31T23:00:00.000000+0000"),
+        "endDate": EDate.from_string("2019-12-31T22:00:00.000000+0000"),
     }
 
     # Demand 2 parameters
@@ -165,14 +163,14 @@ if __name__ == "__main__":
     ]
     demand_2_coord = [51.99653, 4.3731]
     demand_2_profile_params = {
-        'multiplier': 0.5,
-        'database' : 'energy_profiles',
-        'measurement' : "WarmingUp default profiles",
-        'host' : "profiles.warmingup.info",
-        'field' : "demand4_MW",
-        'port' : 443,
-        'startDate' : EDate.from_string("2018-12-31T23:00:00.000000+0000"),
-        'endDate' : EDate.from_string("2019-12-31T22:00:00.000000+0000")
+        "multiplier": 0.5,
+        "database": "energy_profiles",
+        "measurement": "WarmingUp default profiles",
+        "host": "profiles.warmingup.info",
+        "field": "demand4_MW",
+        "port": 443,
+        "startDate": EDate.from_string("2018-12-31T23:00:00.000000+0000"),
+        "endDate": EDate.from_string("2019-12-31T22:00:00.000000+0000"),
     }
 
     # Demand 3 parameters
@@ -187,14 +185,14 @@ if __name__ == "__main__":
     ]
     demand_3_coord = [51.99074, 4.3791]
     demand_3_profile_params = {
-        'multiplier': 0.3,
-        'database' : 'energy_profiles',
-        'measurement' : "WarmingUp default profiles",
-        'host' : "profiles.warmingup.info",
-        'field' : "demand4_MW",
-        'port' : 443,
-        'startDate' : EDate.from_string("2018-12-31T23:00:00.000000+0000"),
-        'endDate' : EDate.from_string("2019-12-31T22:00:00.000000+0000")
+        "multiplier": 0.3,
+        "database": "energy_profiles",
+        "measurement": "WarmingUp default profiles",
+        "host": "profiles.warmingup.info",
+        "field": "demand4_MW",
+        "port": 443,
+        "startDate": EDate.from_string("2018-12-31T23:00:00.000000+0000"),
+        "endDate": EDate.from_string("2019-12-31T22:00:00.000000+0000"),
     }
 
     # Source 1 parameters
@@ -220,18 +218,18 @@ if __name__ == "__main__":
     joint_2ret_coord = [51.99537, 4.36895]
 
     # Pipes
-    pipe_diam = "DN400"     # Assumes all pipes have the same diameter.
+    pipe_diam = "DN400"  # Assumes all pipes have the same diameter.
     pipe_1_elbow_coord = [52.00353, 4.36593]
     pipe_3_elbow_coord = [51.9898, 4.37191]
     pipe_1ret_elbow_coord = [52.00363, 4.36492]
     pipe_3ret_elbow_coord = [51.98922, 4.3717]
 
-    ######################################################
-    ##                  PROCESSING                      ##
-    ######################################################
+    # -------------------------------------------------- #
+    #                   PROCESSING                       #
+    # -------------------------------------------------- #
 
     esh = EnergySystemHandler()
-    energy_system = esh.create_empty_energy_system(name="Generated PoC tutoral")
+    energy_system = esh.create_empty_energy_system(name="Generated PoC tutorial")
     main_area = energy_system.instance[0].area  # Logical high level area.
 
     # Create heat carriers
@@ -251,21 +249,21 @@ if __name__ == "__main__":
         esi = esdl.EnergySystemInformation(id=str(uuid4()))
         esh.energy_system.energySystemInformation = esi
         esh.add_object(esi)
-    
-    quantities = esdl.QuantityAndUnits(id = str(uuid4()))
+
+    quantities = esdl.QuantityAndUnits(id=str(uuid4()))
     power_quantity = esdl.QuantityAndUnitType(
-        id = str(uuid4()),
-        description = "Power in MW",
-        physicalQuantity = "POWER",
-        multiplier = "MEGA",
-        unit = "WATT"
+        id=str(uuid4()),
+        description="Power in MW",
+        physicalQuantity="POWER",
+        multiplier="MEGA",
+        unit="WATT",
     )
     quantities.quantityAndUnit.append(power_quantity)
-    
+
     esi.quantityAndUnits = quantities
     esi.carriers = heat_carrs
 
-    ##### Area 1 (demand 1)
+    # Area 1 (demand 1)
     area_1 = esdl.Area(id=str(uuid4()), name="Area_demand_1")
     define_area(area_1, area_1_coord)
     main_area.area.append(area_1)
@@ -276,19 +274,19 @@ if __name__ == "__main__":
     heat_demand_1.power = demand_1_power
 
     heat_demand_1.costInformation = esdl.CostInformation(id=str(uuid4()))
-    costInf = heat_demand_1.costInformation
-    costInf.investmentCosts = create_cost_value_profile(
+    cost_info = heat_demand_1.costInformation
+    cost_info.investmentCosts = create_cost_value_profile(
         demand_1_inv_cost, "EURO", per_unit="WATT", per_multiplier="MEGA"
     )
-    costInf.installationCosts = create_cost_value_profile(demand_1_inst_cost, "EURO")
+    cost_info.installationCosts = create_cost_value_profile(demand_1_inst_cost, "EURO")
 
     in_carrier = heat_commodity_primary
     out_carrier = heat_commodity_ret
 
     heat_demand_profile = import_demand_profile(demand_1_profile_params, power_quantity)
-    create_in_out_ports(heat_demand_1, in_carrier, out_carrier, demand_profile = heat_demand_profile)
+    create_in_out_ports(heat_demand_1, in_carrier, out_carrier, demand_profile=heat_demand_profile)
 
-    ###### Area 2 (demand 2)
+    # Area 2 (demand 2)
     area_2 = esdl.Area(id=str(uuid4()), name="Area_demand_2")
     define_area(area_2, area_2_coord)
     main_area.area.append(area_2)
@@ -299,19 +297,19 @@ if __name__ == "__main__":
     heat_demand_2.power = demand_2_power
 
     heat_demand_2.costInformation = esdl.CostInformation(id=str(uuid4()))
-    costInf = heat_demand_2.costInformation
-    costInf.investmentCosts = create_cost_value_profile(
+    cost_info = heat_demand_2.costInformation
+    cost_info.investmentCosts = create_cost_value_profile(
         demand_2_inv_cost, "EURO", per_unit="WATT", per_multiplier="MEGA"
     )
-    costInf.installationCosts = create_cost_value_profile(demand_2_inst_cost, "EURO")
+    cost_info.installationCosts = create_cost_value_profile(demand_2_inst_cost, "EURO")
 
     in_carrier = heat_commodity_primary
     out_carrier = heat_commodity_ret
 
     heat_demand_profile = import_demand_profile(demand_2_profile_params, power_quantity)
-    create_in_out_ports(heat_demand_2, in_carrier, out_carrier, demand_profile = heat_demand_profile)
+    create_in_out_ports(heat_demand_2, in_carrier, out_carrier, demand_profile=heat_demand_profile)
 
-    ##### Area 3 (demand 3)
+    # Area 3 (demand 3)
     area_3 = esdl.Area(id=str(uuid4()), name="Area_demand_3")
     define_area(area_3, area_3_coord)
     main_area.area.append(area_3)
@@ -322,19 +320,19 @@ if __name__ == "__main__":
     heat_demand_3.power = demand_3_power
 
     heat_demand_3.costInformation = esdl.CostInformation(id=str(uuid4()))
-    costInf = heat_demand_3.costInformation
-    costInf.investmentCosts = create_cost_value_profile(
+    cost_info = heat_demand_3.costInformation
+    cost_info.investmentCosts = create_cost_value_profile(
         demand_3_inv_cost, "EURO", per_unit="WATT", per_multiplier="MEGA"
     )
-    costInf.installationCosts = create_cost_value_profile(demand_3_inst_cost, "EURO")
+    cost_info.installationCosts = create_cost_value_profile(demand_3_inst_cost, "EURO")
 
     in_carrier = heat_commodity_primary
     out_carrier = heat_commodity_ret
-    
-    heat_demand_profile = import_demand_profile(demand_3_profile_params, power_quantity)
-    create_in_out_ports(heat_demand_3, in_carrier, out_carrier, demand_profile = heat_demand_profile)
 
-    ##### Main area (sources)
+    heat_demand_profile = import_demand_profile(demand_3_profile_params, power_quantity)
+    create_in_out_ports(heat_demand_3, in_carrier, out_carrier, demand_profile=heat_demand_profile)
+
+    # Main area (sources)
     heat_source_1 = esdl.ResidualHeatSource(id=str(uuid4()), name="Heat_source1", state="OPTIONAL")
     heat_source_2 = esdl.ResidualHeatSource(id=str(uuid4()), name="Heat_source2", state="OPTIONAL")
     main_area.asset.append(heat_source_1)
@@ -346,28 +344,28 @@ if __name__ == "__main__":
     heat_source_2.power = source_2_power
 
     heat_source_1.costInformation = esdl.CostInformation(id=str(uuid4()))
-    costInf = heat_source_1.costInformation
-    costInf.investmentCosts = create_cost_value_profile(
+    cost_info = heat_source_1.costInformation
+    cost_info.investmentCosts = create_cost_value_profile(
         source_1_inv_cost, "EURO", per_unit="WATT", per_multiplier="MEGA"
     )
-    costInf.installationCosts = create_cost_value_profile(source_1_inst_cost, "EURO")
-    costInf.variableOperationalCosts = create_cost_value_profile(
+    cost_info.installationCosts = create_cost_value_profile(source_1_inst_cost, "EURO")
+    cost_info.variableOperationalCosts = create_cost_value_profile(
         source_1_varop_cost, "EURO", per_unit="WATTHOUR", per_multiplier="MEGA"
     )
-    costInf.fixedOperationalCosts = create_cost_value_profile(
+    cost_info.fixedOperationalCosts = create_cost_value_profile(
         source_1_fixop_cost, "EURO", per_unit="WATT", per_multiplier="MEGA"
     )
 
     heat_source_2.costInformation = esdl.CostInformation(id=str(uuid4()))
-    costInf = heat_source_2.costInformation
-    costInf.investmentCosts = create_cost_value_profile(
+    cost_info = heat_source_2.costInformation
+    cost_info.investmentCosts = create_cost_value_profile(
         source_2_inv_cost, "EURO", per_unit="WATT", per_multiplier="MEGA"
     )
-    costInf.installationCosts = create_cost_value_profile(source_2_inst_cost, "EURO")
-    costInf.variableOperationalCosts = create_cost_value_profile(
+    cost_info.installationCosts = create_cost_value_profile(source_2_inst_cost, "EURO")
+    cost_info.variableOperationalCosts = create_cost_value_profile(
         source_2_varop_cost, "EURO", per_unit="WATTHOUR", per_multiplier="MEGA"
     )
-    costInf.fixedOperationalCosts = create_cost_value_profile(
+    cost_info.fixedOperationalCosts = create_cost_value_profile(
         source_2_fixop_cost, "EURO", per_unit="WATT", per_multiplier="MEGA"
     )
 
@@ -378,7 +376,7 @@ if __name__ == "__main__":
     out_carrier = heat_commodity_primary
     create_in_out_ports(heat_source_2, in_carrier, out_carrier)
 
-    ##### Main netowrk joints joints
+    # Main netowrk joints joints
     joint_1 = esdl.Joint(id=str(uuid4()), name="Joint_1")
     in_carrier = heat_commodity_primary
     out_carrier = heat_commodity_primary
@@ -393,7 +391,7 @@ if __name__ == "__main__":
     add_geometry_point(joint_2, joint_2_coord)
     main_area.asset.append(joint_2)
 
-    ##### Primary network pipes
+    # Primary network pipes
     pipe_d = esdl.PipeDiameterEnum.from_string(pipe_diam)  # Pipe diameters
 
     pipe_1 = esdl.Pipe(id=str(uuid4()), diameter=pipe_d, name="Pipe_1", state="OPTIONAL")
@@ -450,26 +448,22 @@ if __name__ == "__main__":
     define_pipe(pipe_6, pipe_from, pipe_to)
     main_area.asset.append(pipe_6)
 
-    ##### Return network joints
-    joint_1ret = esdl.Joint(
-        id=str(uuid4()), name="Joint_1ret"
-    )  # Can attach multiple pipes to a single inport.
+    # Return network joints
+    joint_1ret = esdl.Joint(id=str(uuid4()), name="Joint_1ret")
     in_carrier = heat_commodity_ret
     out_carrier = heat_commodity_ret
     create_in_out_ports(joint_1ret, in_carrier, out_carrier)
     add_geometry_point(joint_1ret, joint_1ret_coord)
     main_area.asset.append(joint_1ret)
 
-    joint_2ret = esdl.Joint(
-        id=str(uuid4()), name="Joint_2ret"
-    )  # Can attach multiple pipes to a single inport.
+    joint_2ret = esdl.Joint(id=str(uuid4()), name="Joint_2ret")
     in_carrier = heat_commodity_ret
     out_carrier = heat_commodity_ret
     create_in_out_ports(joint_2ret, in_carrier, out_carrier)
     add_geometry_point(joint_2ret, joint_2ret_coord)
     main_area.asset.append(joint_2ret)
 
-    ##### Return network pipes.
+    # Return network pipes.
     pipe_ret_d = esdl.PipeDiameterEnum.from_string("DN400")  # Pipe diameters
 
     pipe_1ret = esdl.Pipe(id=str(uuid4()), diameter=pipe_ret_d, name="Pipe_1ret", state="OPTIONAL")
@@ -526,7 +520,7 @@ if __name__ == "__main__":
     define_pipe(pipe_6ret, pipe_from, pipe_to)
     main_area.asset.append(pipe_6ret)
 
-    ##### File export and saving
+    # File export and saving
     save_dir = save_folder
     os.chdir(save_dir)
     esh.save(filename=esdl_file_name)
