@@ -1,6 +1,8 @@
 # [Unreleased] - 2024-08-20
 
 ## Added
+- Limit the available pipe classes connetced to heat/gas demand/producers
+- Add demands and sources to the topology object to have easy access to the connected pipes/cables later on
 - User feedback regarding demand type to be used in heat networks 
 - Functionality to connect assets with logical links 
 
