@@ -23,8 +23,7 @@ def create_in_out_ports_influxdb_test(asset, in_carrier, out_carrier):
     asset.port.append(out_port)
     demand_profile = esdl.InfluxDBProfile(
         id=str(uuid4())
-    )  # Add all parameters here, might need the quantity and unit like with the costs.
-    # For the date esdl.EDate.from_string(date string).
+    )
     in_port.profile.append(demand_profile)
 
 def get_in_out_ports(asset):
@@ -52,7 +51,7 @@ def define_area(area, points):
     area.geometry.exterior = area_shape
 
 def define_pipe(pipe, from_asset, to_asset, elbow_point=None):
-    # Creates a pipe asset given the assets it connects (to and from) and assigns an elbow, if chosen.
+    # Connects the ports of the pipe to its corresponding assetsand assigns it its geometry.
     # Collect relevant ports for this pipe
     _, connect_from = get_in_out_ports(from_asset)
     connect_to, _ = get_in_out_ports(to_asset)
@@ -76,17 +75,41 @@ def define_pipe(pipe, from_asset, to_asset, elbow_point=None):
 def create_cost_value_profile(cost_value, unit, per_unit=None, per_multiplier=None):
     # Creates a cost profile with a single constant value that can be used to be assigned to any asset cost type.
     qua_per = esdl.QuantityAndUnitType(id=str(uuid4()))
-    qua_per.unit = unit
+    qua_per.unit = esdl.UnitEnum.from_string(unit)
     if per_unit is not None:
-        qua_per.perUnit = per_unit
+        qua_per.perUnit = esdl.UnitEnum.from_string(per_unit)
         if per_multiplier is not None:
-            qua_per.perMultiplier = per_multiplier
-    qua_per.physicalQuantity = "COST"
+            qua_per.perMultiplier = esdl.MultiplierEnum.from_string(per_multiplier)
+    qua_per.physicalQuantity = esdl.PhysicalQuantityEnum.from_string("COST")
     esdl_cost_profile = esdl.SingleValue(
         id=str(uuid4()), value=cost_value, profileQuantityAndUnit=qua_per
     )
 
     return esdl_cost_profile
+
+def import_demand_profile(demand_profile_parameters, profile_quantity):
+    
+    # Imports the demand profile from InfluxDB and creates the demand object
+    # demand_profile_parameters is a dictionary (see below) and the profile quantity
+    # must be an esdl.QuantityAndUnitType object.
+
+    demand_profile = esdl.InfluxDBProfile(
+        id=str(uuid4()),
+        multiplier = demand_profile_parameters['multiplier'],
+        database = demand_profile_parameters['database'],
+        measurement = demand_profile_parameters['measurement'],
+        host = demand_profile_parameters['host'],
+        field = demand_profile_parameters['field'],
+        port = demand_profile_parameters['port'],
+        startDate = demand_profile_parameters['startDate'],
+        endDate = demand_profile_parameters['endDate']
+    )
+
+    demand_profile.profileQuantityAndUnit = esdl.QuantityAndUnitReference(
+        reference = profile_quantity
+    )
+
+    return demand_profile
 
 
 if __name__ == "__main__":
@@ -117,6 +140,16 @@ if __name__ == "__main__":
         [51.9963626102222, 4.380712509155274],
     ]
     demand_1_coord = [52.00107, 4.37353]
+    demand_1_profile_params = {
+        'multiplier': 0.75,
+        'database' : 'energy_profiles',
+        'measurement' : "WarmingUp default profiles",
+        'host' : "profiles.warmingup.info",
+        'field' : "demand4_MW",
+        'port' : 443,
+        'startDate' : EDate.from_string("2018-12-31T23:00:00.000000+0000"),
+        'endDate' : EDate.from_string("2019-12-31T22:00:00.000000+0000")
+    }
 
     # Demand 2 parameters
     demand_2_power = 15e6  # W
@@ -131,6 +164,16 @@ if __name__ == "__main__":
         [51.99272923553559, 4.372708797454835],
     ]
     demand_2_coord = [51.99653, 4.3731]
+    demand_2_profile_params = {
+        'multiplier': 0.5,
+        'database' : 'energy_profiles',
+        'measurement' : "WarmingUp default profiles",
+        'host' : "profiles.warmingup.info",
+        'field' : "demand4_MW",
+        'port' : 443,
+        'startDate' : EDate.from_string("2018-12-31T23:00:00.000000+0000"),
+        'endDate' : EDate.from_string("2019-12-31T22:00:00.000000+0000")
+    }
 
     # Demand 3 parameters
     demand_3_power = 15e6  # W
@@ -143,6 +186,16 @@ if __name__ == "__main__":
         [51.98688879367896, 4.37633514404297],
     ]
     demand_3_coord = [51.99074, 4.3791]
+    demand_3_profile_params = {
+        'multiplier': 0.3,
+        'database' : 'energy_profiles',
+        'measurement' : "WarmingUp default profiles",
+        'host' : "profiles.warmingup.info",
+        'field' : "demand4_MW",
+        'port' : 443,
+        'startDate' : EDate.from_string("2018-12-31T23:00:00.000000+0000"),
+        'endDate' : EDate.from_string("2019-12-31T22:00:00.000000+0000")
+    }
 
     # Source 1 parameters
     source_1_power = 50e6  # W
@@ -167,9 +220,10 @@ if __name__ == "__main__":
     joint_2ret_coord = [51.99537, 4.36895]
 
     # Pipes
+    pipe_diam = "DN400"     # Assumes all pipes have the same diameter.
     pipe_1_elbow_coord = [52.00353, 4.36593]
-    pipe_1ret_elbow_coord = [52.00363, 4.36492]
     pipe_3_elbow_coord = [51.9898, 4.37191]
+    pipe_1ret_elbow_coord = [52.00363, 4.36492]
     pipe_3ret_elbow_coord = [51.98922, 4.3717]
 
     ######################################################
@@ -190,11 +244,8 @@ if __name__ == "__main__":
     heat_carrs = esdl.Carriers(id=str(uuid4()))
     heat_carrs.carrier.append(heat_commodity_primary)
     heat_carrs.carrier.append(heat_commodity_ret)
-    for carrier in heat_carrs.carrier:
-        if carrier.name == "HeatCommodityPrimary":
-            id_primary_carr = carrier.id
-        elif carrier.name == "HeatCommodityRet":
-            id_ret_carr = carrier.id
+    id_primary_carr = heat_commodity_primary.id
+    id_ret_carr = heat_commodity_ret.id
     esi = esh.energy_system.energySystemInformation
     if not esi:
         esi = esdl.EnergySystemInformation(id=str(uuid4()))
@@ -231,22 +282,10 @@ if __name__ == "__main__":
     )
     costInf.installationCosts = create_cost_value_profile(demand_1_inst_cost, "EURO")
 
-    in_carrier = esh.get_by_id_slow(id_primary_carr)
-    out_carrier = esh.get_by_id_slow(id_ret_carr)
-    heat_demand_profile = esdl.InfluxDBProfile(
-        id=str(uuid4()),
-        multiplier = 0.75,
-        database = 'energy_profiles',
-        measurement = "WarmingUp default profiles",
-        host = "profiles.warmingup.info",
-        field = "demand4_MW",
-        port = 443,
-        startDate = EDate.from_string("2018-12-31T23:00:00.000000+0000"),
-        endDate = EDate.from_string("2019-12-31T22:00:00.000000+0000")
-    ) 
-    heat_demand_profile.profileQuantityAndUnit = esdl.QuantityAndUnitReference(
-        reference = power_quantity
-    )
+    in_carrier = heat_commodity_primary
+    out_carrier = heat_commodity_ret
+
+    heat_demand_profile = import_demand_profile(demand_1_profile_params, power_quantity)
     create_in_out_ports(heat_demand_1, in_carrier, out_carrier, demand_profile = heat_demand_profile)
 
     ###### Area 2 (demand 2)
@@ -266,22 +305,10 @@ if __name__ == "__main__":
     )
     costInf.installationCosts = create_cost_value_profile(demand_2_inst_cost, "EURO")
 
-    in_carrier = esh.get_by_id_slow(id_primary_carr)
-    out_carrier = esh.get_by_id_slow(id_ret_carr)
-    heat_demand_profile = esdl.InfluxDBProfile(
-        id=str(uuid4()),
-        multiplier = 0.5,
-        database = 'energy_profiles',
-        measurement = "WarmingUp default profiles",
-        host = "profiles.warmingup.info",
-        field = "demand4_MW",
-        port = 443,
-        startDate = EDate.from_string("2018-12-31T23:00:00.000000+0000"),
-        endDate = EDate.from_string("2019-12-31T22:00:00.000000+0000")
-    ) 
-    heat_demand_profile.profileQuantityAndUnit = esdl.QuantityAndUnitReference(
-        reference = power_quantity
-    )
+    in_carrier = heat_commodity_primary
+    out_carrier = heat_commodity_ret
+
+    heat_demand_profile = import_demand_profile(demand_2_profile_params, power_quantity)
     create_in_out_ports(heat_demand_2, in_carrier, out_carrier, demand_profile = heat_demand_profile)
 
     ##### Area 3 (demand 3)
@@ -301,22 +328,10 @@ if __name__ == "__main__":
     )
     costInf.installationCosts = create_cost_value_profile(demand_3_inst_cost, "EURO")
 
-    in_carrier = esh.get_by_id_slow(id_primary_carr)
-    out_carrier = esh.get_by_id_slow(id_ret_carr)
-    heat_demand_profile = esdl.InfluxDBProfile(
-        id=str(uuid4()),
-        multiplier = 0.3,
-        database = 'energy_profiles',
-        measurement = "WarmingUp default profiles",
-        host = "profiles.warmingup.info",
-        field = "demand5_MW",
-        port = 443,
-        startDate = EDate.from_string("2018-12-31T23:00:00.000000+0000"),
-        endDate = EDate.from_string("2019-12-31T22:00:00.000000+0000")
-    ) 
-    heat_demand_profile.profileQuantityAndUnit = esdl.QuantityAndUnitReference(
-        reference = power_quantity
-    )
+    in_carrier = heat_commodity_primary
+    out_carrier = heat_commodity_ret
+    
+    heat_demand_profile = import_demand_profile(demand_3_profile_params, power_quantity)
     create_in_out_ports(heat_demand_3, in_carrier, out_carrier, demand_profile = heat_demand_profile)
 
     ##### Main area (sources)
@@ -356,34 +371,34 @@ if __name__ == "__main__":
         source_2_fixop_cost, "EURO", per_unit="WATT", per_multiplier="MEGA"
     )
 
-    in_carrier = esh.get_by_id_slow(id_ret_carr)
-    out_carrier = esh.get_by_id_slow(id_primary_carr)
+    in_carrier = heat_commodity_ret
+    out_carrier = heat_commodity_primary
     create_in_out_ports(heat_source_1, in_carrier, out_carrier)
-    in_carrier = esh.get_by_id_slow(id_ret_carr)
-    out_carrier = esh.get_by_id_slow(id_primary_carr)
+    in_carrier = heat_commodity_ret
+    out_carrier = heat_commodity_primary
     create_in_out_ports(heat_source_2, in_carrier, out_carrier)
 
     ##### Main netowrk joints joints
     joint_1 = esdl.Joint(id=str(uuid4()), name="Joint_1")
-    in_carrier = esh.get_by_id_slow(id_primary_carr)
-    out_carrier = esh.get_by_id_slow(id_primary_carr)
+    in_carrier = heat_commodity_primary
+    out_carrier = heat_commodity_primary
     create_in_out_ports(joint_1, in_carrier, out_carrier)
     add_geometry_point(joint_1, joint_1_coord)
     main_area.asset.append(joint_1)
 
     joint_2 = esdl.Joint(id=str(uuid4()), name="Joint_2")
-    in_carrier = esh.get_by_id_slow(id_primary_carr)
-    out_carrier = esh.get_by_id_slow(id_primary_carr)
+    in_carrier = heat_commodity_primary
+    out_carrier = heat_commodity_primary
     create_in_out_ports(joint_2, in_carrier, out_carrier)
     add_geometry_point(joint_2, joint_2_coord)
     main_area.asset.append(joint_2)
 
     ##### Primary network pipes
-    pipe_d = esdl.PipeDiameterEnum.from_string("DN400")  # Pipe diameters
+    pipe_d = esdl.PipeDiameterEnum.from_string(pipe_diam)  # Pipe diameters
 
     pipe_1 = esdl.Pipe(id=str(uuid4()), diameter=pipe_d, name="Pipe_1", state="OPTIONAL")
-    in_carrier = esh.get_by_id_slow(id_primary_carr)
-    out_carrier = esh.get_by_id_slow(id_primary_carr)
+    in_carrier = heat_commodity_primary
+    out_carrier = heat_commodity_primary
     create_in_out_ports(pipe_1, in_carrier, out_carrier)
     pipe_from = heat_source_1
     pipe_to = joint_1
@@ -391,8 +406,8 @@ if __name__ == "__main__":
     main_area.asset.append(pipe_1)
 
     pipe_2 = esdl.Pipe(id=str(uuid4()), diameter=pipe_d, name="Pipe_2")
-    in_carrier = esh.get_by_id_slow(id_primary_carr)
-    out_carrier = esh.get_by_id_slow(id_primary_carr)
+    in_carrier = heat_commodity_primary
+    out_carrier = heat_commodity_primary
     create_in_out_ports(pipe_2, in_carrier, out_carrier)
     pipe_from = joint_1
     pipe_to = joint_2
@@ -400,8 +415,8 @@ if __name__ == "__main__":
     main_area.asset.append(pipe_2)
 
     pipe_3 = esdl.Pipe(id=str(uuid4()), diameter=pipe_d, name="Pipe_3")
-    in_carrier = esh.get_by_id_slow(id_primary_carr)
-    out_carrier = esh.get_by_id_slow(id_primary_carr)
+    in_carrier = heat_commodity_primary
+    out_carrier = heat_commodity_primary
     create_in_out_ports(pipe_3, in_carrier, out_carrier)
     pipe_from = joint_2
     pipe_to = heat_demand_3
@@ -409,8 +424,8 @@ if __name__ == "__main__":
     main_area.asset.append(pipe_3)
 
     pipe_4 = esdl.Pipe(id=str(uuid4()), diameter=pipe_d, name="Pipe_4")
-    in_carrier = esh.get_by_id_slow(id_primary_carr)
-    out_carrier = esh.get_by_id_slow(id_primary_carr)
+    in_carrier = heat_commodity_primary
+    out_carrier = heat_commodity_primary
     create_in_out_ports(pipe_4, in_carrier, out_carrier)
     pipe_from = joint_1
     pipe_to = heat_demand_1
@@ -418,8 +433,8 @@ if __name__ == "__main__":
     main_area.asset.append(pipe_4)
 
     pipe_5 = esdl.Pipe(id=str(uuid4()), diameter=pipe_d, name="Pipe_5")
-    in_carrier = esh.get_by_id_slow(id_primary_carr)
-    out_carrier = esh.get_by_id_slow(id_primary_carr)
+    in_carrier = heat_commodity_primary
+    out_carrier = heat_commodity_primary
     create_in_out_ports(pipe_5, in_carrier, out_carrier)
     pipe_from = joint_2
     pipe_to = heat_demand_2
@@ -427,8 +442,8 @@ if __name__ == "__main__":
     main_area.asset.append(pipe_5)
 
     pipe_6 = esdl.Pipe(id=str(uuid4()), diameter=pipe_d, name="Pipe_6", state="OPTIONAL")
-    in_carrier = esh.get_by_id_slow(id_primary_carr)
-    out_carrier = esh.get_by_id_slow(id_primary_carr)
+    in_carrier = heat_commodity_primary
+    out_carrier = heat_commodity_primary
     create_in_out_ports(pipe_6, in_carrier, out_carrier)
     pipe_from = heat_source_2
     pipe_to = joint_2
@@ -439,8 +454,8 @@ if __name__ == "__main__":
     joint_1ret = esdl.Joint(
         id=str(uuid4()), name="Joint_1ret"
     )  # Can attach multiple pipes to a single inport.
-    in_carrier = esh.get_by_id_slow(id_ret_carr)
-    out_carrier = esh.get_by_id_slow(id_ret_carr)
+    in_carrier = heat_commodity_ret
+    out_carrier = heat_commodity_ret
     create_in_out_ports(joint_1ret, in_carrier, out_carrier)
     add_geometry_point(joint_1ret, joint_1ret_coord)
     main_area.asset.append(joint_1ret)
@@ -448,8 +463,8 @@ if __name__ == "__main__":
     joint_2ret = esdl.Joint(
         id=str(uuid4()), name="Joint_2ret"
     )  # Can attach multiple pipes to a single inport.
-    in_carrier = esh.get_by_id_slow(id_ret_carr)
-    out_carrier = esh.get_by_id_slow(id_ret_carr)
+    in_carrier = heat_commodity_ret
+    out_carrier = heat_commodity_ret
     create_in_out_ports(joint_2ret, in_carrier, out_carrier)
     add_geometry_point(joint_2ret, joint_2ret_coord)
     main_area.asset.append(joint_2ret)
@@ -458,8 +473,8 @@ if __name__ == "__main__":
     pipe_ret_d = esdl.PipeDiameterEnum.from_string("DN400")  # Pipe diameters
 
     pipe_1ret = esdl.Pipe(id=str(uuid4()), diameter=pipe_ret_d, name="Pipe_1ret", state="OPTIONAL")
-    in_carrier = esh.get_by_id_slow(id_ret_carr)
-    out_carrier = esh.get_by_id_slow(id_ret_carr)
+    in_carrier = heat_commodity_ret
+    out_carrier = heat_commodity_ret
     create_in_out_ports(pipe_1ret, in_carrier, out_carrier)
     pipe_from = joint_1ret
     pipe_to = heat_source_1
@@ -467,8 +482,8 @@ if __name__ == "__main__":
     main_area.asset.append(pipe_1ret)
 
     pipe_2ret = esdl.Pipe(id=str(uuid4()), diameter=pipe_ret_d, name="Pipe_2ret")
-    in_carrier = esh.get_by_id_slow(id_ret_carr)
-    out_carrier = esh.get_by_id_slow(id_ret_carr)
+    in_carrier = heat_commodity_ret
+    out_carrier = heat_commodity_ret
     create_in_out_ports(pipe_2ret, in_carrier, out_carrier)
     pipe_from = joint_2ret
     pipe_to = joint_1ret
@@ -476,8 +491,8 @@ if __name__ == "__main__":
     main_area.asset.append(pipe_2ret)
 
     pipe_3ret = esdl.Pipe(id=str(uuid4()), diameter=pipe_ret_d, name="Pipe_3ret")
-    in_carrier = esh.get_by_id_slow(id_ret_carr)
-    out_carrier = esh.get_by_id_slow(id_ret_carr)
+    in_carrier = heat_commodity_ret
+    out_carrier = heat_commodity_ret
     create_in_out_ports(pipe_3ret, in_carrier, out_carrier)
     pipe_from = heat_demand_3
     pipe_to = joint_2ret
@@ -485,8 +500,8 @@ if __name__ == "__main__":
     main_area.asset.append(pipe_3ret)
 
     pipe_4ret = esdl.Pipe(id=str(uuid4()), diameter=pipe_ret_d, name="Pipe_4ret")
-    in_carrier = esh.get_by_id_slow(id_ret_carr)
-    out_carrier = esh.get_by_id_slow(id_ret_carr)
+    in_carrier = heat_commodity_ret
+    out_carrier = heat_commodity_ret
     create_in_out_ports(pipe_4ret, in_carrier, out_carrier)
     pipe_from = heat_demand_1
     pipe_to = joint_1ret
@@ -494,8 +509,8 @@ if __name__ == "__main__":
     main_area.asset.append(pipe_4ret)
 
     pipe_5ret = esdl.Pipe(id=str(uuid4()), diameter=pipe_ret_d, name="Pipe_5ret")
-    in_carrier = esh.get_by_id_slow(id_ret_carr)
-    out_carrier = esh.get_by_id_slow(id_ret_carr)
+    in_carrier = heat_commodity_ret
+    out_carrier = heat_commodity_ret
     create_in_out_ports(pipe_5ret, in_carrier, out_carrier)
     pipe_from = heat_demand_2
     pipe_to = joint_2ret
@@ -503,8 +518,8 @@ if __name__ == "__main__":
     main_area.asset.append(pipe_5ret)
 
     pipe_6ret = esdl.Pipe(id=str(uuid4()), diameter=pipe_ret_d, name="Pipe_6ret", state="OPTIONAL")
-    in_carrier = esh.get_by_id_slow(id_ret_carr)
-    out_carrier = esh.get_by_id_slow(id_ret_carr)
+    in_carrier = heat_commodity_ret
+    out_carrier = heat_commodity_ret
     create_in_out_ports(pipe_6ret, in_carrier, out_carrier)
     pipe_from = joint_2ret
     pipe_to = heat_source_2
