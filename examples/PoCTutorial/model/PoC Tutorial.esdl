@@ -33,7 +33,7 @@
           </marginalCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:Pipe" related="Pipe1_ret" diameter="DN400" name="Pipe1" outerDiameter="0.56" length="818.07" innerDiameter="0.3938" id="Pipe1" state="OPTIONAL">
+      <asset xsi:type="esdl:Pipe" related="Pipe1_ret" diameter="DN900" name="Pipe1" outerDiameter="0.56" length="818.07" innerDiameter="0.3938" id="Pipe1" state="OPTIONAL">
         <geometry xsi:type="esdl:Line">
           <point xsi:type="esdl:Point" lon="4.372987747192384" lat="52.00467202060717"/>
           <point xsi:type="esdl:Point" lon="4.365863800048829" lat="52.00210934629504"/>
@@ -180,7 +180,7 @@
         <port xsi:type="esdl:InPort" connectedTo="59b53a77-a253-4a96-81ef-84e719a1f518 6f9268a0-1fd9-42f6-8821-2d7d4a6e5618" id="6b4d9bba-484b-46aa-bfe6-895d491b6747" carrier="9f6aeb1a-138b-4bb9-9a09-d524e94658e6_ret" name="ret_port"/>
         <port xsi:type="esdl:OutPort" id="5a47482f-6cdf-41b3-91b0-014578ee8143" connectedTo="da70a1aa-53c4-496e-ba63-2c04674b8c84 c92afccb-09a2-4a99-ad98-3f18ca0122dd" carrier="9f6aeb1a-138b-4bb9-9a09-d524e94658e6_ret" name="ret_port"/>
       </asset>
-      <asset xsi:type="esdl:Pipe" related="Pipe1" diameter="DN400" name="Pipe1_ret" outerDiameter="0.56" id="Pipe1_ret" length="818.07" innerDiameter="0.3938" state="OPTIONAL">
+      <asset xsi:type="esdl:Pipe" related="Pipe1" diameter="DN900" name="Pipe1_ret" outerDiameter="0.56" id="Pipe1_ret" length="818.07" innerDiameter="0.3938" state="OPTIONAL">
         <geometry xsi:type="esdl:Line">
           <point xsi:type="esdl:Point" lon="4.3663488762941665" lat="52.000059268817886" CRS="WGS84"/>
           <point xsi:type="esdl:Point" lon="4.365092860885141" lat="52.00219934638504" CRS="WGS84"/>

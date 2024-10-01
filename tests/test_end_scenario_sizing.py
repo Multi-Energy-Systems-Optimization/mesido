@@ -71,8 +71,6 @@ class TestEndScenarioSizing(TestCase):
         # Pipe connected to a demand
         assert self.solution.pipe_classes("Pipe2")[0].name == "DN150"  # initially DN->None
         assert self.solution.pipe_classes("Pipe2")[-1].name == "DN250"  # initially DN450
-        # Pipe connected to a producer
-        assert self.solution.pipe_classes("Pipe_f6e5")[-1].name == "DN500"  # initially DN900
 
         # Check whether cyclic ates constraint is working
         for a in self.solution.energy_system_components.get("ates", []):

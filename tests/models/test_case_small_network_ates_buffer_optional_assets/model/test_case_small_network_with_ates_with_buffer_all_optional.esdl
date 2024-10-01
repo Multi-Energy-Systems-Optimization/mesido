@@ -345,7 +345,7 @@
           </installationCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:Pipe" state="OPTIONAL"  diameter="DN900" name="Pipe_f6e5" length="239.7" id="f6e5a760-01d5-4341-bf15-b8d33b7bea50" innerDiameter="0.4444" outerDiameter="0.63">
+      <asset xsi:type="esdl:Pipe" state="OPTIONAL"  diameter="DN450" name="Pipe_f6e5" length="239.7" id="f6e5a760-01d5-4341-bf15-b8d33b7bea50" innerDiameter="0.4444" outerDiameter="0.63">
         <geometry xsi:type="esdl:Line" CRS="WGS84">
           <point xsi:type="esdl:Point" lon="4.311726093292237" lat="52.04487621664103"/>
           <point xsi:type="esdl:Point" lon="4.311695247888566" lat="52.042720861938854"/>
@@ -370,7 +370,7 @@
           </investmentCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:Pipe" state="OPTIONAL"  diameter="DN900" name="Pipe_f6e5_ret" length="233.9" id="0db91515-418a-4bcb-9d99-9047c1ca8bdf" innerDiameter="0.4444" outerDiameter="0.63">
+      <asset xsi:type="esdl:Pipe" state="OPTIONAL"  diameter="DN450" name="Pipe_f6e5_ret" length="233.9" id="0db91515-418a-4bcb-9d99-9047c1ca8bdf" innerDiameter="0.4444" outerDiameter="0.63">
         <geometry xsi:type="esdl:Line" CRS="WGS84">
           <point xsi:type="esdl:Point" lon="4.311074402665649" lat="52.04281086202885"/>
           <point xsi:type="esdl:Point" lon="4.311726093292237" lat="52.04487621664103"/>
