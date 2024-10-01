@@ -127,7 +127,11 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
             for i in range(n_connections):
                 if n in nodes:
                     cur_port = f"{n}.{heat_network_model_type}Conn[{i + 1}]"
-                    prop = "T" if heat_network_model_type == "QTH" else NetworkSettings.NETWORK_TYPE_HEAT
+                    prop = (
+                        "T"
+                        if heat_network_model_type == "QTH"
+                        else NetworkSettings.NETWORK_TYPE_HEAT
+                    )
                     prop_h = "H"
                     in_suffix = ".QTHIn.T" if heat_network_model_type == "QTH" else ".HeatIn.Heat"
                     out_suffix = (
@@ -253,7 +257,9 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
 
             for k in ["In", "Out"]:
                 b_conn = f"{b}.{heat_network_model_type}{k}"
-                prop = "T" if heat_network_model_type == "QTH" else NetworkSettings.NETWORK_TYPE_HEAT
+                prop = (
+                    "T" if heat_network_model_type == "QTH" else NetworkSettings.NETWORK_TYPE_HEAT
+                )
                 aliases = [
                     x
                     for x in self.alias_relation.aliases(f"{b_conn}.{prop}")
@@ -298,7 +304,9 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
 
             for k in ["In", "Out"]:
                 a_conn = f"{a}.{heat_network_model_type}{k}"
-                prop = "T" if heat_network_model_type == "QTH" else NetworkSettings.NETWORK_TYPE_HEAT
+                prop = (
+                    "T" if heat_network_model_type == "QTH" else NetworkSettings.NETWORK_TYPE_HEAT
+                )
                 aliases = [
                     x
                     for x in self.alias_relation.aliases(f"{a_conn}.{prop}")
