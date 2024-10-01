@@ -5,7 +5,15 @@ from mesido.heat_network_common import NodeConnectionDirection
 
 class Topology:
     def __init__(
-        self, nodes=None, gas_nodes=None, pipe_series=None, buffers=None, atess=None, busses=None
+        self,
+        nodes=None,
+        gas_nodes=None,
+        pipe_series=None,
+        buffers=None,
+        atess=None,
+        busses=None,
+        demands=None,
+        sources=None,
     ):
         if nodes is not None:
             self._nodes = nodes
@@ -19,6 +27,10 @@ class Topology:
             self._busses = busses
         if atess is not None:
             self._atess = atess
+        if demands is not None:
+            self._demands = demands
+        if sources is not None:
+            self._sources = sources
 
     @property
     def nodes(self) -> Dict[str, Dict[int, Tuple[str, NodeConnectionDirection]]]:
@@ -95,5 +107,33 @@ class Topology:
         """
         try:
             return self._atess
+        except AttributeError:
+            raise NotImplementedError
+
+    @property
+    def demands(
+        self,
+    ) -> Dict[str, Tuple[str, NodeConnectionDirection]]:
+        """
+        Maps an demand name to a dictionary of its in/out connections. Written out using
+        descriptive variable names the return type would be:
+            Dict[demand_name, Tuple[pipe/cable, orientation]
+        """
+        try:
+            return self._demands
+        except AttributeError:
+            raise NotImplementedError
+
+    @property
+    def sources(
+        self,
+    ) -> Dict[str, Tuple[str, NodeConnectionDirection]]:
+        """
+        Maps a source name to a dictionary of its in/out connections. Written out using
+        descriptive variable names the return type would be:
+            Dict[source_name, Tuple[pipe/cable, orientation]
+        """
+        try:
+            return self._sources
         except AttributeError:
             raise NotImplementedError
