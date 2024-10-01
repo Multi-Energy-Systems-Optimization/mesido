@@ -45,9 +45,10 @@ class TestEndScenarioSizing(TestCase):
         day.
 
         Checks:
+        - demand matching
+        - that the availabnle pipe classes were adapted
         - Cyclic behaviour for ATES
         - That buffer tank is only used on peak day
-        - demand matching
         - Check if TCO goal included the desired cost components.
 
 
@@ -67,7 +68,8 @@ class TestEndScenarioSizing(TestCase):
         demand_matching_test(self.solution, self.results)
 
         # Check that indeed the available pipe classes were adapted based on demand profile
-        assert self.solution.pipe_classes("Pipe2")[-1].name == "DN200"
+        assert self.solution.pipe_classes("Pipe2")[-1].name == "DN250"
+        assert self.solution.pipe_classes("Pipe2")[0].name == "DN150"
 
         # Check whether cyclic ates constraint is working
         for a in self.solution.energy_system_components.get("ates", []):

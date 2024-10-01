@@ -53,6 +53,15 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
                     )
                 except KeyError:
                     max_demand = bounds[f"{asset}.Heat_demand"][1]
+                is_pipe_dn0_needed = True
+                try:
+                    if min(self.get_timeseries(f"{asset}.target_heat_demand").values) > 0.0:
+                        is_pipe_dn0_needed = False
+                except KeyError:
+                    is_pipe_dn0_needed = True
+
+                max_demand *= 1.3  # 30% added for expected worst case heat losses
+
                 new_pcs = []
                 found_pc_large_enough = False
                 for pc in self.pipe_classes(connected_asset):
@@ -65,6 +74,18 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
                         * (parameters[f"{asset}.T_supply"] - parameters[f"{asset}.T_return"])
                     ) >= max_demand:
                         found_pc_large_enough = True
+
+                # Remove pipe DN0 from the availble pipe list, if there is always flow required
+                # TODO: Bug to be resolved. Currently the solution is infeasible when onle 1 pipe
+                # class is available, bit it should be able to working. Then remove the need for
+                # having 2 pipes classes available in new_pcs.
+                if (
+                    not is_pipe_dn0_needed
+                    and len(new_pcs) > 2
+                    and new_pcs[0].maximum_discharge == 0.0
+                ):
+                    new_pcs.remove(new_pcs[0])
+
                 self._override_pipe_classes[connected_asset] = new_pcs
                 if not self.is_hot_pipe(self.hot_to_cold_pipe(connected_asset)):
                     self._override_pipe_classes[self.hot_to_cold_pipe(connected_asset)] = new_pcs
