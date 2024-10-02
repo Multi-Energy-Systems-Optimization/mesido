@@ -120,15 +120,16 @@ class DetailedTestResult(unittest.TestResult):
     def save_range_data_to_csv(self, filename='new_scaling_range_test.csv'):
         """
         Save self.range_data to a CSV file with columns: test name, model element, min, and max.
+        The file will be saved in the 'test_runner_data' folder.
         """
-        # Get the directory of the filename
-        directory = os.path.dirname(filename)
+        # Create the 'test_runner_data' folder if it doesn't exist
+        folder_name = 'test_scaling_data'
+        os.makedirs(folder_name, exist_ok=True)
 
-        # If directory is not empty, ensure it exists
-        if directory:
-            os.makedirs(directory, exist_ok=True)
+        # Construct the full path for the file
+        full_path = os.path.join(folder_name, filename)
 
-        with open(filename, 'w', newline='') as csvfile:
+        with open(full_path, 'w', newline='') as csvfile:
             writer = csv.writer(csvfile)
 
             # Write header
@@ -144,6 +145,8 @@ class DetailedTestResult(unittest.TestResult):
                     else:
                         # Handle cases where value_array doesn't have enough elements
                         writer.writerow([test_id_short, model_element, 'N/A', 'N/A'])
+
+            print(f"CSV file saved successfully: {full_path}")
 
 
 def check_directory() -> None:
