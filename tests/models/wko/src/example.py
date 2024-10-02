@@ -201,9 +201,6 @@ class HeatProblem(
         for s in self.energy_system_components["heat_source"]:
             goals.append(MinimizeSourcesHeatGoal(s))
 
-        # for s in self.energy_system_components["airco"]:
-        #     goals.append(MinimizeSourcesColdGoal(s))
-
         return goals
 
     def solver_options(self):
