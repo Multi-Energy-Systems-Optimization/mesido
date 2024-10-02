@@ -100,13 +100,13 @@ class TestMultiCommoditySimulator(TestCase):
         base_folder = Path(example.__file__).resolve().parent.parent
 
         (
-            multicommoditysimulatorscaling,
+            multicommodity_simulator_scaling,
             logger,
             logs_list,
         ) = create_problem_with_debug_info(MultiCommoditySimulator)
 
         solution = run_optimization_problem(
-            multicommoditysimulatorscaling,
+            multicommodity_simulator_scaling,
             base_folder=base_folder,
             esdl_file_name="Electric_bus4_priorities.esdl",
             esdl_parser=ESDLFileParser,
