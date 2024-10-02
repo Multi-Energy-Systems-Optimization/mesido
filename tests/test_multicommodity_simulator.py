@@ -1,4 +1,3 @@
-import sys
 from pathlib import Path
 from unittest import TestCase
 
@@ -18,10 +17,8 @@ import numpy as np
 from rtctools.util import run_optimization_problem
 
 from utils_test_scaling import (
-    check_scale_order,
-    check_scale_range,
+    check_scaling,
     create_problem_with_debug_info,
-    get_scaling_range,
 )
 
 from utils_tests import (
@@ -141,10 +138,7 @@ class TestMultiCommoditySimulator(TestCase):
         demand_2_target[demand_2_target < 0] = 0
         np.testing.assert_allclose(dem_2, demand_2_target, atol=1e-3, rtol=1e-6)
 
-        self.range_data = get_scaling_range(logs_list, logger)
-        test_name = sys._getframe().f_code.co_name
-        check_scale_order(self.range_data)
-        check_scale_range(test_name, self.range_data)
+        check_scaling(self, logger, logs_list)
 
     def test_multi_commodity_simulator_prod_profile(self):
         import models.unit_cases_electricity.bus_networks.src.example as example

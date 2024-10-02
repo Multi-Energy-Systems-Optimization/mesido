@@ -1,9 +1,11 @@
 import csv
+import inspect
 import logging
 import math
 import os
 import re
 from typing import Any, Dict, List
+from unittest import TestCase
 
 from rtctools._internal.debug_check_helpers import DebugLevel
 
@@ -80,7 +82,9 @@ def check_scale_order(dict_values, maximum_order_diff=1e6):
     assert len(msg_order) == 0, msg_order
 
 
-def get_scaling_range(logs_list: List[Any], logger: logging.Logger) -> Dict[str, List[float]]:
+def get_scaling_range(
+    logs_list: List[logging.LogRecord], logger: logging.Logger
+) -> Dict[str, List[float]]:
     """
     Extract scaling range data from an  optimization problem.
 
@@ -90,7 +94,7 @@ def get_scaling_range(logs_list: List[Any], logger: logging.Logger) -> Dict[str,
     to determine the ranges for various components.
 
     Args:
-        logs_list (List[Any]): A list of log entries to process. Each entry is expected
+        logs_list (List[logging.LogRecord]): A list of log entries to process. Each entry is expected
                                to have 'funcName' and 'msg' attributes.
         logger (logging.Logger): A logger object to record the extracted range data.
 
@@ -236,3 +240,24 @@ def check_element_range(
             f"The actual max for {element} ({actual_max}) is "
             f"greater than the expected max ({expected_max})"
         )
+
+
+def check_scaling(
+    test_instance: TestCase, logger: logging.Logger, logs_list: List[logging.LogRecord]
+) -> None:
+    """
+    Helper function to check scaling for a test instance.
+
+    Args:
+        test_instance (TestCase): The test instance object.
+        logger (logging.Logger): The logger object.
+        logs_list (List[logging.LogRecord]): A list of log records.
+
+    Returns:
+        None
+    """
+    range_data = get_scaling_range(logs_list, logger)
+    test_instance.range_data = range_data
+    test_name = inspect.currentframe().f_back.f_code.co_name
+    check_scale_order(range_data)
+    check_scale_range(test_name, range_data)
