@@ -42,8 +42,8 @@ class DetailedTestResult(unittest.TestResult):
         Args:
             test (unittest.TestCase): The test case that just finished.
         """
-        if hasattr(test, 'range_data'):
-            self.range_data[test.id()] = getattr(test, 'range_data')
+        if hasattr(test, "range_data"):
+            self.range_data[test.id()] = getattr(test, "range_data")
         super().stopTest(test)
 
     def get_test_duration(self) -> float:
@@ -67,7 +67,9 @@ class DetailedTestResult(unittest.TestResult):
         super().addSuccess(test)
         self.test_results.append((test, "Success", None, self.get_test_duration()))
 
-    def addError(self, test: unittest.TestCase, err: Tuple[type, Exception, Any]) -> None:
+    def addError(
+        self, test: unittest.TestCase, err: Tuple[type, Exception, Any]
+    ) -> None:
         """
         Called when a test raises an error.
 
@@ -78,7 +80,9 @@ class DetailedTestResult(unittest.TestResult):
         super().addError(test, err)
         self.test_results.append((test, "Error", err, self.get_test_duration()))
 
-    def addFailure(self, test: unittest.TestCase, err: Tuple[type, Exception, Any]) -> None:
+    def addFailure(
+        self, test: unittest.TestCase, err: Tuple[type, Exception, Any]
+    ) -> None:
         """
         Called when a test fails.
 
@@ -95,7 +99,7 @@ class DetailedTestResult(unittest.TestResult):
         """
         print("\nDetailed Test Results:")
         for test, outcome, error, duration in self.test_results:
-            test_id_short = test.id().split('.')[-1]
+            test_id_short = test.id().split(".")[-1]
             print(f"{test_id_short}: {outcome} (Duration: {duration:.3f}s)")
             if error:
                 if outcome == "Skipped":
@@ -117,34 +121,41 @@ class DetailedTestResult(unittest.TestResult):
         print(f"Errors: {len(self.errors)}")
         print(f"Skipped: {len(self.skipped)}")
 
-    def save_range_data_to_csv(self, filename='new_scaling_range_test.csv'):
+    def save_range_data_to_csv(self, filename="new_scaling_range_test.csv"):
         """
         Save self.range_data to a CSV file with columns: test name, model element, min, and max.
         The file will be saved in the 'test_runner_data' folder.
         """
         # Create the 'test_runner_data' folder if it doesn't exist
-        folder_name = 'test_scaling_data'
+        folder_name = "test_scaling_data"
         os.makedirs(folder_name, exist_ok=True)
 
         # Construct the full path for the file
         full_path = os.path.join(folder_name, filename)
 
-        with open(full_path, 'w', newline='') as csvfile:
+        with open(full_path, "w", newline="") as csvfile:
             writer = csv.writer(csvfile)
 
             # Write header
-            writer.writerow(['Test Name', 'Model Element', 'Min', 'Max'])
+            writer.writerow(["Test Name", "Model Element", "Min", "Max"])
 
             # Write data
             for test_id, data in self.range_data.items():
-                test_id_short = test_id.split('.')[-1]
+                test_id_short = test_id.split(".")[-1]
                 for model_element, value_array in data.items():
                     # Ensure value_array has at least two elements
                     if len(value_array) >= 2:
-                        writer.writerow([test_id_short, model_element, value_array[0], value_array[1]])
+                        writer.writerow(
+                            [
+                                test_id_short,
+                                model_element,
+                                value_array[0],
+                                value_array[1],
+                            ]
+                        )
                     else:
                         # Handle cases where value_array doesn't have enough elements
-                        writer.writerow([test_id_short, model_element, 'N/A', 'N/A'])
+                        writer.writerow([test_id_short, model_element, "N/A", "N/A"])
 
             print(f"CSV file saved successfully: {full_path}")
 
@@ -179,7 +190,9 @@ def load_tests(loader: unittest.TestLoader) -> unittest.TestSuite:
         unittest.TestSuite: A TestSuite containing all discovered tests.
     """
     suite = unittest.TestSuite()
-    test_files = [f for f in os.listdir() if f.startswith('test_') and f.endswith('.py')]
+    test_files = [
+        f for f in os.listdir() if f.startswith("test_") and f.endswith(".py")
+    ]
     print(f"Found test files: {test_files}")
 
     for test_file in test_files:
@@ -197,7 +210,7 @@ def load_tests(loader: unittest.TestLoader) -> unittest.TestSuite:
     return suite
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print("Test Runner Script")
     print("==================")
     print("This script runs all test files in the same directory as the script.")
@@ -230,4 +243,4 @@ if __name__ == '__main__':
 
     result.print_results()
 
-    result.save_range_data_to_csv('new_scaling_range_test.csv')
+    result.save_range_data_to_csv("new_scaling_range_test.csv")

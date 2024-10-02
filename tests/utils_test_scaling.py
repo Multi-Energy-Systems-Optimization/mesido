@@ -80,7 +80,9 @@ def check_scale_order(dict_values, maximum_order_diff=1e6):
     assert len(msg_order) == 0, msg_order
 
 
-def get_scaling_range(logs_list: List[Any], logger: logging.Logger) -> Dict[str, List[float]]:
+def get_scaling_range(
+    logs_list: List[Any], logger: logging.Logger
+) -> Dict[str, List[float]]:
     """
     Extract scaling range data from an  optimization problem.
 
@@ -105,12 +107,15 @@ def get_scaling_range(logs_list: List[Any], logger: logging.Logger) -> Dict[str,
         adjustment if the log format changes.
     """
     linear_coeff_log = [
-        log for log in logs_list if "__debug_check_transcribe_linear_coefficients" in log.funcName
+        log
+        for log in logs_list
+        if "__debug_check_transcribe_linear_coefficients" in log.funcName
     ]
     range_data = {}
     for log in linear_coeff_log:
         if (
-            "Statistics of constraints: max & min of abs(jac(g, x0))), " "max & min of abs(g(x0))"
+            "Statistics of constraints: max & min of abs(jac(g, x0))), "
+            "max & min of abs(g(x0))"
         ) == log.msg:
             data = linear_coeff_log[linear_coeff_log.index(log) + 1]
             data_str = re.findall(r"[-+]?\d*\.\d+|\d+", data.msg)
@@ -120,7 +125,10 @@ def get_scaling_range(logs_list: List[Any], logger: logging.Logger) -> Dict[str,
             data = linear_coeff_log[linear_coeff_log.index(log) + 1]
             data_str = re.findall(r"[-+]?\d*\.\d+|\d+", data.msg)
             if len(data_str) > 2:
-                range_data["objective_matrix"] = [float(data_str[1]), float(data_str[0])]
+                range_data["objective_matrix"] = [
+                    float(data_str[1]),
+                    float(data_str[0]),
+                ]
                 range_data["objective"] = [float(data_str[3]), float(data_str[2])]
             else:
                 range_data["objective"] = [float(data_str[1]), float(data_str[0])]
@@ -129,7 +137,9 @@ def get_scaling_range(logs_list: List[Any], logger: logging.Logger) -> Dict[str,
     return range_data
 
 
-def check_scale_range(test_name: str, range_data: dict, relative_tol: float = 0.1) -> None:
+def check_scale_range(
+    test_name: str, range_data: dict, relative_tol: float = 0.1
+) -> None:
     """
     Perform scaling tests by comparing actual range data against expected values.
 
@@ -157,14 +167,16 @@ def check_scale_range(test_name: str, range_data: dict, relative_tol: float = 0.
     Returns:
         None: The function doesn't return a value, but raises exceptions for any failed checks.
     """
-    elements = ['objective', 'matrix', 'rhs']
-    folder_name = 'test_scaling_data'
-    file_name = 'scaling_range_test.csv'
+    elements = ["objective", "matrix", "rhs"]
+    folder_name = "test_scaling_data"
+    file_name = "scaling_range_test.csv"
     csv_file_path = get_csv_file_path(folder_name, file_name)
     expected_values = read_expected_values(csv_file_path, test_name, elements)
 
     for element in elements:
-        check_element_range(element, range_data[element], expected_values[element], relative_tol)
+        check_element_range(
+            element, range_data[element], expected_values[element], relative_tol
+        )
 
 
 def get_csv_file_path(folder_name: str, file_name: str) -> str:
@@ -177,11 +189,13 @@ def get_csv_file_path(folder_name: str, file_name: str) -> str:
     return csv_file_path
 
 
-def read_expected_values(csv_file_path: str, test_name: str, elements: List[str]) -> Dict[str, Dict[str, float]]:
+def read_expected_values(
+    csv_file_path: str, test_name: str, elements: List[str]
+) -> Dict[str, Dict[str, float]]:
     """Read and return the expected values from the CSV file for the given test name."""
     expected_values = {}
 
-    with open(csv_file_path, 'r') as csvfile:
+    with open(csv_file_path, "r") as csvfile:
         csv_reader = csv.reader(csvfile)
         next(csv_reader)  # Skip the header row
         for row in csv_reader:
@@ -189,26 +203,39 @@ def read_expected_values(csv_file_path: str, test_name: str, elements: List[str]
                 element = row[1]
                 if element in elements:
                     min_value, max_value = float(row[2]), float(row[3])
-                    expected_values.setdefault(element, {})['min'] = min_value
-                    expected_values.setdefault(element, {})['max'] = max_value
+                    expected_values.setdefault(element, {})["min"] = min_value
+                    expected_values.setdefault(element, {})["max"] = max_value
 
     if not expected_values:
-        raise ValueError(f"Could not find expected values for {test_name} in scaling_range_test.csv")
+        raise ValueError(
+            f"Could not find expected values for {test_name} in scaling_range_test.csv"
+        )
 
     for element in elements:
         if element not in expected_values:
-            raise ValueError(f"Could not find expected values for {element} in scaling_range_test.csv")
+            raise ValueError(
+                f"Could not find expected values for {element} in scaling_range_test.csv"
+            )
 
     return expected_values
 
 
-def check_element_range(element: str, actual_range: List[float], expected_range: Dict[str, float], relative_tol: float) -> None:
+def check_element_range(
+    element: str,
+    actual_range: List[float],
+    expected_range: Dict[str, float],
+    relative_tol: float,
+) -> None:
     """Check if the actual range falls within the expected range, considering the relative tolerance."""
     actual_min, actual_max = actual_range
-    expected_min, expected_max = expected_range['min'], expected_range['max']
+    expected_min, expected_max = expected_range["min"], expected_range["max"]
 
     if actual_min < expected_min * (1 - relative_tol):
-        raise AssertionError(f"The actual min for {element} ({actual_min}) is smaller than the expected min ({expected_min})")
+        raise AssertionError(
+            f"The actual min for {element} ({actual_min}) is smaller than the expected min ({expected_min})"
+        )
 
     if actual_max > expected_max * (1 + relative_tol):
-        raise AssertionError(f"The actual max for {element} ({actual_max}) is greater than the expected max ({expected_max})")
+        raise AssertionError(
+            f"The actual max for {element} ({actual_max}) is greater than the expected max ({expected_max})"
+        )
