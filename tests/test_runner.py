@@ -1,10 +1,10 @@
 import csv
-import os
-import unittest
 import importlib
+import os
 import sys
 import time
-from typing import Any, Dict, List, Tuple, Optional
+import unittest
+from typing import Any, Dict, List, Optional, Tuple
 
 # Define the expected directory relative to the script location, excluding the filename
 EXPECTED_DIR: str = os.path.dirname(os.path.abspath(__file__))
@@ -43,7 +43,7 @@ class DetailedTestResult(unittest.TestResult):
             test (unittest.TestCase): The test case that just finished.
         """
         if hasattr(test, "range_data"):
-            self.range_data[test.id()] = getattr(test, "range_data")
+            self.range_data[test.id()] = test.range_data
         super().stopTest(test)
 
     def get_test_duration(self) -> float:
@@ -67,9 +67,7 @@ class DetailedTestResult(unittest.TestResult):
         super().addSuccess(test)
         self.test_results.append((test, "Success", None, self.get_test_duration()))
 
-    def addError(
-        self, test: unittest.TestCase, err: Tuple[type, Exception, Any]
-    ) -> None:
+    def addError(self, test: unittest.TestCase, err: Tuple[type, Exception, Any]) -> None:
         """
         Called when a test raises an error.
 
@@ -80,9 +78,7 @@ class DetailedTestResult(unittest.TestResult):
         super().addError(test, err)
         self.test_results.append((test, "Error", err, self.get_test_duration()))
 
-    def addFailure(
-        self, test: unittest.TestCase, err: Tuple[type, Exception, Any]
-    ) -> None:
+    def addFailure(self, test: unittest.TestCase, err: Tuple[type, Exception, Any]) -> None:
         """
         Called when a test fails.
 
@@ -190,9 +186,7 @@ def load_tests(loader: unittest.TestLoader) -> unittest.TestSuite:
         unittest.TestSuite: A TestSuite containing all discovered tests.
     """
     suite = unittest.TestSuite()
-    test_files = [
-        f for f in os.listdir() if f.startswith("test_") and f.endswith(".py")
-    ]
+    test_files = [f for f in os.listdir() if f.startswith("test_") and f.endswith(".py")]
     print(f"Found test files: {test_files}")
 
     for test_file in test_files:
