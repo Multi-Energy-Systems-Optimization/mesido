@@ -1,6 +1,9 @@
 import logging
 import math
 import re
+import os
+import csv
+from typing import Dict, List, Any
 
 from rtctools._internal.debug_check_helpers import DebugLevel
 
@@ -52,7 +55,7 @@ def create_problem_with_debug_info(problem_class):
     return ProblemClassScaling, logger, logs_list
 
 
-def check_order(dict_values, maximum_order_diff):
+def check_scale_order(dict_values, maximum_order_diff=1e6):
     """
     Checks the difference in order between the lower and upperbound of several problem settings;
     objective, matrix and right hand side.
@@ -77,15 +80,29 @@ def check_order(dict_values, maximum_order_diff):
     assert len(msg_order) == 0, msg_order
 
 
-def problem_scaling_check(logs_list, logger, order_diff=1e6):
+def get_scaling_range(logs_list: List[Any], logger: logging.Logger) -> Dict[str, List[float]]:
     """
-     Checks the difference in order between the lower and upperbound of several problem settings;
-    objective, matrix and rhs.
-    These settings are first to be extracted from the logging information.
-    :param logs_list: The list containing all the logs.
-    :param logger: The logger that logs information, warnings and errors depending on the level set.
-    :param order_diff: The maximum difference between the lower and upperbound.
-    :return:
+    Extract scaling range data from an  optimization problem.
+
+    This function processes a list of log entries to extract scaling range data
+    for constraints, objectives and rhs in an optimization problem. It looks for specific
+    debug messages related to linear coefficients and extracts numerical values
+    to determine the ranges for various components.
+
+    Args:
+        logs_list (List[Any]): A list of log entries to process. Each entry is expected
+                               to have 'funcName' and 'msg' attributes.
+        logger (logging.Logger): A logger object to record the extracted range data.
+
+    Returns:
+        Dict[str, List[float]]: A dictionary containing the extracted range data.
+                                Possible keys are 'matrix', 'rhs', 'objective_matrix',
+                                and 'objective'. Each value is a list of two floats
+                                representing the minimum and maximum of the range.
+
+    Note:
+        The function assumes specific formats for the log messages and may need
+        adjustment if the log format changes.
     """
     linear_coeff_log = [
         log for log in logs_list if "__debug_check_transcribe_linear_coefficients" in log.funcName
@@ -109,4 +126,89 @@ def problem_scaling_check(logs_list, logger, order_diff=1e6):
                 range_data["objective"] = [float(data_str[1]), float(data_str[0])]
     for k, v in range_data.items():
         logger.info(f"{k,v}")
-    check_order(range_data, order_diff)
+    return range_data
+
+
+def check_scale_range(test_name: str, range_data: dict, relative_tol: float = 0.1) -> None:
+    """
+    Perform scaling tests by comparing actual range data against expected values.
+
+    This function reads expected scaling ranges from a CSV file and compares them
+    against the provided actual range data. It checks if the actual minimum and
+    maximum values for each element (objective, matrix, rhs) fall within the
+    expected ranges, considering a relative tolerance.
+
+    Args:
+        test_name (str): The name of the test case to look up in the CSV file.
+        range_data (dict): A dictionary containing the actual range data for each element.
+                           Expected format: {
+                               'objective': [min, max],
+                               'matrix': [min, max],
+                               'rhs': [min, max]
+                           }
+        relative_tol (float, optional): The relative tolerance for comparing actual and expected values.
+                                        Defaults to 0.1 (10%).
+
+    Raises:
+        FileNotFoundError: If the scaling_range_test.csv file is not found.
+        ValueError: If expected values for the test_name or any element are not found in the CSV.
+        AssertionError: If any actual value falls outside the expected range, considering the relative tolerance.
+
+    Returns:
+        None: The function doesn't return a value, but raises exceptions for any failed checks.
+    """
+    elements = ['objective', 'matrix', 'rhs']
+    folder_name = 'test_scaling_data'
+    file_name = 'scaling_range_test.csv'
+    csv_file_path = get_csv_file_path(folder_name, file_name)
+    expected_values = read_expected_values(csv_file_path, test_name, elements)
+
+    for element in elements:
+        check_element_range(element, range_data[element], expected_values[element], relative_tol)
+
+
+def get_csv_file_path(folder_name: str, file_name: str) -> str:
+    """Get the path to the CSV file containing expected values."""
+    csv_file_path = os.path.join(os.path.dirname(__file__), folder_name, file_name)
+
+    if not os.path.exists(csv_file_path):
+        raise FileNotFoundError(f"The file {csv_file_path} does not exist.")
+
+    return csv_file_path
+
+
+def read_expected_values(csv_file_path: str, test_name: str, elements: List[str]) -> Dict[str, Dict[str, float]]:
+    """Read and return the expected values from the CSV file for the given test name."""
+    expected_values = {}
+
+    with open(csv_file_path, 'r') as csvfile:
+        csv_reader = csv.reader(csvfile)
+        next(csv_reader)  # Skip the header row
+        for row in csv_reader:
+            if row[0] == test_name:
+                element = row[1]
+                if element in elements:
+                    min_value, max_value = float(row[2]), float(row[3])
+                    expected_values.setdefault(element, {})['min'] = min_value
+                    expected_values.setdefault(element, {})['max'] = max_value
+
+    if not expected_values:
+        raise ValueError(f"Could not find expected values for {test_name} in scaling_range_test.csv")
+
+    for element in elements:
+        if element not in expected_values:
+            raise ValueError(f"Could not find expected values for {element} in scaling_range_test.csv")
+
+    return expected_values
+
+
+def check_element_range(element: str, actual_range: List[float], expected_range: Dict[str, float], relative_tol: float) -> None:
+    """Check if the actual range falls within the expected range, considering the relative tolerance."""
+    actual_min, actual_max = actual_range
+    expected_min, expected_max = expected_range['min'], expected_range['max']
+
+    if actual_min < expected_min * (1 - relative_tol):
+        raise AssertionError(f"The actual min for {element} ({actual_min}) is smaller than the expected min ({expected_min})")
+
+    if actual_max > expected_max * (1 + relative_tol):
+        raise AssertionError(f"The actual max for {element} ({actual_max}) is greater than the expected max ({expected_max})")
