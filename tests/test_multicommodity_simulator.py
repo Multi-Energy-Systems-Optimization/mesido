@@ -1,7 +1,6 @@
 from pathlib import Path
 from unittest import TestCase
-import os
-import csv
+import sys
 
 import mesido._darcy_weisbach as darcy_weisbach
 from mesido.electricity_physics_mixin import ElectrolyzerOption
@@ -18,7 +17,7 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
-from utils_test_scaling import create_problem_with_debug_info, problem_scaling_check
+from utils_test_scaling import create_problem_with_debug_info, get_scaling_range, check_scale_range, check_scale_order
 
 from utils_tests import (
     demand_matching_test,
@@ -108,8 +107,6 @@ class TestMultiCommoditySimulator(TestCase):
             input_timeseries_file="timeseries_2.csv",
         )
 
-        self.range_data = problem_scaling_check(logs_list, logger)
-
         bounds = solution.bounds()
         results = solution.extract_results()
 
@@ -134,50 +131,10 @@ class TestMultiCommoditySimulator(TestCase):
         demand_2_target[demand_2_target < 0] = 0
         np.testing.assert_allclose(dem_2, demand_2_target, atol=1e-3, rtol=1e-6)
 
-        test_name = 'test_multi_commodity_simulator_priorities_el'
-        elements = ['objective', 'matrix', 'rhs']
-
-        # Read the scaling_range_test.csv file
-        csv_file_path = os.path.join(os.path.dirname(__file__), 'scaling_range_test.csv')
-        expected_values = {}
-
-        with open(csv_file_path, 'r') as csvfile:
-            csv_reader = csv.reader(csvfile)
-            next(csv_reader)  # Skip the header row
-            for row in csv_reader:
-                if row[0] == test_name:
-                    element = row[1]
-                    if element in elements:
-                        min_value = float(row[2])
-                        max_value = float(row[3])
-                        expected_values.setdefault(element, {})['min'] = min_value
-                        expected_values.setdefault(element, {})['max'] = max_value
-
-        if not expected_values:
-            self.fail(f"Could not find expected values for {test_name} in scaling_range_test.csv")
-
-        for element in elements:
-            if element not in expected_values:
-                self.fail(f"Could not find expected values for {element} in scaling_range_test.csv")
-
-            actual_min = self.range_data[element][0]
-            actual_max = self.range_data[element][1]
-            expected_min = expected_values[element]['min']
-            expected_max = expected_values[element]['max']
-
-            # Assert that the actual min is not smaller than the expected min
-            self.assertGreaterEqual(
-                actual_min, 
-                expected_min, 
-                f"The actual min for {element} ({actual_min}) is smaller than the expected min ({expected_min})"
-            )
-
-            # Assert that the actual min is not smaller than the expected min
-            self.assertLessEqual(
-                actual_max, 
-                expected_max, 
-                f"The actual max for {element} ({actual_max}) is greathner than the expected max ({expected_max})"
-            )
+        self.range_data = get_scaling_range(logs_list, logger)
+        test_name = sys._getframe().f_code.co_name
+        check_scale_order(self.range_data)
+        check_scale_range(test_name, self.range_data)
 
     def test_multi_commodity_simulator_prod_profile(self):
         import models.unit_cases_electricity.bus_networks.src.example as example
