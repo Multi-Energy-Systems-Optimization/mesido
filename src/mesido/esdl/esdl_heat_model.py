@@ -1982,7 +1982,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
         eff_max_load = asset.attributes["effMaxLoad"]  # Wh/g
         eff_max = asset.attributes["efficiency"]  # Wh/g
 
-        power_factor = asset.attributes["powerFactor"] if asset.attributes["powerFactor"] != 0.0 else 2.5
+        power_factor = (
+            asset.attributes["powerFactor"] if asset.attributes["powerFactor"] != 0.0 else 2.5
+        )
 
         def equations(x):
             a, b, c = x
