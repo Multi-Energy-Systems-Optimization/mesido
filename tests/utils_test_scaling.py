@@ -134,6 +134,7 @@ def get_scaling_range(
                 range_data["objective"] = [float(data_str[1]), float(data_str[0])]
     for k, v in range_data.items():
         rtc_logger.info(f"{k,v}")
+    logging.info(f"Extracted range data: {range_data}")  # Add this line for debugging
     return range_data
 
 
@@ -262,6 +263,7 @@ def check_scaling(
     """
     range_data = get_scaling_range(rtc_logs_list, rtc_logger)
     test_instance.range_data = range_data
+    logging.info(f"Range data in check_scaling: {range_data}")  # Add this line for debugging
     test_name = inspect.currentframe().f_back.f_code.co_name
     check_scale_order(range_data, maximum_order_diff)
     check_scale_range(test_name, range_data, relative_tol)
