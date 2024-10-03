@@ -85,6 +85,7 @@ class SolverHIGHS:
             highs_options["mip_rel_gap"] = 0.02
 
         options["gurobi"] = None
+        options["cplex"] = None
 
         return options
 
@@ -103,6 +104,24 @@ class SolverGurobi:
         gurobi_options["MIPgap"] = 0.02
         gurobi_options["threads"] = 4
         gurobi_options["LPWarmStart"] = 2
+
+        options["highs"] = None
+
+        return options
+
+
+class SolverCPLEX:
+    def solver_options(self):
+        options = super().solver_options()
+        options["casadi_solver"] = self._qpsol
+        options["solver"] = "cplex"
+        cplex_options = options["cplex"] = {}
+        if hasattr(self, "_stage"):
+            if self._stage == 1:
+                cplex_options["CPX_PARAM_EPGAP"] = 0.005
+            else:
+                cplex_options["CPX_PARAM_EPGAP"] = 0.02
+        cplex_options["CPX_PARAM_EPGAP"] = 0.02
 
         options["highs"] = None
 
