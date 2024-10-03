@@ -126,6 +126,9 @@ class SolverCPLEX:
     inherited by a class describing the optimization problem.
     The relative MIP gap is set to 0.01%.
     """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._priority = None
 
     def solver_options(self):
         options = super().solver_options()
@@ -133,6 +136,9 @@ class SolverCPLEX:
         options["solver"] = "cplex"
         cplex_options = options["cplex"] = {}
         cplex_options["CPX_PARAM_EPGAP"] = 0.0001
+        if self._priority:
+            if self._priority>1e4:
+                cplex_options["CPX_PARAM_EPGAP"] = 0.001
 
         options["highs"] = None
         options["gurobi"] = None
@@ -523,15 +529,16 @@ class MultiCommoditySimulator(
                     )
             elif asset in assets_to_include.get("demand", []):
                 variable_name = f"{asset}.{asset_variable_map[asset]}"
-
-                goals.append(
-                    MaximizeDemandGoalMerit(
-                        variable_name,
-                        marginal_priority,
-                        self.bounds()[variable_name],
-                        self.variable_nominal(variable_name),
+                if marginal_priority != 6:
+                    goals.append(
+                        MaximizeDemandGoalMerit(
+                            variable_name,
+                            marginal_priority,
+                            self.bounds()[variable_name],
+                            self.variable_nominal(variable_name),
+                            order=2,
+                        )
                     )
-                )
             elif asset in assets_to_include.get("storage", []):
                 # TODO: should use separate variable for charging and discharging
 
@@ -635,7 +642,7 @@ class MultiCommoditySimulator(
     def energy_system_options(self):
         options = super().energy_system_options()
 
-        self.gas_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+        self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
         self.gas_network_settings["network_type"] = NetworkSettings.NETWORK_TYPE_HYDROGEN
         self.gas_network_settings["minimize_head_losses"] = True
         self.gas_network_settings["maximum_velocity"] = 60.0

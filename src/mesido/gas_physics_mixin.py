@@ -438,7 +438,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
         # Summing head loss in pipes
         max_sum_dh_pipes = 0.0
-
+        pipe=None
         for ensemble_member in range(self.ensemble_size):
             parameters = self.parameters(ensemble_member)
 
@@ -464,10 +464,16 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
         # Maximum pressure difference allowed with user options
         # NOTE: Does not yet take elevation differences into acccount
-        max_dh_network_options = (
-            self.gas_network_settings["pipe_maximum_pressure"]
-            - self.gas_network_settings["pipe_minimum_pressure"]
-        ) * 10e5/ (parameters[f"{pipe}.density"]/1e3)
+        if pipe:
+            max_dh_network_options = (
+                self.gas_network_settings["pipe_maximum_pressure"]
+                - self.gas_network_settings["pipe_minimum_pressure"]
+            ) * 10e5/ (parameters[f"{pipe}.density"]/1e3)
+        else:
+            max_dh_network_options = (
+                                             self.gas_network_settings["pipe_maximum_pressure"]
+                                             - self.gas_network_settings["pipe_minimum_pressure"]
+                                     )
 
         return min(max_sum_dh_pipes, max_dh_network_options)
 
