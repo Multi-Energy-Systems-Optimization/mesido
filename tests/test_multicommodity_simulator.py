@@ -98,8 +98,8 @@ class TestMultiCommoditySimulator(TestCase):
 
         (
             multicommodity_simulator_scaling,
-            logger,
-            logs_list,
+            rtc_logger,
+            rtc_logs_list,
         ) = create_problem_with_debug_info(MultiCommoditySimulator)
 
         solution = run_optimization_problem(
@@ -137,8 +137,8 @@ class TestMultiCommoditySimulator(TestCase):
         demand_2_target = prod_1 - dem_1
         demand_2_target[demand_2_target < 0] = 0
         np.testing.assert_allclose(dem_2, demand_2_target, atol=1e-3, rtol=1e-6)
-
-        check_scaling(self, logger, logs_list)
+        check_scaling(self, rtc_logger, rtc_logs_list)
+        print(self.range_data)
 
     def test_multi_commodity_simulator_prod_profile(self):
         import models.unit_cases_electricity.bus_networks.src.example as example

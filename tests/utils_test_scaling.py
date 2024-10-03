@@ -4,7 +4,7 @@ import logging
 import math
 import os
 import re
-from typing import Any, Dict, List
+from typing import Dict, List
 from unittest import TestCase
 
 from rtctools._internal.debug_check_helpers import DebugLevel
@@ -49,22 +49,21 @@ def create_problem_with_debug_info(problem_class):
     The problem class including its debuglevel and the logging list and logger.
     """
     # TODO: currently only the default settings can be used to check the scaling.
-    logger, logs_list = create_log_list_scaling("rtctools")
+    rtc_logger, rtc_logs_list = create_log_list_scaling("rtctools")
 
     class ProblemClassScaling(problem_class):
         _debug_check_level = DebugLevel.VERYHIGH
 
-    return ProblemClassScaling, logger, logs_list
+    return ProblemClassScaling, rtc_logger, rtc_logs_list
 
 
-def check_scale_order(dict_values, maximum_order_diff=1e6):
+def check_scale_order(dict_values, maximum_order_diff):
     """
     Checks the difference in order between the lower and upperbound of several problem settings;
     objective, matrix and right hand side.
     :param dict_values: dictionary with the different problem settings and their respective lower
     and upperbound
     :param maximum_order_diff: the maximum difference that is allowed.
-    :return:
     """
     msg_order = {}
     for key, value in dict_values.items():
@@ -83,7 +82,7 @@ def check_scale_order(dict_values, maximum_order_diff=1e6):
 
 
 def get_scaling_range(
-    logs_list: List[logging.LogRecord], logger: logging.Logger
+    rtc_logs_list: List[logging.LogRecord], rtc_logger: logging.Logger
 ) -> Dict[str, List[float]]:
     """
     Extract scaling range data from an  optimization problem.
@@ -94,9 +93,9 @@ def get_scaling_range(
     to determine the ranges for various components.
 
     Args:
-        logs_list (List[logging.LogRecord]): A list of log entries to process. Each entry is expected
+        rtc_logs_list (List[logging.LogRecord]): A list of log entries to process. Each entry is expected
                                to have 'funcName' and 'msg' attributes.
-        logger (logging.Logger): A logger object to record the extracted range data.
+        rtc_logger (logging.Logger): A logger object to record the extracted range data.
 
     Returns:
         Dict[str, List[float]]: A dictionary containing the extracted range data.
@@ -109,7 +108,9 @@ def get_scaling_range(
         adjustment if the log format changes.
     """
     linear_coeff_log = [
-        log for log in logs_list if "__debug_check_transcribe_linear_coefficients" in log.funcName
+        log
+        for log in rtc_logs_list
+        if "__debug_check_transcribe_linear_coefficients" in log.funcName
     ]
     range_data = {}
     for log in linear_coeff_log:
@@ -132,11 +133,11 @@ def get_scaling_range(
             else:
                 range_data["objective"] = [float(data_str[1]), float(data_str[0])]
     for k, v in range_data.items():
-        logger.info(f"{k,v}")
+        rtc_logger.info(f"{k,v}")
     return range_data
 
 
-def check_scale_range(test_name: str, range_data: dict, relative_tol: float = 0.1) -> None:
+def check_scale_range(test_name: str, range_data: dict, relative_tol: float) -> None:
     """
     Perform scaling tests by comparing actual range data against expected values.
 
@@ -155,7 +156,6 @@ def check_scale_range(test_name: str, range_data: dict, relative_tol: float = 0.
                            }
         relative_tol (float, optional): The relative tolerance for comparing actual and
                                         expected values.
-                                        Defaults to 0.1 (10%).
 
     Raises:
         FileNotFoundError: If the scaling_range_test.csv file is not found.
@@ -243,7 +243,11 @@ def check_element_range(
 
 
 def check_scaling(
-    test_instance: TestCase, logger: logging.Logger, logs_list: List[logging.LogRecord]
+    test_instance: TestCase,
+    rtc_logger: logging.Logger,
+    rtc_logs_list: List[logging.LogRecord],
+    maximum_order_diff: float = 1e6,
+    relative_tol: float = 0.1,
 ) -> None:
     """
     Helper function to check scaling for a test instance.
@@ -256,8 +260,8 @@ def check_scaling(
     Returns:
         None
     """
-    range_data = get_scaling_range(logs_list, logger)
+    range_data = get_scaling_range(rtc_logs_list, rtc_logger)
     test_instance.range_data = range_data
     test_name = inspect.currentframe().f_back.f_code.co_name
-    check_scale_order(range_data)
-    check_scale_range(test_name, range_data)
+    check_scale_order(range_data, maximum_order_diff)
+    check_scale_range(test_name, range_data, relative_tol)

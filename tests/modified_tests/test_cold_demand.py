@@ -7,7 +7,11 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
-from utils_test_scaling import create_log_list_scaling
+from utils_test_scaling import (
+    check_scaling,
+    create_log_list_scaling,
+    create_problem_with_debug_info,
+)
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
@@ -31,9 +35,15 @@ class TestColdDemand(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
+        (
+            heat_problem_scaling,
+            rtc_logger,
+            rtc_logs_list,
+        ) = create_problem_with_debug_info(HeatProblem)
+
         with self.assertRaises(SystemExit) as cm:
             _ = run_esdl_mesido_optimization(
-                HeatProblem,
+                heat_problem_scaling,
                 base_folder=base_folder,
                 esdl_file_name="LT_wko_error_check.esdl",
                 esdl_parser=ESDLFileParser,
@@ -55,6 +65,9 @@ class TestColdDemand(TestCase):
             True,
         )
 
+        # Check scaling differences and ranges in objective, matrix and rhs
+        check_scaling(self, rtc_logger, rtc_logs_list)
+
     def test_cold_demand(self):
         """
         This test is to check the basic physics for a network which includes cold demand. In this
@@ -72,8 +85,14 @@ class TestColdDemand(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
+        (
+            heat_problem_scaling,
+            rtc_logger,
+            rtc_logs_list,
+        ) = create_problem_with_debug_info(HeatProblem)
+
         heat_problem = run_esdl_mesido_optimization(
-            HeatProblem,
+            heat_problem_scaling,
             base_folder=base_folder,
             esdl_file_name="LT_wko.esdl",
             esdl_parser=ESDLFileParser,
@@ -85,6 +104,7 @@ class TestColdDemand(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
+        check_scaling(self, rtc_logger, rtc_logs_list)
 
     def test_airco(self):
         """
@@ -103,8 +123,14 @@ class TestColdDemand(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
+        (
+            heat_problem_scaling,
+            rtc_logger,
+            rtc_logs_list,
+        ) = create_problem_with_debug_info(HeatProblem)
+
         heat_problem = run_esdl_mesido_optimization(
-            HeatProblem,
+            heat_problem_scaling,
             base_folder=base_folder,
             esdl_file_name="airco.esdl",
             esdl_parser=ESDLFileParser,
@@ -116,6 +142,7 @@ class TestColdDemand(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
+        check_scaling(self, rtc_logger, rtc_logs_list)
 
     def test_wko(self):
         """
@@ -186,8 +213,14 @@ class TestColdDemand(TestCase):
 
                 return constraints
 
+        (
+            heating_cooling_problem_scaling,
+            rtc_logger,
+            rtc_logs_list,
+        ) = create_problem_with_debug_info(HeatingCoolingProblem)
+
         heat_problem = run_esdl_mesido_optimization(
-            HeatingCoolingProblem,
+            heating_cooling_problem_scaling,
             base_folder=base_folder,
             esdl_file_name="LT_wko_heating_and_cooling.esdl",
             esdl_parser=ESDLFileParser,
@@ -199,6 +232,7 @@ class TestColdDemand(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
+        check_scaling(self, rtc_logger, rtc_logs_list)
 
         # Check cyclic constraint
         np.testing.assert_allclose(
@@ -221,8 +255,14 @@ class TestColdDemand(TestCase):
                 options["neglect_pipe_heat_losses"] = True
                 return options
 
+        (
+            heating_cooling_problem_no_heat_loss,
+            rtc_logger,
+            rtc_logs_list,
+        ) = create_problem_with_debug_info(HeatingCoolingProblemNoHeatLoss)
+
         heat_problem = run_esdl_mesido_optimization(
-            HeatingCoolingProblemNoHeatLoss,
+            heating_cooling_problem_no_heat_loss,
             base_folder=base_folder,
             esdl_file_name="LT_wko_heating_and_cooling.esdl",
             esdl_parser=ESDLFileParser,
@@ -234,6 +274,7 @@ class TestColdDemand(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
+        check_scaling(self, rtc_logger, rtc_logs_list)
 
         # Check cyclic constraint
         np.testing.assert_allclose(

@@ -57,7 +57,7 @@ class DetailedTestResult(unittest.TestResult):
             return 0.0
         return time.perf_counter() - self.test_start_time
 
-    def add_success(self, test: unittest.TestCase) -> None:
+    def addSuccess(self, test: unittest.TestCase) -> None:
         """
         Called when a test succeeds.
 
@@ -67,7 +67,7 @@ class DetailedTestResult(unittest.TestResult):
         super().addSuccess(test)
         self.test_results.append((test, "Success", None, self.get_test_duration()))
 
-    def add_error(self, test: unittest.TestCase, err: Tuple[type, Exception, Any]) -> None:
+    def addError(self, test: unittest.TestCase, err: Tuple[type, Exception, Any]) -> None:
         """
         Called when a test raises an error.
 
@@ -78,7 +78,7 @@ class DetailedTestResult(unittest.TestResult):
         super().addError(test, err)
         self.test_results.append((test, "Error", err, self.get_test_duration()))
 
-    def add_failure(self, test: unittest.TestCase, err: Tuple[type, Exception, Any]) -> None:
+    def addFailure(self, test: unittest.TestCase, err: Tuple[type, Exception, Any]) -> None:
         """
         Called when a test fails.
 

@@ -13,6 +13,11 @@ import numpy as np
 
 from utils_tests import demand_matching_test
 
+from utils_test_scaling import (
+    check_scaling,
+    create_problem_with_debug_info,
+)
+
 
 class TestHeadLoss(TestCase):
     """
@@ -89,8 +94,14 @@ class TestHeadLoss(TestCase):
                 "influxdb_verify_ssl": False,
             }
 
+            (
+                source_pipe_sink_dw_scaling,
+                rtc_logger,
+                rtc_logs_list,
+            ) = create_problem_with_debug_info(SourcePipeSinkDW)
+
             solution = run_esdl_mesido_optimization(
-                SourcePipeSinkDW,
+                source_pipe_sink_dw_scaling,
                 base_folder=base_folder,
                 esdl_file_name="sourcesink.esdl",
                 esdl_parser=ESDLFileParser,
@@ -225,6 +236,13 @@ class TestHeadLoss(TestCase):
 
             np.testing.assert_allclose(abs(sum_hp), pump_power, atol=1.0e-3)
 
+            # Check scaling differences and ranges in objective, matrix and rhs
+            check_scaling(
+                self,
+                rtc_logger,
+                rtc_logs_list,
+            )
+
     def test_heat_network_pipe_split_head_loss(self):
         """
         Heat network: test the piecewise linear weak inequality and equality constraints of the
@@ -274,8 +292,14 @@ class TestHeadLoss(TestCase):
 
                     return options
 
+            (
+                source_pipe_sink_dw_scaling,
+                rtc_logger,
+                rtc_logs_list,
+            ) = create_problem_with_debug_info(SourcePipeSinkDW)
+
             solution = run_esdl_mesido_optimization(
-                SourcePipeSinkDW,
+                source_pipe_sink_dw_scaling,
                 base_folder=base_folder,
                 esdl_file_name="sourcesink.esdl",
                 esdl_parser=ESDLFileParser,
@@ -399,6 +423,13 @@ class TestHeadLoss(TestCase):
                         np.testing.assert_allclose(
                             results["Pipe2.dH"][ii], results[f"{pipe}.dH"][ii]
                         )
+
+            # Check scaling differences and ranges in objective, matrix and rhs
+            check_scaling(
+                self,
+                rtc_logger,
+                rtc_logs_list,
+            )
 
     def test_gas_network_head_loss(self):
         """

@@ -8,6 +8,11 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
+from utils_test_scaling import (
+    check_scaling,
+    create_problem_with_debug_info,
+)
+
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
@@ -26,8 +31,14 @@ class TestHeat(TestCase):
 
         base_folder = Path(double_pipe_heat.__file__).resolve().parent.parent
 
+        (
+            source_pipe_sink_scaled,
+            rtc_logger,
+            rtc_logs_list,
+        ) = create_problem_with_debug_info(SourcePipeSink)
+
         case = run_esdl_mesido_optimization(
-            SourcePipeSink,
+            source_pipe_sink_scaled,
             base_folder=base_folder,
             esdl_file_name="sourcesink.esdl",
             esdl_parser=ESDLFileParser,
@@ -46,6 +57,7 @@ class TestHeat(TestCase):
         demand_matching_test(case, results)
         energy_conservation_test(case, results)
         heat_to_discharge_test(case, results)
+        check_scaling(self, rtc_logger, rtc_logs_list)
 
     def test_zero_heat_loss(self):
         """

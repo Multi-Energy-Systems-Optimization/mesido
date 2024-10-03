@@ -9,6 +9,11 @@ import numpy as np
 
 import pytest
 
+from utils_test_scaling import (
+    check_scaling,
+    create_problem_with_debug_info,
+)
+
 
 class TestSetpointConstraints(TestCase):
     @pytest.mark.first
@@ -30,8 +35,14 @@ class TestSetpointConstraints(TestCase):
 
         base_folder = Path(run_3a.__file__).resolve().parent.parent
 
+        (
+            heat_problem_set_point_constraints_scaling,
+            rtc_logger,
+            rtc_logs_list,
+        ) = create_problem_with_debug_info(HeatProblemSetPointConstraints)
+
         _heat_problem_3 = run_esdl_mesido_optimization(
-            HeatProblemSetPointConstraints,
+            heat_problem_set_point_constraints_scaling,
             base_folder=base_folder,
             esdl_file_name="3a.esdl",
             esdl_parser=ESDLFileParser,
@@ -40,6 +51,9 @@ class TestSetpointConstraints(TestCase):
             **{"timed_setpoints": {"GeothermalSource_b702": (45, 1)}},
         )
         results_3 = _heat_problem_3.extract_results()
+
+        # Check scaling differences and ranges in objective, matrix and rhs
+        check_scaling(self, rtc_logger, rtc_logs_list)
 
         _heat_problem_4 = run_esdl_mesido_optimization(
             HeatProblemSetPointConstraints,

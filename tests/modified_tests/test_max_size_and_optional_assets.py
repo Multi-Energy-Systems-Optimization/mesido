@@ -7,6 +7,11 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
+from utils_test_scaling import (
+    check_scaling,
+    create_problem_with_debug_info,
+)
+
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
@@ -43,9 +48,15 @@ class TestMaxSizeAggregationCount(TestCase):
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
+        (
+            heat_problem_scaled,
+            rtc_logger,
+            rtc_logs_list,
+        ) = create_problem_with_debug_info(HeatProblem)
+
         # This is an optimization done over a few days
         solution = run_esdl_mesido_optimization(
-            HeatProblem,
+            heat_problem_scaled,
             base_folder=base_folder,
             esdl_file_name="test_case_small_network_with_ates_with_buffer.esdl",
             esdl_parser=ESDLFileParser,
@@ -134,6 +145,13 @@ class TestMaxSizeAggregationCount(TestCase):
         np.testing.assert_allclose(results["ATES_033c_aggregation_count"], 1.0)
         np.testing.assert_allclose(results["HeatStorage_74c1_aggregation_count"], 1.0)
 
+        # Check scaling differences and ranges in objective, matrix and rhs
+        check_scaling(
+            self,
+            rtc_logger,
+            rtc_logs_list,
+        )
+
         import models.test_case_small_network_ates_buffer_optional_assets.src.run_ates as run_ates
         from models.test_case_small_network_ates_buffer_optional_assets.src.run_ates import (
             HeatProblem,
@@ -144,8 +162,15 @@ class TestMaxSizeAggregationCount(TestCase):
         # This is the same problem, but now with the buffer and ates also optional.
         # Therefore, we expect that the ates and buffer are no longer placed to avoid their heat
         # losses. This allows us to check if their placement constraints are proper.
+
+        (
+            heat_problem_scaling,
+            rtc_logger,
+            rtc_logs_list,
+        ) = create_problem_with_debug_info(HeatProblem)
+
         solution = run_esdl_mesido_optimization(
-            HeatProblem,
+            heat_problem_scaling,
             base_folder=base_folder,
             esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
             esdl_parser=ESDLFileParser,
@@ -163,3 +188,8 @@ class TestMaxSizeAggregationCount(TestCase):
         demand_matching_test(solution, results)
         energy_conservation_test(solution, results)
         heat_to_discharge_test(solution, results)
+        check_scaling(
+            self,
+            rtc_logger,
+            rtc_logs_list,
+        )
