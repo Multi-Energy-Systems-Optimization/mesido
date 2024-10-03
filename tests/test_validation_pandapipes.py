@@ -96,6 +96,8 @@ class ValidateWithPandaPipes(TestCase):
         esdl_file = os.path.join(base_folder, "model", "Test_Tree_S1C1.esdl")
         esdlparser = PandapipeEsdlParserClass()
         esdlparser.loadESDLFile(esdl_file)
+        # A producer/consumer cannot directly connect to a pipe, but must be connected to a joint,
+        # therefore additional joints created for the inlet & outlet of these assets
         esdlparser.add_additional_joint()
 
         # ------------------------------------------------------------------------------
@@ -126,10 +128,13 @@ class ValidateWithPandaPipes(TestCase):
         demand_flow = mesido_demand_flow_kg_s
         supply_flow = demand_flow * total_consumers / total_producers
 
-        # Assign profiles to assets
+        # Below control is needed when there is more than 1 producer/heat demand
         net.flow_control.control_active[0] = False  # 1st supplier
         net.flow_control.control_active[0 + total_producers] = False  # 1st demand
 
+        # Assign profiles to the following assets:
+        #  - producer mass flow rate, supply temperature
+        #  - heat demand power
         # Producer
         isupply = 0
         supply_flow_kg_s = pd.DataFrame(supply_flow, columns=[f"{isupply}"])
@@ -155,16 +160,6 @@ class ValidateWithPandaPipes(TestCase):
             data_source=df_supply_pump_temperature_kelvin,
             profile_name=net.circ_pump_mass.index.values[isupply].astype(str),
         )
-        supply_flow_kgs_s = pd.DataFrame(supply_flow, columns=[f"{isupply}"])
-        ds_supply_control_flow_kgs_s = DFData(supply_flow_kgs_s)
-        control.ConstControl(
-            net,
-            element="flow_control",
-            variable="controlled_mdot_kg_per_s",
-            element_index=net.flow_control.index.values[isupply],
-            data_source=ds_supply_control_flow_kgs_s,
-            profile_name=net.flow_control.index.values[isupply].astype(str),
-        )
 
         # Demand settings
         idemand = 0
@@ -177,20 +172,6 @@ class ValidateWithPandaPipes(TestCase):
             element_index=net.heat_exchanger.index.values[idemand],
             data_source=ds_demand_power_watt,
             profile_name=net.heat_exchanger.index.values[idemand].astype(str),
-        )
-
-        demand_flow_kgs_s = pd.DataFrame(
-            demand_flow,
-            columns=[f"{idemand + total_producers}"],
-        )
-        ds_demand_control_flow_kgs_s = DFData(demand_flow_kgs_s)
-        control.ConstControl(
-            net,
-            element="flow_control",
-            variable="controlled_mdot_kg_per_s",
-            element_index=net.flow_control.index.values[idemand + total_producers],
-            data_source=ds_demand_control_flow_kgs_s,
-            profile_name=net.flow_control.index.values[idemand + total_producers].astype(str),
         )
 
         if profile_demand_load_watt.shape[0] != supply_flow_kg_s.shape[0]:
