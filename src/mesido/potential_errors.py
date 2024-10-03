@@ -1,5 +1,6 @@
 import enum
-from typing import Dict, List
+from typing import Dict, List, Union
+
 
 # Goes into ./potential_errors.py
 
@@ -61,3 +62,42 @@ def run_end_scenario_sizing(*args, **kwargs):
             logger.error("For asset %s %s", asset_id, message)
         logger.error(e.general_issue)
         raise
+
+
+
+#v_______________________________________________
+# ERROR CODE VERSION:
+class MesidoAssetMessage:
+    asset_message_error_code: str
+    variables: Dict[str, Union[int, float, str, bool]]
+
+
+class MesidoAssetIssue(Exception):
+    general_issue_error_code: str
+    variables: Dict[str, Union[int, float, str, bool]]
+    error_code_with_variables_per_asset_id: Dict[AssetId, MesidoAssetMessage]
+    error_type: MesidoAssetIssueType
+
+
+MesidoAssetIssue().error_code_with_variables_per_asset_id['HeatDemand1234'] = MesidoAssetMessage('asset.heat_demand.power_001', {'asset_id': "HeatDemand1234", "asset_power": 5.0, "max_profile_value": 4.5})
+
+
+general_issue_error_codes = {
+    "general.heat_demand.power_001": "bla bla bla"
+}
+asset_error_codes = {
+    "asset.heat_demand.power_001": "{asset_id}: The installed capacity of {asset_power}MW should be larger than the maximum of the heat demand profile {max_profile_value}MW"
+}
+
+
+def run_end_scenario_sizing(*args, **kwargs):
+    try:
+        POTENTIAL_ERRORS.add_potential_issue(MesidoAssetIssueType.HEAT_DEMAND_POWER, "some asset id", "error message")
+    except MesidoAssetIssue as e:
+        for asset_id, message in e.message_per_asset_id:
+            logger.error(instantiate_template(asset_error_codes[message.asset_message_error_code] asset_id, message.variables))
+        logger.error(e.general_issue_error_code + ":" + instantiate_template(asset_error_codes[e.general_issue_error_code], e.variables))
+        raise
+
+
+
