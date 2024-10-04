@@ -133,6 +133,7 @@ class EndScenarioSizing(
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        # default setting to cater for ~ 10kW heat, DN800 pipe at dT = 40 degrees Celcuis
         self.heat_network_settings["minimum_velocity"] = 1.0e-4
 
         self.heat_network_settings["maximum_velocity"] = 3.0
@@ -232,9 +233,7 @@ class EndScenarioSizing(
         #  constraints in the ESDL e.g. min max pressure
         options = super().energy_system_options()
         options["maximum_temperature_der"] = np.inf
-        # options["heat_loss_disconnected_pipe"] = True
-        options["heat_loss_disconnected_pipe"] = False
-        # options.update(self._override_hn_options)
+        options["heat_loss_disconnected_pipe"] = True
         return options
 
     def path_goals(self):

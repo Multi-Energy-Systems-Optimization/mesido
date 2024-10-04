@@ -295,6 +295,7 @@ class TestHeadLoss(TestCase):
                             self.heat_network_settings["minimum_velocity"] = 0.0
                         elif counter_linearized_n_lines_weak_ineq_runs == 2:
                             ...
+                            # Do not delete. This reminds the dev that different min velo value
                             # with min velo = default value (>0.0), instead of specifying a value
                             # here
 
