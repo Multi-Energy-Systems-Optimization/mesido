@@ -4,7 +4,8 @@
 - Test case: Head loss validation with pandapipes
 
 ## Changed
-- Bugfix: No longer required to provide a power at the heating demands when a profile has been added. 
+- Bugfix: No longer required to provide a power at the heating demands when a profile has been added.
+- Bugfix: Scaling fix on ATES temperature variable when temperature modelling not used.
  
 ## Fixed
 - xxx
