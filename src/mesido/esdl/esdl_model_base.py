@@ -24,6 +24,7 @@ class _ESDLModelBase(_Model):
 
     primary_port_name_convention = "prim"
     secondary_port_name_convention = "sec"
+    __connections = None
 
     def _esdl_convert(
         self, converter: _AssetToComponentBase, assets: Dict, name_to_id_map: Dict, prefix: str
@@ -320,6 +321,7 @@ class _ESDLModelBase(_Model):
         # therefore do the nodes first, and do all remaining connections
         # after.
         connections = set()
+        model_connections = []
 
         for asset in [*node_assets, *bus_assets, *gas_node_assets]:
             component = getattr(self, asset.name)
@@ -353,6 +355,12 @@ class _ESDLModelBase(_Model):
                             == "Pipe"
                         ):
                             self.connect(getattr(component, node_suf)[i], port_map[connected_to.id])
+                            model_connections.append(
+                                [
+                                    getattr(component, node_suf)[i].name,
+                                    port_map[connected_to.id].name,
+                                ]
+                            )
                         elif connected_to.id not in list(port_map.keys()):
                             # If The asset is not in the
                             # port map means that there is a direct node to node connection with a
@@ -374,11 +382,22 @@ class _ESDLModelBase(_Model):
                                 getattr(component, node_suf)[i],
                                 getattr(getattr(self, connected_node_asset.name), node_suf)[idx],
                             )
+                            model_connections.append(
+                                [
+                                    getattr(component, node_suf)[i],
+                                    getattr(getattr(self, connected_node_asset.name), node_suf)[
+                                        idx
+                                    ],
+                                ]
+                            )
                         else:
                             # If the Connected asset is not of type pipe, there might be
                             # logical link like source to node.
                             self.connect_logical_links(
                                 getattr(component, node_suf)[i], port_map[connected_to.id]
+                            )
+                            model_connections.append(
+                                [getattr(component, node_suf)[i], port_map[connected_to.id]]
                             )
                         connections.add(conn)
                         i += 1
@@ -393,6 +412,9 @@ class _ESDLModelBase(_Model):
                         ):
                             self.connect(
                                 getattr(component, elec_node_suf)[i], port_map[connected_to.id]
+                            )
+                            model_connections.append(
+                                [getattr(component, elec_node_suf)[i], port_map[connected_to.id]]
                             )
                         elif connected_to.id not in list(port_map.keys()):
                             for node in bus_assets:
@@ -413,10 +435,21 @@ class _ESDLModelBase(_Model):
                                     idx
                                 ],
                             )
+                            model_connections.append(
+                                [
+                                    getattr(component, elec_node_suf)[i],
+                                    getattr(
+                                        getattr(self, connected_node_asset.name), elec_node_suf
+                                    )[idx],
+                                ]
+                            )
                         else:
                             self.connect_logical_links(
                                 getattr(component, elec_node_suf)[i],
                                 port_map[connected_to.id],
+                            )
+                            model_connections.append(
+                                [getattr(component, elec_node_suf)[i], port_map[connected_to.id]]
                             )
                         connections.add(conn)
                         i += 1
@@ -431,6 +464,9 @@ class _ESDLModelBase(_Model):
                         ):
                             self.connect(
                                 getattr(component, gas_node_suf)[i], port_map[connected_to.id]
+                            )
+                            model_connections.append(
+                                [getattr(component, gas_node_suf)[i], port_map[connected_to.id]]
                             )
                         elif connected_to.id not in list(port_map.keys()):
                             for node in gas_node_assets:
@@ -451,9 +487,20 @@ class _ESDLModelBase(_Model):
                                     idx
                                 ],
                             )
+                            model_connections.append(
+                                [
+                                    getattr(component, gas_node_suf)[i],
+                                    getattr(getattr(self, connected_node_asset.name), gas_node_suf)[
+                                        idx
+                                    ],
+                                ]
+                            )
                         else:
                             self.connect_logical_links(
                                 getattr(component, gas_node_suf)[i], port_map[connected_to.id]
+                            )
+                            model_connections.append(
+                                [getattr(component, gas_node_suf)[i], port_map[connected_to.id]]
                             )
                         connections.add(conn)
                         i += 1
@@ -508,4 +555,12 @@ class _ESDLModelBase(_Model):
                         self.connect(port_map[port.id], port_map[connected_to.id])
                     else:
                         self.connect_logical_links(port_map[port.id], port_map[connected_to.id])
+                    model_connections.append(
+                        [port_map[port.id].name, port_map[connected_to.id].name]
+                    )
                     connections.add(conn)
+
+        self.__connections = model_connections
+
+    def get_connections(self):
+        return self.__connections
