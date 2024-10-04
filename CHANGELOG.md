@@ -1,7 +1,7 @@
-# [Unreleased] - 2024-08-23
+# [Unreleased] - 2024-09-20
 
 ## Added
-- xxx
+- Test case: Head loss validation with pandapipes
 
 ## Changed
 - xxx
