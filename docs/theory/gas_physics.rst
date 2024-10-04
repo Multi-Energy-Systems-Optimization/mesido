@@ -11,13 +11,12 @@ An asset :math:`a \in A` in the system is modelled using a set of in-ports, deno
 :math:`I^a_{in} \neq \emptyset`, and a set of out-ports, denoted by
 :math:`I^a_{out} \neq \emptyset`, with :math:`I^a` denoting the union of these two sets.
 For an asset :math:`a` the variables :math:`\dot{V}_i, \dot{m}_i`,
-:math:`H_i` and :math:`HP_i` denote the volumetric flow, mass flow, head and Hydraulic power for port :math:`i \in I^a`.
+:math:`H_i` and :math:`HP_i` denote the volumetric flow, mass flow, head and hydraulic power for port :math:`i \in I^a`.
 For readability, the variables and equations of the model, given below, are defined without
 indexing the variables and sets for each timestep.
 The equations below are assumed to hold for every timestep, unless otherwise specified.
 
-By modelling these variables the gaseous system can be closely approximated. The method will show
-that for the modelling assumptions a feasible conservative solution will be guaranteed.
+By modelling these variables the gaseous system can be closely approximated. The method will show that for the modelling assumptions a feasible conservative solution will be guaranteed.
 
 Incompressible Flow
 -------------------
@@ -52,11 +51,11 @@ Equality constraints are used to relate the volumetric flow to the mass flow.
 
     \dot{m}^a = \rho \dot{V}^a \;\; \forall a \in A_{pipes}.
 
-Where :math:`\rho` is the density of the medium which is assumed constant assume one hydrualic
+Where :math:`\rho` is the density of the medium which is assumed constant in one hydrualic
 coupled system and is set based on the design nominal pressure in the system.
 
 The head loss, :math:`dH` must be compensated by pumps which are assumed to be located at sources
-and storage assets. Pipes lose head due to the friction of the flow with the pipe walls.
+and storage assets.
 
 .. math::
     :label: eq:gas_pipe_head
@@ -170,7 +169,7 @@ Demand
 ~~~~~~
 
 A demand extracts gas from the network, defined by :eq:`eq:Q_balance` and :eq:`eq:m_balance` where
-:math:`\dot{V}^a_{consumed}` and :math:`\dot{m}^a_{consumed}` is the consumed gas from the network.
+:math:`\dot{V}^a_{consumed}` and :math:`\dot{m}^a_{consumed}` are the consumed gas from the network.
 
 Similar to the source, no constraints are required at the in-going supply side of the demand, and
 an equality constraint relates outgoing thermal power with volumetric flow:
@@ -208,10 +207,10 @@ The consumed mass of the storage assets is equated to the change in stored gas m
 
 Compressor and Sub-station/control-valve
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The compressor and sub-station are used to change from nominal pressure level in the system.
+The compressor and sub-station are used to change the nominal pressure level in the system.
 This means that these assets will have a different pressure level and thus density on their in port
 w.r.t. their out port.
-It is assumed that mass and is maintained over the pressure step.
+It is assumed that mass is maintained over the pressure step.
 
 .. math::
     :label: eq:mass_balance_pressure_level
