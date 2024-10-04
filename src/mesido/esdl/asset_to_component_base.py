@@ -522,7 +522,7 @@ class _AssetToComponentBase:
                 if self._port_to_i_nominal.get(connected_port, False)
                 else max(
                     [
-                        asset.attributes.get(key, -1) / connected_port.carrier.voltage
+                        asset.attributes.get(key, -1) / connected_port.carrier.voltage / 2.0
                         for key in self.__power_keys
                     ]
                 )
@@ -543,7 +543,7 @@ class _AssetToComponentBase:
                 if self._port_to_i_nominal.get(connected_port, False)
                 else max(
                     [
-                        asset.attributes.get(key, -1) / connected_port.carrier.voltage
+                        asset.attributes.get(key, -1) / connected_port.carrier.voltage / 2.0
                         for key in self.__power_keys
                     ]
                 )

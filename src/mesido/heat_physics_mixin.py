@@ -576,7 +576,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                             # connected node, hence we assume a node has at least one not node
                             # asset connected to it.
                             self.__heat_node_variable_nominal[f"{node}.HeatConn[{i + 1}].{var}"] = (
-                                np.median(nominals[var])
+                                np.median([x for x in nominals[var] if x != 1])
                             )
 
     def energy_system_options(self):
