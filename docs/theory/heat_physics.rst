@@ -168,11 +168,11 @@ Although the constraints by themselves will not guarantee a physically feasible 
 
     Schematic visualization of how the linear constraints are fitted to the head loss curve.
 
-Furthermore, this head loss approximation has been validated against pandapipes as shown in :numref:`_validation1dH`. This validation has also been added in a test case, for more information see the test folder.
+Furthermore, this head loss approximation has been validated against pandapipes as shown in :numref:`validation1dH`. This validation work has also been incorprated into a test case, for more information see the test folder.
 
 .. _validation1dH:
 
-.. figure:: ../images/dH_MESIDO_10_vs pandapipe.png
+.. figure:: ../images/dH_MESIDO_10_vs_pandapipes.png
     :figwidth: 6.94792in
     :align: center
 
