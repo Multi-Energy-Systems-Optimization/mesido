@@ -54,6 +54,8 @@ class ValidateWithPandaPipes(TestCase):
                 )
                 self.heat_network_settings["n_linearization_lines"] = 10
 
+                self.heat_network_settings["minimum_velocity"] = 0.0
+
                 return options
 
             def times(self, variable=None) -> np.ndarray:
@@ -68,7 +70,7 @@ class ValidateWithPandaPipes(TestCase):
                 -------
                 The timeseries
                 """
-                return super().times(variable)[:9]
+                return super().times(variable)[:10]
 
         demand_time_series_file = "timeseries_constant.csv"
 
@@ -224,7 +226,9 @@ class ValidateWithPandaPipes(TestCase):
         )
 
         # Compare head losses
-        for ii in range(len(results["Pipe1.dH"])):
+        # Hard coded value of 9 used below, since the last data entry has value close to 0, and
+        # a comparison is not of importance
+        for ii in range(len(results["Pipe1.dH"][:9])):
             np.testing.assert_array_less(
                 pandapipes_head_loss_m[ii][0], 0.0
             )  # check that values are negative
@@ -237,6 +241,79 @@ class ValidateWithPandaPipes(TestCase):
             )
         # Check cp value
         np.testing.assert_allclose(4200.0, cp_joule_kgkelvin)
+
+        # Check panpapipes results
+        # Expected results (during validation) during validation work
+        expected_dh = {  #
+            "pandapipes": [
+                -1.34309074e+01,
+                -1.06285745e+01,
+                -8.15362473e+00,
+                -6.00606036e+00,
+                -4.18588773e+00,
+                -2.69436747e+00,
+                -1.52897525e+00,
+                -6.91030646e-01,
+                -1.80687567e-01,
+                -2.05221922e-05,
+            ],
+        }
+        for ii in range(len(pandapipes_head_loss_m)):
+            np.testing.assert_allclose(expected_dh["pandapipes"][ii], pandapipes_head_loss_m[ii][0])
+
+        # ------------------------------------------------------------------------------------------
+        # Do not delete the code below.
+        # ------------------------------------------------------------------------------------------
+
+        # # Plotting code for manual checking values
+        # import matplotlib.pyplot as plt
+
+        # # Setup data for easy plotting
+        # velo_m_s = {
+        #     "pandapipes": [],
+        #     "mesido": results["Pipe1.HeatIn.Q"] / solution.parameters(0)["Pipe1.area"],
+        # }
+        # head_loss_m = {
+        #     "pandapipes": [],
+        #     "mesido": -results["Pipe1.dH"],
+        # }
+        # for ii in range(len(ow.np_results["res_pipe.v_mean_m_per_s"])):
+        #     velo_m_s["pandapipes"].append(ow.np_results["res_pipe.v_mean_m_per_s"][ii][0])
+        #     head_loss_m["pandapipes"].append(-pandapipes_head_loss_m[ii][0])
+
+        # # Plot data
+        # plt.figure().set_size_inches(10, 6)
+        # plt.plot(velo_m_s["pandapipes"], head_loss_m["pandapipes"], linewidth=2)
+        # plt.plot(
+        #     velo_m_s["mesido"],
+        #     head_loss_m["mesido"],
+        #     "k--",
+        #     linewidth=2,
+        #     alpha=0.75,
+        #     marker="x"
+        # )
+
+        # plt.legend(["pandapipes", "MESIDO"], prop={'size': 13})
+        # plt.xlabel("Flow velocity [m/s]", fontsize=16)
+        # plt.ylabel("Head loss [m]", fontsize=16)
+        # plt.grid()
+        # plt.xticks(np.linspace(0, 2.5, 6), fontsize=16)
+        # plt.yticks(
+        #     np.linspace(0, 15.0, 7),
+        #     labels=["0.0", "2.5", "5.0", "7.5", "10.0", "12.5", "15.0"],
+        #     fontsize=16,
+        # )
+        # plt.xlim([0., 2.5])
+        # plt.tick_params(left=False, right=False, labelleft=False)
+        # plt.ylim([0., 15.])
+        # plt.tick_params(left=True, right=False, labelleft=True)
+        # n_lines = solution.heat_network_settings["n_linearization_lines"]
+        # plt.savefig(f"dH MESIDO_{n_lines} vs pandapipes")
+        # plt.show()
+        # plt.close()
+
+        # end Plotting code for manual checking values
+        # ------------------------------------------------------------------------------------------
 
 
 if __name__ == "__main__":
