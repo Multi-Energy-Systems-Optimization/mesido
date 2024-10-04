@@ -1468,7 +1468,7 @@ class ScenarioOutput:
             # test = 0.0
         # ------------------------------------------------------------------------------------------
         # Save esdl file
-
+        # Edwin_marker_esdl_string - line 1224
         if self.esdl_parser_class == mesido.esdl.esdl_parser.ESDLFileParser:
             extension = "_Simulation.esdl" if optimizer_sim else "_GrowOptimized.esdl"
             file_path = Path(self.model_folder) / (Path(self.esdl_file_name).stem + extension)
@@ -1476,6 +1476,7 @@ class ScenarioOutput:
         self.optimized_esdl_string = self.convert_energy_system_to_string(
             energy_system=energy_system
         )
+
         # self.__optimized_energy_system_handler = esh
         # self.optimized_esdl_string = esh.to_string()
         #
