@@ -36,6 +36,7 @@ class ValidateWithPandaPipes(TestCase):
         Checks:
         - head losses
         - cp value
+        - check pandapipes values
         """
         root_folder = str(Path(__file__).resolve().parent.parent)
         sys.path.insert(1, root_folder)
