@@ -4,7 +4,7 @@
 - Test case: Head loss validation with pandapipes
 
 ## Changed
-- xxx
+- Bugfix: No longer required to provide a power at the heating demands when a profile has been added. 
  
 ## Fixed
 - xxx
