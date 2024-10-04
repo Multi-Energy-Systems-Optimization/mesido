@@ -187,25 +187,31 @@ class EndScenarioSizing(
         #   demand profile
         is_error = False
         for error_type, errors in self._asset_potential_errors.items():
-            if error_type in ["heat_demand.power", "cold_demand.power"]:
-                if len(errors) > 0:
-                    for asset_name in errors:
-                        logger.error(self._asset_potential_errors[error_type][asset_name])
-                    logger.error(
-                        "Asset insufficient installed capacity: please increase the"
+            if error_type in ["heat_demand.power", "cold_demand.power"] and len(errors) > 0:
+                    # for asset_name in errors:
+                    #     logger.error(self._asset_potential_errors[error_type][asset_name])
+                    # logger.error(
+                    general_issue =  "Asset insufficient installed capacity: please increase the"
                         " installed power or reduce the demand profile peak value of the demand(s)"
                         " listed."
-                    )
-                    is_error = True
-            elif error_type in ["heat_demand.type"]:
-                if len(errors) > 0:
-                    for asset_name in errors:
-                        logger.error(self._asset_potential_errors[error_type][asset_name])
-                    logger.error("Incorrect asset type: please update.")
-                    is_error = True
+                    # )
+                    #is_error = True
+            elif error_type in ["heat_demand.type"] and len(errors) > 0:
+                    general_issue = "Incorrect asset type: please update."
+                    # for asset_name in errors:
+                    #     logger.error(self._asset_potential_errors[error_type][asset_name])
+                    #logger.error("Incorrect asset type: please update.")
 
-        if is_error:
-            exit(1)
+                    #is_error = True
+
+        if general_issue:
+            raise MesidoAssetIssue(
+                        general_issue=general_issue,
+                        message_per_asset_id=self._asset_potential_errors[error_type],
+                        error_type=error_type
+
+                    )
+           # exit(1)
         # end error checking
 
         (
