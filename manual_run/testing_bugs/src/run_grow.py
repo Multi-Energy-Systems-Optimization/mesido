@@ -1,8 +1,7 @@
 from pathlib import Path
 
 from mesido.esdl.esdl_parser import ESDLFileParser
-from mesido.workflows import EndScenarioSizingStagedHIGHS, run_end_scenario_sizing
-from mesido.workflows.grow_workflow import EndScenarioSizingStagedGurobi
+from mesido.workflows import EndScenarioSizingStaged, run_end_scenario_sizing
 
 if __name__ == "__main__":
     import time
@@ -11,7 +10,7 @@ if __name__ == "__main__":
     base_folder = Path(__file__).resolve().parent.parent
 
     solution = run_end_scenario_sizing(
-        EndScenarioSizingStagedHIGHS,
+        EndScenarioSizingStaged,
         base_folder=base_folder,
         esdl_file_name="Base Netwerk Delft.esdl",
         esdl_parser=ESDLFileParser,

@@ -1948,6 +1948,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         Optional ESDL fields:
         ---------------------
         - technicalLifetime
+        - powerFactor
         - CostInformation: discountRate
         - CostInformation: marginalCost
         - CostInformation: installationCost
@@ -1981,11 +1982,15 @@ class AssetToHeatComponent(_AssetToComponentBase):
         eff_max_load = asset.attributes["effMaxLoad"]  # Wh/g
         eff_max = asset.attributes["efficiency"]  # Wh/g
 
+        power_factor = (
+            asset.attributes["powerFactor"] if asset.attributes["powerFactor"] != 0.0 else 2.5
+        )
+
         def equations(x):
             a, b, c = x
             eq1 = a / min_load + b * min_load + c - eff_min_load
             eq2 = a / max_load + b * max_load + c - eff_max_load
-            eq3 = a / (min_load * 2.5) + b * (min_load * 2.5) + c - eff_max
+            eq3 = a / (min_load * power_factor) + b * (min_load * power_factor) + c - eff_max
             return [eq1, eq2, eq3]
 
         # Here we approximate the efficiency curve of the electrolyzer with the function:
