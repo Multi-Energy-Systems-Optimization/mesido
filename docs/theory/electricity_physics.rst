@@ -3,14 +3,14 @@
 Electricity Physics
 ===================
 
-MESIDO models the electric power (:math:`\dot{Q}`), the voltage (:math:`V`) and the current
+MESIDO models the electric power (:math:`\dot{P}`), the voltage (:math:`V`) and the current
 (:math:`I`).
 These variables are modelled over all timesteps :math:`K` and for each asset in the system
 :math:`A`.
 An asset :math:`a \in A` in the system is modelled using a set of in-ports, denoted by
 :math:`I^a_{in} \neq \emptyset`, and a set of out-ports, denoted by
 :math:`I^a_{out} \neq \emptyset`, with :math:`I^a` denoting the union of these two sets.
-For an asset :math:`a` the variables :math:`\dot{Q}_i, V_i` and
+For an asset :math:`a` the variables :math:`\dot{P}_i, V_i` and
 :math:`I_i` denote the electrical power, voltage and current for port :math:`i \in I^a`.
 For readability, the variables and equations of the model, given below, are defined without
 indexing the variables and sets for each timestep.
@@ -26,9 +26,9 @@ For all assets energy conservation should be guaranteed.
 .. math::
     :label: eq:Q_balance
 
-    \sum_{i \in I} \dot{Q}_i + \dot{Q}^a_{consumed} = 0 \;\; \forall a \in A
+    \sum_{i \in I} \dot{P}_i + \dot{P}^a_{consumed} = 0 \;\; \forall a \in A
 
-Where :math:`\dot{Q}^a_{consumed}` is the electrical power consumed by asset :math:`a`.
+Where :math:`\dot{P}^a_{consumed}` is the electrical power consumed by asset :math:`a`.
 
 Network Physics
 ---------------
@@ -73,14 +73,14 @@ Electricity Source
 ~~~~~~~~~~~~~~~~~~
 
 The function of an electricity source is to add electrical power to the network.
-The power balance is given by :eq:`eq:Q_balance` where :math:`\dot{Q}_{consumed}` is equal to the
+The power balance is given by :eq:`eq:Q_balance` where :math:`\dot{P}_{consumed}` is equal to the
 (negative) produced power of the source.
 
 Electricity Demand
 ~~~~~~~~~~~~~~~~~~
 
 The function of an electricity demand is to subtract electrical power from the network.
-The power balance is given by :eq:`eq:Q_balance` where :math:`\dot{Q}_{consumed}` is equal to the
+The power balance is given by :eq:`eq:Q_balance` where :math:`\dot{P}_{consumed}` is equal to the
 consumed power of the demand.
 
 Furthermore, demands typically consume their power at a prescribed voltage.
@@ -96,20 +96,20 @@ Electricity storage
 Storage assets add time flexibility with the production and consumption of electrical power.
 Batteries are typically used for the storage of electrical energy.
 
-:math:`\dot{Q}^{a}_{consumed}` can be defined by the electical power substracted from or added to the
+:math:`\dot{P}^{a}_{consumed}` can be defined by the electical power substracted from or added to the
 network, where the internal losses of the storage are subtracted:
 
 .. math::
     :label: eq:change_stored_gas
 
-    \dot{Q}^{a}_{consumed} =  \sum_{i \in I^a_{in}} \dot{Q}^{a}_{i} -  \sum_{i \in I^a_{out}} \dot{Q}^{a}_{i} - \dot{Q}^{a}_{loss} \;\; \forall a \in A_{storage}.
+    \dot{P}^{a}_{consumed} =  \sum_{i \in I^a_{in}} \dot{P}^{a}_{i} -  \sum_{i \in I^a_{out}} \dot{P}^{a}_{i} - \dot{P}^{a}_{loss} \;\; \forall a \in A_{storage}.
 
-The consumed power of the storage assets is equated to the change in stored energy, :math:`\dot{Q}^{a}_{stored}`:
+The consumed power of the storage assets is equated to the change in stored energy, :math:`\dot{P}^{a}_{stored}`:
 
 .. math::
     :label: eq:stored_gas
 
-    \dot{Q}^{a}_{consumed} = \dot{Q}^{a}_{stored} \;\; \forall a \in A_{storage}
+    \dot{P}^{a}_{consumed} = \dot{P}^{a}_{stored} \;\; \forall a \in A_{storage}
 
 Upcoming: ADD THE ENERGY LOSS MODEL
 
