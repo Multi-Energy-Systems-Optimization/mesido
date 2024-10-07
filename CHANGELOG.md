@@ -1,7 +1,7 @@
 # [Unreleased] - 2024-08-23
 
 ## Added
-- xxx
+- Gas physics documentation
 
 ## Changed
 - xxx

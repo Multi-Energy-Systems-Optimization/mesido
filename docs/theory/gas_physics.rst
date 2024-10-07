@@ -155,8 +155,7 @@ Source
 
 The source adds gas mass to the network.
 The volumetric- and mass flow balance is given by :eq:`eq:Q_balance` and :eq:`eq:m_balance` where
-:math:`\dot{V}^a_{consumed}` :math:`\dot{\m}^a_{consumed}` is equal to the (negative) value of the
-supplied gas to the network.
+:math:`\dot{V}^a_{consumed}` and :math:`\dot{m}^a_{consumed}` is equal to the (negative) value of the supplied gas to the network.
 
 A source is modelled with a pump to reach its desired flow rate and head:
 
@@ -170,9 +169,6 @@ Demand
 
 A demand extracts gas from the network, defined by :eq:`eq:Q_balance` and :eq:`eq:m_balance` where
 :math:`\dot{V}^a_{consumed}` and :math:`\dot{m}^a_{consumed}` are the consumed gas from the network.
-
-Similar to the source, no constraints are required at the in-going supply side of the demand, and
-an equality constraint relates outgoing thermal power with volumetric flow:
 
 Every demand is modelled with a control valve to regulate its flow. In reality a minimum head loss is often maintained:
 
