@@ -8,7 +8,7 @@ import esdl
 from esdl.esdl_handler import EnergySystemHandler
 
 from mesido.esdl.esdl_parser import ESDLFileParser
-from mesido.workflows import EndScenarioSizingStagedHIGHS
+from mesido.workflows import EndScenarioSizingStaged
 
 
 import numpy as np
@@ -51,7 +51,7 @@ class TestUpdatedESDL(TestCase):
         model_folder = base_folder / "model"
         input_folder = base_folder / "input"
 
-        problem = EndScenarioSizingStagedHIGHS(
+        problem = EndScenarioSizingStaged(
             esdl_file_name="PoC Tutorial.esdl",
             esdl_parser=ESDLFileParser,
             base_folder=base_folder,

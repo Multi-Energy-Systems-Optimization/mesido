@@ -14,7 +14,7 @@ from mesido.workflows.io.write_output import ScenarioOutput
 from mesido.workflows.utils.adapt_profiles import (
     adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
 )
-from mesido.workflows.utils.helpers import main_decorator
+from mesido.workflows.utils.helpers import main_decorator, run_optimization_problem_solver
 
 import numpy as np
 
@@ -30,7 +30,6 @@ from rtctools.optimization.single_pass_goal_programming_mixin import (
     CachingQPSol,
     SinglePassGoalProgrammingMixin,
 )
-from rtctools.util import run_optimization_problem
 
 
 DB_HOST = "172.17.0.2"
@@ -86,6 +85,7 @@ class SolverHIGHS:
             highs_options["mip_rel_gap"] = 0.02
 
         options["gurobi"] = None
+        options["cplex"] = None
 
         return options
 
@@ -104,6 +104,24 @@ class SolverGurobi:
         gurobi_options["MIPgap"] = 0.02
         gurobi_options["threads"] = 4
         gurobi_options["LPWarmStart"] = 2
+
+        options["highs"] = None
+
+        return options
+
+
+class SolverCPLEX:
+    def solver_options(self):
+        options = super().solver_options()
+        options["casadi_solver"] = self._qpsol
+        options["solver"] = "cplex"
+        cplex_options = options["cplex"] = {}
+        if hasattr(self, "_stage"):
+            if self._stage == 1:
+                cplex_options["CPX_PARAM_EPGAP"] = 0.005
+            else:
+                cplex_options["CPX_PARAM_EPGAP"] = 0.02
+        cplex_options["CPX_PARAM_EPGAP"] = 0.02
 
         options["highs"] = None
 
@@ -425,14 +443,6 @@ class EndScenarioSizingHIGHS(EndScenarioSizing):
     pass
 
 
-class EndScenarioSizingGurobi(SolverGurobi, EndScenarioSizing):
-    """
-    Uses Gurobi as the solver for the EndScenarioSizing problem.
-    """
-
-    pass
-
-
 class EndScenarioSizingDiscounted(EndScenarioSizing):
     """
     The discounted annualized is utilised as the objective function.
@@ -451,14 +461,6 @@ class EndScenarioSizingDiscounted(EndScenarioSizing):
         options["discounted_annualized_cost"] = True
 
         return options
-
-
-class EndScenarioSizingDiscountedHIGHS(EndScenarioSizingDiscounted):
-    pass
-
-
-class EndScenarioSizingDiscountedGurobi(SolverGurobi, EndScenarioSizingDiscounted):
-    pass
 
 
 class EndScenarioSizingHeadLoss(EndScenarioSizing):
@@ -541,31 +543,11 @@ class EndScenarioSizingStaged(SettingsStaged, EndScenarioSizing):
     pass
 
 
-class EndScenarioSizingStagedHIGHS(EndScenarioSizingStaged):
-    pass
-
-
-class EndScenarioSizingStagedGurobi(SolverGurobi, EndScenarioSizingStaged):
-    pass
-
-
 class EndScenarioSizingDiscountedStaged(SettingsStaged, EndScenarioSizingDiscounted):
     pass
 
 
-class EndScenarioSizingDiscountedStagedHIGHS(EndScenarioSizingDiscountedStaged):
-    pass
-
-
-class EndScenarioSizingDiscountedStagedGurobi(SolverGurobi, EndScenarioSizingDiscountedStaged):
-    pass
-
-
 class EndScenarioSizingHeadLossStaged(SettingsStaged, EndScenarioSizingHeadLoss):
-    pass
-
-
-class EndScenarioSizingHeadLossStagedGurobi(SolverGurobi, EndScenarioSizingHeadLossStaged):
     pass
 
 
@@ -575,14 +557,9 @@ class EndScenarioSizingHeadLossDiscountedStaged(
     pass
 
 
-class EndScenarioSizingHeadLossDiscountedStagedGurobi(
-    SolverGurobi, EndScenarioSizingHeadLossDiscountedStaged
-):
-    pass
-
-
 def run_end_scenario_sizing_no_heat_losses(
     end_scenario_problem_class,
+    solver_class=SolverHIGHS,
     **kwargs,
 ):
     """
@@ -593,6 +570,7 @@ def run_end_scenario_sizing_no_heat_losses(
     Parameters
     ----------
     end_scenario_problem_class : The end scenario problem class.
+    solver_class: The solver and its settings to be used to solve the problem.
     staged_pipe_optimization : Boolean to toggle between the staged or non-staged approach
 
     Returns
@@ -606,8 +584,9 @@ def run_end_scenario_sizing_no_heat_losses(
     ), "A staged problem class is required as input for the sizing without heat_losses"
 
     start_time = time.time()
-    solution = run_optimization_problem(
+    solution = run_optimization_problem_solver(
         end_scenario_problem_class,
+        solver_class=solver_class,
         stage=1,
         total_stages=1,
         **kwargs,
@@ -620,6 +599,7 @@ def run_end_scenario_sizing_no_heat_losses(
 
 def run_end_scenario_sizing(
     end_scenario_problem_class,
+    solver_class=None,
     staged_pipe_optimization=True,
     **kwargs,
 ):
@@ -636,6 +616,7 @@ def run_end_scenario_sizing(
     Parameters
     ----------
     end_scenario_problem_class : The end scenario problem class.
+    solver_class: The solver and its settings to be used to solve the problem.
     staged_pipe_optimization : Boolean to toggle between the staged or non-staged approach
 
     Returns
@@ -649,8 +630,9 @@ def run_end_scenario_sizing(
 
     start_time = time.time()
     if staged_pipe_optimization and issubclass(end_scenario_problem_class, SettingsStaged):
-        solution = run_optimization_problem(
+        solution = run_optimization_problem_solver(
             end_scenario_problem_class,
+            solver_class=solver_class,
             stage=1,
             total_stages=2,
             **kwargs,
@@ -732,8 +714,9 @@ def run_end_scenario_sizing(
                     pass
         priorities_output = solution._priorities_output
 
-    solution = run_optimization_problem(
+    solution = run_optimization_problem_solver(
         end_scenario_problem_class,
+        solver_class=solver_class,
         stage=2,
         total_stages=2,
         boolean_bounds=boolean_bounds,
@@ -765,8 +748,9 @@ def main(runinfo_path, log_level):
     # user write-user
     # password nwn_write_test
 
-    _ = run_optimization_problem(
-        EndScenarioSizingHIGHS,
+    _ = run_optimization_problem_solver(
+        EndScenarioSizing,
+        solver_class=SolverHIGHS,
         esdl_run_info_path=runinfo_path,
         log_level=log_level,
         **kwargs,
