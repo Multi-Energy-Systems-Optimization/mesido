@@ -9,6 +9,8 @@ import esdl
 
 from mesido import __version__
 
+from rtctools.util import run_optimization_problem
+
 
 MULTI_ENUM_NAME_TO_FACTOR = {
     esdl.MultiplierEnum.ATTO: 1e-18,
@@ -132,3 +134,37 @@ def get_cost_value_and_unit(cost_info: esdl.SingleValue):
     cost_value /= MULTI_ENUM_NAME_TO_FACTOR[per_multiplier]
 
     return cost_value, unit, per_unit, per_time_uni
+
+
+def run_optimization_problem_solver(
+    scenario_problem_class,
+    solver_class=None,
+    **kwargs,
+):
+    """
+    This method runs the optimisation problem based on the scenario_problem_class. An additional
+    solver_class can be added to substitute the default solver options of the problem definition
+    class.
+    :param scenario_problem_class: Class defining the optimization problem
+    :param solver_class: Class defining the solver settings.
+    :param kwargs:
+    :return:
+    """
+
+    new_solver = False
+    if solver_class:
+
+        if not issubclass(scenario_problem_class, solver_class):
+            # if solver_class is already a subclass of the problem class, then these settings are
+            # already used and it should not be added to the inheritance structure.
+            class ProblemSolverClass(solver_class, scenario_problem_class):
+                pass
+
+            solution = run_optimization_problem(ProblemSolverClass, **kwargs)
+
+            new_solver = True
+
+    if not new_solver:
+        solution = run_optimization_problem(scenario_problem_class, **kwargs)
+
+    return solution
