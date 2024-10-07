@@ -201,6 +201,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         # of these maps is in the AssetSizingMixin.
         self._heat_pipe_topo_pipe_class_map = {}
 
+        # Map for setting node nominals in case of logical links.
+        self.__heat_node_variable_nominal = {}
+
         super().__init__(*args, **kwargs)
 
     def temperature_carriers(self):
@@ -545,6 +548,37 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         self.__maximum_total_head_loss = self.__get_maximum_total_head_loss()
 
+        # Setting the node nominals using the connected assets.
+        for node, connected_assets in self.energy_system_topology.nodes.items():
+            nominals = {}
+            for var in ["Q", "H", "Heat", "Hydraulic_power"]:
+                nominals[var] = []
+                for _, (asset, _orientation) in connected_assets.items():
+                    var_nom = self.variable_nominal(f"{asset}.HeatOut.{var}")
+                    if var_nom != 1:
+                        nominals[var].append(var_nom)
+                    elif self.variable_nominal(f"{asset}.HeatIn.{var}") != 1:
+                        nominals[var].append(self.variable_nominal(f"{asset}.HeatIn.{var}"))
+                    else:
+                        nominals[var].append(1)
+
+                for i in range(len(connected_assets)):
+                    if self.variable_nominal(f"{node}.HeatConn[{i + 1}].{var}") == 1:
+                        if nominals[var][i] != 1:
+                            # Here we set a nominal based directly on the connected asset.
+                            self.__heat_node_variable_nominal[f"{node}.HeatConn[{i + 1}].{var}"] = (
+                                nominals[var][i]
+                            )
+                        else:
+                            # Here we set a nominal based on median of all the connected assets to
+                            # the node. This is specifically done when we have a logical link for
+                            # node to node. In this case we cannot set the nominal based on the
+                            # connected node, hence we assume a node has at least one not node
+                            # asset connected to it.
+                            self.__heat_node_variable_nominal[f"{node}.HeatConn[{i + 1}].{var}"] = (
+                                np.median([x for x in nominals[var] if x != 1])
+                            )
+
     def energy_system_options(self):
         r"""
         Returns a dictionary of heat network physics specific options.
@@ -688,6 +722,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             return self.__pipe_head_loss_nominals[variable]
         elif variable in self.__ates_max_stored_heat_nominals:
             return self.__ates_max_stored_heat_nominals[variable]
+        elif variable in self.__heat_node_variable_nominal:
+            return self.__heat_node_variable_nominal[variable]
         else:
             return super().variable_nominal(variable)
 
@@ -2038,15 +2074,14 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             ates_dt_charging = self.state(f"{ates}.Temperature_change_charging")
             ates_dt_loss = self.state(f"{ates}.Temperature_loss")
 
+            ates_temperature_loss_nominal = self.variable_nominal(f"{ates}.Temperature_loss")
+            ates_dt_charging_nominal = self.variable_nominal(f"{ates}.Temperature_change_charging")
+
             sup_carrier = parameters[f"{ates}.T_supply_id"]
             supply_temperatures = self.temperature_regimes(sup_carrier)
 
             if options["include_ates_temperature_options"] and len(supply_temperatures) != 0:
                 soil_temperature = parameters[f"{ates}.T_amb"]
-                ates_temperature_loss_nominal = self.variable_nominal(f"{ates}.Temperature_loss")
-                ates_dt_charging_nominal = self.variable_nominal(
-                    f"{ates}.Temperature_change_charging"
-                )
 
                 flow_dir_var = self._heat_pipe_to_flow_direct_map[hot_pipe]
                 is_buffer_charging = self.state(flow_dir_var) * _hot_pipe_orientation
@@ -2162,8 +2197,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                             )
                         )
             else:
-                constraints.append((ates_dt_charging, 0.0, 0.0))
-                constraints.append((ates_dt_loss, 0.0, 0.0))
+                constraints.append((ates_dt_charging / ates_dt_charging_nominal, 0.0, 0.0))
+                constraints.append((ates_dt_loss / ates_temperature_loss_nominal, 0.0, 0.0))
         return constraints
 
     def __ates_heat_losses_path_constraints(self, ensemble_member):

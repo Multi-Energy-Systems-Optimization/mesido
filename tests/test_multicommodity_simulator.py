@@ -275,7 +275,7 @@ class TestMultiCommoditySimulator(TestCase):
         # enough windfarm power
         demand_el_calc = windfarm_power - electrolyzer_power
         demand_el_calc[demand_el_calc < 0] = 0
-        np.testing.assert_allclose(demand_el_calc, demand_el)
+        np.testing.assert_allclose(demand_el_calc, demand_el, atol=1.0e-6)
 
     def test_multi_commodity_simulator_emerge_lowprod(self):
         import models.emerge.src.example as example

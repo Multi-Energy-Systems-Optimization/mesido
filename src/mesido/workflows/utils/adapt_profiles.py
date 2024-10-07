@@ -47,6 +47,12 @@ def set_data_with_averages_and_peak_day(
         else:
             values_for_mean.append(val)
 
+    # At this point new_data[0] = 0.0. This value is not utilized. The heat demand value
+    # new_data[1] at new_date_times[1] is active from new_date_times[0] up to new_date_times[1]. To
+    # ensure a no 0.0 heat demand values end up in the optimization, new_data[0] is forced to have
+    # an artificial value below
+    new_data[0] = new_data[1]
+
     # last datetime is not in input data, so we need to take the mean of the last bit
     new_data.append(np.mean(values_for_mean))
 
