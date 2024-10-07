@@ -10,6 +10,7 @@
 - Impact on the way EndScenarioSizing problems in MESIDO are run: The calling of the different optimization problem classes has been split from the solver classes. In EndScenarioSizing classes, the HIGHS solver is the default and the calling functions also cather for other solvers by adding the keyword "solver_class" with the respective solver class.
 - Bugfix: No longer required to provide a power at the heating demands when a profile has been added.
 - Bugfix: Scaling fix on ATES temperature variable when temperature modelling not used.
+- Bugfix: Fix on nominals in electricity cables and gas pipes. Fix on nominals for nodes with logical links.
  
 ## Fixed
 - xxx
