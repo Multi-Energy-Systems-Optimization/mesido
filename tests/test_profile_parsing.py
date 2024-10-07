@@ -7,7 +7,7 @@ import esdl
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import InfluxDBProfileReader, ProfileReaderFromFile
-from mesido.workflows import EndScenarioSizingStagedHIGHS
+from mesido.workflows import EndScenarioSizingStaged
 
 import numpy as np
 
@@ -48,7 +48,7 @@ class TestPotentialErros(unittest.TestCase):
         logger, logs_list = create_log_list_scaling("WarmingUP-MPC")
 
         with self.assertRaises(SystemExit) as cm:
-            problem = EndScenarioSizingStagedHIGHS(
+            problem = EndScenarioSizingStaged(
                 esdl_parser=ESDLFileParser,
                 base_folder=base_folder,
                 model_folder=model_folder,
@@ -114,7 +114,7 @@ class TestProfileLoading(unittest.TestCase):
         base_folder = Path(run_1a.__file__).resolve().parent.parent
         model_folder = base_folder / "model"
         input_folder = base_folder / "input"
-        problem = EndScenarioSizingStagedHIGHS(
+        problem = EndScenarioSizingStaged(
             esdl_parser=ESDLFileParser,
             base_folder=base_folder,
             model_folder=model_folder,
