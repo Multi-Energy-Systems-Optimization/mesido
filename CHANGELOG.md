@@ -1,6 +1,7 @@
 # [Unreleased] - 2024-10-07
 
 ## Added
+- Heating and cooling example case added (2 heating demands, 1 cold demand, hot and cold producer, WKO as seasonal storage)
 - Gas physics documentation
 - Test case: Head loss validation with pandapipes.
 - Example on ESDL file creation using pyESDL for the PoC Tutorial.
@@ -8,6 +9,7 @@
 - Grow_workflow: Solver class created to allow the use of CPLEX as a solver for EndScenarioSizing classes. 
 
 ## Changed
+- Cooling demand added to adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day (peak cooling day not used yet)
 - Impact on the way EndScenarioSizing problems in MESIDO are run: The calling of the different optimization problem classes has been split from the solver classes. In EndScenarioSizing classes, the HIGHS solver is the default and the calling functions also cather for other solvers by adding the keyword "solver_class" with the respective solver class.
 - Bugfix: No longer required to provide a power at the heating demands when a profile has been added.
 - Bugfix: Scaling fix on ATES temperature variable when temperature modelling not used.
