@@ -2038,15 +2038,14 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             ates_dt_charging = self.state(f"{ates}.Temperature_change_charging")
             ates_dt_loss = self.state(f"{ates}.Temperature_loss")
 
+            ates_temperature_loss_nominal = self.variable_nominal(f"{ates}.Temperature_loss")
+            ates_dt_charging_nominal = self.variable_nominal(f"{ates}.Temperature_change_charging")
+
             sup_carrier = parameters[f"{ates}.T_supply_id"]
             supply_temperatures = self.temperature_regimes(sup_carrier)
 
             if options["include_ates_temperature_options"] and len(supply_temperatures) != 0:
                 soil_temperature = parameters[f"{ates}.T_amb"]
-                ates_temperature_loss_nominal = self.variable_nominal(f"{ates}.Temperature_loss")
-                ates_dt_charging_nominal = self.variable_nominal(
-                    f"{ates}.Temperature_change_charging"
-                )
 
                 flow_dir_var = self._heat_pipe_to_flow_direct_map[hot_pipe]
                 is_buffer_charging = self.state(flow_dir_var) * _hot_pipe_orientation
@@ -2162,8 +2161,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                             )
                         )
             else:
-                constraints.append((ates_dt_charging, 0.0, 0.0))
-                constraints.append((ates_dt_loss, 0.0, 0.0))
+                constraints.append((ates_dt_charging / ates_dt_charging_nominal, 0.0, 0.0))
+                constraints.append((ates_dt_loss / ates_temperature_loss_nominal, 0.0, 0.0))
         return constraints
 
     def __ates_heat_losses_path_constraints(self, ensemble_member):
