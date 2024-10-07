@@ -37,9 +37,8 @@ Electricity Cable
 ~~~~~~~~~~~~~~~~~
 
 The main function of an electricity cable is to transport electrical power over the network.
-Whilst doing so the calbe dissepates part of this energy due to the resistance of the cable.
-Within MESIDO the user can select whether or not to model this power loss (energy_system_options -> include_electric_cable_power_loss). In case the power loss
-is modelled the using the DC equations.
+Whilst doing so the cable dissepates part of this energy due to the resistance of the cable.
+Within MESIDO the user can select whether or not to model this power loss (energy_system_options -> include_electric_cable_power_loss). When power loss is included it is represented with a DC (direct current) approximation as follows.
 
 .. math::
     :label: eq:V_drop
@@ -59,7 +58,7 @@ Bus
 ~~~
 
 A bus is a point in the network where multiple electricity cables come together to ensure an
-electrically feasible solution the voltages of all these ports should be equal (similar with head at a node).
+electrically feasible solution. The voltages of all these ports should be equal (similar with head at a node).
 
 .. math::
     :label: eq:bus_V
@@ -74,14 +73,14 @@ Electricity Source
 ~~~~~~~~~~~~~~~~~~
 
 The function of an electricity source is to add electrical power to the network.
-The power balance is given by :eq:`eq:P_balance` where :math:`\dot{Q}_consumed` is equal to the
+The power balance is given by :eq:`eq:Q_balance` where :math:`\dot{Q}_{consumed}` is equal to the
 (negative) produced power of the source.
 
 Electricity Demand
 ~~~~~~~~~~~~~~~~~~
 
 The function of an electricity demand is to subtract electrical power from the network.
-The power balance is given by :eq:`eq:P_balance` where :math:`\dot{Q}_consumed` is equal to the
+The power balance is given by :eq:`eq:Q_balance` where :math:`\dot{Q}_{consumed}` is equal to the
 consumed power of the demand.
 
 Furthermore, demands typically consume their power at a prescribed voltage.
@@ -112,5 +111,5 @@ The consumed power of the storage assets is equated to the change in stored ener
 
     \dot{Q}^{a}_{consumed} = \dot{Q}^{a}_{stored} \;\; \forall a \in A_{storage}
 
-ADD THE ENERGY LOSS MODEL
+Upcoming: ADD THE ENERGY LOSS MODEL
 
