@@ -57,9 +57,13 @@ class DetailedTestResult(unittest.TestResult):
             return 0.0
         return time.perf_counter() - self.test_start_time
 
-    def addSuccess(self, test: unittest.TestCase) -> None:
+    def addSuccess(self, test: unittest.TestCase) -> None:  # noqa: N802
         """
         Called when a test succeeds.
+
+        End-of-line comment "# noqa: N802" is included in the first line to indicate flake8 to
+        ignore the capitals in the method name addSuccess, as this method name overrides the method
+        from a parent class
 
         Args:
             test (unittest.TestCase): The test case that succeeded.
@@ -67,9 +71,15 @@ class DetailedTestResult(unittest.TestResult):
         super().addSuccess(test)
         self.test_results.append((test, "Success", None, self.get_test_duration()))
 
-    def addError(self, test: unittest.TestCase, err: Tuple[type, Exception, Any]) -> None:
+    def addError(
+        self, test: unittest.TestCase, err: Tuple[type, Exception, Any]
+    ) -> None:  # noqa: N802
         """
         Called when a test raises an error.
+
+        End-of-line comment "# noqa: N802" is included in the first line to indicate flake8 to
+        ignore the capitals in the method name addError, as this method name overrides the method
+        from a parent class
 
         Args:
             test (unittest.TestCase): The test case that raised an error.
@@ -78,9 +88,16 @@ class DetailedTestResult(unittest.TestResult):
         super().addError(test, err)
         self.test_results.append((test, "Error", err, self.get_test_duration()))
 
-    def addFailure(self, test: unittest.TestCase, err: Tuple[type, Exception, Any]) -> None:
+    def addFailure(
+        self, test: unittest.TestCase, err: Tuple[type, Exception, Any]
+    ) -> None:  # noqa: N802
         """
         Called when a test fails.
+
+        End-of-line comment "# noqa: N802" is included in the first line to indicate flake8 to
+        ignore the capitals in the method name addFailure, as this method name overrides the method
+        from a parent class
+
 
         Args:
             test (unittest.TestCase): The test case that failed.

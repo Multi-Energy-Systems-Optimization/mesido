@@ -93,8 +93,8 @@ def get_scaling_range(
     to determine the ranges for various components.
 
     Args:
-        rtc_logs_list (List[logging.LogRecord]): A list of log entries to process. Each entry is expected
-                               to have 'funcName' and 'msg' attributes.
+        rtc_logs_list (List[logging.LogRecord]): A list of log entries to process. Each entry
+                               is expected to have 'funcName' and 'msg' attributes.
         rtc_logger (logging.Logger): A logger object to record the extracted range data.
 
     Returns:

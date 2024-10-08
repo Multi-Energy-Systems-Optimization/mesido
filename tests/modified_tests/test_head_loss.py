@@ -11,12 +11,12 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
-from utils_tests import demand_matching_test
-
 from utils_test_scaling import (
     check_scaling,
     create_problem_with_debug_info,
 )
+
+from utils_tests import demand_matching_test
 
 
 class TestHeadLoss(TestCase):
