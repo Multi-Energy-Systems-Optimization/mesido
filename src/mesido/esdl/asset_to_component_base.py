@@ -743,7 +743,8 @@ class _AssetToComponentBase:
             q_nominals = {}
             try:
                 for port in asset.in_ports:
-                    connected_port = asset.in_ports[0].connectedTo[0]
+                    # connected_port = asset.in_ports[0].connectedTo[0] ?? This assume that port 0 is connected the heat network/pipe and port 1 connected to elec cable
+                    connected_port = port.connectedTo[0]
                     if isinstance(port.carrier, esdl.GasCommodity):
                         q_nominals["Q_nominal_gas"] = self._port_to_q_nominal[connected_port]
                         self._port_to_q_nominal[port] = q_nominals["Q_nominal_gas"]
@@ -752,7 +753,7 @@ class _AssetToComponentBase:
                         self._port_to_q_nominal[port] = q_nominals["Q_nominal"]
                     else:
                         logger.error(
-                            f"{asset.name} should have at least gas or heat specified on"
+                            f"{asset.name} should have at least gas or heat specified on "
                             f"one of the in ports"
                         )
             except KeyError:
