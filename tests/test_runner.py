@@ -44,6 +44,8 @@ class DetailedTestResult(unittest.TestResult):
         """
         if hasattr(test, "range_data"):
             self.range_data[test.id()] = test.range_data
+        else:
+            print(f"No range_data attribute found for {test.id()}")
         super().stopTest(test)
 
     def get_test_duration(self) -> float:
@@ -70,7 +72,9 @@ class DetailedTestResult(unittest.TestResult):
         """
         super().addSuccess(test)
         self.test_results.append((test, "Success", None, self.get_test_duration()))
-
+        if hasattr(test, "range_data"):
+            self.range_data[test.id()] = test.range_data
+            
     def addError(
         self, test: unittest.TestCase, err: Tuple[type, Exception, Any]
     ) -> None:  # noqa: N802
@@ -83,8 +87,7 @@ class DetailedTestResult(unittest.TestResult):
 
         Args:
             test (unittest.TestCase): The test case that raised an error.
-            err (Tuple[type, Exception, Any]): A tuple containing the error details.
-        """
+            err (Tuple[type, Exception, Any]) -> None:
         super().addError(test, err)
         self.test_results.append((test, "Error", err, self.get_test_duration()))
 
