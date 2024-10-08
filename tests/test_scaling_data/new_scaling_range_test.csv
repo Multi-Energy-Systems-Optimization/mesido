@@ -1,1 +1,4 @@
 Test Name,Model Element,Min,Max
+test_multi_commodity_simulator_priorities_el,objective,0.0,0.0
+test_multi_commodity_simulator_priorities_el,matrix,0.014349099999999998,754.3376134279414
+test_multi_commodity_simulator_priorities_el,rhs,0.026180339887659526,1.5

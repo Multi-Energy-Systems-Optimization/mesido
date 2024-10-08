@@ -74,7 +74,7 @@ class DetailedTestResult(unittest.TestResult):
         self.test_results.append((test, "Success", None, self.get_test_duration()))
         if hasattr(test, "range_data"):
             self.range_data[test.id()] = test.range_data
-            
+
     def addError(
         self, test: unittest.TestCase, err: Tuple[type, Exception, Any]
     ) -> None:  # noqa: N802
@@ -90,6 +90,9 @@ class DetailedTestResult(unittest.TestResult):
             err (Tuple[type, Exception, Any]) -> None:
         super().addError(test, err)
         self.test_results.append((test, "Error", err, self.get_test_duration()))
+        """
+        if hasattr(test, "range_data"):
+            self.range_data[test.id()] = test.range_data
 
     def addFailure(
         self, test: unittest.TestCase, err: Tuple[type, Exception, Any]
@@ -101,13 +104,14 @@ class DetailedTestResult(unittest.TestResult):
         ignore the capitals in the method name addFailure, as this method name overrides the method
         from a parent class
 
-
         Args:
             test (unittest.TestCase): The test case that failed.
             err (Tuple[type, Exception, Any]): A tuple containing the failure details.
         """
         super().addFailure(test, err)
         self.test_results.append((test, "Failure", err, self.get_test_duration()))
+        if hasattr(test, "range_data"):
+            self.range_data[test.id()] = test.range_data
 
     def print_results(self) -> None:
         """
@@ -123,12 +127,11 @@ class DetailedTestResult(unittest.TestResult):
                 else:
                     print(f"  Error: {error[1]}")
             if test.id() in self.range_data:
-                print("  Range Data:")
+                print(" ************** Range Data:")
                 for key, value in self.range_data[test.id()].items():
                     print(f"    {key}: {value}")
             else:
-                print("  Range Data: Not available")
-            print(self.range_data)
+                print(f"  Range Data: Not available (test.id: {test.id()})")
 
         print("\nOverall Test Results:")
         print(f"Ran {self.testsRun} tests")
