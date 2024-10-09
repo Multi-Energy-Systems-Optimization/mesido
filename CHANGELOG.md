@@ -3,6 +3,7 @@
 ## Added
 - Heating and cooling example case added (2 heating demands, 1 cold demand, hot and cold producer, WKO as seasonal storage)
 - Gas physics documentation
+- Gas & electricity 1st version of physics documentation
 - Test case: Head loss validation with pandapipes.
 - Example on ESDL file creation using pyESDL for the PoC Tutorial.
 - Electrolyzer specific power curve valley location specified optionally specified in ESDL.
@@ -16,6 +17,7 @@
 - Bugfix: Fix on nominals in electricity cables and gas pipes. Fix on nominals for nodes with logical links.
  
 ## Fixed
+- documentation: heat physics tank storage
 - bug fix in grow_workflow (heat networks), changed minimum velocity from 0 to default value
 - addition to tests checking the minimum velocity setting in a workflow
 
