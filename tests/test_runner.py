@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 # Define the expected directory relative to the script location, excluding the filename
 EXPECTED_DIR: str = os.path.dirname(os.path.abspath(__file__))
+TestError = Tuple[type, Exception, Any]
 
 
 class DetailedTestResult(unittest.TestResult):
@@ -75,9 +76,7 @@ class DetailedTestResult(unittest.TestResult):
         if hasattr(test, "range_data"):
             self.range_data[test.id()] = test.range_data
 
-    def addError(
-        self, test: unittest.TestCase, err: Tuple[type, Exception, Any]
-    ) -> None:  # noqa: N802
+    def addError(self, test: unittest.TestCase, err: TestError) -> None:  # noqa: N802
         """
         Called when a test raises an error.
 
@@ -94,9 +93,7 @@ class DetailedTestResult(unittest.TestResult):
         if hasattr(test, "range_data"):
             self.range_data[test.id()] = test.range_data
 
-    def addFailure(
-        self, test: unittest.TestCase, err: Tuple[type, Exception, Any]
-    ) -> None:  # noqa: N802
+    def addFailure(self, test: unittest.TestCase, err: TestError) -> None:  # noqa: N802
         """
         Called when a test fails.
 
