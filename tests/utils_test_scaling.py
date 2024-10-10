@@ -284,7 +284,10 @@ def check_element_range(
         actual_range["min"],
         actual_range["max"],
     )
-    expected_min, expected_max = ["min"], expected_range["max"]
+    expected_min, expected_max = (
+        expected_range["min"],
+        expected_range["max"],
+    )
 
     if actual_min < expected_min * (1 - relative_tol):
         raise AssertionError(
@@ -332,10 +335,11 @@ def check_scaling(
         This function modifies the test_instance by adding a 'range_data' attribute.
         It also logs the range data for debugging purposes.
     """
-    range_data = get_scaling_range(rtc_logs_list, rtc_logger)
-    test_instance.range_data = range_data
-    logging.info(f"Range data in check_scaling: {range_data}")  # Add this line for debugging
     test_name = inspect.currentframe().f_back.f_code.co_name
     if test_name_suffix is not None:
         test_name += "_" + test_name_suffix
+    range_data = get_scaling_range(rtc_logs_list, rtc_logger)
+    test_instance.range_data = range_data
+    test_instance.test_name = test_name
+    logging.info(f"Range data in check_scaling: {range_data}")  # Add this line for debugging
     check_scale_range(test_name, range_data, relative_tol, maximum_order_diff)
