@@ -165,8 +165,8 @@ class DetailedTestResult(unittest.TestResult):
                             [
                                 test_id_short,
                                 model_element,
-                                value_array[0],
-                                value_array[1],
+                                value_array["min"],
+                                value_array["max"],
                             ]
                         )
                     else:

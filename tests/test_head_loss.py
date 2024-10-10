@@ -94,7 +94,7 @@ class TestHeadLoss(TestCase):
                 "influxdb_verify_ssl": False,
             }
 
-            test_name_suffix = head_loss_type = head_loss_option_setting.name
+            test_name_suffix = head_loss_option_setting.name
 
             (
                 source_pipe_sink_dw_scaling,

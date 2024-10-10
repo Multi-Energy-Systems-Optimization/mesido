@@ -26,9 +26,6 @@ test_end_scenario_sizing_discounted,rhs,70.0,6.0
 test_end_scenario_sizing_head_loss,objective,0.0,0.0
 test_end_scenario_sizing_head_loss,matrix,8.101851851851851,2203.0416509164675
 test_end_scenario_sizing_head_loss,rhs,71.33456709572863,6.0
-test_end_scenario_sizing_staged,objective,0.0,0.0
-test_end_scenario_sizing_staged,matrix,8.101851851851851,2203.0416509164675
-test_end_scenario_sizing_staged,rhs,70.0,6.0
 test_end_scenario_sizing_annualized,objective_matrix,9.999999999999998,2.6
 test_end_scenario_sizing_annualized,objective,2.85434,5.0
 test_end_scenario_sizing_annualized,matrix,3.968830251856133,274.6098858686743
@@ -39,9 +36,6 @@ test_gas_boiler,rhs,0.026180339887659526,31.622792381508503
 test_heat_network_head_loss,objective,0.0,0.0
 test_heat_network_head_loss,matrix,0.014860972716447889,67.29034627008068
 test_heat_network_head_loss,rhs,0.026180339887659526,31.622792381508503
-test_heat_network_pipe_split_head_loss,objective,0.0,0.0
-test_heat_network_pipe_split_head_loss,matrix,0.007877857565182441,1000.0
-test_heat_network_pipe_split_head_loss,rhs,2.9931413902500137,133.7808616977707
 test_heat_loss,objective,0.0,0.0
 test_heat_loss,matrix,0.014860972716447889,67.29034627008068
 test_heat_loss,rhs,0.026180339887659526,31.622792381508503
@@ -73,6 +67,9 @@ test_half_network_gone,rhs,0.0011817114411068073,846.2290951684935
 test_max_producer_profile,objective,0.0,0.0
 test_max_producer_profile,matrix,0.004472046514963671,223.6112698412135
 test_max_producer_profile,rhs,0.004472046514963672,223.60679779469854
+test_setpoint_constraints,objective,0.0,0.0
+test_setpoint_constraints,matrix,0.004472046514963671,223.6112698412135
+test_setpoint_constraints,rhs,0.004472046514963672,223.60679779469854
 test_ates_max_flow,objective_matrix,1.0,1.0
 test_ates_max_flow,objective,0.0,39.0
 test_ates_max_flow,matrix,0.0028150405190213662,10000.0

@@ -4,7 +4,7 @@ import logging
 import math
 import os
 import re
-from typing import Callable, Dict, List, Optional
+from typing import Dict, List, Optional
 from unittest import TestCase
 
 from rtctools._internal.debug_check_helpers import DebugLevel
@@ -277,12 +277,14 @@ def check_element_range(
 ) -> None:
     """Check if the actual range falls within the expected range,
     considering the relative tolerance.
+
+    Note: this function assumes that actual_range["max"] is non-negative.
     """
     actual_min, actual_max = (
         actual_range["min"],
         actual_range["max"],
     )
-    expected_min, expected_max = expected_range["min"], expected_range["max"]
+    expected_min, expected_max = ["min"], expected_range["max"]
 
     if actual_min < expected_min * (1 - relative_tol):
         raise AssertionError(

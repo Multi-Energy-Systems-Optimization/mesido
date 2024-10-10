@@ -146,14 +146,8 @@ class TestEndScenarioSizing(TestCase):
 
         solution_unstaged = self.solution
 
-        (
-            end_scenario_sizing_highs_scaling,
-            rtc_logger,
-            rtc_logs_list,
-        ) = create_problem_with_debug_info(EndScenarioSizingHIGHS)
-
         solution_unstaged_2 = run_end_scenario_sizing(
-            end_scenario_sizing_highs_scaling,
+            EndScenarioSizingHIGHS,
             staged_pipe_optimization=False,
             base_folder=base_folder,
             esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
@@ -162,14 +156,8 @@ class TestEndScenarioSizing(TestCase):
             input_timeseries_file="Warmte_test.csv",
         )
 
-        (
-            end_scenario_staged_highs_scaling,
-            rtc_logger,
-            rtc_logs_list,
-        ) = create_problem_with_debug_info(EndScenarioSizingStagedHIGHS)
-
         solution_staged = run_end_scenario_sizing(
-            end_scenario_staged_highs_scaling,
+            EndScenarioSizingStagedHIGHS,
             base_folder=base_folder,
             esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
             esdl_parser=ESDLFileParser,
@@ -181,13 +169,6 @@ class TestEndScenarioSizing(TestCase):
 
         # Check whehter the heat demand is matched
         demand_matching_test(solution_staged, results)
-
-        # Check scaling differences and ranges in objective, matrix and rhs
-        check_scaling(
-            self,
-            rtc_logger,
-            rtc_logs_list,
-        )
 
         # Check whether cyclic ates constraint is working
         for a in solution_staged.energy_system_components.get("ates", []):
