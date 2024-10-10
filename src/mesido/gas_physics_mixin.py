@@ -468,7 +468,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             max_dh_network_options = (
                 self.gas_network_settings["pipe_maximum_pressure"]
                 - self.gas_network_settings["pipe_minimum_pressure"]
-            ) * 10e5/ (parameters[f"{pipe}.density"]/1e3)
+            ) * 1e5/ (parameters[f"{pipe}.density"]/1e3 * 9.81)
         else:
             max_dh_network_options = (
                                              self.gas_network_settings["pipe_maximum_pressure"]

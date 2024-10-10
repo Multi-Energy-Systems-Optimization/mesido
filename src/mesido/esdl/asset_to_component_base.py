@@ -657,6 +657,14 @@ class _AssetToComponentBase:
 
             if q_nominal_in == 0.0 or q_nominal_out == 0.0:
                 q_nominal_in = q_nominal_out = max(q_nominal_in, q_nominal_out)
+            if q_nominal_in == 0.0 and q_nominal_out == 0.0:
+                q_nominal_in = q_nominal_out = ((
+                    max([asset.attributes.get(key, -1) for key in self.__power_keys]))
+                                                / (
+                        get_density(asset.name, asset.in_ports[0].carrier)
+                        * get_internal_energy(asset.name, asset.in_ports[0].carrier)
+                        / 1.0e3
+                ))
             self._port_to_q_nominal[asset.in_ports[0]] = q_nominal_in
             self._port_to_q_nominal[asset.out_ports[0]] = q_nominal_out
 

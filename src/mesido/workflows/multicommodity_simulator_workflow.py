@@ -135,10 +135,11 @@ class SolverCPLEX:
         options["casadi_solver"] = self._qpsol
         options["solver"] = "cplex"
         cplex_options = options["cplex"] = {}
+        cplex_options["CPXPARAM_Threads"] = 4
         cplex_options["CPX_PARAM_EPGAP"] = 0.0001
         if self._priority:
             if self._priority>1e4:
-                cplex_options["CPX_PARAM_EPGAP"] = 0.001
+                cplex_options["CPX_PARAM_EPGAP"] = 0.01
 
         options["highs"] = None
         options["gurobi"] = None
@@ -345,8 +346,8 @@ class MultiCommoditySimulator(
     def pre(self):
         self._qpsol = CachingQPSol()
 
-        self.gas_network_settings["pipe_maximum_pressure"] = 8.0e3  # [bar]
-        self.gas_network_settings["pipe_minimum_pressure"] = 50.0  # [bar]
+        # self.gas_network_settings["pipe_maximum_pressure"] = 8.0e3  # [bar]
+        # self.gas_network_settings["pipe_minimum_pressure"] = 1.0  # [bar]
 
         super().pre()
 
@@ -463,6 +464,7 @@ class MultiCommoditySimulator(
                         add_goal = False
                 if add_goal:
                     if "import" in asset.lower():
+                        # if 'gas' not in asset_variable_map[asset].lower():
                         goals.append(
                             MinimizeSourcesGoalMerit(
                                 variable_name,
@@ -642,9 +644,9 @@ class MultiCommoditySimulator(
     def energy_system_options(self):
         options = super().energy_system_options()
 
-        self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
+        self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
         self.gas_network_settings["network_type"] = NetworkSettings.NETWORK_TYPE_HYDROGEN
-        self.gas_network_settings["minimize_head_losses"] = True
+        self.gas_network_settings["minimize_head_losses"] = False
         self.gas_network_settings["maximum_velocity"] = 60.0
         self.gas_network_settings["n_linearization_lines"] = 5
         options["include_asset_is_switched_on"] = True
@@ -658,12 +660,56 @@ class MultiCommoditySimulator(
 
         return options
 
+    def __constraint_fix_pressure(self, ensemble_member):
+        constraints = []
+        head_in = self.state("Pipe_GDF SUEZ E&P Nederland B_V__6.GasIn.H")
+        density = self.parameters(ensemble_member)["Pipe_GDF SUEZ E&P Nederland B_V__6.density"]
+        pressure = 50e5 #50bar
+        constraints.append((head_in*density/1e3*9.81 /pressure, 1.0, 1.0))
+
+
+        standard = False
+        if standard:
+            conv_DEN_1 = self.state("gasconversion_e209.GasOut.mass_flow")
+            conv_DEN_2 = self.state("gasconversion_6cbe.GasOut.mass_flow")
+
+            conv_EEM_1 = self.state("gasconversion_bad0.GasOut.mass_flow")
+            conv_EEM_2 = self.state("gasconversion_fc69.GasOut.mass_flow")
+            conv_EEM_3 = self.state("gasconversion_2abd.GasOut.mass_flow")
+            nominal = self.bounds()["gasconversion_2abd.GasIn.mass_flow"][1]
+            constraints.append(((1.5*(conv_DEN_1+conv_DEN_2)-(conv_EEM_1+conv_EEM_2+conv_EEM_3))/nominal,0.0, 0.0))
+
+            # match head:
+            conv_DEN_1 = self.state("gasconversion_e209.GasIn.H")
+            conv_DEN_2 = self.state("gasconversion_6cbe.GasIn.H")
+            nominal = 1e5
+            constraints.append(((conv_DEN_1-conv_DEN_2)/nominal, 0.0, 0.0))
+
+            conv_EEM_1 = self.state("gasconversion_bad0.GasIn.H")
+            conv_EEM_2 = self.state("gasconversion_fc69.GasIn.H")
+            conv_EEM_3 = self.state("gasconversion_2abd.GasIn.H")
+            nominal = 1e5
+            constraints.append(((conv_EEM_1 - conv_EEM_3) / nominal, 0.0, 0.0))
+            constraints.append(((conv_EEM_2 - conv_EEM_3) / nominal, 0.0, 0.0))
+        else:
+            conv_DEN_2 = self.state("gasconversion_6cbe.GasOut.mass_flow")
+            conv_EEM_3 = self.state("gasconversion_2abd.GasOut.mass_flow")
+            nominal = 1e4#self.bounds()["gasconversion_2abd.GasIn.mass_flow"][1]
+            constraints.append(((1.5 * conv_DEN_2 - conv_EEM_3) / nominal, 0.0, 0.0))
+
+
+
+
+        return constraints
+
+
     def path_constraints(self, ensemble_member):
         """
         Constraints to limit producer production in case timeseries for the production exist,
         relevant when the first goals is not to match profile.
         """
         constraints = super().path_constraints(ensemble_member)
+        constraints.extend(self.__constraint_fix_pressure(ensemble_member))
 
         return constraints
 
