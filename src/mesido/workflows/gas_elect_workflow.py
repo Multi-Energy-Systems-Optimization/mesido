@@ -1,4 +1,6 @@
 import logging
+
+from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
@@ -46,9 +48,8 @@ class TargetHeatGoal(Goal):
 
 
 class GasElectProblem(
-    # SolverHIGHS,
     ScenarioOutput,
-    # ESDLAdditionalVarsMixin,
+    ESDLAdditionalVarsMixin,
     TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
     SinglePassGoalProgrammingMixin,
@@ -60,8 +61,10 @@ class GasElectProblem(
 
         self._number_of_years = 30.0
 
-    def times(self, variable=None) -> np.ndarray:
-        return super().times(variable)[:5]
+        self.heat_network_settings["minimize_head_losses"] = False
+
+    # def times(self, variable=None) -> np.ndarray:
+    #     return super().times(variable)[:5]  # same lenght as the demand profile data in the csv
 
     def pre(self):
         super().pre()
@@ -87,6 +90,10 @@ class GasElectProblem(
                 target.values,
                 0,
             )
+            # Check for myself
+            if max(self.get_timeseries(f"{demand}.target_heat_demand").values) > 80.0*10**3:
+                temp = 0.0
+                exit("demand issue")
 
     def parameters(self, ensemble_member):
         parameters = super().parameters(ensemble_member)

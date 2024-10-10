@@ -744,7 +744,7 @@ class _AssetToComponentBase:
             try:
                 for port in asset.in_ports:
                     # connected_port = asset.in_ports[0].connectedTo[0] ?? This assume that port 0 is connected the heat network/pipe and port 1 connected to elec cable
-                    connected_port = port.connectedTo[0]
+                    connected_port = port.connectedTo[0]  # ??
                     if isinstance(port.carrier, esdl.GasCommodity):
                         q_nominals["Q_nominal_gas"] = self._port_to_q_nominal[connected_port]
                         self._port_to_q_nominal[port] = q_nominals["Q_nominal_gas"]
@@ -752,13 +752,14 @@ class _AssetToComponentBase:
                         q_nominals["Q_nominal"] = self._port_to_q_nominal[connected_port]
                         self._port_to_q_nominal[port] = q_nominals["Q_nominal"]
                     else:
+                        # error need to be updated
                         logger.error(
                             f"{asset.name} should have at least gas or heat specified on "
                             f"one of the in ports"
                         )
             except KeyError:
                 if isinstance(asset.out_ports[0].carrier, esdl.GasCommodity):
-                    connected_port = asset.out_ports[0].connectedTo[0]
+                    connected_port = asset.out_ports[0].connectedTo[0] # ??
                     q_nominals["Q_nominal"] = (
                         self._port_to_q_nominal.get(connected_port, None)
                         if self._port_to_q_max.get(connected_port, False)
@@ -853,6 +854,8 @@ class _AssetToComponentBase:
             )
             modifiers["installation_cost"] = self.get_installation_costs(asset)
         elif asset.asset_type == "GasDemand":
+            modifiers["variable_operational_cost_coefficient"] = self.get_variable_opex_costs(asset)
+        elif asset.asset_type == "GasProducer":
             modifiers["variable_operational_cost_coefficient"] = self.get_variable_opex_costs(asset)
         elif asset.asset_type == "Electrolyzer":
             modifiers["variable_operational_cost_coefficient"] = self.get_variable_opex_costs(asset)
@@ -1064,6 +1067,7 @@ class _AssetToComponentBase:
                 continue
             if per_unit != UnitEnum.WATTHOUR and asset.asset_type not in [
                 "GasDemand",
+                "GasProducer",
                 "GasStorage",
                 "Electrolyzer",
             ]:
@@ -1074,7 +1078,7 @@ class _AssetToComponentBase:
                 )
                 continue
             if (
-                asset.asset_type in ["GasDemand", "GasStorage", "Electrolyzer"]
+                asset.asset_type in ["GasDemand", "GasProducer", "GasStorage", "Electrolyzer"]
                 and per_unit != UnitEnum.GRAM
             ):
                 logger.warning(

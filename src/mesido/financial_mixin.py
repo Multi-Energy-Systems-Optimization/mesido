@@ -242,8 +242,15 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 )
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
-            elif asset_name in [*self.energy_system_components.get("gas_demand", [])]:
-                nominal_fixed_operational = bounds[f"{asset_name}.Gas_demand_mass_flow"][1]
+            elif asset_name in [
+                *self.energy_system_components.get("gas_demand", []),
+                *self.energy_system_components.get("gas_source", []),
+            ]:
+                if asset_name in [*self.energy_system_components.get("gas_demand", [])]:
+                    nominal_fixed_operational = bounds[f"{asset_name}.Gas_demand_mass_flow"][1]
+                elif asset_name in [*self.energy_system_components.get("gas_source", [])]:
+                    nominal_fixed_operational = bounds[f"{asset_name}.Gas_source_mass_flow"][1]
+
                 nominal_fixed_operational = (
                     nominal_fixed_operational
                     if isinstance(nominal_fixed_operational, float)

@@ -575,8 +575,13 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                             # node to node. In this case we cannot set the nominal based on the
                             # connected node, hence we assume a node has at least one not node
                             # asset connected to it.
+                            # self.__heat_node_variable_nominal[f"{node}.HeatConn[{i + 1}].{var}"] = (
+                            #     np.median([x for x in nominals[var] if x != 1])
+                            # )  bug 
                             self.__heat_node_variable_nominal[f"{node}.HeatConn[{i + 1}].{var}"] = (
-                                np.median([x for x in nominals[var] if x != 1])
+                                np.median([x for x in nominals[var] if x != 1]) if np.sum(
+                                    nominals[var]
+                                ) != len(nominals[var]) else 1.0
                             )
 
     def energy_system_options(self):
