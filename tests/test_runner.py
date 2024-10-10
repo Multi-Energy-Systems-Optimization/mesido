@@ -87,9 +87,9 @@ class DetailedTestResult(unittest.TestResult):
         Args:
             test (unittest.TestCase): The test case that raised an error.
             err (Tuple[type, Exception, Any]) -> None:
+        """
         super().addError(test, err)
         self.test_results.append((test, "Error", err, self.get_test_duration()))
-        """
         if hasattr(test, "range_data"):
             self.range_data[test.id()] = test.range_data
 
@@ -124,11 +124,11 @@ class DetailedTestResult(unittest.TestResult):
                 else:
                     print(f"  Error: {error[1]}")
             if test.id() in self.range_data:
-                print(" ************** Range Data:")
+                print("  Range Data:")
                 for key, value in self.range_data[test.id()].items():
                     print(f"    {key}: {value}")
             else:
-                print(f"  Range Data: Not available (test.id: {test.id()})")
+                print(" Range Data: Not available")
 
         print("\nOverall Test Results:")
         print(f"Ran {self.testsRun} tests")

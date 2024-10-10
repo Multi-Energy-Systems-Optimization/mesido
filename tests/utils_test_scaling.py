@@ -4,7 +4,7 @@ import logging
 import math
 import os
 import re
-from typing import Dict, List
+from typing import Callable, Dict, List, Optional
 from unittest import TestCase
 
 from rtctools._internal.debug_check_helpers import DebugLevel
@@ -81,6 +81,52 @@ def check_scale_order(dict_values, maximum_order_diff):
     assert len(msg_order) == 0, msg_order
 
 
+def check_element_scale_order(
+    element: str,
+    actual_range: Dict[str, float],
+    expected_range_values: Dict[str, float],
+    maximum_order_diff: Optional[float] = None,
+) -> None:
+    """
+    Check if the scaling order of the actual range is within the expected range.
+
+    This function calculates the order of magnitude for both the actual and expected
+    ranges, and compares them. If the actual order exceeds the expected order, it
+    raises an AssertionError with a detailed message.
+
+    Args:
+        element (str): The name or identifier of the element being checked.
+        actual_range (Dict[str, float]): A dictionary containing 'min' and 'max' values
+                                         of the actual range.
+        expected_range_values (Dict[str, float]): A dictionary containing 'min' and 'max'
+                                                  values of the expected range.
+        maximum_order_diff (Optional[float]): The maximum allowed order difference.
+                                              If None, it's calculated from expected_range_values.
+
+    Raises:
+        AssertionError: If the actual scaling order exceeds the expected order.
+
+    Note:
+        The order is calculated as max/min if min is non-zero, otherwise it's just max.
+    """
+
+    def calculate_order(element):
+        return element["max"] / element["min"] if element["min"] != 0.0 else element["max"]
+
+    msg_order = {}
+    order = calculate_order(actual_range)
+    maximum_order_diff = calculate_order(expected_range_values)
+
+    if order > maximum_order_diff:
+        order_wrong = math.floor(math.log(order, 10))
+        msg_order[element] = (
+            f"The scaling order difference of the {element} elements in this problem, "
+            f"is of the order {order_wrong}, which is greather than the expected scaled "
+            f"order difference ({maximum_order_diff})"
+        )
+    assert len(msg_order) == 0, msg_order
+
+
 def get_scaling_range(
     rtc_logs_list: List[logging.LogRecord], rtc_logger: logging.Logger
 ) -> Dict[str, List[float]]:
@@ -119,26 +165,28 @@ def get_scaling_range(
         ) == log.msg:
             data = linear_coeff_log[linear_coeff_log.index(log) + 1]
             data_str = re.findall(r"[-+]?\d*\.\d+|\d+", data.msg)
-            range_data["matrix"] = [float(data_str[1]), float(data_str[0])]
-            range_data["rhs"] = [float(data_str[3]), float(data_str[2])]
+            range_data["matrix"] = {"min": float(data_str[1]), "max": float(data_str[0])}
+            range_data["rhs"] = {"min": float(data_str[3]), "max": float(data_str[2])}
         elif ("Statistics of objective: max & min of abs(jac(f,") in log.msg:
             data = linear_coeff_log[linear_coeff_log.index(log) + 1]
             data_str = re.findall(r"[-+]?\d*\.\d+|\d+", data.msg)
             if len(data_str) > 2:
-                range_data["objective_matrix"] = [
-                    float(data_str[1]),
-                    float(data_str[0]),
-                ]
-                range_data["objective"] = [float(data_str[3]), float(data_str[2])]
+                range_data["objective_matrix"] = {
+                    "min": float(data_str[1]),
+                    "max": float(data_str[0]),
+                }
+                range_data["objective"] = {"min": float(data_str[3]), "max": float(data_str[2])}
             else:
-                range_data["objective"] = [float(data_str[1]), float(data_str[0])]
+                range_data["objective"] = {"min": float(data_str[1]), "max": float(data_str[0])}
     for k, v in range_data.items():
         rtc_logger.info(f"{k,v}")
     logging.info(f"Extracted range data: {range_data}")  # Add this line for debugging
     return range_data
 
 
-def check_scale_range(test_name: str, range_data: dict, relative_tol: float) -> None:
+def check_scale_range(
+    test_name: str, range_data: dict, relative_tol: float, maximum_order_diff: float
+) -> None:
     """
     Perform scaling tests by comparing actual range data against expected values.
 
@@ -175,6 +223,9 @@ def check_scale_range(test_name: str, range_data: dict, relative_tol: float) -> 
 
     for element in elements:
         check_element_range(element, range_data[element], expected_values[element], relative_tol)
+        check_element_scale_order(
+            element, range_data[element], expected_values[element], maximum_order_diff
+        )
 
 
 def get_csv_file_path(folder_name: str, file_name: str) -> str:
@@ -220,14 +271,17 @@ def read_expected_values(
 
 def check_element_range(
     element: str,
-    actual_range: List[float],
+    actual_range: Dict[str, float],
     expected_range: Dict[str, float],
     relative_tol: float,
 ) -> None:
     """Check if the actual range falls within the expected range,
     considering the relative tolerance.
     """
-    actual_min, actual_max = actual_range
+    actual_min, actual_max = (
+        actual_range["min"],
+        actual_range["max"],
+    )
     expected_min, expected_max = expected_range["min"], expected_range["max"]
 
     if actual_min < expected_min * (1 - relative_tol):
@@ -247,23 +301,39 @@ def check_scaling(
     test_instance: TestCase,
     rtc_logger: logging.Logger,
     rtc_logs_list: List[logging.LogRecord],
-    maximum_order_diff: float = 1e6,
+    test_name_suffix: Optional[str] = None,
+    maximum_order_diff: float = None,
     relative_tol: float = 0.1,
 ) -> None:
     """
     Helper function to check scaling for a test instance.
 
+    This function performs scaling checks on the provided test instance using the
+    given logger and log records. It retrieves the range data, checks the scale
+    order, and verifies the scale range.
+
     Args:
-        test_instance (TestCase): The test instance object.
-        logger (logging.Logger): The logger object.
-        logs_list (List[logging.LogRecord]): A list of log records.
+        test_instance (TestCase): The test instance object to be checked.
+        rtc_logger (logging.Logger): The logger object used for logging information.
+        rtc_logs_list (List[logging.LogRecord]): A list of log records to be analyzed.
+        test_name_suffix (str, optional): An optional suffix to be added to the test name.
+            Defaults to None.
+        maximum_order_diff (float, optional): The maximum allowed order difference
+            for scale checking. Defaults to None.
+        relative_tol (float, optional): The relative tolerance for scale range
+            checking. Defaults to 0.1.
 
     Returns:
         None
+
+    Note:
+        This function modifies the test_instance by adding a 'range_data' attribute.
+        It also logs the range data for debugging purposes.
     """
     range_data = get_scaling_range(rtc_logs_list, rtc_logger)
     test_instance.range_data = range_data
     logging.info(f"Range data in check_scaling: {range_data}")  # Add this line for debugging
     test_name = inspect.currentframe().f_back.f_code.co_name
-    check_scale_order(range_data, maximum_order_diff)
-    check_scale_range(test_name, range_data, relative_tol)
+    if test_name_suffix is not None:
+        test_name += "_" + test_name_suffix
+    check_scale_range(test_name, range_data, relative_tol, maximum_order_diff)

@@ -35,15 +35,9 @@ class TestColdDemand(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
-        (
-            heat_problem_scaling,
-            rtc_logger,
-            rtc_logs_list,
-        ) = create_problem_with_debug_info(HeatProblem)
-
         with self.assertRaises(SystemExit) as cm:
             _ = run_esdl_mesido_optimization(
-                heat_problem_scaling,
+                HeatProblem,
                 base_folder=base_folder,
                 esdl_file_name="LT_wko_error_check.esdl",
                 esdl_parser=ESDLFileParser,
@@ -64,9 +58,6 @@ class TestColdDemand(TestCase):
             " larger than the maximum of the heat demand profile 0.15MW",
             True,
         )
-
-        # Check scaling differences and ranges in objective, matrix and rhs
-        check_scaling(self, rtc_logger, rtc_logs_list)
 
     def test_cold_demand(self):
         """

@@ -138,7 +138,6 @@ class TestMultiCommoditySimulator(TestCase):
         demand_2_target[demand_2_target < 0] = 0
         np.testing.assert_allclose(dem_2, demand_2_target, atol=1e-3, rtol=1e-6)
         check_scaling(self, rtc_logger, rtc_logs_list)
-        print(self.range_data)
 
     def test_multi_commodity_simulator_prod_profile(self):
         import models.unit_cases_electricity.bus_networks.src.example as example
