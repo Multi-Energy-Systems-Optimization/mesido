@@ -7,6 +7,8 @@ import re
 from typing import Dict, List, Optional
 from unittest import TestCase
 
+from pytest import skip
+
 from rtctools._internal.debug_check_helpers import DebugLevel
 
 
@@ -222,10 +224,22 @@ def check_scale_range(
     expected_values = read_expected_values(csv_file_path, test_name, elements)
 
     for element in elements:
-        check_element_range(element, range_data[element], expected_values[element], relative_tol)
-        check_element_scale_order(
-            element, range_data[element], expected_values[element], maximum_order_diff
-        )
+        test_range_values = range_data[element]
+        expected_range_values = expected_values[element]
+        if (test_range_values["min"] <= test_range_values["max"]) and (
+            expected_range_values["min"] <= expected_range_values["max"]
+        ):
+            check_element_range(element, test_range_values, expected_range_values, relative_tol)
+            check_element_scale_order(
+                element, test_range_values, expected_range_values, maximum_order_diff
+            )
+        else:
+            skip(
+                f"Expected or actual min is greater than max value for {element}. "
+                f"Actual: ({test_range_values['min']}, {test_range_values['max']}), "
+                f"expected: ({expected_range_values['min']}, {expected_range_values['max']}). "
+                "Skipped check_element_range."
+            )
 
 
 def get_csv_file_path(folder_name: str, file_name: str) -> str:

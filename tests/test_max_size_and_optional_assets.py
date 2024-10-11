@@ -193,3 +193,12 @@ class TestMaxSizeAggregationCount(TestCase):
             rtc_logger,
             rtc_logs_list,
         )
+
+
+if __name__ == "__main__":
+    import time
+
+    start_time = time.time()
+    a = TestMaxSizeAggregationCount()
+    a.test_max_size_and_aggr_count()
+    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
