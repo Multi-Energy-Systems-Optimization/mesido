@@ -681,10 +681,15 @@ def run_end_scenario_sizing(
             *solution.energy_system_components.get("heat_buffer", []),
         ]:
             var_name = f"{asset}_aggregation_count"
-            lb = results[var_name][0]
+            round_lb = round(results[var_name][0])
             ub = solution.bounds()[var_name][1]
-            if round(lb) >= 1:
-                boolean_bounds[var_name] = (lb, ub)
+            if round_lb >= 1 and (round_lb <= ub):
+                boolean_bounds[var_name] = (round_lb, ub)
+            elif round_lb > ub:
+                logger.error(
+                    f"{var_name}: The lower bound value {round_lb} > the upper bound {ub} value"
+                )
+                exit(1)
 
         t = solution.times()
         from rtctools.optimization.timeseries import Timeseries
