@@ -650,7 +650,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         return gas_mass_flow_out
 
     def _get_linear_coef_electrolyzer_mass_vs_epower_fit(
-        self, coef_a, coef_b, coef_c, n_lines, electrical_power_min, electrical_power_max
+        self, coef_a, coef_b, coef_c, n_lines, electrical_power_min, electrical_power_max, power_factor
     ) -> Tuple[np.array, np.array]:
         """
         This function returns a set of coefficients to approximate a gas mass flow rate curve with
@@ -670,9 +670,11 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         coefficients for linear curve fit(s) to the theoretical non-linear electrolyzer curve
         """
 
-        electrical_power_points = np.linspace(
-            electrical_power_min, electrical_power_max, n_lines + 1
-        )
+        # electrical_power_points = np.linspace(
+        #     electrical_power_min, electrical_power_max, n_lines + 1
+        # )
+        # power_factor is used to determine till where the first line should hold as this defines the location with the maximum efficiency.
+        electrical_power_points = np.append(electrical_power_min, np.linspace(electrical_power_min*power_factor, electrical_power_max, n_lines))
 
         gas_mass_flow_points = np.array(
             [
@@ -754,6 +756,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                             0.01 * self.bounds()[f"{asset}.ElectricityIn.Power"][1],
                         ),
                         electrical_power_max=self.bounds()[f"{asset}.ElectricityIn.Power"][1],
+                        power_factor=parameters[f"{asset}.power_factor"],
                     )
                 )
                 power_consumed_vect = ca.repmat(power_consumed, len(linear_coef_a))

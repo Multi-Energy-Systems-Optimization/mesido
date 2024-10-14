@@ -34,6 +34,7 @@ class Electrolyzer(ElectricityComponent, BaseAsset):
         self.c_eff_coefficient = nan
 
         self.minimum_load = nan
+        self.power_factor = nan
 
         self.density = 2.5  # H2 density [kg/m3] at 30bar
 
