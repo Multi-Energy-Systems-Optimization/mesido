@@ -1013,6 +1013,46 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
             constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
 
+        for gs in self.energy_system_components.get("gas_source", []):
+            gas_produced_g_s = self.__state_vector_scaled(
+                f"{gs}.Gas_source_mass_flow", ensemble_member
+            )
+            variable_operational_cost_var = self._asset_variable_operational_cost_map[gs]
+            variable_operational_cost = self.extra_variable(
+                variable_operational_cost_var, ensemble_member
+            )
+            nominal = self.variable_nominal(variable_operational_cost_var)
+            variable_operational_cost_coefficient = parameters[  # euro / g
+                f"{gs}.variable_operational_cost_coefficient"
+            ]
+            timesteps = np.diff(self.times())
+            sum = 0.0
+            for i in range(1, len(self.times())):
+                sum += (
+                    variable_operational_cost_coefficient * gas_produced_g_s[i] * timesteps[i - 1]
+                )  # [euro/g] * [g/s] * [s]
+            constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
+
+        for es in self.energy_system_components.get("electricity_source", []):
+            elec_produced_w = self.__state_vector_scaled( 
+                f"{es}.Electricity_source", ensemble_member
+            )
+            variable_operational_cost_var = self._asset_variable_operational_cost_map[es]
+            variable_operational_cost = self.extra_variable(
+                variable_operational_cost_var, ensemble_member
+            )
+            nominal = self.variable_nominal(variable_operational_cost_var)
+            variable_operational_cost_coefficient = parameters[  # euro / Wh
+                f"{es}.variable_operational_cost_coefficient"
+            ]
+            timesteps = np.diff(self.times()) / 3600.0  # convert dt from [s] to [hr]
+            sum = 0.0
+            for i in range(1, len(self.times())):
+                sum += (
+                    variable_operational_cost_coefficient * elec_produced_w[i] * timesteps[i - 1]
+                )  # [euro/Wh] * [W] * [hr]
+            constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
+
         # for a in self.heat_network_components.get("ates", []):
         # TODO: needs to be replaced with the positive or abs value of this, see varOPEX,
         #  then ates varopex also needs to be added to the mnimize_tco_goal
