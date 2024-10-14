@@ -48,7 +48,68 @@ if __name__ == "__main__":
     energy_conservation_test(solution, results)
     heat_to_discharge_test(solution, results)
 
-    results["STATION_5.Gas_source_mass_flow"]
-    results["Elec_prod_5.Electricity_source"]
+    # for asset_name in [*solution.energy_system_components.get("heat_source", [])]:
+    for asset_name in [*solution.energy_system_components.get("elec_boiler", [])]:
+        power_cons = results[f"{asset_name}.Power_consumed"]
+        value = results[f"{asset_name}__variable_operational_cost"]
+        # print(f"{asset_name} power consumed: {power_cons}, opex: {value}")
+
+    for asset_name in [*solution.energy_system_components.get("gas_boiler", [])]:
+        power_cons = results[f"{asset_name}.Gas_demand_mass_flow"]
+        value = results[f"{asset_name}__variable_operational_cost"]
+        # print(f"{asset_name} gas consumed: {power_cons}, opex: {value}")
+
+    # print(f'Gas OPEX: {results["STATION_5__variable_operational_cost"]}')
+    # print(f'Elec prodcuer OPEX: {results["Elec_prod_5__variable_operational_cost"]}')
+
+    # Check consumption vs production balance
+    sum_gas_g = 0.0
+    for asset_name in [*solution.energy_system_components.get("gas_boiler", [])]:
+        for ii in range(1, len(results[f"{asset_name}.Gas_demand_mass_flow"])):
+            sum_gas_g += results[
+                f"{asset_name}.Gas_demand_mass_flow"
+            ][ii] * np.diff(solution.times())[ii]
+    np.testing.assert_allclose(sum(results["STATION_5.Gas_source_mass_flow"][1:]), sum_gas_g)
+
+
+
+    # Check costs
+    np.testing.assert_allclose(
+        sum(results["STATION_5.Gas_source_mass_flow"][1:] * 0.00123 * np.diff(solution.times())),
+        results["STATION_5__variable_operational_cost"][0],
+    )
+    np.testing.assert_allclose(
+        sum(
+            results["Elec_prod_5.Electricity_source"][1:]
+            * (np.diff(solution.times()))
+            / 3600.0
+            * 0.021
+        ),
+        results["Elec_prod_5__variable_operational_cost"][0],
+    )
+
+
+    kvr= 0.0
+        # elec_price_profile = "Elec.price_profile"
+        # gas_tranport_cost = sum(
+        #     (
+        #         solution.get_timeseries(elec_price_profile).times[1:]
+        #         - solution.get_timeseries(elec_price_profile).times[0:-1]
+        #     )
+        #     / 3600.0
+        #     * results["STATION_5.Gas_source_mass_flow"][1:]
+        #     * 0.00123,
+        # )
+        # np.testing.assert_allclose(
+        #     gas_tranport_cost,
+        #     results["STATION_5__variable_operational_cost"],
+        # )
+
+        
+
+    # results["Heatpump_4482.Power_consumed"]
+
+    # results["STATION_5.Gas_source_mass_flow"]
+    # results["Elec_prod_5.Electricity_source"]
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

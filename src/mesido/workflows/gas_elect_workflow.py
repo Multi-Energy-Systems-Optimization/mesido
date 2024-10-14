@@ -128,7 +128,7 @@ class GasElectProblem(
 
     def goals(self):
         goals = super().goals().copy()
-        goals.append(MinimizeTCO(priority=2, number_of_years=self._number_of_years))
+        goals.append(MinimizeTCO(priority=2, number_of_years=1.0))
 
         return goals
 
