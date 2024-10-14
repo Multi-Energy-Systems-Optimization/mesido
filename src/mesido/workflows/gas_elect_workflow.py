@@ -66,6 +66,14 @@ class GasElectProblem(
     # def times(self, variable=None) -> np.ndarray:
     #     return super().times(variable)[:5]  # same lenght as the demand profile data in the csv
 
+    def solver_options(self):
+        options = super().solver_options()
+        options["solver"] = "highs"
+        highs_options = options["highs"] = {}
+        highs_options["mip_abs_gap"] = 0.001
+
+        return options
+
     def pre(self):
         super().pre()
 
