@@ -61,7 +61,7 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
                                 new_pcs[-1].maximum_discharge
                                 * self.parameters(0)[f"{connected_asset}.rho"]
                                 >= max_demand_g_s
-                            ):  # m3/s * g/m3 / 1000.0 = g/s
+                            ):  # m3/s * g/m3 = g/s
                                 found_pc_large_enough = True
                     # Remove pipe DN0 from the available pipe list, if there is always flow required
                     # TODO: Bug to be resolved. Currently the solution is infeasible when only
