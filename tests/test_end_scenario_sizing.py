@@ -5,9 +5,9 @@ import mesido._darcy_weisbach as darcy_weisbach
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.workflows import (
-    EndScenarioSizingDiscountedHIGHS,
-    EndScenarioSizingHIGHS,
-    EndScenarioSizingStagedHIGHS,
+    EndScenarioSizing,
+    EndScenarioSizingDiscounted,
+    EndScenarioSizingStaged,
     run_end_scenario_sizing,
 )
 from mesido.workflows.grow_workflow import EndScenarioSizingHeadLossStaged
@@ -29,7 +29,7 @@ class TestEndScenarioSizing(TestCase):
         # This is an optimization done over a full year with timesteps of 5 days and hour timesteps
         # for the peak day
         cls.solution = run_optimization_problem(
-            EndScenarioSizingHIGHS,
+            EndScenarioSizing,
             base_folder=base_folder,
             esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
             esdl_parser=ESDLFileParser,
@@ -47,6 +47,7 @@ class TestEndScenarioSizing(TestCase):
         Checks:
         - demand matching
         - that the available pipe classes were adapted
+        - minimum velocity setting
         - Cyclic behaviour for ATES
         - That buffer tank is only used on peak day
         - Check if TCO goal included the desired cost components.
@@ -71,6 +72,9 @@ class TestEndScenarioSizing(TestCase):
         # Pipe connected to a demand
         assert self.solution.pipe_classes("Pipe2")[0].name == "DN150"  # initially DN->None
         assert self.solution.pipe_classes("Pipe2")[-1].name == "DN250"  # initially DN450
+        # Check the minimum velocity setting==default value. Keep the default value hard-coded to
+        # prevent future coding bugs
+        np.testing.assert_equal(1.0e-4, self.solution.heat_network_settings["minimum_velocity"])
 
         # Check whether cyclic ates constraint is working
         for a in self.solution.energy_system_components.get("ates", []):
@@ -139,7 +143,7 @@ class TestEndScenarioSizing(TestCase):
         solution_unstaged = self.solution
 
         solution_unstaged_2 = run_end_scenario_sizing(
-            EndScenarioSizingHIGHS,
+            EndScenarioSizing,
             staged_pipe_optimization=False,
             base_folder=base_folder,
             esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
@@ -149,7 +153,7 @@ class TestEndScenarioSizing(TestCase):
         )
 
         solution_staged = run_end_scenario_sizing(
-            EndScenarioSizingStagedHIGHS,
+            EndScenarioSizingStaged,
             base_folder=base_folder,
             esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
             esdl_parser=ESDLFileParser,
@@ -246,7 +250,7 @@ class TestEndScenarioSizing(TestCase):
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
-        class TestEndScenarioSizingDiscountedHIGHS(EndScenarioSizingDiscountedHIGHS):
+        class TestEndScenarioSizingDiscountedHIGHS(EndScenarioSizingDiscounted):
             def solver_options(self):
                 options = super().solver_options()
                 options["solver"] = "highs"

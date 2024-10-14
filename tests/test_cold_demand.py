@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from unittest import TestCase
 
@@ -10,6 +11,9 @@ import numpy as np
 from utils_test_scaling import create_log_list_scaling
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
+
+logger = logging.getLogger("WarmingUP-MPC")
+logger.setLevel(logging.INFO)
 
 
 class TestColdDemand(TestCase):
@@ -255,3 +259,4 @@ if __name__ == "__main__":
     test_cold_demand.test_insufficient_capacity()
     test_cold_demand.test_cold_demand()
     test_cold_demand.test_wko()
+    test_cold_demand.test_airco()

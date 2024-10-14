@@ -356,7 +356,7 @@ class NetworkSimulatorHIGHSWeeklyTimeStep(NetworkSimulatorHIGHS):
         """
         super().read()
 
-        self.__indx_max_peak, _ = adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(
+        self.__indx_max_peak, _, _ = adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(
             self, self.__day_steps
         )
         logger.info("HeatProblem read")

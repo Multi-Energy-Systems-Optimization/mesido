@@ -31,8 +31,13 @@ class ElectricityCable(ElectricityTwoPort, BaseAsset):
         self.nominal_current = nan
         self.nominal_voltage = nan
         self.r = 1.0e-6 * self.length  # TODO: temporary value
-        self.nominal_voltage_loss = (self.nominal_current * self.r * self.nominal_current) ** 0.5
-        self.add_variable(Variable, "Power_loss", min=0.0, nominal=self.r * self.max_current**2)
+        self.nominal_voltage_loss = (self.nominal_current * self.r * self.nominal_voltage) ** 0.5
+        self.power_loss_nominal = self.r * self.max_current * self.nominal_current
+        # We accept lower accuracy in the loss computation to improve scaling in case the nominals
+        # are very far apart. Typically, when a short cable has a very high max capacity.
+        if self.power_loss_nominal / self.ElectricityIn.Power.nominal < 1.0e-4:
+            self.power_loss_nominal = self.ElectricityIn.Power.nominal * 1.0e-4
+        self.add_variable(Variable, "Power_loss", min=0.0, nominal=self.power_loss_nominal)
         self.add_variable(Variable, "I", nominal=self.nominal_current)
         self.add_variable(Variable, "V_loss", nominal=self.nominal_voltage_loss)
 
@@ -50,6 +55,6 @@ class ElectricityCable(ElectricityTwoPort, BaseAsset):
         self.add_equation(
             (
                 (self.ElectricityOut.Power - (self.ElectricityIn.Power - self.Power_loss))
-                / (self.nominal_voltage * self.nominal_current * self.r * self.max_current) ** 0.5
+                / (self.ElectricityIn.Power.nominal * self.Power_loss.nominal) ** 0.5
             )
         )

@@ -81,6 +81,9 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         self.__electricity_storage_discharge_nominals = {}
         self.__electricity_storage_discharge_map = {}
 
+        # Map for setting node nominals in case of logical links.
+        self.__bus_variable_nominal = {}
+
     def energy_system_options(self):
         r"""
         Returns a dictionary of milp network specific options.
@@ -166,6 +169,37 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                 self.__set_point_var[var_name] = ca.MX.sym(var_name)
                 self.__set_point_bounds[var_name] = (0.0, 1.0)
 
+        # Setting the bus nominals using the connected assets.
+        for node, connected_assets in self.energy_system_topology.busses.items():
+            nominals = {}
+            for var in ["Power", "I", "V"]:
+                nominals[var] = []
+                for _, (asset, _orientation) in connected_assets.items():
+                    var_nom = self.variable_nominal(f"{asset}.ElectricityOut.{var}")
+                    if var_nom != 1:
+                        nominals[var].append(var_nom)
+                    elif self.variable_nominal(f"{asset}.ElectricityIn.{var}") != 1:
+                        nominals[var].append(self.variable_nominal(f"{asset}.ElectricityIn.{var}"))
+                    else:
+                        nominals[var].append(1)
+
+                for i in range(len(connected_assets)):
+                    if self.variable_nominal(f"{node}.ElectricityConn[{i + 1}].{var}") == 1:
+                        if nominals[var][i] != 1:
+                            # Here we set a nominal based directly on the connected asset.
+                            self.__bus_variable_nominal[
+                                f"{node}.ElectricityConn[{i + 1}].{var}"
+                            ] = nominals[var][i]
+                        else:
+                            # Here we set a nominal based on median of all the connected assets to
+                            # the node. This is specifically done when we have a logical link for
+                            # node to node. In this case we cannot set the nominal based on the
+                            # connected node, hence we assume a node has at least one not node
+                            # asset connected to it.
+                            self.__bus_variable_nominal[
+                                f"{node}.ElectricityConn[{i + 1}].{var}"
+                            ] = np.median([x for x in nominals[var] if x != 1])
+
     @property
     def extra_variables(self):
         """
@@ -213,8 +247,10 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         """
         if variable in self.__electricity_storage_discharge_nominals:
             return self.__electricity_storage_discharge_nominals[variable]
-
-        return super().variable_nominal(variable)
+        elif variable in self.__bus_variable_nominal:
+            return self.__bus_variable_nominal[variable]
+        else:
+            return super().variable_nominal(variable)
 
     def bounds(self):
         """
@@ -290,12 +326,13 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                 )
                 # TODO: [: len(self.times())] should be removed once the emerge test is properly
                 # time-sampled.
-                max = self.bounds()[f"{asset}.Electricity_source"][1].values[: len(self.times())]
+                max_ = self.bounds()[f"{asset}.Electricity_source"][1].values[: len(self.times())]
+                a = [x for x in max_ if abs(x) > 0.0]
                 nominal = (
-                    self.variable_nominal(f"{asset}.Electricity_source") * np.median(max)
-                ) ** 0.5
+                    self.variable_nominal(f"{asset}.Electricity_source") * min(a) * np.median(a)
+                ) ** (1.0 / 3.0)
 
-                constraints.append(((set_point * max - electricity_source) / nominal, 0.0, 0.0))
+                constraints.append(((set_point * max_ - electricity_source) / nominal, 0.0, 0.0))
 
         return constraints
 
