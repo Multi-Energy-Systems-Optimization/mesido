@@ -932,9 +932,12 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             assert len(self.get_electricity_carriers().keys()) <= 1
 
             if len(self.get_electricity_carriers().keys()) == 1:
-                price_profile = self.get_timeseries(
-                    f"{list(self.get_electricity_carriers().values())[0]['name']}.price_profile"
-                )
+                try:
+                    price_profile = self.get_timeseries(
+                        f"{list(self.get_electricity_carriers().values())[0]['name']}.price_profile"
+                    )
+                except KeyError:
+                    price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
             else:
                 price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
 
