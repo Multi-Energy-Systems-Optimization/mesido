@@ -27,7 +27,7 @@ from rtctools.util import run_optimization_problem
 root_folder = os.path.join(str(Path(__file__).resolve().parent.parent.parent.parent), "tests")
 sys.path.insert(1, root_folder)
 
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
+from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test, electric_power_conservation_test
 
 
 if __name__ == "__main__":
@@ -62,15 +62,25 @@ if __name__ == "__main__":
     # print(f'Gas OPEX: {results["STATION_5__variable_operational_cost"]}')
     # print(f'Elec prodcuer OPEX: {results["Elec_prod_5__variable_operational_cost"]}')
 
-    # Check consumption vs production balance
-    sum_gas_g = 0.0
+    # Check gas consumption vs production balance
+    total_gas_demand_g = [0] * len(np.diff(solution.times()))
+    total_gas_source_g = [0] * len(np.diff(solution.times()))
     for asset_name in [*solution.energy_system_components.get("gas_boiler", [])]:
-        for ii in range(1, len(results[f"{asset_name}.Gas_demand_mass_flow"])):
-            sum_gas_g += results[
-                f"{asset_name}.Gas_demand_mass_flow"
-            ][ii] * np.diff(solution.times())[ii]
-    np.testing.assert_allclose(sum(results["STATION_5.Gas_source_mass_flow"][1:]), sum_gas_g)
+        for ii in range(1, len(results[f"{asset_name}.Power_consumed"])):
+            total_gas_demand_g[ii - 1] += (
+                results[f"{asset_name}.Power_consumed"][ii]
+                * np.diff(solution.times())[ii - 1]
+            )
+    for asset_name in [*solution.energy_system_components.get("gas_source", [])]:
+        for ii in range(1, len(results[f"{asset_name}.Gas_source_mass_flow"])):
+            total_gas_source_g[ii - 1] += (
+                results[f"{asset_name}.Gas_source_mass_flow"][ii]
+                * np.diff(solution.times())[ii - 1]
+            )
+    np.testing.assert_allclose(total_gas_source_g, total_gas_demand_g)
 
+    # Check elect power demand vs production balance
+    electric_power_conservation_test(solution, results)
 
 
     # Check costs
