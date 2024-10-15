@@ -33,3 +33,9 @@ src/*.egg-info
 *_GrowOptimized.esdl 
 *_GrowOptimized_esdl_string.esdl 
 *_Simulation.esdl
+
+# Virtual environment files
+.venv/*
+
+# Documentation folder
+docs/*

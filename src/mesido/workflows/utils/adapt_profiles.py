@@ -11,6 +11,15 @@ from rtctools.data.storage import DataStore
 logger = logging.getLogger("WarmingUP-MPC")
 logger.setLevel(logging.INFO)
 
+# var_name = f"{demand}.target_heat_demand"
+# set_data_with_averages_and_peak_day(
+#                 datastore=new_datastore,
+#                 variable_name=var_name,
+#                 ensemble_member=ensemble_member,
+#                 new_date_times=new_date_times,
+#                 problem=problem,
+#             )
+
 
 def set_data_with_averages_and_peak_day(
     datastore: DataStore,
@@ -70,7 +79,7 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, prob
         - cold_demand_nominal: max cold demand value found for a specific cold demand
     """
 
-    demands = problem.energy_system_components.get("heat_demand", [])
+    heat_demands = problem.energy_system_components.get("heat_demand", [])
     new_datastore = DataStore(problem)
     new_datastore.reference_datetime = problem.io.datetimes[0]
 
@@ -81,7 +90,7 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, prob
         total_demand = None
         heat_demand_nominal = dict()
 
-        for demand in demands:
+        for demand in heat_demands:
             try:
                 demand_values = problem.get_timeseries(
                     f"{demand}.target_heat_demand", ensemble_member
@@ -98,39 +107,39 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, prob
         # TODO: the approach of picking one peak day was introduced for a network with a tree
         #  layout and all big sources situated at the root of the tree. It is not guaranteed
         #  that an optimal solution is reached in different network topologies.
-        idx_max = int(np.argmax(total_demand))
-        max_day = idx_max // 24
-        nr_of_days = len(total_demand) // 24
-        new_date_times = list()
-        day_steps = problem_day_steps
+        # idx_max = int(np.argmax(total_demand))
+        # max_day = idx_max // 24
+        # nr_of_days = len(total_demand) // 24
+        # new_date_times = list()
+        # day_steps = problem_day_steps
 
-        problem_indx_max_peak = max_day // day_steps
-        if max_day % day_steps > 0:
-            problem_indx_max_peak += 1.0
+        # problem_indx_max_peak = max_day // day_steps
+        # if max_day % day_steps > 0:
+        #     problem_indx_max_peak += 1.0
 
-        for day in range(0, nr_of_days, day_steps):
-            if day == max_day // day_steps * day_steps:
-                if max_day > day:
-                    new_date_times.append(problem.io.datetimes[day * 24])
-                new_date_times.extend(problem.io.datetimes[max_day * 24 : max_day * 24 + 24])
-                if (day + day_steps - 1) > max_day:
-                    new_date_times.append(problem.io.datetimes[max_day * 24 + 24])
-            else:
-                new_date_times.append(problem.io.datetimes[day * 24])
-        new_date_times.append(problem.io.datetimes[-1] + datetime.timedelta(hours=1))
+        # for day in range(0, nr_of_days, day_steps):
+        #     if day == max_day // day_steps * day_steps:
+        #         if max_day > day:
+        #             new_date_times.append(problem.io.datetimes[day * 24])
+        #         new_date_times.extend(problem.io.datetimes[max_day * 24 : max_day * 24 + 24])
+        #         if (day + day_steps - 1) > max_day:
+        #             new_date_times.append(problem.io.datetimes[max_day * 24 + 24])
+        #     else:
+        #         new_date_times.append(problem.io.datetimes[day * 24])
+        # new_date_times.append(problem.io.datetimes[-1] + datetime.timedelta(hours=1))
 
-        new_date_times = np.asarray(new_date_times)
-        parameters["times"] = [x.timestamp() for x in new_date_times]
+        # new_date_times = np.asarray(new_date_times)
+        # parameters["times"] = [x.timestamp() for x in new_date_times]
 
-        for demand in demands:
-            var_name = f"{demand}.target_heat_demand"
-            set_data_with_averages_and_peak_day(
-                datastore=new_datastore,
-                variable_name=var_name,
-                ensemble_member=ensemble_member,
-                new_date_times=new_date_times,
-                problem=problem,
-            )
+        # for demand in demands:
+        #     var_name = f"{demand}.target_heat_demand"
+        #     set_data_with_averages_and_peak_day(
+        #         datastore=new_datastore,
+        #         variable_name=var_name,
+        #         ensemble_member=ensemble_member,
+        #         new_date_times=new_date_times,
+        #         problem=problem,
+        #     )
         # ------------------------------------------------------------------------------------------
         # cooling demands
         total_cold_demand = None
@@ -151,7 +160,65 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, prob
             cold_demand_nominal[f"{demand}.Heat_flow"] = max(cold_demand_values)
 
         # TODO: find the peak cooling day and adapt to hourly
+        # Make something here to visualize the demands arrays.
+        # Probably something similar to what is done in lines 110 to 134 with the heat demand part.
 
+        idx_max_hot = int(np.argmax(total_demand))
+        max_day_hot = idx_max_hot // 24
+        idx_max_cold = int(np.argmax(total_cold_demand))
+        max_day_cold = idx_max_cold // 24
+        nr_of_days = len(total_demand) // 24
+        new_date_times = list()
+        day_steps = problem_day_steps
+
+        problem_indx_max_peak = max_day_hot // day_steps
+        if max_day_hot % day_steps > 0:
+            problem_indx_max_peak += 1.0
+
+        problem_indx_max_peak_cold = max_day_cold // day_steps
+        if max_day_cold % day_steps > 0:
+            problem_indx_max_peak_cold += 1.0
+        
+        for day in range(0, nr_of_days, day_steps):
+            if day == max_day_hot // day_steps * day_steps or day == max_day_cold // day_steps * day_steps:
+                if day == max_day_hot // day_steps * day_steps:
+                    peak_day = max_day_hot
+                elif day == max_day_cold // day_steps * day_steps:
+                    peak_day = max_day_cold
+                if peak_day > day:
+                    new_date_times.append(problem.io.datetimes[day * 24])
+                new_date_times.extend(problem.io.datetimes[peak_day * 24 : peak_day * 24 + 24])
+                if (day + day_steps - 1) > peak_day:
+                    new_date_times.append(problem.io.datetimes[max_day_cold * 24 + 24])
+            else:
+                new_date_times.append(problem.io.datetimes[day * 24])
+        new_date_times.append(problem.io.datetimes[-1] + datetime.timedelta(hours=1))
+
+        new_date_times = np.asarray(new_date_times)
+        parameters["times"] = [x.timestamp() for x in new_date_times]
+
+        # import matplotlib.pyplot as plt
+        # hours_list_heat = []
+        # hours_list_cold = []
+        # for date_hour in new_date_times:
+        #     hours_list_heat.append((date_hour - new_date_times[0]).total_seconds()/3600)
+        # plt.figure()
+        # plt.scatter(hours_list_heat, np.zeros(len(hours_list_heat)), c = 'red')
+        # plt.scatter(hours_list_cold, np.ones(len(hours_list_cold)))
+        # plt.plot(total_demand)
+        # plt.plot(total_cold_demand)
+        # plt.show()
+
+        for demand in heat_demands:
+            var_name = f"{demand}.target_heat_demand"
+            set_data_with_averages_and_peak_day(
+                datastore=new_datastore,
+                variable_name=var_name,
+                ensemble_member=ensemble_member,
+                new_date_times=new_date_times,
+                problem=problem,
+            )
+        
         for demand in cold_demands:
             var_name = f"{demand}.target_cold_demand"
             set_data_with_averages_and_peak_day(
@@ -161,6 +228,8 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, prob
                 new_date_times=new_date_times,
                 problem=problem,
             )
+
+        
         # end cooling demands
         # ------------------------------------------------------------------------------------------
 
