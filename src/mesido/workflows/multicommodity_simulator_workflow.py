@@ -110,6 +110,7 @@ class SolverGurobi:
         gurobi_options["MIPgap"] = 0.0001
         gurobi_options["threads"] = 4
         gurobi_options["LPWarmStart"] = 2
+        gurobi_options["TimeLimit"] = 1000
         if self._priority:
             if self._priority>1e4:
                 gurobi_options["MIPgap"] = 0.05
@@ -692,10 +693,10 @@ class MultiCommoditySimulator(
             constraints.append(((conv_EEM_1 - conv_EEM_3) / nominal, 0.0, 0.0))
             constraints.append(((conv_EEM_2 - conv_EEM_3) / nominal, 0.0, 0.0))
         else:
-            conv_DEN_2 = self.state("gasconversion_6cbe.GasOut.mass_flow")
-            conv_EEM_3 = self.state("gasconversion_2abd.GasOut.mass_flow")
+            conv_DEN_2 = self.state("H2-import_DEN.GasOut.mass_flow")
+            conv_EEM_3 = self.state("H2-import_EEM.GasOut.mass_flow")
             nominal = 1e4#self.bounds()["gasconversion_2abd.GasIn.mass_flow"][1]
-            constraints.append(((1.5 * conv_DEN_2 - conv_EEM_3) / nominal, 0.0, 0.0))
+            constraints.append(((56/44 * conv_DEN_2 - conv_EEM_3) / nominal, 0.0, 0.0))
 
 
 
