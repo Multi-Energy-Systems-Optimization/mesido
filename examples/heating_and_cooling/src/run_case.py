@@ -124,6 +124,7 @@ class HeatColdDemand(TestCase):
                 #     discharged. -> WKO in cooling mode
                 #   - Volume decrease: Cold well is being charged and the hot well is being
                 #     discharged. -> WKO in heating mode
+
                 for ates_id in self.energy_system_components.get("low_temperature_ates", []):
                     stored_volume = self.state_vector(f"{ates_id}.Stored_volume")
                     volume_usage = 0.0
@@ -185,3 +186,9 @@ class HeatColdDemand(TestCase):
 if __name__ == "__main__":
     test_cold_demand = HeatColdDemand()
     test_cold_demand.heating_cooling_case()
+    # Tests to write:
+    # - Peak heat and peak cold are on the same day.
+    #       - Create function that artificially adds a peak cold day.
+    # - Peak heat and peak cold are back to back.
+    # - There are heat demands but no cold ones.
+    # - There are cold demands but no heat ones.
