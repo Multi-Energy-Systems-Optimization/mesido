@@ -76,7 +76,7 @@ The sizing integer can then be used to limit the max size variable, e.g. max flo
 where :math:`\bar{e_j}` denotes the max value for the state at that sizing option.
 
 Asset sizing methods employed
--------------------------
+-----------------------------
 
 .. list-table:: Asset Sizing Model
    :widths: 25 25 25 25 50
