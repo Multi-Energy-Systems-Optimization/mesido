@@ -114,7 +114,7 @@ class TestUpdatedESDL(TestCase):
         # Test limiting the pipe classes for a pipe connected to a heat demand/producer
         # Pipe connected to a demand
         # Check that Pipe4 has 2 of pipe classes available, and that DN0 has not been
-        # included in the list of avialbel pipe classes. Pipe4 started as an optioanl pipe with
+        # included in the list of avialbel pipe classes. Pipe4 started as an optional pipe with
         # DN900 as the starting point for the upper limit.
         for key in problem._heat_pipe_topo_pipe_class_map["Pipe4"].keys():
             np.testing.assert_equal(key.name in ["DN150", "DN200"], True)

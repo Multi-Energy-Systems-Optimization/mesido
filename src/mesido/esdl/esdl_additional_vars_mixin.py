@@ -3,6 +3,7 @@ import logging
 import esdl
 
 from mesido.network_common import NetworkSettings
+from mesido.pipe_class import PipeClass
 
 import numpy as np
 
@@ -45,12 +46,12 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
                         )
                     except KeyError:
                         max_demand_g_s = bounds[f"{asset}.Gas_demand_mass_flow"][1]
-                    is_pipe_dn0_needed = True
+                    is_there_always_mass_flow = False
                     try:
                         if min(self.get_timeseries(f"{asset}.target_gas_demand").values) > 0.0:
-                            is_pipe_dn0_needed = False
+                            is_there_always_mass_flow = True
                     except KeyError:
-                        is_pipe_dn0_needed = True
+                        is_there_always_mass_flow = False
 
                     new_pcs = []
                     found_pc_large_enough = False
@@ -63,18 +64,10 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
                                 >= max_demand_g_s
                             ):  # m3/s * g/m3 = g/s
                                 found_pc_large_enough = True
-                    # Remove pipe DN0 from the available pipe list, if there is always flow required
-                    # TODO: Bug to be resolved. Currently the solution is infeasible when only
-                    # 1 pipe class is available, bit it should be able to working.
-                    # Then remove the need for having 2 pipes classes available in new_pcs.
-                    if (
-                        not is_pipe_dn0_needed
-                        and len(new_pcs) > 2
-                        and new_pcs[0].maximum_discharge == 0.0
-                    ):
-                        new_pcs.remove(new_pcs[0])
 
+                    self.remove_dn0(new_pcs, is_there_always_mass_flow)
                     self._override_gas_pipe_classes[connected_asset] = new_pcs
+
                 if asset in self.energy_system_components.get("heat_demand", []):
                     try:
                         max_demand = min(
@@ -83,12 +76,12 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
                         )
                     except KeyError:
                         max_demand = bounds[f"{asset}.Heat_demand"][1]
-                    is_pipe_dn0_needed = True
+                    is_there_always_mass_flow = False
                     try:
                         if min(self.get_timeseries(f"{asset}.target_heat_demand").values) > 0.0:
-                            is_pipe_dn0_needed = False
+                            is_there_always_mass_flow = True
                     except KeyError:
-                        is_pipe_dn0_needed = True
+                        is_there_always_mass_flow = False
 
                     max_demand *= 1.3  # 30% added for expected worst case heat losses
 
@@ -105,18 +98,9 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
                         ) >= max_demand:
                             found_pc_large_enough = True
 
-                    # Remove pipe DN0 from the available pipe list, if there is always flow required
-                    # TODO: Bug to be resolved. Currently the solution is infeasible when
-                    # only 1 pipe class is available, bit it should be able to working. Then remove
-                    # the need for having 2 pipes classes available in new_pcs.
-                    if (
-                        not is_pipe_dn0_needed
-                        and len(new_pcs) > 2
-                        and new_pcs[0].maximum_discharge == 0.0
-                    ):
-                        new_pcs.remove(new_pcs[0])
-
+                    self.remove_dn0(new_pcs, is_there_always_mass_flow)
                     self._override_pipe_classes[connected_asset] = new_pcs
+
                     if not self.is_hot_pipe(self.hot_to_cold_pipe(connected_asset)):
                         self._override_pipe_classes[self.hot_to_cold_pipe(connected_asset)] = (
                             new_pcs
@@ -205,6 +189,18 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
                     asset_setpoints = {asset: (time_hours, constraint.range.maxValue)}
 
                     self._timed_setpoints.update(asset_setpoints)
+
+    def remove_dn0(self, new_pcs: list[PipeClass], is_there_always_mass_flow: bool) -> None:
+        """Remove pipe DN0 from the available pipe list, if there is always flow required"""
+        # TODO: Bug to be resolved. Currently the solution is infeasible when only
+        # 1 pipe class is available, but it should be able to working.
+        # Then remove the need for having 2 pipes classes available in new_pcs.
+        if (
+            is_there_always_mass_flow
+            and len(new_pcs) > 2
+            and new_pcs[0].maximum_discharge == 0.0
+        ):
+            new_pcs.remove(new_pcs[0])
 
     def pipe_classes(self, p):
         return self._override_pipe_classes.get(p, [])
