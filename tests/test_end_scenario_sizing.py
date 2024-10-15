@@ -46,6 +46,7 @@ class TestEndScenarioSizing(TestCase):
 
         Checks:
         - demand matching
+        - that the available pipe classes were adapted
         - minimum velocity setting
         - Cyclic behaviour for ATES
         - That buffer tank is only used on peak day
@@ -67,6 +68,10 @@ class TestEndScenarioSizing(TestCase):
         # Check whehter the heat demand is matched
         demand_matching_test(self.solution, self.results)
 
+        # Check that indeed the available pipe classes were adapted based on expected flow
+        # Pipe connected to a demand
+        assert self.solution.pipe_classes("Pipe2")[0].name == "DN150"  # initially DN->None
+        assert self.solution.pipe_classes("Pipe2")[-1].name == "DN250"  # initially DN450
         # Check the minimum velocity setting==default value. Keep the default value hard-coded to
         # prevent future coding bugs
         np.testing.assert_equal(1.0e-4, self.solution.heat_network_settings["minimum_velocity"])

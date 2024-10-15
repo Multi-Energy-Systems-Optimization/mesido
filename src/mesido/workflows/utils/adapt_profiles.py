@@ -73,11 +73,14 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, prob
     Return the following:
         - problem_indx_max_peak: index of the maximum of the peak values
         - heat_demand_nominal: max demand value found for a specific heating demand
+        - cold_demand_nominal: max cold demand value found for a specific cold demand
     """
 
     demands = problem.energy_system_components.get("heat_demand", [])
     new_datastore = DataStore(problem)
     new_datastore.reference_datetime = problem.io.datetimes[0]
+
+    cold_demands = problem.energy_system_components.get("cold_demand", [])
 
     for ensemble_member in range(problem.ensemble_size):
         parameters = problem.parameters(ensemble_member)
@@ -134,6 +137,38 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, prob
                 new_date_times=new_date_times,
                 problem=problem,
             )
+        # ------------------------------------------------------------------------------------------
+        # cooling demands
+        total_cold_demand = None
+        cold_demand_nominal = dict()
+
+        for demand in cold_demands:
+            try:
+                cold_demand_values = problem.get_timeseries(
+                    f"{demand}.target_cold_demand", ensemble_member
+                ).values
+            except KeyError:
+                continue
+            if total_cold_demand is None:
+                total_cold_demand = cold_demand_values
+            else:
+                total_cold_demand += cold_demand_values
+            cold_demand_nominal[f"{demand}.Cold_demand"] = max(cold_demand_values)
+            cold_demand_nominal[f"{demand}.Heat_flow"] = max(cold_demand_values)
+
+        # TODO: find the peak cooling day and adapt to hourly
+
+        for demand in cold_demands:
+            var_name = f"{demand}.target_cold_demand"
+            set_data_with_averages_and_peak_day(
+                datastore=new_datastore,
+                variable_name=var_name,
+                ensemble_member=ensemble_member,
+                new_date_times=new_date_times,
+                problem=problem,
+            )
+        # end cooling demands
+        # ------------------------------------------------------------------------------------------
 
         # TODO: this has not been tested but is required if a production profile is included
         #  in the data
@@ -178,4 +213,4 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, prob
 
     logger.info("Profile data has been adapted to a common format")
 
-    return problem_indx_max_peak, heat_demand_nominal
+    return problem_indx_max_peak, heat_demand_nominal, cold_demand_nominal
