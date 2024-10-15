@@ -1,3 +1,4 @@
+import logging
 import datetime
 import unittest
 from pathlib import Path
@@ -45,7 +46,7 @@ class TestPotentialErros(unittest.TestCase):
         model_folder = base_folder / "model"
         input_folder = base_folder / "input"
 
-        logger, logs_list = create_log_list_scaling("WarmingUP-MPC")
+        logger, logs_list = create_log_list_scaling("WarmingUP-MPC", level=logging.ERROR)
 
         with self.assertRaises(SystemExit) as cm:
             problem = EndScenarioSizingStaged(

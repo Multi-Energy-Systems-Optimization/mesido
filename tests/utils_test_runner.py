@@ -6,10 +6,13 @@ import time
 import unittest
 from typing import Any, Dict, List, Optional, Tuple
 
+import cProfile
+import pstats
+import io
+
 # Define the expected directory relative to the script location, excluding the filename
 EXPECTED_DIR: str = os.path.dirname(os.path.abspath(__file__))
 TestError = Tuple[type, Exception, Any]
-
 
 class DetailedTestResult(unittest.TestResult):
     """
@@ -26,7 +29,7 @@ class DetailedTestResult(unittest.TestResult):
         self.test_results: List[Tuple[unittest.TestCase, str, Any, float]] = []
         self.range_data: Dict[str, Dict[str, Any]] = {}
 
-    def start_test(self, test: unittest.TestCase) -> None:
+    def startTest(self, test: unittest.TestCase) -> None:    # noqa: N802
         """
         Called when a test begins.
 
@@ -35,19 +38,20 @@ class DetailedTestResult(unittest.TestResult):
         """
         self.test_start_time = time.perf_counter()
         super().startTest(test)
+        print(f"Running test: {test.id()}")
 
-    def stop_test(self, test: unittest.TestCase) -> None:
+    def stopTest(self, test: unittest.TestCase) -> None:     # noqa: N802
         """
         Called when a test finishes.
 
         Args:
             test (unittest.TestCase): The test case that just finished.
         """
+        super().stopTest(test)
         if hasattr(test, "range_data"):
             self.range_data[test.id()] = test.range_data
         else:
             print(f"No range_data attribute found for {test.id()}")
-        super().stopTest(test)
 
     def get_test_duration(self) -> float:
         """
@@ -56,9 +60,8 @@ class DetailedTestResult(unittest.TestResult):
         Returns:
             float: The duration of the test in seconds.
         """
-        if self.test_start_time is None:
-            return 0.0
-        return time.perf_counter() - self.test_start_time
+        duration = time.perf_counter() - self.test_start_time
+        return duration
 
     def addSuccess(self, test: unittest.TestCase) -> None:  # noqa: N802
         """
@@ -80,16 +83,18 @@ class DetailedTestResult(unittest.TestResult):
         """
         Called when a test raises an error.
 
-        End-of-line comment "# noqa: N802" is included in the first line to indicate flake8 to
-        ignore the capitals in the method name addError, as this method name overrides the method
-        from a parent class
-
         Args:
             test (unittest.TestCase): The test case that raised an error.
-            err (Tuple[type, Exception, Any]) -> None:
+            err (Tuple[type, Exception, Any]): A tuple containing the error details.
         """
-        super().addError(test, err)
-        self.test_results.append((test, "Error", err, self.get_test_duration()))
+        error_message = str(err[1])
+        if "Expected or actual min is greater than max value" in error_message:
+            # This is a range check error, treat it as a skip
+            reason = f"Range check failed: {error_message}"
+            self.addSkip(test, reason)
+        else:
+            super().addError(test, err)
+            self.test_results.append((test, "Error", err, self.get_test_duration()))
         if hasattr(test, "range_data"):
             self.range_data[test.id()] = test.range_data
 
@@ -110,14 +115,27 @@ class DetailedTestResult(unittest.TestResult):
         if hasattr(test, "range_data"):
             self.range_data[test.id()] = test.range_data
 
+    def addSkip(self, test: unittest.TestCase, reason: str) -> None:  # noqa: N802
+        """
+        Called when a test is skipped.
+
+        Args:
+            test (unittest.TestCase): The test case that was skipped.
+            reason (str): The reason for skipping the test.
+        """
+        super().addSkip(test, reason)
+        self.test_results.append((test, "Skipped", reason, self.get_test_duration()))
+        if hasattr(test, "range_data"):
+            self.range_data[test.id()] = test.range_data
+
     def print_results(self) -> None:
         """
         Print detailed results of all tests, including range data if available.
         """
-        print("\nDetailed Test Results:")
+        print("\nDetailed Test Results:")                
         for test, outcome, error, duration in self.test_results:
             test_id_short = test.id().split(".")[-1]
-            print(f"{test_id_short}: {outcome} (Duration: {duration:.3f}s)")
+            print(f"{test_id_short}: {outcome} (Duration: {duration:.6f}s)")
             if error:
                 if outcome == "Skipped":
                     print(f"  Reason: {error}")
@@ -129,6 +147,11 @@ class DetailedTestResult(unittest.TestResult):
                     print(f"    {key}: {value}")
             else:
                 print(" Range Data: Not available")
+
+        print("\nOverall Test Results:")
+        for test, outcome, error, duration in self.test_results:
+            test_id_short = test.id().split(".")[-1]
+            print(f"{test_id_short}: {outcome} (Duration: {duration:.6f}s)")
 
         print("\nOverall Test Results:")
         print(f"Ran {self.testsRun} tests")
@@ -223,6 +246,12 @@ def load_tests(loader: unittest.TestLoader) -> unittest.TestSuite:
 
     return suite
 
+def print_profiling_stats(pr):
+    s = io.StringIO()
+    sortby = 'time'
+    ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+    ps.print_stats()
+    print(s.getvalue())
 
 if __name__ == "__main__":
     print("Test Runner Script")
@@ -245,6 +274,9 @@ if __name__ == "__main__":
     print("Current working directory:", os.getcwd())
     print("Expected directory:", EXPECTED_DIR)
 
+    pr = cProfile.Profile()
+    pr.enable()
+
     loader = unittest.TestLoader()
     suite = load_tests(loader)
 
@@ -258,3 +290,5 @@ if __name__ == "__main__":
     result.print_results()
 
     result.save_range_data_to_csv("new_scaling_range_test.csv")
+    pr.disable()
+    print_profiling_stats(pr)

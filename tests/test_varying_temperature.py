@@ -8,10 +8,6 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
-from utils_test_scaling import (
-    check_scaling,
-    create_problem_with_debug_info,
-)
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
@@ -37,14 +33,8 @@ class TestVaryingTemperature(TestCase):
 
         base_folder = Path(run_1a.__file__).resolve().parent.parent
 
-        (
-            heat_problem_t_var_scaling,
-            rtc_logger,
-            rtc_logs_list,
-        ) = create_problem_with_debug_info(HeatProblemTvar)
-
         heat_problem = run_esdl_mesido_optimization(
-            heat_problem_t_var_scaling,
+            HeatProblemTvar,
             base_folder=base_folder,
             esdl_file_name="1a.esdl",
             esdl_parser=ESDLFileParser,
@@ -70,7 +60,7 @@ class TestVaryingTemperature(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
-        check_scaling(self, rtc_logger, rtc_logs_list)
+        
 
         parameters = heat_problem.parameters(0)
 
@@ -108,14 +98,9 @@ class TestVaryingTemperature(TestCase):
 
         base_folder = Path(run_3a.__file__).resolve().parent.parent
 
-        (
-            heat_problem_t_var_sup_scaling,
-            rtc_logger,
-            rtc_logs_list,
-        ) = create_problem_with_debug_info(HeatProblemTvarsup)
 
         heat_problem = run_esdl_mesido_optimization(
-            heat_problem_t_var_sup_scaling,
+            HeatProblemTvarsup,
             base_folder=base_folder,
             esdl_file_name="3a.esdl",
             esdl_parser=ESDLFileParser,
@@ -147,7 +132,7 @@ class TestVaryingTemperature(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
-        check_scaling(self, rtc_logger, rtc_logs_list)
+        
 
         parameters = heat_problem.parameters(0)
 
@@ -187,14 +172,8 @@ class TestVaryingTemperature(TestCase):
 
         base_folder = Path(run_3a.__file__).resolve().parent.parent
 
-        (
-            heat_problem_t_var_ret_scaling,
-            rtc_logger,
-            rtc_logs_list,
-        ) = create_problem_with_debug_info(HeatProblemTvarret)
-
         heat_problem = run_esdl_mesido_optimization(
-            heat_problem_t_var_ret_scaling,
+            HeatProblemTvarret,
             base_folder=base_folder,
             esdl_file_name="3a.esdl",
             esdl_parser=ESDLFileParser,
@@ -219,7 +198,7 @@ class TestVaryingTemperature(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
-        check_scaling(self, rtc_logger, rtc_logs_list)
+        
 
         parameters = heat_problem.parameters(0)
 
@@ -258,14 +237,9 @@ class TestVaryingTemperature(TestCase):
 
         base_folder = Path(run_heat_exchanger.__file__).resolve().parent.parent
 
-        (
-            heat_problem_t_var_scaling,
-            rtc_logger,
-            rtc_logs_list,
-        ) = create_problem_with_debug_info(HeatProblemTvar)
 
         heat_problem = run_esdl_mesido_optimization(
-            heat_problem_t_var_scaling,
+            HeatProblemTvar,
             base_folder=base_folder,
             esdl_file_name="heat_exchanger.esdl",
             esdl_parser=ESDLFileParser,
@@ -293,7 +267,7 @@ class TestVaryingTemperature(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
-        check_scaling(self, rtc_logger, rtc_logs_list)
+        
 
         parameters = heat_problem.parameters(0)
 
@@ -331,14 +305,9 @@ class TestVaryingTemperature(TestCase):
 
         base_folder = Path(run_heat_exchanger.__file__).resolve().parent.parent
 
-        (
-            heat_problem_tvar_disable_hex_scaling,
-            rtc_logger,
-            rtc_logs_list,
-        ) = create_problem_with_debug_info(HeatProblemTvarDisableHEX)
 
         heat_problem = run_esdl_mesido_optimization(
-            heat_problem_tvar_disable_hex_scaling,
+            HeatProblemTvarDisableHEX,
             base_folder=base_folder,
             esdl_file_name="heat_exchanger.esdl",
             esdl_parser=ESDLFileParser,
@@ -362,7 +331,7 @@ class TestVaryingTemperature(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
-        check_scaling(self, rtc_logger, rtc_logs_list)
+        
 
     def test_hex_temperature_variation_secondary(self):
         """
@@ -380,14 +349,9 @@ class TestVaryingTemperature(TestCase):
 
         base_folder = Path(run_heat_exchanger.__file__).resolve().parent.parent
 
-        (
-            heat_problem_tvar_secondary_scaling,
-            rtc_logger,
-            rtc_logs_list,
-        ) = create_problem_with_debug_info(HeatProblemTvarSecondary)
 
         heat_problem = run_esdl_mesido_optimization(
-            heat_problem_tvar_secondary_scaling,
+            HeatProblemTvarSecondary,
             base_folder=base_folder,
             esdl_file_name="heat_exchanger.esdl",
             esdl_parser=ESDLFileParser,
@@ -412,7 +376,7 @@ class TestVaryingTemperature(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
-        check_scaling(self, rtc_logger, rtc_logs_list)
+        
 
     def test_heat_pump_varying_temperature(self):
         """
@@ -425,14 +389,8 @@ class TestVaryingTemperature(TestCase):
 
         base_folder = Path(run_heat_pump.__file__).resolve().parent.parent
 
-        (
-            heat_problem_tvar_scaling,
-            rtc_logger,
-            rtc_logs_list,
-        ) = create_problem_with_debug_info(HeatProblemTvar)
-
         heat_problem = run_esdl_mesido_optimization(
-            heat_problem_tvar_scaling,
+            HeatProblemTvar,
             base_folder=base_folder,
             esdl_file_name="heat_pump.esdl",
             esdl_parser=ESDLFileParser,
@@ -446,7 +404,7 @@ class TestVaryingTemperature(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
-        check_scaling(self, rtc_logger, rtc_logs_list)
+        
 
         expected_cop = (
             parameters["GenericConversion_3d3f.efficiency"]

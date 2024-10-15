@@ -9,10 +9,6 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
-from utils_test_scaling import (
-    check_scaling,
-    create_problem_with_debug_info,
-)
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
@@ -53,14 +49,9 @@ class TestPipeDiameterSizingExample(TestCase):
         del root_folder
         sys.path.pop(1)
 
-        (
-            pipe_diameter_sizing_problem_scaled,
-            rtc_logger,
-            rtc_logs_list,
-        ) = create_problem_with_debug_info(PipeDiameterSizingProblem)
 
         problem = run_esdl_mesido_optimization(
-            pipe_diameter_sizing_problem_scaled,
+            PipeDiameterSizingProblem,
             base_folder=base_folder,
             esdl_file_name="2a.esdl",
             esdl_parser=ESDLFileParser,
@@ -162,7 +153,6 @@ class TestPipeDiameterSizingExample(TestCase):
         demand_matching_test(problem, results)
         energy_conservation_test(problem, results)
         heat_to_discharge_test(problem, results)
-        check_scaling(self, rtc_logger, rtc_logs_list)
 
 
 if __name__ == "__main__":

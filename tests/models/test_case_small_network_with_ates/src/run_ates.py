@@ -74,6 +74,7 @@ class _GoalsAndOptions:
     def solver_options(self):
         options = super().solver_options()
         options["solver"] = "highs"
+        self._qpsol = CachingQPSol()
         return options
 
 

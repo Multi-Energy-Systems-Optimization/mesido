@@ -430,14 +430,8 @@ class TestMultiCommoditySimulator(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
-        (
-            multicommoditysimulatornolossesscaling,
-            logger,
-            logs_list,
-        ) = create_problem_with_debug_info(MultiCommoditySimulatorNoLosses)
-
         solution = run_optimization_problem(
-            multicommoditysimulatornolossesscaling,
+            MultiCommoditySimulatorNoLosses,
             base_folder=base_folder,
             esdl_file_name="emerge_battery_priorities.esdl",
             esdl_parser=ESDLFileParser,

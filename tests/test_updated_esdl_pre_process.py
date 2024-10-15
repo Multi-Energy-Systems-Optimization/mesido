@@ -7,8 +7,6 @@ from mesido.workflows import run_end_scenario_sizing
 
 import numpy as np
 
-from utils_test_scaling import create_problem_with_debug_info  # , problem_scaling_check
-
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
@@ -38,12 +36,9 @@ class TestUpdatedESDL(TestCase):
             Path(examples.PoCTutorial.src.run_grow_tutorial.__file__).resolve().parent.parent
         )
 
-        optimscaling, logger, logs_list = create_problem_with_debug_info(
-            EndScenarioSizingStagedHighs
-        )
 
         problem = run_end_scenario_sizing(
-            optimscaling,
+            EndScenarioSizingStagedHighs,
             base_folder=base_folder,
             esdl_file_name="PoC Tutorial.esdl",
             esdl_parser=ESDLFileParser,

@@ -10,7 +10,11 @@ import numpy as np
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
-from rtctools.optimization.goal_programming_mixin import Goal, GoalProgrammingMixin
+from rtctools.optimization.goal_programming_mixin import Goal
+from rtctools.optimization.single_pass_goal_programming_mixin import (
+    SinglePassGoalProgrammingMixin,
+    CachingQPSol
+)
 from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
 )
@@ -49,6 +53,7 @@ class _GoalsAndOptions:
     def solver_options(self):
         options = super().solver_options()
         options["solver"] = "highs"
+        self._qpsol = CachingQPSol()
         return options
 
 
@@ -72,7 +77,7 @@ class HeatProblem(
     _GoalsAndOptions,
     PhysicsMixin,
     LinearizedOrderGoalProgrammingMixin,
-    GoalProgrammingMixin,
+    SinglePassGoalProgrammingMixin,
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
@@ -91,17 +96,14 @@ class HeatProblem(
 
         return options
 
-    def solver_options(self):
-        options = super().solver_options()
-        options["solver"] = "highs"
-        return options
+
 
 
 class HeatProblemTvarSecondary(
     _GoalsAndOptions,
     PhysicsMixin,
     LinearizedOrderGoalProgrammingMixin,
-    GoalProgrammingMixin,
+    SinglePassGoalProgrammingMixin,
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
@@ -158,7 +160,7 @@ class HeatProblemTvar(
     _GoalsAndOptions,
     PhysicsMixin,
     LinearizedOrderGoalProgrammingMixin,
-    GoalProgrammingMixin,
+    SinglePassGoalProgrammingMixin,
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
@@ -210,7 +212,7 @@ class HeatProblemTvarDisableHEX(
     _GoalsAndOptions,
     PhysicsMixin,
     LinearizedOrderGoalProgrammingMixin,
-    GoalProgrammingMixin,
+    SinglePassGoalProgrammingMixin,
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):

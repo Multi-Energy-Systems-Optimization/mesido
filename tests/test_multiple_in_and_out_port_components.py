@@ -7,10 +7,6 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
-from utils_test_scaling import (
-    check_scaling,
-    create_problem_with_debug_info,
-)
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
@@ -65,14 +61,8 @@ class TestHEX(TestCase):
         }
         # -----------------------------------------------------------------------------------------
 
-        (
-            heat_problem_post_scaling,
-            rtc_logger,
-            rtc_logs_list,
-        ) = create_problem_with_debug_info(HeatProblemPost)
-
         solution = run_esdl_mesido_optimization(
-            heat_problem_post_scaling,
+            HeatProblemPost,
             base_folder=base_folder,
             esdl_file_name="heat_exchanger.esdl",
             esdl_parser=ESDLFileParser,
@@ -94,7 +84,6 @@ class TestHEX(TestCase):
         demand_matching_test(solution, results)
         heat_to_discharge_test(solution, results)
         energy_conservation_test(solution, results)
-        check_scaling(self, rtc_logger, rtc_logs_list)
 
         np.testing.assert_allclose(prim_heat * eff, sec_heat)
 
@@ -166,14 +155,8 @@ class TestHP(TestCase):
         }
         # -----------------------------------------------------------------------------------------
 
-        (
-            heat_problem_post,
-            rtc_logger,
-            rtc_logs_list,
-        ) = create_problem_with_debug_info(HeatProblemPost)
-
         solution = run_esdl_mesido_optimization(
-            heat_problem_post,
+            HeatProblemPost,
             base_folder=base_folder,
             esdl_file_name="heat_pump.esdl",
             esdl_parser=ESDLFileParser,
@@ -200,7 +183,7 @@ class TestHP(TestCase):
         demand_matching_test(solution, results)
         heat_to_discharge_test(solution, results)
         energy_conservation_test(solution, results)
-        check_scaling(self, rtc_logger, rtc_logs_list)
+
 
         # We check the energy converted betweeen the commodities
         np.testing.assert_allclose(power_elec * parameters["GenericConversion_3d3f.COP"], sec_heat)

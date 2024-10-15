@@ -17,7 +17,10 @@ from rtctools.optimization.goal_programming_mixin_base import Goal
 from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
 )
-from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
+from rtctools.optimization.single_pass_goal_programming_mixin import (
+    SinglePassGoalProgrammingMixin,
+    CachingQPSol,
+)
 from rtctools.optimization.timeseries import Timeseries
 from rtctools.util import run_optimization_problem
 
@@ -213,6 +216,7 @@ class HeatProblem(
         """
         options = super().solver_options()
         options["solver"] = "highs"
+        self._qpsol = CachingQPSol()
         return options
 
     def constraints(self, ensemble_member):

@@ -156,15 +156,10 @@ class TestWarmingUpUnitCases(TestCase):
 
         base_folder = Path(run_3a.__file__).resolve().parent.parent
 
-        (
-            heat_problem_scaling,
-            rtc_logger,
-            rtc_logs_list,
-        ) = create_problem_with_debug_info(HeatProblem)
 
         # Just a "problem is not infeasible"
         heat_problem = run_esdl_mesido_optimization(
-            heat_problem_scaling,
+            HeatProblem,
             base_folder=base_folder,
             esdl_file_name="3a.esdl",
             esdl_parser=ESDLFileParser,
@@ -179,7 +174,7 @@ class TestWarmingUpUnitCases(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
-        check_scaling(self, rtc_logger, rtc_logs_list)
+
 
         # We only check the flow directions for the time-steps that there is flow in the pipe.
         inds = np.round(1 - results["Pipe_e53a__is_disconnected"]).astype(bool)

@@ -12,7 +12,7 @@ from pytest import skip
 from rtctools._internal.debug_check_helpers import DebugLevel
 
 
-def create_log_list_scaling(logger_name):
+def create_log_list_scaling(logger_name, level=logging.CRITICAL):
     """
     Creation of a list for the logs which will be filled with the logging information of the
     problem.
@@ -34,8 +34,7 @@ def create_log_list_scaling(logger_name):
     logs_list = []
 
     logger = logging.getLogger(logger_name)
-    logger.setLevel(logging.INFO)
-
+    logger.setLevel(level)
     logger.addHandler(LogRecordsListHandler(logs_list))
 
     return logger, logs_list

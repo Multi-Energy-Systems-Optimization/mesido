@@ -16,8 +16,6 @@ from utils_test_scaling import (
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
-logger = logging.getLogger("WarmingUP-MPC")
-logger.setLevel(logging.INFO)
 
 
 class TestColdDemand(TestCase):
@@ -35,7 +33,7 @@ class TestColdDemand(TestCase):
         import models.wko.src.example as example
         from models.wko.src.example import HeatProblem
 
-        logger, logs_list = create_log_list_scaling("WarmingUP-MPC")
+        logger, logs_list = create_log_list_scaling("WarmingUP-MPC", level=logging.ERROR)
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
