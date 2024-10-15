@@ -16,7 +16,7 @@ General notes:
 
 ***************************************************************************************************
 
-Exsting test cases:
+Existing test cases:
 - What do we want to explain in description? General scenario? Or more detail like 1 year profile
 used etc?
 - Where is the warming up 3/4 test cases that have been mentioned by Ryvo and Sam - KvR check with Ryvo where there cases are?
@@ -662,4 +662,99 @@ r"""
         """"
    
 ***************************************************************************************************
+
+
+- Scaling checks
+
+    Scaling checks have been included in the following test functions:
+        test_absolute_heat
+        test_absolute_heat
+        test_asset_is_realized
+        test_asset_is_realized
+        test_asset_is_realized
+        test_ates
+        test_ates
+        test_ates
+        test_airco
+        test_airco
+        test_airco
+        test_cold_demand
+        test_cold_demand
+        test_cold_demand
+        test_wko
+        test_wko
+        test_wko
+        test_end_scenario_sizing
+        test_end_scenario_sizing
+        test_end_scenario_sizing
+        test_end_scenario_sizing_discounted
+        test_end_scenario_sizing_discounted
+        test_end_scenario_sizing_discounted
+        test_end_scenario_sizing_head_loss
+        test_end_scenario_sizing_head_loss
+        test_end_scenario_sizing_head_loss
+        test_end_scenario_sizing_annualized
+        test_end_scenario_sizing_annualized
+        test_end_scenario_sizing_annualized
+        test_end_scenario_sizing_annualized
+        test_gas_boiler
+        test_gas_boiler
+        test_gas_boiler
+        test_heat_network_head_loss_LINEARIZED_N_LINES_WEAK_INEQUALITY
+        test_heat_network_head_loss_LINEARIZED_N_LINES_WEAK_INEQUALITY
+        test_heat_network_head_loss_LINEARIZED_N_LINES_WEAK_INEQUALITY
+        test_heat_network_head_loss_LINEARIZED_N_LINES_EQUALITY
+        test_heat_network_head_loss_LINEARIZED_N_LINES_EQUALITY
+        test_heat_network_head_loss_LINEARIZED_N_LINES_EQUALITY
+        test_heat_network_pipe_split_head_loss
+        test_heat_network_pipe_split_head_loss
+        test_heat_network_pipe_split_head_loss
+        test_heat_loss
+        test_heat_loss
+        test_heat_loss
+        test_insulation_heatdemand
+        test_insulation_heatdemand
+        test_insulation_heatdemand
+        test_insulation_heatdemand
+        test_max_size_and_aggr_count
+        test_max_size_and_aggr_count
+        test_max_size_and_aggr_count
+        test_max_size_and_aggr_count
+        test_multi_commodity_simulator_priorities_el
+        test_multi_commodity_simulator_priorities_el
+        test_multi_commodity_simulator_priorities_el
+        test_heat_exchanger
+        test_heat_exchanger
+        test_heat_exchanger
+        test_heat_exchanger
+        test_heat_pump
+        test_heat_pump
+        test_heat_pump
+        test_heat_pump
+        test_network_simulator
+        test_network_simulator
+        test_network_simulator
+        test_half_network_gone
+        test_half_network_gone
+        test_half_network_gone
+        test_max_producer_profile
+        test_max_producer_profile
+        test_max_producer_profile
+        test_ates_max_flow
+        test_ates_max_flow
+        test_ates_max_flow
+        test_ates_max_flow
+        test_ates_temperature
+        test_ates_temperature
+        test_ates_temperature
+        test_ates_temperature
+        test_pipe_class_var
+        test_pipe_class_var
+        test_pipe_class_var
+        test_1a_temperature_variation
+        test_1a_temperature_variation
+        test_1a_temperature_variation
+        test_1a_temperature_variation
+        test_3a_temperature_variation_return
+        test_3a_temperature_variation_return
 
