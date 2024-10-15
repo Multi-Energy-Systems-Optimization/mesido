@@ -191,7 +191,7 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
 
                     self._timed_setpoints.update(asset_setpoints)
 
-    def remove_dn0(self, new_pcs: List[type[PipeClass]], is_there_always_mass_flow: bool) -> None:
+    def remove_dn0(self, new_pcs: List[PipeClass], is_there_always_mass_flow: bool) -> None:
         """Remove pipe DN0 from the available pipe list, if there is always flow required"""
         # TODO: Bug to be resolved. Currently the solution is infeasible when only
         # 1 pipe class is available, but it should be able to working.
