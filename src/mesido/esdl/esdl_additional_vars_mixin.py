@@ -195,11 +195,7 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
         # TODO: Bug to be resolved. Currently the solution is infeasible when only
         # 1 pipe class is available, but it should be able to working.
         # Then remove the need for having 2 pipes classes available in new_pcs.
-        if (
-            is_there_always_mass_flow
-            and len(new_pcs) > 2
-            and new_pcs[0].maximum_discharge == 0.0
-        ):
+        if is_there_always_mass_flow and len(new_pcs) > 2 and new_pcs[0].maximum_discharge == 0.0:
             new_pcs.remove(new_pcs[0])
 
     def pipe_classes(self, p):
