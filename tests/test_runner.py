@@ -112,7 +112,7 @@ class DetailedTestResult(unittest.TestResult):
         if hasattr(test, "range_data"):
             self.range_data[test.id()] = test.range_data
 
-    def addSkip(self, test: unittest.TestCase, reason: str) -> None:
+    def addSkip(self, test: unittest.TestCase, reason: str) -> None:  # noqa: N802
         """
         Called when a test is skipped.
 
