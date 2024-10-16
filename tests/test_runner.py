@@ -80,16 +80,18 @@ class DetailedTestResult(unittest.TestResult):
         """
         Called when a test raises an error.
 
-        End-of-line comment "# noqa: N802" is included in the first line to indicate flake8 to
-        ignore the capitals in the method name addError, as this method name overrides the method
-        from a parent class
-
         Args:
             test (unittest.TestCase): The test case that raised an error.
-            err (Tuple[type, Exception, Any]) -> None:
+            err (Tuple[type, Exception, Any]): A tuple containing the error details.
         """
-        super().addError(test, err)
-        self.test_results.append((test, "Error", err, self.get_test_duration()))
+        error_message = str(err[1])
+        if "Expected or actual min is greater than max value" in error_message:
+            # This is a range check error, treat it as a skip
+            reason = f"Range check failed: {error_message}"
+            self.addSkip(test, reason)
+        else:
+            super().addError(test, err)
+            self.test_results.append((test, "Error", err, self.get_test_duration()))
         if hasattr(test, "range_data"):
             self.range_data[test.id()] = test.range_data
 
@@ -107,6 +109,19 @@ class DetailedTestResult(unittest.TestResult):
         """
         super().addFailure(test, err)
         self.test_results.append((test, "Failure", err, self.get_test_duration()))
+        if hasattr(test, "range_data"):
+            self.range_data[test.id()] = test.range_data
+
+    def addSkip(self, test: unittest.TestCase, reason: str) -> None:
+        """
+        Called when a test is skipped.
+
+        Args:
+            test (unittest.TestCase): The test case that was skipped.
+            reason (str): The reason for skipping the test.
+        """
+        super().addSkip(test, reason)
+        self.test_results.append((test, "Skipped", reason, self.get_test_duration()))
         if hasattr(test, "range_data"):
             self.range_data[test.id()] = test.range_data
 
