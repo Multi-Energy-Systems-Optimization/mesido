@@ -3,6 +3,7 @@ from typing import Dict, Set
 
 from mesido.base_component_type_mixin import BaseComponentTypeMixin
 from mesido.heat_network_common import NodeConnectionDirection
+from mesido.network_common import NetworkSettings
 from mesido.topology import Topology
 
 import numpy as np
@@ -36,6 +37,16 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
         gas_nodes = components.get("gas_node", [])
         buffers = components.get("heat_buffer", [])
         atess = [*components.get("ates", []), *components.get("low_temperature_ates", [])]
+        demands = [
+            *components.get("heat_demand", []),
+            *components.get("electricity_demand", []),
+            *components.get("gas_demand", []),
+        ]
+        sources = [
+            *components.get("heat_source", []),
+            *components.get("electricity_source", []),
+            *components.get("gas_source", []),
+        ]
         pipes = components.get("heat_pipe", [])
 
         # An energy system should have at least one asset.
@@ -50,7 +61,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
         bus_connections = {}
         gas_node_connections = {}
 
-        heat_network_model_type = "Heat"
+        heat_network_model_type = NetworkSettings.NETWORK_TYPE_HEAT
 
         # Note that a pipe series can include both hot and cold pipes for
         # QTH models. It is only about figuring out which pipes are
@@ -59,7 +70,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
         # series, as the cold part is zero milp by construction.
         if heat_network_model_type == "QTH":
             alias_relation = self.alias_relation
-        elif heat_network_model_type == "Heat":
+        elif heat_network_model_type == NetworkSettings.NETWORK_TYPE_HEAT:
             # There is no proper AliasRelation yet (because there is milp loss in pipes).
             # So we build one, as that is the easiest way to figure out which pipes are
             # connected to each other in series. We do this by making a temporary/shadow
@@ -116,7 +127,11 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
             for i in range(n_connections):
                 if n in nodes:
                     cur_port = f"{n}.{heat_network_model_type}Conn[{i + 1}]"
-                    prop = "T" if heat_network_model_type == "QTH" else "Heat"
+                    prop = (
+                        "T"
+                        if heat_network_model_type == "QTH"
+                        else NetworkSettings.NETWORK_TYPE_HEAT
+                    )
                     prop_h = "H"
                     in_suffix = ".QTHIn.T" if heat_network_model_type == "QTH" else ".HeatIn.Heat"
                     out_suffix = (
@@ -242,7 +257,9 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
 
             for k in ["In", "Out"]:
                 b_conn = f"{b}.{heat_network_model_type}{k}"
-                prop = "T" if heat_network_model_type == "QTH" else "Heat"
+                prop = (
+                    "T" if heat_network_model_type == "QTH" else NetworkSettings.NETWORK_TYPE_HEAT
+                )
                 aliases = [
                     x
                     for x in self.alias_relation.aliases(f"{b_conn}.{prop}")
@@ -287,7 +304,9 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
 
             for k in ["In", "Out"]:
                 a_conn = f"{a}.{heat_network_model_type}{k}"
-                prop = "T" if heat_network_model_type == "QTH" else "Heat"
+                prop = (
+                    "T" if heat_network_model_type == "QTH" else NetworkSettings.NETWORK_TYPE_HEAT
+                )
                 aliases = [
                     x
                     for x in self.alias_relation.aliases(f"{a_conn}.{prop}")
@@ -325,6 +344,102 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
 
             ates_connections[a] = tuple(ates_connections[a])
 
+        demand_connections = {}
+
+        for a in demands:
+            if a in components.get("heat_demand", []):
+                network_type = NetworkSettings.NETWORK_TYPE_HEAT
+                prop = NetworkSettings.NETWORK_TYPE_HEAT
+            elif a in components.get("electricity_demand", []):
+                network_type = "Electricity"
+                prop = "Power"
+            elif a in components.get("gas_demand", []):
+                network_type = NetworkSettings.NETWORK_TYPE_GAS
+                prop = "H"
+            else:
+                logger.error(f"{a} cannot be modelled with heat, gas or electricity")
+            a_conn = f"{a}.{network_type}In"
+            aliases = [
+                x
+                for x in self.alias_relation.aliases(f"{a_conn}.{prop}")
+                if not x.startswith(a) and x.endswith(f".{prop}")
+            ]
+
+            if len(aliases) > 1:
+                raise Exception(f"More than one connection to {a_conn}")
+            elif len(aliases) == 0:
+                # the connection was a logical link to a node
+                continue
+
+            in_suffix = f".{network_type}In.{prop}"
+            out_suffix = f".{network_type}Out.{prop}"
+
+            if aliases[0].endswith(out_suffix):
+                asset_w_orientation = (
+                    aliases[0][: -len(out_suffix)],
+                    NodeConnectionDirection.IN,
+                )
+            else:
+                asset_w_orientation = (
+                    aliases[0][: -len(in_suffix)],
+                    NodeConnectionDirection.OUT,
+                )
+
+            if asset_w_orientation[0] in [
+                *components.get("heat_pipe", []),
+                *components.get("gas_pipe", []),
+                *components.get("electricity_cable", []),
+            ]:
+                demand_connections[a] = asset_w_orientation
+
+        source_connections = {}
+
+        for a in sources:
+            if a in components.get("heat_source", []):
+                network_type = NetworkSettings.NETWORK_TYPE_HEAT
+                prop = NetworkSettings.NETWORK_TYPE_HEAT
+            elif a in components.get("electricity_source", []):
+                network_type = "Electricity"
+                prop = "Power"
+            elif a in components.get("gas_source", []):
+                network_type = NetworkSettings.NETWORK_TYPE_GAS
+                prop = "H"
+            else:
+                logger.error(f"{a} cannot be modelled with heat, gas or electricity")
+            a_conn = f"{a}.{network_type}Out"
+            aliases = [
+                x
+                for x in self.alias_relation.aliases(f"{a_conn}.{prop}")
+                if not x.startswith(a) and x.endswith(f".{prop}")
+            ]
+
+            if len(aliases) > 1:
+                raise Exception(f"More than one connection to {a_conn}")
+            elif len(aliases) == 0:
+                # the connection was a logical link to a node
+                continue
+
+            in_suffix = f".{network_type}In.{prop}"
+            out_suffix = f".{network_type}Out.{prop}"
+
+            if aliases[0].endswith(out_suffix):
+                asset_w_orientation = (
+                    aliases[0][: -len(out_suffix)],
+                    NodeConnectionDirection.IN,
+                )
+            else:
+                asset_w_orientation = (
+                    aliases[0][: -len(in_suffix)],
+                    NodeConnectionDirection.OUT,
+                )
+
+            if asset_w_orientation[0] in [
+                *components.get("heat_pipe", []),
+                *components.get("gas_pipe", []),
+                *components.get("electricity_cable", []),
+            ]:
+                source_connections[a] = asset_w_orientation
+
         self.__topology = Topology(
             node_connections,
             gas_node_connections,
@@ -332,6 +447,8 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
             buffer_connections,
             ates_connections,
             bus_connections,
+            demand_connections,
+            source_connections,
         )
 
         super().pre()

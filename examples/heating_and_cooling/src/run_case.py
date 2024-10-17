@@ -65,6 +65,7 @@ class HeatColdDemand(TestCase):
                 super().read()
 
                 # Set the peak of the heating demand since the specified profile is normalized to 1
+
                 for d in self.energy_system_components["heat_demand"]:
                     target = self.get_timeseries(f"{d}.target_heat_demand")
                     for ii in range(len(target.values)):
