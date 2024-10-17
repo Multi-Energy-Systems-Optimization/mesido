@@ -58,7 +58,7 @@ setup(
         "influxdb >= 5.3.1",
         "pyecore == 0.12.1",
         "pymoca >= 0.9.0",
-        'rtc-tools == 2.6.1 "casadi >=3.6.7"',
+        'rtc-tools == 2.6.1 "casadi>=3.6.7"',
         "pyesdl == 24.2",
         "pandas >= 1.3.1, < 2.0",
         "casadi == 3.6.3",
