@@ -61,7 +61,7 @@ setup(
         "rtc-tools == 2.6.1",
         "pyesdl == 24.2",
         "pandas >= 1.3.1, < 2.0",
-        "casadi == 3.6.6",
+        "casadi >= 3.6.7",
         "StrEnum == 0.4.15",
         "CoolProp==6.6.0",
     ],
