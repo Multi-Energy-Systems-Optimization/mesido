@@ -253,6 +253,30 @@ class TestColdDemand(TestCase):
         )
         # ------------------------------------------------------------------------------------------
 
+    
+    def test_time_discretization(self):
+        """
+        This test checks wether the demand arrays are discretized correctly.
+        Chrck corner cases with two demand peaks (cold and heat).
+        """
+        pass
+        # Heat and cold are on the same day,
+        # Heat and cold are back to back.
+        # Cold happens before the heat peak.
+        # Probably do it by creating multiple timeseries.
+
+    def test_only_cold_demand(self):
+        """
+        This test checks the basic physics for a network with only cold demands and
+        no heat demands.
+        
+        """
+        pass
+
+
+    
+
+
 
 if __name__ == "__main__":
     test_cold_demand = TestColdDemand()
