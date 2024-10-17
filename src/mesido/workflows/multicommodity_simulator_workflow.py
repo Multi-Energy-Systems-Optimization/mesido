@@ -658,6 +658,7 @@ class MultiCommoditySimulator(
 
         options["gas_storage_discharge_variables"] = True
         options["electricity_storage_discharge_variables"] = True
+        options["wall_roughness"] = 1.5e-5
 
         return options
 
@@ -665,6 +666,8 @@ class MultiCommoditySimulator(
         constraints = []
         head_in = self.state("Pipe_GDF SUEZ E&P Nederland B_V__6.GasIn.H")
         density = self.parameters(ensemble_member)["Pipe_GDF SUEZ E&P Nederland B_V__6.density"]
+        # head_in = self.state("Pipe_HyOne_Main_9.GasIn.H")
+        # density = self.parameters(ensemble_member)["Pipe_HyOne_Main_9.density"]
         pressure = 50e5 #50bar
         constraints.append((head_in*density/1e3*9.81 /pressure, 1.0, 1.0))
 
