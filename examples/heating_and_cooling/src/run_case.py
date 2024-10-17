@@ -64,7 +64,7 @@ class HeatColdDemand(TestCase):
             def read(self):
                 super().read()
 
-                # Set the peak of the heating demand since the specified proifle is normalized to 1
+                # Set the peak of the heating demand since the specified profile is normalized to 1
                 for d in self.energy_system_components["heat_demand"]:
                     target = self.get_timeseries(f"{d}.target_heat_demand")
                     for ii in range(len(target.values)):
@@ -186,9 +186,9 @@ class HeatColdDemand(TestCase):
 if __name__ == "__main__":
     test_cold_demand = HeatColdDemand()
     test_cold_demand.heating_cooling_case()
-    # Tests to write:
+    
+    # Tests to run:
     # - Peak heat and peak cold are on the same day.
     #       - Create function that artificially adds a peak cold day.
-    # - Peak heat and peak cold are back to back.
-    # - There are heat demands but no cold ones.
-    # - There are cold demands but no heat ones.
+    # - Peak heat and peak cold are back to back. 
+    # - There are cold demands but no heat ones.Check if it's already in test_cold_demand.py.
