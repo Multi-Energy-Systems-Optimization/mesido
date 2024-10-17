@@ -207,6 +207,7 @@ class _AssetToComponentBase:
         self._edr_pipes = json.load(
             open(os.path.join(Path(__file__).parent, "_edr_pipes.json"), "r")
         )
+        self._gas_pipes = json.load(open(os.path.join(Path(__file__).parent, "_gas_pipe_database.json"), "r"))
 
     def convert(self, asset: Asset) -> Tuple[Type[_Model], MODIFIERS]:
         """
@@ -323,6 +324,56 @@ class _AssetToComponentBase:
                     conductivies_insulation = [x.matter.thermalConductivity for x in components]
 
         return inner_diameter, insulation_thicknesses, conductivies_insulation
+
+    def _gas_pipe_get_diameter_and_roughness(self, asset: Asset) -> Tuple[float, float]:
+        """
+        There are multiple ways to specify pipe properties like inner-diameter and
+        pipe material and thickness.  The user specified nominal diameter (DN size)
+        takes precedence over potential user specified innerDiameter and material (while logging
+        warnings when either of these two variables are specified in combination with the pipe DN)
+        Parameters
+        ----------
+        asset : Asset pipe object with it's properties from ESDL
+
+        Returns
+        -------
+        pipe inner diameter, thickness and conductivity of each insulation layer
+        """
+
+        full_name = f"{asset.asset_type} '{asset.name}'"
+        if asset.attributes["innerDiameter"] and asset.attributes["diameter"].value > 0:
+            logger.warning(
+                f"{full_name}' has both 'innerDiameter' and 'diameter' specified. "
+                f"Diameter of {asset.attributes['diameter'].name} will be used."
+            )
+        if asset.attributes["material"] and asset.attributes["diameter"].value > 0:
+            logger.warning(
+                f"{full_name}' has both 'material' and 'diameter' specified. "
+                f"Insulation properties of {asset.attributes['diameter'].name} will be used."
+            )
+        if asset.attributes["diameter"].value == 0 and not asset.attributes["innerDiameter"]:
+            logger.error(
+                f"{full_name}' has no DN size or innerDiameter specified. "
+            )
+
+        edr_dn_size = None
+        if asset.attributes["diameter"].value > 0:
+            edr_dn_size = str(asset.attributes["diameter"].name)
+
+        # NaN means the default values will be used
+        wall_roughness = math.nan
+
+        if edr_dn_size:
+            # Get insulation and diameter properties from EDR asset with this size.
+            edr_asset = self._gas_pipes[edr_dn_size]
+            inner_diameter = float(edr_asset["inner_diameter"])
+            wall_roughness = float(edr_asset["roughness"])
+        else:
+            assert asset.attributes["innerDiameter"]
+            inner_diameter = asset.attributes["innerDiameter"]
+
+
+        return inner_diameter, wall_roughness
 
     def _cable_get_resistance(self, asset: Asset) -> Tuple:
         """
