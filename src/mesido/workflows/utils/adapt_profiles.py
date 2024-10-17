@@ -86,9 +86,9 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, prob
     for ensemble_member in range(problem.ensemble_size):
         parameters = problem.parameters(ensemble_member)
         
-        total_demand = None
+        total_heat_demand = None
         heat_demand_nominal = dict()
-        # Assemble all demands together to get the peak.
+        # Assemble all demands together to get the peaks.
         for demand in heat_demands:
             try:
                 demand_values = problem.get_timeseries(
@@ -96,10 +96,10 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, prob
                 ).values
             except KeyError:
                 continue
-            if total_demand is None:
-                total_demand = demand_values
+            if total_heat_demand is None:
+                total_heat_demand = demand_values
             else:
-                total_demand += demand_values
+                total_heat_demand += demand_values
             heat_demand_nominal[f"{demand}.Heat_demand"] = max(demand_values)
             heat_demand_nominal[f"{demand}.Heat_flow"] = max(demand_values)
 
@@ -119,10 +119,10 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, prob
                 cold_demand_nominal[f"{demand}.Cold_demand"] = max(cold_demand_values)
                 cold_demand_nominal[f"{demand}.Heat_flow"] = max(cold_demand_values)
 
-        idx_max_hot = int(np.argmax(total_demand))
+        idx_max_hot = int(np.argmax(total_heat_demand))
         max_day_hot = idx_max_hot // 24
         new_date_times = list()
-        nr_of_days = len(total_demand) // 24
+        nr_of_days = len(total_heat_demand) // 24
         day_steps = problem_day_steps
 
         problem_indx_max_peak = max_day_hot // day_steps
@@ -204,34 +204,34 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, prob
             )
         # ------------------------------------------------------------------------------------------
         # cooling demands
-        total_cold_demand = None
-        cold_demand_nominal = dict()
+        # total_cold_demand = None
+        # cold_demand_nominal = dict()
 
-        for demand in cold_demands:
-            try:
-                cold_demand_values = problem.get_timeseries(
-                    f"{demand}.target_cold_demand", ensemble_member
-                ).values
-            except KeyError:
-                continue
-            if total_cold_demand is None:
-                total_cold_demand = cold_demand_values
-            else:
-                total_cold_demand += cold_demand_values
-            cold_demand_nominal[f"{demand}.Cold_demand"] = max(cold_demand_values)
-            cold_demand_nominal[f"{demand}.Heat_flow"] = max(cold_demand_values)
+        # for demand in cold_demands:
+        #     try:
+        #         cold_demand_values = problem.get_timeseries(
+        #             f"{demand}.target_cold_demand", ensemble_member
+        #         ).values
+        #     except KeyError:
+        #         continue
+        #     if total_cold_demand is None:
+        #         total_cold_demand = cold_demand_values
+        #     else:
+        #         total_cold_demand += cold_demand_values
+        #     cold_demand_nominal[f"{demand}.Cold_demand"] = max(cold_demand_values)
+        #     cold_demand_nominal[f"{demand}.Heat_flow"] = max(cold_demand_values)
 
-        # TODO: find the peak cooling day and adapt to hourly
+        # # TODO: find the peak cooling day and adapt to hourly
 
-        for demand in cold_demands:
-            var_name = f"{demand}.target_cold_demand"
-            set_data_with_averages_and_peak_day(
-                datastore=new_datastore,
-                variable_name=var_name,
-                ensemble_member=ensemble_member,
-                new_date_times=new_date_times,
-                problem=problem,
-            )
+        # for demand in cold_demands:
+        #     var_name = f"{demand}.target_cold_demand"
+        #     set_data_with_averages_and_peak_day(
+        #         datastore=new_datastore,
+        #         variable_name=var_name,
+        #         ensemble_member=ensemble_member,
+        #         new_date_times=new_date_times,
+        #         problem=problem,
+        #     )
         # end cooling demands
         # ------------------------------------------------------------------------------------------
 
