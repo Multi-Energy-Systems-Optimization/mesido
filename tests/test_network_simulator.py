@@ -9,6 +9,11 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
+from utils_test_scaling import (
+    check_scaling,
+    create_problem_with_debug_info,
+)
+
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
@@ -30,8 +35,14 @@ class TestNetworkSimulator(TestCase):
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
+        (
+            networks_simulator_highs_test_case_scaling,
+            rtc_logger,
+            rtc_logs_list,
+        ) = create_problem_with_debug_info(NetworkSimulatorHIGHSTestCase)
+
         solution = run_optimization_problem(
-            NetworkSimulatorHIGHSTestCase,
+            networks_simulator_highs_test_case_scaling,
             base_folder=base_folder,
             # TODO: it seems to write an output file (NOT NICE!)
             esdl_file_name="test_case_small_network_with_ates.esdl",
@@ -46,6 +57,7 @@ class TestNetworkSimulator(TestCase):
         demand_matching_test(solution, results)
         energy_conservation_test(solution, results)
         heat_to_discharge_test(solution, results)
+        check_scaling(self, rtc_logger, rtc_logs_list)
 
         # Check that producer 1 (merit oder = 2) is not used
         # and is does not contribute to the heating demands 1, 2 and 3

@@ -7,6 +7,11 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
+from utils_test_scaling import (
+    check_scaling,
+    create_problem_with_debug_info,
+)
+
 
 class TestAssetIsRealized(TestCase):
     def test_asset_is_realized(self):
@@ -33,10 +38,16 @@ class TestAssetIsRealized(TestCase):
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
+        (
+            heat_problem_placing_over_time_scaling,
+            rtc_logger,
+            rtc_logs_list,
+        ) = create_problem_with_debug_info(HeatProblemPlacingOverTime)
+
         # This is an optimization done over 25 timesteps with a cap on how quickly the cost
         # for the 2 producers can be realized
         solution = run_esdl_mesido_optimization(
-            HeatProblemPlacingOverTime,
+            heat_problem_placing_over_time_scaling,
             base_folder=base_folder,
             esdl_file_name="test_case_small_network_with_ates.esdl",
             esdl_parser=ESDLFileParser,
@@ -91,6 +102,9 @@ class TestAssetIsRealized(TestCase):
         # Here we test that the asset is actually used once it is realized
         np.testing.assert_allclose(results["HeatProducer_1.Heat_source"][inds_1] > 0.0, True)
         np.testing.assert_allclose(results["HeatProducer_2.Heat_source"][inds_2] > 0.0, True)
+
+        # Check scaling differences and ranges in objective, matrix and rhs
+        check_scaling(self, rtc_logger, rtc_logs_list)
 
 
 if __name__ == "__main__":

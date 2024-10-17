@@ -8,6 +8,11 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
+from utils_test_scaling import (
+    check_scaling,
+    create_problem_with_debug_info,
+)
+
 
 class TestEndScenarioSizingAnnualized(TestCase):
     """
@@ -39,8 +44,14 @@ class TestEndScenarioSizingAnnualized(TestCase):
 
         base_folder = Path(run_annualized.__file__).resolve().parent.parent
 
+        (
+            heat_problem_scaling,
+            rtc_logger,
+            rtc_logs_list,
+        ) = create_problem_with_debug_info(HeatProblem)
+
         solution_run_ates = run_optimization_problem(
-            HeatProblem,
+            heat_problem_scaling,
             base_folder=base_folder,
             esdl_file_name="annualized_test_case_discount5.esdl",
             esdl_parser=ESDLFileParser,
@@ -48,10 +59,16 @@ class TestEndScenarioSizingAnnualized(TestCase):
             input_timeseries_file="Warmte_test.csv",
         )
 
+        (
+            heat_problem_discount_annualized_cost,
+            rtc_logger,
+            rtc_logs_list,
+        ) = create_problem_with_debug_info(HeatProblemDiscAnnualizedCost)
+
         # Solution of model with annualized cost, considering a discount rate > 0
         # and a technical life > 1
         solution_annualized_cost = run_optimization_problem(
-            HeatProblemDiscAnnualizedCost,
+            heat_problem_discount_annualized_cost,
             base_folder=base_folder,
             esdl_file_name="annualized_test_case_discount5.esdl",
             esdl_parser=ESDLFileParser,
@@ -131,6 +148,9 @@ class TestEndScenarioSizingAnnualized(TestCase):
         # rate of 10%
         assert np.isclose(calculate_annuity_factor(0, 1), 1.0, atol=1e-14, rtol=0.0)
         assert np.isclose(calculate_annuity_factor(0.1, 1), 1.1, atol=1e-14, rtol=0.0)
+
+        # Check scaling differences and ranges in objective, matrix and rhs
+        check_scaling(self, rtc_logger, rtc_logs_list)
 
 
 if __name__ == "__main__":

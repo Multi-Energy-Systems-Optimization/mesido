@@ -7,6 +7,11 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
+from utils_test_scaling import (
+    check_scaling,
+    create_problem_with_debug_info,
+)
+
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
@@ -41,8 +46,14 @@ class TestAtesTemperature(TestCase):
 
         basefolder = Path(run_ates_temperature.__file__).resolve().parent.parent
 
+        (
+            heat_problem_scaling,
+            rtc_logger,
+            rtc_logs_list,
+        ) = create_problem_with_debug_info(HeatProblem)
+
         solution = run_esdl_mesido_optimization(
-            HeatProblem,
+            heat_problem_scaling,
             base_folder=basefolder,
             esdl_file_name="HP_ATES with return network.esdl",
             esdl_parser=ESDLFileParser,
@@ -60,6 +71,7 @@ class TestAtesTemperature(TestCase):
         demand_matching_test(solution, results)
         energy_conservation_test(solution, results)
         heat_to_discharge_test(solution, results)
+        check_scaling(self, rtc_logger, rtc_logs_list)
 
         ates_charging = results["Pipe1__flow_direct_var"]  # =1 if charging
         ates_temperature = results["ATES_cb47.Temperature_ates"]
@@ -155,8 +167,14 @@ class TestAtesTemperature(TestCase):
 
         basefolder = Path(run_ates_temperature.__file__).resolve().parent.parent
 
+        (
+            heat_problem_max_flow_scaling,
+            rtc_logger,
+            rtc_logs_list,
+        ) = create_problem_with_debug_info(HeatProblemMaxFlow)
+
         solution = run_esdl_mesido_optimization(
-            HeatProblemMaxFlow,
+            heat_problem_max_flow_scaling,
             base_folder=basefolder,
             esdl_file_name="HP_ATES with return network.esdl",
             esdl_parser=ESDLFileParser,
@@ -198,3 +216,6 @@ class TestAtesTemperature(TestCase):
                 * (ates_temperature[demand_not_matched] - ates_temp_ret)
             ),
         )
+
+        # Check scaling differences and ranges in objective, matrix and rhs
+        check_scaling(self, rtc_logger, rtc_logs_list)

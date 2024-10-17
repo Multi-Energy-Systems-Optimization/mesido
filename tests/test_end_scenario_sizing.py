@@ -16,6 +16,11 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
+from utils_test_scaling import (
+    check_scaling,
+    create_problem_with_debug_info,
+)
+
 from utils_tests import demand_matching_test
 
 
@@ -26,10 +31,16 @@ class TestEndScenarioSizing(TestCase):
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
+        (
+            cls.end_scenario_sizing_highs,
+            cls.rtc_logger,
+            cls.rtc_logs_list,
+        ) = create_problem_with_debug_info(EndScenarioSizing)
+
         # This is an optimization done over a full year with timesteps of 5 days and hour timesteps
         # for the peak day
         cls.solution = run_optimization_problem(
-            EndScenarioSizing,
+            cls.end_scenario_sizing_highs,
             base_folder=base_folder,
             esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
             esdl_parser=ESDLFileParser,
@@ -67,6 +78,9 @@ class TestEndScenarioSizing(TestCase):
 
         # Check whehter the heat demand is matched
         demand_matching_test(self.solution, self.results)
+
+        # Check scaling differences and ranges in objective, matrix and rhs
+        check_scaling(self, self.rtc_logger, self.rtc_logs_list)
 
         # Check that indeed the available pipe classes were adapted based on expected flow
         # Pipe connected to a demand
@@ -258,10 +272,16 @@ class TestEndScenarioSizing(TestCase):
                 highs_options["mip_rel_gap"] = 0.05
                 return options
 
+        (
+            test_end_scenario_sizing_discount_highs_scaling,
+            rtc_logger,
+            rtc_logs_list,
+        ) = create_problem_with_debug_info(TestEndScenarioSizingDiscountedHIGHS)
+
         # This is an optimization done over a full year with timesteps of 5 days and hour timesteps
         # for the peak day
         solution = run_optimization_problem(
-            TestEndScenarioSizingDiscountedHIGHS,
+            test_end_scenario_sizing_discount_highs_scaling,
             base_folder=base_folder,
             esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
             esdl_parser=ESDLFileParser,
@@ -279,6 +299,13 @@ class TestEndScenarioSizing(TestCase):
 
         # Check whether the heat demand is matched
         demand_matching_test(solution, results)
+
+        # Check scaling differences and ranges in objective, matrix and rhs
+        check_scaling(
+            self,
+            rtc_logger,
+            rtc_logs_list,
+        )
 
         # Check whether cyclic ates constraint is working
         for a in solution.energy_system_components.get("ates", []):
@@ -309,8 +336,14 @@ class TestEndScenarioSizing(TestCase):
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
+        (
+            test_end_scenario_sizing_loss_staged_scaling,
+            rtc_logger,
+            rtc_logs_list,
+        ) = create_problem_with_debug_info(EndScenarioSizingHeadLossStaged)
+
         solution = run_end_scenario_sizing(
-            EndScenarioSizingHeadLossStaged,
+            test_end_scenario_sizing_loss_staged_scaling,
             base_folder=base_folder,
             esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
             esdl_parser=ESDLFileParser,
@@ -321,6 +354,13 @@ class TestEndScenarioSizing(TestCase):
         results = solution.extract_results()
 
         demand_matching_test(solution, results)
+
+        # Check scaling differences and ranges in objective, matrix and rhs
+        check_scaling(
+            self,
+            rtc_logger,
+            rtc_logs_list,
+        )
 
         pipes = solution.energy_system_components.get("heat_pipe")
         for pipe in pipes:

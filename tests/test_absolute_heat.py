@@ -5,7 +5,16 @@ from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.util import run_esdl_mesido_optimization
 
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
+from utils_test_scaling import (
+    check_scaling,
+    create_problem_with_debug_info,
+)
+
+from utils_tests import (
+    demand_matching_test,
+    energy_conservation_test,
+    heat_to_discharge_test,
+)
 
 
 class TestAbsoluteHeat(TestCase):
@@ -26,8 +35,14 @@ class TestAbsoluteHeat(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
+        (
+            heat_problem_scaling,
+            rtc_logger,
+            rtc_logs_list,
+        ) = create_problem_with_debug_info(HeatProblem)
+
         heat_problem = run_esdl_mesido_optimization(
-            HeatProblem,
+            heat_problem_scaling,
             base_folder=base_folder,
             esdl_file_name="absolute_heat.esdl",
             esdl_parser=ESDLFileParser,
@@ -38,6 +53,7 @@ class TestAbsoluteHeat(TestCase):
         demand_matching_test(heat_problem, heat_problem.extract_results())
         energy_conservation_test(heat_problem, heat_problem.extract_results())
         heat_to_discharge_test(heat_problem, heat_problem.extract_results())
+        check_scaling(self, rtc_logger, rtc_logs_list)
 
 
 if __name__ == "__main__":

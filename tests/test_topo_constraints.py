@@ -13,6 +13,11 @@ from mesido.util import run_esdl_mesido_optimization
 import numpy as np
 import numpy.testing
 
+from utils_test_scaling import (
+    check_scaling,
+    create_problem_with_debug_info,
+)
+
 MIP_TOLERANCE = 1e-8
 
 
@@ -41,8 +46,14 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
         del root_folder
         sys.path.pop(1)
 
+        (
+            cls.pipe_diameter_sizing_problem_scaling,
+            cls.rtc_logger,
+            cls.rtc_logs_list,
+        ) = create_problem_with_debug_info(PipeDiameterSizingProblem)
+
         cls.problem = run_esdl_mesido_optimization(
-            PipeDiameterSizingProblem,
+            cls.pipe_diameter_sizing_problem_scaling,
             base_folder=base_folder,
             esdl_file_name="2a.esdl",
             esdl_parser=ESDLFileParser,
@@ -103,6 +114,9 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
             np.testing.assert_almost_equal(
                 self.results[f"{p}__hn_heat_loss"], expected_heat_losses, 5
             )
+
+            # Check scaling differences and ranges in objective, matrix and rhs
+        check_scaling(self, self.rtc_logger, self.rtc_logs_list)
 
     def test_pipe_class_ordering_vars(self):
         """

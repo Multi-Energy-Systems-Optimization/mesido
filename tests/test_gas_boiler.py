@@ -7,6 +7,11 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
+from utils_test_scaling import (
+    check_scaling,
+    create_problem_with_debug_info,
+)
+
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
@@ -28,8 +33,14 @@ class TestGasBoiler(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
+        (
+            source_pipe_sink_scaling,
+            rtc_logger,
+            rtc_logs_list,
+        ) = create_problem_with_debug_info(SourcePipeSink)
+
         heat_problem = run_esdl_mesido_optimization(
-            SourcePipeSink,
+            source_pipe_sink_scaling,
             base_folder=base_folder,
             esdl_file_name="sourcesink_withgasboiler.esdl",
             esdl_parser=ESDLFileParser,
@@ -42,6 +53,11 @@ class TestGasBoiler(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
+        check_scaling(
+            self,
+            rtc_logger,
+            rtc_logs_list,
+        )
 
         np.testing.assert_array_less(0.0, results["GasHeater_f713.Heat_source"])
         np.testing.assert_array_less(0.0, results["GasProducer_82ec.Gas_source_mass_flow"])
