@@ -589,6 +589,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         ]
 
         if isinstance(asset.in_ports[0].carrier, esdl.esdl.GasCommodity):
+            (diameter, wall_roughness) = self._gas_pipe_get_diameter_and_roughness(asset)
             q_nominal = math.pi * diameter**2 / 4.0 * self.v_max_gas / 2.0
             self._set_q_nominal(asset, q_nominal)
             q_max = math.pi * diameter**2 / 4.0 * self.v_max_gas
