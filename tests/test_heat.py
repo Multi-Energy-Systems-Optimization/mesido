@@ -26,8 +26,17 @@ class TestHeat(TestCase):
 
         base_folder = Path(double_pipe_heat.__file__).resolve().parent.parent
 
+        class TestClass(SourcePipeSink):
+
+            def solver_options(self):
+                options = super().solver_options()
+                options["highs"] = options_highs = {}
+                options_highs["presolve"] = "off"
+                options_highs["solver"] = "choose"
+                return options
+
         case = run_esdl_mesido_optimization(
-            SourcePipeSink,
+            TestClass,
             base_folder=base_folder,
             esdl_file_name="sourcesink.esdl",
             esdl_parser=ESDLFileParser,
@@ -64,6 +73,13 @@ class TestHeat(TestCase):
                 options = super().energy_system_options()
                 options["neglect_pipe_heat_losses"] = True
 
+                return options
+
+            def solver_options(self):
+                options = super().solver_options()
+                options["highs"] = options_highs = {}
+                options_highs["presolve"] = "off"
+                options_highs["solver"] = "choose"
                 return options
 
         base_folder = Path(double_pipe_heat.__file__).resolve().parent.parent
@@ -248,6 +264,14 @@ class TestDisconnectablePipe(TestCase):
             for p in self.energy_system_components["heat_pipe"]:
                 parameters[f"{p}.disconnectable"] = True
             return parameters
+
+        def solver_options(self):
+            options = super().solver_options()
+            options["highs"] = options_highs = {}
+            options_highs["presolve"] = "off"
+            options_highs["solver"] = "choose"
+            # options_highs["pdlp_scaling"] = True
+            return options
 
         def bounds(self):
             bounds = super().bounds()

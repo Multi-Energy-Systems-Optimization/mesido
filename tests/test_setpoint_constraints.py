@@ -149,8 +149,17 @@ class TestSetpointConstraints(TestCase):
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
+        class TestProblem(HeatProblemSetPoints):
+
+            def solver_options(self):
+                options = super().solver_options()
+                options["highs"] = options_highs = {}
+                # options_highs["presolve"] = "off"
+                options_highs["solver"] = "ipm"
+                return options
+
         solution = run_esdl_mesido_optimization(
-            HeatProblemSetPoints,
+            TestProblem,
             base_folder=base_folder,
             esdl_file_name="test_case_small_network_with_ates.esdl",
             esdl_parser=ESDLFileParser,

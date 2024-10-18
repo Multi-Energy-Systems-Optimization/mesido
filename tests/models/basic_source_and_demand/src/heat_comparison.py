@@ -71,6 +71,13 @@ class HeatPython(
     def pycml_model(self):
         return self.__model
 
+    def solver_options(self):
+        options = super().solver_options()
+        options["highs"] = options_highs = {}
+        options_highs["presolve"] = "off"
+        options_highs["solver"] = "ipm"
+        return options
+
     def bounds(self):
         bounds = super().bounds()
         bounds["source.Heat_source"] = (75000.0, 125000.0)
