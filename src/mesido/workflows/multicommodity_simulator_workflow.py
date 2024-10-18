@@ -508,6 +508,7 @@ class MultiCommoditySimulator(
                                 marginal_priority_source,
                                 func_range,
                                 self.variable_nominal(variable_name),
+                                order=1
                             )
                         )
                 variable_name = f"{asset}.Gas_mass_flow_out"
@@ -648,7 +649,7 @@ class MultiCommoditySimulator(
         self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
         self.gas_network_settings["network_type"] = NetworkSettings.NETWORK_TYPE_HYDROGEN
         self.gas_network_settings["minimize_head_losses"] = False
-        self.gas_network_settings["maximum_velocity"] = 40.0
+        self.gas_network_settings["maximum_velocity"] = 20.0
         self.gas_network_settings["n_linearization_lines"] = 5
         options["include_asset_is_switched_on"] = True
         options["estimated_velocity"] = 7.5
