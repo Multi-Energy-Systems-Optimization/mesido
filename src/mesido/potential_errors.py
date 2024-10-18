@@ -1,12 +1,15 @@
 import enum
 from typing import Dict, List
 
+from mesido.exceptions import MesidoAssetIssue
+from mesido.network_common import MesidoAssetIssueType
 
 # Goes into ./potential_errors.py
 
-class MesidoAssetIssueType(enum.Enum):
-    HEAT_DEMAND_POWER = "heat_demand.power"
-    "etc."
+# need a common place for this
+# class MesidoAssetIssueType(enum.Enum):
+#     HEAT_DEMAND_POWER = "heat_demand.power"
+#     # "etc."
 
 
 AssetId = str
@@ -15,7 +18,11 @@ ErrorMessage = str
 
 class PotentialErrors:
     """Singleton, do not instantiate. Use POTENTIAL_ERRORS."""
+
     _gathered_potential_issues: Dict[MesidoAssetIssueType, Dict[AssetId, List[ErrorMessage]]]
+
+    def __init__(self):
+        self._gathered_potential_issues = {}
 
     def add_potential_issue(
             self, issue_type: MesidoAssetIssueType, asset_id: AssetId, error_message: ErrorMessage
@@ -23,6 +30,14 @@ class PotentialErrors:
         self._gathered_potential_issues.setdefault(
             issue_type, {}
         ).setdefault(asset_id, []).append(error_message)
+        temp = 10.0
+        # self._gathered_potential_issues.append(
+        #     {
+        #         "fff" : {"123": ["fffffffffffffffffff"]},
+        #     }
+        # )
+
+        # self._gathered_potential_issues.append(error_message)
 
     def have_issues_for(self, issue_types: List[MesidoAssetIssueType]) -> bool:
         """
@@ -44,9 +59,14 @@ class PotentialErrors:
         if issue_type not in self._gathered_potential_issues:
             raise RuntimeError('Something very wrong. Issue type not in potential errors')
 
-        return MesidoAssetIssue(general_issue=general_issue,
-                                error_type=issue_type,
-                                message_per_asset_id=self._gathered_potential_issues[issue_type])
+        raise MesidoAssetIssue(
+            general_issue=general_issue,
+            error_type=issue_type,
+            message_per_asset_id=self._gathered_potential_issues[issue_type]
+        )
+        # return MesidoAssetIssue(general_issue=general_issue,
+        #                         error_type=issue_type,
+        #                         message_per_asset_id=self._gathered_potential_issues[issue_type])
 
 
 POTENTIAL_ERRORS = PotentialErrors()
@@ -54,6 +74,7 @@ POTENTIAL_ERRORS = PotentialErrors()
 
 # def get_potential_errors_for(run_id: str) -> PotentialErrors:
 #     return POTENTIAL_ERRORS.setdefault(run_id, PotentialErrors())
+
 
 
 # Goes into ./exceptions.py
@@ -65,14 +86,14 @@ POTENTIAL_ERRORS = PotentialErrors()
 
 
 ### EXAMPLE
-def run_end_scenario_sizing(*args, **kwargs):
-    try:
-        POTENTIAL_ERRORS.add_potential_issue(MesidoAssetIssueType.HEAT_DEMAND_POWER, "some asset id", "error message")
-    except MesidoAssetIssue as e:
-        for asset_id, message in e.message_per_asset_id:
-            logger.error("For asset %s %s", asset_id, message)
-        logger.error(e.general_issue)
-        raise
+# def run_end_scenario_sizing(*args, **kwargs):
+#     try:
+#         POTENTIAL_ERRORS.add_potential_issue(MesidoAssetIssueType.HEAT_DEMAND_POWER, "some asset id", "error message")
+#     except MesidoAssetIssue as e:
+#         for asset_id, message in e.message_per_asset_id:
+#             logger.error("For asset %s %s", asset_id, message)
+#         logger.error(e.general_issue)
+#         raise
 
 
 

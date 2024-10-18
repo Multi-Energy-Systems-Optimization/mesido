@@ -1,3 +1,5 @@
+from enum import Enum
+
 from strenum import StrEnum
 
 
@@ -16,3 +18,9 @@ class NetworkSettings(StrEnum):
         "&n-Pentane[0.0004]&n-Hexane[0.0005]&nitrogen[0.1435]&CO2[0.0089]"
         "&oxygen[0.0001]"
     )  # Natural gas Groningen
+
+
+# Asset error that can occur
+class MesidoAssetIssueType(Enum):
+    HEAT_DEMAND_POWER = "heat_demand.power"
+    # "etc."

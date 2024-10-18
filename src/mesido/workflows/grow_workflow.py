@@ -15,6 +15,9 @@ from mesido.workflows.utils.adapt_profiles import (
     adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
 )
 from mesido.workflows.utils.helpers import main_decorator
+from mesido.potential_errors import POTENTIAL_ERRORS
+from mesido.exceptions import MesidoAssetIssue
+from mesido.network_common import MesidoAssetIssueType
 
 import numpy as np
 
@@ -191,26 +194,32 @@ class EndScenarioSizing(
                     # for asset_name in errors:
                     #     logger.error(self._asset_potential_errors[error_type][asset_name])
                     # logger.error(
-                    general_issue =  "Asset insufficient installed capacity: please increase the"
-                        " installed power or reduce the demand profile peak value of the demand(s)"
-                        " listed."
-                    # )
+                general_issue = (
+                    "Asset insufficient installed capacity: please increase the"
+                    " installed power or reduce the demand profile peak value of the demand(s)"
+                    " listed."
+                    )
                     #is_error = True
             elif error_type in ["heat_demand.type"] and len(errors) > 0:
-                    general_issue = "Incorrect asset type: please update."
+                general_issue = "Incorrect asset type: please update."
                     # for asset_name in errors:
                     #     logger.error(self._asset_potential_errors[error_type][asset_name])
                     #logger.error("Incorrect asset type: please update.")
 
                     #is_error = True
 
-        if general_issue:
-            raise MesidoAssetIssue(
-                        general_issue=general_issue,
-                        message_per_asset_id=self._asset_potential_errors[error_type],
-                        error_type=error_type
-
-                    )
+        # if general_issue:
+        if POTENTIAL_ERRORS.have_issues_for([MesidoAssetIssueType.HEAT_DEMAND_POWER]):
+            POTENTIAL_ERRORS.convert_to_exception(
+                MesidoAssetIssueType.HEAT_DEMAND_POWER,
+                general_issue,
+            )
+            what = "ddd"
+            # raise MesidoAssetIssue(
+            #             general_issue=general_issue,
+            #             message_per_asset_id=self._asset_potential_errors[error_type],
+            #             error_type=error_type
+            #         )
            # exit(1)
         # end error checking
 

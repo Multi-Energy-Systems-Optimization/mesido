@@ -10,6 +10,7 @@ from esdl.profiles.influxdbprofilemanager import InfluxDBProfileManager
 from esdl.units.conversion import ENERGY_IN_J, POWER_IN_W, convert_to_unit
 
 from mesido.esdl.common import Asset
+from mesido.potential_errors import MesidoAssetIssueType, POTENTIAL_ERRORS
 
 import numpy as np
 
@@ -17,8 +18,6 @@ import pandas as pd
 
 import rtctools.data.pi
 from rtctools.data.storage import DataStore
-
-from potential_errors import POTENTIAL_ERRORS, MesidoAssetIssueType
 
 
 logger = logging.getLogger()
@@ -148,8 +147,12 @@ class BaseProfileReader:
                             POTENTIAL_ERRORS.add_potential_issue(
                                 MesidoAssetIssueType.HEAT_DEMAND_POWER,
                                 "some asset id",
-                                "error message",
-                            )                          
+                                "The installed capacity of"
+                                f" {round(asset_power / 1.0e6, 3)}MW should be larger than the"
+                                " maximum of the heat demand profile "
+                                f"{round(max_profile_value / 1.0e6, 3)}MW",  # "error message",
+                                # "component",  # "asset_name,"
+                            ) 
 
             for properties in carrier_properties.values():
                 carrier_name = properties["name"]
