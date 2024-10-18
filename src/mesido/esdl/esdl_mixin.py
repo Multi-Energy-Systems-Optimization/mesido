@@ -544,6 +544,7 @@ class ESDLMixin(
             carrier_properties=esdl_carriers,
             ensemble_size=self.ensemble_size,
         )
+        temp = 0.0
 
     def write(self) -> None:
         """
