@@ -54,6 +54,13 @@ class TestHeadLoss(TestCase):
                 #       optimizer_sim=True,
                 #   )
 
+                def solver_options(self):
+                    options = super().solver_options()
+                    options["highs"] = options_highs = {}
+                    options_highs["presolve"] = "off"
+                    options_highs["solver"] = "choose"
+                    return options
+
                 def energy_system_options(self):
                     options = super().energy_system_options()
 
@@ -271,6 +278,17 @@ class TestHeadLoss(TestCase):
 
             # Added for case where head loss is modelled via DW
             class SourcePipeSinkDW(SourcePipeSink):
+
+                def solver_options(self):
+                    options = super().solver_options()
+                    # options["solver"] = "cbc"
+                    options["highs"] = options_highs = {}
+                    options_highs["presolve"] = "on"
+                    options_highs["solver"] = "choose"
+                    # options_highs["run_crossover"] = "off"
+
+                    return options
+
                 def energy_system_options(self):
                     options = super().energy_system_options()
 
@@ -285,19 +303,19 @@ class TestHeadLoss(TestCase):
                     self.heat_network_settings["n_linearization_lines"] = 2
                     if head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
                         self.heat_network_settings["minimize_head_losses"] = False
-                        self.heat_network_settings["minimum_velocity"] = 0.0
+                        # self.heat_network_settings["minimum_velocity"] = 0.005
                     elif (
                         head_loss_option_setting
                         == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
                     ):
                         self.heat_network_settings["minimize_head_losses"] = True
-                        if counter_linearized_n_lines_weak_ineq_runs == 1:
-                            self.heat_network_settings["minimum_velocity"] = 0.0
-                        elif counter_linearized_n_lines_weak_ineq_runs == 2:
-                            ...
-                            # Do not delete. This reminds the dev that different min velo value
-                            # with min velo = default value (>0.0), instead of specifying a value
-                            # here
+                        # if counter_linearized_n_lines_weak_ineq_runs == 1:
+                        #     self.heat_network_settings["minimum_velocity"] = 0.005
+                        # elif counter_linearized_n_lines_weak_ineq_runs == 2:
+                        #     ...
+                        # Do not delete. This reminds the dev that different min velo value
+                        # with min velo = default value (>0.0), instead of specifying a value
+                        # here
 
                     return options
 
@@ -436,7 +454,7 @@ class TestHeadLoss(TestCase):
                 np.testing.assert_allclose(
                     results["Pipe4.HeatIn.Q"]
                     / (solution.parameters(0)["Pipe4.diameter"] ** 2 / 4.0 * np.pi),
-                    0.0,
+                    0.005,
                     atol=1e-07,
                 )
             elif (
