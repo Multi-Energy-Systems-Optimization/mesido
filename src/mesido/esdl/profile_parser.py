@@ -18,6 +18,8 @@ import pandas as pd
 import rtctools.data.pi
 from rtctools.data.storage import DataStore
 
+from potential_errors import POTENTIAL_ERRORS, MesidoAssetIssueType
+
 
 logger = logging.getLogger()
 
@@ -143,6 +145,11 @@ class BaseProfileReader:
                                 " maximum of the heat demand profile "
                                 f"{round(max_profile_value / 1.0e6, 3)}MW"
                             )
+                            POTENTIAL_ERRORS.add_potential_issue(
+                                MesidoAssetIssueType.HEAT_DEMAND_POWER,
+                                "some asset id",
+                                "error message",
+                            )                          
 
             for properties in carrier_properties.values():
                 carrier_name = properties["name"]
