@@ -29,18 +29,30 @@ sys.path.insert(1, root_folder)
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test, electric_power_conservation_test
 
+from utils_test_scaling import create_problem_with_debug_info, problem_scaling_check
+
 
 if __name__ == "__main__":
     import time
 
     start_time = time.time()
+
+    optimscaling, logger, logs_list = create_problem_with_debug_info(GasElectProblem)
+
     solution = run_optimization_problem(
+        # optimscaling,
         GasElectProblem,
         esdl_parser=ESDLFileParser,
-        esdl_file_name="Kapelle_gas_elec_efvc_.esdl",
+        # esdl_file_name="Kapelle_gas_elec_efvc_.esdl",
+        # esdl_file_name="Kapelle_gas_elec_efvc_kvr_partial_pipes_network.esdl",  # time=1.5minutes no dh
+        # esdl_file_name="Kapelle_gas_elec_efvc_kvr_partial_direct_network.esdl",  # time=1.5 minutes no dh
+        esdl_file_name="Kapelle_gas_elec_efvc_kvr_complete_direct_network.esdl",
         profile_reader=ProfileReaderFromFile,
         input_timeseries_file="gas_demand_nom_m3_s_efvc_.csv",
     )
+
+    # This code below is used to do manual check. Do not delete
+    # problem_scaling_check(logs_list, logger)
 
     results = solution.extract_results()
 
@@ -49,15 +61,16 @@ if __name__ == "__main__":
     heat_to_discharge_test(solution, results)
 
     # for asset_name in [*solution.energy_system_components.get("heat_source", [])]:
-    for asset_name in [*solution.energy_system_components.get("elec_boiler", [])]:
+    # for asset_name in [*solution.energy_system_components.get("elec_boiler", [])]: 
+    for asset_name in [*solution.energy_system_components.get("air_water_heat_pump_elec", [])]:
         power_cons = results[f"{asset_name}.Power_consumed"]
         value = results[f"{asset_name}__variable_operational_cost"]
-        # print(f"{asset_name} power consumed: {power_cons}, opex: {value}")
+        print(f"{asset_name} power consumed: {power_cons}, opex: {value}")
 
     for asset_name in [*solution.energy_system_components.get("gas_boiler", [])]:
         power_cons = results[f"{asset_name}.Gas_demand_mass_flow"]
         value = results[f"{asset_name}__variable_operational_cost"]
-        # print(f"{asset_name} gas consumed: {power_cons}, opex: {value}")
+        print(f"{asset_name} gas consumed: {power_cons}, opex: {value}")
 
     # print(f'Gas OPEX: {results["STATION_5__variable_operational_cost"]}')
     # print(f'Elec prodcuer OPEX: {results["Elec_prod_5__variable_operational_cost"]}')
@@ -71,6 +84,7 @@ if __name__ == "__main__":
                 results[f"{asset_name}.Power_consumed"][ii]
                 * np.diff(solution.times())[ii - 1]
             )
+
     for asset_name in [*solution.energy_system_components.get("gas_source", [])]:
         for ii in range(1, len(results[f"{asset_name}.Gas_source_mass_flow"])):
             total_gas_source_g[ii - 1] += (

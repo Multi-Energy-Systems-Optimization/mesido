@@ -66,11 +66,17 @@ class GasElectProblem(
     # def times(self, variable=None) -> np.ndarray:
     #     return super().times(variable)[:5]  # same lenght as the demand profile data in the csv
 
+    def energy_system_options(self):
+        options = super().energy_system_options()
+        options["neglect_pipe_heat_losses"] = True
+        options["include_electric_cable_power_loss"] = False
+        return options
+
     def solver_options(self):
         options = super().solver_options()
         options["solver"] = "highs"
         highs_options = options["highs"] = {}
-        highs_options["mip_abs_gap"] = 0.001
+        highs_options["mip_abs_gap"] = 0.0001  # 0.001 did not work
 
         return options
 
@@ -131,6 +137,15 @@ class GasElectProblem(
         goals.append(MinimizeTCO(priority=2, number_of_years=1.0))
 
         return goals
+
+    # def path_constraints(self, ensemble_member):
+    #     constraints = super().path_constraints(ensemble_member)
+
+    #     for eb in self.energy_system_components.get("air_water_heat_pump_elec", []):
+    #         power_consumed = self.state(f"{eb}.Power_consumed")
+    #         constraints.append((power_consumed, 0.0, 0.0))
+
+    #     return constraints
 
 
 
