@@ -159,7 +159,7 @@ class HeatColdDemand(TestCase):
         #         ).values
         #     heat_demands_result[demand] = demand_result_values
 
-        plotting = True
+        plotting = False
         if plotting:
             import matplotlib.pyplot as plt
             time_list = heat_problem.get_timeseries('HeatingDemand_1.target_heat_demand').times/3600

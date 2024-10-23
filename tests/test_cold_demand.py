@@ -90,6 +90,49 @@ class TestColdDemand(TestCase):
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
 
+    def test_only_cold_demand(self):
+        """
+        This test checks the basic physics for a network with only cold demands and
+        no heat demands.
+        
+        """
+        import models.wko.src.example as example
+        from models.wko.src.example import HeatProblem
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        heat_problem = run_esdl_mesido_optimization(
+            HeatProblem,
+            base_folder=base_folder,
+            esdl_file_name="Only_cold_demand.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file= 'timeseries_only_cold_demand.csv'
+        )
+        results = heat_problem.extract_results()
+
+        plotting = False
+        if plotting:
+            import matplotlib.pyplot as plt
+            time_list = heat_problem.get_timeseries('CoolingDemand_15e8.target_cold_demand').times/3600
+            cold_demand_results = results["CoolingDemand_15e8.Cold_demand"]
+            cold_demand_input = heat_problem.get_timeseries('CoolingDemand_15e8.target_cold_demand', 0).values
+            heat_pump_production = results["HeatPump_b97e.Heat_source"]
+            ates_production = results["ATES_226d.Heat_low_temperature_ates"]
+            plt.figure()
+            plt.plot(time_list, cold_demand_input, label = 'target cold demand')
+            plt.plot(time_list, cold_demand_results, label = 'result cold demand')
+            plt.plot(time_list, ates_production, label = 'ates production')
+            plt.plot(time_list, heat_pump_production, label = 'heat pump production')
+
+            plt.legend()
+            plt.show()
+        
+        
+        demand_matching_test(heat_problem, results)
+        energy_conservation_test(heat_problem, results)
+        heat_to_discharge_test(heat_problem, results)
+
     def test_airco(self):
         """
         This test is to check the basic physics for a network which includes an airco. In this
@@ -257,7 +300,7 @@ class TestColdDemand(TestCase):
     def test_time_discretization(self):
         """
         This test checks wether the demand arrays are discretized correctly.
-        Chrck corner cases with two demand peaks (cold and heat).
+        Check corner cases with two demand peaks (cold and heat).
         """
         pass
         # Heat and cold are on the same day,
@@ -265,13 +308,7 @@ class TestColdDemand(TestCase):
         # Cold happens before the heat peak.
         # Probably do it by creating multiple timeseries.
 
-    def test_only_cold_demand(self):
-        """
-        This test checks the basic physics for a network with only cold demands and
-        no heat demands.
-        
-        """
-        pass
+    
 
 
     
@@ -283,4 +320,5 @@ if __name__ == "__main__":
     test_cold_demand.test_insufficient_capacity()
     test_cold_demand.test_cold_demand()
     test_cold_demand.test_wko()
+    test_cold_demand.test_only_cold_demand()
     test_cold_demand.test_airco()
