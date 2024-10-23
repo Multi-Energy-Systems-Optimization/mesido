@@ -7,7 +7,6 @@ import numpy as np
 
 from rtctools.data.storage import DataStore
 
-
 logger = logging.getLogger("WarmingUP-MPC")
 logger.setLevel(logging.INFO)
 
@@ -33,7 +32,9 @@ def set_data_with_averages_and_peak_day(
 
     new_data = []
     data_timestamps = data.times
-    new_date_timestamps = [(new_dt - problem.io.datetimes[0]).total_seconds() for new_dt in new_date_times]
+    new_date_timestamps = [
+        (new_dt - problem.io.datetimes[0]).total_seconds() for new_dt in new_date_times
+    ]
 
     values_for_mean = [0.0]
     for dt, val in zip(data_timestamps, data.values):
