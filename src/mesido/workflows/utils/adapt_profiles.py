@@ -119,40 +119,67 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, prob
                 cold_demand_nominal[f"{demand}.Cold_demand"] = max(cold_demand_values)
                 cold_demand_nominal[f"{demand}.Heat_flow"] = max(cold_demand_values)
 
-        idx_max_hot = int(np.argmax(total_heat_demand))
-        max_day_hot = idx_max_hot // 24
         new_date_times = list()
         nr_of_days = len(total_heat_demand) // 24
         day_steps = problem_day_steps
 
-        problem_indx_max_peak = max_day_hot // day_steps
-        if max_day_hot % day_steps > 0:
-            problem_indx_max_peak += 1.0       
+        peak_days = []
+        if total_heat_demand is not None:
+            idx_max_hot = int(np.argmax(total_heat_demand))
+            max_day_hot = idx_max_hot // 24
+            
+            problem_indx_max_peak = max_day_hot // day_steps
+            if max_day_hot % day_steps > 0:
+                problem_indx_max_peak += 1.0
+            
+            peak_days.append(max_day_hot)
+        else:
+            max_day_hot = None     
 
-        idx_max_cold = int(np.argmax(total_cold_demand))
-        max_day_cold = idx_max_cold // 24
+        if total_cold_demand is not None:
+            idx_max_cold = int(np.argmax(total_cold_demand))
+            max_day_cold = idx_max_cold // 24
 
-        problem_indx_max_peak_cold = max_day_cold // day_steps
-        if max_day_cold % day_steps > 0:
-            problem_indx_max_peak_cold += 1.0
+            problem_indx_max_peak_cold = max_day_cold // day_steps
+            if max_day_cold % day_steps > 0:
+                problem_indx_max_peak_cold += 1.0
+
+            peak_days.append(max_day_cold)
+        else:
+            max_day_cold = None
 
         # TODO: the approach of picking one peak day was introduced for a network with a tree
         #  layout and all big sources situated at the root of the tree. It is not guaranteed
         #  that an optimal solution is reached in different network topologies.
         
+        # for day in range(0, nr_of_days, day_steps):
+        #     if day == max_day_hot // day_steps * day_steps or day == max_day_cold // day_steps * day_steps:
+        #         if day == max_day_hot // day_steps * day_steps:
+        #             peak_day = max_day_hot
+        #         elif day == max_day_cold // day_steps * day_steps: # TODO: might have to fix this if the peak day is the same for heat and cold.
+        #             peak_day = max_day_cold
+        #         if peak_day > day:
+        #             new_date_times.append(problem.io.datetimes[day * 24])
+        #         new_date_times.extend(problem.io.datetimes[peak_day * 24 : peak_day * 24 + 24])
+        #         if (day + day_steps - 1) > peak_day:
+        #             new_date_times.append(problem.io.datetimes[peak_day * 24 + 24])
+        #     else:
+        #         new_date_times.append(problem.io.datetimes[day * 24])
+        
+        peak_check_days = np.array(peak_days) // day_steps * day_steps
+        current_peak_idx = 0
         for day in range(0, nr_of_days, day_steps):
-            if day == max_day_hot // day_steps * day_steps or day == max_day_cold // day_steps * day_steps:
-                if day == max_day_hot // day_steps * day_steps:
-                    peak_day = max_day_hot
-                elif day == max_day_cold // day_steps * day_steps: # TODO: might have to fix this if the peak day is the same for heat and cold.
-                    peak_day = max_day_cold
+            if day in peak_check_days:
+                peak_day = peak_days[current_peak_idx]
                 if peak_day > day:
                     new_date_times.append(problem.io.datetimes[day * 24])
                 new_date_times.extend(problem.io.datetimes[peak_day * 24 : peak_day * 24 + 24])
                 if (day + day_steps - 1) > peak_day:
                     new_date_times.append(problem.io.datetimes[peak_day * 24 + 24])
+                current_peak_idx += 1
             else:
                 new_date_times.append(problem.io.datetimes[day * 24])
+
         new_date_times.append(problem.io.datetimes[-1] + datetime.timedelta(hours=1))
 
         new_date_times = np.asarray(new_date_times)
