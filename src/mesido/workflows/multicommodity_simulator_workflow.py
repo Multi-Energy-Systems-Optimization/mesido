@@ -108,10 +108,12 @@ class SolverGurobi:
         options["solver"] = "gurobi"
         gurobi_options = options["gurobi"] = {}
         gurobi_options["MIPgap"] = 0.0001
-        gurobi_options["threads"] = 4
+        gurobi_options["threads"] = 6
         gurobi_options["LPWarmStart"] = 2
-        gurobi_options["TimeLimit"] = 1000
+        gurobi_options["TimeLimit"] = 500
         if self._priority:
+            if self._priority>4:
+                gurobi_options["MIPgap"] = 0.005
             if self._priority>1e4:
                 gurobi_options["MIPgap"] = 0.05
 
@@ -138,6 +140,7 @@ class SolverCPLEX:
         cplex_options = options["cplex"] = {}
         cplex_options["CPXPARAM_Threads"] = 4
         cplex_options["CPX_PARAM_EPGAP"] = 0.0001
+        cplex_options["CPXPARAM_TimeLimit"] = 1000
         if self._priority:
             if self._priority>1e4:
                 cplex_options["CPX_PARAM_EPGAP"] = 0.01
@@ -293,7 +296,7 @@ class _GoalsAndOptions:
                     if type in map_demand.keys():
                         goals.append(TargetDemandGoal(state, target))
                     else:
-                        priority = 2 * len(self._esdl_assets)
+                        priority = 5# 2 * len(self._esdl_assets)
                         # goals.append(TargetProducerGoal(state, target, priority))
 
         return goals
@@ -463,6 +466,8 @@ class MultiCommoditySimulator(
                 if isinstance(v1, np.ndarray) and isinstance(v2, np.ndarray):
                     if (v1 == v2).all():
                         add_goal = False
+                if "h2-import" in asset.lower():
+                    add_goal = False
                 if add_goal:
                     if "import" in asset.lower():
                         # if 'gas' not in asset_variable_map[asset].lower():
@@ -490,7 +495,7 @@ class MultiCommoditySimulator(
                 marginal_priority_source = (
                     index_start_of_priority + max_value_merit - asset_merit["merit_order"][index_s]
                 )
-
+                # if asset!="EL_DDW-West" and asset!="EL_TNW":#asset=="EL_WA6_1" or asset=="EL_WA6_2":
                 if self.energy_system_options()["electrolyzer_efficiency"]!= ElectrolyzerOption.LINEARIZED_THREE_LINES_EQUALITY:
                     func_range = self.bounds()[variable_name]
                     v1 = _extract_values_timeseries(func_range[0])
@@ -501,6 +506,7 @@ class MultiCommoditySimulator(
                     if isinstance(v1, np.ndarray) and isinstance(v2, np.ndarray):
                         if (v1 == v2).all():
                             add_goal = False
+                        v2[v2==0.0e0] = 1e8
                     if add_goal:
                         goals.append(
                             MinimizeSourcesGoalMerit(
@@ -533,7 +539,7 @@ class MultiCommoditySimulator(
                     )
             elif asset in assets_to_include.get("demand", []):
                 variable_name = f"{asset}.{asset_variable_map[asset]}"
-                if marginal_priority != 6:
+                if "export" not in asset: #marginal_priority != 6 and marginal_priority != 7 :
                     goals.append(
                         MaximizeDemandGoalMerit(
                             variable_name,
@@ -649,12 +655,12 @@ class MultiCommoditySimulator(
         self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
         self.gas_network_settings["network_type"] = NetworkSettings.NETWORK_TYPE_HYDROGEN
         self.gas_network_settings["minimize_head_losses"] = False
-        self.gas_network_settings["maximum_velocity"] = 20.0
+        self.gas_network_settings["maximum_velocity"] = 25.0
         self.gas_network_settings["n_linearization_lines"] = 5
         options["include_asset_is_switched_on"] = True
         options["estimated_velocity"] = 7.5
         options["electrolyzer_efficiency"] = (
-            ElectrolyzerOption.LINEARIZED_THREE_LINES_WEAK_INEQUALITY
+            ElectrolyzerOption.LINEARIZED_THREE_LINES_EQUALITY
         )
 
         options["gas_storage_discharge_variables"] = True
@@ -662,6 +668,33 @@ class MultiCommoditySimulator(
         options["wall_roughness"] = 1.5e-5
 
         return options
+
+    def seed(self, ensemble_member):
+        seed = super().seed(ensemble_member)
+        parameters = self.parameters(0)
+        # electrolyzers = self.energy_system_components.get("electrolyzer")
+        wind_farms = self.energy_system_components.get("wind_park")
+        for windfarm in wind_farms:
+            variable = f"{windfarm}.maximum_electricity_source"
+            electrolyzer = "EL"+windfarm.lstrip("WF")
+            variable_el = f"{electrolyzer}.Power_consumed"
+            el_power_time = Timeseries(
+                *self.io.get_timeseries_sec(variable, ensemble_member)
+            )
+            variable_seed = f"{windfarm}.Electricity_source"
+            try:
+                el_min_load = parameters[f"{electrolyzer}.minimum_load"]
+                el_max_load = parameters[f"{electrolyzer}.max_power"]
+                el_power_time.values[el_power_time.values < el_min_load] = 0.0
+                seed[variable_seed] = el_power_time
+                el_power_time.values[el_power_time.values > el_max_load] = el_max_load
+                seed[variable_el] = el_power_time
+            except KeyError:
+                seed[variable_seed] = el_power_time
+
+        return seed
+
+
 
     def __constraint_fix_pressure(self, ensemble_member):
         constraints = []
@@ -824,6 +857,24 @@ class MultiCommoditySimulator(
         logger.info(f"Goal with priority {priority} has been completed")
         if priority == 1 and self.objective_value > 1e-6:
             raise RuntimeError("The heating demand is not matched")
+
+    def solver_success(self, solver_stats, log_solver_failure_as_error):
+        success, log_level = super().solver_success(solver_stats, log_solver_failure_as_error)
+
+        # Allow time-outs for GUROBI, CPLEX and CBC
+        if (
+            solver_stats["return_status"] == "TIME_LIMIT"
+            or solver_stats["return_status"] == "time limit exceeded"
+            or solver_stats["return_status"] == "stopped - on maxnodes, maxsols, maxtime"
+        ):
+            if self.objective_value > 1e10:
+                # Quick check on the objective value. If no solution was
+                # found, this is typically something like 1E50.
+                return success, log_level
+
+            return True, logging.INFO
+        else:
+            return success, log_level
 
     def __state_vector_scaled(self, variable, ensemble_member):
         canonical, sign = self.alias_relation.canonical_signed(variable)
