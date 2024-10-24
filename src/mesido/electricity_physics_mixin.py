@@ -292,6 +292,8 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                 # time-sampled.
                 max_ = self.bounds()[f"{asset}.Electricity_source"][1].values[: len(self.times())]
                 a = [x for x in max_ if abs(x) > 0.]
+                if a == []:
+                    a = [1]
                 nominal = (
                     self.variable_nominal(f"{asset}.Electricity_source") * min(a) * np.median(a)
                 ) ** (1. / 3.)
@@ -670,11 +672,11 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         coefficients for linear curve fit(s) to the theoretical non-linear electrolyzer curve
         """
 
-        # electrical_power_points = np.linspace(
-        #     electrical_power_min, electrical_power_max, n_lines + 1
-        # )
+        electrical_power_points = np.linspace(
+            electrical_power_min, electrical_power_max, n_lines + 1
+        )
         # power_factor is used to determine till where the first line should hold as this defines the location with the maximum efficiency.
-        electrical_power_points = np.append(electrical_power_min, np.linspace(electrical_power_min*power_factor, electrical_power_max, n_lines))
+        # electrical_power_points = np.append(electrical_power_min, np.linspace(electrical_power_min*power_factor, electrical_power_max, n_lines))
 
         gas_mass_flow_points = np.array(
             [
@@ -753,9 +755,10 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                         n_lines=curve_fit_number_of_lines,
                         electrical_power_min=max(
                             parameters[f"{asset}.minimum_load"],
-                            0.01 * self.bounds()[f"{asset}.ElectricityIn.Power"][1],
+                            0.01*parameters[f"{asset}.max_power"]
+                            # 0.01 * self.bounds()[f"{asset}.ElectricityIn.Power"][1],
                         ),
-                        electrical_power_max=self.bounds()[f"{asset}.ElectricityIn.Power"][1],
+                        electrical_power_max=parameters[f"{asset}.max_power"],
                         power_factor=parameters[f"{asset}.power_factor"],
                     )
                 )
@@ -764,7 +767,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                 gass_mass_out_linearized_vect = linear_coef_a * power_consumed_vect + linear_coef_b
 
                 gass_mass_out_max = (
-                    linear_coef_a[-1] * self.bounds()[f"{asset}.Power_consumed"][1]
+                    linear_coef_a[-1] * parameters[f"{asset}.max_power"]
                     + linear_coef_b[-1]
                 )
                 nominal = (
@@ -841,7 +844,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             # Add constraints to ensure the electrolyzer is switched off when it reaches a power
             # input below the minimum operating value
 
-            big_m = self.bounds()[f"{asset}.ElectricityIn.Power"][1] * 1.5 * 10.0
+            big_m = parameters[f"{asset}.max_power"] * 1.5 * 10.0
             constraints.append(
                 (
                     (
