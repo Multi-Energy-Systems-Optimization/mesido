@@ -2032,6 +2032,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             b_eff_coefficient=b,
             c_eff_coefficient=c,
             minimum_load=min_load,
+            max_power=max_power,
             power_factor=power_factor,
             nominal_power_consumed=max_power / 2.0,
             nominal_gass_mass_out=mass_flow_nominal_g_per_s,
