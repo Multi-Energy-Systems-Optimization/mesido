@@ -7,6 +7,7 @@ import esdl
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import InfluxDBProfileReader, ProfileReaderFromFile
+from mesido.exceptions import MesidoAssetIssueError
 from mesido.potential_errors import MesidoAssetIssueType
 from mesido.workflows import EndScenarioSizingStagedHIGHS
 
@@ -48,7 +49,7 @@ class TestPotentialErros(unittest.TestCase):
 
         logger, logs_list = create_log_list_scaling("WarmingUP-MPC")
 
-        with self.assertRaises(Exception) as cm:
+        with self.assertRaises(MesidoAssetIssueError) as cm:
             problem = EndScenarioSizingStagedHIGHS(
                 esdl_parser=ESDLFileParser,
                 base_folder=base_folder,
@@ -82,7 +83,7 @@ class TestPotentialErros(unittest.TestCase):
             "Asset named HeatingDemand_6662: The installed capacity of 2.0MW should be larger than"
             " the maximum of the heat demand profile 1957.931MW",
         )
-
+        yield
         # TODO: add test for other raised errors
         # np.testing.assert_equal(
         #     logs_list[4].msg == "Asset HeatingDemand_2ab9: This asset is currently a"

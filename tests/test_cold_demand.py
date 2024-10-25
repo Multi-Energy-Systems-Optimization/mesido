@@ -3,8 +3,8 @@ from unittest import TestCase
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
-from mesido.exceptions import MesidoAssetIssue
-from mesido.network_common import MesidoAssetIssueType
+from mesido.exceptions import MesidoAssetIssueError
+from mesido.potential_errors import MesidoAssetIssueType
 from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
@@ -33,50 +33,28 @@ class TestColdDemand(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
-        # with self.assertRaises(
-        #     MesidoAssetIssue
-        # ) as cm:
-        #     _ = run_esdl_mesido_optimization(
-        #         HeatProblem,
-        #         base_folder=base_folder,
-        #         esdl_file_name="LT_wko_error_check.esdl",
-        #         esdl_parser=ESDLFileParser,
-        #         profile_reader=ProfileReaderFromFile,
-        #         input_timeseries_file="timeseries.csv",
-        #     )
-        self.assertRaises(
-            Exception,
-            run_esdl_mesido_optimization(
-                 HeatProblem,
-                 base_folder=base_folder,
-                 esdl_file_name="LT_wko_error_check.esdl",
-                 esdl_parser=ESDLFileParser,
-                 profile_reader=ProfileReaderFromFile,
-                 input_timeseries_file="timeseries.csv",
-            ),
-        )
-        # try:
-        #     _ = run_esdl_mesido_optimization(
-        #         HeatProblem,
-        #         base_folder=base_folder,
-        #         esdl_file_name="LT_wko_error_check.esdl",
-        #         esdl_parser=ESDLFileParser,
-        #         profile_reader=ProfileReaderFromFile,
-        #         input_timeseries_file="timeseries.csv",
-        #     )
-        # except MesidoAssetIssue as cm:
-        #     # Check that the cold demand had an error
-        #     np.testing.assert_equal(cm.error_type, MesidoAssetIssueType.COLD_DEMAND_POWER)
-        #     np.testing.assert_equal(
-        #         cm.general_issue,
-        #         "Asset insufficient installed capacity: please increase the installed power or reduce"
-        #         " the demand profile peak value of the demand(s) listed."
-        #     )
-        #     np.testing.assert_equal(
-        #         cm.message_per_asset_id["15e803b4-1224-4cac-979f-87747a656741"],
-        #         "Asset named CoolingDemand_15e8: The installed capacity of 0.05MW should be larger than"
-        #         " the maximum of the heat demand profile 0.15MW",
-        #     )
+        with self.assertRaises(MesidoAssetIssueError) as cm:
+            _ = run_esdl_mesido_optimization(
+                HeatProblem,
+                base_folder=base_folder,
+                esdl_file_name="LT_wko_error_check.esdl",
+                esdl_parser=ESDLFileParser,
+                profile_reader=ProfileReaderFromFile,
+                input_timeseries_file="timeseries.csv",
+            )
+        # Check that the cold demand had an error
+            np.testing.assert_equal(cm.error_type, MesidoAssetIssueType.COLD_DEMAND_POWER)
+            np.testing.assert_equal(
+                cm.general_issue,
+                "Asset insufficient installed capacity: please increase the installed power or"
+                " reduce the demand profile peak value of the demand(s) listed."
+            )
+            np.testing.assert_equal(
+                cm.message_per_asset_id["15e803b4-1224-4cac-979f-87747a656741"],
+                "Asset named CoolingDemand_15e8: The installed capacity of 0.05MW should be larger"
+                " than the maximum of the heat demand profile 0.15MW",
+            )
+            yield
 
     def test_cold_demand(self):
         """
