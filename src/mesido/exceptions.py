@@ -1,5 +1,3 @@
-
-
 class MesidoAssetIssueError(Exception):
     """
     This class is used as a MESIDO defined exception class.
