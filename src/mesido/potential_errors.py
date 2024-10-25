@@ -1,10 +1,17 @@
+from enum import Enum
 from typing import Dict, List
 
 from mesido.exceptions import MesidoAssetIssueError
-from mesido.network_common import MesidoAssetIssueType
 
 AssetId = str
 ErrorMessage = str
+
+
+# Asset error type that can occur-- move to error potential_err.....
+class MesidoAssetIssueType(Enum):
+    HEAT_DEMAND_POWER = "heat_demand.power"
+    COLD_DEMAND_POWER = "cold_demand.power"
+    HEAT_DEMAND_TYPE = "heat_demand.type"
 
 
 class PotentialErrors:

@@ -6,8 +6,7 @@ from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
-from mesido.network_common import MesidoAssetIssueType
-from mesido.potential_errors import POTENTIAL_ERRORS
+from mesido.potential_errors import MesidoAssetIssueType, POTENTIAL_ERRORS
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 
 import numpy as np

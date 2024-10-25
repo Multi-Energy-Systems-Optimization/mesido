@@ -7,7 +7,7 @@ import esdl
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import InfluxDBProfileReader, ProfileReaderFromFile
-from mesido.network_common import MesidoAssetIssueType
+from mesido.potential_errors import MesidoAssetIssueType
 from mesido.workflows import EndScenarioSizingStagedHIGHS
 
 import numpy as np

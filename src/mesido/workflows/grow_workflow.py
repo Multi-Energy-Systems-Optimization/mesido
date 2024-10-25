@@ -7,8 +7,7 @@ import time
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.head_loss_class import HeadLossOption
-from mesido.network_common import MesidoAssetIssueType
-from mesido.potential_errors import POTENTIAL_ERRORS
+from mesido.potential_errors import MesidoAssetIssueType, POTENTIAL_ERRORS
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.goals.minimize_tco_goal import MinimizeTCO
 from mesido.workflows.io.write_output import ScenarioOutput
