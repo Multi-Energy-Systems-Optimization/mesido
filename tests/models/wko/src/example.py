@@ -185,7 +185,7 @@ class HeatProblem(
                     POTENTIAL_ERRORS.convert_to_exception(
                         etype,
                         "Asset insufficient installed capacity: please increase the installed power"
-                        " or reduce the demand profile peak value of the demand(s) listed."
+                        " or reduce the demand profile peak value of the demand(s) listed.",
                     )
                 else:
                     POTENTIAL_ERRORS.convert_to_exception(

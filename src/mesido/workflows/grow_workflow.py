@@ -3,7 +3,6 @@ import logging
 import os
 import sys
 import time
-from typing import Dict
 
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
@@ -163,8 +162,6 @@ class EndScenarioSizing(
 
         self._save_json = False
 
-        self._asset_potential_errors = Dict[str, Dict]
-
     def parameters(self, ensemble_member):
         parameters = super().parameters(ensemble_member)
         parameters["peak_day_index"] = self.__indx_max_peak
@@ -200,14 +197,13 @@ class EndScenarioSizing(
                     POTENTIAL_ERRORS.convert_to_exception(
                         etype,
                         "Asset insufficient installed capacity: please increase the installed power"
-                        " or reduce the demand profile peak value of the demand(s) listed."
+                        " or reduce the demand profile peak value of the demand(s) listed.",
                     )
                 else:
                     POTENTIAL_ERRORS.convert_to_exception(
                         etype,
                         "Incorrect asset type: please update.",
                     )
-        what = "ddd"
         # end error checking
 
         (

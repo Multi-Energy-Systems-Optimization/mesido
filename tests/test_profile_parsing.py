@@ -65,7 +65,7 @@ class TestPotentialErros(unittest.TestCase):
         np.testing.assert_equal(
             cm.exception.general_issue,
             "Asset insufficient installed capacity: please increase the installed power or reduce"
-            " the demand profile peak value of the demand(s) listed."
+            " the demand profile peak value of the demand(s) listed.",
         )
         np.testing.assert_equal(
             cm.exception.message_per_asset_id["2ab92324-f86e-4976-9a6e-f7454b77ba3c"],
@@ -78,9 +78,9 @@ class TestPotentialErros(unittest.TestCase):
             " the maximum of the heat demand profile 1957.931MW",
         )
         np.testing.assert_equal(
-            cm.exception.message_per_asset_id["6662aebb-f85e-4df3-9f7e-c58993586fba"], 
+            cm.exception.message_per_asset_id["6662aebb-f85e-4df3-9f7e-c58993586fba"],
             "Asset named HeatingDemand_6662: The installed capacity of 2.0MW should be larger than"
-            " the maximum of the heat demand profile 1957.931MW"
+            " the maximum of the heat demand profile 1957.931MW",
         )
 
         # TODO: add test for other raised errors

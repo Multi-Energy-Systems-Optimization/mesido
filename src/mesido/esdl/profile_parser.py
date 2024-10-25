@@ -47,11 +47,6 @@ class BaseProfileReader:
         self._energy_system: esdl.EnergySystem = energy_system
         self._file_path: Optional[Path] = file_path
         self._reference_datetimes: Optional[pd.DatetimeIndex] = None
-        self._asset_potential_errors_identified: Dict[str, Dict] = {
-            "heat_demand.power": {},  # error type, heat demand name, error message
-            "cold_demand.power": {},  # error type, cold demand name, error message
-            "heat_demand.type": {},  # error type, heat demand name, error message
-        }
 
     def read_profiles(
         self,
@@ -61,7 +56,7 @@ class BaseProfileReader:
         esdl_assets: Dict[str, Asset],
         carrier_properties: Dict[str, Dict],
         ensemble_size: int,
-    ) -> Dict[str, Dict]:
+    ) -> None:
         """
         This function takes a datastore and a dictionary of milp network components and loads a
         profile for each demand and source in the provided milp network components into the
@@ -165,7 +160,6 @@ class BaseProfileReader:
                         values=profile,
                         ensemble_member=ensemble_member,
                     )
-        return self._asset_potential_errors_identified
 
     def _load_profiles_from_source(
         self,
