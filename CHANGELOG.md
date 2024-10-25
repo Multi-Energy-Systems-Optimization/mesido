@@ -17,6 +17,7 @@
 - Bugfix: No longer required to provide a power at the heating demands when a profile has been added.
 - Bugfix: Scaling fix on ATES temperature variable when temperature modelling not used.
 - Bugfix: Fix on nominals in electricity cables and gas pipes. Fix on nominals for nodes with logical links.
+- Pipeline is only run when pull request is ready for review and synchronized or when opened. 
  
 ## Fixed
 - Bug fix: machine error/rounding with updating lower bound values in the grow_workflow after stage 1
