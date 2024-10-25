@@ -296,7 +296,11 @@ class _GoalsAndOptions:
                     if type in map_demand.keys():
                         goals.append(TargetDemandGoal(state, target))
                     else:
-                        priority = 5# 2 * len(self._esdl_assets)
+                        priority = 2 * len(self._esdl_assets)
+                        if asset in self.energy_system_components.get("solar_pv"):
+                            priority = 2*len(self._esdl_assets)+1
+                        nom = self.variable_nominal(state)
+                        goals.append(MaximizeDemandGoalMerit(state, priority, nom, nom))
                         # goals.append(TargetProducerGoal(state, target, priority))
 
         return goals
@@ -468,6 +472,7 @@ class MultiCommoditySimulator(
                         add_goal = False
                 if "h2-import" in asset.lower():
                     add_goal = False
+                add_goal = False
                 if add_goal:
                     if "import" in asset.lower():
                         # if 'gas' not in asset_variable_map[asset].lower():
@@ -655,7 +660,7 @@ class MultiCommoditySimulator(
         self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
         self.gas_network_settings["network_type"] = NetworkSettings.NETWORK_TYPE_HYDROGEN
         self.gas_network_settings["minimize_head_losses"] = False
-        self.gas_network_settings["maximum_velocity"] = 25.0
+        self.gas_network_settings["maximum_velocity"] = 40.0
         self.gas_network_settings["n_linearization_lines"] = 5
         options["include_asset_is_switched_on"] = True
         options["estimated_velocity"] = 7.5
@@ -1290,7 +1295,7 @@ def run_sequatially_staged_simulation(
     )
 
     tic = time.time()
-    for simulated_window in range(simulation_window_size, end_time, simulation_window_size):
+    for simulated_window in range(simulation_window_size, min(100,end_time), simulation_window_size):
         # Note that the end time is not necessarily a multiple of simulation_window_size
         (
             solution,
