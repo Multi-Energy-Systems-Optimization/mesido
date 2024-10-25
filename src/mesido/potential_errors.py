@@ -1,6 +1,6 @@
 from typing import Dict, List
 
-from mesido.exceptions import MesidoAssetIssue
+from mesido.exceptions import MesidoAssetIssueError
 from mesido.network_common import MesidoAssetIssueType
 
 AssetId = str
@@ -47,7 +47,7 @@ class PotentialErrors:
 
     def convert_to_exception(
         self, issue_type: MesidoAssetIssueType, general_issue: str
-    ) -> "MesidoAssetIssue":
+    ) -> "MesidoAssetIssueError":
         """
         Raise a MESIDO exception if the issue exists.
 
@@ -55,7 +55,7 @@ class PotentialErrors:
         if issue_type not in self._gathered_potential_issues:
             raise RuntimeError("Something very wrong. Issue type not in potential errors")
 
-        raise MesidoAssetIssue(
+        raise MesidoAssetIssueError(
             general_issue=general_issue,
             error_type=issue_type,
             message_per_asset_id=self._gathered_potential_issues[issue_type],
