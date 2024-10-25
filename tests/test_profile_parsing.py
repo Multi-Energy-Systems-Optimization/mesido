@@ -9,7 +9,7 @@ from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import InfluxDBProfileReader, ProfileReaderFromFile
 from mesido.exceptions import MesidoAssetIssueError
 from mesido.potential_errors import MesidoAssetIssueType
-from mesido.workflows import EndScenarioSizingStagedHIGHS
+from mesido.workflows import EndScenarioSizingStaged
 
 import numpy as np
 
@@ -50,7 +50,7 @@ class TestPotentialErros(unittest.TestCase):
         logger, logs_list = create_log_list_scaling("WarmingUP-MPC")
 
         with self.assertRaises(MesidoAssetIssueError) as cm:
-            problem = EndScenarioSizingStagedHIGHS(
+            problem = EndScenarioSizingStaged(
                 esdl_parser=ESDLFileParser,
                 base_folder=base_folder,
                 model_folder=model_folder,
@@ -118,7 +118,7 @@ class TestProfileLoading(unittest.TestCase):
         base_folder = Path(run_1a.__file__).resolve().parent.parent
         model_folder = base_folder / "model"
         input_folder = base_folder / "input"
-        problem = EndScenarioSizingStagedHIGHS(
+        problem = EndScenarioSizingStaged(
             esdl_parser=ESDLFileParser,
             base_folder=base_folder,
             model_folder=model_folder,
@@ -134,11 +134,11 @@ class TestProfileLoading(unittest.TestCase):
         # the three demands in the test ESDL
         for demand_name in ["HeatingDemand_2ab9", "HeatingDemand_6662", "HeatingDemand_506c"]:
             profile_values = problem.get_timeseries(f"{demand_name}.target_heat_demand").values
-            self.assertEqual(profile_values[0], 0.0)
+            self.assertEqual(profile_values[0], profile_values[1])
             self.assertEqual(len(profile_values), 26)
 
         heat_price_profile = problem.get_timeseries("Heat.price_profile").values
-        self.assertEqual(heat_price_profile[0], 0.0)
+        self.assertEqual(heat_price_profile[0], heat_price_profile[1])
         self.assertLess(max(heat_price_profile), 1.0)
 
     def test_loading_from_csv(self):

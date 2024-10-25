@@ -130,7 +130,7 @@ class BaseProfileReader:
                     # Check if that the installed heat/cool demand capacity is sufficient
                     if component_type in ["heat_demand", "cold_demand"]:
                         max_profile_value = max(values)
-                        if asset_power < max_profile_value:
+                        if asset_power < max_profile_value and asset_power != 0.0:
                             asset_id = esdl_asset_names_to_ids[component]
                             POTENTIAL_ERRORS.add_potential_issue(
                                 (

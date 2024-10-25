@@ -1,8 +1,7 @@
 # MESIDO
 
 MESIDO is an optimization application for optimal planning, design and 
-operation of Energy Systems with the current main focus on District Heating Systems (DHS). The current application focuses on a Mixed Integer Linear Problem (MILP) approach, with multiple linearization strategies to conservatively approximate the steady-state physics and financial models.
-All physics, placement, sizing and financial models are combined in the TechnoEconomicMixin class. When inherited this class can be combined with objective functions (that typically incorporate the financial aspects) and interface methods to create an
+operation of Energy Systems with the current main focus on District Heating Systems (DHS). The current application focuses on a Mixed Integer Linear Problem (MILP) approach, with multiple linearization strategies to conservatively approximate the steady-state physics and financial models. See for example the head loss validation test, using pandapipes, in the test folder. All physics, placement, sizing and financial models are combined in the TechnoEconomicMixin class. When inherited this class can be combined with objective functions (that typically incorporate the financial aspects) and interface methods to create an
 optimization workflow (see also running an example).
 
 The main supported method for defining your Energy system is ESDL (Energy System Description Language), which is a modelling language for energy systems. See also: https://github.com/EnergyTransition/ESDL.

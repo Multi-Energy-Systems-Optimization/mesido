@@ -168,6 +168,16 @@ Although the constraints by themselves will not guarantee a physically feasible 
 
     Schematic visualization of how the linear constraints are fitted to the head loss curve.
 
+Furthermore, this head loss approximation has been validated against pandapipes as shown in :numref:`validation1dH`. This validation work has also been incorprated into a test case, for more information see the test folder.
+
+.. _validation1dH:
+
+.. figure:: ../images/dH_MESIDO_10_vs_pandapipes.png
+    :figwidth: 6.94792in
+    :align: center
+
+    Head loss approximation with 10 linear lines against pandapipes.  
+
 Similar as with head loss the hydraulic power, :math:`HP^a`, required to overcome the head losses is modelled with a set of linear inequalities:
 
 .. math::
@@ -342,9 +352,7 @@ Heat loss in a tank is modelled as linear with the stored heat:
 
 where :math:`Q^{a}_{stored}` is the heat stored in the storage asset and :math:`\beta` is the efficiency factor.
 
-The efficiency factor is approximated assuming that tanks are cylindrical and lose heat over their surface area, see :eq:`eq:etatank`.
-For cylindrical tanks their surface area approximately increases linearly with the stored heat.
-A radiation coefficient, :math:`c_r`, of 1 :math:`W/m^2` is used as an approximation.
+The efficiency factor is approximated assuming that tanks are cylindrical and lose heat over their surface area. For cylindrical tanks their surface area approximately increases linearly with the stored heat. A radiation coefficient, :math:`c_r`, of 1 :math:`W/m^2` is used as an approximation.
 
 HT-ATES
 ^^^^^^^
