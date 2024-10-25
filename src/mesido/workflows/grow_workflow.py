@@ -8,6 +8,8 @@ from typing import Dict
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.head_loss_class import HeadLossOption
+from mesido.network_common import MesidoAssetIssueType
+from mesido.potential_errors import POTENTIAL_ERRORS
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.goals.minimize_tco_goal import MinimizeTCO
 from mesido.workflows.io.write_output import ScenarioOutput
@@ -15,9 +17,6 @@ from mesido.workflows.utils.adapt_profiles import (
     adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
 )
 from mesido.workflows.utils.helpers import main_decorator
-from mesido.potential_errors import POTENTIAL_ERRORS
-from mesido.exceptions import MesidoAssetIssue
-from mesido.network_common import MesidoAssetIssueType
 
 import numpy as np
 
@@ -188,39 +187,27 @@ class EndScenarioSizing(
         # Error checking:
         # - installed capacity/power of a heating/cooling demand is sufficient for the specified
         #   demand profile
-        is_error = False
-        for error_type, errors in self._asset_potential_errors.items():
-            if error_type in ["heat_demand.power", "cold_demand.power"] and len(errors) > 0:
-                    # for asset_name in errors:
-                    #     logger.error(self._asset_potential_errors[error_type][asset_name])
-                    # logger.error(
-                general_issue = (
-                    "Asset insufficient installed capacity: please increase the"
-                    " installed power or reduce the demand profile peak value of the demand(s)"
-                    " listed."
+        # - asset used for a heating demand
+        potential_error_type = [
+            MesidoAssetIssueType.HEAT_DEMAND_POWER,
+            MesidoAssetIssueType.COLD_DEMAND_POWER,
+            MesidoAssetIssueType.HEAT_DEMAND_TYPE,
+        ]
+        is_potential_error = POTENTIAL_ERRORS.have_issues_for(potential_error_type)
+        for etype in potential_error_type:
+            if is_potential_error[etype]:
+                if etype is not MesidoAssetIssueType.HEAT_DEMAND_TYPE:
+                    POTENTIAL_ERRORS.convert_to_exception(
+                        etype,
+                        "Asset insufficient installed capacity: please increase the installed power"
+                        " or reduce the demand profile peak value of the demand(s) listed."
                     )
-                    #is_error = True
-            elif error_type in ["heat_demand.type"] and len(errors) > 0:
-                general_issue = "Incorrect asset type: please update."
-                    # for asset_name in errors:
-                    #     logger.error(self._asset_potential_errors[error_type][asset_name])
-                    #logger.error("Incorrect asset type: please update.")
-
-                    #is_error = True
-
-        # if general_issue:
-        if POTENTIAL_ERRORS.have_issues_for([MesidoAssetIssueType.HEAT_DEMAND_POWER]):
-            POTENTIAL_ERRORS.convert_to_exception(
-                MesidoAssetIssueType.HEAT_DEMAND_POWER,
-                general_issue,
-            )
-            what = "ddd"
-            # raise MesidoAssetIssue(
-            #             general_issue=general_issue,
-            #             message_per_asset_id=self._asset_potential_errors[error_type],
-            #             error_type=error_type
-            #         )
-           # exit(1)
+                else:
+                    POTENTIAL_ERRORS.convert_to_exception(
+                        etype,
+                        "Incorrect asset type: please update.",
+                    )
+        what = "ddd"
         # end error checking
 
         (

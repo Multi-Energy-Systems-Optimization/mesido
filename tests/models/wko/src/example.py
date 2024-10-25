@@ -6,6 +6,8 @@ from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
+from mesido.network_common import MesidoAssetIssueType
+from mesido.potential_errors import POTENTIAL_ERRORS
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 
 import numpy as np
@@ -172,20 +174,24 @@ class HeatProblem(
         # Error checking:
         # - installed capacity/power of a heating/cooling demand is sufficient for the specified
         #   demand profile
-        is_error = False
-        for error_type, errors in self._asset_potential_errors.items():
-            if error_type in ["heat_demand.power", "cold_demand.power"]:
-                if len(errors) > 0:
-                    for asset_name in errors:
-                        logger.error(self._asset_potential_errors[error_type][asset_name])
-                    logger.error(
-                        "Asset insufficient installed capacity: please increase the"
-                        " installed power or reduce the demand profile peak value of the demand(s)"
-                        " listed."
+        potential_error_type = [
+            MesidoAssetIssueType.HEAT_DEMAND_POWER,
+            MesidoAssetIssueType.COLD_DEMAND_POWER,
+        ]
+        is_potential_error = POTENTIAL_ERRORS.have_issues_for(potential_error_type)
+        for etype in potential_error_type:
+            if is_potential_error[etype]:
+                if etype is not MesidoAssetIssueType.HEAT_DEMAND_TYPE:
+                    POTENTIAL_ERRORS.convert_to_exception(
+                        etype,
+                        "Asset insufficient installed capacity: please increase the installed power"
+                        " or reduce the demand profile peak value of the demand(s) listed."
                     )
-                    is_error = True
-        if is_error:
-            exit(1)
+                else:
+                    POTENTIAL_ERRORS.convert_to_exception(
+                        etype,
+                        "Incorrect asset type: please update.",
+                    )
         # end error checking
 
     def path_goals(self):

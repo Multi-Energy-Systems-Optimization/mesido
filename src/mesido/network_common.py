@@ -20,7 +20,8 @@ class NetworkSettings(StrEnum):
     )  # Natural gas Groningen
 
 
-# Asset error that can occur
+# Asset error type that can occur
 class MesidoAssetIssueType(Enum):
     HEAT_DEMAND_POWER = "heat_demand.power"
-    # "etc."
+    COLD_DEMAND_POWER = "cold_demand.power"
+    HEAT_DEMAND_TYPE = "heat_demand.type"
