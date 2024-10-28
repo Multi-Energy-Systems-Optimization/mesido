@@ -303,9 +303,9 @@ class TestMultiCommoditySimulator(TestCase):
             def energy_system_options(self):
                 options = super().energy_system_options()
 
-                options[
-                    "electrolyzer_efficiency"
-                ] = ElectrolyzerOption.LINEARIZED_THREE_LINES_WEAK_INEQUALITY
+                options["electrolyzer_efficiency"] = (
+                    ElectrolyzerOption.LINEARIZED_THREE_LINES_WEAK_INEQUALITY
+                )
 
                 return options
 

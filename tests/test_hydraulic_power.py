@@ -271,9 +271,9 @@ class TestHydraulicPower(TestCase):
             def energy_system_options(self):
                 options = super().energy_system_options()
 
-                self.gas_network_settings[
-                    "head_loss_option"
-                ] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
+                self.gas_network_settings["head_loss_option"] = (
+                    HeadLossOption.LINEARIZED_N_LINES_EQUALITY
+                )
                 self.gas_network_settings["n_linearization_lines"] = 3
                 self.gas_network_settings["minimum_velocity"] = 0.0
                 self.gas_network_settings["minimize_head_losses"] = False
@@ -401,9 +401,9 @@ class TestHydraulicPower(TestCase):
             def energy_system_options(self):
                 options = super().energy_system_options()
 
-                self.gas_network_settings[
-                    "head_loss_option"
-                ] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
+                self.gas_network_settings["head_loss_option"] = (
+                    HeadLossOption.LINEARIZED_N_LINES_EQUALITY
+                )
                 self.gas_network_settings["n_linearization_lines"] = 3
                 self.gas_network_settings["minimum_velocity"] = 0.0
                 self.gas_network_settings["minimize_head_losses"] = False
