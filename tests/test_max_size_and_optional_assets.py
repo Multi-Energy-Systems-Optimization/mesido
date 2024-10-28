@@ -44,7 +44,6 @@ class TestMaxSizeAggregationCount(TestCase):
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
-
         # This is an optimization done over a few days
         solution = run_esdl_mesido_optimization(
             HeatProblem,
@@ -136,7 +135,6 @@ class TestMaxSizeAggregationCount(TestCase):
         np.testing.assert_allclose(results["ATES_033c_aggregation_count"], 1.0)
         np.testing.assert_allclose(results["HeatStorage_74c1_aggregation_count"], 1.0)
 
-
         import models.test_case_small_network_ates_buffer_optional_assets.src.run_ates as run_ates
         from models.test_case_small_network_ates_buffer_optional_assets.src.run_ates import (
             HeatProblem,
@@ -147,7 +145,6 @@ class TestMaxSizeAggregationCount(TestCase):
         # This is the same problem, but now with the buffer and ates also optional.
         # Therefore, we expect that the ates and buffer are no longer placed to avoid their heat
         # losses. This allows us to check if their placement constraints are proper.
-
 
         solution = run_esdl_mesido_optimization(
             HeatProblem,

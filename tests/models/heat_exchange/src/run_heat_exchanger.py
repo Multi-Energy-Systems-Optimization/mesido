@@ -13,7 +13,7 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
 from rtctools.optimization.goal_programming_mixin import Goal
 from rtctools.optimization.single_pass_goal_programming_mixin import (
     SinglePassGoalProgrammingMixin,
-    CachingQPSol
+    CachingQPSol,
 )
 from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
@@ -95,8 +95,6 @@ class HeatProblem(
         options["heat_loss_disconnected_pipe"] = False
 
         return options
-
-
 
 
 class HeatProblemTvarSecondary(

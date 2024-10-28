@@ -30,7 +30,6 @@ class TestSetpointConstraints(TestCase):
 
         base_folder = Path(run_3a.__file__).resolve().parent.parent
 
-
         _heat_problem_3 = run_esdl_mesido_optimization(
             HeatProblemSetPointConstraints,
             base_folder=base_folder,

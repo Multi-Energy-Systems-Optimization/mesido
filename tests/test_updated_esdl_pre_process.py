@@ -36,7 +36,6 @@ class TestUpdatedESDL(TestCase):
             Path(examples.PoCTutorial.src.run_grow_tutorial.__file__).resolve().parent.parent
         )
 
-
         problem = run_end_scenario_sizing(
             EndScenarioSizingStagedHighs,
             base_folder=base_folder,

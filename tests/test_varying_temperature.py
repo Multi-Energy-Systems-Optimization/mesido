@@ -60,7 +60,6 @@ class TestVaryingTemperature(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
-        
 
         parameters = heat_problem.parameters(0)
 
@@ -98,7 +97,6 @@ class TestVaryingTemperature(TestCase):
 
         base_folder = Path(run_3a.__file__).resolve().parent.parent
 
-
         heat_problem = run_esdl_mesido_optimization(
             HeatProblemTvarsup,
             base_folder=base_folder,
@@ -132,7 +130,6 @@ class TestVaryingTemperature(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
-        
 
         parameters = heat_problem.parameters(0)
 
@@ -198,7 +195,6 @@ class TestVaryingTemperature(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
-        
 
         parameters = heat_problem.parameters(0)
 
@@ -237,7 +233,6 @@ class TestVaryingTemperature(TestCase):
 
         base_folder = Path(run_heat_exchanger.__file__).resolve().parent.parent
 
-
         heat_problem = run_esdl_mesido_optimization(
             HeatProblemTvar,
             base_folder=base_folder,
@@ -267,7 +262,6 @@ class TestVaryingTemperature(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
-        
 
         parameters = heat_problem.parameters(0)
 
@@ -305,7 +299,6 @@ class TestVaryingTemperature(TestCase):
 
         base_folder = Path(run_heat_exchanger.__file__).resolve().parent.parent
 
-
         heat_problem = run_esdl_mesido_optimization(
             HeatProblemTvarDisableHEX,
             base_folder=base_folder,
@@ -331,7 +324,6 @@ class TestVaryingTemperature(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
-        
 
     def test_hex_temperature_variation_secondary(self):
         """
@@ -348,7 +340,6 @@ class TestVaryingTemperature(TestCase):
         from models.heat_exchange.src.run_heat_exchanger import HeatProblemTvarSecondary
 
         base_folder = Path(run_heat_exchanger.__file__).resolve().parent.parent
-
 
         heat_problem = run_esdl_mesido_optimization(
             HeatProblemTvarSecondary,
@@ -376,7 +367,6 @@ class TestVaryingTemperature(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
-        
 
     def test_heat_pump_varying_temperature(self):
         """
@@ -404,7 +394,6 @@ class TestVaryingTemperature(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
-        
 
         expected_cop = (
             parameters["GenericConversion_3d3f.efficiency"]

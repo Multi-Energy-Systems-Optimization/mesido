@@ -28,7 +28,6 @@ class TestProducerMaxProfile(TestCase):
 
         base_folder = Path(run_3a.__file__).resolve().parent.parent
 
-
         solution = run_esdl_mesido_optimization(
             HeatProblemProdProfile,
             base_folder=base_folder,
@@ -42,7 +41,6 @@ class TestProducerMaxProfile(TestCase):
         demand_matching_test(solution, results)
         energy_conservation_test(solution, results)
         heat_to_discharge_test(solution, results)
-
 
         tol = 1e-8
         heat_producer = results["GeothermalSource_b702.Heat_source"]

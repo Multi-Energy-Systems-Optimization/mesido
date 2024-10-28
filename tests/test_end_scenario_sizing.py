@@ -272,7 +272,6 @@ class TestEndScenarioSizing(TestCase):
                 highs_options["mip_rel_gap"] = 0.05
                 return options
 
-
         # This is an optimization done over a full year with timesteps of 5 days and hour timesteps
         # for the peak day
         solution = run_optimization_problem(
@@ -324,7 +323,6 @@ class TestEndScenarioSizing(TestCase):
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
-
         solution = run_end_scenario_sizing(
             EndScenarioSizingHeadLossStaged,
             base_folder=base_folder,
@@ -337,7 +335,6 @@ class TestEndScenarioSizing(TestCase):
         results = solution.extract_results()
 
         demand_matching_test(solution, results)
-
 
         pipes = solution.energy_system_components.get("heat_pipe")
         for pipe in pipes:

@@ -49,7 +49,6 @@ class TestPipeDiameterSizingExample(TestCase):
         del root_folder
         sys.path.pop(1)
 
-
         problem = run_esdl_mesido_optimization(
             PipeDiameterSizingProblem,
             base_folder=base_folder,

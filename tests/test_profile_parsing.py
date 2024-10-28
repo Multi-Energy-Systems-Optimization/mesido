@@ -96,7 +96,6 @@ class TestPotentialErros(unittest.TestCase):
 
 
 class TestProfileLoading(unittest.TestCase):
-
     def test_loading_from_influx(self):
         """
         This test checks if loading an ESDL with influxDB profiles works. Since

@@ -85,12 +85,10 @@ class MaxElecProduction(Goal):
     def function(
         self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
     ) -> ca.MX:
-
         return -optimization_problem.state(f"{self.source}.Electricity_source")
 
 
 class MaxRevenue(Goal):
-
     priority = 1
 
     order = 1
@@ -129,7 +127,6 @@ class MaxRevenue(Goal):
 
 
 class MinCost(Goal):
-
     priority = 1
 
     order = 1
@@ -144,7 +141,6 @@ class MinCost(Goal):
     def function(
         self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
     ) -> ca.MX:
-
         return optimization_problem.extra_variable(
             f"{self.asset_name}__fixed_operational_cost", ensemble_member
         ) + optimization_problem.extra_variable(
@@ -195,7 +191,6 @@ class EmergeTest(
     #     return goals
 
     def goals(self):
-
         goals = super().goals().copy()
 
         for asset_name in [
@@ -319,7 +314,6 @@ class EmergeTest(
 
 
 if __name__ == "__main__":
-
     tic = time.time()
     # for _ in range(10):
     #     elect = run_optimization_problem(

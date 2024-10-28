@@ -138,7 +138,6 @@ class TestEndScenarioSizingAnnualized(TestCase):
         assert np.isclose(calculate_annuity_factor(0.1, 1), 1.1, atol=1e-14, rtol=0.0)
 
 
-
 if __name__ == "__main__":
     import time
 

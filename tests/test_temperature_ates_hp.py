@@ -156,7 +156,6 @@ class TestAtesTemperature(TestCase):
 
         basefolder = Path(run_ates_temperature.__file__).resolve().parent.parent
 
-
         solution = run_esdl_mesido_optimization(
             HeatProblemMaxFlow,
             base_folder=basefolder,
@@ -200,4 +199,3 @@ class TestAtesTemperature(TestCase):
                 * (ates_temperature[demand_not_matched] - ates_temp_ret)
             ),
         )
-

@@ -17,9 +17,7 @@ from utils_test_scaling import (
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
-
 class TestColdDemand(TestCase):
-
     def test_insufficient_capacity(self):
         """
         This test checks that the error checks in the code for sufficient installed cool/heatig
@@ -168,7 +166,6 @@ class TestColdDemand(TestCase):
         # ------------------------------------------------------------------------------------------
         # Pipe heat losses inlcuded
         class HeatingCoolingProblem(HeatProblem):
-
             def energy_system_options(self):
                 options = super().energy_system_options()
                 options["neglect_pipe_heat_losses"] = False

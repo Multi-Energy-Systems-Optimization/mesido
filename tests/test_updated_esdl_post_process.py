@@ -15,7 +15,6 @@ import numpy as np
 
 
 class TestUpdatedESDL(TestCase):
-
     def test_updated_esdl(self):
         """
         Check that the updated ESDL resulting from the optmizer, is correct by using the PoCTutorial
@@ -164,7 +163,6 @@ class TestUpdatedESDL(TestCase):
                 # Check optim time horizon vs yearly cost when the lifetime value is
                 # 15 years
                 for il in range(len(compare_yearly_lifetime_kpis["kpi_name_list"])):
-
                     if kpi_name in compare_yearly_lifetime_kpis["kpi_name_list"][il]:
                         compare_yearly_lifetime_kpis["index_high_level_cost_list"][il].append(ii)
                         if len(compare_yearly_lifetime_kpis["index_high_level_cost_list"][il]) == 2:
@@ -186,7 +184,6 @@ class TestUpdatedESDL(TestCase):
                                     .label
                                     in compare_yearly_lifetime_kpis["kpi_label_list"][il]
                                 ):
-
                                     max_value = max(
                                         energy_system.instance[0]
                                         .area.KPIs.kpi[

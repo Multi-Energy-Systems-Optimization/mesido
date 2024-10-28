@@ -156,7 +156,6 @@ class TestWarmingUpUnitCases(TestCase):
 
         base_folder = Path(run_3a.__file__).resolve().parent.parent
 
-
         # Just a "problem is not infeasible"
         heat_problem = run_esdl_mesido_optimization(
             HeatProblem,
@@ -174,7 +173,6 @@ class TestWarmingUpUnitCases(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
-
 
         # We only check the flow directions for the time-steps that there is flow in the pipe.
         inds = np.round(1 - results["Pipe_e53a__is_disconnected"]).astype(bool)
