@@ -41,7 +41,9 @@ class MinimizeSourcesHeatGoal(Goal):
 
     def function(self, optimization_problem, ensemble_member):
         obj = 0.0
-        for source in optimization_problem.energy_system_components.get("heat_source", []):
+        for source in optimization_problem.energy_system_components.get(
+            "heat_source", []
+        ):
             obj += optimization_problem.state(f"{source}.Heat_source")
 
         return obj
@@ -71,12 +73,13 @@ class HeatProblem(
     CollocatedIntegratedOptimizationProblem,
 ):
     def __init__(self, *args, **kwargs):
-
         global head_loss_setting, n_linearization_lines_setting
         super().__init__(*args, **kwargs)
         self.heat_network_settings["head_loss_option"] = head_loss_setting
         if head_loss_setting == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY:
-            self.heat_network_settings["n_linearization_lines"] = n_linearization_lines_setting
+            self.heat_network_settings[
+                "n_linearization_lines"
+            ] = n_linearization_lines_setting
         if head_loss_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
             self.heat_network_settings["minimize_head_losses"] = False
         else:
@@ -106,7 +109,9 @@ class HeatProblem(
         options = super().heat_network_options()
         self.heat_network_settings["head_loss_option"] = head_loss_setting
         if head_loss_setting == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY:
-            self.heat_network_settings["n_linearization_lines"] = n_linearization_lines_setting
+            self.heat_network_settings[
+                "n_linearization_lines"
+            ] = n_linearization_lines_setting
         if head_loss_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
             self.heat_network_settings["minimize_head_losses"] = False
         else:
@@ -182,9 +187,15 @@ class HeatProblem(
         data_milp = {}  # Data storage
 
         # Pressure drop [Pa]
-        data_milp = {"Pipe1_supply_dPress": results["Pipe1.dH"] * parameters["Pipe1.rho"] * 9.81}
+        data_milp = {
+            "Pipe1_supply_dPress": results["Pipe1.dH"] * parameters["Pipe1.rho"] * 9.81
+        }
         data_milp.update(
-            {"Pipe1_return_dPress": results["Pipe1_ret.dH"] * parameters["Pipe1_ret.rho"] * 9.81}
+            {
+                "Pipe1_return_dPress": results["Pipe1_ret.dH"]
+                * parameters["Pipe1_ret.rho"]
+                * 9.81
+            }
         )
 
         # Volumetric flow [m3/s]
@@ -238,8 +249,12 @@ class HeatProblem(
         )
 
         # Hydraulic power via linearized method in MILP [W]
-        data_milp.update({"Pipe1_supply_Hydraulic_power": results["Pipe1.Hydraulic_power"]})
-        data_milp.update({"Pipe1_return_Hydraulic_power": results["Pipe1_ret.Hydraulic_power"]})
+        data_milp.update(
+            {"Pipe1_supply_Hydraulic_power": results["Pipe1.Hydraulic_power"]}
+        )
+        data_milp.update(
+            {"Pipe1_return_Hydraulic_power": results["Pipe1_ret.Hydraulic_power"]}
+        )
 
         # Determine index to be used for row data that will be added to the dataframe
         if len(df_MILP) == 0:
@@ -249,9 +264,13 @@ class HeatProblem(
 
         try:
             if len(data_milp["Pipe1_supply_dPress"]) > 1:
-                df_MILP = pd.concat([df_MILP, pd.DataFrame(data_milp)], ignore_index=True)
+                df_MILP = pd.concat(
+                    [df_MILP, pd.DataFrame(data_milp)], ignore_index=True
+                )
         except Exception:  # Case when there is only one row value added
-            df_MILP = pd.concat([df_MILP, pd.DataFrame(data_milp)], index=[index_df_milp])
+            df_MILP = pd.concat(
+                [df_MILP, pd.DataFrame(data_milp)], index=[index_df_milp]
+            )
 
         # Update pipe length value for the last rows added in dataframe
         index_last_row = df_MILP.last_valid_index()
@@ -263,6 +282,6 @@ class HeatProblem(
         except Exception:  # Case when there is only one row value added
             m_rows_added = 1
 
-        df_MILP.loc[(index_last_row + 1 - m_rows_added) : (index_last_row + 1), "pipe_length"] = (
-            manual_set_pipe_length
-        )
+        df_MILP.loc[
+            (index_last_row + 1 - m_rows_added) : (index_last_row + 1), "pipe_length"
+        ] = manual_set_pipe_length

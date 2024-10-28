@@ -128,7 +128,9 @@ class HeatProblemTvar(HeatProblem):
         return options
 
     def temperature_carriers(self):
-        return self.esdl_carriers  # geeft terug de carriers met multiple temperature options
+        return (
+            self.esdl_carriers
+        )  # geeft terug de carriers met multiple temperature options
 
     def temperature_regimes(self, carrier):
         temperatures = []

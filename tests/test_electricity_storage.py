@@ -7,7 +7,11 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
-from utils_tests import demand_matching_test, electric_power_conservation_test, feasibility_test
+from utils_tests import (
+    demand_matching_test,
+    electric_power_conservation_test,
+    feasibility_test,
+)
 
 
 class TestMILPElectricSourceSink(TestCase):
@@ -53,7 +57,9 @@ class TestMILPElectricSourceSink(TestCase):
         discharge_eff = parameters[f"{storage_name}.discharge_efficiency"]
         is_charging = results[f"{storage_name}__is_charging"]
         eff_power_change_bat = results[f"{storage_name}.Effective_power_charging"]
-        eff_power_change_discharge_bat = results[f"{storage_name}__effective_power_discharging"]
+        eff_power_change_discharge_bat = results[
+            f"{storage_name}__effective_power_discharging"
+        ]
         power_bat_network = results[f"{storage_name}.ElectricityIn.Power"]
         stored_el = results[f"{storage_name}.Stored_electricity"]
 
@@ -86,7 +92,9 @@ class TestMILPElectricSourceSink(TestCase):
 
         # stored electricity change should be equal to the effective power change
         stored_change = stored_el[1:] - stored_el[:-1]
-        np.testing.assert_allclose(eff_power_change_bat[1:] * 3600, stored_change, atol=tol)
+        np.testing.assert_allclose(
+            eff_power_change_bat[1:] * 3600, stored_change, atol=tol
+        )
 
         # effective power change while charging should be equal to efficiency * powerIn
         np.testing.assert_allclose(
@@ -106,5 +114,7 @@ class TestMILPElectricSourceSink(TestCase):
         # charging. When a goal would be set to minimise discharge it should match the charge power,
         # however now this goal is not turned on.
         # TODO: when the new goal is included create test, this will end up in the mc_simulator
-        np.testing.assert_array_less(-eff_power_change_bat, eff_power_change_discharge_bat + tol)
+        np.testing.assert_array_less(
+            -eff_power_change_bat, eff_power_change_discharge_bat + tol
+        )
         self.assertTrue(all(eff_power_change_discharge_bat >= 0.0))

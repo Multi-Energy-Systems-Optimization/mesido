@@ -31,7 +31,9 @@ class HeatProblemDiscAnnualizedCost(HeatProblem):
             "fixed_operational": {"heat_source"},
             "annualized": {"heat_source"},
         }
-        goals.append(MinimizeTCO(priority=2, custom_asset_type_maps=custom_asset_type_maps))
+        goals.append(
+            MinimizeTCO(priority=2, custom_asset_type_maps=custom_asset_type_maps)
+        )
         return goals
 
     def modify_discount_rate(self, assets):
@@ -39,11 +41,14 @@ class HeatProblemDiscAnnualizedCost(HeatProblem):
             if asset.asset_type == "HeatProducer":
                 if "costInformation" in asset.attributes and (
                     asset.attributes["costInformation"].discountRate is not None
-                    and asset.attributes["costInformation"].discountRate.value is not None
+                    and asset.attributes["costInformation"].discountRate.value
+                    is not None
                 ):
                     asset.attributes["costInformation"].discountRate.value = 0.0
                 else:
-                    asset.attributes["costInformation"].discountRate = esdl.SingleValue(value=0.0)
+                    asset.attributes["costInformation"].discountRate = esdl.SingleValue(
+                        value=0.0
+                    )
         return assets
 
 

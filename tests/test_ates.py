@@ -12,7 +12,11 @@ from utils_test_scaling import (
     create_problem_with_debug_info,
 )
 
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
+from utils_tests import (
+    demand_matching_test,
+    energy_conservation_test,
+    heat_to_discharge_test,
+)
 
 
 class TestAtes(TestCase):

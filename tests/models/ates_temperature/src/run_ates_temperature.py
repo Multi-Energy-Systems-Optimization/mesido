@@ -148,9 +148,9 @@ class HeatProblem(
     def energy_system_options(self):
         options = super().energy_system_options()
         self.heat_network_settings["minimum_velocity"] = 0.0001
-        options["heat_loss_disconnected_pipe"] = (
-            False  # required since we want to disconnect HP & HEX
-        )
+        options[
+            "heat_loss_disconnected_pipe"
+        ] = False  # required since we want to disconnect HP & HEX
         self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
         options["neglect_pipe_heat_losses"] = True
         options["include_ates_temperature_options"] = True
@@ -205,7 +205,9 @@ class HeatProblem(
             ates_temperature_disc = self.__state_vector_scaled(
                 f"{a}__temperature_ates_disc", ensemble_member
             )
-            constraints.append(((ates_temperature_disc[-1] - ates_temperature_disc[0]), 0.0, 0.0))
+            constraints.append(
+                ((ates_temperature_disc[-1] - ates_temperature_disc[0]), 0.0, 0.0)
+            )
 
         return constraints
 
@@ -216,7 +218,9 @@ class HeatProblem(
         """
         canonical, sign = self.alias_relation.canonical_signed(variable)
         return (
-            self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
+            self.state_vector(canonical, ensemble_member)
+            * self.variable_nominal(canonical)
+            * sign
         )
 
     def read(self):
@@ -231,7 +235,9 @@ class HeatProblem(
 
         for ensemble_member in range(self.ensemble_size):
             total_demand = sum(
-                self.get_timeseries(f"{demand}.target_heat_demand", ensemble_member).values
+                self.get_timeseries(
+                    f"{demand}.target_heat_demand", ensemble_member
+                ).values
                 for demand in demands
             )
 

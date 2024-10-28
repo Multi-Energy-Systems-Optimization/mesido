@@ -14,12 +14,14 @@ from utils_test_scaling import (
     create_problem_with_debug_info,
 )
 
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
-
+from utils_tests import (
+    demand_matching_test,
+    energy_conservation_test,
+    heat_to_discharge_test,
+)
 
 
 class TestColdDemand(TestCase):
-
     def test_insufficient_capacity(self):
         """
         This test checks that the error checks in the code for sufficient installed cool/heatig
@@ -33,7 +35,9 @@ class TestColdDemand(TestCase):
         import models.wko.src.example as example
         from models.wko.src.example import HeatProblem
 
-        logger, logs_list = create_log_list_scaling("WarmingUP-MPC", level=logging.ERROR)
+        logger, logs_list = create_log_list_scaling(
+            "WarmingUP-MPC", level=logging.ERROR
+        )
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
@@ -51,12 +55,14 @@ class TestColdDemand(TestCase):
 
         # Check that the heat & cold demand had an error
         np.testing.assert_equal(
-            logs_list[0].msg == "HeatingDemand_9b90: The installed capacity of 0.05MW should be"
+            logs_list[0].msg
+            == "HeatingDemand_9b90: The installed capacity of 0.05MW should be"
             " larger than the maximum of the heat demand profile 0.15MW",
             True,
         )
         np.testing.assert_equal(
-            logs_list[2].msg == "CoolingDemand_15e8: The installed capacity of 0.05MW should be"
+            logs_list[2].msg
+            == "CoolingDemand_15e8: The installed capacity of 0.05MW should be"
             " larger than the maximum of the heat demand profile 0.15MW",
             True,
         )
@@ -168,7 +174,6 @@ class TestColdDemand(TestCase):
         # ------------------------------------------------------------------------------------------
         # Pipe heat losses inlcuded
         class HeatingCoolingProblem(HeatProblem):
-
             def energy_system_options(self):
                 options = super().energy_system_options()
                 options["neglect_pipe_heat_losses"] = False
@@ -234,10 +239,14 @@ class TestColdDemand(TestCase):
         # Check heat loss and gain
         tol_value = 1.0e-6
         np.testing.assert_array_less(
-            0.0, results["Pipe1.HeatIn.Heat"] - results["Pipe1.HeatOut.Heat"] + tol_value
+            0.0,
+            results["Pipe1.HeatIn.Heat"] - results["Pipe1.HeatOut.Heat"] + tol_value,
         )
         np.testing.assert_array_less(
-            results["Pipe1_ret.HeatIn.Heat"] - results["Pipe1_ret.HeatOut.Heat"] - tol_value, 0.0
+            results["Pipe1_ret.HeatIn.Heat"]
+            - results["Pipe1_ret.HeatOut.Heat"]
+            - tol_value,
+            0.0,
         )
 
         # ------------------------------------------------------------------------------------------
@@ -279,7 +288,9 @@ class TestColdDemand(TestCase):
             0.0, results["Pipe1.HeatIn.Heat"] - results["Pipe1.HeatOut.Heat"], atol=1e-6
         )
         np.testing.assert_allclose(
-            0.0, results["Pipe1_ret.HeatIn.Heat"] - results["Pipe1_ret.HeatOut.Heat"], atol=1e-6
+            0.0,
+            results["Pipe1_ret.HeatIn.Heat"] - results["Pipe1_ret.HeatOut.Heat"],
+            atol=1e-6,
         )
         # ------------------------------------------------------------------------------------------
 

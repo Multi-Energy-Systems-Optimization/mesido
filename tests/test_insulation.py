@@ -83,7 +83,9 @@ class TestInsulation(TestCase):
         results = heat_problem.extract_results()
 
         test = TestCase()
-        test.assertTrue(heat_problem.solver_stats["success"], msg="Optimisation did not succeed")
+        test.assertTrue(
+            heat_problem.solver_stats["success"], msg="Optimisation did not succeed"
+        )
 
         # Check that only the demand for insulation A has been selected for every time step
         np.testing.assert_allclose(
@@ -117,7 +119,8 @@ class TestInsulation(TestCase):
             - results["HeatStorage_bce7.Heat_buffer"]
         ) / 1.0e6
         tot_dmnd = (
-            results["HeatingDemand_f15e.Heat_demand"] + results["HeatingDemand_e6b3.Heat_demand"]
+            results["HeatingDemand_f15e.Heat_demand"]
+            + results["HeatingDemand_e6b3.Heat_demand"]
         ) / 1.0e6
         np.testing.assert_array_less(
             (tot_dmnd - tot_src), 0.0, err_msg="The heat source is not sufficient"
@@ -170,7 +173,9 @@ class TestInsulation(TestCase):
         results = heat_problem.extract_results()
 
         test = TestCase()
-        test.assertTrue(heat_problem.solver_stats["success"], msg="Optimisation did not succeed")
+        test.assertTrue(
+            heat_problem.solver_stats["success"], msg="Optimisation did not succeed"
+        )
 
         # Check that only the demand for insulation A has been selected for every time step
         np.testing.assert_allclose(
@@ -230,4 +235,7 @@ if __name__ == "__main__":
     a = TestInsulation()
     a.test_insulation_heatdemand()
     a.test_insulation_heatdemand_b()
-    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
+    print(
+        "Execution time: "
+        + time.strftime("%M:%S", time.gmtime(time.time() - start_time))
+    )

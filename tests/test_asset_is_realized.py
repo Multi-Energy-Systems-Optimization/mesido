@@ -60,10 +60,14 @@ class TestAssetIsRealized(TestCase):
         # First we test whether the investments made are below cap
         cap = 2.5e5 + 1.0e-3  # some small tolerance, CBC...
         np.testing.assert_allclose(
-            True, np.diff(results["HeatProducer_1__cumulative_investments_made_in_eur"]) <= cap
+            True,
+            np.diff(results["HeatProducer_1__cumulative_investments_made_in_eur"])
+            <= cap,
         )
         np.testing.assert_allclose(
-            True, np.diff(results["HeatProducer_2__cumulative_investments_made_in_eur"]) <= cap
+            True,
+            np.diff(results["HeatProducer_2__cumulative_investments_made_in_eur"])
+            <= cap,
         )
 
         # Now we test if the investments made are greater then the needed investments once the
@@ -90,18 +94,26 @@ class TestAssetIsRealized(TestCase):
         )
 
         # Here we test that the asset is not used until it is actually realized
-        inds_not_1 = np.where(np.round(results["HeatProducer_1__asset_is_realized"]) == 0)
+        inds_not_1 = np.where(
+            np.round(results["HeatProducer_1__asset_is_realized"]) == 0
+        )
         np.testing.assert_allclose(
             results["HeatProducer_1.Heat_source"][inds_not_1], 0.0, atol=1e-6
         )
-        inds_not_2 = np.where(np.round(results["HeatProducer_2__asset_is_realized"]) == 0)
+        inds_not_2 = np.where(
+            np.round(results["HeatProducer_2__asset_is_realized"]) == 0
+        )
         np.testing.assert_allclose(
             results["HeatProducer_1.Heat_source"][inds_not_2], 0.0, atol=1e-6
         )
 
         # Here we test that the asset is actually used once it is realized
-        np.testing.assert_allclose(results["HeatProducer_1.Heat_source"][inds_1] > 0.0, True)
-        np.testing.assert_allclose(results["HeatProducer_2.Heat_source"][inds_2] > 0.0, True)
+        np.testing.assert_allclose(
+            results["HeatProducer_1.Heat_source"][inds_1] > 0.0, True
+        )
+        np.testing.assert_allclose(
+            results["HeatProducer_2.Heat_source"][inds_2] > 0.0, True
+        )
 
         # Check scaling differences and ranges in objective, matrix and rhs
         check_scaling(self, rtc_logger, rtc_logs_list)
@@ -113,4 +125,7 @@ if __name__ == "__main__":
     start_time = time.time()
     a = TestAssetIsRealized()
     a.test_asset_is_realized()
-    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
+    print(
+        "Execution time: "
+        + time.strftime("%M:%S", time.gmtime(time.time() - start_time))
+    )

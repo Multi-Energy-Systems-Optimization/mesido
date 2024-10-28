@@ -45,7 +45,9 @@ class MinimizeSourcesHeatCostGoal(Goal):
 
     def function(self, optimization_problem, ensemble_member):
         return (
-            optimization_problem.extra_variable(f"{self.source}__variable_operational_cost")
+            optimization_problem.extra_variable(
+                f"{self.source}__variable_operational_cost"
+            )
             + optimization_problem.extra_variable(f"{self.source}__investment_cost")
             + optimization_problem.extra_variable(f"{self.source}__installation_cost")
         )
@@ -165,4 +167,7 @@ if __name__ == "__main__":
         input_timeseries_file="Warmte_test.csv",
     )
 
-    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
+    print(
+        "Execution time: "
+        + time.strftime("%M:%S", time.gmtime(time.time() - start_time))
+    )

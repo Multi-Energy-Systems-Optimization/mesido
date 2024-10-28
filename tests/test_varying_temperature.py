@@ -9,7 +9,11 @@ from mesido.util import run_esdl_mesido_optimization
 import numpy as np
 
 
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
+from utils_tests import (
+    demand_matching_test,
+    energy_conservation_test,
+    heat_to_discharge_test,
+)
 
 
 class TestVaryingTemperature(TestCase):
@@ -48,19 +52,22 @@ class TestVaryingTemperature(TestCase):
         results = heat_problem.extract_results()
 
         test = TestCase()
-        test.assertTrue(heat_problem.solver_stats["success"], msg="Optimisation did not succeed")
+        test.assertTrue(
+            heat_problem.solver_stats["success"], msg="Optimisation did not succeed"
+        )
         # Check that the highest supply temperature is selected
         np.testing.assert_allclose(results[f"{3625334968694477359}_temperature"], 85.0)
         np.testing.assert_allclose(results[f"{3625334968694477359}_85.0"], 1.0)
 
         # Check that the lowest return temperature is selected
-        np.testing.assert_allclose(results[f"{3625334968694477359000}_temperature"], 60.0)
+        np.testing.assert_allclose(
+            results[f"{3625334968694477359000}_temperature"], 60.0
+        )
         np.testing.assert_allclose(results[f"{3625334968694477359000}_60.0"], 1.0)
 
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
-        
 
         parameters = heat_problem.parameters(0)
 
@@ -98,7 +105,6 @@ class TestVaryingTemperature(TestCase):
 
         base_folder = Path(run_3a.__file__).resolve().parent.parent
 
-
         heat_problem = run_esdl_mesido_optimization(
             HeatProblemTvarsup,
             base_folder=base_folder,
@@ -109,7 +115,9 @@ class TestVaryingTemperature(TestCase):
         )
 
         test = TestCase()
-        test.assertTrue(heat_problem.solver_stats["success"], msg="Optimisation did not succeed")
+        test.assertTrue(
+            heat_problem.solver_stats["success"], msg="Optimisation did not succeed"
+        )
 
         # optimization with two choices in supply temp 80 and 120 deg
         # lowest temperature should be selected because of lower heat losses and
@@ -124,7 +132,9 @@ class TestVaryingTemperature(TestCase):
             np.testing.assert_allclose(target, results[f"{d}.Heat_demand"])
 
         # Check that the lowest temperature (80.0) is the outputted temperature
-        np.testing.assert_allclose(results[f"{4195016129475469474608}_temperature"], 80.0)
+        np.testing.assert_allclose(
+            results[f"{4195016129475469474608}_temperature"], 80.0
+        )
         # Verify that also the integer is correctly set
         np.testing.assert_allclose(results[f"{4195016129475469474608}_80.0"], 1.0)
         np.testing.assert_allclose(results[f"{4195016129475469474608}_120.0"], 0.0)
@@ -132,7 +142,6 @@ class TestVaryingTemperature(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
-        
 
         parameters = heat_problem.parameters(0)
 
@@ -182,7 +191,9 @@ class TestVaryingTemperature(TestCase):
         )
 
         test = TestCase()
-        test.assertTrue(heat_problem.solver_stats["success"], msg="Optimisation did not succeed")
+        test.assertTrue(
+            heat_problem.solver_stats["success"], msg="Optimisation did not succeed"
+        )
 
         # optimization with two choices in return temp 30 and 40 deg
         # lowest temperature should be selected because of larger dT causing lowest flow rates
@@ -190,7 +201,9 @@ class TestVaryingTemperature(TestCase):
         results = heat_problem.extract_results()
 
         # Check that the lowest temperature (30.0) is the outputted temperature
-        np.testing.assert_allclose(results[f"{4195016129475469474608000}_temperature"], 30.0)
+        np.testing.assert_allclose(
+            results[f"{4195016129475469474608000}_temperature"], 30.0
+        )
         # Verify that also the integer is correctly set
         np.testing.assert_allclose(results[f"{4195016129475469474608000}_30.0"], 1.0)
         np.testing.assert_allclose(results[f"{4195016129475469474608000}_40.0"], 0.0)
@@ -198,7 +211,6 @@ class TestVaryingTemperature(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
-        
 
         parameters = heat_problem.parameters(0)
 
@@ -237,7 +249,6 @@ class TestVaryingTemperature(TestCase):
 
         base_folder = Path(run_heat_exchanger.__file__).resolve().parent.parent
 
-
         heat_problem = run_esdl_mesido_optimization(
             HeatProblemTvar,
             base_folder=base_folder,
@@ -248,7 +259,9 @@ class TestVaryingTemperature(TestCase):
         )
 
         test = TestCase()
-        test.assertTrue(heat_problem.solver_stats["success"], msg="Optimisation did not succeed")
+        test.assertTrue(
+            heat_problem.solver_stats["success"], msg="Optimisation did not succeed"
+        )
 
         # optimization with three choices of primary supply temperature of which the lowest is
         # infeasible. Therefore optimization should select second lowest option of 80.
@@ -267,7 +280,6 @@ class TestVaryingTemperature(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
-        
 
         parameters = heat_problem.parameters(0)
 
@@ -301,10 +313,11 @@ class TestVaryingTemperature(TestCase):
 
         """
         import models.heat_exchange.src.run_heat_exchanger as run_heat_exchanger
-        from models.heat_exchange.src.run_heat_exchanger import HeatProblemTvarDisableHEX
+        from models.heat_exchange.src.run_heat_exchanger import (
+            HeatProblemTvarDisableHEX,
+        )
 
         base_folder = Path(run_heat_exchanger.__file__).resolve().parent.parent
-
 
         heat_problem = run_esdl_mesido_optimization(
             HeatProblemTvarDisableHEX,
@@ -316,7 +329,9 @@ class TestVaryingTemperature(TestCase):
         )
         # FIXME: apparantly there is a conflict in the constraints for the is_disabled_hex
         test = TestCase()
-        test.assertTrue(heat_problem.solver_stats["success"], msg="Optimisation did not succeed")
+        test.assertTrue(
+            heat_problem.solver_stats["success"], msg="Optimisation did not succeed"
+        )
 
         # optimization with only one option in temperature which is infeasible for the hex.
         # therefore optimization should disable the heat exchanger
@@ -331,7 +346,6 @@ class TestVaryingTemperature(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
-        
 
     def test_hex_temperature_variation_secondary(self):
         """
@@ -349,7 +363,6 @@ class TestVaryingTemperature(TestCase):
 
         base_folder = Path(run_heat_exchanger.__file__).resolve().parent.parent
 
-
         heat_problem = run_esdl_mesido_optimization(
             HeatProblemTvarSecondary,
             base_folder=base_folder,
@@ -360,7 +373,9 @@ class TestVaryingTemperature(TestCase):
         )
 
         test = TestCase()
-        test.assertTrue(heat_problem.solver_stats["success"], msg="Optimisation did not succeed")
+        test.assertTrue(
+            heat_problem.solver_stats["success"], msg="Optimisation did not succeed"
+        )
 
         # optimization with two choices in secondary supply temp 70 and 90 deg
         # lowest temperature should be selected because of heat minimization and lower T has
@@ -368,7 +383,9 @@ class TestVaryingTemperature(TestCase):
         results = heat_problem.extract_results()
 
         # Check that the lowest temperature (70.0) is the outputted temperature
-        np.testing.assert_allclose(results[f"{7212673879469902607010}_temperature"], 70.0)
+        np.testing.assert_allclose(
+            results[f"{7212673879469902607010}_temperature"], 70.0
+        )
         # Verify that also the integer is correctly set
         np.testing.assert_allclose(results[f"{7212673879469902607010}_70.0"], 1.0)
         np.testing.assert_allclose(results[f"{7212673879469902607010}_90.0"], 0.0)
@@ -376,7 +393,6 @@ class TestVaryingTemperature(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
-        
 
     def test_heat_pump_varying_temperature(self):
         """
@@ -404,7 +420,6 @@ class TestVaryingTemperature(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
-        
 
         expected_cop = (
             parameters["GenericConversion_3d3f.efficiency"]
@@ -466,4 +481,7 @@ if __name__ == "__main__":
     a.test_hex_temperature_variation_disablehex()
     a.test_hex_temperature_variation_secondary()
     a.test_heat_pump_varying_temperature()
-    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
+    print(
+        "Execution time: "
+        + time.strftime("%M:%S", time.gmtime(time.time() - start_time))
+    )

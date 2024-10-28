@@ -8,7 +8,11 @@ from mesido.util import run_esdl_mesido_optimization
 import numpy as np
 
 
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
+from utils_tests import (
+    demand_matching_test,
+    energy_conservation_test,
+    heat_to_discharge_test,
+)
 
 
 class TestHEX(TestCase):
@@ -184,9 +188,10 @@ class TestHP(TestCase):
         heat_to_discharge_test(solution, results)
         energy_conservation_test(solution, results)
 
-
         # We check the energy converted betweeen the commodities
-        np.testing.assert_allclose(power_elec * parameters["GenericConversion_3d3f.COP"], sec_heat)
+        np.testing.assert_allclose(
+            power_elec * parameters["GenericConversion_3d3f.COP"], sec_heat
+        )
         np.testing.assert_allclose(power_elec + prim_heat, sec_heat)
 
 

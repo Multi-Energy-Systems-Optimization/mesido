@@ -33,7 +33,9 @@ class ModelQTH(_Model):
         self.t_supply_nom = 75.0
         self.t_return_nom = 45.0
 
-        supply_return_modifiers = dict(T_supply=self.t_supply_nom, T_return=self.t_return_nom)
+        supply_return_modifiers = dict(
+            T_supply=self.t_supply_nom, T_return=self.t_return_nom
+        )
 
         # Heatsource min en max in [W]
         self.add_variable(
@@ -397,8 +399,12 @@ class ModelQTH(_Model):
         self.add_variable(ControlInput, "Heat_source2", value=self.source2.Heat_source)
 
         self.add_variable(Variable, "Heat_demand7_opt", value=self.demand7.Heat_demand)
-        self.add_variable(Variable, "Heat_demand91_opt", value=self.demand91.Heat_demand)
-        self.add_variable(Variable, "Heat_demand92_opt", value=self.demand92.Heat_demand)
+        self.add_variable(
+            Variable, "Heat_demand91_opt", value=self.demand91.Heat_demand
+        )
+        self.add_variable(
+            Variable, "Heat_demand92_opt", value=self.demand92.Heat_demand
+        )
 
         # Connect Model Elements
 

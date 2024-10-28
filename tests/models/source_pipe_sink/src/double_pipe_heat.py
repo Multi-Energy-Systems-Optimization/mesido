@@ -14,7 +14,9 @@ from rtctools.optimization.goal_programming_mixin import Goal
 from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
 )
-from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
+from rtctools.optimization.single_pass_goal_programming_mixin import (
+    SinglePassGoalProgrammingMixin,
+)
 from rtctools.util import run_optimization_problem
 
 
@@ -24,8 +26,12 @@ class TargetDemandGoal(Goal):
     order = 2
 
     def __init__(self, optimization_problem):
-        self.target_min = optimization_problem.get_timeseries("demand.target_heat_demand")
-        self.target_max = optimization_problem.get_timeseries("demand.target_heat_demand")
+        self.target_min = optimization_problem.get_timeseries(
+            "demand.target_heat_demand"
+        )
+        self.target_max = optimization_problem.get_timeseries(
+            "demand.target_heat_demand"
+        )
         self.function_range = (0.0, 2e5)
         self.function_nominal = 1e5
 
@@ -43,7 +49,9 @@ class MinimizeProduction(Goal):
 
     def function(self, optimization_problem, ensemble_member):
         sum = 0
-        for source in optimization_problem.energy_system_components.get("heat_source", []):
+        for source in optimization_problem.energy_system_components.get(
+            "heat_source", []
+        ):
             sum = optimization_problem.state(f"{source}.Heat_source")
         return sum
 
@@ -72,9 +80,9 @@ class SourcePipeSink(
 class HeatProblemHydraulic(ESDLAdditionalVarsMixin, SourcePipeSink):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.heat_network_settings["head_loss_option"] = (
-            HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
-        )
+        self.heat_network_settings[
+            "head_loss_option"
+        ] = HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
         self.heat_network_settings["n_linearization_lines"] = 5
         self.heat_network_settings["minimize_head_losses"] = True
 

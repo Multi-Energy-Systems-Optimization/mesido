@@ -30,7 +30,6 @@ class TestSetpointConstraints(TestCase):
 
         base_folder = Path(run_3a.__file__).resolve().parent.parent
 
-
         _heat_problem_3 = run_esdl_mesido_optimization(
             HeatProblemSetPointConstraints,
             base_folder=base_folder,
@@ -84,7 +83,9 @@ class TestSetpointConstraints(TestCase):
             results_3["GeothermalSource_b702.Heat_source"][2:]
             - results_3["GeothermalSource_b702.Heat_source"][1:-1]
         )
-        np.testing.assert_array_less((a >= 1.0).sum(), 2)  # the 1.0 value is a manual threshold
+        np.testing.assert_array_less(
+            (a >= 1.0).sum(), 2
+        )  # the 1.0 value is a manual threshold
 
         # Check that solution has no setpoint change
         np.testing.assert_array_less(
@@ -110,7 +111,9 @@ class TestSetpointConstraints(TestCase):
 
         """
         import models.test_case_small_network_with_ates.src.run_ates as run_ates
-        from models.test_case_small_network_with_ates.src.run_ates import HeatProblemSetPoints
+        from models.test_case_small_network_with_ates.src.run_ates import (
+            HeatProblemSetPoints,
+        )
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
@@ -125,7 +128,8 @@ class TestSetpointConstraints(TestCase):
         )
         results = solution.extract_results()
         check = abs(
-            results["HeatProducer_1.Heat_source"][2:] - results["HeatProducer_1.Heat_source"][1:-1]
+            results["HeatProducer_1.Heat_source"][2:]
+            - results["HeatProducer_1.Heat_source"][1:-1]
         )
         # check if there are less than 3 switches, a solution might be found with less
         # than 2 switches
@@ -146,7 +150,9 @@ class TestSetpointConstraints(TestCase):
 
         """
         import models.test_case_small_network_with_ates.src.run_ates as run_ates
-        from models.test_case_small_network_with_ates.src.run_ates import HeatProblemSetPoints
+        from models.test_case_small_network_with_ates.src.run_ates import (
+            HeatProblemSetPoints,
+        )
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
@@ -157,11 +163,14 @@ class TestSetpointConstraints(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
-            **{"timed_setpoints": {"HeatProducer_1": (24 * 365, 0)}},  # not change at all - works
+            **{
+                "timed_setpoints": {"HeatProducer_1": (24 * 365, 0)}
+            },  # not change at all - works
         )
         results = solution.extract_results()
         check = abs(
-            results["HeatProducer_1.Heat_source"][2:] - results["HeatProducer_1.Heat_source"][1:-1]
+            results["HeatProducer_1.Heat_source"][2:]
+            - results["HeatProducer_1.Heat_source"][1:-1]
         )
         np.testing.assert_array_less(check, 1.0e-5)
 
@@ -181,7 +190,9 @@ class TestSetpointConstraints(TestCase):
 
         """
         import models.test_case_small_network_with_ates.src.run_ates as run_ates
-        from models.test_case_small_network_with_ates.src.run_ates import HeatProblemSetPoints
+        from models.test_case_small_network_with_ates.src.run_ates import (
+            HeatProblemSetPoints,
+        )
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
@@ -203,10 +214,12 @@ class TestSetpointConstraints(TestCase):
             ires = [idx + 2 for idx, val in enumerate(diff) if abs(val) > 1e-6]
             for ii in range(1, len(ires)):
                 check = (
-                    solution.get_timeseries("HeatingDemand_1.target_heat_demand", 0).times[ires[ii]]
-                    - solution.get_timeseries("HeatingDemand_1.target_heat_demand", 0).times[
-                        ires[ii - 1]
-                    ]
+                    solution.get_timeseries(
+                        "HeatingDemand_1.target_heat_demand", 0
+                    ).times[ires[ii]]
+                    - solution.get_timeseries(
+                        "HeatingDemand_1.target_heat_demand", 0
+                    ).times[ires[ii - 1]]
                 )
                 # The following checks should be true because the changes setpoint changes occur at
                 # the during 120hr time intervals
@@ -215,7 +228,9 @@ class TestSetpointConstraints(TestCase):
                 elif ihrs == 120:
                     np.testing.assert_equal(np.less_equal(ihrs * 3600, check), True)
                 elif ihrs == 121:
-                    np.testing.assert_equal(np.less_equal((ihrs - 1) * 3600, check), True)
+                    np.testing.assert_equal(
+                        np.less_equal((ihrs - 1) * 3600, check), True
+                    )
                 else:
                     exit("ii out of range")
 
@@ -230,4 +245,7 @@ if __name__ == "__main__":
     a.test_run_small_ates_timed_setpoints_0_changes()
     a.test_run_small_ates_timed_setpoints_multiple_constraints()
 
-    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
+    print(
+        "Execution time: "
+        + time.strftime("%M:%S", time.gmtime(time.time() - start_time))
+    )

@@ -8,11 +8,6 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
-from utils_test_scaling import (
-    check_scaling,
-    create_problem_with_debug_info,
-)
-
 
 class TestEndScenarioSizingAnnualized(TestCase):
     """
@@ -90,7 +85,8 @@ class TestEndScenarioSizingAnnualized(TestCase):
         # # Assertion 1: Model for annualized objective value with discount=0 and
         # # technical life 1 year matches the objective value of the non-discounted problem
         np.testing.assert_allclose(
-            solution__annualized_modified_param.objective_value, solution_run_ates.objective_value
+            solution__annualized_modified_param.objective_value,
+            solution_run_ates.objective_value,
         )
 
         # Assertion 2: Undiscounted problem has a lower objective value than the discocunted one
@@ -110,10 +106,12 @@ class TestEndScenarioSizingAnnualized(TestCase):
                 + results[f"HeatProducer_{i}__installation_cost"]
             )
             # These are the same parameters used by the model from the ESDL file:
-            asset_id = solution_annualized_cost.esdl_asset_name_to_id_map[f"HeatProducer_{i}"]
-            years_asset_life = solution_annualized_cost.esdl_assets[asset_id].attributes[
-                "technicalLifetime"
+            asset_id = solution_annualized_cost.esdl_asset_name_to_id_map[
+                f"HeatProducer_{i}"
             ]
+            years_asset_life = solution_annualized_cost.esdl_assets[
+                asset_id
+            ].attributes["technicalLifetime"]
             discount_rate = (
                 solution_annualized_cost.esdl_assets[asset_id]
                 .attributes["costInformation"]
@@ -138,11 +136,13 @@ class TestEndScenarioSizingAnnualized(TestCase):
         assert np.isclose(calculate_annuity_factor(0.1, 1), 1.1, atol=1e-14, rtol=0.0)
 
 
-
 if __name__ == "__main__":
     import time
 
     start_time = time.time()
     a = TestEndScenarioSizingAnnualized()
     a.test_end_scenario_sizing_annualized()
-    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
+    print(
+        "Execution time: "
+        + time.strftime("%M:%S", time.gmtime(time.time() - start_time))
+    )

@@ -14,7 +14,11 @@ from utils_test_scaling import (
     create_problem_with_debug_info,
 )
 
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
+from utils_tests import (
+    demand_matching_test,
+    energy_conservation_test,
+    heat_to_discharge_test,
+)
 
 
 class TestNetworkSimulator(TestCase):
@@ -84,4 +88,7 @@ if __name__ == "__main__":
     start_time = time.time()
     a = TestNetworkSimulator()
     a.test_network_simulator()
-    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
+    print(
+        "Execution time: "
+        + time.strftime("%M:%S", time.gmtime(time.time() - start_time))
+    )

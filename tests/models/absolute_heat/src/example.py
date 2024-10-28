@@ -14,7 +14,9 @@ from rtctools.optimization.goal_programming_mixin_base import Goal
 from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
 )
-from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
+from rtctools.optimization.single_pass_goal_programming_mixin import (
+    SinglePassGoalProgrammingMixin,
+)
 from rtctools.optimization.timeseries import Timeseries
 from rtctools.util import run_optimization_problem
 
@@ -48,7 +50,9 @@ class TargetDemandGoal(Goal):
         self.function_nominal = np.median(target.values)
 
     def function(
-        self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
+        self,
+        optimization_problem: CollocatedIntegratedOptimizationProblem,
+        ensemble_member: int,
     ) -> ca.MX:
         """
         This function returns the state to which will be tried to match to the target.
@@ -89,7 +93,9 @@ class MinimizeSourcesHeatGoal(Goal):
         self.function_nominal = 1e6
 
     def function(
-        self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
+        self,
+        optimization_problem: CollocatedIntegratedOptimizationProblem,
+        ensemble_member: int,
     ) -> ca.MX:
         """
         This function returns the state variable to which should to be matched to the target

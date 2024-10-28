@@ -34,7 +34,9 @@ class TestMILPbus(TestCase):
 
         """
         import models.unit_cases_electricity.bus_networks.src.example as example
-        from models.unit_cases_electricity.bus_networks.src.example import ElectricityProblem
+        from models.unit_cases_electricity.bus_networks.src.example import (
+            ElectricityProblem,
+        )
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
@@ -69,7 +71,8 @@ class TestMILPbus(TestCase):
 
         # check if minimum voltage is reached
         np.testing.assert_array_less(
-            solution.parameters(0)["ElectricityDemand_e527.min_voltage"] - 1.0e-3, v_demand
+            solution.parameters(0)["ElectricityDemand_e527.min_voltage"] - 1.0e-3,
+            v_demand,
         )
         # Check that current is high enough to carry the power
         np.testing.assert_array_less(p_demand - 1e-12, v_demand * i_demand)

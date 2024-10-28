@@ -26,7 +26,9 @@ class MockInfluxDBProfileReader(InfluxDBProfileReader):
             date_parser=lambda x: pd.to_datetime(x).tz_convert(datetime.timezone.utc),
         )
 
-    def _load_profile_timeseries_from_database(self, profile: esdl.InfluxDBProfile) -> pd.Series:
+    def _load_profile_timeseries_from_database(
+        self, profile: esdl.InfluxDBProfile
+    ) -> pd.Series:
         return self._loaded_profiles[profile.id]
 
 
@@ -46,7 +48,9 @@ class TestPotentialErros(unittest.TestCase):
         model_folder = base_folder / "model"
         input_folder = base_folder / "input"
 
-        logger, logs_list = create_log_list_scaling("WarmingUP-MPC", level=logging.ERROR)
+        logger, logs_list = create_log_list_scaling(
+            "WarmingUP-MPC", level=logging.ERROR
+        )
 
         with self.assertRaises(SystemExit) as cm:
             problem = EndScenarioSizingStaged(
@@ -64,22 +68,26 @@ class TestPotentialErros(unittest.TestCase):
 
         # Check that the heat demand had an error
         np.testing.assert_equal(
-            logs_list[0].msg == "HeatingDemand_2ab9: The installed capacity of 6.0MW should be"
+            logs_list[0].msg
+            == "HeatingDemand_2ab9: The installed capacity of 6.0MW should be"
             " larger than the maximum of the heat demand profile 5175.717MW",
             True,
         )
         np.testing.assert_equal(
-            logs_list[1].msg == "HeatingDemand_506c: The installed capacity of 2.0MW should be"
+            logs_list[1].msg
+            == "HeatingDemand_506c: The installed capacity of 2.0MW should be"
             " larger than the maximum of the heat demand profile 1957.931MW",
             True,
         )
         np.testing.assert_equal(
-            logs_list[2].msg == "HeatingDemand_6662: The installed capacity of 2.0MW should be"
+            logs_list[2].msg
+            == "HeatingDemand_6662: The installed capacity of 2.0MW should be"
             " larger than the maximum of the heat demand profile 1957.931MW",
             True,
         )
         np.testing.assert_equal(
-            logs_list[3].msg == "Asset insufficient installed capacity: please increase the"
+            logs_list[3].msg
+            == "Asset insufficient installed capacity: please increase the"
             " installed power or reduce the demand profile peak value of the demand(s) listed.",
             True,
         )
@@ -96,7 +104,6 @@ class TestPotentialErros(unittest.TestCase):
 
 
 class TestProfileLoading(unittest.TestCase):
-
     def test_loading_from_influx(self):
         """
         This test checks if loading an ESDL with influxDB profiles works. Since
@@ -126,11 +133,19 @@ class TestProfileLoading(unittest.TestCase):
         )
         problem.pre()
 
-        np.testing.assert_equal(problem.io.reference_datetime.tzinfo, datetime.timezone.utc)
+        np.testing.assert_equal(
+            problem.io.reference_datetime.tzinfo, datetime.timezone.utc
+        )
 
         # the three demands in the test ESDL
-        for demand_name in ["HeatingDemand_2ab9", "HeatingDemand_6662", "HeatingDemand_506c"]:
-            profile_values = problem.get_timeseries(f"{demand_name}.target_heat_demand").values
+        for demand_name in [
+            "HeatingDemand_2ab9",
+            "HeatingDemand_6662",
+            "HeatingDemand_506c",
+        ]:
+            profile_values = problem.get_timeseries(
+                f"{demand_name}.target_heat_demand"
+            ).values
             self.assertEqual(profile_values[0], profile_values[1])
             self.assertEqual(len(profile_values), 26)
 
@@ -145,7 +160,9 @@ class TestProfileLoading(unittest.TestCase):
         default UTC timezone has been set.
         """
         import models.unit_cases_electricity.electrolyzer.src.example as example
-        from models.unit_cases_electricity.electrolyzer.src.example import MILPProblemInequality
+        from models.unit_cases_electricity.electrolyzer.src.example import (
+            MILPProblemInequality,
+        )
 
         base_folder = Path(example.__file__).resolve().parent.parent
         model_folder = base_folder / "model"
@@ -161,7 +178,9 @@ class TestProfileLoading(unittest.TestCase):
         )
         problem.pre()
 
-        np.testing.assert_equal(problem.io.reference_datetime.tzinfo, datetime.timezone.utc)
+        np.testing.assert_equal(
+            problem.io.reference_datetime.tzinfo, datetime.timezone.utc
+        )
 
         expected_array = np.array([1.0e8] * 3)
         np.testing.assert_equal(
@@ -170,7 +189,9 @@ class TestProfileLoading(unittest.TestCase):
         )
 
         expected_array = np.array([1.0] * 3)
-        np.testing.assert_equal(expected_array, problem.get_timeseries("elec.price_profile").values)
+        np.testing.assert_equal(
+            expected_array, problem.get_timeseries("elec.price_profile").values
+        )
 
         expected_array = np.array([1.0e6] * 3)
         np.testing.assert_equal(
@@ -200,7 +221,9 @@ class TestProfileLoading(unittest.TestCase):
         )
         problem.pre()
 
-        np.testing.assert_equal(problem.io.reference_datetime.tzinfo, datetime.timezone.utc)
+        np.testing.assert_equal(
+            problem.io.reference_datetime.tzinfo, datetime.timezone.utc
+        )
 
         expected_array = np.array([1.5e5] * 16 + [1.0e5] * 13 + [0.5e5] * 16)
         np.testing.assert_equal(
@@ -216,7 +239,9 @@ class TestProfileLoading(unittest.TestCase):
         if the loaded profiles match those specified in the csv.
         """
         import models.unit_cases_electricity.electrolyzer.src.example as example
-        from models.unit_cases_electricity.electrolyzer.src.example import MILPProblemInequality
+        from models.unit_cases_electricity.electrolyzer.src.example import (
+            MILPProblemInequality,
+        )
 
         base_folder = Path(example.__file__).resolve().parent.parent
         model_folder = base_folder / "model"
@@ -232,7 +257,9 @@ class TestProfileLoading(unittest.TestCase):
         )
         problem.pre()
 
-        np.testing.assert_equal(problem.io.reference_datetime.tzinfo, datetime.timezone.utc)
+        np.testing.assert_equal(
+            problem.io.reference_datetime.tzinfo, datetime.timezone.utc
+        )
 
         expected_array = np.array([1.0e8] * 3)
         np.testing.assert_equal(
@@ -241,7 +268,9 @@ class TestProfileLoading(unittest.TestCase):
         )
 
         expected_array = np.array([1.0] * 3)
-        np.testing.assert_equal(expected_array, problem.get_timeseries("elec.price_profile").values)
+        np.testing.assert_equal(
+            expected_array, problem.get_timeseries("elec.price_profile").values
+        )
 
         expected_array = np.array([1.0e6] * 3)
         np.testing.assert_equal(

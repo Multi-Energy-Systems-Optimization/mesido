@@ -7,7 +7,11 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
+from utils_tests import (
+    demand_matching_test,
+    energy_conservation_test,
+    heat_to_discharge_test,
+)
 
 
 class TestLogicalLinks(TestCase):
@@ -22,7 +26,9 @@ class TestLogicalLinks(TestCase):
 
         """
         import models.unit_cases_electricity.bus_networks.src.example as example
-        from models.unit_cases_electricity.bus_networks.src.example import ElectricityProblem
+        from models.unit_cases_electricity.bus_networks.src.example import (
+            ElectricityProblem,
+        )
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
@@ -54,7 +60,9 @@ class TestLogicalLinks(TestCase):
 
         """
         import models.unit_cases_gas.multi_demand_source_node.src.run_test as example
-        from models.unit_cases_gas.multi_demand_source_node.src.run_test import GasProblem
+        from models.unit_cases_gas.multi_demand_source_node.src.run_test import (
+            GasProblem,
+        )
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
@@ -84,7 +92,9 @@ class TestLogicalLinks(TestCase):
         """
 
         import models.unit_cases_gas.source_pipe_split_sink.src.run_source_sink as example
-        from models.unit_cases_gas.source_pipe_split_sink.src.run_source_sink import GasProblem
+        from models.unit_cases_gas.source_pipe_split_sink.src.run_source_sink import (
+            GasProblem,
+        )
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
@@ -112,7 +122,9 @@ class TestLogicalLinks(TestCase):
             for i_conn, (_pipe, orientation) in connected_pipes.items():
                 discharge_sum += results[f"{node}.GasConn[{i_conn+1}].Q"] * orientation
                 np.testing.assert_allclose(
-                    results[f"{node}.GasConn[{i_conn+1}].H"], results[f"{node}.H"], atol=1.0e-6
+                    results[f"{node}.GasConn[{i_conn+1}].H"],
+                    results[f"{node}.H"],
+                    atol=1.0e-6,
                 )
             np.testing.assert_allclose(discharge_sum, 0.0, atol=1.0e-12)
 
@@ -151,7 +163,9 @@ class TestLogicalLinks(TestCase):
             for i_conn, (_pipe, orientation) in connected_pipes.items():
                 discharge_sum += results[f"{node}.HeatConn[{i_conn+1}].Q"] * orientation
                 np.testing.assert_allclose(
-                    results[f"{node}.HeatConn[{i_conn+1}].H"], results[f"{node}.H"], atol=1.0e-6
+                    results[f"{node}.HeatConn[{i_conn+1}].H"],
+                    results[f"{node}.H"],
+                    atol=1.0e-6,
                 )
             np.testing.assert_allclose(discharge_sum, 0.0, atol=1.0e-12)
 

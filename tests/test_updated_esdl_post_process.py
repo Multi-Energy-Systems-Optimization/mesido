@@ -15,7 +15,6 @@ import numpy as np
 
 
 class TestUpdatedESDL(TestCase):
-
     def test_updated_esdl(self):
         """
         Check that the updated ESDL resulting from the optmizer, is correct by using the PoCTutorial
@@ -46,7 +45,9 @@ class TestUpdatedESDL(TestCase):
         import examples.PoCTutorial.src.run_grow_tutorial
 
         base_folder = (
-            Path(examples.PoCTutorial.src.run_grow_tutorial.__file__).resolve().parent.parent
+            Path(examples.PoCTutorial.src.run_grow_tutorial.__file__)
+            .resolve()
+            .parent.parent
         )
         model_folder = base_folder / "model"
         input_folder = base_folder / "input"
@@ -62,14 +63,23 @@ class TestUpdatedESDL(TestCase):
 
         # Load in optimized esdl in the form of esdl string created by MESIDO
         esh = EnergySystemHandler()
-        file = os.path.join(base_folder, "model", "PoC Tutorial_GrowOptimized_esdl_string.esdl")
+        file = os.path.join(
+            base_folder, "model", "PoC Tutorial_GrowOptimized_esdl_string.esdl"
+        )
         optimized_energy_system_esdl_string: esdl.EnergySystem = esh.load_file(file)
 
         # Load in optimized esdl in the form of the actual optimized esdl file created by MESIDO
-        esdl_path = os.path.join(base_folder, "model", "PoC Tutorial_GrowOptimized.esdl")
-        optimized_energy_system = problem._ESDLMixin__energy_system_handler.load_file(esdl_path)
+        esdl_path = os.path.join(
+            base_folder, "model", "PoC Tutorial_GrowOptimized.esdl"
+        )
+        optimized_energy_system = problem._ESDLMixin__energy_system_handler.load_file(
+            esdl_path
+        )
 
-        optimized_energy_systems = [optimized_energy_system_esdl_string, optimized_energy_system]
+        optimized_energy_systems = [
+            optimized_energy_system_esdl_string,
+            optimized_energy_system,
+        ]
 
         for energy_system in optimized_energy_systems:
             # Test KPIs in optimized ESDL
@@ -95,7 +105,8 @@ class TestUpdatedESDL(TestCase):
             all_high_level_kpis = high_level_kpis_euro + high_level_kpis_wh
 
             np.testing.assert_allclose(
-                len(energy_system.instance[0].area.KPIs.kpi), number_of_kpis_top_level_in_esdl
+                len(energy_system.instance[0].area.KPIs.kpi),
+                number_of_kpis_top_level_in_esdl,
             )
             np.testing.assert_allclose(
                 len(energy_system.instance[0].area.KPIs.kpi), len(all_high_level_kpis)
@@ -150,12 +161,16 @@ class TestUpdatedESDL(TestCase):
                 )
                 if kpi_name in high_level_kpis_euro:
                     np.testing.assert_array_equal(
-                        energy_system.instance[0].area.KPIs.kpi[ii].quantityAndUnit.unit.name,
+                        energy_system.instance[0]
+                        .area.KPIs.kpi[ii]
+                        .quantityAndUnit.unit.name,
                         "EURO",
                     )
                 elif kpi_name in high_level_kpis_wh:
                     np.testing.assert_array_equal(
-                        energy_system.instance[0].area.KPIs.kpi[ii].quantityAndUnit.unit.name,
+                        energy_system.instance[0]
+                        .area.KPIs.kpi[ii]
+                        .quantityAndUnit.unit.name,
                         "WATTHOUR",
                     )
                 else:
@@ -164,10 +179,18 @@ class TestUpdatedESDL(TestCase):
                 # Check optim time horizon vs yearly cost when the lifetime value is
                 # 15 years
                 for il in range(len(compare_yearly_lifetime_kpis["kpi_name_list"])):
-
                     if kpi_name in compare_yearly_lifetime_kpis["kpi_name_list"][il]:
-                        compare_yearly_lifetime_kpis["index_high_level_cost_list"][il].append(ii)
-                        if len(compare_yearly_lifetime_kpis["index_high_level_cost_list"][il]) == 2:
+                        compare_yearly_lifetime_kpis["index_high_level_cost_list"][
+                            il
+                        ].append(ii)
+                        if (
+                            len(
+                                compare_yearly_lifetime_kpis[
+                                    "index_high_level_cost_list"
+                                ][il]
+                            )
+                            == 2
+                        ):
                             for iitem in range(
                                 len(
                                     energy_system.instance[0]
@@ -178,15 +201,16 @@ class TestUpdatedESDL(TestCase):
                                 if (
                                     energy_system.instance[0]
                                     .area.KPIs.kpi[
-                                        compare_yearly_lifetime_kpis["index_high_level_cost_list"][
-                                            il
-                                        ][0]
+                                        compare_yearly_lifetime_kpis[
+                                            "index_high_level_cost_list"
+                                        ][il][0]
                                     ]
                                     .distribution.stringItem.items[iitem]
                                     .label
-                                    in compare_yearly_lifetime_kpis["kpi_label_list"][il]
+                                    in compare_yearly_lifetime_kpis["kpi_label_list"][
+                                        il
+                                    ]
                                 ):
-
                                     max_value = max(
                                         energy_system.instance[0]
                                         .area.KPIs.kpi[
@@ -224,11 +248,14 @@ class TestUpdatedESDL(TestCase):
                                         .value,
                                     )
                                     # Lifetime of 15 years and the optim time horizon is 30 years
-                                    np.testing.assert_allclose(min_value * 15.0 * 2.0, max_value)
+                                    np.testing.assert_allclose(
+                                        min_value * 15.0 * 2.0, max_value
+                                    )
             # make ssure that all the items in kpi_name_list was checked
             for il in range(len(compare_yearly_lifetime_kpis["kpi_name_list"])):
                 np.testing.assert_equal(
-                    len(compare_yearly_lifetime_kpis["index_high_level_cost_list"][il]), 2
+                    len(compare_yearly_lifetime_kpis["index_high_level_cost_list"][il]),
+                    2,
                 )
 
             # Check the asset quantity
@@ -243,7 +270,11 @@ class TestUpdatedESDL(TestCase):
             # - asset aggregation count
             # - number of ports
             # - number of connection to a port
-            asset_to_be_deleted = ["ResidualHeatSource_76f0", "Pipe_8fa5_ret", "Pipe_8fa5"]
+            asset_to_be_deleted = [
+                "ResidualHeatSource_76f0",
+                "Pipe_8fa5_ret",
+                "Pipe_8fa5",
+            ]
             for ii in range(len(energy_system.instance[0].area.asset)):
                 asset_name = energy_system.instance[0].area.asset[ii].name
                 # Existance of asset and its state
@@ -253,22 +284,33 @@ class TestUpdatedESDL(TestCase):
                     err_msg=f"Asset name {asset_name} was not expected in the ESDL",
                 )
                 np.testing.assert_array_equal(
-                    energy_system.instance[0].area.asset[ii].state.name == "ENABLED", True
+                    energy_system.instance[0].area.asset[ii].state.name == "ENABLED",
+                    True,
                 )
 
                 # Check pipe diameter
-                if len(fnmatch.filter([energy_system.instance[0].area.asset[ii].id], "Pipe*")) == 1:
+                if (
+                    len(
+                        fnmatch.filter(
+                            [energy_system.instance[0].area.asset[ii].id], "Pipe*"
+                        )
+                    )
+                    == 1
+                ):
                     if asset_name in ["Pipe1", "Pipe1_ret"]:
                         np.testing.assert_array_equal(
-                            energy_system.instance[0].area.asset[ii].diameter.name, "DN250"
+                            energy_system.instance[0].area.asset[ii].diameter.name,
+                            "DN250",
                         )  # original pipe DN400 being sized
                     elif asset_name in ["Pipe4", "Pipe4_ret"]:
                         np.testing.assert_array_equal(
-                            energy_system.instance[0].area.asset[ii].diameter.name, "DN200"
+                            energy_system.instance[0].area.asset[ii].diameter.name,
+                            "DN200",
                         )  # original pipe DN900 being sized
                     elif asset_name not in ["Pipe5", "Pipe5_ret"]:
                         np.testing.assert_array_equal(
-                            energy_system.instance[0].area.asset[ii].diameter.name, "DN400"
+                            energy_system.instance[0].area.asset[ii].diameter.name,
+                            "DN400",
                         )  # pipe DN was not sized and should be the same as specified in the ESDL
                     else:
                         np.testing.assert_array_equal(
@@ -289,8 +331,13 @@ class TestUpdatedESDL(TestCase):
                     )
                     # Check the number of connection to a port
                     energy_system.instance[0].area.asset[ii].port[1].name
-                    for iport in range(len(energy_system.instance[0].area.asset[ii].port)):
-                        if energy_system.instance[0].area.asset[ii].port[iport].name == "In":
+                    for iport in range(
+                        len(energy_system.instance[0].area.asset[ii].port)
+                    ):
+                        if (
+                            energy_system.instance[0].area.asset[ii].port[iport].name
+                            == "In"
+                        ):
                             np.testing.assert_array_equal(
                                 len(
                                     energy_system.instance[0]
@@ -322,4 +369,7 @@ if __name__ == "__main__":
     a = TestUpdatedESDL()
     a.test_updated_esdl()
 
-    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
+    print(
+        "Execution time: "
+        + time.strftime("%M:%S", time.gmtime(time.time() - start_time))
+    )

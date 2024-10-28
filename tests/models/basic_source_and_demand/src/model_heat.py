@@ -34,7 +34,10 @@ class Model(_Model):
         )
 
         self.add_variable(
-            HeatDemand, "demand", HeatIn=dict(Heat=dict(max=5e5)), **supply_return_modifiers
+            HeatDemand,
+            "demand",
+            HeatIn=dict(Heat=dict(max=5e5)),
+            **supply_return_modifiers,
         )
 
         self.add_variable(

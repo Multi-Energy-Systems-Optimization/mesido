@@ -27,7 +27,9 @@ class TestElectrolyzer(TestCase):
         - The pipe head loss constraint for a hydrogen network
         """
         import models.unit_cases_electricity.electrolyzer.src.example as example
-        from models.unit_cases_electricity.electrolyzer.src.example import MILPProblemInequality
+        from models.unit_cases_electricity.electrolyzer.src.example import (
+            MILPProblemInequality,
+        )
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
@@ -59,7 +61,9 @@ class TestElectrolyzer(TestCase):
         # occours in the calculation of the gas kinematic viscosity.
 
         # - Check head loss contraint
-        v_inspect = results["Pipe_6ba6.GasOut.Q"] / solution.parameters(0)["Pipe_6ba6.area"]
+        v_inspect = (
+            results["Pipe_6ba6.GasOut.Q"] / solution.parameters(0)["Pipe_6ba6.area"]
+        )
         head_loss_max = darcy_weisbach.head_loss(
             solution.gas_network_settings["maximum_velocity"],
             solution.parameters(0)["Pipe_6ba6.diameter"],
@@ -71,7 +75,9 @@ class TestElectrolyzer(TestCase):
         )
         for iv in range(len(v_inspect)):
             np.testing.assert_allclose(
-                v_inspect[iv] / solution.gas_network_settings["maximum_velocity"] * head_loss_max,
+                v_inspect[iv]
+                / solution.gas_network_settings["maximum_velocity"]
+                * head_loss_max,
                 2.173724632,
             )
             np.testing.assert_allclose(-results["Pipe_6ba6.dH"][iv], 2.173724632)
@@ -108,15 +114,20 @@ class TestElectrolyzer(TestCase):
         )
         tol = 1.0e-6
         # Check that the electrolyzer only consumes electricity and does not produce.
-        np.testing.assert_array_less(-results["Electrolyzer_fc66.ElectricityIn.Power"], tol)
+        np.testing.assert_array_less(
+            -results["Electrolyzer_fc66.ElectricityIn.Power"], tol
+        )
 
         # Check that windfarm does not produce more than the specified maximum profile
         ub = solution.get_timeseries("WindPark_7f14.maximum_electricity_source").values
-        np.testing.assert_array_less(results["WindPark_7f14.ElectricityOut.Power"], ub + tol)
+        np.testing.assert_array_less(
+            results["WindPark_7f14.ElectricityOut.Power"], ub + tol
+        )
 
         # Check that the wind farm setpoint matches with the production
         np.testing.assert_allclose(
-            results["WindPark_7f14.ElectricityOut.Power"], ub * results["WindPark_7f14__set_point"]
+            results["WindPark_7f14.ElectricityOut.Power"],
+            ub * results["WindPark_7f14__set_point"],
         )
 
         # Checks on the storage
@@ -131,10 +142,12 @@ class TestElectrolyzer(TestCase):
         np.testing.assert_allclose(results["GasStorage_e492.Gas_tank_flow"][0], 0.0)
 
         for cable in solution.energy_system_components.get("electricity_cable", []):
-            ub = solution.esdl_assets[solution.esdl_asset_name_to_id_map[f"{cable}"]].attributes[
-                "capacity"
-            ]
-            np.testing.assert_array_less(results[f"{cable}.ElectricityOut.Power"], ub + tol)
+            ub = solution.esdl_assets[
+                solution.esdl_asset_name_to_id_map[f"{cable}"]
+            ].attributes["capacity"]
+            np.testing.assert_array_less(
+                results[f"{cable}.ElectricityOut.Power"], ub + tol
+            )
             lb = (
                 solution.esdl_assets[solution.esdl_asset_name_to_id_map[f"{cable}"]]
                 .in_ports[0]
@@ -144,7 +157,9 @@ class TestElectrolyzer(TestCase):
             np.testing.assert_array_less(lb - tol, results[f"{cable}.ElectricityOut.V"])
             np.testing.assert_array_less(
                 results[f"{cable}.ElectricityOut.Power"],
-                results[f"{cable}.ElectricityOut.V"] * results[f"{cable}.ElectricityOut.I"] + tol,
+                results[f"{cable}.ElectricityOut.V"]
+                * results[f"{cable}.ElectricityOut.I"]
+                + tol,
             )
 
         # Electrolyser
@@ -160,7 +175,9 @@ class TestElectrolyzer(TestCase):
                 solution.parameters(0)["Electrolyzer_fc66.minimum_load"],
                 0.01 * solution.bounds()["Electrolyzer_fc66.ElectricityIn.Power"][1],
             ),
-            electrical_power_max=solution.bounds()["Electrolyzer_fc66.ElectricityIn.Power"][1],
+            electrical_power_max=solution.bounds()[
+                "Electrolyzer_fc66.ElectricityIn.Power"
+            ][1],
         )
         # TODO: Add test below once the mass flow is coupled to the volumetric flow rate. Currently
         #  the gas network is non-limiting (mass flow not coupled to volumetric flow rate)
@@ -180,7 +197,8 @@ class TestElectrolyzer(TestCase):
         )
         # Check electrolyzer output massflow
         np.testing.assert_allclose(
-            results["Electrolyzer_fc66.Gas_mass_flow_out"], [431.367058, 431.367058, 431.367058]
+            results["Electrolyzer_fc66.Gas_mass_flow_out"],
+            [431.367058, 431.367058, 431.367058],
         )
 
         #  -----------------------------------------------------------------------------------------
@@ -246,7 +264,9 @@ class TestElectrolyzer(TestCase):
 
         """
         import models.unit_cases_electricity.electrolyzer.src.example as example
-        from models.unit_cases_electricity.electrolyzer.src.example import MILPProblemInequality
+        from models.unit_cases_electricity.electrolyzer.src.example import (
+            MILPProblemInequality,
+        )
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
@@ -429,7 +449,9 @@ class TestElectrolyzer(TestCase):
                 solution.parameters(0)["Electrolyzer_fc66.minimum_load"],
                 0.01 * solution.bounds()["Electrolyzer_fc66.ElectricityIn.Power"][1],
             ),
-            electrical_power_max=solution.bounds()["Electrolyzer_fc66.ElectricityIn.Power"][1],
+            electrical_power_max=solution.bounds()[
+                "Electrolyzer_fc66.ElectricityIn.Power"
+            ][1],
         )
         for idx in range(3):
             np.testing.assert_allclose(

@@ -11,7 +11,9 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
 from rtctools.optimization.csv_mixin import CSVMixin
 from rtctools.optimization.goal_programming_mixin import Goal
 from rtctools.optimization.homotopy_mixin import HomotopyMixin
-from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
+from rtctools.optimization.single_pass_goal_programming_mixin import (
+    SinglePassGoalProgrammingMixin,
+)
 from rtctools.util import run_optimization_problem
 
 if __name__ == "__main__":
@@ -26,8 +28,12 @@ class TargetDemandGoal(Goal):
     order = 1
 
     def __init__(self, optimization_problem):
-        self.target_min = optimization_problem.get_timeseries("demand.target_heat_demand")
-        self.target_max = optimization_problem.get_timeseries("demand.target_heat_demand")
+        self.target_min = optimization_problem.get_timeseries(
+            "demand.target_heat_demand"
+        )
+        self.target_max = optimization_problem.get_timeseries(
+            "demand.target_heat_demand"
+        )
         self.function_range = (0.0, 2e5)
         self.function_nominal = 1e5
 

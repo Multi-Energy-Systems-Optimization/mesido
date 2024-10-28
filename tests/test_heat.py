@@ -13,7 +13,11 @@ from utils_test_scaling import (
     create_problem_with_debug_info,
 )
 
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
+from utils_tests import (
+    demand_matching_test,
+    energy_conservation_test,
+    heat_to_discharge_test,
+)
 
 
 class TestHeat(TestCase):
@@ -121,7 +125,9 @@ class TestMinMaxPressureOptions(TestCase):
             parameters = super().parameters(ensemble_member)
             for p in self.energy_system_components["heat_pipe"]:
                 parameters[f"{p}.diameter"] = 0.04
-                parameters[f"{p}.area"] = 0.25 * 3.14159265 * parameters[f"{p}.diameter"] ** 2
+                parameters[f"{p}.area"] = (
+                    0.25 * 3.14159265 * parameters[f"{p}.diameter"] ** 2
+                )
             return parameters
 
         def bounds(self):
@@ -136,9 +142,9 @@ class TestMinMaxPressureOptions(TestCase):
         def energy_system_options(self):
             options = super().energy_system_options()
             assert "pipe_minimum_pressure" in self.heat_network_settings
-            self.heat_network_settings["pipe_minimum_pressure"] = (
-                TestMinMaxPressureOptions.min_pressure
-            )
+            self.heat_network_settings[
+                "pipe_minimum_pressure"
+            ] = TestMinMaxPressureOptions.min_pressure
             return options
 
     class MaxPressure(SmallerPipes):
@@ -151,12 +157,12 @@ class TestMinMaxPressureOptions(TestCase):
     class MinMaxPressure(SmallerPipes):
         def energy_system_options(self):
             options = super().energy_system_options()
-            self.heat_network_settings["pipe_minimum_pressure"] = (
-                TestMinMaxPressureOptions.min_pressure
-            )
-            self.heat_network_settings["pipe_maximum_pressure"] = (
-                TestMinMaxPressureOptions.max_pressure
-            )
+            self.heat_network_settings[
+                "pipe_minimum_pressure"
+            ] = TestMinMaxPressureOptions.min_pressure
+            self.heat_network_settings[
+                "pipe_maximum_pressure"
+            ] = TestMinMaxPressureOptions.max_pressure
             return options
 
     def test_min_max_pressure_options(self):
@@ -227,20 +233,29 @@ class TestMinMaxPressureOptions(TestCase):
         min_, max_ = _get_min_max_pressure(case_min_pressure)
         self.assertGreater(min_, self.min_pressure * 0.99)
         self.assertGreater(max_, self.max_pressure)
-        self.assertAlmostEqual(case_min_pressure.objective_value, base_objective_value, 4)
+        self.assertAlmostEqual(
+            case_min_pressure.objective_value, base_objective_value, 4
+        )
 
         min_, max_ = _get_min_max_pressure(case_max_pressure)
         self.assertLess(min_, self.min_pressure)
         self.assertLess(max_, self.max_pressure * 1.01)
-        self.assertAlmostEqual(case_max_pressure.objective_value, base_objective_value, 4)
+        self.assertAlmostEqual(
+            case_max_pressure.objective_value, base_objective_value, 4
+        )
 
         min_, max_ = _get_min_max_pressure(case_min_max_pressure)
         self.assertGreater(min_, self.min_pressure * 0.99)
         self.assertLess(max_, self.max_pressure * 1.01)
         target = case_default.get_timeseries("demand.target_heat_demand").values
         self.assertLess(
-            np.sum((case_default.extract_results()["demand.Heat_demand"] - target) ** 2),
-            np.sum((case_min_max_pressure.extract_results()["demand.Heat_demand"] - target) ** 2),
+            np.sum(
+                (case_default.extract_results()["demand.Heat_demand"] - target) ** 2
+            ),
+            np.sum(
+                (case_min_max_pressure.extract_results()["demand.Heat_demand"] - target)
+                ** 2
+            ),
         )
 
 
@@ -329,21 +344,25 @@ class TestDisconnectablePipe(TestCase):
         # Sanity check, as we rely on the minimum velocity being strictly
         # larger than zero for the discharge constraint to disconnect the
         # pipe.
-        self.assertGreater(case_connected.heat_network_settings["minimum_velocity"], 0.0)
+        self.assertGreater(
+            case_connected.heat_network_settings["minimum_velocity"], 0.0
+        )
 
         self.assertLess(q_disconnected[1], q_connected[1])
         self.assertAlmostEqual(q_disconnected[1], 0.0, 5)
         np.testing.assert_allclose(results_connected["Pipe1__is_disconnected"], 0.0)
-        np.testing.assert_allclose(results_disconnected["Pipe1__is_disconnected"][1], 1.0)
+        np.testing.assert_allclose(
+            results_disconnected["Pipe1__is_disconnected"][1], 1.0
+        )
 
         np.testing.assert_allclose(q_connected[2:], q_disconnected[2:])
 
     class ModelDisconnectedDarcyWeisbach(ModelDisconnected):
         def energy_system_options(self):
             options = super().energy_system_options()
-            self.heat_network_settings["head_loss_option"] = (
-                HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
-            )
+            self.heat_network_settings[
+                "head_loss_option"
+            ] = HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
             return options
 
     def test_disconnected_pipe_darcy_weisbach(self):

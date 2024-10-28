@@ -10,7 +10,11 @@ from mesido.util import run_esdl_mesido_optimization
 import numpy as np
 
 
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
+from utils_tests import (
+    demand_matching_test,
+    energy_conservation_test,
+    heat_to_discharge_test,
+)
 
 
 class TestPipeDiameterSizingExample(TestCase):
@@ -43,12 +47,13 @@ class TestPipeDiameterSizingExample(TestCase):
         )  # noqa: E402, I100
 
         base_folder = (
-            Path(examples.pipe_diameter_sizing.src.example.__file__).resolve().parent.parent
+            Path(examples.pipe_diameter_sizing.src.example.__file__)
+            .resolve()
+            .parent.parent
         )
 
         del root_folder
         sys.path.pop(1)
-
 
         problem = run_esdl_mesido_optimization(
             PipeDiameterSizingProblem,
@@ -79,10 +84,14 @@ class TestPipeDiameterSizingExample(TestCase):
         pipes_remained = ["Pipe_96bc", "Pipe_51e4", "Pipe_6b39", "Pipe_f9b0"]
         self.assertTrue(
             all(
-                (elem in [k for k, d in diameters.items() if (d == 0.0)] for elem in pipes_remained)
+                (
+                    elem in [k for k, d in diameters.items() if (d == 0.0)]
+                    for elem in pipes_remained
+                )
             )
             or all(
-                elem in [k for k, d in diameters.items() if (d == 0.0)] for elem in pipes_removed
+                elem in [k for k, d in diameters.items() if (d == 0.0)]
+                for elem in pipes_removed
             ),
             "The incorrect 4 pipes have been removed",
         )
@@ -99,7 +108,10 @@ class TestPipeDiameterSizingExample(TestCase):
             ][0]
             np.testing.assert_array_less(
                 results[f"{pipe}.Q"],
-                chosen_pc.maximum_velocity * np.pi * (chosen_pc.inner_diameter / 2.0) ** 2 + 1.0e-6,
+                chosen_pc.maximum_velocity
+                * np.pi
+                * (chosen_pc.inner_diameter / 2.0) ** 2
+                + 1.0e-6,
             )
 
         for pipe in problem.energy_system_components.get("heat_pipe", []):
@@ -121,15 +133,21 @@ class TestPipeDiameterSizingExample(TestCase):
                 )
                 c_v = parameters[f"{pipe}.length"] * ff / (2 * 9.81) / pc.inner_diameter
                 dh_max = c_v * pc.maximum_velocity**2
-                dh_manual = dh_max * results[f"{pipe}.Q"][1:] / pc.area / pc.maximum_velocity
-                np.testing.assert_allclose(-dh_manual, results[f"{pipe}.dH"][1:], atol=1.0e-12)
+                dh_manual = (
+                    dh_max * results[f"{pipe}.Q"][1:] / pc.area / pc.maximum_velocity
+                )
+                np.testing.assert_allclose(
+                    -dh_manual, results[f"{pipe}.dH"][1:], atol=1.0e-12
+                )
 
         # Ensure that the removed pipes do not have predicted hydraulic power values
         hydraulic_power_sum = 0.0
         for pipe in diameters.keys():
             if pipe in pipes_removed:
                 hydraulic_power_sum += sum(abs(results[f"{pipe}.Hydraulic_power"]))
-        self.assertEqual(hydraulic_power_sum, 0.0, "Hydraulic power exists for a removed pipe")
+        self.assertEqual(
+            hydraulic_power_sum, 0.0, "Hydraulic power exists for a removed pipe"
+        )
 
         # Hydraulic power = delta pressure * Q = f(Q^3), where delta pressure = f(Q^2)
         # The linear approximation of the 3rd order function should overestimate the hydraulic
@@ -161,4 +179,7 @@ if __name__ == "__main__":
     start_time = time.time()
     a = TestPipeDiameterSizingExample()
     a.test_half_network_gone()
-    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
+    print(
+        "Execution time: "
+        + time.strftime("%M:%S", time.gmtime(time.time() - start_time))
+    )

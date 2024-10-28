@@ -70,7 +70,9 @@ class HeatProblemTvar(HeatProblem):
         return options
 
     def temperature_carriers(self):
-        return self.esdl_carriers  # geeft terug de carriers met multiple temperature options
+        return (
+            self.esdl_carriers
+        )  # geeft terug de carriers met multiple temperature options
 
     def temperature_regimes(self, carrier):
         temperatures = []
@@ -99,7 +101,9 @@ class HeatProblemTvar(HeatProblem):
                 if carrier_type == "return":
                     number = number + "000"
                 carrier_id_number_mapping = number
-            temperature_regimes = self.temperature_regimes(int(carrier_id_number_mapping))
+            temperature_regimes = self.temperature_regimes(
+                int(carrier_id_number_mapping)
+            )
             if len(temperature_regimes) > 0:
                 for temperature in temperature_regimes:
                     selected_temp_vec = self.state_vector(

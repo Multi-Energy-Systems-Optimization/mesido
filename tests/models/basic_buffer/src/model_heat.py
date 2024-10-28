@@ -66,24 +66,58 @@ class ModelHeat(_Model):
         )
 
         self.add_variable(
-            HeatPipe, "pipe1a_cold", length=170.365, diameter=0.15, **cold_pipe_modifiers
+            HeatPipe,
+            "pipe1a_cold",
+            length=170.365,
+            diameter=0.15,
+            **cold_pipe_modifiers,
         )
         self.add_variable(
-            HeatPipe, "pipe1b_cold", length=309.635, diameter=0.15, **cold_pipe_modifiers
+            HeatPipe,
+            "pipe1b_cold",
+            length=309.635,
+            diameter=0.15,
+            **cold_pipe_modifiers,
         )
-        self.add_variable(HeatPipe, "pipe4a_cold", length=5, diameter=0.15, **cold_pipe_modifiers)
-        self.add_variable(HeatPipe, "pipe4b_cold", length=15, diameter=0.15, **cold_pipe_modifiers)
-        self.add_variable(HeatPipe, "pipe5_cold", length=126, diameter=0.15, **cold_pipe_modifiers)
-        self.add_variable(HeatPipe, "pipe7_cold", length=60, diameter=0.15, **cold_pipe_modifiers)
-        self.add_variable(HeatPipe, "pipe9_cold", length=70, diameter=0.15, **cold_pipe_modifiers)
-        self.add_variable(HeatPipe, "pipe15_cold", length=129, diameter=0.15, **cold_pipe_modifiers)
-        self.add_variable(HeatPipe, "pipe25_cold", length=150, diameter=0.15, **cold_pipe_modifiers)
-        self.add_variable(HeatPipe, "pipe26_cold", length=30, diameter=0.1, **cold_pipe_modifiers)
-        self.add_variable(HeatPipe, "pipe27_cold", length=55, diameter=0.15, **cold_pipe_modifiers)
-        self.add_variable(HeatPipe, "pipe29_cold", length=134, diameter=0.15, **cold_pipe_modifiers)
-        self.add_variable(HeatPipe, "pipe30_cold", length=60, diameter=0.1, **cold_pipe_modifiers)
-        self.add_variable(HeatPipe, "pipe31_cold", length=60, diameter=0.1, **cold_pipe_modifiers)
-        self.add_variable(HeatPipe, "pipe32_cold", length=50, diameter=0.1, **cold_pipe_modifiers)
+        self.add_variable(
+            HeatPipe, "pipe4a_cold", length=5, diameter=0.15, **cold_pipe_modifiers
+        )
+        self.add_variable(
+            HeatPipe, "pipe4b_cold", length=15, diameter=0.15, **cold_pipe_modifiers
+        )
+        self.add_variable(
+            HeatPipe, "pipe5_cold", length=126, diameter=0.15, **cold_pipe_modifiers
+        )
+        self.add_variable(
+            HeatPipe, "pipe7_cold", length=60, diameter=0.15, **cold_pipe_modifiers
+        )
+        self.add_variable(
+            HeatPipe, "pipe9_cold", length=70, diameter=0.15, **cold_pipe_modifiers
+        )
+        self.add_variable(
+            HeatPipe, "pipe15_cold", length=129, diameter=0.15, **cold_pipe_modifiers
+        )
+        self.add_variable(
+            HeatPipe, "pipe25_cold", length=150, diameter=0.15, **cold_pipe_modifiers
+        )
+        self.add_variable(
+            HeatPipe, "pipe26_cold", length=30, diameter=0.1, **cold_pipe_modifiers
+        )
+        self.add_variable(
+            HeatPipe, "pipe27_cold", length=55, diameter=0.15, **cold_pipe_modifiers
+        )
+        self.add_variable(
+            HeatPipe, "pipe29_cold", length=134, diameter=0.15, **cold_pipe_modifiers
+        )
+        self.add_variable(
+            HeatPipe, "pipe30_cold", length=60, diameter=0.1, **cold_pipe_modifiers
+        )
+        self.add_variable(
+            HeatPipe, "pipe31_cold", length=60, diameter=0.1, **cold_pipe_modifiers
+        )
+        self.add_variable(
+            HeatPipe, "pipe32_cold", length=50, diameter=0.1, **cold_pipe_modifiers
+        )
         self.add_variable(
             HeatPipe,
             "pipe52_cold",
@@ -145,19 +179,45 @@ class ModelHeat(_Model):
         self.add_variable(
             HeatPipe, "pipe1b_hot", length=309.635, diameter=0.15, **hot_pipe_modifiers
         )
-        self.add_variable(HeatPipe, "pipe4a_hot", length=5, diameter=0.15, **hot_pipe_modifiers)
-        self.add_variable(HeatPipe, "pipe4b_hot", length=15, diameter=0.15, **hot_pipe_modifiers)
-        self.add_variable(HeatPipe, "pipe5_hot", length=126, diameter=0.15, **hot_pipe_modifiers)
-        self.add_variable(HeatPipe, "pipe7_hot", length=60, diameter=0.15, **hot_pipe_modifiers)
-        self.add_variable(HeatPipe, "pipe9_hot", length=70, diameter=0.15, **hot_pipe_modifiers)
-        self.add_variable(HeatPipe, "pipe15_hot", length=129, diameter=0.15, **hot_pipe_modifiers)
-        self.add_variable(HeatPipe, "pipe25_hot", length=150, diameter=0.15, **hot_pipe_modifiers)
-        self.add_variable(HeatPipe, "pipe26_hot", length=30, diameter=0.1, **hot_pipe_modifiers)
-        self.add_variable(HeatPipe, "pipe27_hot", length=55, diameter=0.15, **hot_pipe_modifiers)
-        self.add_variable(HeatPipe, "pipe29_hot", length=134, diameter=0.15, **hot_pipe_modifiers)
-        self.add_variable(HeatPipe, "pipe30_hot", length=60, diameter=0.1, **hot_pipe_modifiers)
-        self.add_variable(HeatPipe, "pipe31_hot", length=60, diameter=0.1, **hot_pipe_modifiers)
-        self.add_variable(HeatPipe, "pipe32_hot", length=50, diameter=0.1, **hot_pipe_modifiers)
+        self.add_variable(
+            HeatPipe, "pipe4a_hot", length=5, diameter=0.15, **hot_pipe_modifiers
+        )
+        self.add_variable(
+            HeatPipe, "pipe4b_hot", length=15, diameter=0.15, **hot_pipe_modifiers
+        )
+        self.add_variable(
+            HeatPipe, "pipe5_hot", length=126, diameter=0.15, **hot_pipe_modifiers
+        )
+        self.add_variable(
+            HeatPipe, "pipe7_hot", length=60, diameter=0.15, **hot_pipe_modifiers
+        )
+        self.add_variable(
+            HeatPipe, "pipe9_hot", length=70, diameter=0.15, **hot_pipe_modifiers
+        )
+        self.add_variable(
+            HeatPipe, "pipe15_hot", length=129, diameter=0.15, **hot_pipe_modifiers
+        )
+        self.add_variable(
+            HeatPipe, "pipe25_hot", length=150, diameter=0.15, **hot_pipe_modifiers
+        )
+        self.add_variable(
+            HeatPipe, "pipe26_hot", length=30, diameter=0.1, **hot_pipe_modifiers
+        )
+        self.add_variable(
+            HeatPipe, "pipe27_hot", length=55, diameter=0.15, **hot_pipe_modifiers
+        )
+        self.add_variable(
+            HeatPipe, "pipe29_hot", length=134, diameter=0.15, **hot_pipe_modifiers
+        )
+        self.add_variable(
+            HeatPipe, "pipe30_hot", length=60, diameter=0.1, **hot_pipe_modifiers
+        )
+        self.add_variable(
+            HeatPipe, "pipe31_hot", length=60, diameter=0.1, **hot_pipe_modifiers
+        )
+        self.add_variable(
+            HeatPipe, "pipe32_hot", length=50, diameter=0.1, **hot_pipe_modifiers
+        )
         self.add_variable(
             HeatPipe,
             "pipe52_hot",
@@ -187,8 +247,12 @@ class ModelHeat(_Model):
         self.add_variable(ControlInput, "Heat_source2", value=self.source2.Heat_source)
 
         self.add_variable(Variable, "Heat_demand7_opt", value=self.demand7.Heat_demand)
-        self.add_variable(Variable, "Heat_demand91_opt", value=self.demand91.Heat_demand)
-        self.add_variable(Variable, "Heat_demand92_opt", value=self.demand92.Heat_demand)
+        self.add_variable(
+            Variable, "Heat_demand91_opt", value=self.demand91.Heat_demand
+        )
+        self.add_variable(
+            Variable, "Heat_demand92_opt", value=self.demand92.Heat_demand
+        )
 
         # Connect Model Elements
 

@@ -84,11 +84,17 @@ class TestEndScenarioSizing(TestCase):
 
         # Check that indeed the available pipe classes were adapted based on expected flow
         # Pipe connected to a demand
-        assert self.solution.pipe_classes("Pipe2")[0].name == "DN150"  # initially DN->None
-        assert self.solution.pipe_classes("Pipe2")[-1].name == "DN250"  # initially DN450
+        assert (
+            self.solution.pipe_classes("Pipe2")[0].name == "DN150"
+        )  # initially DN->None
+        assert (
+            self.solution.pipe_classes("Pipe2")[-1].name == "DN250"
+        )  # initially DN450
         # Check the minimum velocity setting==default value. Keep the default value hard-coded to
         # prevent future coding bugs
-        np.testing.assert_equal(1.0e-4, self.solution.heat_network_settings["minimum_velocity"])
+        np.testing.assert_equal(
+            1.0e-4, self.solution.heat_network_settings["minimum_velocity"]
+        )
 
         # Check whether cyclic ates constraint is working
         for a in self.solution.energy_system_components.get("ates", []):
@@ -114,9 +120,17 @@ class TestEndScenarioSizing(TestCase):
             *self.solution.energy_system_components.get("heat_pump", []),
             *self.solution.energy_system_components.get("heat_pipe", []),
         ]:
-            obj += self.results[f"{self.solution._asset_fixed_operational_cost_map[asset]}"] * years
             obj += (
-                self.results[f"{self.solution._asset_variable_operational_cost_map[asset]}"] * years
+                self.results[
+                    f"{self.solution._asset_fixed_operational_cost_map[asset]}"
+                ]
+                * years
+            )
+            obj += (
+                self.results[
+                    f"{self.solution._asset_variable_operational_cost_map[asset]}"
+                ]
+                * years
             )
             obj += self.results[f"{self.solution._asset_investment_cost_map[asset]}"]
             obj += self.results[f"{self.solution._asset_installation_cost_map[asset]}"]
@@ -204,8 +218,16 @@ class TestEndScenarioSizing(TestCase):
             *solution_staged.energy_system_components.get("heat_pump", []),
             *solution_staged.energy_system_components.get("heat_pipe", []),
         ]:
-            obj += results[f"{solution_staged._asset_fixed_operational_cost_map[asset]}"] * years
-            obj += results[f"{solution_staged._asset_variable_operational_cost_map[asset]}"] * years
+            obj += (
+                results[f"{solution_staged._asset_fixed_operational_cost_map[asset]}"]
+                * years
+            )
+            obj += (
+                results[
+                    f"{solution_staged._asset_variable_operational_cost_map[asset]}"
+                ]
+                * years
+            )
             obj += results[f"{solution_staged._asset_investment_cost_map[asset]}"]
             obj += results[f"{solution_staged._asset_installation_cost_map[asset]}"]
 
@@ -236,8 +258,12 @@ class TestEndScenarioSizing(TestCase):
         # approaches should be smaller than the difference with the staged and unstaged approach.
         # The staged approach should be quickest in solving. The two unstaged approaches should
         # have comparable computation time.
-        solution_time_unstaged = sum([i[1] for i in solution_unstaged._priorities_output])
-        solution_time_unstaged_2 = sum([i[1] for i in solution_unstaged_2._priorities_output])
+        solution_time_unstaged = sum(
+            [i[1] for i in solution_unstaged._priorities_output]
+        )
+        solution_time_unstaged_2 = sum(
+            [i[1] for i in solution_unstaged_2._priorities_output]
+        )
         solution_time_staged = sum([i[1] for i in solution_staged._priorities_output])
         np.testing.assert_array_less(
             abs(solution_time_unstaged_2 - solution_time_unstaged),
@@ -271,7 +297,6 @@ class TestEndScenarioSizing(TestCase):
                 highs_options = options["highs"] = {}
                 highs_options["mip_rel_gap"] = 0.05
                 return options
-
 
         # This is an optimization done over a full year with timesteps of 5 days and hour timesteps
         # for the peak day
@@ -324,7 +349,6 @@ class TestEndScenarioSizing(TestCase):
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
-
         solution = run_end_scenario_sizing(
             EndScenarioSizingHeadLossStaged,
             base_folder=base_folder,
@@ -338,7 +362,6 @@ class TestEndScenarioSizing(TestCase):
 
         demand_matching_test(solution, results)
 
-
         pipes = solution.energy_system_components.get("heat_pipe")
         for pipe in pipes:
             pipe_diameter = solution.parameters(0)[f"{pipes[0]}.diameter"]
@@ -346,7 +369,9 @@ class TestEndScenarioSizing(TestCase):
             temperature = solution.parameters(0)[f"{pipes[0]}.temperature"]
             pipe_length = solution.parameters(0)[f"{pipes[0]}.length"]
             if pipe_diameter > 0.0:
-                velocities = results[f"{pipe}.Q"] / solution.parameters(0)[f"{pipe}.area"]
+                velocities = (
+                    results[f"{pipe}.Q"] / solution.parameters(0)[f"{pipe}.area"]
+                )
             else:
                 velocities = results[f"{pipe}.Q"]  # should be zero
             for ii in range(len(results[f"{pipe}.dH"])):
@@ -373,4 +398,7 @@ if __name__ == "__main__":
     a.test_end_scenario_sizing_staged()
     a.test_end_scenario_sizing_discounted()
     a.test_end_scenario_sizing_head_loss()
-    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
+    print(
+        "Execution time: "
+        + time.strftime("%M:%S", time.gmtime(time.time() - start_time))
+    )

@@ -161,7 +161,9 @@ class HeatProblem(
 
         for ensemble_member in range(self.ensemble_size):
             total_demand = sum(
-                self.get_timeseries(f"{demand}.target_heat_demand", ensemble_member).values
+                self.get_timeseries(
+                    f"{demand}.target_heat_demand", ensemble_member
+                ).values
                 for demand in demands
             )
 
@@ -263,7 +265,11 @@ class HeatProblemPlacingOverTime(HeatProblem):
             constraints.append((inv_made[0] / nominal, 0.0, 200000.0))
             for i in range(1, len(self.times())):
                 constraints.append(
-                    (((inv_made[i] - inv_made[i - 1]) * nominal - inv_cap) / nominal, -np.inf, 0.0)
+                    (
+                        ((inv_made[i] - inv_made[i - 1]) * nominal - inv_cap) / nominal,
+                        -np.inf,
+                        0.0,
+                    )
                 )
 
         # to avoid ates in short problem
@@ -280,7 +286,9 @@ class HeatProblemPlacingOverTime(HeatProblem):
         """
         canonical, sign = self.alias_relation.canonical_signed(variable)
         return (
-            self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
+            self.state_vector(canonical, ensemble_member)
+            * self.variable_nominal(canonical)
+            * sign
         )
 
     def times(self, variable=None):
@@ -380,7 +388,9 @@ class HeatProblemSetPoints(
                 if day == max_day // day_steps * day_steps:
                     if max_day > day:
                         new_date_times.append(self.io.datetimes[day * 24])
-                    new_date_times.extend(self.io.datetimes[max_day * 24 : max_day * 24 + 24])
+                    new_date_times.extend(
+                        self.io.datetimes[max_day * 24 : max_day * 24 + 24]
+                    )
                     if (day + day_steps - 1) > max_day:
                         new_date_times.append(self.io.datetimes[max_day * 24 + 24])
                     # if day == nr_of_days - day_steps:
@@ -406,7 +416,9 @@ class HeatProblemSetPoints(
             #  in the data
             for source in self.energy_system_components.get("heat_source", []):
                 try:
-                    self.get_timeseries(f"{source}.target_heat_source_year", ensemble_member)
+                    self.get_timeseries(
+                        f"{source}.target_heat_source_year", ensemble_member
+                    )
                 except KeyError:
                     continue
                 var_name = f"{source}.target_heat_source_year"
@@ -427,7 +439,9 @@ class HeatProblemSetPoints(
         new_date_times: np.array,
     ):
         try:
-            data = self.get_timeseries(variable=variable_name, ensemble_member=ensemble_member)
+            data = self.get_timeseries(
+                variable=variable_name, ensemble_member=ensemble_member
+            )
         except KeyError:
             datastore.set_timeseries(
                 variable=variable_name,
@@ -441,7 +455,8 @@ class HeatProblemSetPoints(
         new_data = list()
         data_timestamps = data.times
         data_datetimes = [
-            self.io.datetimes[0] + datetime.timedelta(seconds=s) for s in data_timestamps
+            self.io.datetimes[0] + datetime.timedelta(seconds=s)
+            for s in data_timestamps
         ]
         assert new_date_times[0] == data_datetimes[0]
         data_values = data.values

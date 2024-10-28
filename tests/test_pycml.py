@@ -19,7 +19,9 @@ class TestPyCML(TestCase):
 
         recursive_merge = Model.merge_modifiers(x, y)
 
-        self.assertEqual(recursive_merge, dict(V=10.0, OutPort=dict(Q=dict(min=0.5, nominal=1.0))))
+        self.assertEqual(
+            recursive_merge, dict(V=10.0, OutPort=dict(Q=dict(min=0.5, nominal=1.0)))
+        )
 
     def test_merge_modifiers_models(self):
         """
@@ -66,7 +68,10 @@ class TestPyCML(TestCase):
                 super().__init__(None)
 
                 self.add_variable(
-                    Storage, "storage", V=dict(min=10.0), OutPort=dict(Q=dict(nominal=1.5, max=4.0))
+                    Storage,
+                    "storage",
+                    V=dict(min=10.0),
+                    OutPort=dict(Q=dict(nominal=1.5, max=4.0)),
                 )
 
         # We testing/comparing with min, max and nominals

@@ -46,7 +46,9 @@ class MinimizeSourcesHeatCostGoal(Goal):
 
     def function(self, optimization_problem, ensemble_member):
         return (
-            optimization_problem.extra_variable(f"{self.source}__variable_operational_cost")
+            optimization_problem.extra_variable(
+                f"{self.source}__variable_operational_cost"
+            )
             + optimization_problem.extra_variable(f"{self.source}__investment_cost")
             + optimization_problem.extra_variable(f"{self.source}__installation_cost")
         )

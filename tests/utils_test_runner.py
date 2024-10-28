@@ -14,6 +14,7 @@ import io
 EXPECTED_DIR: str = os.path.dirname(os.path.abspath(__file__))
 TestError = Tuple[type, Exception, Any]
 
+
 class DetailedTestResult(unittest.TestResult):
     """
     A custom TestResult class that collects detailed information about test runs,
@@ -29,7 +30,7 @@ class DetailedTestResult(unittest.TestResult):
         self.test_results: List[Tuple[unittest.TestCase, str, Any, float]] = []
         self.range_data: Dict[str, Dict[str, Any]] = {}
 
-    def startTest(self, test: unittest.TestCase) -> None:    # noqa: N802
+    def startTest(self, test: unittest.TestCase) -> None:  # noqa: N802
         """
         Called when a test begins.
 
@@ -40,7 +41,7 @@ class DetailedTestResult(unittest.TestResult):
         super().startTest(test)
         print(f"Running test: {test.id()}")
 
-    def stopTest(self, test: unittest.TestCase) -> None:     # noqa: N802
+    def stopTest(self, test: unittest.TestCase) -> None:  # noqa: N802
         """
         Called when a test finishes.
 
@@ -132,7 +133,7 @@ class DetailedTestResult(unittest.TestResult):
         """
         Print detailed results of all tests, including range data if available.
         """
-        print("\nDetailed Test Results:")                
+        print("\nDetailed Test Results:")
         for test, outcome, error, duration in self.test_results:
             test_id_short = test.id().split(".")[-1]
             print(f"{test_id_short}: {outcome} (Duration: {duration:.6f}s)")
@@ -229,7 +230,9 @@ def load_tests(loader: unittest.TestLoader) -> unittest.TestSuite:
         unittest.TestSuite: A TestSuite containing all discovered tests.
     """
     suite = unittest.TestSuite()
-    test_files = [f for f in os.listdir() if f.startswith("test_") and f.endswith(".py")]
+    test_files = [
+        f for f in os.listdir() if f.startswith("test_") and f.endswith(".py")
+    ]
     print(f"Found test files: {test_files}")
 
     for test_file in test_files:
@@ -246,12 +249,14 @@ def load_tests(loader: unittest.TestLoader) -> unittest.TestSuite:
 
     return suite
 
+
 def print_profiling_stats(pr):
     s = io.StringIO()
-    sortby = 'time'
+    sortby = "time"
     ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
     ps.print_stats()
     print(s.getvalue())
+
 
 if __name__ == "__main__":
     print("Test Runner Script")

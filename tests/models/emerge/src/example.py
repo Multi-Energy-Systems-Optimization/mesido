@@ -21,7 +21,9 @@ from rtctools.optimization.goal_programming_mixin_base import Goal
 from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
 )
-from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
+from rtctools.optimization.single_pass_goal_programming_mixin import (
+    SinglePassGoalProgrammingMixin,
+)
 
 
 class MaxHydrogenProduction(Goal):
@@ -45,7 +47,9 @@ class MaxHydrogenProduction(Goal):
         self.source = source
 
     def function(
-        self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
+        self,
+        optimization_problem: CollocatedIntegratedOptimizationProblem,
+        ensemble_member: int,
     ) -> ca.MX:
         """
         This function returns the state variable to be minimized.
@@ -83,14 +87,14 @@ class MaxElecProduction(Goal):
         self.source = source
 
     def function(
-        self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
+        self,
+        optimization_problem: CollocatedIntegratedOptimizationProblem,
+        ensemble_member: int,
     ) -> ca.MX:
-
         return -optimization_problem.state(f"{self.source}.Electricity_source")
 
 
 class MaxRevenue(Goal):
-
     priority = 1
 
     order = 1
@@ -110,7 +114,9 @@ class MaxRevenue(Goal):
         self.asset_name = asset_name
 
     def function(
-        self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
+        self,
+        optimization_problem: CollocatedIntegratedOptimizationProblem,
+        ensemble_member: int,
     ) -> ca.MX:
         """
         This function returns the state variable to be minimized.
@@ -125,11 +131,12 @@ class MaxRevenue(Goal):
         The negative hydrogen production state of the optimization problem.
         """
         # TODO: not yet scaled
-        return -optimization_problem.extra_variable(f"{self.asset_name}__revenue", ensemble_member)
+        return -optimization_problem.extra_variable(
+            f"{self.asset_name}__revenue", ensemble_member
+        )
 
 
 class MinCost(Goal):
-
     priority = 1
 
     order = 1
@@ -142,9 +149,10 @@ class MinCost(Goal):
         self.asset_name = asset_name
 
     def function(
-        self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
+        self,
+        optimization_problem: CollocatedIntegratedOptimizationProblem,
+        ensemble_member: int,
     ) -> ca.MX:
-
         return optimization_problem.extra_variable(
             f"{self.asset_name}__fixed_operational_cost", ensemble_member
         ) + optimization_problem.extra_variable(
@@ -195,7 +203,6 @@ class EmergeTest(
     #     return goals
 
     def goals(self):
-
         goals = super().goals().copy()
 
         for asset_name in [
@@ -220,15 +227,21 @@ class EmergeTest(
         constraints = super().constraints(ensemble_member)
 
         for gs in self.energy_system_components.get("gas_tank_storage", []):
-            canonical, sign = self.alias_relation.canonical_signed(f"{gs}.Stored_gas_mass")
+            canonical, sign = self.alias_relation.canonical_signed(
+                f"{gs}.Stored_gas_mass"
+            )
             storage_t0 = sign * self.state_vector(canonical, ensemble_member)[0]
             constraints.append((storage_t0, 0.0, 0.0))
-            canonical, sign = self.alias_relation.canonical_signed(f"{gs}.Gas_tank_flow")
+            canonical, sign = self.alias_relation.canonical_signed(
+                f"{gs}.Gas_tank_flow"
+            )
             gas_flow_t0 = sign * self.state_vector(canonical, ensemble_member)[0]
             constraints.append((gas_flow_t0, 0.0, 0.0))
 
         for es in self.energy_system_components.get("electricity_storage", []):
-            canonical, sign = self.alias_relation.canonical_signed(f"{es}.Stored_electricity")
+            canonical, sign = self.alias_relation.canonical_signed(
+                f"{es}.Stored_electricity"
+            )
             storage_t0 = sign * self.state_vector(canonical, ensemble_member)[0]
             constraints.append((storage_t0, 0.0, 0.0))
 
@@ -319,7 +332,6 @@ class EmergeTest(
 
 
 if __name__ == "__main__":
-
     tic = time.time()
     # for _ in range(10):
     #     elect = run_optimization_problem(
