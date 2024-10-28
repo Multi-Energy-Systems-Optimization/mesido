@@ -11,12 +11,12 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
 from rtctools.optimization.goal_programming_mixin import Goal
-from rtctools.optimization.single_pass_goal_programming_mixin import (
-    SinglePassGoalProgrammingMixin,
-    CachingQPSol,
-)
 from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
+)
+from rtctools.optimization.single_pass_goal_programming_mixin import (
+    CachingQPSol,
+    SinglePassGoalProgrammingMixin,
 )
 from rtctools.util import run_optimization_problem
 
@@ -114,9 +114,7 @@ class HeatProblemTvarSecondary(
         return goals
 
     def temperature_carriers(self):
-        return (
-            self.esdl_carriers
-        )  # geeft terug de carriers met multiple temperature options
+        return self.esdl_carriers  # geeft terug de carriers met multiple temperature options
 
     def energy_system_options(self):
         options = super().energy_system_options()
@@ -142,9 +140,7 @@ class HeatProblemTvarSecondary(
         # These constraints are added to allow for a quicker solve
         for _carrier, temperatures in self.temperature_carriers().items():
             carrier_id_number_mapping = str(temperatures["id_number_mapping"])
-            temperature_regimes = self.temperature_regimes(
-                int(carrier_id_number_mapping)
-            )
+            temperature_regimes = self.temperature_regimes(int(carrier_id_number_mapping))
             if len(temperature_regimes) > 0:
                 for temperature in temperature_regimes:
                     selected_temp_vec = self.state_vector(
@@ -175,9 +171,7 @@ class HeatProblemTvar(
         return goals
 
     def temperature_carriers(self):
-        return (
-            self.esdl_carriers
-        )  # geeft terug de carriers met multiple temperature options
+        return self.esdl_carriers  # geeft terug de carriers met multiple temperature options
 
     def energy_system_options(self):
         options = super().energy_system_options()
@@ -198,9 +192,7 @@ class HeatProblemTvar(
         # These constraints are added to allow for a quicker solve
         for _carrier, temperatures in self.temperature_carriers().items():
             carrier_id_number_mapping = str(temperatures["id_number_mapping"])
-            temperature_regimes = self.temperature_regimes(
-                int(carrier_id_number_mapping)
-            )
+            temperature_regimes = self.temperature_regimes(int(carrier_id_number_mapping))
             if len(temperature_regimes) > 0:
                 for temperature in temperature_regimes:
                     selected_temp_vec = self.state_vector(
@@ -223,9 +215,7 @@ class HeatProblemTvarDisableHEX(
     CollocatedIntegratedOptimizationProblem,
 ):
     def temperature_carriers(self):
-        return (
-            self.esdl_carriers
-        )  # geeft terug de carriers met multiple temperature options
+        return self.esdl_carriers  # geeft terug de carriers met multiple temperature options
 
     def energy_system_options(self):
         options = super().energy_system_options()
@@ -255,9 +245,7 @@ class HeatProblemTvarDisableHEX(
         # These constraints are added to allow for a quicker solve
         for _carrier, temperatures in self.temperature_carriers().items():
             carrier_id_number_mapping = str(temperatures["id_number_mapping"])
-            temperature_regimes = self.temperature_regimes(
-                int(carrier_id_number_mapping)
-            )
+            temperature_regimes = self.temperature_regimes(int(carrier_id_number_mapping))
             if len(temperature_regimes) > 0:
                 for temperature in temperature_regimes:
                     selected_temp_vec = self.state_vector(

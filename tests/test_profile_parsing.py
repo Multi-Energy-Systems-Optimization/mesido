@@ -1,5 +1,5 @@
-import logging
 import datetime
+import logging
 import unittest
 from pathlib import Path
 from typing import Optional

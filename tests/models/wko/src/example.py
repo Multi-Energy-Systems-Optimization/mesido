@@ -18,8 +18,8 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
 )
 from rtctools.optimization.single_pass_goal_programming_mixin import (
-    SinglePassGoalProgrammingMixin,
     CachingQPSol,
+    SinglePassGoalProgrammingMixin,
 )
 from rtctools.optimization.timeseries import Timeseries
 from rtctools.util import run_optimization_problem

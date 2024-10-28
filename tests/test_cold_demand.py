@@ -20,7 +20,6 @@ from utils_tests import (
     heat_to_discharge_test,
 )
 
-
 class TestColdDemand(TestCase):
     def test_insufficient_capacity(self):
         """
