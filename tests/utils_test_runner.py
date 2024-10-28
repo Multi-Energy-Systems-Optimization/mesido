@@ -172,7 +172,7 @@ class DetailedTestResult(unittest.TestResult):
         # Construct the full path for the file
         full_path = os.path.join(folder_name, filename)
 
-        with open(full_path, "w", newline="") as csvfile:
+        with open(full_path, "w", encoding="utf-8", newline="") as csvfile:
             writer = csv.writer(csvfile)
 
             # Write header
@@ -229,9 +229,7 @@ def load_tests(loader: unittest.TestLoader) -> unittest.TestSuite:
         unittest.TestSuite: A TestSuite containing all discovered tests.
     """
     suite = unittest.TestSuite()
-    test_files = [
-        f for f in os.listdir() if f.startswith("test_") and f.endswith(".py")
-    ]
+    test_files = [f for f in os.listdir() if f.startswith("test_") and f.endswith(".py")]
     print(f"Found test files: {test_files}")
 
     for test_file in test_files:
@@ -258,16 +256,17 @@ def print_profiling_stats(pr):
 
 
 if __name__ == "__main__":
+    # Redirect output to a file: python utils_test_runner.py > output.txt 2>&1
     print("Test Runner Script")
     print("==================")
     print("This script runs all test files in the same directory as the script.")
     print("Expected directory structure:")
     print("  <project_root>")
-    print("    └── tests")
-    print("        ├── test_runner.py")
-    print("        ├── test_module1.py")
-    print("        ├── test_module2.py")
-    print("        └── ... (other test files)")
+    print("    +-- tests")
+    print("        |-- test_runner.py")
+    print("        |-- test_module1.py")
+    print("        |-- test_module2.py")
+    print("        +-- ... (other test files)")
     print("\nTo run tests:")
     print("1. Navigate to the directory containing test_runner.py")
     print("2. Run: python test_runner.py")
