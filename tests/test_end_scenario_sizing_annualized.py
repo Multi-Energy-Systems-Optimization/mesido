@@ -8,11 +8,6 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
-from utils_test_scaling import (
-    check_scaling,
-    create_problem_with_debug_info,
-)
-
 
 class TestEndScenarioSizingAnnualized(TestCase):
     """

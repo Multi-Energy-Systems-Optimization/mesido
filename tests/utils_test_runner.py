@@ -1,14 +1,13 @@
+import cProfile
 import csv
 import importlib
+import io
 import os
+import pstats
 import sys
 import time
 import unittest
 from typing import Any, Dict, List, Optional, Tuple
-
-import cProfile
-import pstats
-import io
 
 # Define the expected directory relative to the script location, excluding the filename
 EXPECTED_DIR: str = os.path.dirname(os.path.abspath(__file__))
@@ -150,7 +149,7 @@ class DetailedTestResult(unittest.TestResult):
                 print(" Range Data: Not available")
 
         print("\nOverall Test Results:")
-        for test, outcome, error, duration in self.test_results:
+        for test, outcome, _error, duration in self.test_results:
             test_id_short = test.id().split(".")[-1]
             print(f"{test_id_short}: {outcome} (Duration: {duration:.6f}s)")
 
