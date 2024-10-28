@@ -20,6 +20,7 @@ from utils_tests import (
     heat_to_discharge_test,
 )
 
+
 class TestColdDemand(TestCase):
     def test_insufficient_capacity(self):
         """
@@ -34,9 +35,7 @@ class TestColdDemand(TestCase):
         import models.wko.src.example as example
         from models.wko.src.example import HeatProblem
 
-        logger, logs_list = create_log_list_scaling(
-            "WarmingUP-MPC", level=logging.ERROR
-        )
+        logger, logs_list = create_log_list_scaling("WarmingUP-MPC", level=logging.ERROR)
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
@@ -54,14 +53,12 @@ class TestColdDemand(TestCase):
 
         # Check that the heat & cold demand had an error
         np.testing.assert_equal(
-            logs_list[0].msg
-            == "HeatingDemand_9b90: The installed capacity of 0.05MW should be"
+            logs_list[0].msg == "HeatingDemand_9b90: The installed capacity of 0.05MW should be"
             " larger than the maximum of the heat demand profile 0.15MW",
             True,
         )
         np.testing.assert_equal(
-            logs_list[2].msg
-            == "CoolingDemand_15e8: The installed capacity of 0.05MW should be"
+            logs_list[2].msg == "CoolingDemand_15e8: The installed capacity of 0.05MW should be"
             " larger than the maximum of the heat demand profile 0.15MW",
             True,
         )
@@ -242,9 +239,7 @@ class TestColdDemand(TestCase):
             results["Pipe1.HeatIn.Heat"] - results["Pipe1.HeatOut.Heat"] + tol_value,
         )
         np.testing.assert_array_less(
-            results["Pipe1_ret.HeatIn.Heat"]
-            - results["Pipe1_ret.HeatOut.Heat"]
-            - tol_value,
+            results["Pipe1_ret.HeatIn.Heat"] - results["Pipe1_ret.HeatOut.Heat"] - tol_value,
             0.0,
         )
 
