@@ -130,23 +130,15 @@ class Model(_Model):
         self.add_variable(ControlInput, "Heat_source", value=self.source.Heat_source)
 
         self.connect(self.source.HeatOut, self.pipe_sourcebuffer_hot.HeatIn)
-        self.connect(
-            self.pipe_sourcebuffer_hot.HeatOut, self.node_buffer_hot.HeatConn[1]
-        )
-        self.connect(
-            self.node_buffer_hot.HeatConn[2], self.pipe_bufferdemand_hot.HeatIn
-        )
+        self.connect(self.pipe_sourcebuffer_hot.HeatOut, self.node_buffer_hot.HeatConn[1])
+        self.connect(self.node_buffer_hot.HeatConn[2], self.pipe_bufferdemand_hot.HeatIn)
         self.connect(self.pipe_bufferdemand_hot.HeatOut, self.demand.HeatIn)
         self.connect(self.node_buffer_hot.HeatConn[3], self.pipe_buffer_hot.HeatIn)
         self.connect(self.pipe_buffer_hot.HeatOut, self.buffer.HeatIn)
 
         self.connect(self.demand.HeatOut, self.pipe_bufferdemand_cold.HeatIn)
-        self.connect(
-            self.pipe_bufferdemand_cold.HeatOut, self.node_buffer_cold.HeatConn[1]
-        )
-        self.connect(
-            self.node_buffer_cold.HeatConn[2], self.pipe_sourcebuffer_cold.HeatIn
-        )
+        self.connect(self.pipe_bufferdemand_cold.HeatOut, self.node_buffer_cold.HeatConn[1])
+        self.connect(self.node_buffer_cold.HeatConn[2], self.pipe_sourcebuffer_cold.HeatIn)
         self.connect(self.pipe_sourcebuffer_cold.HeatOut, self.pump.HeatIn)
         self.connect(self.pump.HeatOut, self.source.HeatIn)
         self.connect(self.buffer.HeatOut, self.pipe_buffer_cold.HeatIn)

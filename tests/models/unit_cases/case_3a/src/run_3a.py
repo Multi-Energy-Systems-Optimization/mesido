@@ -42,9 +42,7 @@ class ConstantGeothermalSource(Goal):
 
     order = 2
 
-    def __init__(
-        self, optimization_problem, source, target, lower_fac=0.9, upper_fac=1.1
-    ):
+    def __init__(self, optimization_problem, source, target, lower_fac=0.9, upper_fac=1.1):
         self.target_min = lower_fac * target
         self.target_max = upper_fac * target
         self.function_range = (0.0, 2.0 * target)
@@ -196,9 +194,7 @@ class HeatProblemTvarsup(
         return goals
 
     def temperature_carriers(self):
-        return (
-            self.esdl_carriers
-        )  # geeft terug de carriers met multiple temperature options
+        return self.esdl_carriers  # geeft terug de carriers met multiple temperature options
 
     def temperature_regimes(self, carrier):
         temperatures = []
@@ -217,9 +213,7 @@ class HeatProblemTvarsup(
         # These constraints are added to allow for a quicker solve
         for _carrier, temperatures in self.temperature_carriers().items():
             carrier_id_number_mapping = str(temperatures["id_number_mapping"])
-            temperature_regimes = self.temperature_regimes(
-                int(carrier_id_number_mapping)
-            )
+            temperature_regimes = self.temperature_regimes(int(carrier_id_number_mapping))
             if len(temperature_regimes) > 0:
                 for temperature in temperature_regimes:
                     selected_temp_vec = self.state_vector(
@@ -250,9 +244,7 @@ class HeatProblemTvarret(
         return goals
 
     def temperature_carriers(self):
-        return (
-            self.esdl_carriers
-        )  # geeft terug de carriers met multiple temperature options
+        return self.esdl_carriers  # geeft terug de carriers met multiple temperature options
 
     def temperature_regimes(self, carrier):
         temperatures = []
@@ -281,9 +273,7 @@ class HeatProblemTvarret(
                 if carrier_type == "return":
                     number = number + "000"
                 carrier_id_number_mapping = number
-            temperature_regimes = self.temperature_regimes(
-                int(carrier_id_number_mapping)
-            )
+            temperature_regimes = self.temperature_regimes(int(carrier_id_number_mapping))
             if len(temperature_regimes) > 0:
                 for temperature in temperature_regimes:
                     selected_temp_vec = self.state_vector(
@@ -309,9 +299,7 @@ class HeatProblemProdProfile(
         super().read()
 
         for s in self.energy_system_components["heat_source"]:
-            demand_timeseries = self.get_timeseries(
-                "HeatingDemand_a3b8.target_heat_demand"
-            )
+            demand_timeseries = self.get_timeseries("HeatingDemand_a3b8.target_heat_demand")
             new_timeseries = np.ones(len(demand_timeseries.values)) * 1
             ind_hlf = int(len(demand_timeseries.values) / 2)
             new_timeseries[ind_hlf : ind_hlf + 4] = np.ones(4) * 0.10

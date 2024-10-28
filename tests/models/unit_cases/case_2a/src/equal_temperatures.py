@@ -41,9 +41,9 @@ class MinimizeSourceTemperature(Goal):
         self.state = f"{source}.QTHOut.T"
 
     def function(self, optimization_problem, ensemble_member):
-        return optimization_problem.state(
+        return optimization_problem.state(self.state) / optimization_problem.variable_nominal(
             self.state
-        ) / optimization_problem.variable_nominal(self.state)
+        )
 
 
 class _GoalsAndOptions:

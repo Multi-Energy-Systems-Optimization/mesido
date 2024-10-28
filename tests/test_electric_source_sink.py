@@ -93,8 +93,7 @@ class TestMILPElectricSourceSink(TestCase):
                 atol=1.0e-3,
             )
             np.testing.assert_allclose(
-                results[f"{demand}.ElectricityIn.V"]
-                * results[f"{demand}.ElectricityIn.I"],
+                results[f"{demand}.ElectricityIn.V"] * results[f"{demand}.ElectricityIn.I"],
                 results[f"{demand}.ElectricityIn.Power"],
                 atol=1.0e-3,
             )
@@ -140,17 +139,14 @@ class TestMILPElectricSourceSink(TestCase):
             parameters["ElectricityCable_238f.min_voltage"]
             * parameters["ElectricityCable_238f.max_current"]
         )  # This max is based on max current and voltage requirement at consumer
-        v_min = parameters[
-            "ElectricityCable_238f.min_voltage"
-        ]  # set as minimum voltage for cables
+        v_min = parameters["ElectricityCable_238f.min_voltage"]  # set as minimum voltage for cables
 
         tolerance = 1e-10  # due to computational comparison
 
         # Test if capping is ok (capping based on max power as result of v_min*Imax)
         power_consumed = results["ElectricityDemand_2af6.ElectricityIn.Power"]
         smallerthen = all(
-            power_consumed - tolerance
-            <= np.ones(len(power_consumed)) * max_power_transport
+            power_consumed - tolerance <= np.ones(len(power_consumed)) * max_power_transport
         )
         self.assertTrue(smallerthen)
         demand_target = solution.get_timeseries(
@@ -158,9 +154,7 @@ class TestMILPElectricSourceSink(TestCase):
         ).values
         np.testing.assert_allclose(
             power_consumed,
-            np.minimum(
-                demand_target, np.ones(len(power_consumed)) * max_power_transport
-            ),
+            np.minimum(demand_target, np.ones(len(power_consumed)) * max_power_transport),
         )
         biggerthen = all(power_consumed >= np.zeros(len(power_consumed)))
         self.assertTrue(biggerthen)
@@ -183,8 +177,7 @@ class TestMILPElectricSourceSink(TestCase):
         np.testing.assert_allclose(current_demand, current_cable)
         np.testing.assert_allclose(current_cable, current_producer)
         biggerthen = all(
-            parameters["ElectricityCable_238f.max_current"]
-            * np.ones(len(current_demand))
+            parameters["ElectricityCable_238f.max_current"] * np.ones(len(current_demand))
             >= current_demand - tolerance
         )
         self.assertTrue(biggerthen)
@@ -196,8 +189,7 @@ class TestMILPElectricSourceSink(TestCase):
                 atol=1.0e-3,
             )
             np.testing.assert_allclose(
-                results[f"{demand}.ElectricityIn.V"]
-                * results[f"{demand}.ElectricityIn.I"],
+                results[f"{demand}.ElectricityIn.V"] * results[f"{demand}.ElectricityIn.I"],
                 results[f"{demand}.ElectricityIn.Power"],
                 atol=1.0e-3,
             )
@@ -251,17 +243,14 @@ class TestMILPElectricSourceSink(TestCase):
             atol=1.0e-3,
         )
 
-        for demand in solution.energy_system_components_get(
-            ["electricity_demand", "transformer"]
-        ):
+        for demand in solution.energy_system_components_get(["electricity_demand", "transformer"]):
             np.testing.assert_allclose(
                 results[f"{demand}.ElectricityIn.V"],
                 parameters[f"{demand}.min_voltage"],
                 atol=1.0e-3,
             )
             np.testing.assert_allclose(
-                results[f"{demand}.ElectricityIn.V"]
-                * results[f"{demand}.ElectricityIn.I"],
+                results[f"{demand}.ElectricityIn.V"] * results[f"{demand}.ElectricityIn.I"],
                 results[f"{demand}.ElectricityIn.Power"],
                 atol=1.0e-3,
             )

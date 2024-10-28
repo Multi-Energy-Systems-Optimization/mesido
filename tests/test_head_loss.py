@@ -69,15 +69,15 @@ class TestHeadLoss(TestCase):
                         head_loss_option_setting
                         == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
                     ):
-                        self.gas_network_settings["head_loss_option"] = (
-                            HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
-                        )
+                        self.gas_network_settings[
+                            "head_loss_option"
+                        ] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
                         self.gas_network_settings["n_linearization_lines"] = 5
                         self.heat_network_settings["minimize_head_losses"] = True
                     elif head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
-                        self.heat_network_settings["head_loss_option"] = (
-                            HeadLossOption.LINEARIZED_N_LINES_EQUALITY
-                        )
+                        self.heat_network_settings[
+                            "head_loss_option"
+                        ] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
                         self.heat_network_settings["minimize_head_losses"] = False
                         self.heat_network_settings["minimum_velocity"] = 1.0e-6
 

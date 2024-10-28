@@ -82,15 +82,13 @@ class TestHydraulicPower(TestCase):
         ]
 
         # Initialize variables
-        run_hydraulic_power.ThermalDemand = run_hydraulic_power.comp_vars_init[
-            "heat_demand"
-        ]
+        run_hydraulic_power.ThermalDemand = run_hydraulic_power.comp_vars_init["heat_demand"]
         run_hydraulic_power.manual_set_pipe_length = run_hydraulic_power.comp_vars_init[
             "pipe_length"
         ]
-        run_hydraulic_power.manual_set_pipe_DN_diam_MILP = (
-            run_hydraulic_power.comp_vars_init["pipe_DN_MILP"]
-        )
+        run_hydraulic_power.manual_set_pipe_DN_diam_MILP = run_hydraulic_power.comp_vars_init[
+            "pipe_DN_MILP"
+        ]
         # ----------------------------------------------------------------------------------------
         # 3 MILP simulations with the only difference being the linear head loss setting:
         # - LINEARIZED_N_LINES_WEAK_INEQUALITY (1 line segment)
@@ -99,15 +97,13 @@ class TestHydraulicPower(TestCase):
         # ----------------------------------------------------------------------------------------
         # Run MILP with LINEARIZED_N_LINES_WEAK_INEQUALITY head loss setting and 1 line segement
         run_hydraulic_power.df_MILP = pd.DataFrame(columns=standard_columns_specified)
-        run_hydraulic_power.head_loss_setting = (
-            HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
-        )
+        run_hydraulic_power.head_loss_setting = HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
         run_hydraulic_power.n_linearization_lines_setting = 1
 
         for val in range(0, len(run_hydraulic_power.comp_vars_vals["pipe_length"])):
-            run_hydraulic_power.manual_set_pipe_length = (
-                run_hydraulic_power.comp_vars_vals["pipe_length"][val]
-            )
+            run_hydraulic_power.manual_set_pipe_length = run_hydraulic_power.comp_vars_vals[
+                "pipe_length"
+            ][val]
             run_esdl_mesido_optimization(
                 HeatProblem,
                 base_folder=base_folder,
@@ -117,12 +113,10 @@ class TestHydraulicPower(TestCase):
                 input_timeseries_file="timeseries_import.xml",
             )
 
-        hydraulic_power_post_process_dw_1 = run_hydraulic_power.df_MILP[
-            "Pipe1_supply_Q"
-        ][0] * abs(run_hydraulic_power.df_MILP["Pipe1_supply_dPress"][0])
-        hydraulic_power_dw_1 = run_hydraulic_power.df_MILP[
-            "Pipe1_supply_Hydraulic_power"
-        ][0]
+        hydraulic_power_post_process_dw_1 = run_hydraulic_power.df_MILP["Pipe1_supply_Q"][0] * abs(
+            run_hydraulic_power.df_MILP["Pipe1_supply_dPress"][0]
+        )
+        hydraulic_power_dw_1 = run_hydraulic_power.df_MILP["Pipe1_supply_Hydraulic_power"][0]
         # Hydraulic power = delta pressure * Q = f(Q^3), where delta pressure = f(Q^2)
         # The linear approximation (hydraulic_power_dw_1) of the 3rd order function should
         # overestimate the hydraulic power when compared to the product of Q and the linear
@@ -146,17 +140,13 @@ class TestHydraulicPower(TestCase):
         )
         # ----------------------------------------------------------------------------------------
         # Rerun MILP with LINEARIZED_ONE_LINE_EQUALITY head loss setting
-        run_hydraulic_power.df_MILP = pd.DataFrame(
-            columns=standard_columns_specified
-        )  # empty df
-        run_hydraulic_power.head_loss_setting = (
-            HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
-        )
+        run_hydraulic_power.df_MILP = pd.DataFrame(columns=standard_columns_specified)  # empty df
+        run_hydraulic_power.head_loss_setting = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
 
         for val in range(0, len(run_hydraulic_power.comp_vars_vals["pipe_length"])):
-            run_hydraulic_power.manual_set_pipe_length = (
-                run_hydraulic_power.comp_vars_vals["pipe_length"][val]
-            )
+            run_hydraulic_power.manual_set_pipe_length = run_hydraulic_power.comp_vars_vals[
+                "pipe_length"
+            ][val]
             run_esdl_mesido_optimization(
                 HeatProblem,
                 base_folder=base_folder,
@@ -166,12 +156,10 @@ class TestHydraulicPower(TestCase):
                 input_timeseries_file="timeseries_import.xml",
             )
 
-        hydraulic_power_post_process_linear = run_hydraulic_power.df_MILP[
-            "Pipe1_supply_Q"
-        ][0] * abs(run_hydraulic_power.df_MILP["Pipe1_supply_dPress"][0])
-        hydraulic_power_linear = run_hydraulic_power.df_MILP[
-            "Pipe1_supply_Hydraulic_power"
-        ][0]
+        hydraulic_power_post_process_linear = run_hydraulic_power.df_MILP["Pipe1_supply_Q"][
+            0
+        ] * abs(run_hydraulic_power.df_MILP["Pipe1_supply_dPress"][0])
+        hydraulic_power_linear = run_hydraulic_power.df_MILP["Pipe1_supply_Hydraulic_power"][0]
         # Hydraulic power = delta pressure * Q = f(Q^3), where delta pressure = f(Q^2)
         # The linear approximation (1 line segment) of the 3rd order function should
         # overestimate the hydraulic power when compared to the product of Q and the linear
@@ -204,18 +192,14 @@ class TestHydraulicPower(TestCase):
         )
         # ----------------------------------------------------------------------------------------
         # Rerun MILP with DW head loss setting, and default line segments
-        run_hydraulic_power.df_MILP = pd.DataFrame(
-            columns=standard_columns_specified
-        )  # empty df
-        run_hydraulic_power.head_loss_setting = (
-            HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
-        )
+        run_hydraulic_power.df_MILP = pd.DataFrame(columns=standard_columns_specified)  # empty df
+        run_hydraulic_power.head_loss_setting = HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
         run_hydraulic_power.n_linearization_lines_setting = 5
 
         for val in range(0, len(run_hydraulic_power.comp_vars_vals["pipe_length"])):
-            run_hydraulic_power.manual_set_pipe_length = (
-                run_hydraulic_power.comp_vars_vals["pipe_length"][val]
-            )
+            run_hydraulic_power.manual_set_pipe_length = run_hydraulic_power.comp_vars_vals[
+                "pipe_length"
+            ][val]
             run_esdl_mesido_optimization(
                 HeatProblem,
                 base_folder=base_folder,
@@ -225,12 +209,10 @@ class TestHydraulicPower(TestCase):
                 input_timeseries_file="timeseries_import.xml",
             )
 
-        hydraulic_power_post_process_dw = run_hydraulic_power.df_MILP["Pipe1_supply_Q"][
-            0
-        ] * abs(run_hydraulic_power.df_MILP["Pipe1_supply_dPress"][0])
-        hydraulic_power_dw = run_hydraulic_power.df_MILP[
-            "Pipe1_supply_Hydraulic_power"
-        ][0]
+        hydraulic_power_post_process_dw = run_hydraulic_power.df_MILP["Pipe1_supply_Q"][0] * abs(
+            run_hydraulic_power.df_MILP["Pipe1_supply_dPress"][0]
+        )
+        hydraulic_power_dw = run_hydraulic_power.df_MILP["Pipe1_supply_Hydraulic_power"][0]
         # Hydraulic power = delta pressure * Q = f(Q^3), where delta pressure = f(Q^2)
         # The linear approximation (default number of line segments) of the 3rd order function
         # should overestimate the hydraulic power when compared to the product of Q and the linear
@@ -283,9 +265,7 @@ class TestHydraulicPower(TestCase):
                 super().read()
 
                 for d in self.energy_system_components["gas_demand"]:
-                    new_timeseries = (
-                        self.get_timeseries(f"{d}.target_gas_demand").values * 5e3
-                    )
+                    new_timeseries = self.get_timeseries(f"{d}.target_gas_demand").values * 5e3
                     self.set_timeseries(f"{d}.target_gas_demand", new_timeseries)
 
             def energy_system_options(self):
@@ -388,15 +368,9 @@ class TestHydraulicPower(TestCase):
         a = np.diff(calc_hp_v_points) / np.diff(v_points_volumetric)
         b = calc_hp_v_points[1:] - a * v_points_volumetric[1:]
 
-        np.testing.assert_allclose(
-            pipe_hp[0], a[0] * results[f"{pipe}.GasOut.Q"][0] + b[0]
-        )
-        np.testing.assert_allclose(
-            pipe_hp[1], a[1] * results[f"{pipe}.GasOut.Q"][1] + b[1]
-        )
-        np.testing.assert_allclose(
-            pipe_hp[2], a[2] * results[f"{pipe}.GasOut.Q"][2] + b[2]
-        )
+        np.testing.assert_allclose(pipe_hp[0], a[0] * results[f"{pipe}.GasOut.Q"][0] + b[0])
+        np.testing.assert_allclose(pipe_hp[1], a[1] * results[f"{pipe}.GasOut.Q"][1] + b[1])
+        np.testing.assert_allclose(pipe_hp[2], a[2] * results[f"{pipe}.GasOut.Q"][2] + b[2])
 
         demand_matching_test(solution, results)
 
@@ -421,9 +395,7 @@ class TestHydraulicPower(TestCase):
                 super().read()
 
                 for d in self.energy_system_components["gas_demand"]:
-                    new_timeseries = (
-                        self.get_timeseries(f"{d}.target_gas_demand").values * 3
-                    )
+                    new_timeseries = self.get_timeseries(f"{d}.target_gas_demand").values * 3
                     self.set_timeseries(f"{d}.target_gas_demand", new_timeseries)
 
             def energy_system_options(self):
@@ -465,14 +437,10 @@ class TestHydraulicPower(TestCase):
 
             v_max = solution.gas_network_settings["maximum_velocity"]
 
-            v_inspect = (
-                results[f"{pipe}.GasOut.Q"] / solution.parameters(0)[f"{pipe}.area"]
-            )
+            v_inspect = results[f"{pipe}.GasOut.Q"] / solution.parameters(0)[f"{pipe}.area"]
             v_points = [
                 i * v_max / solution.gas_network_settings["n_linearization_lines"]
-                for i in range(
-                    solution.gas_network_settings["n_linearization_lines"] + 1
-                )
+                for i in range(solution.gas_network_settings["n_linearization_lines"] + 1)
             ]
 
             # due to non linearity, every timestep on new linearized line, a doubled mass flow
@@ -535,7 +503,4 @@ if __name__ == "__main__":
     a.test_hydraulic_power_gas()
     a.test_hydraulic_power_gas_multi_demand()
 
-    print(
-        "Execution time: "
-        + time.strftime("%M:%S", time.gmtime(time.time() - start_time))
-    )
+    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

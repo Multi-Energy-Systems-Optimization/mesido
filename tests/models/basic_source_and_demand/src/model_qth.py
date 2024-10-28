@@ -23,9 +23,7 @@ class Model(_Model):
         self.t_supply_nom = 75.0
         self.t_return_nom = 45.0
 
-        supply_return_modifiers = dict(
-            T_supply=self.t_supply_nom, T_return=self.t_return_nom
-        )
+        supply_return_modifiers = dict(T_supply=self.t_supply_nom, T_return=self.t_return_nom)
 
         self.add_variable(
             Source,

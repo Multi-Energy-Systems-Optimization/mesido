@@ -203,8 +203,7 @@ class TestWarmingUpUnitCases(TestCase):
             # buffer should have positive heat loss
             assert parameters[f"{buffer}.heat_loss_coeff"] > 0.0
             np.testing.assert_allclose(
-                results[f"{buffer}.Stored_heat"]
-                * parameters[f"{buffer}.heat_loss_coeff"],
+                results[f"{buffer}.Stored_heat"] * parameters[f"{buffer}.heat_loss_coeff"],
                 results[f"{buffer}.Heat_loss"],
             )
             np.testing.assert_allclose(
@@ -212,19 +211,15 @@ class TestWarmingUpUnitCases(TestCase):
                 bounds[f"{buffer}.Stored_heat"][0].values[0],
             )
             np.testing.assert_allclose(
-                results[f"{buffer}.Stored_heat"][-1]
-                - results[f"{buffer}.Stored_heat"][0],
+                results[f"{buffer}.Stored_heat"][-1] - results[f"{buffer}.Stored_heat"][0],
                 np.sum(results[f"{buffer}.Heat_buffer"][1:] * 3600.0)
                 - np.sum(results[f"{buffer}.Heat_loss"][1:] * 3600.0),
                 atol=1.0,
             )
-            np.testing.assert_allclose(
-                results[f"{buffer}.Heat_buffer"][0], 0.0, atol=1.0e-6
-            )
+            np.testing.assert_allclose(results[f"{buffer}.Heat_buffer"][0], 0.0, atol=1.0e-6)
 
             np.testing.assert_allclose(
                 results[f"{buffer}.dH"][inds],
-                results[f"{buffer}.HeatOut.H"][inds]
-                - results[f"{buffer}.HeatIn.H"][inds],
+                results[f"{buffer}.HeatOut.H"][inds] - results[f"{buffer}.HeatIn.H"][inds],
                 atol=1.0e-6,
             )

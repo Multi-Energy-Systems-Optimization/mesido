@@ -112,9 +112,7 @@ class MinimizeElectricityCableInvestments(Goal):
         The Heat_source state of the optimization problem.
         """
         return (
-            optimization_problem.extra_variable(
-                f"{self.cable}__investment_cost", ensemble_member
-            )
+            optimization_problem.extra_variable(f"{self.cable}__investment_cost", ensemble_member)
             / 1e3
         )
 

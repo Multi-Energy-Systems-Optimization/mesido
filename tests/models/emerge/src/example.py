@@ -131,9 +131,7 @@ class MaxRevenue(Goal):
         The negative hydrogen production state of the optimization problem.
         """
         # TODO: not yet scaled
-        return -optimization_problem.extra_variable(
-            f"{self.asset_name}__revenue", ensemble_member
-        )
+        return -optimization_problem.extra_variable(f"{self.asset_name}__revenue", ensemble_member)
 
 
 class MinCost(Goal):
@@ -227,21 +225,15 @@ class EmergeTest(
         constraints = super().constraints(ensemble_member)
 
         for gs in self.energy_system_components.get("gas_tank_storage", []):
-            canonical, sign = self.alias_relation.canonical_signed(
-                f"{gs}.Stored_gas_mass"
-            )
+            canonical, sign = self.alias_relation.canonical_signed(f"{gs}.Stored_gas_mass")
             storage_t0 = sign * self.state_vector(canonical, ensemble_member)[0]
             constraints.append((storage_t0, 0.0, 0.0))
-            canonical, sign = self.alias_relation.canonical_signed(
-                f"{gs}.Gas_tank_flow"
-            )
+            canonical, sign = self.alias_relation.canonical_signed(f"{gs}.Gas_tank_flow")
             gas_flow_t0 = sign * self.state_vector(canonical, ensemble_member)[0]
             constraints.append((gas_flow_t0, 0.0, 0.0))
 
         for es in self.energy_system_components.get("electricity_storage", []):
-            canonical, sign = self.alias_relation.canonical_signed(
-                f"{es}.Stored_electricity"
-            )
+            canonical, sign = self.alias_relation.canonical_signed(f"{es}.Stored_electricity")
             storage_t0 = sign * self.state_vector(canonical, ensemble_member)[0]
             constraints.append((storage_t0, 0.0, 0.0))
 

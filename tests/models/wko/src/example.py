@@ -55,9 +55,7 @@ class TargetDemandGoal(Goal):
         self.target_max = target
         self.function_range = (-2.0 * max(target.values), 2.0 * max(target.values))
         self.function_nominal = (
-            np.median(target.values)
-            if np.median(target.values)
-            else max(abs(target.values)) / 2.0
+            np.median(target.values) if np.median(target.values) else max(abs(target.values)) / 2.0
         )
 
     def function(
@@ -186,9 +184,7 @@ class HeatProblem(
             if error_type in ["heat_demand.power", "cold_demand.power"]:
                 if len(errors) > 0:
                     for asset_name in errors:
-                        logger.error(
-                            self._asset_potential_errors[error_type][asset_name]
-                        )
+                        logger.error(self._asset_potential_errors[error_type][asset_name])
                     logger.error(
                         "Asset insufficient installed capacity: please increase the"
                         " installed power or reduce the demand profile peak value of the demand(s)"

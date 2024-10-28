@@ -66,21 +66,15 @@ class UnequalLengthLinearEquality(LinearEqualityHeadLossMixin, UnequalLengthIneq
     pass
 
 
-class UnequalLengthValveLinearEquality(
-    LinearEqualityHeadLossMixin, UnequalLengthValveInequality
-):
+class UnequalLengthValveLinearEquality(LinearEqualityHeadLossMixin, UnequalLengthValveInequality):
     pass
 
 
-class EqualLengthQuadraticEquality(
-    QuadraticEqualityHeadLossMixin, EqualLengthInequality
-):
+class EqualLengthQuadraticEquality(QuadraticEqualityHeadLossMixin, EqualLengthInequality):
     pass
 
 
-class UnequalLengthQuadraticEquality(
-    QuadraticEqualityHeadLossMixin, UnequalLengthInequality
-):
+class UnequalLengthQuadraticEquality(QuadraticEqualityHeadLossMixin, UnequalLengthInequality):
     pass
 
 
@@ -100,26 +94,18 @@ if __name__ == "__main__":
     # Cases that use only inequality formulations
     equal_length_inequality = run_optimization_problem(EqualLengthInequality)
     unequal_length_inequality = run_optimization_problem(UnequalLengthInequality)
-    unequal_length_valve_inequality = run_optimization_problem(
-        UnequalLengthValveInequality
-    )
+    unequal_length_valve_inequality = run_optimization_problem(UnequalLengthValveInequality)
 
     # Cases that use linear equality formulation
     equal_length_linear_equality = run_optimization_problem(EqualLengthLinearEquality)
-    unequal_length_linear_equality = run_optimization_problem(
-        UnequalLengthLinearEquality
-    )
+    unequal_length_linear_equality = run_optimization_problem(UnequalLengthLinearEquality)
     unequal_length_valve_linear_equality = run_optimization_problem(
         UnequalLengthValveLinearEquality
     )
 
     # Cases that use C*Q^2 equality formulations
-    equal_length_quadratic_equality = run_optimization_problem(
-        EqualLengthQuadraticEquality
-    )
-    unequal_length_quadratic_equality = run_optimization_problem(
-        UnequalLengthQuadraticEquality
-    )
+    equal_length_quadratic_equality = run_optimization_problem(EqualLengthQuadraticEquality)
+    unequal_length_quadratic_equality = run_optimization_problem(UnequalLengthQuadraticEquality)
     unequal_length_valve_quadratic_equality = run_optimization_problem(
         UnequalLengthValveQuadraticEquality
     )

@@ -40,9 +40,7 @@ else:
 class SwitchModelicaToPyCML(ABCMeta):
     def mro(cls):
         assert len(cls.__bases__) == 1
-        return [cls] + [
-            x if x != ModelicaMixin else PyCMLMixin for x in cls.__bases__[0].__mro__
-        ]
+        return [cls] + [x if x != ModelicaMixin else PyCMLMixin for x in cls.__bases__[0].__mro__]
 
 
 class SwitchQTHToQTHLoop(SwitchModelicaToPyCML, ABCMeta):
@@ -142,7 +140,4 @@ if __name__ == "__main__":
     )
 
     # Output runtime
-    print(
-        "Execution time: "
-        + time.strftime("%H:%M:%S", time.gmtime(time.time() - start_time))
-    )
+    print("Execution time: " + time.strftime("%H:%M:%S", time.gmtime(time.time() - start_time)))

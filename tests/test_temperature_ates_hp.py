@@ -73,9 +73,7 @@ class TestAtesTemperature(TestCase):
         temperature_regimes = solution.temperature_regimes(41770304791669983859190)
 
         ates_temperature_loss = results["ATES_cb47.Temperature_loss"]
-        ates_temperature_change_charging = results[
-            "ATES_cb47.Temperature_change_charging"
-        ]
+        ates_temperature_change_charging = results["ATES_cb47.Temperature_change_charging"]
 
         # heat_pump_sec = results["HeatPump_7f2c.Secondary_heat"]
         heat_ates = results["ATES_cb47.Heat_ates"]
@@ -89,9 +87,7 @@ class TestAtesTemperature(TestCase):
 
         objective_calc = (
             sum(
-                parameters[
-                    "GeothermalSource_4e5b.variable_operational_cost_coefficient"
-                ]
+                parameters["GeothermalSource_4e5b.variable_operational_cost_coefficient"]
                 * results["GeothermalSource_4e5b.Heat_source"]
             )
             + sum(
@@ -139,9 +135,7 @@ class TestAtesTemperature(TestCase):
         charging = np.array([int(val > 0) for val in heat_ates])
         # array less then because ates charging boolean can be either 0 or 1 when there is no flow,
         # or just flow to compensate the heatloss
-        np.testing.assert_array_less(
-            np.ones(len(hex_disabled)) - tol, hex_disabled + hp_disabled
-        )
+        np.testing.assert_array_less(np.ones(len(hex_disabled)) - tol, hex_disabled + hp_disabled)
         np.testing.assert_array_less(charging - tol, hp_disabled)
         np.testing.assert_array_less(charging[1:] - tol, 1 - hex_disabled[1:])
 
@@ -199,9 +193,7 @@ class TestAtesTemperature(TestCase):
         rho = parameters["ATES_cb47.rho"]
 
         np.testing.assert_allclose(abs(ates_flow[demand_not_matched]), ates_flow_bound)
-        np.testing.assert_array_less(
-            abs(ates_heat[demand_not_matched]), ates_heat_bound
-        )
+        np.testing.assert_array_less(abs(ates_heat[demand_not_matched]), ates_heat_bound)
         np.testing.assert_array_less(
             abs(ates_heat[demand_not_matched]),
             abs(

@@ -54,9 +54,7 @@ class TestMILPGasSourceSink(TestCase):
         )
 
         # Test if head is going down
-        np.testing.assert_array_less(
-            results["Pipe_4abc.GasOut.H"], results["Pipe_4abc.GasIn.H"]
-        )
+        np.testing.assert_array_less(results["Pipe_4abc.GasOut.H"], results["Pipe_4abc.GasIn.H"])
 
 
 if __name__ == "__main__":
@@ -65,7 +63,4 @@ if __name__ == "__main__":
     start_time = time.time()
     a = TestMILPGasSourceSink()
     a.test_source_sink()
-    print(
-        "Execution time: "
-        + time.strftime("%M:%S", time.gmtime(time.time() - start_time))
-    )
+    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

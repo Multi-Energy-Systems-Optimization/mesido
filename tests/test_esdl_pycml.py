@@ -40,9 +40,7 @@ class TestESDL(TestCase):
             input_timeseries_file="timeseries.xml",
         )
 
-        self.assertAlmostEqual(
-            case_python.objective_value, case_esdl.objective_value, 6
-        )
+        self.assertAlmostEqual(case_python.objective_value, case_esdl.objective_value, 6)
 
         np.testing.assert_allclose(
             case_python.extract_results()["demand.Heat_demand"],

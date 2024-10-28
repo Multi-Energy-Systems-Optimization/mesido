@@ -19,9 +19,7 @@ class TestPyCML(TestCase):
 
         recursive_merge = Model.merge_modifiers(x, y)
 
-        self.assertEqual(
-            recursive_merge, dict(V=10.0, OutPort=dict(Q=dict(min=0.5, nominal=1.0)))
-        )
+        self.assertEqual(recursive_merge, dict(V=10.0, OutPort=dict(Q=dict(min=0.5, nominal=1.0))))
 
     def test_merge_modifiers_models(self):
         """

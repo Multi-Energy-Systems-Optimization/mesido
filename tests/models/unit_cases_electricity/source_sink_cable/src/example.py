@@ -96,9 +96,7 @@ class ElectricityProblemMaxCurr(
         super().read()
 
         for d in self.energy_system_components["electricity_demand"]:
-            new_timeseries = (
-                self.get_timeseries(f"{d}.target_electricity_demand").values * 50
-            )
+            new_timeseries = self.get_timeseries(f"{d}.target_electricity_demand").values * 50
             self.set_timeseries(f"{d}.target_electricity_demand", new_timeseries)
 
     def path_goals(self):

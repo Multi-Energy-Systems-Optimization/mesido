@@ -48,32 +48,20 @@ class TestGasNetwork(TestCase):
 
         for demand in solution.energy_system_components.get("gas_demand", []):
             target = solution.get_timeseries(f"{demand}.target_gas_demand").values
-            np.testing.assert_allclose(
-                target, results[f"{demand}.Gas_demand_mass_flow"]
-            )
+            np.testing.assert_allclose(target, results[f"{demand}.Gas_demand_mass_flow"])
 
         removed_pipes = ["Pipe_a718", "Pipe_9a6f", "Pipe_2927", "Pipe_8592"]
         remained_pipes = ["Pipe_51e4", "Pipe_6b39", "Pipe_f9b0", "Pipe_96bc"]
         for pipe in removed_pipes:
-            np.testing.assert_allclose(
-                results[f"{pipe}__gn_diameter"], 0.0, atol=1.0e-6
-            )
-            np.testing.assert_allclose(
-                results[f"{pipe}__investment_cost"], 0.0, atol=1.0e-6
-            )
-            np.testing.assert_allclose(
-                results[f"{pipe}__gn_max_discharge"], 0.0, atol=1.0e-6
-            )
+            np.testing.assert_allclose(results[f"{pipe}__gn_diameter"], 0.0, atol=1.0e-6)
+            np.testing.assert_allclose(results[f"{pipe}__investment_cost"], 0.0, atol=1.0e-6)
+            np.testing.assert_allclose(results[f"{pipe}__gn_max_discharge"], 0.0, atol=1.0e-6)
         for pipe in remained_pipes:
             np.testing.assert_array_less(0.0, results[f"{pipe}__gn_diameter"])
             np.testing.assert_array_less(0.0, results[f"{pipe}__investment_cost"])
-            np.testing.assert_equal(
-                True, None is not results[f"{pipe}__gn_max_discharge"]
-            )
+            np.testing.assert_equal(True, None is not results[f"{pipe}__gn_max_discharge"])
 
-        np.testing.assert_allclose(
-            results["GasProducer_c92e.GasOut.Q"], 0.0, atol=1e-10
-        )
+        np.testing.assert_allclose(results["GasProducer_c92e.GasOut.Q"], 0.0, atol=1e-10)
         np.testing.assert_array_less(0.0, results["GasProducer_17aa.GasOut.Q"])
 
 
@@ -83,7 +71,4 @@ if __name__ == "__main__":
     start_time = time.time()
     a = TestGasNetwork()
     a.test_gas_pipe_top()
-    print(
-        "Execution time: "
-        + time.strftime("%M:%S", time.gmtime(time.time() - start_time))
-    )
+    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

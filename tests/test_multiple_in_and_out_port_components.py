@@ -189,9 +189,7 @@ class TestHP(TestCase):
         energy_conservation_test(solution, results)
 
         # We check the energy converted betweeen the commodities
-        np.testing.assert_allclose(
-            power_elec * parameters["GenericConversion_3d3f.COP"], sec_heat
-        )
+        np.testing.assert_allclose(power_elec * parameters["GenericConversion_3d3f.COP"], sec_heat)
         np.testing.assert_allclose(power_elec + prim_heat, sec_heat)
 
 

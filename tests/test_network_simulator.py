@@ -88,7 +88,4 @@ if __name__ == "__main__":
     start_time = time.time()
     a = TestNetworkSimulator()
     a.test_network_simulator()
-    print(
-        "Execution time: "
-        + time.strftime("%M:%S", time.gmtime(time.time() - start_time))
-    )
+    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

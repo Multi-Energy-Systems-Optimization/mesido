@@ -94,8 +94,7 @@ class TestMaxSizeAggregationCount(TestCase):
         # Test that investmentcost is correctly linked to max size
         np.testing.assert_allclose(
             inv_cost_2,
-            solution.parameters(0)["HeatProducer_2.investment_cost_coefficient"]
-            * max_size_2,
+            solution.parameters(0)["HeatProducer_2.investment_cost_coefficient"] * max_size_2,
         )
 
         # Test that cost only exist for 2 and not for 1. Note the tolerances
@@ -115,8 +114,7 @@ class TestMaxSizeAggregationCount(TestCase):
         np.testing.assert_allclose(fix_cost_1, 0.0, atol=1.0e-6)
         np.testing.assert_allclose(
             fix_cost_2,
-            max_size_2
-            * parameters["HeatProducer_2.fixed_operational_cost_coefficient"],
+            max_size_2 * parameters["HeatProducer_2.fixed_operational_cost_coefficient"],
             atol=1.0e-6,
         )
         np.testing.assert_allclose(inst_cost_1, 0.0, atol=1e-9)
@@ -134,8 +132,7 @@ class TestMaxSizeAggregationCount(TestCase):
         # Therefore, we can check the max_size constraint.
         np.testing.assert_allclose(
             True,
-            results["HeatStorage_74c1.Stored_heat"]
-            <= results["HeatStorage_74c1__max_size"],
+            results["HeatStorage_74c1.Stored_heat"] <= results["HeatStorage_74c1__max_size"],
         )
         np.testing.assert_allclose(
             True, abs(results["ATES_033c.Heat_ates"]) <= results["ATES_033c__max_size"]
@@ -166,15 +163,9 @@ class TestMaxSizeAggregationCount(TestCase):
         results = solution.extract_results()
 
         np.testing.assert_allclose(results["ATES_033c.Heat_ates"], 0.0, atol=1.0e-6)
-        np.testing.assert_allclose(
-            results["HeatStorage_74c1.Stored_heat"], 0.0, atol=1.0e-3
-        )
-        np.testing.assert_allclose(
-            results["ATES_033c_aggregation_count"], 0.0, atol=1.0e-6
-        )
-        np.testing.assert_allclose(
-            results["HeatStorage_74c1_aggregation_count"], 0.0, atol=1.0e-6
-        )
+        np.testing.assert_allclose(results["HeatStorage_74c1.Stored_heat"], 0.0, atol=1.0e-3)
+        np.testing.assert_allclose(results["ATES_033c_aggregation_count"], 0.0, atol=1.0e-6)
+        np.testing.assert_allclose(results["HeatStorage_74c1_aggregation_count"], 0.0, atol=1.0e-6)
 
         demand_matching_test(solution, results)
         energy_conservation_test(solution, results)
@@ -187,7 +178,4 @@ if __name__ == "__main__":
     start_time = time.time()
     a = TestMaxSizeAggregationCount()
     a.test_max_size_and_aggr_count()
-    print(
-        "Execution time: "
-        + time.strftime("%M:%S", time.gmtime(time.time() - start_time))
-    )
+    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

@@ -35,9 +35,7 @@ class TestHeadLossCalculation(TestCase):
                 "head_loss_option": HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY,
             }
 
-            def _hn_get_pipe_head_loss_option(
-                self, heat_network_settings, *args, **kwargs
-            ):
+            def _hn_get_pipe_head_loss_option(self, heat_network_settings, *args, **kwargs):
                 return self.__head_loss_option
 
             def optimize(self):
@@ -139,7 +137,4 @@ if __name__ == "__main__":
     start_time = time.time()
     a = TestHeadLossCalculation()
     a.test_scalar_return_type()
-    print(
-        "Execution time: "
-        + time.strftime("%M:%S", time.gmtime(time.time() - start_time))
-    )
+    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

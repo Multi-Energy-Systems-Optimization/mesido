@@ -30,9 +30,7 @@ class RevenueGoal(Goal):
         self.function_nominal = nominal
 
     def function(self, optimization_problem, ensemble_member):
-        canonical, sign = optimization_problem.alias_relation.canonical_signed(
-            self.state
-        )
+        canonical, sign = optimization_problem.alias_relation.canonical_signed(self.state)
 
         symbols = sign * optimization_problem.state_vector(canonical, ensemble_member)
         price_profile = optimization_problem.get_timeseries(self.price_profile).values
@@ -68,9 +66,7 @@ class _GoalsAndOptions:
         # TODO: these goals should incorperate the timestep
         for demand in self.energy_system_components.get("electricity_demand", []):
             carrier_name = (
-                self.esdl_assets[self.esdl_asset_name_to_id_map[demand]]
-                .in_ports[0]
-                .carrier.name
+                self.esdl_assets[self.esdl_asset_name_to_id_map[demand]].in_ports[0].carrier.name
             )
             price_profile = f"{carrier_name}.price_profile"
             # price_profile = f"{demand}.electricity_price"
@@ -84,9 +80,7 @@ class _GoalsAndOptions:
         for demand in self.energy_system_components.get("gas_demand", []):
             # Code below: When profile is assigned to carrier instead of using .csv file
             carrier_name = (
-                self.esdl_assets[self.esdl_asset_name_to_id_map[demand]]
-                .in_ports[0]
-                .carrier.name
+                self.esdl_assets[self.esdl_asset_name_to_id_map[demand]].in_ports[0].carrier.name
             )
             price_profile = f"{carrier_name}.price_profile"
             # price_profile = f"{demand}.gas_price"
@@ -103,14 +97,10 @@ class _GoalsAndOptions:
         constraints = super().constraints(ensemble_member)
 
         for gs in self.energy_system_components.get("gas_tank_storage", []):
-            canonical, sign = self.alias_relation.canonical_signed(
-                f"{gs}.Stored_gas_mass"
-            )
+            canonical, sign = self.alias_relation.canonical_signed(f"{gs}.Stored_gas_mass")
             storage_t0 = sign * self.state_vector(canonical, ensemble_member)[0]
             constraints.append((storage_t0, 0.0, 0.0))
-            canonical, sign = self.alias_relation.canonical_signed(
-                f"{gs}.Gas_tank_flow"
-            )
+            canonical, sign = self.alias_relation.canonical_signed(f"{gs}.Gas_tank_flow")
             gas_flow_t0 = sign * self.state_vector(canonical, ensemble_member)[0]
             constraints.append((gas_flow_t0, 0.0, 0.0))
 
@@ -144,9 +134,7 @@ class MILPProblemInequality(
         options = super().energy_system_options()
         options["include_asset_is_switched_on"] = True
         options["include_electric_cable_power_loss"] = False
-        self.gas_network_settings[
-            "network_type"
-        ] = NetworkSettings.NETWORK_TYPE_HYDROGEN
+        self.gas_network_settings["network_type"] = NetworkSettings.NETWORK_TYPE_HYDROGEN
 
         return options
 
@@ -165,9 +153,7 @@ class MILPProblemConstantEfficiency(MILPProblemInequality):
 class MILPProblemEquality(MILPProblemInequality):
     def energy_system_options(self):
         options = super().energy_system_options()
-        options[
-            "electrolyzer_efficiency"
-        ] = ElectrolyzerOption.LINEARIZED_THREE_LINES_EQUALITY
+        options["electrolyzer_efficiency"] = ElectrolyzerOption.LINEARIZED_THREE_LINES_EQUALITY
 
         return options
 

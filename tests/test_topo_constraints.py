@@ -40,9 +40,7 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
         )  # noqa: E402, I100
 
         base_folder = (
-            Path(examples.pipe_diameter_sizing.src.example.__file__)
-            .resolve()
-            .parent.parent
+            Path(examples.pipe_diameter_sizing.src.example.__file__).resolve().parent.parent
         )
 
         del root_folder
@@ -78,22 +76,16 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
         """
         for p in self.problem.energy_system_components.get("heat_pipe", []):
             # If there is nothing to choose for the optimizer, no pipe class binaries are made
-            if (
-                self.problem.pipe_classes(p) is None
-                or len(self.problem.pipe_classes(p)) == 1
-            ):
+            if self.problem.pipe_classes(p) is None or len(self.problem.pipe_classes(p)) == 1:
                 continue
 
             class_vars = self.get_pipe_class_vars(p)
             chosen_pc = self.get_chosen_pipe_class(p, class_vars)
 
             for var_name, value in class_vars.items():
+                self.assertTrue(var_name in self.results, msg=f"{var_name} not in results")
                 self.assertTrue(
-                    var_name in self.results, msg=f"{var_name} not in results"
-                )
-                self.assertTrue(
-                    abs(value - 0.0) < MIP_TOLERANCE
-                    or abs(value - 1.0) < MIP_TOLERANCE,
+                    abs(value - 0.0) < MIP_TOLERANCE or abs(value - 1.0) < MIP_TOLERANCE,
                     msg=f"Binary {var_name} isn't either 0.0 or 1.0, it is {value}",
                 )
             np.testing.assert_almost_equal(
@@ -142,10 +134,7 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
         total_pipes_to_optimize = 0
         for p in self.problem.energy_system_components.get("heat_pipe", []):
             # If there is nothing to choose for the optimizer, no pipe class binaries are made,
-            if (
-                self.problem.pipe_classes(p) is None
-                or len(self.problem.pipe_classes(p)) == 1
-            ):
+            if self.problem.pipe_classes(p) is None or len(self.problem.pipe_classes(p)) == 1:
                 continue
             pipe_class_vars = self.get_pipe_class_vars(p)
             chosen_pc = self.get_chosen_pipe_class(p, pipe_class_vars)
@@ -153,9 +142,7 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
             total_pipes_to_optimize += 1
             for pc in self.problem.pipe_classes(p):
                 if p in self.problem.cold_pipes:
-                    base_name = (
-                        f"{self.problem.cold_to_hot_pipe(p)}__hn_pipe_class_{pc.name}"
-                    )
+                    base_name = f"{self.problem.cold_to_hot_pipe(p)}__hn_pipe_class_{pc.name}"
                 else:
                     base_name = f"{p}__hn_pipe_class_{pc.name}"
                 cost_ordering_var_name = base_name + "_cost_ordering"
@@ -245,9 +232,7 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
                 for pc in given_pipe_classes
             ]
         else:
-            expected_class_vars = [
-                f"{pipe}__hn_pipe_class_{pc.name}" for pc in given_pipe_classes
-            ]
+            expected_class_vars = [f"{pipe}__hn_pipe_class_{pc.name}" for pc in given_pipe_classes]
         class_vars = {
             var_name: value
             for var_name, value in self.results.items()
@@ -255,9 +240,7 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
         }
         return class_vars
 
-    def get_chosen_pipe_class(
-        self, pipe: str, pipe_class_vars: Dict[str, np.ndarray]
-    ) -> PipeClass:
+    def get_chosen_pipe_class(self, pipe: str, pipe_class_vars: Dict[str, np.ndarray]) -> PipeClass:
         """
         This function retrieves the selected pipe class optimization result for a pipe.
 
@@ -278,9 +261,7 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
         self.assertIsNotNone(chosen_var, msg=f"No pipe class selected for {pipe}")
         class_name = chosen_var.split("_")[-1]
         chosen_pc = [pc for pc in given_pipe_classes if pc.name == class_name]
-        self.assertEqual(
-            len(chosen_pc), 1, msg=f"Found multiple chosen pipe classes for {pipe}"
-        )
+        self.assertEqual(len(chosen_pc), 1, msg=f"Found multiple chosen pipe classes for {pipe}")
         return chosen_pc[0]
 
     def get_heat_losses(self, pipe: str, pipe_class: PipeClass):

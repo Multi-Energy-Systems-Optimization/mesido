@@ -77,9 +77,7 @@ class TestMultiCommodityHeatPump(TestCase):
         # check that heatpump is providing more energy to secondary side than demanded
         np.testing.assert_array_less(heatdemand_sec - heatpump_heat_sec, 0)
         # check that producer is providing more energy to heatpump and primary demand
-        np.testing.assert_array_less(
-            heatdemand_prim - (heatsource_prim - heatpump_heat_prim), 0
-        )
+        np.testing.assert_array_less(heatdemand_prim - (heatsource_prim - heatpump_heat_prim), 0)
 
         # check that heatpumppower*COP==secondaryheat heatpump
         np.testing.assert_allclose(heatpump_power * cop, heatpump_heat_sec)
@@ -87,12 +85,8 @@ class TestMultiCommodityHeatPump(TestCase):
         np.testing.assert_allclose(heatpump_power, heatpump_current * heatpump_voltage)
         np.testing.assert_array_less(heatpump_power, elec_prod_power)
         # check if current and voltage limits are satisfied
-        np.testing.assert_array_less(
-            heatpump_current, i_max * np.ones(len(heatpump_current))
-        )
-        np.testing.assert_allclose(
-            v_min_hp * np.ones(len(heatpump_voltage)), heatpump_voltage
-        )
+        np.testing.assert_array_less(heatpump_current, i_max * np.ones(len(heatpump_current)))
+        np.testing.assert_allclose(v_min_hp * np.ones(len(heatpump_voltage)), heatpump_voltage)
 
     def test_heat_pump_elec_min_heat_curr_limit(self):
         """
@@ -155,25 +149,17 @@ class TestMultiCommodityHeatPump(TestCase):
             np.zeros(len(heatdemand_sec)),
         )
         # check that heatpump is limited by electric transport power limitations:
-        np.testing.assert_allclose(
-            heatpump_power, i_max * v_min_hp * np.ones(len(heatpump_power))
-        )
+        np.testing.assert_allclose(heatpump_power, i_max * v_min_hp * np.ones(len(heatpump_power)))
         # check that prim producer is providing more energy to heatpump and primary demand
-        np.testing.assert_array_less(
-            heatdemand_prim - (heatsource_prim - heatpump_heat_prim), 0
-        )
+        np.testing.assert_array_less(heatdemand_prim - (heatsource_prim - heatpump_heat_prim), 0)
         # check that heatpumppower*COP==secondaryheat heatpump
         np.testing.assert_allclose(heatpump_power * cop, heatpump_heat_sec)
         # check power consumption with current and voltage heatpump
         np.testing.assert_allclose(heatpump_power, heatpump_current * heatpump_voltage)
         np.testing.assert_array_less(heatpump_power, elec_prod_power)
         # check if current and voltage limits are satisfied
-        np.testing.assert_allclose(
-            heatpump_current, i_max * np.ones(len(heatpump_current))
-        )
-        np.testing.assert_allclose(
-            v_min_hp * np.ones(len(heatpump_voltage)), heatpump_voltage
-        )
+        np.testing.assert_allclose(heatpump_current, i_max * np.ones(len(heatpump_current)))
+        np.testing.assert_allclose(v_min_hp * np.ones(len(heatpump_voltage)), heatpump_voltage)
         # TODO: currently connecting pipes at HPs can not be disabled, these don't have the
         # functionality as this causes other problems with HP tests, have to adjust this later.
         # This option would be added/changed in asset_to_component_base
@@ -224,27 +210,15 @@ class TestMultiCommodityHeatPump(TestCase):
         # pipe_sec_out_hp_disconnected = results["Pipe_408e__is_disconnected"]
 
         # check that heatpump is not used:
-        np.testing.assert_allclose(
-            heatpump_power, np.zeros(len(heatpump_power)), atol=tol
-        )
-        np.testing.assert_allclose(
-            heatpump_heat_sec, np.zeros(len(heatpump_heat_sec)), atol=tol
-        )
-        np.testing.assert_allclose(
-            heatpump_heat_prim, np.zeros(len(heatpump_heat_prim)), atol=tol
-        )
+        np.testing.assert_allclose(heatpump_power, np.zeros(len(heatpump_power)), atol=tol)
+        np.testing.assert_allclose(heatpump_heat_sec, np.zeros(len(heatpump_heat_sec)), atol=tol)
+        np.testing.assert_allclose(heatpump_heat_prim, np.zeros(len(heatpump_heat_prim)), atol=tol)
 
-        np.testing.assert_allclose(
-            elec_prod_power, np.zeros(len(heatpump_heat_prim)), atol=tol
-        )
-        np.testing.assert_allclose(
-            heatpump_disabled, np.ones(len(heatpump_heat_prim)), atol=tol
-        )
+        np.testing.assert_allclose(elec_prod_power, np.zeros(len(heatpump_heat_prim)), atol=tol)
+        np.testing.assert_allclose(heatpump_disabled, np.ones(len(heatpump_heat_prim)), atol=tol)
 
         # check that prim producer is providing more energy to heatpump and primary demand
-        np.testing.assert_array_less(
-            heatdemand_prim - (heatsource_prim - heatpump_heat_prim), 0
-        )
+        np.testing.assert_array_less(heatdemand_prim - (heatsource_prim - heatpump_heat_prim), 0)
 
     def test_heat_pump_elec_price_profile(self):
         """

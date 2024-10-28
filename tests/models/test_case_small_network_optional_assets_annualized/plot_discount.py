@@ -3,9 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def calculate_annuity_factor(
-    discount_rate: np.ndarray, years_asset_life: float
-) -> np.ndarray:
+def calculate_annuity_factor(discount_rate: np.ndarray, years_asset_life: float) -> np.ndarray:
     """
     Calculate the annuity factor, given an annual discount_rate over
     a specified number years_asset_life.
@@ -44,9 +42,7 @@ for years_asset_life in [1] + list(range(5, 31, 5)):
     # Calculate the corresponding annuity factors
     annuity_factors = calculate_annuity_factor(discount_rate, years_asset_life)
     # Plot the line for each year
-    plt.plot(
-        discount_rate, 1 / annuity_factors, label=f"Life = {years_asset_life} years"
-    )
+    plt.plot(discount_rate, 1 / annuity_factors, label=f"Life = {years_asset_life} years")
 
 plt.xlabel("Discount rate)")
 plt.ylabel("1/(Annuity factor)")

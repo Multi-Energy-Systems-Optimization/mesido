@@ -181,9 +181,7 @@ class HeatProblem2(
         super().read()
 
         for d in self.energy_system_components["heat_demand"]:
-            new_timeseries = (
-                self.get_timeseries(f"{d}.target_heat_demand").values * 0.01
-            )
+            new_timeseries = self.get_timeseries(f"{d}.target_heat_demand").values * 0.01
             self.set_timeseries(f"{d}.target_heat_demand", new_timeseries)
 
     def path_goals(self):
@@ -228,9 +226,7 @@ class ElectricityProblem(
         super().read()
 
         for d in self.energy_system_components["heat_demand"]:
-            new_timeseries = (
-                self.get_timeseries(f"{d}.target_heat_demand").values * 0.01
-            )
+            new_timeseries = self.get_timeseries(f"{d}.target_heat_demand").values * 0.01
             self.set_timeseries(f"{d}.target_heat_demand", new_timeseries)
 
     def path_goals(self):
@@ -282,9 +278,7 @@ class ElectricityProblemPriceProfile(
         super().read()
 
         for d in self.energy_system_components["heat_demand"]:
-            new_timeseries = (
-                self.get_timeseries(f"{d}.target_heat_demand").values * 0.01
-            )
+            new_timeseries = self.get_timeseries(f"{d}.target_heat_demand").values * 0.01
             self.set_timeseries(f"{d}.target_heat_demand", new_timeseries)
 
     def goals(self):

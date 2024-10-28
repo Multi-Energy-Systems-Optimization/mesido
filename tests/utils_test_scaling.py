@@ -112,9 +112,7 @@ def check_element_scale_order(
     """
 
     def calculate_order(element):
-        return (
-            element["max"] / element["min"] if element["min"] != 0.0 else element["max"]
-        )
+        return element["max"] / element["min"] if element["min"] != 0.0 else element["max"]
 
     msg_order = {}
     order = calculate_order(actual_range)
@@ -164,8 +162,7 @@ def get_scaling_range(
     range_data = {}
     for log in linear_coeff_log:
         if (
-            "Statistics of constraints: max & min of abs(jac(g, x0))), "
-            "max & min of abs(g(x0))"
+            "Statistics of constraints: max & min of abs(jac(g, x0))), " "max & min of abs(g(x0))"
         ) == log.msg:
             data = linear_coeff_log[linear_coeff_log.index(log) + 1]
             data_str = re.findall(r"[-+]?\d*\.\d+|\d+", data.msg)
@@ -240,9 +237,7 @@ def check_scale_range(
         if (test_range_values["min"] <= test_range_values["max"]) and (
             expected_range_values["min"] <= expected_range_values["max"]
         ):
-            check_element_range(
-                element, test_range_values, expected_range_values, relative_tol
-            )
+            check_element_range(element, test_range_values, expected_range_values, relative_tol)
             check_element_scale_order(
                 element, test_range_values, expected_range_values, maximum_order_diff
             )
@@ -368,7 +363,5 @@ def check_scaling(
     range_data = get_scaling_range(rtc_logs_list, rtc_logger)
     test_instance.range_data = range_data
     test_instance.test_name = test_name
-    logging.info(
-        f"Range data in check_scaling: {range_data}"
-    )  # Add this line for debugging
+    logging.info(f"Range data in check_scaling: {range_data}")  # Add this line for debugging
     check_scale_range(test_name, range_data, relative_tol, maximum_order_diff)

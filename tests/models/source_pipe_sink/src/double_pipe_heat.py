@@ -26,12 +26,8 @@ class TargetDemandGoal(Goal):
     order = 2
 
     def __init__(self, optimization_problem):
-        self.target_min = optimization_problem.get_timeseries(
-            "demand.target_heat_demand"
-        )
-        self.target_max = optimization_problem.get_timeseries(
-            "demand.target_heat_demand"
-        )
+        self.target_min = optimization_problem.get_timeseries("demand.target_heat_demand")
+        self.target_max = optimization_problem.get_timeseries("demand.target_heat_demand")
         self.function_range = (0.0, 2e5)
         self.function_nominal = 1e5
 
@@ -49,9 +45,7 @@ class MinimizeProduction(Goal):
 
     def function(self, optimization_problem, ensemble_member):
         sum = 0
-        for source in optimization_problem.energy_system_components.get(
-            "heat_source", []
-        ):
+        for source in optimization_problem.energy_system_components.get("heat_source", []):
             sum = optimization_problem.state(f"{source}.Heat_source")
         return sum
 

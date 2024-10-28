@@ -48,9 +48,7 @@ class ValidateWithPandaPipes(TestCase):
         import examples.pandapipes.src.run_example
         from examples.pandapipes.src.run_example import HeatProblemHydraulic
 
-        base_folder = (
-            Path(examples.pandapipes.src.run_example.__file__).resolve().parent.parent
-        )
+        base_folder = Path(examples.pandapipes.src.run_example.__file__).resolve().parent.parent
 
         class SourcePipeSinkNetwork(HeatProblemHydraulic):
             def energy_system_options(self):
@@ -133,12 +131,8 @@ class ValidateWithPandaPipes(TestCase):
         profile_demand_load_watt = pd.DataFrame(results["demand_1.Heat_demand"])
 
         # Setup supply mass flow for panda_pipes
-        average_temperature_kelvin = (
-            supply_temperature + return_temperature
-        ) / 2.0 + 273.15
-        cp_joule_kgkelvin = pp.get_fluid(net).get_heat_capacity(
-            average_temperature_kelvin
-        )
+        average_temperature_kelvin = (supply_temperature + return_temperature) / 2.0 + 273.15
+        cp_joule_kgkelvin = pp.get_fluid(net).get_heat_capacity(average_temperature_kelvin)
 
         # Enforce mass flow rate instead of cacluting it from Q = m_dot...
         mesido_demand_flow_kg_s = results["Pipe1.Q"] * 988.0
@@ -274,9 +268,7 @@ class ValidateWithPandaPipes(TestCase):
             ],
         }
         for ii in range(len(pandapipes_head_loss_m)):
-            np.testing.assert_allclose(
-                expected_dh["pandapipes"][ii], pandapipes_head_loss_m[ii][0]
-            )
+            np.testing.assert_allclose(expected_dh["pandapipes"][ii], pandapipes_head_loss_m[ii][0])
 
         # ------------------------------------------------------------------------------------------
         # Do not delete the code below.
@@ -340,7 +332,4 @@ if __name__ == "__main__":
     a = ValidateWithPandaPipes()
     a.test_heat_network_head_loss()
 
-    print(
-        "Execution time: "
-        + time.strftime("%M:%S", time.gmtime(time.time() - start_time))
-    )
+    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
