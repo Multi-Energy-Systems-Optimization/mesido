@@ -7,6 +7,11 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
+from utils_test_scaling import (
+    check_scaling,
+    create_problem_with_debug_info,
+)
+
 
 class TestInsulation(TestCase):
     """
@@ -60,8 +65,15 @@ class TestInsulation(TestCase):
         from models.insulation.src.run_insulation import HeatProblem
 
         base_folder = Path(run_insulation.__file__).resolve().parent.parent
+
+        (
+            heat_problem_scaling,
+            rtc_logger,
+            rtc_logs_list,
+        ) = create_problem_with_debug_info(HeatProblem)
+
         heat_problem = run_esdl_mesido_optimization(
-            HeatProblem,
+            heat_problem_scaling,
             base_folder=base_folder,
             esdl_file_name="Insulation.esdl",
             esdl_parser=ESDLFileParser,
@@ -124,6 +136,13 @@ class TestInsulation(TestCase):
             * heat_problem.insulation_levels()["scaling_factor"][0],
             results["HeatingDemand_e6b3.Heat_demand"],
             err_msg="The scaled demand value is incorrect: HeatingDemand_e6b3.Heat_demand",
+        )
+
+        # Check scaling differences and ranges in objective, matrix and rhs
+        check_scaling(
+            self,
+            rtc_logger,
+            rtc_logs_list,
         )
 
     # test1_B

@@ -109,7 +109,9 @@ class TestSetpointConstraints(TestCase):
 
         """
         import models.test_case_small_network_with_ates.src.run_ates as run_ates
-        from models.test_case_small_network_with_ates.src.run_ates import HeatProblemSetPoints
+        from models.test_case_small_network_with_ates.src.run_ates import (
+            HeatProblemSetPoints,
+        )
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
@@ -145,7 +147,9 @@ class TestSetpointConstraints(TestCase):
 
         """
         import models.test_case_small_network_with_ates.src.run_ates as run_ates
-        from models.test_case_small_network_with_ates.src.run_ates import HeatProblemSetPoints
+        from models.test_case_small_network_with_ates.src.run_ates import (
+            HeatProblemSetPoints,
+        )
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
@@ -180,7 +184,9 @@ class TestSetpointConstraints(TestCase):
 
         """
         import models.test_case_small_network_with_ates.src.run_ates as run_ates
-        from models.test_case_small_network_with_ates.src.run_ates import HeatProblemSetPoints
+        from models.test_case_small_network_with_ates.src.run_ates import (
+            HeatProblemSetPoints,
+        )
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 

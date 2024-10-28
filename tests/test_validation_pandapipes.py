@@ -20,7 +20,11 @@ from pandapower.timeseries import OutputWriter
 
 import pandas as pd
 
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
+from utils_tests import (
+    demand_matching_test,
+    energy_conservation_test,
+    heat_to_discharge_test,
+)
 
 
 class ValidateWithPandaPipes(TestCase):
@@ -47,7 +51,6 @@ class ValidateWithPandaPipes(TestCase):
         base_folder = Path(examples.pandapipes.src.run_example.__file__).resolve().parent.parent
 
         class SourcePipeSinkNetwork(HeatProblemHydraulic):
-
             def energy_system_options(self):
                 options = super().energy_system_options()
                 self.heat_network_settings["head_loss_option"] = (
@@ -110,7 +113,12 @@ class ValidateWithPandaPipes(TestCase):
         total_consumers = len(esdlparser.esdl_asset["heat"]["consumer"])
 
         # Create panda_pipes network
-        net, net_asset, supply_temperature, return_temperature = esdlparser.createpandapipenet()
+        (
+            net,
+            net_asset,
+            supply_temperature,
+            return_temperature,
+        ) = esdlparser.createpandapipenet()
 
         # Setup profile data
         raw_profile_demand_load_watt = pd.read_csv(

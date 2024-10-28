@@ -33,7 +33,9 @@ class TargetDemandGoal(Goal):
         self.function_nominal = 1e6
 
     def function(
-        self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
+        self,
+        optimization_problem: CollocatedIntegratedOptimizationProblem,
+        ensemble_member: int,
     ):
         return optimization_problem.state("demand.Heat_demand")
 

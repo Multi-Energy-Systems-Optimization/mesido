@@ -20,7 +20,10 @@ class TestESDL(TestCase):
 
         """
         import models.basic_source_and_demand.src.heat_comparison as heat_comparison
-        from models.basic_source_and_demand.src.heat_comparison import HeatESDL, HeatPython
+        from models.basic_source_and_demand.src.heat_comparison import (
+            HeatESDL,
+            HeatPython,
+        )
 
         base_folder = Path(heat_comparison.__file__).resolve().parent.parent
         input_folder = base_folder / "input"

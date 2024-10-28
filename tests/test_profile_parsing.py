@@ -1,4 +1,5 @@
 import datetime
+import logging
 import unittest
 from pathlib import Path
 from typing import Optional
@@ -45,7 +46,7 @@ class TestPotentialErros(unittest.TestCase):
         model_folder = base_folder / "model"
         input_folder = base_folder / "input"
 
-        logger, logs_list = create_log_list_scaling("WarmingUP-MPC")
+        logger, logs_list = create_log_list_scaling("WarmingUP-MPC", level=logging.ERROR)
 
         with self.assertRaises(SystemExit) as cm:
             problem = EndScenarioSizingStaged(
@@ -95,7 +96,6 @@ class TestPotentialErros(unittest.TestCase):
 
 
 class TestProfileLoading(unittest.TestCase):
-
     def test_loading_from_influx(self):
         """
         This test checks if loading an ESDL with influxDB profiles works. Since
@@ -128,7 +128,11 @@ class TestProfileLoading(unittest.TestCase):
         np.testing.assert_equal(problem.io.reference_datetime.tzinfo, datetime.timezone.utc)
 
         # the three demands in the test ESDL
-        for demand_name in ["HeatingDemand_2ab9", "HeatingDemand_6662", "HeatingDemand_506c"]:
+        for demand_name in [
+            "HeatingDemand_2ab9",
+            "HeatingDemand_6662",
+            "HeatingDemand_506c",
+        ]:
             profile_values = problem.get_timeseries(f"{demand_name}.target_heat_demand").values
             self.assertEqual(profile_values[0], profile_values[1])
             self.assertEqual(len(profile_values), 26)
@@ -144,7 +148,9 @@ class TestProfileLoading(unittest.TestCase):
         default UTC timezone has been set.
         """
         import models.unit_cases_electricity.electrolyzer.src.example as example
-        from models.unit_cases_electricity.electrolyzer.src.example import MILPProblemInequality
+        from models.unit_cases_electricity.electrolyzer.src.example import (
+            MILPProblemInequality,
+        )
 
         base_folder = Path(example.__file__).resolve().parent.parent
         model_folder = base_folder / "model"
@@ -215,7 +221,9 @@ class TestProfileLoading(unittest.TestCase):
         if the loaded profiles match those specified in the csv.
         """
         import models.unit_cases_electricity.electrolyzer.src.example as example
-        from models.unit_cases_electricity.electrolyzer.src.example import MILPProblemInequality
+        from models.unit_cases_electricity.electrolyzer.src.example import (
+            MILPProblemInequality,
+        )
 
         base_folder = Path(example.__file__).resolve().parent.parent
         model_folder = base_folder / "model"

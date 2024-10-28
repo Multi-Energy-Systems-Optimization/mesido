@@ -66,7 +66,10 @@ class TestPyCML(TestCase):
                 super().__init__(None)
 
                 self.add_variable(
-                    Storage, "storage", V=dict(min=10.0), OutPort=dict(Q=dict(nominal=1.5, max=4.0))
+                    Storage,
+                    "storage",
+                    V=dict(min=10.0),
+                    OutPort=dict(Q=dict(nominal=1.5, max=4.0)),
                 )
 
         # We testing/comparing with min, max and nominals

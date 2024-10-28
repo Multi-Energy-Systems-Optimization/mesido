@@ -7,7 +7,11 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
+from utils_tests import (
+    demand_matching_test,
+    energy_conservation_test,
+    heat_to_discharge_test,
+)
 
 
 class TestMultiCommodityHeatPump(TestCase):
@@ -28,7 +32,9 @@ class TestMultiCommodityHeatPump(TestCase):
 
         """
         import models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec as run_hp_elec
-        from models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec import HeatProblem2
+        from models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec import (
+            HeatProblem2,
+        )
 
         base_folder = Path(run_hp_elec.__file__).resolve().parent.parent
 
@@ -98,7 +104,9 @@ class TestMultiCommodityHeatPump(TestCase):
 
         """
         import models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec as run_hp_elec
-        from models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec import HeatProblem
+        from models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec import (
+            HeatProblem,
+        )
 
         base_folder = Path(run_hp_elec.__file__).resolve().parent.parent
 
@@ -137,7 +145,8 @@ class TestMultiCommodityHeatPump(TestCase):
             np.zeros(len(heatdemand_sec)), heatdemand_sec - heatpump_heat_sec
         )
         np.testing.assert_array_less(
-            heatdemand_sec - (heatpump_heat_sec + heatsource_sec), np.zeros(len(heatdemand_sec))
+            heatdemand_sec - (heatpump_heat_sec + heatsource_sec),
+            np.zeros(len(heatdemand_sec)),
         )
         # check that heatpump is limited by electric transport power limitations:
         np.testing.assert_allclose(heatpump_power, i_max * v_min_hp * np.ones(len(heatpump_power)))

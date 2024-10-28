@@ -7,7 +7,16 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
+from utils_test_scaling import (
+    check_scaling,
+    create_problem_with_debug_info,
+)
+
+from utils_tests import (
+    demand_matching_test,
+    energy_conservation_test,
+    heat_to_discharge_test,
+)
 
 
 class TestWarmingUpUnitCases(TestCase):
@@ -32,9 +41,15 @@ class TestWarmingUpUnitCases(TestCase):
 
         base_folder = Path(run_1a.__file__).resolve().parent.parent
 
+        (
+            heat_problem_scaling,
+            rtc_logger,
+            rtc_logs_list,
+        ) = create_problem_with_debug_info(HeatProblem)
+
         # Just a "problem is not infeasible"
         heat_problem = run_esdl_mesido_optimization(
-            HeatProblem,
+            heat_problem_scaling,
             base_folder=base_folder,
             esdl_file_name="1a.esdl",
             esdl_parser=ESDLFileParser,
@@ -47,6 +62,7 @@ class TestWarmingUpUnitCases(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
+        check_scaling(self, rtc_logger, rtc_logs_list)
 
         for node, connected_pipes in heat_problem.energy_system_topology.nodes.items():
             discharge_sum = 0.0
@@ -56,7 +72,9 @@ class TestWarmingUpUnitCases(TestCase):
                 discharge_sum += results[f"{node}.HeatConn[{i_conn+1}].Q"] * orientation
                 heat_sum += results[f"{node}.HeatConn[{i_conn+1}].Heat"] * orientation
                 np.testing.assert_allclose(
-                    results[f"{node}.HeatConn[{i_conn+1}].H"], results[f"{node}.H"], atol=1.0e-6
+                    results[f"{node}.HeatConn[{i_conn+1}].H"],
+                    results[f"{node}.H"],
+                    atol=1.0e-6,
                 )
 
             np.testing.assert_allclose(discharge_sum, 0.0, atol=1.0e-12)
@@ -64,7 +82,8 @@ class TestWarmingUpUnitCases(TestCase):
 
         for demand in heat_problem.energy_system_components.get("heat_demand", []):
             np.testing.assert_array_less(
-                10.2 - 1.0e-6, results[f"{demand}.HeatIn.H"] - results[f"{demand}.HeatOut.H"]
+                10.2 - 1.0e-6,
+                results[f"{demand}.HeatIn.H"] - results[f"{demand}.HeatOut.H"],
             )
             np.testing.assert_allclose(
                 results[f"{demand}.HeatIn.Heat"] - results[f"{demand}.HeatOut.Heat"],
@@ -72,7 +91,9 @@ class TestWarmingUpUnitCases(TestCase):
                 atol=1.0e-6,
             )
             np.testing.assert_allclose(
-                results[f"{demand}.Heat_demand"], results[f"{demand}.Heat_flow"], atol=1.0e-6
+                results[f"{demand}.Heat_demand"],
+                results[f"{demand}.Heat_flow"],
+                atol=1.0e-6,
             )
 
         for source in heat_problem.energy_system_components.get("heat_source", []):
@@ -82,7 +103,9 @@ class TestWarmingUpUnitCases(TestCase):
                 atol=1.0e-6,
             )
             np.testing.assert_allclose(
-                results[f"{source}.Heat_source"], results[f"{source}.Heat_flow"], atol=1.0e-6
+                results[f"{source}.Heat_source"],
+                results[f"{source}.Heat_flow"],
+                atol=1.0e-6,
             )
 
     def test_2a(self):
@@ -101,9 +124,15 @@ class TestWarmingUpUnitCases(TestCase):
 
         base_folder = Path(run_2a.__file__).resolve().parent.parent
 
+        (
+            heat_problem_scaling,
+            rtc_logger,
+            rtc_logs_list,
+        ) = create_problem_with_debug_info(HeatProblem)
+
         # Just a "problem is not infeasible"
         heat_problem = run_esdl_mesido_optimization(
-            HeatProblem,
+            heat_problem_scaling,
             base_folder=base_folder,
             esdl_file_name="2a.esdl",
             esdl_parser=ESDLFileParser,
@@ -114,6 +143,7 @@ class TestWarmingUpUnitCases(TestCase):
         demand_matching_test(heat_problem, heat_problem.extract_results())
         energy_conservation_test(heat_problem, heat_problem.extract_results())
         heat_to_discharge_test(heat_problem, heat_problem.extract_results())
+        check_scaling(self, rtc_logger, rtc_logs_list)
 
     def test_3a(self):
         """
@@ -177,7 +207,8 @@ class TestWarmingUpUnitCases(TestCase):
                 results[f"{buffer}.Heat_loss"],
             )
             np.testing.assert_allclose(
-                results[f"{buffer}.Stored_heat"][0], bounds[f"{buffer}.Stored_heat"][0].values[0]
+                results[f"{buffer}.Stored_heat"][0],
+                bounds[f"{buffer}.Stored_heat"][0].values[0],
             )
             np.testing.assert_allclose(
                 results[f"{buffer}.Stored_heat"][-1] - results[f"{buffer}.Stored_heat"][0],

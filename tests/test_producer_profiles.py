@@ -5,7 +5,12 @@ from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.util import run_esdl_mesido_optimization
 
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
+
+from utils_tests import (
+    demand_matching_test,
+    energy_conservation_test,
+    heat_to_discharge_test,
+)
 
 
 class TestProducerMaxProfile(TestCase):
@@ -40,6 +45,7 @@ class TestProducerMaxProfile(TestCase):
         demand_matching_test(solution, results)
         energy_conservation_test(solution, results)
         heat_to_discharge_test(solution, results)
+
         tol = 1e-8
         heat_producer = results["GeothermalSource_b702.Heat_source"]
         size_producer = results["GeothermalSource_b702__max_size"]

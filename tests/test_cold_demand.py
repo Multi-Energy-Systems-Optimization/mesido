@@ -8,16 +8,20 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
-from utils_test_scaling import create_log_list_scaling
+from utils_test_scaling import (
+    check_scaling,
+    create_log_list_scaling,
+    create_problem_with_debug_info,
+)
 
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
-
-logger = logging.getLogger("WarmingUP-MPC")
-logger.setLevel(logging.INFO)
+from utils_tests import (
+    demand_matching_test,
+    energy_conservation_test,
+    heat_to_discharge_test,
+)
 
 
 class TestColdDemand(TestCase):
-
     def test_insufficient_capacity(self):
         """
         This test checks that the error checks in the code for sufficient installed cool/heatig
@@ -31,7 +35,7 @@ class TestColdDemand(TestCase):
         import models.wko.src.example as example
         from models.wko.src.example import HeatProblem
 
-        logger, logs_list = create_log_list_scaling("WarmingUP-MPC")
+        logger, logs_list = create_log_list_scaling("WarmingUP-MPC", level=logging.ERROR)
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
@@ -76,8 +80,14 @@ class TestColdDemand(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
+        (
+            heat_problem_scaling,
+            rtc_logger,
+            rtc_logs_list,
+        ) = create_problem_with_debug_info(HeatProblem)
+
         heat_problem = run_esdl_mesido_optimization(
-            HeatProblem,
+            heat_problem_scaling,
             base_folder=base_folder,
             esdl_file_name="LT_wko.esdl",
             esdl_parser=ESDLFileParser,
@@ -89,6 +99,7 @@ class TestColdDemand(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
+        check_scaling(self, rtc_logger, rtc_logs_list)
 
     def test_airco(self):
         """
@@ -107,8 +118,14 @@ class TestColdDemand(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
+        (
+            heat_problem_scaling,
+            rtc_logger,
+            rtc_logs_list,
+        ) = create_problem_with_debug_info(HeatProblem)
+
         heat_problem = run_esdl_mesido_optimization(
-            HeatProblem,
+            heat_problem_scaling,
             base_folder=base_folder,
             esdl_file_name="airco.esdl",
             esdl_parser=ESDLFileParser,
@@ -120,6 +137,7 @@ class TestColdDemand(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
+        check_scaling(self, rtc_logger, rtc_logs_list)
 
     def test_wko(self):
         """
@@ -152,7 +170,6 @@ class TestColdDemand(TestCase):
         # ------------------------------------------------------------------------------------------
         # Pipe heat losses inlcuded
         class HeatingCoolingProblem(HeatProblem):
-
             def energy_system_options(self):
                 options = super().energy_system_options()
                 options["neglect_pipe_heat_losses"] = False
@@ -190,8 +207,14 @@ class TestColdDemand(TestCase):
 
                 return constraints
 
+        (
+            heating_cooling_problem_scaling,
+            rtc_logger,
+            rtc_logs_list,
+        ) = create_problem_with_debug_info(HeatingCoolingProblem)
+
         heat_problem = run_esdl_mesido_optimization(
-            HeatingCoolingProblem,
+            heating_cooling_problem_scaling,
             base_folder=base_folder,
             esdl_file_name="LT_wko_heating_and_cooling.esdl",
             esdl_parser=ESDLFileParser,
@@ -203,6 +226,7 @@ class TestColdDemand(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
+        check_scaling(self, rtc_logger, rtc_logs_list)
 
         # Check cyclic constraint
         np.testing.assert_allclose(
@@ -211,10 +235,12 @@ class TestColdDemand(TestCase):
         # Check heat loss and gain
         tol_value = 1.0e-6
         np.testing.assert_array_less(
-            0.0, results["Pipe1.HeatIn.Heat"] - results["Pipe1.HeatOut.Heat"] + tol_value
+            0.0,
+            results["Pipe1.HeatIn.Heat"] - results["Pipe1.HeatOut.Heat"] + tol_value,
         )
         np.testing.assert_array_less(
-            results["Pipe1_ret.HeatIn.Heat"] - results["Pipe1_ret.HeatOut.Heat"] - tol_value, 0.0
+            results["Pipe1_ret.HeatIn.Heat"] - results["Pipe1_ret.HeatOut.Heat"] - tol_value,
+            0.0,
         )
 
         # ------------------------------------------------------------------------------------------
@@ -225,8 +251,14 @@ class TestColdDemand(TestCase):
                 options["neglect_pipe_heat_losses"] = True
                 return options
 
+        (
+            heating_cooling_problem_no_heat_loss,
+            rtc_logger,
+            rtc_logs_list,
+        ) = create_problem_with_debug_info(HeatingCoolingProblemNoHeatLoss)
+
         heat_problem = run_esdl_mesido_optimization(
-            HeatingCoolingProblemNoHeatLoss,
+            heating_cooling_problem_no_heat_loss,
             base_folder=base_folder,
             esdl_file_name="LT_wko_heating_and_cooling.esdl",
             esdl_parser=ESDLFileParser,
@@ -238,6 +270,7 @@ class TestColdDemand(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
+        check_scaling(self, rtc_logger, rtc_logs_list)
 
         # Check cyclic constraint
         np.testing.assert_allclose(
@@ -249,7 +282,9 @@ class TestColdDemand(TestCase):
             0.0, results["Pipe1.HeatIn.Heat"] - results["Pipe1.HeatOut.Heat"], atol=1e-6
         )
         np.testing.assert_allclose(
-            0.0, results["Pipe1_ret.HeatIn.Heat"] - results["Pipe1_ret.HeatOut.Heat"], atol=1e-6
+            0.0,
+            results["Pipe1_ret.HeatIn.Heat"] - results["Pipe1_ret.HeatOut.Heat"],
+            atol=1e-6,
         )
         # ------------------------------------------------------------------------------------------
 

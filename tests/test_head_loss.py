@@ -11,6 +11,11 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
+from utils_test_scaling import (
+    check_scaling,
+    create_problem_with_debug_info,
+)
+
 from utils_tests import demand_matching_test
 
 
@@ -89,8 +94,16 @@ class TestHeadLoss(TestCase):
                 "influxdb_verify_ssl": False,
             }
 
+            test_name_suffix = head_loss_option_setting.name
+
+            (
+                source_pipe_sink_dw_scaling,
+                rtc_logger,
+                rtc_logs_list,
+            ) = create_problem_with_debug_info(SourcePipeSinkDW)
+
             solution = run_esdl_mesido_optimization(
-                SourcePipeSinkDW,
+                source_pipe_sink_dw_scaling,
                 base_folder=base_folder,
                 esdl_file_name="sourcesink.esdl",
                 esdl_parser=ESDLFileParser,
@@ -99,6 +112,9 @@ class TestHeadLoss(TestCase):
                 **kwargs,
             )
             results = solution.extract_results()
+
+            # Check scaling differences and ranges in objective, matrix and rhs
+            check_scaling(self, rtc_logger, rtc_logs_list, test_name_suffix=test_name_suffix)
 
             pipes = ["Pipe1"]
             for itime in range(len(results[f"{pipes[0]}.dH"])):

@@ -59,7 +59,10 @@ class TestHeadLossCalculation(TestCase):
             HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY,
         ]:
             m = run_optimization_problem(
-                Model, head_loss_option=h, base_folder=base_folder, input_folder=input_folder
+                Model,
+                head_loss_option=h,
+                base_folder=base_folder,
+                input_folder=input_folder,
             )
 
             options = m.energy_system_options()

@@ -27,7 +27,9 @@ class TestElectrolyzer(TestCase):
         - The pipe head loss constraint for a hydrogen network
         """
         import models.unit_cases_electricity.electrolyzer.src.example as example
-        from models.unit_cases_electricity.electrolyzer.src.example import MILPProblemInequality
+        from models.unit_cases_electricity.electrolyzer.src.example import (
+            MILPProblemInequality,
+        )
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
@@ -116,7 +118,8 @@ class TestElectrolyzer(TestCase):
 
         # Check that the wind farm setpoint matches with the production
         np.testing.assert_allclose(
-            results["WindPark_7f14.ElectricityOut.Power"], ub * results["WindPark_7f14__set_point"]
+            results["WindPark_7f14.ElectricityOut.Power"],
+            ub * results["WindPark_7f14__set_point"],
         )
 
         # Checks on the storage
@@ -180,7 +183,8 @@ class TestElectrolyzer(TestCase):
         )
         # Check electrolyzer output massflow
         np.testing.assert_allclose(
-            results["Electrolyzer_fc66.Gas_mass_flow_out"], [431.367058, 431.367058, 431.367058]
+            results["Electrolyzer_fc66.Gas_mass_flow_out"],
+            [431.367058, 431.367058, 431.367058],
         )
 
         #  -----------------------------------------------------------------------------------------
@@ -246,7 +250,9 @@ class TestElectrolyzer(TestCase):
 
         """
         import models.unit_cases_electricity.electrolyzer.src.example as example
-        from models.unit_cases_electricity.electrolyzer.src.example import MILPProblemInequality
+        from models.unit_cases_electricity.electrolyzer.src.example import (
+            MILPProblemInequality,
+        )
 
         base_folder = Path(example.__file__).resolve().parent.parent
 

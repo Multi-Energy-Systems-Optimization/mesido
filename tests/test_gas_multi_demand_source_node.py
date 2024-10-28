@@ -22,7 +22,9 @@ class TestMILPGasMultiDemandSourceNode(TestCase):
 
         """
         import models.unit_cases_gas.multi_demand_source_node.src.run_test as example
-        from models.unit_cases_gas.multi_demand_source_node.src.run_test import GasProblem
+        from models.unit_cases_gas.multi_demand_source_node.src.run_test import (
+            GasProblem,
+        )
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
@@ -44,13 +46,18 @@ class TestMILPGasMultiDemandSourceNode(TestCase):
         results = heat_problem.extract_results()
 
         # Test head at node
-        for node, connected_pipes in heat_problem.energy_system_topology.gas_nodes.items():
+        for (
+            node,
+            connected_pipes,
+        ) in heat_problem.energy_system_topology.gas_nodes.items():
             discharge_sum = 0.0
 
             for i_conn, (_pipe, orientation) in connected_pipes.items():
                 discharge_sum += results[f"{node}.GasConn[{i_conn+1}].Q"] * orientation
                 np.testing.assert_allclose(
-                    results[f"{node}.GasConn[{i_conn+1}].H"], results[f"{node}.H"], atol=1.0e-6
+                    results[f"{node}.GasConn[{i_conn+1}].H"],
+                    results[f"{node}.H"],
+                    atol=1.0e-6,
                 )
             np.testing.assert_allclose(discharge_sum, 0.0, atol=1.0e-12)
 

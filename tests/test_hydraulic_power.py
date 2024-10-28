@@ -186,7 +186,9 @@ class TestHydraulicPower(TestCase):
         # HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY and
         # HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY (with 1 linear segment)
         np.testing.assert_allclose(
-            hydraulic_power_linear, hydraulic_power_dw_1, err_msg="Values should be the same"
+            hydraulic_power_linear,
+            hydraulic_power_dw_1,
+            err_msg="Values should be the same",
         )
         # ----------------------------------------------------------------------------------------
         # Rerun MILP with DW head loss setting, and default line segments
@@ -389,7 +391,6 @@ class TestHydraulicPower(TestCase):
         base_folder = Path(run_test.__file__).resolve().parent.parent
 
         class GasProblemHydraulic(GasProblem):
-
             def read(self):
                 super().read()
 
@@ -457,7 +458,8 @@ class TestHydraulicPower(TestCase):
                     )
                 elif v_inspect_line_ind[k] < v_inspect_line_ind[k + 1]:
                     np.testing.assert_array_less(
-                        (pipe_hp[k] + 1e-6) * pipe_mass[k + 1] / pipe_mass[k], pipe_hp[k + 1]
+                        (pipe_hp[k] + 1e-6) * pipe_mass[k + 1] / pipe_mass[k],
+                        pipe_hp[k + 1],
                     )
                     ind_check += 1
                 else:

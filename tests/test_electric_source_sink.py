@@ -32,7 +32,9 @@ class TestMILPElectricSourceSink(TestCase):
         """
 
         import models.unit_cases_electricity.source_sink_cable.src.example as example
-        from models.unit_cases_electricity.source_sink_cable.src.example import ElectricityProblem
+        from models.unit_cases_electricity.source_sink_cable.src.example import (
+            ElectricityProblem,
+        )
 
         base_folder = Path(example.__file__).resolve().parent.parent
         tol = 1e-10

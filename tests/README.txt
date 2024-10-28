@@ -16,7 +16,7 @@ General notes:
 
 ***************************************************************************************************
 
-Exsting test cases:
+Existing test cases:
 - What do we want to explain in description? General scenario? Or more detail like 1 year profile
 used etc?
 - Where is the warming up 3/4 test cases that have been mentioned by Ryvo and Sam - KvR check with Ryvo where there cases are?
@@ -663,3 +663,24 @@ r"""
    
 ***************************************************************************************************
 
+
+- Scaling checks
+
+    Scaling checks have been included in the following test functions:
+        test_absolute_heat
+        test_asset_is_realized
+        test_ates
+        test_airco
+        test_cold_demand
+        test_wko
+        test_end_scenario_sizing
+        test_gas_boiler
+        test_heat_network_head_loss_LINEARIZED_N_LINES_WEAK_INEQUALITY
+        test_heat_network_head_loss_LINEARIZED_N_LINES_EQUALITY
+        test_heat_loss
+        test_insulation_heatdemand
+        test_multi_commodity_simulator_priorities_el
+        test_network_simulator
+        test_pipe_class_var
+        test_1a
+        test_2a

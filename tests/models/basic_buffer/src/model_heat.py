@@ -66,10 +66,18 @@ class ModelHeat(_Model):
         )
 
         self.add_variable(
-            HeatPipe, "pipe1a_cold", length=170.365, diameter=0.15, **cold_pipe_modifiers
+            HeatPipe,
+            "pipe1a_cold",
+            length=170.365,
+            diameter=0.15,
+            **cold_pipe_modifiers,
         )
         self.add_variable(
-            HeatPipe, "pipe1b_cold", length=309.635, diameter=0.15, **cold_pipe_modifiers
+            HeatPipe,
+            "pipe1b_cold",
+            length=309.635,
+            diameter=0.15,
+            **cold_pipe_modifiers,
         )
         self.add_variable(HeatPipe, "pipe4a_cold", length=5, diameter=0.15, **cold_pipe_modifiers)
         self.add_variable(HeatPipe, "pipe4b_cold", length=15, diameter=0.15, **cold_pipe_modifiers)

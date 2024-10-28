@@ -71,7 +71,6 @@ class HeatProblem(
     CollocatedIntegratedOptimizationProblem,
 ):
     def __init__(self, *args, **kwargs):
-
         global head_loss_setting, n_linearization_lines_setting
         super().__init__(*args, **kwargs)
         self.heat_network_settings["head_loss_option"] = head_loss_setting

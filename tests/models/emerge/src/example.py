@@ -21,7 +21,9 @@ from rtctools.optimization.goal_programming_mixin_base import Goal
 from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
 )
-from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
+from rtctools.optimization.single_pass_goal_programming_mixin import (
+    SinglePassGoalProgrammingMixin,
+)
 
 
 class MaxHydrogenProduction(Goal):
@@ -45,7 +47,9 @@ class MaxHydrogenProduction(Goal):
         self.source = source
 
     def function(
-        self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
+        self,
+        optimization_problem: CollocatedIntegratedOptimizationProblem,
+        ensemble_member: int,
     ) -> ca.MX:
         """
         This function returns the state variable to be minimized.
@@ -83,14 +87,14 @@ class MaxElecProduction(Goal):
         self.source = source
 
     def function(
-        self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
+        self,
+        optimization_problem: CollocatedIntegratedOptimizationProblem,
+        ensemble_member: int,
     ) -> ca.MX:
-
         return -optimization_problem.state(f"{self.source}.Electricity_source")
 
 
 class MaxRevenue(Goal):
-
     priority = 1
 
     order = 1
@@ -110,7 +114,9 @@ class MaxRevenue(Goal):
         self.asset_name = asset_name
 
     def function(
-        self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
+        self,
+        optimization_problem: CollocatedIntegratedOptimizationProblem,
+        ensemble_member: int,
     ) -> ca.MX:
         """
         This function returns the state variable to be minimized.
@@ -129,7 +135,6 @@ class MaxRevenue(Goal):
 
 
 class MinCost(Goal):
-
     priority = 1
 
     order = 1
@@ -142,9 +147,10 @@ class MinCost(Goal):
         self.asset_name = asset_name
 
     def function(
-        self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
+        self,
+        optimization_problem: CollocatedIntegratedOptimizationProblem,
+        ensemble_member: int,
     ) -> ca.MX:
-
         return optimization_problem.extra_variable(
             f"{self.asset_name}__fixed_operational_cost", ensemble_member
         ) + optimization_problem.extra_variable(
@@ -195,7 +201,6 @@ class EmergeTest(
     #     return goals
 
     def goals(self):
-
         goals = super().goals().copy()
 
         for asset_name in [
@@ -319,7 +324,6 @@ class EmergeTest(
 
 
 if __name__ == "__main__":
-
     tic = time.time()
     # for _ in range(10):
     #     elect = run_optimization_problem(

@@ -7,9 +7,11 @@ from mesido.workflows import run_end_scenario_sizing
 
 import numpy as np
 
-from utils_test_scaling import create_problem_with_debug_info  # , problem_scaling_check
-
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
+from utils_tests import (
+    demand_matching_test,
+    energy_conservation_test,
+    heat_to_discharge_test,
+)
 
 
 class TestUpdatedESDL(TestCase):
@@ -32,18 +34,16 @@ class TestUpdatedESDL(TestCase):
         sys.path.insert(1, root_folder)
 
         import examples.PoCTutorial.src.run_grow_tutorial
-        from examples.PoCTutorial.src.run_grow_tutorial import EndScenarioSizingStagedHighs
+        from examples.PoCTutorial.src.run_grow_tutorial import (
+            EndScenarioSizingStagedHighs,
+        )
 
         base_folder = (
             Path(examples.PoCTutorial.src.run_grow_tutorial.__file__).resolve().parent.parent
         )
 
-        optimscaling, logger, logs_list = create_problem_with_debug_info(
-            EndScenarioSizingStagedHighs
-        )
-
         problem = run_end_scenario_sizing(
-            optimscaling,
+            EndScenarioSizingStagedHighs,
             base_folder=base_folder,
             esdl_file_name="PoC Tutorial.esdl",
             esdl_parser=ESDLFileParser,
@@ -55,7 +55,8 @@ class TestUpdatedESDL(TestCase):
         # Save optimized esdl string
         optimized_esdl_string = problem.optimized_esdl_string
         file = open(
-            Path.joinpath(base_folder, "model", "PoC Tutorial_GrowOptimized_esdl_string.esdl"), "w"
+            Path.joinpath(base_folder, "model", "PoC Tutorial_GrowOptimized_esdl_string.esdl"),
+            "w",
         )
         file.write(optimized_esdl_string)
         file.close()
@@ -121,7 +122,8 @@ class TestUpdatedESDL(TestCase):
         # Pipe connected to a producer
         # initially DN900
         np.testing.assert_equal(
-            [*problem._heat_pipe_topo_pipe_class_map["Pipe1"].keys()][-1].name == "DN400", True
+            [*problem._heat_pipe_topo_pipe_class_map["Pipe1"].keys()][-1].name == "DN400",
+            True,
         )
 
 

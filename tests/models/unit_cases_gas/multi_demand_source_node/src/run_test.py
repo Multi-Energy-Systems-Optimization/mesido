@@ -32,7 +32,9 @@ class TargetDemandGoal(Goal):
         self.function_nominal = np.median(target.values)
 
     def function(
-        self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
+        self,
+        optimization_problem: CollocatedIntegratedOptimizationProblem,
+        ensemble_member: int,
     ):
         return optimization_problem.state(self.state)
 

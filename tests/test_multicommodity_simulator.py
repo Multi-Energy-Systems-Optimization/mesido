@@ -16,7 +16,10 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
-from utils_test_scaling import create_problem_with_debug_info, problem_scaling_check
+from utils_test_scaling import (
+    check_scaling,
+    create_problem_with_debug_info,
+)
 
 from utils_tests import (
     demand_matching_test,
@@ -93,12 +96,14 @@ class TestMultiCommoditySimulator(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
-        multicommoditysimulatorscaling, logger, logs_list = create_problem_with_debug_info(
-            MultiCommoditySimulator
-        )
+        (
+            multicommodity_simulator_scaling,
+            rtc_logger,
+            rtc_logs_list,
+        ) = create_problem_with_debug_info(MultiCommoditySimulator)
 
         solution = run_optimization_problem(
-            multicommoditysimulatorscaling,
+            multicommodity_simulator_scaling,
             base_folder=base_folder,
             esdl_file_name="Electric_bus4_priorities.esdl",
             esdl_parser=ESDLFileParser,
@@ -106,7 +111,6 @@ class TestMultiCommoditySimulator(TestCase):
             input_timeseries_file="timeseries_2.csv",
         )
 
-        problem_scaling_check(logs_list, logger)
         bounds = solution.bounds()
         results = solution.extract_results()
 
@@ -119,7 +123,10 @@ class TestMultiCommoditySimulator(TestCase):
 
         # check producer with highest priority (lowest marginal costs is maximizing production)
         np.testing.assert_allclose(
-            prod_1, bounds["ElectricityProducer_a215.Electricity_source"][1], atol=1e-3, rtol=1e-6
+            prod_1,
+            bounds["ElectricityProducer_a215.Electricity_source"][1],
+            atol=1e-3,
+            rtol=1e-6,
         )
         # check producer with second highest priority is only producing to meet profile of demand
         prod_2_target = dem_1 - prod_1
@@ -130,6 +137,7 @@ class TestMultiCommoditySimulator(TestCase):
         demand_2_target = prod_1 - dem_1
         demand_2_target[demand_2_target < 0] = 0
         np.testing.assert_allclose(dem_2, demand_2_target, atol=1e-3, rtol=1e-6)
+        check_scaling(self, rtc_logger, rtc_logs_list)
 
     def test_multi_commodity_simulator_prod_profile(self):
         import models.unit_cases_electricity.bus_networks.src.example as example
@@ -283,7 +291,6 @@ class TestMultiCommoditySimulator(TestCase):
         base_folder = Path(example.__file__).resolve().parent.parent
 
         class MCSimulatorShortSmallProd(MultiCommoditySimulatorNoLosses):
-
             def read(self, variable=None):
                 super().read()
 
@@ -423,19 +430,14 @@ class TestMultiCommoditySimulator(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
-        multicommoditysimulatornolossesscaling, logger, logs_list = create_problem_with_debug_info(
-            MultiCommoditySimulatorNoLosses
-        )
-
         solution = run_optimization_problem(
-            multicommoditysimulatornolossesscaling,
+            MultiCommoditySimulatorNoLosses,
             base_folder=base_folder,
             esdl_file_name="emerge_battery_priorities.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_short.csv",
         )
-        problem_scaling_check(logs_list, logger, order_diff=1e7)
         results = solution.extract_results()
 
         feasibility_test(solution)

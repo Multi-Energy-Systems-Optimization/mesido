@@ -8,7 +8,12 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
+
+from utils_tests import (
+    demand_matching_test,
+    energy_conservation_test,
+    heat_to_discharge_test,
+)
 
 
 class TestVaryingTemperature(TestCase):
@@ -294,7 +299,9 @@ class TestVaryingTemperature(TestCase):
 
         """
         import models.heat_exchange.src.run_heat_exchanger as run_heat_exchanger
-        from models.heat_exchange.src.run_heat_exchanger import HeatProblemTvarDisableHEX
+        from models.heat_exchange.src.run_heat_exchanger import (
+            HeatProblemTvarDisableHEX,
+        )
 
         base_folder = Path(run_heat_exchanger.__file__).resolve().parent.parent
 

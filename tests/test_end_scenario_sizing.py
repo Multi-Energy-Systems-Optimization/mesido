@@ -16,6 +16,11 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
+from utils_test_scaling import (
+    check_scaling,
+    create_problem_with_debug_info,
+)
+
 from utils_tests import demand_matching_test
 
 
@@ -26,10 +31,16 @@ class TestEndScenarioSizing(TestCase):
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
+        (
+            cls.end_scenario_sizing_highs,
+            cls.rtc_logger,
+            cls.rtc_logs_list,
+        ) = create_problem_with_debug_info(EndScenarioSizing)
+
         # This is an optimization done over a full year with timesteps of 5 days and hour timesteps
         # for the peak day
         cls.solution = run_optimization_problem(
-            EndScenarioSizing,
+            cls.end_scenario_sizing_highs,
             base_folder=base_folder,
             esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
             esdl_parser=ESDLFileParser,
@@ -67,6 +78,9 @@ class TestEndScenarioSizing(TestCase):
 
         # Check whehter the heat demand is matched
         demand_matching_test(self.solution, self.results)
+
+        # Check scaling differences and ranges in objective, matrix and rhs
+        check_scaling(self, self.rtc_logger, self.rtc_logs_list)
 
         # Check that indeed the available pipe classes were adapted based on expected flow
         # Pipe connected to a demand

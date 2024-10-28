@@ -7,7 +7,12 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
+
+from utils_tests import (
+    demand_matching_test,
+    energy_conservation_test,
+    heat_to_discharge_test,
+)
 
 
 class TestMaxSizeAggregationCount(TestCase):
@@ -126,7 +131,8 @@ class TestMaxSizeAggregationCount(TestCase):
         # losses as the buffer has a minimum fraction volume of 5%.
         # Therefore, we can check the max_size constraint.
         np.testing.assert_allclose(
-            True, results["HeatStorage_74c1.Stored_heat"] <= results["HeatStorage_74c1__max_size"]
+            True,
+            results["HeatStorage_74c1.Stored_heat"] <= results["HeatStorage_74c1__max_size"],
         )
         np.testing.assert_allclose(
             True, abs(results["ATES_033c.Heat_ates"]) <= results["ATES_033c__max_size"]
@@ -144,6 +150,7 @@ class TestMaxSizeAggregationCount(TestCase):
         # This is the same problem, but now with the buffer and ates also optional.
         # Therefore, we expect that the ates and buffer are no longer placed to avoid their heat
         # losses. This allows us to check if their placement constraints are proper.
+
         solution = run_esdl_mesido_optimization(
             HeatProblem,
             base_folder=base_folder,
@@ -163,3 +170,12 @@ class TestMaxSizeAggregationCount(TestCase):
         demand_matching_test(solution, results)
         energy_conservation_test(solution, results)
         heat_to_discharge_test(solution, results)
+
+
+if __name__ == "__main__":
+    import time
+
+    start_time = time.time()
+    a = TestMaxSizeAggregationCount()
+    a.test_max_size_and_aggr_count()
+    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

@@ -85,7 +85,8 @@ class TestEndScenarioSizingAnnualized(TestCase):
         # # Assertion 1: Model for annualized objective value with discount=0 and
         # # technical life 1 year matches the objective value of the non-discounted problem
         np.testing.assert_allclose(
-            solution__annualized_modified_param.objective_value, solution_run_ates.objective_value
+            solution__annualized_modified_param.objective_value,
+            solution_run_ates.objective_value,
         )
 
         # Assertion 2: Undiscounted problem has a lower objective value than the discocunted one

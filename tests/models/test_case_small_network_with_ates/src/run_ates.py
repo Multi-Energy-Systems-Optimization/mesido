@@ -74,6 +74,7 @@ class _GoalsAndOptions:
     def solver_options(self):
         options = super().solver_options()
         options["solver"] = "highs"
+        self._qpsol = CachingQPSol()
         return options
 
 
@@ -262,7 +263,11 @@ class HeatProblemPlacingOverTime(HeatProblem):
             constraints.append((inv_made[0] / nominal, 0.0, 200000.0))
             for i in range(1, len(self.times())):
                 constraints.append(
-                    (((inv_made[i] - inv_made[i - 1]) * nominal - inv_cap) / nominal, -np.inf, 0.0)
+                    (
+                        ((inv_made[i] - inv_made[i - 1]) * nominal - inv_cap) / nominal,
+                        -np.inf,
+                        0.0,
+                    )
                 )
 
         # to avoid ates in short problem
