@@ -166,7 +166,10 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, prob
         #     else:
         #         new_date_times.append(problem.io.datetimes[day * 24])
         
+        peak_days = sorted(peak_days)
         peak_check_days = np.array(peak_days) // day_steps * day_steps
+        
+
         current_peak_idx = 0
         for day in range(0, nr_of_days, day_steps):
             if day in peak_check_days:
