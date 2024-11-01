@@ -62,7 +62,6 @@ class TestColdDemand(TestCase):
                 " than the maximum of the heat demand profile 0.15MW",
             )
 
-
     def test_cold_demand(self):
         """
         This test is to check the basic physics for a network which includes cold demand. In this

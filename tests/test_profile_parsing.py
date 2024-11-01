@@ -108,7 +108,7 @@ class TestPotentialErros(unittest.TestCase):
         np.testing.assert_equal(cm.exception.error_type, MesidoAssetIssueType.HEAT_DEMAND_TYPE)
         np.testing.assert_equal(cm.exception.general_issue, "Incorrect asset type: please update.")
         np.testing.assert_equal(
-            cm.exception.message_per_asset_id['2ab92324-f86e-4976-9a6e-f7454b77ba3c'],
+            cm.exception.message_per_asset_id["2ab92324-f86e-4976-9a6e-f7454b77ba3c"],
             "Asset named HeatingDemand_2ab9: This asset is currently a GenericConsumer please"
             " change it to a HeatingDemand",
         )
