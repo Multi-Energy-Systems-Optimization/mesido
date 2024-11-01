@@ -214,7 +214,7 @@ class EndScenarioSizing(
         # possible multiple exceptions at once are true here):
         # https://www.geeksforgeeks.org/exception-groups-in-python/
         for etype in potential_error_type:
-            if get_potential_errors.have_issues_for(etype):
+            if get_potential_errors().have_issues_for(etype):
                 if etype is not MesidoAssetIssueType.HEAT_DEMAND_TYPE:
                     get_potential_errors().convert_to_exception(
                         etype,
