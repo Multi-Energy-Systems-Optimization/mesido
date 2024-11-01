@@ -1,5 +1,6 @@
 import datetime
 import unittest
+import unittest.mock
 from pathlib import Path
 from typing import Optional
 
@@ -8,7 +9,7 @@ import esdl
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import InfluxDBProfileReader, ProfileReaderFromFile
 from mesido.exceptions import MesidoAssetIssueError
-from mesido.potential_errors import MesidoAssetIssueType
+from mesido.potential_errors import MesidoAssetIssueType, PotentialErrors
 from mesido.workflows import EndScenarioSizingStaged
 
 import numpy as np
@@ -50,7 +51,9 @@ class TestPotentialErros(unittest.TestCase):
 
         logger, logs_list = create_log_list_scaling("WarmingUP-MPC")
 
-        with self.assertRaises(MesidoAssetIssueError) as cm:
+        with self.assertRaises(MesidoAssetIssueError) as cm, unittest.mock.patch(
+            "mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()
+        ):
             problem = EndScenarioSizingStaged(
                 esdl_parser=ESDLFileParser,
                 base_folder=base_folder,
@@ -87,7 +90,9 @@ class TestPotentialErros(unittest.TestCase):
         np.testing.assert_equal(len(cm.exception.message_per_asset_id), 3.0)
 
         # Check heating demand type error
-        with self.assertRaises(MesidoAssetIssueError) as cm:
+        with self.assertRaises(MesidoAssetIssueError) as cm, unittest.mock.patch(
+            "mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()
+        ):
             problem = EndScenarioSizingStaged(
                 esdl_parser=ESDLFileParser,
                 base_folder=base_folder,
