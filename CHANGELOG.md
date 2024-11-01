@@ -19,6 +19,7 @@
 - Bugfix: Fix on nominals in electricity cables and gas pipes. Fix on nominals for nodes with logical links.
  
 ## Fixed
+- Bug fix: setting nominals while using logical links when all values are 1.0
 - Bug fix: machine error/rounding with updating lower bound values in the grow_workflow after stage 1
 - documentation: heat physics tank storage
 - bug fix in grow_workflow (heat networks), changed minimum velocity from 0 to default value
