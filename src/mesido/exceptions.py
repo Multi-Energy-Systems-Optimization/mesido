@@ -1,15 +1,30 @@
+from typing import Dict, TYPE_CHECKING
+
+if TYPE_CHECKING:  # This prevents circular referencing between this file and potential_errors.py
+    from mesido.potential_errors import ErrorMessage, MesidoAssetIssueType
+
+
 class MesidoAssetIssueError(Exception):
     """
     This class is used as a MESIDO defined exception class.
     """
 
-    def __init__(self, general_issue, error_type, message_per_asset_id):
+    error_type: "MesidoAssetIssueType"
+    general_issue: str
+    message_per_asset_id: Dict[str, "ErrorMessage"]
+
+    def __init__(
+        self,
+        general_issue: str,
+        error_type: "MesidoAssetIssueType",
+        message_per_asset_id: Dict[str, "ErrorMessage"],
+    ):
 
         self.error_type = error_type
         self.general_issue = general_issue
         self.message_per_asset_id = message_per_asset_id
 
-    def __str__(self):
+    def __str__(self) -> str:
         """
         Returns
         -------

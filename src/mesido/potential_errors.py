@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, List
+from typing import Dict, List, NoReturn
 
 from mesido.exceptions import MesidoAssetIssueError
 
@@ -29,32 +29,23 @@ class PotentialErrors:
         Add potential issues to _gathered_potential_issues.
 
         """
-        self._gathered_potential_issues.setdefault(issue_type, {}).setdefault(asset_id, "")
+        self._gathered_potential_issues.setdefault(issue_type, {})
         self._gathered_potential_issues[issue_type][asset_id] = error_message
 
-    def have_issues_for(self, issue_types: List[MesidoAssetIssueType]) -> Dict[
-        MesidoAssetIssueType,
-        bool,
-    ]:
+    def have_issues_for(self, issue_type: MesidoAssetIssueType) -> bool:
         """
-        Check if the potential issue exists and mark them as True for the specific issue type.
+        Check if the potential issue exists.
 
         """
-        result = {}
-        for ii in range(len(issue_types)):
-            if (
-                issue_types[ii] in self._gathered_potential_issues
-                and len(self._gathered_potential_issues) > 0
-            ):
-                result[issue_types[ii]] = True
-            else:
-                result[issue_types[ii]] = False
+        result = False
+        if issue_type in self._gathered_potential_issues:
+            result = True
 
         return result
 
     def convert_to_exception(
         self, issue_type: MesidoAssetIssueType, general_issue: str
-    ) -> "MesidoAssetIssueError":
+    ) -> NoReturn:
         """
         Raise a MESIDO exception if the issue exists.
 

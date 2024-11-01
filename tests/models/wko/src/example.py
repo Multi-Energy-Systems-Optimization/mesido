@@ -177,9 +177,9 @@ class HeatProblem(
             MesidoAssetIssueType.HEAT_DEMAND_POWER,
             MesidoAssetIssueType.COLD_DEMAND_POWER,
         ]
-        is_potential_error = get_potential_errors().have_issues_for(potential_error_type)
+
         for etype in potential_error_type:
-            if is_potential_error[etype]:
+            if get_potential_errors.have_issues_for(etype):
                 if etype is not MesidoAssetIssueType.HEAT_DEMAND_TYPE:
                     get_potential_errors().convert_to_exception(
                         etype,

@@ -1,6 +1,7 @@
 # [Unreleased] - 2024-10-07
 
 ## Added
+- Added MESIDO error exception class to raise applicable potential errors in a workflow & include required info for feedback in the mapeditor
 - Limit the available pipe classes connetced to heat/gas demand/producers
 - Add demands and sources to the topology object to have easy access to the connected pipes/cables later on
 - Heating and cooling example case added (2 heating demands, 1 cold demand, hot and cold producer, WKO as seasonal storage)
