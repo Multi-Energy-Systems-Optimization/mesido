@@ -1,11 +1,12 @@
 import logging
+import unittest.mock
 from pathlib import Path
 from unittest import TestCase
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.exceptions import MesidoAssetIssueError
-from mesido.potential_errors import MesidoAssetIssueType
+from mesido.potential_errors import MesidoAssetIssueType, PotentialErrors
 from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
@@ -37,7 +38,9 @@ class TestColdDemand(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
-        with self.assertRaises(MesidoAssetIssueError) as cm:
+        with self.assertRaises(MesidoAssetIssueError) as cm, unittest.mock.patch(
+            "mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()
+        ):
             _ = run_esdl_mesido_optimization(
                 HeatProblem,
                 base_folder=base_folder,
@@ -58,6 +61,7 @@ class TestColdDemand(TestCase):
                 "Asset named CoolingDemand_15e8: The installed capacity of 0.05MW should be larger"
                 " than the maximum of the heat demand profile 0.15MW",
             )
+
 
     def test_cold_demand(self):
         """

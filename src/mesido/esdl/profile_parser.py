@@ -10,7 +10,7 @@ from esdl.profiles.influxdbprofilemanager import InfluxDBProfileManager
 from esdl.units.conversion import ENERGY_IN_J, POWER_IN_W, convert_to_unit
 
 from mesido.esdl.common import Asset
-from mesido.potential_errors import MesidoAssetIssueType, POTENTIAL_ERRORS
+from mesido.potential_errors import MesidoAssetIssueType, get_potential_errors
 
 import numpy as np
 
@@ -132,7 +132,7 @@ class BaseProfileReader:
                         max_profile_value = max(values)
                         if asset_power < max_profile_value and asset_power != 0.0:
                             asset_id = esdl_asset_names_to_ids[component]
-                            POTENTIAL_ERRORS.add_potential_issue(
+                            get_potential_errors().add_potential_issue(
                                 (
                                     MesidoAssetIssueType.HEAT_DEMAND_POWER
                                     if component_type == "heat_demand"
@@ -301,7 +301,7 @@ class InfluxDBProfileReader(BaseProfileReader):
                     # For multicommidity work profiles need to be assigned to GenericConsumer, but
                     # not for heat network (this asset_potential_errors is used in grow_workflow)
                     if type(asset) is esdl.GenericConsumer:
-                        POTENTIAL_ERRORS.add_potential_issue(
+                        get_potential_errors().add_potential_issue(
                             MesidoAssetIssueType.HEAT_DEMAND_TYPE,
                             asset.id,
                             f"Asset named {asset.name}: This asset is currently a GenericConsumer"

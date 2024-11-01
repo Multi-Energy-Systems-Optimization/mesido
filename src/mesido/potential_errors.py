@@ -61,3 +61,7 @@ class PotentialErrors:
 
 
 POTENTIAL_ERRORS = PotentialErrors()
+
+
+def get_potential_errors() -> PotentialErrors:
+    return POTENTIAL_ERRORS
