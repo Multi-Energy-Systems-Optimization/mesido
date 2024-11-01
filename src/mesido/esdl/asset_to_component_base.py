@@ -743,7 +743,7 @@ class _AssetToComponentBase:
             q_nominals = {}
             try:
                 for port in asset.in_ports:
-                    connected_port = asset.in_ports[0].connectedTo[0]
+                    connected_port = port.connectedTo[0]
                     if isinstance(port.carrier, esdl.GasCommodity):
                         q_nominals["Q_nominal_gas"] = self._port_to_q_nominal[connected_port]
                         self._port_to_q_nominal[port] = q_nominals["Q_nominal_gas"]
