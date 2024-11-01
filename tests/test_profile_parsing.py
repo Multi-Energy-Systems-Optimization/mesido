@@ -39,7 +39,8 @@ class TestPotentialErros(unittest.TestCase):
 
         Checks:
         1. Correct error is raised
-        2. That the error is due to insufficient heat specified capacities
+        2. That the error is due to insufficient heat specified capacities for 3 heating demands
+        3. That the error is due to incorrect heating demand type being used for 1 heating demand
         """
         import models.unit_cases.case_1a.src.run_1a as run_1a
 
@@ -55,7 +56,7 @@ class TestPotentialErros(unittest.TestCase):
                 base_folder=base_folder,
                 model_folder=model_folder,
                 input_folder=input_folder,
-                esdl_file_name="1a_with_influx_profiles_error_check.esdl",
+                esdl_file_name="1a_with_influx_profiles_error_check_1.esdl",
                 profile_reader=MockInfluxDBProfileReader,
                 input_timeseries_file="influx_mock.csv",
             )
@@ -83,19 +84,30 @@ class TestPotentialErros(unittest.TestCase):
             "Asset named HeatingDemand_6662: The installed capacity of 2.0MW should be larger than"
             " the maximum of the heat demand profile 1957.931MW",
         )
-        # This is needed, else the POTENTIAL_ERRORS from this test still exists in the following
-        # tests
-        yield
-        # TODO: add test for other raised errors
-        # np.testing.assert_equal(
-        #     logs_list[4].msg == "Asset HeatingDemand_2ab9: This asset is currently a"
-        #     " GenericConsumer please change it to a HeatingDemand",
-        #     True,
-        # )
-        # np.testing.assert_equal(
-        #     logs_list[5].msg == "Incorrect asset type: please update.",
-        #     True,
-        # )
+        np.testing.assert_equal(len(cm.exception.message_per_asset_id), 3.0)
+
+        # Check heating demand type error
+        with self.assertRaises(MesidoAssetIssueError) as cm:
+            problem = EndScenarioSizingStaged(
+                esdl_parser=ESDLFileParser,
+                base_folder=base_folder,
+                model_folder=model_folder,
+                input_folder=input_folder,
+                esdl_file_name="1a_with_influx_profiles_error_check_2.esdl",
+                profile_reader=MockInfluxDBProfileReader,
+                input_timeseries_file="influx_mock.csv",
+            )
+            problem.pre()
+
+        # Check that the heat demand had an error
+        np.testing.assert_equal(cm.exception.error_type, MesidoAssetIssueType.HEAT_DEMAND_TYPE)
+        np.testing.assert_equal(cm.exception.general_issue, "Incorrect asset type: please update.")
+        np.testing.assert_equal(
+            cm.exception.message_per_asset_id['2ab92324-f86e-4976-9a6e-f7454b77ba3c'],
+            "Asset named HeatingDemand_2ab9: This asset is currently a GenericConsumer please"
+            " change it to a HeatingDemand",
+        )
+        np.testing.assert_equal(len(cm.exception.message_per_asset_id), 1.0)
 
 
 class TestProfileLoading(unittest.TestCase):
@@ -254,10 +266,10 @@ class TestProfileLoading(unittest.TestCase):
 
 if __name__ == "__main__":
     # unittest.main()
-    a = TestProfileLoading()
+    # a = TestProfileLoading()
     b = TestPotentialErros()
     b.test_asset_potential_errors()
-    a.test_loading_from_influx()
-    a.test_loading_from_csv()
-    a.test_loading_from_xml()
-    a.test_loading_from_csv_with_influx_profiles_given()
+    # a.test_loading_from_influx()
+    # a.test_loading_from_csv()
+    # a.test_loading_from_xml()
+    # a.test_loading_from_csv_with_influx_profiles_given()

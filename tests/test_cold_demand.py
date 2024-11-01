@@ -58,9 +58,6 @@ class TestColdDemand(TestCase):
                 "Asset named CoolingDemand_15e8: The installed capacity of 0.05MW should be larger"
                 " than the maximum of the heat demand profile 0.15MW",
             )
-            # This is needed, else the POTENTIAL_ERRORS from this test still exists in the
-            # following tests
-            yield
 
     def test_cold_demand(self):
         """
