@@ -1,14 +1,20 @@
 name: PyPi release
 run-name: CI pipeline
 on:
-  push:
+  pull_request:
     branches:
       - '*'
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
 
 jobs:
   style:
     name: Check style
     runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
     env:
       TOXENV: flake8,black
     steps:
@@ -27,6 +33,7 @@ jobs:
   build:
     name: Check build
     runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
     steps:
       - uses: actions/checkout@v3
 
@@ -44,6 +51,7 @@ jobs:
   test_main:
     name: Test main
     runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
     env:
       TOXENV: py38
     steps:
@@ -63,6 +71,7 @@ jobs:
   test_pre_processing:
     name: Test pre-processing
     runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
     env:
       TOXENV: py38
     steps:
@@ -98,6 +107,7 @@ jobs:
     name: Test post-processing
     needs: test_pre_processing
     runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
     env:
       TOXENV: py38
     steps:
@@ -127,6 +137,7 @@ jobs:
   documentation:
     name: Generate documentation
     runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
     steps:
       - uses: actions/checkout@v3
 
