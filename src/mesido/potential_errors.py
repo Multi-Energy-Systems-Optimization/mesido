@@ -7,7 +7,7 @@ AssetId = str
 ErrorMessage = str
 
 
-# Asset error type that can occur-- move to error potential_err.....
+# Asset error type that can occur
 class MesidoAssetIssueType(Enum):
     HEAT_DEMAND_POWER = "heat_demand.power"
     COLD_DEMAND_POWER = "cold_demand.power"
