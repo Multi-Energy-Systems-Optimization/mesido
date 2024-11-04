@@ -8,6 +8,7 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
+
 class TestESDLParsing(unittest.TestCase):
 
     def test_from_string_and_from_file_are_equal(self):

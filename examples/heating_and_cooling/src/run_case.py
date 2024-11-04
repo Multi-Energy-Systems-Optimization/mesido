@@ -143,8 +143,8 @@ class HeatColdDemand(TestCase):
         # TODO: check below can be added, once the heat_to_discharge_test have been updated such
         # that a pipe can absorb heat
         # heat_to_discharge_test(heat_problem, results)
-        
+
+
 if __name__ == "__main__":
     test_cold_demand = HeatColdDemand()
     test_cold_demand.heating_cooling_case()
-    

@@ -5,16 +5,15 @@ from unittest import TestCase
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.util import run_esdl_mesido_optimization
+from mesido.workflows.utils.adapt_profiles import (
+    adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
+)
 
 import numpy as np
 
 from utils_test_scaling import create_log_list_scaling
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
-
-from mesido.workflows.utils.adapt_profiles import (
-    adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
-)
 
 logger = logging.getLogger("WarmingUP-MPC")
 logger.setLevel(logging.INFO)
@@ -38,7 +37,7 @@ class TestColdDemand(TestCase):
         logger, logs_list = create_log_list_scaling("WarmingUP-MPC")
 
         base_folder = Path(example.__file__).resolve().parent.parent
-        
+
         with self.assertRaises(SystemExit) as cm:
             _ = run_esdl_mesido_optimization(
                 HeatProblem,
@@ -261,22 +260,22 @@ class TestColdDemand(TestCase):
         """
         This is a demand parsing and time series discretization test.
         It checks whether the timeseries are discretized correctly in presence of
-        a cold and heat demand. This case runs a heat and cold demand case where 
+        a cold and heat demand. This case runs a heat and cold demand case where
         both peaks are on the same day.
         """
         import models.wko.src.example as example
         from models.wko.src.example import HeatProblem
 
         base_folder = Path(example.__file__).resolve().parent.parent
-        
+
         class DiscretizationProblem(HeatProblem):
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
                 self.day_steps = 1
-            
+
             def read(self):
                 super().read()
-                
+
                 (
                     self.__indx_max_peak,
                     self.__heat_demand_nominal,
@@ -304,22 +303,22 @@ class TestColdDemand(TestCase):
         """
         This is a demand parsing and time series discretization test.
         It checks whether the timeseries are discretized correctly in presence of
-        a cold and heat demand. This case runs a heat and cold demand case where 
+        a cold and heat demand. This case runs a heat and cold demand case where
         both peaks are on consecutive days.
         """
         import models.wko.src.example as example
         from models.wko.src.example import HeatProblem
 
         base_folder = Path(example.__file__).resolve().parent.parent
-        
+
         class DiscretizationProblem(HeatProblem):
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
                 self.day_steps = 1
-            
+
             def read(self):
                 super().read()
-                
+
                 (
                     self.__indx_max_peak,
                     self.__heat_demand_nominal,
@@ -342,29 +341,31 @@ class TestColdDemand(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
-        
+
     def test_heat_cold_peak_before(self):
         """
         This is a demand parsing and time series discretization test.
         It checks whether the timeseries are discretized correctly in presence of
-        a cold and heat demand. This case runs a heat and cold demand case where 
+        a cold and heat demand. This case runs a heat and cold demand case where
         the cold peak happens before the heat one.
         """
         import models.wko.src.example as example
         from models.wko.src.example import HeatProblem
 
         base_folder = Path(example.__file__).resolve().parent.parent
-        
+
         class DiscretizationProblem(HeatProblem):
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
                 self.day_steps = 1
-            
+
             def read(self):
                 super().read()
-                
+
                 (
-                    _, _, _,
+                    _,
+                    _,
+                    _,
                 ) = adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(
                     self,
                     self.day_steps,
@@ -383,7 +384,6 @@ class TestColdDemand(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
-
 
 
 if __name__ == "__main__":

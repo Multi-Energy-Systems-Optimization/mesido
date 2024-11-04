@@ -11,6 +11,7 @@ from rtctools.data.storage import DataStore
 logger = logging.getLogger("WarmingUP-MPC")
 logger.setLevel(logging.INFO)
 
+
 def set_data_with_averages_and_peak_day(
     datastore: DataStore,
     variable_name: str,
@@ -79,13 +80,13 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, prob
     heat_demands = problem.energy_system_components.get("heat_demand", [])
     cold_demands = problem.energy_system_components.get("cold_demand", [])
     new_datastore = DataStore(problem)
-    new_datastore.reference_datetime = problem.io.datetimes[0]   
+    new_datastore.reference_datetime = problem.io.datetimes[0]
 
     cold_demands = problem.energy_system_components.get("cold_demand", [])
 
     for ensemble_member in range(problem.ensemble_size):
         parameters = problem.parameters(ensemble_member)
-        
+
         total_heat_demand = None
         heat_demand_nominal = dict()
         # Assemble all demands together to get the peaks.
@@ -106,18 +107,18 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, prob
         total_cold_demand = None
         cold_demand_nominal = dict()
         for demand in cold_demands:
-                try:
-                    cold_demand_values = problem.get_timeseries(
-                        f"{demand}.target_cold_demand", ensemble_member
-                    ).values
-                except KeyError:
-                    continue
-                if total_cold_demand is None:
-                    total_cold_demand = cold_demand_values
-                else:
-                    total_cold_demand += cold_demand_values
-                cold_demand_nominal[f"{demand}.Cold_demand"] = max(cold_demand_values)
-                cold_demand_nominal[f"{demand}.Heat_flow"] = max(cold_demand_values)
+            try:
+                cold_demand_values = problem.get_timeseries(
+                    f"{demand}.target_cold_demand", ensemble_member
+                ).values
+            except KeyError:
+                continue
+            if total_cold_demand is None:
+                total_cold_demand = cold_demand_values
+            else:
+                total_cold_demand += cold_demand_values
+            cold_demand_nominal[f"{demand}.Cold_demand"] = max(cold_demand_values)
+            cold_demand_nominal[f"{demand}.Heat_flow"] = max(cold_demand_values)
 
         new_date_times = list()
         nr_of_days = len(total_heat_demand) // 24
@@ -127,14 +128,14 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, prob
         if total_heat_demand is not None:
             idx_max_hot = int(np.argmax(total_heat_demand))
             max_day_hot = idx_max_hot // 24
-            
+
             problem_indx_max_peak = max_day_hot // day_steps
             if max_day_hot % day_steps > 0:
                 problem_indx_max_peak += 1.0
-            
+
             peak_days.append(max_day_hot)
         else:
-            max_day_hot = None     
+            max_day_hot = None
 
         if total_cold_demand is not None:
             idx_max_cold = int(np.argmax(total_cold_demand))
@@ -151,10 +152,10 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, prob
         # TODO: the approach of picking one peak day was introduced for a network with a tree
         #  layout and all big sources situated at the root of the tree. It is not guaranteed
         #  that an optimal solution is reached in different network topologies.
-        
+
         peak_days = sorted(peak_days)
         peak_check_days = np.array(peak_days) // day_steps * day_steps
-        
+
         current_peak_idx = 0
         for day in range(0, nr_of_days, day_steps):
             if day in peak_check_days:
