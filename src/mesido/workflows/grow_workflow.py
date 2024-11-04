@@ -208,6 +208,7 @@ class EndScenarioSizing(
             MesidoAssetIssueType.HEAT_DEMAND_POWER,
             MesidoAssetIssueType.COLD_DEMAND_POWER,
             MesidoAssetIssueType.HEAT_DEMAND_TYPE,
+            MesidoAssetIssueType.ASSET_PROFILE_CAPABILITY,
         ]
 
         # TODO: Once pyhton 3.11 is used, use the following: Group multiple exceptions (as it is
@@ -215,16 +216,24 @@ class EndScenarioSizing(
         # https://www.geeksforgeeks.org/exception-groups-in-python/
         for etype in potential_error_type:
             if get_potential_errors().have_issues_for(etype):
-                if etype is not MesidoAssetIssueType.HEAT_DEMAND_TYPE:
+                if etype in [
+                    MesidoAssetIssueType.HEAT_DEMAND_POWER,
+                    MesidoAssetIssueType.COLD_DEMAND_POWER,
+                ]:
                     get_potential_errors().convert_to_exception(
                         etype,
                         "Asset insufficient installed capacity: please increase the installed power"
                         " or reduce the demand profile peak value of the demand(s) listed.",
                     )
-                else:
+                elif etype is MesidoAssetIssueType.HEAT_DEMAND_TYPE:
                     get_potential_errors().convert_to_exception(
                         etype,
                         "Incorrect asset type: please update.",
+                    )
+                elif etype is MesidoAssetIssueType.ASSET_PROFILE_CAPABILITY:
+                    get_potential_errors().convert_to_exception(
+                        etype,
+                        "Profile assigment not allowed.",
                     )
         # end error checking
 

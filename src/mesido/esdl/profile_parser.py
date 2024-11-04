@@ -308,10 +308,11 @@ class InfluxDBProfileReader(BaseProfileReader):
                             " please change it to a HeatingDemand",
                         )
                 except KeyError:
-                    raise RuntimeError(
-                        f"The asset {profile.field} is of type {type(asset)} which is "
-                        f"currently not supported to have a profile to be loaded "
-                        f"from the database."
+                    get_potential_errors().add_potential_issue(
+                        MesidoAssetIssueType.ASSET_PROFILE_CAPABILITY,
+                        asset.id,
+                        f"Asset named {asset.name}: The assigment of profile field {profile.field}"
+                        f" is not possible for this asset type {type(asset)}",
                     )
             else:
                 raise RuntimeError(
