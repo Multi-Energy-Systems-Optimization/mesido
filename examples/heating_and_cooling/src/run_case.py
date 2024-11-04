@@ -42,13 +42,6 @@ class HeatColdDemand(TestCase):
                 self.__indx_max_peak = None
                 self.__day_steps = 5
 
-            # def post(self):     # Make sure the file has access to this method. Probably with a from import at the top.
-            #     super().post()
-            #     self._write_updated_esdl(
-            #         self._ESDLMixin__energy_system_handler.energy_system,
-            #         optimizer_sim=False,
-            #     )
-
             def energy_system_options(self):
                 options = super().energy_system_options()
                 options["neglect_pipe_heat_losses"] = False
@@ -150,46 +143,8 @@ class HeatColdDemand(TestCase):
         # TODO: check below can be added, once the heat_to_discharge_test have been updated such
         # that a pipe can absorb heat
         # heat_to_discharge_test(heat_problem, results)
-
-        # heat_demands_assets = heat_problem.energy_system_components.get("heat_demand", [])
-        # heat_demands_result = {key:[] for key in heat_demands_assets}
-        # for demand in heat_demands_assets:
-        #     demand_result_values = heat_problem.get_timeseries(
-        #             f"{demand}.target_heat_demand", 0
-        #         ).values
-        #     heat_demands_result[demand] = demand_result_values
-
-        plotting = False
-        if plotting:
-            import matplotlib.pyplot as plt
-            time_list = heat_problem.get_timeseries('HeatingDemand_1.target_heat_demand').times/3600
-            heat_demand1_results = results["HeatingDemand_1.Heat_demand"]
-            heat_demand2_results = results["HeatingDemand_1.Heat_demand"]
-            cold_demand_results = results["CoolingDemand_1.Cold_demand"]
-            heat_demand1_input = heat_problem.get_timeseries("HeatingDemand_1.target_heat_demand", 0).values
-            heat_demand2_input = heat_problem.get_timeseries("HeatingDemand_2.target_heat_demand", 0).values
-            cold_demand_input = heat_problem.get_timeseries("CoolingDemand_1.target_cold_demand", 0).values
-            heat_source_results = results["HeatPump_1.Heat_source"]
-            cooling_source_results = results["Airco_1.Heat_airco"] 
-            ates_source_results = results["ATES_1.Heat_low_temperature_ates"]
-            plt.figure()
-            plt.plot(time_list, heat_demand1_results + heat_demand2_results, marker = 'x', label = 'Heat demand results')
-            plt.plot(time_list, heat_demand1_input + heat_demand2_input, marker ='o', label = 'Heat demand input')
-            plt.plot(time_list, cold_demand_input, marker = 'x', label= 'Cooling demand input')
-            plt.plot(time_list, cold_demand_results, marker = 'o', label = 'Cooling demand results')
-            plt.plot(time_list, heat_source_results, marker = 'o', label = 'Heat pump')
-            plt.plot(time_list, cooling_source_results, marker = 'x', label = 'Airco')
-            plt.plot(time_list, ates_source_results, marker = '+', label = 'Ates production')
-            plt.grid()
-            plt.legend()
-            plt.show()
         
 if __name__ == "__main__":
     test_cold_demand = HeatColdDemand()
     test_cold_demand.heating_cooling_case()
     
-    # Tests to run:
-    # - Peak heat and peak cold are on the same day.
-    #       - Create function that artificially adds a peak cold day.
-    # - Peak heat and peak cold are back to back. 
-    # - There are cold demands but no heat ones.Check if it's already in test_cold_demand.py.

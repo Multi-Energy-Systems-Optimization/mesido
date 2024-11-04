@@ -152,24 +152,9 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, prob
         #  layout and all big sources situated at the root of the tree. It is not guaranteed
         #  that an optimal solution is reached in different network topologies.
         
-        # for day in range(0, nr_of_days, day_steps):
-        #     if day == max_day_hot // day_steps * day_steps or day == max_day_cold // day_steps * day_steps:
-        #         if day == max_day_hot // day_steps * day_steps:
-        #             peak_day = max_day_hot
-        #         elif day == max_day_cold // day_steps * day_steps: # TODO: might have to fix this if the peak day is the same for heat and cold.
-        #             peak_day = max_day_cold
-        #         if peak_day > day:
-        #             new_date_times.append(problem.io.datetimes[day * 24])
-        #         new_date_times.extend(problem.io.datetimes[peak_day * 24 : peak_day * 24 + 24])
-        #         if (day + day_steps - 1) > peak_day:
-        #             new_date_times.append(problem.io.datetimes[peak_day * 24 + 24])
-        #     else:
-        #         new_date_times.append(problem.io.datetimes[day * 24])
-        
         peak_days = sorted(peak_days)
         peak_check_days = np.array(peak_days) // day_steps * day_steps
         
-
         current_peak_idx = 0
         for day in range(0, nr_of_days, day_steps):
             if day in peak_check_days:
@@ -187,26 +172,7 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, prob
 
         new_date_times = np.asarray(new_date_times)
         parameters["times"] = [x.timestamp() for x in new_date_times]
-            
-        # heat_flag = False
-        # if heat_flag: # Case where there is only heat demands.
-        #     for day in range(0, nr_of_days, day_steps):
-        #         if day == max_day_hot // day_steps * day_steps: # Stops at the first day in the original discretization before the peak day
-        #             peak_day = max_day_hot
-        #             if peak_day > day: # Sitting behind the peak day
-        #                 new_date_times.append(problem.io.datetimes[day * 24]) # Just append a normal day. Not necessary if already at the peak day because it gets added in the next one if you are.
-        #             new_date_times.extend(problem.io.datetimes[peak_day * 24 : peak_day * 24 + 24]) # Appends the 24 hours of the peak day starting at the beginning of that peak day.
-        #             if (day + day_steps - 1) > peak_day: # Case where the end of the peak day does not coincide with the next step day. In that case, this "missing" day is added.
-        #                 new_date_times.append(problem.io.datetimes[peak_day * 24 + 24]) 
-        #         else:
-        #             new_date_times.append(problem.io.datetimes[day * 24]) # Normal day addition.
-        #     new_date_times.append(problem.io.datetimes[-1] + datetime.timedelta(hours=1)) # Adds one hour at the end of the year for some reason.
-            
-        #     new_date_times = np.asarray(new_date_times)
-        #     parameters["times"] = [x.timestamp() for x in new_date_times]
 
-        # Store the heat and cold target demands in the problem object, together with the now computed
-        # time series with both peaks in it.
         for demand in heat_demands:
             try:
                 var_name = f"{demand}.target_heat_demand"
@@ -232,38 +198,6 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, prob
                 new_date_times=new_date_times,
                 problem=problem,
             )
-        # ------------------------------------------------------------------------------------------
-        # cooling demands
-        # total_cold_demand = None
-        # cold_demand_nominal = dict()
-
-        # for demand in cold_demands:
-        #     try:
-        #         cold_demand_values = problem.get_timeseries(
-        #             f"{demand}.target_cold_demand", ensemble_member
-        #         ).values
-        #     except KeyError:
-        #         continue
-        #     if total_cold_demand is None:
-        #         total_cold_demand = cold_demand_values
-        #     else:
-        #         total_cold_demand += cold_demand_values
-        #     cold_demand_nominal[f"{demand}.Cold_demand"] = max(cold_demand_values)
-        #     cold_demand_nominal[f"{demand}.Heat_flow"] = max(cold_demand_values)
-
-        # # TODO: find the peak cooling day and adapt to hourly
-
-        # for demand in cold_demands:
-        #     var_name = f"{demand}.target_cold_demand"
-        #     set_data_with_averages_and_peak_day(
-        #         datastore=new_datastore,
-        #         variable_name=var_name,
-        #         ensemble_member=ensemble_member,
-        #         new_date_times=new_date_times,
-        #         problem=problem,
-        #     )
-        # end cooling demands
-        # ------------------------------------------------------------------------------------------
 
         # TODO: this has not been tested but is required if a production profile is included
         #  in the data

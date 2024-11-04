@@ -12,6 +12,10 @@ from utils_test_scaling import create_log_list_scaling
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
+from mesido.workflows.utils.adapt_profiles import (
+    adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
+)
+
 logger = logging.getLogger("WarmingUP-MPC")
 logger.setLevel(logging.INFO)
 
@@ -34,7 +38,7 @@ class TestColdDemand(TestCase):
         logger, logs_list = create_log_list_scaling("WarmingUP-MPC")
 
         base_folder = Path(example.__file__).resolve().parent.parent
-
+        
         with self.assertRaises(SystemExit) as cm:
             _ = run_esdl_mesido_optimization(
                 HeatProblem,
@@ -86,49 +90,6 @@ class TestColdDemand(TestCase):
         )
         results = heat_problem.extract_results()
 
-        demand_matching_test(heat_problem, results)
-        energy_conservation_test(heat_problem, results)
-        heat_to_discharge_test(heat_problem, results)
-
-    def test_only_cold_demand(self):
-        """
-        This test checks the basic physics for a network with only cold demands and
-        no heat demands.
-        
-        """
-        import models.wko.src.example as example
-        from models.wko.src.example import HeatProblem
-
-        base_folder = Path(example.__file__).resolve().parent.parent
-
-        heat_problem = run_esdl_mesido_optimization(
-            HeatProblem,
-            base_folder=base_folder,
-            esdl_file_name="Only_cold_demand.esdl",
-            esdl_parser=ESDLFileParser,
-            profile_reader=ProfileReaderFromFile,
-            input_timeseries_file= 'timeseries_only_cold_demand.csv'
-        )
-        results = heat_problem.extract_results()
-
-        plotting = False
-        if plotting:
-            import matplotlib.pyplot as plt
-            time_list = heat_problem.get_timeseries('CoolingDemand_15e8.target_cold_demand').times/3600
-            cold_demand_results = results["CoolingDemand_15e8.Cold_demand"]
-            cold_demand_input = heat_problem.get_timeseries('CoolingDemand_15e8.target_cold_demand', 0).values
-            heat_pump_production = results["HeatPump_b97e.Heat_source"]
-            ates_production = results["ATES_226d.Heat_low_temperature_ates"]
-            plt.figure()
-            plt.plot(time_list, cold_demand_input, label = 'target cold demand')
-            plt.plot(time_list, cold_demand_results, label = 'result cold demand')
-            plt.plot(time_list, ates_production, label = 'ates production')
-            plt.plot(time_list, heat_pump_production, label = 'heat pump production')
-
-            plt.legend()
-            plt.show()
-        
-        
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
@@ -296,22 +257,132 @@ class TestColdDemand(TestCase):
         )
         # ------------------------------------------------------------------------------------------
 
-    
-    def test_time_discretization(self):
+    def test_heat_cold_demand_peak_overlap(self):
         """
-        This test checks wether the demand arrays are discretized correctly.
-        Check corner cases with two demand peaks (cold and heat).
+        This is a demand parsing and time series discretization test.
+        It checks whether the timeseries are discretized correctly in presence of
+        a cold and heat demand. This case runs a heat and cold demand case where 
+        both peaks are on the same day.
         """
-        pass
-        # Heat and cold are on the same day,
-        # Heat and cold are back to back.
-        # Cold happens before the heat peak.
-        # Probably do it by creating multiple timeseries.
+        import models.wko.src.example as example
+        from models.wko.src.example import HeatProblem
 
-    
+        base_folder = Path(example.__file__).resolve().parent.parent
+        
+        class DiscretizationProblem(HeatProblem):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.day_steps = 1
+            
+            def read(self):
+                super().read()
+                
+                (
+                    self.__indx_max_peak,
+                    self.__heat_demand_nominal,
+                    self.__cold_demand_nominal,
+                ) = adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(
+                    self,
+                    self.day_steps,
+                )
 
+        heat_problem = run_esdl_mesido_optimization(
+            DiscretizationProblem,
+            base_folder=base_folder,
+            esdl_file_name="heatpump_airco_time_parsing.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_peak_overlap.csv",
+        )
+        results = heat_problem.extract_results()
 
-    
+        demand_matching_test(heat_problem, results)
+        energy_conservation_test(heat_problem, results)
+        heat_to_discharge_test(heat_problem, results)
+
+    def test_heat_cold_demand_peak_back_to_back(self):
+        """
+        This is a demand parsing and time series discretization test.
+        It checks whether the timeseries are discretized correctly in presence of
+        a cold and heat demand. This case runs a heat and cold demand case where 
+        both peaks are on consecutive days.
+        """
+        import models.wko.src.example as example
+        from models.wko.src.example import HeatProblem
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+        
+        class DiscretizationProblem(HeatProblem):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.day_steps = 1
+            
+            def read(self):
+                super().read()
+                
+                (
+                    self.__indx_max_peak,
+                    self.__heat_demand_nominal,
+                    self.__cold_demand_nominal,
+                ) = adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(
+                    self,
+                    self.day_steps,
+                )
+
+        heat_problem = run_esdl_mesido_optimization(
+            DiscretizationProblem,
+            base_folder=base_folder,
+            esdl_file_name="heatpump_airco_time_parsing.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_peak_back_to_back.csv",
+        )
+        results = heat_problem.extract_results()
+
+        demand_matching_test(heat_problem, results)
+        energy_conservation_test(heat_problem, results)
+        heat_to_discharge_test(heat_problem, results)
+        
+    def test_heat_cold_peak_before(self):
+        """
+        This is a demand parsing and time series discretization test.
+        It checks whether the timeseries are discretized correctly in presence of
+        a cold and heat demand. This case runs a heat and cold demand case where 
+        the cold peak happens before the heat one.
+        """
+        import models.wko.src.example as example
+        from models.wko.src.example import HeatProblem
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+        
+        class DiscretizationProblem(HeatProblem):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.day_steps = 1
+            
+            def read(self):
+                super().read()
+                
+                (
+                    _, _, _,
+                ) = adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(
+                    self,
+                    self.day_steps,
+                )
+
+        heat_problem = run_esdl_mesido_optimization(
+            DiscretizationProblem,
+            base_folder=base_folder,
+            esdl_file_name="heatpump_airco_time_parsing.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_peak_back_to_back.csv",
+        )
+        results = heat_problem.extract_results()
+
+        demand_matching_test(heat_problem, results)
+        energy_conservation_test(heat_problem, results)
+        heat_to_discharge_test(heat_problem, results)
 
 
 
@@ -320,5 +391,7 @@ if __name__ == "__main__":
     test_cold_demand.test_insufficient_capacity()
     test_cold_demand.test_cold_demand()
     test_cold_demand.test_wko()
-    test_cold_demand.test_only_cold_demand()
     test_cold_demand.test_airco()
+    test_cold_demand.test_heat_cold_demand_peak_overlap()
+    test_cold_demand.test_heat_cold_demand_peak_back_to_back()
+    test_cold_demand.test_heat_cold_peak_before()
