@@ -206,6 +206,7 @@ class _AssetToComponentBase:
         self._edr_pipes = json.load(
             open(os.path.join(Path(__file__).parent, "_edr_pipes.json"), "r")
         )
+        # The default gas pipe database is based on the ASA pipe catalogue schedule standard (std).
         self._gas_pipes = json.load(open(os.path.join(Path(__file__).parent, "_gas_pipe_database.json"), "r"))
 
     def convert(self, asset: Asset) -> Tuple[Type[_Model], MODIFIERS]:
