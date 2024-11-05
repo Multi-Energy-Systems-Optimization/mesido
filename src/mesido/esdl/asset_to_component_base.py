@@ -795,8 +795,9 @@ class _AssetToComponentBase:
             try:
                 for port in asset.in_ports:
                     connected_port = port.connectedTo[0]
-                    if isinstance(port.carrier, esdl.GasCommodity) or isinstance(
-                        port.carrier, esdl.HeatCommodity
+                    if (
+                        isinstance(port.carrier, esdl.GasCommodity)
+                        or isinstance(port.carrier, esdl.HeatCommodity)
                     ):
                         nominal_string = "Q_nominal"
                         convert_density_units = 1.0
