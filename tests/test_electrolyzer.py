@@ -72,9 +72,9 @@ class TestElectrolyzer(TestCase):
         for iv in range(len(v_inspect)):
             np.testing.assert_allclose(
                 v_inspect[iv] / solution.gas_network_settings["maximum_velocity"] * head_loss_max,
-                2.173724632,
+                2.1760566566624733,
             )
-            np.testing.assert_allclose(-results["Pipe_6ba6.dH"][iv], 2.173724632)
+            np.testing.assert_allclose(-results["Pipe_6ba6.dH"][iv], 2.1760566566624733)
 
         gas_price_profile = "Hydrogen.price_profile"
         state = "GasDemand_0cf3.Gas_demand_mass_flow"

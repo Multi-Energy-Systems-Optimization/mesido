@@ -359,6 +359,9 @@ class _AssetToComponentBase:
         edr_dn_size = None
         if asset.attributes["diameter"].value > 0:
             edr_dn_size = str(asset.attributes["diameter"].name)
+        elif not asset.attributes["innerDiameter"]:
+            logger.warning(f"{full_name}' has no DN size or innerDiameter specified. ")
+            edr_dn_size = "DN200" #ideally I don't want us to set a default diameter size, we can get in this line in case innerDiameter is set to 0.0.
 
         # NaN means the default values will be used
         wall_roughness = math.nan
@@ -371,6 +374,7 @@ class _AssetToComponentBase:
         else:
             assert asset.attributes["innerDiameter"]
             inner_diameter = asset.attributes["innerDiameter"]
+
 
 
         return inner_diameter, wall_roughness
