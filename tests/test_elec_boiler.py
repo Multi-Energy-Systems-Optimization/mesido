@@ -94,13 +94,3 @@ class TestElecBoiler(TestCase):
             parameters["HeatPump_d8fd.cop"] * results["HeatPump_d8fd.Power_consumed"],
             results["HeatPump_d8fd.Heat_source"] + 1.0e-6,
         )
-
-
-if __name__ == "__main__":
-    import time
-
-    start_time = time.time()
-    a = TestElecBoiler()
-    a.test_elec_boiler()
-    a.test_air_water_hp_elec()
-    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
