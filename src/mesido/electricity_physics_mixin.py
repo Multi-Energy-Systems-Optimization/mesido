@@ -151,7 +151,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                 if isinstance(bound_storage, Timeseries):
                     bound_storage = copy.deepcopy(bound_storage)
                     bound_storage.values[bound_storage.values < 0] = 0.0
-                var_name = f"{asset}__effective_power_discharging"
+                var_name = f"{asset}.__effective_power_discharging"
                 self.__electricity_storage_discharge_map[asset] = var_name
                 self.__electricity_storage_discharge_var[var_name] = ca.MX.sym(var_name)
                 self.__electricity_storage_discharge_bounds[var_name] = (0, bound_storage)

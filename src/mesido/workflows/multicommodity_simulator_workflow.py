@@ -273,13 +273,13 @@ class MinimizeCosts(Goal):
         self.asset_cost_map = asset_cost_map
         self.priority = priority
         self.order = order
-        # self.function_nominal = 1e12
+        self.function_nominal = 1e9
 
 
     def function(self, optimization_problem, ensemble_member):
 
         obj = 0.0
-
+        #TODO: think about difference magnitude of value between electricity and gas --> will cause small magnitude differences, which will result in changes within the MIPGAP
         for var_name, marg_cost in self.asset_cost_map.items():
             try:
                 variable = optimization_problem.state(var_name)
@@ -347,7 +347,75 @@ class _GoalsAndOptions:
         return options
 
 
+class _CaseConstraints:
+    def __constraint_fix_pressure(self, ensemble_member):
+        constraints = []
+        head_in = self.state("Pipe_GDF SUEZ E&P Nederland B_V__6.GasIn.H")
+        density = self.parameters(ensemble_member)["Pipe_GDF SUEZ E&P Nederland B_V__6.density"]
+        # head_in = self.state("Pipe_HyOne_Main_9.GasIn.H")
+        # density = self.parameters(ensemble_member)["Pipe_HyOne_Main_9.density"]
+        pressure = 50e5 #50bar
+        constraints.append((head_in*density/1e3*9.81 /pressure, 1.0, 1.0))
+
+
+        standard = False
+        if standard:
+            conv_DEN_1 = self.state("gasconversion_e209.GasOut.mass_flow")
+            conv_DEN_2 = self.state("gasconversion_6cbe.GasOut.mass_flow")
+
+            conv_EEM_1 = self.state("gasconversion_bad0.GasOut.mass_flow")
+            conv_EEM_2 = self.state("gasconversion_fc69.GasOut.mass_flow")
+            conv_EEM_3 = self.state("gasconversion_2abd.GasOut.mass_flow")
+            nominal = self.bounds()["gasconversion_2abd.GasIn.mass_flow"][1]
+            constraints.append(((1.5*(conv_DEN_1+conv_DEN_2)-(conv_EEM_1+conv_EEM_2+conv_EEM_3))/nominal,0.0, 0.0))
+
+            # match head:
+            conv_DEN_1 = self.state("gasconversion_e209.GasIn.H")
+            conv_DEN_2 = self.state("gasconversion_6cbe.GasIn.H")
+            nominal = 1e5
+            constraints.append(((conv_DEN_1-conv_DEN_2)/nominal, 0.0, 0.0))
+
+            conv_EEM_1 = self.state("gasconversion_bad0.GasIn.H")
+            conv_EEM_2 = self.state("gasconversion_fc69.GasIn.H")
+            conv_EEM_3 = self.state("gasconversion_2abd.GasIn.H")
+            nominal = 1e5
+            constraints.append(((conv_EEM_1 - conv_EEM_3) / nominal, 0.0, 0.0))
+            constraints.append(((conv_EEM_2 - conv_EEM_3) / nominal, 0.0, 0.0))
+        else:
+            conv_DEN_2 = self.state("H2-import_DEN.GasOut.mass_flow")
+            conv_EEM_3 = self.state("H2-import_EEM.GasOut.mass_flow")
+            nominal = 1e4#self.bounds()["gasconversion_2abd.GasIn.mass_flow"][1]
+            constraints.append(((56/44 * conv_DEN_2 - conv_EEM_3) / nominal, 0.0, 0.0))
+
+
+
+
+        return constraints
+
+
+    def path_constraints(self, ensemble_member):
+        """
+        Constraints to limit producer production in case timeseries for the production exist,
+        relevant when the first goals is not to match profile.
+        """
+        constraints = super().path_constraints(ensemble_member)
+        constraints.extend(self.__constraint_fix_pressure(ensemble_member))
+
+        return constraints
+
+    def constraints(self, ensemble_member):
+        """
+        Add equality constraints to enforce a cyclic energy balance [J] between the end and the
+        start of the time horizon used as well an inequality constraint to enforce no milp supply
+        [W] to the netwok in the 1st time step
+        """
+        constraints = super().constraints(ensemble_member)
+
+        # TODO: cyclic constraints
+
+        return constraints
 # -------------------------------------------------------------------------------------------------
+
 class MultiCommoditySimulator(
     ScenarioOutput,
     _GoalsAndOptions,
@@ -626,7 +694,7 @@ class MultiCommoditySimulator(
                     marginal_priority >= index_start_of_priority
                 ), "Priorities assigned must be smaller than the total number of producers"
 
-                variable_name = f"{asset}{asset_variable_map[asset]['discharge']}"
+                variable_name = f"{asset}.{asset_variable_map[asset]['discharge']}"
 
                 func_range = self.bounds()[variable_name]
                 v1 = _extract_values_timeseries(func_range[0], "min")
@@ -721,72 +789,7 @@ class MultiCommoditySimulator(
 
 
 
-    def __constraint_fix_pressure(self, ensemble_member):
-        constraints = []
-        head_in = self.state("Pipe_GDF SUEZ E&P Nederland B_V__6.GasIn.H")
-        density = self.parameters(ensemble_member)["Pipe_GDF SUEZ E&P Nederland B_V__6.density"]
-        # head_in = self.state("Pipe_HyOne_Main_9.GasIn.H")
-        # density = self.parameters(ensemble_member)["Pipe_HyOne_Main_9.density"]
-        pressure = 50e5 #50bar
-        constraints.append((head_in*density/1e3*9.81 /pressure, 1.0, 1.0))
 
-
-        standard = False
-        if standard:
-            conv_DEN_1 = self.state("gasconversion_e209.GasOut.mass_flow")
-            conv_DEN_2 = self.state("gasconversion_6cbe.GasOut.mass_flow")
-
-            conv_EEM_1 = self.state("gasconversion_bad0.GasOut.mass_flow")
-            conv_EEM_2 = self.state("gasconversion_fc69.GasOut.mass_flow")
-            conv_EEM_3 = self.state("gasconversion_2abd.GasOut.mass_flow")
-            nominal = self.bounds()["gasconversion_2abd.GasIn.mass_flow"][1]
-            constraints.append(((1.5*(conv_DEN_1+conv_DEN_2)-(conv_EEM_1+conv_EEM_2+conv_EEM_3))/nominal,0.0, 0.0))
-
-            # match head:
-            conv_DEN_1 = self.state("gasconversion_e209.GasIn.H")
-            conv_DEN_2 = self.state("gasconversion_6cbe.GasIn.H")
-            nominal = 1e5
-            constraints.append(((conv_DEN_1-conv_DEN_2)/nominal, 0.0, 0.0))
-
-            conv_EEM_1 = self.state("gasconversion_bad0.GasIn.H")
-            conv_EEM_2 = self.state("gasconversion_fc69.GasIn.H")
-            conv_EEM_3 = self.state("gasconversion_2abd.GasIn.H")
-            nominal = 1e5
-            constraints.append(((conv_EEM_1 - conv_EEM_3) / nominal, 0.0, 0.0))
-            constraints.append(((conv_EEM_2 - conv_EEM_3) / nominal, 0.0, 0.0))
-        else:
-            conv_DEN_2 = self.state("H2-import_DEN.GasOut.mass_flow")
-            conv_EEM_3 = self.state("H2-import_EEM.GasOut.mass_flow")
-            nominal = 1e4#self.bounds()["gasconversion_2abd.GasIn.mass_flow"][1]
-            constraints.append(((56/44 * conv_DEN_2 - conv_EEM_3) / nominal, 0.0, 0.0))
-
-
-
-
-        return constraints
-
-
-    def path_constraints(self, ensemble_member):
-        """
-        Constraints to limit producer production in case timeseries for the production exist,
-        relevant when the first goals is not to match profile.
-        """
-        constraints = super().path_constraints(ensemble_member)
-        constraints.extend(self.__constraint_fix_pressure(ensemble_member))
-
-        return constraints
-
-    def constraints(self, ensemble_member):
-        """
-        Add equality constraints to enforce a cyclic energy balance [J] between the end and the
-        start of the time horizon used as well an inequality constraint to enforce no milp supply
-        [W] to the netwok in the 1st time step
-        """
-        constraints = super().constraints(ensemble_member)
-
-        # TODO: cyclic constraints
-
-        return constraints
 
     def __merit_controls(self, assets_list):
         attributes = {
@@ -912,6 +915,12 @@ class MultiCommoditySimulator(
     #     super().post()
     #     self._write_updated_esdl(self.get_energy_system_copy(), optimizer_sim=True)
 
+
+class MultiCommoditySimulatorNSE(
+    MultiCommoditySimulator,
+    _CaseConstraints,
+):
+    pass
 # -------------------------------------------------------------------------------------------------
 class MultiCommoditySimulatorMarginal(
     ScenarioOutput,
@@ -1215,7 +1224,7 @@ class MultiCommoditySimulatorMarginal(
                     marginal_priority >= index_start_of_priority
                 ), "Priorities assigned must be smaller than the total number of producers"
 
-                variable_name = f"{asset}{asset_variable_map[asset]['discharge']}"
+                variable_name = f"{asset}.{asset_variable_map[asset]['discharge']}"
 
                 func_range = self.bounds()[variable_name]
                 v1 = _extract_values_timeseries(func_range[0], "min")
@@ -1309,75 +1318,6 @@ class MultiCommoditySimulatorMarginal(
 
         return seed
 
-
-    def __constraint_fix_pressure(self, ensemble_member):
-        constraints = []
-        head_in = self.state("Pipe_GDF SUEZ E&P Nederland B_V__6.GasIn.H")
-        density = self.parameters(ensemble_member)["Pipe_GDF SUEZ E&P Nederland B_V__6.density"]
-        # head_in = self.state("Pipe_HyOne_Main_9.GasIn.H")
-        # density = self.parameters(ensemble_member)["Pipe_HyOne_Main_9.density"]
-        pressure = 50e5 #50bar
-        constraints.append((head_in*density/1e3*9.81 /pressure, 1.0, 1.0))
-
-
-        standard = False
-        if standard:
-            conv_DEN_1 = self.state("gasconversion_e209.GasOut.mass_flow")
-            conv_DEN_2 = self.state("gasconversion_6cbe.GasOut.mass_flow")
-
-            conv_EEM_1 = self.state("gasconversion_bad0.GasOut.mass_flow")
-            conv_EEM_2 = self.state("gasconversion_fc69.GasOut.mass_flow")
-            conv_EEM_3 = self.state("gasconversion_2abd.GasOut.mass_flow")
-            nominal = self.bounds()["gasconversion_2abd.GasIn.mass_flow"][1]
-            constraints.append(((1.5*(conv_DEN_1+conv_DEN_2)-(conv_EEM_1+conv_EEM_2+conv_EEM_3))/nominal,0.0, 0.0))
-
-            # match head:
-            conv_DEN_1 = self.state("gasconversion_e209.GasIn.H")
-            conv_DEN_2 = self.state("gasconversion_6cbe.GasIn.H")
-            nominal = 1e5
-            constraints.append(((conv_DEN_1-conv_DEN_2)/nominal, 0.0, 0.0))
-
-            conv_EEM_1 = self.state("gasconversion_bad0.GasIn.H")
-            conv_EEM_2 = self.state("gasconversion_fc69.GasIn.H")
-            conv_EEM_3 = self.state("gasconversion_2abd.GasIn.H")
-            nominal = 1e5
-            constraints.append(((conv_EEM_1 - conv_EEM_3) / nominal, 0.0, 0.0))
-            constraints.append(((conv_EEM_2 - conv_EEM_3) / nominal, 0.0, 0.0))
-        else:
-            conv_DEN_2 = self.state("H2-import_DEN.GasOut.mass_flow")
-            conv_EEM_3 = self.state("H2-import_EEM.GasOut.mass_flow")
-            nominal = 1e4#self.bounds()["gasconversion_2abd.GasIn.mass_flow"][1]
-            constraints.append(((56/44 * conv_DEN_2 - conv_EEM_3) / nominal, 0.0, 0.0))
-
-
-
-
-        return constraints
-
-
-    def path_constraints(self, ensemble_member):
-        """
-        Constraints to limit producer production in case timeseries for the production exist,
-        relevant when the first goals is not to match profile.
-        """
-        constraints = super().path_constraints(ensemble_member)
-        # constraints.extend(self.__constraint_fix_pressure(ensemble_member))
-
-        return constraints
-
-    def constraints(self, ensemble_member):
-        """
-        Add equality constraints to enforce a cyclic energy balance [J] between the end and the
-        start of the time horizon used as well an inequality constraint to enforce no milp supply
-        [W] to the netwok in the 1st time step
-        """
-        constraints = super().constraints(ensemble_member)
-
-        # TODO: cyclic constraints
-
-        return constraints
-
-
     def __get_marginal_cost(self, asset, marg_type=None):
         try:
             if not marg_type:
@@ -1470,12 +1410,28 @@ class MultiCommoditySimulatorMarginal(
     #     self._write_updated_esdl(self.get_energy_system_copy(), optimizer_sim=True)
 
 
+class MultiCommoditySimulatorMarginalNSE(
+    MultiCommoditySimulatorMarginal,
+    _CaseConstraints,
+):
+    pass
+
 # -------------------------------------------------------------------------------------------------
 class MultiCommoditySimulatorHIGHS(SolverHIGHS, MultiCommoditySimulator):
     pass
 
 
 class MultiCommoditySimulatorNoLosses(MultiCommoditySimulator):
+    def energy_system_options(self):
+        options = super().energy_system_options()
+
+        self.gas_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+        self.gas_network_settings["minimize_head_losses"] = False
+        options["include_electric_cable_power_loss"] = False
+
+        return options
+
+class MultiCommoditySimulatorMarginalNoLosses(MultiCommoditySimulatorMarginal):
     def energy_system_options(self):
         options = super().energy_system_options()
 

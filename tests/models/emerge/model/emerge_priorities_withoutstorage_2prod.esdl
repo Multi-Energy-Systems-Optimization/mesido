@@ -23,6 +23,7 @@
           <fixedMaintenanceCosts xsi:type="esdl:SingleValue" value="255000.0" id="0c34c932-7857-4f8f-b1b3-d7fbe04d300c">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="WATT" id="9dc9c866-79ee-4a72-9982-8d3d7e04d3aa" unit="EURO" description="Cost in EUR/MW" physicalQuantity="COST" perMultiplier="MEGA"/>
           </fixedMaintenanceCosts>
+          <marginalCosts xsi:type="esdl:SingleValue" value="0.9" name="ElectricityDemand_f833-MarginalCosts" id="d18bb16f-094c-451d-bb74-943b7d6ddad0"/>
         </costInformation>
       </asset>
       <asset xsi:type="esdl:ElectricityDemand" name="ElectricityDemand_f833" power="1300000000.0" technicalLifetime="20.0" id="f8339608-af60-4b32-945b-521e6f7b8098">
@@ -40,7 +41,7 @@
           <fixedMaintenanceCosts xsi:type="esdl:SingleValue" value="15000.0" id="63836d94-a84b-4137-8274-e926ace66a9f">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="WATT" id="1b39bf48-df74-4fcf-b94b-a23593fa965b" unit="EURO" description="Cost in EUR/MW" physicalQuantity="COST" perMultiplier="MEGA"/>
           </fixedMaintenanceCosts>
-          <marginalCosts xsi:type="esdl:SingleValue" value="1.0" id="d18bb16f-094c-451d-bb74-943b7d6ddad1" name="Electrolyzer_6327-MarginalCosts"/>
+          <marginalCosts xsi:type="esdl:SingleValue" value="1.6" id="d18bb16f-094c-451d-bb74-943b7d6ddad1" name="Electrolyzer_6327-MarginalCosts"/>
         </costInformation>
       </asset>
       <asset xsi:type="esdl:GasDemand" name="GasDemand_4146" power="500000000.0" technicalLifetime="20.0" id="41466625-a14b-43a9-9a13-93d34a4ea6ff">

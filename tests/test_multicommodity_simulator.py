@@ -9,7 +9,8 @@ from mesido.network_common import NetworkSettings
 from mesido.workflows.multicommodity_simulator_workflow import (
     MultiCommoditySimulator,
     MultiCommoditySimulatorNoLosses,
-    run_sequatially_staged_simulation,
+    run_sequatially_staged_simulation, MultiCommoditySimulatorMarginal,
+    MultiCommoditySimulatorMarginalNoLosses,
 )
 
 import numpy as np
@@ -282,72 +283,73 @@ class TestMultiCommoditySimulator(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
-        class MCSimulatorShortSmallProd(MultiCommoditySimulatorNoLosses):
+        for problem_class in [MultiCommoditySimulatorNoLosses, MultiCommoditySimulatorMarginalNoLosses]:
+            class MCSimulatorShortSmallProd(problem_class):
 
-            def read(self, variable=None):
-                super().read()
+                def read(self, variable=None):
+                    super().read()
 
-                for asset in self.energy_system_components["wind_park"]:
-                    new_timeseries = (
-                        self.get_timeseries(f"{asset}.maximum_electricity_source").values * 0.5
+                    for asset in self.energy_system_components["wind_park"]:
+                        new_timeseries = (
+                            self.get_timeseries(f"{asset}.maximum_electricity_source").values * 0.5
+                        )
+                        self.set_timeseries(f"{asset}.maximum_electricity_source", new_timeseries)
+
+                def energy_system_options(self):
+                    options = super().energy_system_options()
+
+                    options["electrolyzer_efficiency"] = (
+                        ElectrolyzerOption.LINEARIZED_THREE_LINES_WEAK_INEQUALITY
                     )
-                    self.set_timeseries(f"{asset}.maximum_electricity_source", new_timeseries)
 
-            def energy_system_options(self):
-                options = super().energy_system_options()
+                    return options
 
-                options["electrolyzer_efficiency"] = (
-                    ElectrolyzerOption.LINEARIZED_THREE_LINES_WEAK_INEQUALITY
-                )
+            solution = run_optimization_problem(
+                MCSimulatorShortSmallProd,
+                base_folder=base_folder,
+                esdl_file_name="emerge_priorities_withoutstorage_2prod.esdl",
+                esdl_parser=ESDLFileParser,
+                profile_reader=ProfileReaderFromFile,
+                input_timeseries_file="timeseries_short.csv",
+            )
 
-                return options
+            results = solution.extract_results()
+            bounds = solution.bounds()
 
-        solution = run_optimization_problem(
-            MCSimulatorShortSmallProd,
-            base_folder=base_folder,
-            esdl_file_name="emerge_priorities_withoutstorage_2prod.esdl",
-            esdl_parser=ESDLFileParser,
-            profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries_short.csv",
-        )
+            tol = 1.0e-6
 
-        results = solution.extract_results()
-        bounds = solution.bounds()
+            checks_all_mc_simulations(solution, results)
 
-        tol = 1.0e-6
+            esdl_electrolyzer = solution._esdl_assets[
+                solution.esdl_asset_name_to_id_map["Electrolyzer_6327"]
+            ]
+            demand_gas = results["GasDemand_4146.Gas_demand_mass_flow"]
+            demand_el = results["ElectricityDemand_f833.Electricity_demand"]
+            electrolyzer_power = results["Electrolyzer_6327.Power_consumed"]
+            electrolyzer_gas = results["Electrolyzer_6327.Gas_mass_flow_out"]
+            windfarm_power = results["WindPark_9074.Electricity_source"]
+            prod_power = results["ElectricityProducer_4850.Electricity_source"]
+            prod_power_cap = 3e8  # W
 
-        checks_all_mc_simulations(solution, results)
+            check_electrolyzer_efficiency(tol, electrolyzer_gas, electrolyzer_power, esdl_electrolyzer)
 
-        esdl_electrolyzer = solution._esdl_assets[
-            solution.esdl_asset_name_to_id_map["Electrolyzer_6327"]
-        ]
-        demand_gas = results["GasDemand_4146.Gas_demand_mass_flow"]
-        demand_el = results["ElectricityDemand_f833.Electricity_demand"]
-        electrolyzer_power = results["Electrolyzer_6327.Power_consumed"]
-        electrolyzer_gas = results["Electrolyzer_6327.Gas_mass_flow_out"]
-        windfarm_power = results["WindPark_9074.Electricity_source"]
-        prod_power = results["ElectricityProducer_4850.Electricity_source"]
-        prod_power_cap = 3e8  # W
-
-        check_electrolyzer_efficiency(tol, electrolyzer_gas, electrolyzer_power, esdl_electrolyzer)
-
-        # demand gas maximised when sufficient power available to convert electricity to gas
-        cap_electrolyzer_power = 444880000.0
-        index_gas_max = windfarm_power >= cap_electrolyzer_power
-        np.testing.assert_allclose(
-            demand_gas[index_gas_max], bounds["Electrolyzer_6327.Gas_mass_flow_out"][1]
-        )
-        # due to priority settings, electricity demand only consuming if demand_gas maximised and
-        # enough windfarm power
-        demand_el_calc = windfarm_power - electrolyzer_power
-        demand_el_calc[demand_el_calc < 0] = 0
-        np.testing.assert_allclose(demand_el_calc, demand_el, atol=1e-5 * max(demand_el))
-        # electricity_producer only producing upto its own cap if windfarm_power is insufficient to
-        # fullfill demand_gas
-        el_prod_calc = np.maximum(
-            np.minimum(max(electrolyzer_power) - windfarm_power, prod_power_cap), 0.0
-        )
-        np.testing.assert_allclose(el_prod_calc, prod_power, atol=1e-5 * max(demand_el))
+            # demand gas maximised when sufficient power available to convert electricity to gas
+            cap_electrolyzer_power = 444880000.0
+            index_gas_max = windfarm_power >= cap_electrolyzer_power
+            np.testing.assert_allclose(
+                demand_gas[index_gas_max], bounds["Electrolyzer_6327.Gas_mass_flow_out"][1]
+            )
+            # due to priority settings, electricity demand only consuming if demand_gas maximised and
+            # enough windfarm power
+            demand_el_calc = windfarm_power - electrolyzer_power
+            demand_el_calc[demand_el_calc < 0] = 0
+            np.testing.assert_allclose(demand_el_calc, demand_el, atol=1e-5 * max(demand_el))
+            # electricity_producer only producing upto its own cap if windfarm_power is insufficient to
+            # fullfill demand_gas
+            el_prod_calc = np.maximum(
+                np.minimum(max(electrolyzer_power) - windfarm_power, prod_power_cap), 0.0
+            )
+            np.testing.assert_allclose(el_prod_calc, prod_power, atol=1e-5 * max(demand_el))
 
     def test_multi_commodity_simulator_emerge_storage(self):
         """
@@ -487,98 +489,100 @@ class TestMultiCommoditySimulator(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
-        solution = run_optimization_problem(
-            MultiCommoditySimulator,
-            base_folder=base_folder,
-            esdl_file_name="emerge_battery_priorities.esdl",
-            esdl_parser=ESDLFileParser,
-            profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries_short_2.csv",
-        )
+        for problem_class in [MultiCommoditySimulator, MultiCommoditySimulatorMarginal]:
 
-        results = solution.extract_results()
-        parameters = solution.parameters(0)
-
-        feasibility_test(solution)
-        electric_power_conservation_test(solution, results)
-
-        checks_all_mc_simulations(solution, results)
-        tol = 1.0e-6
-
-        esdl_electrolyzer = solution._esdl_assets[
-            solution.esdl_asset_name_to_id_map["Electrolyzer_6327"]
-        ]
-        demand_gas = results["GasDemand_4146.Gas_demand_mass_flow"]
-        electrolyzer_power = results["Electrolyzer_6327.Power_consumed"]
-        electrolyzer_power_bound = solution.bounds()["Electrolyzer_6327.Power_consumed"][1]
-        electrolyzer_gas = results["Electrolyzer_6327.Gas_mass_flow_out"]
-        windfarm_power = results["WindPark_9074.Electricity_source"]
-        storage_gas_mass_flow = results["GasStorage_9172.Gas_tank_flow"]
-        battery_power = results["Battery_4688.ElectricityIn.Power"]
-
-        check_electrolyzer_efficiency(tol, electrolyzer_gas, electrolyzer_power, esdl_electrolyzer)
-
-        # gas mass balance including storage
-        np.testing.assert_allclose(
-            electrolyzer_gas - storage_gas_mass_flow, demand_gas, rtol=tol, atol=tol
-        )
-
-        # check battery only discharged if not enough windpower for electrolyzer
-        discharge_battery = windfarm_power < electrolyzer_power_bound
-        np.testing.assert_array_less(battery_power[discharge_battery], 1.0)
-        charge_battery = windfarm_power > electrolyzer_power_bound
-        np.testing.assert_array_less(0.0, battery_power[charge_battery])
-
-        # gas_storage not used due to low priority
-        np.testing.assert_allclose(storage_gas_mass_flow[1:], 0.0, atol=tol)
-
-        # linearized dw_headloss calculations
-        linear_lines = 5
-        v_max = solution.gas_network_settings["maximum_velocity"]
-        velocities = np.linspace(0, v_max, linear_lines + 1)
-
-        for pipe in solution.energy_system_components.get("gas_pipe"):
-            length = parameters[f"{pipe}.length"]
-            diameter = parameters[f"{pipe}.diameter"]
-            vol_flow_rate = results[f"{pipe}.GasIn.Q"]
-            v_pipe = vol_flow_rate / (3.14 * (diameter / 2) ** 2)
-            wall_roughness = solution.energy_system_options()["wall_roughness"]
-            head_loss = results[f"{pipe}.dH"]
-            head_loss_full_var = results[f"{pipe}.__head_loss"]
-            # If this test fails there is most likely a scaling issue.
-            indexes = np.abs(v_pipe) > 1e-11
-            indexes[0] = False
-            np.testing.assert_allclose(
-                np.abs(np.asarray(head_loss[indexes])), head_loss_full_var[indexes]
+            solution = run_optimization_problem(
+                problem_class,
+                base_folder=base_folder,
+                esdl_file_name="emerge_battery_priorities.esdl",
+                esdl_parser=ESDLFileParser,
+                profile_reader=ProfileReaderFromFile,
+                input_timeseries_file="timeseries_short_2.csv",
             )
-            for i in range(1, len(v_pipe)):
-                v = v_pipe[i]
-                line_num = velocities.searchsorted(abs(v))
-                if abs(v) > 1e-8:
-                    dw_headloss_max = darcy_weisbach.head_loss(
-                        velocities[line_num],
-                        diameter,
-                        length,
-                        wall_roughness,
-                        20,
-                        NetworkSettings.NETWORK_TYPE_HYDROGEN,
-                        15e5,
-                    )
-                    dw_headloss_min = darcy_weisbach.head_loss(
-                        velocities[line_num - 1],
-                        diameter,
-                        length,
-                        wall_roughness,
-                        20,
-                        NetworkSettings.NETWORK_TYPE_HYDROGEN,
-                        15e5,
-                    )
-                    a = (dw_headloss_max - dw_headloss_min) / (
-                        velocities[line_num] - velocities[line_num - 1]
-                    )
-                    b = dw_headloss_min - a * velocities[line_num - 1]
-                    headloss_calc = a * v + b
-                    np.testing.assert_allclose(abs(head_loss[i]), headloss_calc, 0.1)
+
+            results = solution.extract_results()
+            parameters = solution.parameters(0)
+
+            feasibility_test(solution)
+            electric_power_conservation_test(solution, results)
+
+            checks_all_mc_simulations(solution, results)
+            tol = 1.0e-6
+
+            esdl_electrolyzer = solution._esdl_assets[
+                solution.esdl_asset_name_to_id_map["Electrolyzer_6327"]
+            ]
+            demand_gas = results["GasDemand_4146.Gas_demand_mass_flow"]
+            electrolyzer_power = results["Electrolyzer_6327.Power_consumed"]
+            electrolyzer_power_bound = solution.bounds()["Electrolyzer_6327.Power_consumed"][1]
+            electrolyzer_gas = results["Electrolyzer_6327.Gas_mass_flow_out"]
+            windfarm_power = results["WindPark_9074.Electricity_source"]
+            storage_gas_mass_flow = results["GasStorage_9172.Gas_tank_flow"]
+            battery_power = results["Battery_4688.ElectricityIn.Power"]
+
+            check_electrolyzer_efficiency(tol, electrolyzer_gas, electrolyzer_power, esdl_electrolyzer)
+
+            # gas mass balance including storage
+            np.testing.assert_allclose(
+                electrolyzer_gas - storage_gas_mass_flow, demand_gas, rtol=tol, atol=tol
+            )
+
+            # check battery only discharged if not enough windpower for electrolyzer
+            discharge_battery = windfarm_power < electrolyzer_power_bound
+            np.testing.assert_array_less(battery_power[discharge_battery], 1.0)
+            charge_battery = windfarm_power > electrolyzer_power_bound
+            np.testing.assert_array_less(0.0, battery_power[charge_battery])
+
+            # gas_storage not used due to low priority
+            np.testing.assert_allclose(storage_gas_mass_flow[1:], 0.0, atol=tol)
+
+            # linearized dw_headloss calculations
+            linear_lines = 5
+            v_max = solution.gas_network_settings["maximum_velocity"]
+            velocities = np.linspace(0, v_max, linear_lines + 1)
+
+            for pipe in solution.energy_system_components.get("gas_pipe"):
+                length = parameters[f"{pipe}.length"]
+                diameter = parameters[f"{pipe}.diameter"]
+                vol_flow_rate = results[f"{pipe}.GasIn.Q"]
+                v_pipe = vol_flow_rate / (3.14 * (diameter / 2) ** 2)
+                wall_roughness = solution.energy_system_options()["wall_roughness"]
+                head_loss = results[f"{pipe}.dH"]
+                head_loss_full_var = results[f"{pipe}.__head_loss"]
+                # If this test fails there is most likely a scaling issue.
+                indexes = np.abs(v_pipe) > 1e-11
+                indexes[0] = False
+                np.testing.assert_allclose(
+                    np.abs(np.asarray(head_loss[indexes])), head_loss_full_var[indexes]
+                )
+                for i in range(1, len(v_pipe)):
+                    v = v_pipe[i]
+                    line_num = velocities.searchsorted(abs(v))
+                    if abs(v) > 1e-8:
+                        dw_headloss_max = darcy_weisbach.head_loss(
+                            velocities[line_num],
+                            diameter,
+                            length,
+                            wall_roughness,
+                            20,
+                            NetworkSettings.NETWORK_TYPE_HYDROGEN,
+                            15e5,
+                        )
+                        dw_headloss_min = darcy_weisbach.head_loss(
+                            velocities[line_num - 1],
+                            diameter,
+                            length,
+                            wall_roughness,
+                            20,
+                            NetworkSettings.NETWORK_TYPE_HYDROGEN,
+                            15e5,
+                        )
+                        a = (dw_headloss_max - dw_headloss_min) / (
+                            velocities[line_num] - velocities[line_num - 1]
+                        )
+                        b = dw_headloss_min - a * velocities[line_num - 1]
+                        headloss_calc = a * v + b
+                        np.testing.assert_allclose(abs(head_loss[i]), headloss_calc, 0.1)
 
     def test_multi_commodity_simulator_sequential_staged(self):
         """
