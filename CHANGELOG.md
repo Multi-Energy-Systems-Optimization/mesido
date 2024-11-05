@@ -17,7 +17,7 @@
 - Bugfix: No longer required to provide a power at the heating demands when a profile has been added.
 - Bugfix: Scaling fix on ATES temperature variable when temperature modelling not used.
 - Bugfix: Fix on nominals in electricity cables and gas pipes. Fix on nominals for nodes with logical links.
-- Pipeline is only run when pull request is ready for review and synchronized or when opened. 
+- Pipeline is only run when pull request is ready for review and synchronized or when opened, as well as when a pull request is merged to main. 
  
 ## Fixed
 - Bug fix: e-boiler expected order of inports while setting nominal values
