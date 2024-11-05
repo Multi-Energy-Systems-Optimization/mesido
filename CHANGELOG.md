@@ -20,6 +20,8 @@
 - Pipeline is only run when pull request is ready for review and synchronized or when opened, as well as when a pull request is merged to main. 
  
 ## Fixed
+- Bug fix: Logical links: e_boiler & gas boiler update to use energy values 
+- Bug fix: Q max and nominal calculation update when reference energy value    
 - Bug fix: e-boiler expected order of inports while setting nominal values
 - Bug fix: setting nominals while using logical links when all values are 1.0
 - Bug fix: machine error/rounding with updating lower bound values in the grow_workflow after stage 1
