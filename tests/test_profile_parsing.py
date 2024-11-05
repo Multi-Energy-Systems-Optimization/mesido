@@ -11,6 +11,7 @@ from mesido.esdl.profile_parser import InfluxDBProfileReader, ProfileReaderFromF
 from mesido.exceptions import MesidoAssetIssueError
 from mesido.potential_errors import MesidoAssetIssueType, PotentialErrors
 from mesido.workflows import EndScenarioSizingStaged
+from mesido.workflows.utils.error_types import mesido_issue_type_gen_message
 
 import numpy as np
 
@@ -71,8 +72,7 @@ class TestPotentialErros(unittest.TestCase):
         np.testing.assert_equal(cm.exception.error_type, MesidoAssetIssueType.HEAT_DEMAND_POWER)
         np.testing.assert_equal(
             cm.exception.general_issue,
-            "Asset insufficient installed capacity: please increase the installed power or reduce"
-            " the demand profile peak value of the demand(s) listed.",
+            mesido_issue_type_gen_message(MesidoAssetIssueType.HEAT_DEMAND_POWER),
         )
         np.testing.assert_equal(
             cm.exception.message_per_asset_id["2ab92324-f86e-4976-9a6e-f7454b77ba3c"],
@@ -107,7 +107,10 @@ class TestPotentialErros(unittest.TestCase):
             problem.pre()
         # Check that the heat demand had an error
         np.testing.assert_equal(cm.exception.error_type, MesidoAssetIssueType.HEAT_DEMAND_TYPE)
-        np.testing.assert_equal(cm.exception.general_issue, "Incorrect asset type: please update.")
+        np.testing.assert_equal(
+            cm.exception.general_issue,
+            mesido_issue_type_gen_message(MesidoAssetIssueType.HEAT_DEMAND_TYPE),
+        )
         np.testing.assert_equal(
             cm.exception.message_per_asset_id["2ab92324-f86e-4976-9a6e-f7454b77ba3c"],
             "Asset named HeatingDemand_2ab9: This asset is currently a GenericConsumer please"
@@ -134,7 +137,10 @@ class TestPotentialErros(unittest.TestCase):
             cm.exception.error_type,
             MesidoAssetIssueType.ASSET_PROFILE_CAPABILITY,
         )
-        np.testing.assert_equal(cm.exception.general_issue, "Profile assigment not allowed.")
+        np.testing.assert_equal(
+            cm.exception.general_issue,
+            mesido_issue_type_gen_message(MesidoAssetIssueType.ASSET_PROFILE_CAPABILITY),
+        )
         np.testing.assert_equal(
             cm.exception.message_per_asset_id["95802cf8-61d6-4773-bb99-e275c3bf26cc"],
             "Asset named Joint_9580: The assigment of profile field demand3_MW is not possible for"

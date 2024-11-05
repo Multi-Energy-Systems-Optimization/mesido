@@ -8,6 +8,7 @@ from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.exceptions import MesidoAssetIssueError
 from mesido.potential_errors import MesidoAssetIssueType, PotentialErrors
 from mesido.util import run_esdl_mesido_optimization
+from mesido.workflows.utils.error_types import mesido_issue_type_gen_message
 
 import numpy as np
 
@@ -53,8 +54,7 @@ class TestColdDemand(TestCase):
             np.testing.assert_equal(cm.error_type, MesidoAssetIssueType.COLD_DEMAND_POWER)
             np.testing.assert_equal(
                 cm.general_issue,
-                "Asset insufficient installed capacity: please increase the installed power or"
-                " reduce the demand profile peak value of the demand(s) listed.",
+                mesido_issue_type_gen_message(MesidoAssetIssueType.COLD_DEMAND_POWER),
             )
             np.testing.assert_equal(
                 cm.message_per_asset_id["15e803b4-1224-4cac-979f-87747a656741"],

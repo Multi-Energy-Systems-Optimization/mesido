@@ -7,13 +7,13 @@ import time
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.head_loss_class import HeadLossOption
-from mesido.potential_errors import MesidoAssetIssueType, get_potential_errors
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.goals.minimize_tco_goal import MinimizeTCO
 from mesido.workflows.io.write_output import ScenarioOutput
 from mesido.workflows.utils.adapt_profiles import (
     adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
 )
+from mesido.workflows.utils.error_types import HEAT_NETWORK_ERRORS, potential_error_to_error
 from mesido.workflows.utils.helpers import main_decorator, run_optimization_problem_solver
 
 import numpy as np
@@ -200,42 +200,7 @@ class EndScenarioSizing(
         """
         super().read()
 
-        # Error checking:
-        # - installed capacity/power of a heating/cooling demand is sufficient for the specified
-        #   demand profile
-        # - asset used for a heating demand
-        potential_error_type = [
-            MesidoAssetIssueType.HEAT_DEMAND_POWER,
-            MesidoAssetIssueType.COLD_DEMAND_POWER,
-            MesidoAssetIssueType.HEAT_DEMAND_TYPE,
-            MesidoAssetIssueType.ASSET_PROFILE_CAPABILITY,
-        ]
-
-        # TODO: Once pyhton 3.11 is used, use the following: Group multiple exceptions (as it is
-        # possible multiple exceptions at once are true here):
-        # https://www.geeksforgeeks.org/exception-groups-in-python/
-        for etype in potential_error_type:
-            if get_potential_errors().have_issues_for(etype):
-                if etype in [
-                    MesidoAssetIssueType.HEAT_DEMAND_POWER,
-                    MesidoAssetIssueType.COLD_DEMAND_POWER,
-                ]:
-                    get_potential_errors().convert_to_exception(
-                        etype,
-                        "Asset insufficient installed capacity: please increase the installed power"
-                        " or reduce the demand profile peak value of the demand(s) listed.",
-                    )
-                elif etype is MesidoAssetIssueType.HEAT_DEMAND_TYPE:
-                    get_potential_errors().convert_to_exception(
-                        etype,
-                        "Incorrect asset type: please update.",
-                    )
-                elif etype is MesidoAssetIssueType.ASSET_PROFILE_CAPABILITY:
-                    get_potential_errors().convert_to_exception(
-                        etype,
-                        "Profile assigment not allowed.",
-                    )
-        # end error checking
+        potential_error_to_error(HEAT_NETWORK_ERRORS)
 
         (
             self.__indx_max_peak,
