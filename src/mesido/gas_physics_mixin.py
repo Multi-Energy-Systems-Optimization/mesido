@@ -304,6 +304,8 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                             # asset connected to it.
                             self.__gas_node_variable_nominal[f"{node}.GasConn[{i + 1}].{var}"] = (
                                 np.median([x for x in nominals[var] if x != 1])
+                                if np.sum(nominals[var]) != len(nominals[var])
+                                else 1.0
                             )
 
     def energy_system_options(self):

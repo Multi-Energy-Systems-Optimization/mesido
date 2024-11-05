@@ -18,8 +18,11 @@
 - Bugfix: No longer required to provide a power at the heating demands when a profile has been added.
 - Bugfix: Scaling fix on ATES temperature variable when temperature modelling not used.
 - Bugfix: Fix on nominals in electricity cables and gas pipes. Fix on nominals for nodes with logical links.
+- Pipeline is only run when pull request is ready for review and synchronized or when opened, as well as when a pull request is merged to main. 
  
 ## Fixed
+- Bug fix: e-boiler expected order of inports while setting nominal values
+- Bug fix: setting nominals while using logical links when all values are 1.0
 - Bug fix: machine error/rounding with updating lower bound values in the grow_workflow after stage 1
 - documentation: heat physics tank storage
 - bug fix in grow_workflow (heat networks), changed minimum velocity from 0 to default value

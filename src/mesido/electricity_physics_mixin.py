@@ -198,7 +198,11 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                             # asset connected to it.
                             self.__bus_variable_nominal[
                                 f"{node}.ElectricityConn[{i + 1}].{var}"
-                            ] = np.median([x for x in nominals[var] if x != 1])
+                            ] = (
+                                np.median([x for x in nominals[var] if x != 1])
+                                if np.sum(nominals[var]) != len(nominals[var])
+                                else 1.0
+                            )
 
     @property
     def extra_variables(self):
