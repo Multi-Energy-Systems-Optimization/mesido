@@ -305,10 +305,10 @@ class TestProfileLoading(unittest.TestCase):
 
 if __name__ == "__main__":
     # unittest.main()
-    # a = TestProfileLoading()
+    a = TestProfileLoading()
     b = TestPotentialErros()
     b.test_asset_potential_errors()
-    # a.test_loading_from_influx()
-    # a.test_loading_from_csv()
-    # a.test_loading_from_xml()
-    # a.test_loading_from_csv_with_influx_profiles_given()
+    a.test_loading_from_influx()
+    a.test_loading_from_csv()
+    a.test_loading_from_xml()
+    a.test_loading_from_csv_with_influx_profiles_given()
