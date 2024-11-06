@@ -94,3 +94,9 @@ class TestElecBoiler(TestCase):
             parameters["HeatPump_d8fd.cop"] * results["HeatPump_d8fd.Power_consumed"],
             results["HeatPump_d8fd.Heat_source"] + 1.0e-6,
         )
+
+
+if __name__ == "__main__":
+    TestElecBoiler = TestElecBoiler()
+    TestElecBoiler.test_elec_boiler()
+    TestElecBoiler.test_air_water_hp_elec()
