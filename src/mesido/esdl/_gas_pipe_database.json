@@ -1,0 +1,205 @@
+{
+    "DN6": {
+        "name": "DN6",
+        "inner_diameter": "0.00684",
+        "wall_thickness": "0.00173",
+        "outer_diameter": "0.0103",
+        "roughness": "1.50E-05"
+    },
+    "DN8": {
+        "name": "DN8",
+        "inner_diameter": "0.00922",
+        "wall_thickness": "0.00224",
+        "outer_diameter": "0.0137",
+        "roughness": "1.50E-05"
+    },
+    "DN10": {
+        "name": "DN10",
+        "inner_diameter": "0.01248",
+        "wall_thickness": "0.00231",
+        "outer_diameter": "0.0171",
+        "roughness": "1.50E-05"
+    },
+    "DN15": {
+        "name": "DN15",
+        "inner_diameter": "0.01576",
+        "wall_thickness": "0.00277",
+        "outer_diameter": "0.0213",
+        "roughness": "1.50E-05"
+    },
+    "DN20": {
+        "name": "DN20",
+        "inner_diameter": "0.02096",
+        "wall_thickness": "0.00287",
+        "outer_diameter": "0.0267",
+        "roughness": "1.50E-05"
+    },
+    "DN25": {
+        "name": "DN25",
+        "inner_diameter": "0.02664",
+        "wall_thickness": "0.00338",
+        "outer_diameter": "0.0334",
+        "roughness": "1.50E-05"
+    },
+    "DN32": {
+        "name": "DN32",
+        "inner_diameter": "0.03508",
+        "wall_thickness": "0.00356",
+        "outer_diameter": "0.0422",
+        "roughness": "1.50E-05"
+    },
+    "DN40": {
+        "name": "DN40",
+        "inner_diameter": "0.04094",
+        "wall_thickness": "0.00368",
+        "outer_diameter": "0.0483",
+        "roughness": "1.50E-05"
+    },
+    "DN50": {
+        "name": "DN50",
+        "inner_diameter": "0.05248",
+        "wall_thickness": "0.00391",
+        "outer_diameter": "0.0603",
+        "roughness": "1.50E-05"
+    },
+    "DN65": {
+        "name": "DN65",
+        "inner_diameter": "0.06268",
+        "wall_thickness": "0.00516",
+        "outer_diameter": "0.073",
+        "roughness": "1.50E-05"
+    },
+    "DN80": {
+        "name": "DN80",
+        "inner_diameter": "0.07792",
+        "wall_thickness": "0.00549",
+        "outer_diameter": "0.0889",
+        "roughness": "1.50E-05"
+    },
+    "DN90": {
+        "name": "DN90",
+        "inner_diameter": "0.09012",
+        "wall_thickness": "0.00574",
+        "outer_diameter": "0.1016",
+        "roughness": "1.50E-05"
+    },
+    "DN100": {
+        "name": "DN100",
+        "inner_diameter": "0.10226",
+        "wall_thickness": "0.00602",
+        "outer_diameter": "0.1143",
+        "roughness": "1.50E-05"
+    },
+    "DN125": {
+        "name": "DN125",
+        "inner_diameter": "0.1282",
+        "wall_thickness": "0.00655",
+        "outer_diameter": "0.1413",
+        "roughness": "1.50E-05"
+    },
+    "DN150": {
+        "name": "DN150",
+        "inner_diameter": "0.15408",
+        "wall_thickness": "0.00711",
+        "outer_diameter": "0.1683",
+        "roughness": "1.50E-05"
+    },
+    "DN200": {
+        "name": "DN200",
+        "inner_diameter": "0.20274",
+        "wall_thickness": "0.00818",
+        "outer_diameter": "0.2191",
+        "roughness": "1.50E-05"
+    },
+    "DN250": {
+        "name": "DN250",
+        "inner_diameter": "0.25456",
+        "wall_thickness": "0.00927",
+        "outer_diameter": "0.2731",
+        "roughness": "1.50E-05"
+    },
+    "DN300": {
+        "name": "DN300",
+        "inner_diameter": "0.30484",
+        "wall_thickness": "0.00953",
+        "outer_diameter": "0.3239",
+        "roughness": "1.50E-05"
+    },
+    "DN350": {
+        "name": "DN350",
+        "inner_diameter": "0.33654",
+        "wall_thickness": "0.00953",
+        "outer_diameter": "0.3556",
+        "roughness": "1.50E-05"
+    },
+    "DN400": {
+        "name": "DN400",
+        "inner_diameter": "0.38734",
+        "wall_thickness": "0.00953",
+        "outer_diameter": "0.4064",
+        "roughness": "1.50E-05"
+    },
+    "DN450": {
+        "name": "DN450",
+        "inner_diameter": "0.43814",
+        "wall_thickness": "0.00953",
+        "outer_diameter": "0.4572",
+        "roughness": "1.50E-05"
+    },
+    "DN500": {
+        "name": "DN500",
+        "inner_diameter": "0.48894",
+        "wall_thickness": "0.00953",
+        "outer_diameter": "0.508",
+        "roughness": "1.50E-05"
+    },
+    "DN600": {
+        "name": "DN600",
+        "inner_diameter": "0.59094",
+        "wall_thickness": "0.00953",
+        "outer_diameter": "0.61",
+        "roughness": "1.50E-05"
+    },
+    "DN700": {
+        "name": "DN700",
+        "inner_diameter": "0.69194",
+        "wall_thickness": "0.00953",
+        "outer_diameter": "0.711",
+        "roughness": "1.50E-05"
+    },
+    "DN800": {
+        "name": "DN800",
+        "inner_diameter": "0.79394",
+        "wall_thickness": "0.00953",
+        "outer_diameter": "0.813",
+        "roughness": "1.50E-05"
+    },
+    "DN900": {
+        "name": "DN900",
+        "inner_diameter": "0.89494",
+        "wall_thickness": "0.00953",
+        "outer_diameter": "0.914",
+        "roughness": "1.50E-05"
+    },
+    "DN1000": {
+        "name": "DN1000",
+        "inner_diameter": "0.99694",
+        "wall_thickness": "0.00953",
+        "outer_diameter": "1.016",
+        "roughness": "1.50E-05"
+    },
+    "DN1100": {
+        "name": "DN1100",
+        "inner_diameter": "1.09894",
+        "wall_thickness": "0.00953",
+        "outer_diameter": "1.118",
+        "roughness": "1.50E-05"
+    },
+    "DN1200": {
+        "name": "DN1200",
+        "inner_diameter": "1.1936",
+        "wall_thickness": "0.0127",
+        "outer_diameter": "1.219",
+        "roughness": "1.50E-05"
+    }
+}
