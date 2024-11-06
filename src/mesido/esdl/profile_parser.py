@@ -10,6 +10,7 @@ from esdl.profiles.influxdbprofilemanager import InfluxDBProfileManager
 from esdl.units.conversion import ENERGY_IN_J, POWER_IN_W, convert_to_unit
 
 from mesido.esdl.common import Asset
+from mesido.potential_errors import MesidoAssetIssueType, get_potential_errors
 
 import numpy as np
 
@@ -38,6 +39,7 @@ class BaseProfileReader:
         "gas_demand": ".target_gas_demand",
         "gas_source": ".maximum_gas_source",
     }
+
     carrier_profile_var_name: str = ".price_profile"
 
     def __init__(self, energy_system: esdl.EnergySystem, file_path: Optional[Path]):
@@ -104,6 +106,9 @@ class BaseProfileReader:
             for component_type, var_name in self.component_type_to_var_name_map.items():
                 for component in energy_system_components.get(component_type, []):
                     profile = self._profiles[ensemble_member].get(component + var_name, None)
+                    asset_power = esdl_assets[esdl_asset_names_to_ids[component]].attributes[
+                        "power"
+                    ]
                     if profile is not None:
                         values = profile
                     else:
@@ -114,9 +119,6 @@ class BaseProfileReader:
                             f"No profile provided for {component=} and "
                             f"{ensemble_member=}, using the assets power value instead"
                         )
-                        asset_power = esdl_assets[esdl_asset_names_to_ids[component]].attributes[
-                            "power"
-                        ]
                         values = np.array([asset_power] * len(self._reference_datetimes))
 
                     io.set_timeseries(
@@ -125,6 +127,24 @@ class BaseProfileReader:
                         values=values,
                         ensemble_member=ensemble_member,
                     )
+                    # Check if that the installed heat/cool demand capacity is sufficient
+                    if component_type in ["heat_demand", "cold_demand"]:
+                        max_profile_value = max(values)
+                        if asset_power < max_profile_value and asset_power != 0.0:
+                            asset_id = esdl_asset_names_to_ids[component]
+                            get_potential_errors().add_potential_issue(
+                                (
+                                    MesidoAssetIssueType.HEAT_DEMAND_POWER
+                                    if component_type == "heat_demand"
+                                    else MesidoAssetIssueType.COLD_DEMAND_POWER
+                                ),
+                                asset_id,
+                                f"Asset named {component}: The installed capacity of"
+                                f" {round(asset_power / 1.0e6, 3)}MW should be larger than the"
+                                " maximum of the heat demand profile "
+                                f"{round(max_profile_value / 1.0e6, 3)}MW",
+                            )
+
             for properties in carrier_properties.values():
                 carrier_name = properties["name"]
                 profile = self._profiles[ensemble_member].get(
@@ -175,6 +195,7 @@ class BaseProfileReader:
 class InfluxDBProfileReader(BaseProfileReader):
     asset_type_to_variable_name_conversion = {
         esdl.esdl.HeatingDemand: ".target_heat_demand",
+        esdl.esdl.GenericConsumer: ".target_heat_demand",
         esdl.esdl.HeatProducer: ".maximum_heat_source",
         esdl.esdl.ElectricityDemand: ".target_electricity_demand",
         esdl.esdl.ElectricityProducer: ".maximum_electricity_source",
@@ -277,11 +298,21 @@ class InfluxDBProfileReader(BaseProfileReader):
                 var_base_name = asset.name
                 try:
                     variable_suffix = self.asset_type_to_variable_name_conversion[type(asset)]
+                    # For multicommidity work profiles need to be assigned to GenericConsumer, but
+                    # not for heat network (this asset_potential_errors is used in grow_workflow)
+                    if type(asset) is esdl.GenericConsumer:
+                        get_potential_errors().add_potential_issue(
+                            MesidoAssetIssueType.HEAT_DEMAND_TYPE,
+                            asset.id,
+                            f"Asset named {asset.name}: This asset is currently a GenericConsumer"
+                            " please change it to a HeatingDemand",
+                        )
                 except KeyError:
-                    raise RuntimeError(
-                        f"The asset {profile.field} is of type {type(asset)} which is "
-                        f"currently not supported to have a profile to be loaded "
-                        f"from the database."
+                    get_potential_errors().add_potential_issue(
+                        MesidoAssetIssueType.ASSET_PROFILE_CAPABILITY,
+                        asset.id,
+                        f"Asset named {asset.name}: The assigment of profile field {profile.field}"
+                        f" is not possible for this asset type {type(asset)}",
                     )
             else:
                 raise RuntimeError(

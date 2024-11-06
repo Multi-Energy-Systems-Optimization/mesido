@@ -2,14 +2,16 @@ import logging
 import math
 from typing import Dict, Tuple, Type, Union
 
-import CoolProp as cP
-
 import esdl
 
-from mesido.esdl.asset_to_component_base import MODIFIERS, _AssetToComponentBase
+from mesido.esdl.asset_to_component_base import (
+    MODIFIERS,
+    _AssetToComponentBase,
+    get_density,
+    get_internal_energy,
+)
 from mesido.esdl.common import Asset
 from mesido.esdl.esdl_model_base import _ESDLModelBase
-from mesido.network_common import NetworkSettings
 from mesido.pycml.component_library.milp import (
     ATES,
     AirWaterHeatPump,
@@ -98,67 +100,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
         rho and cp
         """
         return dict(rho=self.rho, cp=self.cp)
-
-    def get_internal_energy(self, asset_name, carrier):
-        # The default of 20°C is also used in the head_loss_class. Thus, when updating ensure it
-        # is also updated in the head_loss_class.
-        temperature = 20.0
-
-        if NetworkSettings.NETWORK_TYPE_GAS in carrier.name:
-            internal_energy = cP.CoolProp.PropsSI(
-                "U",
-                "T",
-                273.15 + temperature,
-                "P",
-                carrier.pressure * 1.0e5,
-                NetworkSettings.NETWORK_COMPOSITION_GAS,
-            )
-        elif NetworkSettings.NETWORK_TYPE_HYDROGEN in carrier.name:
-            internal_energy = cP.CoolProp.PropsSI(
-                "U",
-                "T",
-                273.15 + temperature,
-                "P",
-                carrier.pressure * 1.0e5,
-                str(NetworkSettings.NETWORK_TYPE_HYDROGEN).upper(),
-            )
-        else:
-            logger.warning(
-                f"Neither gas or hydrogen was used in the carrier " f"name of pipe {asset_name}"
-            )
-            internal_energy = 46.0e6  # natural gas at about 8 bar
-        return internal_energy  # we use gram per second and coolprop gives results in kJ per kg
-
-    def get_density(self, asset_name, carrier):
-        # TODO: gas carrier temperature still needs to be resolved.
-        # The default of 20°C is also used in the head_loss_class. Thus, when updating ensure it
-        # is also updated in the head_loss_class.
-        temperature = 20.0
-
-        if NetworkSettings.NETWORK_TYPE_GAS in carrier.name:
-            density = cP.CoolProp.PropsSI(
-                "D",
-                "T",
-                273.15 + temperature,
-                "P",
-                carrier.pressure * 1.0e5,
-                NetworkSettings.NETWORK_COMPOSITION_GAS,
-            )
-        elif NetworkSettings.NETWORK_TYPE_HYDROGEN in carrier.name:
-            density = cP.CoolProp.PropsSI(
-                "D",
-                "T",
-                273.15 + temperature,
-                "P",
-                carrier.pressure * 1.0e5,
-                str(NetworkSettings.NETWORK_TYPE_HYDROGEN).upper(),
-            )
-        else:
-            logger.warning(
-                f"Neither gas or hydrogen was used in the carrier " f"name of pipe {asset_name}"
-            )
-            density = 6.2  # natural gas at about 8 bar
-        return density * 1.0e3  # to convert from kg/m3 to g/m3
 
     def get_asset_attribute_value(
         self,
@@ -643,13 +584,17 @@ class AssetToHeatComponent(_AssetToComponentBase):
             conductivies_insulation,
         ) = self._pipe_get_diameter_and_insulation(asset)
 
+        id_mapping = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
+            "id_number_mapping"
+        ]
+
         if isinstance(asset.in_ports[0].carrier, esdl.esdl.GasCommodity):
             q_nominal = math.pi * diameter**2 / 4.0 * self.v_max_gas / 2.0
             self._set_q_nominal(asset, q_nominal)
             q_max = math.pi * diameter**2 / 4.0 * self.v_max_gas
             self._set_q_max(asset, q_max)
             pressure = asset.in_ports[0].carrier.pressure * 1.0e5
-            density = self.get_density(asset.name, asset.in_ports[0].carrier)
+            density = get_density(asset.name, asset.in_ports[0].carrier)
             bounds_nominals = dict(
                 Q=dict(min=-q_max, max=q_max, nominal=q_nominal),
                 mass_flow=dict(
@@ -658,6 +603,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 Hydraulic_power=dict(nominal=q_nominal * pressure),
             )
             modifiers = dict(
+                id_mapping_carrier=id_mapping,
                 length=length,
                 density=density,
                 diameter=diameter,
@@ -1002,6 +948,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         # In this case we only have the secondary side ports, here we assume a air-water HP
         if len(asset.in_ports) == 1 and len(asset.out_ports) == 1:
+            # TODO: the power filled in at the heatpmp should always be the electric power, thus,
+            # the max heat supply should be power*cop
             _, modifiers = self.convert_heat_source(asset)
             return AirWaterHeatPump, modifiers
         # In this case we only have the secondary side ports, here we assume a air-water HP elec
@@ -1303,6 +1251,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
                     )
                 )
             )
+            logger.warning(
+                "ATES in use: WKO (koude-warmteopslag, cold and heat storage) since the"
+                " maximum temperature has been specified to be <= 30 degrees Celcius"
+            )
             return LowTemperatureATES, modifiers
         else:
             modifiers.update(
@@ -1319,6 +1271,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
                         nominal=temperatures["T_return"],
                     ),
                 )
+            )
+            logger.warning(
+                "ATES in use: High Temperature ATES since the maximum temperature has"
+                " been specified to be > 30 degrees Celcius or not specified at all"
             )
             return ATES, modifiers
 
@@ -1643,6 +1599,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 I=dict(min=-i_max, max=i_max, nominal=i_nom),
                 Power=dict(min=-max_discharge, max=max_charge, nominal=max_charge / 2.0),
             ),
+            Effective_power_charging=dict(
+                min=-max_discharge, max=max_charge, nominal=max_charge / 2.0
+            ),
             **self._get_cost_figure_modifiers(asset),
         )
 
@@ -1863,13 +1822,11 @@ class AssetToHeatComponent(_AssetToComponentBase):
         ]
         # DO not remove due usage in future
         # hydrogen_specfic_energy = 20.0 / 1.0e6
-        specific_energy = (
-            self.get_internal_energy(asset.name, asset.in_ports[0].carrier) / 10
-        )  # J/g
+        specific_energy = get_internal_energy(asset.name, asset.in_ports[0].carrier) / 10  # J/g
         # TODO: the value being used is the internal energy and not the HHV (higher
         #  heating value) for hydrogen, therefore it does not represent the energy per weight.
         #  This still needs to be updated
-        density = self.get_density(asset.name, asset.in_ports[0].carrier)
+        density = get_density(asset.name, asset.in_ports[0].carrier)
         pressure = asset.in_ports[0].carrier.pressure * 1.0e5
         q_nominal = self._get_connected_q_nominal(asset)
         q_max = self._get_connected_q_max(asset)
@@ -1886,7 +1843,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             # *hydrogen_specfic_energy),
             density=density,
             GasIn=dict(
-                Q=dict(min=0.0, max=q_max, nominal=q_nominal),
+                Q=dict(min=0.0, nominal=q_nominal),
                 mass_flow=dict(nominal=mass_flow_nominal_g_per_s, max=max_mass_flow_g_per_s),
                 Hydraulic_power=dict(min=0.0, max=0.0, nominal=q_nominal * pressure),
             ),
@@ -1936,10 +1893,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
         assert asset.asset_type in {"GasProducer", "Import"}
 
         q_nominal = self._get_connected_q_nominal(asset)
-        density_value = self.get_density(asset.name, asset.out_ports[0].carrier)
+        density_value = get_density(asset.name, asset.out_ports[0].carrier)
         pressure = asset.out_ports[0].carrier.pressure * 1.0e5
         specific_energy = (
-            self.get_internal_energy(asset.name, asset.out_ports[0].carrier) / 10
+            get_internal_energy(asset.name, asset.out_ports[0].carrier) / 10
         )  # J/g #TODO: is not the HHV for hydrogen, so is off
         # [g/s] = [J/s] * [J/kg]^-1 *1000
         max_mass_flow_g_per_s = asset.attributes["power"] / specific_energy * 1000.0
@@ -1991,6 +1948,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         Optional ESDL fields:
         ---------------------
         - technicalLifetime
+        - powerFactor
         - CostInformation: discountRate
         - CostInformation: marginalCost
         - CostInformation: installationCost
@@ -2013,15 +1971,26 @@ class AssetToHeatComponent(_AssetToComponentBase):
         max_power = asset.attributes.get("power", math.inf)
         min_load = float(asset.attributes["minLoad"])
         max_load = float(asset.attributes["maxLoad"])
+        if not max_power == max_load:
+            max_power = max_load
+            logger.warning(
+                f"The maximum load and the power of the electrolyzer did not match for "
+                f"{asset.name}. The maximum load of {max_load}W is now used as maximum "
+                f"power."
+            )
         eff_min_load = asset.attributes["effMinLoad"]  # Wh/g
         eff_max_load = asset.attributes["effMaxLoad"]  # Wh/g
         eff_max = asset.attributes["efficiency"]  # Wh/g
+
+        power_factor = (
+            asset.attributes["powerFactor"] if asset.attributes["powerFactor"] != 0.0 else 2.5
+        )
 
         def equations(x):
             a, b, c = x
             eq1 = a / min_load + b * min_load + c - eff_min_load
             eq2 = a / max_load + b * max_load + c - eff_max_load
-            eq3 = a / (min_load * 2.5) + b * (min_load * 2.5) + c - eff_max
+            eq3 = a / (min_load * power_factor) + b * (min_load * power_factor) + c - eff_max
             return [eq1, eq2, eq3]
 
         # Here we approximate the efficiency curve of the electrolyzer with the function:
@@ -2031,7 +2000,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         a, b, c = fsolve(equations, (0, 0, 0))
 
         q_nominal = self._get_connected_q_nominal(asset)
-        density = self.get_density(asset.name, asset.out_ports[0].carrier)
+        density = get_density(asset.name, asset.out_ports[0].carrier)
         # [g/s] = [W] * [kWh/kg]^-1 * 1/3600 = [g/h] * 1/3600
         mass_flow_max_g_per_s = max_power / eff_max_load / 3600
         mass_flow_nominal_g_per_s = min(density * q_nominal, mass_flow_max_g_per_s / 2)
@@ -2107,7 +2076,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         # DO not remove due usage in future
         # hydrogen_specific_energy = 20.0 / 1.0e6  # kg/Wh
         q_nominal = self._get_connected_q_nominal(asset)
-        density = self.get_density(asset.name, asset.in_ports[0].carrier)
+        density = get_density(asset.name, asset.in_ports[0].carrier)
         pressure = asset.in_ports[0].carrier.pressure * 1.0e5
 
         modifiers = dict(
@@ -2166,13 +2135,13 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         Returns
         -------
-        GasTankStorage class with modifiers
+        GasSubstation class with modifiers
         """
         assert asset.asset_type in {"GasConversion", "PressureReducingValve"}
 
         q_nom_in, q_nom_out = self._get_connected_q_nominal(asset)
-        density_in = self.get_density(asset.name, asset.in_ports[0].carrier)
-        density_out = self.get_density(asset.name, asset.out_ports[0].carrier)
+        density_in = get_density(asset.name, asset.in_ports[0].carrier)
+        density_out = get_density(asset.name, asset.out_ports[0].carrier)
         pressure_in = asset.in_ports[0].carrier.pressure * 1.0e5
         pressure_out = asset.out_ports[0].carrier.pressure * 1.0e5
 
@@ -2237,8 +2206,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
         assert asset.asset_type in {"Compressor"}
 
         q_nom_in, q_nom_out = self._get_connected_q_nominal(asset)
-        density_in = self.get_density(asset.name, asset.in_ports[0].carrier)
-        density_out = self.get_density(asset.name, asset.out_ports[0].carrier)
+        density_in = get_density(asset.name, asset.in_ports[0].carrier)
+        density_out = get_density(asset.name, asset.out_ports[0].carrier)
         pressure_in = asset.in_ports[0].carrier.pressure * 1.0e5
         pressure_out = asset.out_ports[0].carrier.pressure * 1.0e5
 
@@ -2319,8 +2288,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         for port in asset.in_ports:
             if isinstance(port.carrier, esdl.GasCommodity):
-                density = self.get_density(asset.name, port.carrier)
-                internal_energy = self.get_internal_energy(asset.name, port.carrier)
+                density = get_density(asset.name, port.carrier)
+                internal_energy = get_internal_energy(asset.name, port.carrier)
 
         # TODO: CO2 coefficient
 
@@ -2551,7 +2520,13 @@ class ESDLHeatModel(_ESDLModelBase):
     This probably could be standardized in that case this class would become obsolete.
     """
 
-    def __init__(self, assets: Dict[str, Asset], converter_class=AssetToHeatComponent, **kwargs):
+    def __init__(
+        self,
+        assets: Dict[str, Asset],
+        name_to_id_map: Dict[str, str],
+        converter_class=AssetToHeatComponent,
+        **kwargs,
+    ):
         super().__init__(None)
 
         converter = converter_class(
@@ -2564,4 +2539,4 @@ class ESDLHeatModel(_ESDLModelBase):
             }
         )
 
-        self._esdl_convert(converter, assets, "Heat")
+        self._esdl_convert(converter, assets, name_to_id_map, "MILP")

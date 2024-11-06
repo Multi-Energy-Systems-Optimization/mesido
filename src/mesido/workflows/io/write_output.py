@@ -1264,13 +1264,14 @@ class ScenarioOutput:
 
                                     profile_attributes = esdl.InfluxDBProfile(
                                         database=output_energy_system_id,
-                                        measurement=asset_name,
+                                        measurement=carrier_id,
                                         field=profiles.profile_header[-1],
                                         port=self.influxdb_port,
                                         host=self.influxdb_host,
                                         startDate=start_date_time,
                                         endDate=end_date_time,
                                         id=str(uuid.uuid4()),
+                                        filters='"assetId"=' + f"'{str(asset_id)}'",
                                     )
                                     # Assign quantity and units variable
                                     if variable in ["Heat_flow", "Pump_power"]:
@@ -1467,7 +1468,7 @@ class ScenarioOutput:
             # test = 0.0
         # ------------------------------------------------------------------------------------------
         # Save esdl file
-
+        # Edwin_marker_esdl_string - line 1224
         if self.esdl_parser_class == mesido.esdl.esdl_parser.ESDLFileParser:
             extension = "_Simulation.esdl" if optimizer_sim else "_GrowOptimized.esdl"
             file_path = Path(self.model_folder) / (Path(self.esdl_file_name).stem + extension)
@@ -1475,6 +1476,7 @@ class ScenarioOutput:
         self.optimized_esdl_string = self.convert_energy_system_to_string(
             energy_system=energy_system
         )
+
         # self.__optimized_energy_system_handler = esh
         # self.optimized_esdl_string = esh.to_string()
         #

@@ -53,8 +53,8 @@ class LowTemperatureATES(HeatTwoPort, BaseAsset):
         # Thus Heat_buffer = HeatHot = der(Stored_heat).
         # We connect an ATES as an demand, meaning that flow and Heat_low_temperature_ates are
         # positive undercharging and negative under discharge
-        self.add_variable(Variable, "Heat_low_temperature_ates", nominal=self.Heat_nominal)
-        self.add_variable(Variable, "Heat_flow", nominal=self.Heat_nominal)
+        self.add_variable(Variable, "Heat_low_temperature_ates", nominal=self.Heat_nominal)  # [W]
+        self.add_variable(Variable, "Heat_flow", nominal=self.Heat_nominal)  # [W]
         # Assume the storage fills in about 3 months at typical rate
         self._typical_fill_time = 3600.0 * 24.0 * 90.0
         self._nominal_stored_heat = self.Heat_nominal * self._typical_fill_time
@@ -70,6 +70,7 @@ class LowTemperatureATES(HeatTwoPort, BaseAsset):
             min=0.0,
             nominal=self._typical_fill_time * self.Q_nominal,
         )
+
         self.add_variable(Variable, "Q", nominal=self.Q_nominal)
         self.add_variable(
             Variable, "Pump_power", min=0.0, nominal=self.Q_nominal * self.nominal_pressure
@@ -86,7 +87,7 @@ class LowTemperatureATES(HeatTwoPort, BaseAsset):
         self.add_equation(self.HeatIn.Q - self.HeatOut.Q)
         self.add_equation(self.Q - self.HeatOut.Q)
 
-        # # Heat stored in the ates
+        # Heat stored in the ates
         self.add_equation(
             (self.der(self.Stored_heat) - self.Heat_low_temperature_ates + self.Heat_loss)
             / self._heat_loss_eq_nominal_ates

@@ -3,7 +3,10 @@ from typing import Dict, Set
 
 from mesido.base_component_type_mixin import BaseComponentTypeMixin
 from mesido.heat_network_common import NodeConnectionDirection
+from mesido.network_common import NetworkSettings
 from mesido.topology import Topology
+
+import numpy as np
 
 from pymoca.backends.casadi.alias_relation import AliasRelation
 
@@ -34,117 +37,31 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
         gas_nodes = components.get("gas_node", [])
         buffers = components.get("heat_buffer", [])
         atess = [*components.get("ates", []), *components.get("low_temperature_ates", [])]
-        try:
-            pipes = components["heat_pipe"]
-            cables = components.get("electricity_cable", [])
-            gas_pipes = components.get("gas_pipe", [])
-        except KeyError:
-            try:
-                cables = components["electricity_cable"]
-                gas_pipes = components.get("gas_pipe", [])
-                pipes = []
-            except KeyError:
-                try:
-                    cables = []
-                    gas_pipes = components["gas_pipe"]
-                    pipes = []
-                except KeyError:
-                    logger.error(
-                        "A valid network should have at least one pipe/cable, "
-                        "assets cannot be connected directly"
-                    )
+        demands = [
+            *components.get("heat_demand", []),
+            *components.get("electricity_demand", []),
+            *components.get("gas_demand", []),
+        ]
+        sources = [
+            *components.get("heat_source", []),
+            *components.get("electricity_source", []),
+            *components.get("gas_source", []),
+        ]
+        pipes = components.get("heat_pipe", [])
+
+        # An energy system should have at least one asset.
+        assert len(components) > 1
 
         # Figure out which pipes are connected to which nodes, which pipes
         # are connected in series, and which pipes are connected to which buffers.
 
         pipes_set = set(pipes)
-        cables_set = set(cables)
-        gas_pipes_set = set(gas_pipes)
         parameters = [self.parameters(e) for e in range(self.ensemble_size)]
         node_connections = {}
         bus_connections = {}
         gas_node_connections = {}
 
-        # Figure out if we are dealing with a Heat model, or a QTH model
-        try:
-            if len(pipes):
-                _ = self.variable(f"{pipes[0]}.HeatIn.Heat")
-                heat_network_model_type = "Heat"
-            else:
-                heat_network_model_type = "Heat"
-        except KeyError:
-            heat_network_model_type = "QTH"
-
-        for n in [*nodes, *busses, *gas_nodes]:
-            n_connections = [ens_params[f"{n}.n"] for ens_params in parameters]
-
-            if len(set(n_connections)) > 1:
-                raise Exception(
-                    "Nodes and busses cannot have differing number of connections per "
-                    "ensemble member"
-                )
-
-            n_connections = n_connections[0]
-
-            # Note that we do this based on temperature, because discharge may
-            # be an alias of yet some other further away connected pipe.
-            if n in nodes:
-                node_connections[n] = connected_pipes = {}
-            elif n in busses:
-                bus_connections[n] = connected_pipes = {}
-            elif n in gas_nodes:
-                gas_node_connections[n] = connected_pipes = {}
-
-            for i in range(n_connections):
-                if n in nodes:
-                    cur_port = f"{n}.{heat_network_model_type}Conn[{i + 1}]"
-                    prop = "T" if heat_network_model_type == "QTH" else "Heat"
-                    in_suffix = ".QTHIn.T" if heat_network_model_type == "QTH" else ".HeatIn.Heat"
-                    out_suffix = (
-                        ".QTHOut.T" if heat_network_model_type == "QTH" else ".HeatOut.Heat"
-                    )
-                elif n in busses:
-                    cur_port = f"{n}.ElectricityConn[{i + 1}]"
-                    prop = "Power"
-                    in_suffix = ".ElectricityIn.Power"
-                    out_suffix = ".ElectricityOut.Power"
-                elif n in gas_nodes:
-                    # TODO: Ideally a temporary variable would be created to make the connections
-                    #  map that is not passed to the problem
-                    cur_port = f"{n}.GasConn[{i + 1}]"
-                    prop = "Q_shadow"
-                    in_suffix = ".GasIn.Q_shadow"
-                    out_suffix = ".GasOut.Q_shadow"
-                aliases = [
-                    x
-                    for x in self.alias_relation.aliases(f"{cur_port}.{prop}")
-                    if not x.startswith(n) and x.endswith(f".{prop}")
-                ]
-
-                if len(aliases) > 1:
-                    raise Exception(f"More than one connection to {cur_port}")
-                elif len(aliases) == 0:
-                    raise Exception(f"Found no connection to {cur_port}")
-
-                if aliases[0].endswith(out_suffix):
-                    pipe_w_orientation = (
-                        aliases[0][: -len(out_suffix)],
-                        NodeConnectionDirection.IN,
-                    )
-                else:
-                    assert aliases[0].endswith(in_suffix)
-                    pipe_w_orientation = (
-                        aliases[0][: -len(in_suffix)],
-                        NodeConnectionDirection.OUT,
-                    )
-
-                assert (
-                    pipe_w_orientation[0] in pipes_set
-                    or pipe_w_orientation[0] in cables_set
-                    or pipe_w_orientation[0] in gas_pipes_set
-                )
-
-                connected_pipes[i] = pipe_w_orientation
+        heat_network_model_type = NetworkSettings.NETWORK_TYPE_HEAT
 
         # Note that a pipe series can include both hot and cold pipes for
         # QTH models. It is only about figuring out which pipes are
@@ -153,7 +70,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
         # series, as the cold part is zero milp by construction.
         if heat_network_model_type == "QTH":
             alias_relation = self.alias_relation
-        elif heat_network_model_type == "Heat":
+        elif heat_network_model_type == NetworkSettings.NETWORK_TYPE_HEAT:
             # There is no proper AliasRelation yet (because there is milp loss in pipes).
             # So we build one, as that is the easiest way to figure out which pipes are
             # connected to each other in series. We do this by making a temporary/shadow
@@ -185,6 +102,137 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                         if f"{other_pipe}.Q" not in alias_relation.canonical_variables:
                             alias_relation.add(f"{p}.Q", f"{sign_prefix}{other_pipe}.Q")
 
+        node_to_node_logical_link_map = {}
+
+        for n in [*nodes, *busses, *gas_nodes]:
+            n_connections = [ens_params[f"{n}.n"] for ens_params in parameters]
+
+            if len(set(n_connections)) > 1:
+                raise Exception(
+                    "Nodes and busses cannot have differing number of connections per "
+                    "ensemble member"
+                )
+
+            n_connections = n_connections[0]
+
+            # Note that we do this based on temperature, because discharge may
+            # be an alias of yet some other further away connected pipe.
+            if n in nodes:
+                node_connections[n] = connected_pipes = {}
+            elif n in busses:
+                bus_connections[n] = connected_pipes = {}
+            elif n in gas_nodes:
+                gas_node_connections[n] = connected_pipes = {}
+
+            for i in range(n_connections):
+                if n in nodes:
+                    cur_port = f"{n}.{heat_network_model_type}Conn[{i + 1}]"
+                    prop = (
+                        "T"
+                        if heat_network_model_type == "QTH"
+                        else NetworkSettings.NETWORK_TYPE_HEAT
+                    )
+                    prop_h = "H"
+                    in_suffix = ".QTHIn.T" if heat_network_model_type == "QTH" else ".HeatIn.Heat"
+                    out_suffix = (
+                        ".QTHOut.T" if heat_network_model_type == "QTH" else ".HeatOut.Heat"
+                    )
+                    in_suffix_h = ".HeatIn.H"
+                    out_suffix_h = ".HeatOut.H"
+                    node_suffix = ".HeatConn[1].Heat"
+                elif n in busses:
+                    cur_port = f"{n}.ElectricityConn[{i + 1}]"
+                    prop = "Power"
+                    prop_h = "V"
+                    in_suffix = ".ElectricityIn.Power"
+                    out_suffix = ".ElectricityOut.Power"
+                    in_suffix_h = ".ElectricityIn.V"
+                    out_suffix_h = ".ElectricityOut.V"
+                    node_suffix = ".ElectricityConn[1].Power"
+                elif n in gas_nodes:
+                    # TODO: Ideally a temporary variable would be created to make the connections
+                    #  map that is not passed to the problem
+                    cur_port = f"{n}.GasConn[{i + 1}]"
+                    prop = "Q"
+                    prop_h = "H"
+                    in_suffix = ".GasIn.Q"
+                    out_suffix = ".GasOut.Q"
+                    in_suffix_h = ".GasIn.H"
+                    out_suffix_h = ".GasOut.H"
+                    node_suffix = ".GasConn[1].Q"
+                aliases = [
+                    x
+                    for x in self.alias_relation.aliases(f"{cur_port}.{prop}")
+                    if not x.startswith(n) and x.endswith(f".{prop}")
+                ]
+
+                if len(aliases) == 0:
+                    raise Exception(f"Found no connection to {cur_port}")
+
+                # Here we make a count of the amount of in and out port aliases.
+                in_suffix_count = np.sum([1 if x.endswith(in_suffix) else 0 for x in aliases])
+                out_suffix_count = np.sum([1 if x.endswith(out_suffix) else 0 for x in aliases])
+
+                # Here we gather the aliases for a property that is equal for all node ports.
+                aliases_h = [
+                    x
+                    for x in self.alias_relation.aliases(f"{cur_port}.{prop_h}")
+                    if not x.startswith(n) and x.endswith(f".{prop_h}")
+                ]
+                pipe_out_port = False
+                # We can have multiple aliases, specifically when a pipe is connected to a port the
+                # direction of that pipe matters. To determine if the connected alias is a pipe and
+                # which direction it has we look for the overlap between the prop and prop_h in the
+                # aliases. This means that if a pipe is both in the aliases and in the aliases_h,
+                # then that must be the pipe connected to the port of the node.
+                for k in range(len(aliases)):
+                    pipe_name = aliases[k].split(".")[0]
+                    if pipe_name + out_suffix_h in aliases_h:
+                        pipe_out_port = True
+                        node_connection_direction = NodeConnectionDirection.IN
+                    elif pipe_name + in_suffix_h in aliases_h:
+                        pipe_out_port = True
+                        node_connection_direction = NodeConnectionDirection.OUT
+
+                if pipe_out_port:
+                    # This is only for when a pipe is connected to a gas node to determine direction
+                    asset_w_orientation = (
+                        pipe_name,
+                        node_connection_direction,
+                    )
+                elif out_suffix_count > in_suffix_count:
+                    # This is for the case of Non pipe asset is logically linked to a node
+                    asset_w_orientation = (
+                        aliases[0][: -len(out_suffix)],
+                        NodeConnectionDirection.IN,
+                    )
+                elif out_suffix_count < in_suffix_count:
+                    # This is for the case of Non pipe asset is logically linked to a node
+                    asset_w_orientation = (
+                        aliases[0][: -len(in_suffix)],
+                        NodeConnectionDirection.OUT,
+                    )
+                elif out_suffix_count == in_suffix_count:
+                    # This is for the case of logical links between node to node
+                    # Note that we cannot determine the direction of node to node logical links, we
+                    # therefore, always take the first node with an in port and the second node with
+                    # and out port.
+                    if n not in list(node_to_node_logical_link_map.values()):
+                        node_to_node_logical_link_map[n] = aliases[0][: -len(node_suffix)]
+                        asset_w_orientation = (
+                            aliases[0][: -len(node_suffix)],
+                            NodeConnectionDirection.IN,
+                        )
+                    else:
+                        asset_w_orientation = (
+                            aliases[0][: -len(node_suffix)],
+                            NodeConnectionDirection.OUT,
+                        )
+                else:
+                    logger.error("connections are not properly matched")
+
+                connected_pipes[i] = asset_w_orientation
+
         canonical_pipe_qs = {p: alias_relation.canonical_signed(f"{p}.Q") for p in pipes}
         # Move sign from canonical to alias
         canonical_pipe_qs = {(p, d): c for p, (c, d) in canonical_pipe_qs.items()}
@@ -209,7 +257,9 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
 
             for k in ["In", "Out"]:
                 b_conn = f"{b}.{heat_network_model_type}{k}"
-                prop = "T" if heat_network_model_type == "QTH" else "Heat"
+                prop = (
+                    "T" if heat_network_model_type == "QTH" else NetworkSettings.NETWORK_TYPE_HEAT
+                )
                 aliases = [
                     x
                     for x in self.alias_relation.aliases(f"{b_conn}.{prop}")
@@ -225,25 +275,25 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                 out_suffix = ".QTHOut.T" if heat_network_model_type == "QTH" else ".HeatOut.Heat"
                 alias = aliases[0]
                 if alias.endswith(out_suffix):
-                    pipe_w_orientation = (
+                    asset_w_orientation = (
                         alias[: -len(out_suffix)],
                         NodeConnectionDirection.IN,
                     )
                 else:
                     assert alias.endswith(in_suffix)
-                    pipe_w_orientation = (
+                    asset_w_orientation = (
                         alias[: -len(in_suffix)],
                         NodeConnectionDirection.OUT,
                     )
 
-                assert pipe_w_orientation[0] in pipes_set
+                assert asset_w_orientation[0] in pipes_set
 
                 if k == "In":
-                    assert self.is_hot_pipe(pipe_w_orientation[0])
+                    assert self.is_hot_pipe(asset_w_orientation[0])
                 else:
-                    assert self.is_cold_pipe(pipe_w_orientation[0])
+                    assert self.is_cold_pipe(asset_w_orientation[0])
 
-                buffer_connections[b].append(pipe_w_orientation)
+                buffer_connections[b].append(asset_w_orientation)
 
             buffer_connections[b] = tuple(buffer_connections[b])
 
@@ -254,7 +304,9 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
 
             for k in ["In", "Out"]:
                 a_conn = f"{a}.{heat_network_model_type}{k}"
-                prop = "T" if heat_network_model_type == "QTH" else "Heat"
+                prop = (
+                    "T" if heat_network_model_type == "QTH" else NetworkSettings.NETWORK_TYPE_HEAT
+                )
                 aliases = [
                     x
                     for x in self.alias_relation.aliases(f"{a_conn}.{prop}")
@@ -270,27 +322,123 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                 out_suffix = ".QTHOut.T" if heat_network_model_type == "QTH" else ".HeatOut.Heat"
 
                 if aliases[0].endswith(out_suffix):
-                    pipe_w_orientation = (
+                    asset_w_orientation = (
                         aliases[0][: -len(out_suffix)],
                         NodeConnectionDirection.IN,
                     )
                 else:
                     assert aliases[0].endswith(in_suffix)
-                    pipe_w_orientation = (
+                    asset_w_orientation = (
                         aliases[0][: -len(in_suffix)],
                         NodeConnectionDirection.OUT,
                     )
 
-                assert pipe_w_orientation[0] in pipes_set
+                assert asset_w_orientation[0] in pipes_set
 
                 if k == "Out":
-                    assert self.is_cold_pipe(pipe_w_orientation[0])
+                    assert self.is_cold_pipe(asset_w_orientation[0])
                 else:
-                    assert self.is_hot_pipe(pipe_w_orientation[0])
+                    assert self.is_hot_pipe(asset_w_orientation[0])
 
-                ates_connections[a].append(pipe_w_orientation)
+                ates_connections[a].append(asset_w_orientation)
 
             ates_connections[a] = tuple(ates_connections[a])
+
+        demand_connections = {}
+
+        for a in demands:
+            if a in components.get("heat_demand", []):
+                network_type = NetworkSettings.NETWORK_TYPE_HEAT
+                prop = NetworkSettings.NETWORK_TYPE_HEAT
+            elif a in components.get("electricity_demand", []):
+                network_type = "Electricity"
+                prop = "Power"
+            elif a in components.get("gas_demand", []):
+                network_type = NetworkSettings.NETWORK_TYPE_GAS
+                prop = "H"
+            else:
+                logger.error(f"{a} cannot be modelled with heat, gas or electricity")
+            a_conn = f"{a}.{network_type}In"
+            aliases = [
+                x
+                for x in self.alias_relation.aliases(f"{a_conn}.{prop}")
+                if not x.startswith(a) and x.endswith(f".{prop}")
+            ]
+
+            if len(aliases) > 1:
+                raise Exception(f"More than one connection to {a_conn}")
+            elif len(aliases) == 0:
+                # the connection was a logical link to a node
+                continue
+
+            in_suffix = f".{network_type}In.{prop}"
+            out_suffix = f".{network_type}Out.{prop}"
+
+            if aliases[0].endswith(out_suffix):
+                asset_w_orientation = (
+                    aliases[0][: -len(out_suffix)],
+                    NodeConnectionDirection.IN,
+                )
+            else:
+                asset_w_orientation = (
+                    aliases[0][: -len(in_suffix)],
+                    NodeConnectionDirection.OUT,
+                )
+
+            if asset_w_orientation[0] in [
+                *components.get("heat_pipe", []),
+                *components.get("gas_pipe", []),
+                *components.get("electricity_cable", []),
+            ]:
+                demand_connections[a] = asset_w_orientation
+
+        source_connections = {}
+
+        for a in sources:
+            if a in components.get("heat_source", []):
+                network_type = NetworkSettings.NETWORK_TYPE_HEAT
+                prop = NetworkSettings.NETWORK_TYPE_HEAT
+            elif a in components.get("electricity_source", []):
+                network_type = "Electricity"
+                prop = "Power"
+            elif a in components.get("gas_source", []):
+                network_type = NetworkSettings.NETWORK_TYPE_GAS
+                prop = "H"
+            else:
+                logger.error(f"{a} cannot be modelled with heat, gas or electricity")
+            a_conn = f"{a}.{network_type}Out"
+            aliases = [
+                x
+                for x in self.alias_relation.aliases(f"{a_conn}.{prop}")
+                if not x.startswith(a) and x.endswith(f".{prop}")
+            ]
+
+            if len(aliases) > 1:
+                raise Exception(f"More than one connection to {a_conn}")
+            elif len(aliases) == 0:
+                # the connection was a logical link to a node
+                continue
+
+            in_suffix = f".{network_type}In.{prop}"
+            out_suffix = f".{network_type}Out.{prop}"
+
+            if aliases[0].endswith(out_suffix):
+                asset_w_orientation = (
+                    aliases[0][: -len(out_suffix)],
+                    NodeConnectionDirection.IN,
+                )
+            else:
+                asset_w_orientation = (
+                    aliases[0][: -len(in_suffix)],
+                    NodeConnectionDirection.OUT,
+                )
+
+            if asset_w_orientation[0] in [
+                *components.get("heat_pipe", []),
+                *components.get("gas_pipe", []),
+                *components.get("electricity_cable", []),
+            ]:
+                source_connections[a] = asset_w_orientation
 
         self.__topology = Topology(
             node_connections,
@@ -299,6 +447,8 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
             buffer_connections,
             ates_connections,
             bus_connections,
+            demand_connections,
+            source_connections,
         )
 
         super().pre()

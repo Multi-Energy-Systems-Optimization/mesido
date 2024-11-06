@@ -73,7 +73,7 @@ class TestHeadLoss(TestCase):
                         self.heat_network_settings["head_loss_option"] = (
                             HeadLossOption.LINEARIZED_N_LINES_EQUALITY
                         )
-                        self.heat_network_settings["minimize_head_losses"] = True
+                        self.heat_network_settings["minimize_head_losses"] = False
                         self.heat_network_settings["minimum_velocity"] = 1.0e-6
 
                     return options
@@ -244,30 +244,60 @@ class TestHeadLoss(TestCase):
             - That only one linear line is active for the applicable pipes
             - That the linearized dH value is constraint is satisfied
             - Pipe 4 for has a zero flow rate, but its dH should be the same as pipe 2
+        - Check that the minimum velocity in the longest parallel pipe (Pipe4):
+            - LINEARIZED_N_LINES_WEAK_INEQUALITY: pipe velo == 0.0 or == default value
+            - LINEARIZED_N_LINES_EQUALITY: velo > min velocity
         """
         import models.source_pipe_split_sink.src.double_pipe_heat as example
         from models.source_pipe_split_sink.src.double_pipe_heat import SourcePipeSink
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
+        # Keep track of the number of runs
+        counter_linearized_n_lines_weak_ineq_runs = 0
+        counter_total_runs = 0
+
         # Specify the head loss linearizations to be tested
         for head_loss_option_setting in [
-            HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY,
+            # Do not change the order of the items below.
+            HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY,  # with min velo = 0.0
+            HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY,  # with min velo = default value
             HeadLossOption.LINEARIZED_N_LINES_EQUALITY,
         ]:
+            counter_total_runs += 1
+
+            if head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY:
+                counter_linearized_n_lines_weak_ineq_runs += 1
+
             # Added for case where head loss is modelled via DW
             class SourcePipeSinkDW(SourcePipeSink):
                 def energy_system_options(self):
                     options = super().energy_system_options()
 
-                    nonlocal head_loss_option_setting
+                    nonlocal head_loss_option_setting, counter_linearized_n_lines_weak_ineq_runs
                     head_loss_option_setting = head_loss_option_setting
+                    counter_linearized_n_lines_weak_ineq_runs = (
+                        counter_linearized_n_lines_weak_ineq_runs
+                    )
 
                     self.heat_network_settings["head_loss_option"] = head_loss_option_setting
 
                     self.heat_network_settings["n_linearization_lines"] = 2
-                    self.heat_network_settings["minimum_velocity"] = 0.0
-                    self.heat_network_settings["minimize_head_losses"] = True
+                    if head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
+                        self.heat_network_settings["minimize_head_losses"] = False
+                        self.heat_network_settings["minimum_velocity"] = 0.0
+                    elif (
+                        head_loss_option_setting
+                        == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
+                    ):
+                        self.heat_network_settings["minimize_head_losses"] = True
+                        if counter_linearized_n_lines_weak_ineq_runs == 1:
+                            self.heat_network_settings["minimum_velocity"] = 0.0
+                        elif counter_linearized_n_lines_weak_ineq_runs == 2:
+                            ...
+                            # Do not delete. This reminds the dev that different min velo value
+                            # with min velo = default value (>0.0), instead of specifying a value
+                            # here
 
                     return options
 
@@ -397,6 +427,44 @@ class TestHeadLoss(TestCase):
                             results["Pipe2.dH"][ii], results[f"{pipe}.dH"][ii]
                         )
 
+            # Check min pipe velocity
+            if (
+                solution.heat_network_settings["head_loss_option"]
+                == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
+                and counter_linearized_n_lines_weak_ineq_runs == 1
+            ):
+                np.testing.assert_allclose(
+                    results["Pipe4.HeatIn.Q"]
+                    / (solution.parameters(0)["Pipe4.diameter"] ** 2 / 4.0 * np.pi),
+                    0.0,
+                    atol=1e-07,
+                )
+            elif (
+                solution.heat_network_settings["head_loss_option"]
+                == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
+                and counter_linearized_n_lines_weak_ineq_runs == 2
+            ):
+                np.testing.assert_allclose(
+                    results["Pipe4.HeatIn.Q"]
+                    / (solution.parameters(0)["Pipe4.diameter"] ** 2 / 4.0 * np.pi),
+                    0.005,  # Keep this value hard-coded to prevent future errors
+                )
+            else:  # LINEARIZED_N_LINES_EQUALITY
+                np.testing.assert_array_less(
+                    solution.heat_network_settings["minimum_velocity"],
+                    results["Pipe4.HeatIn.Q"]
+                    / (solution.parameters(0)["Pipe4.diameter"] ** 2 / 4.0 * np.pi),
+                )
+            # Checking that all the runs were done
+            if counter_total_runs not in [
+                1,
+                2,
+                3,
+            ] or counter_linearized_n_lines_weak_ineq_runs not in [0, 1, 2]:
+                exit("Something went wrong with the number of runs")
+            elif counter_total_runs == 3 and counter_linearized_n_lines_weak_ineq_runs != 2:
+                exit("Something went wrong with the number of runs")
+
     def test_gas_network_head_loss(self):
         """
         Gas network: Test the head loss approximation
@@ -442,7 +510,7 @@ class TestHeadLoss(TestCase):
                     ):
                         self.gas_network_settings["n_linearization_lines"] = 2
                         self.gas_network_settings["minimize_head_losses"] = True
-                    if head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
+                    elif head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
                         self.gas_network_settings["n_linearization_lines"] = 2
                         self.gas_network_settings["minimize_head_losses"] = True
                         self.gas_network_settings["minimum_velocity"] = 0.0
@@ -593,7 +661,7 @@ class TestHeadLoss(TestCase):
                     if head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
                         # do not change in value below, see notes above
                         self.gas_network_settings["n_linearization_lines"] = 2
-                        self.gas_network_settings["minimize_head_losses"] = True
+                        self.gas_network_settings["minimize_head_losses"] = False
                     # if statements below are currently not used, potential use in the future
                     elif head_loss_option_setting == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY:
                         self.gas_network_settings["minimize_head_losses"] = True

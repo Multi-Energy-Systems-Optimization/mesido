@@ -1,3 +1,4 @@
+import copy
 import logging
 
 import casadi as ca
@@ -141,6 +142,10 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         self.__gas_storage_discharge_nominals = {}
         self.__gas_storage_discharge_map = {}
 
+        # Map for setting port variable nominals in the case they were not set during the model
+        # parsing (logical links).
+        self.__gas_node_variable_nominal = {}
+
     def gas_carriers(self):
         """
         This function should be overwritten by the problem and should give a dict with the
@@ -181,7 +186,10 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             # Note we always use the gas network type for the naming of variables, independent of
             # the gas mixture used.
             initialized_vars = self._gn_head_loss_class.initialize_variables_nominals_and_bounds(
-                self, NetworkSettings.NETWORK_TYPE_GAS, pipe_name, self.gas_network_settings
+                self,
+                self.gas_network_settings["network_type"],
+                pipe_name,
+                self.gas_network_settings,
             )
             if initialized_vars[0] != {}:
                 self.__gas_pipe_head_bounds[
@@ -254,15 +262,51 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         self.__maximum_total_head_loss = self.__get_maximum_total_head_loss()
 
         if options["gas_storage_discharge_variables"]:
-            for storage in self.energy_system_components.get("gas_storage", []):
-                bound_storage_q = self.bounds()[f"{storage}.GasIn.Q"][0]
+            for storage in self.energy_system_components.get("gas_tank_storage", []):
+                bound_storage_q = -self.bounds()[f"{storage}.GasIn.Q"][0]
+                if isinstance(bound_storage_q, Timeseries):
+                    bound_storage_q = copy.deepcopy(bound_storage_q)
+                    bound_storage_q.values[bound_storage_q.values < 0] = 0.0
                 var_name = f"{storage}__Q_discharge"
                 self.__gas_storage_discharge_map[storage] = var_name
                 self.__gas_storage_discharge_var[var_name] = ca.MX.sym(var_name)
-                self.__gas_storage_discharge_bounds[var_name] = (0, -bound_storage_q)
+                self.__gas_storage_discharge_bounds[var_name] = (0, bound_storage_q)
                 self.__gas_storage_discharge_nominals[var_name] = self.variable_nominal(
                     f"{storage}.GasIn.Q"
                 )
+
+        # Setting the node nominals using the connected assets.
+        for node, connected_assets in self.energy_system_topology.gas_nodes.items():
+            nominals = {}
+            for var in ["Q", "H", "Hydraulic_power"]:
+                nominals[var] = []
+                for _, (asset, _orientation) in connected_assets.items():
+                    var_nom = self.variable_nominal(f"{asset}.GasOut.{var}")
+                    if var_nom != 1:
+                        nominals[var].append(var_nom)
+                    elif self.variable_nominal(f"{asset}.GasIn.{var}") != 1:
+                        nominals[var].append(self.variable_nominal(f"{asset}.GasIn.{var}"))
+                    else:
+                        nominals[var].append(1)
+
+                for i in range(len(connected_assets)):
+                    if self.variable_nominal(f"{node}.GasConn[{i + 1}].{var}") == 1:
+                        if nominals[var][i] != 1:
+                            # Here we set a nominal based directly on the connected asset.
+                            self.__gas_node_variable_nominal[f"{node}.GasConn[{i + 1}].{var}"] = (
+                                nominals[var][i]
+                            )
+                        else:
+                            # Here we set a nominal based on median of all the connected assets to
+                            # the node. This is specifically done when we have a logical link for
+                            # node to node. In this case we cannot set the nominal based on the
+                            # connected node, hence we assume a node has at least one not node
+                            # asset connected to it.
+                            self.__gas_node_variable_nominal[f"{node}.GasConn[{i + 1}].{var}"] = (
+                                np.median([x for x in nominals[var] if x != 1])
+                                if np.sum(nominals[var]) != len(nominals[var])
+                                else 1.0
+                            )
 
     def energy_system_options(self):
         r"""
@@ -327,6 +371,8 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             return self.__gas_pipe_head_loss_nominals[variable]
         elif variable in self.__gas_storage_discharge_nominals:
             return self.__gas_storage_discharge_nominals[variable]
+        elif variable in self.__gas_node_variable_nominal:
+            return self.__gas_node_variable_nominal[variable]
         else:
             return super().variable_nominal(variable)
 
@@ -453,17 +499,6 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             q_nominal = np.median(q_nominals)
             constraints.append((q_sum / q_nominal, 0.0, 0.0))
 
-            q_sum = 0.0
-            q_nominals = []
-
-            for i_conn, (_pipe, orientation) in connected_pipes.items():
-                gas_conn = f"{node}.GasConn[{i_conn + 1}].Q_shadow"
-                q_sum += orientation * self.state(gas_conn)
-                q_nominals.append(self.variable_nominal(gas_conn))
-
-            q_nominal = np.median(q_nominals)
-            constraints.append((q_sum / q_nominal, 0.0, 0.0))
-
         return constraints
 
     def __gas_node_hydraulic_power_mixing_path_constraints(self, ensemble_member):
@@ -560,7 +595,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
         return constraints
 
-    def __gas_storage_discharge_path_constraints(self):
+    def __gas_storage_discharge_path_constraints(self, ensemble_member):
         """
         The discharge variables are added such that two separate goals for charging and discharging
         can be created. The discharging variable has a lower bound of 0 and should always be larger
@@ -568,12 +603,11 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         the discharging and afterwards an maximisation of the charging without conflicting goals or
         constraints.
         """
-        # TODO: still add test
         constraints = []
         options = self.energy_system_options()
 
         if options["gas_storage_discharge_variables"]:
-            for storage in self.energy_system_components.get("gas_storage"):
+            for storage in self.energy_system_components.get("gas_tank_storage", []):
                 storage_charge_var = self.state(f"{storage}.GasIn.Q")
                 storage_discharge_var_name = f"{storage}__Q_discharge"
                 storage_discharge_var = self.state(storage_discharge_var_name)
@@ -583,6 +617,8 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                 constraints.append(
                     ((storage_discharge_var + storage_charge_var) / nominal, 0.0, np.inf)
                 )
+
+        return constraints
 
     def path_constraints(self, ensemble_member):
         """
@@ -599,13 +635,14 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             constraints.extend(
                 self._gn_head_loss_class._pipe_head_loss_path_constraints(self, ensemble_member)
             )
-        constraints.extend(
-            self._gn_head_loss_class._pipe_hydraulic_power_path_constraints(
-                self, self.__maximum_total_head_loss, ensemble_member
+            constraints.extend(
+                self._gn_head_loss_class._pipe_hydraulic_power_path_constraints(
+                    self, self.__maximum_total_head_loss, ensemble_member
+                )
             )
-        )
         constraints.extend(self.__flow_direction_path_constraints(ensemble_member))
         constraints.extend(self.__gas_node_hydraulic_power_mixing_path_constraints(ensemble_member))
+        constraints.extend(self.__gas_storage_discharge_path_constraints(ensemble_member))
 
         return constraints
 

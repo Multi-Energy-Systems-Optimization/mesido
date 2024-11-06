@@ -13,7 +13,8 @@ from mesido.workflows.io.write_output import ScenarioOutput
 from mesido.workflows.utils.adapt_profiles import (
     adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
 )
-from mesido.workflows.utils.helpers import main_decorator
+from mesido.workflows.utils.error_types import HEAT_NETWORK_ERRORS, potential_error_to_error
+from mesido.workflows.utils.helpers import main_decorator, run_optimization_problem_solver
 
 import numpy as np
 
@@ -29,7 +30,6 @@ from rtctools.optimization.single_pass_goal_programming_mixin import (
     CachingQPSol,
     SinglePassGoalProgrammingMixin,
 )
-from rtctools.util import run_optimization_problem
 
 
 DB_HOST = "172.17.0.2"
@@ -85,6 +85,7 @@ class SolverHIGHS:
             highs_options["mip_rel_gap"] = 0.02
 
         options["gurobi"] = None
+        options["cplex"] = None
 
         return options
 
@@ -103,6 +104,24 @@ class SolverGurobi:
         gurobi_options["MIPgap"] = 0.02
         gurobi_options["threads"] = 4
         gurobi_options["LPWarmStart"] = 2
+
+        options["highs"] = None
+
+        return options
+
+
+class SolverCPLEX:
+    def solver_options(self):
+        options = super().solver_options()
+        options["casadi_solver"] = self._qpsol
+        options["solver"] = "cplex"
+        cplex_options = options["cplex"] = {}
+        if hasattr(self, "_stage"):
+            if self._stage == 1:
+                cplex_options["CPX_PARAM_EPGAP"] = 0.005
+            else:
+                cplex_options["CPX_PARAM_EPGAP"] = 0.02
+        cplex_options["CPX_PARAM_EPGAP"] = 0.02
 
         options["highs"] = None
 
@@ -132,7 +151,9 @@ class EndScenarioSizing(
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.heat_network_settings["minimum_velocity"] = 0.0  # 0.001
+        # default setting to cater for ~ 10kW heat, DN800 pipe at dT = 40 degrees Celcuis
+        self.heat_network_settings["minimum_velocity"] = 1.0e-4
+
         self.heat_network_settings["maximum_velocity"] = 3.0
         self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
 
@@ -179,9 +200,12 @@ class EndScenarioSizing(
         """
         super().read()
 
+        potential_error_to_error(HEAT_NETWORK_ERRORS)
+
         (
             self.__indx_max_peak,
             self.__heat_demand_nominal,
+            _,
         ) = adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(self, self.__day_steps)
 
         logger.info("HeatProblem read")
@@ -203,7 +227,6 @@ class EndScenarioSizing(
         options = super().energy_system_options()
         options["maximum_temperature_der"] = np.inf
         options["heat_loss_disconnected_pipe"] = True
-        # options.update(self._override_hn_options)
         return options
 
     def path_goals(self):
@@ -211,13 +234,14 @@ class EndScenarioSizing(
         bounds = self.bounds()
 
         for demand in self.energy_system_components["heat_demand"]:
-            # target = self.get_timeseries(f"{demand}.target_heat_demand_peak")
             target = self.get_timeseries(f"{demand}.target_heat_demand")
             if bounds[f"{demand}.HeatIn.Heat"][1] < max(target.values):
                 logger.warning(
                     f"{demand} has a flow limit, {bounds[f'{demand}.HeatIn.Heat'][1]}, "
                     f"lower that wat is required for the maximum demand {max(target.values)}"
                 )
+            # TODO: update this caclulation to bounds[f"{demand}.HeatIn.Heat"][1]/ dT * Tsup & move
+            # to potential_errors variable
             state = f"{demand}.Heat_demand"
 
             goals.append(TargetHeatGoal(state, target))
@@ -272,7 +296,7 @@ class EndScenarioSizing(
         if options["solver"] == "highs":
             highs_options = options["highs"]
             if self.__priority == 1:
-                highs_options["time_limit"] = 100
+                highs_options["time_limit"] = 600
             else:
                 highs_options["time_limit"] = 100000
         return options
@@ -395,14 +419,6 @@ class EndScenarioSizingHIGHS(EndScenarioSizing):
     pass
 
 
-class EndScenarioSizingGurobi(SolverGurobi, EndScenarioSizing):
-    """
-    Uses Gurobi as the solver for the EndScenarioSizing problem.
-    """
-
-    pass
-
-
 class EndScenarioSizingDiscounted(EndScenarioSizing):
     """
     The discounted annualized is utilised as the objective function.
@@ -421,14 +437,6 @@ class EndScenarioSizingDiscounted(EndScenarioSizing):
         options["discounted_annualized_cost"] = True
 
         return options
-
-
-class EndScenarioSizingDiscountedHIGHS(EndScenarioSizingDiscounted):
-    pass
-
-
-class EndScenarioSizingDiscountedGurobi(SolverGurobi, EndScenarioSizingDiscounted):
-    pass
 
 
 class EndScenarioSizingHeadLoss(EndScenarioSizing):
@@ -511,31 +519,11 @@ class EndScenarioSizingStaged(SettingsStaged, EndScenarioSizing):
     pass
 
 
-class EndScenarioSizingStagedHIGHS(EndScenarioSizingStaged):
-    pass
-
-
-class EndScenarioSizingStagedGurobi(SolverGurobi, EndScenarioSizingStaged):
-    pass
-
-
 class EndScenarioSizingDiscountedStaged(SettingsStaged, EndScenarioSizingDiscounted):
     pass
 
 
-class EndScenarioSizingDiscountedStagedHIGHS(EndScenarioSizingDiscountedStaged):
-    pass
-
-
-class EndScenarioSizingDiscountedStagedGurobi(SolverGurobi, EndScenarioSizingDiscountedStaged):
-    pass
-
-
 class EndScenarioSizingHeadLossStaged(SettingsStaged, EndScenarioSizingHeadLoss):
-    pass
-
-
-class EndScenarioSizingHeadLossStagedGurobi(SolverGurobi, EndScenarioSizingHeadLossStaged):
     pass
 
 
@@ -545,14 +533,9 @@ class EndScenarioSizingHeadLossDiscountedStaged(
     pass
 
 
-class EndScenarioSizingHeadLossDiscountedStagedGurobi(
-    SolverGurobi, EndScenarioSizingHeadLossDiscountedStaged
-):
-    pass
-
-
 def run_end_scenario_sizing_no_heat_losses(
     end_scenario_problem_class,
+    solver_class=SolverHIGHS,
     **kwargs,
 ):
     """
@@ -563,6 +546,7 @@ def run_end_scenario_sizing_no_heat_losses(
     Parameters
     ----------
     end_scenario_problem_class : The end scenario problem class.
+    solver_class: The solver and its settings to be used to solve the problem.
     staged_pipe_optimization : Boolean to toggle between the staged or non-staged approach
 
     Returns
@@ -576,8 +560,9 @@ def run_end_scenario_sizing_no_heat_losses(
     ), "A staged problem class is required as input for the sizing without heat_losses"
 
     start_time = time.time()
-    solution = run_optimization_problem(
+    solution = run_optimization_problem_solver(
         end_scenario_problem_class,
+        solver_class=solver_class,
         stage=1,
         total_stages=1,
         **kwargs,
@@ -590,6 +575,7 @@ def run_end_scenario_sizing_no_heat_losses(
 
 def run_end_scenario_sizing(
     end_scenario_problem_class,
+    solver_class=None,
     staged_pipe_optimization=True,
     **kwargs,
 ):
@@ -606,6 +592,7 @@ def run_end_scenario_sizing(
     Parameters
     ----------
     end_scenario_problem_class : The end scenario problem class.
+    solver_class: The solver and its settings to be used to solve the problem.
     staged_pipe_optimization : Boolean to toggle between the staged or non-staged approach
 
     Returns
@@ -619,12 +606,27 @@ def run_end_scenario_sizing(
 
     start_time = time.time()
     if staged_pipe_optimization and issubclass(end_scenario_problem_class, SettingsStaged):
-        solution = run_optimization_problem(
+        solution = run_optimization_problem_solver(
             end_scenario_problem_class,
+            solver_class=solver_class,
             stage=1,
             total_stages=2,
             **kwargs,
         )
+        # Error checking
+        solver_success, _ = solution.solver_success(solution.solver_stats, False)
+        if not solver_success:
+            if (
+                solution.solver_stats["return_status"] == "Time limit reached"
+                and solution.objective_value > 1e-6
+                and solution._stage == 1
+            ):
+                logger.error("Optimization maximum allowed time limit reached for stage_1, goal_1")
+                exit(1)
+            else:
+                logger.error("Unsuccessful: unexpected error for stage_1, goal_1")
+                exit(1)
+
         results = solution.extract_results()
         parameters = solution.parameters(0)
         bounds = solution.bounds()
@@ -653,10 +655,15 @@ def run_end_scenario_sizing(
             *solution.energy_system_components.get("heat_buffer", []),
         ]:
             var_name = f"{asset}_aggregation_count"
-            lb = results[var_name][0]
+            round_lb = round(results[var_name][0])
             ub = solution.bounds()[var_name][1]
-            if round(lb) >= 1:
-                boolean_bounds[var_name] = (lb, ub)
+            if round_lb >= 1 and (round_lb <= ub):
+                boolean_bounds[var_name] = (round_lb, ub)
+            elif round_lb > ub:
+                logger.error(
+                    f"{var_name}: The lower bound value {round_lb} > the upper bound {ub} value"
+                )
+                exit(1)
 
         t = solution.times()
         from rtctools.optimization.timeseries import Timeseries
@@ -688,8 +695,9 @@ def run_end_scenario_sizing(
                     pass
         priorities_output = solution._priorities_output
 
-    solution = run_optimization_problem(
+    solution = run_optimization_problem_solver(
         end_scenario_problem_class,
+        solver_class=solver_class,
         stage=2,
         total_stages=2,
         boolean_bounds=boolean_bounds,
@@ -721,8 +729,9 @@ def main(runinfo_path, log_level):
     # user write-user
     # password nwn_write_test
 
-    _ = run_optimization_problem(
-        EndScenarioSizingHIGHS,
+    _ = run_optimization_problem_solver(
+        EndScenarioSizing,
+        solver_class=SolverHIGHS,
         esdl_run_info_path=runinfo_path,
         log_level=log_level,
         **kwargs,

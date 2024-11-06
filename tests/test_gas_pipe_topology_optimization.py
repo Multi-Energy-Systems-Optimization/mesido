@@ -32,7 +32,7 @@ class TestGasNetwork(TestCase):
                 self.gas_network_settings["head_loss_option"] = (
                     HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
                 )
-                self.gas_network_settings["minimize_head_losses"] = True
+                self.gas_network_settings["minimize_head_losses"] = False
                 return options
 
         solution = run_esdl_mesido_optimization(
