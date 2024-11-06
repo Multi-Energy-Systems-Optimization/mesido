@@ -46,6 +46,8 @@ def potential_error_to_error(network_check_type: Enum) -> None:
         HEAT_AND_COOL_NETWORK_ERRORS: [
             MesidoAssetIssueType.HEAT_DEMAND_POWER,
             MesidoAssetIssueType.COLD_DEMAND_POWER,
+            MesidoAssetIssueType.HEAT_DEMAND_TYPE,
+            MesidoAssetIssueType.ASSET_PROFILE_CAPABILITY,
         ],
         CUSTOM_ERRORS: [MesidoAssetIssueType.ASSET_PROFILE_CAPABILITY],
     }
