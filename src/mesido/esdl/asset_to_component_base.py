@@ -207,7 +207,9 @@ class _AssetToComponentBase:
             open(os.path.join(Path(__file__).parent, "_edr_pipes.json"), "r")
         )
         # The default gas pipe database is based on the ASA pipe catalogue schedule standard (std).
-        self._gas_pipes = json.load(open(os.path.join(Path(__file__).parent, "_gas_pipe_database.json"), "r"))
+        self._gas_pipes = json.load(
+            open(os.path.join(Path(__file__).parent, "_gas_pipe_database.json"), "r")
+        )
 
     def convert(self, asset: Asset) -> Tuple[Type[_Model], MODIFIERS]:
         """
@@ -352,16 +354,15 @@ class _AssetToComponentBase:
                 f"Insulation properties of {asset.attributes['diameter'].name} will be used."
             )
         if asset.attributes["diameter"].value == 0 and not asset.attributes["innerDiameter"]:
-            logger.error(
-                f"{full_name}' has no DN size or innerDiameter specified. "
-            )
+            logger.error(f"{full_name}' has no DN size or innerDiameter specified. ")
 
         edr_dn_size = None
         if asset.attributes["diameter"].value > 0:
             edr_dn_size = str(asset.attributes["diameter"].name)
         elif not asset.attributes["innerDiameter"]:
             logger.warning(f"{full_name}' has no DN size or innerDiameter specified. ")
-            edr_dn_size = "DN200" #ideally I don't want us to set a default diameter size, we can get in this line in case innerDiameter is set to 0.0.
+            edr_dn_size = "DN200"  # ideally I don't want us to set a default diameter size, we
+            # can get in this line in case innerDiameter is set to 0.0.
 
         # NaN means the default values will be used
         wall_roughness = math.nan
@@ -374,8 +375,6 @@ class _AssetToComponentBase:
         else:
             assert asset.attributes["innerDiameter"]
             inner_diameter = asset.attributes["innerDiameter"]
-
-
 
         return inner_diameter, wall_roughness
 
