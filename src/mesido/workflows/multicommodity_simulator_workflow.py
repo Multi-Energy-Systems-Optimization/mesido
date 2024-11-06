@@ -607,7 +607,7 @@ class MultiCommoditySimulator(
 
         options["solver"] = "highs"
         highs_options = options["highs"] = {}
-        highs_options["presolve"] = "off"
+        highs_options["presolve"] = "on"
 
         return options
 
