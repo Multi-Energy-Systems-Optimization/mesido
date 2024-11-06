@@ -460,7 +460,7 @@ class _AssetToComponentBase:
             for port in asset.in_ports:
                 convert_density_units = 1.0
                 energy_reference_j_kg = 1.0
-                if isinstance(port.carrier, esdl.HeatCommodity):
+                if not isinstance(port.carrier, esdl.HeatCommodity):
                     convert_density_units = 1.0e3  # convert g/m3 to kg/m3 if needed
                     energy_reference_j_kg = get_internal_energy(asset.name, port.carrier)
                 else:
