@@ -50,17 +50,18 @@ class TestColdDemand(TestCase):
                 profile_reader=ProfileReaderFromFile,
                 input_timeseries_file="timeseries.csv",
             )
-            # Check that the cold demand had an error
-            np.testing.assert_equal(cm.error_type, MesidoAssetIssueType.COLD_DEMAND_POWER)
-            np.testing.assert_equal(
-                cm.general_issue,
-                mesido_issue_type_gen_message(MesidoAssetIssueType.COLD_DEMAND_POWER),
-            )
-            np.testing.assert_equal(
-                cm.message_per_asset_id["15e803b4-1224-4cac-979f-87747a656741"],
-                "Asset named CoolingDemand_15e8: The installed capacity of 0.05MW should be larger"
-                " than the maximum of the heat demand profile 0.15MW",
-            )
+
+        # Check that the cold demand had an error
+        np.testing.assert_equal(cm.exception.error_type, MesidoAssetIssueType.COLD_DEMAND_POWER)
+        np.testing.assert_equal(
+            cm.exception.general_issue,
+            mesido_issue_type_gen_message(MesidoAssetIssueType.COLD_DEMAND_POWER),
+        )
+        np.testing.assert_equal(
+            cm.exception.message_per_asset_id["15e803b4-1224-4cac-979f-87747a656741"],
+            "Asset named CoolingDemand_15e8: The installed capacity of 0.05MW should be larger"
+            " than the maximum of the heat demand profile 0.15MW",
+        )
 
     def test_cold_demand(self):
         """
@@ -260,6 +261,6 @@ class TestColdDemand(TestCase):
 if __name__ == "__main__":
     test_cold_demand = TestColdDemand()
     test_cold_demand.test_insufficient_capacity()
-    test_cold_demand.test_cold_demand()
-    test_cold_demand.test_wko()
-    test_cold_demand.test_airco()
+    # test_cold_demand.test_cold_demand()
+    # test_cold_demand.test_wko()
+    # test_cold_demand.test_airco()
