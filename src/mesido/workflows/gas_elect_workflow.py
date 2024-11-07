@@ -19,7 +19,8 @@ from rtctools.optimization.goal_programming_mixin import Goal
 from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
 )
-from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
+from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin, \
+    CachingQPSol
 from rtctools.util import run_optimization_problem
 
 logger = logging.getLogger("WarmingUP-MPC")
@@ -61,10 +62,18 @@ class GasElectProblem(
 
         self._number_of_years = 30.0
 
+        # variables for solver settings
+        self._qpsol = CachingQPSol()
+
         # self.heat_network_settings["minimize_head_losses"] = False
 
     # def times(self, variable=None) -> np.ndarray:
     #     return super().times(variable)[:5]  # same lenght as the demand profile data in the csv
+
+    def pre(self):
+        self._qpsol = CachingQPSol()
+
+        super().pre()
 
     def energy_system_options(self):
         options = super().energy_system_options()
@@ -73,14 +82,15 @@ class GasElectProblem(
 
         # Setting when started with head loss inclusions
         self.gas_network_settings["minimum_velocity"] = 0.0
-        self.gas_network_settings["n_linearization_lines"] = 2
+        self.gas_network_settings["n_linearization_lines"] = 1
         self.gas_network_settings["minimize_head_losses"] = False
-        self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
+        self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY#HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
 
         return options
 
     def solver_options(self):
         options = super().solver_options()
+        options["casadi_solver"] = self._qpsol
         options["solver"] = "highs"
         highs_options = options["highs"] = {}
         highs_options["mip_abs_gap"] = 0.0001  # 0.001 did not work

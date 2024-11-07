@@ -9,7 +9,7 @@ from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.goals.minimize_tco_goal import MinimizeTCO
-from mesido.workflows.grow_workflow import SolverCPLEX
+from mesido.workflows.grow_workflow import SolverCPLEX, SolverHIGHS
 from mesido.workflows.io.write_output import ScenarioOutput
 from mesido.workflows.gas_elect_workflow import GasElectProblem
 
