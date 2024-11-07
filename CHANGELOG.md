@@ -7,7 +7,7 @@
 - xx
 
 ## Fixed
-- xx
+- Bugfix: same mip gap settings for all solvers in grow_workflow.
 
 
 # [0.1.8] - 2024-11-07
