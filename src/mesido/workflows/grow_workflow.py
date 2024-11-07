@@ -71,6 +71,8 @@ class TargetHeatGoal(Goal):
 
 
 def _mip_gap_settings(mip_gap_name: str, problem) -> dict[str, float]:
+    """Creating the same MIP gap settings for all solvers."""
+
     options = {}
     if hasattr(problem, "_stage"):
         if problem._stage == 1:
@@ -81,6 +83,7 @@ def _mip_gap_settings(mip_gap_name: str, problem) -> dict[str, float]:
         options[mip_gap_name] = 0.02
 
     return options
+
 
 class SolverHIGHS:
     def solver_options(self):
