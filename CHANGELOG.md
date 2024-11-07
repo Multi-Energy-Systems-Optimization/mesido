@@ -1,4 +1,16 @@
-# [Unreleased] - 2024-10-07
+# [Unreleased] - 2024-11-07
+
+## Added
+- xx
+
+## Changed
+- xx
+
+## Fixed
+- xx
+
+
+# [0.1.8] - 2024-11-07
 
 ## Added
 - Added MESIDO error exception class to raise applicable potential errors in a workflow & include required info for feedback in the mapeditor
