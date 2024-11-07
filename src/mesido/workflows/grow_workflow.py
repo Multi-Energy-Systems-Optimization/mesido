@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 import time
+from typing import Dict
 
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
@@ -70,7 +71,7 @@ class TargetHeatGoal(Goal):
         return optimization_problem.state(self.state)
 
 
-def _mip_gap_settings(mip_gap_name: str, problem) -> dict[str, float]:
+def _mip_gap_settings(mip_gap_name: str, problem) -> Dict[str, float]:
     """Creating the same MIP gap settings for all solvers."""
 
     options = {}
