@@ -140,8 +140,9 @@ class SolverCPLEX:
         options["solver"] = "cplex"
         cplex_options = options["cplex"] = {}
         cplex_options["CPXPARAM_Threads"] = 4
-        cplex_options["CPX_PARAM_EPGAP"] = 0.0001
+        cplex_options["CPX_PARAM_EPGAP"] = 0.00001
         cplex_options["CPXPARAM_TimeLimit"] = 1000
+        cplex_options["CPXPARAM_Tune_Display"] = 3
         if self._priority:
             if self._priority>1e4:
                 cplex_options["CPX_PARAM_EPGAP"] = 0.01
@@ -332,10 +333,10 @@ class _GoalsAndOptions:
         self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
         self.gas_network_settings["network_type"] = NetworkSettings.NETWORK_TYPE_HYDROGEN
         self.gas_network_settings["minimize_head_losses"] = False
-        self.gas_network_settings["maximum_velocity"] = 25.0
+        self.gas_network_settings["maximum_velocity"] = 40.0
         self.gas_network_settings["n_linearization_lines"] = 5
         options["include_asset_is_switched_on"] = True
-        options["estimated_velocity"] = 7.5
+        options["estimated_velocity"] = 20
         options["electrolyzer_efficiency"] = (
             ElectrolyzerOption.LINEARIZED_THREE_LINES_EQUALITY
         )
@@ -355,7 +356,7 @@ class _CaseConstraints:
         # head_in = self.state("Pipe_HyOne_Main_9.GasIn.H")
         # density = self.parameters(ensemble_member)["Pipe_HyOne_Main_9.density"]
         pressure = 50e5 #50bar
-        constraints.append((head_in*density/1e3*9.81 /pressure, 1.0, 1.0))
+        constraints.append(((head_in*density/1e3*9.81 -pressure)/(pressure/2), 0.0, 0.0))
 
 
         standard = False
@@ -917,8 +918,8 @@ class MultiCommoditySimulator(
 
 
 class MultiCommoditySimulatorNSE(
-    MultiCommoditySimulator,
     _CaseConstraints,
+    MultiCommoditySimulator,
 ):
     pass
 # -------------------------------------------------------------------------------------------------
@@ -1036,16 +1037,17 @@ class MultiCommoditySimulatorMarginal(
                     asset_variable_map[asset] = asset_var_name
 
                     esdl_asset = self.esdl_assets[self.esdl_asset_name_to_id_map[asset]]
-
+                    lhv = 1e6#120e6 #J/kg LHV hydrogen
+                    multiplier_gas = 1 if "gas" not in asset_type else lhv
                     if isinstance(asset_var_name, str):
                         marg_cost = self.__get_marginal_cost(esdl_asset) * multiplier[group]
                         var_name = f"{asset}.{asset_var_name}"
-                        asset_cost_map[var_name] = marg_cost
+                        asset_cost_map[var_name] = marg_cost * multiplier_gas
                     else:
                         for k,v in asset_var_name.items():
                             marg_cost = self.__get_marginal_cost(esdl_asset, marg_type=k)* multiplier[k]
                             var_name = f"{asset}.{v}"
-                            asset_cost_map[var_name] = marg_cost
+                            asset_cost_map[var_name] = marg_cost * multiplier_gas
                     # asset_cost_map[asset] = {"var_name": var_name,
                     #                          "marginal_cost": marg_cost}
 
@@ -1376,7 +1378,8 @@ class MultiCommoditySimulatorMarginal(
                 self.solver_stats,
             )
         )
-        logger.info(f"Goal with priority {priority} has been completed")
+        print(f"Goal with priority {priority} has been completed  with objective value {self.objective_value}")
+        # logger.info(f"Goal with priority {priority} has been completed  with objective value {self.objective_value}")
         if priority == 1 and self.objective_value > 1e-6:
             raise RuntimeError("The heating demand is not matched")
 
@@ -1411,8 +1414,8 @@ class MultiCommoditySimulatorMarginal(
 
 
 class MultiCommoditySimulatorMarginalNSE(
-    MultiCommoditySimulatorMarginal,
     _CaseConstraints,
+    MultiCommoditySimulatorMarginal,
 ):
     pass
 
@@ -1828,7 +1831,7 @@ def run_sequatially_staged_simulation(
     )
 
     tic = time.time()
-    for simulated_window in range(simulation_window_size, end_time, simulation_window_size):
+    for simulated_window in range(simulation_window_size, min(200,end_time), simulation_window_size):
         # Note that the end time is not necessarily a multiple of simulation_window_size
         (
             solution,
