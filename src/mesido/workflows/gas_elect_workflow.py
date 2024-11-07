@@ -61,7 +61,7 @@ class GasElectProblem(
 
         self._number_of_years = 30.0
 
-        self.heat_network_settings["minimize_head_losses"] = False
+        # self.heat_network_settings["minimize_head_losses"] = False
 
     # def times(self, variable=None) -> np.ndarray:
     #     return super().times(variable)[:5]  # same lenght as the demand profile data in the csv
@@ -70,6 +70,13 @@ class GasElectProblem(
         options = super().energy_system_options()
         options["neglect_pipe_heat_losses"] = True
         options["include_electric_cable_power_loss"] = False
+
+        # Setting when started with head loss inclusions
+        self.gas_network_settings["minimum_velocity"] = 0.0
+        self.gas_network_settings["n_linearization_lines"] = 2
+        self.gas_network_settings["minimize_head_losses"] = False
+        self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
+
         return options
 
     def solver_options(self):
@@ -84,11 +91,11 @@ class GasElectProblem(
         super().pre()
 
         # Convert gas demand m3/h to heat demand in watts
-        # gas demand (Nm3/s) * 31.68* 10^6 (J/m3) = xxx (J/s), nominal values at 1bar, 273.15K
+        # gas demand (Nm3/s) * 31.68 (LCV value) * 10^6 (J/m3) = xxx (J/s), nominal values at 1bar, 273.15K
         # Assume operating pressure at 5bar T=10degr, so ratio is 3.62 / 0.8331kg/m3 to get actual
         # values
         # Actual gas demand = xxx * ratio_nominal_to_operating = yyy (J/s)
-        ratio_nominal_to_operating = 0.8331 / 3.62
+        ratio_nominal_to_operating = 0.8331 / 3.62  # need a density calc function to automate this
         # An efficiency of 80% is assumed for the gas boiler
         # Heat demand = yyy * 0.8 (Watt or J/s)
         for demand in self.energy_system_components["heat_demand"]:
