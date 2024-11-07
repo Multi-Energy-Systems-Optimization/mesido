@@ -73,9 +73,13 @@ class GasElectProblem(
 
         # Setting when started with head loss inclusions
         self.gas_network_settings["minimum_velocity"] = 0.0
-        self.gas_network_settings["n_linearization_lines"] = 2
+
+        self.gas_network_settings["n_linearization_lines"] = 1
         self.gas_network_settings["minimize_head_losses"] = False
         self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
+
+        # self.gas_network_settings["minimize_head_losses"] = True
+        # self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
 
         return options
 
@@ -84,6 +88,7 @@ class GasElectProblem(
         options["solver"] = "highs"
         highs_options = options["highs"] = {}
         highs_options["mip_abs_gap"] = 0.0001  # 0.001 did not work
+        # highs_options["presolve"] = "off"
 
         return options
 

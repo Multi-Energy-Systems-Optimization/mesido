@@ -45,8 +45,8 @@ if __name__ == "__main__":
         esdl_parser=ESDLFileParser,
         # esdl_file_name="Kapelle_gas_elec_efvc_.esdl",
         # esdl_file_name="Kapelle_gas_elec_efvc_kvr_partial_pipes_network.esdl",  # time=1.5minutes no dh
-        # esdl_file_name="Kapelle_gas_elec_efvc_kvr_partial_direct_network.esdl",  # time=1.5 minutes no dh
-        esdl_file_name="Kapelle_gas_elec_efvc_kvr_complete_direct_network.esdl",
+        esdl_file_name="Kapelle_gas_elec_efvc_kvr_partial_direct_network.esdl",  # time=1.5 minutes no dh
+        # esdl_file_name="Kapelle_gas_elec_efvc_kvr_complete_direct_network.esdl",
         profile_reader=ProfileReaderFromFile,
         input_timeseries_file="gas_demand_nom_m3_s_efvc_.csv",
     )
