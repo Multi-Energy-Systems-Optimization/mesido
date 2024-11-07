@@ -70,19 +70,25 @@ class TargetHeatGoal(Goal):
         return optimization_problem.state(self.state)
 
 
+def _mip_gap_settings(mip_gap_name: str, problem) -> dict[str, float]:
+    options = {}
+    if hasattr(problem, "_stage"):
+        if problem._stage == 1:
+            options[mip_gap_name] = 0.005
+        else:
+            options[mip_gap_name] = 0.02
+    else:
+        options[mip_gap_name] = 0.02
+
+    return options
+
 class SolverHIGHS:
     def solver_options(self):
         options = super().solver_options()
         options["casadi_solver"] = self._qpsol
         options["solver"] = "highs"
         highs_options = options["highs"] = {}
-        if hasattr(self, "_stage"):
-            if self._stage == 1:
-                highs_options["mip_rel_gap"] = 0.005
-            else:
-                highs_options["mip_rel_gap"] = 0.02
-        else:
-            highs_options["mip_rel_gap"] = 0.02
+        highs_options.update(_mip_gap_settings("mip_rel_gap", self))
 
         options["gurobi"] = None
         options["cplex"] = None
@@ -96,12 +102,7 @@ class SolverGurobi:
         options["casadi_solver"] = self._qpsol
         options["solver"] = "gurobi"
         gurobi_options = options["gurobi"] = {}
-        if hasattr(self, "_stage"):
-            if self._stage == 1:
-                gurobi_options["MIPgap"] = 0.005
-            else:
-                gurobi_options["MIPgap"] = 0.02
-        gurobi_options["MIPgap"] = 0.02
+        gurobi_options.update(_mip_gap_settings("MIPgap", self))
         gurobi_options["threads"] = 4
         gurobi_options["LPWarmStart"] = 2
 
@@ -116,12 +117,7 @@ class SolverCPLEX:
         options["casadi_solver"] = self._qpsol
         options["solver"] = "cplex"
         cplex_options = options["cplex"] = {}
-        if hasattr(self, "_stage"):
-            if self._stage == 1:
-                cplex_options["CPX_PARAM_EPGAP"] = 0.005
-            else:
-                cplex_options["CPX_PARAM_EPGAP"] = 0.02
-        cplex_options["CPX_PARAM_EPGAP"] = 0.02
+        cplex_options.update(_mip_gap_settings("CPX_PARAM_EPGAP", self))
 
         options["highs"] = None
 
