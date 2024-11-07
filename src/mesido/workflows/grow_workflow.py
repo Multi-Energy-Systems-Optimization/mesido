@@ -113,7 +113,7 @@ class SolverGurobi:
 class SolverCPLEX:
     def solver_options(self):
         options = super().solver_options()
-        options["casadi_solver"] = self._qpsol
+        # options["casadi_solver"] = self._qpsol
         options["solver"] = "cplex"
         cplex_options = options["cplex"] = {}
         if hasattr(self, "_stage"):
