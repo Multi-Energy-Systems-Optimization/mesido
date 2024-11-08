@@ -82,9 +82,10 @@ class GasElectProblem(
 
         # Setting when started with head loss inclusions
         self.gas_network_settings["minimum_velocity"] = 0.0
-        self.gas_network_settings["n_linearization_lines"] = 1
+        self.gas_network_settings["n_linearization_lines"] = 4
+        self.gas_network_settings["maximum_velocity"] = 1.0
         self.gas_network_settings["minimize_head_losses"] = False
-        self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY#HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+        self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY #HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY # HeadLossOption.LINEARIZED_N_LINES_EQUALITY
 
         return options
 
