@@ -74,12 +74,12 @@ class GasElectProblem(
         # Setting when started with head loss inclusions
         self.gas_network_settings["minimum_velocity"] = 0.0
 
-        self.gas_network_settings["n_linearization_lines"] = 1
-        self.gas_network_settings["minimize_head_losses"] = False
-        self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
+        # self.gas_network_settings["n_linearization_lines"] = 3
+        # self.gas_network_settings["minimize_head_losses"] = False
+        # self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
 
-        # self.gas_network_settings["minimize_head_losses"] = True
-        # self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+        self.gas_network_settings["minimize_head_losses"] = True
+        self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
 
         return options
 
@@ -108,7 +108,7 @@ class GasElectProblem(
 
             # Manually set Demand
             for ii in range(len(target.values)):
-                target.values[ii] *= 31.68 * 10**6 * ratio_nominal_to_operating * 0.8
+                target.values[ii] *= 31.68 * 10**6 * ratio_nominal_to_operating * 0.8 # * 40.0 * 5.0
 
             self.io.set_timeseries(
                 f"{demand}.target_heat_demand",
@@ -118,6 +118,7 @@ class GasElectProblem(
             )
             # Check for myself
             if max(self.get_timeseries(f"{demand}.target_heat_demand").values) > 80.0*10**3:
+            # if max(self.get_timeseries(f"{demand}.target_heat_demand").values) > 5.0e6:
                 temp = 0.0
                 exit("demand issue")
 

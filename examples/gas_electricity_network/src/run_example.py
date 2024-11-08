@@ -40,19 +40,22 @@ if __name__ == "__main__":
     optimscaling, logger, logs_list = create_problem_with_debug_info(GasElectProblem)
 
     solution = run_optimization_problem(
-        # optimscaling,
-        GasElectProblem,
+        optimscaling,
+        # GasElectProblem,
         esdl_parser=ESDLFileParser,
         # esdl_file_name="Kapelle_gas_elec_efvc_.esdl",
+ 
         # esdl_file_name="Kapelle_gas_elec_efvc_kvr_partial_pipes_network.esdl",  # time=1.5minutes no dh
-        esdl_file_name="Kapelle_gas_elec_efvc_kvr_partial_direct_network.esdl",  # time=1.5 minutes no dh
+ 
+        # esdl_file_name="Kapelle_gas_elec_efvc_kvr_partial_direct_network.esdl",  # time=1.5 minutes no dh
+        esdl_file_name="Kapelle_gas_elec_efvc_kvr_partial_direct_network_updatedDN.esdl",
         # esdl_file_name="Kapelle_gas_elec_efvc_kvr_complete_direct_network.esdl",
         profile_reader=ProfileReaderFromFile,
         input_timeseries_file="gas_demand_nom_m3_s_efvc_.csv",
     )
 
     # This code below is used to do manual check. Do not delete
-    # problem_scaling_check(logs_list, logger)
+    problem_scaling_check(logs_list, logger)
 
     results = solution.extract_results()
 
@@ -79,9 +82,9 @@ if __name__ == "__main__":
     total_gas_demand_g = [0] * len(np.diff(solution.times()))
     total_gas_source_g = [0] * len(np.diff(solution.times()))
     for asset_name in [*solution.energy_system_components.get("gas_boiler", [])]:
-        for ii in range(1, len(results[f"{asset_name}.Power_consumed"])):
+        for ii in range(1, len(results[f"{asset_name}.Gas_demand_mass_flow"])):
             total_gas_demand_g[ii - 1] += (
-                results[f"{asset_name}.Power_consumed"][ii]
+                results[f"{asset_name}.Gas_demand_mass_flow"][ii]
                 * np.diff(solution.times())[ii - 1]
             )
 
