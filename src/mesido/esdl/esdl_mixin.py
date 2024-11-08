@@ -536,7 +536,7 @@ class ESDLMixin(
         energy_system_components = self.energy_system_components
         esdl_carriers = self.esdl_carriers
         io = self.io
-        self._asset_potential_errors = self.__profile_reader.read_profiles(
+        self.__profile_reader.read_profiles(
             energy_system_components=energy_system_components,
             io=io,
             esdl_asset_id_to_name_map=self.esdl_asset_id_to_name_map,

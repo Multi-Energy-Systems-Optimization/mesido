@@ -14,6 +14,7 @@ from mesido.workflows.io.write_output import ScenarioOutput
 from mesido.workflows.utils.adapt_profiles import (
     adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
 )
+from mesido.workflows.utils.error_types import HEAT_NETWORK_ERRORS, potential_error_to_error
 from mesido.workflows.utils.helpers import main_decorator, run_optimization_problem_solver
 
 import numpy as np
@@ -70,19 +71,28 @@ class TargetHeatGoal(Goal):
         return optimization_problem.state(self.state)
 
 
+def _mip_gap_settings(mip_gap_name: str, problem) -> Dict[str, float]:
+    """Creating the same MIP gap settings for all solvers."""
+
+    options = {}
+    if hasattr(problem, "_stage"):
+        if problem._stage == 1:
+            options[mip_gap_name] = 0.005
+        else:
+            options[mip_gap_name] = 0.02
+    else:
+        options[mip_gap_name] = 0.02
+
+    return options
+
+
 class SolverHIGHS:
     def solver_options(self):
         options = super().solver_options()
         options["casadi_solver"] = self._qpsol
         options["solver"] = "highs"
         highs_options = options["highs"] = {}
-        if hasattr(self, "_stage"):
-            if self._stage == 1:
-                highs_options["mip_rel_gap"] = 0.005
-            else:
-                highs_options["mip_rel_gap"] = 0.02
-        else:
-            highs_options["mip_rel_gap"] = 0.02
+        highs_options.update(_mip_gap_settings("mip_rel_gap", self))
 
         options["gurobi"] = None
         options["cplex"] = None
@@ -96,12 +106,7 @@ class SolverGurobi:
         options["casadi_solver"] = self._qpsol
         options["solver"] = "gurobi"
         gurobi_options = options["gurobi"] = {}
-        if hasattr(self, "_stage"):
-            if self._stage == 1:
-                gurobi_options["MIPgap"] = 0.005
-            else:
-                gurobi_options["MIPgap"] = 0.02
-        gurobi_options["MIPgap"] = 0.02
+        gurobi_options.update(_mip_gap_settings("MIPgap", self))
         gurobi_options["threads"] = 4
         gurobi_options["LPWarmStart"] = 2
 
@@ -116,12 +121,7 @@ class SolverCPLEX:
         options["casadi_solver"] = self._qpsol
         options["solver"] = "cplex"
         cplex_options = options["cplex"] = {}
-        if hasattr(self, "_stage"):
-            if self._stage == 1:
-                cplex_options["CPX_PARAM_EPGAP"] = 0.005
-            else:
-                cplex_options["CPX_PARAM_EPGAP"] = 0.02
-        cplex_options["CPX_PARAM_EPGAP"] = 0.02
+        cplex_options.update(_mip_gap_settings("CPX_PARAM_EPGAP", self))
 
         options["highs"] = None
 
@@ -181,8 +181,6 @@ class EndScenarioSizing(
 
         self._save_json = False
 
-        self._asset_potential_errors = Dict[str, Dict]
-
     def parameters(self, ensemble_member):
         parameters = super().parameters(ensemble_member)
         parameters["peak_day_index"] = self.__indx_max_peak
@@ -202,31 +200,7 @@ class EndScenarioSizing(
         """
         super().read()
 
-        # Error checking:
-        # - installed capacity/power of a heating/cooling demand is sufficient for the specified
-        #   demand profile
-        is_error = False
-        for error_type, errors in self._asset_potential_errors.items():
-            if error_type in ["heat_demand.power", "cold_demand.power"]:
-                if len(errors) > 0:
-                    for asset_name in errors:
-                        logger.error(self._asset_potential_errors[error_type][asset_name])
-                    logger.error(
-                        "Asset insufficient installed capacity: please increase the"
-                        " installed power or reduce the demand profile peak value of the demand(s)"
-                        " listed."
-                    )
-                    is_error = True
-            elif error_type in ["heat_demand.type"]:
-                if len(errors) > 0:
-                    for asset_name in errors:
-                        logger.error(self._asset_potential_errors[error_type][asset_name])
-                    logger.error("Incorrect asset type: please update.")
-                    is_error = True
-
-        if is_error:
-            exit(1)
-        # end error checking
+        potential_error_to_error(HEAT_NETWORK_ERRORS)
 
         (
             self.__indx_max_peak,

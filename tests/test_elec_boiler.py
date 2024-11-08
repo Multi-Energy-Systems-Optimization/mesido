@@ -98,4 +98,5 @@ class TestElecBoiler(TestCase):
 
 if __name__ == "__main__":
     TestElecBoiler = TestElecBoiler()
+    TestElecBoiler.test_elec_boiler()
     TestElecBoiler.test_air_water_hp_elec()
