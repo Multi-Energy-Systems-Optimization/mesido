@@ -1,4 +1,4 @@
-# [Unreleased] - 2024-11-07
+# [Unreleased] - 2024-11-11
 
 ## Added
 - xx
@@ -8,6 +8,7 @@
 
 ## Fixed
 - Bugfix: same mip gap settings for all solvers in grow_workflow.
+- Bugfix: head loss test case when minimum_velocity = 0.0
 
 
 # [0.1.8] - 2024-11-07
