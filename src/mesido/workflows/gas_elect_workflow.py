@@ -73,7 +73,7 @@ class GasElectProblem(
 
         # Setting when started with head loss inclusions
         self.gas_network_settings["minimum_velocity"] = 0.0
-        self.gas_network_settings["maximum_velocity"] = 1.0
+        self.gas_network_settings["maximum_velocity"] = 3.0
 
         # self.gas_network_settings["n_linearization_lines"] = 3
         # self.gas_network_settings["minimize_head_losses"] = False
@@ -101,7 +101,7 @@ class GasElectProblem(
         # Assume operating pressure at 5bar T=10degr, so ratio is 3.62 / 0.8331kg/m3 to get actual
         # values
         # Actual gas demand = xxx * ratio_nominal_to_operating = yyy (J/s)
-        ratio_nominal_to_operating = 0.8331 / 3.62  # need a density calc function to automate this
+        # ratio_nominal_to_operating = 0.8331 / 3.62  # need a density calc function to automate this
         # An efficiency of 80% is assumed for the gas boiler
         # Heat demand = yyy * 0.8 (Watt or J/s)
         for demand in self.energy_system_components["heat_demand"]:
@@ -109,7 +109,7 @@ class GasElectProblem(
 
             # Manually set Demand
             for ii in range(len(target.values)):
-                target.values[ii] *= 31.68 * 10**6 * ratio_nominal_to_operating * 0.8 # * 40.0 * 5.0
+                target.values[ii] *= 31.68 * 10**6 * 0.8  # * 40.0 * 5.0
 
             self.io.set_timeseries(
                 f"{demand}.target_heat_demand",
@@ -118,7 +118,7 @@ class GasElectProblem(
                 0,
             )
             # Check for myself
-            if max(self.get_timeseries(f"{demand}.target_heat_demand").values) > 80.0*10**3:
+            if max(self.get_timeseries(f"{demand}.target_heat_demand").values) > 190.0*10**3:
             # if max(self.get_timeseries(f"{demand}.target_heat_demand").values) > 5.0e6:
                 temp = 0.0
                 exit("demand issue")

@@ -52,6 +52,7 @@ if __name__ == "__main__":
         # esdl_file_name="Kapelle_gas_elec_efvc_kvr_complete_direct_network.esdl",
         profile_reader=ProfileReaderFromFile,
         input_timeseries_file="gas_demand_nom_m3_s_efvc_.csv",
+        # input_timeseries_file="gas_demand_nom_m3_s_efvc_kvr_.csv",
     )
 
     # This code below is used to do manual check. Do not delete
