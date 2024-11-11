@@ -37,5 +37,6 @@ src/*.egg-info
 # Virtual environment files
 .venv/*
 
-# Documentation folder
-docs/*
+# Docs build folder
+docs/_build/*
+docs/_build_kvr_

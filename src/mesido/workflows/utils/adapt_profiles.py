@@ -175,10 +175,7 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, prob
         parameters["times"] = [x.timestamp() for x in new_date_times]
 
         for demand in heat_demands:
-            try:
-                var_name = f"{demand}.target_heat_demand"
-            except KeyError:
-                break
+            var_name = f"{demand}.target_heat_demand"
             set_data_with_averages_and_peak_day(
                 datastore=new_datastore,
                 variable_name=var_name,
@@ -188,10 +185,7 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, prob
             )
 
         for demand in cold_demands:
-            try:
-                var_name = f"{demand}.target_cold_demand"
-            except KeyError:
-                break
+            var_name = f"{demand}.target_cold_demand"
             set_data_with_averages_and_peak_day(
                 datastore=new_datastore,
                 variable_name=var_name,
