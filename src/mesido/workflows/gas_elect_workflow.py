@@ -73,6 +73,7 @@ class GasElectProblem(
 
         # Setting when started with head loss inclusions
         self.gas_network_settings["minimum_velocity"] = 0.0
+        self.gas_network_settings["maximum_velocity"] = 1.0
 
         # self.gas_network_settings["n_linearization_lines"] = 3
         # self.gas_network_settings["minimize_head_losses"] = False
@@ -87,14 +88,14 @@ class GasElectProblem(
         options = super().solver_options()
         options["solver"] = "highs"
         highs_options = options["highs"] = {}
-        highs_options["mip_abs_gap"] = 0.0001  # 0.001 did not work
+        highs_options["mip_abs_gap"] = 0.00001  # 0.001 did not work
         # highs_options["presolve"] = "off"
 
         return options
 
+    # max velo reduction, remove ratio, new demands in more peak period of the day 
     def pre(self):
         super().pre()
-
         # Convert gas demand m3/h to heat demand in watts
         # gas demand (Nm3/s) * 31.68 (LCV value) * 10^6 (J/m3) = xxx (J/s), nominal values at 1bar, 273.15K
         # Assume operating pressure at 5bar T=10degr, so ratio is 3.62 / 0.8331kg/m3 to get actual
