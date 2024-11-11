@@ -7,6 +7,10 @@ from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
 from mesido.techno_economic_mixin import TechnoEconomicMixin
+from mesido.workflows.utils.error_types import (
+    HEAT_AND_COOL_NETWORK_ERRORS,
+    potential_error_to_error,
+)
 
 import numpy as np
 
@@ -169,24 +173,7 @@ class HeatProblem(
         """
         super().read()
 
-        # Error checking:
-        # - installed capacity/power of a heating/cooling demand is sufficient for the specified
-        #   demand profile
-        is_error = False
-        for error_type, errors in self._asset_potential_errors.items():
-            if error_type in ["heat_demand.power", "cold_demand.power"]:
-                if len(errors) > 0:
-                    for asset_name in errors:
-                        logger.error(self._asset_potential_errors[error_type][asset_name])
-                    logger.error(
-                        "Asset insufficient installed capacity: please increase the"
-                        " installed power or reduce the demand profile peak value of the demand(s)"
-                        " listed."
-                    )
-                    is_error = True
-        if is_error:
-            exit(1)
-        # end error checking
+        potential_error_to_error(HEAT_AND_COOL_NETWORK_ERRORS)
 
     def path_goals(self):
         """

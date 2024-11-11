@@ -72,8 +72,9 @@ def get_internal_energy(asset_name, carrier):
         logger.warning(
             f"Neither gas or hydrogen was used in the carrier " f"name of pipe {asset_name}"
         )
-        internal_energy = 46.0e6  # natural gas at about 8 bar
-    return internal_energy  # we use gram per second and coolprop gives results in kJ per kg
+        # TODO: resolve heating value (default value below) vs internal energy values (above)
+        internal_energy = 46.0e6  # natural gas at about 1 bar [J/kg] heating value
+    return internal_energy  # [J/kg]
 
 
 def get_density(asset_name, carrier):
@@ -109,10 +110,10 @@ def get_density(asset_name, carrier):
             16.0e5,
             "INCOMP::Water",
         )
-        return density  # to convert from kg/m3
+        return density  # kg/m3
     else:
         logger.warning(
-            f"Neither water, gas or hydrogen was used in the carrier " f"name of pipe {asset_name}"
+            f"Neither gas/hydrogen/heat was used in the carrier " f"name of pipe {asset_name}"
         )
         density = 6.2  # natural gas at about 8 bar
     return density * 1.0e3  # to convert from kg/m3 to g/m3
@@ -457,15 +458,25 @@ class _AssetToComponentBase:
     def _get_connected_q_max(self, asset: Asset) -> float:
         if asset.in_ports is not None and asset.asset_type != "Electrolyzer":
             for port in asset.in_ports:
+                convert_density_units = 1.0
+                energy_reference_j_kg = 1.0
+                if not isinstance(port.carrier, esdl.HeatCommodity):
+                    convert_density_units = 1.0e3  # convert g/m3 to kg/m3 if needed
+                    energy_reference_j_kg = get_internal_energy(asset.name, port.carrier)
+                else:
+                    # heat_value / rho * minimum_dT => [J/m3K] / [kg/m3] * 1.0 [K] => [J/kg]
+                    energy_reference_j_kg = HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS / 988.0
+
                 connected_port = port.connectedTo[0]
                 q_max = (
                     self._port_to_q_max.get(connected_port, None)
                     if self._port_to_q_max.get(connected_port, False)
                     else max([asset.attributes.get(key, -1) for key in self.__power_keys])
                     / (
+                        # note rho -> gas/hydrogen g/m3, heat kg/m3
                         get_density(asset.name, port.carrier)
-                        * get_internal_energy(asset.name, port.carrier)
-                        / 1.0e3
+                        * energy_reference_j_kg
+                        / convert_density_units
                     )
                 )
                 if q_max is not None:
@@ -478,15 +489,25 @@ class _AssetToComponentBase:
                     )
         elif asset.out_ports is not None:
             for port in asset.out_ports:
+                convert_density_units = 1.0
+                energy_reference_j_kg = 1.0
+                if not isinstance(port.carrier, esdl.HeatCommodity):
+                    convert_density_units = 1.0e3  # convert g/m3 to kg/m3 if needed
+                    energy_reference_j_kg = get_internal_energy(asset.name, port.carrier)
+                else:
+                    # heat_value / rho * minimum_dT => [J/m3K] / [kg/m3] * 1.0 [K] => [J/kg]
+                    energy_reference_j_kg = HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS / 988.0
+
                 connected_port = port.connectedTo[0]
                 q_max = (
                     self._port_to_q_max.get(connected_port, None)
                     if self._port_to_q_max.get(connected_port, False)
                     else max([asset.attributes.get(key, -1) for key in self.__power_keys])
                     / (
+                        # note rho -> gas/hydrogen g/m3, heat kg/m3
                         get_density(asset.name, port.carrier)
-                        * get_internal_energy(asset.name, port.carrier)
-                        / 1.0e3
+                        * energy_reference_j_kg
+                        / convert_density_units
                     )
                 )
                 if q_max is not None:
@@ -687,15 +708,25 @@ class _AssetToComponentBase:
                 if isinstance(port.carrier, esdl.GasCommodity) or isinstance(
                     port.carrier, esdl.HeatCommodity
                 ):
+                    convert_density_units = 1.0
+                    energy_reference_j_kg = 1.0
+                    if not isinstance(port.carrier, esdl.HeatCommodity):
+                        convert_density_units = 1.0e3  # convert g/m3 to kg/m3 if needed
+                        energy_reference_j_kg = get_internal_energy(asset.name, port.carrier)
+                    else:
+                        # heat_value / rho * minimum_dT => [J/m3K] / [kg/m3] * 1.0 [K] => [J/kg]
+                        energy_reference_j_kg = HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS / 988.0
+
                     connected_port = port.connectedTo[0]
                     q_nominal = (
                         self._port_to_q_nominal.get(connected_port, None)
                         if self._port_to_q_nominal.get(connected_port, False)
                         else max([asset.attributes.get(key, -1) for key in self.__power_keys])
                         / (
+                            # note rho -> gas/hydrogen g/m3, heat kg/m3
                             get_density(asset.name, port.carrier)
-                            * get_internal_energy(asset.name, port.carrier)
-                            / 1.0e3
+                            * energy_reference_j_kg
+                            / convert_density_units
                         )
                     )
                     if q_nominal is not None:
@@ -706,15 +737,25 @@ class _AssetToComponentBase:
                 if isinstance(port.carrier, esdl.GasCommodity) or isinstance(
                     port.carrier, esdl.HeatCommodity
                 ):
+                    convert_density_units = 1.0
+                    energy_reference_j_kg = 1.0
+                    if not isinstance(port.carrier, esdl.HeatCommodity):
+                        convert_density_units = 1.0e3  # convert g/m3 to kg/m3 if needed
+                        energy_reference_j_kg = get_internal_energy(asset.name, port.carrier)
+                    else:
+                        # heat_value / rho * minimum_dT => [J/m3K] / [kg/m3] * 1.0 [K] => [J/kg]
+                        energy_reference_j_kg = HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS / 988.0
+
                     connected_port = port.connectedTo[0]
                     q_nominal = (
                         self._port_to_q_nominal.get(connected_port, None)
                         if self._port_to_q_nominal.get(connected_port, False)
                         else max([asset.attributes.get(key, -1) for key in self.__power_keys])
                         / (
+                            # note rho -> gas/hydrogen g/m3, heat kg/m3
                             get_density(asset.name, port.carrier)
-                            * get_internal_energy(asset.name, port.carrier)
-                            / 1.0e3
+                            * energy_reference_j_kg
+                            / convert_density_units
                         )
                     )
                     if q_nominal is not None:
@@ -725,15 +766,25 @@ class _AssetToComponentBase:
                 if isinstance(port.carrier, esdl.GasCommodity) or isinstance(
                     port.carrier, esdl.HeatCommodity
                 ):
+                    convert_density_units = 1.0
+                    energy_reference_j_kg = 1.0
+                    if not isinstance(port.carrier, esdl.HeatCommodity):
+                        convert_density_units = 1.0e3  # convert g/m3 to kg/m3 if needed
+                        energy_reference_j_kg = get_internal_energy(asset.name, port.carrier)
+                    else:
+                        # heat_value / rho * minimum_dT => [J/m3K] / [kg/m3] * 1.0 [K] => [J/kg]
+                        energy_reference_j_kg = HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS / 988.0
+
                     connected_port = port.connectedTo[0]
                     q_nominal = (
                         self._port_to_q_nominal.get(connected_port, None)
                         if self._port_to_q_nominal.get(connected_port, False)
                         else max([asset.attributes.get(key, -1) for key in self.__power_keys])
                         / (
+                            # note rho -> gas/hydrogen g/m3, heat kg/m3
                             get_density(asset.name, port.carrier)
-                            * get_internal_energy(asset.name, port.carrier)
-                            / 1.0e3
+                            * energy_reference_j_kg
+                            / convert_density_units
                         )
                     )
                     if q_nominal is not None:
@@ -744,15 +795,43 @@ class _AssetToComponentBase:
             try:
                 for port in asset.in_ports:
                     connected_port = port.connectedTo[0]
-                    if isinstance(port.carrier, esdl.GasCommodity):
-                        q_nominals["Q_nominal_gas"] = self._port_to_q_nominal[connected_port]
-                        self._port_to_q_nominal[port] = q_nominals["Q_nominal_gas"]
-                    elif isinstance(port.carrier, esdl.HeatCommodity):
-                        q_nominals["Q_nominal"] = self._port_to_q_nominal[connected_port]
-                        self._port_to_q_nominal[port] = q_nominals["Q_nominal"]
-                if not q_nominals:
+                    if isinstance(port.carrier, esdl.GasCommodity) or isinstance(
+                        port.carrier, esdl.HeatCommodity
+                    ):
+                        nominal_string = "Q_nominal"
+                        convert_density_units = 1.0
+                        energy_reference_j_kg = 1.0
+                        if isinstance(port.carrier, esdl.GasCommodity):
+                            nominal_string += "_gas"
+                            convert_density_units = 1.0e3  # convert g/m3 to kg/m3 if needed
+                            energy_reference_j_kg = get_internal_energy(asset.name, port.carrier)
+                        elif isinstance(port.carrier, esdl.HeatCommodity):
+                            # heat_value / rho * minimum_dT => [J/m3K] / [kg/m3] * 1.0 [K] => [J/kg]
+                            energy_reference_j_kg = HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS / 988.0
+
+                        if isinstance(connected_port.energyasset, esdl.Joint):
+                            q_nominal = (
+                                self._port_to_q_nominal.get(connected_port, None)
+                                if self._port_to_q_nominal.get(connected_port, False)
+                                else max(
+                                    [asset.attributes.get(key, -1) for key in self.__power_keys]
+                                )
+                                / (
+                                    # note rho -> gas/hydrogen g/m3, heat kg/m3
+                                    get_density(asset.name, port.carrier)
+                                    * energy_reference_j_kg
+                                    / convert_density_units
+                                )
+                            )
+                            if q_nominal is not None:
+                                q_nominals[nominal_string] = q_nominal
+                                self._port_to_q_nominal[port] = q_nominals[nominal_string]
+                        else:
+                            q_nominals[nominal_string] = self._port_to_q_nominal[connected_port]
+                            self._port_to_q_nominal[port] = q_nominals[nominal_string]
+                if q_nominals is None:
                     logger.error(
-                        f"{asset.name} should have at least gas or heat specified on"
+                        f"{asset.name} should have at least gas or heat specified on "
                         f"one of the in ports"
                     )
                     exit(1)
@@ -764,6 +843,7 @@ class _AssetToComponentBase:
                         if self._port_to_q_max.get(connected_port, False)
                         else max([asset.attributes.get(key, -1) for key in self.__power_keys])
                         / (
+                            # note rho -> gas/hydrogen g/m3, heat kg/m3
                             get_density(asset.name, port.carrier)
                             * get_internal_energy(asset.name, port.carrier)
                             / 1.0e3
@@ -795,9 +875,9 @@ class _AssetToComponentBase:
                             if self._port_to_q_max.get(connected_port, False)
                             else max([asset.attributes.get(key, -1) for key in self.__power_keys])
                             / (
+                                # note rho -> gas/hydrogen g/m3, heat kg/m3
                                 get_density(asset.name, p.carrier)
-                                * get_internal_energy(asset.name, p.carrier)
-                                / 1.0e3
+                                * (HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS / 988.0)
                             )
                         )
                     if q_nominal is not None:
