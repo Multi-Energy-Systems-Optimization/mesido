@@ -15,6 +15,7 @@ from mesido.workflows.utils.error_types import mesido_issue_type_gen_message
 
 
 import numpy as np
+
 import pandas as pd
 
 from utils_test_scaling import create_log_list_scaling
@@ -302,8 +303,12 @@ class TestColdDemand(TestCase):
         )
         results = heat_problem.extract_results()
 
-        cold_demand_timeseries = heat_problem.get_timeseries('CoolingDemand_15e8.target_cold_demand')
-        heat_demand_timeseries = heat_problem.get_timeseries('HeatingDemand_9b90.target_heat_demand')
+        cold_demand_timeseries = heat_problem.get_timeseries(
+            "CoolingDemand_15e8.target_cold_demand"
+        )
+        heat_demand_timeseries = heat_problem.get_timeseries(
+            "HeatingDemand_9b90.target_heat_demand"
+        )
         max_cold_idx = np.argmax(cold_demand_timeseries.values)
         max_heat_idx = np.argmax(heat_demand_timeseries.values)
 
@@ -311,17 +316,21 @@ class TestColdDemand(TestCase):
         np.testing.assert_equal(len(cold_demand_timeseries.times), 27)
         np.testing.assert_equal(len(heat_demand_timeseries.times), 27)
 
-        # Check that the peak hour is at the correct location after discretization. 
+        # Check that the peak hour is at the correct location after discretization.
         np.testing.assert_equal(max_cold_idx, 25)
         np.testing.assert_equal(max_heat_idx, 9)
 
         # Check that the peak day array is the same as the raw input after discretization.
-        csv_path = base_folder /  'input/timeseries_peak_overlap.csv'
+        csv_path = base_folder / "input/timeseries_peak_overlap.csv"
         raw_demand_data = pd.read_csv(csv_path)
-        cold_demand_raw_list = np.array(raw_demand_data['CoolingDemand_15e8'])
-        heat_demand_raw_list = np.array(raw_demand_data['HeatingDemand_9b90'])
-        np.testing.assert_array_equal(cold_demand_raw_list[24:47], cold_demand_timeseries.values[2:25])
-        np.testing.assert_array_equal(heat_demand_raw_list[24:47], heat_demand_timeseries.values[2:25])
+        cold_demand_raw_list = np.array(raw_demand_data["CoolingDemand_15e8"])
+        heat_demand_raw_list = np.array(raw_demand_data["HeatingDemand_9b90"])
+        np.testing.assert_array_equal(
+            cold_demand_raw_list[24:47], cold_demand_timeseries.values[2:25]
+        )
+        np.testing.assert_array_equal(
+            heat_demand_raw_list[24:47], heat_demand_timeseries.values[2:25]
+        )
 
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
@@ -366,8 +375,12 @@ class TestColdDemand(TestCase):
         )
         results = heat_problem.extract_results()
 
-        cold_demand_timeseries = heat_problem.get_timeseries('CoolingDemand_15e8.target_cold_demand')
-        heat_demand_timeseries = heat_problem.get_timeseries('HeatingDemand_9b90.target_heat_demand')
+        cold_demand_timeseries = heat_problem.get_timeseries(
+            "CoolingDemand_15e8.target_cold_demand"
+        )
+        heat_demand_timeseries = heat_problem.get_timeseries(
+            "HeatingDemand_9b90.target_heat_demand"
+        )
         max_cold_idx = np.argmax(cold_demand_timeseries.values)
         max_heat_idx = np.argmax(heat_demand_timeseries.values)
 
@@ -375,17 +388,21 @@ class TestColdDemand(TestCase):
         np.testing.assert_equal(len(cold_demand_timeseries.times), 50)
         np.testing.assert_equal(len(heat_demand_timeseries.times), 50)
 
-        # Check that the peak hour is at the correct location after discretization. 
+        # Check that the peak hour is at the correct location after discretization.
         np.testing.assert_equal(max_cold_idx, 44)
         np.testing.assert_equal(max_heat_idx, 11)
 
         # Check that the peak day array is the same as the raw input after discretization.
-        csv_path = base_folder /  'input/timeseries_peak_back_to_back.csv'
+        csv_path = base_folder / "input/timeseries_peak_back_to_back.csv"
         raw_demand_data = pd.read_csv(csv_path)
-        cold_demand_raw_list = np.array(raw_demand_data['CoolingDemand_15e8'])
-        heat_demand_raw_list = np.array(raw_demand_data['HeatingDemand_9b90'])
-        np.testing.assert_array_equal(cold_demand_raw_list[48:72], cold_demand_timeseries.values[26:50])
-        np.testing.assert_array_equal(heat_demand_raw_list[24:47], heat_demand_timeseries.values[2:25])
+        cold_demand_raw_list = np.array(raw_demand_data["CoolingDemand_15e8"])
+        heat_demand_raw_list = np.array(raw_demand_data["HeatingDemand_9b90"])
+        np.testing.assert_array_equal(
+            cold_demand_raw_list[48:72], cold_demand_timeseries.values[26:50]
+        )
+        np.testing.assert_array_equal(
+            heat_demand_raw_list[24:47], heat_demand_timeseries.values[2:25]
+        )
 
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
@@ -430,8 +447,12 @@ class TestColdDemand(TestCase):
         )
         results = heat_problem.extract_results()
 
-        cold_demand_timeseries = heat_problem.get_timeseries('CoolingDemand_15e8.target_cold_demand')
-        heat_demand_timeseries = heat_problem.get_timeseries('HeatingDemand_9b90.target_heat_demand')
+        cold_demand_timeseries = heat_problem.get_timeseries(
+            "CoolingDemand_15e8.target_cold_demand"
+        )
+        heat_demand_timeseries = heat_problem.get_timeseries(
+            "HeatingDemand_9b90.target_heat_demand"
+        )
         max_cold_idx = np.argmax(cold_demand_timeseries.values)
         max_heat_idx = np.argmax(heat_demand_timeseries.values)
 
@@ -439,17 +460,21 @@ class TestColdDemand(TestCase):
         np.testing.assert_equal(len(cold_demand_timeseries.times), 50)
         np.testing.assert_equal(len(heat_demand_timeseries.times), 50)
 
-        # Check that the peak hour is at the correct location after discretization. 
+        # Check that the peak hour is at the correct location after discretization.
         np.testing.assert_equal(max_cold_idx, 17)
         np.testing.assert_equal(max_heat_idx, 38)
 
         # Check that the peak day array is the same as the raw input after discretization.
-        csv_path = base_folder /  'input/timeseries_cold_peak_before.csv'
+        csv_path = base_folder / "input/timeseries_cold_peak_before.csv"
         raw_demand_data = pd.read_csv(csv_path)
-        cold_demand_raw_list = np.array(raw_demand_data['CoolingDemand_15e8'])
-        heat_demand_raw_list = np.array(raw_demand_data['HeatingDemand_9b90'])
-        np.testing.assert_array_equal(cold_demand_raw_list[24:48], cold_demand_timeseries.values[2:26])
-        np.testing.assert_array_equal(heat_demand_raw_list[48:75], heat_demand_timeseries.values[26:50])        
+        cold_demand_raw_list = np.array(raw_demand_data["CoolingDemand_15e8"])
+        heat_demand_raw_list = np.array(raw_demand_data["HeatingDemand_9b90"])
+        np.testing.assert_array_equal(
+            cold_demand_raw_list[24:48], cold_demand_timeseries.values[2:26]
+        )
+        np.testing.assert_array_equal(
+            heat_demand_raw_list[48:75], heat_demand_timeseries.values[26:50]
+        )
 
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
