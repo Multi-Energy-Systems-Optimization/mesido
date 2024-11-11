@@ -20,7 +20,7 @@ class TargetDemandGoal(Goal):
     def __init__(self, optimization_problem):
         self.target_min = optimization_problem.get_timeseries("demand.target_heat_demand")
         self.target_max = optimization_problem.get_timeseries("demand.target_heat_demand")
-        self.function_range = (0.0, 2e5)
+        self.function_range = (0.0, 2e6)
         self.function_nominal = 1e5
 
     def function(self, optimization_problem, ensemble_member):
