@@ -284,8 +284,9 @@ class TestHeadLoss(TestCase):
                     # options["solver"] = "cbc"
                     options["highs"] = options_highs = {}
                     # options_highs["presolve"] = "on"
-                    options_highs["presolve"] = "off"  # check something
-                    options_highs["solver"] = "choose"
+                    # options_highs["solver"] = "choose"
+                    options_highs["presolve"] = "off"
+                    options_highs["solver"] = "ipm"
                     # options_highs["run_crossover"] = "off"
 
                     return options
