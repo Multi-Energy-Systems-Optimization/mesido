@@ -9,7 +9,7 @@ import traceback
 import uuid
 from collections import OrderedDict
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Union
 
 import esdl
 from esdl.profiles.influxdbprofilemanager import ConnectionSettings
@@ -1495,9 +1495,9 @@ class ScenarioOutput:
 
     def _write_json_output(
         self,
-        results: AliasDict | Dict,
-        parameters: AliasDict | Dict,
-        bounds: AliasDict | Dict,
+        results: Union[AliasDict, Dict],
+        parameters: Union[AliasDict, Dict],
+        bounds: Union[AliasDict, Dict],
         aliases: OrderedDict,
         solver_stats: Dict,
     ):
@@ -1515,7 +1515,7 @@ class ScenarioOutput:
 
         workdir = self.output_folder
 
-        parameters_dict = parameters
+        parameters_dict = dict()
         parameter_path = os.path.join(workdir, "parameters.json")
         for key, value in parameters.items():
             new_value = value  # [x for x in value]
