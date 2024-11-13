@@ -335,7 +335,7 @@ class _AssetToComponentBase:
         warnings when either of these two variables are specified in combination with the pipe DN)
         Parameters
         ----------
-        asset : Asset pipe object with it's properties from ESDL
+        asset : Asset pipe object with itss properties from ESDL
 
         Returns
         -------
@@ -348,21 +348,17 @@ class _AssetToComponentBase:
                 f"{full_name}' has both 'innerDiameter' and 'diameter' specified. "
                 f"Diameter of {asset.attributes['diameter'].name} will be used."
             )
-        if asset.attributes["material"] and asset.attributes["diameter"].value > 0:
-            logger.warning(
-                f"{full_name}' has both 'material' and 'diameter' specified. "
-                f"Insulation properties of {asset.attributes['diameter'].name} will be used."
-            )
-        if asset.attributes["diameter"].value == 0 and not asset.attributes["innerDiameter"]:
-            logger.error(f"{full_name}' has no DN size or innerDiameter specified. ")
 
         edr_dn_size = None
         if asset.attributes["diameter"].value > 0:
             edr_dn_size = str(asset.attributes["diameter"].name)
         elif not asset.attributes["innerDiameter"]:
-            logger.warning(f"{full_name}' has no DN size or innerDiameter specified. ")
-            edr_dn_size = "DN200"  # ideally I don't want us to set a default diameter size, we
-            # can get in this line in case innerDiameter is set to 0.0.
+            logger.error(
+                f"{full_name}' has no DN size or innerDiameter specified, default is set to DN200. "
+            )
+            edr_dn_size = "DN200"
+            # TODO: ideally no default diameter size is set, test cases have to be updated for this
+            #  to be removed.
 
         # NaN means the default values will be used
         wall_roughness = math.nan
@@ -375,6 +371,8 @@ class _AssetToComponentBase:
         else:
             assert asset.attributes["innerDiameter"]
             inner_diameter = asset.attributes["innerDiameter"]
+            if asset.attributes["roughness"] > 0.0:
+                wall_roughness = float(asset.attributes["roughness"])
 
         return inner_diameter, wall_roughness
 
@@ -392,6 +390,7 @@ class _AssetToComponentBase:
         -------
         resistance
         """
+        default_res = 1e-6
         material = asset.attributes["material"]
         el_conductivity = None
         if material:
@@ -399,9 +398,9 @@ class _AssetToComponentBase:
         if not el_conductivity:
             logger.warning(
                 f"Cable {asset.name} does not have a material with conductivity assigned,"
-                f" using default resistance"
+                f" using default resistance of {default_res} ohm/m"
             )
-        res_ohm_per_m = 1 / el_conductivity if el_conductivity else 1e-6
+        res_ohm_per_m = 1 / el_conductivity if el_conductivity else default_res
 
         return res_ohm_per_m
 
