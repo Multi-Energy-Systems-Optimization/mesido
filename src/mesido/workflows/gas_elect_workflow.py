@@ -1,5 +1,7 @@
 import logging
 
+import casadi as ca
+
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
@@ -47,6 +49,46 @@ class TargetHeatGoal(Goal):
         return optimization_problem.state(self.state)
 
 
+# class MinimizeSourcesHeatGoal(Goal):
+#     """
+#     A minimization goal for source milp production. We use order 1 here as we want to minimize milp
+#     over the full horizon and not per time-step.
+#     """
+
+#     priority = 3
+
+#     order = 1
+
+#     def __init__(self, source: str):
+#         """
+#         The constructor of the goal.
+
+#         Parameters
+#         ----------
+#         source : string of the source name that is going to be minimized
+#         """
+#         self.source = source
+
+#     def function(
+#         self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
+#     ) -> ca.MX:
+#         """
+#         This function returns the state variable to which should to be matched to the target
+#         specified in the __init__.
+
+#         Parameters
+#         ----------
+#         optimization_problem : The optimization class containing the variables'.
+#         ensemble_member : the ensemble member.
+
+#         Returns
+#         -------
+#         The Heat_source state of the optimization problem.
+#         """
+#         return optimization_problem.state(f"{self.source}.Gas_source_mass_flow")
+
+
+
 class GasElectProblem(
     ScenarioOutput,
     ESDLAdditionalVarsMixin,
@@ -73,7 +115,7 @@ class GasElectProblem(
 
         # Setting when started with head loss inclusions
         self.gas_network_settings["minimum_velocity"] = 0.0
-        self.gas_network_settings["maximum_velocity"] = 3.0
+        self.gas_network_settings["maximum_velocity"] = 30.0
 
         # self.gas_network_settings["n_linearization_lines"] = 3
         # self.gas_network_settings["minimize_head_losses"] = False
@@ -82,17 +124,17 @@ class GasElectProblem(
         self.gas_network_settings["minimize_head_losses"] = True
         self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
 
+
         return options
 
     def solver_options(self):
         options = super().solver_options()
         options["solver"] = "highs"
         highs_options = options["highs"] = {}
-        highs_options["mip_abs_gap"] = 0.00001  # 0.001 did not work
+        highs_options["mip_abs_gap"] = 1.0e-6  #0.00001  # 0.001 did not work
         # highs_options["presolve"] = "off"
 
         return options
-
     # max velo reduction, remove ratio, new demands in more peak period of the day 
     def pre(self):
         super().pre()
@@ -109,7 +151,7 @@ class GasElectProblem(
 
             # Manually set Demand
             for ii in range(len(target.values)):
-                target.values[ii] *= 31.68 * 10**6 * 0.8  # * 40.0 * 5.0
+                target.values[ii] *= 31.68 * 10**6 * 0.8
 
             self.io.set_timeseries(
                 f"{demand}.target_heat_demand",
@@ -144,6 +186,10 @@ class GasElectProblem(
             state = f"{demand}.Heat_demand"
 
             goals.append(TargetHeatGoal(state, target))
+
+            # temporary code - Min gas usage
+            # for s in self.energy_system_components["gas_source"]:
+            #     goals.append(MinimizeSourcesHeatGoal(s))
         return goals
 
     def goals(self):
@@ -151,7 +197,7 @@ class GasElectProblem(
         goals.append(MinimizeTCO(priority=2, number_of_years=1.0))
 
         return goals
-
+    # Do not delete. Temporary code to deactivate the heat pumps
     # def path_constraints(self, ensemble_member):
     #     constraints = super().path_constraints(ensemble_member)
 
@@ -160,7 +206,6 @@ class GasElectProblem(
     #         constraints.append((power_consumed, 0.0, 0.0))
 
     #     return constraints
-
 
 
 @main_decorator

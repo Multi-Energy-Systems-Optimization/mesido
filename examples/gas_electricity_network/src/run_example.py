@@ -45,10 +45,8 @@ if __name__ == "__main__":
         esdl_parser=ESDLFileParser,
         # esdl_file_name="Kapelle_gas_elec_efvc_.esdl",
  
-        # esdl_file_name="Kapelle_gas_elec_efvc_kvr_partial_pipes_network.esdl",  # time=1.5minutes no dh
- 
-        # esdl_file_name="Kapelle_gas_elec_efvc_kvr_partial_direct_network.esdl",  # time=1.5 minutes no dh
-        esdl_file_name="Kapelle_gas_elec_efvc_kvr_partial_direct_network_updatedDN.esdl",
+        # esdl_file_name="Kapelle_gas_elec_efvc_kvr_partial_pipes_network.esdl",
+        esdl_file_name="Kapelle_gas_elec_efvc_kvr_partial_direct_network.esdl",
         # esdl_file_name="Kapelle_gas_elec_efvc_kvr_complete_direct_network.esdl",
         profile_reader=ProfileReaderFromFile,
         input_timeseries_file="gas_demand_nom_m3_s_efvc_.csv",
@@ -100,10 +98,9 @@ if __name__ == "__main__":
     # Check elect power demand vs production balance
     electric_power_conservation_test(solution, results)
 
-
     # Check costs
     np.testing.assert_allclose(
-        sum(results["STATION_5.Gas_source_mass_flow"][1:] * 0.00123 * np.diff(solution.times())),
+        sum(results["STATION_5.Gas_source_mass_flow"][1:] * 0.002888 * np.diff(solution.times())),
         results["STATION_5__variable_operational_cost"][0],
     )
     np.testing.assert_allclose(
@@ -111,12 +108,42 @@ if __name__ == "__main__":
             results["Elec_prod_5.Electricity_source"][1:]
             * (np.diff(solution.times()))
             / 3600.0
-            * 0.021
+            * 0.00027
         ),
         results["Elec_prod_5__variable_operational_cost"][0],
+        atol=1e-10,
+    )
+    np.testing.assert_allclose(
+        sum(results["STATION_10.Gas_source_mass_flow"][1:] * 0.002888 * np.diff(solution.times())),
+        results["STATION_10__variable_operational_cost"][0],
+    )
+    np.testing.assert_allclose(
+        sum(
+            results["Elec_prod_10.Electricity_source"][1:]
+            * (np.diff(solution.times()))
+            / 3600.0
+            * 0.00027
+        ),
+        results["Elec_prod_10__variable_operational_cost"][0],
+        atol=1e-10,
     )
 
-
+    # Nice plots/prints
+    for asset_name in [*solution.energy_system_components.get("heat_demand", [])]:
+        dmnd_num = asset_name.strip("Demand_")
+        dmnd_val = results[f"Demand_{dmnd_num}.Heat_flow"]
+        prod_perc_hp = results[f"Heatpump_{dmnd_num}.Heat_flow"] / dmnd_val
+        prod_perc_gb = results[f"Gasboiler_{dmnd_num}.Heat_flow"] / dmnd_val
+        print(
+            f"dmnd_num: {dmnd_num} demand {dmnd_val/1.0e3}kW, source % split "
+            f"HP: {[round(elem*100.0, 1) for elem in prod_perc_hp]} & "
+            f"GasBoiler{[round(elem*100.0, 1) for elem in prod_perc_gb]}"
+        )
+        np.testing.assert_allclose(prod_perc_hp + prod_perc_gb, 1.0)
+    
+    # Checks 
+    results["Gasboiler_4391.Gas_demand_mass_flow"] / 1000 * 612008.78
+    results["Gasboiler_4391.Heat_flow"]
     kvr= 0.0
         # elec_price_profile = "Elec.price_profile"
         # gas_tranport_cost = sum(

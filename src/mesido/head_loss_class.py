@@ -222,7 +222,6 @@ class HeadLossClass:
         self.__pipe_head_loss_zero_bounds = {}
         self._hn_pipe_to_head_loss_map = {}
 
-        # Kvr
         # Boolean variables for the linear line segment options per pipe.
         self.__pipe_linear_line_segment_var = {}  # value 0/1: line segment - not active/active
         self.__pipe_linear_line_segment_var_bounds = {}
