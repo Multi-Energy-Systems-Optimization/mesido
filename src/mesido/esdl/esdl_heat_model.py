@@ -522,9 +522,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         return Node, modifiers
 
-
-    def convert_pipe(self, asset: Asset
-                     )-> Tuple[Union[Type[HeatPipe], Type[GasPipe]], MODIFIERS]:
+    def convert_pipe(self, asset: Asset) -> Tuple[Union[Type[HeatPipe], Type[GasPipe]], MODIFIERS]:
         """
         This function converts the pipe object in esdl to a set of modifiers that can be used in
         a pycml object. Most important, it checks whether it should be converted to a gas or heat
@@ -540,11 +538,14 @@ class AssetToHeatComponent(_AssetToComponentBase):
         elif isinstance(asset.in_ports[0].carrier, esdl.esdl.HeatCommodity):
             return self.convert_heat_pipe(asset)
         else:
-            logger.error(f"{asset.name} is of type {asset.asset_type} but is connected with a commodity of type "
-                         f"{str(type(asset.in_ports[0].carrier))}, while only the commodities Heat and "
-                         f"Gas are allowed")
+            logger.error(
+                f"{asset.name} is of type {asset.asset_type} but is connected with a commodity of "
+                f"type {str(type(asset.in_ports[0].carrier))}, while only the commodities Heat and "
+                f"Gas are allowed"
+            )
 
-    def convert_gas_pipe(self, asset: Asset
+    def convert_gas_pipe(
+        self, asset: Asset
     ) -> Tuple[Union[Type[HeatPipe], Type[GasPipe]], MODIFIERS]:
         """
         This function converts the pipe object in esdl to a set of modifiers that can be used in
@@ -598,17 +599,15 @@ class AssetToHeatComponent(_AssetToComponentBase):
             "id_number_mapping"
         ]
         (diameter, wall_roughness) = self._gas_pipe_get_diameter_and_roughness(asset)
-        q_nominal = math.pi * diameter ** 2 / 4.0 * self.v_max_gas / 2.0
+        q_nominal = math.pi * diameter**2 / 4.0 * self.v_max_gas / 2.0
         self._set_q_nominal(asset, q_nominal)
-        q_max = math.pi * diameter ** 2 / 4.0 * self.v_max_gas
+        q_max = math.pi * diameter**2 / 4.0 * self.v_max_gas
         self._set_q_max(asset, q_max)
         pressure = asset.in_ports[0].carrier.pressure * 1.0e5
         density = get_density(asset.name, asset.in_ports[0].carrier)
         bounds_nominals = dict(
             Q=dict(min=-q_max, max=q_max, nominal=q_nominal),
-            mass_flow=dict(
-                min=-q_max * density, max=q_max * density, nominal=q_nominal * density
-            ),
+            mass_flow=dict(min=-q_max * density, max=q_max * density, nominal=q_nominal * density),
             Hydraulic_power=dict(nominal=q_nominal * pressure),
         )
         modifiers = dict(
@@ -824,20 +823,22 @@ class AssetToHeatComponent(_AssetToComponentBase):
         }
 
         if isinstance(asset.in_ports[0].carrier, esdl.ElectricityCommodity) and isinstance(
-                asset.out_ports[0].carrier, esdl.ElectricityCommodity
+            asset.out_ports[0].carrier, esdl.ElectricityCommodity
         ):
             return self.convert_transformer(asset)
         elif isinstance(asset.in_ports[0].carrier, esdl.HeatCommodity) and isinstance(
-                asset.out_ports[0].carrier, esdl.HeatCommodity
+            asset.out_ports[0].carrier, esdl.HeatCommodity
         ):
             return self.convert_heat_exchanger(asset)
         else:
-            logger.error( f"{asset.name} is of type {asset.asset_type} which is currently only "
-                          f"supported as a heat exchanger or an electric transformer, thus either "
-                          f"heat commodities or electricity commodities need to be connected to the "
-                          f"ports. Currently the connected commodities are of type, "
-                          f"{str(type(asset.in_ports[0].carrier))} and "
-                          f"{str(type(asset.out_ports[0].carrier))}")
+            logger.error(
+                f"{asset.name} is of type {asset.asset_type} which is currently only "
+                f"supported as a heat exchanger or an electric transformer, thus either "
+                f"heat commodities or electricity commodities need to be connected to the "
+                f"ports. Currently the connected commodities are of type, "
+                f"{str(type(asset.in_ports[0].carrier))} and "
+                f"{str(type(asset.out_ports[0].carrier))}"
+            )
 
     def convert_heat_exchanger(self, asset: Asset) -> Tuple[Type[HeatExchanger], MODIFIERS]:
         """
@@ -1634,7 +1635,13 @@ class AssetToHeatComponent(_AssetToComponentBase):
         -------
         ElectricitySource class with modifiers
         """
-        assert asset.asset_type in {"ElectricityProducer", "WindPark", "WindTurbine", "PVInstallation", "Import"}
+        assert asset.asset_type in {
+            "ElectricityProducer",
+            "WindPark",
+            "WindTurbine",
+            "PVInstallation",
+            "Import",
+        }
 
         max_supply = asset.attributes.get(
             "power", math.inf
