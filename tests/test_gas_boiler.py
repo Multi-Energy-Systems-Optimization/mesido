@@ -1,3 +1,4 @@
+import math
 from pathlib import Path
 from unittest import TestCase
 
@@ -38,6 +39,7 @@ class TestGasBoiler(TestCase):
         )
         results = heat_problem.extract_results()
         parameters = heat_problem.parameters(0)
+        bounds = heat_problem.bounds()
 
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
@@ -49,4 +51,13 @@ class TestGasBoiler(TestCase):
             parameters["GasHeater_f713.internal_energy"]
             * results["GasHeater_f713.GasIn.mass_flow"],
             results["GasHeater_f713.Heat_source"] + 1.0e-6,
+        )
+
+        # check if the maximum gas velocity set in problem is used to determine bounds on pipes
+        v_max_gas = heat_problem.gas_network_settings[
+            "maximum_velocity"
+        ]  # m/s maximum velocity set in problem.
+        np.testing.assert_allclose(
+            bounds["Pipe_a7b5.GasIn.Q"][1],
+            parameters["Pipe_a7b5.diameter"] ** 2 / 4 * math.pi * v_max_gas,
         )

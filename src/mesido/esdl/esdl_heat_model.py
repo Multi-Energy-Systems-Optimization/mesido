@@ -534,7 +534,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         assert asset.asset_type == "Pipe"
 
         if isinstance(asset.in_ports[0].carrier, esdl.esdl.GasCommodity):
-            return
+            return self.convert_gas_pipe(asset)
         elif isinstance(asset.in_ports[0].carrier, esdl.esdl.HeatCommodity):
             return self.convert_heat_pipe(asset)
         else:
