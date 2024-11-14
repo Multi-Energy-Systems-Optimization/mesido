@@ -130,12 +130,12 @@ class GasElectProblem(
         self.gas_network_settings["minimum_velocity"] = 0.0
         self.gas_network_settings["maximum_velocity"] = 15.0 # 30.0
 
-        self.gas_network_settings["n_linearization_lines"] = 3
-        self.gas_network_settings["minimize_head_losses"] = False
-        self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
+        # self.gas_network_settings["n_linearization_lines"] = 3
+        # self.gas_network_settings["minimize_head_losses"] = False
+        # self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
 
-        # self.gas_network_settings["minimize_head_losses"] = True
-        # self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+        self.gas_network_settings["minimize_head_losses"] = True
+        self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
 
         return options
 

@@ -45,15 +45,15 @@ if __name__ == "__main__":
     solution = run_optimization_problem_solver(
         optimscaling,
         # GasElectProblem,
-        solver_class=SolverCPLEX,
+        # solver_class=SolverCPLEX,
         esdl_parser=ESDLFileParser,
         # esdl_file_name="Kapelle_gas_elec_efvc_.esdl",
  
         # esdl_file_name="Kapelle_gas_elec_efvc_kvr_partial_pipes_network.esdl",
         # esdl_file_name="Kapelle_gas_elec_efvc_kvr_partial_direct_network.esdl",
 
-        esdl_file_name="Kapelle_gas_elec_efvc_kvr_partial_direct_network_with_e_limit.esdl",
-        # esdl_file_name="Kapelle_gas_elec_efvc_kvr_partial_direct_network_without_e_limit.esdl",
+        # esdl_file_name="Kapelle_gas_elec_efvc_kvr_partial_direct_network_with_e_limit.esdl",
+        esdl_file_name="Kapelle_gas_elec_efvc_kvr_partial_direct_network_without_e_limit.esdl",
 
         # esdl_file_name="Kapelle_gas_elec_efvc_kvr_complete_direct_network.esdl",
         profile_reader=ProfileReaderFromFile,
