@@ -342,7 +342,7 @@ class _AssetToComponentBase:
 
         Returns
         -------
-        pipe inner diameter, wall roughness
+        pipe inner diameter [m], wall roughness [m]
         """
 
         full_name = f"{asset.asset_type} '{asset.name}'"
