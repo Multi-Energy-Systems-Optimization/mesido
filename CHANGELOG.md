@@ -1,7 +1,7 @@
 # [Unreleased] - 2024-11-11
 
 ## Added
-- xx
+- Default database for gas pipe dimensions based on the ASA pipe schedule with thicknesses from the standard class
 
 ## Changed
 - xx
