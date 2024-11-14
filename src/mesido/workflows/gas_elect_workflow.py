@@ -1,4 +1,5 @@
 import logging
+import os
 
 import casadi as ca
 
@@ -107,6 +108,8 @@ class GasElectProblem(
         # variables for solver settings
         self._qpsol = CachingQPSol()
 
+        self._save_json = True
+
         # self.heat_network_settings["minimize_head_losses"] = False
 
     # def times(self, variable=None) -> np.ndarray:
@@ -126,12 +129,12 @@ class GasElectProblem(
         self.gas_network_settings["minimum_velocity"] = 0.0
         self.gas_network_settings["maximum_velocity"] = 15.0 # 30.0
 
-        # self.gas_network_settings["n_linearization_lines"] = 3
-        # self.gas_network_settings["minimize_head_losses"] = False
-        # self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
+        self.gas_network_settings["n_linearization_lines"] = 3
+        self.gas_network_settings["minimize_head_losses"] = False
+        self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
 
-        self.gas_network_settings["minimize_head_losses"] = True
-        self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+        # self.gas_network_settings["minimize_head_losses"] = True
+        # self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
 
         return options
 
@@ -215,6 +218,10 @@ class GasElectProblem(
     #         constraints.append((power_consumed, 0.0, 0.0))
 
     #     return constraints
+
+    def post(self):
+        if os.path.exists(self.output_folder) and self._save_json:
+            self._write_json_output()
 
 
 @main_decorator
