@@ -1,6 +1,20 @@
-# [Unreleased] - 2024-10-07
+# [Unreleased] - 2024-11-11
 
 ## Added
+- xx
+
+## Changed
+- xx
+
+## Fixed
+- Bugfix: same mip gap settings for all solvers in grow_workflow.
+- Bugfix: head loss test case when minimum_velocity = 0.0
+
+
+# [0.1.8] - 2024-11-07
+
+## Added
+- Added MESIDO error exception class to raise applicable potential errors in a workflow & include required info for feedback in the mapeditor
 - Limit the available pipe classes connetced to heat/gas demand/producers
 - Add demands and sources to the topology object to have easy access to the connected pipes/cables later on
 - Heating and cooling example case added (2 heating demands, 1 cold demand, hot and cold producer, WKO as seasonal storage)
@@ -17,8 +31,14 @@
 - Bugfix: No longer required to provide a power at the heating demands when a profile has been added.
 - Bugfix: Scaling fix on ATES temperature variable when temperature modelling not used.
 - Bugfix: Fix on nominals in electricity cables and gas pipes. Fix on nominals for nodes with logical links.
+- Pipeline is only run when pull request is ready for review and synchronized or when opened, as well as when a pull request is merged to main.
+- Speedup: Changed the way daily average profiles are created from hourly profiles to speed up the conversion.
  
 ## Fixed
+- Bug fix: Logical links: e_boiler & gas boiler update to use energy values 
+- Bug fix: Q max and nominal calculation update when reference energy value    
+- Bug fix: e-boiler expected order of inports while setting nominal values
+- Bug fix: setting nominals while using logical links when all values are 1.0
 - Bug fix: machine error/rounding with updating lower bound values in the grow_workflow after stage 1
 - documentation: heat physics tank storage
 - bug fix in grow_workflow (heat networks), changed minimum velocity from 0 to default value

@@ -286,6 +286,7 @@ class TestHeadLoss(TestCase):
                     if head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
                         self.heat_network_settings["minimize_head_losses"] = False
                         self.heat_network_settings["minimum_velocity"] = 0.0
+                        options["neglect_pipe_heat_losses"] = True
                     elif (
                         head_loss_option_setting
                         == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
@@ -293,6 +294,7 @@ class TestHeadLoss(TestCase):
                         self.heat_network_settings["minimize_head_losses"] = True
                         if counter_linearized_n_lines_weak_ineq_runs == 1:
                             self.heat_network_settings["minimum_velocity"] = 0.0
+                            options["neglect_pipe_heat_losses"] = True
                         elif counter_linearized_n_lines_weak_ineq_runs == 2:
                             ...
                             # Do not delete. This reminds the dev that different min velo value

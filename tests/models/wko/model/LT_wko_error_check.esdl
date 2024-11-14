@@ -11,7 +11,7 @@
   </energySystemInformation>
   <instance xsi:type="esdl:Instance" id="d1a23619-2ef0-4172-8bab-25dfc28a64e1" name="Untitled Instance">
     <area xsi:type="esdl:Area" name="Untitled Area" id="4f36ae5d-6dc1-465d-8fc0-f5459d5c3e27">
-      <asset xsi:type="esdl:HeatingDemand" name="HeatingDemand_9b90" id="9b904958-feed-40d0-934e-fe4e4420d916" power="50000.0">
+      <asset xsi:type="esdl:HeatingDemand" name="HeatingDemand_9b90" id="9b904958-feed-40d0-934e-fe4e4420d916" power="5000000.0">
         <port xsi:type="esdl:InPort" id="62f09402-d0ef-455c-86e7-e1b8f39a5542" carrier="13db0822-98da-4ca8-9d48-868653ae06af" name="In" connectedTo="8fc5dd57-acc8-4de5-8a00-2df5da7a57c1"/>
         <port xsi:type="esdl:OutPort" id="8e360471-beba-4bcf-bbd3-466259c51b5b" connectedTo="5d7d8d7e-9009-404d-bdac-cbbc1c8fab40" carrier="13db0822-98da-4ca8-9d48-868653ae06af_ret" name="Out"/>
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="52.079796120944025" lon="4.41802740097046"/>

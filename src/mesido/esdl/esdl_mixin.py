@@ -431,6 +431,7 @@ class ESDLMixin(
         energy_system_options = self.energy_system_options()
         v_nominal = energy_system_options["estimated_velocity"]
         v_max = self.heat_network_settings["maximum_velocity"]
+        # v_max = self.gas_network_settings["maximum_velocity"]  # dammit not here kvr
         return dict(v_nominal=v_nominal, v_max=v_max)
 
     def esdl_qth_model_options(self) -> Dict:
@@ -536,7 +537,7 @@ class ESDLMixin(
         energy_system_components = self.energy_system_components
         esdl_carriers = self.esdl_carriers
         io = self.io
-        self._asset_potential_errors = self.__profile_reader.read_profiles(
+        self.__profile_reader.read_profiles(
             energy_system_components=energy_system_components,
             io=io,
             esdl_asset_id_to_name_map=self.esdl_asset_id_to_name_map,

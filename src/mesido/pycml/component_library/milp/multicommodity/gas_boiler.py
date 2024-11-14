@@ -47,5 +47,5 @@ class GasBoiler(HeatSource):
         )
 
         self.add_equation(
-            ((self.GasIn.mass_flow * self.internal_energy - self.Heat_source) / self.Heat_nominal)
+            ((self.GasIn.mass_flow / 1000.0 * self.internal_energy - self.Heat_source) / self.Heat_nominal)
         )

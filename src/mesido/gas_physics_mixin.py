@@ -306,9 +306,9 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                             #     np.median([x for x in nominals[var] if x != 1])
                             # )  but
                             self.__gas_node_variable_nominal[f"{node}.GasConn[{i + 1}].{var}"] = (
-                                np.median([x for x in nominals[var] if x != 1]) if np.sum(
-                                    nominals[var]
-                                ) != len(nominals[var]) else 1.0
+                                np.median([x for x in nominals[var] if x != 1])
+                                if np.sum(nominals[var]) != len(nominals[var])
+                                else 1.0
                             )
 
     def energy_system_options(self):
