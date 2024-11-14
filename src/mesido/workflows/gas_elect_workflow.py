@@ -112,6 +112,7 @@ class GasElectProblem(
         options = super().energy_system_options()
         options["neglect_pipe_heat_losses"] = True
         options["include_electric_cable_power_loss"] = False
+        # options["include_electric_cable_power_loss"] = True
 
         # Setting when started with head loss inclusions
         self.gas_network_settings["minimum_velocity"] = 0.0

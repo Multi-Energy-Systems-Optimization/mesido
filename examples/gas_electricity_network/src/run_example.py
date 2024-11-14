@@ -46,7 +46,11 @@ if __name__ == "__main__":
         # esdl_file_name="Kapelle_gas_elec_efvc_.esdl",
  
         # esdl_file_name="Kapelle_gas_elec_efvc_kvr_partial_pipes_network.esdl",
-        esdl_file_name="Kapelle_gas_elec_efvc_kvr_partial_direct_network.esdl",
+        # esdl_file_name="Kapelle_gas_elec_efvc_kvr_partial_direct_network.esdl",
+
+        esdl_file_name="Kapelle_gas_elec_efvc_kvr_partial_direct_network_with_e_limit.esdl",
+        # esdl_file_name="Kapelle_gas_elec_efvc_kvr_partial_direct_network_without_e_limit.esdl",
+
         # esdl_file_name="Kapelle_gas_elec_efvc_kvr_complete_direct_network.esdl",
         profile_reader=ProfileReaderFromFile,
         input_timeseries_file="gas_demand_nom_m3_s_efvc_.csv",
@@ -100,7 +104,7 @@ if __name__ == "__main__":
 
     # Check costs
     np.testing.assert_allclose(
-        sum(results["STATION_5.Gas_source_mass_flow"][1:] * 0.002888 * np.diff(solution.times())),
+        sum(results["STATION_5.Gas_source_mass_flow"][1:] * 0.0037926 * np.diff(solution.times())),
         results["STATION_5__variable_operational_cost"][0],
     )
     np.testing.assert_allclose(
@@ -114,7 +118,7 @@ if __name__ == "__main__":
         atol=1e-10,
     )
     np.testing.assert_allclose(
-        sum(results["STATION_10.Gas_source_mass_flow"][1:] * 0.002888 * np.diff(solution.times())),
+        sum(results["STATION_10.Gas_source_mass_flow"][1:] * 0.0037926 * np.diff(solution.times())),
         results["STATION_10__variable_operational_cost"][0],
     )
     np.testing.assert_allclose(
@@ -140,10 +144,15 @@ if __name__ == "__main__":
             f"GasBoiler{[round(elem*100.0, 1) for elem in prod_perc_gb]}"
         )
         np.testing.assert_allclose(prod_perc_hp + prod_perc_gb, 1.0)
-    
-    # Checks 
+
+    # Source usage
+    # print(
+    #     f"E-source_10: {results["Elec_prod_10__variable_operational_cost"][0]} euro"
+    #     f"E-source_5: {results["Elec_prod_5__variable_operational_cost"][0]} euro"
+    #     )
+    # Costs    
     opex_gas =  results["STATION_5__variable_operational_cost"][0] +  results["STATION_10__variable_operational_cost"][0]
-    opex_elect = results["Elec_prod_10__variable_operational_cost"][0] + results["STATION_5__variable_operational_cost"][0] 
+    opex_elect = results["Elec_prod_10__variable_operational_cost"][0] + results["Elec_prod_5__variable_operational_cost"][0] 
 
     opex_tot = opex_gas + opex_elect
     print(f"gas:{opex_gas} & elect:{opex_elect} = {opex_tot}")
