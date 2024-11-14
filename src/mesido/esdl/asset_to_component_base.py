@@ -331,15 +331,18 @@ class _AssetToComponentBase:
         """
         There are multiple ways to specify pipe properties like inner-diameter and
         pipe material and thickness.  The user specified nominal diameter (DN size)
-        takes precedence over potential user specified innerDiameter and material (while logging
-        warnings when either of these two variables are specified in combination with the pipe DN)
+        takes precedence over potential user specified innerDiameter (while logging
+        warnings when either of these are specified in combination with the pipe DN).
+        Similarly, for the wall roughness, the order of preference is; based on the
+        DN size from the default database in this repo, the wall_roughness attribute
+        from the ESDL asset or the default value.
         Parameters
         ----------
         asset : Asset pipe object with itss properties from ESDL
 
         Returns
         -------
-        pipe inner diameter, thickness and conductivity of each insulation layer
+        pipe inner diameter, wall roughness
         """
 
         full_name = f"{asset.asset_type} '{asset.name}'"
@@ -373,6 +376,8 @@ class _AssetToComponentBase:
             inner_diameter = asset.attributes["innerDiameter"]
             if asset.attributes["roughness"] > 0.0:
                 wall_roughness = float(asset.attributes["roughness"])
+            else:
+                wall_roughness = 1.0e-4
 
         return inner_diameter, wall_roughness
 
