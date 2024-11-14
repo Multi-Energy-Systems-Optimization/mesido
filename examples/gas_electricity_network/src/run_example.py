@@ -9,9 +9,8 @@ from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.goals.minimize_tco_goal import MinimizeTCO
-from mesido.workflows.grow_workflow import SolverCPLEX, SolverHIGHS
 from mesido.workflows.io.write_output import ScenarioOutput
-from mesido.workflows.gas_elect_workflow import GasElectProblem
+from mesido.workflows.gas_elect_workflow import GasElectProblem, SolverCPLEX
 
 import numpy as np
 
@@ -45,15 +44,16 @@ if __name__ == "__main__":
     solution = run_optimization_problem_solver(
         optimscaling,
         # GasElectProblem,
-        solver_class=SolverCPLEX,
+        # solver_class=SolverCPLEX,
         esdl_parser=ESDLFileParser,
         # esdl_file_name="Kapelle_gas_elec_efvc_.esdl",
  
         # esdl_file_name="Kapelle_gas_elec_efvc_kvr_partial_pipes_network.esdl",
-        esdl_file_name="Kapelle_gas_elec_efvc_kvr_partial_direct_network.esdl",
-        # esdl_file_name="Kapelle_gas_elec_efvc_kvr_complete_direct_network.esdl",
+        # esdl_file_name="Kapelle_gas_elec_efvc_kvr_partial_direct_network.esdl",
+        # esdl_file_name="Kapelle_gas_elec_efvc_kvr_complete_direct_network.esdl"
+        esdl_file_name="Kapelle_gas_elec_efvc_kvr_partial_direct_network_without_e_limit.esdl",
         profile_reader=ProfileReaderFromFile,
-        input_timeseries_file="gas_demand_nom_m3_s_efvc_.csv",
+        input_timeseries_file="gas_demand_nom_m3_s_efvc_ 1.csv",
         # input_timeseries_file="gas_demand_nom_m3_s_efvc_kvr_.csv",
     )
 

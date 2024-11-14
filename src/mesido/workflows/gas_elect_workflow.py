@@ -89,7 +89,17 @@ class TargetHeatGoal(Goal):
 #         """
 #         return optimization_problem.state(f"{self.source}.Gas_source_mass_flow")
 
+class SolverCPLEX:
+    def solver_options(self):
+        options = super().solver_options()
+        options["casadi_solver"] = self._qpsol
+        options["solver"] = "cplex"
+        cplex_options = options["cplex"] = {}
+        cplex_options["CPX_PARAM_EPGAP"] = 0.00001
 
+        options["highs"] = None
+
+        return options
 
 class GasElectProblem(
     ScenarioOutput,
