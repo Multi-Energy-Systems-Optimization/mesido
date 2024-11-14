@@ -4,7 +4,8 @@
 - Default database for gas pipe dimensions based on the ASA pipe schedule with thicknesses from the standard class
 
 ## Changed
-- xx
+- Write output to json also saves the solver statistics.
+- Updates in asset conversion from ESDL to pycml; gas and heat pipe split, generic conversion better specified.  
 
 ## Fixed
 - Bugfix: same mip gap settings for all solvers in grow_workflow.
