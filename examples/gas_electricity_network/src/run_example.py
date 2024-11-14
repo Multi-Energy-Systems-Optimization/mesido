@@ -142,8 +142,14 @@ if __name__ == "__main__":
         np.testing.assert_allclose(prod_perc_hp + prod_perc_gb, 1.0)
     
     # Checks 
-    results["Gasboiler_4391.Gas_demand_mass_flow"] / 1000 * 612008.78
-    results["Gasboiler_4391.Heat_flow"]
+    opex_gas =  results["STATION_5__variable_operational_cost"][0] +  results["STATION_10__variable_operational_cost"][0]
+    opex_elect = results["Elec_prod_10__variable_operational_cost"][0] + results["STATION_5__variable_operational_cost"][0] 
+
+    opex_tot = opex_gas + opex_elect
+    print(f"gas:{opex_gas} & elect:{opex_elect} = {opex_tot}")
+
+    # results["Gasboiler_4391.Gas_demand_mass_flow"] / 1000 * 41373333.404736854  # g/s /1000 * J/kg
+    # results["Gasboiler_4391.Heat_flow"]
     kvr= 0.0
         # elec_price_profile = "Elec.price_profile"
         # gas_tranport_cost = sum(
