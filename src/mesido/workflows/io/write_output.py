@@ -7,7 +7,9 @@ import os
 import sys
 import traceback
 import uuid
+from collections import OrderedDict
 from pathlib import Path
+from typing import Dict, Union
 
 import esdl
 from esdl.profiles.influxdbprofilemanager import ConnectionSettings
@@ -23,7 +25,7 @@ import numpy as np
 
 import pandas as pd
 
-
+from rtctools._internal.alias_tools import AliasDict
 from rtctools.optimization.timeseries import Timeseries
 
 
@@ -1491,12 +1493,28 @@ class ScenarioOutput:
         #         )
         #     esh.save(str(filename))
 
-    def _write_json_output(self):
-        # TODO: still add solver stats as json output
-        results = self.extract_results()
+    def _write_json_output(
+        self,
+        results: Union[AliasDict, Dict],
+        parameters: Union[AliasDict, Dict],
+        bounds: Union[AliasDict, Dict],
+        aliases: OrderedDict,
+        solver_stats: Dict,
+    ):
+        """
+        The results, parameters, bounds are saved as json files which can be used for further
+        processing. Aliases are also saved as this allows us to only save the necessary variables.
+        :param results: dictionary or Alias dictionary with the results of the optimization problem
+        :param parameters: dictionary or Alias dictionary with the parameters of the optimization
+        problem
+        :param bounds: dictionary or Alias dictionary with the bounds of the optimization problem
+        :param aliases: Alias dictionary describing all the aliases for the variables used
+        :param solver_stats: solver statistics provided by the solver
+        :return:
+        """
+
         workdir = self.output_folder
 
-        parameters = self.parameters(0)
         parameters_dict = dict()
         parameter_path = os.path.join(workdir, "parameters.json")
         for key, value in parameters.items():
@@ -1505,7 +1523,6 @@ class ScenarioOutput:
         with open(parameter_path, "w") as file:
             json.dump(parameters_dict, fp=file)
 
-        bounds = self.bounds()
         bounds_dict = dict()
         bounds_path = os.path.join(workdir, "bounds.json")
         for key, value in bounds.items():
@@ -1518,7 +1535,6 @@ class ScenarioOutput:
             json.dump(bounds_dict, fp=file)
 
         results_dict = dict()
-
         for key, values in results.items():
             new_value = values.tolist()
             if len(new_value) == 1:
@@ -1531,7 +1547,6 @@ class ScenarioOutput:
 
         # save aliases
         alias_dict = {}
-        aliases = self.alias_relation._canonical_variables_map
         for key, values in aliases.items():
             new_value = values
             alias_dict[key] = new_value
@@ -1539,3 +1554,9 @@ class ScenarioOutput:
         aliases_path = os.path.join(workdir, "aliases.json")
         with open(aliases_path, "w") as file:
             json.dump(alias_dict, fp=file)
+
+        # save solver_stats
+        solver_stats_dict = solver_stats
+        solver_stats_path = os.path.join(workdir, "solver_stats.json")
+        with open(solver_stats_path, "w") as file:
+            json.dump(solver_stats_dict, fp=file)

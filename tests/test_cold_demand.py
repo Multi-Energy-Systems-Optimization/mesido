@@ -1,10 +1,14 @@
 import logging
+import unittest.mock
 from pathlib import Path
 from unittest import TestCase
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.exceptions import MesidoAssetIssueError
+from mesido.potential_errors import MesidoAssetIssueType, PotentialErrors
 from mesido.util import run_esdl_mesido_optimization
+from mesido.workflows.utils.error_types import mesido_issue_type_gen_message
 
 import numpy as np
 
@@ -20,12 +24,12 @@ class TestColdDemand(TestCase):
 
     def test_insufficient_capacity(self):
         """
-        This test checks that the error checks in the code for sufficient installed cool/heatig
-        capacity of a cold/heat demand is sufficient (grow_workflow not used)
+        This test checks that the error checks in the code for sufficient installed cooling
+        capacity of a cold demand is sufficient (grow_workflow not used)
 
         Checks:
-        1. SystemExit is raised
-        2. That the error is due to insufficient heat/cold specified capacities
+        1. Correct error is raised
+        2. That the error is due to insufficient cold specified capacities
 
         """
         import models.wko.src.example as example
@@ -35,7 +39,9 @@ class TestColdDemand(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
-        with self.assertRaises(SystemExit) as cm:
+        with self.assertRaises(MesidoAssetIssueError) as cm, unittest.mock.patch(
+            "mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()
+        ):
             _ = run_esdl_mesido_optimization(
                 HeatProblem,
                 base_folder=base_folder,
@@ -44,19 +50,17 @@ class TestColdDemand(TestCase):
                 profile_reader=ProfileReaderFromFile,
                 input_timeseries_file="timeseries.csv",
             )
-        # Is SystemExit is raised
-        np.testing.assert_array_equal(cm.exception.code, 1)
 
-        # Check that the heat & cold demand had an error
+        # Check that the cold demand had an error
+        np.testing.assert_equal(cm.exception.error_type, MesidoAssetIssueType.COLD_DEMAND_POWER)
         np.testing.assert_equal(
-            logs_list[0].msg == "HeatingDemand_9b90: The installed capacity of 0.05MW should be"
-            " larger than the maximum of the heat demand profile 0.15MW",
-            True,
+            cm.exception.general_issue,
+            mesido_issue_type_gen_message(MesidoAssetIssueType.COLD_DEMAND_POWER),
         )
         np.testing.assert_equal(
-            logs_list[2].msg == "CoolingDemand_15e8: The installed capacity of 0.05MW should be"
-            " larger than the maximum of the heat demand profile 0.15MW",
-            True,
+            cm.exception.message_per_asset_id["15e803b4-1224-4cac-979f-87747a656741"],
+            "Asset named CoolingDemand_15e8: The installed capacity of 0.05MW should be larger"
+            " than the maximum of the heat demand profile 0.15MW",
         )
 
     def test_cold_demand(self):
@@ -257,6 +261,6 @@ class TestColdDemand(TestCase):
 if __name__ == "__main__":
     test_cold_demand = TestColdDemand()
     test_cold_demand.test_insufficient_capacity()
-    test_cold_demand.test_cold_demand()
-    test_cold_demand.test_wko()
-    test_cold_demand.test_airco()
+    # test_cold_demand.test_cold_demand()
+    # test_cold_demand.test_wko()
+    # test_cold_demand.test_airco()

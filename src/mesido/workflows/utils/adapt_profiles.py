@@ -31,17 +31,15 @@ def set_data_with_averages_and_peak_day(
         )
         return
 
-    new_data = list()
+    new_data = []
     data_timestamps = data.times
-    data_datetimes = [
-        problem.io.datetimes[0] + datetime.timedelta(seconds=s) for s in data_timestamps
+    new_date_timestamps = [
+        (new_dt - problem.io.datetimes[0]).total_seconds() for new_dt in new_date_times
     ]
-    assert new_date_times[0] == data_datetimes[0]
-    data_values = data.values
 
     values_for_mean = [0.0]
-    for dt, val in zip(data_datetimes, data_values):
-        if dt in new_date_times:
+    for dt, val in zip(data_timestamps, data.values):
+        if dt in new_date_timestamps:
             new_data.append(np.mean(values_for_mean))
             values_for_mean = [val]
         else:
