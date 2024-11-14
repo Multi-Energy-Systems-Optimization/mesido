@@ -9,6 +9,7 @@ from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.goals.minimize_tco_goal import MinimizeTCO
+from mesido.workflows.grow_workflow import SolverCPLEX, SolverHIGHS
 from mesido.workflows.io.write_output import ScenarioOutput
 from mesido.workflows.gas_elect_workflow import GasElectProblem
 
@@ -23,6 +24,8 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 )
 from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
 from rtctools.util import run_optimization_problem
+
+from mesido.workflows.utils.helpers import run_optimization_problem_solver
 
 root_folder = os.path.join(str(Path(__file__).resolve().parent.parent.parent.parent), "tests")
 sys.path.insert(1, root_folder)
@@ -39,9 +42,10 @@ if __name__ == "__main__":
 
     optimscaling, logger, logs_list = create_problem_with_debug_info(GasElectProblem)
 
-    solution = run_optimization_problem(
+    solution = run_optimization_problem_solver(
         optimscaling,
         # GasElectProblem,
+        solver_class=SolverCPLEX,
         esdl_parser=ESDLFileParser,
         # esdl_file_name="Kapelle_gas_elec_efvc_.esdl",
  

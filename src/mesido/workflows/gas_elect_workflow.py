@@ -1,4 +1,5 @@
 import logging
+import os
 
 import casadi as ca
 
@@ -21,7 +22,8 @@ from rtctools.optimization.goal_programming_mixin import Goal
 from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
 )
-from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
+from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin, \
+    CachingQPSol
 from rtctools.util import run_optimization_problem
 
 logger = logging.getLogger("WarmingUP-MPC")
@@ -103,10 +105,20 @@ class GasElectProblem(
 
         self._number_of_years = 30.0
 
+        # variables for solver settings
+        self._qpsol = CachingQPSol()
+
+        self._save_json = True
+
         # self.heat_network_settings["minimize_head_losses"] = False
 
     # def times(self, variable=None) -> np.ndarray:
     #     return super().times(variable)[:5]  # same lenght as the demand profile data in the csv
+
+    def pre(self):
+        self._qpsol = CachingQPSol()
+
+        super().pre()
 
     def energy_system_options(self):
         options = super().energy_system_options()
@@ -118,18 +130,18 @@ class GasElectProblem(
         self.gas_network_settings["minimum_velocity"] = 0.0
         self.gas_network_settings["maximum_velocity"] = 15.0 # 30.0
 
-        # self.gas_network_settings["n_linearization_lines"] = 3
-        # self.gas_network_settings["minimize_head_losses"] = False
-        # self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
+        self.gas_network_settings["n_linearization_lines"] = 3
+        self.gas_network_settings["minimize_head_losses"] = False
+        self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
 
-        self.gas_network_settings["minimize_head_losses"] = True
-        self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
-
+        # self.gas_network_settings["minimize_head_losses"] = True
+        # self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
 
         return options
 
     def solver_options(self):
         options = super().solver_options()
+        options["casadi_solver"] = self._qpsol
         options["solver"] = "highs"
         highs_options = options["highs"] = {}
         highs_options["mip_abs_gap"] = 1.0e-6  #0.00001  # 0.001 did not work
@@ -207,6 +219,10 @@ class GasElectProblem(
     #         constraints.append((power_consumed, 0.0, 0.0))
 
     #     return constraints
+
+    def post(self):
+        if os.path.exists(self.output_folder) and self._save_json:
+            self._write_json_output()
 
 
 @main_decorator
