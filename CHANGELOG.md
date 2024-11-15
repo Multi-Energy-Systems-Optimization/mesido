@@ -1,4 +1,15 @@
-# [Unreleased] - 2024-11-11
+# [Unreleased] - 2024-11-15
+
+## Added
+- xx
+
+## Changed
+- xx
+
+## Fixed
+- xx
+
+# [0.1.8.2] - 2024-11-15
 
 ## Added
 - xx
@@ -11,7 +22,7 @@
 - Bugfix: head loss test case when minimum_velocity = 0.0
 
 
-# [0.1.8] - 2024-11-07
+# [0.1.8 & 0.1.8.1] - 2024-11-07
 
 ## Added
 - Added MESIDO error exception class to raise applicable potential errors in a workflow & include required info for feedback in the mapeditor
