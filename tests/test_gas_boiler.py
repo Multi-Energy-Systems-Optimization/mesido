@@ -47,6 +47,12 @@ class TestGasBoiler(TestCase):
         np.testing.assert_array_less(0.0, results["GasProducer_82ec.Gas_source_mass_flow"])
         np.testing.assert_array_less(
             parameters["GasHeater_f713.internal_energy"]
-            * results["GasHeater_f713.GasIn.mass_flow"],
+            * results["GasHeater_f713.GasIn.mass_flow"] / 1000.0,  # [J/kg] * [g/s] / 1000.0 = [J/s]
             results["GasHeater_f713.Heat_source"] + 1.0e-6,
         )
+
+
+if __name__ == "__main__":
+
+    a = TestGasBoiler()
+    a.test_gas_boiler()

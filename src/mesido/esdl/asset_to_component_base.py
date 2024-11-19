@@ -495,12 +495,9 @@ class _AssetToComponentBase:
         if asset.in_ports is not None and asset.asset_type != "Electrolyzer":
             for port in asset.in_ports:
                 convert_density_units = 1.0
-                if not isinstance(port.carrier, esdl.HeatCommodity):
-                    convert_density_units = 1.0e3  # convert g/m3 to kg/m3 if needed
                 energy_reference_j_kg = 1.0
                 if not isinstance(port.carrier, esdl.HeatCommodity):
                     convert_density_units = 1.0e3  # convert g/m3 to kg/m3 if needed
-                    # energy_reference_j_kg = get_internal_energy(asset.name, port.carrier)
                     energy_reference_j_kg = get_energy_content(asset.name, port.carrier)
                 else:
                     # heat_value / rho * minimum_dT => [J/m3K] / [kg/m3] * 1.0 [K] => [J/kg]
@@ -532,7 +529,6 @@ class _AssetToComponentBase:
                 energy_reference_j_kg = 1.0
                 if not isinstance(port.carrier, esdl.HeatCommodity):
                     convert_density_units = 1.0e3  # convert g/m3 to kg/m3 if needed
-                    # energy_reference_j_kg = get_internal_energy(asset.name, port.carrier)
                     energy_reference_j_kg = get_energy_content(asset.name, port.carrier)
                 else:
                     # heat_value / rho * minimum_dT => [J/m3K] / [kg/m3] * 1.0 [K] => [J/kg]
@@ -752,7 +748,6 @@ class _AssetToComponentBase:
                     energy_reference_j_kg = 1.0
                     if not isinstance(port.carrier, esdl.HeatCommodity):
                         convert_density_units = 1.0e3  # convert g/m3 to kg/m3 if needed
-                        # energy_reference_j_kg = get_internal_energy(asset.name, port.carrier)
                         energy_reference_j_kg = get_energy_content(asset.name, port.carrier)
                     else:
                         # heat_value / rho * minimum_dT => [J/m3K] / [kg/m3] * 1.0 [K] => [J/kg]
@@ -782,7 +777,6 @@ class _AssetToComponentBase:
                     energy_reference_j_kg = 1.0
                     if not isinstance(port.carrier, esdl.HeatCommodity):
                         convert_density_units = 1.0e3  # convert g/m3 to kg/m3 if needed
-                        # energy_reference_j_kg = get_internal_energy(asset.name, port.carrier)
                         energy_reference_j_kg = get_energy_content(asset.name, port.carrier)
                     else:
                         # heat_value / rho * minimum_dT => [J/m3K] / [kg/m3] * 1.0 [K] => [J/kg]
@@ -812,7 +806,6 @@ class _AssetToComponentBase:
                     energy_reference_j_kg = 1.0
                     if not isinstance(port.carrier, esdl.HeatCommodity):
                         convert_density_units = 1.0e3  # convert g/m3 to kg/m3 if needed
-                        # energy_reference_j_kg = get_internal_energy(asset.name, port.carrier)
                         energy_reference_j_kg = get_energy_content(asset.name, port.carrier)
                     else:
                         # heat_value / rho * minimum_dT => [J/m3K] / [kg/m3] * 1.0 [K] => [J/kg]
@@ -847,7 +840,6 @@ class _AssetToComponentBase:
                         if isinstance(port.carrier, esdl.GasCommodity):
                             nominal_string += "_gas"
                             convert_density_units = 1.0e3  # convert g/m3 to kg/m3 if needed
-                            # energy_reference_j_kg = get_internal_energy(asset.name, port.carrier)
                             energy_reference_j_kg = get_energy_content(asset.name, port.carrier)
                         elif isinstance(port.carrier, esdl.HeatCommodity):
                             # heat_value / rho * minimum_dT => [J/m3K] / [kg/m3] * 1.0 [K] => [J/kg]
@@ -890,7 +882,6 @@ class _AssetToComponentBase:
                             # note rho -> gas/hydrogen g/m3, heat kg/m3
                             get_density(asset.name, port.carrier)
                             * get_energy_content(asset.name, port.carrier)
-                            # * get_internal_energy(asset.name, port.carrier)
                             / 1.0e3
                         )
                     )
