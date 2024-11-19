@@ -20,6 +20,7 @@ class GasNode(GasComponent, BaseAsset):
 
         self.n = 2
         assert self.n >= 2
+        self.carrier_id = -1
 
         self.add_variable(GasPort, "GasConn", self.n)
         self.add_variable(Variable, "H", min=0.0)
@@ -29,3 +30,6 @@ class GasNode(GasComponent, BaseAsset):
 
         # Because the orientation of the connected pipes are important to setup the mass
         # conservation, these constraints are added in the mixin.
+
+        for i in range(1, self.n + 1):
+            self.GasConn[i].carrier_id = self.carrier_id
