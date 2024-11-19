@@ -1,12 +1,8 @@
 import logging
 import os
 
-import casadi as ca
-
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
-from mesido.esdl.esdl_parser import ESDLFileParser
-from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.goals.minimize_tco_goal import MinimizeTCO
@@ -22,8 +18,10 @@ from rtctools.optimization.goal_programming_mixin import Goal
 from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
 )
-from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin, \
-    CachingQPSol
+from rtctools.optimization.single_pass_goal_programming_mixin import (
+    CachingQPSol,
+    SinglePassGoalProgrammingMixin,
+)
 from rtctools.util import run_optimization_problem
 
 logger = logging.getLogger("WarmingUP-MPC")
@@ -51,46 +49,6 @@ class TargetHeatGoal(Goal):
         return optimization_problem.state(self.state)
 
 
-# class MinimizeSourcesHeatGoal(Goal):
-#     """
-#     A minimization goal for source milp production. We use order 1 here as we want to minimize milp
-#     over the full horizon and not per time-step.
-#     """
-
-#     priority = 3
-
-#     order = 1
-
-#     def __init__(self, source: str):
-#         """
-#         The constructor of the goal.
-
-#         Parameters
-#         ----------
-#         source : string of the source name that is going to be minimized
-#         """
-#         self.source = source
-
-#     def function(
-#         self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
-#     ) -> ca.MX:
-#         """
-#         This function returns the state variable to which should to be matched to the target
-#         specified in the __init__.
-
-#         Parameters
-#         ----------
-#         optimization_problem : The optimization class containing the variables'.
-#         ensemble_member : the ensemble member.
-
-#         Returns
-#         -------
-#         The Heat_source state of the optimization problem.
-#         """
-#         return optimization_problem.state(f"{self.source}.Gas_source_mass_flow")
-
-
-
 class GasElectProblem(
     ScenarioOutput,
     ESDLAdditionalVarsMixin,
@@ -103,33 +61,27 @@ class GasElectProblem(
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._number_of_years = 30.0
+        self._number_of_years = 1.0
 
         # variables for solver settings
         self._qpsol = CachingQPSol()
 
         self._save_json = True
 
-        # self.heat_network_settings["minimize_head_losses"] = False
-
-    # def times(self, variable=None) -> np.ndarray:
-    #     return super().times(variable)[:5]  # same lenght as the demand profile data in the csv
-
-    def pre(self):
-        self._qpsol = CachingQPSol()
-
-        super().pre()
-
     def energy_system_options(self):
         options = super().energy_system_options()
         options["neglect_pipe_heat_losses"] = True
         options["include_electric_cable_power_loss"] = False
+        # TODO: determine why no heat pump (case with heat pumps & boilers) is used when pwer
+        # losses are included
         # options["include_electric_cable_power_loss"] = True
 
         # Setting when started with head loss inclusions
         self.gas_network_settings["minimum_velocity"] = 0.0
-        self.gas_network_settings["maximum_velocity"] = 15.0 # 30.0
+        self.gas_network_settings["maximum_velocity"] = 15.0
 
+        # TODO: resolve scaling and potential other issues preventing HIGHS to optimize the system
+        # when LINEARIZED_N_LINES_EQUALITY head loss setting is used
         # self.gas_network_settings["n_linearization_lines"] = 3
         # self.gas_network_settings["minimize_head_losses"] = False
         # self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
@@ -144,27 +96,29 @@ class GasElectProblem(
         options["casadi_solver"] = self._qpsol
         options["solver"] = "highs"
         highs_options = options["highs"] = {}
-        highs_options["mip_abs_gap"] = 1.0e-6  #0.00001  # 0.001 did not work
-        # highs_options["presolve"] = "off"
+        highs_options["mip_abs_gap"] = 1.0e-6
 
         return options
-    # max velo reduction, remove ratio, new demands in more peak period of the day 
+
     def pre(self):
         super().pre()
-        # Convert gas demand m3/h to heat demand in watts
-        # gas demand (Nm3/s) * 31.68 (LCV value) * 10^6 (J/m3) = xxx (J/s), nominal values at 1bar, 273.15K
-        # Assume operating pressure at 5bar T=10degr, so ratio is 3.62 / 0.8331kg/m3 to get actual
-        # values
-        # Actual gas demand = xxx * ratio_nominal_to_operating = yyy (J/s)
-        # ratio_nominal_to_operating = 0.8331 / 3.62  # need a density calc function to automate this
-        # An efficiency of 80% is assumed for the gas boiler
-        # Heat demand = yyy * 0.8 (Watt or J/s)
+
+        self._qpsol = CachingQPSol()
+
+        # Convert gas demand Nm3/h (data in timeseries source file) to heat demand in watts
+        # Assumumption:
+        #   - gas heating value (LCV value) = 31.68 * 10^6 (J/m3) at 1bar, 273.15K
+        #   - gas boiler efficiency 80%
+        # TODO: setup a standard way for gas usage and automate the link to heating value & boiler
+        # efficiency (if needed)
         for demand in self.energy_system_components["heat_demand"]:
             target = self.get_timeseries(f"{demand}.target_heat_demand")
 
-            # Manually set Demand
+            # Manually set heating demand values
+            boiler_efficiency = 0.8
+            gas_heating_value_joule_m3 = 31.68 * 10**6
             for ii in range(len(target.values)):
-                target.values[ii] *= 31.68 * 10**6 * 0.8
+                target.values[ii] *= gas_heating_value_joule_m3 * boiler_efficiency
 
             self.io.set_timeseries(
                 f"{demand}.target_heat_demand",
@@ -172,11 +126,6 @@ class GasElectProblem(
                 target.values,
                 0,
             )
-            # Check for myself
-            if max(self.get_timeseries(f"{demand}.target_heat_demand").values) > 190.0*10**3:
-            # if max(self.get_timeseries(f"{demand}.target_heat_demand").values) > 5.0e6:
-                temp = 0.0
-                exit("demand issue")
 
     def parameters(self, ensemble_member):
         parameters = super().parameters(ensemble_member)
@@ -200,17 +149,15 @@ class GasElectProblem(
 
             goals.append(TargetHeatGoal(state, target))
 
-            # temporary code - Min gas usage
-            # for s in self.energy_system_components["gas_source"]:
-            #     goals.append(MinimizeSourcesHeatGoal(s))
         return goals
 
     def goals(self):
         goals = super().goals().copy()
-        goals.append(MinimizeTCO(priority=2, number_of_years=1.0))
+        goals.append(MinimizeTCO(priority=2, number_of_years=self._number_of_years))
 
         return goals
-    # Do not delete. Temporary code to deactivate the heat pumps
+
+    # Do not delete. Temporary code to deactivate the heat pumps. Use for manual test/checking
     # def path_constraints(self, ensemble_member):
     #     constraints = super().path_constraints(ensemble_member)
 

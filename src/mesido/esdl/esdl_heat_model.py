@@ -75,7 +75,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         rho=988.0,
         cp=4200.0,
         min_fraction_tank_volume=0.05,
-        v_max_gas=15.0, #15.0, # kvr kvr
+        v_max_gas=15.0,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
