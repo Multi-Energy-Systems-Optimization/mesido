@@ -291,6 +291,8 @@ class TestHydraulicPower(TestCase):
         results = solution.extract_results()
         parameters = solution.parameters(0)
 
+        demand_matching_test(solution, results)
+
         pipe = "Pipe_4abc"
         pipe_hp_in = results[f"{pipe}.GasIn.Hydraulic_power"]
         pipe_hp_out = results[f"{pipe}.GasOut.Hydraulic_power"]
@@ -370,7 +372,6 @@ class TestHydraulicPower(TestCase):
         np.testing.assert_allclose(pipe_hp[1], a[1] * results[f"{pipe}.GasOut.Q"][1] + b[1])
         np.testing.assert_allclose(pipe_hp[2], a[2] * results[f"{pipe}.GasOut.Q"][2] + b[2])
 
-        demand_matching_test(solution, results)
 
     def test_hydraulic_power_gas_multi_demand(self):
         """
