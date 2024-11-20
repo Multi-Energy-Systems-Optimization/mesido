@@ -2289,7 +2289,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
         for port in asset.in_ports:
             if isinstance(port.carrier, esdl.GasCommodity):
                 density = get_density(asset.name, port.carrier)
-                # internal_energy = get_internal_energy(asset.name, port.carrier)
                 internal_energy = get_energy_content(asset.name, port.carrier)
 
         # TODO: CO2 coefficient
