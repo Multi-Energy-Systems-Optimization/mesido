@@ -74,8 +74,8 @@ class HeatPython(
     def solver_options(self):
         options = super().solver_options()
         options["highs"] = options_highs = {}
-        # options_highs["presolve"] = "off"  # kvr check something
-        # options_highs["solver"] = "ipm"
+        options_highs["presolve"] = "off"
+        options_highs["solver"] = "ipm"
         return options
 
     def bounds(self):
