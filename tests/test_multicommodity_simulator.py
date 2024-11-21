@@ -672,7 +672,7 @@ class TestMultiCommoditySimulator(TestCase):
         results_unstaged_bounded_win = solution_unstaged_bounded_win.extract_results()
 
         np.testing.assert_allclose(
-            results_staged_bounded["Battery_4688.Stored_electricity"][20],
+            results_staged_bounded["Battery_4688.Stored_electricity"][19],
             results_unstaged_bounded_win["Battery_4688.Stored_electricity"][-1],
         )
 
