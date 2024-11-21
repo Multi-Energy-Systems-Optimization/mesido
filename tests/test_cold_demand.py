@@ -8,13 +8,20 @@ from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.exceptions import MesidoAssetIssueError
 from mesido.potential_errors import MesidoAssetIssueType, PotentialErrors
 from mesido.util import run_esdl_mesido_optimization
+from mesido.workflows.utils.adapt_profiles import (
+    adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
+)
 from mesido.workflows.utils.error_types import mesido_issue_type_gen_message
 
+
 import numpy as np
+
+import pandas as pd
 
 from utils_test_scaling import create_log_list_scaling
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
+
 
 logger = logging.getLogger("WarmingUP-MPC")
 logger.setLevel(logging.INFO)
@@ -257,10 +264,229 @@ class TestColdDemand(TestCase):
         )
         # ------------------------------------------------------------------------------------------
 
+    def test_heat_cold_demand_peak_overlap(self):
+        """
+        This is a demand parsing and time series discretization test.
+        It checks whether the timeseries are discretized correctly in presence of
+        a cold and heat demand. This case runs a heat and cold demand case where
+        both peaks are on the same day.
+        """
+        import models.wko.src.example as example
+        from models.wko.src.example import HeatProblem
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        class DiscretizationProblem(HeatProblem):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.day_steps = 1
+
+            def read(self):
+                super().read()
+
+                (
+                    self.__indx_max_peak,
+                    self.__heat_demand_nominal,
+                    self.__cold_demand_nominal,
+                ) = adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(
+                    self,
+                    self.day_steps,
+                )
+
+        heat_problem = run_esdl_mesido_optimization(
+            DiscretizationProblem,
+            base_folder=base_folder,
+            esdl_file_name="heatpump_airco_time_parsing.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_peak_overlap.csv",
+        )
+        results = heat_problem.extract_results()
+
+        cold_demand_timeseries = heat_problem.get_timeseries(
+            "CoolingDemand_15e8.target_cold_demand"
+        )
+        heat_demand_timeseries = heat_problem.get_timeseries(
+            "HeatingDemand_9b90.target_heat_demand"
+        )
+        max_cold_idx = np.argmax(cold_demand_timeseries.values)
+        max_heat_idx = np.argmax(heat_demand_timeseries.values)
+
+        # Check that the resulting discretized series are the correct size.
+        np.testing.assert_equal(len(cold_demand_timeseries.times), 27)
+        np.testing.assert_equal(len(heat_demand_timeseries.times), 27)
+
+        # Check that the peak hour is at the correct location after discretization.
+        np.testing.assert_equal(max_cold_idx, 25)
+        np.testing.assert_equal(max_heat_idx, 9)
+
+        # Check that the peak day array is the same as the raw input after discretization.
+        csv_path = base_folder / "input/timeseries_peak_overlap.csv"
+        raw_demand_data = pd.read_csv(csv_path)
+        cold_demand_raw_list = np.array(raw_demand_data["CoolingDemand_15e8"])
+        heat_demand_raw_list = np.array(raw_demand_data["HeatingDemand_9b90"])
+        np.testing.assert_array_equal(
+            cold_demand_raw_list[24:47], cold_demand_timeseries.values[2:25]
+        )
+        np.testing.assert_array_equal(
+            heat_demand_raw_list[24:47], heat_demand_timeseries.values[2:25]
+        )
+
+        demand_matching_test(heat_problem, results)
+        energy_conservation_test(heat_problem, results)
+        heat_to_discharge_test(heat_problem, results)
+
+    def test_heat_cold_demand_peak_back_to_back(self):
+        """
+        This is a demand parsing and time series discretization test.
+        It checks whether the timeseries are discretized correctly in presence of
+        a cold and heat demand. This case runs a heat and cold demand case where
+        both peaks are on consecutive days.
+        """
+        import models.wko.src.example as example
+        from models.wko.src.example import HeatProblem
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        class DiscretizationProblem(HeatProblem):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.day_steps = 1
+
+            def read(self):
+                super().read()
+
+                (
+                    self.__indx_max_peak,
+                    self.__heat_demand_nominal,
+                    self.__cold_demand_nominal,
+                ) = adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(
+                    self,
+                    self.day_steps,
+                )
+
+        heat_problem = run_esdl_mesido_optimization(
+            DiscretizationProblem,
+            base_folder=base_folder,
+            esdl_file_name="heatpump_airco_time_parsing.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_peak_back_to_back.csv",
+        )
+        results = heat_problem.extract_results()
+
+        cold_demand_timeseries = heat_problem.get_timeseries(
+            "CoolingDemand_15e8.target_cold_demand"
+        )
+        heat_demand_timeseries = heat_problem.get_timeseries(
+            "HeatingDemand_9b90.target_heat_demand"
+        )
+        max_cold_idx = np.argmax(cold_demand_timeseries.values)
+        max_heat_idx = np.argmax(heat_demand_timeseries.values)
+
+        # Check that the resulting discretized series are the correct size.
+        np.testing.assert_equal(len(cold_demand_timeseries.times), 50)
+        np.testing.assert_equal(len(heat_demand_timeseries.times), 50)
+
+        # Check that the peak hour is at the correct location after discretization.
+        np.testing.assert_equal(max_cold_idx, 44)
+        np.testing.assert_equal(max_heat_idx, 11)
+
+        # Check that the peak day array is the same as the raw input after discretization.
+        csv_path = base_folder / "input/timeseries_peak_back_to_back.csv"
+        raw_demand_data = pd.read_csv(csv_path)
+        cold_demand_raw_list = np.array(raw_demand_data["CoolingDemand_15e8"])
+        heat_demand_raw_list = np.array(raw_demand_data["HeatingDemand_9b90"])
+        np.testing.assert_array_equal(
+            cold_demand_raw_list[48:72], cold_demand_timeseries.values[26:50]
+        )
+        np.testing.assert_array_equal(
+            heat_demand_raw_list[24:47], heat_demand_timeseries.values[2:25]
+        )
+
+        demand_matching_test(heat_problem, results)
+        energy_conservation_test(heat_problem, results)
+        heat_to_discharge_test(heat_problem, results)
+
+    def test_heat_cold_peak_before(self):
+        """
+        This is a demand parsing and time series discretization test.
+        It checks whether the timeseries are discretized correctly in presence of
+        a cold and heat demand. This case runs a heat and cold demand case where
+        the cold peak happens before the heat one.
+        """
+        import models.wko.src.example as example
+        from models.wko.src.example import HeatProblem
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        class DiscretizationProblem(HeatProblem):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.day_steps = 1
+
+            def read(self):
+                super().read()
+
+                (
+                    _,
+                    _,
+                    _,
+                ) = adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(
+                    self,
+                    self.day_steps,
+                )
+
+        heat_problem = run_esdl_mesido_optimization(
+            DiscretizationProblem,
+            base_folder=base_folder,
+            esdl_file_name="heatpump_airco_time_parsing.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_cold_peak_before.csv",
+        )
+        results = heat_problem.extract_results()
+
+        cold_demand_timeseries = heat_problem.get_timeseries(
+            "CoolingDemand_15e8.target_cold_demand"
+        )
+        heat_demand_timeseries = heat_problem.get_timeseries(
+            "HeatingDemand_9b90.target_heat_demand"
+        )
+        max_cold_idx = np.argmax(cold_demand_timeseries.values)
+        max_heat_idx = np.argmax(heat_demand_timeseries.values)
+
+        # Check that the resulting discretized series are the correct size.
+        np.testing.assert_equal(len(cold_demand_timeseries.times), 50)
+        np.testing.assert_equal(len(heat_demand_timeseries.times), 50)
+
+        # Check that the peak hour is at the correct location after discretization.
+        np.testing.assert_equal(max_cold_idx, 17)
+        np.testing.assert_equal(max_heat_idx, 38)
+
+        # Check that the peak day array is the same as the raw input after discretization.
+        csv_path = base_folder / "input/timeseries_cold_peak_before.csv"
+        raw_demand_data = pd.read_csv(csv_path)
+        cold_demand_raw_list = np.array(raw_demand_data["CoolingDemand_15e8"])
+        heat_demand_raw_list = np.array(raw_demand_data["HeatingDemand_9b90"])
+        np.testing.assert_array_equal(
+            cold_demand_raw_list[24:48], cold_demand_timeseries.values[2:26]
+        )
+        np.testing.assert_array_equal(
+            heat_demand_raw_list[48:75], heat_demand_timeseries.values[26:50]
+        )
+
+        demand_matching_test(heat_problem, results)
+        energy_conservation_test(heat_problem, results)
+        heat_to_discharge_test(heat_problem, results)
+
 
 if __name__ == "__main__":
     test_cold_demand = TestColdDemand()
     test_cold_demand.test_insufficient_capacity()
-    # test_cold_demand.test_cold_demand()
-    # test_cold_demand.test_wko()
-    # test_cold_demand.test_airco()
+    test_cold_demand.test_cold_demand()
+    test_cold_demand.test_wko()
+    test_cold_demand.test_airco()
+    test_cold_demand.test_heat_cold_demand_peak_overlap()
+    test_cold_demand.test_heat_cold_demand_peak_back_to_back()
+    test_cold_demand.test_heat_cold_peak_before()

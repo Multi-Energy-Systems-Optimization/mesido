@@ -2,4 +2,5 @@ recursive-include src/mesido/modelica/WarmingUp *
 include versioneer.py
 include src/mesido/_version.py
 include src/mesido/esdl/_edr_pipes.json
+include src/mesido/esdl/_gas_pipe_database.json
 include additional_info_for_license.txt

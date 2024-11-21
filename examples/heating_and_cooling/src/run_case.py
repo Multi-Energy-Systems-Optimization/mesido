@@ -57,7 +57,8 @@ class HeatColdDemand(TestCase):
             def read(self):
                 super().read()
 
-                # Set the peak of the heating demand since the specified proifle is normalized to 1
+                # Set the peak of the heating demand since the specified profile is normalized to 1
+
                 for d in self.energy_system_components["heat_demand"]:
                     target = self.get_timeseries(f"{d}.target_heat_demand")
                     for ii in range(len(target.values)):
@@ -117,6 +118,7 @@ class HeatColdDemand(TestCase):
                 #     discharged. -> WKO in cooling mode
                 #   - Volume decrease: Cold well is being charged and the hot well is being
                 #     discharged. -> WKO in heating mode
+
                 for ates_id in self.energy_system_components.get("low_temperature_ates", []):
                     stored_volume = self.state_vector(f"{ates_id}.Stored_volume")
                     volume_usage = 0.0
