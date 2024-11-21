@@ -686,5 +686,6 @@ if __name__ == "__main__":
     a.test_multi_commodity_simulator_prod_profile()
     a.test_multi_commodity_simulator_emerge()
     a.test_multi_commodity_simulator_emerge_lowprod()
+    a.test_multi_commodity_simulator_sequential_staged()
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
