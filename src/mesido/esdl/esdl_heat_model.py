@@ -559,8 +559,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         Required ESDL fields:
         ---------------------
-        - Diameter/inner_diameter
-        - length
+        - Diameter/inner_diameter [m]
+        - length [m]
         - id (this id must be unique)
         - name (this name must be unique)
         - xsi:type
@@ -594,6 +594,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
         length = asset.attributes["length"]
         if length < 25.0:
             length = 25.0
+            logger.warning(
+                f"{asset.name} was shorter then the minimum length, thus is set to "
+                f"{length} meter"
+            )
 
         id_mapping = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
             "id_number_mapping"
@@ -616,7 +620,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
             density=density,
             diameter=diameter,
             pressure=pressure,
-            # disconnectable=self._is_disconnectable_pipe(asset),  # still to be added
+            # disconnectable=self._is_disconnectable_pipe(asset),
+            # TODO: disconnectable option for gaspipes needs to be added.
             GasIn=bounds_nominals,
             GasOut=bounds_nominals,
             state=self.get_state(asset),
@@ -643,8 +648,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         Required ESDL fields:
         ---------------------
-        - Diameter/inner_diameter
-        - length
+        - Diameter/inner_diameter [m]
+        - length [m]
         - id (this id must be unique)
         - name (this name must be unique)
         - xsi:type
@@ -680,6 +685,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
         length = asset.attributes["length"]
         if length < 25.0:
             length = 25.0
+            logger.warning(
+                f"{asset.name} was shorter then the minimum length, thus is set to "
+                f"{length} meter"
+            )
 
         (
             diameter,
@@ -810,12 +819,20 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         return Pump, modifiers
 
-    def convert_generic_conversion(self, asset: Asset):
+    def convert_generic_conversion(
+        self, asset: Asset
+    ) -> Tuple[Union[Type[Transformer], Type[HeatExchanger]], MODIFIERS]:
         """
         This function determines the type to which the generic conversion should be changed, based
         on the connected commodities and calls the required conversion function.
-        :param asset: The asset object with its properties.
-        :return:
+
+        Parameters
+        ----------
+        asset: The asset object with its properties.
+
+        Returns
+        -------
+        Transformer class or HeatExchanger class with modifiers
         """
 
         assert asset.asset_type in {
@@ -1822,7 +1839,11 @@ class AssetToHeatComponent(_AssetToComponentBase):
         min_voltage = asset.in_ports[0].carrier.voltage
         max_current = max_power / min_voltage
         self._set_electricity_current_nominal_and_max(asset, max_current / 2.0, max_current)
-        length = asset.attributes["length"] if asset.attributes["length"] != 0.0 else 10.0
+
+        length = asset.attributes["length"]
+        if length == 0.0:
+            length = 10.0
+            logger.warning(f"{asset.name} had a length of 0.0m, thus is set to " f"{length} meter")
         res_ohm_per_m = self._cable_get_resistance(asset)
         res_ohm = res_ohm_per_m * length
 
