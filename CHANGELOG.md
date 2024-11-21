@@ -1,10 +1,10 @@
-# [Unreleased-main] - 2024-11-15
+# [Unreleased-main] - 2024-11-21
 
 ## Added
 - Default database for gas pipe dimensions based on the ASA pipe schedule with thicknesses from the standard class
 
 ## Changed
-- xx
+- Adapt profiles for heating and cooling peak day seperately & add test case
 
 ## Fixed
 - Bugfix: same mip gap settings for all solvers in grow_workflow.
