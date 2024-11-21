@@ -1,18 +1,31 @@
-# [Unreleased] - 2024-11-11
+# [Unreleased-main] - 2024-11-21
 
 ## Added
 - Default database for gas pipe dimensions based on the ASA pipe schedule with thicknesses from the standard class
 
 ## Changed
 - Write output to json also saves the solver statistics.
-- Updates in asset conversion from ESDL to pycml; gas and heat pipe split, generic conversion better specified.  
+- Updates in asset conversion from ESDL to pycml; gas and heat pipe split, generic conversion better specified.
+- Adapt profiles for heating and cooling peak day seperately & add test case
+
+## Fixed
+- Bugfix: same mip gap settings for all solvers in grow_workflow.
+- Bugfix: head loss test case when minimum_velocity = 0.0
+
+# [0.1.8.2] - 2024-11-15
+
+## Added
+- xx
+
+## Changed
+- xx
 
 ## Fixed
 - Bugfix: same mip gap settings for all solvers in grow_workflow.
 - Bugfix: head loss test case when minimum_velocity = 0.0
 
 
-# [0.1.8] - 2024-11-07
+# [0.1.8 & 0.1.8.1] - 2024-11-07
 
 ## Added
 - Added MESIDO error exception class to raise applicable potential errors in a workflow & include required info for feedback in the mapeditor

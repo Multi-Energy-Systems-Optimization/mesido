@@ -10,6 +10,7 @@ from rtctools.util import run_optimization_problem
 
 
 class TestESDLParsing(unittest.TestCase):
+
     def test_from_string_and_from_file_are_equal(self):
         """
         This test checks if we load the model for the electrolyzer test case
