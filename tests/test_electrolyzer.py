@@ -496,3 +496,13 @@ class TestElectrolyzer(TestCase):
             0.0,
             atol=1e-4,
         )
+
+
+if __name__ == "__main__":
+
+    a = TestElectrolyzer()
+    a.test_electrolyzer_inequality()
+    a.test_electrolyzer_minimum_power()
+    a.test_electrolyzer_constant_efficiency()
+    a.test_electrolyzer_equality_constraint()
+    a.test_electrolyzer_equality_constraint_inactive_line()

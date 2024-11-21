@@ -83,13 +83,15 @@ def get_internal_energy(asset_name, carrier):
         )
         # TODO: resolve heating value (default value below) vs internal energy values (above)
         internal_energy = 46.0e6  # natural gas at about 1 bar [J/kg] heating value
-    return internal_energy # [J/kg]
+    return internal_energy  # [J/kg]
 
 
 def get_energy_content(asset_name, carrier) -> float:
     # Return the heating value
     energy_content_j_kg = 0.0  # [J/kg]
-    density_kg_m3 = get_density(asset_name, carrier, 1.0e5) / 1000.0
+    density_kg_m3 = get_density(
+        asset_name, carrier, temperature_degrees_celsius=20.0, pressure_pa=1.0e5
+    ) / 1000.0
     if str(NetworkSettings.NETWORK_TYPE_GAS).upper() in str(carrier.name).upper():
         # Groningen gas: 31,68 MJ/m3 LCV
         energy_content_j_kg = 31.68 * 10.0**6 / density_kg_m3  # LCV / lower heating value
@@ -103,27 +105,25 @@ def get_energy_content(asset_name, carrier) -> float:
     return energy_content_j_kg
 
 
-def get_density(asset_name, carrier, specified_pressure_pa=0.0):
+def get_density(asset_name, carrier, temperature_degrees_celsius=20.0, pressure_pa=None):
     # TODO: gas carrier temperature still needs to be resolved.
-    # The default of 20°C is also used in the head_loss_class. Thus, when updating ensure it
-    # is also updated in the head_loss_class.
-    temperature = 20.0
-    pressure_pa = 0.0
-    if specified_pressure_pa == 0.0:
+    # The default for temperature_degrees_celsius=20.0, this should be the same as the value (20°C)
+    # used in the head_loss_class for the calculation of the friction factor
+    # (linked to _kinematic_viscosity). Thus, when updating the default value of
+    # temperature_degrees_celsius ensure it is also updated in the head_loss_class.
+    if pressure_pa is None:
         if str(NetworkSettings.NETWORK_TYPE_HEAT).upper() in str(carrier.name).upper():
             pressure_pa = 1.0e5  # 1bar
         else:
             pressure_pa = carrier.pressure * 1.0e5  # convert bar to Pa
-    elif specified_pressure_pa > 0.0:
-        pressure_pa = specified_pressure_pa
-    elif specified_pressure_pa < 0.0 or pressure_pa == 0.0:
+    elif pressure_pa < 0.0:
         raise logger.error("The pressure should be > 0.0 to calculate density")
 
     if NetworkSettings.NETWORK_TYPE_GAS in carrier.name:
         density = cP.CoolProp.PropsSI(
             "D",
             "T",
-            273.15 + temperature,
+            273.15 + temperature_degrees_celsius,
             "P",
             pressure_pa,
             NetworkSettings.NETWORK_COMPOSITION_GAS,
@@ -132,7 +132,7 @@ def get_density(asset_name, carrier, specified_pressure_pa=0.0):
         density = cP.CoolProp.PropsSI(
             "D",
             "T",
-            273.15 + temperature,
+            273.15 + temperature_degrees_celsius,
             "P",
             pressure_pa,
             str(NetworkSettings.NETWORK_TYPE_HYDROGEN).upper(),
@@ -141,7 +141,7 @@ def get_density(asset_name, carrier, specified_pressure_pa=0.0):
         density = cP.CoolProp.PropsSI(
             "D",
             "T",
-            273.15 + temperature,
+            273.15 + temperature_degrees_celsius,
             "P",
             pressure_pa,
             "INCOMP::Water",
@@ -495,12 +495,9 @@ class _AssetToComponentBase:
         if asset.in_ports is not None and asset.asset_type != "Electrolyzer":
             for port in asset.in_ports:
                 convert_density_units = 1.0
-                if not isinstance(port.carrier, esdl.HeatCommodity):
-                    convert_density_units = 1.0e3  # convert g/m3 to kg/m3 if needed
                 energy_reference_j_kg = 1.0
                 if not isinstance(port.carrier, esdl.HeatCommodity):
                     convert_density_units = 1.0e3  # convert g/m3 to kg/m3 if needed
-                    # energy_reference_j_kg = get_internal_energy(asset.name, port.carrier)
                     energy_reference_j_kg = get_energy_content(asset.name, port.carrier)
                 else:
                     # heat_value / rho * minimum_dT => [J/m3K] / [kg/m3] * 1.0 [K] => [J/kg]
@@ -532,7 +529,6 @@ class _AssetToComponentBase:
                 energy_reference_j_kg = 1.0
                 if not isinstance(port.carrier, esdl.HeatCommodity):
                     convert_density_units = 1.0e3  # convert g/m3 to kg/m3 if needed
-                    # energy_reference_j_kg = get_internal_energy(asset.name, port.carrier)
                     energy_reference_j_kg = get_energy_content(asset.name, port.carrier)
                 else:
                     # heat_value / rho * minimum_dT => [J/m3K] / [kg/m3] * 1.0 [K] => [J/kg]
@@ -752,7 +748,6 @@ class _AssetToComponentBase:
                     energy_reference_j_kg = 1.0
                     if not isinstance(port.carrier, esdl.HeatCommodity):
                         convert_density_units = 1.0e3  # convert g/m3 to kg/m3 if needed
-                        # energy_reference_j_kg = get_internal_energy(asset.name, port.carrier)
                         energy_reference_j_kg = get_energy_content(asset.name, port.carrier)
                     else:
                         # heat_value / rho * minimum_dT => [J/m3K] / [kg/m3] * 1.0 [K] => [J/kg]
@@ -782,7 +777,6 @@ class _AssetToComponentBase:
                     energy_reference_j_kg = 1.0
                     if not isinstance(port.carrier, esdl.HeatCommodity):
                         convert_density_units = 1.0e3  # convert g/m3 to kg/m3 if needed
-                        # energy_reference_j_kg = get_internal_energy(asset.name, port.carrier)
                         energy_reference_j_kg = get_energy_content(asset.name, port.carrier)
                     else:
                         # heat_value / rho * minimum_dT => [J/m3K] / [kg/m3] * 1.0 [K] => [J/kg]
@@ -812,7 +806,6 @@ class _AssetToComponentBase:
                     energy_reference_j_kg = 1.0
                     if not isinstance(port.carrier, esdl.HeatCommodity):
                         convert_density_units = 1.0e3  # convert g/m3 to kg/m3 if needed
-                        # energy_reference_j_kg = get_internal_energy(asset.name, port.carrier)
                         energy_reference_j_kg = get_energy_content(asset.name, port.carrier)
                     else:
                         # heat_value / rho * minimum_dT => [J/m3K] / [kg/m3] * 1.0 [K] => [J/kg]
@@ -847,7 +840,6 @@ class _AssetToComponentBase:
                         if isinstance(port.carrier, esdl.GasCommodity):
                             nominal_string += "_gas"
                             convert_density_units = 1.0e3  # convert g/m3 to kg/m3 if needed
-                            # energy_reference_j_kg = get_internal_energy(asset.name, port.carrier)
                             energy_reference_j_kg = get_energy_content(asset.name, port.carrier)
                         elif isinstance(port.carrier, esdl.HeatCommodity):
                             # heat_value / rho * minimum_dT => [J/m3K] / [kg/m3] * 1.0 [K] => [J/kg]
@@ -890,7 +882,6 @@ class _AssetToComponentBase:
                             # note rho -> gas/hydrogen g/m3, heat kg/m3
                             get_density(asset.name, port.carrier)
                             * get_energy_content(asset.name, port.carrier)
-                            # * get_internal_energy(asset.name, port.carrier)
                             / 1.0e3
                         )
                     )

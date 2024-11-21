@@ -75,7 +75,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         rho=988.0,
         cp=4200.0,
         min_fraction_tank_volume=0.05,
-        v_max_gas=15.0, #15.0, # kvr kvr
+        v_max_gas=15.0,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
@@ -1823,8 +1823,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         ]
         # DO not remove due usage in future
         # hydrogen_specfic_energy = 20.0 / 1.0e6
-        # specific_energy = get_internal_energy(asset.name, asset.in_ports[0].carrier) / 10
-        specific_energy = get_energy_content(asset.name, asset.in_ports[0].carrier) / 10  # J/kg
+        specific_energy = get_energy_content(asset.name, asset.in_ports[0].carrier)  # J/kg
         # TODO: the value being used is the internal energy and not the HHV (higher
         #  heating value) for hydrogen, therefore it does not represent the energy per weight.
         #  This still needs to be updated
@@ -1897,10 +1896,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
         q_nominal = self._get_connected_q_nominal(asset)
         density_value = get_density(asset.name, asset.out_ports[0].carrier)
         pressure = asset.out_ports[0].carrier.pressure * 1.0e5
-        specific_energy = (
-            # get_internal_energy(asset.name, asset.out_ports[0].carrier) / 10
-            get_energy_content(asset.name, asset.out_ports[0].carrier) / 10
-        )  # J/kg #TODO: is not the HHV for hydrogen, so is off
+        # J/kg #TODO: is not the HHV for hydrogen, so is off
+        specific_energy = get_energy_content(asset.name, asset.out_ports[0].carrier)
         # [g/s] = [J/s] * [J/kg]^-1 *1000
         max_mass_flow_g_per_s = asset.attributes["power"] / specific_energy * 1000.0
 
@@ -2292,7 +2289,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
         for port in asset.in_ports:
             if isinstance(port.carrier, esdl.GasCommodity):
                 density = get_density(asset.name, port.carrier)
-                # internal_energy = get_internal_energy(asset.name, port.carrier)
                 internal_energy = get_energy_content(asset.name, port.carrier)
 
         # TODO: CO2 coefficient
