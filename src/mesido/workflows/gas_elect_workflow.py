@@ -49,44 +49,6 @@ class TargetHeatGoal(Goal):
         return optimization_problem.state(self.state)
 
 
-# class MinimizeSourcesHeatGoal(Goal):
-#     """
-#     A minimization goal for source milp production. We use order 1 here as we want to minimize milp
-#     over the full horizon and not per time-step.
-#     """
-
-#     priority = 3
-
-#     order = 1
-
-#     def __init__(self, source: str):
-#         """
-#         The constructor of the goal.
-
-#         Parameters
-#         ----------
-#         source : string of the source name that is going to be minimized
-#         """
-#         self.source = source
-
-#     def function(
-#         self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
-#     ) -> ca.MX:
-#         """
-#         This function returns the state variable to which should to be matched to the target
-#         specified in the __init__.
-
-#         Parameters
-#         ----------
-#         optimization_problem : The optimization class containing the variables'.
-#         ensemble_member : the ensemble member.
-
-#         Returns
-#         -------
-#         The Heat_source state of the optimization problem.
-#         """
-#         return optimization_problem.state(f"{self.source}.Gas_source_mass_flow")
-
 class SolverCPLEX:
     def solver_options(self):
         options = super().solver_options()
@@ -98,6 +60,7 @@ class SolverCPLEX:
         options["highs"] = None
 
         return options
+
 
 class GasElectProblem(
     ScenarioOutput,
@@ -112,9 +75,6 @@ class GasElectProblem(
         super().__init__(*args, **kwargs)
 
         self._number_of_years = 1.0
-
-        # variables for solver settings
-        self._qpsol = CachingQPSol()
 
         self._save_json = True
 
@@ -150,10 +110,8 @@ class GasElectProblem(
 
         return options
 
-    def pre(self):
-        super().pre()
-
-        self._qpsol = CachingQPSol()
+    def read(self):
+        super().read()
 
         # Convert gas demand Nm3/h (data in timeseries source file) to heat demand in watts
         # Assumumption:
@@ -176,6 +134,12 @@ class GasElectProblem(
                 target.values,
                 0,
             )
+
+    def pre(self):
+        super().pre()
+
+        # variables for solver settings
+        self._qpsol = CachingQPSol()
 
     def parameters(self, ensemble_member):
         parameters = super().parameters(ensemble_member)

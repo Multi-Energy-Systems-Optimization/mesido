@@ -1034,7 +1034,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
 
         for es in self.energy_system_components.get("electricity_source", []):
-            elec_produced_w = self.__state_vector_scaled( 
+            elec_produced_w = self.__state_vector_scaled(
                 f"{es}.Electricity_source", ensemble_member
             )
             variable_operational_cost_var = self._asset_variable_operational_cost_map[es]

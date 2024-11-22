@@ -459,7 +459,7 @@ class TestHydraulicPower(TestCase):
             v_inspect_line_ind = []
             v_points = np.array(v_points)
             for k in range(len(v_inspect)):
-                idx = (v_points < v_inspect[k] + 1e-6)
+                idx = v_points < v_inspect[k] + 1e-6
                 v_inspect_line_ind.append(np.where(idx)[0][-1])
 
             ind_check = 0
@@ -468,25 +468,22 @@ class TestHydraulicPower(TestCase):
                     v_inspect_line_ind[k] == v_inspect_line_ind[k + 1]
                     and v_inspect_line_ind[k] == 0
                 ):  # use simple ratio calc
-                    if (pipe_mass[k] > 0):
+                    if pipe_mass[k] > 0:
                         np.testing.assert_allclose(
                             pipe_hp[k] * pipe_mass[k + 1] / pipe_mass[k], pipe_hp[k + 1]
                         )
                     elif pipe_mass[k] == 0:
-                        np.testing.assert_array_less(
-                            0.0, pipe_hp[k + 1]
-                        )
+                        np.testing.assert_array_less(0.0, pipe_hp[k + 1])
                     elif pipe_mass[k] < 0:
-                        raise RuntimeWarning(
-                            "The mass flow cannot be negative for this test case"
-                        )
+                        raise RuntimeWarning("The mass flow cannot be negative for this test case")
                 elif (
-                    v_inspect_line_ind[k] == v_inspect_line_ind[k + 1] and v_inspect_line_ind[k] > 0
+                    v_inspect_line_ind[k] == v_inspect_line_ind[k + 1]
+                    and v_inspect_line_ind[k] > 0
                     and k > 0
                 ):
                     # use fact that the extrapolated value will be smaller than the value on the
                     # next line
-                    if (pipe_mass[k - 1] > 0):
+                    if pipe_mass[k - 1] > 0:
                         np.testing.assert_array_less(
                             pipe_hp[k - 1] * pipe_mass[k + 1] / pipe_mass[k - 1], pipe_hp[k + 1]
                         )
@@ -494,44 +491,32 @@ class TestHydraulicPower(TestCase):
                             pipe_hp[k - 1] * pipe_mass[k] / pipe_mass[k - 1], pipe_hp[k]
                         )
                     elif pipe_mass[k - 1] == 0:
-                        np.testing.assert_array_less(
-                            0.0, pipe_hp[k + 1]
-                        )
+                        np.testing.assert_array_less(0.0, pipe_hp[k + 1])
                     elif pipe_mass[k] < 0:
-                        raise RuntimeWarning(
-                            "The mass flow cannot be negative for this test case"
-                        )
+                        raise RuntimeWarning("The mass flow cannot be negative for this test case")
                 elif (
-                    v_inspect_line_ind[k] == v_inspect_line_ind[k + 1] and v_inspect_line_ind[k] > 0
+                    v_inspect_line_ind[k] == v_inspect_line_ind[k + 1]
+                    and v_inspect_line_ind[k] > 0
                     and k == 0
                 ):
                     # use fact that the extrapolated value will be larger on the same line
-                    if (pipe_mass[k] > 0):
+                    if pipe_mass[k] > 0:
                         np.testing.assert_array_less(
                             pipe_hp[k] * pipe_mass[k + 1] / pipe_mass[k], pipe_hp[k + 1]
                         )
-
                     elif pipe_mass[k] == 0:
-                        np.testing.assert_array_less(
-                            0.0, pipe_hp[k + 1]
-                        )
+                        np.testing.assert_array_less(0.0, pipe_hp[k + 1])
                     elif pipe_mass[k] < 0:
-                        raise RuntimeWarning(
-                            "The mass flow cannot be negative for this test case"
-                        )
+                        raise RuntimeWarning("The mass flow cannot be negative for this test case")
                 elif v_inspect_line_ind[k] < v_inspect_line_ind[k + 1]:
-                    if (pipe_mass[k] > 0):
+                    if pipe_mass[k] > 0:
                         np.testing.assert_array_less(
                             (pipe_hp[k]) * pipe_mass[k + 1] / pipe_mass[k], pipe_hp[k + 1]
                         )
                     elif pipe_mass[k] == 0:
-                        np.testing.assert_array_less(
-                            0.0, pipe_hp[k + 1]
-                        )
+                        np.testing.assert_array_less(0.0, pipe_hp[k + 1])
                     elif pipe_mass[k] < 0:
-                        raise RuntimeWarning(
-                            "The mass flow cannot be negative for this test case"
-                        )
+                        raise RuntimeWarning("The mass flow cannot be negative for this test case")
                     ind_check += 1
                 else:
                     raise RuntimeWarning(

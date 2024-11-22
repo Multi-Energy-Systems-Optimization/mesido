@@ -1,38 +1,15 @@
-import os
-import sys
-from pathlib import Path
+# Note: The commented out items are requried for the manual checks/print outs below in this file
+# import os
+# import sys
+# from pathlib import Path
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
-from mesido.head_loss_class import HeadLossOption
-from mesido.techno_economic_mixin import TechnoEconomicMixin
-from mesido.workflows.goals.minimize_tco_goal import MinimizeTCO
-from mesido.workflows.io.write_output import ScenarioOutput
-from mesido.workflows.gas_elect_workflow import GasElectProblem, SolverCPLEX
-
-import numpy as np
-
-from rtctools.optimization.collocated_integrated_optimization_problem import (
-    CollocatedIntegratedOptimizationProblem,
-)
-from rtctools.optimization.goal_programming_mixin import Goal
-from rtctools.optimization.linearized_order_goal_programming_mixin import (
-    LinearizedOrderGoalProgrammingMixin,
-)
-from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
-from rtctools.util import run_optimization_problem
-
 from mesido.workflows.gas_elect_workflow import GasElectProblem
-
 from mesido.workflows.utils.helpers import run_optimization_problem_solver
 
-# import numpy as np
-
-root_folder = os.path.join(str(Path(__file__).resolve().parent.parent.parent.parent), "tests")
-sys.path.insert(1, root_folder)
-
-from utils_test_scaling import create_problem_with_debug_info
-# from utils_test_scaling import problem_scaling_check
+# root_folder = os.path.join(str(Path(__file__).resolve().parent.parent.parent.parent), "tests")
+# sys.path.insert(1, root_folder)
 
 # from utils_tests import (
 #     demand_matching_test,
@@ -46,21 +23,12 @@ if __name__ == "__main__":
 
     start_time = time.time()
 
-    optimscaling, logger, logs_list = create_problem_with_debug_info(GasElectProblem)
-
     solution = run_optimization_problem_solver(
-        optimscaling,
-        # GasElectProblem,
-        # solver_class=SolverCPLEX,
+        GasElectProblem,
         esdl_parser=ESDLFileParser,
-        # esdl_file_name="Kapelle_gas_elec_efvc_.esdl",
-        # esdl_file_name="Kapelle_gas_elec_efvc_kvr_partial_pipes_network.esdl",
-        # esdl_file_name="Kapelle_gas_elec_efvc_kvr_partial_direct_network.esdl",
-        # esdl_file_name="Kapelle_gas_elec_efvc_kvr_complete_direct_network.esdl"
-        esdl_file_name="Kapelle_gas_elec_efvc_kvr_partial_direct_network_without_e_limit.esdl",
+        esdl_file_name="Example_gas_elec.esdl",
         profile_reader=ProfileReaderFromFile,
-        input_timeseries_file="gas_demand_nom_m3_s_efvc_ 1.csv",
-        # input_timeseries_file="gas_demand_nom_m3_s_efvc_kvr_.csv",
+        input_timeseries_file="Example_gas_demand_nom_m3_s.csv",
     )
 
     results = solution.extract_results()
@@ -68,8 +36,6 @@ if __name__ == "__main__":
     # ----------------------------------------------------------------------------------------------
     # Do not delete the code below: manual checking and testing of values + usefull prints to
     # terminal
-
-    # problem_scaling_check(logs_list, logger)
 
     # demand_matching_test(solution, results)
     # energy_conservation_test(solution, results)
@@ -104,9 +70,11 @@ if __name__ == "__main__":
     # # Check elect power demand vs production balance
     # electric_power_conservation_test(solution, results)
 
-    # # Check OPEX costs
+    # Check OPEX costs
     # np.testing.assert_allclose(
-    #     sum(results["STATION_5.Gas_source_mass_flow"][1:] * 0.0037926 * np.diff(solution.times())),
+    #     sum(
+    #         results["STATION_5.Gas_source_mass_flow"][1:] * 0.0037926 * np.diff(solution.times())
+    #     ),
     #     results["STATION_5__variable_operational_cost"][0],
     # )
     # np.testing.assert_allclose(
@@ -120,7 +88,9 @@ if __name__ == "__main__":
     #     atol=1e-10,
     # )
     # np.testing.assert_allclose(
-    #     sum(results["STATION_10.Gas_source_mass_flow"][1:] * 0.0037926 * np.diff(solution.times())),
+    #     sum(
+    #         results["STATION_10.Gas_source_mass_flow"][1:] * 0.0037926 * np.diff(solution.times())
+    #     ),
     #     results["STATION_10__variable_operational_cost"][0],
     # )
     # np.testing.assert_allclose(
@@ -156,7 +126,7 @@ if __name__ == "__main__":
     # opex_elect = (
     #     results["Elec_prod_10__variable_operational_cost"][0]
     #     + results["Elec_prod_5__variable_operational_cost"][0]
-    # ) 
+    # )
     # opex_tot = opex_gas + opex_elect
     # print(f"OPEX for gas:{opex_gas} + elect:{opex_elect} = total OPEX {opex_tot}")
 

@@ -8,7 +8,6 @@ from mesido.esdl.asset_to_component_base import (
     MODIFIERS,
     _AssetToComponentBase,
     get_density,
-    get_internal_energy,
     get_energy_content,
 )
 from mesido.esdl.common import Asset
@@ -2290,7 +2289,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         for port in asset.in_ports:
             if isinstance(port.carrier, esdl.GasCommodity):
                 density = get_density(asset.name, port.carrier)
-                internal_energy = get_energy_content(asset.name, port.carrier)
+                energy_content = get_energy_content(asset.name, port.carrier)
 
         # TODO: CO2 coefficient
 
@@ -2314,7 +2313,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             HeatOut=dict(Hydraulic_power=dict(nominal=q_nominals["Q_nominal"] * 16.0e5)),
             id_mapping_carrier=id_mapping,
             density=density,
-            internal_energy=internal_energy,
+            energy_content=energy_content,
             GasIn=dict(Q=dict(min=0.0, nominal=q_nominals["Q_nominal_gas"])),
             **q_nominals,
             **self._supply_return_temperature_modifiers(asset),

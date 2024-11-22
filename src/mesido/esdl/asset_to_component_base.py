@@ -89,14 +89,16 @@ def get_internal_energy(asset_name, carrier):
 def get_energy_content(asset_name, carrier) -> float:
     # Return the heating value
     energy_content_j_kg = 0.0  # [J/kg]
-    density_kg_m3 = get_density(
-        asset_name, carrier, temperature_degrees_celsius=20.0, pressure_pa=1.0e5
-    ) / 1000.0
+    density_kg_m3 = (
+        get_density(asset_name, carrier, temperature_degrees_celsius=20.0, pressure_pa=1.0e5)
+        / 1000.0
+    )
     if str(NetworkSettings.NETWORK_TYPE_GAS).upper() in str(carrier.name).upper():
         # Groningen gas: 31,68 MJ/m3 LCV
         energy_content_j_kg = 31.68 * 10.0**6 / density_kg_m3  # LCV / lower heating value
     elif str(NetworkSettings.NETWORK_TYPE_HYDROGEN).upper() in str(carrier.name).upper():
-        # this value can be lower / higher heating value depending on the case
+        # This value can be lower / higher heating value depending on the case
+        # Currently the lower heating value is used below (120.0 MJ/kg)
         energy_content_j_kg = 120.0 * 10.0**6 / density_kg_m3
     else:
         raise logger.error(
@@ -113,7 +115,7 @@ def get_density(asset_name, carrier, temperature_degrees_celsius=20.0, pressure_
     # temperature_degrees_celsius ensure it is also updated in the head_loss_class.
     if pressure_pa is None:
         if str(NetworkSettings.NETWORK_TYPE_HEAT).upper() in str(carrier.name).upper():
-            pressure_pa = 1.0e5  # 1bar
+            pressure_pa = 16.0e5  # 16bar is expected to be the upper limit in networks
         else:
             pressure_pa = carrier.pressure * 1.0e5  # convert bar to Pa
     elif pressure_pa < 0.0:
