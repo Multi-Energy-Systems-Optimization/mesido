@@ -214,9 +214,9 @@ class _AssetToComponentBase:
         "HeatProducer": "heat_source",
         "Import": "import",
         "ResidualHeatSource": "heat_source",
-        "GenericConversion": "heat_exchanger",
+        "GenericConversion": "generic_conversion",
         "Joint": "node",
-        "Pipe": "heat_pipe",
+        "Pipe": "pipe",
         "Pump": "pump",
         "PressureReducingValve": "gas_substation",
         "PVInstallation": "electricity_source",
@@ -224,6 +224,7 @@ class _AssetToComponentBase:
         "Sensor": "skip",
         "Valve": "control_valve",
         "WindPark": "electricity_source",
+        "WindTurbine": "electricity_source",
         "Transformer": "transformer",
         "CheckValve": "check_valve",
     }
@@ -432,8 +433,9 @@ class _AssetToComponentBase:
 
         Returns
         -------
-        resistance
+        resistance [ohm/m]
         """
+
         default_res = 1e-6
         material = asset.attributes["material"]
         el_conductivity = None

@@ -30,7 +30,7 @@ class ElectricityCable(ElectricityTwoPort, BaseAsset):
         self.max_voltage = self.min_voltage * 2.0
         self.nominal_current = nan
         self.nominal_voltage = nan
-        self.r = 1.0e-6 * self.length  # TODO: temporary value
+        self.r = nan
         self.nominal_voltage_loss = (self.nominal_current * self.r * self.nominal_voltage) ** 0.5
         self.power_loss_nominal = self.r * self.max_current * self.nominal_current
         # We accept lower accuracy in the loss computation to improve scaling in case the nominals

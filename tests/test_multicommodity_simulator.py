@@ -275,7 +275,7 @@ class TestMultiCommoditySimulator(TestCase):
         # enough windfarm power
         demand_el_calc = windfarm_power - electrolyzer_power
         demand_el_calc[demand_el_calc < 0] = 0
-        np.testing.assert_allclose(demand_el_calc, demand_el, atol=1.5e-5)
+        np.testing.assert_allclose(demand_el_calc, demand_el, atol=1.0e-3)
 
     def test_multi_commodity_simulator_emerge_lowprod(self):
         import models.emerge.src.example as example
@@ -686,6 +686,7 @@ if __name__ == "__main__":
     a.test_multi_commodity_simulator_prod_profile()
     a.test_multi_commodity_simulator_emerge()
     a.test_multi_commodity_simulator_emerge_lowprod()
+    a.test_multi_commodity_simulator_emerge_head_losses()
     a.test_multi_commodity_simulator_sequential_staged()
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

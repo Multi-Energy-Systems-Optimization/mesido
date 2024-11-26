@@ -522,6 +522,114 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         return Node, modifiers
 
+    def convert_pipe(self, asset: Asset) -> Tuple[Union[Type[HeatPipe], Type[GasPipe]], MODIFIERS]:
+        """
+        This function converts the pipe object in esdl to a set of modifiers that can be used in
+        a pycml object. Most important, it checks whether it should be converted to a gas or heat
+        pipe based on the connected commodity.
+        :param asset: The asset object with its properties.
+        :return:
+        """
+
+        assert asset.asset_type == "Pipe"
+
+        if isinstance(asset.in_ports[0].carrier, esdl.esdl.GasCommodity):
+            return self.convert_gas_pipe(asset)
+        elif isinstance(asset.in_ports[0].carrier, esdl.esdl.HeatCommodity):
+            return self.convert_heat_pipe(asset)
+        else:
+            logger.error(
+                f"{asset.name} is of type {asset.asset_type} but is connected with a commodity of "
+                f"type {str(type(asset.in_ports[0].carrier))}, while only the commodities Heat and "
+                f"Gas are allowed"
+            )
+
+    def convert_gas_pipe(
+        self, asset: Asset
+    ) -> Tuple[Union[Type[HeatPipe], Type[GasPipe]], MODIFIERS]:
+        """
+        This function converts the pipe object in esdl to a set of modifiers that can be used in
+        a pycml object. Most important:
+
+        - Setting the dimensions of the pipe needed for head loss computation.
+        - setting if a pipe is disconnecteable for the optimization.
+        - Setting the state (enabled, disabled, optional)
+        - Setting the relevant pressure.
+        - Setting the relevant cost figures.
+
+        Required ESDL fields:
+        ---------------------
+        - Diameter/inner_diameter [m]
+        - length [m]
+        - id (this id must be unique)
+        - name (this name must be unique)
+        - xsi:type
+        - State
+        - InPort and OutPort with (note only one inport and one outport):
+            - xsi:type
+            - id
+            - name
+            - connectedTo
+            - carrier with temperature specified
+
+        Optional ESDL fields:
+        ---------------------
+        - technicalLifetime
+        - CostInformation: discountRate
+        - CostInformation: marginalCost
+        - CostInformation: installationCost
+        - CostInformation: investmentCost
+        - CostInformation: fixedOperationalCost
+        - CostInformation: variableOperationalCost
+
+        Parameters
+        ----------
+        asset : The asset object with its properties.
+
+        Returns
+        -------
+        Pipe class with modifiers
+        """
+
+        length = asset.attributes["length"]
+        if length < 25.0:
+            length = 25.0
+            logger.warning(
+                f"{asset.name} was shorter then the minimum length, thus is set to "
+                f"{length} meter"
+            )
+
+        id_mapping = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
+            "id_number_mapping"
+        ]
+        (diameter, wall_roughness) = self._gas_pipe_get_diameter_and_roughness(asset)
+        q_nominal = math.pi * diameter**2 / 4.0 * self.v_max_gas / 2.0
+        self._set_q_nominal(asset, q_nominal)
+        q_max = math.pi * diameter**2 / 4.0 * self.v_max_gas
+        self._set_q_max(asset, q_max)
+        pressure = asset.in_ports[0].carrier.pressure * 1.0e5
+        density = get_density(asset.name, asset.in_ports[0].carrier)
+        bounds_nominals = dict(
+            Q=dict(min=-q_max, max=q_max, nominal=q_nominal),
+            mass_flow=dict(min=-q_max * density, max=q_max * density, nominal=q_nominal * density),
+            Hydraulic_power=dict(nominal=q_nominal * pressure),
+        )
+        modifiers = dict(
+            id_mapping_carrier=id_mapping,
+            length=length,
+            density=density,
+            diameter=diameter,
+            pressure=pressure,
+            # disconnectable=self._is_disconnectable_pipe(asset),
+            # TODO: disconnectable option for gaspipes needs to be added.
+            GasIn=bounds_nominals,
+            GasOut=bounds_nominals,
+            state=self.get_state(asset),
+            **self._get_cost_figure_modifiers(asset),
+        )
+
+        return GasPipe, modifiers
+
     def convert_heat_pipe(
         self, asset: Asset
     ) -> Tuple[Union[Type[HeatPipe], Type[GasPipe]], MODIFIERS]:
@@ -540,8 +648,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         Required ESDL fields:
         ---------------------
-        - Diameter/inner_diameter
-        - length
+        - Diameter/inner_diameter [m]
+        - length [m]
         - id (this id must be unique)
         - name (this name must be unique)
         - xsi:type
@@ -577,46 +685,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
         length = asset.attributes["length"]
         if length < 25.0:
             length = 25.0
+            logger.warning(
+                f"{asset.name} was shorter then the minimum length, thus is set to "
+                f"{length} meter"
+            )
 
         (
             diameter,
             insulation_thicknesses,
             conductivies_insulation,
         ) = self._pipe_get_diameter_and_insulation(asset)
-
-        id_mapping = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
-            "id_number_mapping"
-        ]
-
-        if isinstance(asset.in_ports[0].carrier, esdl.esdl.GasCommodity):
-            (diameter, wall_roughness) = self._gas_pipe_get_diameter_and_roughness(asset)
-            q_nominal = math.pi * diameter**2 / 4.0 * self.v_max_gas / 2.0
-            self._set_q_nominal(asset, q_nominal)
-            q_max = math.pi * diameter**2 / 4.0 * self.v_max_gas
-            self._set_q_max(asset, q_max)
-            pressure = asset.in_ports[0].carrier.pressure * 1.0e5
-            density = get_density(asset.name, asset.in_ports[0].carrier)
-            bounds_nominals = dict(
-                Q=dict(min=-q_max, max=q_max, nominal=q_nominal),
-                mass_flow=dict(
-                    min=-q_max * density, max=q_max * density, nominal=q_nominal * density
-                ),
-                Hydraulic_power=dict(nominal=q_nominal * pressure),
-            )
-            modifiers = dict(
-                id_mapping_carrier=id_mapping,
-                length=length,
-                density=density,
-                diameter=diameter,
-                pressure=pressure,
-                # disconnectable=self._is_disconnectable_pipe(asset),  # still to be added
-                GasIn=bounds_nominals,
-                GasOut=bounds_nominals,
-                state=self.get_state(asset),
-                **self._get_cost_figure_modifiers(asset),
-            )
-
-            return GasPipe, modifiers
 
         temperature_modifiers = self._supply_return_temperature_modifiers(asset)
 
@@ -740,6 +818,44 @@ class AssetToHeatComponent(_AssetToComponentBase):
         )
 
         return Pump, modifiers
+
+    def convert_generic_conversion(
+        self, asset: Asset
+    ) -> Tuple[Union[Type[Transformer], Type[HeatExchanger]], MODIFIERS]:
+        """
+        This function determines the type to which the generic conversion should be changed, based
+        on the connected commodities and calls the required conversion function.
+
+        Parameters
+        ----------
+        asset: The asset object with its properties.
+
+        Returns
+        -------
+        Transformer class or HeatExchanger class with modifiers
+        """
+
+        assert asset.asset_type in {
+            "GenericConversion",
+        }
+
+        if isinstance(asset.in_ports[0].carrier, esdl.ElectricityCommodity) and isinstance(
+            asset.out_ports[0].carrier, esdl.ElectricityCommodity
+        ):
+            return self.convert_transformer(asset)
+        elif isinstance(asset.in_ports[0].carrier, esdl.HeatCommodity) and isinstance(
+            asset.out_ports[0].carrier, esdl.HeatCommodity
+        ):
+            return self.convert_heat_exchanger(asset)
+        else:
+            logger.error(
+                f"{asset.name} is of type {asset.asset_type} which is currently only "
+                f"supported as a heat exchanger or an electric transformer, thus either "
+                f"heat commodities or electricity commodities need to be connected to the "
+                f"ports. Currently the connected commodities are of type, "
+                f"{str(type(asset.in_ports[0].carrier))} and "
+                f"{str(type(asset.out_ports[0].carrier))}"
+            )
 
     def convert_heat_exchanger(self, asset: Asset) -> Tuple[Type[HeatExchanger], MODIFIERS]:
         """
@@ -1536,7 +1652,13 @@ class AssetToHeatComponent(_AssetToComponentBase):
         -------
         ElectricitySource class with modifiers
         """
-        assert asset.asset_type in {"ElectricityProducer", "WindPark", "PVInstallation", "Import"}
+        assert asset.asset_type in {
+            "ElectricityProducer",
+            "WindPark",
+            "WindTurbine",
+            "PVInstallation",
+            "Import",
+        }
 
         max_supply = asset.attributes.get(
             "power", math.inf
@@ -1557,7 +1679,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         if asset.asset_type in ["ElectricityProducer", "Import"]:
             return ElectricitySource, modifiers
-        if asset.asset_type == "WindPark":
+        if asset.asset_type in ["WindPark", "WindTurbine"]:
             return WindPark, modifiers
         if asset.asset_type == "PVInstallation":
             return SolarPV, modifiers
@@ -1718,12 +1840,20 @@ class AssetToHeatComponent(_AssetToComponentBase):
         max_current = max_power / min_voltage
         self._set_electricity_current_nominal_and_max(asset, max_current / 2.0, max_current)
 
+        length = asset.attributes["length"]
+        if length == 0.0:
+            length = 10.0
+            logger.warning(f"{asset.name} had a length of 0.0m, thus is set to " f"{length} meter")
+        res_ohm_per_m = self._cable_get_resistance(asset)
+        res_ohm = res_ohm_per_m * length
+
         modifiers = dict(
             max_current=max_current,
             min_voltage=min_voltage,
             nominal_current=max_current / 2.0,
             nominal_voltage=min_voltage,
-            length=asset.attributes["length"],
+            length=length,
+            r=res_ohm,
             ElectricityOut=dict(
                 V=dict(min=min_voltage, nominal=min_voltage),
                 I=dict(min=-max_current, max=max_current, nominal=max_current / 2.0),
@@ -1754,7 +1884,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         -------
         ElectricityCable class with modifiers
         """
-        assert asset.asset_type in {"Transformer"}
+        assert asset.asset_type in {"Transformer", "GenericConversion"}
         self._get_connected_i_nominal_and_max(asset)
         i_max_in, i_nom_in, i_max_out, i_nom_out = self._get_connected_i_nominal_and_max(asset)
         min_voltage_in = asset.in_ports[0].carrier.voltage
