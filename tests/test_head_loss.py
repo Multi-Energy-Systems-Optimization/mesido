@@ -54,6 +54,13 @@ class TestHeadLoss(TestCase):
                 #       optimizer_sim=True,
                 #   )
 
+                def solver_options(self):
+                    options = super().solver_options()
+                    options["highs"] = options_highs = {}
+                    options_highs["presolve"] = "off"
+                    options_highs["solver"] = "choose"
+                    return options
+
                 def energy_system_options(self):
                     options = super().energy_system_options()
 
@@ -271,6 +278,17 @@ class TestHeadLoss(TestCase):
 
             # Added for case where head loss is modelled via DW
             class SourcePipeSinkDW(SourcePipeSink):
+
+                def solver_options(self):
+                    options = super().solver_options()
+                    # options["solver"] = "cbc"
+                    options["highs"] = options_highs = {}
+                    options_highs["presolve"] = "on"
+                    options_highs["solver"] = "choose"
+                    # options_highs["run_crossover"] = "off"
+
+                    return options
+
                 def energy_system_options(self):
                     options = super().energy_system_options()
 
@@ -297,9 +315,9 @@ class TestHeadLoss(TestCase):
                             options["neglect_pipe_heat_losses"] = True
                         elif counter_linearized_n_lines_weak_ineq_runs == 2:
                             ...
-                            # Do not delete. This reminds the dev that different min velo value
-                            # with min velo = default value (>0.0), instead of specifying a value
-                            # here
+                        # Do not delete. This reminds the dev that different min velo value
+                        # with min velo = default value (>0.0), instead of specifying a value
+                        # here
 
                     return options
 

@@ -34,7 +34,11 @@ class Model(_Model):
         )
 
         self.add_variable(
-            HeatDemand, "demand", HeatIn=dict(Heat=dict(max=5e5)), **supply_return_modifiers
+            HeatDemand,
+            "demand",
+            HeatIn=dict(Heat=dict(max=5e5, nominal=2.5e5)),
+            Heat_demand=dict(nominal=2.5e5),
+            **supply_return_modifiers,
         )
 
         self.add_variable(
@@ -66,6 +70,7 @@ class Model(_Model):
         )
 
         self.add_variable(ControlInput, "Heat_source", value=self.source.Heat_source)
+        # self.add_variable(ControlInput, "Heat_demand", value=self.demand.Heat_demand)
 
         self.connect(self.source.HeatOut, self.pipe_hot.HeatIn)
         self.connect(self.pipe_hot.HeatOut, self.demand.HeatIn)
