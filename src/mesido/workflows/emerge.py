@@ -205,10 +205,14 @@ class EmergeWorkFlow(
 
         self._save_json = False
 
-        if os.path.exists(self.output_folder) and self._save_json:
-            self._write_json_output()
-
         results = self.extract_results()
+
+        if os.path.exists(self.output_folder) and self._save_json:
+            parameters = self.parameters(0)
+            bounds = self.bounds()
+            aliases = self.alias_relation._canonical_variables_map
+            solver_stats = self.solver_stats
+            self._write_json_output(results, parameters, bounds, aliases, solver_stats)
 
         for _type, assets in self.energy_system_components.items():
             for asset in assets:
