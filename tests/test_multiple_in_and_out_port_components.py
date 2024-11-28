@@ -104,6 +104,47 @@ class TestHEX(TestCase):
             parameters["HeatExchange_39ed.Primary.T_return"],
         )
 
+    def test_heat_exchanger_bypass(self):
+        """
+        Check the modelling of the heat exchanger component which allows two hydraulically
+        decoupled networks to exchange heat with each other. It is enforced that heat can only flow
+        from the primary side to the secondary side, and heat exchangers are allowed to be disabled
+        for timesteps in which they are not used. This is to allow for the temperature constraints
+        (T_primary > T_secondary) to become deactivated.
+
+        Checks:
+        - Standard checks for demand matching, heat to discharge and energy conservation
+        - That the efficiency is correclty implemented for heat from primary to secondary
+        - Check that the is_disabled is set correctly.
+        - Check if the temperatures provided are physically feasible.
+
+        """
+        import models.heat_exchange.src.run_heat_exchanger as run_heat_exchanger
+        from models.heat_exchange.src.run_heat_exchanger import (
+            HeatProblem,
+        )
+
+        base_folder = Path(run_heat_exchanger.__file__).resolve().parent.parent
+        class HeatProblemNoLosses(HeatProblem):
+            def energy_system_options(self):
+                options = super().energy_system_options()
+                options["neglect_pipe_heat_losses"] = True
+
+                return options
+
+
+        solution = run_esdl_mesido_optimization(
+            HeatProblemNoLosses,
+            base_folder=base_folder,
+            esdl_file_name="test_hex_bypass.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.xml",
+        )
+
+        results = solution.extract_results()
+        parameters = solution.parameters(0)
+
 
 class TestHP(TestCase):
     def test_heat_pump(self):

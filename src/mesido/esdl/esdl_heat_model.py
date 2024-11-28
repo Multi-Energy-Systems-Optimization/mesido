@@ -917,14 +917,14 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 f"{params_t['Secondary']['T_supply']}. This is not possible as the HEX can only "
                 "transfer milp from primary to secondary."
             )
-            assert params_t["Primary"]["T_supply"] >= params_t["Secondary"]["T_supply"]
+            # assert params_t["Primary"]["T_supply"] >= params_t["Secondary"]["T_supply"]
         if params_t["Primary"]["T_return"] < params_t["Secondary"]["T_return"]:
             logger.error(
                 f"{asset.name} has a primary side return temperature that is lower than the "
                 f"secondary return temperature. This is not possible as the HEX can only transfer "
                 f"milp from primary to secondary."
             )
-            assert params_t["Primary"]["T_return"] >= params_t["Secondary"]["T_return"]
+            # assert params_t["Primary"]["T_return"] >= params_t["Secondary"]["T_return"]
 
         if asset.asset_type == "GenericConversion":
             max_power = asset.attributes["power"] if asset.attributes["power"] else math.inf
@@ -936,11 +936,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 * (params_t["Primary"]["T_supply"] - params_t["Secondary"]["T_return"])
                 / 2.0
             )
+            if max_power == 0.0:
+                max_power = asset.attributes["capacity"] if asset.attributes["capacity"] else math.inf
 
+        dT_prim = params_t["Primary"]["T_supply"] - params_t["Primary"]["T_return"]
+        dT_prim = dT_prim if dT_prim>0.0 else 10
+        params_t["Primary"]["dT"] = dT_prim
         max_heat_transport = (
             params_t["Primary"]["T_supply"]
             * max_power
-            / (params_t["Primary"]["T_supply"] - params_t["Primary"]["T_return"])
+            / (dT_prim)
         )
 
         prim_heat = dict(
@@ -957,9 +962,13 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 2
                 * self.rho
                 * self.cp
-                * (params_t["Primary"]["T_supply"] - params_t["Primary"]["T_return"])
+                * (dT_prim)
             ),
         )
+
+        dT_sec = params_t["Secondary"]["T_supply"] - params_t["Secondary"]["T_return"]
+        dT_sec = dT_sec if dT_sec > 0.0 else 10
+        params_t["Secondary"]["dT"] = dT_sec
         sec_heat = dict(
             HeatIn=dict(
                 Heat=dict(min=-max_heat_transport, max=max_heat_transport, nominal=max_power / 2.0),
@@ -974,7 +983,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 2
                 * self.cp
                 * self.rho
-                * (params_t["Secondary"]["T_supply"] - params_t["Secondary"]["T_return"])
+                * (dT_sec)
             ),
         )
         params["Primary"] = {**params_t["Primary"], **params_q["Primary"], **prim_heat}

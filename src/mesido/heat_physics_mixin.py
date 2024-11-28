@@ -106,6 +106,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             "n_linearization_lines": 5,
             "pipe_minimum_pressure": -np.inf,
             "pipe_maximum_pressure": np.inf,
+            "heat_exchanger_bypass": False,
         }
         self._hn_head_loss_class = HeadLossClass(self.heat_network_settings)
         self.__pipe_head_bounds = {}
@@ -2566,6 +2567,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             # primary side
             if len(return_temperatures_prim) == 0:
+                #TODO: for bypass only works if heatloss is turned off, else a check should be made here if the return temperature is below supply temperature
                 constraints.append(
                     (
                         (

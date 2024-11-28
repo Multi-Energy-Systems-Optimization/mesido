@@ -971,7 +971,7 @@ class _AssetToComponentBase:
                     if q_nominal is not None:
                         self._port_to_q_nominal[p] = q_nominal
                         self._port_to_q_nominal[out_port] = q_nominal
-                        if "_ret" in p.carrier.name:
+                        if "sec" in p.name.lower():
                             q_nominals["Secondary"] = {"Q_nominal": q_nominal}
                         else:
                             q_nominals["Primary"] = {"Q_nominal": q_nominal}
@@ -1143,9 +1143,9 @@ class _AssetToComponentBase:
                     f"primary and secondary ports ('prim' and 'sec') for the hydraulically "
                     f"decoupled networks"
                 )
-            assert sec_supply_temperature > sec_return_temperature
+            # assert sec_supply_temperature > sec_return_temperature
             assert sec_return_temperature > 0.0
-            assert prim_supply_temperature > prim_return_temperature
+            # assert prim_supply_temperature > prim_return_temperature
             assert prim_return_temperature > 0.0
             temperatures = {
                 "Primary": {
