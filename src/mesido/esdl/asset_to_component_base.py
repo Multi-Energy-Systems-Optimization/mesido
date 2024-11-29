@@ -13,6 +13,7 @@ from esdl import TimeUnitEnum, UnitEnum
 from mesido.esdl._exceptions import _RetryLaterException
 from mesido.esdl.common import Asset
 from mesido.network_common import NetworkSettings
+from mesido.potential_errors import MesidoAssetIssueType, get_potential_errors
 from mesido.pycml import Model as _Model
 
 
@@ -1143,10 +1144,27 @@ class _AssetToComponentBase:
                     f"primary and secondary ports ('prim' and 'sec') for the hydraulically "
                     f"decoupled networks"
                 )
-            # assert sec_supply_temperature > sec_return_temperature
+            assert sec_supply_temperature >= sec_return_temperature
             assert sec_return_temperature > 0.0
-            # assert prim_supply_temperature > prim_return_temperature
+            assert prim_supply_temperature >= prim_return_temperature
             assert prim_return_temperature > 0.0
+
+            if (
+                sec_supply_temperature == sec_return_temperature
+                or prim_return_temperature == prim_supply_temperature
+            ):
+                asset_id = asset.id
+                get_potential_errors().add_potential_issue(
+                    MesidoAssetIssueType.HEAT_EXCHANGER_TEMPERATURES,
+                    asset_id,
+                    f"Asset named {asset.name}: The temperature on the primary side "
+                    f"supply side is {prim_supply_temperature} and on the return side is "
+                    f"{prim_return_temperature} and on the secondary side the supply temperature "
+                    f"is {sec_supply_temperature} and return temperature is "
+                    f"{sec_return_temperature}. This would result in a bypass of the "
+                    f"heatexchanger.",
+                )
+
             temperatures = {
                 "Primary": {
                     "T_supply": prim_supply_temperature,

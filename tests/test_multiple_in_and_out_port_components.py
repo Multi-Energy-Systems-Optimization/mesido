@@ -111,13 +111,20 @@ class TestHEX(TestCase):
         from the primary side to the secondary side, and heat exchangers are allowed to be disabled
         for timesteps in which they are not used. This is to allow for the temperature constraints
         (T_primary > T_secondary) to become deactivated.
+        An option to allow for bypassing of the heat exchanger has been added, such that when the
+        heat exchanger is disabled, flow through the heat exchanger is allowed, however no heat
+        exchange is allowed, in the case the carriers of both the supply and return on one side
+        of the heat exchanger are the same.
 
         Checks:
-        - Standard checks for demand matching, heat to discharge and energy conservation
-        - That the efficiency is correclty implemented for heat from primary to secondary
+        - Standard checks for demand matching and energy conservation.
+        - Heat to discharge test is not applied as at one heat exchanger (the bypassed one), the
+        heat going out on the primary side will not coincide exactly with the temperature due to
+        heatlosses in the network before the heat exchanger.
         - Check that the is_disabled is set correctly.
         - Check if the temperatures provided are physically feasible.
-
+        - Checks that heat exchanger is bypassed, e.g. not exchanging heat, but allowing flow when
+        both supply and return on one side have the same temperature.
         """
         import models.heat_exchange.src.run_heat_exchanger as run_heat_exchanger
         from models.heat_exchange.src.run_heat_exchanger import (
@@ -125,13 +132,19 @@ class TestHEX(TestCase):
         )
 
         base_folder = Path(run_heat_exchanger.__file__).resolve().parent.parent
+
         class HeatProblemNoLosses(HeatProblem):
+
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+
+                self.heat_network_settings["heat_exchanger_bypass"] = True
+
             def energy_system_options(self):
                 options = super().energy_system_options()
-                options["neglect_pipe_heat_losses"] = True
+                options["neglect_pipe_heat_losses"] = False
 
                 return options
-
 
         solution = run_esdl_mesido_optimization(
             HeatProblemNoLosses,
@@ -143,7 +156,21 @@ class TestHEX(TestCase):
         )
 
         results = solution.extract_results()
-        parameters = solution.parameters(0)
+
+        demand_matching_test(solution, results)
+        energy_conservation_test(solution, results)
+
+        hex_active = "HeatExchange_e410_copy"
+        hex_bypass = "HeatExchange_e410"
+
+        np.testing.assert_allclose(results[f"{hex_active}__disabled"][:-1], 0)
+        np.testing.assert_allclose(results[f"{hex_bypass}__disabled"][:-1], 1)
+
+        np.testing.assert_array_less(0.001, results[f"{hex_active}.Primary.Q"][:-1])
+        np.testing.assert_array_less(0.001, results[f"{hex_bypass}.Primary.Q"][:-1])
+
+        np.testing.assert_allclose(results[f"{hex_bypass}.Heat_flow"][:-1], 0)
+        np.testing.assert_array_less(1e5, results[f"{hex_active}.Heat_flow"][:-1])
 
 
 class TestHP(TestCase):

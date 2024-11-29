@@ -937,16 +937,14 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 / 2.0
             )
             if max_power == 0.0:
-                max_power = asset.attributes["capacity"] if asset.attributes["capacity"] else math.inf
+                max_power = (
+                    asset.attributes["capacity"] if asset.attributes["capacity"] else math.inf
+                )
 
-        dT_prim = params_t["Primary"]["T_supply"] - params_t["Primary"]["T_return"]
-        dT_prim = dT_prim if dT_prim>0.0 else 10
-        params_t["Primary"]["dT"] = dT_prim
-        max_heat_transport = (
-            params_t["Primary"]["T_supply"]
-            * max_power
-            / (dT_prim)
-        )
+        dt_prim = params_t["Primary"]["T_supply"] - params_t["Primary"]["T_return"]
+        dt_prim = dt_prim if dt_prim > 0.0 else 10
+        params_t["Primary"]["dT"] = dt_prim
+        max_heat_transport = params_t["Primary"]["T_supply"] * max_power / (dt_prim)
 
         prim_heat = dict(
             HeatIn=dict(
@@ -957,18 +955,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 Heat=dict(min=-max_heat_transport, max=max_heat_transport, nominal=max_power / 2.0),
                 Hydraulic_power=dict(nominal=params_q["Primary"]["Q_nominal"] * 16.0e5),
             ),
-            Q_nominal=max_power
-            / (
-                2
-                * self.rho
-                * self.cp
-                * (dT_prim)
-            ),
+            Q_nominal=max_power / (2 * self.rho * self.cp * (dt_prim)),
         )
 
-        dT_sec = params_t["Secondary"]["T_supply"] - params_t["Secondary"]["T_return"]
-        dT_sec = dT_sec if dT_sec > 0.0 else 10
-        params_t["Secondary"]["dT"] = dT_sec
+        dt_sec = params_t["Secondary"]["T_supply"] - params_t["Secondary"]["T_return"]
+        dt_sec = dt_sec if dt_sec > 0.0 else 10
+        params_t["Secondary"]["dT"] = dt_sec
         sec_heat = dict(
             HeatIn=dict(
                 Heat=dict(min=-max_heat_transport, max=max_heat_transport, nominal=max_power / 2.0),
@@ -978,13 +970,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 Heat=dict(min=-max_heat_transport, max=max_heat_transport, nominal=max_power / 2.0),
                 Hydraulic_power=dict(nominal=params_q["Secondary"]["Q_nominal"] * 16.0e5),
             ),
-            Q_nominal=max_power
-            / (
-                2
-                * self.cp
-                * self.rho
-                * (dT_sec)
-            ),
+            Q_nominal=max_power / (2 * self.cp * self.rho * (dt_sec)),
         )
         params["Primary"] = {**params_t["Primary"], **params_q["Primary"], **prim_heat}
         params["Secondary"] = {
