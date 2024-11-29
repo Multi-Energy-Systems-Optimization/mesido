@@ -133,7 +133,7 @@ class TestHEX(TestCase):
 
         base_folder = Path(run_heat_exchanger.__file__).resolve().parent.parent
 
-        class HeatProblemNoLosses(HeatProblem):
+        class HeatProblemByPass(HeatProblem):
 
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
@@ -147,7 +147,7 @@ class TestHEX(TestCase):
                 return options
 
         solution = run_esdl_mesido_optimization(
-            HeatProblemNoLosses,
+            HeatProblemByPass,
             base_folder=base_folder,
             esdl_file_name="test_hex_bypass.esdl",
             esdl_parser=ESDLFileParser,
