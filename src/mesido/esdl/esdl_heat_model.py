@@ -940,9 +940,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 max_power = (
                     asset.attributes["capacity"] if asset.attributes["capacity"] else math.inf
                 )
-
+        # This default delta temperature is used when on the primary or secondary side the
+        # temperature difference is 0.0. It is set to 10.0 to ensure that maximum/nominal
+        # flowrates and heat transport are set at realistic values.
+        default_dt = 10.0
         dt_prim = params_t["Primary"]["T_supply"] - params_t["Primary"]["T_return"]
-        dt_prim = dt_prim if dt_prim > 0.0 else 10
+        dt_prim = dt_prim if dt_prim > 0.0 else default_dt
         params_t["Primary"]["dT"] = dt_prim
         max_heat_transport = params_t["Primary"]["T_supply"] * max_power / (dt_prim)
 
@@ -959,7 +962,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         )
 
         dt_sec = params_t["Secondary"]["T_supply"] - params_t["Secondary"]["T_return"]
-        dt_sec = dt_sec if dt_sec > 0.0 else 10
+        dt_sec = dt_sec if dt_sec > 0.0 else default_dt
         params_t["Secondary"]["dT"] = dt_sec
         sec_heat = dict(
             HeatIn=dict(
