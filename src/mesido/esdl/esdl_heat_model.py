@@ -12,6 +12,7 @@ from mesido.esdl.asset_to_component_base import (
 )
 from mesido.esdl.common import Asset
 from mesido.esdl.esdl_model_base import _ESDLModelBase
+from mesido.potential_errors import MesidoAssetIssueType, get_potential_errors
 from mesido.pycml.component_library.milp import (
     ATES,
     AirWaterHeatPump,
@@ -911,20 +912,25 @@ class AssetToHeatComponent(_AssetToComponentBase):
         params = {}
 
         if params_t["Primary"]["T_supply"] < params_t["Secondary"]["T_supply"]:
-            logger.error(
-                f"{asset.name} has a primary side supply temperature, "
-                f"{params_t['Primary']['T_supply']}, that is higher than the secondary supply , "
-                f"{params_t['Secondary']['T_supply']}. This is not possible as the HEX can only "
-                "transfer milp from primary to secondary."
+            get_potential_errors().add_potential_issue(
+                MesidoAssetIssueType.HEAT_EXCHANGER_TEMPERATURES,
+                asset.id,
+                f"Asset named {asset.name}: The supply temperature on the primary side "
+                f"of the heat exchanger ({params_t['Primary']['T_supply']}°C) should be larger "
+                f"than the supply temperature on the secondary side "
+                f"({params_t['Secondary']['T_supply']}°C), as the heat exchanger can only "
+                f"transfer heat from primary to secondary.",
             )
-            # assert params_t["Primary"]["T_supply"] >= params_t["Secondary"]["T_supply"]
         if params_t["Primary"]["T_return"] < params_t["Secondary"]["T_return"]:
-            logger.error(
-                f"{asset.name} has a primary side return temperature that is lower than the "
-                f"secondary return temperature. This is not possible as the HEX can only transfer "
-                f"milp from primary to secondary."
+            get_potential_errors().add_potential_issue(
+                MesidoAssetIssueType.HEAT_EXCHANGER_TEMPERATURES,
+                asset.id,
+                f"Asset named {asset.name}: The return temperature on the primary side "
+                f"of the heat exchanger ({params_t['Primary']['T_return']}°C) should be larger "
+                f"than the return temperature on the secondary side "
+                f"({params_t['Secondary']['T_return']}°C), as the heat exchanger can only "
+                f"transfer heat from primary to secondary.",
             )
-            # assert params_t["Primary"]["T_return"] >= params_t["Secondary"]["T_return"]
 
         if asset.asset_type == "GenericConversion":
             max_power = asset.attributes["power"] if asset.attributes["power"] else math.inf
