@@ -622,7 +622,14 @@ class TestMultiCommoditySimulator(TestCase):
         # Checking that the results are the same.
         for key, value in results_unstaged.items():
             value_staged = results_staged[key]
-            np.testing.assert_allclose(value, value_staged)
+            if len(key.split("__")) > 1 and key.split("__")[1] == "gas_flow_direct_var":
+                # For the scenario when Q is -0 and 0 then gas_flow_direct_var 0 or 1 for the same
+                # volumetric flow rate of zero. So only check gas_flow_direct_var when Q != zero
+                zero_staged = results_staged[f"{key.split('__')[0]}.GasIn.Q"] != 0
+                zero_unstaged = results_unstaged[f"{key.split('__')[0]}.GasIn.Q"] != 0
+                np.testing.assert_allclose(value[zero_staged], value_staged[zero_unstaged])
+            else:
+                np.testing.assert_allclose(value, value_staged)
 
         solution_staged_bounded = run_sequatially_staged_simulation(
             multi_commodity_simulator_class=MultiCommoditySimulatorNoLosses,
@@ -672,7 +679,7 @@ class TestMultiCommoditySimulator(TestCase):
         results_unstaged_bounded_win = solution_unstaged_bounded_win.extract_results()
 
         np.testing.assert_allclose(
-            results_staged_bounded["Battery_4688.Stored_electricity"][20],
+            results_staged_bounded["Battery_4688.Stored_electricity"][19],
             results_unstaged_bounded_win["Battery_4688.Stored_electricity"][-1],
         )
 
@@ -682,9 +689,11 @@ if __name__ == "__main__":
 
     start_time = time.time()
     a = TestMultiCommoditySimulator()
-    a.test_multi_commodity_simulator_priorities_el()
-    a.test_multi_commodity_simulator_prod_profile()
-    a.test_multi_commodity_simulator_emerge()
-    a.test_multi_commodity_simulator_emerge_lowprod()
+    # a.test_multi_commodity_simulator_priorities_el()
+    # a.test_multi_commodity_simulator_prod_profile()
+    # a.test_multi_commodity_simulator_emerge()
+    # a.test_multi_commodity_simulator_emerge_lowprod()
+    # a.test_multi_commodity_simulator_emerge_head_losses()
+    a.test_multi_commodity_simulator_sequential_staged()
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

@@ -10,20 +10,20 @@
   </energySystemInformation>
   <instance xsi:type="esdl:Instance" id="4eb142f6-d611-4791-a771-4649b6b0d523" name="Untitled instance">
     <area xsi:type="esdl:Area" id="6b615002-f95c-49c0-8394-a99d03671d30" name="Untitled area">
-      <asset xsi:type="esdl:GasProducer" power="10000000.0" name="GasProducer_3573" id="35734457-bbb7-483f-90ce-927000df81e8">
+      <asset xsi:type="esdl:GasProducer" power="11000000.0" name="GasProducer_3573" id="35734457-bbb7-483f-90ce-927000df81e8">
         <geometry xsi:type="esdl:Point" lon="4.435129165649415" CRS="WGS84" lat="52.088129590216774"/>
         <port xsi:type="esdl:OutPort" id="738238fc-12e6-4ebd-ac43-cb5a536a0d8a" connectedTo="1acd03da-1262-43be-9f28-58063bfc9aed" carrier="43264592-a907-498c-9595-25b8fefb268b" name="Out"/>
       </asset>
-      <asset xsi:type="esdl:GasProducer" power="10000000.0" name="GasProducer_a977" id="a9777537-496a-4746-8f20-652c511fb98e">
+      <asset xsi:type="esdl:GasProducer" power="11000000.0" name="GasProducer_a977" id="a9777537-496a-4746-8f20-652c511fb98e">
         <geometry xsi:type="esdl:Point" lon="4.434700012207032" CRS="WGS84" lat="52.083040029708826"/>
         <port xsi:type="esdl:OutPort" id="02698b65-c114-46a5-9c1e-0ddc125bc834" connectedTo="f283d51b-602c-47df-9d42-e9c179e24992" carrier="43264592-a907-498c-9595-25b8fefb268b" name="Out"/>
       </asset>
-      <asset xsi:type="esdl:GasDemand" name="GasDemand_47d0" id="47d0748a-5fd3-45cd-85de-f11df1cbe8b0" power="10000000.0">
+      <asset xsi:type="esdl:GasDemand" name="GasDemand_47d0" id="47d0748a-5fd3-45cd-85de-f11df1cbe8b0" power="17000000.0">
         <geometry xsi:type="esdl:Point" lon="4.456930160522462" CRS="WGS84" lat="52.08886792383876"/>
         <port xsi:type="esdl:InPort" connectedTo="d5026706-d236-4f33-bfc2-f48ffc210fa2" id="65853820-c234-4483-89f1-49d0c764ed17" carrier="43264592-a907-498c-9595-25b8fefb268b" name="In">
         </port>
       </asset>
-      <asset xsi:type="esdl:GasDemand" name="GasDemand_7978" id="7978b867-4fce-4ecb-9e20-558e2b1537ee" power="10000000.0">
+      <asset xsi:type="esdl:GasDemand" name="GasDemand_7978" id="7978b867-4fce-4ecb-9e20-558e2b1537ee" power="17000000.0">
         <geometry xsi:type="esdl:Point" lon="4.456629753112794" CRS="WGS84" lat="52.08369933192916"/>
         <port xsi:type="esdl:InPort" connectedTo="a851c15f-62d7-4ad9-956a-c4dafc69cdd0" id="7b417ffc-835b-45e3-9fc0-f076a8eee711" carrier="43264592-a907-498c-9595-25b8fefb268b" name="In">
         </port>
@@ -41,7 +41,7 @@
         <port xsi:type="esdl:InPort" connectedTo="738238fc-12e6-4ebd-ac43-cb5a536a0d8a" id="1acd03da-1262-43be-9f28-58063bfc9aed" carrier="43264592-a907-498c-9595-25b8fefb268b" name="In"/>
         <port xsi:type="esdl:OutPort" id="129fe8e2-a9f7-4ab0-924d-014ae292e847" connectedTo="fe62444f-6b6c-426a-9cb4-5f26ee44121f" carrier="43264592-a907-498c-9595-25b8fefb268b" name="Out"/>
       </asset>
-      <asset xsi:type="esdl:Pipe" name="Pipe_f1a4" id="f1a4790b-33ac-4ba5-932e-b60acb1bbbed" length="780.3">
+      <asset xsi:type="esdl:Pipe" name="Pipe_f1a4" id="f1a4790b-33ac-4ba5-932e-b60acb1bbbed" length="78.3">
         <geometry xsi:type="esdl:Line" CRS="WGS84">
           <point xsi:type="esdl:Point" lon="4.434700012207032" lat="52.083040029708826"/>
           <point xsi:type="esdl:Point" lon="4.444956779479981" lat="52.0861254802313"/>

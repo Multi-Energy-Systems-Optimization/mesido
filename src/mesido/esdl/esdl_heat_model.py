@@ -8,7 +8,7 @@ from mesido.esdl.asset_to_component_base import (
     MODIFIERS,
     _AssetToComponentBase,
     get_density,
-    get_internal_energy,
+    get_energy_content,
 )
 from mesido.esdl.common import Asset
 from mesido.esdl.esdl_model_base import _ESDLModelBase
@@ -1957,7 +1957,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         ]
         # DO not remove due usage in future
         # hydrogen_specfic_energy = 20.0 / 1.0e6
-        specific_energy = get_internal_energy(asset.name, asset.in_ports[0].carrier) / 10  # J/g
+        specific_energy = get_energy_content(asset.name, asset.in_ports[0].carrier)  # J/kg
         # TODO: the value being used is the internal energy and not the HHV (higher
         #  heating value) for hydrogen, therefore it does not represent the energy per weight.
         #  This still needs to be updated
@@ -2030,9 +2030,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
         q_nominal = self._get_connected_q_nominal(asset)
         density_value = get_density(asset.name, asset.out_ports[0].carrier)
         pressure = asset.out_ports[0].carrier.pressure * 1.0e5
-        specific_energy = (
-            get_internal_energy(asset.name, asset.out_ports[0].carrier) / 10
-        )  # J/g #TODO: is not the HHV for hydrogen, so is off
+        # J/kg #TODO: is not the HHV for hydrogen, so is off
+        specific_energy = get_energy_content(asset.name, asset.out_ports[0].carrier)
         # [g/s] = [J/s] * [J/kg]^-1 *1000
         max_mass_flow_g_per_s = asset.attributes["power"] / specific_energy * 1000.0
 
@@ -2424,7 +2423,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         for port in asset.in_ports:
             if isinstance(port.carrier, esdl.GasCommodity):
                 density = get_density(asset.name, port.carrier)
-                internal_energy = get_internal_energy(asset.name, port.carrier)
+                energy_content = get_energy_content(asset.name, port.carrier)
 
         # TODO: CO2 coefficient
 
@@ -2448,7 +2447,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             HeatOut=dict(Hydraulic_power=dict(nominal=q_nominals["Q_nominal"] * 16.0e5)),
             id_mapping_carrier=id_mapping,
             density=density,
-            internal_energy=internal_energy,
+            energy_content=energy_content,
             GasIn=dict(Q=dict(min=0.0, nominal=q_nominals["Q_nominal_gas"])),
             **q_nominals,
             **self._supply_return_temperature_modifiers(asset),

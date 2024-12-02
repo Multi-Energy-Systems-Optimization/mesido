@@ -27,7 +27,7 @@ class GasBoiler(HeatSource):
 
         self.component_subtype = "gas_boiler"
 
-        self.internal_energy = nan
+        self.energy_content = nan
         self.density = 2.5e3  # H2 density [g/m3] at 30bar
 
         self.id_mapping_carrier = -1
@@ -47,5 +47,8 @@ class GasBoiler(HeatSource):
         )
 
         self.add_equation(
-            ((self.GasIn.mass_flow * self.internal_energy - self.Heat_source) / self.Heat_nominal)
+            (
+                (self.GasIn.mass_flow / 1000.0 * self.energy_content - self.Heat_source)
+                / self.Heat_nominal
+            )
         )

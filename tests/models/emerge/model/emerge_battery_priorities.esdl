@@ -36,7 +36,7 @@
         <port xsi:type="esdl:OutPort" id="5e58c0e2-5db4-4f6a-8aab-2c880d499c14" connectedTo="5e660a4f-e8ca-4e9d-8568-6292d36b5994" carrier="14831e6c-c3bb-4763-8300-9658a365ee54" name="Out"/>
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="52.579688026538726" lon="3.6419677734375004"/>
       </asset>
-      <asset xsi:type="esdl:GasDemand" name="GasDemand_4146" id="41466625-a14b-43a9-9a13-93d34a4ea6ff" power="500000000.0" technicalLifetime="20.0">
+      <asset xsi:type="esdl:GasDemand" name="GasDemand_4146" id="41466625-a14b-43a9-9a13-93d34a4ea6ff" power="1200000000.0" technicalLifetime="20.0">
         <costInformation xsi:type="esdl:CostInformation" id="14964bd8-8eb0-4525-bcb4-0d03c1252a2b">
           <variableOperationalCosts xsi:type="esdl:SingleValue" id="5c63dce1-8a70-44f3-b6b9-476587ff73bb">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" unit="EURO" id="4a4516c3-372a-4a6c-b25a-dcc8dca30545" description="Cost in EUR/kg" physicalQuantity="COST" multiplier="KILO" perUnit="GRAM"/>

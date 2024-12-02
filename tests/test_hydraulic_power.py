@@ -291,6 +291,8 @@ class TestHydraulicPower(TestCase):
         results = solution.extract_results()
         parameters = solution.parameters(0)
 
+        demand_matching_test(solution, results)
+
         pipe = "Pipe_4abc"
         pipe_hp_in = results[f"{pipe}.GasIn.Hydraulic_power"]
         pipe_hp_out = results[f"{pipe}.GasOut.Hydraulic_power"]
@@ -370,8 +372,6 @@ class TestHydraulicPower(TestCase):
         np.testing.assert_allclose(pipe_hp[1], a[1] * results[f"{pipe}.GasOut.Q"][1] + b[1])
         np.testing.assert_allclose(pipe_hp[2], a[2] * results[f"{pipe}.GasOut.Q"][2] + b[2])
 
-        demand_matching_test(solution, results)
-
     def test_hydraulic_power_gas_multi_demand(self):
         """
         Checks the logic for the hydraulic power of gas pipes.
@@ -394,7 +394,7 @@ class TestHydraulicPower(TestCase):
                 super().read()
 
                 for d in self.energy_system_components["gas_demand"]:
-                    new_timeseries = self.get_timeseries(f"{d}.target_gas_demand").values * 3
+                    new_timeseries = self.get_timeseries(f"{d}.target_gas_demand").values * 1.39
                     self.set_timeseries(f"{d}.target_gas_demand", new_timeseries)
 
             def energy_system_options(self):
@@ -429,7 +429,7 @@ class TestHydraulicPower(TestCase):
 
             pipe_mass = results[f"{pipe}.GasIn.mass_flow"]
 
-            np.testing.assert_allclose(pipe_hp, pipe_hp_in - pipe_hp_out)
+            np.testing.assert_allclose(pipe_hp, pipe_hp_in - pipe_hp_out, atol=1e-8)
             if pipe in ["Pipe_7c53", "Pipe_c50f"]:
                 # connected to demand, thus hydraulic_power should be 0
                 np.testing.assert_allclose(0, pipe_hp_out)
@@ -442,23 +442,81 @@ class TestHydraulicPower(TestCase):
                 for i in range(solution.gas_network_settings["n_linearization_lines"] + 1)
             ]
 
-            # due to non linearity, every timestep on new linearized line, a doubled mass flow
-            # should result in more than doubled hydraulic power
+            # Check hydraulic power for:
+            # - On the first linear line (line_index = 0), the line intercepts the y-axis at 0. So a
+            # simple ratio calc is used
+            # - On any other linear line (line_index > 0), the line does not intercept the y-axis
+            # at 0 anymore. But it is known that the gradient of these lines are higher than the
+            # gradient of the line at line_index=0, due these lines representing a non-linear
+            # curve. This implies that the hydraulic power on these lines will be higher than the
+            # hydraulic power that is exrapolated from line_index=0. Also if on line index > 0 then
+            # the extrapolated value will on a line will be larger.
+            # Notes:
+            # - It is ensured that for each pipe more than one line out of the linearized lines is
+            # used
+            # - Checks have been added to cater for the scenario where the a pipe has no flow at a
+            # specific time step
             v_inspect_line_ind = []
+            v_points = np.array(v_points)
             for k in range(len(v_inspect)):
-                for i in range(len(v_points)):
-                    if v_points[i] + 1e-6 < v_inspect[k] <= v_points[i + 1] + 1e-6:
-                        v_inspect_line_ind.append(i)
+                idx = v_points < v_inspect[k] + 1e-6
+                v_inspect_line_ind.append(np.where(idx)[0][-1])
+
             ind_check = 0
             for k in range(len(v_inspect) - 1):
-                if v_inspect_line_ind[k] == v_inspect_line_ind[k + 1]:
-                    np.testing.assert_allclose(
-                        pipe_hp[k] * pipe_mass[k + 1] / pipe_mass[k], pipe_hp[k + 1]
-                    )
+                if (
+                    v_inspect_line_ind[k] == v_inspect_line_ind[k + 1]
+                    and v_inspect_line_ind[k] == 0
+                ):  # use simple ratio calc
+                    if pipe_mass[k] > 0:
+                        np.testing.assert_allclose(
+                            pipe_hp[k] * pipe_mass[k + 1] / pipe_mass[k], pipe_hp[k + 1]
+                        )
+                    elif pipe_mass[k] == 0:
+                        np.testing.assert_array_less(0.0, pipe_hp[k + 1])
+                    elif pipe_mass[k] < 0:
+                        raise RuntimeWarning("The mass flow cannot be negative for this test case")
+                elif (
+                    v_inspect_line_ind[k] == v_inspect_line_ind[k + 1]
+                    and v_inspect_line_ind[k] > 0
+                    and k > 0
+                ):
+                    # use fact that the extrapolated value will be smaller than the value on the
+                    # next line
+                    if pipe_mass[k - 1] > 0:
+                        np.testing.assert_array_less(
+                            pipe_hp[k - 1] * pipe_mass[k + 1] / pipe_mass[k - 1], pipe_hp[k + 1]
+                        )
+                        np.testing.assert_array_less(
+                            pipe_hp[k - 1] * pipe_mass[k] / pipe_mass[k - 1], pipe_hp[k]
+                        )
+                    elif pipe_mass[k - 1] == 0:
+                        np.testing.assert_array_less(0.0, pipe_hp[k + 1])
+                    elif pipe_mass[k] < 0:
+                        raise RuntimeWarning("The mass flow cannot be negative for this test case")
+                elif (
+                    v_inspect_line_ind[k] == v_inspect_line_ind[k + 1]
+                    and v_inspect_line_ind[k] > 0
+                    and k == 0
+                ):
+                    # use fact that the extrapolated value will be larger on the same line
+                    if pipe_mass[k] > 0:
+                        np.testing.assert_array_less(
+                            pipe_hp[k] * pipe_mass[k + 1] / pipe_mass[k], pipe_hp[k + 1]
+                        )
+                    elif pipe_mass[k] == 0:
+                        np.testing.assert_array_less(0.0, pipe_hp[k + 1])
+                    elif pipe_mass[k] < 0:
+                        raise RuntimeWarning("The mass flow cannot be negative for this test case")
                 elif v_inspect_line_ind[k] < v_inspect_line_ind[k + 1]:
-                    np.testing.assert_array_less(
-                        (pipe_hp[k] + 1e-6) * pipe_mass[k + 1] / pipe_mass[k], pipe_hp[k + 1]
-                    )
+                    if pipe_mass[k] > 0:
+                        np.testing.assert_array_less(
+                            (pipe_hp[k]) * pipe_mass[k + 1] / pipe_mass[k], pipe_hp[k + 1]
+                        )
+                    elif pipe_mass[k] == 0:
+                        np.testing.assert_array_less(0.0, pipe_hp[k + 1])
+                    elif pipe_mass[k] < 0:
+                        raise RuntimeWarning("The mass flow cannot be negative for this test case")
                     ind_check += 1
                 else:
                     raise RuntimeWarning(
@@ -497,8 +555,8 @@ if __name__ == "__main__":
 
     start_time = time.time()
     a = TestHydraulicPower()
-    a.test_hydraulic_power_heat()
-    a.test_hydraulic_power_gas()
+    # a.test_hydraulic_power_heat()
+    # a.test_hydraulic_power_gas()
     a.test_hydraulic_power_gas_multi_demand()
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

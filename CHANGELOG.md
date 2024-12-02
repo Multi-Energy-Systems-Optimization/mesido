@@ -2,13 +2,18 @@
 
 ## Added
 - Default database for gas pipe dimensions based on the ASA pipe schedule with thicknesses from the standard class
+- Gas and electricity workflow has been added. Still a work in progress
+- Internal energy content function added for natural gas and hydrogen
+- OPEX added for gas and electricity source
 
 ## Changed
 - Write output to json also saves the solver statistics.
 - Updates in asset conversion from ESDL to pycml; gas and heat pipe split, generic conversion better specified.
 - Adapt profiles for heating and cooling peak day seperately & add test case
+- For gas: Use energy content (heating value) instead of internal energy 
 
 ## Fixed
+- Bugfix: gas boiler mass flow contraint units
 - Bugfix: same mip gap settings for all solvers in grow_workflow.
 - Bugfix: head loss test case when minimum_velocity = 0.0
 
