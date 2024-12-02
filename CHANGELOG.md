@@ -1,7 +1,18 @@
-# [Unreleased] - 2024-11-15
+# [Unreleased] - 2024-12-02
 
 ## Added
 - xx
+
+## Changed
+- xx
+
+## Fixed
+- xx
+
+# [0.1.8.3] - 2024-12-02
+
+## Added
+- Added function to make pickle usable (exceptions) in the OMOTES back end 
 
 ## Changed
 - xx

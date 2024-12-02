@@ -41,6 +41,7 @@ class MesidoAssetIssueError(Exception):
 
         return return_string
 
+    # Currently this function has been added for Design Toolkit back end purposes
     def __reduce__(
         self,
     ) -> Tuple[
