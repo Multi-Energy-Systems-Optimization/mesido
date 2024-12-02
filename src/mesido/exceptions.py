@@ -41,7 +41,11 @@ class MesidoAssetIssueError(Exception):
 
         return return_string
 
-    def __reduce__(self) -> Tuple[Type["MesidoAssetIssueError"], Tuple[str, "MesidoAssetIssueType", Dict[str, "ErrorMessage"]]]:
+    def __reduce__(
+        self,
+    ) -> Tuple[
+        Type["MesidoAssetIssueError"], Tuple[str, "MesidoAssetIssueType", Dict[str, "ErrorMessage"]]
+    ]:
         """Reduce an instance of this class to pickable components.
 
         This is required so the class can be serialized and deserialized in the pickle format.
