@@ -10,4 +10,3 @@ class HeatComponent(BaseAsset):
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
         self.network_type = NetworkSettings.NETWORK_TYPE_HEAT
-

@@ -193,13 +193,9 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                 self.gas_network_settings,
             )
             if initialized_vars[0] != {}:
-                self.__gas_pipe_head_bounds[
-                    f"{pipe_name}.{commodity}In.H"
-                ] = initialized_vars[0]
+                self.__gas_pipe_head_bounds[f"{pipe_name}.{commodity}In.H"] = initialized_vars[0]
             if initialized_vars[1] != {}:
-                self.__gas_pipe_head_bounds[
-                    f"{pipe_name}.{commodity}Out.H"
-                ] = initialized_vars[1]
+                self.__gas_pipe_head_bounds[f"{pipe_name}.{commodity}Out.H"] = initialized_vars[1]
             if initialized_vars[2] != {}:
                 self.__gas_pipe_head_loss_zero_bounds[f"{pipe_name}.dH"] = initialized_vars[2]
             if initialized_vars[3] != {}:

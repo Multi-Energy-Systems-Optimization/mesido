@@ -1148,23 +1148,26 @@ class ScenarioOutput:
                         elif asset_name in [*self.energy_system_components.get("pump", [])]:
                             variables_one_hydraulic_system = ["Pump_power"]
                             variables_two_hydraulic_system = ["Pump_power"]
-                    if asset_name in [*self.energy_system_components.get("heat_pipe", []),
-                                      *self.energy_system_components.get("gas_pipe", [])]:
+                    if asset_name in [
+                        *self.energy_system_components.get("heat_pipe", []),
+                        *self.energy_system_components.get("gas_pipe", []),
+                    ]:
                         variables_one_hydraulic_system.append("PostProc.Velocity")
                         variables_two_hydraulic_system.append("PostProc.Velocity")
                         # Velocity at the pipe outlet [m/s]
                         post_processed["PostProc.Velocity"] = (
-                            results[f"{asset_name}.{commodity}Out.Q"] / parameters[f"{asset_name}.area"]
+                            results[f"{asset_name}.{commodity}Out.Q"]
+                            / parameters[f"{asset_name}.area"]
                         )
                         variables_one_hydraulic_system.append("PostProc.Pressure")
-                        variables_two_hydraulic_system.append("PostProc.Pressure") #seems
+                        variables_two_hydraulic_system.append("PostProc.Pressure")  # seems
                         # unnecessary, pipes always only have 1 hydraulic system
                         post_processed["PostProc.Pressure"] = (
-                                results[f"{asset_name}.{commodity}In.H"] * #m
-                                GRAVITATIONAL_CONSTANT *  #m/s2
-                                parameters[f"{asset_name}.density"] / #g/m3
-                                1e3
-                        ) #Pa
+                            results[f"{asset_name}.{commodity}In.H"]  # m
+                            * GRAVITATIONAL_CONSTANT  # m/s2
+                            * parameters[f"{asset_name}.density"]  # g/m3
+                            / 1e3
+                        )  # Pa
 
                     # Depending on the port set, different carriers are assigned
                     if port:

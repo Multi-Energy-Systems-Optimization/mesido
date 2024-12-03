@@ -465,9 +465,9 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
 
             # Find the components in model, detection by string
             # (name.component_type: type)
-            component_types = sorted({v for k, v in string_parameters.items() if "network_type"
-            not in k})
-
+            component_types = sorted(
+                {v for k, v in string_parameters.items() if "network_type" not in k}
+            )
 
             components = {}
             for c in component_types:
@@ -490,8 +490,9 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
 
             # Find the components in model, detection by string
             # (name.component_type: type)
-            commodity_types = {k.split(".")[0]: v for k, v in string_parameters.items() if
-                                      "network_type" in k}
+            commodity_types = {
+                k.split(".")[0]: v for k, v in string_parameters.items() if "network_type" in k
+            }
 
             self.__commodity_types = commodity_types
 
