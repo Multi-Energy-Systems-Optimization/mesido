@@ -1,8 +1,10 @@
 import json
 import os
-from typing import Dict
+from typing import Dict, Union
 
 import numpy as np
+from rtctools._internal.alias_tools import AliasDict
+
 
 class AliasDictResults:
     """
@@ -23,8 +25,16 @@ class AliasDictResults:
             alias = self._aliases[name]
             return alias[1]*self.results[alias[0]]
 
+    def __getitem__(self, name):
+        #TODO check if this now works and get_results can be removed
+        if name in self.results.keys():
+            return self.results[name]
+        else:
+            alias = self._aliases[name]
+            return alias[1] * self.results[alias[0]]
+
     def get_results_as_array(self, name):
-        return np.array(self.get_results(name))
+        return np.array(self.results[name])
 
 def extract_data_results_alias(data_path: str) -> [AliasDictResults, Dict]:
     raw_data = extract_data_results(data_path)
@@ -58,3 +68,22 @@ def extract_data_results(data_path: str) -> Dict:
             pass
 
     return data
+
+
+def pipe_velocity(asset_name: str, commodity: str, results: Union[AliasDictResults, AliasDict],
+parameters: Dict) -> np.array:
+    """
+    Post-processing to determine the pipe_velocity.
+    To be used in code and as post-processing from jsons.
+    Args:
+        asset_name: asset_name of gas or heat pipe
+        results: AliasDict with results
+        parameters: Dict with results
+
+    Returns:
+
+    """
+    post_processed_velocity = (
+            results[f"{asset_name}.{commodity}Out.Q"] / parameters[f"{asset_name}.area"]
+    )
+    return post_processed_velocity
