@@ -1124,15 +1124,18 @@ class ScenarioOutput:
                         "Secondary.HeatIn.Q",
                         "Heat_flow",
                     ]
+                    post_processed = {}
+
+                    commodity = self.energy_system_components_commodity.get(asset_name)
 
                     # Update/overwrite each asset variable list due to:
                     # - the addition of head loss minimization: head variable and pump power
                     # - only a specific variable required for a specific asset: pump power
                     # - addition of post processed variables: pipe velocity
                     if self.heat_network_settings["minimize_head_losses"]:
-                        variables_one_hydraulic_system.append("HeatIn.H")
-                        variables_two_hydraulic_system.append("Primary.HeatIn.H")
-                        variables_two_hydraulic_system.append("Secondary.HeatIn.H")
+                        variables_one_hydraulic_system.append(f"{commodity}In.H")
+                        variables_two_hydraulic_system.append(f"Primary.{commodity}In.H")
+                        variables_two_hydraulic_system.append(f"Secondary.{commodity}In.H")
                         if asset_name in [
                             *self.energy_system_components.get("heat_source", []),
                             *self.energy_system_components.get("heat_buffer", []),
@@ -1145,13 +1148,23 @@ class ScenarioOutput:
                         elif asset_name in [*self.energy_system_components.get("pump", [])]:
                             variables_one_hydraulic_system = ["Pump_power"]
                             variables_two_hydraulic_system = ["Pump_power"]
-                    if asset_name in [*self.energy_system_components.get("heat_pipe", [])]:
+                    if asset_name in [*self.energy_system_components.get("heat_pipe", []),
+                                      *self.energy_system_components.get("gas_pipe", [])]:
                         variables_one_hydraulic_system.append("PostProc.Velocity")
                         variables_two_hydraulic_system.append("PostProc.Velocity")
                         # Velocity at the pipe outlet [m/s]
-                        post_processed_velocity = (
-                            results[f"{asset_name}.HeatOut.Q"] / parameters[f"{asset_name}.area"]
+                        post_processed["PostProc.Velocity"] = (
+                            results[f"{asset_name}.{commodity}Out.Q"] / parameters[f"{asset_name}.area"]
                         )
+                        variables_one_hydraulic_system.append("PostProc.Pressure")
+                        variables_two_hydraulic_system.append("PostProc.Pressure") #seems
+                        # unnecessary, pipes always only have 1 hydraulic system
+                        post_processed["PostProc.Pressure"] = (
+                                results[f"{asset_name}.{commodity}In.H"] * #m
+                                GRAVITATIONAL_CONSTANT *  #m/s2
+                                parameters[f"{asset_name}.density"] / #g/m3
+                                1e3
+                        ) #Pa
 
                     # Depending on the port set, different carriers are assigned
                     if port:
@@ -1336,14 +1349,14 @@ class ScenarioOutput:
                                     conversion_factor = GRAVITATIONAL_CONSTANT * 988.0
                                 else:
                                     conversion_factor = 1.0
-                                if variable not in ["PostProc.Velocity"]:
+                                if variable not in ["PostProc.Velocity", "PostProc.Pressure"]:
                                     data_row.append(
                                         results[f"{asset_name}." + variable][ii] * conversion_factor
                                     )
                                 # The variable evaluation below seems unnecessary, but it would be
                                 # used we expand the list of post process type variables
-                                elif variable in ["PostProc.Velocity"]:
-                                    data_row.append(post_processed_velocity[ii])
+                                elif variable in ["PostProc.Velocity", "PostProc.Pressure"]:
+                                    data_row.append(post_processed[variable][ii])
 
                             profiles.profile_data_list.append(data_row)
                         # end time steps
