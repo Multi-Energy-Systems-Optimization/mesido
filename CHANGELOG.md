@@ -1,10 +1,11 @@
-# [Unreleased-main] - 2024-11-21
+# [Unreleased-main] - 2024-12-04
 
 ## Added
 - Default database for gas pipe dimensions based on the ASA pipe schedule with thicknesses from the standard class
 - Gas and electricity workflow has been added. Still a work in progress
 - Internal energy content function added for natural gas and hydrogen
 - OPEX added for gas and electricity source
+- Added function to make pickle usable (exceptions) in the OMOTES back end
 
 ## Changed
 - Write output to json also saves the solver statistics.
@@ -17,6 +18,19 @@
 - Bugfix: gas boiler mass flow contraint units
 - Bugfix: same mip gap settings for all solvers in grow_workflow.
 - Bugfix: head loss test case when minimum_velocity = 0.0
+
+
+# [0.1.8.3] - 2024-12-02
+
+## Added
+- Added function to make pickle usable (exceptions) in the OMOTES back end 
+
+## Changed
+- xx
+
+## Fixed
+- xx
+
 
 # [0.1.8.2] - 2024-11-15
 
