@@ -18,7 +18,7 @@
 - xxx
 
 ## Fixed
-- Bugs: state update of heat pump & heat buffer volume update in ESDL, heat storage asset data output to influxDB   
+- Bugs: state update of heat pump, heat buffer volume & ates charge rates update in ESDL, heat storage asset data output to influxDB   
 
 # [0.1.8.3] - 2024-12-02
 

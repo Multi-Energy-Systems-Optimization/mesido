@@ -961,7 +961,10 @@ class ScenarioOutput:
                 placed = np.round(results[asset_placement_var][0]) >= 1.0
                 max_size = results[self._asset_max_size_map[name]][0]
 
-                if asset.name in self.energy_system_components.get("heat_buffer", []):
+                if asset.name in self.energy_system_components.get("ates", []):
+                    asset.maxChargeRate = max(results[f"{name}.Heat_flow"])
+                    asset.maxDischargeRate = min(results[f"{name}.Heat_flow"])
+                elif asset.name in self.energy_system_components.get("heat_buffer", []):
                     asset.capacity = max_size
                     asset.volume = max_size / (
                         parameters[f"{name}.cp"]
@@ -970,7 +973,7 @@ class ScenarioOutput:
                     )
                 elif asset.name in self.energy_system_components.get("heat_pump", []):
                     # Note: Electrical capacity and not the heat capacity
-                    asset.power = max(results["HeatPump_cc7b.Power_elec"])
+                    asset.power = max(results[f"{name}.Power_elec"])
                 else:
                     asset.power = max_size
                 if not placed:
