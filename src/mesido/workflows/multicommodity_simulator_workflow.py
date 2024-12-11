@@ -1831,7 +1831,7 @@ def run_sequatially_staged_simulation(
     )
 
     tic = time.time()
-    for simulated_window in range(simulation_window_size, end_time, simulation_window_size):
+    for simulated_window in range(simulation_window_size, 100, simulation_window_size): #end_time
         # Note that the end time is not necessarily a multiple of simulation_window_size
         (
             solution,
