@@ -1,4 +1,4 @@
-# [Unreleased] - 2024-12-02
+# [Unreleased] - 2024-12-11
 
 ## Added
 - xx
@@ -8,6 +8,17 @@
 
 ## Fixed
 - xx
+
+# [0.1.8.4] - 2024-12-11
+
+## Added
+- More of the existing classes added to __init_ for local runs using the grow_workflow
+
+## Changed
+- xxx
+
+## Fixed
+- Bugs: state update of heat pump & heat buffer volume update in ESDL, heat storage asset data output to influxDB   
 
 # [0.1.8.3] - 2024-12-02
 
