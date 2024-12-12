@@ -962,8 +962,8 @@ class ScenarioOutput:
                 max_size = results[self._asset_max_size_map[name]][0]
 
                 if asset.name in self.energy_system_components.get("ates", []):
-                    asset.maxChargeRate = max(results[f"{name}.Heat_flow"])
-                    asset.maxDischargeRate = min(results[f"{name}.Heat_flow"])
+                    asset.maxChargeRate = results[f"{name}__max_size"][0]
+                    asset.maxDischargeRate = results[f"{name}__max_size"][0]
                 elif asset.name in self.energy_system_components.get("heat_buffer", []):
                     asset.capacity = max_size
                     asset.volume = max_size / (
@@ -973,7 +973,8 @@ class ScenarioOutput:
                     )
                 elif asset.name in self.energy_system_components.get("heat_pump", []):
                     # Note: Electrical capacity and not the heat capacity
-                    asset.power = max(results[f"{name}.Power_elec"])
+                    # TODO: in the future we need to cater for varying COP as well
+                    asset.power = results[f"{name}__max_size"][0] / parameters[f"{name}.COP"]
                 else:
                     asset.power = max_size
                 if not placed:
