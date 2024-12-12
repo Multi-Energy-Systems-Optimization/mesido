@@ -1,4 +1,4 @@
-# [Unreleased-main] - 2024-12-04
+# [Unreleased-main] - 2024-12-12
 
 ## Added
 - Default database for gas pipe dimensions based on the ASA pipe schedule with thicknesses from the standard class
@@ -18,6 +18,18 @@
 - Bugfix: gas boiler mass flow contraint units
 - Bugfix: same mip gap settings for all solvers in grow_workflow.
 - Bugfix: head loss test case when minimum_velocity = 0.0
+
+
+# [0.1.8.4] - 2024-12-11
+
+## Added
+- More of the existing classes added to __init_ for local runs using the grow_workflow
+
+## Changed
+- xxx
+
+## Fixed
+- Bugs: state update of heat pump, heat buffer volume & ates charge rates update in ESDL, heat storage asset data output to influxDB   
 
 
 # [0.1.8.3] - 2024-12-02

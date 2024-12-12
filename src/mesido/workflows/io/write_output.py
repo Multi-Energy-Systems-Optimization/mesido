@@ -956,19 +956,27 @@ class ScenarioOutput:
                 *self.energy_system_components.get("heat_source", []),
                 *self.energy_system_components.get("ates", []),
                 *self.energy_system_components.get("heat_buffer", []),
+                *self.energy_system_components.get("heat_pump", []),
             ]:
                 asset = _name_to_asset(name)
                 asset_placement_var = self._asset_aggregation_count_var_map[name]
                 placed = np.round(results[asset_placement_var][0]) >= 1.0
                 max_size = results[self._asset_max_size_map[name]][0]
 
-                if asset in self.energy_system_components.get("heat_buffer", []):
+                if asset.name in self.energy_system_components.get("ates", []):
+                    asset.maxChargeRate = results[f"{name}__max_size"][0]
+                    asset.maxDischargeRate = results[f"{name}__max_size"][0]
+                elif asset.name in self.energy_system_components.get("heat_buffer", []):
                     asset.capacity = max_size
                     asset.volume = max_size / (
                         parameters[f"{name}.cp"]
                         * parameters[f"{name}.rho"]
                         * parameters[f"{name}.dT"]
                     )
+                elif asset.name in self.energy_system_components.get("heat_pump", []):
+                    # Note: Electrical capacity and not the heat capacity
+                    # TODO: in the future we need to cater for varying COP as well
+                    asset.power = results[f"{name}__max_size"][0] / parameters[f"{name}.COP"]
                 else:
                     asset.power = max_size
                 if not placed:
@@ -1063,6 +1071,7 @@ class ScenarioOutput:
                 esdl.Conversion,
                 esdl.Consumer,
                 esdl.Producer,
+                esdl.Storage,
             ]
 
             for asset_name in [
