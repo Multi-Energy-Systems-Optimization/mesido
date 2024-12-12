@@ -6,6 +6,7 @@
 - Internal energy content function added for natural gas and hydrogen
 - OPEX added for gas and electricity source
 - Added function to make pickle usable (exceptions) in the OMOTES back end
+- More of the existing classes added to __init_ for local runs using the grow_workflow
 
 ## Changed
 - Write output to json also saves the solver statistics.
@@ -18,6 +19,7 @@
 - Bugfix: gas boiler mass flow contraint units
 - Bugfix: same mip gap settings for all solvers in grow_workflow.
 - Bugfix: head loss test case when minimum_velocity = 0.0
+- Bugs: state update of heat pump, heat buffer volume & ates charge rates update in ESDL, heat storage asset data output to influxDB  
 
 
 # [0.1.8.4] - 2024-12-11
