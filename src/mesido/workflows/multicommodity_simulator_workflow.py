@@ -500,10 +500,9 @@ class MultiCommoditySimulator(
             "electricity_source": "Electricity_source",
             "gas_demand": "Gas_demand_mass_flow",
             "gas_source": "Gas_source_mass_flow",
-            "gas_tank_storage": {"charge": "Gas_tank_flow", "discharge": "__Q_discharge"},
+            "gas_tank_storage": {"charge": "Gas_tank_flow"},
             "electricity_storage": {
                 "charge": "Effective_power_charging",
-                "discharge": "__effective_power_discharging",
             },
             "electrolyzer": "Power_consumed",
         }
@@ -1006,19 +1005,15 @@ class MultiCommoditySimulatorMarginal(
             "electricity_source": "Electricity_source",
             "gas_demand": "Gas_demand_mass_flow",
             "gas_source": "Gas_source_mass_flow",
-            "gas_tank_storage": {"charge": "Gas_tank_flow", "discharge": "__Q_discharge"},
-            "electricity_storage": {
-                "charge": "Effective_power_charging",
-                "discharge": "__effective_power_discharging",
-            },
+            "gas_tank_storage": "Gas_tank_flow",
+            "electricity_storage": "Effective_power_charging",
             "electrolyzer": "Power_consumed",
         }
 
         multiplier = {"source": 1.0,
                       "demand": -1.0,
                       "conversion": -1.0,
-                      "charge": -1.0,
-                      "discharge": 1.0,}
+                      "storage": -1.0}
 
         assets_to_include = {}
         asset_variable_map = {}
@@ -1831,7 +1826,7 @@ def run_sequatially_staged_simulation(
     )
 
     tic = time.time()
-    for simulated_window in range(simulation_window_size, 100, simulation_window_size): #end_time
+    for simulated_window in range(simulation_window_size, end_time, simulation_window_size): #end_time
         # Note that the end time is not necessarily a multiple of simulation_window_size
         (
             solution,
