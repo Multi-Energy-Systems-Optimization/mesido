@@ -51,4 +51,4 @@ class GasTankStorage(GasComponent, BaseAsset):
             )
         )
 
-        self.add_initial_equation((self.Stored_gas_mass / self._nominal_stored_gas))
+        # self.add_initial_equation((self.Stored_gas_mass / self._nominal_stored_gas))
