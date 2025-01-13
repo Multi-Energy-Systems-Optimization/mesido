@@ -51,7 +51,16 @@ def get_internal_energy(asset_name, carrier):
     # is also updated in the head_loss_class.
     temperature = 20.0
 
-    if NetworkSettings.NETWORK_TYPE_GAS in carrier.name:
+    if isinstance(carrier, esdl.HeatCommodity):
+        internal_energy = cP.CoolProp.PropsSI(
+            "U",
+            "T",
+            273.15 + temperature,
+            "P",
+            1.0 * 1.0e5,  # TODO: defualt 1 bar pressure should be set for the carrier
+            "WATER",
+        )
+    elif NetworkSettings.NETWORK_TYPE_GAS in carrier.name:
         internal_energy = cP.CoolProp.PropsSI(
             "U",
             "T",
@@ -68,15 +77,6 @@ def get_internal_energy(asset_name, carrier):
             "P",
             carrier.pressure * 1.0e5,
             str(NetworkSettings.NETWORK_TYPE_HYDROGEN).upper(),
-        )
-    elif NetworkSettings.NETWORK_TYPE_HEAT in carrier.name:
-        internal_energy = cP.CoolProp.PropsSI(
-            "U",
-            "T",
-            273.15 + temperature,
-            "P",
-            1.0 * 1.0e5,  # TODO: defualt 1 bar pressure should be set for the carrier
-            "WATER",
         )
     else:
         logger.warning(
