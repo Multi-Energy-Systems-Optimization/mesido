@@ -198,3 +198,86 @@ class TestAtesTemperature(TestCase):
                 * (ates_temperature[demand_not_matched] - ates_temp_ret)
             ),
         )
+
+    def test_ates_temperature_fixed_flow(self):
+        """
+        Checks if the maximum flow is limiting due to the decreased temperature and not the
+        maximum heat for the ates
+
+        Highs acts slow in solving this problem, already in the first goal 'matching the demand'
+        because it cannot be matched.
+        """
+
+        import models.ates_temperature.src.run_ates_temperature as run_ates_temperature
+        from models.ates_temperature.src.run_ates_temperature import HeatProblem
+
+        basefolder = Path(run_ates_temperature.__file__).resolve().parent.parent
+
+        #flow instead of heat constraint, doesn't allow the temperature of the ates to go up.
+        #makes sense as higher temperature means higher losses and thereby higher costs for the
+        # producers. No other incentive with current optimization to produce as as high
+        # temperature as possible
+        heat_flow_list = [-2e6, -1e6] + [-1e6] * 2 + [3e6] * 6 + [-2e6]
+        # [-3e6] * 2 + [-2e6] *2 + [3e6] * 6 + [-2e6]
+        heat_flow_list = [3 * i for i in heat_flow_list]
+
+        vol_flow_list = [-0.06]*3 + [-0.03] + [0.06]*6 + [0.04]
+
+        class HeatProblemFixedChargeDischarge(HeatProblem):
+
+            def constraints(self, ensemble_member):
+                constraints = super().constraints(ensemble_member)
+                for ates in self.energy_system_components.get("ates", []):
+                    ates_flow = self.__state_vector_scaled(f"{ates}.Q")
+                    heat_ates = self.__state_vector_scaled(f"{ates}.Heat_ates")
+                    # extra_variable or state or state_vector_scaled, not state_vector
+                    for i in range(len(heat_flow_list)):
+                        constraints.append((heat_ates[i+1]-heat_flow_list[i], 0.0, 0.0))
+                        # constraints.append((ates_flow[i + 1] - vol_flow_list[i], 0.0, 0.0))
+                return constraints
+
+            def __state_vector_scaled(self, variable):
+                """
+                This functions returns the casadi symbols scaled with their nominal for the entire time
+                horizon particularly important when aliases are used for the variable.
+                """
+                canonical, sign = self.alias_relation.canonical_signed(variable)
+                return (
+                        self.state_vector(canonical) * self.variable_nominal(
+                    canonical) * sign
+                )
+
+
+        solution = run_esdl_mesido_optimization(
+            HeatProblemFixedChargeDischarge,
+            base_folder=basefolder,
+            esdl_file_name="ATES_GC with return network.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="Warmte_test_3.csv",
+        )
+
+        results = solution.extract_results()
+        parameters = solution.parameters(0)
+        bounds = solution.bounds()
+
+        # energy_conservation_test(solution, results)
+        # heat_to_discharge_test(solution, results)
+
+        ates = solution.energy_system_components.get("ates")[0]
+        ates_flow = results[f"{ates}.Q"]
+        ates_flow_bound = bounds[f"{ates}.Q"][1]
+
+        ates_heat = results[f"{ates}.Heat_ates"]
+        ates_heat_bound = bounds[f"{ates}.Heat_ates"][1]
+
+        ates_stored_heat = results[f"{ates}.Stored_heat"]
+
+        temp_options = solution.temperature_regimes(41770304791669983859190)
+        network_temperature = results["41770304791669983859190_temperature"]
+
+        ates_temperature = results[f"{ates}.Temperature_ates"]
+        ates_temperature_disc = results[f"{ates}__temperature_ates_disc"]
+        ates_temp_ret = parameters[f"{ates}.T_return"]
+        cp = parameters["ATES_cb47.cp"]
+        rho = parameters["ATES_cb47.rho"]

@@ -91,14 +91,15 @@ class _GoalsAndOptions:
         goals = super().path_goals().copy()
 
         for demand in self.energy_system_components.get("heat_demand"):
-            target = self.get_timeseries(f"{demand}.target_heat_demand")
-            state = f"{demand}.Heat_demand"
+            if "1266" not in demand:
+                target = self.get_timeseries(f"{demand}.target_heat_demand")
+                state = f"{demand}.Heat_demand"
 
-            goals.append(TargetDemandGoal(state, target))
+                goals.append(TargetDemandGoal(state, target))
 
         for s in [
-            *self.energy_system_components.get("heat_source"),
-            *self.energy_system_components.get("heat_pump"),
+            *self.energy_system_components.get("heat_source", []),
+            *self.energy_system_components.get("heat_pump", []),
         ]:
             goals.append(MinimizeCostHeatGoal(s))
 
@@ -178,13 +179,13 @@ class HeatProblem(
         # demand without loading/unloading ates.
         sum_disabled_vars = 0
         for asset in [
-            *self.energy_system_components.get("heat_pump"),
-            *self.energy_system_components.get("heat_exchanger"),
+            *self.energy_system_components.get("heat_pump", []),
+            *self.energy_system_components.get("heat_exchanger", []),
         ]:
             disabled_var = self.state(f"{asset}__disabled")
             sum_disabled_vars += disabled_var
-
-        constraints.append((sum_disabled_vars, 1.0, 2.0))
+        if sum_disabled_vars != 0.0:
+            constraints.append((sum_disabled_vars, 1.0, 2.0))
 
         # when using compound asset instead of separate assets, one could still use this constraint
         # but potentially add the constraint that if hex is enabled, ates is loading and if hp is
