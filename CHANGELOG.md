@@ -7,6 +7,7 @@
 - OPEX added for gas and electricity source
 - Added function to make pickle usable (exceptions) in the OMOTES back end
 - More of the existing classes added to __init_ for local runs using the grow_workflow
+- Generic function to adapt timeseries from hourly timesteps to user-defined timesteps by averaging.
 
 ## Changed
 - Write output to json also saves the solver statistics.
