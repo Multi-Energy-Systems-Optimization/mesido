@@ -14,6 +14,7 @@
 - Adapt profiles for heating and cooling peak day seperately & add test case
 - For gas: Use energy content (heating value) instead of internal energy 
 - Option was added to allow a bypass of the heat exchanger 
+- Option for electricity cables to be unidirectional
 
 ## Fixed
 - Bugfix: gas boiler mass flow contraint units
