@@ -482,7 +482,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
     @property
     def energy_system_components_commodity(self) -> Dict[str, Set[str]]:
         """
-        This method return a dict with the milp network assets ordered per asset type.
+        This method returns a dict with the milp network assets and their commodity type.
         """
         if self.__commodity_types is None:
             # Create the dictionary once after that it will be available

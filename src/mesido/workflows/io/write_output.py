@@ -19,6 +19,7 @@ from esdl.profiles.profilemanager import ProfileManager
 import mesido.esdl.esdl_parser
 from mesido.constants import GRAVITATIONAL_CONSTANT
 from mesido.esdl.edr_pipe_class import EDRPipeClass
+from mesido.network_common import NetworkSettings
 from mesido.workflows.utils.helpers import _sort_numbered
 
 import numpy as np
@@ -1118,15 +1119,21 @@ class ScenarioOutput:
                     # These variables exist for all the assets. Variables that only exist for
                     # specific
                     # assets are only added later, like Pump_power
-                    variables_one_hydraulic_system = ["HeatIn.Q", "Heat_flow"]
-                    variables_two_hydraulic_system = [
-                        "Primary.HeatIn.Q",
-                        "Secondary.HeatIn.Q",
-                        "Heat_flow",
-                    ]
-                    post_processed = {}
-
                     commodity = self.energy_system_components_commodity.get(asset_name)
+
+                    variables_one_hydraulic_system = [f"{commodity}In.Q"]
+                    variables_two_hydraulic_system = [
+                        f"Primary.{commodity}In.Q",
+                        f"Secondary.{commodity}In.Q",
+                    ]
+                    if commodity == NetworkSettings.NETWORK_TYPE_HEAT:
+                        variables_one_hydraulic_system.append("Heat_flow")
+                        variables_two_hydraulic_system.append("Heat_flow")
+                    elif commodity == NetworkSettings.NETWORK_TYPE_GAS:
+                        variables_one_hydraulic_system.append(f"{commodity}In.mass_flow")
+                        variables_two_hydraulic_system.append(f"{commodity}In.mass_flow")
+
+                    post_processed = {}
 
                     # Update/overwrite each asset variable list due to:
                     # - the addition of head loss minimization: head variable and pump power
@@ -1160,8 +1167,8 @@ class ScenarioOutput:
                             / parameters[f"{asset_name}.area"]
                         )
                         variables_one_hydraulic_system.append("PostProc.Pressure")
-                        variables_two_hydraulic_system.append("PostProc.Pressure")  # seems
-                        # unnecessary, pipes always only have 1 hydraulic system
+                        # TODO: seems unnecessary, pipes always only have 1 hydraulic system
+                        variables_two_hydraulic_system.append("PostProc.Pressure")
                         post_processed["PostProc.Pressure"] = (
                             results[f"{asset_name}.{commodity}In.H"]  # m
                             * GRAVITATIONAL_CONSTANT  # m/s2
@@ -1301,9 +1308,9 @@ class ScenarioOutput:
                                             )
                                         )
                                     elif variable in [
-                                        "HeatIn.H",
-                                        "Primary.HeatIn.H",
-                                        "Secondary.HeatIn.H",
+                                        f"{commodity}In.H",
+                                        f"Primary.{commodity}In.H",
+                                        f"Secondary.{commodity}In.H",
                                     ]:
                                         profile_attributes.profileQuantityAndUnit = (
                                             esdl.esdl.QuantityAndUnitType(
@@ -1313,9 +1320,9 @@ class ScenarioOutput:
                                             )
                                         )
                                     elif variable in [
-                                        "HeatIn.Q",
-                                        "Primary.HeatIn.Q",
-                                        "Secondary.HeatIn.Q",
+                                        f"{commodity}In.Q",
+                                        f"Primary.{commodity}In.Q",
+                                        f"Secondary.{commodity}In.Q",
                                     ]:
                                         profile_attributes.profileQuantityAndUnit = (
                                             esdl.esdl.QuantityAndUnitType(
@@ -1345,9 +1352,9 @@ class ScenarioOutput:
                                 # Add variable values in new column
                                 conversion_factor = 0.0
                                 if variable in [
-                                    "HeatIn.H",
-                                    "Primary.HeatIn.H",
-                                    "Secondary.HeatIn.H",
+                                    f"{commodity}In.H",
+                                    f"Primary.{commodity}In.H",
+                                    f"Secondary.{commodity}In.H",
                                 ]:
                                     conversion_factor = GRAVITATIONAL_CONSTANT * 988.0
                                 else:
