@@ -498,6 +498,11 @@ class SettingsStaged:
         if self._stage == 2 and priorities_output:
             self._priorities_output = priorities_output
 
+            self.heat_network_settings["n_linearization_lines"] = 1  # gets stuck stage 2, priority 1 when this is 5
+            # self.heat_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+            # self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+            # self.heat_network_settings["minimize_head_losses"] = False
+
     def energy_system_options(self):
         options = super().energy_system_options()
         if self._stage == 1:
@@ -633,22 +638,26 @@ def run_end_scenario_sizing(
 
         # We give bounds for stage 2 by allowing one DN sizes larger than what was found in the
         # stage 1 optimization.
-        pc_map = solution.get_pipe_class_map()
+        # The above statement is not true, Pipe 1, DN500 optional. Only DN150 is option. Some other the same
+        pc_map = solution.get_pipe_class_map()  # if disconnectable and not connected to source
         for pipe_classes in pc_map.values():
             v_prev = 0.0
             first_pipe_class = True
             for var_name in pipe_classes.values():
-                v = results[var_name][0]
-                if first_pipe_class and abs(v) == 1.0:
-                    boolean_bounds[var_name] = (abs(v), abs(v))
-                elif abs(v) == 1.0:
-                    boolean_bounds[var_name] = (0.0, abs(v))
+                v = round(abs(results[var_name][0]))
+                if first_pipe_class and v == 1.0:
+                    boolean_bounds[var_name] = (v, v)
+                elif v == 1.0:
+                    boolean_bounds[var_name] = (0.0, v)
                 elif v_prev == 1.0:
                     boolean_bounds[var_name] = (0.0, 1.0)
                 else:
-                    boolean_bounds[var_name] = (abs(v), abs(v))
+                    boolean_bounds[var_name] = (v, v)
                 v_prev = v
                 first_pipe_class = False
+
+        # boolean_bounds[var_name] = 
+        boolean_bounds["Pipe 16__hn_pipe_class_DN150"] = (0.0, 0.0)
 
         for asset in [
             *solution.energy_system_components.get("heat_source", []),
@@ -693,6 +702,8 @@ def run_end_scenario_sizing(
                     boolean_bounds[f"{p}__is_disconnected"] = (Timeseries(t, r), Timeseries(t, r))
                 except KeyError:
                     pass
+
+                # boolean_bounds["Pipe 16__is_disconnected"] = (Timeseries(t, 1), Timeseries(t, 1))
         priorities_output = solution._priorities_output
 
     solution = run_optimization_problem_solver(
