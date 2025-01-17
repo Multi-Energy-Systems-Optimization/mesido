@@ -161,9 +161,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         self.__demand_insulation_class_result = {}
 
         # Boolean variables for the linear line segment options per pipe.
-        self.__pipe_linear_line_segment_var = {}  # value 0/1: line segment - not active/active
-        self.__pipe_linear_line_segment_var_bounds = {}
-        self._pipe_linear_line_segment_map = {}
+        self.__heat_pipe_linear_line_segment_var = {}  # value 0/1: line segment - not active/active
+        self.__heat_pipe_linear_line_segment_var_bounds = {}
+        self._heat_pipe_linear_line_segment_map = {}
 
         # Variable of selected network temperature
         self.__temperature_regime_var = {}
@@ -282,16 +282,16 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 and initialized_vars[9] != {}
                 and initialized_vars[10] != {}
             ):
-                self._pipe_linear_line_segment_map[pipe_name] = {}
+                self._heat_pipe_linear_line_segment_map[pipe_name] = {}
                 for ii_line in range(self.heat_network_settings["n_linearization_lines"] * 2):
                     pipe_linear_line_segment_var_name = initialized_vars[8][ii_line]
-                    self._pipe_linear_line_segment_map[pipe_name][
+                    self._heat_pipe_linear_line_segment_map[pipe_name][
                         ii_line
                     ] = pipe_linear_line_segment_var_name
-                    self.__pipe_linear_line_segment_var[pipe_linear_line_segment_var_name] = (
+                    self.__heat_pipe_linear_line_segment_var[pipe_linear_line_segment_var_name] = (
                         initialized_vars[9][pipe_linear_line_segment_var_name]
                     )
-                    self.__pipe_linear_line_segment_var_bounds[
+                    self.__heat_pipe_linear_line_segment_var_bounds[
                         pipe_linear_line_segment_var_name
                     ] = initialized_vars[10][pipe_linear_line_segment_var_name]
 
@@ -679,7 +679,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         variables.extend(self.__check_valve_status_var.values())
         variables.extend(self.__control_valve_direction_var.values())
         variables.extend(self.__demand_insulation_class_var.values())
-        variables.extend(self.__pipe_linear_line_segment_var.values())
+        variables.extend(self.__heat_pipe_linear_line_segment_var.values())
         variables.extend(self.__temperature_regime_var.values())
         variables.extend(self.__carrier_selected_var.values())
         variables.extend(self.__ates_temperature_disc_var.values())
@@ -701,7 +701,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             or variable in self.__check_valve_status_var
             or variable in self.__control_valve_direction_var
             or variable in self.__demand_insulation_class_var
-            or variable in self.__pipe_linear_line_segment_var
+            or variable in self.__heat_pipe_linear_line_segment_var
             or variable in self.__carrier_selected_var
             or variable in self.__ates_temperature_selected_var
             or variable in self.__disabled_hex_var
@@ -740,7 +740,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         bounds.update(self.__control_valve_direction_var_bounds)
         bounds.update(self.__buffer_t0_bounds)
         bounds.update(self.__demand_insulation_class_var_bounds)
-        bounds.update(self.__pipe_linear_line_segment_var_bounds)
+        bounds.update(self.__heat_pipe_linear_line_segment_var_bounds)
         bounds.update(self._pipe_heat_loss_var_bounds)
         bounds.update(self.__temperature_regime_var_bounds)
         bounds.update(self.__carrier_selected_var_bounds)
