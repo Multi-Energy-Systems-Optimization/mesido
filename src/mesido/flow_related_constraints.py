@@ -1,6 +1,16 @@
 import numpy as np
 
 
+
+ """
+ Potential constraints that could be moved here:
+ - __gas_node_hydraulic_power_mixing_path_constraints & __node_hydraulic_power_mixing_path_constraints
+ - to allow the disconnected constraints related to flow --> currently in heatphyscismixin in 
+ flow_dir_path_constraints
+ - __node_discharge_mixing_path_constraints & __gas_node_mixing_path_constraints
+
+ """
+
 def flow_direction_path_constraints(
     optimization_problem,
     pipe: str,
@@ -55,26 +65,39 @@ def flow_direction_topology_path_constraints(
     # see the flow_direction constraints for pipe_series
     pass
 
-def initialization_pipe_head_loss(optimization_problem, cls_name, pipe_name):
+def initialization_pipe_head_loss(optimization_problem, cls_name: str, pipe_name: str):
+    """
+    Generic method to initilize the pipe head_loss variables, maps and bounds for both the heat
+    and gas physicis. This method ensures that if anything changes its updated is used in both
+    commodities.
+
+    Args:
+        optimization_problem: the optimization problem for which the pipe head loss variables
+        need to be initialized
+        cls_name: the class in which these variables need to be initialized
+        pipe_name: the pipe for which these variables need to be initialized
+    """
     head_loss_var = f"{pipe_name}.__head_loss"
-    commodity = optimization_problem.energy_system_components_commodity.get(pipe_name).lower()
+    commodity_c = optimization_problem.energy_system_components_commodity.get(pipe_name)
+    commodity_l = commodity_c.lower()
     # Note we always use the gas network type for the naming of variables, independent of
     # the gas mixture used.
-    network = commodity[0].lower()
+    network = commodity_l[0].lower()
     initialized_vars = getattr(optimization_problem,
                                f"_{network}n_head_loss_class").initialize_variables_nominals_and_bounds(
-        optimization_problem, commodity, pipe_name, optimization_problem.gas_network_settings)
+        optimization_problem, commodity_c, pipe_name,
+        getattr(optimization_problem, f"{commodity_l}_network_settings"))
 
-    head_bounds = getattr(optimization_problem, f"_{cls_name}__{commodity}_pipe_head_bounds")
-    head_loss_zero_bounds = getattr(optimization_problem, f"_{cls_name}__{commodity}_pipe_head_loss_zero_bounds")
+    head_bounds = getattr(optimization_problem, f"_{cls_name}__{commodity_l}_pipe_head_bounds")
+    head_loss_zero_bounds = getattr(optimization_problem, f"_{cls_name}__{commodity_l}_pipe_head_loss_zero_bounds")
     network_head_loss_map = getattr(optimization_problem, f"_{network}n_pipe_to_head_loss_map")
-    pipe_head_loss_var = getattr(optimization_problem, f"_{cls_name}__{commodity}_pipe_head_loss_var")
-    head_loss_nominals = getattr(optimization_problem, f"_{cls_name}__{commodity}_pipe_head_loss_nominals")
-    head_loss_bounds = getattr(optimization_problem, f"_{cls_name}__{commodity}_pipe_head_loss_bounds")
+    pipe_head_loss_var = getattr(optimization_problem, f"_{cls_name}__{commodity_l}_pipe_head_loss_var")
+    head_loss_nominals = getattr(optimization_problem, f"_{cls_name}__{commodity_l}_pipe_head_loss_nominals")
+    head_loss_bounds = getattr(optimization_problem, f"_{cls_name}__{commodity_l}_pipe_head_loss_bounds")
     if initialized_vars[0] != {}:
-        head_bounds[f"{pipe_name}.{commodity}In.H"] = (initialized_vars)[0]
+        head_bounds[f"{pipe_name}.{commodity_c}In.H"] = (initialized_vars)[0]
     if initialized_vars[1] != {}:
-        head_bounds[f"{pipe_name}.{commodity}Out.H"] = initialized_vars[1]
+        head_bounds[f"{pipe_name}.{commodity_c}Out.H"] = initialized_vars[1]
     if initialized_vars[2] != {}:
         head_loss_zero_bounds[f"{pipe_name}.dH"] = initialized_vars[2]
     if initialized_vars[3] != {}:
@@ -95,14 +118,14 @@ def initialization_pipe_head_loss(optimization_problem, cls_name, pipe_name):
     ):  # Variables needed to indicate if a linear line segment is active
 
         pipe_line_segment_map = getattr(optimization_problem,
-                                  f"_{commodity}_pipe_linear_line_segment_map")
+                                  f"_{commodity_l}_pipe_linear_line_segment_map")
         pipe_line_segment_map[pipe_name] = {}
-        for ii_line in range(optimization_problem.gas_network_settings["n_linearization_lines"] * 2):
+        for ii_line in range(getattr(optimization_problem, f"{commodity_l}_network_settings")["n_linearization_lines"] * 2):
             segment_var_name = initialized_vars[8][ii_line]
             pipe_line_segment_map[pipe_name][ii_line] = segment_var_name
             getattr(optimization_problem,
-                    f"_{cls_name}__{commodity}_pipe_linear_line_segment_var")[segment_var_name] = (
+                    f"_{cls_name}__{commodity_l}_pipe_linear_line_segment_var")[segment_var_name] = (
                 initialized_vars[9][segment_var_name])
             getattr(optimization_problem,
-                    f"_{cls_name}__{commodity}_pipe_linear_line_segment_var_bounds")[segment_var_name] = (
+                    f"_{cls_name}__{commodity_l}_pipe_linear_line_segment_var_bounds")[segment_var_name] = (
                 initialized_vars)[10][segment_var_name]

@@ -9,7 +9,7 @@ from mesido.base_component_type_mixin import BaseComponentTypeMixin
 from mesido.demand_insulation_class import DemandInsulationClass
 from mesido.head_loss_class import HeadLossClass, HeadLossOption
 from mesido.network_common import NetworkSettings
-from mesido.generic_constraints import flow_direction_path_constraints
+from mesido.flow_related_constraints import flow_direction_path_constraints, initialization_pipe_head_loss
 
 import numpy as np
 
@@ -253,48 +253,49 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         # Set structure used instead of list. Purpose: to make lookup faster when there are many
         # pipes in the network.
         set_self_hot_pipes = set(self.hot_pipes)
-
+        cls_name = "HeatPhysicsMixin"
         for pipe_name in self.energy_system_components.get("heat_pipe", []):
-            commodity = self.energy_system_components_commodity.get(pipe_name)
-            head_loss_var = f"{pipe_name}.__head_loss"
-            initialized_vars = self._hn_head_loss_class.initialize_variables_nominals_and_bounds(
-                self, commodity, pipe_name, self.heat_network_settings
-            )
-            if initialized_vars[0] != {}:
-                self.__heat_pipe_head_bounds[f"{pipe_name}.{commodity}In.H"] = initialized_vars[0]
-            if initialized_vars[1] != {}:
-                self.__heat_pipe_head_bounds[f"{pipe_name}.{commodity}Out.H"] = initialized_vars[1]
-            if initialized_vars[2] != {}:
-                self.__heat_pipe_head_loss_zero_bounds[f"{pipe_name}.dH"] = initialized_vars[2]
-            if initialized_vars[3] != {}:
-                self._hn_pipe_to_head_loss_map[pipe_name] = initialized_vars[3]
-            if initialized_vars[4] != {}:
-                self.__heat_pipe_head_loss_var[head_loss_var] = initialized_vars[4]
-            if initialized_vars[5] != {}:
-                self.__heat_pipe_head_loss_nominals[f"{pipe_name}.dH"] = initialized_vars[5]
-            if initialized_vars[6] != {}:
-                self.__heat_pipe_head_loss_nominals[head_loss_var] = initialized_vars[6]
-            if initialized_vars[7] != {}:
-                self.__heat_pipe_head_loss_bounds[head_loss_var] = initialized_vars[7]
-
-            if (
-                initialized_vars[8] != {}
-                and initialized_vars[9] != {}
-                and initialized_vars[10] != {}
-            ):
-                self._heat_pipe_linear_line_segment_map[pipe_name] = {}
-                for ii_line in range(self.heat_network_settings["n_linearization_lines"] * 2):
-                    pipe_linear_line_segment_var_name = initialized_vars[8][ii_line]
-                    self._heat_pipe_linear_line_segment_map[pipe_name][
-                        ii_line
-                    ] = pipe_linear_line_segment_var_name
-                    self.__heat_pipe_linear_line_segment_var[pipe_linear_line_segment_var_name] = (
-                        initialized_vars[9][pipe_linear_line_segment_var_name]
-                    )
-                    self.__heat_pipe_linear_line_segment_var_bounds[
-                        pipe_linear_line_segment_var_name
-                    ] = initialized_vars[10][pipe_linear_line_segment_var_name]
-
+            initialization_pipe_head_loss(self, cls_name, pipe_name)
+            # commodity = self.energy_system_components_commodity.get(pipe_name)
+            # head_loss_var = f"{pipe_name}.__head_loss"
+            # initialized_vars = self._hn_head_loss_class.initialize_variables_nominals_and_bounds(
+            #     self, commodity, pipe_name, self.heat_network_settings
+            # )
+            # if initialized_vars[0] != {}:
+            #     self.__heat_pipe_head_bounds[f"{pipe_name}.{commodity}In.H"] = initialized_vars[0]
+            # if initialized_vars[1] != {}:
+            #     self.__heat_pipe_head_bounds[f"{pipe_name}.{commodity}Out.H"] = initialized_vars[1]
+            # if initialized_vars[2] != {}:
+            #     self.__heat_pipe_head_loss_zero_bounds[f"{pipe_name}.dH"] = initialized_vars[2]
+            # if initialized_vars[3] != {}:
+            #     self._hn_pipe_to_head_loss_map[pipe_name] = initialized_vars[3]
+            # if initialized_vars[4] != {}:
+            #     self.__heat_pipe_head_loss_var[head_loss_var] = initialized_vars[4]
+            # if initialized_vars[5] != {}:
+            #     self.__heat_pipe_head_loss_nominals[f"{pipe_name}.dH"] = initialized_vars[5]
+            # if initialized_vars[6] != {}:
+            #     self.__heat_pipe_head_loss_nominals[head_loss_var] = initialized_vars[6]
+            # if initialized_vars[7] != {}:
+            #     self.__heat_pipe_head_loss_bounds[head_loss_var] = initialized_vars[7]
+            #
+            # if (
+            #     initialized_vars[8] != {}
+            #     and initialized_vars[9] != {}
+            #     and initialized_vars[10] != {}
+            # ):
+            #     self._heat_pipe_linear_line_segment_map[pipe_name] = {}
+            #     for ii_line in range(self.heat_network_settings["n_linearization_lines"] * 2):
+            #         pipe_linear_line_segment_var_name = initialized_vars[8][ii_line]
+            #         self._heat_pipe_linear_line_segment_map[pipe_name][
+            #             ii_line
+            #         ] = pipe_linear_line_segment_var_name
+            #         self.__heat_pipe_linear_line_segment_var[pipe_linear_line_segment_var_name] = (
+            #             initialized_vars[9][pipe_linear_line_segment_var_name]
+            #         )
+            #         self.__heat_pipe_linear_line_segment_var_bounds[
+            #             pipe_linear_line_segment_var_name
+            #         ] = initialized_vars[10][pipe_linear_line_segment_var_name]
+            print(self.__heat_pipe_head_bounds)
             neighbour = self.has_related_pipe(pipe_name)
             if neighbour and pipe_name not in set_self_hot_pipes:
                 flow_dir_var = f"{self.cold_to_hot_pipe(pipe_name)}__flow_direct_var"

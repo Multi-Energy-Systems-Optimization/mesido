@@ -6,8 +6,8 @@ import casadi as ca
 from mesido.base_component_type_mixin import BaseComponentTypeMixin
 from mesido.head_loss_class import HeadLossClass, HeadLossOption
 from mesido.network_common import NetworkSettings
-from mesido.generic_constraints import (flow_direction_path_constraints,
-                                        initialization_pipe_head_loss)
+from mesido.flow_related_constraints import (flow_direction_path_constraints,
+                                             initialization_pipe_head_loss)
 
 import numpy as np
 
