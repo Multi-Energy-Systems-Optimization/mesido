@@ -6,6 +6,8 @@ import casadi as ca
 from mesido.base_component_type_mixin import BaseComponentTypeMixin
 from mesido.head_loss_class import HeadLossClass, HeadLossOption
 from mesido.network_common import NetworkSettings
+from mesido.generic_constraints import (flow_direction_path_constraints,
+                                        initialization_pipe_head_loss)
 
 import numpy as np
 
@@ -180,52 +182,54 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                 return bound
 
         bounds = self.bounds()
-
+        print(self)
+        cls_name = "GasPhysicsMixin"
         for pipe_name in self.energy_system_components.get("gas_pipe", []):
-            head_loss_var = f"{pipe_name}.__head_loss"
-            commodity = self.energy_system_components_commodity.get(pipe_name)
-            # Note we always use the gas network type for the naming of variables, independent of
-            # the gas mixture used.
-            initialized_vars = self._gn_head_loss_class.initialize_variables_nominals_and_bounds(
-                self,
-                commodity,
-                pipe_name,
-                self.gas_network_settings,
-            )
-            if initialized_vars[0] != {}:
-                self.__gas_pipe_head_bounds[f"{pipe_name}.{commodity}In.H"] = initialized_vars[0]
-            if initialized_vars[1] != {}:
-                self.__gas_pipe_head_bounds[f"{pipe_name}.{commodity}Out.H"] = initialized_vars[1]
-            if initialized_vars[2] != {}:
-                self.__gas_pipe_head_loss_zero_bounds[f"{pipe_name}.dH"] = initialized_vars[2]
-            if initialized_vars[3] != {}:
-                self._gn_pipe_to_head_loss_map[pipe_name] = initialized_vars[3]
-            if initialized_vars[4] != {}:
-                self.__gas_pipe_head_loss_var[head_loss_var] = initialized_vars[4]
-            if initialized_vars[5] != {}:
-                self.__gas_pipe_head_loss_nominals[f"{pipe_name}.dH"] = initialized_vars[5]
-            if initialized_vars[6] != {}:
-                self.__gas_pipe_head_loss_nominals[head_loss_var] = initialized_vars[6]
-            if initialized_vars[7] != {}:
-                self.__gas_pipe_head_loss_bounds[head_loss_var] = initialized_vars[7]
-
-            if (
-                initialized_vars[8] != {}
-                and initialized_vars[9] != {}
-                and initialized_vars[10] != {}
-            ):  # Variables needed to indicate if a linear line segment is active
-                self._gas_pipe_linear_line_segment_map[pipe_name] = {}
-                for ii_line in range(self.gas_network_settings["n_linearization_lines"] * 2):
-                    pipe_linear_line_segment_var_name = initialized_vars[8][ii_line]
-                    self._gas_pipe_linear_line_segment_map[pipe_name][
-                        ii_line
-                    ] = pipe_linear_line_segment_var_name
-                    self.__gas_pipe_linear_line_segment_var[pipe_linear_line_segment_var_name] = (
-                        initialized_vars[9][pipe_linear_line_segment_var_name]
-                    )
-                    self.__gas_pipe_linear_line_segment_var_bounds[
-                        pipe_linear_line_segment_var_name
-                    ] = initialized_vars[10][pipe_linear_line_segment_var_name]
+            initialization_pipe_head_loss(self, cls_name, pipe_name)
+            # head_loss_var = f"{pipe_name}.__head_loss"
+            # commodity = self.energy_system_components_commodity.get(pipe_name)
+            # # Note we always use the gas network type for the naming of variables, independent of
+            # # the gas mixture used.
+            # initialized_vars = self._gn_head_loss_class.initialize_variables_nominals_and_bounds(
+            #     self,
+            #     commodity,
+            #     pipe_name,
+            #     self.gas_network_settings,
+            # )
+            # if initialized_vars[0] != {}:
+            #     self.__gas_pipe_head_bounds[f"{pipe_name}.{commodity}In.H"] = initialized_vars[0]
+            # if initialized_vars[1] != {}:
+            #     self.__gas_pipe_head_bounds[f"{pipe_name}.{commodity}Out.H"] = initialized_vars[1]
+            # if initialized_vars[2] != {}:
+            #     self.__gas_pipe_head_loss_zero_bounds[f"{pipe_name}.dH"] = initialized_vars[2]
+            # if initialized_vars[3] != {}:
+            #     self._gn_pipe_to_head_loss_map[pipe_name] = initialized_vars[3]
+            # if initialized_vars[4] != {}:
+            #     self.__gas_pipe_head_loss_var[head_loss_var] = initialized_vars[4]
+            # if initialized_vars[5] != {}:
+            #     self.__gas_pipe_head_loss_nominals[f"{pipe_name}.dH"] = initialized_vars[5]
+            # if initialized_vars[6] != {}:
+            #     self.__gas_pipe_head_loss_nominals[head_loss_var] = initialized_vars[6]
+            # if initialized_vars[7] != {}:
+            #     self.__gas_pipe_head_loss_bounds[head_loss_var] = initialized_vars[7]
+            #
+            # if (
+            #     initialized_vars[8] != {}
+            #     and initialized_vars[9] != {}
+            #     and initialized_vars[10] != {}
+            # ):  # Variables needed to indicate if a linear line segment is active
+            #     self._gas_pipe_linear_line_segment_map[pipe_name] = {}
+            #     for ii_line in range(self.gas_network_settings["n_linearization_lines"] * 2):
+            #         pipe_linear_line_segment_var_name = initialized_vars[8][ii_line]
+            #         self._gas_pipe_linear_line_segment_map[pipe_name][
+            #             ii_line
+            #         ] = pipe_linear_line_segment_var_name
+            #         self.__gas_pipe_linear_line_segment_var[pipe_linear_line_segment_var_name] = (
+            #             initialized_vars[9][pipe_linear_line_segment_var_name]
+            #         )
+            #         self.__gas_pipe_linear_line_segment_var_bounds[
+            #             pipe_linear_line_segment_var_name
+            #         ] = initialized_vars[10][pipe_linear_line_segment_var_name]
 
             # Integer variables
             flow_dir_var = f"{pipe_name}__gas_flow_direct_var"
@@ -540,7 +544,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         The directions are set based upon the directions of how thermal power propegates. This is
         done based upon the sign of the Heat variable. Where positive Heat means a positive
         direction and negative milp means a negative direction. By default, positive is defined from
-        HeatIn to HeatOut.
+        GasIn to GasOut.
 
         Finally, a minimum flow can be set. This can sometimes be useful for numerical stability.
         """
@@ -551,9 +555,17 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             flow_dir_var = self._gas_pipe_to_flow_direct_map[p]
             flow_dir = self.state(flow_dir_var)
 
-            q_in = self.state(f"{p}.GasIn.Q")
+            # q_in = self.state(f"{p}.GasIn.Q")
 
-            big_m = 2.0 * np.max(
+            # big_m = 2.0 * np.max(
+            #     np.abs(
+            #         (
+            #             *self.bounds()[f"{p}.GasIn.Q"],
+            #             *self.bounds()[f"{p}.GasOut.Q"],
+            #         )
+            #     )
+            # )
+            max_discharge = np.max(
                 np.abs(
                     (
                         *self.bounds()[f"{p}.GasIn.Q"],
@@ -562,22 +574,28 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                 )
             )
 
-            # Note we only need one on the milp as the desired behaviour is propegated by the
-            # constraints heat_in - heat_out - heat_loss == 0.
-            constraints.append(
-                (
-                    (q_in - big_m * flow_dir) / big_m,
-                    -np.inf,
-                    0.0,
+            constraints.extend(
+                flow_direction_path_constraints(
+                    self, p, flow_dir_var, maximum_discharge=max_discharge
                 )
             )
-            constraints.append(
-                (
-                    (q_in + big_m * (1 - flow_dir)) / big_m,
-                    0.0,
-                    np.inf,
-                )
-            )
+
+            # # Note we only need one on the milp as the desired behaviour is propegated by the
+            # # constraints heat_in - heat_out - heat_loss == 0.
+            # constraints.append(
+            #     (
+            #         (q_in - big_m * flow_dir) / big_m,
+            #         -np.inf,
+            #         0.0,
+            #     )
+            # )
+            # constraints.append(
+            #     (
+            #         (q_in + big_m * (1 - flow_dir)) / big_m,
+            #         0.0,
+            #         np.inf,
+            #     )
+            # )
 
         # Pipes that are connected in series should have the same milp direction.
         for pipes in self.energy_system_topology.pipe_series:
