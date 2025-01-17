@@ -4,10 +4,13 @@ import logging
 import casadi as ca
 
 from mesido.base_component_type_mixin import BaseComponentTypeMixin
+from mesido.flow_related_constraints import (
+    flow_direction_path_constraints,
+    initialization_pipe_head_loss,
+)
 from mesido.head_loss_class import HeadLossClass, HeadLossOption
 from mesido.network_common import NetworkSettings
-from mesido.flow_related_constraints import (flow_direction_path_constraints,
-                                             initialization_pipe_head_loss)
+
 
 import numpy as np
 
@@ -553,7 +556,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         # Also ensure that the discharge has the same sign as the milp.
         for p in self.energy_system_components.get("gas_pipe", []):
             flow_dir_var = self._gas_pipe_to_flow_direct_map[p]
-            flow_dir = self.state(flow_dir_var)
+            # flow_dir = self.state(flow_dir_var)
 
             # q_in = self.state(f"{p}.GasIn.Q")
 

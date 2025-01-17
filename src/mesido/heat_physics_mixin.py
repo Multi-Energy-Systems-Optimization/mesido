@@ -7,9 +7,13 @@ import casadi as ca
 from mesido._heat_loss_u_values_pipe import pipe_heat_loss
 from mesido.base_component_type_mixin import BaseComponentTypeMixin
 from mesido.demand_insulation_class import DemandInsulationClass
+from mesido.flow_related_constraints import (
+    flow_direction_path_constraints,
+    initialization_pipe_head_loss,
+)
 from mesido.head_loss_class import HeadLossClass, HeadLossOption
 from mesido.network_common import NetworkSettings
-from mesido.flow_related_constraints import flow_direction_path_constraints, initialization_pipe_head_loss
+
 
 import numpy as np
 

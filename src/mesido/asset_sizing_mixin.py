@@ -1479,7 +1479,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         return constraints
 
     def __gas_pipe_topology_constraints(self, ensemble_member):
-        #TODO: potentially this could be merged with the __pipe_topology_constraints since we
+        # TODO: potentially this could be merged with the __pipe_topology_constraints since we
         # have the commodity types available and the majority of these constraints is similar
         # besides tapping into some different maps.
         constraints = []
