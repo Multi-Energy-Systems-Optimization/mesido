@@ -9,6 +9,7 @@ from mesido.base_component_type_mixin import BaseComponentTypeMixin
 from mesido.demand_insulation_class import DemandInsulationClass
 from mesido.head_loss_class import HeadLossClass, HeadLossOption
 from mesido.network_common import NetworkSettings
+from mesido.generic_constraints import flow_direction_path_constraints
 
 import numpy as np
 
@@ -109,11 +110,11 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             "heat_exchanger_bypass": False,
         }
         self._hn_head_loss_class = HeadLossClass(self.heat_network_settings)
-        self.__pipe_head_bounds = {}
-        self.__pipe_head_loss_var = {}
-        self.__pipe_head_loss_bounds = {}
-        self.__pipe_head_loss_nominals = {}
-        self.__pipe_head_loss_zero_bounds = {}
+        self.__heat_pipe_head_bounds = {}
+        self.__heat_pipe_head_loss_var = {}
+        self.__heat_pipe_head_loss_bounds = {}
+        self.__heat_pipe_head_loss_nominals = {}
+        self.__heat_pipe_head_loss_zero_bounds = {}
         self._hn_pipe_to_head_loss_map = {}
 
         # Boolean path-variable for the direction of the flow, inport to outport is positive flow.
@@ -260,21 +261,21 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 self, commodity, pipe_name, self.heat_network_settings
             )
             if initialized_vars[0] != {}:
-                self.__pipe_head_bounds[f"{pipe_name}.{commodity}In.H"] = initialized_vars[0]
+                self.__heat_pipe_head_bounds[f"{pipe_name}.{commodity}In.H"] = initialized_vars[0]
             if initialized_vars[1] != {}:
-                self.__pipe_head_bounds[f"{pipe_name}.{commodity}Out.H"] = initialized_vars[1]
+                self.__heat_pipe_head_bounds[f"{pipe_name}.{commodity}Out.H"] = initialized_vars[1]
             if initialized_vars[2] != {}:
-                self.__pipe_head_loss_zero_bounds[f"{pipe_name}.dH"] = initialized_vars[2]
+                self.__heat_pipe_head_loss_zero_bounds[f"{pipe_name}.dH"] = initialized_vars[2]
             if initialized_vars[3] != {}:
                 self._hn_pipe_to_head_loss_map[pipe_name] = initialized_vars[3]
             if initialized_vars[4] != {}:
-                self.__pipe_head_loss_var[head_loss_var] = initialized_vars[4]
+                self.__heat_pipe_head_loss_var[head_loss_var] = initialized_vars[4]
             if initialized_vars[5] != {}:
-                self.__pipe_head_loss_nominals[f"{pipe_name}.dH"] = initialized_vars[5]
+                self.__heat_pipe_head_loss_nominals[f"{pipe_name}.dH"] = initialized_vars[5]
             if initialized_vars[6] != {}:
-                self.__pipe_head_loss_nominals[head_loss_var] = initialized_vars[6]
+                self.__heat_pipe_head_loss_nominals[head_loss_var] = initialized_vars[6]
             if initialized_vars[7] != {}:
-                self.__pipe_head_loss_bounds[head_loss_var] = initialized_vars[7]
+                self.__heat_pipe_head_loss_bounds[head_loss_var] = initialized_vars[7]
 
             if (
                 initialized_vars[8] != {}
@@ -672,7 +673,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         time-step.
         """
         variables = super().path_variables.copy()
-        variables.extend(self.__pipe_head_loss_var.values())
+        variables.extend(self.__heat_pipe_head_loss_var.values())
         variables.extend(self.__heat_flow_direct_var.values())
         variables.extend(self.__heat_pipe_disconnect_var.values())
         variables.extend(self.__check_valve_status_var.values())
@@ -718,8 +719,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         """
         if variable in self._pipe_heat_loss_nominals:
             return self._pipe_heat_loss_nominals[variable]
-        elif variable in self.__pipe_head_loss_nominals:
-            return self.__pipe_head_loss_nominals[variable]
+        elif variable in self.__heat_pipe_head_loss_nominals:
+            return self.__heat_pipe_head_loss_nominals[variable]
         elif variable in self.__ates_max_stored_heat_nominals:
             return self.__ates_max_stored_heat_nominals[variable]
         elif variable in self.__heat_node_variable_nominal:
@@ -747,14 +748,14 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         bounds.update(self.__ates_temperature_selected_var_bounds)
         bounds.update(self.__disabled_hex_var_bounds)
 
-        bounds.update(self.__pipe_head_loss_bounds)
-        bounds.update(self.__pipe_head_loss_zero_bounds)
+        bounds.update(self.__heat_pipe_head_loss_bounds)
+        bounds.update(self.__heat_pipe_head_loss_zero_bounds)
         bounds.update(self.__ates_temperature_ordering_var_bounds)
         bounds.update(self.__ates_temperature_disc_ordering_var_bounds)
         bounds.update(self.__carrier_temperature_disc_ordering_var_bounds)
         bounds.update(self.__ates_max_stored_heat_bounds)
 
-        for k, v in self.__pipe_head_bounds.items():
+        for k, v in self.__heat_pipe_head_bounds.items():
             bounds[k] = self.merge_bounds(bounds[k], v)
 
         return bounds
@@ -1298,41 +1299,52 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     minimum_discharge = 0.0
                 dn_none = 0.0
 
-            if maximum_discharge == 0.0:
-                maximum_discharge = 1.0
-            big_m = 2.0 * (maximum_discharge + minimum_discharge)
-
-            if minimum_discharge > 0.0:
-                constraint_nominal = (minimum_discharge * big_m) ** 0.5
-            else:
-                constraint_nominal = big_m
+            # if maximum_discharge == 0.0:
+            #     maximum_discharge = 1.0
+            # big_m = 2.0 * (maximum_discharge + minimum_discharge)
+            #
+            # if minimum_discharge > 0.0:
+            #     constraint_nominal = (minimum_discharge * big_m) ** 0.5
+            # else:
+            #     constraint_nominal = big_m
 
             # when DN=0 the flow_dir variable can be 0 or 1, thus these constraints then need to be
             # disabled
-            constraints.append(
-                (
-                    (
-                        q_pipe
-                        - big_m * (flow_dir + dn_none)
-                        + (1 - is_disconnected) * minimum_discharge
-                    )
-                    / constraint_nominal,
-                    -np.inf,
-                    0.0,
+            constraints.extend(
+                flow_direction_path_constraints(
+                    self,
+                    p,
+                    flow_dir_var,
+                    maximum_discharge=maximum_discharge,
+                    minimum_discharge=minimum_discharge,
+                    dn_none=dn_none,
+                    is_disconnected_var=is_disconnected_var,
                 )
             )
-            constraints.append(
-                (
-                    (
-                        q_pipe
-                        + big_m * (1 - flow_dir + dn_none)
-                        - (1 - is_disconnected) * minimum_discharge
-                    )
-                    / constraint_nominal,
-                    0.0,
-                    np.inf,
-                )
-            )
+            # constraints.append(
+            #     (
+            #         (
+            #             q_pipe
+            #             - big_m * (flow_dir + dn_none)
+            #             + (1 - is_disconnected) * minimum_discharge
+            #         )
+            #         / constraint_nominal,
+            #         -np.inf,
+            #         0.0,
+            #     )
+            # )
+            # constraints.append(
+            #     (
+            #         (
+            #             q_pipe
+            #             + big_m * (1 - flow_dir + dn_none)
+            #             - (1 - is_disconnected) * minimum_discharge
+            #         )
+            #         / constraint_nominal,
+            #         0.0,
+            #         np.inf,
+            #     )
+            # )
             big_m = 2.0 * np.max(
                 np.abs(
                     (
@@ -1341,7 +1353,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     )
                 )
             )
-            # Note we only need one on the heat as the desired behaviour is propegated by the
+            # Note we only need one on the heat in as the desired behaviour is propegated by the
             # constraints heat_in - heat_out - heat_loss == 0.
             constraints.append(
                 (
