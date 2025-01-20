@@ -1,4 +1,4 @@
-# [Unreleased] - 2024-12-11
+# [Unreleased] - 2025-01-20
 
 ## Added
 - xx
@@ -8,6 +8,17 @@
 
 ## Fixed
 - xx
+
+# [0.1.8.5] - 2025-01-20
+
+## Added
+- xx
+
+## Changed
+- xx
+
+## Fixed
+- Bug fix: pipe class bounds when pipe DN none results from stage 1 in the grow_workflow
 
 # [0.1.8.4] - 2024-12-11
 
