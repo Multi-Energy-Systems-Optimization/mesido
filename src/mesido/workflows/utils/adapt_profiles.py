@@ -201,9 +201,8 @@ def adapt_hourly_profile_averages_timestep_size(problem, problem_step_size_hours
         parameters = problem.parameters(ensemble_member)
 
         new_date_times = list()
-        nr_of_timesteps = len(org_timeseries) // problem_step_size_hours
 
-        for hour in range(0, nr_of_timesteps, problem_step_size_hours):
+        for hour in range(0, len(org_timeseries), problem_step_size_hours):
             new_date_times.append(problem.io.datetimes[hour])
 
         new_date_times.append(problem.io.datetimes[-1] + datetime.timedelta(hours=1))
