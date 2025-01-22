@@ -1,4 +1,4 @@
-from mesido.pycml import DiscreteVariable, Variable
+from mesido.pycml import Variable
 
 from numpy import nan, pi
 
@@ -76,7 +76,7 @@ class HeatPipe(_NonStorageComponent):
             self.rho * ff * max(self.length, 1.0) * pi * self.area / self.diameter / 2.0 * velo**3
         )
         self.add_variable(
-            DiscreteVariable, "Hydraulic_power", min=0.0, nominal=self.Hydraulic_power_nominal
+            Variable, "Hydraulic_power", min=0.0, nominal=self.Hydraulic_power_nominal
         )  # [W]
 
         self.add_equation(
