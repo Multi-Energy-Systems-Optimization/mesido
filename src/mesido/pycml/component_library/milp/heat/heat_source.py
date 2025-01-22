@@ -19,16 +19,22 @@ class HeatSource(_NonStorageComponent):
     port = HeatIn or HeatOut
 
     Variables created:
-        * {name}.Heat_source
-        * {name}.Emission
         * {name}.dH
-        * {name}.Pump_power
+        * {name}.Emission
         * {name}.Heat_flow
+        * {name}.Heat_source
+        * {name}.Pump_power
         * {name}.Q
         * {name}.{port}.H
         * {name}.{port}.Heat
         * {name}.{port}.Hydraulic_power
         * {name}.{port}.Q
+
+
+    Parameters
+    ----------
+    name : The name of the asset.
+    modifiers : Dictionary with asset information.
 
     """
 

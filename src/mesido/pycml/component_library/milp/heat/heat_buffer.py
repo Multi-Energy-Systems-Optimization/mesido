@@ -17,6 +17,28 @@ class HeatBuffer(HeatTwoPort, BaseAsset):
     Like all storage assets we enforce that they must be connected as a demand. The heat to
     discharge constraints are set in the HeatPhysicsMixin, where we use a big_m formulation to
     enforce the correct constraints depending on whether the buffer is charging or discharging.
+
+    port = HeatIn or HeatOut
+
+    Variables created:
+        * {name}.dH
+        * {name}.Heat_buffer
+        * {name}.Heat_flow
+        * {name}.Heat_loss
+        * {name}.Pump_power
+        * {name}.Q
+        * {name}.Stored_heat
+        * {name}.{port}.H
+        * {name}.{port}.Heat
+        * {name}.{port}.Hydraulic_power
+        * {name}.{port}.Q
+
+
+    Parameters
+    ----------
+    name : The name of the asset.
+    modifiers : Dictionary with asset information.
+
     """
 
     def __init__(self, name, **modifiers):

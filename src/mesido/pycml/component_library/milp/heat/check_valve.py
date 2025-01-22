@@ -7,6 +7,23 @@ class CheckValve(_NonStorageComponent):
     """
     The check valve allows the fluid to flow in only one direction. This is done with constraints
     in the HeatMixin.
+
+    port = HeatIn or HeatOut
+
+    Variables created:
+        * {name}.dH
+        * {name}.Heat_flow
+        * {name}.Q
+        * {name}.{port}.H
+        * {name}.{port}.Heat
+        * {name}.{port}.Hydraulic_power
+        * {name}.{port}.Q
+
+    Parameters
+    ----------
+    name : The name of the asset.
+    modifiers : Dictionary with asset information.
+
     """
 
     def __init__(self, name, **modifiers):

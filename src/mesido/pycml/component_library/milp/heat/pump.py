@@ -9,6 +9,22 @@ class Pump(_NonStorageComponent):
     """
     The pump component is there to add head to the flow. We assume head can only be added for
     positive flow.
+    port = HeatIn or HeatOut
+
+    Variables created:
+        * {name}.dH
+        * {name}.Heat_flow
+        * {name}.Pump_power
+        * {name}.Q
+        * {name}.{port}.H
+        * {name}.{port}.Heat
+        * {name}.{port}.Hydraulic_power
+        * {name}.{port}.Q
+
+    Parameters
+    ----------
+    name : The name of the asset.
+    modifiers : Dictionary with asset information.
     """
 
     def __init__(self, name, **modifiers):

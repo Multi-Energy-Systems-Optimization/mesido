@@ -11,6 +11,21 @@ class Node(HeatComponent, BaseAsset):
     junctions where multiple pipes come together. The node ensures that the heat on all ports is
     equal. Furthermore, it ensures that discharge and heat are conserved for which constraints in
     the HeatMixin are set.
+
+    port = HeatConn[i] (i is the index of the port)
+
+    Variables created:
+        * {name}.H
+        * {name}.{port}.H
+        * {name}.{port}.Heat
+        * {name}.{port}.Hydraulic_power
+        * {name}.{port}.Q
+
+    Parameters
+    ----------
+    name : The name of the asset.
+    modifiers : Dictionary with asset information.
+
     """
 
     def __init__(self, name, **modifiers):

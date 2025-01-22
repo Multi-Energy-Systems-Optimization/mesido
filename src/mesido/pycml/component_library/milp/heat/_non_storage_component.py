@@ -21,6 +21,11 @@ class _NonStorageComponent(HeatTwoPort, BaseAsset):
         * {name}.{port}.Heat
         * {name}.{port}.Hydraulic_power
         * {name}.{port}.Q
+
+    Parameters
+    ----------
+    name : The name of the asset.
+    modifiers : Dictionary with asset information.
     """
 
     def __init__(self, name, **modifiers):

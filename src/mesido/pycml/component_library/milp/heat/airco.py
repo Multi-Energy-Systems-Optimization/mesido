@@ -16,17 +16,26 @@ class Airco(_NonStorageComponent):
     drops. It also implicitly assumes that the temperature drops in the network are small and thus
     satisfy minimum temperature requirements.
 
+
     port = HeatIn or HeatOut
 
     Variables created:
-        * {name}.Heat_airco
         * {name}.dH
+        * {name}.Emission
         * {name}.Heat_flow
+        * {name}.Heat_airco
         * {name}.Q
         * {name}.{port}.H
         * {name}.{port}.Heat
         * {name}.{port}.Hydraulic_power
         * {name}.{port}.Q
+
+
+    Parameters
+    ----------
+    name : The name of the asset.
+    modifiers : Dictionary with asset information.
+
 
     """
 

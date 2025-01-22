@@ -1,4 +1,4 @@
-from mesido.pycml import Variable
+from mesido.pycml import DiscreteVariable, Variable
 
 from numpy import nan, pi
 
@@ -19,6 +19,24 @@ class HeatPipe(_NonStorageComponent):
     throughout the network. Meaning that the flow does lose energy but not temperature. In this
     manner the energy losses will always be overestimated as in reality the
     flow will also have a temperature drop.
+
+    port = HeatIn or HeatOut
+
+    Variables created:
+        * {name}.dH
+        * {name}.Heat_flow
+        * {name}.Hydraulic_power
+        * {name}.Q
+        * {name}.{port}.H
+        * {name}.{port}.Heat
+        * {name}.{port}.Hydraulic_power
+        * {name}.{port}.Q
+
+    Parameters
+    ----------
+    name : The name of the asset.
+    modifiers : Dictionary with asset information.
+
     """
 
     def __init__(self, name, **modifiers):
@@ -58,7 +76,7 @@ class HeatPipe(_NonStorageComponent):
             self.rho * ff * max(self.length, 1.0) * pi * self.area / self.diameter / 2.0 * velo**3
         )
         self.add_variable(
-            Variable, "Hydraulic_power", min=0.0, nominal=self.Hydraulic_power_nominal
+            DiscreteVariable, "Hydraulic_power", min=0.0, nominal=self.Hydraulic_power_nominal
         )  # [W]
 
         self.add_equation(

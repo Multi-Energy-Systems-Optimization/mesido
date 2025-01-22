@@ -15,6 +15,25 @@ class ColdDemand(_NonStorageComponent):
     downstream in the network are over-estimated with T_ret where in reality this temperature
     drops. It also implicitly assumes that the temperature drops in the network are small and thus
     satisfy minimum temperature requirements.
+
+    port = HeatIn or HeatOut
+
+    Variables created:
+        * {name}.Cold_demand
+        * {name}.dH
+        * {name}.Pump_power
+        * {name}.Heat_flow
+        * {name}.Q
+        * {name}.{port}.H
+        * {name}.{port}.Heat
+        * {name}.{port}.Hydraulic_power
+        * {name}.{port}.Q
+
+    Parameters
+    ----------
+    name : The name of the asset.
+    modifiers : Dictionary with asset information.
+
     """
 
     def __init__(self, name, **modifiers):

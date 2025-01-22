@@ -20,6 +20,30 @@ class HeatExchanger(HeatFourPort, BaseAsset):
     To avoid unphysical heat transfer the HeatPhysicsMixin sets constraints on the temperatures on
     both sides in the case of varying temperature. We also allow a heat_exchanger to be disabled on
     certain time-steps to then allow these temperature constraints to be also disabled.
+
+    side = Primary or Secondary
+    port = HeatIn or HeatOut
+
+    Variables created:
+        * {name}.dH_prim
+        * {name}.dH_sec
+        * {name}.Heat_flow
+        * {name}.Primary_heat
+        * {name}.Pump_power
+        * {name}.Secondary_heat
+        * {name}.{side}.Heat_flow
+        * {name}.{side}.Q
+        * {name}.{side}.{port}.H
+        * {name}.{side}.{port}.Heat
+        * {name}.{side}.{port}.Hydraulic_power
+        * {name}.{side}.{port}.Q
+
+
+    Parameters
+    ----------
+    name : The name of the asset.
+    modifiers : Dictionary with asset information.
+
     """
 
     def __init__(self, name, **modifiers):

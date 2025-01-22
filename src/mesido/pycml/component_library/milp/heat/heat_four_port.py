@@ -8,6 +8,21 @@ class HeatFourPort(HeatComponent):
     """
     The HeatFourPort is used as a base component to model assets that interact with two
     hydraulically decoupled systems.
+
+    side = Primary | Secondary
+    port = HeatIn | HeatOut
+
+    Variables created:
+        * {name}.Pump_power
+        * {name}.{side}.{port}.H
+        * {name}.{side}.{port}.Heat
+        * {name}.{side}.{port}.Hydraulic_power
+        * {name}.{side}.{port}.Q
+
+    Parameters
+    ----------
+    name : The name of the asset.
+    modifiers : Dictionary with asset information.
     """
 
     def __init__(self, name, **modifiers):

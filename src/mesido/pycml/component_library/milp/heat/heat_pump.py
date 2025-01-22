@@ -15,6 +15,31 @@ class HeatPump(HeatFourPort, BaseAsset):
     as a demand, meaning it consumes energy from the primary network and gives it to the secondary
     side, where the secondary side acts like a source to the secondary network. This also means
     that heat can only flow from primary to secondary.
+
+    side = Primary or Secondary
+    port = HeatIn or HeatOut
+
+    Variables created:
+        * {name}.dH_prim
+        * {name}.dH_sec
+        * {name}.Heat_flow
+        * {name}.Power_elec
+        * {name}.Primary_heat
+        * {name}.Pump_power
+        * {name}.Secondary_heat
+        * {name}.{side}.Heat_flow
+        * {name}.{side}.Q
+        * {name}.{side}.{port}.H
+        * {name}.{side}.{port}.Heat
+        * {name}.{side}.{port}.Hydraulic_power
+        * {name}.{side}.{port}.Q
+
+
+    Parameters
+    ----------
+    name : The name of the asset.
+    modifiers : Dictionary with asset information.
+
     """
 
     def __init__(self, name, **modifiers):

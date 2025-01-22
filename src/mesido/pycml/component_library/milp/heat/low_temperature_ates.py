@@ -19,6 +19,30 @@ class LowTemperatureATES(HeatTwoPort, BaseAsset):
     The user is responsible to implement the cyclic behaviour in their workflow constraints.
     Meaning that the milp stored at the 1st and last time step should be equal. Furthermore, due
     to the implicit solving note that the energy out of the ATES should be 0 for the 1st time step.
+
+    port = HeatIn or HeatOut
+
+    Variables created:
+        * {name}.dH
+        * {name}.Heat_ates
+        * {name}.Heat_flow
+        * {name}.Heat_loss
+        * {name}.Pump_power
+        * {name}.Q
+        * {name}.Stored_heat
+        * {name}.Stored_volume
+        * {name}.Temperature_ates
+        * {name}.Temperature_loss
+        * {name}.Temperature_change_charging
+        * {name}.{port}.H
+        * {name}.{port}.Heat
+        * {name}.{port}.Hydraulic_power
+        * {name}.{port}.Q
+
+    Parameters
+    ----------
+    name : The name of the asset.
+    modifiers : Dictionary with asset information.
     """
 
     def __init__(self, name, **modifiers):

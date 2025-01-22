@@ -8,6 +8,22 @@ class ControlValve(_NonStorageComponent):
     The control valve is a component to create pressure drop. We allow the control valve to create
     pressure drop for flow in both directions. Note that we set the absolute head loss symbol in
     the HeatMixin.
+
+    port = HeatIn or HeatOut
+
+    Variables created:
+        * {name}.dH
+        * {name}.Heat_flow
+        * {name}.Q
+        * {name}.{port}.H
+        * {name}.{port}.Heat
+        * {name}.{port}.Hydraulic_power
+        * {name}.{port}.Q
+
+    Parameters
+    ----------
+    name : The name of the asset.
+    modifiers : Dictionary with asset information.
     """
 
     def __init__(self, name, **modifiers):
