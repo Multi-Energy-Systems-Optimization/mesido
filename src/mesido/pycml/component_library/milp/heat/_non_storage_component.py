@@ -11,6 +11,16 @@ class _NonStorageComponent(HeatTwoPort, BaseAsset):
     A non storage component is an asset type that does not have states that have interdependent
     time-steps, it does have time-varying states like Heat_flow. In the NonStorageComponent we
     define most of the properties being utilized by all components, like rho and cp.
+
+    port = HeatIn or HeatOut
+
+    Variables created:
+        * {name}.Heat_flow
+        * {name}.Q
+        * {name}.{port}.H
+        * {name}.{port}.Heat
+        * {name}.{port}.Hydraulic_power
+        * {name}.{port}.Q
     """
 
     def __init__(self, name, **modifiers):
