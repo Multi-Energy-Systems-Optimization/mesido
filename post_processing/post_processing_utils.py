@@ -3,6 +3,7 @@ import os
 from typing import Dict, Union
 
 import numpy as np
+
 from rtctools._internal.alias_tools import AliasDict
 
 
@@ -11,43 +12,48 @@ class AliasDictResults:
     This class allows for the handling of the result data created by MESIDO.
     In MESIDO aliasing of variables is used to reduce computational effort. This results in fewer
     variables being saved with their own names.
-    This class takes the loaded jsons of the results and aliases to be converted to an alias dictionary again.
+    This class takes the loaded jsons of the results and aliases to be converted to an alias
+    dictionary.
     Using the get_results method the result of each original variable name can be accessed.
     """
-    def __init__(self, results, aliases):
+
+    def __init__(self, results: Dict, aliases: Dict):
         self.results = results
         self._aliases = aliases
 
-    def get_results(self, name):
-        if name in self.results.keys():
-            return self.results[name]
-        else:
-            alias = self._aliases[name]
-            return alias[1]*self.results[alias[0]]
-
-    def __getitem__(self, name):
-        #TODO check if this now works and get_results can be removed
+    def __getitem__(self, name: str) -> list:
         if name in self.results.keys():
             return self.results[name]
         else:
             alias = self._aliases[name]
             return alias[1] * self.results[alias[0]]
 
-    def get_results_as_array(self, name):
+    def get_results_as_array(self, name: str) -> np.array:
         return np.array(self.results[name])
 
+
 def extract_data_results_alias(data_path: str) -> [AliasDictResults, Dict]:
+    """
+    Extracts the data in the provided path to create an alias dictionary of the results
+    Args:
+        data_path: path to the folder with the jsons saved after a MESIDO run
+
+    Returns: an alias dictionary of the results, and the raw data extracted in the path.
+
+    """
     raw_data = extract_data_results(data_path)
     results_alias_dict = create_alias_dict(raw_data)
     return results_alias_dict, raw_data
 
-def create_alias_dict(data: Dict)-> AliasDictResults:
+
+def create_alias_dict(data: Dict) -> AliasDictResults:
     """
     Creates the alias dict from the dictionary which contains the aliases and results.
     :param data:
     :return:
     """
     return AliasDictResults(data["results"], data["aliases"])
+
 
 def extract_data_results(data_path: str) -> Dict:
     """
@@ -70,13 +76,15 @@ def extract_data_results(data_path: str) -> Dict:
     return data
 
 
-def pipe_velocity(asset_name: str, commodity: str, results: Union[AliasDictResults, AliasDict],
-parameters: Dict) -> np.array:
+def pipe_velocity(
+    asset_name: str, commodity: str, results: Union[AliasDictResults, AliasDict], parameters: Dict
+) -> np.array:
     """
     Post-processing to determine the pipe_velocity.
     To be used in code and as post-processing from jsons.
     Args:
         asset_name: asset_name of gas or heat pipe
+        commodity: commodity type to select the correct port name "Heat" or "Gas"
         results: AliasDict with results
         parameters: Dict with results
 
@@ -84,6 +92,6 @@ parameters: Dict) -> np.array:
 
     """
     post_processed_velocity = (
-            results[f"{asset_name}.{commodity}Out.Q"] / parameters[f"{asset_name}.area"]
+        results[f"{asset_name}.{commodity}Out.Q"] / parameters[f"{asset_name}.area"]
     )
     return post_processed_velocity
