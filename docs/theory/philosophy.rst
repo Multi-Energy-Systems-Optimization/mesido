@@ -11,7 +11,7 @@ Nevertheless, in practice it is seen that the decisions made in these early phas
 Later design phases can therefore be limited by decisions made during the initial feasibility phases.
 Good trade-offs take into account the interaction between assets, but also trade-offs between design and operational strategy are key in reducing the overall system cost.
 
-MESIDO applies a Mixed Integer Linear Problem (MILP) formulation to adress these challenges. The main reasons are:
+MESIDO applies a Mixed Integer Linear Problem (MILP) formulation to address these challenges. The main reasons are:
 
 * In the early phases of designing an energy system, decision makers are typically not looking for high accuracy physical insight, but rather for directions in investment choices. Hence MILP approximation methods that are conservative and feasible, whilst staying within accuracy bounds of the available input data, will suffice. This allows the decision makers to make plans in this early phase with lower financial risk, as these plans will become more detailed over time.
 * Part of the decisions for designing an energy system have an integer nature, e.g. placing a source or options for a pipe size. These design choices cannot be modelled with continuous formulation in a representative manner.

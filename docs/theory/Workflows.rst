@@ -61,7 +61,7 @@ In its default configuration the workflow has the following main assumptions:
     * This assumptions is sufficient when the user is still in a phase where the exact location of (booster-)pumps is to be determined and hence limiting the sizing of pipes with pressure drop calculations would not be representative.
     * Note that EndScenarioSizingHeadLoss can be used when the user wants the pressure drop functionality.
 * Investment costs are not discounted and all assets depreciate to zero over the system lifetime.
-    * This assumption comes out of an initial development phase, by now EndScenarioDiscounted can be used.
+    * This assumption comes out of an initial development phase, but now EndScenarioDiscounted can be used to consider discount rates and depreciation preiods of assets.
 * It is assumed that the user provides sufficient possibilities to the optimizer to match the heat demands.
     * The optimization will become significantly slower in scenarios where the demands cannot be satisfied. If the user cannot garuantee to have sufficient assets to fullfill the demand, it is advised to use slack (peak) sources.
 * It is assumed that the tank storage in the network can only be used for intra day buffering and hence can only be used by the optimizer for the peak day.
@@ -86,11 +86,13 @@ EndScenarioSizingNoHeatLosses workflow should not be used as a replacement of th
 EndScenarioSizingDiscounted
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The EndScenarioSizingDiscounted provides everything the EndScenarioSizing workflow provides, with the addition of:
+The time value of money and the depreciation periods of assets are critical aspects of long-term financial planning. To account for these elements, this workflow specifies the Equivalent Annual Cost (EAC) in the objective function.
+The EndScenarioSizingDiscounted workflow includes everything provided by the EndScenarioSizing workflow, with the addition of:
 
-* The ability to account for varying depreciation times of assets in the system.
-* The ability to take into account a discount rate for the CAPEX of assets.
+* The ability to account for different depreciation periods of assets in the system.
+* The ability to apply a CAPEX discount rate to assets to calculate their EAC.
 
+Additional details on the annualized cost calculations are discussed in the :ref:`discounted-cost-section` section.
 
 EndScenarioSizingHeadLoss
 ~~~~~~~~~~~~~~~~~~~~~~~~~
