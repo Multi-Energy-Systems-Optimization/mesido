@@ -59,6 +59,11 @@ class SourcePipeSink(
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+    def energy_system_options(self):
+        options = super().energy_system_options()
+        self.gas_network_settings["maximum_velocity"] = 20.0
+        return options
+
     def path_goals(self):
         g = super().path_goals().copy()
         g.append(TargetDemandGoal(self))

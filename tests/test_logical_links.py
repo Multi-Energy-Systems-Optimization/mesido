@@ -195,3 +195,16 @@ class TestLogicalLinks(TestCase):
             )
             != 0.0
         )
+
+
+if __name__ == "__main__":
+    import time
+
+    start_time = time.time()
+    a = TestLogicalLinks()
+    a.test_logical_links_electricity()
+    a.test_logical_links_gas()
+    a.test_logical_links_nodes()
+    a.test_logical_links_nodes_heat()
+    a.test_logical_links_network_hybrid()
+    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

@@ -106,6 +106,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             "n_linearization_lines": 5,
             "pipe_minimum_pressure": -np.inf,
             "pipe_maximum_pressure": np.inf,
+            "heat_exchanger_bypass": False,
         }
         self._hn_head_loss_class = HeadLossClass(self.heat_network_settings)
         self.__pipe_head_bounds = {}
@@ -2528,6 +2529,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints = []
         parameters = self.parameters(ensemble_member)
 
+        hn_settings = self.heat_network_settings
+
         # The primary side of the heat exchanger acts like a heat consumer, and the secondary side
         # acts as a heat producer. Essentially using equality constraints to set the heat leaving
         # the secondary side based on the secondary Supply temperature and the heat leaving the
@@ -2547,7 +2550,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             discharge_secondary = self.state(f"{heat_exchanger}.Secondary.HeatOut.Q")
             heat_primary = self.state(f"{heat_exchanger}.Primary_heat")
             heat_out_prim = self.state(f"{heat_exchanger}.Primary.HeatOut.Heat")
+            heat_in_prim = self.state(f"{heat_exchanger}.Primary.HeatIn.Heat")
             heat_out_sec = self.state(f"{heat_exchanger}.Secondary.HeatOut.Heat")
+            heat_in_sec = self.state(f"{heat_exchanger}.Secondary.HeatIn.Heat")
 
             constraint_nominal = (
                 cp_prim
@@ -2566,16 +2571,27 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             # primary side
             if len(return_temperatures_prim) == 0:
+                # TODO: for bypass only works if heatloss is turned off, else a check should be
+                #  made here if the return temperature is below supply temperature
+                if (
+                    hn_settings["heat_exchanger_bypass"]
+                    and parameters[f"{heat_exchanger}.Primary.T_return"]
+                    >= parameters[f"{heat_exchanger}.Primary.T_supply"]
+                ):
+                    # Only when bypass is allowed Tret can be equal to Tsup. The below equation
+                    # will not hold as due to heatlosses Heatinprim might somewhat smaller than
+                    # the original temperature
+                    expr = heat_in_prim
+                else:
+                    expr = (
+                        discharge_primary
+                        * cp_prim
+                        * rho_prim
+                        * parameters[f"{heat_exchanger}.Primary.T_return"]
+                    )
                 constraints.append(
                     (
-                        (
-                            heat_out_prim
-                            - discharge_primary
-                            * cp_prim
-                            * rho_prim
-                            * parameters[f"{heat_exchanger}.Primary.T_return"]
-                        )
-                        / constraint_nominal,
+                        (heat_out_prim - expr) / constraint_nominal,
                         0.0,
                         0.0,
                     )
@@ -2585,13 +2601,16 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     ret_temperature_is_selected = self.state(
                         f"{ret_carrier_prim}_{return_temperature}"
                     )
+                    if (
+                        hn_settings["heat_exchanger_bypass"]
+                        and return_temperature >= parameters[f"{heat_exchanger}.Primary.T_supply"]
+                    ):
+                        expr = heat_in_prim
+                    else:
+                        expr = discharge_primary * cp_prim * rho_prim * return_temperature
                     constraints.append(
                         (
-                            (
-                                heat_out_prim
-                                - discharge_primary * cp_prim * rho_prim * return_temperature
-                                + (1.0 - ret_temperature_is_selected) * big_m
-                            )
+                            (heat_out_prim - expr + (1.0 - ret_temperature_is_selected) * big_m)
                             / constraint_nominal,
                             0.0,
                             np.inf,
@@ -2599,11 +2618,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     )
                     constraints.append(
                         (
-                            (
-                                heat_out_prim
-                                - discharge_primary * cp_prim * rho_prim * return_temperature
-                                - (1.0 - ret_temperature_is_selected) * big_m
-                            )
+                            (heat_out_prim - expr - (1.0 - ret_temperature_is_selected) * big_m)
                             / constraint_nominal,
                             -np.inf,
                             0.0,
@@ -2622,16 +2637,22 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             )
 
             if len(supply_temperatures_sec) == 0:
+                if (
+                    hn_settings["heat_exchanger_bypass"]
+                    and parameters[f"{heat_exchanger}.Secondary.T_return"]
+                    >= parameters[f"{heat_exchanger}.Secondary.T_supply"]
+                ):
+                    expr = heat_in_sec
+                else:
+                    expr = (
+                        discharge_secondary
+                        * cp_sec
+                        * rho_sec
+                        * parameters[f"{heat_exchanger}.Secondary.T_supply"]
+                    )
                 constraints.append(
                     (
-                        (
-                            heat_out_sec
-                            - discharge_secondary
-                            * cp_sec
-                            * rho_sec
-                            * parameters[f"{heat_exchanger}.Secondary.T_supply"]
-                        )
-                        / constraint_nominal,
+                        (heat_out_sec - expr) / constraint_nominal,
                         0.0,
                         0.0,
                     )
@@ -2641,13 +2662,16 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     sup_temperature_is_selected = self.state(
                         f"{sup_carrier_sec}_{supply_temperature}"
                     )
+                    if (
+                        hn_settings["heat_exchanger_bypass"]
+                        and supply_temperature <= parameters[f"{heat_exchanger}.Secondary.T_return"]
+                    ):
+                        expr = heat_in_sec
+                    else:
+                        expr = discharge_secondary * cp_sec * rho_sec * supply_temperature
                     constraints.append(
                         (
-                            (
-                                heat_out_sec
-                                - discharge_secondary * cp_sec * rho_sec * supply_temperature
-                                - (1.0 - sup_temperature_is_selected) * big_m
-                            )
+                            (heat_out_sec - expr - (1.0 - sup_temperature_is_selected) * big_m)
                             / constraint_nominal,
                             -np.inf,
                             0.0,
@@ -2655,11 +2679,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     )
                     constraints.append(
                         (
-                            (
-                                heat_out_sec
-                                - discharge_secondary * cp_sec * rho_sec * supply_temperature
-                                + (1.0 - sup_temperature_is_selected) * big_m
-                            )
+                            (heat_out_sec - expr + (1.0 - sup_temperature_is_selected) * big_m)
                             / constraint_nominal,
                             0.0,
                             np.inf,

@@ -25,6 +25,8 @@ def mesido_issue_type_gen_message(issue_type: MesidoAssetIssueType) -> str:
         " listed.",
         MesidoAssetIssueType.HEAT_DEMAND_TYPE: "Incorrect asset type: please update.",
         MesidoAssetIssueType.ASSET_PROFILE_CAPABILITY: "Profile assigment not allowed.",
+        MesidoAssetIssueType.HEAT_EXCHANGER_TEMPERATURES: "Temperatures at heat exchanger set "
+        "incorrectly.",
     }
 
     return type_and_general_meassage[issue_type]
@@ -42,12 +44,14 @@ def potential_error_to_error(network_check_type: Enum) -> None:
             MesidoAssetIssueType.COLD_DEMAND_POWER,
             MesidoAssetIssueType.HEAT_DEMAND_TYPE,
             MesidoAssetIssueType.ASSET_PROFILE_CAPABILITY,
+            MesidoAssetIssueType.HEAT_EXCHANGER_TEMPERATURES,
         ],
         HEAT_AND_COOL_NETWORK_ERRORS: [
             MesidoAssetIssueType.HEAT_DEMAND_POWER,
             MesidoAssetIssueType.COLD_DEMAND_POWER,
             MesidoAssetIssueType.HEAT_DEMAND_TYPE,
             MesidoAssetIssueType.ASSET_PROFILE_CAPABILITY,
+            MesidoAssetIssueType.HEAT_EXCHANGER_TEMPERATURES,
         ],
         # Example of extra error types / groups that can be added. This one is not used yet.
         CUSTOM_ERRORS: [MesidoAssetIssueType.ASSET_PROFILE_CAPABILITY],

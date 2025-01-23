@@ -37,7 +37,7 @@
         <port xsi:type="esdl:InPort" carrier="d7bfb1ae-b0ea-4d66-98a2-b7cf2b0f094d" name="In" connectedTo="487db503-69b4-4604-9896-563634352699" id="8ed762e6-b62d-4dd0-b84d-d3759af40b3d"/>
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="52.92463517826793" lon="4.727210998535157"/>
       </asset>
-      <asset xsi:type="esdl:GasDemand" id="0cf3a097-01ea-4fea-a6af-f141a6885445" power="1000000000.0" name="GasDemand_0cf3">
+      <asset xsi:type="esdl:GasDemand" id="0cf3a097-01ea-4fea-a6af-f141a6885445" power="15000000000.0" name="GasDemand_0cf3">
         <port xsi:type="esdl:InPort" carrier="68904785-3ba5-4894-8751-78d5883dc372" name="In" connectedTo="a75218ac-9a5b-4ee4-b0ad-ae1262329442" id="119be8fa-50a9-463b-ba1e-6b97cea86f0e"/>
         <geometry xsi:type="esdl:Point" lat="52.91987443929076" lon="4.728240966796876"/>
         <costInformation xsi:type="esdl:CostInformation" id="14964bd8-8eb0-4525-bcb4-0d03c1252a2b">

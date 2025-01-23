@@ -13,6 +13,7 @@ from esdl import TimeUnitEnum, UnitEnum
 from mesido.esdl._exceptions import _RetryLaterException
 from mesido.esdl.common import Asset
 from mesido.network_common import NetworkSettings
+from mesido.potential_errors import MesidoAssetIssueType, get_potential_errors
 from mesido.pycml import Model as _Model
 
 
@@ -50,7 +51,16 @@ def get_internal_energy(asset_name, carrier):
     # is also updated in the head_loss_class.
     temperature = 20.0
 
-    if NetworkSettings.NETWORK_TYPE_GAS in carrier.name:
+    if isinstance(carrier, esdl.HeatCommodity):
+        internal_energy = cP.CoolProp.PropsSI(
+            "U",
+            "T",
+            273.15 + temperature,
+            "P",
+            1.0 * 1.0e5,  # TODO: defualt 1 bar pressure should be set for the carrier
+            "WATER",
+        )
+    elif NetworkSettings.NETWORK_TYPE_GAS in carrier.name:
         internal_energy = cP.CoolProp.PropsSI(
             "U",
             "T",
@@ -70,47 +80,76 @@ def get_internal_energy(asset_name, carrier):
         )
     else:
         logger.warning(
-            f"Neither gas or hydrogen was used in the carrier " f"name of pipe {asset_name}"
+            f"Neither gas/hydrogen/heat was used in the carrier " f"name of pipe {asset_name}."
         )
         # TODO: resolve heating value (default value below) vs internal energy values (above)
         internal_energy = 46.0e6  # natural gas at about 1 bar [J/kg] heating value
     return internal_energy  # [J/kg]
 
 
-def get_density(asset_name, carrier):
-    # TODO: gas carrier temperature still needs to be resolved.
-    # The default of 20°C is also used in the head_loss_class. Thus, when updating ensure it
-    # is also updated in the head_loss_class.
-    temperature = 20.0
+def get_energy_content(asset_name, carrier) -> float:
+    # Return the heating value
+    energy_content_j_kg = 0.0  # [J/kg]
+    density_kg_m3 = (
+        get_density(asset_name, carrier, temperature_degrees_celsius=20.0, pressure_pa=1.0e5)
+        / 1000.0
+    )
+    if str(NetworkSettings.NETWORK_TYPE_GAS).upper() in str(carrier.name).upper():
+        # Groningen gas: 31,68 MJ/m3 LCV
+        energy_content_j_kg = 31.68 * 10.0**6 / density_kg_m3  # LCV / lower heating value
+    elif str(NetworkSettings.NETWORK_TYPE_HYDROGEN).upper() in str(carrier.name).upper():
+        # This value can be lower / higher heating value depending on the case
+        # Currently the lower heating value is used below (120.0 MJ/kg)
+        energy_content_j_kg = 120.0 * 10.0**6 / density_kg_m3
+    else:
+        raise logger.error(
+            f"Neither gas/hydrogen was used in the carrier " f"name of pipe {asset_name}."
+        )
+    return energy_content_j_kg
 
-    if NetworkSettings.NETWORK_TYPE_GAS in carrier.name:
+
+def get_density(asset_name, carrier, temperature_degrees_celsius=20.0, pressure_pa=None):
+    # TODO: gas carrier temperature still needs to be resolved.
+    # The default for temperature_degrees_celsius=20.0, this should be the same as the value (20°C)
+    # used in the head_loss_class for the calculation of the friction factor
+    # (linked to _kinematic_viscosity). Thus, when updating the default value of
+    # temperature_degrees_celsius ensure it is also updated in the head_loss_class.
+    if pressure_pa is None:
+        if isinstance(carrier, esdl.HeatCommodity):
+            pressure_pa = 16.0e5  # 16bar is expected to be the upper limit in networks
+        else:
+            pressure_pa = carrier.pressure * 1.0e5  # convert bar to Pa
+    elif pressure_pa < 0.0:
+        raise logger.error("The pressure should be > 0.0 to calculate density")
+
+    if isinstance(carrier, esdl.HeatCommodity):
         density = cP.CoolProp.PropsSI(
             "D",
             "T",
-            273.15 + temperature,
+            273.15 + temperature_degrees_celsius,
             "P",
-            carrier.pressure * 1.0e5,
+            pressure_pa,
+            "INCOMP::Water",
+        )
+        return density  # kg/m3
+    elif NetworkSettings.NETWORK_TYPE_GAS in carrier.name:
+        density = cP.CoolProp.PropsSI(
+            "D",
+            "T",
+            273.15 + temperature_degrees_celsius,
+            "P",
+            pressure_pa,
             NetworkSettings.NETWORK_COMPOSITION_GAS,
         )
     elif NetworkSettings.NETWORK_TYPE_HYDROGEN in carrier.name:
         density = cP.CoolProp.PropsSI(
             "D",
             "T",
-            273.15 + temperature,
+            273.15 + temperature_degrees_celsius,
             "P",
-            carrier.pressure * 1.0e5,
+            pressure_pa,
             str(NetworkSettings.NETWORK_TYPE_HYDROGEN).upper(),
         )
-    elif NetworkSettings.NETWORK_TYPE_HEAT in carrier.name:
-        density = cP.CoolProp.PropsSI(
-            "D",
-            "T",
-            273.15 + temperature,
-            "P",
-            16.0e5,
-            "INCOMP::Water",
-        )
-        return density  # kg/m3
     else:
         logger.warning(
             f"Neither gas/hydrogen/heat was used in the carrier " f"name of pipe {asset_name}"
@@ -176,9 +215,9 @@ class _AssetToComponentBase:
         "HeatProducer": "heat_source",
         "Import": "import",
         "ResidualHeatSource": "heat_source",
-        "GenericConversion": "heat_exchanger",
+        "GenericConversion": "generic_conversion",
         "Joint": "node",
-        "Pipe": "heat_pipe",
+        "Pipe": "pipe",
         "Pump": "pump",
         "PressureReducingValve": "gas_substation",
         "PVInstallation": "electricity_source",
@@ -186,6 +225,7 @@ class _AssetToComponentBase:
         "Sensor": "skip",
         "Valve": "control_valve",
         "WindPark": "electricity_source",
+        "WindTurbine": "electricity_source",
         "Transformer": "transformer",
         "CheckValve": "check_valve",
     }
@@ -394,8 +434,9 @@ class _AssetToComponentBase:
 
         Returns
         -------
-        resistance
+        resistance [ohm/m]
         """
+
         default_res = 1e-6
         material = asset.attributes["material"]
         el_conductivity = None
@@ -548,7 +589,7 @@ class _AssetToComponentBase:
                 energy_reference_j_kg = 1.0
                 if not isinstance(port.carrier, esdl.HeatCommodity):
                     convert_density_units = 1.0e3  # convert g/m3 to kg/m3 if needed
-                    energy_reference_j_kg = get_internal_energy(asset.name, port.carrier)
+                    energy_reference_j_kg = get_energy_content(asset.name, port.carrier)
                 else:
                     # heat_value / rho * minimum_dT => [J/m3K] / [kg/m3] * 1.0 [K] => [J/kg]
                     energy_reference_j_kg = HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS / 988.0
@@ -579,7 +620,7 @@ class _AssetToComponentBase:
                 energy_reference_j_kg = 1.0
                 if not isinstance(port.carrier, esdl.HeatCommodity):
                     convert_density_units = 1.0e3  # convert g/m3 to kg/m3 if needed
-                    energy_reference_j_kg = get_internal_energy(asset.name, port.carrier)
+                    energy_reference_j_kg = get_energy_content(asset.name, port.carrier)
                 else:
                     # heat_value / rho * minimum_dT => [J/m3K] / [kg/m3] * 1.0 [K] => [J/kg]
                     energy_reference_j_kg = HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS / 988.0
@@ -798,7 +839,7 @@ class _AssetToComponentBase:
                     energy_reference_j_kg = 1.0
                     if not isinstance(port.carrier, esdl.HeatCommodity):
                         convert_density_units = 1.0e3  # convert g/m3 to kg/m3 if needed
-                        energy_reference_j_kg = get_internal_energy(asset.name, port.carrier)
+                        energy_reference_j_kg = get_energy_content(asset.name, port.carrier)
                     else:
                         # heat_value / rho * minimum_dT => [J/m3K] / [kg/m3] * 1.0 [K] => [J/kg]
                         energy_reference_j_kg = HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS / 988.0
@@ -827,7 +868,7 @@ class _AssetToComponentBase:
                     energy_reference_j_kg = 1.0
                     if not isinstance(port.carrier, esdl.HeatCommodity):
                         convert_density_units = 1.0e3  # convert g/m3 to kg/m3 if needed
-                        energy_reference_j_kg = get_internal_energy(asset.name, port.carrier)
+                        energy_reference_j_kg = get_energy_content(asset.name, port.carrier)
                     else:
                         # heat_value / rho * minimum_dT => [J/m3K] / [kg/m3] * 1.0 [K] => [J/kg]
                         energy_reference_j_kg = HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS / 988.0
@@ -856,7 +897,7 @@ class _AssetToComponentBase:
                     energy_reference_j_kg = 1.0
                     if not isinstance(port.carrier, esdl.HeatCommodity):
                         convert_density_units = 1.0e3  # convert g/m3 to kg/m3 if needed
-                        energy_reference_j_kg = get_internal_energy(asset.name, port.carrier)
+                        energy_reference_j_kg = get_energy_content(asset.name, port.carrier)
                     else:
                         # heat_value / rho * minimum_dT => [J/m3K] / [kg/m3] * 1.0 [K] => [J/kg]
                         energy_reference_j_kg = HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS / 988.0
@@ -890,7 +931,7 @@ class _AssetToComponentBase:
                         if isinstance(port.carrier, esdl.GasCommodity):
                             nominal_string += "_gas"
                             convert_density_units = 1.0e3  # convert g/m3 to kg/m3 if needed
-                            energy_reference_j_kg = get_internal_energy(asset.name, port.carrier)
+                            energy_reference_j_kg = get_energy_content(asset.name, port.carrier)
                         elif isinstance(port.carrier, esdl.HeatCommodity):
                             # heat_value / rho * minimum_dT => [J/m3K] / [kg/m3] * 1.0 [K] => [J/kg]
                             energy_reference_j_kg = HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS / 988.0
@@ -931,7 +972,7 @@ class _AssetToComponentBase:
                         / (
                             # note rho -> gas/hydrogen g/m3, heat kg/m3
                             get_density(asset.name, port.carrier)
-                            * get_internal_energy(asset.name, port.carrier)
+                            * get_energy_content(asset.name, port.carrier)
                             / 1.0e3
                         )
                     )
@@ -969,7 +1010,7 @@ class _AssetToComponentBase:
                     if q_nominal is not None:
                         self._port_to_q_nominal[p] = q_nominal
                         self._port_to_q_nominal[out_port] = q_nominal
-                        if "_ret" in p.carrier.name:
+                        if "sec" in p.name.lower():
                             q_nominals["Secondary"] = {"Q_nominal": q_nominal}
                         else:
                             q_nominals["Primary"] = {"Q_nominal": q_nominal}
@@ -1019,6 +1060,8 @@ class _AssetToComponentBase:
             )
             modifiers["installation_cost"] = self.get_installation_costs(asset)
         elif asset.asset_type == "GasDemand":
+            modifiers["variable_operational_cost_coefficient"] = self.get_variable_opex_costs(asset)
+        elif asset.asset_type == "GasProducer":
             modifiers["variable_operational_cost_coefficient"] = self.get_variable_opex_costs(asset)
         elif asset.asset_type == "Electrolyzer":
             modifiers["variable_operational_cost_coefficient"] = self.get_variable_opex_costs(asset)
@@ -1141,10 +1184,27 @@ class _AssetToComponentBase:
                     f"primary and secondary ports ('prim' and 'sec') for the hydraulically "
                     f"decoupled networks"
                 )
-            assert sec_supply_temperature > sec_return_temperature
+            assert sec_supply_temperature >= sec_return_temperature
             assert sec_return_temperature > 0.0
-            assert prim_supply_temperature > prim_return_temperature
+            assert prim_supply_temperature >= prim_return_temperature
             assert prim_return_temperature > 0.0
+
+            if (
+                sec_supply_temperature == sec_return_temperature
+                or prim_return_temperature == prim_supply_temperature
+            ):
+                asset_id = asset.id
+                get_potential_errors().add_potential_issue(
+                    MesidoAssetIssueType.HEAT_EXCHANGER_TEMPERATURES,
+                    asset_id,
+                    f"Asset named {asset.name}: The temperature on the primary side "
+                    f"supply side is {prim_supply_temperature} and on the return side is "
+                    f"{prim_return_temperature} and on the secondary side the supply temperature "
+                    f"is {sec_supply_temperature} and return temperature is "
+                    f"{sec_return_temperature}. This would result in a bypass of the "
+                    f"heatexchanger.",
+                )
+
             temperatures = {
                 "Primary": {
                     "T_supply": prim_supply_temperature,
@@ -1230,6 +1290,7 @@ class _AssetToComponentBase:
                 continue
             if per_unit != UnitEnum.WATTHOUR and asset.asset_type not in [
                 "GasDemand",
+                "GasProducer",
                 "GasStorage",
                 "Electrolyzer",
             ]:
@@ -1240,7 +1301,7 @@ class _AssetToComponentBase:
                 )
                 continue
             if (
-                asset.asset_type in ["GasDemand", "GasStorage", "Electrolyzer"]
+                asset.asset_type in ["GasDemand", "GasProducer", "GasStorage", "Electrolyzer"]
                 and per_unit != UnitEnum.GRAM
             ):
                 logger.warning(

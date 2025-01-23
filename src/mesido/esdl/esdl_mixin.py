@@ -421,7 +421,7 @@ class ESDLMixin(
 
     def esdl_heat_model_options(self) -> Dict:
         """
-        function to spedifically return the needed HeatMixin options needed for the conversion
+        function to spedifically return the needed PhysicsMixin options needed for the conversion
         from ESDL to pycml. This case velocities used to set nominals and caps on the milp.
 
         Returns
@@ -431,7 +431,8 @@ class ESDLMixin(
         energy_system_options = self.energy_system_options()
         v_nominal = energy_system_options["estimated_velocity"]
         v_max = self.heat_network_settings["maximum_velocity"]
-        return dict(v_nominal=v_nominal, v_max=v_max)
+        v_max_gas = self.gas_network_settings["maximum_velocity"]
+        return dict(v_nominal=v_nominal, v_max=v_max, v_max_gas=v_max_gas)
 
     def esdl_qth_model_options(self) -> Dict:
         """

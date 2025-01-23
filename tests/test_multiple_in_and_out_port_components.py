@@ -104,6 +104,74 @@ class TestHEX(TestCase):
             parameters["HeatExchange_39ed.Primary.T_return"],
         )
 
+    def test_heat_exchanger_bypass(self):
+        """
+        Check the modelling of the heat exchanger component which allows two hydraulically
+        decoupled networks to exchange heat with each other. It is enforced that heat can only flow
+        from the primary side to the secondary side, and heat exchangers are allowed to be disabled
+        for timesteps in which they are not used. This is to allow for the temperature constraints
+        (T_primary > T_secondary) to become deactivated.
+        An option to allow for bypassing of the heat exchanger has been added, such that when the
+        heat exchanger is disabled, flow through the heat exchanger is allowed, however no heat
+        exchange is allowed, in the case the carriers of both the supply and return on one side
+        of the heat exchanger are the same.
+
+        Checks:
+        - Standard checks for demand matching and energy conservation.
+        - Heat to discharge test is not applied as at one heat exchanger (the bypassed one), the
+        heat going out on the primary side will not coincide exactly with the temperature due to
+        heatlosses in the network before the heat exchanger.
+        - Check that the is_disabled is set correctly.
+        - Check if the temperatures provided are physically feasible.
+        - Checks that heat exchanger is bypassed, e.g. not exchanging heat, but allowing flow when
+        both supply and return on one side have the same temperature.
+        """
+        import models.heat_exchange.src.run_heat_exchanger as run_heat_exchanger
+        from models.heat_exchange.src.run_heat_exchanger import (
+            HeatProblem,
+        )
+
+        base_folder = Path(run_heat_exchanger.__file__).resolve().parent.parent
+
+        class HeatProblemByPass(HeatProblem):
+
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+
+                self.heat_network_settings["heat_exchanger_bypass"] = True
+
+            def energy_system_options(self):
+                options = super().energy_system_options()
+                options["neglect_pipe_heat_losses"] = False
+
+                return options
+
+        solution = run_esdl_mesido_optimization(
+            HeatProblemByPass,
+            base_folder=base_folder,
+            esdl_file_name="test_hex_bypass.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.xml",
+        )
+
+        results = solution.extract_results()
+
+        demand_matching_test(solution, results)
+        energy_conservation_test(solution, results)
+
+        hex_active = "HeatExchange_e410_copy"
+        hex_bypass = "HeatExchange_e410"
+
+        np.testing.assert_allclose(results[f"{hex_active}__disabled"][:-1], 0)
+        np.testing.assert_allclose(results[f"{hex_bypass}__disabled"][:-1], 1)
+
+        np.testing.assert_array_less(0.001, results[f"{hex_active}.Primary.Q"][:-1])
+        np.testing.assert_array_less(0.001, results[f"{hex_bypass}.Primary.Q"][:-1])
+
+        np.testing.assert_allclose(results[f"{hex_bypass}.Heat_flow"][:-1], 0)
+        np.testing.assert_array_less(1e5, results[f"{hex_active}.Heat_flow"][:-1])
+
 
 class TestHP(TestCase):
     def test_heat_pump(self):
