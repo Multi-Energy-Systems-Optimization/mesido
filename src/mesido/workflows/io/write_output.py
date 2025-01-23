@@ -25,7 +25,7 @@ import numpy as np
 
 import pandas as pd
 
-from post_processing.post_processing_utils import pipe_velocity
+from mesido.post_processing.post_processing_utils import pipe_velocity
 
 from rtctools._internal.alias_tools import AliasDict
 from rtctools.optimization.timeseries import Timeseries
