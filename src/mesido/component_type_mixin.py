@@ -24,6 +24,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(**kwargs)
         self.__hn_component_types = None
+        self.__commodity_types = None
 
     def pre(self):
         """
@@ -464,7 +465,9 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
 
             # Find the components in model, detection by string
             # (name.component_type: type)
-            component_types = sorted({v for k, v in string_parameters.items()})
+            component_types = sorted(
+                {v for k, v in string_parameters.items() if "network_type" not in k}
+            )
 
             components = {}
             for c in component_types:
@@ -475,6 +478,25 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
             self.__hn_component_types = components
 
         return self.__hn_component_types
+
+    @property
+    def energy_system_components_commodity(self) -> Dict[str, Set[str]]:
+        """
+        This method returns a dict with the milp network assets and their commodity type.
+        """
+        if self.__commodity_types is None:
+            # Create the dictionary once after that it will be available
+            string_parameters = self.string_parameters(0)
+
+            # Find the components in model, detection by string
+            # (name.component_type: type)
+            commodity_types = {
+                k.split(".")[0]: v for k, v in string_parameters.items() if "network_type" in k
+            }
+
+            self.__commodity_types = commodity_types
+
+        return self.__commodity_types
 
     @property
     def energy_system_topology(self) -> Topology:
