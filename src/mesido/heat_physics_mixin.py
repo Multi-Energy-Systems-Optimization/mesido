@@ -22,9 +22,9 @@ logger = logging.getLogger("mesido")
 
 class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
     """
-        This class is used to model the physics of a heat district network with its assets. We model
-        the different components with variety of linearization strategies.
-        """
+    This class is used to model the physics of a heat district network with its assets. We model
+    the different components with variety of linearization strategies.
+    """
 
     __allowed_head_loss_options = {
         HeadLossOption.NO_HEADLOSS,
@@ -2966,13 +2966,11 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         Furthermore, the __hn_heat_loss symbol is set, as the heat loss depends on the chosen pipe
         class and the selected temperature in the network.
 
-        Parameters
-        ----------
-        ensemble_member : The ensemble of the optimizaton
+        Parameters:
+            ensemble_member : The ensemble of the optimizaton
 
-        Returns
-        -------
-        list of the added constraints
+        Returns:
+            list of the added constraints
         """
         constraints = []
 

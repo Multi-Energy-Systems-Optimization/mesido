@@ -19,10 +19,9 @@ class HeatFourPort(HeatComponent):
         * {name}.{side}.{port}.Hydraulic_power
         * {name}.{side}.{port}.Q
 
-    Parameters
-    ----------
-    name : The name of the asset.
-    modifiers : Dictionary with asset information.
+    Parameters:
+        name : The name of the asset.
+        modifiers : Dictionary with asset information.
     """
 
     def __init__(self, name, **modifiers):
