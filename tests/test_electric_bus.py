@@ -120,9 +120,11 @@ class TestMILPbus(TestCase):
         bound_prod_1 = solution.bounds()[f"{prod_1}.Electricity_source"][1]
         bound_prod_2 = solution.bounds()[f"{prod_2}.Electricity_source"][1]
         target_demand_1 = solution.get_timeseries(f"{demand_1}.target_electricity_demand").values
-        target_demand_1[target_demand_1>bound_prod_1] = bound_prod_1
+        target_demand_1[target_demand_1 > bound_prod_1] = bound_prod_1
         target_demand_2 = solution.get_timeseries(f"{demand_2}.target_electricity_demand").values
-        target_demand_2[target_demand_2>(bound_prod_1+bound_prod_2)] = bound_prod_1+bound_prod_2
+        target_demand_2[target_demand_2 > (bound_prod_1 + bound_prod_2)] = (
+            bound_prod_1 + bound_prod_2
+        )
 
         np.testing.assert_allclose(p_demand_1, target_demand_1)
         np.testing.assert_allclose(p_demand_2, target_demand_2)
