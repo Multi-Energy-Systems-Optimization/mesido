@@ -19,13 +19,12 @@ from esdl.profiles.profilemanager import ProfileManager
 import mesido.esdl.esdl_parser
 from mesido.constants import GRAVITATIONAL_CONSTANT
 from mesido.esdl.edr_pipe_class import EDRPipeClass
+from mesido.post_processing.post_processing_utils import pipe_velocity
 from mesido.workflows.utils.helpers import _sort_numbered
 
 import numpy as np
 
 import pandas as pd
-
-from mesido.post_processing.post_processing_utils import pipe_velocity
 
 from rtctools._internal.alias_tools import AliasDict
 from rtctools.optimization.timeseries import Timeseries
