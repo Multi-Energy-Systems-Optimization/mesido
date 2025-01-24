@@ -73,3 +73,60 @@ class TestMILPbus(TestCase):
         )
         # Check that current is high enough to carry the power
         np.testing.assert_array_less(p_demand - 1e-12, v_demand * i_demand)
+
+    def test_unidirectional_cable(self):
+        """
+        Checks the behaviour of electricity networks with a two bus assets connected with a cable
+        that is only allowed to be unidirectional.
+
+        Electricity from producer 1 can go to demand 1 and demand 2, but electricity from producer 2
+        can only go to demand 2 due to unidirectional cable between the two busses
+
+        Checks:
+        - electric power conservation
+        - bounds on unidirectional cable set to a minimum power flow of 0.0
+        - demand 1 is limited by production of producer 1
+
+        """
+        import models.unit_cases_electricity.bus_networks.src.example as example
+        from models.unit_cases_electricity.bus_networks.src.example import ElectricityProblem
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        # Run the problem
+        solution = run_esdl_mesido_optimization(
+            ElectricityProblem,
+            base_folder=base_folder,
+            esdl_file_name="Electric_bus4.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_uni.csv",
+        )
+        results = solution.extract_results()
+
+        # electric power conservation system and no dissipation of power and current in bus
+        electric_power_conservation_test(solution, results)
+
+        demand_1 = "ElectricityDemand_e527"
+        demand_2 = "ElectricityDemand_281a"
+        prod_1 = "ElectricityProducer_a215"
+        prod_2 = "ElectricityProducer_17a1"
+        unidirectional_cable = "ElectricityCable_d16c"
+
+        p_demand_1 = results[f"{demand_1}.ElectricityIn.Power"]
+        p_demand_2 = results[f"{demand_2}.ElectricityIn.Power"]
+        cable_power_bound = solution.bounds()[f"{unidirectional_cable}.ElectricityIn.Power"][0]
+
+        bound_prod_1 = solution.bounds()[f"{prod_1}.Electricity_source"][1]
+        bound_prod_2 = solution.bounds()[f"{prod_2}.Electricity_source"][1]
+        target_demand_1 = solution.get_timeseries(f"{demand_1}.target_electricity_demand").values
+        target_demand_1[target_demand_1 > bound_prod_1] = bound_prod_1
+        target_demand_2 = solution.get_timeseries(f"{demand_2}.target_electricity_demand").values
+        target_demand_2[target_demand_2 > (bound_prod_1 + bound_prod_2)] = (
+            bound_prod_1 + bound_prod_2
+        )
+
+        np.testing.assert_allclose(p_demand_1, target_demand_1)
+        np.testing.assert_allclose(p_demand_2, target_demand_2)
+
+        np.testing.assert_allclose(0.0, cable_power_bound)
