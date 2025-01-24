@@ -2589,6 +2589,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 Returns:
 
                 """
+                constraints = []
                 constraints.append(
                     (
                         (heat_out - expr + (2.0 - sum_temp_selec) * big_m) / constraint_nominal,
