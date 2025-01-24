@@ -25,9 +25,10 @@ import numpy as np
 
 import pandas as pd
 
+from mesido.post_processing.post_processing_utils import pipe_velocity
+
 from rtctools._internal.alias_tools import AliasDict
 from rtctools.optimization.timeseries import Timeseries
-
 
 logger = logging.getLogger("mesido")
 
@@ -1158,8 +1159,8 @@ class ScenarioOutput:
                         variables_one_hydraulic_system.append("PostProc.Velocity")
                         variables_two_hydraulic_system.append("PostProc.Velocity")
                         # Velocity at the pipe outlet [m/s]
-                        post_processed_velocity = (
-                            results[f"{asset_name}.HeatOut.Q"] / parameters[f"{asset_name}.area"]
+                        post_processed_velocity = pipe_velocity(
+                            asset_name, "Heat", results, parameters
                         )
 
                     # Depending on the port set, different carriers are assigned
