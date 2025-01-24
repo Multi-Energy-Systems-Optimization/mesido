@@ -1,4 +1,4 @@
-# [Unreleased-main] - 2024-11-21
+# [Unreleased-main] - 2024-12-12
 
 ## Added
 - Default database for gas pipe dimensions based on the ASA pipe schedule with thicknesses from the standard class
@@ -6,6 +6,9 @@
 - Internal energy content function added for natural gas and hydrogen
 - OPEX added for gas and electricity source
 - Commodity annotation for assets, to allow for easier postprocessing
+- Added function to make pickle usable (exceptions) in the OMOTES back end
+- More of the existing classes added to __init_ for local runs using the grow_workflow
+- Generic function to adapt timeseries from hourly timesteps to user-defined timesteps by averaging.
 
 ## Changed
 - Write output to json also saves the solver statistics.
@@ -18,6 +21,33 @@
 - Bugfix: gas boiler mass flow constraint units
 - Bugfix: same mip gap settings for all solvers in grow_workflow.
 - Bugfix: head loss test case when minimum_velocity = 0.0
+- Bugs: state update of heat pump, heat buffer volume & ates charge rates update in ESDL, heat storage asset data output to influxDB  
+- Bugfix: get_density + get_internal_energy updated to ensure it checks commodity type for heat instead of the carrier name
+
+
+# [0.1.8.4] - 2024-12-11
+
+## Added
+- More of the existing classes added to __init_ for local runs using the grow_workflow
+
+## Changed
+- xxx
+
+## Fixed
+- Bugs: state update of heat pump, heat buffer volume & ates charge rates update in ESDL, heat storage asset data output to influxDB   
+
+
+# [0.1.8.3] - 2024-12-02
+
+## Added
+- Added function to make pickle usable (exceptions) in the OMOTES back end 
+
+## Changed
+- xx
+
+## Fixed
+- xx
+
 
 # [0.1.8.2] - 2024-11-15
 

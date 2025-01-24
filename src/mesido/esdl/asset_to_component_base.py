@@ -51,7 +51,16 @@ def get_internal_energy(asset_name, carrier):
     # is also updated in the head_loss_class.
     temperature = 20.0
 
-    if NetworkSettings.NETWORK_TYPE_GAS in carrier.name:
+    if isinstance(carrier, esdl.HeatCommodity):
+        internal_energy = cP.CoolProp.PropsSI(
+            "U",
+            "T",
+            273.15 + temperature,
+            "P",
+            1.0 * 1.0e5,  # TODO: defualt 1 bar pressure should be set for the carrier
+            "WATER",
+        )
+    elif NetworkSettings.NETWORK_TYPE_GAS in carrier.name:
         internal_energy = cP.CoolProp.PropsSI(
             "U",
             "T",
@@ -68,15 +77,6 @@ def get_internal_energy(asset_name, carrier):
             "P",
             carrier.pressure * 1.0e5,
             str(NetworkSettings.NETWORK_TYPE_HYDROGEN).upper(),
-        )
-    elif NetworkSettings.NETWORK_TYPE_HEAT in carrier.name:
-        internal_energy = cP.CoolProp.PropsSI(
-            "U",
-            "T",
-            273.15 + temperature,
-            "P",
-            1.0 * 1.0e5,  # TODO: defualt 1 bar pressure should be set for the carrier
-            "WATER",
         )
     else:
         logger.warning(
@@ -115,14 +115,24 @@ def get_density(asset_name, carrier, temperature_degrees_celsius=20.0, pressure_
     # (linked to _kinematic_viscosity). Thus, when updating the default value of
     # temperature_degrees_celsius ensure it is also updated in the head_loss_class.
     if pressure_pa is None:
-        if str(NetworkSettings.NETWORK_TYPE_HEAT).upper() in str(carrier.name).upper():
+        if isinstance(carrier, esdl.HeatCommodity):
             pressure_pa = 16.0e5  # 16bar is expected to be the upper limit in networks
         else:
             pressure_pa = carrier.pressure * 1.0e5  # convert bar to Pa
     elif pressure_pa < 0.0:
         raise logger.error("The pressure should be > 0.0 to calculate density")
 
-    if NetworkSettings.NETWORK_TYPE_GAS in carrier.name:
+    if isinstance(carrier, esdl.HeatCommodity):
+        density = cP.CoolProp.PropsSI(
+            "D",
+            "T",
+            273.15 + temperature_degrees_celsius,
+            "P",
+            pressure_pa,
+            "INCOMP::Water",
+        )
+        return density  # kg/m3
+    elif NetworkSettings.NETWORK_TYPE_GAS in carrier.name:
         density = cP.CoolProp.PropsSI(
             "D",
             "T",
@@ -140,16 +150,6 @@ def get_density(asset_name, carrier, temperature_degrees_celsius=20.0, pressure_
             pressure_pa,
             str(NetworkSettings.NETWORK_TYPE_HYDROGEN).upper(),
         )
-    elif NetworkSettings.NETWORK_TYPE_HEAT in carrier.name:
-        density = cP.CoolProp.PropsSI(
-            "D",
-            "T",
-            273.15 + temperature_degrees_celsius,
-            "P",
-            pressure_pa,
-            "INCOMP::Water",
-        )
-        return density  # kg/m3
     else:
         logger.warning(
             f"Neither gas/hydrogen/heat was used in the carrier " f"name of pipe {asset_name}"
