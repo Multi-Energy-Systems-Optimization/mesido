@@ -19,6 +19,23 @@ class HeatPipe(_NonStorageComponent):
     throughout the network. Meaning that the flow does lose energy but not temperature. In this
     manner the energy losses will always be overestimated as in reality the
     flow will also have a temperature drop.
+
+    port = HeatIn or HeatOut
+
+    Variables created:
+        * {name}.dH
+        * {name}.Heat_flow
+        * {name}.Hydraulic_power
+        * {name}.Q
+        * {name}.{port}.H
+        * {name}.{port}.Heat
+        * {name}.{port}.Hydraulic_power
+        * {name}.{port}.Q
+
+    Parameters:
+        name : The name of the asset.
+        modifiers : Dictionary with asset information.
+
     """
 
     def __init__(self, name, **modifiers):
