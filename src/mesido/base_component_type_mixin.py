@@ -22,7 +22,7 @@ class BaseComponentTypeMixin:
 
     @property
     @abstractmethod
-    def energy_system_components_commodity(self) -> Dict[str, list[str]]:
+    def energy_system_components_commodity(self) -> Dict[str, List[str]]:
         """
         This method return a dict with the components ad their network types.
         """
