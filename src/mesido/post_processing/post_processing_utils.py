@@ -2,6 +2,8 @@ import json
 import os
 from typing import Dict, Union
 
+from mesido.constants import GRAVITATIONAL_CONSTANT
+
 import numpy as np
 
 from rtctools._internal.alias_tools import AliasDict
@@ -95,3 +97,27 @@ def pipe_velocity(
         results[f"{asset_name}.{commodity}Out.Q"] / parameters[f"{asset_name}.area"]
     )
     return post_processed_velocity
+
+
+def pipe_pressure(
+    asset_name: str, commodity: str, results: Union[AliasDictResults, AliasDict], parameters: Dict
+) -> np.array:
+    """
+    Post-processing to determine the pipe_velocity.
+    To be used in code and as post-processing from jsons.
+    Args:
+        asset_name: asset_name of gas or heat pipe
+        commodity: commodity type to select the correct port name "Heat" or "Gas"
+        results: AliasDict with results
+        parameters: Dict with results
+
+    Returns:
+
+    """
+    post_processed_pressure = (
+        results[f"{asset_name}.{commodity}In.H"]  # m
+        * GRAVITATIONAL_CONSTANT  # m/s2
+        * parameters[f"{asset_name}.density"]  # g/m3
+        / 1e3
+    )  # Pa
+    return post_processed_pressure
