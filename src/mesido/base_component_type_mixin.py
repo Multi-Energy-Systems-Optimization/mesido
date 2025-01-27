@@ -20,6 +20,14 @@ class BaseComponentTypeMixin:
         """
         raise NotImplementedError
 
+    @property
+    @abstractmethod
+    def energy_system_components_commodity(self) -> Dict[str, List[str]]:
+        """
+        This method return a dict with the components ad their network types.
+        """
+        raise NotImplementedError
+
     def energy_system_components_get(self, list_types: list) -> list:
         components = []
         for component_type in list_types:

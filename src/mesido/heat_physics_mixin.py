@@ -254,18 +254,15 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         set_self_hot_pipes = set(self.hot_pipes)
 
         for pipe_name in self.energy_system_components.get("heat_pipe", []):
+            commodity = self.energy_system_components_commodity.get(pipe_name)
             head_loss_var = f"{pipe_name}.__head_loss"
             initialized_vars = self._hn_head_loss_class.initialize_variables_nominals_and_bounds(
-                self, NetworkSettings.NETWORK_TYPE_HEAT, pipe_name, self.heat_network_settings
+                self, commodity, pipe_name, self.heat_network_settings
             )
             if initialized_vars[0] != {}:
-                self.__pipe_head_bounds[f"{pipe_name}.{NetworkSettings.NETWORK_TYPE_HEAT}In.H"] = (
-                    initialized_vars[0]
-                )
+                self.__pipe_head_bounds[f"{pipe_name}.{commodity}In.H"] = initialized_vars[0]
             if initialized_vars[1] != {}:
-                self.__pipe_head_bounds[f"{pipe_name}.{NetworkSettings.NETWORK_TYPE_HEAT}Out.H"] = (
-                    initialized_vars[1]
-                )
+                self.__pipe_head_bounds[f"{pipe_name}.{commodity}Out.H"] = initialized_vars[1]
             if initialized_vars[2] != {}:
                 self.__pipe_head_loss_zero_bounds[f"{pipe_name}.dH"] = initialized_vars[2]
             if initialized_vars[3] != {}:

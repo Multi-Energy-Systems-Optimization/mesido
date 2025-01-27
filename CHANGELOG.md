@@ -5,9 +5,11 @@
 - Gas and electricity workflow has been added. Still a work in progress
 - Internal energy content function added for natural gas and hydrogen
 - OPEX added for gas and electricity source
+- Commodity annotation for assets, to allow for easier postprocessing
 - Added function to make pickle usable (exceptions) in the OMOTES back end
 - More of the existing classes added to __init_ for local runs using the grow_workflow
 - Generic functions for postprocessing are added.
+- Generic function to adapt timeseries from hourly timesteps to user-defined timesteps by averaging.
 
 ## Changed
 - Write output to json also saves the solver statistics.
@@ -15,6 +17,7 @@
 - Adapt profiles for heating and cooling peak day separately & add test case
 - For gas: Use energy content (heating value) instead of internal energy 
 - Option was added to allow a bypass of the heat exchanger 
+- Option for electricity cables to be unidirectional
 
 ## Fixed
 - Bugfix: gas boiler mass flow constraint units

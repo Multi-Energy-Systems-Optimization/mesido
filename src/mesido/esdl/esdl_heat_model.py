@@ -1844,12 +1844,17 @@ class AssetToHeatComponent(_AssetToComponentBase):
         max_current = max_power / min_voltage
         self._set_electricity_current_nominal_and_max(asset, max_current / 2.0, max_current)
 
+        bi_direct = True if asset.attributes["assetType"] != "unidirectional" else False
+
         length = asset.attributes["length"]
         if length == 0.0:
             length = 10.0
             logger.warning(f"{asset.name} had a length of 0.0m, thus is set to " f"{length} meter")
         res_ohm_per_m = self._cable_get_resistance(asset)
         res_ohm = res_ohm_per_m * length
+
+        min_current = -max_current if bi_direct else 0.0
+        min_power = -max_power if bi_direct else 0.0
 
         modifiers = dict(
             max_current=max_current,
@@ -1860,13 +1865,13 @@ class AssetToHeatComponent(_AssetToComponentBase):
             r=res_ohm,
             ElectricityOut=dict(
                 V=dict(min=min_voltage, nominal=min_voltage),
-                I=dict(min=-max_current, max=max_current, nominal=max_current / 2.0),
-                Power=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
+                I=dict(min=min_current, max=max_current, nominal=max_current / 2.0),
+                Power=dict(min=min_power, max=max_power, nominal=max_power / 2.0),
             ),
             ElectricityIn=dict(
                 V=dict(min=min_voltage, nominal=min_voltage),
-                I=dict(min=-max_current, max=max_current, nominal=max_current / 2.0),
-                Power=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
+                I=dict(min=min_current, max=max_current, nominal=max_current / 2.0),
+                Power=dict(min=min_power, max=max_power, nominal=max_power / 2.0),
             ),
             **self._get_cost_figure_modifiers(asset),
         )
