@@ -7,6 +7,18 @@ class HeatPort(HeatComponent, Connector):
     The HeatPort is used to model the variables at an in or outgoing port of a component. For the
     HeatMixin we model thermal Power (Heat [W]), flow (Q [m3/s]) and head (H [m]) at every port in
     the network.
+
+    port = HeatIn or HeatOut
+
+    Variables created:
+        * {name}.{port}.H
+        * {name}.{port}.Heat
+        * {name}.{port}.Hydraulic_power
+        * {name}.{port}.Q
+
+    Parameters:
+        name : The name of the asset.
+        modifiers : Dictionary with asset information.
     """
 
     def __init__(self, name, **modifiers):
