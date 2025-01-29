@@ -153,6 +153,16 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 )
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
+            elif asset_name in [*self.energy_system_components.get("airco", [])]:
+                # This does not take into COP at the moment
+                nominal_fixed_operational = self.variable_nominal(f"{asset_name}.Heat_airco")
+                nominal_fixed_operational = (
+                    nominal_fixed_operational
+                    if isinstance(nominal_fixed_operational, float)
+                    else max(nominal_fixed_operational.values)
+                )
+                nominal_variable_operational = nominal_fixed_operational
+                nominal_investment = nominal_fixed_operational
             elif asset_name in [*self.energy_system_components.get("heat_pipe", [])]:
                 nominal_fixed_operational = max(parameters[f"{asset_name}.length"], 1.0)
                 nominal_fixed_operational = (
@@ -945,6 +955,25 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             for i in range(1, len(self.times())):
                 sum += variable_operational_cost_coefficient * heat_source[i] * timesteps[i - 1]
                 sum += price_profile.values[i] * pump_power[i] * timesteps[i - 1] / eff
+
+            constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
+
+        # Very simplified at the moment
+        for ac in self.energy_system_components.get("airco", []):
+            heat_source = self.__state_vector_scaled(f"{ac}.Heat_airco", ensemble_member)
+            variable_operational_cost_var = self._asset_variable_operational_cost_map[s]
+            variable_operational_cost = self.extra_variable(
+                variable_operational_cost_var, ensemble_member
+            )
+            nominal = self.variable_nominal(variable_operational_cost_var)
+            variable_operational_cost_coefficient = parameters[
+                f"{s}.variable_operational_cost_coefficient"
+            ]
+            timesteps = np.diff(self.times()) / 3600.0
+
+            sum = 0.0
+            for i in range(1, len(self.times())):
+                sum += variable_operational_cost_coefficient * heat_source[i] * timesteps[i - 1]
 
             constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
 

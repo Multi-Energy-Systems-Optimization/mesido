@@ -401,6 +401,13 @@ class AssetToHeatComponent(_AssetToComponentBase):
         q_nominal = self._get_connected_q_nominal(asset)
 
         modifiers = dict(
+            technical_life=self.get_asset_attribute_value(
+                asset,
+                "technicalLifetime",
+                default_value=30.0,
+                min_value=1.0,
+                max_value=50.0,
+            ),
             Q_nominal=q_nominal,
             Heat_airco=dict(max=max_, nominal=max_ / 2.0),
             Heat_flow=dict(max=max_, nominal=max_ / 2.0),
