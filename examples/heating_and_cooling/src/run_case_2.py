@@ -28,6 +28,7 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 )
 from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
 from rtctools.optimization.timeseries import Timeseries
+from rtctools.util import run_optimization_problem
 
 root_folder = os.path.join(str(Path(__file__).resolve().parent.parent.parent.parent), "tests")
 sys.path.insert(1, root_folder)
@@ -182,7 +183,7 @@ class HeatingCoolingProblem(
 
     This problem class is applied to an esdl where there is no dedicated supply or return line. For this test case we just match heating demand (_GoalsAndOptions) and minimize the energy production to have a representative result.
 
-    TCO minimization to be added
+    TCO minimization has been added. This is currently a manual setup in this script
     """
 
     def __init__(self, *args, **kwargs):
@@ -197,7 +198,7 @@ class HeatingCoolingProblem(
         self._number_of_years = 30.0
 
         self.__indx_max_peak = None
-        self.__day_steps = 5
+        self.__day_steps = 10 # 5
 
     def energy_system_options(self):
         options = super().energy_system_options()
@@ -274,14 +275,14 @@ class HeatingCoolingProblem(
                 0,
             )
 
-        # (
-        #     self.__indx_max_peak,
-        #     self.__heat_demand_nominal,
-        #     self.__cold_demand_nominal,
-        # ) = adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(
-        #     self,
-        #     self.__day_steps,
-        # )
+        (
+            self.__indx_max_peak,
+            self.__heat_demand_nominal,
+            self.__cold_demand_nominal,
+        ) = adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(
+            self,
+            self.__day_steps,
+        )
         temp_variable_for_debugging = 0.0
 
     def path_goals(self):
@@ -311,15 +312,15 @@ class HeatingCoolingProblem(
         options = super().solver_options()
         # Manually select solver below
         # HIGHS solver
-        options["solver"] = "highs"
-        highs_options = options["highs"] = {}
-        highs_options.update(_mip_gap_settings("mip_rel_gap", self))
+        # options["solver"] = "highs"
+        # highs_options = options["highs"] = {}
+        # highs_options.update(_mip_gap_settings("mip_rel_gap", self))
 
-        # CPLEX solver - not tested yet
-        # options["casadi_solver"] = self._qpsol
-        # options["solver"] = "cplex"
-        # cplex_options = options["cplex"] = {}
-        # cplex_options.update(_mip_gap_settings("CPX_PARAM_EPGAP", self))
+        # CPLEX solver - for internal use
+        options["solver"] = "cplex"
+
+        # potentiall add Gurobi if license is avaialble
+        # options["solver"] = "gurobi"
 
         return options
 
@@ -327,7 +328,7 @@ class HeatingCoolingProblem(
         goals = super().goals().copy()
 
         # When this is used then the minimization of the heat source should be commented out
-        # goals.append(MinimizeTCO(priority=2, number_of_years=self._number_of_years))
+        goals.append(MinimizeTCO(priority=2, number_of_years=self._number_of_years))
 
         return goals
 
@@ -369,7 +370,8 @@ if __name__ == "__main__":
 
     base_folder = Path(__file__).resolve().parent.parent
 
-    heat_problem = run_esdl_mesido_optimization(
+    # heat_problem = run_esdl_mesido_optimization( # Ideally use with HIGHS sovvel
+    heat_problem = run_optimization_problem( # used with cplex solver
         HeatingCoolingProblem,
         base_folder=base_folder,
         # esdl_file_name="Heating and cooling network with return network.esdl",
@@ -385,5 +387,84 @@ if __name__ == "__main__":
     # checks to make sure the run was valid
     demand_matching_test(heat_problem, results)
     energy_conservation_test(heat_problem, results)
+
+    # ---------------------------------------------------------------------------------------------
+    # Manually checking of some results
+    # Cold producers
+    for iac in heat_problem.energy_system_components["airco"]:
+        print(
+            f"{iac} __investment_cost: {results[f'{iac}__investment_cost']} "
+            f"__installation_cost: {results[f'{iac}__installation_cost']} "
+            f"__variable_operational_cost: {results[f'{iac}__variable_operational_cost']} "
+            f"__fixed_operational_cost: {results[f'{iac}__fixed_operational_cost']}"
+        )
+        print(
+            f"cooling [W]: {results[f'{iac}.HeatOut.Heat'] - results[f'{iac}.HeatIn.Heat']}"
+            # -results["Airco_K.Heat_airco"] # same data in variable
+        )
+    # manually calculate variable operation cost if rate is 25 euro/MWh
+    np.testing.assert_allclose(
+        sum(
+            results["Airco_K.Heat_airco"][1:] / 1.0e6 * (
+                (heat_problem.times()[1:] - heat_problem.times()[0:-1]) / 3600
+            ) * 25.0
+        ),
+        results["Airco_K__variable_operational_cost"],
+        atol=1e-8,
+    )
+    # Heat producers
+    for hpdcr in heat_problem.energy_system_components["heat_source"]:
+        print(
+            f"{hpdcr} __investment_cost: {results[f'{hpdcr}__investment_cost']} "
+            f"__installation_cost: {results[f'{hpdcr}__installation_cost']} "
+            f"__variable_operational_cost: {results[f'{hpdcr}__variable_operational_cost']} "
+            f"__fixed_operational_cost: {results[f'{hpdcr}__fixed_operational_cost']}"
+        )
+        print(
+            f"heating [W]: {results[f'{hpdcr}.HeatOut.Heat'] - results[f'{hpdcr}.HeatIn.Heat']}"
+            # results["f{hpdcr}.Heat_flow"] # same data in variable
+        )
+    # manually calculate variable operation cost if rate is 40 euro/MWh
+    np.testing.assert_allclose(
+        sum(
+            results["HeatProducer_J.Heat_flow"][1:] / 1.0e6 * (
+                (heat_problem.times()[1:] - heat_problem.times()[0:-1]) / 3600
+            ) * 40.0
+        ),
+        results["HeatProducer_J__variable_operational_cost"],
+        atol=1e-8,
+    )
+
+    # Objective value of the optimization problem
+    total_cost_manual_calc = 0.0
+    for iac in heat_problem.energy_system_components["airco"]:
+        total_cost_manual_calc += sum(
+            results[f'{iac}__investment_cost'] + results[f'{iac}__installation_cost']
+            + (
+                results[f'{iac}__variable_operational_cost']
+                * heat_problem.parameters(0)["number_of_years"]
+            )
+            + (
+                results[f'{iac}__fixed_operational_cost']
+                * heat_problem.parameters(0)["number_of_years"]
+            )
+        )
+    for hpdcr in heat_problem.energy_system_components["heat_source"]:
+        total_cost_manual_calc += sum(
+            results[f'{hpdcr}__investment_cost'] + results[f'{hpdcr}__installation_cost']
+            + (
+                results[f'{hpdcr}__variable_operational_cost']
+                * heat_problem.parameters(0)["number_of_years"]
+            )
+            + (
+                results[f'{hpdcr}__fixed_operational_cost']
+                * heat_problem.parameters(0)["number_of_years"]
+            )
+        )
+    print(
+        f"{total_cost_manual_calc} vs {heat_problem.objective_value * 1.0e6}"
+    ) # Convert objective_value to unscaled value
+    # ---------------------------------------------------------------------------------------------
+
 
     temp_variable_debugging = 0.0
