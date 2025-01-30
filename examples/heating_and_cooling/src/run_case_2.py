@@ -145,7 +145,7 @@ class MinimizeSourcesColdGoal(Goal):
     over the full horizon and not per time-step.
     """
 
-    priority = 2
+    priority = 3
 
     order = 1
 
@@ -363,7 +363,7 @@ class HeatingCoolingProblem(
         # cplex_options = options["cplex"] = {}
         # cplex_options.update(_mip_gap_settings("CPX_PARAM_EPGAP", self))
 
-        # potentiall add Gurobi if license is avaialble
+        # potentially add Gurobi if license is avaialble, will reduce computational time
         # options["solver"] = "gurobi"
 
         return options
@@ -405,7 +405,7 @@ class HeatingCoolingProblem(
             stored_volume = self.state_vector(f"{ates_id}.Stored_volume")
             volume_usage = 0.0
             volume_usage = stored_volume[0] - stored_volume[-1]
-            constraints.append((volume_usage, 0.0, 0.0))
+            constraints.append((volume_usage, 0.0, 0.0)) # Scaling of this constraint has not been checked
 
         return constraints
 
@@ -414,16 +414,14 @@ if __name__ == "__main__":
 
     base_folder = Path(__file__).resolve().parent.parent
 
-    # heat_problem = run_esdl_mesido_optimization( # Ideally use with HIGHS sovvel
-    heat_problem = run_optimization_problem( # used with cplex solver
+    heat_problem = run_esdl_mesido_optimization(  # Ideally use with HIGHS solver
+    # heat_problem = run_optimization_problem(  # used with cplex solver
         HeatingCoolingProblem,
         base_folder=base_folder,
-        # esdl_file_name="Heating and cooling network with return network.esdl",
         esdl_file_name="Supply_only_1_return_network_efvc_.esdl",
         # esdl_file_name="Small_Supply_only_1_return_network_efvc_.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,
-        # input_timeseries_file="timeseries_4.csv",
         input_timeseries_file="timeseries_5.csv",
     )
     results = heat_problem.extract_results()

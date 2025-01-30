@@ -154,7 +154,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
             elif asset_name in [*self.energy_system_components.get("airco", [])]:
-                # This does not take into COP at the moment
+                # The airco functions as a cold producer (no COP as in the case of a heat pump)
                 nominal_fixed_operational = self.variable_nominal(f"{asset_name}.Heat_airco")
                 nominal_fixed_operational = (
                     nominal_fixed_operational
@@ -958,7 +958,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
             constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
 
-        # Very simplified at the moment
+        # The airco functions as a cold producer
         for ac in self.energy_system_components.get("airco", []):
             heat_source = self.__state_vector_scaled(f"{ac}.Heat_airco", ensemble_member)
             variable_operational_cost_var = self._asset_variable_operational_cost_map[ac]
