@@ -961,13 +961,13 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         # Very simplified at the moment
         for ac in self.energy_system_components.get("airco", []):
             heat_source = self.__state_vector_scaled(f"{ac}.Heat_airco", ensemble_member)
-            variable_operational_cost_var = self._asset_variable_operational_cost_map[s]
+            variable_operational_cost_var = self._asset_variable_operational_cost_map[ac]
             variable_operational_cost = self.extra_variable(
                 variable_operational_cost_var, ensemble_member
             )
             nominal = self.variable_nominal(variable_operational_cost_var)
             variable_operational_cost_coefficient = parameters[
-                f"{s}.variable_operational_cost_coefficient"
+                f"{ac}.variable_operational_cost_coefficient"
             ]
             timesteps = np.diff(self.times()) / 3600.0
 
