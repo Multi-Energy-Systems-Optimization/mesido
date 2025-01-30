@@ -8,7 +8,6 @@ from mesido.util import run_esdl_mesido_optimization
 from mesido.workflows.utils.adapt_profiles import (
     adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
 )
-from mesido.workflows.grow_workflow import SolverCPLEX
 
 logger = logging.getLogger("WarmingUP-MPC")
 logger.setLevel(logging.INFO)
@@ -58,37 +57,12 @@ class HeatColdDemand(TestCase):
             def read(self):
                 super().read()
 
-                # Manually normalize the profile and set peak value
-                heat_demand_peaks_watt = {
-                    "HeatingDemand_A": 170.0e3,
-                    "HeatingDemand_B": 440.0e2,
-                    "HeatingDemand_C": 60.0e2,
-                    "HeatingDemand_D": 60.0e2,
-                    "HeatingDemand_E": 40.0e2,
-                    "HeatingDemand_F": 140.0e2,
-                    "HeatingDemand_G": 70.0e2,
-                    "HeatingDemand_H": 340.0e2,
-
-                }
-                cold_demand_peaks_watt = {
-                    "CoolingDemand_A": 600.0e3,
-                    "CoolingDemand_C": 60.0e3,
-                    "CoolingDemand_E": 140.0e3,
-                    "CoolingDemand_F": 900.0e3,
-                    "CoolingDemand_G": 240.0e3,
-                    "CoolingDemand_H": 1200.0e3,
-                }
+                # Set the peak of the heating demand since the specified profile is normalized to 1
 
                 for d in self.energy_system_components["heat_demand"]:
                     target = self.get_timeseries(f"{d}.target_heat_demand")
-                    max_heat_demand_scaling = max(target.values)
                     for ii in range(len(target.values)):
-                        target.values[ii] = (
-                            target.values[ii] / max_heat_demand_scaling * heat_demand_peaks_watt[d]
-                        )
-                        # Manaully prevent very small values
-                        # if target.values[ii] < 4.0e3:
-                        #     target.values[ii] = 4.0e3
+                        target.values[ii] = target.values[ii] * 7.0e6
 
                     self.io.set_timeseries(
                         f"{d}.target_heat_demand",
@@ -101,14 +75,8 @@ class HeatColdDemand(TestCase):
                 # demand such that the seasonal storage is utilized
                 for d in self.energy_system_components["cold_demand"]:
                     target = self.get_timeseries(f"{d}.target_cold_demand")
-                    max_cool_demand_scaling = max(target.values)
                     for ii in range(len(target.values)):
-                        target.values[ii] = (
-                            target.values[ii] / max_cool_demand_scaling * cold_demand_peaks_watt[d]
-                        )
-                        # Manaully prevent very small values
-                        # if target.values[ii] < 6.0e3:
-                        #     target.values[ii] = 6.0e3
+                        target.values[ii] = target.values[ii] * 0.25
 
                     self.io.set_timeseries(
                         f"{d}.target_cold_demand",
@@ -117,15 +85,14 @@ class HeatColdDemand(TestCase):
                         0,
                     )
 
-                # (
-                #     self.__indx_max_peak,
-                #     self.__heat_demand_nominal,
-                #     self.__cold_demand_nominal,
-                # ) = adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(
-                #     self,
-                #     self.__day_steps,
-                # )
-                temp_variable = 0.0
+                (
+                    self.__indx_max_peak,
+                    self.__heat_demand_nominal,
+                    self.__cold_demand_nominal,
+                ) = adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(
+                    self,
+                    self.__day_steps,
+                )
 
             def constraints(self, ensemble_member):
                 constraints = super().constraints(ensemble_member)
@@ -163,13 +130,10 @@ class HeatColdDemand(TestCase):
         heat_problem = run_esdl_mesido_optimization(
             HeatingCoolingProblem,
             base_folder=base_folder,
-            # esdl_file_name="Heating and cooling network with return network.esdl",
-            esdl_file_name="Supply_only_1_return_network_efvc_.esdl",
-            # esdl_file_name="Small_Supply_only_1_return_network_efvc_.esdl",
+            esdl_file_name="Heating and cooling network with return network.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
-            # input_timeseries_file="timeseries_4.csv",
-            input_timeseries_file="timeseries_5.csv",
+            input_timeseries_file="timeseries_4.csv",
         )
         results = heat_problem.extract_results()
 
