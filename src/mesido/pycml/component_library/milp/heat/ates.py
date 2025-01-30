@@ -1,11 +1,13 @@
 from mesido.pycml import Variable
 from mesido.pycml.component_library.milp._internal.heat_component import BaseAsset
+from mesido.pycml.pycml_mixin import add_names_automatically
 
 from numpy import nan
 
 from .heat_two_port import HeatTwoPort
 
 
+@add_names_automatically
 class ATES(HeatTwoPort, BaseAsset):
     """
     An Ates is a storage component that is used to model heat storage underground. Typically, this
@@ -39,6 +41,8 @@ class ATES(HeatTwoPort, BaseAsset):
         * {name}.{port}.Heat
         * {name}.{port}.Hydraulic_power
         * {name}.{port}.Q
+
+        {add_names_here}
 
     Parameters:
         name : The name of the asset.

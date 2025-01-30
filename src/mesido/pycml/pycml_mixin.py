@@ -1,3 +1,7 @@
+import ast
+import inspect
+from typing import Type
+
 import itertools
 import logging
 from abc import abstractmethod
@@ -16,6 +20,49 @@ from . import ConstantInput, ControlInput, Model, SymbolicParameter, Variable
 
 
 logger = logging.getLogger("mesido")
+
+
+
+def add_names_automatically(class_: Type):
+    dynamic_names = []
+    dynamic_port_names = []
+    for class__ in inspect.getmro(class_):
+        if inspect.getmodule(class__).__name__ == 'builtins':
+            break
+        ast_of_init: ast.Module = ast.parse(inspect.getsource(class__))
+        for node in ast.walk(ast_of_init):
+            # Look for any function calls that fit self.add_variable
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and isinstance(
+                    node.func.value,
+                    ast.Name) and node.func.value.id == 'self' and node.func.attr == 'add_variable':
+                # Now extract the first and second argument
+                # First argument decides if it is a port or variable name
+                # Second argument is the string name
+                if isinstance(node.args[0], ast.Name):
+                    print(node, ast.dump(node))
+                    if node.args[0].id in ['HeatPort', 'ElectricityPort', 'GasPort']:
+                        dynamic_port_names.append(node.args[1].value)
+                    elif node.args[0].id == 'Variable':
+                        dynamic_names.append(node.args[1].value)
+                    else:
+                        raise RuntimeError(f'Unknown case:\n{ast.dump(node)}')
+                else:
+                    raise RuntimeError(f'Unknown case:\n{ast.dump(node)}')
+
+    # Format the dynamic names properly and find the indent that should be used
+    dynamic_names = [f'* {{name}}.{dynamic_name}' for dynamic_name in sorted(dynamic_names)]
+    dynamic_port_names = [f'* {{name}}.{{port}}.{dynamic_name}' for dynamic_name in
+                          sorted(dynamic_port_names)]
+
+    # Find the indent that should be used
+    line_with_hook = next(
+        line for line in class_.__doc__.splitlines() if '{add_names_here}' in line)
+    (indent, _) = line_with_hook.split('{add_names_here}')
+
+    # Insert the dynamic names into the documentation
+    class_.__doc__ = class_.__doc__.replace('{add_names_here}',
+                                            f'\n{indent}'.join(dynamic_names + dynamic_port_names))
+    return class_
 
 
 class PyCMLMixin(OptimizationProblem):

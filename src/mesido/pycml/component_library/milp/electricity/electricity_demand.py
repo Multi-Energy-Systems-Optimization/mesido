@@ -5,13 +5,21 @@ from numpy import nan
 from .electricity_base import ElectricityPort
 from .._internal import BaseAsset
 from .._internal.electricity_component import ElectricityComponent
+from mesido.pycml.pycml_mixin import add_names_automatically
 
-
+@add_names_automatically
 class ElectricityDemand(ElectricityComponent, BaseAsset):
     """
     The electricity demand models consumption of electrical power. We set an equality constriant
     in to enforce the minimum voltage and the associated power at the demand. This allows us to
     overestimate the power losses in the rest of the network.
+
+    Variables created:
+        {add_names_here}
+
+    Parameters:
+        name : The name of the asset.
+        modifiers : Dictionary with asset information.
     """
 
     def __init__(self, name, **modifiers):
