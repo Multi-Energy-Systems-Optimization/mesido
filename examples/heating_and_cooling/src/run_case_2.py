@@ -139,6 +139,44 @@ class MinimizeSourcesHeatGoal(Goal):
         return optimization_problem.state(f"{self.source}.Heat_source")
 
 
+class MinimizeSourcesColdGoal(Goal):
+    """
+    A minimization goal for source milp production. We use order 1 here as we want to minimize milp
+    over the full horizon and not per time-step.
+    """
+
+    priority = 2
+
+    order = 1
+
+    def __init__(self, source: str):
+        """
+        The constructor of the goal.
+
+        Parameters
+        ----------
+        source : string of the source name that is going to be minimized
+        """
+        self.source = source
+
+    def function(
+        self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
+    ) -> ca.MX:
+        """
+        This function returns the state variable to which should to be matched to the target
+        specified in the __init__.
+
+        Parameters
+        ----------
+        optimization_problem : The optimization class containing the variables'.
+        ensemble_member : the ensemble member.
+
+        Returns
+        -------
+        The Heat_airco state of the optimization problem.
+        """
+        return optimization_problem.state(f"{self.source}.Heat_airco")
+
 class _GoalsAndOptions:
     """
     A goals class that we often use if we specify multiple problem classes.
@@ -198,12 +236,13 @@ class HeatingCoolingProblem(
         self._number_of_years = 30.0
 
         self.__indx_max_peak = None
-        self.__day_steps = 10 # 5
+        self.__day_steps = 14 # 5
 
     def energy_system_options(self):
         options = super().energy_system_options()
         options["heat_loss_disconnected_pipe"] = False
-        options["neglect_pipe_heat_losses"] = False
+        # options["neglect_pipe_heat_losses"] = False
+        options["neglect_pipe_heat_losses"] = True  # To reduce compuational speed (1 year profiles)
         return options
 
     def parameters(self, ensemble_member):
@@ -295,9 +334,11 @@ class HeatingCoolingProblem(
         """
         goals = super().path_goals().copy()
 
-        # To be replaced by TCO
+        # To code below can optionally also be used, instead of TCO
         # for s in self.energy_system_components["heat_source"]:
         #     goals.append(MinimizeSourcesHeatGoal(s))
+        # for s in self.energy_system_components["airco"]:
+        #     goals.append(MinimizeSourcesColdGoal(s))
 
         return goals
 
@@ -311,13 +352,16 @@ class HeatingCoolingProblem(
         """
         options = super().solver_options()
         # Manually select solver below
+
         # HIGHS solver
-        # options["solver"] = "highs"
-        # highs_options = options["highs"] = {}
-        # highs_options.update(_mip_gap_settings("mip_rel_gap", self))
+        options["solver"] = "highs"
+        highs_options = options["highs"] = {}
+        highs_options.update(_mip_gap_settings("mip_rel_gap", self))
 
         # CPLEX solver - for internal use
-        options["solver"] = "cplex"
+        # options["solver"] = "cplex"
+        # cplex_options = options["cplex"] = {}
+        # cplex_options.update(_mip_gap_settings("CPX_PARAM_EPGAP", self))
 
         # potentiall add Gurobi if license is avaialble
         # options["solver"] = "gurobi"
