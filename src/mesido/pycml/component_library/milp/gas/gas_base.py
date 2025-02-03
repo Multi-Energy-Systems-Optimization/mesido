@@ -1,13 +1,24 @@
 from mesido.pycml import Connector, Variable
+from mesido.pycml.pycml_mixin import add_names_automatically
 
 from .._internal.gas_component import GasComponent
 
 
+@add_names_automatically
 class GasPort(GasComponent, Connector):
     """
     The gas port is used to model the variables at a port where two assets are connected. For the
     gas network we model flow (Q [m3/s]) and head (H [m]). The Q_shadow variable is only used for
     correctly connecting ports of assets later on.
+
+    port = GasIn or GasOut
+
+    Variables created:
+        {add_names_here}
+
+    Parameters:
+        name : The name of the asset.
+        modifiers : Dictionary with asset information.
     """
 
     def __init__(self, name, **modifiers):

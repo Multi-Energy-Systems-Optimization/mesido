@@ -1,4 +1,5 @@
 from mesido.pycml import Variable
+from mesido.pycml.pycml_mixin import add_names_automatically
 
 from numpy import nan
 
@@ -7,9 +8,19 @@ from .._internal import BaseAsset
 from .._internal.gas_component import GasComponent
 
 
+@add_names_automatically
 class GasDemand(GasComponent, BaseAsset):
     """
     A gas demand consumes flow from the network.
+
+    port = GasIn or GasOut
+
+    Variables created:
+        {add_names_here}
+
+    Parameters:
+        name : The name of the asset.
+        modifiers : Dictionary with asset information.
     """
 
     def __init__(self, name, **modifiers):

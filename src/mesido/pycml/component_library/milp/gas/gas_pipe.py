@@ -1,4 +1,5 @@
 from mesido.pycml import Variable
+from mesido.pycml.pycml_mixin import add_names_automatically
 
 from numpy import nan, pi
 
@@ -6,10 +7,20 @@ from .gas_base import GasTwoPort
 from .._internal import BaseAsset
 
 
+@add_names_automatically
 class GasPipe(GasTwoPort, BaseAsset):
     """
     The gas_pipe component is used to model head loss through the pipe. At the moment we only have
     a placeholder linear head loss formulation in place.
+
+    port = GasIn or GasOut
+
+    Variables created:
+        {add_names_here}
+
+    Parameters:
+        name : The name of the asset.
+        modifiers : Dictionary with asset information.
     """
 
     def __init__(self, name, **modifiers):

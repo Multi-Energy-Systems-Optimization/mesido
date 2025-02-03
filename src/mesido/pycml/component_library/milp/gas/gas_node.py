@@ -1,16 +1,27 @@
 from mesido.pycml import Variable
+from mesido.pycml.pycml_mixin import add_names_automatically
 
 from .gas_base import GasPort
 from .._internal import BaseAsset
 from .._internal.gas_component import GasComponent
 
 
+@add_names_automatically
 class GasNode(GasComponent, BaseAsset):
     """
     The gas node is a component where we model multiple flows coming together,
     this is the only component where it is allowed that 3 or more flows come together. This means
     that a node is always connected to gas pipes. We set constraints for equal head at all ports.
     Furthermore, we set constraints for conservation of flow.
+
+    port = GasIn or GasOut
+
+    Variables created:
+        {add_names_here}
+
+    Parameters:
+        name : The name of the asset.
+        modifiers : Dictionary with asset information.
     """
 
     def __init__(self, name, **modifiers):
