@@ -222,10 +222,10 @@ class TestHEX(TestCase):
             def temperature_regimes(self, carrier):
                 temperatures = []
                 if carrier == 829940433102452838:
-                    temperatures = [70.0, 65.0, 60.0] #producer out
+                    temperatures = [70.0, 65.0, 60.0]  # producer out
 
                 if carrier == 8725433194681736500139:
-                    temperatures = [65.0, 60.0] #first hex out
+                    temperatures = [65.0, 60.0]  # first hex out
 
                 return temperatures
 
@@ -236,19 +236,20 @@ class TestHEX(TestCase):
                 for carrier in carriers.values():
                     carrier_map = carrier["id_number_mapping"]
                     temperature_regimes = self.temperature_regimes(int(carrier_map))
-                    if len(temperature_regimes)>1:
+                    if len(temperature_regimes) > 1:
                         carrier_var_name = str(carrier_map) + "_temperature"
                         var_carrier = self.extra_variable(carrier_var_name)
-                        for i in range(var_carrier.shape[0]-1):
-                            constraints.append((var_carrier[i]-var_carrier[i+1], 0.0, 0.0))
+                        for i in range(var_carrier.shape[0] - 1):
+                            constraints.append((var_carrier[i] - var_carrier[i + 1], 0.0, 0.0))
 
                         for temperature in temperature_regimes:
                             selected_temp_vec = self.state_vector(
                                 f"{int(carrier_map)}_{temperature}"
                             )
                             for i in range(var_carrier.shape[0] - 1):
-                                constraints.append((selected_temp_vec[i] - selected_temp_vec[i + 1], 0.0, 0.0))
-
+                                constraints.append(
+                                    (selected_temp_vec[i] - selected_temp_vec[i + 1], 0.0, 0.0)
+                                )
 
                 return constraints
 
@@ -280,7 +281,7 @@ class TestHEX(TestCase):
         temp_prod = results["829940433102452838_temperature"]
         temp_hex = results["8725433194681736500139_temperature"]
 
-        #check heat exchanger 1 is bypassed
+        # check heat exchanger 1 is bypassed
         hex_active = "HeatExchange_e410_copy"
         hex_bypass = "HeatExchange_e410"
 
@@ -293,14 +294,12 @@ class TestHEX(TestCase):
         np.testing.assert_allclose(results[f"{hex_bypass}.Heat_flow"][:-1], 0, atol=1e-6)
         np.testing.assert_array_less(1e5, results[f"{hex_active}.Heat_flow"][:-1])
 
-        #check lowest temperatures are picked (due to minimum heatloss).
-        #check temperatures on bypass side are the same.
+        # check lowest temperatures are picked (due to minimum heatloss).
+        # check temperatures on bypass side are the same.
 
         np.testing.assert_allclose(temp_prod, 60.0)
         np.testing.assert_allclose(temp_hex, 60.0)
         np.testing.assert_allclose(temp_hex, temp_prod)
-
-
 
 
 class TestHP(TestCase):

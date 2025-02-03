@@ -1494,8 +1494,11 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             sup_carrier = parameters[f"{s}.T_supply_id"]
             supply_temperatures = self.temperature_regimes(sup_carrier)
             big_m = 2.0 * self.bounds()[f"{s}.HeatOut.Heat"][1]
-            big_m = (big_m if big_m!=np.inf else 2.0 * self.bounds()[f"{s}.Heat_source"
-            ][1]*parameters[f"{s}.T_supply"]/dt )
+            big_m = (
+                big_m
+                if big_m != np.inf
+                else 2.0 * self.bounds()[f"{s}.Heat_source"][1] * parameters[f"{s}.T_supply"] / dt
+            )
 
             if len(supply_temperatures) == 0:
                 constraints.append(
