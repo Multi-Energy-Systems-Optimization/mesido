@@ -1,10 +1,12 @@
 from mesido.pycml import Variable
+from mesido.pycml.pycml_mixin import add_names_automatically
 
 from numpy import nan
 
 from ._non_storage_component import _NonStorageComponent
 
 
+@add_names_automatically
 class Pump(_NonStorageComponent):
     """
     The pump component is there to add head to the flow. We assume head can only be added for
@@ -12,14 +14,7 @@ class Pump(_NonStorageComponent):
     port = HeatIn or HeatOut
 
     Variables created:
-        * {name}.dH
-        * {name}.Heat_flow
-        * {name}.Pump_power
-        * {name}.Q
-        * {name}.{port}.H
-        * {name}.{port}.Heat
-        * {name}.{port}.Hydraulic_power
-        * {name}.{port}.Q
+        {add_names_here}
 
     Parameters:
         name : The name of the asset.

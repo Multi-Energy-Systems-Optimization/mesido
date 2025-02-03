@@ -1,8 +1,10 @@
 from mesido.pycml import Variable
+from mesido.pycml.pycml_mixin import add_names_automatically
 
 from ._non_storage_component import _NonStorageComponent
 
 
+@add_names_automatically
 class CheckValve(_NonStorageComponent):
     """
     The check valve allows the fluid to flow in only one direction. This is done with constraints
@@ -11,13 +13,7 @@ class CheckValve(_NonStorageComponent):
     port = HeatIn or HeatOut
 
     Variables created:
-        * {name}.dH
-        * {name}.Heat_flow
-        * {name}.Q
-        * {name}.{port}.H
-        * {name}.{port}.Heat
-        * {name}.{port}.Hydraulic_power
-        * {name}.{port}.Q
+        {add_names_here}
 
     Parameters:
         name : The name of the asset.

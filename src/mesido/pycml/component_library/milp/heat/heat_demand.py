@@ -21,14 +21,6 @@ class HeatDemand(_NonStorageComponent):
     port = HeatIn or HeatOut
 
     Variables created:
-        * {name}.dH
-        * {name}.Heat_demand
-        * {name}.Heat_flow
-        * {name}.Q
-        * {name}.{port}.H
-        * {name}.{port}.Heat
-        * {name}.{port}.Hydraulic_power
-        * {name}.{port}.Q
         {add_names_here}
 
     Parameters:

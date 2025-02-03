@@ -1,8 +1,11 @@
 from numpy import nan
 
+from mesido.pycml.pycml_mixin import add_names_automatically
+
 from .heat_source import HeatSource
 
 
+@add_names_automatically
 class GeothermalSource(HeatSource):
     """
     The geothermal source component is used to model geothermal doublets. It is equivilent to a
@@ -15,16 +18,7 @@ class GeothermalSource(HeatSource):
     port = HeatIn or HeatOut
 
     Variables created:
-        * {name}.dH
-        * {name}.Emission
-        * {name}.Heat_flow
-        * {name}.Heat_source
-        * {name}.Pump_power
-        * {name}.Q
-        * {name}.{port}.H
-        * {name}.{port}.Heat
-        * {name}.{port}.Hydraulic_power
-        * {name}.{port}.Q
+        {add_names_here}
 
 
     Parameters:

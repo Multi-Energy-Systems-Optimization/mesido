@@ -1,11 +1,13 @@
 from mesido.pycml import Variable
 from mesido.pycml.component_library.milp._internal.heat_component import BaseAsset
+from mesido.pycml.pycml_mixin import add_names_automatically
 
 from numpy import nan
 
 from .heat_two_port import HeatTwoPort
 
 
+@add_names_automatically
 class _NonStorageComponent(HeatTwoPort, BaseAsset):
     """
     A non storage component is an asset type that does not have states that have interdependent
@@ -15,12 +17,7 @@ class _NonStorageComponent(HeatTwoPort, BaseAsset):
     port = HeatIn or HeatOut
 
     Variables created:
-        * {name}.Heat_flow
-        * {name}.Q
-        * {name}.{port}.H
-        * {name}.{port}.Heat
-        * {name}.{port}.Hydraulic_power
-        * {name}.{port}.Q
+        {add_names_here}
 
     Parameters:
         name : The name of the asset.

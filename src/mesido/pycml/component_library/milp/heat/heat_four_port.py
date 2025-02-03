@@ -1,9 +1,11 @@
 from mesido.pycml import Variable
 from mesido.pycml.component_library.milp._internal import HeatComponent
+from mesido.pycml.pycml_mixin import add_names_automatically
 
 from ._non_storage_component import _NonStorageComponent
 
 
+@add_names_automatically
 class HeatFourPort(HeatComponent):
     """
     The HeatFourPort is used as a base component to model assets that interact with two
@@ -13,11 +15,7 @@ class HeatFourPort(HeatComponent):
     port = HeatIn | HeatOut
 
     Variables created:
-        * {name}.Pump_power
-        * {name}.{side}.{port}.H
-        * {name}.{side}.{port}.Heat
-        * {name}.{side}.{port}.Hydraulic_power
-        * {name}.{side}.{port}.Q
+        {add_names_here}
 
     Parameters:
         name : The name of the asset.

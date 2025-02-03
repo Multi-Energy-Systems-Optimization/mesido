@@ -1,11 +1,13 @@
 from mesido.pycml import Variable
 from mesido.pycml.component_library.milp._internal.heat_component import BaseAsset
+from mesido.pycml.pycml_mixin import add_names_automatically
 
 from numpy import nan
 
 from .heat_two_port import HeatTwoPort
 
 
+@add_names_automatically
 class LowTemperatureATES(HeatTwoPort, BaseAsset):
     """
     TODO: This model is still under developement.
@@ -23,21 +25,7 @@ class LowTemperatureATES(HeatTwoPort, BaseAsset):
     port = HeatIn or HeatOut
 
     Variables created:
-        * {name}.dH
-        * {name}.Heat_ates
-        * {name}.Heat_flow
-        * {name}.Heat_loss
-        * {name}.Pump_power
-        * {name}.Q
-        * {name}.Stored_heat
-        * {name}.Stored_volume
-        * {name}.Temperature_ates
-        * {name}.Temperature_loss
-        * {name}.Temperature_change_charging
-        * {name}.{port}.H
-        * {name}.{port}.Heat
-        * {name}.{port}.Hydraulic_power
-        * {name}.{port}.Q
+        {add_names_here}
 
     Parameters:
         name : The name of the asset.

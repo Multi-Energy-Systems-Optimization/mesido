@@ -40,7 +40,8 @@ def add_names_automatically(class_: Type):
                 # Second argument is the string name
                 if isinstance(node.args[0], ast.Name):
                     print(node, ast.dump(node))
-                    if node.args[0].id in ['HeatPort', 'ElectricityPort', 'GasPort']:
+                    if node.args[0].id in ['HeatPort', 'ElectricityPort', 'GasPort', 'Primary',
+                                           'Secondary', '_NonStorageComponent']:
                         dynamic_port_names.append(node.args[1].value)
                     elif node.args[0].id == 'Variable':
                         dynamic_names.append(node.args[1].value)

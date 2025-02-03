@@ -1,6 +1,8 @@
 from .heat_source import HeatSource
+from mesido.pycml.pycml_mixin import add_names_automatically
 
 
+@add_names_automatically
 class AirWaterHeatPump(HeatSource):
     """
     The air water heat pump component is used to model the source behaviour of air water heat pumps.
@@ -9,16 +11,7 @@ class AirWaterHeatPump(HeatSource):
     port = HeatIn or HeatOut
 
     Variables created:
-        * {name}.dH
-        * {name}.Emission
-        * {name}.Heat_flow
-        * {name}.Heat_source
-        * {name}.Pump_power
-        * {name}.Q
-        * {name}.{port}.H
-        * {name}.{port}.Heat
-        * {name}.{port}.Hydraulic_power
-        * {name}.{port}.Q
+        {add_names_here}
 
 
     Parameters:

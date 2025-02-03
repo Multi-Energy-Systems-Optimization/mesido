@@ -1,8 +1,10 @@
 from mesido.pycml import Variable
+from mesido.pycml.pycml_mixin import add_names_automatically
 
 from ._non_storage_component import _NonStorageComponent
 
 
+@add_names_automatically
 class Airco(_NonStorageComponent):
     """
     The airco component is there to extract thermal power (Heat) out of the network. This component
@@ -20,22 +22,11 @@ class Airco(_NonStorageComponent):
     port = HeatIn or HeatOut
 
     Variables created:
-        * {name}.dH
-        * {name}.Emission
-        * {name}.Heat_flow
-        * {name}.Heat_airco
-        * {name}.Q
-        * {name}.{port}.H
-        * {name}.{port}.Heat
-        * {name}.{port}.Hydraulic_power
-        * {name}.{port}.Q
-
+        {add_names_here}
 
     Parameters:
         name : The name of the asset.
         modifiers : Dictionary with asset information.
-
-
     """
 
     def __init__(self, name, **modifiers):

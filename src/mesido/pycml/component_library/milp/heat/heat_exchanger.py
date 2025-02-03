@@ -1,10 +1,12 @@
 from mesido.pycml import Variable
 from mesido.pycml.component_library.milp._internal import BaseAsset
 from mesido.pycml.component_library.milp.heat.heat_four_port import HeatFourPort
+from mesido.pycml.pycml_mixin import add_names_automatically
 
 from numpy import nan
 
 
+@add_names_automatically
 class HeatExchanger(HeatFourPort, BaseAsset):
     """
     The heat exchanger component is used to model the exchange of thermal power between two
@@ -37,6 +39,8 @@ class HeatExchanger(HeatFourPort, BaseAsset):
         * {name}.{side}.{port}.Heat
         * {name}.{side}.{port}.Hydraulic_power
         * {name}.{side}.{port}.Q
+
+        {add_names_here}
 
 
     Parameters:

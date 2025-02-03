@@ -2,12 +2,14 @@ import math
 
 from mesido.pycml import Variable
 from mesido.pycml.component_library.milp._internal.heat_component import BaseAsset
+from mesido.pycml.pycml_mixin import add_names_automatically
 
 from numpy import nan
 
 from .heat_two_port import HeatTwoPort
 
 
+@add_names_automatically
 class HeatBuffer(HeatTwoPort, BaseAsset):
     """
     The buffer component is to model milp storage in a tank. This means that we model a tank of hot
@@ -21,17 +23,7 @@ class HeatBuffer(HeatTwoPort, BaseAsset):
     port = HeatIn or HeatOut
 
     Variables created:
-        * {name}.dH
-        * {name}.Heat_buffer
-        * {name}.Heat_flow
-        * {name}.Heat_loss
-        * {name}.Pump_power
-        * {name}.Q
-        * {name}.Stored_heat
-        * {name}.{port}.H
-        * {name}.{port}.Heat
-        * {name}.{port}.Hydraulic_power
-        * {name}.{port}.Q
+        {add_names_here}
 
 
     Parameters:
