@@ -2579,14 +2579,15 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 Ensuring that
                 - when bypass is allowed, heatout = heatin
                 - otherwise heatout = Q*cp*rho*Tout
-                - based on the selected temperatures the approriate cons
+                - based on the selected temperatures the approriate expression is added.
 
                 Args:
-                    heat_out:
-                    exp:
-                    sum_temp_selec:
-                    big_m:
-                    constraint_nominal:
+                    heat_out: HeatOut variable
+                    exp: expression for heatout
+                    sum_temp_selec: sum of two binary variables and or floats (1.0 or 2.0) to
+                    identify if the temperature for this constraint is selected
+                    big_m: float to activate/deactive this constraint
+                    constraint_nominal: nominal to scale the constraint
 
                 Returns:
 
@@ -2633,16 +2634,16 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     temp_prim_in: Primary temperature in
                     temp_prim_out: Primary temperature out
                     discharge: Casadi variable for primary volumetric flow
-                    cp:
-                    rho:
+                    cp: specific heat capacity
+                    rho: density
                     heat_in: Casadi variable for primary heat in
                     heat_out: Casadi variable for primary heat out
-                    temp_high_selec: is_selected variabele for the primary in temperature or 1.0
+                    temp_high_selec: is_selected variable for the primary in temperature or 1.0
                     if temperature is fixed
-                    temp_low_selec: is_selected variabele for the primary out temperature or 1.0
+                    temp_low_selec: is_selected variable for the primary out temperature or 1.0
                     if temperature is fixed
-                    big_m:
-                    constraint_nominal:
+                    big_m: float to activate/deactive this constraint
+                    constraint_nominal: nominal to scale the constraint
 
                 Returns:
 
@@ -2682,16 +2683,16 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     temp_sec_in: Secondary temperature in
                     temp_sec_out: Secondary temperature out
                     discharge: Casadi variable for secondary volumetric flow
-                    cp:
-                    rho:
+                    cp: specific heat capacity
+                    rho: density
                     heat_in: Casadi variable for secondary heat in
                     heat_out: Casadi variable for secondary heat out
-                    temp_high_selec: is_selected variabele for the secondary out temperature or 1.0
+                    temp_high_selec: is_selected variable for the secondary out temperature or 1.0
                     if temperature is fixed
-                    temp_low_selec: is_selected variabele for the secondary in temperature or
+                    temp_low_selec: is_selected variable for the secondary in temperature or
                     1.0 if temperature is fixed
-                    big_m:
-                    constraint_nominal:
+                    big_m: float to activate/deactive this constraint
+                    constraint_nominal: nominal to scale the constraint
 
                 Returns:
 
@@ -2709,8 +2710,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             # primary side
             if len(return_temperatures_prim) == 0:
                 return_temperature = parameters[f"{heat_exchanger}.Primary.T_return"]
-                # TODO: for bypass only works if heatloss is turned off, else a check should be
-                #  made here if the return temperature is below supply temperature
                 if len(supply_temperatures_prim) != 0 and hn_settings["heat_exchanger_bypass"]:
                     for sup_temp in supply_temperatures_prim:
                         sup_temperature_is_selected = self.state(f"{sup_carrier_prim}_{sup_temp}")
