@@ -13,7 +13,7 @@
 - Updates in asset conversion from ESDL to pycml; gas and heat pipe split, generic conversion better specified.
 - Adapt profiles for heating and cooling peak day seperately & add test case
 - For gas: Use energy content (heating value) instead of internal energy 
-- Option was added to allow a bypass of the heat exchanger 
+- Option was added to allow a bypass of the heat exchanger, possible on both sides of the heat exchanger
 
 ## Fixed
 - Bugfix: gas boiler mass flow contraint units
