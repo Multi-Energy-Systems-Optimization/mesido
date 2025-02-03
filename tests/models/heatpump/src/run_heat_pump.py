@@ -138,6 +138,12 @@ class HeatProblemTvar(HeatProblem):
 
         return temperatures
 
+    def times(self, variable=None) -> np.ndarray:
+        """
+        Shorten the timeseries to speed up the test, when highs is used as a solver.
+        """
+        return super().times(variable)[:10]
+
 
 if __name__ == "__main__":
     solution = run_optimization_problem(
