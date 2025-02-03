@@ -1,10 +1,12 @@
 from mesido.pycml import Variable
 from mesido.pycml.component_library.milp.electricity.electricity_base import ElectricityPort
 from mesido.pycml.component_library.milp.heat.heat_source import HeatSource
+from mesido.pycml.pycml_mixin import add_names_automatically
 
 from numpy import nan
 
 
+@add_names_automatically
 class ElecBoiler(HeatSource):
     """
     The e-boiler component is there to insert thermal power (Heat) into the network.
@@ -15,6 +17,15 @@ class ElecBoiler(HeatSource):
     the heat losses further downstream in the network are over-estimated with T_ret where in
     reality this temperature drops. It also implicitly assumes that the temperature drops in the
     network are small and thus satisfy minimum temperature requirements.
+
+    port = HeatIn or HeatOut or ElectricityIn
+
+    Variables created:
+        {add_names_here}
+
+    Parameters:
+        name : The name of the asset.
+        modifiers : Dictionary with asset information.
     """
 
     def __init__(self, name, **modifiers):

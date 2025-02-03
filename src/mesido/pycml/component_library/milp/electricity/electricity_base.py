@@ -1,4 +1,5 @@
 from mesido.pycml import Connector, Variable
+from mesido.pycml.pycml_mixin import add_names_automatically
 
 from .._internal.electricity_component import ElectricityComponent
 

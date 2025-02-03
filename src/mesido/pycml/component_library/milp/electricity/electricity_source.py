@@ -1,4 +1,5 @@
 from mesido.pycml import Variable
+from mesido.pycml.pycml_mixin import add_names_automatically
 
 from numpy import nan
 
@@ -7,11 +8,21 @@ from .._internal import BaseAsset
 from .._internal.electricity_component import ElectricityComponent
 
 
+@add_names_automatically
 class ElectricitySource(ElectricityComponent, BaseAsset):
     """
     The electricity source component is used to generate electrical power and provide that to the
     network. As we set the equality constraint on the demand side we do not have to set any
     constraint at the source side.
+
+    port = ElectricityIn or ElectricityOut
+
+    Variables created:
+        {add_names_here}
+
+    Parameters:
+        name : The name of the asset.
+        modifiers : Dictionary with asset information.
     """
 
     def __init__(self, name, **modifiers):

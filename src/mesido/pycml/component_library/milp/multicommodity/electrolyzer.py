@@ -9,13 +9,24 @@ from mesido.pycml.component_library.milp.electricity.electricity_base import (
 from mesido.pycml.component_library.milp.gas.gas_base import (
     GasPort,
 )
+from mesido.pycml.pycml_mixin import add_names_automatically
 
 from numpy import nan
 
 
+@add_names_automatically
 class Electrolyzer(ElectricityComponent, BaseAsset):
     """
-    An electrolyzer consumes electricity and produces hydrogen
+    An electrolyzer consumes electricity and produces hydrogen.
+
+    port = ElectricityIn or GasOut
+
+    Variables created:
+        {add_names_here}
+
+    Parameters:
+        name : The name of the asset.
+        modifiers : Dictionary with asset information.
     """
 
     def __init__(self, name, **modifiers):

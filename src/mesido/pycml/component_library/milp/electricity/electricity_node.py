@@ -1,4 +1,5 @@
 from mesido.pycml import Variable
+from mesido.pycml.pycml_mixin import add_names_automatically
 
 from numpy import nan
 
@@ -7,12 +8,22 @@ from .._internal import BaseAsset
 from .._internal.electricity_component import ElectricityComponent
 
 
+@add_names_automatically
 class ElectricityNode(ElectricityComponent, BaseAsset):
     """
     The electricity node or bus is a component where we model multiple currents coming together,
     this is the only component where it is allowed that 3 or more currents come together. This means
     that a node is always connected to cables. We set constraints for equal voltage at all ports.
     Furthermore, we set constraints for conservation of power and current.
+
+    port = ElectricityIn or ElectricityOut
+
+    Variables created:
+        {add_names_here}
+
+    Parameters:
+        name : The name of the asset.
+        modifiers : Dictionary with asset information.
     """
 
     def __init__(self, name, **modifiers):
