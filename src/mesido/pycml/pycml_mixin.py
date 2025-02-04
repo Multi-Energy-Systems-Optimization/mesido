@@ -5,7 +5,7 @@ from typing import Type
 import itertools
 import logging
 from abc import abstractmethod
-from typing import Dict, Union
+from typing import Dict, Union, List
 
 import casadi as ca
 
@@ -18,42 +18,50 @@ from rtctools.optimization.optimization_problem import OptimizationProblem
 
 from . import ConstantInput, ControlInput, Model, SymbolicParameter, Variable
 
+# These imports are used by `add_names_automatically` dynamically
+from mesido.pycml.component_library.milp.heat.heat_port import HeatPort
+from mesido.pycml.component_library.milp.electricity.electricity_base import ElectricityPort
+from mesido.pycml.component_library.milp.gas.gas_base import GasPort
 
 logger = logging.getLogger("mesido")
 
 
-
 def add_names_automatically(class_: Type):
-    dynamic_names = []
-    dynamic_port_names = []
-    for class__ in inspect.getmro(class_):
-        if inspect.getmodule(class__).__name__ == 'builtins':
-            break
-        ast_of_init: ast.Module = ast.parse(inspect.getsource(class__))
-        for node in ast.walk(ast_of_init):
-            # Look for any function calls that fit self.add_variable
-            if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and isinstance(
-                    node.func.value,
-                    ast.Name) and node.func.value.id == 'self' and node.func.attr == 'add_variable':
-                # Now extract the first and second argument
-                # First argument decides if it is a port or variable name
-                # Second argument is the string name
-                if isinstance(node.args[0], ast.Name):
-                    print(node, ast.dump(node))
-                    if node.args[0].id in ['HeatPort', 'ElectricityPort', 'GasPort', 'Primary',
-                                           'Secondary', '_NonStorageComponent']:
-                        dynamic_port_names.append(node.args[1].value)
-                    elif node.args[0].id == 'Variable':
-                        dynamic_names.append(node.args[1].value)
+    def get_names_for_class(current_class_: Type) -> List[str]:
+        dynamic_names = []
+        for class__ in inspect.getmro(current_class_):
+            if inspect.getmodule(class__).__name__ == 'builtins':
+                break
+            ast_of_init: ast.Module = ast.parse(inspect.getsource(class__))
+            for node in ast.walk(ast_of_init):
+                # Look for any function calls that fit self.add_variable
+                if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and isinstance(
+                        node.func.value,
+                        ast.Name) and node.func.value.id == 'self' and node.func.attr == 'add_variable':
+                    # Now extract the first and second argument
+                    # First argument decides if it is a port or variable name
+                    # Second argument is the string name
+                    if isinstance(node.args[0], ast.Name):
+                        if node.args[0].id in ['HeatPort', 'ElectricityPort', 'GasPort', 'Primary',
+                                               'Secondary', '_NonStorageComponent']:
+                            # Follow the port and retrieve all variable names for that port
+                            name_of_port = node.args[1].value
+                            dynamic_names_of_port = get_names_for_class(globals()[node.args[0].id])
+                            for dynamic_name_of_port in dynamic_names_of_port:
+                                dynamic_names.append(f'{name_of_port}.{dynamic_name_of_port}')
+                        elif node.args[0].id == 'Variable':
+                            # This is a variable for this component, save its name.
+                            dynamic_names.append(node.args[1].value)
+                        else:
+                            raise RuntimeError(f'Unknown case:\n{ast.dump(node)}')
                     else:
                         raise RuntimeError(f'Unknown case:\n{ast.dump(node)}')
-                else:
-                    raise RuntimeError(f'Unknown case:\n{ast.dump(node)}')
+        return sorted(dynamic_names)
 
-    # Format the dynamic names properly and find the indent that should be used
-    dynamic_names = [f'* {{name}}.{dynamic_name}' for dynamic_name in sorted(dynamic_names)]
-    dynamic_port_names = [f'* {{name}}.{{port}}.{dynamic_name}' for dynamic_name in
-                          sorted(dynamic_port_names)]
+    all_dynamic_names = get_names_for_class(class_)
+
+    # Format the dynamic names properly
+    formatted_dynamic_names = [f'* {{name}}.{dynamic_name}' for dynamic_name in sorted(all_dynamic_names)]
 
     # Find the indent that should be used
     line_with_hook = next(
@@ -62,7 +70,7 @@ def add_names_automatically(class_: Type):
 
     # Insert the dynamic names into the documentation
     class_.__doc__ = class_.__doc__.replace('{add_names_here}',
-                                            f'\n{indent}'.join(dynamic_names + dynamic_port_names))
+                                            f'\n{indent}'.join(formatted_dynamic_names))
     return class_
 
 
