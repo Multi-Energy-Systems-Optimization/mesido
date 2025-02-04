@@ -217,8 +217,13 @@ class TestAtesTemperature(TestCase):
         #makes sense as higher temperature means higher losses and thereby higher costs for the
         # producers. No other incentive with current optimization to produce as as high
         # temperature as possible
-        heat_flow_list = [-2e6, -1e6] + [-1e6] * 2 + [3e6] * 6 + [-2e6]
+        # heat_flow_list = [-2e6, -1e6] + [-1e6] * 3 + [3e6] * 5 + [-2e6]
+        # heat_flow_list = [-2e6]*2 + [-1e6] * 3 + [3e6] * 5 + [-2.5e6]
+        heat_flow_list = [-2e6] * 2 + [-1e6, -.8e6, -.5e6] + [3.5e6] * 4 + [-2.5e6]
         # [-3e6] * 2 + [-2e6] *2 + [3e6] * 6 + [-2e6]
+        # ATES temperature is only increasing on the last timestep where it is charging,
+        # beause then the total heatlosses are lower, so now a forced minimum tempeature increase
+        # to mimimic proper changing temperatures.
         heat_flow_list = [3 * i for i in heat_flow_list]
 
         vol_flow_list = [-0.06]*3 + [-0.03] + [0.06]*6 + [0.04]
@@ -272,12 +277,31 @@ class TestAtesTemperature(TestCase):
         ates_heat_bound = bounds[f"{ates}.Heat_ates"][1]
 
         ates_stored_heat = results[f"{ates}.Stored_heat"]
+        ates_heat_loss = results[f"{ates}.Heat_loss"]
 
         temp_options = solution.temperature_regimes(41770304791669983859190)
         network_temperature = results["41770304791669983859190_temperature"]
 
         ates_temperature = results[f"{ates}.Temperature_ates"]
         ates_temperature_disc = results[f"{ates}__temperature_ates_disc"]
+        ates_temperature_change_charging = results[f"{ates}.Temperature_change_charging"]
+        ates_temperature_loss = results[f"{ates}.Temperature_loss"]
         ates_temp_ret = parameters[f"{ates}.T_return"]
-        cp = parameters["ATES_cb47.cp"]
-        rho = parameters["ATES_cb47.rho"]
+
+        ates_heat_efficiency = 1-sum(ates_heat)/sum(ates_heat[ates_heat>0])
+
+        ##prints
+        print("network temperature", network_temperature)
+        print("ates temperature", ates_temperature)
+        print("ates temperature discrete", ates_temperature_disc)
+        print("temperature change charging", ates_temperature_change_charging)
+        print("temperature loss", ates_temperature_loss)
+        print("ates heat", ates_heat)
+        print("stored heat", ates_stored_heat)
+        print("heat loss", ates_heat_loss)
+        print("ates_flow", ates_flow, "with bound", ates_flow_bound)
+        print("average_efficiency", ates_heat_efficiency)
+
+
+        cp = parameters[f"{ates}.cp"]
+        rho = parameters[f"{ates}.rho"]

@@ -2026,14 +2026,14 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             # TODO: function needs to be updated with realistic function, woudl normally non convex
             # coefficient currently based on:
             # 30°C temperature drop: 125 MJ / m3
-            # assume over 3 months: 16.2 W/m3 -> xx W/J
+            # assume over 3 months: 16.2 W/m3 -> xx W/J -> maybe should be 6 months
             # max_stored_volume = max_stored_heat/(40 (dT assumed) *ro*cp)= 334e3 m3
             # nominal_volume = max_stored_volume/2
             # heatloss = 16.2*max_stored_volume W
             # heatloss = 16.2 / (70-17) * stored_volume * (T_ates - T_amb)
             # stored_volume = stored_heat / (40 (dT assumed) *rho*cp)
             # multiplied coefficient with 1e-1
-            heatloss = 1.5e-10 * heat_points * (temperature_ates - temperature_ambient)
+            heatloss = 0.5*1.5e-10 * heat_points * (temperature_ates - temperature_ambient)
             # heatloss = 1e4 * (temperature_ates - temperature_ambient) * (
             #     heat_points / heat_stored_max)**2
             return heatloss
@@ -2110,21 +2110,72 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 # TODO: later placed inside ates_temperature loop, in which a nested loop for the
                 #  supply temperature of the carrier should be located, only needs to create
                 #  constraint for carrier_temperatures>ates_temperature.
-                a, b = self.__get_linear_temperature_charging_vs_heatates(heat_ates_max, 50, 70)
+                a, b = self.__get_linear_temperature_charging_vs_heatates(heat_ates_max,
+                                                                          min(supply_temperatures), 70)
                 # constraint provides upper bound of the temperature change that can occur due to
                 # charging
-                constraints.append(
-                    (
-                        (
-                            ates_dt_charging
-                            - (a * heat_ates / heat_ates_max + b)
-                            - (1 - is_buffer_charging) * big_m
+                # constraints.append(
+                #     (
+                #         (
+                #             ates_dt_charging
+                #             - (a * heat_ates / heat_ates_max + b)#/5
+                #             - (1 - is_buffer_charging) * big_m
+                #         )
+                #         / ates_dt_charging_nominal,
+                #         -np.inf,
+                #         0.0,
+                #     )
+                # )
+                max_t = max(supply_temperatures)
+                min_t = min(supply_temperatures)
+                for ates_t in supply_temperatures:
+                    ates_t_selected = self.state(f"{ates}__temperature_disc_{ates_t}")
+                    if ates_t != max_t:# and ates_t != supply_temperatures[1]:
+                        # if ates temperature is already at maximum then temperature can not
+                        # futher increase when charging.
+                        ratio_max_temp = (max_t - ates_t) / (max_t - min_t)
+
+                        constraints.append(
+                            (
+                                (
+                                        ates_dt_charging
+                                        - (a * heat_ates / heat_ates_max + b) * ratio_max_temp
+                                        - (2 - is_buffer_charging - ates_t_selected) * big_m
+                                )
+                                / ates_dt_charging_nominal,
+                                -np.inf,
+                                0.0,
+                            )
                         )
-                        / ates_dt_charging_nominal,
-                        -np.inf,
-                        0.0,
-                    )
-                )
+
+                        if ates_t == supply_temperatures[1]: #one to largest supply temperature
+                            ratio_max_temp /= 10
+                        constraints.append(
+                            (
+                                (
+                                        ates_dt_charging
+                                        - (a * heat_ates / heat_ates_max + b)*ratio_max_temp/2
+                                        + (2 - is_buffer_charging - ates_t_selected) * big_m
+                                )
+                                / ates_dt_charging_nominal,
+                                0.0,
+                                np.inf,
+                            )
+                        )
+                    else:
+                        constraints.append(
+                            (
+                                (
+                                        ates_dt_charging
+                                        - (a * heat_ates / heat_ates_max + b) * 0.15 / 2
+                                        - (2 - is_buffer_charging - ates_t_selected) * big_m
+                                )
+                                / ates_dt_charging_nominal,
+                                -np.inf,
+                                0.0,
+                            )
+                        )
+
 
                 big_m = 2.0 * bounds[f"{ates}.Temperature_loss"][1]
                 for ates_temperature in supply_temperatures:

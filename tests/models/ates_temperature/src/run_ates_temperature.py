@@ -177,6 +177,7 @@ class HeatProblem(
 
         # To prevent heat being consumer by hex to upgrade it (add heat) by heatpump to match
         # demand without loading/unloading ates.
+        disabled_vars_active = False
         sum_disabled_vars = 0
         for asset in [
             *self.energy_system_components.get("heat_pump", []),
@@ -184,7 +185,8 @@ class HeatProblem(
         ]:
             disabled_var = self.state(f"{asset}__disabled")
             sum_disabled_vars += disabled_var
-        if sum_disabled_vars != 0.0:
+            disabled_vars_active = True
+        if disabled_vars_active:
             constraints.append((sum_disabled_vars, 1.0, 2.0))
 
         # when using compound asset instead of separate assets, one could still use this constraint
