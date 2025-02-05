@@ -4,6 +4,7 @@ from mesido.pycml.pycml_mixin import add_names_automatically
 from .._internal.electricity_component import ElectricityComponent
 
 
+@add_names_automatically
 class ElectricityPort(ElectricityComponent, Connector):
     """
     The electricity port is used to model the variables at a port where two assets are connected.

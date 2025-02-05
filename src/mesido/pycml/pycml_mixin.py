@@ -5,6 +5,7 @@ from typing import Type
 import itertools
 import logging
 from abc import abstractmethod
+import importlib
 from typing import Dict, Union, List
 
 import casadi as ca
@@ -18,13 +19,11 @@ from rtctools.optimization.optimization_problem import OptimizationProblem
 
 from . import ConstantInput, ControlInput, Model, SymbolicParameter, Variable
 
-# These imports are used by `add_names_automatically` dynamically
-from mesido.pycml.component_library.milp.heat.heat_port import HeatPort
-from mesido.pycml.component_library.milp.electricity.electricity_base import ElectricityPort
-from mesido.pycml.component_library.milp.gas.gas_base import GasPort
 
 logger = logging.getLogger("mesido")
 
+
+DYNAMIC_NAME_CACHE = {}
 
 def add_names_automatically(class_: Type):
     def get_names_for_class(current_class_: Type) -> List[str]:
@@ -42,13 +41,18 @@ def add_names_automatically(class_: Type):
                     # First argument decides if it is a port or variable name
                     # Second argument is the string name
                     if isinstance(node.args[0], ast.Name):
-                        if node.args[0].id in ['HeatPort', 'ElectricityPort', 'GasPort', 'Primary',
+                        port_class_name = node.args[0].id
+                        if port_class_name in ['HeatPort', 'ElectricityPort', 'GasPort', 'Primary',
                                                'Secondary', '_NonStorageComponent']:
                             # Follow the port and retrieve all variable names for that port
-                            name_of_port = node.args[1].value
-                            dynamic_names_of_port = get_names_for_class(globals()[node.args[0].id])
+                            port_name = node.args[1].value
+
+                            # We leverage Python's import structure here. If there is a reference
+                            # to a class in another file, that file will already have imported
+                            # the necessary class as well as run this function.
+                            dynamic_names_of_port = DYNAMIC_NAME_CACHE[port_class_name]
                             for dynamic_name_of_port in dynamic_names_of_port:
-                                dynamic_names.append(f'{name_of_port}.{dynamic_name_of_port}')
+                                dynamic_names.append(f'{port_name}.{dynamic_name_of_port}')
                         elif node.args[0].id == 'Variable':
                             # This is a variable for this component, save its name.
                             dynamic_names.append(node.args[1].value)
@@ -56,7 +60,10 @@ def add_names_automatically(class_: Type):
                             raise RuntimeError(f'Unknown case:\n{ast.dump(node)}')
                     else:
                         raise RuntimeError(f'Unknown case:\n{ast.dump(node)}')
-        return sorted(dynamic_names)
+
+        dynamic_names = sorted(dynamic_names)
+        DYNAMIC_NAME_CACHE[current_class_.__name__] = dynamic_names
+        return dynamic_names
 
     all_dynamic_names = get_names_for_class(class_)
 
@@ -65,8 +72,11 @@ def add_names_automatically(class_: Type):
 
     # Find the indent that should be used
     line_with_hook = next(
-        line for line in class_.__doc__.splitlines() if '{add_names_here}' in line)
-    (indent, _) = line_with_hook.split('{add_names_here}')
+        (line for line in class_.__doc__.splitlines() if '{add_names_here}' in line), None)
+    if line_with_hook is None:
+        indent = ''
+    else:
+        (indent, _) = line_with_hook.split('{add_names_here}')
 
     # Insert the dynamic names into the documentation
     class_.__doc__ = class_.__doc__.replace('{add_names_here}',
