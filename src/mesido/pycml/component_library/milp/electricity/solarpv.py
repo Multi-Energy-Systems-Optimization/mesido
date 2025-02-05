@@ -1,5 +1,6 @@
-from .. import ElectricitySource
 from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
+
+from .. import ElectricitySource
 
 
 @add_variables_documentation_automatically
@@ -17,6 +18,7 @@ class SolarPV(ElectricitySource):
         name : The name of the asset. \n
         modifiers : Dictionary with asset information.
     """
+
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
 

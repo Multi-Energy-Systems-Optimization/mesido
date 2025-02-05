@@ -1,12 +1,9 @@
 import ast
 import inspect
-from typing import Type
-
 import itertools
 import logging
 from abc import abstractmethod
-import importlib
-from typing import Dict, Union, List
+from typing import Dict, List, Type, Union
 
 import casadi as ca
 
@@ -25,25 +22,36 @@ logger = logging.getLogger("mesido")
 
 DYNAMIC_NAME_CACHE = {}
 
+
 def add_variables_documentation_automatically(class_: Type):
     def get_names_for_class(current_class_: Type) -> List[str]:
         dynamic_names = []
         for class__ in inspect.getmro(current_class_):
-            if inspect.getmodule(class__).__name__ == 'builtins':
+            if inspect.getmodule(class__).__name__ == "builtins":
                 break
             ast_of_init: ast.Module = ast.parse(inspect.getsource(class__))
             for node in ast.walk(ast_of_init):
                 # Look for any function calls that fit self.add_variable
-                if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and isinstance(
-                        node.func.value,
-                        ast.Name) and node.func.value.id == 'self' and node.func.attr == 'add_variable':
+                if (
+                    isinstance(node, ast.Call)
+                    and isinstance(node.func, ast.Attribute)
+                    and isinstance(node.func.value, ast.Name)
+                    and node.func.value.id == "self"
+                    and node.func.attr == "add_variable"
+                ):
                     # Now extract the first and second argument
                     # First argument decides if it is a port or variable name
                     # Second argument is the string name
                     if isinstance(node.args[0], ast.Name):
                         port_class_name = node.args[0].id
-                        if port_class_name in ['HeatPort', 'ElectricityPort', 'GasPort', 'Primary',
-                                               'Secondary', '_NonStorageComponent']:
+                        if port_class_name in [
+                            "HeatPort",
+                            "ElectricityPort",
+                            "GasPort",
+                            "Primary",
+                            "Secondary",
+                            "_NonStorageComponent",
+                        ]:
                             # Follow the port and retrieve all variable names for that port
                             port_name = node.args[1].value
 
@@ -52,14 +60,14 @@ def add_variables_documentation_automatically(class_: Type):
                             # the necessary class as well as run this function.
                             dynamic_names_of_port = DYNAMIC_NAME_CACHE[port_class_name]
                             for dynamic_name_of_port in dynamic_names_of_port:
-                                dynamic_names.append(f'{port_name}.{dynamic_name_of_port}')
-                        elif node.args[0].id == 'Variable':
+                                dynamic_names.append(f"{port_name}.{dynamic_name_of_port}")
+                        elif node.args[0].id == "Variable":
                             # This is a variable for this component, save its name.
                             dynamic_names.append(node.args[1].value)
                         else:
-                            raise RuntimeError(f'Unknown case:\n{ast.dump(node)}')
+                            raise RuntimeError(f"Unknown case:\n{ast.dump(node)}")
                     else:
-                        raise RuntimeError(f'Unknown case:\n{ast.dump(node)}')
+                        raise RuntimeError(f"Unknown case:\n{ast.dump(node)}")
 
         dynamic_names = sorted(dynamic_names)
         DYNAMIC_NAME_CACHE[current_class_.__name__] = dynamic_names
@@ -68,19 +76,23 @@ def add_variables_documentation_automatically(class_: Type):
     all_dynamic_names = get_names_for_class(class_)
 
     # Format the dynamic names properly
-    formatted_dynamic_names = [f'* {{name}}.{dynamic_name}' for dynamic_name in sorted(all_dynamic_names)]
+    formatted_dynamic_names = [
+        f"* {{name}}.{dynamic_name}" for dynamic_name in sorted(all_dynamic_names)
+    ]
 
     # Find the indent that should be used
     line_with_hook = next(
-        (line for line in class_.__doc__.splitlines() if '{add_names_here}' in line), None)
+        (line for line in class_.__doc__.splitlines() if "{add_names_here}" in line), None
+    )
     if line_with_hook is None:
-        indent = ''
+        indent = ""
     else:
-        (indent, _) = line_with_hook.split('{add_names_here}')
+        (indent, _) = line_with_hook.split("{add_names_here}")
 
     # Insert the dynamic names into the documentation
-    class_.__doc__ = class_.__doc__.replace('{add_names_here}',
-                                            f'\n{indent}'.join(formatted_dynamic_names))
+    class_.__doc__ = class_.__doc__.replace(
+        "{add_names_here}", f"\n{indent}".join(formatted_dynamic_names)
+    )
     return class_
 
 

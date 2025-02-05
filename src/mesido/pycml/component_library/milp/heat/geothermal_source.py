@@ -1,6 +1,6 @@
-from numpy import nan
-
 from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
+
+from numpy import nan
 
 from .heat_source import HeatSource
 

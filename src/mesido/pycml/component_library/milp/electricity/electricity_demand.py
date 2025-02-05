@@ -6,7 +6,6 @@ from numpy import nan
 from .electricity_base import ElectricityPort
 from .._internal import BaseAsset
 from .._internal.electricity_component import ElectricityComponent
-from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 
 @add_variables_documentation_automatically

@@ -1,5 +1,6 @@
-from .heat_source import HeatSource
 from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
+
+from .heat_source import HeatSource
 
 
 @add_variables_documentation_automatically
