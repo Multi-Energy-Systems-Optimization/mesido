@@ -1,4 +1,4 @@
-# [Unreleased-main] - 2024-12-12
+# [Unreleased-main] - 2025-05-02
 
 ## Added
 - Default database for gas pipe dimensions based on the ASA pipe schedule with thicknesses from the standard class
@@ -25,7 +25,7 @@
 - Bugfix: head loss test case when minimum_velocity = 0.0
 - Bugs: state update of heat pump, heat buffer volume & ates charge rates update in ESDL, heat storage asset data output to influxDB  
 - Bugfix: get_density + get_internal_energy updated to ensure it checks commodity type for heat instead of the carrier name
-
+- Bug: post processing pressure in a pipe
 
 # [0.1.8.4] - 2024-12-11
 
