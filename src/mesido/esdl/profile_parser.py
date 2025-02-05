@@ -437,6 +437,11 @@ class InfluxDBProfileReader(BaseProfileReader):
                     f"The timestep for variable {profile.field} between {d1} and {d2} isn't "
                     f"exactly 1 hour"
                 )
+        # Check if any NaN values exist
+        if profile_time_series.isnull().any().any():
+            raise Exception("Nan value was encountered in the profile data for variable "
+                            f"{profile.field}"
+                            )
 
     def _convert_profile_to_correct_unit(
         self, profile_time_series: pd.Series, profile: esdl.InfluxDBProfile
