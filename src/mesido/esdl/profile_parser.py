@@ -439,9 +439,9 @@ class InfluxDBProfileReader(BaseProfileReader):
                 )
         # Check if any NaN values exist
         if profile_time_series.isnull().any().any():
-            raise Exception("Nan value was encountered in the profile data for variable "
-                            f"{profile.field}"
-                            )
+            raise Exception(
+                f"Nan value was encountered in the profile data for variable {profile.field}"
+            )
 
     def _convert_profile_to_correct_unit(
         self, profile_time_series: pd.Series, profile: esdl.InfluxDBProfile
