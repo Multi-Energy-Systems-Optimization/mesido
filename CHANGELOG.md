@@ -1,4 +1,4 @@
-# [Unreleased-main] - 2024-12-12
+# [Unreleased-main] - 2025-02-05
 
 ## Added
 - Default database for gas pipe dimensions based on the ASA pipe schedule with thicknesses from the standard class
@@ -10,6 +10,7 @@
 - More of the existing classes added to __init_ for local runs using the grow_workflow
 - Generic functions for postprocessing are added.
 - Generic function to adapt timeseries from hourly timesteps to user-defined timesteps by averaging.
+- Error check for NaN values in profile data (csv & influxDB)
 
 ## Changed
 - Write output to json also saves the solver statistics.
