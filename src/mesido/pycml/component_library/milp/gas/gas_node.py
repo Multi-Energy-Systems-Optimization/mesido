@@ -1,12 +1,12 @@
 from mesido.pycml import Variable
-from mesido.pycml.pycml_mixin import add_names_automatically
+from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 from .gas_base import GasPort
 from .._internal import BaseAsset
 from .._internal.gas_component import GasComponent
 
 
-@add_names_automatically
+@add_variables_documentation_automatically
 class GasNode(GasComponent, BaseAsset):
     """
     The gas node is a component where we model multiple flows coming together,
@@ -20,7 +20,7 @@ class GasNode(GasComponent, BaseAsset):
         {add_names_here}
 
     Parameters:
-        name : The name of the asset.
+        name : The name of the asset. \n
         modifiers : Dictionary with asset information.
     """
 

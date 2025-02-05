@@ -1,10 +1,10 @@
 from mesido.pycml.component_library.milp._internal import HeatComponent
-from mesido.pycml.pycml_mixin import add_names_automatically
+from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 from .heat_port import HeatPort
 
 
-@add_names_automatically
+@add_variables_documentation_automatically
 class HeatTwoPort(HeatComponent):
     """
     The HeatTwoPort component is used as a base for interaction with one hydraulically coupled
@@ -17,7 +17,7 @@ class HeatTwoPort(HeatComponent):
         {add_names_here}
 
     Parameters:
-        name : The name of the asset.
+        name : The name of the asset. \n
         modifiers : Dictionary with asset information.
     """
 

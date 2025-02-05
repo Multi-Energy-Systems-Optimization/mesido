@@ -1,9 +1,9 @@
 from mesido.pycml import Connector, Variable
 from mesido.pycml.component_library.milp._internal import HeatComponent
-from mesido.pycml.pycml_mixin import add_names_automatically
+from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 
-@add_names_automatically
+@add_variables_documentation_automatically
 class HeatPort(HeatComponent, Connector):
     """
     The HeatPort is used to model the variables at an in or outgoing port of a component. For the
@@ -16,7 +16,7 @@ class HeatPort(HeatComponent, Connector):
         {add_names_here}
 
     Parameters:
-        name : The name of the asset.
+        name : The name of the asset. \n
         modifiers : Dictionary with asset information.
     """
 

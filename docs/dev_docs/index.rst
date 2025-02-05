@@ -7,5 +7,5 @@ Developers documentation
    :caption: Contents:
 
    component_library_milp
-   heat_physics_mixin
+   physics_mixins
    workflows

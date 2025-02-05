@@ -1,12 +1,12 @@
 from mesido.pycml import Variable
-from mesido.pycml.pycml_mixin import add_names_automatically
+from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 from numpy import nan, pi
 
 from ._non_storage_component import _NonStorageComponent
 
 
-@add_names_automatically
+@add_variables_documentation_automatically
 class HeatPipe(_NonStorageComponent):
     """
     The pipe component is to model the pressure drop (and optionally hydraulic power) and
@@ -28,7 +28,7 @@ class HeatPipe(_NonStorageComponent):
         {add_names_here}
 
     Parameters:
-        name : The name of the asset.
+        name : The name of the asset. \n
         modifiers : Dictionary with asset information.
 
     """

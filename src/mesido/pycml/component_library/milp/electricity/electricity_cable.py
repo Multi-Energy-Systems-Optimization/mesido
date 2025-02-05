@@ -1,5 +1,5 @@
 from mesido.pycml import Variable
-from mesido.pycml.pycml_mixin import add_names_automatically
+from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 from numpy import nan
 
@@ -7,7 +7,7 @@ from .electricity_base import ElectricityTwoPort
 from .._internal import BaseAsset
 
 
-@add_names_automatically
+@add_variables_documentation_automatically
 class ElectricityCable(ElectricityTwoPort, BaseAsset):
     """
     The electricity cable component is used to model voltage and power drops in the electricity
@@ -21,7 +21,7 @@ class ElectricityCable(ElectricityTwoPort, BaseAsset):
         {add_names_here}
 
     Parameters:
-        name : The name of the asset.
+        name : The name of the asset. \n
         modifiers : Dictionary with asset information.
     """
 

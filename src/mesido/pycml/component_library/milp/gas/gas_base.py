@@ -1,10 +1,10 @@
 from mesido.pycml import Connector, Variable
-from mesido.pycml.pycml_mixin import add_names_automatically
+from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 from .._internal.gas_component import GasComponent
 
 
-@add_names_automatically
+@add_variables_documentation_automatically
 class GasPort(GasComponent, Connector):
     """
     The gas port is used to model the variables at a port where two assets are connected. For the
@@ -17,7 +17,7 @@ class GasPort(GasComponent, Connector):
         {add_names_here}
 
     Parameters:
-        name : The name of the asset.
+        name : The name of the asset. \n
         modifiers : Dictionary with asset information.
     """
 

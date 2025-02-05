@@ -1,11 +1,11 @@
 from mesido.pycml import Variable
 from mesido.pycml.component_library.milp._internal import BaseAsset, HeatComponent
-from mesido.pycml.pycml_mixin import add_names_automatically
+from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 from .heat_port import HeatPort
 
 
-@add_names_automatically
+@add_variables_documentation_automatically
 class Node(HeatComponent, BaseAsset):
     """
     A node is the only component in the network that allows to model 3 or more flows to come
@@ -20,7 +20,7 @@ class Node(HeatComponent, BaseAsset):
         {add_names_here}
 
     Parameters:
-        name : The name of the asset.
+        name : The name of the asset. \n
         modifiers : Dictionary with asset information.
 
     """

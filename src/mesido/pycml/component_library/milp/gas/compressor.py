@@ -1,4 +1,4 @@
-from mesido.pycml.pycml_mixin import add_names_automatically
+from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 from numpy import nan
 
@@ -6,7 +6,7 @@ from .gas_base import GasTwoPort
 from .._internal import BaseAsset
 
 
-@add_names_automatically
+@add_variables_documentation_automatically
 class Compressor(GasTwoPort, BaseAsset):
     """
     A gas compressor increases the pressure level of the flow.
@@ -17,7 +17,7 @@ class Compressor(GasTwoPort, BaseAsset):
         {add_names_here}
 
     Parameters:
-        name : The name of the asset.
+        name : The name of the asset. \n
         modifiers : Dictionary with asset information.
     """
 

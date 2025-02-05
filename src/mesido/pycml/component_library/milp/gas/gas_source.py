@@ -1,5 +1,5 @@
 from mesido.pycml import Variable
-from mesido.pycml.pycml_mixin import add_names_automatically
+from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 from numpy import nan
 
@@ -8,7 +8,7 @@ from .._internal import BaseAsset
 from .._internal.gas_component import GasComponent
 
 
-@add_names_automatically
+@add_variables_documentation_automatically
 class GasSource(GasComponent, BaseAsset):
     """
     A gas source generates gas flow for the network.
@@ -19,7 +19,7 @@ class GasSource(GasComponent, BaseAsset):
         {add_names_here}
 
     Parameters:
-        name : The name of the asset.
+        name : The name of the asset. \n
         modifiers : Dictionary with asset information.
     """
 

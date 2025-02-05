@@ -25,7 +25,7 @@ logger = logging.getLogger("mesido")
 
 DYNAMIC_NAME_CACHE = {}
 
-def add_names_automatically(class_: Type):
+def add_variables_documentation_automatically(class_: Type):
     def get_names_for_class(current_class_: Type) -> List[str]:
         dynamic_names = []
         for class__ in inspect.getmro(current_class_):

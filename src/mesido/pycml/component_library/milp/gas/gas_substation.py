@@ -1,11 +1,11 @@
 from numpy import nan
-from mesido.pycml.pycml_mixin import add_names_automatically
+from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 from .gas_base import GasTwoPort
 from .._internal import BaseAsset
 
 
-@add_names_automatically
+@add_variables_documentation_automatically
 class GasSubstation(GasTwoPort, BaseAsset):
     """
     A gas substation that reduces the pressure level of the flow
@@ -17,7 +17,7 @@ class GasSubstation(GasTwoPort, BaseAsset):
         {add_names_here}
 
     Parameters:
-        name : The name of the asset.
+        name : The name of the asset. \n
         modifiers : Dictionary with asset information.
     """
 

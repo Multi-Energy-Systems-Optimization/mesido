@@ -1,4 +1,4 @@
-from mesido.pycml.pycml_mixin import add_names_automatically
+from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 from numpy import nan
 
@@ -6,7 +6,7 @@ from .electricity_base import ElectricityTwoPort
 from .._internal import BaseAsset
 
 
-@add_names_automatically
+@add_variables_documentation_automatically
 class Transformer(ElectricityTwoPort, BaseAsset):
     """
     The transformer component is used to change the voltage level of the network whilst conserving
@@ -18,7 +18,7 @@ class Transformer(ElectricityTwoPort, BaseAsset):
         {add_names_here}
 
     Parameters:
-        name : The name of the asset.
+        name : The name of the asset. \n
         modifiers : Dictionary with asset information.
     """
 

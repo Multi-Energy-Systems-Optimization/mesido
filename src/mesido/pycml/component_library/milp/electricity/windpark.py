@@ -1,8 +1,8 @@
 from .. import ElectricitySource
-from mesido.pycml.pycml_mixin import add_names_automatically
+from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 
-@add_names_automatically
+@add_variables_documentation_automatically
 class WindPark(ElectricitySource):
     """
     The windpark is an electricity source component used to generate electrical power and
@@ -14,7 +14,7 @@ class WindPark(ElectricitySource):
         {add_names_here}
 
     Parameters:
-        name : The name of the asset.
+        name : The name of the asset. \n
         modifiers : Dictionary with asset information.
     """
     def __init__(self, name, **modifiers):
