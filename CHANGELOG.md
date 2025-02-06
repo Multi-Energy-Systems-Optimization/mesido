@@ -4,7 +4,7 @@
 - xx
 
 ## Changed
-- xx
+- Updated Casadi to 3.6.7 with gil fixes (see https://github.com/casadi/casadi/releases/tag/nightly-gil_release)
 
 ## Fixed
 - xx
