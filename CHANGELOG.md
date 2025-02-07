@@ -27,7 +27,6 @@
 - Bugs: state update of heat pump, heat buffer volume & ates charge rates update in ESDL, heat storage asset data output to influxDB  
 - Bugfix: get_density + get_internal_energy updated to ensure it checks commodity type for heat instead of the carrier name
 
-
 # [0.1.8.4] - 2024-12-11
 
 ## Added
