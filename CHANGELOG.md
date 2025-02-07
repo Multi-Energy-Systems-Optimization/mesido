@@ -1,4 +1,5 @@
-# [Unreleased-main] - 2024-12-12
+
+# [Unreleased-main] - 2025-02-07
 
 ## Added
 - Default database for gas pipe dimensions based on the ASA pipe schedule with thicknesses from the standard class
@@ -18,6 +19,7 @@
 - For gas: Use energy content (heating value) instead of internal energy 
 - Option was added to allow a bypass of the heat exchanger 
 - Option for electricity cables to be unidirectional
+- Updated Casadi to 3.6.7 with gil fixes (see https://github.com/casadi/casadi/releases/tag/nightly-gil_release)
 
 ## Fixed
 - Bugfix: gas boiler mass flow constraint units
