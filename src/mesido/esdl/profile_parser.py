@@ -575,7 +575,7 @@ class ProfileReaderFromFile(BaseProfileReader):
                     try:
                         column_name = f"{component_name.replace(' ', '')}"
                         values = data[column_name].to_numpy()
-                        if data[data[column_name].isnull()].any().any():
+                        if np.isnan(values).any():
                             raise Exception(
                                 f"Column name: {column_name}, NaN exists in the profile source"
                                 f" file {self._file_path}."
