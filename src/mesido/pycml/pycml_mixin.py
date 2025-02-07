@@ -24,7 +24,29 @@ DYNAMIC_NAME_CACHE = {}
 
 
 def add_variables_documentation_automatically(class_: Type):
+    """
+    This function can be added as a decorator to asset classes. It will update the documentation
+    of that class with the variables that are created in it and the classes from which it inherits,
+    based on the self.add_variable() function. The string "{add_names_here}" in the asset
+    documentation is then replaced by a list of the variable names.
+
+    Args:
+        class_: The asset class it is documenting
+
+    Returns: updated documentation of the class.
+
+    """
     def get_names_for_class(current_class_: Type) -> List[str]:
+        """
+        This function checks for the variables that are added using the add_variable function.
+        Using the cache the variable names that are created by inheritence and port names,
+        are tracked to recreate the full variable name.
+        Args:
+            current_class_: The class which is currently checked
+
+        Returns: List of variable names
+
+        """
         dynamic_names = []
         for class__ in inspect.getmro(current_class_):
             if inspect.getmodule(class__).__name__ == "builtins":
