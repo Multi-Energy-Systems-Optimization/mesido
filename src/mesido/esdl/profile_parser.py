@@ -589,7 +589,7 @@ class ProfileReaderFromFile(BaseProfileReader):
                 carrier_name = properties.get("name")
                 try:
                     values = data[carrier_name].to_numpy()
-                    if data[data[carrier_name].isnull()].any().any():
+                    if np.isnan(values).any():
                         raise Exception(
                             f"Carrier name: {carrier_name}, NaN exists in the profile source file"
                             f" {self._file_path}. Details: {data[data[carrier_name].isnull()]}"
