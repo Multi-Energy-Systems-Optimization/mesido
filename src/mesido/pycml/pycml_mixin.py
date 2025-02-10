@@ -102,6 +102,11 @@ def add_variables_documentation_automatically(class_: Type):
                         raise RuntimeError(f"Unknown case:\n{ast.dump(node)}")
 
         dynamic_names = sorted(dynamic_names)
+        if current_class_.__name__ in DYNAMIC_NAME_CACHE:
+            raise RuntimeError(f'Unsupported situation. Already generated documentation for '
+                               f'{current_class_.__name__} before. Possibly that 2 classes '
+                               f'(in different modules) have the same class name? This is not '
+                               f'supported by this function.')
         DYNAMIC_NAME_CACHE[current_class_.__name__] = dynamic_names
         return dynamic_names
 
