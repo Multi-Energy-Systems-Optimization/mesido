@@ -41,6 +41,7 @@ def add_variables_documentation_automatically(class_: Type):
     Returns: updated documentation of the class.
 
     """
+
     def get_names_for_class(current_class_: Type) -> List[str]:
         """
         This function checks for the variables that are added using the add_variable function.
@@ -103,10 +104,12 @@ def add_variables_documentation_automatically(class_: Type):
 
         dynamic_names = sorted(dynamic_names)
         if current_class_.__name__ in DYNAMIC_NAME_CACHE:
-            raise RuntimeError(f'Unsupported situation. Already generated documentation for '
-                               f'{current_class_.__name__} before. Possibly that 2 classes '
-                               f'(in different modules) have the same class name? This is not '
-                               f'supported by this function.')
+            raise RuntimeError(
+                f"Unsupported situation. Already generated documentation for "
+                f"{current_class_.__name__} before. Possibly that 2 classes "
+                f"(in different modules) have the same class name? This is not "
+                f"supported by this function."
+            )
         DYNAMIC_NAME_CACHE[current_class_.__name__] = dynamic_names
         return dynamic_names
 
