@@ -30,6 +30,11 @@ def add_variables_documentation_automatically(class_: Type):
     based on the self.add_variable() function. The string "{add_names_here}" in the asset
     documentation is then replaced by a list of the variable names.
 
+    Note: This decorator must be added to any class which may be referenced by `class_`.
+
+    Note: This function will not work properly if 2 two port classes have the same name due to
+    the use of `DYNAMIC_NAME_CACHE`.
+
     Args:
         class_: The asset class it is documenting
 
@@ -39,8 +44,13 @@ def add_variables_documentation_automatically(class_: Type):
     def get_names_for_class(current_class_: Type) -> List[str]:
         """
         This function checks for the variables that are added using the add_variable function.
-        Using the cache the variable names that are created by inheritence and port names,
+        Using the cache the variable names that are created by inheritance and port names,
         are tracked to recreate the full variable name.
+
+        It will follow any classes up the inheritance tree and it will follow any Port classes
+        recursively. The variable name of port classes are added to the variable path while classes
+        up the inheritance tree only add their variable paths to the set of this class.
+
         Args:
             current_class_: The class which is currently checked
 
@@ -111,10 +121,10 @@ def add_variables_documentation_automatically(class_: Type):
     else:
         (indent, _) = line_with_hook.split("{add_names_here}")
 
-    # Insert the dynamic names into the documentation
-    class_.__doc__ = class_.__doc__.replace(
-        "{add_names_here}", f"\n{indent}".join(formatted_dynamic_names)
-    )
+        # Insert the dynamic names into the documentation
+        class_.__doc__ = class_.__doc__.replace(
+            "{add_names_here}", f"\n{indent}".join(formatted_dynamic_names)
+        )
     return class_
 
 
