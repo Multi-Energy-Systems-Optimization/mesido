@@ -46,8 +46,8 @@ def _mip_gap_settings(mip_gap_name: str, problem) -> Dict[str, float]:
     """Creating the same MIP gap settings for all solvers."""
 
     options = {}
-    # options[mip_gap_name] = 0.005
-    options[mip_gap_name] = 0.02
+    options[mip_gap_name] = 0.005
+    # options[mip_gap_name] = 0.02
 
     return options
 
@@ -300,6 +300,10 @@ class HeatingCoolingProblem(
             target = self.get_timeseries(f"{d}.target_cold_demand")
             max_cool_demand_scaling = max(target.values)
             for ii in range(len(target.values)):
+                # hard-coded lowering the min cooling load, since load profile is fairly flat
+                if target.values[ii] < 10.0e6:
+                    target.values[ii] = target.values[ii] / 100.0
+
                 target.values[ii] = (
                     target.values[ii] / max_cool_demand_scaling * cold_demand_peaks_watt[d]
                 )
