@@ -58,7 +58,7 @@ setup(
         "influxdb >= 5.3.1",
         "pyecore == 0.12.1",
         "pymoca >= 0.9.0",
-        "rtc-tools == 2.6.0a3",
+        "rtc-tools == 2.6.1",
         "pyesdl == 24.2",
         "pandas >= 1.3.1, < 2.0",
         "casadi @ https://github.com/casadi/casadi/releases/download/nightly-gil_release/casadi-3.6.7.dev+gil.release-cp37-none-win_amd64.whl ; python_version == '3.7' and sys_platform == 'win32'",  # noqa: E501
