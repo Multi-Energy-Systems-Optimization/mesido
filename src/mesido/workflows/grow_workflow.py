@@ -635,21 +635,26 @@ def run_end_scenario_sizing(
         bounds = solution.bounds()
 
         # We give bounds for stage 2 by allowing one DN sizes larger than what was found in the
-        # stage 1 optimization.
-        pc_map = solution.get_pipe_class_map()
+        # stage 1 optimization. But if the pipe is not to be used class DN none should be used and
+        # all the following pipe clasess should have bounds (0, 0)
+        # Assumptions:
+        # - The fist pipe class in the list of pipe_classes is pipe DN none
+        pc_map = solution.get_pipe_class_map()  # if disconnectable and not connected to source
         for pipe_classes in pc_map.values():
             v_prev = 0.0
             first_pipe_class = True
+            use_pipe_dn_none = False
             for var_name in pipe_classes.values():
-                v = results[var_name][0]
-                if first_pipe_class and abs(v) == 1.0:
-                    boolean_bounds[var_name] = (abs(v), abs(v))
-                elif abs(v) == 1.0:
-                    boolean_bounds[var_name] = (0.0, abs(v))
-                elif v_prev == 1.0:
+                v = round(abs(results[var_name][0]))
+                if first_pipe_class and v == 1.0:
+                    boolean_bounds[var_name] = (v, v)
+                    use_pipe_dn_none = True
+                elif v == 1.0:
+                    boolean_bounds[var_name] = (0.0, v)
+                elif not use_pipe_dn_none and v_prev == 1.0:  # This allows one DN larger
                     boolean_bounds[var_name] = (0.0, 1.0)
                 else:
-                    boolean_bounds[var_name] = (abs(v), abs(v))
+                    boolean_bounds[var_name] = (v, v)
                 v_prev = v
                 first_pipe_class = False
 
@@ -696,6 +701,7 @@ def run_end_scenario_sizing(
                     boolean_bounds[f"{p}__is_disconnected"] = (Timeseries(t, r), Timeseries(t, r))
                 except KeyError:
                     pass
+
         priorities_output = solution._priorities_output
 
     solution = run_optimization_problem_solver(
