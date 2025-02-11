@@ -640,7 +640,7 @@ def run_end_scenario_sizing(
         for pipe_classes in pc_map.values():
             v_prev = 0.0
             first_pipe_class = True
-            use_pipe_dn_none = False  # If DN noe i
+            use_pipe_dn_none = False
             for var_name in pipe_classes.values():
                 v = round(abs(results[var_name][0]))
                 if first_pipe_class and v == 1.0:
@@ -699,7 +699,6 @@ def run_end_scenario_sizing(
                 except KeyError:
                     pass
 
-                # boolean_bounds["Pipe 16__is_disconnected"] = (Timeseries(t, 1), Timeseries(t, 1))
         priorities_output = solution._priorities_output
 
     solution = run_optimization_problem_solver(
