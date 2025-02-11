@@ -1491,6 +1491,11 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             sup_carrier = parameters[f"{s}.T_supply_id"]
             supply_temperatures = self.temperature_regimes(sup_carrier)
             big_m = 2.0 * self.bounds()[f"{s}.HeatOut.Heat"][1]
+            big_m = (
+                big_m
+                if big_m != np.inf
+                else 2.0 * self.bounds()[f"{s}.Heat_source"][1] * parameters[f"{s}.T_supply"] / dt
+            )
 
             if len(supply_temperatures) == 0:
                 constraints.append(
@@ -2566,61 +2571,227 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             big_m = 2.0 * self.bounds()[f"{heat_exchanger}.Primary.HeatOut.Heat"][1]
 
-            # primary side
-            if len(return_temperatures_prim) == 0:
-                # TODO: for bypass only works if heatloss is turned off, else a check should be
-                #  made here if the return temperature is below supply temperature
-                if (
-                    hn_settings["heat_exchanger_bypass"]
-                    and parameters[f"{heat_exchanger}.Primary.T_return"]
-                    >= parameters[f"{heat_exchanger}.Primary.T_supply"]
-                ):
-                    # Only when bypass is allowed Tret can be equal to Tsup. The below equation
-                    # will not hold as due to heatlosses Heatinprim might somewhat smaller than
-                    # the original temperature
-                    expr = heat_in_prim
-                else:
-                    expr = (
-                        discharge_primary
-                        * cp_prim
-                        * rho_prim
-                        * parameters[f"{heat_exchanger}.Primary.T_return"]
-                    )
+            def __constraints_temperature_heat_to_discharge_bypass(
+                heat_out, expr, sum_temp_selec, big_m: float, constraint_nominal: float
+            ):
+                """
+                Generic setup of the constraints for the heat to discharge of a heat exchanger.
+                Ensuring that
+                - when bypass is allowed, heatout = heatin
+                - otherwise heatout = Q*cp*rho*Tout
+                - based on the selected temperatures the approriate expression is added.
+
+                Args:
+                    heat_out: HeatOut variable
+                    exp: expression for heatout
+                    sum_temp_selec: sum of two binary variables and or floats (1.0 or 2.0) to
+                    identify if the temperature for this constraint is selected
+                    big_m: float to activate/deactive this constraint
+                    constraint_nominal: nominal to scale the constraint
+
+                Returns:
+
+                """
+                constraints = []
                 constraints.append(
                     (
-                        (heat_out_prim - expr) / constraint_nominal,
+                        (heat_out - expr + (2.0 - sum_temp_selec) * big_m) / constraint_nominal,
                         0.0,
+                        np.inf,
+                    )
+                )
+                constraints.append(
+                    (
+                        (heat_out - expr - (2.0 - sum_temp_selec) * big_m) / constraint_nominal,
+                        -np.inf,
                         0.0,
                     )
                 )
+                return constraints
+
+            def __constraints_temperature_heat_to_discharge_bypass_primary(
+                temp_prim_in: float,
+                temp_prim_out: float,
+                discharge,
+                cp: float,
+                rho: float,
+                heat_in,
+                heat_out,
+                temp_high_selec,
+                temp_low_selec,
+                big_m: float,
+                constraint_nominal: float,
+            ):
+                """
+                Generic setup of the constraints for the primary side of the heat exchanger for
+                heat to discharge.
+                Ensuring that
+                - when bypass is allowed, heatout = heatin
+                - otherwise heatout = Q*cp*rho*Tout
+                - based on the selected temperatures
+
+                Args:
+                    temp_prim_in: Primary temperature in
+                    temp_prim_out: Primary temperature out
+                    discharge: Casadi variable for primary volumetric flow
+                    cp: specific heat capacity
+                    rho: density
+                    heat_in: Casadi variable for primary heat in
+                    heat_out: Casadi variable for primary heat out
+                    temp_high_selec: is_selected variable for the primary in temperature or 1.0
+                    if temperature is fixed
+                    temp_low_selec: is_selected variable for the primary out temperature or 1.0
+                    if temperature is fixed
+                    big_m: float to activate/deactive this constraint
+                    constraint_nominal: nominal to scale the constraint
+
+                Returns:
+
+                """
+
+                if temp_prim_out >= temp_prim_in:
+                    expr = heat_in
+                else:
+                    expr = discharge * cp * rho * temp_prim_out
+
+                return __constraints_temperature_heat_to_discharge_bypass(
+                    heat_out, expr, temp_high_selec + temp_low_selec, big_m, constraint_nominal
+                )
+
+            def __constraints_temperature_heat_to_discharge_bypass_secondary(
+                temp_sec_in: float,
+                temp_sec_out: float,
+                discharge,
+                cp: float,
+                rho: float,
+                heat_in,
+                heat_out,
+                temp_high_selec,
+                temp_low_selec,
+                big_m: float,
+                constraint_nominal: float,
+            ):
+                """
+                Generic setup of the constraints for the primary side of the heat exchanger for
+                heat to discharge.
+                Ensuring that
+                - when bypass is allowed, heatout = heatin
+                - otherwise heatout = Q*cp*rho*Tout
+                - based on the selected temperatures
+
+                Args:
+                    temp_sec_in: Secondary temperature in
+                    temp_sec_out: Secondary temperature out
+                    discharge: Casadi variable for secondary volumetric flow
+                    cp: specific heat capacity
+                    rho: density
+                    heat_in: Casadi variable for secondary heat in
+                    heat_out: Casadi variable for secondary heat out
+                    temp_high_selec: is_selected variable for the secondary out temperature or 1.0
+                    if temperature is fixed
+                    temp_low_selec: is_selected variable for the secondary in temperature or
+                    1.0 if temperature is fixed
+                    big_m: float to activate/deactive this constraint
+                    constraint_nominal: nominal to scale the constraint
+
+                Returns:
+
+                """
+
+                if temp_sec_in >= temp_sec_out:
+                    expr = heat_in
+                else:
+                    expr = discharge * cp * rho * temp_sec_out
+
+                return __constraints_temperature_heat_to_discharge_bypass(
+                    heat_out, expr, temp_high_selec + temp_low_selec, big_m, constraint_nominal
+                )
+
+            # primary side
+            if len(return_temperatures_prim) == 0:
+                return_temperature = parameters[f"{heat_exchanger}.Primary.T_return"]
+                if len(supply_temperatures_prim) != 0 and hn_settings["heat_exchanger_bypass"]:
+                    for sup_temp in supply_temperatures_prim:
+                        sup_temperature_is_selected = self.state(f"{sup_carrier_prim}_{sup_temp}")
+                        constraints.extend(
+                            __constraints_temperature_heat_to_discharge_bypass_primary(
+                                sup_temp,
+                                return_temperature,
+                                discharge_primary,
+                                cp_prim,
+                                rho_prim,
+                                heat_in_prim,
+                                heat_out_prim,
+                                sup_temperature_is_selected,
+                                1.0,
+                                big_m,
+                                constraint_nominal,
+                            )
+                        )
+                else:
+                    sup_temp = parameters[f"{heat_exchanger}.Primary.T_supply"]
+                    assert sup_temp >= return_temperature
+                    constraints.extend(
+                        __constraints_temperature_heat_to_discharge_bypass_primary(
+                            sup_temp,
+                            return_temperature,
+                            discharge_primary,
+                            cp_prim,
+                            rho_prim,
+                            heat_in_prim,
+                            heat_out_prim,
+                            1.0,
+                            1.0,
+                            big_m,
+                            constraint_nominal,
+                        )
+                    )
+
             else:
                 for return_temperature in return_temperatures_prim:
                     ret_temperature_is_selected = self.state(
                         f"{ret_carrier_prim}_{return_temperature}"
                     )
-                    if (
-                        hn_settings["heat_exchanger_bypass"]
-                        and return_temperature >= parameters[f"{heat_exchanger}.Primary.T_supply"]
-                    ):
-                        expr = heat_in_prim
+                    if hn_settings["heat_exchanger_bypass"] and len(supply_temperatures_prim) != 0:
+                        # if bypass of heat exchanger is allowed and the primary in temperature
+                        # is also a variable
+                        for sup_temp in supply_temperatures_prim:
+                            sup_temperature_is_selected = self.state(
+                                f"{sup_carrier_prim}_{sup_temp}"
+                            )
+                            constraints.extend(
+                                __constraints_temperature_heat_to_discharge_bypass_primary(
+                                    sup_temp,
+                                    return_temperature,
+                                    discharge_primary,
+                                    cp_prim,
+                                    rho_prim,
+                                    heat_in_prim,
+                                    heat_out_prim,
+                                    sup_temperature_is_selected,
+                                    ret_temperature_is_selected,
+                                    big_m,
+                                    constraint_nominal,
+                                )
+                            )
+
                     else:
-                        expr = discharge_primary * cp_prim * rho_prim * return_temperature
-                    constraints.append(
-                        (
-                            (heat_out_prim - expr + (1.0 - ret_temperature_is_selected) * big_m)
-                            / constraint_nominal,
-                            0.0,
-                            np.inf,
+                        sup_temp = parameters[(f"{heat_exchanger}.Primary.T_supply")]
+                        constraints.extend(
+                            __constraints_temperature_heat_to_discharge_bypass_primary(
+                                sup_temp,
+                                return_temperature,
+                                discharge_primary,
+                                cp_prim,
+                                rho_prim,
+                                heat_in_prim,
+                                heat_out_prim,
+                                1.0,
+                                ret_temperature_is_selected,
+                                big_m,
+                                constraint_nominal,
+                            )
                         )
-                    )
-                    constraints.append(
-                        (
-                            (heat_out_prim - expr - (1.0 - ret_temperature_is_selected) * big_m)
-                            / constraint_nominal,
-                            -np.inf,
-                            0.0,
-                        )
-                    )
 
             # Secondary side
             sup_carrier_sec = parameters[f"{heat_exchanger}.Secondary.T_supply_id"]
@@ -2634,54 +2805,87 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             )
 
             if len(supply_temperatures_sec) == 0:
-                if (
-                    hn_settings["heat_exchanger_bypass"]
-                    and parameters[f"{heat_exchanger}.Secondary.T_return"]
-                    >= parameters[f"{heat_exchanger}.Secondary.T_supply"]
-                ):
-                    expr = heat_in_sec
+                supply_temperature = parameters[f"{heat_exchanger}.Secondary.T_supply"]
+                if len(return_temperatures_sec) != 0 and hn_settings["heat_exchanger_bypass"]:
+                    for ret_temperature in return_temperatures_sec:
+                        ret_temperature_is_selected = self.state(
+                            f"{ret_carrier_sec}_{ret_temperature}"
+                        )
+                        constraints.extend(
+                            __constraints_temperature_heat_to_discharge_bypass_secondary(
+                                ret_temperature,
+                                supply_temperature,
+                                discharge_secondary,
+                                cp_sec,
+                                rho_sec,
+                                heat_in_sec,
+                                heat_out_sec,
+                                ret_temperature_is_selected,
+                                1.0,
+                                big_m,
+                                constraint_nominal,
+                            )
+                        )
                 else:
-                    expr = (
-                        discharge_secondary
-                        * cp_sec
-                        * rho_sec
-                        * parameters[f"{heat_exchanger}.Secondary.T_supply"]
+                    ret_temperature = parameters[f"{heat_exchanger}.Secondary.T_return"]
+                    assert supply_temperature >= ret_temperature
+                    constraints.extend(
+                        __constraints_temperature_heat_to_discharge_bypass_secondary(
+                            ret_temperature,
+                            supply_temperature,
+                            discharge_secondary,
+                            cp_sec,
+                            rho_sec,
+                            heat_in_sec,
+                            heat_out_sec,
+                            1.0,
+                            1.0,
+                            big_m,
+                            constraint_nominal,
+                        )
                     )
-                constraints.append(
-                    (
-                        (heat_out_sec - expr) / constraint_nominal,
-                        0.0,
-                        0.0,
-                    )
-                )
             else:
                 for supply_temperature in supply_temperatures_sec:
                     sup_temperature_is_selected = self.state(
                         f"{sup_carrier_sec}_{supply_temperature}"
                     )
-                    if (
-                        hn_settings["heat_exchanger_bypass"]
-                        and supply_temperature <= parameters[f"{heat_exchanger}.Secondary.T_return"]
-                    ):
-                        expr = heat_in_sec
+                    if len(return_temperatures_sec) != 0 and hn_settings["heat_exchanger_bypass"]:
+                        for ret_temperature in return_temperatures_sec:
+                            ret_temperature_is_selected = self.state(
+                                f"{ret_carrier_sec}_{ret_temperature}"
+                            )
+                            constraints.extend(
+                                __constraints_temperature_heat_to_discharge_bypass_secondary(
+                                    ret_temperature,
+                                    supply_temperature,
+                                    discharge_secondary,
+                                    cp_sec,
+                                    rho_sec,
+                                    heat_in_sec,
+                                    heat_out_sec,
+                                    ret_temperature_is_selected,
+                                    sup_temperature_is_selected,
+                                    big_m,
+                                    constraint_nominal,
+                                )
+                            )
                     else:
-                        expr = discharge_secondary * cp_sec * rho_sec * supply_temperature
-                    constraints.append(
-                        (
-                            (heat_out_sec - expr - (1.0 - sup_temperature_is_selected) * big_m)
-                            / constraint_nominal,
-                            -np.inf,
-                            0.0,
+                        ret_temperature = parameters[f"{heat_exchanger}.Secondary.T_return"]
+                        constraints.extend(
+                            __constraints_temperature_heat_to_discharge_bypass_secondary(
+                                ret_temperature,
+                                supply_temperature,
+                                discharge_secondary,
+                                cp_sec,
+                                rho_sec,
+                                heat_in_sec,
+                                heat_out_sec,
+                                1.0,
+                                sup_temperature_is_selected,
+                                big_m,
+                                constraint_nominal,
+                            )
                         )
-                    )
-                    constraints.append(
-                        (
-                            (heat_out_sec - expr + (1.0 - sup_temperature_is_selected) * big_m)
-                            / constraint_nominal,
-                            0.0,
-                            np.inf,
-                        )
-                    )
 
             # disconnect HEX
             # Getting var for disabled constraints
@@ -2731,8 +2935,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                                 constraints.append(
                                     (
                                         (
-                                            t_sup_prim * sup_prim_t_is_selected
-                                            - t_sup_sec * sup_sec_t_is_selected
+                                            t_sup_prim
+                                            - t_sup_sec
                                             + (
                                                 is_disabled
                                                 + (1.0 - sup_prim_t_is_selected)
