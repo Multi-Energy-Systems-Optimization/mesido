@@ -18,6 +18,7 @@
 - For gas: Use energy content (heating value) instead of internal energy 
 - Option was added to allow a bypass of the heat exchanger, possible on both sides of the heat exchanger
 - Option for electricity cables to be unidirectional
+- Upgraded rtctools to v 2.6.1
 
 ## Fixed
 - Bugfix: gas boiler mass flow constraint units
