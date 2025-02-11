@@ -3,6 +3,7 @@ import os
 from typing import Dict, Union
 
 from mesido.constants import GRAVITATIONAL_CONSTANT
+from mesido.network_common import NetworkSettings
 
 import numpy as np
 
@@ -114,10 +115,16 @@ def pipe_pressure(
     Returns:
 
     """
+    if commodity == NetworkSettings.NETWORK_TYPE_HEAT:
+        scale_factor = 1.0
+    elif commodity in [NetworkSettings.NETWORK_TYPE_GAS, NetworkSettings.NETWORK_TYPE_HYDROGEN]:
+        scale_factor = 1.0e3
+    else:
+        exit("Unkown commodity type used for pipe pressure")
     post_processed_pressure = (
         results[f"{asset_name}.{commodity}In.H"]  # m
         * GRAVITATIONAL_CONSTANT  # m/s2
-        * parameters[f"{asset_name}.density"]  # g/m3
-        / 1e3
+        * parameters[f"{asset_name}.rho"]  # Heat kg/m3, non-heat related g/m3
+        / scale_factor
     )  # Pa
     return post_processed_pressure
