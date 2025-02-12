@@ -33,6 +33,7 @@ review = 'Kobus van Rooyen and Femke Janssen'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = ['sphinx.ext.autodoc',
+              'sphinx.ext.autosummary',
               'sphinx.ext.intersphinx',
               'sphinx.ext.todo',
               'sphinx.ext.coverage',
@@ -46,6 +47,13 @@ mathjax3_config = {'chtml': {'displayAlign': 'left',
                              'displayIndent': '2em'}}
 
 bibtex_bibfiles = ['references.bib']
+
+autodoc_default_options = {
+    'members': True,
+    'member-order': 'bysource',
+    'special-members': '__init__',
+    'show-inheritance': True,
+}
 
 # -- GraphViz configuration ----------------------------------
 graphviz_output_format = 'svg'

@@ -1,10 +1,12 @@
 from mesido.pycml import Variable
 from mesido.pycml.component_library.milp._internal import BaseAsset
 from mesido.pycml.component_library.milp.heat.heat_four_port import HeatFourPort
+from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 from numpy import nan
 
 
+@add_variables_documentation_automatically
 class HeatPump(HeatFourPort, BaseAsset):
     """
     The heatpump component is used to model a water-water heatpump.
@@ -15,6 +17,17 @@ class HeatPump(HeatFourPort, BaseAsset):
     as a demand, meaning it consumes energy from the primary network and gives it to the secondary
     side, where the secondary side acts like a source to the secondary network. This also means
     that heat can only flow from primary to secondary.
+
+    side = Primary or Secondary
+    port = HeatIn or HeatOut
+
+    Variables created:
+        {add_names_here}
+
+    Parameters:
+        name : The name of the asset. \n
+        modifiers : Dictionary with asset information.
+
     """
 
     def __init__(self, name, **modifiers):

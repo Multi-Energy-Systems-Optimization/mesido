@@ -1,10 +1,12 @@
 from mesido.pycml import Variable
 from mesido.pycml.component_library.milp._internal import BaseAsset
 from mesido.pycml.component_library.milp.heat.heat_four_port import HeatFourPort
+from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 from numpy import nan
 
 
+@add_variables_documentation_automatically
 class HeatExchanger(HeatFourPort, BaseAsset):
     """
     The heat exchanger component is used to model the exchange of thermal power between two
@@ -20,6 +22,16 @@ class HeatExchanger(HeatFourPort, BaseAsset):
     To avoid unphysical heat transfer the HeatPhysicsMixin sets constraints on the temperatures on
     both sides in the case of varying temperature. We also allow a heat_exchanger to be disabled on
     certain time-steps to then allow these temperature constraints to be also disabled.
+
+    side = Primary or Secondary
+    port = HeatIn or HeatOut
+
+    Variables created:
+        {add_names_here}
+
+    Parameters:
+        name : The name of the asset. \n
+        modifiers : Dictionary with asset information.
     """
 
     def __init__(self, name, **modifiers):
