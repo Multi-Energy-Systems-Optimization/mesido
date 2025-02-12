@@ -1786,7 +1786,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         i_max_in, i_nom_in, i_max_out, i_nom_out = self._get_connected_i_nominal_and_max(asset)
         min_voltage_in = asset.in_ports[0].carrier.voltage
         min_voltage_out = asset.out_ports[0].carrier.voltage
-        max_power = min_voltage_in * i_max_in
+        max_power = min(min_voltage_in * i_max_in, asset.attributes["power"]) if asset.attributes["power"]!= 0.0 else min_voltage_in*i_max_in
 
         modifiers = dict(
             power_nominal=max_power / 2.0,

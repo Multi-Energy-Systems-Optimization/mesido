@@ -393,6 +393,18 @@ class _CaseConstraints:
 
         return constraints
 
+    def __electrolyzer_minimum_operational_constraint(self, ensemble_member):
+        parameters = self.parameters(ensemble_member)
+        constraints = []
+        for el in self.energy_system_components.get("electrolyzer", []):
+            max_power = parameters[f"{el}.max_power"]
+            minimum_load = max(parameters[f"{el}.minimum_load"], 0.01 * max_power)
+            el_power = self.state(f"{el}.ElectricityIn.Power")
+            constraints.append(((el_power - minimum_load) / max_power, 0.0, np.inf))
+
+        return constraints
+
+
 
     def path_constraints(self, ensemble_member):
         """
@@ -401,6 +413,8 @@ class _CaseConstraints:
         """
         constraints = super().path_constraints(ensemble_member)
         constraints.extend(self.__constraint_fix_pressure(ensemble_member))
+
+        constraints.extend(self.__electrolyzer_minimum_operational_constraint(ensemble_member))
 
         return constraints
 
@@ -1012,6 +1026,7 @@ class MultiCommoditySimulatorMarginal(
                 "discharge": "__effective_power_discharging",
             },
             "electrolyzer": "Power_consumed",
+            "transformer": "ElectricityIn.Power"
         }
 
         multiplier = {"source": 1.0,
@@ -1260,7 +1275,7 @@ class MultiCommoditySimulatorMarginal(
         asset_types_to_include = {
             "source": ["electricity_source", "gas_source"],
             "demand": ["electricity_demand", "gas_demand"],
-            "conversion": ["electrolyzer"],
+            "conversion": ["electrolyzer", "transformer"],
             "storage": ["gas_tank_storage", "electricity_storage"],
         }
 
@@ -1333,12 +1348,12 @@ class MultiCommoditySimulatorMarginal(
         except AttributeError:
             raise Exception(f"Asset: {asset.name} does not have a marginal cost specified")
 
-        if marg_cost <= 0.0:
-            raise Exception(
-                "The specified producer usage marginal cost must be a "
-                f"positve integer value, producer name:{asset.name}, current "
-                f"specified marginal cost: {marg_cost[-1]}"
-            )
+        # if marg_cost <= 0.0:
+        #     raise Exception(
+        #         "The specified producer usage marginal cost must be a "
+        #         f"positve integer value, producer name:{asset.name}, current "
+        #         f"specified marginal cost: {marg_cost[-1]}"
+        #     )
 
         return marg_cost
 
@@ -1831,7 +1846,8 @@ def run_sequatially_staged_simulation(
     )
 
     tic = time.time()
-    for simulated_window in range(simulation_window_size, 100, simulation_window_size): #end_time
+    for simulated_window in range(simulation_window_size, end_time, simulation_window_size):
+        #end_time #300
         # Note that the end time is not necessarily a multiple of simulation_window_size
         (
             solution,
