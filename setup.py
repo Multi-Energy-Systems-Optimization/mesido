@@ -58,23 +58,10 @@ setup(
         "influxdb >= 5.3.1",
         "pyecore == 0.12.1",
         "pymoca >= 0.9.0",
-        "rtc-tools == 2.6.1",
+        "rtc-tools-gil-comp == 2.6.1",
         "pyesdl == 24.2",
         "pandas >= 1.3.1, < 2.0",
-        "casadi @ https://github.com/casadi/casadi/releases/download/nightly-gil_release/casadi-3.6.7.dev+gil.release-cp37-none-win_amd64.whl ; python_version == '3.7' and sys_platform == 'win32'",  # noqa: E501
-        "casadi @ https://github.com/casadi/casadi/releases/download/nightly-gil_release/casadi-3.6.7.dev+gil.release-cp38-none-win_amd64.whl ; python_version == '3.8' and sys_platform == 'win32'",  # noqa: E501
-        "casadi @ https://github.com/casadi/casadi/releases/download/nightly-gil_release/casadi-3.6.7.dev+gil.release-cp39-none-win_amd64.whl ; python_version == '3.9' and sys_platform == 'win32'",  # noqa: E501
-        "casadi @ https://github.com/casadi/casadi/releases/download/nightly-gil_release/casadi-3.6.7.dev+gil.release-cp310-none-win_amd64.whl ; python_version == '3.10' and sys_platform == 'win32'",  # noqa: E501
-        "casadi @ https://github.com/casadi/casadi/releases/download/nightly-gil_release/casadi-3.6.7.dev+gil.release-cp311-none-win_amd64.whl ; python_version == '3.11' and sys_platform == 'win32'",  # noqa: E501
-        "casadi @ https://github.com/casadi/casadi/releases/download/nightly-gil_release/casadi-3.6.7.dev+gil.release-cp312-none-win_amd64.whl ; python_version == '3.12' and sys_platform == 'win32'",  # noqa: E501
-        "casadi @ https://github.com/casadi/casadi/releases/download/nightly-gil_release/casadi-3.6.7.dev+gil.release-cp313-none-win_amd64.whl ; python_version == '3.13' and sys_platform == 'win32'",  # noqa: E501
-        "casadi @ https://github.com/casadi/casadi/releases/download/nightly-gil_release/casadi-3.6.7.dev+gil.release-cp37-none-manylinux2014_x86_64.whl ; python_version == '3.7' and sys_platform == 'linux'",  # noqa: E501
-        "casadi @ https://github.com/casadi/casadi/releases/download/nightly-gil_release/casadi-3.6.7.dev+gil.release-cp38-none-manylinux2014_x86_64.whl ; python_version == '3.8' and sys_platform == 'linux'",  # noqa: E501
-        "casadi @ https://github.com/casadi/casadi/releases/download/nightly-gil_release/casadi-3.6.7.dev+gil.release-cp39-none-manylinux2014_x86_64.whl ; python_version == '3.9' and sys_platform == 'linux'",  # noqa: E501
-        "casadi @ https://github.com/casadi/casadi/releases/download/nightly-gil_release/casadi-3.6.7.dev+gil.release-cp310-none-manylinux2014_x86_64.whl ; python_version == '3.10' and sys_platform == 'linux'",  # noqa: E501
-        "casadi @ https://github.com/casadi/casadi/releases/download/nightly-gil_release/casadi-3.6.7.dev+gil.release-cp311-none-manylinux2014_x86_64.whl ; python_version == '3.11' and sys_platform == 'linux'",  # noqa: E501
-        "casadi @ https://github.com/casadi/casadi/releases/download/nightly-gil_release/casadi-3.6.7.dev+gil.release-cp312-none-manylinux2014_x86_64.whl ; python_version == '3.12' and sys_platform == 'linux'",  # noqa: E501
-        "casadi @ https://github.com/casadi/casadi/releases/download/nightly-gil_release/casadi-3.6.7.dev+gil.release-cp313-none-manylinux2014_x86_64.whl ; python_version == '3.13' and sys_platform == 'linux'",  # noqa: E501
+        "casadi-gil-comp == 3.6.7",
         "StrEnum == 0.4.15",
         "CoolProp==6.6.0",
     ],
