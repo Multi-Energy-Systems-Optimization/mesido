@@ -1,4 +1,17 @@
-# [Unreleased] - 2025-02-07
+# [Unreleased] - 2025-02-13
+
+## Added
+- xx
+
+## Changed
+- xx
+- xx
+
+## Fixed
+- xx
+
+
+# [0.1.8.5] - 2025-02-12
 
 ## Added
 - xx
@@ -9,6 +22,7 @@
 
 ## Fixed
 - Bug: pipe class bounds when pipe DN none results from stage 1 in the grow_workflow
+
 
 # [0.1.8.4] - 2024-12-11
 
@@ -21,6 +35,7 @@
 ## Fixed
 - Bugs: state update of heat pump, heat buffer volume & ates charge rates update in ESDL, heat storage asset data output to influxDB   
 
+
 # [0.1.8.3] - 2024-12-02
 
 ## Added
@@ -31,6 +46,7 @@
 
 ## Fixed
 - xx
+
 
 # [0.1.8.2] - 2024-11-15
 
