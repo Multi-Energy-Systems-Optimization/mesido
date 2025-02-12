@@ -65,11 +65,22 @@ import inspect
 
 def docs_esdl_modifiers(class__):
     modifiers_dict = {}
+    input_dict = {}
+
+    def extract_asset_info(bod):
+        if isinstance(bod.value, ast.Subscript):
+            if isinstance(bod.value.value, ast.Attribute):
+                if (bod.value.value.attr == "attributes" and bod.value.value.value.id ==
+                        "asset" and isinstance(bod.targets[0], ast.Name)):
+                    input_dict[node.name][bod.targets[0].id] = (
+                        f"{bod.targets[0].id}:  asset.attributes[{bod.value.slice.value}]"
+                    )
 
     ast_of_init: ast.Module = ast.parse(inspect.getsource(class__))
     for node in ast.walk(ast_of_init):
         if isinstance(node, ast.FunctionDef) and "convert_" in node.name:
             modifiers_dict[node.name] = []
+            input_dict[node.name] = {}
             for bod in node.body:
                 if isinstance(bod, ast.Assign):
                     if isinstance(bod.targets[0], ast.Name) and bod.targets[0].id == "modifiers":
@@ -79,10 +90,22 @@ def docs_esdl_modifiers(class__):
                             elif key.arg == None and isinstance(key.value, ast.Call) and isinstance(
                                     key.value.func, ast.Attribute):
                                 modifiers_dict[node.name].append(key.value.func.attr)
+                    else:
+                        extract_asset_info(bod)
+
+            func = getattr(class__, node.name)
             if len(modifiers_dict[node.name]) >0:
                 format_list_string = "\n         * "+ f"\n         * ".join(modifiers_dict[node.name])
-                func = getattr(class__, node.name)
                 func.__doc__ += format_list_string
+            if len(input_dict[node.name]) >0:
+                func.__doc__ += "\n\n ESDL input"
+                # format_list_string = ("\n         * "+ f"\n         * ".join(input_dict[
+                #                                                                 node.name].keys()).join(input_dict[
+                #                            node.name].values()))
+                format_list_string = ("\n         * " + f"\n         * ".join(input_dict[
+                                                                                  node.name].values()))
+                func.__doc__ += format_list_string
+
     return class__
 
 
