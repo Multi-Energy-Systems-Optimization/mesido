@@ -1,4 +1,5 @@
-# [Unreleased-main] - 2024-12-12
+
+# [Unreleased-main] - 2025-02-07
 
 ## Added
 - Default database for gas pipe dimensions based on the ASA pipe schedule with thicknesses from the standard class
@@ -10,6 +11,7 @@
 - More of the existing classes added to __init_ for local runs using the grow_workflow
 - Generic functions for postprocessing are added.
 - Generic function to adapt timeseries from hourly timesteps to user-defined timesteps by averaging.
+- Error check for NaN values in profile data (csv & influxDB)
 
 ## Changed
 - Write output to json also saves the solver statistics.
@@ -19,6 +21,7 @@
 - Option was added to allow a bypass of the heat exchanger, possible on both sides of the heat exchanger
 - Option for electricity cables to be unidirectional
 - Upgraded rtctools to v 2.6.1
+- Updated Casadi to 3.6.7 with gil fixes (see https://github.com/casadi/casadi/releases/tag/nightly-gil_release)
 
 ## Fixed
 - Bugfix: gas boiler mass flow constraint units
@@ -26,6 +29,8 @@
 - Bugfix: head loss test case when minimum_velocity = 0.0
 - Bugs: state update of heat pump, heat buffer volume & ates charge rates update in ESDL, heat storage asset data output to influxDB  
 - Bugfix: get_density + get_internal_energy updated to ensure it checks commodity type for heat instead of the carrier name
+- Bug: pipe class bounds when pipe DN none results from stage 1 in the grow_workflow
+
 
 # [0.1.8.4] - 2024-12-11
 
@@ -48,7 +53,8 @@
 - xx
 
 ## Fixed
-- xx
+- Bugfix: same mip gap settings for all solvers in grow_workflow.
+- Bugfix: head loss test case when minimum_velocity = 0.0
 
 
 # [0.1.8.2] - 2024-11-15
