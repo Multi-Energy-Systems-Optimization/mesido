@@ -97,6 +97,8 @@ def docs_esdl_modifiers(class__):
             if len(modifiers_dict[node.name]) >0:
                 format_list_string = "\n         * "+ f"\n         * ".join(modifiers_dict[node.name])
                 func.__doc__ += format_list_string
+            # TODO: the input dictionary is still in progress and not as easy to extract by code I
+            # believe
             if len(input_dict[node.name]) >0:
                 func.__doc__ += "\n\n ESDL input"
                 # format_list_string = ("\n         * "+ f"\n         * ".join(input_dict[
