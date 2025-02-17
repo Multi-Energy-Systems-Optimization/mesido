@@ -386,8 +386,8 @@ class _CaseConstraints:
             conv_DEN_2 = self.state("H2-import_DEN.GasOut.mass_flow")
             conv_EEM_3 = self.state("H2-import_EEM.GasOut.mass_flow")
             nominal = 1e4#self.bounds()["gasconversion_2abd.GasIn.mass_flow"][1]
-            constraints.append(((56/44 * conv_DEN_2 - conv_EEM_3) / nominal, 0.0, 0.0))
-
+            # constraints.append(((56/44 * conv_DEN_2 - conv_EEM_3) / nominal, 0.0, 0.0))
+            constraints.append(((1.5 * conv_DEN_2 - conv_EEM_3) / nominal, 0.0, 0.0))
 
 
 
@@ -397,10 +397,11 @@ class _CaseConstraints:
         parameters = self.parameters(ensemble_member)
         constraints = []
         for el in self.energy_system_components.get("electrolyzer", []):
-            max_power = parameters[f"{el}.max_power"]
-            minimum_load = max(parameters[f"{el}.minimum_load"], 0.01 * max_power)
-            el_power = self.state(f"{el}.ElectricityIn.Power")
-            constraints.append(((el_power - minimum_load) / max_power, 0.0, np.inf))
+            if el != "EL_TNW" and el != "EL_DDW-West":
+                max_power = parameters[f"{el}.max_power"]
+                minimum_load = max(parameters[f"{el}.minimum_load"], 0.01 * max_power)
+                el_power = self.state(f"{el}.ElectricityIn.Power")
+                constraints.append(((el_power - minimum_load) / max_power, 0.0, np.inf))
 
         return constraints
 
@@ -1313,8 +1314,24 @@ class MultiCommoditySimulatorMarginal(
     def seed(self, ensemble_member):
         seed = super().seed(ensemble_member)
         parameters = self.parameters(0)
-        # electrolyzers = self.energy_system_components.get("electrolyzer")
+        electrolyzers = self.energy_system_components.get("electrolyzer")
         wind_farms = self.energy_system_components.get("wind_park")
+        gas_demands = self.energy_system_components.get("gas_demand", [])
+        el_demands = self.energy_system_components.get("electricity_demand", [])
+        for dem in [*gas_demands, *el_demands]:
+            if dem in el_demands:
+                variable = f"{dem}.Electricity_demand"
+                variable_timeseries = f"{dem}.target_electricity_demand"
+            elif dem in gas_demands:
+                variable = f"{dem}.Gas_demand_mass_flow"
+                variable_timeseries = f"{dem}.target_gas_demand"
+            if variable_timeseries in self.io.get_timeseries_names():
+                timeseries_values = Timeseries(
+                    *self.io.get_timeseries_sec(variable_timeseries, ensemble_member)
+                )
+                seed[variable] = timeseries_values
+
+
         for windfarm in wind_farms:
             variable = f"{windfarm}.maximum_electricity_source"
             electrolyzer = "EL"+windfarm.lstrip("WF")
@@ -1323,15 +1340,20 @@ class MultiCommoditySimulatorMarginal(
                 *self.io.get_timeseries_sec(variable, ensemble_member)
             )
             variable_seed = f"{windfarm}.Electricity_source"
-            try:
-                el_min_load = parameters[f"{electrolyzer}.minimum_load"]
-                el_max_load = parameters[f"{electrolyzer}.max_power"]
-                el_power_time.values[el_power_time.values < el_min_load] = 0.0
-                seed[variable_seed] = el_power_time
-                el_power_time.values[el_power_time.values > el_max_load] = el_max_load
-                seed[variable_el] = el_power_time
-            except KeyError:
-                seed[variable_seed] = el_power_time
+            seed[variable_seed] = el_power_time
+            # try:
+            #     for el in electrolyzers:
+            #         if electrolyzer in el:
+            #             el_min_load = parameters[f"{electrolyzer}.minimum_load"]
+            #             el_max_load = parameters[f"{electrolyzer}.max_power"]
+            #             el_power_time.values[el_power_time.values < el_min_load/2] = el_min_load
+            #             el_power_time.values[el_power_time.values < el_max_load / 4] = (
+            #                     el_power_time.values[el_power_time.values < el_max_load / 4]*2)
+            #             el_power_time.values[el_power_time.values > el_max_load] = el_max_load
+            #             seed[variable_el] = el_power_time
+            # except KeyError:
+            #     pass
+            #     seed[variable_seed] = el_power_time
 
         return seed
 
@@ -1396,7 +1418,7 @@ class MultiCommoditySimulatorMarginal(
         print(f"Goal with priority {priority} has been completed  with objective value {self.objective_value}")
         # logger.info(f"Goal with priority {priority} has been completed  with objective value {self.objective_value}")
         if priority == 1 and self.objective_value > 1e-6:
-            raise RuntimeError("The heating demand is not matched")
+            raise RuntimeError("The demand is not matched")
 
     def solver_success(self, solver_stats, log_solver_failure_as_error):
         success, log_level = super().solver_success(solver_stats, log_solver_failure_as_error)
@@ -1846,7 +1868,7 @@ def run_sequatially_staged_simulation(
     )
 
     tic = time.time()
-    for simulated_window in range(simulation_window_size, end_time, simulation_window_size):
+    for simulated_window in range(simulation_window_size, 300, simulation_window_size):
         #end_time #300
         # Note that the end time is not necessarily a multiple of simulation_window_size
         (
