@@ -27,8 +27,9 @@ def add_variables_documentation_automatically(class_: Type):
     """
     This function can be added as a decorator to asset classes. It will update the documentation
     of that class with the variables that are created in it and the classes from which it inherits,
-    based on the self.add_variable() function. The string "{add_names_here}" in the asset
-    documentation is then replaced by a list of the variable names.
+    based on the self.add_variable() function. The string
+    "{add_variable_names_for_documentation_here}" in the asset documentation is then replaced by
+    a list of the variable names.
 
     Note: This decorator must be added to any class which may be referenced by `class_`.
 
@@ -122,16 +123,18 @@ def add_variables_documentation_automatically(class_: Type):
 
     # Find the indent that should be used
     line_with_hook = next(
-        (line for line in class_.__doc__.splitlines() if "{add_names_here}" in line), None
+        (line for line in class_.__doc__.splitlines() if "{"
+                                                         "add_variable_names_for_documentation_here}" in line),
+        None
     )
     if line_with_hook is None:
         indent = ""
     else:
-        (indent, _) = line_with_hook.split("{add_names_here}")
+        (indent, _) = line_with_hook.split("{add_variable_names_for_documentation_here}")
 
         # Insert the dynamic names into the documentation
         class_.__doc__ = class_.__doc__.replace(
-            "{add_names_here}", f"\n{indent}".join(formatted_dynamic_names)
+            "{add_variable_names_for_documentation_here}", f"\n{indent}".join(formatted_dynamic_names)
         )
     return class_
 

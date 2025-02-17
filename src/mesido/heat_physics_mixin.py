@@ -23,7 +23,7 @@ logger = logging.getLogger("mesido")
 class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
     """
     This class is used to model the physics of a heat district network with its assets. We model
-    the different components with variety of linearization strategies.
+    the different components with a variety of linearization strategies.
     """
 
     __allowed_head_loss_options = {

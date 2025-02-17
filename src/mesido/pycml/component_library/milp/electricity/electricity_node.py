@@ -16,10 +16,8 @@ class ElectricityNode(ElectricityComponent, BaseAsset):
     that a node is always connected to cables. We set constraints for equal voltage at all ports.
     Furthermore, we set constraints for conservation of power and current.
 
-    port = ElectricityIn or ElectricityOut
-
     Variables created:
-        {add_names_here}
+        {add_variable_names_for_documentation_here}
 
     Parameters:
         name : The name of the asset. \n

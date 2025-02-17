@@ -10,10 +10,8 @@ class CheckValve(_NonStorageComponent):
     The check valve allows the fluid to flow in only one direction. This is done with constraints
     in the HeatMixin.
 
-    port = HeatIn or HeatOut
-
     Variables created:
-        {add_names_here}
+        {add_variable_names_for_documentation_here}
 
     Parameters:
         name : The name of the asset. \n

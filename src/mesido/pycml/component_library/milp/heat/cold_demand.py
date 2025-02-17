@@ -18,10 +18,8 @@ class ColdDemand(_NonStorageComponent):
     drops. It also implicitly assumes that the temperature drops in the network are small and thus
     satisfy minimum temperature requirements.
 
-    port = HeatIn or HeatOut
-
     Variables created:
-        {add_names_here}
+        {add_variable_names_for_documentation_here}
 
     Parameters:
         name : The name of the asset. \n

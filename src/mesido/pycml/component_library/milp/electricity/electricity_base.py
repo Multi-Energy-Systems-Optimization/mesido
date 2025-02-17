@@ -11,7 +11,7 @@ class ElectricityPort(ElectricityComponent, Connector):
     For electricity networks we model the electrical power (P), the voltage (V) and the current (I).
 
     Variables created:
-        {add_names_here}
+        {add_variable_names_for_documentation_here}
 
     Parameters:
         name : The name of the asset. \n
@@ -33,7 +33,7 @@ class ElectricityTwoPort(ElectricityComponent):
     electricity flow in and out of the component.
 
     Variables created:
-        {add_names_here}
+        {add_variable_names_for_documentation_here}
 
     Parameters:
         name : The name of the asset. \n

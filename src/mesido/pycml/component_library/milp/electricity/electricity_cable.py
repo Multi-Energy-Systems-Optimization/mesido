@@ -15,10 +15,8 @@ class ElectricityCable(ElectricityTwoPort, BaseAsset):
     that the power is always less than what the current is able to carry by an equality constraint
     at the demand where we enforce the minimum voltage.
 
-    port = ElectricityIn or ElectricityOut
-
     Variables created:
-        {add_names_here}
+        {add_variable_names_for_documentation_here}
 
     Parameters:
         name : The name of the asset. \n

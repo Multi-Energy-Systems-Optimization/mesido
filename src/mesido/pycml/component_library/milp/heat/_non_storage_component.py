@@ -14,10 +14,8 @@ class _NonStorageComponent(HeatTwoPort, BaseAsset):
     time-steps, it does have time-varying states like Heat_flow. In the NonStorageComponent we
     define most of the properties being utilized by all components, like rho and cp.
 
-    port = HeatIn or HeatOut
-
     Variables created:
-        {add_names_here}
+        {add_variable_names_for_documentation_here}
 
     Parameters:
         name : The name of the asset. \n

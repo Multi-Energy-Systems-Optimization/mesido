@@ -18,11 +18,8 @@ class HeatPump(HeatFourPort, BaseAsset):
     side, where the secondary side acts like a source to the secondary network. This also means
     that heat can only flow from primary to secondary.
 
-    side = Primary or Secondary
-    port = HeatIn or HeatOut
-
     Variables created:
-        {add_names_here}
+        {add_variable_names_for_documentation_here}
 
     Parameters:
         name : The name of the asset. \n

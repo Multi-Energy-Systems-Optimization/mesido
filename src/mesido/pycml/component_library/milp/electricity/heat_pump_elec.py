@@ -14,10 +14,8 @@ class HeatPumpElec(HeatPump):
     to the electricity grid. This allows to potentially optimize for electricity network constraints
     in the optimization of the heat network and vice-versa.
 
-    port = ElectricityIn or ElectricityOut
-
     Variables created:
-        {add_names_here}
+        {add_variable_names_for_documentation_here}
 
     Parameters:
         name : The name of the asset. \n

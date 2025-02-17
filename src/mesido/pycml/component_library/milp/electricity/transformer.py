@@ -12,10 +12,8 @@ class Transformer(ElectricityTwoPort, BaseAsset):
     The transformer component is used to change the voltage level of the network whilst conserving
     the power.
 
-    port = ElectricityIn or ElectricityOut
-
     Variables created:
-        {add_names_here}
+        {add_variable_names_for_documentation_here}
 
     Parameters:
         name : The name of the asset. \n

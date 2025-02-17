@@ -11,10 +11,9 @@ class Pump(_NonStorageComponent):
     """
     The pump component is there to add head to the flow. We assume head can only be added for
     positive flow.
-    port = HeatIn or HeatOut
 
     Variables created:
-        {add_names_here}
+        {add_variable_names_for_documentation_here}
 
     Parameters:
         name : The name of the asset. \n

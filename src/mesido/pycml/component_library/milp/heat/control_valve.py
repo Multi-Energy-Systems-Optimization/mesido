@@ -11,10 +11,8 @@ class ControlValve(_NonStorageComponent):
     pressure drop for flow in both directions. Note that we set the absolute head loss symbol in
     the HeatMixin.
 
-    port = HeatIn or HeatOut
-
     Variables created:
-        {add_names_here}
+        {add_variable_names_for_documentation_here}
 
     Parameters:
         name : The name of the asset. \n

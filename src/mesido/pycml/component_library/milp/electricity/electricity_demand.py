@@ -15,10 +15,8 @@ class ElectricityDemand(ElectricityComponent, BaseAsset):
     in to enforce the minimum voltage and the associated power at the demand. This allows us to
     overestimate the power losses in the rest of the network.
 
-    port = ElectricityIn or ElectricityOut
-
     Variables created:
-        {add_names_here}
+        {add_variable_names_for_documentation_here}
 
     Parameters:
         name : The name of the asset. \n

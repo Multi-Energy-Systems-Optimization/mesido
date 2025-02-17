@@ -13,10 +13,8 @@ class GasPipe(GasTwoPort, BaseAsset):
     The gas_pipe component is used to model head loss through the pipe. At the moment we only have
     a placeholder linear head loss formulation in place.
 
-    port = GasIn or GasOut
-
     Variables created:
-        {add_names_here}
+        {add_variable_names_for_documentation_here}
 
     Parameters:
         name : The name of the asset. \n

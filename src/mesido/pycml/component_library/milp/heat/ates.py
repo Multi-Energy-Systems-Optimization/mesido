@@ -23,10 +23,8 @@ class ATES(HeatTwoPort, BaseAsset):
     Meaning that the heat stored at the 1st and last time step should be equal. Furthermore, due
     to the implicit solving note that the energy out of the ATES should be 0 for the 1st time step.
 
-    port = HeatIn or HeatOut
-
     Variables created:
-        {add_names_here}
+        {add_variable_names_for_documentation_here}
 
     Parameters:
         name : The name of the asset. \n

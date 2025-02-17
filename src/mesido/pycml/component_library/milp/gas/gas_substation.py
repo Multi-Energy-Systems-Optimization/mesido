@@ -12,10 +12,10 @@ class GasSubstation(GasTwoPort, BaseAsset):
     A gas substation that reduces the pressure level of the flow
     (basically pressure reducinng valve).
 
-    port = GasIn or GasOut
+    .__disabled
 
     Variables created:
-        {add_names_here}
+        {add_variable_names_for_documentation_here}
 
     Parameters:
         name : The name of the asset. \n

@@ -15,10 +15,8 @@ class ElectricityStorage(ElectricityComponent, BaseAsset):
     The change in stored electrical power should be equal to the electricity entering and leaving
     the component multiplied with its efficiency.
 
-    port = ElectricityIn or ElectricityOut
-
     Variables created:
-        {add_names_here}
+        {add_variable_names_for_documentation_here}
 
     Parameters:
         name : The name of the asset. \n

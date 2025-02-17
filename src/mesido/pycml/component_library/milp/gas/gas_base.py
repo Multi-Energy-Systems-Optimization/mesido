@@ -11,10 +11,8 @@ class GasPort(GasComponent, Connector):
     gas network we model flow (Q [m3/s]) and head (H [m]). The Q_shadow variable is only used for
     correctly connecting ports of assets later on.
 
-    port = GasIn or GasOut
-
     Variables created:
-        {add_names_here}
+        {add_variable_names_for_documentation_here}
 
     Parameters:
         name : The name of the asset. \n

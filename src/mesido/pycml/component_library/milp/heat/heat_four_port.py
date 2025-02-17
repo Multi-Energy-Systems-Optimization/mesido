@@ -11,11 +11,8 @@ class HeatFourPort(HeatComponent):
     The HeatFourPort is used as a base component to model assets that interact with two
     hydraulically decoupled systems.
 
-    side = Primary | Secondary
-    port = HeatIn | HeatOut
-
     Variables created:
-        {add_names_here}
+        {add_variable_names_for_documentation_here}
 
     Parameters:
         name : The name of the asset. \n

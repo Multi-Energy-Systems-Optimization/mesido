@@ -14,10 +14,8 @@ class GasTankStorage(GasComponent, BaseAsset):
     A gas tank storages can storage gas from the network, thereby allowing both charging and
     discharging, thus both flow directions.
 
-    port = GasIn or GasOut
-
     Variables created:
-        {add_names_here}
+        {add_variable_names_for_documentation_here}
 
     Parameters:
         name : The name of the asset. \n

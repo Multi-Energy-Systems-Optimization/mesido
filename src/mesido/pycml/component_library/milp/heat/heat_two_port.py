@@ -11,10 +11,8 @@ class HeatTwoPort(HeatComponent):
     system. As heat networks are closed systems we always need two ports to model both the in and
     out going flow in the system.
 
-    port = HeatIn or HeatOut
-
     Variables created:
-        {add_names_here}
+        {add_variable_names_for_documentation_here}
 
     Parameters:
         name : The name of the asset. \n

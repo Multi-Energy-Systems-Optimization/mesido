@@ -20,10 +20,8 @@ class HeatBuffer(HeatTwoPort, BaseAsset):
     discharge constraints are set in the HeatPhysicsMixin, where we use a big_m formulation to
     enforce the correct constraints depending on whether the buffer is charging or discharging.
 
-    port = HeatIn or HeatOut
-
     Variables created:
-        {add_names_here}
+        {add_variable_names_for_documentation_here}
 
     Parameters:
         name : The name of the asset. \n

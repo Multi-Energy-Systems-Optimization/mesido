@@ -15,10 +15,8 @@ class ElectricitySource(ElectricityComponent, BaseAsset):
     network. As we set the equality constraint on the demand side we do not have to set any
     constraint at the source side.
 
-    port = ElectricityIn or ElectricityOut
-
     Variables created:
-        {add_names_here}
+        {add_variable_names_for_documentation_here}
 
     Parameters:
         name : The name of the asset. \n

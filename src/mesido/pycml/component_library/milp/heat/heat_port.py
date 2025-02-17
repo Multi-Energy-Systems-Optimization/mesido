@@ -10,10 +10,8 @@ class HeatPort(HeatComponent, Connector):
     HeatMixin we model thermal Power (Heat [W]), flow (Q [m3/s]) and head (H [m]) at every port in
     the network.
 
-    port = HeatIn or HeatOut
-
     Variables created:
-        {add_names_here}
+        {add_variable_names_for_documentation_here}
 
     Parameters:
         name : The name of the asset. \n

@@ -23,11 +23,8 @@ class HeatExchanger(HeatFourPort, BaseAsset):
     both sides in the case of varying temperature. We also allow a heat_exchanger to be disabled on
     certain time-steps to then allow these temperature constraints to be also disabled.
 
-    side = Primary or Secondary
-    port = HeatIn or HeatOut
-
     Variables created:
-        {add_names_here}
+        {add_variable_names_for_documentation_here}
 
     Parameters:
         name : The name of the asset. \n

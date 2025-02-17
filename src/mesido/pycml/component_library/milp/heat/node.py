@@ -17,7 +17,7 @@ class Node(HeatComponent, BaseAsset):
     port = HeatConn[i] (i is the index of the port)
 
     Variables created:
-        {add_names_here}
+        {add_variable_names_for_documentation_here}
 
     Parameters:
         name : The name of the asset. \n

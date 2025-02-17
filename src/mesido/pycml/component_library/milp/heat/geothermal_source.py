@@ -15,10 +15,8 @@ class GeothermalSource(HeatSource):
     model the amount of doublets and the maximum power will scale with this integer instead of
     continuous. This will also ensure that the cost will scale with this integer.
 
-    port = HeatIn or HeatOut
-
     Variables created:
-        {add_names_here}
+        {add_variable_names_for_documentation_here}
 
     Parameters:
         name : The name of the asset. \n
