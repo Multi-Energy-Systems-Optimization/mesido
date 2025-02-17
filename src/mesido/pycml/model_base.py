@@ -112,6 +112,7 @@ class DiscreteVariable(BaseVariable):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.discrete = True
+        self.python_type = int
 
 
 class ControlInput(BaseVariable):

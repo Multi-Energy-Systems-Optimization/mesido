@@ -121,7 +121,6 @@ class ESDLMixin(
 
         if isinstance(self, PhysicsMixin):
             self.__model = ESDLHeatModel(assets, name_to_id_map, **self.esdl_heat_model_options())
-            self.discrete_vars = self.__model._discrete_vars
         else:
             assert isinstance(self, QTHMixin)
 
@@ -522,15 +521,6 @@ class ESDLMixin(
         Returns the pycml model object.
         """
         return self.__model
-
-    def variable_is_discrete(self, variable: str):
-        if (
-                variable in self.discrete_vars
-        ):
-            print(variable)
-            return True
-        else:
-            return super().variable_is_discrete(variable)
 
     def read(self) -> None:
         """
