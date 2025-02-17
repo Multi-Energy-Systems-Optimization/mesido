@@ -123,9 +123,12 @@ def add_variables_documentation_automatically(class_: Type):
 
     # Find the indent that should be used
     line_with_hook = next(
-        (line for line in class_.__doc__.splitlines() if "{"
-                                                         "add_variable_names_for_documentation_here}" in line),
-        None
+        (
+            line
+            for line in class_.__doc__.splitlines()
+            if "{" "add_variable_names_for_documentation_here}" in line
+        ),
+        None,
     )
     if line_with_hook is None:
         indent = ""
@@ -134,7 +137,8 @@ def add_variables_documentation_automatically(class_: Type):
 
         # Insert the dynamic names into the documentation
         class_.__doc__ = class_.__doc__.replace(
-            "{add_variable_names_for_documentation_here}", f"\n{indent}".join(formatted_dynamic_names)
+            "{add_variable_names_for_documentation_here}",
+            f"\n{indent}".join(formatted_dynamic_names),
         )
     return class_
 
