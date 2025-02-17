@@ -74,8 +74,8 @@ class TestAtesTemperature(TestCase):
         heat_ates = results["ATES_cb47.Heat_ates"]
         heat_loss_ates = results["ATES_cb47.Heat_loss"]
         ates_stored_heat = results["ATES_cb47.Stored_heat"]
-        hex_disabled = results["HeatExchange_32ba__disabled"]
-        hp_disabled = results["HeatPump_7f2c__disabled"]
+        hex_disabled = results["HeatExchange_32ba.__disabled"]
+        hp_disabled = results["HeatPump_7f2c.__disabled"]
 
         # geo_source = results["GeothermalSource_4e5b.Heat_source"]
         objective = solution.objective_value

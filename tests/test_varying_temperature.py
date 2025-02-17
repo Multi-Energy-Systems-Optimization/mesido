@@ -317,7 +317,7 @@ class TestVaryingTemperature(TestCase):
         # Check that the problem has an infeasible temperature for the hex
         np.testing.assert_allclose(results[f"{33638164429859421}_temperature"], 69.0)
         # Verify that the hex is disabled
-        np.testing.assert_allclose(results["HeatExchange_39ed__disabled"], 1.0)
+        np.testing.assert_allclose(results["HeatExchange_39ed.__disabled"], 1.0)
         np.testing.assert_allclose(results["HeatExchange_39ed.Primary_heat"], 0.0)
 
         demand_matching_test(heat_problem, results)

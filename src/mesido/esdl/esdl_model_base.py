@@ -6,6 +6,7 @@ from esdl import InPort, OutPort
 
 from mesido.esdl.asset_to_component_base import _AssetToComponentBase
 from mesido.pycml import Model as _Model
+from mesido.pycml import DiscreteVariable
 
 logger = logging.getLogger("mesido")
 
@@ -74,6 +75,14 @@ class _ESDLModelBase(_Model):
         for asset in list(assets_sorted.values()):
             pycml_type, modifiers = converter.convert(asset)
             self.add_variable(pycml_type, asset.name, **modifiers)
+
+        self._discrete_vars = []
+        for asset_name, asset in self._variables.items():
+            for var_name, var in asset.variables.items():
+                cur_name = f"{asset_name}.{var_name}"
+                #TODO: still requires update for more neste variables
+                if isinstance(var, DiscreteVariable):
+                    self._discrete_vars.append(cur_name)
 
         in_suf = "HeatIn"
         out_suf = "HeatOut"

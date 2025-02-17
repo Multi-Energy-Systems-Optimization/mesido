@@ -1,4 +1,4 @@
-from mesido.pycml import Variable
+from mesido.pycml import DiscreteVariable, Variable
 
 from ._non_storage_component import _NonStorageComponent
 
@@ -23,6 +23,8 @@ class CheckValve(_NonStorageComponent):
         self.component_type = "check_valve"
 
         self.add_variable(Variable, "dH", min=0.0)
+
+        self.add_variable(DiscreteVariable, "__status_var", min=0.0, max=1.0)
 
         self.add_equation(self.dH - (self.HeatOut.H - self.HeatIn.H))
 
