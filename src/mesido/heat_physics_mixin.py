@@ -127,9 +127,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         self._heat_pipe_disconnect_map = {}
 
         # Boolean path-variable for the status of the check valve
-        self.__check_valve_status_var = {}
-        self.__check_valve_status_var_bounds = {}
-        self.__check_valve_status_map = {}
+        # self.__check_valve_status_var = {}
+        # self.__check_valve_status_var_bounds = {}
+        # self.__check_valve_status_map = {}
 
         # Boolean path-variable for the status of the control valve
         self.__control_valve_direction_var = {}
@@ -338,21 +338,21 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 raise Exception(f"Heat flow rate in/out of pipe '{pipe_name}' cannot be zero.")
 
         # Integers for disabling the HEX temperature constraints
-        for hex in [
-            *self.energy_system_components.get("heat_exchanger", []),
-            *self.energy_system_components.get("heat_pump", []),
-        ]:
-            disabeld_hex_var = f"{hex}__disabled"
-            self.__disabled_hex_map[hex] = disabeld_hex_var
-            self.__disabled_hex_var[disabeld_hex_var] = ca.MX.sym(disabeld_hex_var)
-            self.__disabled_hex_var_bounds[disabeld_hex_var] = (0, 1.0)
+        # for hex in [
+        #     *self.energy_system_components.get("heat_exchanger", []),
+        #     *self.energy_system_components.get("heat_pump", []),
+        # ]:
+        #     disabeld_hex_var = f"{hex}__disabled"
+        #     self.__disabled_hex_map[hex] = disabeld_hex_var
+        #     self.__disabled_hex_var[disabeld_hex_var] = ca.MX.sym(disabeld_hex_var)
+        #     self.__disabled_hex_var_bounds[disabeld_hex_var] = (0, 1.0)
 
-        for v in self.energy_system_components.get("check_valve", []):
-            status_var = f"{v}__status_var"
-
-            self.__check_valve_status_map[v] = status_var
-            self.__check_valve_status_var[status_var] = ca.MX.sym(status_var)
-            self.__check_valve_status_var_bounds[status_var] = (0.0, 1.0)
+        # for v in self.energy_system_components.get("check_valve", []):
+        #     status_var = f"{v}__status_var"
+        #
+        #     self.__check_valve_status_map[v] = status_var
+        #     self.__check_valve_status_var[status_var] = ca.MX.sym(status_var)
+        #     self.__check_valve_status_var_bounds[status_var] = (0.0, 1.0)
 
         for v in self.energy_system_components.get("control_valve", []):
             flow_dir_var = f"{v}__flow_direct_var"
@@ -675,7 +675,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         variables.extend(self.__pipe_head_loss_var.values())
         variables.extend(self.__heat_flow_direct_var.values())
         variables.extend(self.__heat_pipe_disconnect_var.values())
-        variables.extend(self.__check_valve_status_var.values())
+        # variables.extend(self.__check_valve_status_var.values())
         variables.extend(self.__control_valve_direction_var.values())
         variables.extend(self.__demand_insulation_class_var.values())
         variables.extend(self.__pipe_linear_line_segment_var.values())
@@ -697,7 +697,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         if (
             variable in self.__heat_flow_direct_var
             or variable in self.__heat_pipe_disconnect_var
-            or variable in self.__check_valve_status_var
+            # or variable in self.__check_valve_status_var
             or variable in self.__control_valve_direction_var
             or variable in self.__demand_insulation_class_var
             or variable in self.__pipe_linear_line_segment_var
@@ -735,7 +735,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         bounds = super().bounds()
         bounds.update(self.__heat_flow_direct_bounds)
         bounds.update(self.__heat_pipe_disconnect_var_bounds)
-        bounds.update(self.__check_valve_status_var_bounds)
+        # bounds.update(self.__check_valve_status_var_bounds)
         bounds.update(self.__control_valve_direction_var_bounds)
         bounds.update(self.__buffer_t0_bounds)
         bounds.update(self.__demand_insulation_class_var_bounds)
@@ -2891,7 +2891,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             # Getting var for disabled constraints
             small_m = 0  # 0W
             tol = 1e-5 * big_m  # W
-            is_disabled = self.state(self.__disabled_hex_map[heat_exchanger])
+            is_disabled = self.state(f"{heat_exchanger}.__disabled")
 
             # Constraints to set the disabled integer, note we only set it for the primary
             # side as the secondary side implicetly follows from the energy balance constraints.
@@ -3077,7 +3077,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         maximum_velocity = self.heat_network_settings["maximum_velocity"]
 
         for v in self.energy_system_components.get("check_valve", []):
-            status_var = self.__check_valve_status_map[v]
+            status_var = f"{v}.__status_var"
             status = self.state(status_var)
 
             q = self.state(f"{v}.Q")

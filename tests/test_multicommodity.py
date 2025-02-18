@@ -194,7 +194,7 @@ class TestMultiCommodityHeatPump(TestCase):
         heatpump_power = results["GenericConversion_3d3f.Power_elec"]
         heatpump_heat_prim = results["GenericConversion_3d3f.Primary_heat"]
         heatpump_heat_sec = results["GenericConversion_3d3f.Secondary_heat"]
-        heatpump_disabled = results["GenericConversion_3d3f__disabled"]
+        heatpump_disabled = results["GenericConversion_3d3f.__disabled"]
         # heatdemand_sec = results["HeatingDemand_18aa.Heat_demand"]
         heatdemand_prim = results["HeatingDemand_3322.Heat_demand"]
         elec_prod_power = results["ElectricityProducer_ac2e.ElectricityOut.Power"]
@@ -253,7 +253,7 @@ class TestMultiCommodityHeatPump(TestCase):
 
         heatpump_power = results["GenericConversion_3d3f.Power_elec"]
         heatpump_heat_sec = results["GenericConversion_3d3f.Secondary_heat"]
-        heatpump_disabled = results["GenericConversion_3d3f__disabled"]
+        heatpump_disabled = results["GenericConversion_3d3f.__disabled"]
         heatdemand_sec = results["HeatingDemand_18aa.Heat_demand"]
         var_opex_hp = results["GenericConversion_3d3f__variable_operational_cost"]
         # pipe_sec_out_hp_disconnected = results["Pipe_408e__is_disconnected"]

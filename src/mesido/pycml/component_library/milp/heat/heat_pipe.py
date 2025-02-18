@@ -1,4 +1,4 @@
-from mesido.pycml import Variable
+from mesido.pycml import Variable, ControlInput
 
 from numpy import nan, pi
 
@@ -23,6 +23,10 @@ class HeatPipe(_NonStorageComponent):
 
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
+
+        # away to create variables with a constant value over time is using the add_variable
+        # fixed, it does create variabeles for all timesteps
+        # self.add_variable(Variable, "_cost_test", min=0.0, fixed=True)
 
         self.component_type = "heat_pipe"
         self.disconnectable = False
