@@ -31,6 +31,29 @@
 - Bugfix: get_density + get_internal_energy updated to ensure it checks commodity type for heat instead of the carrier name
 - Bug: pipe class bounds when pipe DN none results from stage 1 in the grow_workflow
 
+## Added
+- xx
+
+## Changed
+- xx
+- xx
+
+## Fixed
+- xx
+
+
+# [0.1.8.5] - 2025-02-12
+
+## Added
+- xx
+
+## Changed
+- Updated Casadi to 3.6.7 with gil fixes (see https://github.com/casadi/casadi/releases/tag/nightly-gil_release)
+- Upgraded rtctools to version 2.6.1
+
+## Fixed
+- Bug: pipe class bounds when pipe DN none results from stage 1 in the grow_workflow
+
 
 # [0.1.8.4] - 2024-12-11
 
