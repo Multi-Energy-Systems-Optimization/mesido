@@ -60,13 +60,64 @@ logger = logging.getLogger("mesido")
 class _ESDLInputException(Exception):
     pass
 
+import ast
+import inspect
 
+def docs_esdl_modifiers(class__):
+    modifiers_dict = {}
+    input_dict = {}
+
+    def extract_asset_info(bod):
+        if isinstance(bod.value, ast.Subscript):
+            if isinstance(bod.value.value, ast.Attribute):
+                if (bod.value.value.attr == "attributes" and bod.value.value.value.id ==
+                        "asset" and isinstance(bod.targets[0], ast.Name)):
+                    input_dict[node.name][bod.targets[0].id] = (
+                        f"{bod.targets[0].id}:  asset.attributes[{bod.value.slice.value}]"
+                    )
+
+    ast_of_init: ast.Module = ast.parse(inspect.getsource(class__))
+    for node in ast.walk(ast_of_init):
+        if isinstance(node, ast.FunctionDef) and "convert_" in node.name:
+            modifiers_dict[node.name] = []
+            input_dict[node.name] = {}
+            for bod in node.body:
+                if isinstance(bod, ast.Assign):
+                    if isinstance(bod.targets[0], ast.Name) and bod.targets[0].id == "modifiers":
+                        for key in bod.value.keywords:
+                            if isinstance(key.arg, str):
+                                modifiers_dict[node.name].append(key.arg)
+                            elif key.arg == None and isinstance(key.value, ast.Call) and isinstance(
+                                    key.value.func, ast.Attribute):
+                                modifiers_dict[node.name].append(key.value.func.attr)
+                    else:
+                        extract_asset_info(bod)
+
+            func = getattr(class__, node.name)
+            if len(modifiers_dict[node.name]) >0:
+                format_list_string = "\n         * "+ f"\n         * ".join(modifiers_dict[node.name])
+                func.__doc__ += format_list_string
+            # TODO: the input dictionary is still in progress and not as easy to extract by code I
+            # believe
+            if len(input_dict[node.name]) >0:
+                func.__doc__ += "\n\n ESDL input"
+                # format_list_string = ("\n         * "+ f"\n         * ".join(input_dict[
+                #                                                                 node.name].keys()).join(input_dict[
+                #                            node.name].values()))
+                format_list_string = ("\n         * " + f"\n         * ".join(input_dict[
+                                                                                  node.name].values()))
+                func.__doc__ += format_list_string
+
+    return class__
+
+
+@docs_esdl_modifiers
 class AssetToHeatComponent(_AssetToComponentBase):
     """
     This class is used for the converting logic from the esdl assets with their properties to pycml
     objects and set their respective properties.
-    """
 
+    """
     def __init__(
         self,
         *args,
@@ -516,9 +567,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
         if isinstance(asset.in_ports[0].carrier, esdl.esdl.GasCommodity) or isinstance(
             asset.out_ports[0].carrier, esdl.esdl.GasCommodity
         ):
-            modifiers = dict(
-                n=sum_in + sum_out,
-            )
             return GasNode, modifiers
 
         return Node, modifiers
@@ -1578,6 +1626,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 I=dict(min=0.0, max=i_max, nominal=i_nom),
                 V=dict(min=min_voltage, nominal=min_voltage),
             ),
+            state=self.get_state(asset),
             **self._get_cost_figure_modifiers(asset),
         )
 
@@ -1678,6 +1727,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 I=dict(min=0.0, max=i_max, nominal=i_nom),
                 Power=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
             ),
+            state=self.get_state(asset),
             **self._get_cost_figure_modifiers(asset),
         )
 
@@ -1729,6 +1779,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             Effective_power_charging=dict(
                 min=-max_discharge, max=max_charge, nominal=max_charge / 2.0
             ),
+            state=self.get_state(asset),
             **self._get_cost_figure_modifiers(asset),
         )
 
@@ -1792,7 +1843,11 @@ class AssetToHeatComponent(_AssetToComponentBase):
             if isinstance(x, esdl.esdl.OutPort):
                 sum_out += len(x.connectedTo)
 
-        modifiers = dict(voltage_nominal=nominal_voltage, n=sum_in + sum_out)
+        modifiers = dict(
+            voltage_nominal=nominal_voltage,
+            n=sum_in + sum_out,
+            state=self.get_state(asset),
+        )
 
         return ElectricityNode, modifiers
 
@@ -1873,6 +1928,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 I=dict(min=min_current, max=max_current, nominal=max_current / 2.0),
                 Power=dict(min=min_power, max=max_power, nominal=max_power / 2.0),
             ),
+            state=self.get_state(asset),
             **self._get_cost_figure_modifiers(asset),
         )
         return ElectricityCable, modifiers
@@ -1913,6 +1969,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 I=dict(min=0.0, max=i_max_out, nominal=i_nom_out),
                 Power=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
             ),
+            state=self.get_state(asset),
             **self._get_cost_figure_modifiers(asset),
         )
         return Transformer, modifiers
@@ -1987,6 +2044,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 mass_flow=dict(nominal=mass_flow_nominal_g_per_s, max=max_mass_flow_g_per_s),
                 Hydraulic_power=dict(min=0.0, max=0.0, nominal=q_nominal * pressure),
             ),
+            state=self.get_state(asset),
             **self._get_cost_figure_modifiers(asset),
         )
 
@@ -2055,6 +2113,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 mass_flow=bounds_nominals_mass_flow_g_per_s,
                 Hydraulic_power=dict(nominal=q_nominal * pressure),
             ),
+            state=self.get_state(asset),
             **self._get_cost_figure_modifiers(asset),
         )
 
@@ -2168,6 +2227,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 I=dict(min=0.0, max=i_max, nominal=i_nom),
                 V=dict(min=v_min, nominal=v_min),
             ),
+            state=self.get_state(asset),
             **self._get_cost_figure_modifiers(asset),
         )
 
@@ -2235,6 +2295,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 mass_flow=dict(nominal=q_nominal * density),
                 Hydraulic_power=dict(nominal=q_nominal * pressure),
             ),
+            state=self.get_state(asset),
             **self._get_cost_figure_modifiers(asset),
         )
 
@@ -2301,6 +2362,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 mass_flow=dict(nominal=q_nom_out * density_out),
                 Hydraulic_power=dict(nominal=q_nom_out * pressure_out),
             ),
+            state=self.get_state(asset),
             **self._get_cost_figure_modifiers(asset),
         )
 
@@ -2367,6 +2429,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 mass_flow=dict(nominal=q_nom_out * density_out),
                 Hydraulic_power=dict(nominal=q_nom_out * pressure_out),
             ),
+            state=self.get_state(asset),
             **self._get_cost_figure_modifiers(asset),
         )
 
@@ -2445,7 +2508,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
             discount_rate=self.get_asset_attribute_value(
                 asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
             ),
-            state=self.get_state(asset),
             Heat_source=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
             Heat_flow=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
             HeatIn=dict(Hydraulic_power=dict(nominal=q_nominals["Q_nominal"] * 16.0e5)),
@@ -2454,6 +2516,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             density=density,
             energy_content=energy_content,
             GasIn=dict(Q=dict(min=0.0, nominal=q_nominals["Q_nominal_gas"])),
+            state=self.get_state(asset),
             **q_nominals,
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
@@ -2535,7 +2598,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
             discount_rate=self.get_asset_attribute_value(
                 asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
             ),
-            state=self.get_state(asset),
             Heat_source=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
             Heat_flow=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
             HeatIn=dict(Hydraulic_power=dict(nominal=q_nominal["Q_nominal"] * 16.0e5)),
@@ -2549,6 +2611,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             min_voltage=min_voltage,
             elec_power_nominal=max_supply,
             efficiency=eff,
+            state=self.get_state(asset),
             **q_nominal,
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
@@ -2629,7 +2692,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
             discount_rate=self.get_asset_attribute_value(
                 asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
             ),
-            state=self.get_state(asset),
             Heat_source=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
             Heat_flow=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
             HeatIn=dict(Hydraulic_power=dict(nominal=q_nominal["Q_nominal"] * 16.0e5)),
@@ -2643,6 +2705,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             min_voltage=min_voltage,
             elec_power_nominal=max_supply,
             cop=cop,
+            state=self.get_state(asset),
             **q_nominal,
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
