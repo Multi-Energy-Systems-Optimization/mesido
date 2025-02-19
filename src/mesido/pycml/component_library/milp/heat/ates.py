@@ -1,11 +1,13 @@
 from mesido.pycml import Variable
 from mesido.pycml.component_library.milp._internal.heat_component import BaseAsset
+from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 from numpy import nan
 
 from .heat_two_port import HeatTwoPort
 
 
+@add_variables_documentation_automatically
 class ATES(HeatTwoPort, BaseAsset):
     """
     An Ates is a storage component that is used to model heat storage underground. Typically, this
@@ -20,6 +22,13 @@ class ATES(HeatTwoPort, BaseAsset):
     The user is responsible to implement the cyclic behaviour in their workflow constraints.
     Meaning that the heat stored at the 1st and last time step should be equal. Furthermore, due
     to the implicit solving note that the energy out of the ATES should be 0 for the 1st time step.
+
+    Variables created:
+        {add_variable_names_for_documentation_here}
+
+    Parameters:
+        name : The name of the asset. \n
+        modifiers : Dictionary with asset information.
     """
 
     def __init__(self, name, **modifiers):

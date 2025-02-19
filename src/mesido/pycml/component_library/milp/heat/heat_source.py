@@ -1,10 +1,12 @@
 from mesido.pycml import Variable
+from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 from numpy import nan
 
 from ._non_storage_component import _NonStorageComponent
 
 
+@add_variables_documentation_automatically
 class HeatSource(_NonStorageComponent):
     """
     The source component is there to insert thermal power (Heat) into the network.
@@ -15,6 +17,14 @@ class HeatSource(_NonStorageComponent):
     the heat losses further downstream in the network are over-estimated with T_ret where in
     reality this temperature drops. It also implicitly assumes that the temperature drops in the
     network are small and thus satisfy minimum temperature requirements.
+
+    Variables created:
+        {add_variable_names_for_documentation_here}
+
+    Parameters:
+        name : The name of the asset. \n
+        modifiers : Dictionary with asset information.
+
     """
 
     def __init__(self, name, **modifiers):
