@@ -351,8 +351,10 @@ class _GoalsAndOptions:
 class _CaseConstraints:
     def __constraint_fix_pressure(self, ensemble_member):
         constraints = []
-        head_in = self.state("Pipe_GDF SUEZ E&P Nederland B_V__6.GasIn.H")
-        density = self.parameters(ensemble_member)["Pipe_GDF SUEZ E&P Nederland B_V__6.density"]
+        head_in = self.state("Pipe_NoGaT_to_Newbuilt_2.GasOut.H")
+        density = self.parameters(ensemble_member)["Pipe_NoGaT_to_Newbuilt_2.density"]
+            # self.state("Pipe_GDF SUEZ E&P Nederland B_V__6.GasIn.H"))
+        # density = self.parameters(ensemble_member)["Pipe_GDF SUEZ E&P Nederland B_V__6.density"]
         # head_in = self.state("Pipe_HyOne_Main_9.GasIn.H")
         # density = self.parameters(ensemble_member)["Pipe_HyOne_Main_9.density"]
         pressure = 50e5 #50bar
