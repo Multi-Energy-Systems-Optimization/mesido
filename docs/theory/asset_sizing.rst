@@ -46,7 +46,7 @@ Examples include the sizing of geothermal sources by their amount of wells, with
 .. math::
     :label: eq:aggregationcount
 
-    x^{a} \leq \delta^{a}_{aggr,count} X^{a}_{single,max}
+    x^{a} \leq \delta^{a}_{aggr\_count} X^{a}_{single,max}
 
 Sizing With Integer Modelling
 -----------------------------

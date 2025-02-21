@@ -421,14 +421,14 @@ class EndScenarioSizingHIGHS(EndScenarioSizing):
 
 class EndScenarioSizingDiscounted(EndScenarioSizing):
     """
-    The discounted annualized is utilised as the objective function.
-    The change of the objective function is done by changing the option 'discounted_annulized_cost'
+    The Discounted Annualized Cost is used as the objective function.
+    Changing the objective function is done by setting the 'discounted_annualized_cost' option
     to True
 
     Goal priorities are:
     1. Match heat demand with target
-    2. minimize TCO = Anualized capex (function of technical lifetime of individual assets) +
-    Opex*timehorizon
+    2. Minimize annualized TCO = discounted annualized CAPEX (function of technical lifetime
+    of each asset) + annual OPEX.
     """
 
     def energy_system_options(self):
