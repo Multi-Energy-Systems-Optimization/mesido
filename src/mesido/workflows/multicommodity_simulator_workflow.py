@@ -320,6 +320,8 @@ class _GoalsAndOptions:
                     state = f"{asset}.{type_values['state']}"
                     if type in map_demand.keys():
                         goals.append(TargetDemandGoal(state, target))
+                    elif type == "gas_source":
+                        goals.append(TargetDemandGoal(state, target, priority=1))
                     else:
                         priority = 5# 2 * len(self._esdl_assets)
                         # goals.append(TargetProducerGoal(state, target, priority))
@@ -333,8 +335,8 @@ class _GoalsAndOptions:
         self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
         self.gas_network_settings["network_type"] = NetworkSettings.NETWORK_TYPE_HYDROGEN
         self.gas_network_settings["minimize_head_losses"] = False
-        self.gas_network_settings["maximum_velocity"] = 40.0
-        self.gas_network_settings["n_linearization_lines"] = 5
+        self.gas_network_settings["maximum_velocity"] = 100.0
+        self.gas_network_settings["n_linearization_lines"] = 10
         options["include_asset_is_switched_on"] = True
         options["estimated_velocity"] = 20
         options["electrolyzer_efficiency"] = (
@@ -357,7 +359,7 @@ class _CaseConstraints:
         # density = self.parameters(ensemble_member)["Pipe_GDF SUEZ E&P Nederland B_V__6.density"]
         # head_in = self.state("Pipe_HyOne_Main_9.GasIn.H")
         # density = self.parameters(ensemble_member)["Pipe_HyOne_Main_9.density"]
-        pressure = 50e5 #50bar
+        pressure = 80e5 #50bar
         constraints.append(((head_in*density/1e3*9.81 -pressure)/(pressure/2), 0.0, 0.0))
 
 
@@ -385,11 +387,21 @@ class _CaseConstraints:
             constraints.append(((conv_EEM_1 - conv_EEM_3) / nominal, 0.0, 0.0))
             constraints.append(((conv_EEM_2 - conv_EEM_3) / nominal, 0.0, 0.0))
         else:
-            conv_DEN_2 = self.state("H2-import_DEN.GasOut.mass_flow")
-            conv_EEM_3 = self.state("H2-import_EEM.GasOut.mass_flow")
+
             nominal = 1e4#self.bounds()["gasconversion_2abd.GasIn.mass_flow"][1]
             # constraints.append(((56/44 * conv_DEN_2 - conv_EEM_3) / nominal, 0.0, 0.0))
-            constraints.append(((1.5 * conv_DEN_2 - conv_EEM_3) / nominal, 0.0, 0.0))
+            try:
+                #TODO: for EEMShaven when re-use, the flow to EEM cannot be equal as to DEN
+                # because of the much smaller diameter.
+                conv_IJM = self.state("gasconversion_IJM.GasOut.mass_flow")
+                conv_EEM = self.state("gasconversion_EEM.GasOut.mass_flow")
+                conv_DEN = self.state("gasconversion_DEN.GasOut.mass_flow")
+                constraints.append(((conv_DEN - conv_EEM) / nominal, 0.0, 0.0))
+                constraints.append(((conv_DEN - conv_IJM) / nominal, 0.0, 0.0))
+            except:
+                conv_DEN_2 = self.state("H2-import_DEN.GasOut.mass_flow")
+                conv_EEM_3 = self.state("H2-import_EEM.GasOut.mass_flow")
+                constraints.append(((1.5 * conv_DEN_2 - conv_EEM_3) / nominal, 0.0, 0.0))
 
 
 
@@ -399,11 +411,10 @@ class _CaseConstraints:
         parameters = self.parameters(ensemble_member)
         constraints = []
         for el in self.energy_system_components.get("electrolyzer", []):
-            if el != "EL_TNW" and el != "EL_DDW-West":
-                max_power = parameters[f"{el}.max_power"]
-                minimum_load = max(parameters[f"{el}.minimum_load"], 0.01 * max_power)
-                el_power = self.state(f"{el}.ElectricityIn.Power")
-                constraints.append(((el_power - minimum_load) / max_power, 0.0, np.inf))
+            max_power = parameters[f"{el}.max_power"]
+            minimum_load = max(parameters[f"{el}.minimum_load"], 0.01 * max_power)
+            el_power = self.state(f"{el}.ElectricityIn.Power")
+            constraints.append(((el_power - minimum_load) / max_power, 0.0, np.inf))
 
         return constraints
 
@@ -1343,19 +1354,24 @@ class MultiCommoditySimulatorMarginal(
             )
             variable_seed = f"{windfarm}.Electricity_source"
             seed[variable_seed] = el_power_time
-            # try:
-            #     for el in electrolyzers:
-            #         if electrolyzer in el:
-            #             el_min_load = parameters[f"{electrolyzer}.minimum_load"]
-            #             el_max_load = parameters[f"{electrolyzer}.max_power"]
-            #             el_power_time.values[el_power_time.values < el_min_load/2] = el_min_load
-            #             el_power_time.values[el_power_time.values < el_max_load / 4] = (
-            #                     el_power_time.values[el_power_time.values < el_max_load / 4]*2)
-            #             el_power_time.values[el_power_time.values > el_max_load] = el_max_load
-            #             seed[variable_el] = el_power_time
-            # except KeyError:
-            #     pass
-            #     seed[variable_seed] = el_power_time
+            try:
+                for el in electrolyzers:
+                    if electrolyzer in el:
+                        el_min_load = parameters[f"{electrolyzer}.minimum_load"]
+                        el_max_load = parameters[f"{electrolyzer}.max_power"]
+                        el_power_time.values[el_power_time.values*2 < el_min_load] = el_min_load
+                        el_power_time.values[el_power_time.values*2 < el_max_load / 2] = (
+                                el_power_time.values[el_power_time.values*2 < el_max_load /2]*2)
+                        el_power_time.values[el_power_time.values*2 > el_max_load / 2] = (
+                            el_max_load) /2
+                        el_power_time.values[el_power_time.values * 2 > el_max_load] = ((
+                                el_power_time.values[el_power_time.values * 2 > el_max_load])
+                                                                                        -
+                                                                                        el_max_load)
+                        seed[variable_el] = el_power_time
+            except KeyError:
+                pass
+                seed[variable_seed] = el_power_time
 
         return seed
 
@@ -1870,7 +1886,7 @@ def run_sequatially_staged_simulation(
     )
 
     tic = time.time()
-    for simulated_window in range(simulation_window_size, 300, simulation_window_size):
+    for simulated_window in range(simulation_window_size, end_time, simulation_window_size):
         #end_time #300
         # Note that the end time is not necessarily a multiple of simulation_window_size
         (
