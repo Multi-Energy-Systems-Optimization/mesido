@@ -1490,7 +1490,7 @@ class ScenarioOutput:
         #         )
         #     esh.save(str(filename))
 
-    def _write_json_output(self, results, parameters, bounds, aliases):
+    def _write_json_output(self, results, parameters, bounds, aliases, **kwargs):
         # TODO: still add solver stats as json output
         workdir = self.output_folder
 
@@ -1534,3 +1534,8 @@ class ScenarioOutput:
         aliases_path = os.path.join(workdir, "aliases.json")
         with open(aliases_path, "w") as file:
             json.dump(alias_dict, fp=file)
+
+        if "demand_mismatch" in kwargs.keys():
+            mismatch_path = os.path.join(workdir, "demand_mismatch.json")
+            with open(mismatch_path, "w") as file:
+                json.dump(kwargs["demand_mismatch"], fp=file)

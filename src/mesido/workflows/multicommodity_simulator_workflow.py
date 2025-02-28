@@ -64,11 +64,12 @@ class OptimisationOverview:
     needed for post-processing and visualisation.
     """
 
-    def __init__(self, total_results, bounds, parameters, aliases):
+    def __init__(self, total_results, bounds, parameters, aliases, demand_mismatch):
         self.results = total_results
         self.bounds = bounds
         self.parameters = parameters
         self.aliases = aliases
+        self.demand_mismatch = demand_mismatch
 
 
 class SolverHIGHS:
@@ -335,8 +336,8 @@ class _GoalsAndOptions:
         self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
         self.gas_network_settings["network_type"] = NetworkSettings.NETWORK_TYPE_HYDROGEN
         self.gas_network_settings["minimize_head_losses"] = False
-        self.gas_network_settings["maximum_velocity"] = 100.0
-        self.gas_network_settings["n_linearization_lines"] = 10
+        self.gas_network_settings["maximum_velocity"] = 40.0 #100
+        self.gas_network_settings["n_linearization_lines"] = 8 #10
         options["include_asset_is_switched_on"] = True
         options["estimated_velocity"] = 20
         options["electrolyzer_efficiency"] = (
@@ -396,8 +397,12 @@ class _CaseConstraints:
                 conv_IJM = self.state("gasconversion_IJM.GasOut.mass_flow")
                 conv_EEM = self.state("gasconversion_EEM.GasOut.mass_flow")
                 conv_DEN = self.state("gasconversion_DEN.GasOut.mass_flow")
-                constraints.append(((conv_DEN - conv_EEM) / nominal, 0.0, 0.0))
+                p_EEM = self.state("joint_EEM.GasConn[1].H")
+                p_DEN = self.state("joint_DEN.GasConn[1].H")
+                nominal_head = pressure / (density/1e3*9.81) /2
+                # constraints.append(((conv_DEN - conv_EEM) / nominal, 0.0, 0.0))
                 constraints.append(((conv_DEN - conv_IJM) / nominal, 0.0, 0.0))
+                constraints.append(((p_EEM - p_DEN)/ nominal_head, 0.0, 0.0))
             except:
                 conv_DEN_2 = self.state("H2-import_DEN.GasOut.mass_flow")
                 conv_EEM_3 = self.state("H2-import_EEM.GasOut.mass_flow")
@@ -994,6 +999,7 @@ class MultiCommoditySimulatorMarginal(
         self._qpsol = None
         self._priorities_output = []
         self._save_json = kwargs.get("_save_json", False)
+        self._demand_matched = True
 
     def pre(self):
         self._qpsol = CachingQPSol()
@@ -1436,7 +1442,8 @@ class MultiCommoditySimulatorMarginal(
         print(f"Goal with priority {priority} has been completed  with objective value {self.objective_value}")
         # logger.info(f"Goal with priority {priority} has been completed  with objective value {self.objective_value}")
         if priority == 1 and self.objective_value > 1e-6:
-            raise RuntimeError("The demand is not matched")
+            self._demand_matched = False
+            # raise RuntimeError("The demand is not matched")
 
     def solver_success(self, solver_stats, log_solver_failure_as_error):
         success, log_level = super().solver_success(solver_stats, log_solver_failure_as_error)
@@ -1540,6 +1547,9 @@ def staged_approach(
         storage_initial_state_bounds=storage_initial_state_bounds,
         **kwargs,
     )
+
+    demand_matched = solution._demand_matched
+
     if not end_time_confirmed:
         end_time = len(solution._full_time_series)
         end_time_confirmed = True
@@ -1602,6 +1612,7 @@ def staged_approach(
         aliases,
         bounds,
         parameters,
+        demand_matched,
     )
 
 
@@ -1861,6 +1872,8 @@ def run_sequatially_staged_simulation(
         "gas_tank_storage": ["Stored_gas_mass", "Gas_tank_flow"],
     }
 
+    demand_mismatch_timesteps = []
+
     (
         solution,
         end_time,
@@ -1872,6 +1885,7 @@ def run_sequatially_staged_simulation(
         aliases,
         bounds,
         parameters,
+        _,
     ) = staged_approach(
         end_time,
         0,
@@ -1886,6 +1900,7 @@ def run_sequatially_staged_simulation(
     )
 
     tic = time.time()
+    demand_matched = True
     for simulated_window in range(simulation_window_size, end_time, simulation_window_size):
         #end_time #300
         # Note that the end time is not necessarily a multiple of simulation_window_size
@@ -1900,6 +1915,7 @@ def run_sequatially_staged_simulation(
             _,
             _,
             _,
+            demand_matched
         ) = staged_approach(
             end_time,
             simulated_window,
@@ -1912,13 +1928,17 @@ def run_sequatially_staged_simulation(
             solver_class,
             **kwargs,
         )
+        if not demand_matched:
+            demand_mismatch_timesteps.append([simulated_window-1, simulated_window+simulation_window_size])
+
 
     print(time.time() - tic)
 
     if os.path.exists(solution.output_folder) and solution._save_json:
-        solution._write_json_output(total_results, parameters, bounds, aliases)
+        solution._write_json_output(total_results, parameters, bounds, aliases,
+                                    demand_mismatch=demand_mismatch_timesteps)
 
-    return OptimisationOverview(total_results, bounds, parameters, aliases)
+    return OptimisationOverview(total_results, bounds, parameters, aliases, demand_mismatch_timesteps)
 
 
 # -------------------------------------------------------------------------------------------------
