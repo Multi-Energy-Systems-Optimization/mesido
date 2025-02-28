@@ -56,8 +56,6 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
         # Variable for when in time an asset switched on due to meeting a requirement
         self.__asset_is_switched_on_map = {}
-        self.__asset_is_switched_on_var = {}
-        self.__asset_is_switched_on_bounds = {}
 
         self.__electricity_producer_upper_bounds = {}
 
@@ -123,10 +121,8 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             for asset in [
                 *self.energy_system_components.get("electrolyzer", []),
             ]:
-                var_name = f"{asset}__asset_is_switched_on"
+                var_name = f"{asset}.__asset_is_switched_on"
                 self.__asset_is_switched_on_map[asset] = var_name
-                self.__asset_is_switched_on_var[var_name] = ca.MX.sym(var_name)
-                self.__asset_is_switched_on_bounds[var_name] = (0.0, 1.0)
 
         if options["electrolyzer_efficiency"] == ElectrolyzerOption.LINEARIZED_THREE_LINES_EQUALITY:
             for asset in [
@@ -223,7 +219,6 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         """
         variables = super().path_variables.copy()
 
-        variables.extend(self.__asset_is_switched_on_var.values())
         variables.extend(self.__storage_charging_var.values())
         variables.extend(self.__set_point_var.values())
         variables.extend(self.__electrolyzer_is_active_linear_segment_var.values())
@@ -237,8 +232,6 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         """
 
         if variable in self.__electrolyzer_is_active_linear_segment_var:
-            return True
-        if variable in self.__asset_is_switched_on_var:
             return True
         if variable in self.__storage_charging_var:
             return True
@@ -264,7 +257,6 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         bounds = super().bounds()
 
         bounds.update(self.__electrolyzer_is_active_linear_segment_bounds)
-        bounds.update(self.__asset_is_switched_on_bounds)
         bounds.update(self.__storage_charging_bounds)
         bounds.update(self.__electricity_producer_upper_bounds)
         bounds.update(self.__set_point_bounds)

@@ -76,6 +76,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         cp=4200.0,
         min_fraction_tank_volume=0.05,
         v_max_gas=15.0,
+        energy_system_options={},
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
@@ -86,6 +87,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         self.cp = cp
         self.v_max_gas = v_max_gas
         self.min_fraction_tank_volume = min_fraction_tank_volume
+        self.energy_system_options = energy_system_options
         if "primary_port_name_convention" in kwargs.keys():
             self.primary_port_name_convention = kwargs["primary_port_name_convention"]
         if "secondary_port_name_convention" in kwargs.keys():
@@ -2155,6 +2157,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             Q_nominal=q_nominal,
             density=density,
             efficiency=eff_max,
+            include_asset_is_switched_on=self.energy_system_options["include_asset_is_switched_on"],
             GasOut=dict(
                 Q=dict(
                     min=0.0,

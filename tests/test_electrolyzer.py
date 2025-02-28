@@ -283,7 +283,7 @@ class TestElectrolyzer(TestCase):
         )
         # Check that the electrolyzer is switched off
         np.testing.assert_allclose(
-            results["Electrolyzer_fc66__asset_is_switched_on"][-1],
+            results["Electrolyzer_fc66.__asset_is_switched_on"][-1],
             0,
         )
         # Check that the input power is greater than 0
@@ -298,7 +298,7 @@ class TestElectrolyzer(TestCase):
         )
         # Check that the electrolyzer is switched off
         np.testing.assert_allclose(
-            results["Electrolyzer_fc66__asset_is_switched_on"][:-1],
+            results["Electrolyzer_fc66.__asset_is_switched_on"][:-1],
             np.ones(2),
         )
         # Check electrolyzer input power
@@ -401,7 +401,7 @@ class TestElectrolyzer(TestCase):
                     results["Electrolyzer_fc66__line_0_active"][timestep]
                     + results["Electrolyzer_fc66__line_1_active"][timestep]
                     + results["Electrolyzer_fc66__line_2_active"][timestep]
-                    + (1 - results["Electrolyzer_fc66__asset_is_switched_on"][timestep])
+                    + (1 - results["Electrolyzer_fc66.__asset_is_switched_on"][timestep])
                 ),
                 1.0,
             )
@@ -412,7 +412,7 @@ class TestElectrolyzer(TestCase):
             np.testing.assert_allclose(
                 (
                     results[f"Electrolyzer_fc66__line_{idx}_active"][idx]
-                    + (1 - results["Electrolyzer_fc66__asset_is_switched_on"][idx])
+                    + (1 - results["Electrolyzer_fc66.__asset_is_switched_on"][idx])
                 ),
                 1.0,
             )
@@ -480,7 +480,7 @@ class TestElectrolyzer(TestCase):
                 results["Electrolyzer_fc66__line_0_active"][-1]
                 + results["Electrolyzer_fc66__line_1_active"][-1]
                 + results["Electrolyzer_fc66__line_2_active"][-1]
-                + (1 - results["Electrolyzer_fc66__asset_is_switched_on"][-1])
+                + (1 - results["Electrolyzer_fc66.__asset_is_switched_on"][-1])
             ),
             1.0,
         )
