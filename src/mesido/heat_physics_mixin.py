@@ -1267,10 +1267,12 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             flow_dir_var = self._heat_pipe_to_flow_direct_map[p]
             flow_dir = self.state(flow_dir_var)
 
-            # if self.has_related_pipe(p) and self.is_cold_pipe(p):
-            #     hot_pipe = self.cold_to_hot_pipe(p)
-            #     constraints.append((f"{p}.__flow_direct_var", f"{hot_pipe}.__flow_direct_var",
-            #                         0.0,0.0))
+            if self.has_related_pipe(p) and self.is_cold_pipe(p):
+                hot_pipe = self.cold_to_hot_pipe(p)
+                pipe_flow_var = self.state(f"{p}.__flow_direct_var")
+                hot_pipe_flow_var = self.state(f"{hot_pipe}.__flow_direct_var")
+                constraints.append((pipe_flow_var-hot_pipe_flow_var,
+                                    0.0,0.0))
 
             is_disconnected_var = self._heat_pipe_disconnect_map.get(p)
 

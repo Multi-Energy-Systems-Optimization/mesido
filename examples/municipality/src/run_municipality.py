@@ -12,7 +12,6 @@ if __name__ == "__main__":
 
     solution = run_end_scenario_sizing(
         EndScenarioSizingStaged,
-        solver_class=SolverCPLEX,
         base_folder=base_folder,
         esdl_file_name="GROW_withATES_Prod_install.esdl",
         esdl_parser=ESDLFileParser,
