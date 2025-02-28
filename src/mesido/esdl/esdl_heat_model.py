@@ -2158,6 +2158,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             density=density,
             efficiency=eff_max,
             include_asset_is_switched_on=self.energy_system_options["include_asset_is_switched_on"],
+            electrolyzer_efficiency_option=self.energy_system_options["electrolyzer_efficiency"],
             GasOut=dict(
                 Q=dict(
                     min=0.0,

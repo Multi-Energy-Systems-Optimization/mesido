@@ -1,3 +1,4 @@
+from mesido.electricity_physics_mixin import ElectrolyzerOption
 from mesido.pycml import DiscreteVariable, Variable
 from mesido.pycml.component_library.milp._internal import BaseAsset
 from mesido.pycml.component_library.milp._internal.electricity_component import (
@@ -34,6 +35,7 @@ class Electrolyzer(ElectricityComponent, BaseAsset):
         self.c_eff_coefficient = nan
 
         self.include_asset_is_switched_on = False
+        self.electrolyzer_efficiency_option = ElectrolyzerOption.LINEARIZED_THREE_LINES_WEAK_INEQUALITY
 
         self.minimum_load = nan
 
@@ -63,3 +65,6 @@ class Electrolyzer(ElectricityComponent, BaseAsset):
 
         if self.include_asset_is_switched_on:
             self.add_variable(DiscreteVariable,"__asset_is_switched_on", min=0.0, max=1.0)
+        if self.electrolyzer_efficiency_option==ElectrolyzerOption.LINEARIZED_THREE_LINES_EQUALITY:
+            for n in range(3):
+                self.add_variable(DiscreteVariable, f"__line_{n}_active", min=0.0, max=1.0)

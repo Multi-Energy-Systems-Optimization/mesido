@@ -72,8 +72,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
         # Boolean path-variable for the equality constraint of the electrolyzer
         self.__electrolyzer_is_active_linear_segment_map = {}
-        self.__electrolyzer_is_active_linear_segment_var = {}
-        self.__electrolyzer_is_active_linear_segment_bounds = {}
+
         self.__electricity_storage_discharge_var = {}
         self.__electricity_storage_discharge_bounds = {}
         self.__electricity_storage_discharge_nominals = {}
@@ -121,8 +120,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             for asset in [
                 *self.energy_system_components.get("electrolyzer", []),
             ]:
-                var_name = f"{asset}.__asset_is_switched_on"
-                self.__asset_is_switched_on_map[asset] = var_name
+                self.__asset_is_switched_on_map[asset] = f"{asset}.__asset_is_switched_on"
 
         if options["electrolyzer_efficiency"] == ElectrolyzerOption.LINEARIZED_THREE_LINES_EQUALITY:
             for asset in [
@@ -131,13 +129,10 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                 self.__electrolyzer_is_active_linear_segment_map[asset] = {}
                 n_lines = 3
                 for n_line in range(n_lines):
-                    var_name = f"{asset}__line_{n_line}_active"
-
+                    var_name = f"{asset}.__line_{n_line}_active"
                     self.__electrolyzer_is_active_linear_segment_map[asset][
                         f"line_{n_line}"
                     ] = var_name
-                    self.__electrolyzer_is_active_linear_segment_var[var_name] = ca.MX.sym(var_name)
-                    self.__electrolyzer_is_active_linear_segment_bounds[var_name] = (0.0, 1.0)
 
         for asset in [*self.energy_system_components.get("electricity_storage", [])]:
             var_name = f"{asset}__is_charging"
@@ -221,7 +216,6 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
         variables.extend(self.__storage_charging_var.values())
         variables.extend(self.__set_point_var.values())
-        variables.extend(self.__electrolyzer_is_active_linear_segment_var.values())
         variables.extend(self.__electricity_storage_discharge_var.values())
 
         return variables
@@ -231,8 +225,6 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         All variables that only can take integer values should be added to this function.
         """
 
-        if variable in self.__electrolyzer_is_active_linear_segment_var:
-            return True
         if variable in self.__storage_charging_var:
             return True
         else:
@@ -256,7 +248,6 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         """
         bounds = super().bounds()
 
-        bounds.update(self.__electrolyzer_is_active_linear_segment_bounds)
         bounds.update(self.__storage_charging_bounds)
         bounds.update(self.__electricity_producer_upper_bounds)
         bounds.update(self.__set_point_bounds)

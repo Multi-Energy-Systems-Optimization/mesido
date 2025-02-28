@@ -395,12 +395,12 @@ class TestElectrolyzer(TestCase):
         results = solution.extract_results()
 
         # Check that there is only one activated line per timestep
-        for timestep in range(len(results["Electrolyzer_fc66__line_0_active"])):
+        for timestep in range(len(results["Electrolyzer_fc66.__line_0_active"])):
             np.testing.assert_allclose(
                 (
-                    results["Electrolyzer_fc66__line_0_active"][timestep]
-                    + results["Electrolyzer_fc66__line_1_active"][timestep]
-                    + results["Electrolyzer_fc66__line_2_active"][timestep]
+                    results["Electrolyzer_fc66.__line_0_active"][timestep]
+                    + results["Electrolyzer_fc66.__line_1_active"][timestep]
+                    + results["Electrolyzer_fc66.__line_2_active"][timestep]
                     + (1 - results["Electrolyzer_fc66.__asset_is_switched_on"][timestep])
                 ),
                 1.0,
@@ -411,7 +411,7 @@ class TestElectrolyzer(TestCase):
         for idx in range(3):
             np.testing.assert_allclose(
                 (
-                    results[f"Electrolyzer_fc66__line_{idx}_active"][idx]
+                    results[f"Electrolyzer_fc66.__line_{idx}_active"][idx]
                     + (1 - results["Electrolyzer_fc66.__asset_is_switched_on"][idx])
                 ),
                 1.0,
@@ -477,9 +477,9 @@ class TestElectrolyzer(TestCase):
         # such that no line should be active
         np.testing.assert_allclose(
             (
-                results["Electrolyzer_fc66__line_0_active"][-1]
-                + results["Electrolyzer_fc66__line_1_active"][-1]
-                + results["Electrolyzer_fc66__line_2_active"][-1]
+                results["Electrolyzer_fc66.__line_0_active"][-1]
+                + results["Electrolyzer_fc66.__line_1_active"][-1]
+                + results["Electrolyzer_fc66.__line_2_active"][-1]
                 + (1 - results["Electrolyzer_fc66.__asset_is_switched_on"][-1])
             ),
             1.0,
