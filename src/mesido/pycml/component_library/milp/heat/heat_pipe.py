@@ -1,4 +1,4 @@
-from mesido.pycml import Variable, ControlInput
+from mesido.pycml import DiscreteVariable, Variable, ControlInput
 
 from numpy import nan, pi
 
@@ -54,6 +54,8 @@ class HeatPipe(_NonStorageComponent):
         self.Heat_loss = nan
 
         self.add_variable(Variable, "dH")
+
+        self.add_variable(DiscreteVariable, "__flow_direct_var", min=0.0, max=1.0)
 
         # rho * ff * length * area / 2 / diameter * velocity**3
         ff = 0.02  # Order of magnitude expected with 0.05-2.5m/s in 20mm-1200mm diameter pipe

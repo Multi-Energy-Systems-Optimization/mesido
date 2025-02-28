@@ -102,6 +102,10 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                         other_pipe = pipes_map[other_pipe_port]
                         if f"{other_pipe}.Q" not in alias_relation.canonical_variables:
                             alias_relation.add(f"{p}.Q", f"{sign_prefix}{other_pipe}.Q")
+                if self.has_related_pipe(p):
+                    cold_pipe = self.hot_to_cold_pipe(p)
+                    alias_relation.add(f"{p}.__flow_direct_var", f"{cold_pipe}.__flow_direct_var")
+
 
         node_to_node_logical_link_map = {}
 

@@ -295,13 +295,13 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     ] = initialized_vars[10][pipe_linear_line_segment_var_name]
 
             neighbour = self.has_related_pipe(pipe_name)
-            if neighbour and pipe_name not in set_self_hot_pipes:
-                flow_dir_var = f"{self.cold_to_hot_pipe(pipe_name)}__flow_direct_var"
-            else:
-                flow_dir_var = f"{pipe_name}__flow_direct_var"
+            # if neighbour and pipe_name not in set_self_hot_pipes:
+            #     flow_dir_var = f"{self.cold_to_hot_pipe(pipe_name)}__flow_direct_var"
+            # else:
+            flow_dir_var = f"{pipe_name}.__flow_direct_var"
 
             self._heat_pipe_to_flow_direct_map[pipe_name] = flow_dir_var
-            self.__heat_flow_direct_var[flow_dir_var] = ca.MX.sym(flow_dir_var)
+            # self.__heat_flow_direct_var[flow_dir_var] = ca.MX.sym(flow_dir_var)
 
             # Fix the directions that are already implied by the bounds on heat
             # Nonnegative heat implies that flow direction Boolean is equal to one.
@@ -312,16 +312,16 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             heat_out_lb = _get_min_bound(bounds[f"{pipe_name}.HeatOut.Heat"][0])
             heat_out_ub = _get_max_bound(bounds[f"{pipe_name}.HeatOut.Heat"][1])
 
-            if (heat_in_lb >= 0.0 and heat_in_ub >= 0.0) or (
-                heat_out_lb >= 0.0 and heat_out_ub >= 0.0
-            ):
-                self.__heat_flow_direct_bounds[flow_dir_var] = (1.0, 1.0)
-            elif (heat_in_lb <= 0.0 and heat_in_ub <= 0.0) or (
-                heat_out_lb <= 0.0 and heat_out_ub <= 0.0
-            ):
-                self.__heat_flow_direct_bounds[flow_dir_var] = (0.0, 0.0)
-            else:
-                self.__heat_flow_direct_bounds[flow_dir_var] = (0.0, 1.0)
+            # if (heat_in_lb >= 0.0 and heat_in_ub >= 0.0) or (
+            #     heat_out_lb >= 0.0 and heat_out_ub >= 0.0
+            # ):
+            #     self.__heat_flow_direct_bounds[flow_dir_var] = (1.0, 1.0)
+            # elif (heat_in_lb <= 0.0 and heat_in_ub <= 0.0) or (
+            #     heat_out_lb <= 0.0 and heat_out_ub <= 0.0
+            # ):
+            #     self.__heat_flow_direct_bounds[flow_dir_var] = (0.0, 0.0)
+            # else:
+            #     self.__heat_flow_direct_bounds[flow_dir_var] = (0.0, 1.0)
 
             if parameters[f"{pipe_name}.disconnectable"]:
                 neighbour = self.has_related_pipe(pipe_name)
