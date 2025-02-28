@@ -312,14 +312,14 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             heat_out_lb = _get_min_bound(bounds[f"{pipe_name}.HeatOut.Heat"][0])
             heat_out_ub = _get_max_bound(bounds[f"{pipe_name}.HeatOut.Heat"][1])
 
-            # if (heat_in_lb >= 0.0 and heat_in_ub >= 0.0) or (
-            #     heat_out_lb >= 0.0 and heat_out_ub >= 0.0
-            # ):
-            #     self.__heat_flow_direct_bounds[flow_dir_var] = (1.0, 1.0)
-            # elif (heat_in_lb <= 0.0 and heat_in_ub <= 0.0) or (
-            #     heat_out_lb <= 0.0 and heat_out_ub <= 0.0
-            # ):
-            #     self.__heat_flow_direct_bounds[flow_dir_var] = (0.0, 0.0)
+            if (heat_in_lb >= 0.0 and heat_in_ub >= 0.0) or (
+                heat_out_lb >= 0.0 and heat_out_ub >= 0.0
+            ):
+                self.__heat_flow_direct_bounds[flow_dir_var] = (1.0, 1.0)
+            elif (heat_in_lb <= 0.0 and heat_in_ub <= 0.0) or (
+                heat_out_lb <= 0.0 and heat_out_ub <= 0.0
+            ):
+                self.__heat_flow_direct_bounds[flow_dir_var] = (0.0, 0.0)
             # else:
             #     self.__heat_flow_direct_bounds[flow_dir_var] = (0.0, 1.0)
 
@@ -1266,6 +1266,11 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         for p in self.energy_system_components.get("heat_pipe", []):
             flow_dir_var = self._heat_pipe_to_flow_direct_map[p]
             flow_dir = self.state(flow_dir_var)
+
+            # if self.has_related_pipe(p) and self.is_cold_pipe(p):
+            #     hot_pipe = self.cold_to_hot_pipe(p)
+            #     constraints.append((f"{p}.__flow_direct_var", f"{hot_pipe}.__flow_direct_var",
+            #                         0.0,0.0))
 
             is_disconnected_var = self._heat_pipe_disconnect_map.get(p)
 

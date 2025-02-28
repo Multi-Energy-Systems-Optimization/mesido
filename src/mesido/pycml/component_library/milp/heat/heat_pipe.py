@@ -55,6 +55,8 @@ class HeatPipe(_NonStorageComponent):
 
         self.add_variable(Variable, "dH")
 
+        print(modifiers['HeatIn']['Heat'], modifiers['HeatOut']['Heat'])
+
         self.add_variable(DiscreteVariable, "__flow_direct_var", min=0.0, max=1.0)
 
         # rho * ff * length * area / 2 / diameter * velocity**3
