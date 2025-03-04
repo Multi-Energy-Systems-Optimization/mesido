@@ -167,12 +167,13 @@ def heat_to_discharge_test(solution, results):
         # supply_t = solution.parameters(0)[f"{d}.T_supply"]
         # return_t = solution.parameters(0)[f"{d}.T_return"]
         supply_t, return_t, dt = _get_component_temperatures(solution, results, d)
+        sup_t_for_error = supply_t if isinstance(supply_t, float) else min(supply_t)
 
         print(d, max(abs(results[f"{d}.HeatOut.Heat"] - results[f"{d}.Q"] * rho * cp * supply_t)))
         np.testing.assert_allclose(
             results[f"{d}.HeatOut.Heat"],
             results[f"{d}.Q"] * rho * cp * supply_t,
-            atol=5.0,
+            atol=1.0e-6 * rho * cp * sup_t_for_error,
             rtol=1.0e-4,
         )
 

@@ -122,7 +122,7 @@ class ESDLMixin(
             self.__model = ESDLHeatModel(assets, name_to_id_map,
                                          **dict(energy_system_options=self.energy_system_options(
 
-            )))#**self.esdl_heat_model_options())
+            ),**self.esdl_heat_model_options()))
         else:
             assert isinstance(self, QTHMixin)
 
