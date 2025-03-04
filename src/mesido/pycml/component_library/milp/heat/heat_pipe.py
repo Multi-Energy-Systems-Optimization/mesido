@@ -1,4 +1,4 @@
-from mesido.pycml import DiscreteVariable, Variable, ControlInput
+from mesido.pycml import DiscreteVariable, Variable
 
 from numpy import nan, pi
 
@@ -55,7 +55,7 @@ class HeatPipe(_NonStorageComponent):
 
         self.add_variable(Variable, "dH")
 
-        print(modifiers['HeatIn']['Heat'], modifiers['HeatOut']['Heat'])
+        print(modifiers["HeatIn"]["Heat"], modifiers["HeatOut"]["Heat"])
 
         self.add_variable(DiscreteVariable, "__flow_direct_var", min=0.0, max=1.0)
 

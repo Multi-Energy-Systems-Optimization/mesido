@@ -6,7 +6,6 @@ from esdl import InPort, OutPort
 
 from mesido.esdl.asset_to_component_base import _AssetToComponentBase
 from mesido.pycml import Model as _Model
-from mesido.pycml import DiscreteVariable
 
 logger = logging.getLogger("mesido")
 

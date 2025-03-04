@@ -106,7 +106,6 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                 #     cold_pipe = self.hot_to_cold_pipe(p)
                 #     alias_relation.add(f"{p}.__flow_direct_var", f"{cold_pipe}.__flow_direct_var")
 
-
         node_to_node_logical_link_map = {}
 
         for n in [*nodes, *busses, *gas_nodes]:

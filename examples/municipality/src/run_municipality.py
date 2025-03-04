@@ -2,7 +2,6 @@ from pathlib import Path
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.workflows import EndScenarioSizingStaged, run_end_scenario_sizing
-from mesido.workflows.grow_workflow import SolverCPLEX
 
 if __name__ == "__main__":
     import time
