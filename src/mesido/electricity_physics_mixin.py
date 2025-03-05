@@ -137,15 +137,15 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         for asset in [*self.energy_system_components.get("electricity_storage", [])]:
             var_name = f"{asset}.__is_charging"
             self.__storage_charging_map[asset] = var_name
-            self.__storage_charging_var[var_name] = ca.MX.sym(var_name)
-            self.__storage_charging_bounds[var_name] = (0.0, 1.0)
+            # self.__storage_charging_var[var_name] = ca.MX.sym(var_name)
+            # self.__storage_charging_bounds[var_name] = (0.0, 1.0)
 
             if options["electricity_storage_discharge_variables"]:
                 bound_storage = -self.bounds()[f"{asset}.Effective_power_charging"][0]
                 if isinstance(bound_storage, Timeseries):
                     bound_storage = copy.deepcopy(bound_storage)
                     bound_storage.values[bound_storage.values < 0] = 0.0
-                var_name = f"{asset}__effective_power_discharging"
+                var_name = f"{asset}.__effective_power_discharging"
                 self.__electricity_storage_discharge_map[asset] = var_name
                 # self.__electricity_storage_discharge_var[var_name] = ca.MX.sym(var_name)
                 self.__electricity_storage_discharge_bounds[var_name] = (0, bound_storage)

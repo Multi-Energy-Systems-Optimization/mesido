@@ -45,7 +45,7 @@ class ElectricityStorage(ElectricityComponent, BaseAsset):
         self.add_variable(DiscreteVariable, "__is_charging", 0.0, 1.0)
 
         if self.discharge_var:
-            self.add_variable(Variable, "__effective_power_discharging", 
+            self.add_variable(Variable, "__effective_power_discharging",
                               nominal=self.ElectricityIn.Power.nominal, min=0.0,
                               max=-self.ElectricityIn.Power.min)
 
