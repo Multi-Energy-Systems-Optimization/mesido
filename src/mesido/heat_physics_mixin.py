@@ -1282,7 +1282,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 hot_pipe_flow_var = self.state(f"{hot_pipe}.__flow_direct_var")
                 constraints.append((flow_dir - hot_pipe_flow_var, 0.0, 0.0))
 
-                if is_disconnected_var != 0.0:
+                if is_disconnected_var is not None:
                     disconnected_var_hot = self.state(f"{hot_pipe}.__is_disconnected")
                     constraints.append((is_disconnected - disconnected_var_hot, 0.0, 0.0))
 
