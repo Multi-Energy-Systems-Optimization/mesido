@@ -606,7 +606,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         if options["gas_storage_discharge_variables"]:
             for storage in self.energy_system_components.get("gas_tank_storage", []):
                 storage_charge_var = self.state(f"{storage}.GasIn.Q")
-                storage_discharge_var_name = f"{storage}__Q_discharge"
+                storage_discharge_var_name = f"{storage}.__Q_discharge"
                 storage_discharge_var = self.state(storage_discharge_var_name)
                 nominal = self.variable_nominal(storage_discharge_var_name)
 

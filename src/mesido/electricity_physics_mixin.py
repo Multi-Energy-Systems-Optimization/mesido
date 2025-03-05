@@ -630,7 +630,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             for storage in self.energy_system_components.get("electricity_storage", []):
                 storage_eff_power_charge_var = self.state(f"{storage}.Effective_power_charging")
                 discharge_var_name = self.__electricity_storage_discharge_map[storage]
-                storage_discharge_var = self.__electricity_storage_discharge_var[discharge_var_name]
+                storage_discharge_var = self.state(discharge_var_name)
                 nominal = self.variable_nominal(discharge_var_name)
 
                 # P_effective_charge represents both charging and discharing based on the sign.

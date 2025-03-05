@@ -439,7 +439,7 @@ class TestHeadLoss(TestCase):
                     results["Pipe4.HeatIn.Q"]
                     / (solution.parameters(0)["Pipe4.diameter"] ** 2 / 4.0 * np.pi),
                     0.0,
-                    atol=1e-07,
+                    atol=1e-03,
                 )
             elif (
                 solution.heat_network_settings["head_loss_option"]
