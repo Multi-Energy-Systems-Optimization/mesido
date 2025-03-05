@@ -278,14 +278,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         pipe_linear_line_segment_var_name
                     ] = initialized_vars[10][pipe_linear_line_segment_var_name]
 
-            # neighbour = self.has_related_pipe(pipe_name)
-            # if neighbour and pipe_name not in set_self_hot_pipes:
-            #     flow_dir_var = f"{self.cold_to_hot_pipe(pipe_name)}__flow_direct_var"
-            # else:
             flow_dir_var = f"{pipe_name}.__flow_direct_var"
 
             self._heat_pipe_to_flow_direct_map[pipe_name] = flow_dir_var
-            # self.__heat_flow_direct_var[flow_dir_var] = ca.MX.sym(flow_dir_var)
 
             # Fix the directions that are already implied by the bounds on heat
             # Nonnegative heat implies that flow direction Boolean is equal to one.
@@ -308,42 +303,16 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             #     self.__heat_flow_direct_bounds[flow_dir_var] = (0.0, 1.0)
 
             if parameters[f"{pipe_name}.disconnectable"]:
-                # neighbour = self.has_related_pipe(pipe_name)
-                # if neighbour and pipe_name not in set_self_hot_pipes:
-                #     disconnected_var = f"{self.cold_to_hot_pipe(pipe_name)}__is_disconnected"
-                # else:
                 disconnected_var = f"{pipe_name}.__is_disconnected"
-
                 self._heat_pipe_disconnect_map[pipe_name] = disconnected_var
-                # self.__heat_pipe_disconnect_var[disconnected_var] = ca.MX.sym(disconnected_var)
-                # self.__heat_pipe_disconnect_var_bounds[disconnected_var] = (0.0, 1.0)
 
             if heat_in_ub <= 0.0 and heat_out_lb >= 0.0:
                 raise Exception(f"Heat flow rate in/out of pipe '{pipe_name}' cannot be zero.")
-
-        # Integers for disabling the HEX temperature constraints
-        # for hex in [
-        #     *self.energy_system_components.get("heat_exchanger", []),
-        #     *self.energy_system_components.get("heat_pump", []),
-        # ]:
-        #     disabeld_hex_var = f"{hex}__disabled"
-        #     self.__disabled_hex_map[hex] = disabeld_hex_var
-        #     self.__disabled_hex_var[disabeld_hex_var] = ca.MX.sym(disabeld_hex_var)
-        #     self.__disabled_hex_var_bounds[disabeld_hex_var] = (0, 1.0)
-
-        # for v in self.energy_system_components.get("check_valve", []):
-        #     status_var = f"{v}__status_var"
-        #
-        #     self.__check_valve_status_map[v] = status_var
-        #     self.__check_valve_status_var[status_var] = ca.MX.sym(status_var)
-        #     self.__check_valve_status_var_bounds[status_var] = (0.0, 1.0)
 
         for v in self.energy_system_components.get("control_valve", []):
             flow_dir_var = f"{v}.__flow_direct_var"
             #
             self.__control_valve_direction_map[v] = flow_dir_var
-        #     self.__control_valve_direction_var[flow_dir_var] = ca.MX.sym(flow_dir_var)
-        #     self.__control_valve_direction_var_bounds[flow_dir_var] = (0.0, 1.0)
 
         for ates, (
             (hot_pipe, _hot_pipe_orientation),
