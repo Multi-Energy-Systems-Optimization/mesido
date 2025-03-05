@@ -355,11 +355,11 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         #     self.__check_valve_status_var_bounds[status_var] = (0.0, 1.0)
 
         for v in self.energy_system_components.get("control_valve", []):
-            flow_dir_var = f"{v}__flow_direct_var"
-
+            flow_dir_var = f"{v}.__flow_direct_var"
+        #
             self.__control_valve_direction_map[v] = flow_dir_var
-            self.__control_valve_direction_var[flow_dir_var] = ca.MX.sym(flow_dir_var)
-            self.__control_valve_direction_var_bounds[flow_dir_var] = (0.0, 1.0)
+        #     self.__control_valve_direction_var[flow_dir_var] = ca.MX.sym(flow_dir_var)
+        #     self.__control_valve_direction_var_bounds[flow_dir_var] = (0.0, 1.0)
 
         for ates, (
             (hot_pipe, _hot_pipe_orientation),
@@ -1262,16 +1262,12 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         minimum_velocity = self.heat_network_settings["minimum_velocity"]
         maximum_velocity = self.heat_network_settings["maximum_velocity"]
 
+        set_self_hot_pipes = set(self.hot_pipes)
+
         # Also ensure that the discharge has the same sign as the heat.
         for p in self.energy_system_components.get("heat_pipe", []):
             flow_dir_var = self._heat_pipe_to_flow_direct_map[p]
             flow_dir = self.state(flow_dir_var)
-
-            if self.has_related_pipe(p) and self.is_cold_pipe(p):
-                hot_pipe = self.cold_to_hot_pipe(p)
-                pipe_flow_var = self.state(f"{p}.__flow_direct_var")
-                hot_pipe_flow_var = self.state(f"{hot_pipe}.__flow_direct_var")
-                constraints.append((pipe_flow_var - hot_pipe_flow_var, 0.0, 0.0))
 
             is_disconnected_var = self._heat_pipe_disconnect_map.get(p)
 
@@ -1280,9 +1276,16 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             else:
                 is_disconnected = self.state(is_disconnected_var)
 
-            if self.has_related_pipe(p) and self.is_cold_pipe(p):
-                disconnected_var_hot = self.state(f"{self.cold_to_hot_pipe(p)}.__is_disconnected")
-                constraints.append((is_disconnected - disconnected_var_hot, 0.0, 0.0))
+            if self.has_related_pipe(p) and p not in set_self_hot_pipes:
+                hot_pipe = self.cold_to_hot_pipe(p)
+
+                hot_pipe_flow_var = self.state(f"{hot_pipe}.__flow_direct_var")
+                constraints.append((flow_dir - hot_pipe_flow_var, 0.0, 0.0))
+
+                if is_disconnected_var != 0.0:
+                    disconnected_var_hot = self.state(f"{hot_pipe}.__is_disconnected")
+                    constraints.append((is_disconnected - disconnected_var_hot, 0.0, 0.0))
+
 
             q_pipe = self.state(f"{p}.Q")
             heat_in = self.state(f"{p}.HeatIn.Heat")

@@ -1,4 +1,4 @@
-from mesido.pycml import Variable
+from mesido.pycml import DiscreteVariable, Variable
 
 from ._non_storage_component import _NonStorageComponent
 
@@ -16,6 +16,8 @@ class ControlValve(_NonStorageComponent):
         self.component_type = "control_valve"
 
         self.add_variable(Variable, "dH")
+
+        self.add_variable(DiscreteVariable, "__flow_direct_var", min=0.0, max=1.0)
 
         self.add_equation(self.dH - (self.HeatOut.H - self.HeatIn.H))
         self.add_equation(
