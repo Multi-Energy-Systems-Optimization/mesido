@@ -1723,6 +1723,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
             min_voltage=v_min,
             max_capacity=max_capacity,
             Stored_electricity=dict(min=0.0, max=max_capacity),
+            discharge_var=self.energy_system_options.get(
+                "electricity_storage_discharge_variables", False),
             ElectricityIn=dict(
                 V=dict(min=v_min, nominal=v_min),
                 I=dict(min=-i_max, max=i_max, nominal=i_nom),

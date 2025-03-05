@@ -294,7 +294,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         pipe_linear_line_segment_var_name
                     ] = initialized_vars[10][pipe_linear_line_segment_var_name]
 
-            neighbour = self.has_related_pipe(pipe_name)
+            # neighbour = self.has_related_pipe(pipe_name)
             # if neighbour and pipe_name not in set_self_hot_pipes:
             #     flow_dir_var = f"{self.cold_to_hot_pipe(pipe_name)}__flow_direct_var"
             # else:

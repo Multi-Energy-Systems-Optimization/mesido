@@ -135,7 +135,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                     ] = var_name
 
         for asset in [*self.energy_system_components.get("electricity_storage", [])]:
-            var_name = f"{asset}__is_charging"
+            var_name = f"{asset}.__is_charging"
             self.__storage_charging_map[asset] = var_name
             self.__storage_charging_var[var_name] = ca.MX.sym(var_name)
             self.__storage_charging_bounds[var_name] = (0.0, 1.0)
@@ -147,11 +147,11 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                     bound_storage.values[bound_storage.values < 0] = 0.0
                 var_name = f"{asset}__effective_power_discharging"
                 self.__electricity_storage_discharge_map[asset] = var_name
-                self.__electricity_storage_discharge_var[var_name] = ca.MX.sym(var_name)
+                # self.__electricity_storage_discharge_var[var_name] = ca.MX.sym(var_name)
                 self.__electricity_storage_discharge_bounds[var_name] = (0, bound_storage)
-                self.__electricity_storage_discharge_nominals[var_name] = self.variable_nominal(
-                    f"{asset}.Effective_power_charging"
-                )
+                # self.__electricity_storage_discharge_nominals[var_name] = self.variable_nominal(
+                #     f"{asset}.Effective_power_charging"
+                # )
 
         for asset in [*self.energy_system_components.get("electricity_source", [])]:
             if isinstance(self.bounds()[f"{asset}.Electricity_source"][1], Timeseries):
@@ -551,7 +551,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
             # is_charging is 1 if charging and powerin>0
             big_m = 2 * max(np.abs(self.bounds()[f"{asset}.ElectricityIn.Power"]))
-            is_charging = self.state(f"{asset}__is_charging")
+            is_charging = self.state(f"{asset}.__is_charging")
             constraints.append(((power_in + (1 - is_charging) * big_m) / power_nom, 0.0, np.inf))
             constraints.append(((power_in - is_charging * big_m) / power_nom, -np.inf, 0.0))
 
