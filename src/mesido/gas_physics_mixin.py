@@ -1,8 +1,6 @@
 import copy
 import logging
 
-import casadi as ca
-
 from mesido.base_component_type_mixin import BaseComponentTypeMixin
 from mesido.head_loss_class import HeadLossClass, HeadLossOption
 from mesido.network_common import NetworkSettings
@@ -113,7 +111,6 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         self._gn_pipe_to_head_loss_map = {}
 
         # Boolean path-variable for the direction of the flow, inport to outport is positive flow.
-        self.__gas_flow_direct_var = {}
         self.__gas_flow_direct_bounds = {}
         self._gas_pipe_to_flow_direct_map = {}
 
@@ -124,7 +121,6 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         # self._gas_pipe_disconnect_map = {}
 
         # Boolean variables for the linear line segment options per pipe.
-        # TDOD: change name to _gas_pipe_...
         self.__gas_pipe_linear_line_segment_var = {}  # value 0/1: line segment - not active/active
         self.__gas_pipe_linear_line_segment_var_bounds = {}
         self._gas_pipe_linear_line_segment_map = {}
@@ -133,13 +129,9 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
         self._gas_pipe_topo_pipe_class_map = {}
 
-        # self.__gas_pipe_disconnect_var = {}
-        # self.__gas_pipe_disconnect_var_bounds = {}
         self._gas_pipe_disconnect_map = {}
 
-        self.__gas_storage_discharge_var = {}
         self.__gas_storage_discharge_bounds = {}
-        self.__gas_storage_discharge_nominals = {}
         self.__gas_storage_discharge_map = {}
 
         # Map for setting port variable nominals in the case they were not set during the model
@@ -340,10 +332,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         """
         variables = super().path_variables.copy()
         variables.extend(self.__gas_pipe_head_loss_var.values())
-        variables.extend(self.__gas_flow_direct_var.values())
-        # variables.extend(self.__gas_pipe_disconnect_var.values())  # still to be implemented
         variables.extend(self.__gas_pipe_linear_line_segment_var.values())
-        variables.extend(self.__gas_storage_discharge_var.values())
 
         return variables
 
@@ -351,10 +340,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         """
         All variables that only can take integer values should be added to this function.
         """
-        if (
-            variable in self.__gas_flow_direct_var
-            or variable in self.__gas_pipe_linear_line_segment_var
-        ):
+        if variable in self.__gas_pipe_linear_line_segment_var:
             return True
         else:
             return super().variable_is_discrete(variable)
@@ -366,8 +352,6 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
         if variable in self.__gas_pipe_head_loss_nominals:
             return self.__gas_pipe_head_loss_nominals[variable]
-        elif variable in self.__gas_storage_discharge_nominals:
-            return self.__gas_storage_discharge_nominals[variable]
         elif variable in self.__gas_node_variable_nominal:
             return self.__gas_node_variable_nominal[variable]
         else:

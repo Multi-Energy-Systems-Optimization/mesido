@@ -117,29 +117,14 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         self._hn_pipe_to_head_loss_map = {}
 
         # Boolean path-variable for the direction of the flow, inport to outport is positive flow.
-        self.__heat_flow_direct_var = {}
         self.__heat_flow_direct_bounds = {}
         self._heat_pipe_to_flow_direct_map = {}
 
         # Boolean path-variable to determine whether flow is going through a pipe.
-        self.__heat_pipe_disconnect_var = {}
-        self.__heat_pipe_disconnect_var_bounds = {}
         self._heat_pipe_disconnect_map = {}
 
-        # Boolean path-variable for the status of the check valve
-        # self.__check_valve_status_var = {}
-        # self.__check_valve_status_var_bounds = {}
-        # self.__check_valve_status_map = {}
-
         # Boolean path-variable for the status of the control valve
-        self.__control_valve_direction_var = {}
-        self.__control_valve_direction_var_bounds = {}
         self.__control_valve_direction_map = {}
-
-        # Boolean path-variable to disable the hex for certain moments in time
-        self.__disabled_hex_map = {}
-        self.__disabled_hex_var = {}
-        self.__disabled_hex_var_bounds = {}
 
         # To avoid artificial energy generation at t0
         self.__buffer_t0_bounds = {}
@@ -251,7 +236,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         # Set structure used instead of list. Purpose: to make lookup faster when there are many
         # pipes in the network.
-        set_self_hot_pipes = set(self.hot_pipes)
 
         for pipe_name in self.energy_system_components.get("heat_pipe", []):
             commodity = self.energy_system_components_commodity.get(pipe_name)
@@ -356,7 +340,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         for v in self.energy_system_components.get("control_valve", []):
             flow_dir_var = f"{v}.__flow_direct_var"
-        #
+            #
             self.__control_valve_direction_map[v] = flow_dir_var
         #     self.__control_valve_direction_var[flow_dir_var] = ca.MX.sym(flow_dir_var)
         #     self.__control_valve_direction_var_bounds[flow_dir_var] = (0.0, 1.0)
@@ -673,17 +657,12 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         """
         variables = super().path_variables.copy()
         variables.extend(self.__pipe_head_loss_var.values())
-        variables.extend(self.__heat_flow_direct_var.values())
-        variables.extend(self.__heat_pipe_disconnect_var.values())
-        # variables.extend(self.__check_valve_status_var.values())
-        variables.extend(self.__control_valve_direction_var.values())
         variables.extend(self.__demand_insulation_class_var.values())
         variables.extend(self.__pipe_linear_line_segment_var.values())
         variables.extend(self.__temperature_regime_var.values())
         variables.extend(self.__carrier_selected_var.values())
         variables.extend(self.__ates_temperature_disc_var.values())
         variables.extend(self.__ates_temperature_selected_var.values())
-        variables.extend(self.__disabled_hex_var.values())
         variables.extend(self.__pipe_heat_loss_path_var.values())
         variables.extend(self.__ates_temperature_ordering_var.values())
         variables.extend(self.__ates_temperature_disc_ordering_var.values())
@@ -695,15 +674,10 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         All variables that only can take integer values should be added to this function.
         """
         if (
-            variable in self.__heat_flow_direct_var
-            or variable in self.__heat_pipe_disconnect_var
-            # or variable in self.__check_valve_status_var
-            or variable in self.__control_valve_direction_var
-            or variable in self.__demand_insulation_class_var
+            variable in self.__demand_insulation_class_var
             or variable in self.__pipe_linear_line_segment_var
             or variable in self.__carrier_selected_var
             or variable in self.__ates_temperature_selected_var
-            or variable in self.__disabled_hex_var
             or variable in self.__ates_temperature_ordering_var
             or variable in self.__ates_temperature_disc_ordering_var
             or variable in self.__carrier_temperature_disc_ordering_var
@@ -734,9 +708,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         """
         bounds = super().bounds()
         bounds.update(self.__heat_flow_direct_bounds)
-        bounds.update(self.__heat_pipe_disconnect_var_bounds)
-        # bounds.update(self.__check_valve_status_var_bounds)
-        bounds.update(self.__control_valve_direction_var_bounds)
         bounds.update(self.__buffer_t0_bounds)
         bounds.update(self.__demand_insulation_class_var_bounds)
         bounds.update(self.__pipe_linear_line_segment_var_bounds)
@@ -745,7 +716,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         bounds.update(self.__carrier_selected_var_bounds)
         bounds.update(self.__ates_temperature_disc_var_bounds)
         bounds.update(self.__ates_temperature_selected_var_bounds)
-        bounds.update(self.__disabled_hex_var_bounds)
 
         bounds.update(self.__pipe_head_loss_bounds)
         bounds.update(self.__pipe_head_loss_zero_bounds)
@@ -1285,7 +1255,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 if is_disconnected_var is not None:
                     disconnected_var_hot = self.state(f"{hot_pipe}.__is_disconnected")
                     constraints.append((is_disconnected - disconnected_var_hot, 0.0, 0.0))
-
 
             q_pipe = self.state(f"{p}.Q")
             heat_in = self.state(f"{p}.HeatIn.Heat")

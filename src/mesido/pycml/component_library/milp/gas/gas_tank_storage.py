@@ -39,9 +39,13 @@ class GasTankStorage(GasComponent, BaseAsset):
             nominal=self._nominal_stored_gas,
         )
         if self.discharge_var:
-            self.add_variable(Variable, "__Q_discharge",
-                              nominal=self.GasIn.Q.nominal, min=0.0,
-                              max=-self.GasIn.Q.min)
+            self.add_variable(
+                Variable,
+                "__Q_discharge",
+                nominal=self.GasIn.Q.nominal,
+                min=0.0,
+                max=-self.GasIn.Q.min,
+            )
 
         self.add_equation(
             ((self.GasIn.mass_flow - self.Gas_tank_flow) / (self.Q_nominal * self.density))

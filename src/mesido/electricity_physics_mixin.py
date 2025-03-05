@@ -62,8 +62,6 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         self._electricity_cable_topo_cable_class_map = {}
 
         # Boolean path-variable for the charging of storage assets
-        self.__storage_charging_var = {}
-        self.__storage_charging_bounds = {}
         self.__storage_charging_map = {}
 
         self.__set_point_var = {}
@@ -73,9 +71,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         # Boolean path-variable for the equality constraint of the electrolyzer
         self.__electrolyzer_is_active_linear_segment_map = {}
 
-        self.__electricity_storage_discharge_var = {}
         self.__electricity_storage_discharge_bounds = {}
-        self.__electricity_storage_discharge_nominals = {}
         self.__electricity_storage_discharge_map = {}
 
         # Map for setting node nominals in case of logical links.
@@ -137,8 +133,6 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         for asset in [*self.energy_system_components.get("electricity_storage", [])]:
             var_name = f"{asset}.__is_charging"
             self.__storage_charging_map[asset] = var_name
-            # self.__storage_charging_var[var_name] = ca.MX.sym(var_name)
-            # self.__storage_charging_bounds[var_name] = (0.0, 1.0)
 
             if options["electricity_storage_discharge_variables"]:
                 bound_storage = -self.bounds()[f"{asset}.Effective_power_charging"][0]
@@ -147,11 +141,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                     bound_storage.values[bound_storage.values < 0] = 0.0
                 var_name = f"{asset}.__effective_power_discharging"
                 self.__electricity_storage_discharge_map[asset] = var_name
-                # self.__electricity_storage_discharge_var[var_name] = ca.MX.sym(var_name)
                 self.__electricity_storage_discharge_bounds[var_name] = (0, bound_storage)
-                # self.__electricity_storage_discharge_nominals[var_name] = self.variable_nominal(
-                #     f"{asset}.Effective_power_charging"
-                # )
 
         for asset in [*self.energy_system_components.get("electricity_source", [])]:
             if isinstance(self.bounds()[f"{asset}.Electricity_source"][1], Timeseries):
@@ -214,9 +204,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         """
         variables = super().path_variables.copy()
 
-        variables.extend(self.__storage_charging_var.values())
         variables.extend(self.__set_point_var.values())
-        variables.extend(self.__electricity_storage_discharge_var.values())
 
         return variables
 
@@ -225,18 +213,14 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         All variables that only can take integer values should be added to this function.
         """
 
-        if variable in self.__storage_charging_var:
-            return True
-        else:
-            return super().variable_is_discrete(variable)
+        return super().variable_is_discrete(variable)
 
     def variable_nominal(self, variable):
         """
         In this function we add all the nominals for the variables defined/added in the HeatMixin.
         """
-        if variable in self.__electricity_storage_discharge_nominals:
-            return self.__electricity_storage_discharge_nominals[variable]
-        elif variable in self.__bus_variable_nominal:
+
+        if variable in self.__bus_variable_nominal:
             return self.__bus_variable_nominal[variable]
         else:
             return super().variable_nominal(variable)
@@ -248,7 +232,6 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         """
         bounds = super().bounds()
 
-        bounds.update(self.__storage_charging_bounds)
         bounds.update(self.__electricity_producer_upper_bounds)
         bounds.update(self.__set_point_bounds)
         bounds.update(self.__electricity_storage_discharge_bounds)
