@@ -2228,6 +2228,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             Q_nominal=q_nominal,
             density=density,
             volume=asset.attributes["workingVolume"],
+            discharge_var=self.energy_system_options.get("gas_storage_discharge_variables", False),
             # Gas_tank_flow=dict(min=-hydrogen_specific_energy*asset.attributes["maxDischargeRate"],
             # max=hydrogen_specific_energy*asset.attributes["maxChargeRate"]),
             # TODO: Fix -> Gas network is currenlty non-limiting, mass flow is decoupled from the

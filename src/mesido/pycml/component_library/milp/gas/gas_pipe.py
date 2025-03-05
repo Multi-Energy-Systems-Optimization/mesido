@@ -1,4 +1,4 @@
-from mesido.pycml import Variable
+from mesido.pycml import DiscreteVariable, Variable
 
 from numpy import nan, pi
 
@@ -34,6 +34,8 @@ class GasPipe(GasTwoPort, BaseAsset):
 
         self.add_variable(Variable, "dH")
         self.add_variable(Variable, "Q", nominal=self.Q_nominal)
+
+        self.add_variable(DiscreteVariable, "__gas_flow_direct_var", min=0.0, max=1.0)
 
         # Flow should be preserved
         self.add_equation(((self.GasIn.Q - self.GasOut.Q) / self.Q_nominal))

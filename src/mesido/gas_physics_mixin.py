@@ -228,10 +228,10 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                     ] = initialized_vars[10][pipe_linear_line_segment_var_name]
 
             # Integer variables
-            flow_dir_var = f"{pipe_name}__gas_flow_direct_var"
+            flow_dir_var = f"{pipe_name}.__gas_flow_direct_var"
 
             self._gas_pipe_to_flow_direct_map[pipe_name] = flow_dir_var
-            self.__gas_flow_direct_var[flow_dir_var] = ca.MX.sym(flow_dir_var)
+            # self.__gas_flow_direct_var[flow_dir_var] = ca.MX.sym(flow_dir_var)
 
             # Fix the directions that are already implied by the bounds on milp
             # Nonnegative milp implies that flow direction Boolean is equal to one.
@@ -264,13 +264,13 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                 if isinstance(bound_storage_q, Timeseries):
                     bound_storage_q = copy.deepcopy(bound_storage_q)
                     bound_storage_q.values[bound_storage_q.values < 0] = 0.0
-                var_name = f"{storage}__Q_discharge"
+                var_name = f"{storage}.__Q_discharge"
                 self.__gas_storage_discharge_map[storage] = var_name
-                self.__gas_storage_discharge_var[var_name] = ca.MX.sym(var_name)
+                # self.__gas_storage_discharge_var[var_name] = ca.MX.sym(var_name)
                 self.__gas_storage_discharge_bounds[var_name] = (0, bound_storage_q)
-                self.__gas_storage_discharge_nominals[var_name] = self.variable_nominal(
-                    f"{storage}.GasIn.Q"
-                )
+                # self.__gas_storage_discharge_nominals[var_name] = self.variable_nominal(
+                #     f"{storage}.GasIn.Q"
+                # )
 
         # Setting the node nominals using the connected assets.
         for node, connected_assets in self.energy_system_topology.gas_nodes.items():
