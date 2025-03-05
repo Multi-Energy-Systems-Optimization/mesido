@@ -156,7 +156,7 @@ class TestWarmingUpUnitCases(TestCase):
         heat_to_discharge_test(heat_problem, results)
 
         # We only check the flow directions for the time-steps that there is flow in the pipe.
-        inds = np.round(1 - results["Pipe_e53a__is_disconnected"]).astype(bool)
+        inds = np.round(1 - results["Pipe_e53a.__is_disconnected"]).astype(bool)
         np.testing.assert_allclose(
             np.round(results["Pipe_e53a.__flow_direct_var"][inds]) * 2.0 - 1.0,
             np.sign(results["Pipe_e53a.Q"][inds]),

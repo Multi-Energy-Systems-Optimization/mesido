@@ -324,15 +324,15 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             #     self.__heat_flow_direct_bounds[flow_dir_var] = (0.0, 1.0)
 
             if parameters[f"{pipe_name}.disconnectable"]:
-                neighbour = self.has_related_pipe(pipe_name)
-                if neighbour and pipe_name not in set_self_hot_pipes:
-                    disconnected_var = f"{self.cold_to_hot_pipe(pipe_name)}__is_disconnected"
-                else:
-                    disconnected_var = f"{pipe_name}__is_disconnected"
+                # neighbour = self.has_related_pipe(pipe_name)
+                # if neighbour and pipe_name not in set_self_hot_pipes:
+                #     disconnected_var = f"{self.cold_to_hot_pipe(pipe_name)}__is_disconnected"
+                # else:
+                disconnected_var = f"{pipe_name}.__is_disconnected"
 
                 self._heat_pipe_disconnect_map[pipe_name] = disconnected_var
-                self.__heat_pipe_disconnect_var[disconnected_var] = ca.MX.sym(disconnected_var)
-                self.__heat_pipe_disconnect_var_bounds[disconnected_var] = (0.0, 1.0)
+                # self.__heat_pipe_disconnect_var[disconnected_var] = ca.MX.sym(disconnected_var)
+                # self.__heat_pipe_disconnect_var_bounds[disconnected_var] = (0.0, 1.0)
 
             if heat_in_ub <= 0.0 and heat_out_lb >= 0.0:
                 raise Exception(f"Heat flow rate in/out of pipe '{pipe_name}' cannot be zero.")
@@ -1279,6 +1279,10 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 is_disconnected = 0.0
             else:
                 is_disconnected = self.state(is_disconnected_var)
+
+            if self.has_related_pipe(p) and self.is_cold_pipe(p):
+                disconnected_var_hot = self.state(f"{self.cold_to_hot_pipe(p)}.__is_disconnected")
+                constraints.append((is_disconnected - disconnected_var_hot, 0.0, 0.0))
 
             q_pipe = self.state(f"{p}.Q")
             heat_in = self.state(f"{p}.HeatIn.Heat")

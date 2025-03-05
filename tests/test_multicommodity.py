@@ -198,7 +198,7 @@ class TestMultiCommodityHeatPump(TestCase):
         # heatdemand_sec = results["HeatingDemand_18aa.Heat_demand"]
         heatdemand_prim = results["HeatingDemand_3322.Heat_demand"]
         elec_prod_power = results["ElectricityProducer_ac2e.ElectricityOut.Power"]
-        # pipe_sec_out_hp_disconnected = results["Pipe_408e__is_disconnected"]
+        # pipe_sec_out_hp_disconnected = results["Pipe_408e.__is_disconnected"]
 
         # check that heatpump is not used:
         np.testing.assert_allclose(heatpump_power, np.zeros(len(heatpump_power)), atol=tol)
@@ -256,7 +256,7 @@ class TestMultiCommodityHeatPump(TestCase):
         heatpump_disabled = results["GenericConversion_3d3f.__disabled"]
         heatdemand_sec = results["HeatingDemand_18aa.Heat_demand"]
         var_opex_hp = results["GenericConversion_3d3f__variable_operational_cost"]
-        # pipe_sec_out_hp_disconnected = results["Pipe_408e__is_disconnected"]
+        # pipe_sec_out_hp_disconnected = results["Pipe_408e.__is_disconnected"]
 
         # check that heatpump is not used when electricity price is high:
         price_profile = solution.get_timeseries("Electr.price_profile").values
