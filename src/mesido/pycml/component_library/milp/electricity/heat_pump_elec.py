@@ -2,15 +2,24 @@ from mesido.pycml.component_library.milp.electricity.electricity_base import (
     ElectricityPort,
 )
 from mesido.pycml.component_library.milp.heat.heat_pump import HeatPump
+from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 
 # TODO: for now in the electricity folder, but maybe we can make a multicommodity folder,
 # where this is then placed.
+@add_variables_documentation_automatically
 class HeatPumpElec(HeatPump):
     """
     The heat pump elec is to model a water-water heatpump where we explicitly model its connection
     to the electricity grid. This allows to potentially optimize for electricity network constraints
     in the optimization of the heat network and vice-versa.
+
+    Variables created:
+        {add_variable_names_for_documentation_here}
+
+    Parameters:
+        name : The name of the asset. \n
+        modifiers : Dictionary with asset information.
     """
 
     def __init__(self, name, **modifiers):

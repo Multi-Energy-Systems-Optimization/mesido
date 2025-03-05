@@ -1,5 +1,6 @@
 from mesido.pycml import Variable
 from mesido.pycml.component_library.milp._internal import BaseAsset
+from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 from numpy import nan
 
@@ -7,9 +8,18 @@ from .gas_base import GasPort
 from .._internal.gas_component import GasComponent
 
 
+@add_variables_documentation_automatically
 class GasTankStorage(GasComponent, BaseAsset):
     """
-    ...
+    A gas tank storages can storage gas from the network, thereby allowing both charging and
+    discharging, thus both flow directions.
+
+    Variables created:
+        {add_variable_names_for_documentation_here}
+
+    Parameters:
+        name : The name of the asset. \n
+        modifiers : Dictionary with asset information.
     """
 
     def __init__(self, name, **modifiers):

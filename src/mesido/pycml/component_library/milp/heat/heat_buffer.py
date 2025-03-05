@@ -2,12 +2,14 @@ import math
 
 from mesido.pycml import Variable
 from mesido.pycml.component_library.milp._internal.heat_component import BaseAsset
+from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 from numpy import nan
 
 from .heat_two_port import HeatTwoPort
 
 
+@add_variables_documentation_automatically
 class HeatBuffer(HeatTwoPort, BaseAsset):
     """
     The buffer component is to model milp storage in a tank. This means that we model a tank of hot
@@ -17,6 +19,14 @@ class HeatBuffer(HeatTwoPort, BaseAsset):
     Like all storage assets we enforce that they must be connected as a demand. The heat to
     discharge constraints are set in the HeatPhysicsMixin, where we use a big_m formulation to
     enforce the correct constraints depending on whether the buffer is charging or discharging.
+
+    Variables created:
+        {add_variable_names_for_documentation_here}
+
+    Parameters:
+        name : The name of the asset. \n
+        modifiers : Dictionary with asset information.
+
     """
 
     def __init__(self, name, **modifiers):
