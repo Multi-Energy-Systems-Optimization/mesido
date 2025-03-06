@@ -2040,12 +2040,14 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 )
             )
 
-        max_var_assets_not_included = [a for a in energy_system_component_types if a not in
-                                  max_var_types]
-        if len(max_var_assets_not_included)>=0:
-            logger.warning(f"The following asset types are not included in the maximum sizing "
-                           f"constraints {max_var_assets_not_included}")
-
+        max_var_assets_not_included = [
+            a for a in energy_system_component_types if a not in max_var_types
+        ]
+        if len(max_var_assets_not_included) >= 0:
+            logger.warning(
+                f"The following asset types are not included in the maximum sizing "
+                f"constraints {max_var_assets_not_included}"
+            )
 
         return constraints
 
@@ -2126,15 +2128,19 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     # TODO: can we generalize to all possible components to avoid having to skip
                     #  joints and other components in the future?
                     continue
-                elif (self.energy_system_components_commodity.get(asset_name) ==
-                      NetworkSettings.NETWORK_TYPE_HEAT):
+                elif (
+                    self.energy_system_components_commodity.get(asset_name)
+                    == NetworkSettings.NETWORK_TYPE_HEAT
+                ):
                     state_var = self.state(f"{asset_name}.Heat_flow")
                     single_power = bounds[f"{asset_name}.Heat_flow"][1]
                     nominal_value = single_power
                     nominal_var = self.variable_nominal(f"{asset_name}.Heat_flow")
                 else:
-                    logger.warning(f"{asset_name} is not yet included in the optional asset path "
-                                   f"constraints")
+                    logger.warning(
+                        f"{asset_name} is not yet included in the optional asset path "
+                        f"constraints"
+                    )
                     continue
 
                 constraints = self.__add_optional_asset_path_constraints(

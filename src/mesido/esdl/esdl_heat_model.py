@@ -1,3 +1,5 @@
+import ast
+import inspect
 import logging
 import math
 from typing import Dict, Tuple, Type, Union
@@ -60,8 +62,6 @@ logger = logging.getLogger("mesido")
 class _ESDLInputException(Exception):
     pass
 
-import ast
-import inspect
 
 def docs_esdl_modifiers(class__):
     modifiers_dict = {}
@@ -70,11 +70,14 @@ def docs_esdl_modifiers(class__):
     def extract_asset_info(bod):
         if isinstance(bod.value, ast.Subscript):
             if isinstance(bod.value.value, ast.Attribute):
-                if (bod.value.value.attr == "attributes" and bod.value.value.value.id ==
-                        "asset" and isinstance(bod.targets[0], ast.Name)):
-                    input_dict[node.name][bod.targets[0].id] = (
-                        f"{bod.targets[0].id}:  asset.attributes[{bod.value.slice.value}]"
-                    )
+                if (
+                    bod.value.value.attr == "attributes"
+                    and bod.value.value.value.id == "asset"
+                    and isinstance(bod.targets[0], ast.Name)
+                ):
+                    input_dict[node.name][
+                        bod.targets[0].id
+                    ] = f"{bod.targets[0].id}:  asset.attributes[{bod.value.slice.value}]"
 
     ast_of_init: ast.Module = ast.parse(inspect.getsource(class__))
     for node in ast.walk(ast_of_init):
@@ -87,14 +90,17 @@ def docs_esdl_modifiers(class__):
                         for key in bod.value.keywords:
                             if isinstance(key.arg, str):
                                 modifiers_dict[node.name].append(key.arg)
-                            elif key.arg == None and isinstance(key.value, ast.Call) and isinstance(
-                                    key.value.func, ast.Attribute):
+                            elif (
+                                key.arg is None
+                                and isinstance(key.value, ast.Call)
+                                and isinstance(key.value.func, ast.Attribute)
+                            ):
                                 modifiers_dict[node.name].append(key.value.func.attr)
                     else:
                         extract_asset_info(bod)
 
             func = getattr(class__, node.name)
-            if len(modifiers_dict[node.name]) >0:
+            if len(modifiers_dict[node.name]) > 0:
                 line_with_hook = next(
                     (
                         line
@@ -107,24 +113,13 @@ def docs_esdl_modifiers(class__):
                     indent = ""
                 else:
                     format_modifiers_dict = [f"* {mod}" for mod in modifiers_dict[node.name]]
-                    (indent, _) = line_with_hook.split(
-                        "{automatically_add_modifiers_here}")
+                    (indent, _) = line_with_hook.split("{automatically_add_modifiers_here}")
                     func.__doc__ = func.__doc__.replace(
                         "{automatically_add_modifiers_here}",
                         f"\n{indent}".join(format_modifiers_dict),
                     )
 
-            # TODO: the input dictionary is still in progress and not as easy to extract by code I
-            # believe
-            # if len(input_dict[node.name]) >0:
-            #     func.__doc__ += "\n\n ESDL input"
-            #     # format_list_string = ("\n         * "+ f"\n         * ".join(input_dict[
-            #     #                                                                 node.name].keys()).join(input_dict[
-            #     #                            node.name].values()))
-            #     format_list_string = ("\n         * " + f"\n         * ".join(input_dict[
-            #                                                                       node.name].values()))
-            #     func.__doc__ += format_list_string
-
+            # TODO: the input dictionary is still needed in the documentation
     return class__
 
 
@@ -135,6 +130,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
     objects and set their respective properties.
 
     """
+
     def __init__(
         self,
         *args,
@@ -1179,9 +1175,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
             - Setting the CO2 emission coefficient in case this is specified as an KPI
             - Setting a caps on the thermal power.
-            - In case of a GeothermalSource object we read the _aggregation count to model the number
-            of doublets, we then assume that the power specified was also for one doublet and thus
-            increase the thermal power caps.
+            - In case of a GeothermalSource object we read the _aggregation count to model the
+            number of doublets, we then assume that the power specified was also for one doublet
+            and thus increase the thermal power caps.
             - Setting the state (enabled, disabled, optional)
             - Setting the relevant temperatures.
             - Setting the relevant cost figures.
@@ -1298,8 +1294,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
             - Setting a caps on the thermal power.
             - Similar as for the geothermal source we use the aggregation count to model the amount
             of doublets.
-            - Setting caps on the maximum stored energy where we assume that at maximum you can charge
-            for 180 days at full power.
+            - Setting caps on the maximum stored energy where we assume that at maximum you can
+            charge for 180 days at full power.
             - Setting the state (enabled, disabled, optional)
             - Setting the relevant temperatures.
             - Setting the relevant cost figures.
