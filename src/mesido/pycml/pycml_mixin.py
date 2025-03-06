@@ -98,6 +98,22 @@ def add_variables_documentation_automatically(class_: Type):
                         elif node.args[0].id == "Variable":
                             # This is a variable for this component, save its name.
                             dynamic_names.append(node.args[1].value)
+                        elif node.args[0].id == "DiscreteVariable":
+                            #TODO: later we might want to specify the restrictions on the
+                            # variables, discrete/continuous, min/max
+                            if isinstance(node.args[1], ast.Constant):
+                                dynamic_names.append(node.args[1].value)
+                            elif isinstance(node.args[1], ast.JoinedStr):
+                                str_full = ""
+                                for i in range(len(node.args[1].values)):
+                                    str_part = node.args[1].values[i]
+                                    if isinstance(str_part, ast.Constant):
+                                        str_full += str_part.value
+                                    elif isinstance(str_part, ast.FormattedValue):
+                                        str_full += f"{{{str_part.value.id}}}"
+                                    else:
+                                        raise RuntimeError(f"Unknown case:\n{ast.dump(node)}")
+                                dynamic_names.append(str_full)
                         else:
                             raise RuntimeError(f"Unknown case:\n{ast.dump(node)}")
                     else:
