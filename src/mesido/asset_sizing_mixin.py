@@ -7,6 +7,7 @@ from mesido._heat_loss_u_values_pipe import pipe_heat_loss
 from mesido.base_component_type_mixin import BaseComponentTypeMixin
 from mesido.demand_insulation_class import DemandInsulationClass
 from mesido.head_loss_class import HeadLossOption
+from mesido.network_common import NetworkSettings
 from mesido.pipe_class import CableClass, GasPipeClass, PipeClass
 
 import numpy as np
@@ -1841,7 +1842,11 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints = []
         bounds = self.bounds()
 
+        energy_system_component_types = list(self.energy_system_components.keys())
+
+        max_var_types = set()
         for b in self.energy_system_components.get("heat_buffer", []):
+            max_var_types.add("heat_buffer")
             max_var = self._asset_max_size_map[b]
             max_heat = self.extra_variable(max_var, ensemble_member)
             stored_heat = self.__state_vector_scaled(f"{b}.Stored_heat", ensemble_member)
@@ -1857,6 +1862,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             # Same as for the buffer but now for the source
         for s in self.energy_system_components.get("heat_source", []):
+            max_var_types.add("heat_source")
             max_var = self._asset_max_size_map[s]
             max_heat = self.extra_variable(max_var, ensemble_member)
             heat_source = self.__state_vector_scaled(f"{s}.Heat_source", ensemble_member)
@@ -1886,6 +1892,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             *self.energy_system_components.get("heat_exchanger", []),
             *self.energy_system_components.get("heat_pump", []),
         ]:
+            max_var_types.update(["heat_pump", "heat_exchanger"])
             max_var = self._asset_max_size_map[hx]
             max_heat = self.extra_variable(max_var, ensemble_member)
             heat_secondary = self.__state_vector_scaled(f"{hx}.Secondary_heat", ensemble_member)
@@ -1900,6 +1907,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             )
 
         for d in self.energy_system_components.get("heat_demand", []):
+            max_var_types.add("heat_demand")
             max_var = self._asset_max_size_map[d]
             max_heat = self.extra_variable(max_var, ensemble_member)
             heat_demand = self.__state_vector_scaled(f"{d}.Heat_demand", ensemble_member)
@@ -1918,6 +1926,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             *self.energy_system_components.get("ates", []),
             *self.energy_system_components.get("low_temperature_ates", []),
         ]:
+            max_var_types.add(["ates", "low_temperature_ates"])
             max_var = self._asset_max_size_map[a]
             max_heat = self.extra_variable(max_var, ensemble_member)
             if a in self.energy_system_components.get("ates", []):
@@ -1945,6 +1954,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             )
 
         for d in self.energy_system_components.get("electricity_demand", []):
+            max_var_types.add("electricity_demand")
             max_var = self._asset_max_size_map[d]
             max_power = self.extra_variable(max_var, ensemble_member)
             electricity_demand = self.__state_vector_scaled(
@@ -1962,6 +1972,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             )
 
         for d in self.energy_system_components.get("electricity_source", []):
+            max_var_types.add("electricity_source")
             max_var = self._asset_max_size_map[d]
             max_power = self.extra_variable(max_var, ensemble_member)
             electricity_source = self.__state_vector_scaled(
@@ -1979,6 +1990,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             )
 
         for d in self.energy_system_components.get("electricity_storage", []):
+            max_var_types.add("electricity_storage")
             max_var = self._asset_max_size_map[d]
             max_stored_energy = self.extra_variable(max_var, ensemble_member)
             electricity_stored = self.__state_vector_scaled(
@@ -1996,6 +2008,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             )
 
         for d in self.energy_system_components.get("electrolyzer", []):
+            max_var_types.add("electrolyzer")
             max_var = self._asset_max_size_map[d]
             max_power = self.extra_variable(max_var, ensemble_member)
             electricity_electrolyzer = self.__state_vector_scaled(
@@ -2013,6 +2026,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             )
 
         for d in self.energy_system_components.get("gas_tank_storage", []):
+            max_var_types.add("gas_tank_storage")
             max_var = self._asset_max_size_map[d]
             max_size = self.extra_variable(max_var, ensemble_member)
             gas_mass = self.__state_vector_scaled(f"{d}.Stored_gas_mass", ensemble_member)
@@ -2025,6 +2039,13 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     np.inf,
                 )
             )
+
+        max_var_assets_not_included = [a for a in energy_system_component_types if a not in
+                                  max_var_types]
+        if len(max_var_assets_not_included)>=0:
+            logger.warning(f"The following asset types are not included in the maximum sizing "
+                           f"constraints {max_var_assets_not_included}")
+
 
         return constraints
 
@@ -2105,11 +2126,16 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     # TODO: can we generalize to all possible components to avoid having to skip
                     #  joints and other components in the future?
                     continue
-                else:
+                elif (self.energy_system_components_commodity.get(asset_name) ==
+                      NetworkSettings.NETWORK_TYPE_HEAT):
                     state_var = self.state(f"{asset_name}.Heat_flow")
                     single_power = bounds[f"{asset_name}.Heat_flow"][1]
                     nominal_value = single_power
                     nominal_var = self.variable_nominal(f"{asset_name}.Heat_flow")
+                else:
+                    logger.warning(f"{asset_name} is not yet included in the optional asset path "
+                                   f"constraints")
+                    continue
 
                 constraints = self.__add_optional_asset_path_constraints(
                     constraints, asset_name, nominal_value, nominal_var, single_power, state_var
