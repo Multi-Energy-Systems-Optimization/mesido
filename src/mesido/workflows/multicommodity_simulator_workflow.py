@@ -336,7 +336,7 @@ class _GoalsAndOptions:
         self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
         self.gas_network_settings["network_type"] = NetworkSettings.NETWORK_TYPE_HYDROGEN
         self.gas_network_settings["minimize_head_losses"] = False
-        self.gas_network_settings["maximum_velocity"] = 80.0 #100
+        self.gas_network_settings["maximum_velocity"] = 100.0 #100
         self.gas_network_settings["n_linearization_lines"] = 12 #10
         options["include_asset_is_switched_on"] = True
         options["estimated_velocity"] = 20
@@ -406,7 +406,10 @@ class _CaseConstraints:
             # except:
             conv_DEN_2 = self.state("H2-import_DEN.GasOut.mass_flow")
             conv_EEM_3 = self.state("H2-import_EEM.GasOut.mass_flow")
-            constraints.append(((1.5 * conv_DEN_2 - conv_EEM_3) / nominal, 0.0, 0.0))
+            den = self.get_timeseries("H2_Demand_DEN.target_gas_demand")
+            eem = self.get_timeseries("H2_Demand_EEM.target_gas_demand")
+            multipliers = eem.values / den.values
+            constraints.append(((multipliers[0] * conv_DEN_2 - conv_EEM_3) / nominal, 0.0, 0.0))
 
 
 
