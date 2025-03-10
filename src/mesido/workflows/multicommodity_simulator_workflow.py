@@ -322,7 +322,7 @@ class _GoalsAndOptions:
                     if type in map_demand.keys():
                         goals.append(TargetDemandGoal(state, target))
                     elif type == "gas_source":
-                        goals.append(TargetDemandGoal(state, target, priority=1))
+                        goals.append(TargetDemandGoal(state, target, priority=2))
                     else:
                         priority = 5# 2 * len(self._esdl_assets)
                         # goals.append(TargetProducerGoal(state, target, priority))
@@ -336,8 +336,8 @@ class _GoalsAndOptions:
         self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
         self.gas_network_settings["network_type"] = NetworkSettings.NETWORK_TYPE_HYDROGEN
         self.gas_network_settings["minimize_head_losses"] = False
-        self.gas_network_settings["maximum_velocity"] = 100.0 #100
-        self.gas_network_settings["n_linearization_lines"] = 12 #10
+        self.gas_network_settings["maximum_velocity"] = self._maximum_velocity#60.0 #100
+        self.gas_network_settings["n_linearization_lines"] = self._number_linearisation_lines#8 #12
         options["include_asset_is_switched_on"] = True
         options["estimated_velocity"] = 20
         options["electrolyzer_efficiency"] = (
@@ -354,13 +354,14 @@ class _GoalsAndOptions:
 class _CaseConstraints:
     def __constraint_fix_pressure(self, ensemble_member):
         constraints = []
-        head_in = self.state("Pipe_NoGaT_to_Newbuilt_2.GasOut.H")
+        head_in = self.state("Aqua_Ductus_Import.GasOut.H")
         density = self.parameters(ensemble_member)["Pipe_NoGaT_to_Newbuilt_2.density"]
             # self.state("Pipe_GDF SUEZ E&P Nederland B_V__6.GasIn.H"))
         # density = self.parameters(ensemble_member)["Pipe_GDF SUEZ E&P Nederland B_V__6.density"]
         # head_in = self.state("Pipe_HyOne_Main_9.GasIn.H")
         # density = self.parameters(ensemble_member)["Pipe_HyOne_Main_9.density"]
-        pressure = self.parameters(0)["Pipe_NoGaT_to_Newbuilt_2.pressure"] # 80bar #50bar
+        pressure = self._pressure_location #100e5
+        #self.parameters(0)["Pipe_NoGaT_to_Newbuilt_2.pressure"] #80bar #50bar
         constraints.append(((head_in*density/1e3*9.81 -pressure)/(pressure/2), 0.0, 0.0))
 
 
@@ -409,7 +410,8 @@ class _CaseConstraints:
             den = self.get_timeseries("H2_Demand_DEN.target_gas_demand")
             eem = self.get_timeseries("H2_Demand_EEM.target_gas_demand")
             multipliers = eem.values / den.values
-            constraints.append(((multipliers[0] * conv_DEN_2 - conv_EEM_3) / nominal, 0.0, 0.0))
+            multi = 1.2727 #multi = multipliers[0]
+            constraints.append(((multi * conv_DEN_2 - conv_EEM_3) / nominal, 0.0, 0.0))
 
 
 
@@ -998,7 +1000,12 @@ class MultiCommoditySimulatorMarginal(
     """
 
     def __init__(self, *args, **kwargs):
+        self._maximum_velocity = kwargs.get("_maximum_velocity", 40)
+        self._number_linearisation_lines = kwargs.get("_number_linearisation_lines", 6)
+        self._pressure_location = kwargs.get("_pressure_location", 50e5)
+
         super().__init__(*args, **kwargs)
+
         self._qpsol = None
         self._priorities_output = []
         self._save_json = kwargs.get("_save_json", False)
