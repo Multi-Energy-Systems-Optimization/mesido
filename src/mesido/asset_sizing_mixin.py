@@ -1926,7 +1926,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             *self.energy_system_components.get("ates", []),
             *self.energy_system_components.get("low_temperature_ates", []),
         ]:
-            max_var_types.add(["ates", "low_temperature_ates"])
+            max_var_types.update(["ates", "low_temperature_ates"])
             max_var = self._asset_max_size_map[a]
             max_heat = self.extra_variable(max_var, ensemble_member)
             if a in self.energy_system_components.get("ates", []):
