@@ -244,14 +244,14 @@ class AssetToHeatComponent(_AssetToComponentBase):
         This function converts the buffer object in esdl to a set of modifiers that can be used in
         a pycml object. Most important:
 
-        - Setting the dimensions of the buffer needed for milp loss computation. Currently, assume
-        cylinder with height equal to radius.
-        - setting a minimum fill level and minimum asscociated milp
-        - Setting a maximum stored energy based on the size.
-        - Setting a cap on the thermal power.
-        - Setting the state (enabled, disabled, optional)
-        - Setting the relevant temperatures.
-        - Setting the relevant cost figures.
+            - Setting the dimensions of the buffer needed for heat loss computation. Currently,
+              assume cylinder with height equal to radius.
+            - setting a minimum fill level and minimum asscociated milp
+            - Setting a maximum stored energy based on the size.
+            - Setting a cap on the thermal power.
+            - Setting the state (enabled, disabled, optional)
+            - Setting the relevant temperatures.
+            - Setting the relevant cost figures.
 
         Required ESDL fields:
             - volume/capacity
@@ -687,8 +687,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
         This function converts the pipe object in esdl to a set of modifiers that can be used in
         a pycml object. Most important:
 
-            - Setting the dimensions of the pipe needed for milp loss computation. Currently, assume
-            cylinder with height equal to radius.
+            - Setting the dimensions of the pipe needed for milp loss computation. Currently,
+            assume cylinder with height equal to radius.
             - setting if a pipe is disconnecteable for the optimization.
             - Setting the isolative properties of the pipe.
             - Setting a cap on the thermal power.
@@ -874,8 +874,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             asset: The asset object with its properties.
 
         Returns:
-            Transformer class or HeatExchanger class with modifiers:
-                {automatically_add_modifiers_here}
+            Transformer class or HeatExchanger class
         """
 
         assert asset.asset_type in {
@@ -1176,8 +1175,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
             - Setting the CO2 emission coefficient in case this is specified as an KPI
             - Setting a caps on the thermal power.
             - In case of a GeothermalSource object we read the _aggregation count to model the
-            number of doublets, we then assume that the power specified was also for one doublet
-            and thus increase the thermal power caps.
+              number of doublets, we then assume that the power specified was also for one doublet
+              and thus increase the thermal power caps.
             - Setting the state (enabled, disabled, optional)
             - Setting the relevant temperatures.
             - Setting the relevant cost figures.
@@ -1290,12 +1289,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
         a pycml object. Most important:
 
             - Setting the milp loss coefficient based upon the efficiency. Here we assume that this
-            efficiency is realized in 100 days.
+              efficiency is realized in 100 days.
             - Setting a caps on the thermal power.
             - Similar as for the geothermal source we use the aggregation count to model the amount
-            of doublets.
+              of doublets.
             - Setting caps on the maximum stored energy where we assume that at maximum you can
-            charge for 180 days at full power.
+              charge for 180 days at full power.
             - Setting the state (enabled, disabled, optional)
             - Setting the relevant temperatures.
             - Setting the relevant cost figures.
@@ -1941,7 +1940,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
         This function converts the GasDemand object in esdl to a set of modifiers that can be
         used in a pycml object. Most important:
 
-        - ...
+            - Setting a cap on the mass flow produced.
+            - Setting the state (enabled, disabled, optional)
+            - Setting the relevant cost figures.
+
 
         Required ESDL fields:
             - id (this id must be unique)
@@ -2014,7 +2016,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
         This function converts the GasDemand object in esdl to a set of modifiers that can be
         used in a pycml object. Most important:
 
-        - ...
+            - Setting a cap on the mass flow produced.
+            - Setting the state (enabled, disabled, optional)
+            - Setting the relevant cost figures.
 
         Required ESDL fields:
             - id (this id must be unique)
