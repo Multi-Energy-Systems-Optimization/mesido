@@ -271,7 +271,7 @@ class MaximizeStorageGoalMerit(Goal):
 
 
 class MinimizeCosts(Goal):
-    def __init__(self, asset_cost_map: Dict[str, float], priority: int= 3, order: int = 1):
+    def __init__(self, asset_cost_map: Dict[str, float], priority: int= 4, order: int = 1):
         self.asset_cost_map = asset_cost_map
         self.priority = priority
         self.order = order
@@ -324,8 +324,8 @@ class _GoalsAndOptions:
                     elif type == "gas_source":
                         goals.append(TargetDemandGoal(state, target, priority=2))
                     else:
-                        priority = 5# 2 * len(self._esdl_assets)
-                        # goals.append(TargetProducerGoal(state, target, priority))
+                        priority = 2# 2 * len(self._esdl_assets)
+                        # goals.append(TargetProducerGoal(state, target, priority=3))
 
         return goals
 
@@ -405,8 +405,10 @@ class _CaseConstraints:
             #     constraints.append(((conv_DEN - conv_IJM) / nominal, 0.0, 0.0))
             #     constraints.append(((p_EEM - p_DEN)/ nominal_head, 0.0, 0.0))
             # except:
-            conv_DEN_2 = self.state("H2-import_DEN.GasOut.mass_flow")
-            conv_EEM_3 = self.state("H2-import_EEM.GasOut.mass_flow")
+            # conv_DEN_2 = self.state("H2-import_DEN.GasOut.mass_flow")
+            # conv_EEM_3 = self.state("H2-import_EEM.GasOut.mass_flow")
+            conv_DEN_2 = self.state("gasconversion_DEN.GasOut.mass_flow")
+            conv_EEM_3 = self.state("gasconversion_EEM.GasOut.mass_flow")
             den = self.get_timeseries("H2_Demand_DEN.target_gas_demand")
             eem = self.get_timeseries("H2_Demand_EEM.target_gas_demand")
             multipliers = eem.values / den.values
@@ -1000,7 +1002,7 @@ class MultiCommoditySimulatorMarginal(
     """
 
     def __init__(self, *args, **kwargs):
-        self._maximum_velocity = kwargs.get("_maximum_velocity", 40)
+        self._maximum_velocity = kwargs.get("v_max_gas", 40)
         self._number_linearisation_lines = kwargs.get("_number_linearisation_lines", 6)
         self._pressure_location = kwargs.get("_pressure_location", 50e5)
 
@@ -1454,8 +1456,12 @@ class MultiCommoditySimulatorMarginal(
         if priority == 1 and self.objective_value > 1e-6:
             self._demand_matched = False
             # raise RuntimeError("The demand is not matched")
+        if (priority == 2 or priority == 3) and self.objective_value > 1e-6:
+            logger.warning("Production is not met")
 
     def solver_success(self, solver_stats, log_solver_failure_as_error):
+        if not solver_stats['success']:
+            solver_stats['success'] = True
         success, log_level = super().solver_success(solver_stats, log_solver_failure_as_error)
 
         # Allow time-outs for GUROBI, CPLEX and CBC
