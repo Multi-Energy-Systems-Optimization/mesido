@@ -17,8 +17,6 @@ class GasTankStorage(GasComponent, BaseAsset):
 
         self.component_type = "gas_tank_storage"
 
-        # TODO: currently the density value is hard constraint to the H2 value. As an idea, it might be interesting
-        # TODO: to read this from an input file, or at least the gas stored in the tank.
         self.min_head = 30.0
         self.density = 2.5e3  # H2 density [g/m3] at 30bar
         self.density_max_storage = 23.715e3  # H2 density [g/m3] at 350bar
@@ -29,7 +27,6 @@ class GasTankStorage(GasComponent, BaseAsset):
         self.Q_nominal = nan
 
         self.add_variable(GasPort, "GasIn")
-        # TODO: ask if nominal value should be defined here or in esdl_heat_model
         self.add_variable(Variable, "Gas_tank_flow", nominal=self.Q_nominal * self.density)
         self.add_variable(Variable, "Gas_tank_pressure")
 
@@ -49,7 +46,6 @@ class GasTankStorage(GasComponent, BaseAsset):
             ((self.GasIn.mass_flow - self.Gas_tank_flow) / (self.Q_nominal * self.density))
         )
 
-        # TODO: ask if this relation is correct. Density changed with pressure, so why not make it a variable?
         self.add_equation(((self.GasIn.Q - self.GasIn.mass_flow / self.density) / self.Q_nominal))
 
         self.add_equation(

@@ -1052,7 +1052,7 @@ class MultiCommoditySimulatorMarginal(
             "electricity_source": "Electricity_source",
             "gas_demand": "Gas_demand_mass_flow",
             "gas_source": "Gas_source_mass_flow",
-            "gas_tank_storage": {"charge": "Gas_tank_flow", "discharge": "__Q_discharge"},
+            "gas_tank_storage": "Gas_tank_flow",
             "electricity_storage": {
                 "charge": "Effective_power_charging",
                 "discharge": "__effective_power_discharging",
@@ -1064,6 +1064,7 @@ class MultiCommoditySimulatorMarginal(
         multiplier = {"source": 1.0,
                       "demand": -1.0,
                       "conversion": -1.0,
+                      "storage": -1.0,
                       "charge": -1.0,
                       "discharge": 1.0,}
 

@@ -2116,8 +2116,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
             Q_nominal=q_nominal,
             density=density,
             volume=asset.attributes["workingVolume"],
-            Gas_tank_flow=dict(min=-asset.attributes["maxDischargeRate"],
-                               max=asset.attributes["maxChargeRate"]),
+            Gas_tank_flow=dict(min=-asset.attributes["maxDischargeRate"]*1/120e6*1e3,
+                               max=asset.attributes["maxChargeRate"]*1/120e6*1e3),
             Gas_tank_pressure=dict(min=asset.attributes["minStoragePressure"],
                                    max=asset.attributes["maxStoragePressure"], nominal=pressure),
             # TODO: Fix -> Gas network is currenlty non-limiting, mass flow is decoupled from the
