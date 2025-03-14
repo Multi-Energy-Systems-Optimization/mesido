@@ -326,6 +326,7 @@ class _GoalsAndOptions:
                     else:
                         priority = 2# 2 * len(self._esdl_assets)
                         # goals.append(TargetProducerGoal(state, target, priority=3))
+                    # TODO: add targetdemandgoal for massflows at landing points
 
         return goals
 
@@ -1881,6 +1882,7 @@ def run_sequatially_staged_simulation(
     # This is an initial value for end_time, will be corrected after the first stage
     end_time = 2 * simulation_window_size
     end_time_confirmed = False
+    # TODO: fix bounds for Stored_gas_mass at timestep 0
     storage_initial_state_bounds = {}
 
     # TODO: make this dict complete for all relevant assets and their associated variables.
