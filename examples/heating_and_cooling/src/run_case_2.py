@@ -452,6 +452,7 @@ if __name__ == "__main__":
     # results["Pipe25__hn_pipe_class_DN150"]
     # results["Pipe25__hn_pipe_class_DN200"]
     # results["Pipe25__hn_pipe_class_DN250"]
+    # heat_problem.parameters(0)["Pipe25.diameter"]
 
     # manual check ATES/borehole costs
     bore_hole_name = "Borehole_H"
