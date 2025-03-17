@@ -50,6 +50,7 @@ class MinimizeTCO(Goal):
             "fixed_operational": {
                 "heat_source",
                 "ates",
+                "low_temperature_ates",
                 "heat_buffer",
                 "heat_pump",
                 "heat_exchanger",
@@ -59,6 +60,7 @@ class MinimizeTCO(Goal):
             "investment": {
                 "heat_source",
                 "ates",
+                "low_temperature_ates",
                 "heat_buffer",
                 "heat_demand",
                 "heat_exchanger",
@@ -70,6 +72,7 @@ class MinimizeTCO(Goal):
             "installation": {
                 "heat_source",
                 "ates",
+                "low_temperature_ates",
                 "heat_buffer",
                 "heat_demand",
                 "heat_exchanger",

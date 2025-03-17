@@ -252,6 +252,9 @@ class HeatingCoolingProblem(
         parameters["number_of_years"] = self._number_of_years
         return parameters
 
+    def pipe_classes(self, p):
+        return self._override_pipe_classes.get(p, [])
+
     def read(self):
         super().read()
 
@@ -409,7 +412,7 @@ class HeatingCoolingProblem(
             stored_volume = self.state_vector(f"{ates_id}.Stored_volume")
             volume_usage = 0.0
             volume_usage = stored_volume[0] - stored_volume[-1]
-            constraints.append((volume_usage, 0.0, 0.0)) # Scaling of this constraint has not been checked
+            constraints.append((volume_usage, 0.0, 0.0))  # Scaling of this constraint has not been checked
 
         return constraints
 
@@ -436,6 +439,40 @@ if __name__ == "__main__":
 
     # ---------------------------------------------------------------------------------------------
     # Manually checking of some results
+
+    # manual check cost of a pipe
+    pipe_name = "Pipe25"  # pipe is downsized from DN250 to a DN200
+    np.testing.assert_allclose(
+        # 1126.4 * 158.250,  # DN150 manual calc, EDR pipe cost [EURO/m] * pipe length
+        1355.3 * 158.250,   # DN200
+        results[f'{pipe_name}__investment_cost'],  # cost from optimization
+        atol=1e-8,
+    )
+    # One can manually check the pipe class that was selected for pipe 25:
+    # results["Pipe25__hn_pipe_class_DN150"]
+    # results["Pipe25__hn_pipe_class_DN200"]
+    # results["Pipe25__hn_pipe_class_DN250"]
+
+    # manual check ATES/borehole costs
+    bore_hole_name = "Borehole_H"
+    np.testing.assert_allclose(
+        1103.0e3 / 1.e6 * 100000.0,
+        results[f'{bore_hole_name}__investment_cost'],
+        atol=1e-8,
+    )
+    np.testing.assert_allclose(
+        10000.0,
+        results[f'{bore_hole_name}__installation_cost'],
+        atol=1e-8,
+    )
+    # fixed cost per year = fixed maintenance + fixed operational cost
+    # TCO: this value is spend per year over 30 years
+    np.testing.assert_allclose(
+        1103.0e3 / 1e6 * (1234.0 + 9876.0) * 1.0,  # cost for 1 year, in TCO its over 30 years
+        results[f'{bore_hole_name}__fixed_operational_cost'],
+        atol=1e-8,
+    )
+
     # Cold producers
     for iac in heat_problem.energy_system_components["airco"]:
         print(
@@ -507,6 +544,21 @@ if __name__ == "__main__":
                 * heat_problem.parameters(0)["number_of_years"]
             )
         )
+    for lta in heat_problem.energy_system_components["low_temperature_ates"]:
+        total_cost_manual_calc += sum(
+            results[f'{lta}__investment_cost'] + results[f'{lta}__installation_cost']
+            + (
+                results[f'{lta}__fixed_operational_cost']
+                * heat_problem.parameters(0)["number_of_years"]
+            )
+        )
+    for htp in heat_problem.energy_system_components["heat_pipe"]:
+        total_cost_manual_calc += results[f'{htp}__investment_cost']
+    np.testing.assert_allclose(
+        total_cost_manual_calc,
+        heat_problem.objective_value * 1.0e6,
+        atol=1e-8,
+    )
     print(
         f"{total_cost_manual_calc} vs {heat_problem.objective_value * 1.0e6}"
     ) # Convert objective_value to unscaled value
