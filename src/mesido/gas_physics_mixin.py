@@ -261,7 +261,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
         if options["gas_storage_discharge_variables"]:
             for storage in self.energy_system_components.get("gas_tank_storage", []):
-                bound_storage_q = -self.bounds()[f"{storage}.GasIn.Q"][0]
+                bound_storage_q = -np.max(self.bounds()[f"{storage}.GasIn.Q"][0].values())
                 if isinstance(bound_storage_q, Timeseries):
                     bound_storage_q = copy.deepcopy(bound_storage_q)
                     bound_storage_q.values[bound_storage_q.values < 0] = 0.0

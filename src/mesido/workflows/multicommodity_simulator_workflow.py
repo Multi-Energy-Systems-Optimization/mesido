@@ -328,6 +328,19 @@ class _GoalsAndOptions:
                         # goals.append(TargetProducerGoal(state, target, priority=3))
                     # TODO: add targetdemandgoal for massflows at landing points
 
+        # Constant massflows at the landing points (EEM and DEN)
+        try:
+            goals.append(TargetDemandGoal(state='gasconversion_EEM.GasIn.mass_flow',
+                                          target=Timeseries(target.times, np.array([48908.36056553137]*len(target.times))),
+                                          priority=3))
+        except:
+            pass
+        try:
+            goals.append(TargetDemandGoal(state='gasconversion_DEN.GasIn.mass_flow',
+                                          target=Timeseries(target.times, np.array([38428.82106194027]*len(target.times))),
+                                          priority=3))
+        except:
+            pass
         return goals
 
 
@@ -345,7 +358,7 @@ class _GoalsAndOptions:
             ElectrolyzerOption.LINEARIZED_THREE_LINES_EQUALITY
         )
 
-        options["gas_storage_discharge_variables"] = True
+        options["gas_storage_discharge_variables"] = False
         options["electricity_storage_discharge_variables"] = True
         options["wall_roughness"] = 1.5e-5
 
@@ -356,7 +369,7 @@ class _CaseConstraints:
     def __constraint_fix_pressure(self, ensemble_member):
         constraints = []
         head_in = self.state("Aqua_Ductus_Import.GasOut.H")
-        density = self.parameters(ensemble_member)["Pipe_NoGaT_to_Newbuilt_2.density"]
+        density = self.parameters(ensemble_member)["Pipe_Joint_Joint_31_Joint_19.density"]
             # self.state("Pipe_GDF SUEZ E&P Nederland B_V__6.GasIn.H"))
         # density = self.parameters(ensemble_member)["Pipe_GDF SUEZ E&P Nederland B_V__6.density"]
         # head_in = self.state("Pipe_HyOne_Main_9.GasIn.H")
@@ -1053,11 +1066,11 @@ class MultiCommoditySimulatorMarginal(
             "electricity_source": "Electricity_source",
             "gas_demand": "Gas_demand_mass_flow",
             "gas_source": "Gas_source_mass_flow",
-            "gas_tank_storage": "Gas_tank_flow",
-            "electricity_storage": {
-                "charge": "Effective_power_charging",
-                "discharge": "__effective_power_discharging",
-            },
+            # "gas_tank_storage": "Gas_tank_flow",
+            # "electricity_storage": {
+            #     "charge": "Effective_power_charging",
+            #     "discharge": "__effective_power_discharging",
+            # },
             "electrolyzer": "Power_consumed",
             "transformer": "ElectricityIn.Power"
         }
@@ -1310,10 +1323,11 @@ class MultiCommoditySimulatorMarginal(
             "source": ["electricity_source", "gas_source"],
             "demand": ["electricity_demand", "gas_demand"],
             "conversion": ["electrolyzer", "transformer"],
-            "storage": ["gas_tank_storage", "electricity_storage"],
+            # "storage": ["gas_tank_storage", "electricity_storage"],
         }
 
-        assets_without_control = ["Pipe", "ElectricityCable", "Joint", "Bus", "GenericConversion", "GasConversion"]
+        assets_without_control = ["Pipe", "ElectricityCable", "Joint", "Bus", "GenericConversion", "GasConversion",
+                                  "GasStorage"]
 
         # TODO also include other assets than producers, e.g. storage, conversion and possible
         #  demand for the ones without a profile
@@ -1847,6 +1861,9 @@ def run_sequatially_staged_simulation(
                 f"Optimising timestep {self.__start_time_index} to {self.__end_time_index}"
             )
 
+        def pre(self):
+            super().pre()
+            self.__initial_bounds()
         def times(self, variable=None) -> np.ndarray:
             """
             In this function the part of the time-horizon is enforced. Note that the full
@@ -1865,6 +1882,21 @@ def run_sequatially_staged_simulation(
             else:
                 return super().times(variable)
 
+        def __initial_bounds(self):
+            bounds = super().bounds()
+            if self.__start_time_index == 0:
+                sub_time_series = self._full_time_series[self.__start_time_index:self.__end_time_index]
+                for asset in self.energy_system_components.get("gas_tank_storage", []):
+                    for variable in ["Stored_gas_mass"]:
+                        lb_value = bounds[f"{asset}.{variable}"][0]
+                        ub_value = bounds[f"{asset}.{variable}"][1]
+                        lb_values = [lb_value] * len(sub_time_series)
+                        ub_values = [ub_value] * len(sub_time_series)
+                        lb_values[0] = ub_values[0] = lb_value
+                        lb = Timeseries(sub_time_series, lb_values)
+                        ub = Timeseries(sub_time_series, ub_values)
+                        storage_initial_state_bounds[f"{asset}.{variable}"] = (lb, ub)
+                self.__storage_initial_state_bounds = storage_initial_state_bounds
         def bounds(self):
             """
             Here we set bounds on the initial state to ensure that the sequantial simulation is a
@@ -1920,7 +1952,7 @@ def run_sequatially_staged_simulation(
 
     tic = time.time()
     demand_matched = True
-    for simulated_window in range(simulation_window_size, end_time, simulation_window_size):
+    for simulated_window in range(simulation_window_size, 100, simulation_window_size): #end_time
         #end_time #300
         # Note that the end time is not necessarily a multiple of simulation_window_size
         (
