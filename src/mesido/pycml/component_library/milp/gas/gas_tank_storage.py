@@ -18,6 +18,7 @@ class GasTankStorage(GasComponent, BaseAsset):
         self.component_type = "gas_tank_storage"
 
         self.min_head = 30.0
+        self.standard_density = 84  # H2 density [g/m3] at 15C and 1atm
         self.density = 2.5e3  # H2 density [g/m3] at 30bar
         self.density_max_storage = 23.715e3  # H2 density [g/m3] at 350bar
         self.T = 298 #K
@@ -38,7 +39,7 @@ class GasTankStorage(GasComponent, BaseAsset):
             Variable,
             "Stored_gas_mass",
             min=0.0,
-            max=self.density_max_storage * self.volume,
+            max=self.standard_density * self.volume,
             nominal=self._nominal_stored_gas,
         )
 

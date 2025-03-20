@@ -326,7 +326,6 @@ class _GoalsAndOptions:
                     else:
                         priority = 2# 2 * len(self._esdl_assets)
                         # goals.append(TargetProducerGoal(state, target, priority=3))
-                    # TODO: add targetdemandgoal for massflows at landing points
 
         # Constant massflows at the landing points (EEM and DEN)
         try:
@@ -1892,7 +1891,8 @@ def run_sequatially_staged_simulation(
                         ub_value = bounds[f"{asset}.{variable}"][1]
                         lb_values = [lb_value] * len(sub_time_series)
                         ub_values = [ub_value] * len(sub_time_series)
-                        lb_values[0] = ub_values[0] = lb_value
+                        # lb_values[0] = ub_values[0] = lb_value
+                        lb_values[0] = ub_values[0] = 100316.68551435685e6 #g
                         lb = Timeseries(sub_time_series, lb_values)
                         ub = Timeseries(sub_time_series, ub_values)
                         storage_initial_state_bounds[f"{asset}.{variable}"] = (lb, ub)
@@ -1952,7 +1952,7 @@ def run_sequatially_staged_simulation(
 
     tic = time.time()
     demand_matched = True
-    for simulated_window in range(simulation_window_size, 100, simulation_window_size): #end_time
+    for simulated_window in range(simulation_window_size, 4000, simulation_window_size): #end_time
         #end_time #300
         # Note that the end time is not necessarily a multiple of simulation_window_size
         (
