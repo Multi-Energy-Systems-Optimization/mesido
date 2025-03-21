@@ -97,7 +97,7 @@ def add_variables_documentation_automatically(class_: Type):
                                 dynamic_names.append(f"{port_name}.{dynamic_name_of_port}")
                         elif node.args[0].id == "Variable" or node.args[0].id == "DiscreteVariable":
                             # This is a variable for this component, save its name.
-                            #TODO: later we might want to specify the restrictions on the
+                            # TODO: later we might want to specify the restrictions on the
                             # variables, discrete/continuous, min/max, or the if statement
                             # related to it.
                             if isinstance(node.args[1], ast.Constant):
