@@ -171,6 +171,18 @@ class TargetDemandGoal(Goal):
     def function(self, optimization_problem, ensemble_member):
         return optimization_problem.state(self.state)
 
+class TargetDemandGoalMinimization(Goal):
+    def __init__(self, state, target, priority=2, order=1):
+        self.state = state
+
+        # self.function_range = (-2.0 * max(target.values), 2.0 * max(target.values)) if max(target.values)!=0.0 else (-1.0,1.0)
+        self.function_nominal = np.median(target.values) if np.median(target.values)!=0.0 else 1.0
+        self.priority = priority
+        self.order = order
+
+    def function(self, optimization_problem, ensemble_member):
+        return -optimization_problem.state(self.state)
+
 
 # -------------------------------------------------------------------------------------------------
 # Step 2:
@@ -322,7 +334,9 @@ class _GoalsAndOptions:
                     if type in map_demand.keys():
                         goals.append(TargetDemandGoal(state, target))
                     elif type == "gas_source":
-                        goals.append(TargetDemandGoal(state, target, priority=2))
+                        priority =2
+                        # goals.append(TargetDemandGoal(state, target, priority=2))
+                        # goals.append(TargetDemandGoalMinimization(state, target, priority=2))
                     else:
                         priority = 2# 2 * len(self._esdl_assets)
                         # goals.append(TargetProducerGoal(state, target, priority=3))
@@ -352,10 +366,28 @@ class _GoalsAndOptions:
 
 
 class _CaseConstraints:
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.__gas_source_upper_bounds = {}
+
+    def pre(self):
+        super().pre()
+
+        self.__update_gas_source_upper_bounds()
+
+    def bounds(self):
+        bounds = super().bounds()
+
+        bounds.update(self.__gas_source_upper_bounds)
+        return bounds
+
     def __constraint_fix_pressure(self, ensemble_member):
         constraints = []
-        head_in = self.state("Aqua_Ductus_Import.GasOut.H")
-        density = self.parameters(ensemble_member)["Pipe_NoGaT_to_Newbuilt_2.density"]
+        # head_in = self.state("Aqua_Ductus_Import.GasOut.H")
+        head_in = self.state("Joint_19.GasConn[1].H")
+        # head_in = self.state("joint_DEN.GasConn[1].H")
+        density = self.parameters(ensemble_member)["Pipe_Joint_Joint_31_Joint_19.density"]
             # self.state("Pipe_GDF SUEZ E&P Nederland B_V__6.GasIn.H"))
         # density = self.parameters(ensemble_member)["Pipe_GDF SUEZ E&P Nederland B_V__6.density"]
         # head_in = self.state("Pipe_HyOne_Main_9.GasIn.H")
@@ -415,8 +447,6 @@ class _CaseConstraints:
             multi = 1.2727 #multi = multipliers[0]
             constraints.append(((multi * conv_DEN_2 - conv_EEM_3) / nominal, 0.0, 0.0))
 
-
-
         return constraints
 
     def __electrolyzer_minimum_operational_constraint(self, ensemble_member):
@@ -430,6 +460,19 @@ class _CaseConstraints:
 
         return constraints
 
+
+    def __update_gas_source_upper_bounds(self):
+        t = self.times()
+
+        for gas_source in self.energy_system_components.get("gas_source", []):
+            if f"{gas_source}.maximum_gas_source" in self.io.get_timeseries_names():
+                lb = Timeseries(t, np.zeros(len(t)))
+                ub = self.get_timeseries(f"{gas_source}.maximum_gas_source")
+                start_indx = np.where(ub.times == t[0])[0][0]
+                end_indx = np.where(ub.times == t[-1])[0][0] + 1
+                ub = Timeseries(t, (np.asarray(ub.values)[start_indx:end_indx]).tolist())
+                lb = ub
+                self.__gas_source_upper_bounds[f"{gas_source}.GasOut.mass_flow"] = (lb, ub)
 
 
     def path_constraints(self, ensemble_member):
@@ -1457,6 +1500,7 @@ class MultiCommoditySimulatorMarginal(
             self._demand_matched = False
             # raise RuntimeError("The demand is not matched")
         if (priority == 2 or priority == 3) and self.objective_value > 1e-6:
+            self._demand_matched = False
             logger.warning("Production is not met")
 
     def solver_success(self, solver_stats, log_solver_failure_as_error):
@@ -1566,56 +1610,58 @@ def staged_approach(
 
     demand_matched = solution._demand_matched
 
-    if not end_time_confirmed:
-        end_time = len(solution._full_time_series)
-        end_time_confirmed = True
-    results = solution.extract_results()
-
     aliases, bounds, parameters = [None] * 3
+    if demand_matched:
+        if not end_time_confirmed:
+            end_time = len(solution._full_time_series)
+            end_time_confirmed = True
+        results = solution.extract_results()
 
-    # TODO: check if we now capture all relevant variables.
-    if total_results is None:
-        total_results = results
-        aliases = solution.alias_relation._canonical_variables_map
-        bounds = solution.bounds()
-        parameters = solution.parameters(0)
-    else:
-        for key, data in results.items():
-            try:
-                if len(total_results[key]) > 1:
-                    total_results[key] = np.concatenate((total_results[key], data[1:]))
-            except KeyError:
+        aliases, bounds, parameters = [None] * 3
+
+        # TODO: check if we now capture all relevant variables.
+        if total_results is None:
+            total_results = results
+            aliases = solution.alias_relation._canonical_variables_map
+            bounds = solution.bounds()
+            parameters = solution.parameters(0)
+        else:
+            for key, data in results.items():
                 try:
-                    print(f"{key} got an error thus saved separately in time {sub_end_time}")
-                    total_results[key] = data[1:]
-                except:
-                    print(key)
-                    continue
+                    if len(total_results[key]) > 1:
+                        total_results[key] = np.concatenate((total_results[key], data[1:]))
+                except KeyError:
+                    try:
+                        print(f"{key} got an error thus saved separately in time {sub_end_time}")
+                        total_results[key] = data[1:]
+                    except:
+                        print(key)
+                        continue
 
 
-    if sub_end_time < end_time:
-        for asset_type, variables in constrained_assets.items():
-            for asset in solution.energy_system_components.get(asset_type, []):
-                sub_time_series = solution._full_time_series[
-                    simulated_window
-                    - 1
-                    + simulation_window_size : min(
-                        end_time, simulated_window + 2 * simulation_window_size
-                    )
-                ]
-                for variable in variables:
-                    lb_value = _extract_values_timeseries(
-                        solution.bounds()[f"{asset}.{variable}"][0], "min"
-                    )
-                    ub_value = _extract_values_timeseries(
-                        solution.bounds()[f"{asset}.{variable}"][1], "max"
-                    )
-                    lb_values = [lb_value] * len(sub_time_series)
-                    ub_values = [ub_value] * len(sub_time_series)
-                    lb_values[0] = ub_values[0] = results[f"{asset}.{variable}"][-1]
-                    lb = Timeseries(sub_time_series, lb_values)
-                    ub = Timeseries(sub_time_series, ub_values)
-                    storage_initial_state_bounds[f"{asset}.{variable}"] = (lb, ub)
+        if sub_end_time < end_time:
+            for asset_type, variables in constrained_assets.items():
+                for asset in solution.energy_system_components.get(asset_type, []):
+                    sub_time_series = solution._full_time_series[
+                        simulated_window
+                        - 1
+                        + simulation_window_size : min(
+                            end_time, simulated_window + 2 * simulation_window_size
+                        )
+                    ]
+                    for variable in variables:
+                        lb_value = _extract_values_timeseries(
+                            solution.bounds()[f"{asset}.{variable}"][0], "min"
+                        )
+                        ub_value = _extract_values_timeseries(
+                            solution.bounds()[f"{asset}.{variable}"][1], "max"
+                        )
+                        lb_values = [lb_value] * len(sub_time_series)
+                        ub_values = [ub_value] * len(sub_time_series)
+                        lb_values[0] = ub_values[0] = results[f"{asset}.{variable}"][-1]
+                        lb = Timeseries(sub_time_series, lb_values)
+                        ub = Timeseries(sub_time_series, ub_values)
+                        storage_initial_state_bounds[f"{asset}.{variable}"] = (lb, ub)
 
     return (
         solution,
@@ -1946,6 +1992,30 @@ def run_sequatially_staged_simulation(
         )
         if not demand_matched:
             demand_mismatch_timesteps.append([simulated_window-1, simulated_window+simulation_window_size])
+            (
+                solution,
+                end_time,
+                simulated_window,
+                simulation_window_size,
+                storage_initial_state_bounds,
+                end_time_confirmed,
+                total_results,
+                _,
+                _,
+                _,
+                demand_matched
+            ) = staged_approach(
+                end_time,
+                simulated_window,
+                simulation_window_size,
+                storage_initial_state_bounds,
+                end_time_confirmed,
+                total_results,
+                constrained_assets,
+                MultiCommoditySimulatorTimeSequential,
+                solver_class,
+                **kwargs,
+            )
 
 
     print(time.time() - tic)
