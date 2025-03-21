@@ -167,12 +167,13 @@ def heat_to_discharge_test(solution, results):
         # supply_t = solution.parameters(0)[f"{d}.T_supply"]
         # return_t = solution.parameters(0)[f"{d}.T_return"]
         supply_t, return_t, dt = _get_component_temperatures(solution, results, d)
+        sup_t_for_error = supply_t if isinstance(supply_t, float) else min(supply_t)
 
         print(d, max(abs(results[f"{d}.HeatOut.Heat"] - results[f"{d}.Q"] * rho * cp * supply_t)))
         np.testing.assert_allclose(
             results[f"{d}.HeatOut.Heat"],
             results[f"{d}.Q"] * rho * cp * supply_t,
-            atol=5.0,
+            atol=1.0e-6 * rho * cp * sup_t_for_error,
             rtol=1.0e-4,
         )
 
@@ -437,13 +438,13 @@ def energy_conservation_test(solution, results):
 
     for p in solution.energy_system_components.get("heat_pipe", []):
         if (
-            f"{p}__is_disconnected" in results.keys()
-            or f"{solution.cold_to_hot_pipe(p)}__is_disconnected" in results.keys()
+            f"{p}.__is_disconnected" in results.keys()
+            or f"{solution.cold_to_hot_pipe(p)}.__is_disconnected" in results.keys()
         ):
             if p in solution.hot_pipes:
-                p_discon = results[f"{p}__is_disconnected"].copy()
+                p_discon = results[f"{p}.__is_disconnected"].copy()
             else:
-                p_discon = results[f"{solution.cold_to_hot_pipe(p)}__is_disconnected"].copy()
+                p_discon = results[f"{solution.cold_to_hot_pipe(p)}.__is_disconnected"].copy()
 
             p_discon[p_discon < 0.5] = 0  # fix for discrete value sometimes being 0.003 or so.
             np.testing.assert_allclose(
