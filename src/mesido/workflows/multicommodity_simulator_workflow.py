@@ -328,18 +328,12 @@ class _GoalsAndOptions:
                         # goals.append(TargetProducerGoal(state, target, priority=3))
 
         # Constant massflows at the landing points (EEM and DEN)
-        try:
-            goals.append(TargetDemandGoal(state='gasconversion_EEM.GasIn.mass_flow',
-                                          target=Timeseries(target.times, np.array([48908.36056553137]*len(target.times))),
-                                          priority=3))
-        except:
-            pass
-        try:
-            goals.append(TargetDemandGoal(state='gasconversion_DEN.GasIn.mass_flow',
-                                          target=Timeseries(target.times, np.array([38428.82106194027]*len(target.times))),
-                                          priority=3))
-        except:
-            pass
+        goals.append(TargetDemandGoal(state='gasconversion_EEM.GasIn.mass_flow',
+                                      target=Timeseries(target.times, np.array([48908.36056553137]*len(target.times))),
+                                      priority=3))
+        goals.append(TargetDemandGoal(state='gasconversion_DEN.GasIn.mass_flow',
+                                      target=Timeseries(target.times, np.array([38428.82106194027]*len(target.times))),
+                                      priority=3))
         return goals
 
 
@@ -1471,8 +1465,12 @@ class MultiCommoditySimulatorMarginal(
         if priority == 1 and self.objective_value > 1e-6:
             self._demand_matched = False
             # raise RuntimeError("The demand is not matched")
-        if (priority == 2 or priority == 3) and self.objective_value > 1e-6:
+        if priority == 2 and self.objective_value > 1e-6:
             logger.warning("Production is not met")
+
+        if priority == 3 and self.objective_value > 1e-6:
+            logger.warning("Target landing massflow is not met")
+
 
     def solver_success(self, solver_stats, log_solver_failure_as_error):
         if not solver_stats['success']:
@@ -1952,7 +1950,7 @@ def run_sequatially_staged_simulation(
 
     tic = time.time()
     demand_matched = True
-    for simulated_window in range(simulation_window_size, 4000, simulation_window_size): #end_time
+    for simulated_window in range(simulation_window_size, 850, simulation_window_size): #end_time
         #end_time #300
         # Note that the end time is not necessarily a multiple of simulation_window_size
         (
