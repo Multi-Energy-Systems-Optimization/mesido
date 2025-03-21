@@ -336,16 +336,16 @@ class _GoalsAndOptions:
                     elif type == "gas_source":
                         priority =2
                         # goals.append(TargetDemandGoal(state, target, priority=2))
-                        # goals.append(TargetDemandGoalMinimization(state, target, priority=2))
+                        goals.append(TargetDemandGoalMinimization(state, target, priority=2))
                     else:
                         priority = 2# 2 * len(self._esdl_assets)
                         # goals.append(TargetProducerGoal(state, target, priority=3))
 
         # Constant massflows at the landing points (EEM and DEN)
-        goals.append(TargetDemandGoal(state='gasconversion_EEM.GasIn.mass_flow',
+        goals.append(TargetDemandGoalMinimization(state='gasconversion_EEM.GasIn.mass_flow',
                                       target=Timeseries(target.times, np.array([48908.36056553137]*len(target.times))),
                                       priority=3))
-        goals.append(TargetDemandGoal(state='gasconversion_DEN.GasIn.mass_flow',
+        goals.append(TargetDemandGoalMinimization(state='gasconversion_DEN.GasIn.mass_flow',
                                       target=Timeseries(target.times, np.array([38428.82106194027]*len(target.times))),
                                       priority=3))
         return goals
@@ -377,16 +377,19 @@ class _CaseConstraints:
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.__gas_source_upper_bounds = {}
+        self.__gas_conversion_upper_bounds = {}
 
     def pre(self):
         super().pre()
 
         self.__update_gas_source_upper_bounds()
+        self.__update_conversion_input_upper_bounds()
 
     def bounds(self):
         bounds = super().bounds()
 
         bounds.update(self.__gas_source_upper_bounds)
+        bounds.update(self.__gas_conversion_upper_bounds)
         return bounds
 
     def __constraint_fix_pressure(self, ensemble_member):
@@ -480,6 +483,20 @@ class _CaseConstraints:
                 ub = Timeseries(t, (np.asarray(ub.values)[start_indx:end_indx]).tolist())
                 lb = ub
                 self.__gas_source_upper_bounds[f"{gas_source}.GasOut.mass_flow"] = (lb, ub)
+
+    def __update_conversion_input_upper_bounds(self):
+        t = self.times()
+
+        for gas_conversion in self.energy_system_components.get("gas_substation", []):
+            if 'EEM' in gas_conversion:
+                ub_value = 48908.36056553137
+            elif 'DEN' in gas_conversion:
+                ub_value = 38428.82106194027
+
+            lb = Timeseries(t, np.zeros(len(t)))
+            ub = Timeseries(t, np.array([ub_value]*len(t)))
+            # lb = ub
+            self.__gas_conversion_upper_bounds[f"{gas_conversion}.GasIn.mass_flow"] = (lb, ub)
 
 
     def path_constraints(self, ensemble_member):
