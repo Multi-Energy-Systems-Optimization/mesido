@@ -481,7 +481,7 @@ class _CaseConstraints:
                 start_indx = np.where(ub.times == t[0])[0][0]
                 end_indx = np.where(ub.times == t[-1])[0][0] + 1
                 ub = Timeseries(t, (np.asarray(ub.values)[start_indx:end_indx]).tolist())
-                lb = ub
+                # lb = ub
                 self.__gas_source_upper_bounds[f"{gas_source}.GasOut.mass_flow"] = (lb, ub)
 
     def __update_conversion_input_upper_bounds(self):
@@ -489,9 +489,9 @@ class _CaseConstraints:
 
         for gas_conversion in self.energy_system_components.get("gas_substation", []):
             if 'EEM' in gas_conversion:
-                ub_value = 48908.36056553137
+                ub_value = 48908.3556554999
             elif 'DEN' in gas_conversion:
-                ub_value = 38428.82106194027
+                ub_value = 38428.817203975734
 
             lb = Timeseries(t, np.zeros(len(t)))
             ub = Timeseries(t, np.array([ub_value]*len(t)))
@@ -1953,7 +1953,7 @@ def run_sequatially_staged_simulation(
                         lb_values = [lb_value] * len(sub_time_series)
                         ub_values = [ub_value] * len(sub_time_series)
                         # lb_values[0] = ub_values[0] = lb_value
-                        lb_values[0] = ub_values[0] = 100316.68551435685e6 #g
+                        lb_values[0] = ub_values[0] = 100316.67001085529e6 #g
                         lb = Timeseries(sub_time_series, lb_values)
                         ub = Timeseries(sub_time_series, ub_values)
                         storage_initial_state_bounds[f"{asset}.{variable}"] = (lb, ub)
@@ -2013,7 +2013,7 @@ def run_sequatially_staged_simulation(
 
     tic = time.time()
     demand_matched = True
-    for simulated_window in range(simulation_window_size, 850, simulation_window_size): #end_time
+    for simulated_window in range(simulation_window_size, end_time, simulation_window_size): #end_time
         #end_time #300
         # Note that the end time is not necessarily a multiple of simulation_window_size
         (
