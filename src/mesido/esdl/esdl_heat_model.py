@@ -1107,6 +1107,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             # TODO: the power filled in at the heatpmp should always be the electric power, thus,
             # the max heat supply should be power*cop
             _, modifiers = self.convert_heat_source(asset)
+
             return AirWaterHeatPump, modifiers
         # In this case we only have the secondary side ports, here we assume a air-water HP elec
         if len(asset.in_ports) == 2 and len(asset.out_ports) == 1:
@@ -1195,6 +1196,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 - carrier with temperature specified
 
         Optional ESDL fields:
+            - COP
             - aggregationCount
             - technicalLifetime
             - CostInformation: discountRate
@@ -1280,6 +1282,29 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 )
 
             return GeothermalSource, modifiers
+        elif asset.asset_type == "HeatPump":
+            if not asset.attributes["COP"]:
+                raise _ESDLInputException(
+                    f"{asset.name} has not COP specified, this is required for the model"
+                )
+            else:
+                cop = asset.attributes["COP"]
+
+            max_heat_power = asset.attributes["power"] * cop
+            # Update modifiers that were set for a generic heat source in convert_heat_source
+            modifiers["Heat_source"] = dict(
+                min=0.0,
+                max=max_heat_power,
+                nominal=max_heat_power / 2.0,
+            )
+            modifiers["Heat_flow"] = dict(
+                min=0.0,
+                max=max_heat_power,
+                nominal=max_heat_power / 2.0,
+            )
+            modifiers.update({"COP": cop})
+            # return AirWaterHeatPump, modifiers
+            return HeatSource, modifiers
         else:
             return HeatSource, modifiers
 

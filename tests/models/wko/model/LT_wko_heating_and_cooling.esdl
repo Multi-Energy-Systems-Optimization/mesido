@@ -26,7 +26,7 @@
         <port xsi:type="esdl:OutPort" name="Out" connectedTo="28ea57f1-1acd-419c-9c3f-4cb24f58aa60" id="316be022-cc67-4336-9d1b-6898bda3cd96" carrier="13db0822-98da-4ca8-9d48-868653ae06af_ret"/>
         <geometry xsi:type="esdl:Point" lon="4.418177604675294" lat="52.077079495639495" CRS="WGS84"/>
       </asset>
-      <asset xsi:type="esdl:HeatPump" name="HeatPump_b97e" COP="4.0" id="b97e7c4f-fff5-4e4a-bc64-830563f94e4c" power="100000.0">
+      <asset xsi:type="esdl:HeatPump" name="HeatPump_b97e" COP="4.0" id="b97e7c4f-fff5-4e4a-bc64-830563f94e4c" power="25000.0">
         <port xsi:type="esdl:InPort" name="SecIn" connectedTo="1edf7d57-4146-4087-8b38-f45fb56a63eb" id="2083140e-6ddb-4d26-a788-a36ebcf65b80" carrier="13db0822-98da-4ca8-9d48-868653ae06af_ret"/>
         <port xsi:type="esdl:OutPort" name="SecOut" connectedTo="5f8fe6d0-24eb-4427-b47e-1bf4972e7c56" id="ad87a98f-e6a7-4688-9989-ea8a17a85afc" carrier="13db0822-98da-4ca8-9d48-868653ae06af"/>
         <geometry xsi:type="esdl:Point" lon="4.413928985595704" lat="52.07816089056798"/>

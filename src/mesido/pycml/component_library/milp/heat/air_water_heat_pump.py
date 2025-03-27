@@ -2,7 +2,6 @@ from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 from .heat_source import HeatSource
 
-
 @add_variables_documentation_automatically
 class AirWaterHeatPump(HeatSource):
     """
@@ -18,6 +17,14 @@ class AirWaterHeatPump(HeatSource):
     """
 
     def __init__(self, name, **modifiers):
-        super().__init__(name, **modifiers)
+
+        super().__init__(
+            name,
+            **self.merge_modifiers(
+                dict(),
+                modifiers,
+            ),
+        )
 
         self.component_subtype = "air_water_heat_pump"
+        self.COP = 3.0

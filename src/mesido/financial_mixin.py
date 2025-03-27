@@ -911,6 +911,10 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
             constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
 
+        # kvr
+        # self.parameters(0)["HeatPump_b97e.COP"]
+        # self.energy_system_components.get("air_water_heat_pump", [])
+
         for s in self.energy_system_components.get("heat_source", []):
             heat_source = self.__state_vector_scaled(f"{s}.Heat_source", ensemble_member)
             variable_operational_cost_var = self._asset_variable_operational_cost_map[s]
