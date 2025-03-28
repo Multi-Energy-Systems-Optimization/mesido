@@ -177,6 +177,7 @@ class MinimizeSourcesColdGoal(Goal):
         """
         return optimization_problem.state(f"{self.source}.Heat_airco")
 
+
 class _GoalsAndOptions:
     """
     A goals class that we often use if we specify multiple problem classes.
@@ -425,8 +426,10 @@ if __name__ == "__main__":
     # heat_problem = run_optimization_problem(  # used with cplex solver
         HeatingCoolingProblem,
         base_folder=base_folder,
-        esdl_file_name="Supply_only_1_return_network_efvc_.esdl",
+        # esdl_file_name="Supply_only_1_return_network_efvc_.esdl",
         # esdl_file_name="Small_Supply_only_1_return_network_efvc_.esdl",
+        # esdl_file_name="5G_Supply_and_return_network_20250327_efvc_.esdl",
+        esdl_file_name="5G_Supply_and_return_network_20250327_efvc_modifcations.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,
         input_timeseries_file="timeseries_5.csv",
