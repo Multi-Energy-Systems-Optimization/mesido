@@ -37,6 +37,7 @@ from utils_tests import (
     energy_conservation_test,
     heat_to_discharge_test,
 )
+from utils_test_scaling import create_problem_with_debug_info, problem_scaling_check
 
 logger = logging.getLogger("WarmingUP-MPC")
 logger.setLevel(logging.INFO)
@@ -262,13 +263,13 @@ class HeatingCoolingProblem(
         # Manually normalize the profile and set peak value
         heat_demand_peaks_watt = {
             "HeatingDemand_A": 170.0e3,
-            "HeatingDemand_B": 440.0e2,
-            "HeatingDemand_C": 60.0e2,
-            "HeatingDemand_D": 60.0e2,
-            "HeatingDemand_E": 40.0e2,
-            "HeatingDemand_F": 140.0e2,
-            "HeatingDemand_G": 70.0e2,
-            "HeatingDemand_H": 340.0e2,
+            "HeatingDemand_B": 440.0e3,
+            "HeatingDemand_C": 60.0e3,
+            "HeatingDemand_D": 60.0e3,
+            "HeatingDemand_E": 40.0e3,
+            "HeatingDemand_F": 140.0e3,
+            "HeatingDemand_G": 70.0e3,
+            "HeatingDemand_H": 340.0e3,
 
         }
         cold_demand_peaks_watt = {
@@ -283,13 +284,16 @@ class HeatingCoolingProblem(
         for d in self.energy_system_components["heat_demand"]:
             target = self.get_timeseries(f"{d}.target_heat_demand")
             max_heat_demand_scaling = max(target.values)
+
             for ii in range(len(target.values)):
                 target.values[ii] = (
                     target.values[ii] / max_heat_demand_scaling * heat_demand_peaks_watt[d]
                 )
-                # Manaully prevent very small values
-                # if target.values[ii] < 4.0e3:
-                #     target.values[ii] = 4.0e3
+            # To prevent scaling issues
+            # Manaully prevent very small values. Using 1% of max value as the lower limit.
+            for ii in range(len(target.values)):
+                if target.values[ii] < max(target.values) * 0.05:
+                    target.values[ii] = max(target.values) * 0.05
 
             self.io.set_timeseries(
                 f"{d}.target_heat_demand",
@@ -311,9 +315,11 @@ class HeatingCoolingProblem(
                 target.values[ii] = (
                     target.values[ii] / max_cool_demand_scaling * cold_demand_peaks_watt[d]
                 )
-                # Manaully prevent very small values
-                # if target.values[ii] < 6.0e3:
-                #     target.values[ii] = 6.0e3
+            # # To prevent scaling issues
+            # # Manaully prevent very small values. Using 1% of max value as the lower limit.
+            # for ii in range(len(target.values)):
+            #     if target.values[ii] < max(target.values) * 0.01:
+            #         target.values[ii] = max(target.values) * 0.01
 
             self.io.set_timeseries(
                 f"{d}.target_cold_demand",
@@ -422,35 +428,55 @@ if __name__ == "__main__":
 
     base_folder = Path(__file__).resolve().parent.parent
 
+    HeatingCoolingProblemScaling, logger, logs_list = create_problem_with_debug_info(
+        HeatingCoolingProblem
+    )
+
     heat_problem = run_esdl_mesido_optimization(  # Ideally use with HIGHS solver
     # heat_problem = run_optimization_problem(  # used with cplex solver
-        HeatingCoolingProblem,
+        HeatingCoolingProblemScaling,
         base_folder=base_folder,
         # esdl_file_name="Supply_only_1_return_network_efvc_.esdl",
         # esdl_file_name="Small_Supply_only_1_return_network_efvc_.esdl",
-        # esdl_file_name="5G_Supply_and_return_network_20250327_efvc_.esdl",
-        esdl_file_name="5G_Supply_and_return_network_20250327_efvc_modifcations.esdl",
+        esdl_file_name="5G_Supply_and_return_network_20250327_efvc_.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,
         input_timeseries_file="timeseries_5.csv",
     )
     results = heat_problem.extract_results()
 
+    # The line below can be used to check scaling issues of the problem
+    # problem_scaling_check(logs_list, logger)
+
+    # Check that the pipe DN sizes are sufficient. The max allowable velocity is 2.5m/s.
+    # If the specified pipe sizes are to small then the heating/cooling demand cannot be matched
+    for pipe in heat_problem.energy_system_components["heat_pipe"]:
+        dd = heat_problem.parameters(0)[f"{pipe}.diameter"]
+        if max(abs(results[f"{pipe}.HeatIn.Q"]) / (np.pi * dd * dd / 4.0)) > 2.4:
+            print(f"This pipe might be too small: {pipe}: {dd} ")
+            print(max(abs(results[f"{pipe}.HeatIn.Q"]) / (np.pi * dd * dd / 4.0)))
     # checks to make sure the run was valid
     demand_matching_test(heat_problem, results)
     energy_conservation_test(heat_problem, results)
 
     # ---------------------------------------------------------------------------------------------
     # Manually checking of some results
-
+    #----------------------------------------------------------------------------------------------
     # manual check cost of a pipe
-    pipe_name = "Pipe25"  # pipe is downsized from DN250 to a DN200
-    np.testing.assert_allclose(
-        # 1126.4 * 158.250,  # DN150 manual calc, EDR pipe cost [EURO/m] * pipe length
-        1355.3 * 158.250,   # DN200
-        results[f'{pipe_name}__investment_cost'],  # cost from optimization
-        atol=1e-8,
-    )
+    # This check can only be done if the pipe had a cost assigned or of it was optmized in size
+    # pipe_name = "Pipe25"  # pipe is downsized from DN250 to a DN200, case without heat pumps
+    # np.testing.assert_allclose(
+    #     # 1126.4 * 158.250,  # DN150 manual calc, EDR pipe cost [EURO/m] * pipe length
+    #     1355.3 * 158.250,   # DN200
+    #     results[f'{pipe_name}__investment_cost'],  # cost from optimization
+    #     atol=1e-8,
+    # )
+    # pipe_name = "Pipe25"  # pipe is downsized from DN500 to a DN150, case with heat pumps
+    # np.testing.assert_allclose(
+    #     1126.4 * 31.3,  # DN150 manual calc, EDR pipe cost [EURO/m] * pipe length
+    #     results[f'{pipe_name}__investment_cost'],  # cost from optimization
+    #     atol=1e-8,
+    # )
     # One can manually check the pipe class that was selected for pipe 25:
     # results["Pipe25__hn_pipe_class_DN150"]
     # results["Pipe25__hn_pipe_class_DN200"]
@@ -522,6 +548,45 @@ if __name__ == "__main__":
         atol=1e-8,
     )
 
+    # Heat pumps
+    for hp in heat_problem.energy_system_components["heat_source"]:
+        print(
+            f"{hp} __investment_cost: {results[f'{hp}__investment_cost']} "
+            f"__installation_cost: {results[f'{hp}__installation_cost']} "
+            f"__variable_operational_cost: {results[f'{hp}__variable_operational_cost']} "
+            f"__fixed_operational_cost: {results[f'{hp}__fixed_operational_cost']}"
+        )
+        print(
+            f"{hp} secondary heating [W]: {results[f'{hp}.Heat_flow']}"  # heat produced by hp
+            # f"heating [W]: {results[f'{hp}.Secondary.HeatOut.Heat'] - results[
+            #     f'{hp}.Secondary.HeatIn.Heat'
+            # ]}" # same data as in variable above
+        )
+    # manually calculate variable operation cost if rate is 2 euro/MWh
+    np.testing.assert_allclose(
+        sum(
+            results["HeatPump_A.Power_elec"][1:] / 1.0e6 * (
+                (heat_problem.times()[1:] - heat_problem.times()[0:-1]) / 3600
+            ) * 2.0
+        ),
+        results["HeatPump_A__variable_operational_cost"],
+        atol=1e-8,
+    )
+    # manual fixed opex costs of 85kW elec power input, COP 3, max size in
+    # heat capacity = (cop + 1)*85e3 = (3+1)*85e3 = 340 kW
+    # fixed maintenance + fixed operational cost
+    np.testing.assert_allclose(
+        (3 + 1) * 85.0e3 / 1e6 * (90 + 90.0) * 1.0,  # cost for 1 year, in TCO its over 30 years
+        results['HeatPump_A__fixed_operational_cost'],
+        atol=1e-8,
+    )
+    # CAPEX: Investment Costs (cost linked to the thermal heat output size) + Installation Costs
+    np.testing.assert_allclose(
+        (3 + 1) * 85.0e3 / 1e6 * 30.0e3  + 100.0e3,  # cost for 1 year, in TCO its over 30 years
+        results['HeatPump_A__investment_cost'] + results['HeatPump_A__installation_cost'],
+        atol=1e-8,
+    )
+
     # Objective value of the optimization problem
     total_cost_manual_calc = 0.0
     for iac in heat_problem.energy_system_components["airco"]:
@@ -558,6 +623,18 @@ if __name__ == "__main__":
         )
     for htp in heat_problem.energy_system_components["heat_pipe"]:
         total_cost_manual_calc += results[f'{htp}__investment_cost']
+    for hp in heat_problem.energy_system_components["heat_pump"]:
+        total_cost_manual_calc += sum(
+            results[f'{hp}__investment_cost'] + results[f'{hp}__installation_cost']
+            + (
+                results[f'{hp}__variable_operational_cost']
+                * heat_problem.parameters(0)["number_of_years"]
+            )
+            + (
+                results[f'{hp}__fixed_operational_cost']
+                * heat_problem.parameters(0)["number_of_years"]
+            )
+        )
     np.testing.assert_allclose(
         total_cost_manual_calc,
         heat_problem.objective_value * 1.0e6,
@@ -565,7 +642,7 @@ if __name__ == "__main__":
     )
     print(
         f"{total_cost_manual_calc} vs {heat_problem.objective_value * 1.0e6}"
-    ) # Convert objective_value to unscaled value
+    )   # Convert objective_value to unscaled value
     # ---------------------------------------------------------------------------------------------
 
 
