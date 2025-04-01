@@ -338,21 +338,23 @@ def heat_to_discharge_test(solution, results):
         temp_dict = {}
         for ip in pipes_removed:
             temp_dict[ip] = solution.parameters(0)[f"{ip}.diameter"]
+            temp_dict[ip+"_hf"] = results[f"{ip}.Heat_flow"]
         for ip in pipes_remained:
             solution.parameters(0)[f"{ip}.diameter"]
             temp_dict[ip] = solution.parameters(0)[f"{ip}.diameter"]
+            temp_dict[ip+"_hf"] = results[f"{ip}.Heat_flow"]
         
         np.testing.assert_allclose(
             results[f"{p}.HeatIn.Heat"][indices],
             results[f"{p}.Q"][indices] * rho * cp * temperature,
             atol=tol,
-            err_msg=f"{p} has mismatch in milp to discharge {temp_dict}",
+            err_msg=f"{p} has mismatch in milp to discharge {temp_dict}, source {results["GeothermalSource_27cb.Heat_flow"]}",
         )
         np.testing.assert_allclose(
             results[f"{p}.HeatOut.Heat"][indices],
             results[f"{p}.Q"][indices] * rho * cp * temperature,
             atol=tol,
-            err_msg=f"{p} has mismatch in milp to discharge {temp_dict}",
+            err_msg=f"{p} has mismatch in milp to discharge {temp_dict} source {results["GeothermalSource_27cb.Heat_flow"]}",
         )
 
 
