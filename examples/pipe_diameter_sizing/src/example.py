@@ -72,7 +72,8 @@ class PipeDiameterSizingProblem(
         self.heat_network_settings["minimum_velocity"] = 0.001
         options["heat_loss_disconnected_pipe"] = True
         options["maximum_temperature_der"] = np.inf
-        self.heat_network_settings["minimize_head_losses"] = True
+        # self.heat_network_settings["minimize_head_losses"] = True KvR
+        self.heat_network_settings["minimize_head_losses"] = False
         return options
 
     def pipe_classes(self, pipe):
@@ -111,7 +112,7 @@ class PipeDiameterSizingProblem(
 
     def goals(self):
         goals = super().goals().copy()
-        goals.append(MinimizeLDGoal())
+        # goals.append(MinimizeLDGoal()) KvR
         return goals
 
     def priority_completed(self, priority):

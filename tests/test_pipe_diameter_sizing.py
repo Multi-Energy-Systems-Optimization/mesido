@@ -63,6 +63,8 @@ class TestPipeDiameterSizingExample(TestCase):
         parameters = problem.parameters(0)
         diameters = {p: parameters[f"{p}.diameter"] for p in problem.hot_pipes}
         results = problem.extract_results()
+        
+        np.testing.assert_allclose(problem.objective_value, 0.0)  # kvr
 
         # Check that half the network is removed, i.e. 4 pipes. Note that it
         # is equally possible for the left or right side of the network to be
