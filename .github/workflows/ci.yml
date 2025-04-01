@@ -68,7 +68,7 @@ jobs:
         run: python -m pip install -U tox
   
       - name: Check test
-        run: tox -vv -etest_env_main
+        run: tox -vvv -etest_env_main
   
   # Pre-processing testing
   test_pre_processing:
