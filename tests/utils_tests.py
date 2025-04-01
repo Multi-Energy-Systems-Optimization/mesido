@@ -333,8 +333,8 @@ def heat_to_discharge_test(solution, results):
             temperature = results[f"{carrier_id}_temperature"][indices]
         else:
             temperature = solution.parameters(0)[f"{p}.temperature"]
-        pipes_removed = ["Pipe_8592", "Pipe_2927", "Pipe_9a6f", "Pipe_a718"]
-        pipes_remained = ["Pipe_96bc", "Pipe_51e4", "Pipe_6b39", "Pipe_f9b0"]
+        pipes_removed = ["Pipe_8592", "Pipe_2927", "Pipe_9a6f", "Pipe_a718", "Pipe_8592_ret", "Pipe_2927_ret", "Pipe_9a6f_ret", "Pipe_a718_ret"]
+        pipes_remained = ["Pipe_96bc", "Pipe_51e4", "Pipe_6b39", "Pipe_f9b0", "Pipe_96bc_ret", "Pipe_51e4_ret", "Pipe_6b39_ret", "Pipe_f9b0_ret"]
         temp_dict = {}
         for ip in pipes_removed:
             temp_dict[ip] = solution.parameters(0)[f"{ip}.diameter"]
