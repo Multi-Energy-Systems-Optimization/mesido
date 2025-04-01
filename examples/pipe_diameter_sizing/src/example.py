@@ -112,7 +112,7 @@ class PipeDiameterSizingProblem(
 
     def goals(self):
         goals = super().goals().copy()
-        # goals.append(MinimizeLDGoal()) KvR
+        goals.append(MinimizeLDGoal())
         return goals
 
     def priority_completed(self, priority):
