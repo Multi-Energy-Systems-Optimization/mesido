@@ -341,12 +341,16 @@ def heat_to_discharge_test(solution, results):
             temp_dict[ip+"_hf"] = results[f"{ip}.Heat_flow"]
             temp_dict[ip+"_Q_in"] = results[f"{ip}.HeatIn.Q"]
             temp_dict[ip+"_Q_out"] = results[f"{ip}.HeatOut.Q"]
+            temp_dict[ip+"_Heat_in"] = results[f"{ip}.HeatIn.Heat"]
+            temp_dict[ip+"_Heat_out"] = results[f"{ip}.HeatOut.Heat"]
         for ip in pipes_remained:
             solution.parameters(0)[f"{ip}.diameter"]
             temp_dict[ip] = solution.parameters(0)[f"{ip}.diameter"]
             temp_dict[ip+"_hf"] = results[f"{ip}.Heat_flow"]
             temp_dict[ip+"_Q_in"] = results[f"{ip}.HeatIn.Q"]
             temp_dict[ip+"_Q_out"] = results[f"{ip}.HeatOut.Q"]
+            temp_dict[ip+"_Heat_in"] = results[f"{ip}.HeatIn.Heat"]
+            temp_dict[ip+"_Heat_out"] = results[f"{ip}.HeatOut.Heat"]
         
         np.testing.assert_allclose(
             results[f"{p}.HeatIn.Heat"][indices],
