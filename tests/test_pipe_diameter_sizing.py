@@ -65,10 +65,11 @@ class TestPipeDiameterSizingExample(TestCase):
         results = problem.extract_results()
         
         np.testing.assert_allclose(problem.objective_value, 0.66073262043)  # kvr
-        np.testing.assert_allclose(results["Pipe_9a6f.Heat_flow"], 0.0)
-        np.testing.assert_allclose(results["Pipe_9a6f_ret.Heat_flow"], 0.0, rtol=1e-5)
         np.testing.assert_allclose(problem.parameters(0)[f"Pipe_9a6f.diameter"], 0.0)
         np.testing.assert_allclose(problem.parameters(0)[f"Pipe_9a6f_ret.diameter"], 0.0)
+        np.testing.assert_allclose(results["Pipe_9a6f.Heat_flow"], 0.0)
+        np.testing.assert_allclose(results["Pipe_9a6f_ret.Heat_flow"], 0.0, rtol=1e-5)
+
 
 
         # Check that half the network is removed, i.e. 4 pipes. Note that it
