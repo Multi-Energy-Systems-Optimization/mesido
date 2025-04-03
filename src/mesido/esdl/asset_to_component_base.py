@@ -15,6 +15,7 @@ from mesido.esdl.common import Asset
 from mesido.network_common import NetworkSettings
 from mesido.pycml import Model as _Model
 
+from mesido.potential_errors import MesidoAssetIssueType, get_potential_errors
 
 logger = logging.getLogger("mesido")
 
@@ -1330,10 +1331,15 @@ class _AssetToComponentBase:
             )
             return 0.0
         if not per_unit == UnitEnum.NONE:
-            logger.warning(
+            message = (
                 f"Specified installation costs of asset {asset.name}"
-                f" include a component per unit {per_unit}, which we "
-                f"cannot handle."
+                f" include a component per unit {per_unit}, but should be None."
+            )
+            logger.warning(message)
+            get_potential_errors().add_potential_issue(
+                MesidoAssetIssueType.ASSET_COST_INFORMATION,
+                asset.id,
+                message,
             )
             return 0.0
         return cost_value

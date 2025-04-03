@@ -13,6 +13,7 @@ class MesidoAssetIssueType(Enum):
     COLD_DEMAND_POWER = "cold_demand.power"
     HEAT_DEMAND_TYPE = "heat_demand.type"
     ASSET_PROFILE_CAPABILITY = "asset_profile.capability"
+    ASSET_COST_INFORMATION = "asset_cost_information"
 
 
 class PotentialErrors:
