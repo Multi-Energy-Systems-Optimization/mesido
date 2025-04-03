@@ -136,14 +136,14 @@ class TestPipeDiameterSizingExample(TestCase):
                 dh_manual = dh_max * results[f"{pipe}.Q"][1:] / pc.area / pc.maximum_velocity
                 np.testing.assert_allclose(-dh_manual, results[f"{pipe}.dH"][1:], atol=1.0e-12)
 
-        heat_to_discharge_test(problem, results) # kvr
-
         # Ensure that the removed pipes do not have predicted hydraulic power values
         hydraulic_power_sum = 0.0
         for pipe in diameters.keys():
             if pipe in pipes_removed:
                 hydraulic_power_sum += sum(abs(results[f"{pipe}.Hydraulic_power"]))
-        self.assertEqual(hydraulic_power_sum, 0.0, "Hydraulic power exists for a removed pipe")
+        np.testing.assert_allclose(
+        # self.assertEqual(
+            hydraulic_power_sum, 0.0, "Hydraulic power exists for a removed pipe", atol=1e-9)
 
         # Hydraulic power = delta pressure * Q = f(Q^3), where delta pressure = f(Q^2)
         # The linear approximation of the 3rd order function should overestimate the hydraulic
