@@ -126,6 +126,11 @@ class TestPipeDiameterSizingExample(TestCase):
                     2.0e-4,
                     parameters[f"{pipe}.temperature"],
                 )
+                # kvr
+                np.testing.assert_array_less(0.0, pc.inner_diameter)
+                np.testing.assert_array_less(0.0, pc.area)
+                np.testing.assert_array_less(0.0, pc.maximum_velocity)
+
                 c_v = parameters[f"{pipe}.length"] * ff / (2 * 9.81) / pc.inner_diameter
                 dh_max = c_v * pc.maximum_velocity**2
                 dh_manual = dh_max * results[f"{pipe}.Q"][1:] / pc.area / pc.maximum_velocity
