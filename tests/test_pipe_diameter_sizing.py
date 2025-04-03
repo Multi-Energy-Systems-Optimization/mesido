@@ -136,6 +136,8 @@ class TestPipeDiameterSizingExample(TestCase):
                 dh_manual = dh_max * results[f"{pipe}.Q"][1:] / pc.area / pc.maximum_velocity
                 np.testing.assert_allclose(-dh_manual, results[f"{pipe}.dH"][1:], atol=1.0e-12)
 
+        heat_to_discharge_test(problem, results) # kvr
+
         # Ensure that the removed pipes do not have predicted hydraulic power values
         hydraulic_power_sum = 0.0
         for pipe in diameters.keys():
