@@ -72,7 +72,7 @@ class PipeDiameterSizingProblem(
         self.heat_network_settings["minimum_velocity"] = 0.001
         options["heat_loss_disconnected_pipe"] = True
         options["maximum_temperature_der"] = np.inf
-        self.heat_network_settings["minimize_head_losses"] = True # kvr
+        self.heat_network_settings["minimize_head_losses"] = True
         return options
 
     def pipe_classes(self, pipe):
