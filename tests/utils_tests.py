@@ -354,7 +354,7 @@ def heat_to_discharge_test(solution, results):
         #     temp_dict[ip+"_Heat_out"] = results[f"{ip}.HeatOut.Heat"]
         #     temp_dict[ip+"_flow_dir"] = results[f"{ip}.__flow_direct_var"]
 
-        temp_value = results["Pipe_9a6f_ret.HeatIn.Q"]
+        temp_value = results["Pipe_9a6f_ret.HeatIn.Q"] * 1.0e+10
         np.testing.assert_allclose(
             0.0,
             temp_value,
