@@ -358,17 +358,32 @@ def heat_to_discharge_test(solution, results):
         temp_value_2 = results[f"Pipe_9a6f_ret.Q"][indices] * rho * cp * (75.0-45.0)
         np.testing.assert_equal(
             0.0,
-            temp_value_2,
+            temp_value_2[0],
             err_msg="what",
         )
         np.testing.assert_equal(
             0.0,
-            temp_value_2,
+            temp_value_2[1],
+            err_msg="what",
+        )
+        np.testing.assert_equal(
+            0.0,
+            temp_value_2[0],
             err_msg="what again",
         )
         np.testing.assert_equal(
-            temp_value,
-            temp_value_2,
+            0.0,
+            temp_value_2[1],
+            err_msg="what again",
+        )
+        np.testing.assert_equal(
+            temp_value[0],
+            temp_value_2[0],
+            err_msg="what !!!!",
+        )
+        np.testing.assert_equal(
+            temp_value[1],
+            temp_value_2[1],
             err_msg="what !!!!",
         )
 
