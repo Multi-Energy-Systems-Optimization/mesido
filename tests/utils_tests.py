@@ -358,7 +358,7 @@ def heat_to_discharge_test(solution, results):
         np.testing.assert_allclose(
             0.0,
             temp_value,
-            err_msg=f"{temp_value:.03g}",
+            # err_msg=f"{temp_value:.03g}",
         )
 
         np.testing.assert_allclose(
