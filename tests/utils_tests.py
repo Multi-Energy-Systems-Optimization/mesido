@@ -366,6 +366,11 @@ def heat_to_discharge_test(solution, results):
             temp_value_2,
             err_msg="what again",
         )
+        np.testing.assert_equal(
+            temp_value,
+            temp_value_2,
+            err_msg="what !!!!",
+        )
 
         np.testing.assert_allclose(
             results[f"{p}.HeatIn.Heat"][indices],
