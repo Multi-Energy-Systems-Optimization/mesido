@@ -64,15 +64,6 @@ class TestPipeDiameterSizingExample(TestCase):
         diameters = {p: parameters[f"{p}.diameter"] for p in problem.hot_pipes}
         results = problem.extract_results()
         
-        # kvr
-        # np.testing.assert_allclose(problem.objective_value, 0.66073262043)  # kvr
-        # np.testing.assert_allclose(problem.parameters(0)[f"Pipe_9a6f.diameter"], 0.0)
-        # np.testing.assert_allclose(problem.parameters(0)[f"Pipe_9a6f_ret.diameter"], 0.0)
-        # np.testing.assert_allclose(results["Pipe_9a6f.Heat_flow"], 0.0)
-        # np.testing.assert_allclose(results["Pipe_9a6f_ret.Heat_flow"], 0.0, rtol=1e-5)
-
-
-
         # Check that half the network is removed, i.e. 4 pipes. Note that it
         # is equally possible for the left or right side of the network to be
         # removed.
@@ -110,7 +101,7 @@ class TestPipeDiameterSizingExample(TestCase):
             )
 
         for pipe in problem.energy_system_components.get("heat_pipe", []):
-            if results[f"{pipe}__hn_diameter"] <= 1e-10:  # kvr issue in pipeline
+            if results[f"{pipe}__hn_diameter"] <= 1e-15:
                 # TODO: At the moment it is so that a pipe which is not placed (diameter == 0.) can
                 # have head loss since there is an equivalent solution where simultaniously the
                 # is_disconnected variable is also true disabling the head_loss constraints.
@@ -126,10 +117,6 @@ class TestPipeDiameterSizingExample(TestCase):
                     2.0e-4,
                     parameters[f"{pipe}.temperature"],
                 )
-                # kvr
-                temp = results[f"{pipe}__hn_diameter"]
-                np.testing.assert_array_less(0.0, pc.inner_diameter, err_msg=f"{pipe}: {temp}")
-
 
                 c_v = parameters[f"{pipe}.length"] * ff / (2 * 9.81) / pc.inner_diameter
                 dh_max = c_v * pc.maximum_velocity**2

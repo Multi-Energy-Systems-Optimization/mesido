@@ -122,7 +122,6 @@ class PipeDiameterSizingProblem(
         self._qpsol = CachingQPSol()
         options["casadi_solver"] = self._qpsol
         # options["solver"] = "highs"
-
         options["solver"] = "cbc"
 
         return options

@@ -333,56 +333,17 @@ def heat_to_discharge_test(solution, results):
             temperature = results[f"{carrier_id}_temperature"][indices]
         else:
             temperature = solution.parameters(0)[f"{p}.temperature"]
-        pipes_removed = ["Pipe_8592", "Pipe_2927", "Pipe_9a6f", "Pipe_a718", "Pipe_8592_ret", "Pipe_2927_ret", "Pipe_9a6f_ret", "Pipe_a718_ret"]
-        pipes_remained = ["Pipe_96bc", "Pipe_51e4", "Pipe_6b39", "Pipe_f9b0", "Pipe_96bc_ret", "Pipe_51e4_ret", "Pipe_6b39_ret", "Pipe_f9b0_ret"]
-        temp_dict = {}
-        for ip in pipes_removed:
-            temp_dict[ip] = solution.parameters(0)[f"{ip}.diameter"]
-            temp_dict[ip+"_hf"] = results[f"{ip}.Heat_flow"]
-            temp_dict[ip+"_Q_in"] = results[f"{ip}.HeatIn.Q"]
-            temp_dict[ip+"_Q_out"] = results[f"{ip}.HeatOut.Q"]
-            temp_dict[ip+"_Heat_in"] = results[f"{ip}.HeatIn.Heat"]
-            temp_dict[ip+"_Heat_out"] = results[f"{ip}.HeatOut.Heat"]
-            temp_dict[ip+"_flow_dir"] = results[f"{ip}.__flow_direct_var"]
-        # for ip in pipes_remained:
-        #     solution.parameters(0)[f"{ip}.diameter"]
-        #     temp_dict[ip] = solution.parameters(0)[f"{ip}.diameter"]
-        #     temp_dict[ip+"_hf"] = results[f"{ip}.Heat_flow"]
-        #     temp_dict[ip+"_Q_in"] = results[f"{ip}.HeatIn.Q"]
-        #     temp_dict[ip+"_Q_out"] = results[f"{ip}.HeatOut.Q"]
-        #     temp_dict[ip+"_Heat_in"] = results[f"{ip}.HeatIn.Heat"]
-        #     temp_dict[ip+"_Heat_out"] = results[f"{ip}.HeatOut.Heat"]
-        #     temp_dict[ip+"_flow_dir"] = results[f"{ip}.__flow_direct_var"]
-
-        temp_value = results["Pipe_9a6f_ret.HeatIn.Q"][indices]
-        temp_value_2 = results[f"Pipe_9a6f_ret.Q"][indices] * rho * cp * (75.0-45.0)
-        np.testing.assert_equal(
-            0.0,
-            abs(temp_value),
-            err_msg="what",
-        )
-        np.testing.assert_equal(
-            0.0,
-            abs(temp_value_2),
-            err_msg="what again",
-        )
-        np.testing.assert_equal(
-            abs(temp_value),
-            abs(temp_value_2),
-            err_msg="what !!!!",
-        )
-
         np.testing.assert_allclose(
             results[f"{p}.HeatIn.Heat"][indices],
             results[f"{p}.Q"][indices] * rho * cp * temperature,
             atol=tol,
-            err_msg=f"{p} has mismatch in milp to discharge {temp_dict}, source {results['GeothermalSource_27cb.Heat_flow']}",
+            err_msg=f"{p} has mismatch in milp to discharge",
         )
         np.testing.assert_allclose(
             results[f"{p}.HeatOut.Heat"][indices],
             results[f"{p}.Q"][indices] * rho * cp * temperature,
             atol=tol,
-            err_msg=f"{p} has mismatch in milp to discharge {temp_dict} source {results['GeothermalSource_27cb.Heat_flow']}",
+            err_msg=f"{p} has mismatch in milp to discharge",
         )
 
 
