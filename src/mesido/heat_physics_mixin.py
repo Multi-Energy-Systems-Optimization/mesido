@@ -1653,6 +1653,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     temp = max(parameters[f"{p}.temperature"], parameters[f"{p}.T_ground"])
                     assert big_m > 0.0
 
+                    big_m = big_m * 1e2
+
                     carrier = parameters[f"{p}.carrier_id"]
                     temperatures = self.temperature_regimes(carrier)
                     if len(temperatures) == 0:
