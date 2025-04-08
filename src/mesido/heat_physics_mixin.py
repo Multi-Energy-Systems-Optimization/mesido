@@ -300,8 +300,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 heat_out_lb <= 0.0 and heat_out_ub <= 0.0
             ):
                 self.__heat_flow_direct_bounds[flow_dir_var] = (0.0, 0.0)
-            # else:
-            #     self.__heat_flow_direct_bounds[flow_dir_var] = (0.0, 1.0)
+            else:
+                self.__heat_flow_direct_bounds[flow_dir_var] = (0.0, 1.0)    # kvr
 
             if parameters[f"{pipe_name}.disconnectable"]:
                 disconnected_var = f"{pipe_name}.__is_disconnected"
@@ -1653,7 +1653,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     temp = max(parameters[f"{p}.temperature"], parameters[f"{p}.T_ground"])
                     assert big_m > 0.0
 
-                    big_m = big_m * 1e2
+                    # big_m = big_m * 1e2  # kvr
 
                     carrier = parameters[f"{p}.carrier_id"]
                     temperatures = self.temperature_regimes(carrier)
