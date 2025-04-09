@@ -1102,6 +1102,15 @@ class _AssetToComponentBase:
             value = 1.0
         return value
 
+    def _log_and_report_issue(self, message: str, asset_id) -> None:
+        """Helper function to log warnings and report issues."""
+        logger.warning(message)
+        get_potential_errors().add_potential_issue(
+            MesidoAssetIssueType.ASSET_COST_INFORMATION, 
+            asset_id, 
+            message
+        )
+
     def get_variable_opex_costs(self, asset: Asset) -> float:
         """
         Returns the variable opex costs coefficient of an asset in Euros per Wh.
@@ -1115,54 +1124,71 @@ class _AssetToComponentBase:
         float for the variable operational cost coefficient.
         """
 
-        cost_infos = dict()
-        cost_infos["variableOperationalAndMaintenanceCosts"] = asset.attributes[
-            "costInformation"
-        ].variableOperationalAndMaintenanceCosts
-        cost_infos["variableOperationalCosts"] = asset.attributes[
-            "costInformation"
-        ].variableOperationalCosts
-        cost_infos["variableMaintenanceCosts"] = asset.attributes[
-            "costInformation"
-        ].variableMaintenanceCosts
+        cost_fields = [
+            "variableOperationalAndMaintenanceCosts",
+            "variableOperationalCosts",
+            "variableMaintenanceCosts",
+        ]
+
+        GAS_ASSETS = {"GasDemand", "GasStorage", "Electrolyzer"}
+
+        cost_attributes = asset.attributes["costInformation"]
+        cost_infos = {
+            field: getattr(cost_attributes, field)
+            for field in cost_fields
+        }
 
         if all(cost_info is None for cost_info in cost_infos.values()):
-            logger.warning(f"No variable OPEX cost information specified for asset {asset.name}")
-
+            message = (
+                f"No variable OPEX cost information specified for asset {asset.name}"
+            )
+            self._log_and_report_issue(message, asset.id)
         value = 0.0
+
         for cost_info in cost_infos.values():
             if cost_info is None:
                 continue
             cost_value, unit, per_unit, per_time = self.get_cost_value_and_unit(cost_info)
             if unit != UnitEnum.EURO:
-                logger.warning(f"Expected cost information {cost_info} to provide a cost in euros.")
+                message = (
+                    f"Expected cost information {cost_info} to provide a cost in euros."
+                )
+                self._log_and_report_issue(message, asset.id)
                 continue
             if per_time != TimeUnitEnum.NONE:
-                logger.warning(
+                message = (
                     f"Specified OPEX for asset {asset.name} include a "
-                    f"component per time, which we cannot handle."
+                    f"component per time, but should be None."
                 )
+                self._log_and_report_issue(message, asset.id)
                 continue
-            if per_unit != UnitEnum.WATTHOUR and asset.asset_type not in [
-                "GasDemand",
-                "GasStorage",
-                "Electrolyzer",
-            ]:
-                logger.warning(
-                    f"Expected the specified OPEX for asset "
-                    f"{asset.name} to be per Wh, but they are provided "
-                    f"in {per_unit} instead."
+            if per_unit != UnitEnum.WATTHOUR and asset.asset_type not in GAS_ASSETS:
+                message = (
+                    f"Expected the specified OPEX for asset {asset.name} to be per Wh, "
+                    f"but they are provided in {per_unit} instead."
                 )
+                self._log_and_report_issue(message, asset.id)
                 continue
             if (
-                asset.asset_type in ["GasDemand", "GasStorage", "Electrolyzer"]
+                asset.asset_type in GAS_ASSETS
                 and per_unit != UnitEnum.GRAM
             ):
-                logger.warning(
-                    f"Expected the specified OPEX for asset "
-                    f"{asset.name} to be per g/s, but they are provided "
-                    f"in {per_unit}/{per_time} instead."
+                message = (
+                    f"Expected the specified OPEX for asset {asset.name} to be per g/s, "
+                    f"but they are provided in {per_unit}/{per_time} instead."
                 )
+                # NOTE: This check considers per_time units for gas assets. 
+                # However, the check per_time != TimeUnitEnum.NONE above assumes that 
+                # no time units are provided. Please check if for for gas assets an exception
+                # is necessary in the check "per_time != TimeUnitEnum.NONE"   
+                self._log_and_report_issue(message, asset.id)
+                continue
+            if cost_value < 0.0:
+                message = (
+                    f"Specified OPEX for asset {asset.name} is {cost_value}, "
+                    f"but should be non-negative."
+                )
+                self._log_and_report_issue(message, asset.id)
                 continue
 
             value += cost_value
@@ -1322,57 +1348,49 @@ class _AssetToComponentBase:
 
         cost_info = asset.attributes["costInformation"].installationCosts
         if cost_info is None:
-            message = (f"No installation cost info provided for asset {asset.name}.")
-            logger.warning(message)
-            get_potential_errors().add_potential_issue(
-                MesidoAssetIssueType.ASSET_COST_INFORMATION, asset.id, message
+            message = (
+                f"No installation cost information provided for asset {asset.name}."
             )
+            self._log_and_report_issue(message, asset.id)
             return 0.0
+
         cost_value, unit, per_unit, per_time = self.get_cost_value_and_unit(cost_info)
-        if unit != UnitEnum.EURO:
-            message = (f"Expect cost information {cost_info} in euros")
-            logger.warning(message)
-            get_potential_errors().add_potential_issue(
-                MesidoAssetIssueType.ASSET_COST_INFORMATION, asset.id, message
+
+        # Validation checks
+        validations = [
+            (
+                unit != UnitEnum.EURO,
+                f"Expected cost information for {cost_info} in euros",
+            ),
+            (
+                per_time != TimeUnitEnum.NONE,
+                (
+                    f"Specified installation costs of asset {asset.name} include a "
+                    f"component per time, but should be None."
+                ),
+            ),
+            (
+                per_unit != UnitEnum.NONE,
+                (
+                    f"Specified installation costs of asset {asset.name} include a "
+                    f"component per unit {per_unit}, but should be None."
+                ),
+            ),
+            (
+                cost_value < 0.0,
+                (
+                    f"Specified installation cost of asset {asset.name} should be "
+                    f"non-negative, but has value {cost_value}."
+                ),
             )
-            return 0.0
-        if not per_time == TimeUnitEnum.NONE:
-            message = (
-                f"Specified installation costs of asset {asset.name}"
-                f" include a component per time, which we "
-                f"cannot handle."
-            )
-            logger.warning(message)
-            get_potential_errors().add_potential_issue(
-                MesidoAssetIssueType.ASSET_COST_INFORMATION,
-                asset.id,
-                message,
-            )
-            return 0.0
-        if not per_unit == UnitEnum.NONE:
-            message = (
-                f"Specified installation costs of asset {asset.name}"
-                f" include a component per unit {per_unit}, but should be None."
-            )
-            logger.warning(message)
-            get_potential_errors().add_potential_issue(
-                MesidoAssetIssueType.ASSET_COST_INFORMATION,
-                asset.id,
-                message,
-            )
-            return 0.0
-        if cost_value < 0.0:
-            message = (
-                f"Specified installation cost of asset {asset.name} is negative."
-            )
-            logger.warning(message)
-            get_potential_errors().add_potential_issue(
-                MesidoAssetIssueType.ASSET_COST_INFORMATION,
-                asset.id,
-                message,
-            )
-            return 0.0
+        ]
+
+        for condition, message in validations:
+            if condition:
+                self._log_and_report_issue(message, asset.id)
+
         return cost_value
+    
 
     def get_investment_costs(self, asset: Asset, per_unit: UnitEnum = UnitEnum.WATT) -> float:
         """
