@@ -1303,7 +1303,7 @@ class _AssetToComponentBase:
 
     def get_installation_costs(self, asset: Asset) -> float:
         """
-        This function return the installation cost coefficient in EUR for a single aggregation
+        Return the installation cost coefficient in EUR for a single aggregation
         count.
 
         Parameters
@@ -1312,28 +1312,58 @@ class _AssetToComponentBase:
 
         Returns
         -------
-        A float with the installation cost coefficient.
+        A float with the installation cost coefficient in EUR.
+        
+        Raises
+        ------
+        ValueError
+        If asset is None or required attributes are missing.
         """
 
         cost_info = asset.attributes["costInformation"].installationCosts
         if cost_info is None:
-            logger.warning(f"No installation cost info provided for asset " f"{asset.name}.")
+            message = (f"No installation cost info provided for asset {asset.name}.")
+            logger.warning(message)
+            get_potential_errors().add_potential_issue(
+                MesidoAssetIssueType.ASSET_COST_INFORMATION, asset.id, message
+            )
             return 0.0
         cost_value, unit, per_unit, per_time = self.get_cost_value_and_unit(cost_info)
         if unit != UnitEnum.EURO:
-            logger.warning(f"Expect cost information {cost_info} to " f"provide a cost in euros")
+            message = (f"Expect cost information {cost_info} in euros")
+            logger.warning(message)
+            get_potential_errors().add_potential_issue(
+                MesidoAssetIssueType.ASSET_COST_INFORMATION, asset.id, message
+            )
             return 0.0
         if not per_time == TimeUnitEnum.NONE:
-            logger.warning(
+            message = (
                 f"Specified installation costs of asset {asset.name}"
                 f" include a component per time, which we "
                 f"cannot handle."
+            )
+            logger.warning(message)
+            get_potential_errors().add_potential_issue(
+                MesidoAssetIssueType.ASSET_COST_INFORMATION,
+                asset.id,
+                message,
             )
             return 0.0
         if not per_unit == UnitEnum.NONE:
             message = (
                 f"Specified installation costs of asset {asset.name}"
                 f" include a component per unit {per_unit}, but should be None."
+            )
+            logger.warning(message)
+            get_potential_errors().add_potential_issue(
+                MesidoAssetIssueType.ASSET_COST_INFORMATION,
+                asset.id,
+                message,
+            )
+            return 0.0
+        if cost_value < 0.0:
+            message = (
+                f"Specified installation cost of asset {asset.name} is negative."
             )
             logger.warning(message)
             get_potential_errors().add_potential_issue(
