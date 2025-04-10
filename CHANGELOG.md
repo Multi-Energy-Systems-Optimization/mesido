@@ -1,13 +1,13 @@
 
 
-# [Unreleased] - 2025-02-20
+# [Unreleased] - 2025-04-17
 
 ## Added
 - xx
 
 ## Changed
 - Updated the Financial section of the documentation to explain the annualized discounted costs calculation
-
+- Handle potential errors in asset cost information to ensure that error messages are communicated to the front end.
 ## Fixed
 - xx
 
