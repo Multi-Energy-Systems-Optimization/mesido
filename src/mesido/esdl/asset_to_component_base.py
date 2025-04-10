@@ -1122,6 +1122,11 @@ class _AssetToComponentBase:
         Returns
         -------
         float for the variable operational cost coefficient.
+
+        Rises
+        -----
+        ValueError if the asset has no cost information checks did not pass.
+
         """
 
         cost_fields = [
@@ -1219,7 +1224,8 @@ class _AssetToComponentBase:
         ].fixedMaintenanceCosts
 
         if all(cost_info is None for cost_info in cost_infos.values()):
-            logger.warning(f"No fixed OPEX cost information specified for asset {asset.name}")
+            message = (f"No fixed OPEX cost information specified for asset {asset.name}")
+            self._log_and_report_issue(message, asset.id)
             value = 0.0
         else:
             value = 0.0
@@ -1228,9 +1234,10 @@ class _AssetToComponentBase:
                     continue
                 cost_value, unit, per_unit, per_time = self.get_cost_value_and_unit(cost_info)
                 if unit != UnitEnum.EURO:
-                    RuntimeWarning(
-                        f"Expected cost information {cost_info} to " f"provide a cost in euros."
+                    message = (
+                        f"Expected cost information {cost_info} to be provided in euros."
                     )
+                    self._log_and_report_issue(message, asset.id)
                     continue
                 if per_unit == UnitEnum.CUBIC_METRE and asset.asset_type != "GasStorage":
                     # index is 0 because buffers only have one in out port
@@ -1282,19 +1289,19 @@ class _AssetToComponentBase:
                             return 0.0
                     cost_value = cost_value / size
                 elif per_unit != UnitEnum.WATT and asset.asset_type != "GasStorage":
-                    RuntimeWarning(
-                        f"Expected the specified OPEX for asset "
-                        f"{asset.name} to be per W or m3, but they are provided "
-                        f"in {per_unit} instead."
+                    message = (
+                        f"Expected the specified OPEX for asset {asset.name} to be per W or m3, "
+                        f"but they are provided in {per_unit} instead."
                     )
+                    self._log_and_report_issue(message, asset.id)
                     continue
                 # still to decide if the cost is per kg or per m3
                 elif per_unit != UnitEnum.GRAM and asset.asset_type == "GasStorage":
-                    RuntimeWarning(
-                        f"Expected the specified OPEX for asset "
-                        f"{asset.name} to be per GRAM, but they are provided "
-                        f"in {per_unit} instead."
+                    message = (
+                        f"Expected the specified OPEX for asset {asset.name} to be per GRAM, "
+                        f"but they are provided in {per_unit} instead."
                     )
+                    self._log_and_report_issue(message, asset.id)
                     continue
 
                 value += cost_value
@@ -1418,42 +1425,47 @@ class _AssetToComponentBase:
             per_time_provided,
         ) = self.get_cost_value_and_unit(cost_info)
         if unit_provided != UnitEnum.EURO:
-            logger.warning(f"Expect cost information {cost_info} to " f"provide a cost in euros")
+            message = f"Expected cost information {cost_info} to be provided in euros."
+            self._log_and_report_issue(message, asset.id)
             return 0.0
         if not per_time_provided == TimeUnitEnum.NONE:
-            logger.warning(
+            message = (
                 f"Specified investment costs for asset {asset.name}"
                 f" include a component per time, which we "
                 f"cannot handle."
             )
+            self._log_and_report_issue(message, asset.id)
             return 0.0
         if per_unit == UnitEnum.WATT:
             if not per_unit_provided == UnitEnum.WATT:
-                logger.warning(
+                message = (
                     f"Expected the specified investment costs "
                     f"of asset {asset.name} to be per W, but they "
                     f"are provided in {per_unit_provided} "
                     f"instead."
                 )
+                self._log_and_report_issue(message, asset.id)
             return cost_value
         elif per_unit == UnitEnum.WATTHOUR:
             if not per_unit_provided == UnitEnum.WATTHOUR:
-                logger.warning(
+                message = (
                     f"Expected the specified investment costs "
                     f"of asset {asset.name} to be per Wh, but they "
                     f"are provided in {per_unit_provided} "
                     f"instead."
                 )
+                self._log_and_report_issue(message, asset.id)
                 return 0.0
             return cost_value
         elif per_unit == UnitEnum.METRE:
             if not per_unit_provided == UnitEnum.METRE:
-                logger.warning(
+                message = (
                     f"Expected the specified investment costs "
                     f"of asset {asset.name} to be per meter, but they "
                     f"are provided in {per_unit_provided} "
                     f"instead."
                 )
+                self._log_and_report_issue(message, asset.id)
                 return 0.0
             return cost_value
         elif per_unit == UnitEnum.JOULE:
@@ -1471,15 +1483,17 @@ class _AssetToComponentBase:
                 m3_to_joule_factor = delta_temp * HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS
                 return cost_value / m3_to_joule_factor
             else:
-                logger.warning(
+                message = (
                     f"Expected the specified investment costs "
                     f"of asset {asset.name} to be per Wh or m3, but "
                     f"they are provided in {per_unit_provided} "
                     f"instead."
                 )
+                self._log_and_report_issue(message, asset.id)
                 return 0.0
         else:
-            logger.warning(
+            message (
                 f"Cannot provide investment costs for asset " f"{asset.name} per {per_unit}"
             )
+            self._log_and_report_issue(message, asset.id)
             return 0.0
