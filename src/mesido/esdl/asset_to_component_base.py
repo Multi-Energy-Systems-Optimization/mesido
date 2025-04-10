@@ -13,9 +13,9 @@ from esdl import TimeUnitEnum, UnitEnum
 from mesido.esdl._exceptions import _RetryLaterException
 from mesido.esdl.common import Asset
 from mesido.network_common import NetworkSettings
+from mesido.potential_errors import MesidoAssetIssueType, get_potential_errors
 from mesido.pycml import Model as _Model
 
-from mesido.potential_errors import MesidoAssetIssueType, get_potential_errors
 
 logger = logging.getLogger("mesido")
 
@@ -1106,9 +1106,7 @@ class _AssetToComponentBase:
         """Helper function to log warnings and report issues."""
         logger.warning(message)
         get_potential_errors().add_potential_issue(
-            MesidoAssetIssueType.ASSET_COST_INFORMATION, 
-            asset_id, 
-            message
+            MesidoAssetIssueType.ASSET_COST_INFORMATION, asset_id, message
         )
 
     def get_variable_opex_costs(self, asset: Asset) -> float:
@@ -1135,18 +1133,13 @@ class _AssetToComponentBase:
             "variableMaintenanceCosts",
         ]
 
-        GAS_ASSETS = {"GasDemand", "GasStorage", "Electrolyzer"}
+        gas_assets = {"GasDemand", "GasStorage", "Electrolyzer"}
 
         cost_attributes = asset.attributes["costInformation"]
-        cost_infos = {
-            field: getattr(cost_attributes, field)
-            for field in cost_fields
-        }
+        cost_infos = {field: getattr(cost_attributes, field) for field in cost_fields}
 
         if all(cost_info is None for cost_info in cost_infos.values()):
-            message = (
-                f"No variable OPEX cost information specified for asset {asset.name}"
-            )
+            message = f"No variable OPEX cost information specified for asset {asset.name}"
             self._log_and_report_issue(message, asset.id)
         value = 0.0
 
@@ -1155,9 +1148,7 @@ class _AssetToComponentBase:
                 continue
             cost_value, unit, per_unit, per_time = self.get_cost_value_and_unit(cost_info)
             if unit != UnitEnum.EURO:
-                message = (
-                    f"Expected cost information {cost_info} to provide a cost in euros."
-                )
+                message = f"Expected cost information {cost_info} to provide a cost in euros."
                 self._log_and_report_issue(message, asset.id)
                 continue
             if per_time != TimeUnitEnum.NONE:
@@ -1167,25 +1158,22 @@ class _AssetToComponentBase:
                 )
                 self._log_and_report_issue(message, asset.id)
                 continue
-            if per_unit != UnitEnum.WATTHOUR and asset.asset_type not in GAS_ASSETS:
+            if per_unit != UnitEnum.WATTHOUR and asset.asset_type not in gas_assets:
                 message = (
                     f"Expected the specified OPEX for asset {asset.name} to be per Wh, "
                     f"but they are provided in {per_unit} instead."
                 )
                 self._log_and_report_issue(message, asset.id)
                 continue
-            if (
-                asset.asset_type in GAS_ASSETS
-                and per_unit != UnitEnum.GRAM
-            ):
+            if asset.asset_type in gas_assets and per_unit != UnitEnum.GRAM:
                 message = (
                     f"Expected the specified OPEX for asset {asset.name} to be per g/s, "
                     f"but they are provided in {per_unit}/{per_time} instead."
                 )
-                # NOTE: This check considers per_time units for gas assets. 
-                # However, the check per_time != TimeUnitEnum.NONE above assumes that 
+                # NOTE: This check considers per_time units for gas assets.
+                # However, the check per_time != TimeUnitEnum.NONE above assumes that
                 # no time units are provided. Please check if for for gas assets an exception
-                # is necessary in the check "per_time != TimeUnitEnum.NONE"   
+                # is necessary in the check "per_time != TimeUnitEnum.NONE"
                 self._log_and_report_issue(message, asset.id)
                 continue
             if cost_value < 0.0:
@@ -1224,7 +1212,7 @@ class _AssetToComponentBase:
         ].fixedMaintenanceCosts
 
         if all(cost_info is None for cost_info in cost_infos.values()):
-            message = (f"No fixed OPEX cost information specified for asset {asset.name}")
+            message = f"No fixed OPEX cost information specified for asset {asset.name}"
             self._log_and_report_issue(message, asset.id)
             value = 0.0
         else:
@@ -1234,9 +1222,7 @@ class _AssetToComponentBase:
                     continue
                 cost_value, unit, per_unit, per_time = self.get_cost_value_and_unit(cost_info)
                 if unit != UnitEnum.EURO:
-                    message = (
-                        f"Expected cost information {cost_info} to be provided in euros."
-                    )
+                    message = f"Expected cost information {cost_info} to be provided in euros."
                     self._log_and_report_issue(message, asset.id)
                     continue
                 if per_unit == UnitEnum.CUBIC_METRE and asset.asset_type != "GasStorage":
@@ -1346,7 +1332,7 @@ class _AssetToComponentBase:
         Returns
         -------
         A float with the installation cost coefficient in EUR.
-        
+
         Raises
         ------
         ValueError
@@ -1355,9 +1341,7 @@ class _AssetToComponentBase:
 
         cost_info = asset.attributes["costInformation"].installationCosts
         if cost_info is None:
-            message = (
-                f"No installation cost information provided for asset {asset.name}."
-            )
+            message = f"No installation cost information provided for asset {asset.name}."
             self._log_and_report_issue(message, asset.id)
             return 0.0
 
@@ -1389,7 +1373,7 @@ class _AssetToComponentBase:
                     f"Specified installation cost of asset {asset.name} should be "
                     f"non-negative, but has value {cost_value}."
                 ),
-            )
+            ),
         ]
 
         for condition, message in validations:
@@ -1397,7 +1381,6 @@ class _AssetToComponentBase:
                 self._log_and_report_issue(message, asset.id)
 
         return cost_value
-    
 
     def get_investment_costs(self, asset: Asset, per_unit: UnitEnum = UnitEnum.WATT) -> float:
         """
@@ -1492,8 +1475,6 @@ class _AssetToComponentBase:
                 self._log_and_report_issue(message, asset.id)
                 return 0.0
         else:
-            message (
-                f"Cannot provide investment costs for asset " f"{asset.name} per {per_unit}"
-            )
+            message(f"Cannot provide investment costs for asset " f"{asset.name} per {per_unit}")
             self._log_and_report_issue(message, asset.id)
             return 0.0
