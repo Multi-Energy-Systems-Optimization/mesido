@@ -1,5 +1,5 @@
 
-# [Unreleased-main] - 2025-02-24
+# [Unreleased-main] - 2025-04-15
 
 ## Added
 - Default database for gas pipe dimensions based on the ASA pipe schedule with thicknesses from the standard class
@@ -12,6 +12,7 @@
 - Generic functions for postprocessing are added.
 - Generic function to adapt timeseries from hourly timesteps to user-defined timesteps by averaging.
 - Error check for NaN values in profile data (csv & influxDB)
+- Specify package (deepdiff used in pandapipes validation test) version number in test environment
 
 ## Changed
 - Updated the Financial section of the documentation to explain the annualized discounted costs calculation.
