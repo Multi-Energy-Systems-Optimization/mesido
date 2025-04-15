@@ -13,6 +13,7 @@
 - Generic function to adapt timeseries from hourly timesteps to user-defined timesteps by averaging.
 - Error check for NaN values in profile data (csv & influxDB)
 - Specify package (deepdiff used in pandapipes validation test) version number in test environment
+- Reset POTENTIAL_ERRORS class instance (Singleton) in grow_workflow due to it being persistent
 
 ## Changed
 - Updated the Financial section of the documentation to explain the annualized discounted costs calculation.
