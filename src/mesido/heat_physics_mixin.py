@@ -1285,7 +1285,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     np.inf,
                 )
             )
-            big_m = 2.0 * np.max(
+            big_m = np.max(
                 np.abs(
                     (
                         *self.bounds()[f"{p}.HeatIn.Heat"],
@@ -1605,6 +1605,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             carrier = parameters[f"{p}.carrier_id"]
             temperatures = self.temperature_regimes(carrier)
+
+            #TODO: flowdir can be 1 or 0 when Q==0.0, so heat needs to be explicitely set to be
+            # negative or possitive based on flowdir
 
             for heat in [scaled_heat_in, scaled_heat_out]:
                 if self.energy_system_options()["neglect_pipe_heat_losses"]:

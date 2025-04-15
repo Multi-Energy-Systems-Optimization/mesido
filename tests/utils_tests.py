@@ -113,7 +113,7 @@ def heat_to_discharge_test(solution, results):
      discharge and heatflow can be negative.
     """
     test = TestCase()
-    tol = 1.0e-2
+    tol_heat = 1.0e-2
     for d in [
         *solution.energy_system_components.get("heat_demand", []),
         *solution.energy_system_components.get("airco", []),
@@ -136,7 +136,7 @@ def heat_to_discharge_test(solution, results):
         np.testing.assert_allclose(
             results[f"{d}.Heat_flow"],
             results[f"{d}.HeatIn.Heat"] - results[f"{d}.HeatOut.Heat"],
-            atol=tol,
+            atol=tol_heat,
         )
         np.testing.assert_allclose(
             results[f"{d}.HeatOut.Heat"], results[f"{d}.Q"] * rho * cp * return_t
@@ -149,7 +149,7 @@ def heat_to_discharge_test(solution, results):
         np.testing.assert_allclose(
             results[f"{d}.Cold_demand"],
             results[f"{d}.HeatOut.Heat"] - results[f"{d}.HeatIn.Heat"],
-            atol=tol,
+            atol=tol_heat,
         )
         np.testing.assert_allclose(
             results[f"{d}.HeatOut.Heat"], results[f"{d}.Q"] * rho * cp * supply_t
@@ -195,13 +195,13 @@ def heat_to_discharge_test(solution, results):
             np.testing.assert_allclose(
                 results[f"{d}.Heat_ates"],
                 results[f"{d}.HeatIn.Heat"] - results[f"{d}.HeatOut.Heat"],
-                atol=tol,
+                atol=tol_heat,
             )
         except KeyError:
             np.testing.assert_allclose(
                 results[f"{d}.Heat_buffer"],
                 results[f"{d}.HeatIn.Heat"] - results[f"{d}.HeatOut.Heat"],
-                atol=tol,
+                atol=tol_heat,
             )
         supply_temp, return_temp, dt = _get_component_temperatures(solution, results, d)
         indices = results[f"{d}.HeatIn.Q"] >= 0
@@ -216,13 +216,13 @@ def heat_to_discharge_test(solution, results):
         test.assertTrue(
             expr=all(
                 results[f"{d}.HeatIn.Heat"][indices]
-                <= (results[f"{d}.HeatIn.Q"][indices] * rho * cp * supply_t + tol)
+                <= (results[f"{d}.HeatIn.Q"][indices] * rho * cp * supply_t + tol_heat)
             )
         )
         np.testing.assert_allclose(
             results[f"{d}.HeatOut.Heat"][indices],
             results[f"{d}.HeatIn.Q"][indices] * rho * cp * return_t,
-            atol=tol,
+            atol=tol_heat,
         )
         indices = results[f"{d}.HeatIn.Q"] <= 0
         if isinstance(supply_t, float):
@@ -236,13 +236,13 @@ def heat_to_discharge_test(solution, results):
         np.testing.assert_allclose(
             results[f"{d}.HeatIn.Heat"][indices],
             results[f"{d}.HeatIn.Q"][indices] * rho * cp * supply_t,
-            atol=tol,
+            atol=tol_heat,
         )
 
         test.assertTrue(
             expr=all(
                 results[f"{d}.HeatOut.Heat"][indices]
-                >= (results[f"{d}.HeatIn.Q"][indices] * rho * cp * return_t - tol)
+                >= (results[f"{d}.HeatIn.Q"][indices] * rho * cp * return_t - tol_heat)
             )
         )
 
@@ -270,13 +270,13 @@ def heat_to_discharge_test(solution, results):
             heat = results[f"{d}.{p}_heat"]
 
             if p == "Primary":
-                np.testing.assert_allclose(heat_out, discharge * rho * cp * return_t, atol=tol)
-                test.assertTrue(expr=all(heat_in <= discharge * rho * cp * supply_t + tol))
-                test.assertTrue(expr=all(heat <= discharge * rho * cp * dt + tol))
+                np.testing.assert_allclose(heat_out, discharge * rho * cp * return_t, atol=tol_heat)
+                test.assertTrue(expr=all(heat_in <= discharge * rho * cp * supply_t + tol_heat))
+                test.assertTrue(expr=all(heat <= discharge * rho * cp * dt + tol_heat))
             elif p == "Secondary":
-                test.assertTrue(expr=all(heat >= discharge * rho * cp * dt - tol))
-                np.testing.assert_allclose(heat_out, discharge * rho * cp * supply_t, atol=tol)
-                test.assertTrue(expr=all(heat_in <= discharge * rho * cp * return_t + tol))
+                test.assertTrue(expr=all(heat >= discharge * rho * cp * dt - tol_heat))
+                np.testing.assert_allclose(heat_out, discharge * rho * cp * supply_t, atol=tol_heat)
+                test.assertTrue(expr=all(heat_in <= discharge * rho * cp * return_t + tol_heat))
 
     for p in solution.energy_system_components.get("heat_pipe", []):
         cp = solution.parameters(0)[f"{p}.cp"]
@@ -302,7 +302,7 @@ def heat_to_discharge_test(solution, results):
         test.assertTrue(
             expr=all(
                 results[f"{p}.HeatOut.Heat"][indices]
-                <= results[f"{p}.Q"][indices] * rho * cp * temperature + tol
+                <= results[f"{p}.Q"][indices] * rho * cp * temperature + tol_heat
             )
         )
         indices = results[f"{p}.Q"] < 0
@@ -319,13 +319,13 @@ def heat_to_discharge_test(solution, results):
         test.assertTrue(
             expr=all(
                 results[f"{p}.HeatIn.Heat"][indices]
-                >= results[f"{p}.Q"][indices] * rho * cp * temperature - tol
+                >= results[f"{p}.Q"][indices] * rho * cp * temperature - tol_heat
             )
         )
         test.assertTrue(
             expr=all(
                 results[f"{p}.HeatOut.Heat"][indices]
-                >= results[f"{p}.Q"][indices] * rho * cp * temperature - tol
+                >= results[f"{p}.Q"][indices] * rho * cp * temperature - tol_heat
             )
         )
         indices = results[f"{p}.Q"] == 0
@@ -336,13 +336,13 @@ def heat_to_discharge_test(solution, results):
         np.testing.assert_allclose(
             results[f"{p}.HeatIn.Heat"][indices],
             results[f"{p}.Q"][indices] * rho * cp * temperature,
-            atol=tol,
+            atol=tol_heat,
             err_msg=f"{p} has mismatch in milp to discharge",
         )
         np.testing.assert_allclose(
             results[f"{p}.HeatOut.Heat"][indices],
             results[f"{p}.Q"][indices] * rho * cp * temperature,
-            atol=tol,
+            atol=tol_heat,
             err_msg=f"{p} has mismatch in milp to discharge",
         )
 
