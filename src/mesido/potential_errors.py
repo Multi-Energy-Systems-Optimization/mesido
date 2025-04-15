@@ -62,6 +62,8 @@ class PotentialErrors:
         )
 
 
+# When adding POTENTIAL_ERRORS to a workflow a reset thereof is required due to it being a
+# persistent object
 POTENTIAL_ERRORS = PotentialErrors()
 
 
