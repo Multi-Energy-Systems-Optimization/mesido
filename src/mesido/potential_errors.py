@@ -62,14 +62,8 @@ class PotentialErrors:
         )
 
 
-# When adding POTENTIAL_ERRORS to a workflow a reset thereof is required due to it being a
-# persistent object
 POTENTIAL_ERRORS = PotentialErrors()
 
 
 def get_potential_errors() -> PotentialErrors:
     return POTENTIAL_ERRORS
-
-
-def reset_potential_errors() -> None:
-    POTENTIAL_ERRORS._gathered_potential_issues = {}
