@@ -127,7 +127,7 @@ class TestAtesTemperature(TestCase):
         # TODO: potentially update example such that the commented checks will also hold.
         # np.testing.assert_array_less(heat_pump_sec, geo_source)
 
-        charging = np.array([int(val > 0) for val in heat_ates])
+        charging = np.array([int(val > tol) for val in heat_ates])
         # array less then because ates charging boolean can be either 0 or 1 when there is no flow,
         # or just flow to compensate the heatloss
         np.testing.assert_array_less(np.ones(len(hex_disabled)) - tol, hex_disabled + hp_disabled)
@@ -198,3 +198,9 @@ class TestAtesTemperature(TestCase):
                 * (ates_temperature[demand_not_matched] - ates_temp_ret)
             ),
         )
+
+
+if __name__ == "__main__":
+    a = TestAtesTemperature()
+    a.test_ates_temperature()
+    a.test_ates_max_flow()
