@@ -64,7 +64,6 @@ setup(
         "casadi-gil-comp == 3.6.7",
         "StrEnum == 0.4.15",
         "CoolProp==6.6.0",
-        "deepdiff==7.0.1",
     ],
     tests_require=["pytest", "pytest-runner", "numpy"],
     include_package_data=True,
