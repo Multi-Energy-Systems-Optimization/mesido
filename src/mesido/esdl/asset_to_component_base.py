@@ -21,7 +21,7 @@ logger = logging.getLogger("mesido")
 
 MODIFIERS = Dict[str, Union[str, int, float]]
 
-HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS = 4200 * 988
+HEAT_STORAGE_M3_WATER_PER_DEGREE_CELSIUS = 4200 * 988
 WATTHOUR_TO_JOULE = 3600
 
 MULTI_ENUM_NAME_TO_FACTOR = {
@@ -466,7 +466,7 @@ class _AssetToComponentBase:
                     energy_reference_j_kg = get_internal_energy(asset.name, port.carrier)
                 else:
                     # heat_value / rho * minimum_dT => [J/m3K] / [kg/m3] * 1.0 [K] => [J/kg]
-                    energy_reference_j_kg = HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS / 988.0
+                    energy_reference_j_kg = HEAT_STORAGE_M3_WATER_PER_DEGREE_CELSIUS / 988.0
 
                 connected_port = port.connectedTo[0]
                 q_max = (
@@ -497,7 +497,7 @@ class _AssetToComponentBase:
                     energy_reference_j_kg = get_internal_energy(asset.name, port.carrier)
                 else:
                     # heat_value / rho * minimum_dT => [J/m3K] / [kg/m3] * 1.0 [K] => [J/kg]
-                    energy_reference_j_kg = HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS / 988.0
+                    energy_reference_j_kg = HEAT_STORAGE_M3_WATER_PER_DEGREE_CELSIUS / 988.0
 
                 connected_port = port.connectedTo[0]
                 q_max = (
@@ -716,7 +716,7 @@ class _AssetToComponentBase:
                         energy_reference_j_kg = get_internal_energy(asset.name, port.carrier)
                     else:
                         # heat_value / rho * minimum_dT => [J/m3K] / [kg/m3] * 1.0 [K] => [J/kg]
-                        energy_reference_j_kg = HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS / 988.0
+                        energy_reference_j_kg = HEAT_STORAGE_M3_WATER_PER_DEGREE_CELSIUS / 988.0
 
                     connected_port = port.connectedTo[0]
                     q_nominal = (
@@ -745,7 +745,7 @@ class _AssetToComponentBase:
                         energy_reference_j_kg = get_internal_energy(asset.name, port.carrier)
                     else:
                         # heat_value / rho * minimum_dT => [J/m3K] / [kg/m3] * 1.0 [K] => [J/kg]
-                        energy_reference_j_kg = HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS / 988.0
+                        energy_reference_j_kg = HEAT_STORAGE_M3_WATER_PER_DEGREE_CELSIUS / 988.0
 
                     connected_port = port.connectedTo[0]
                     q_nominal = (
@@ -774,7 +774,7 @@ class _AssetToComponentBase:
                         energy_reference_j_kg = get_internal_energy(asset.name, port.carrier)
                     else:
                         # heat_value / rho * minimum_dT => [J/m3K] / [kg/m3] * 1.0 [K] => [J/kg]
-                        energy_reference_j_kg = HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS / 988.0
+                        energy_reference_j_kg = HEAT_STORAGE_M3_WATER_PER_DEGREE_CELSIUS / 988.0
 
                     connected_port = port.connectedTo[0]
                     q_nominal = (
@@ -808,7 +808,7 @@ class _AssetToComponentBase:
                             energy_reference_j_kg = get_internal_energy(asset.name, port.carrier)
                         elif isinstance(port.carrier, esdl.HeatCommodity):
                             # heat_value / rho * minimum_dT => [J/m3K] / [kg/m3] * 1.0 [K] => [J/kg]
-                            energy_reference_j_kg = HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS / 988.0
+                            energy_reference_j_kg = HEAT_STORAGE_M3_WATER_PER_DEGREE_CELSIUS / 988.0
 
                         if isinstance(connected_port.energyasset, esdl.Joint):
                             q_nominal = (
@@ -878,7 +878,7 @@ class _AssetToComponentBase:
                             / (
                                 # note rho -> gas/hydrogen g/m3, heat kg/m3
                                 get_density(asset.name, p.carrier)
-                                * (HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS / 988.0)
+                                * (HEAT_STORAGE_M3_WATER_PER_DEGREE_CELSIUS / 988.0)
                             )
                         )
                     if q_nominal is not None:
@@ -1102,12 +1102,13 @@ class _AssetToComponentBase:
             value = 1.0
         return value
 
-    def _log_and_report_issue(self, message: str, asset_id) -> None:
+    def _log_and_report_issue(self, message: str, asset_id, optional: bool = False) -> None:
         """Helper function to log warnings and report issues."""
         logger.warning(message)
-        get_potential_errors().add_potential_issue(
-            MesidoAssetIssueType.ASSET_COST_INFORMATION, asset_id, message
-        )
+        if not optional:
+            get_potential_errors().add_potential_issue(
+                MesidoAssetIssueType.ASSET_COST_INFORMATION, asset_id, message
+            )
 
     def get_variable_opex_costs(self, asset: Asset) -> float:
         """
@@ -1213,7 +1214,7 @@ class _AssetToComponentBase:
 
         if all(cost_info is None for cost_info in cost_infos.values()):
             message = f"No fixed OPEX cost information specified for asset {asset.name}"
-            self._log_and_report_issue(message, asset.id)
+            self._log_and_report_issue(message, asset.id, optional=True)
             value = 0.0
         else:
             value = 0.0
@@ -1221,74 +1222,75 @@ class _AssetToComponentBase:
                 if cost_info is None:
                     continue
                 cost_value, unit, per_unit, per_time = self.get_cost_value_and_unit(cost_info)
-                if unit != UnitEnum.EURO:
-                    message = f"Expected cost information {cost_info} to be provided in euros."
-                    self._log_and_report_issue(message, asset.id)
-                    continue
-                if per_unit == UnitEnum.CUBIC_METRE and asset.asset_type != "GasStorage":
-                    # index is 0 because buffers only have one in out port
-                    supply_temp = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
-                        "temperature"
-                    ]
-                    return_temp = asset.global_properties["carriers"][
-                        asset.out_ports[0].carrier.id
-                    ]["temperature"]
-                    delta_temp = supply_temp - return_temp
-                    m3_to_joule_factor = delta_temp * HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS
-                    cost_value = cost_value / m3_to_joule_factor
-                elif per_unit == UnitEnum.NONE:
-                    if asset.asset_type == "HeatStorage":
-                        size = asset.attributes["capacity"]
-                        if size == 0.0:
-                            # index is 0 because buffers only have one in out port
-                            supply_temp = asset.global_properties["carriers"][
-                                asset.in_ports[0].carrier.id
-                            ]["temperature"]
-                            return_temp = asset.global_properties["carriers"][
-                                asset.out_ports[0].carrier.id
-                            ]["temperature"]
-                            delta_temp = supply_temp - return_temp
-                            m3_to_joule_factor = (
-                                delta_temp * HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS
-                            )
-                            size = asset.attributes["volume"] * m3_to_joule_factor
+                if cost_value is not None and cost_value > 0.0:
+                    if unit != UnitEnum.EURO:
+                        message = f"Expected cost information {cost_info} to be provided in euros."
+                        self._log_and_report_issue(message, asset.id)
+                        continue
+                    if per_unit == UnitEnum.CUBIC_METRE and asset.asset_type != "GasStorage":
+                        # index is 0 because buffers only have one in out port
+                        supply_temp = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
+                            "temperature"
+                        ]
+                        return_temp = asset.global_properties["carriers"][
+                            asset.out_ports[0].carrier.id
+                        ]["temperature"]
+                        delta_temp = supply_temp - return_temp
+                        m3_to_joule_factor = delta_temp * HEAT_STORAGE_M3_WATER_PER_DEGREE_CELSIUS
+                        cost_value = cost_value / m3_to_joule_factor
+                    elif per_unit == UnitEnum.NONE:
+                        if asset.asset_type == "HeatStorage":
+                            size = asset.attributes["capacity"]
                             if size == 0.0:
-                                RuntimeWarning(f"{asset.name} has not capacity or volume set")
-                                return 0.0
-                    elif asset.asset_type == "ATES":
-                        size = asset.attributes["maxChargeRate"]
-                        if size == 0.0:
-                            size = asset.attributes["capacity"] / (
-                                365 * 24 * 3600 / 2
-                            )  # only half a year it can load
-                            if size == 0.0:
-                                RuntimeWarning(
-                                    f"{asset.name} has not capacity or maximum charge rate set"
+                                # index is 0 because buffers only have one in out port
+                                supply_temp = asset.global_properties["carriers"][
+                                    asset.in_ports[0].carrier.id
+                                ]["temperature"]
+                                return_temp = asset.global_properties["carriers"][
+                                    asset.out_ports[0].carrier.id
+                                ]["temperature"]
+                                delta_temp = supply_temp - return_temp
+                                m3_to_joule_factor = (
+                                    delta_temp * HEAT_STORAGE_M3_WATER_PER_DEGREE_CELSIUS
                                 )
-                                return 0.0
-                    else:
-                        try:
-                            size = asset.attributes["power"]
+                                size = asset.attributes["volume"] * m3_to_joule_factor
+                                if size == 0.0:
+                                    RuntimeWarning(f"{asset.name} has not capacity or volume set")
+                                    return 0.0
+                        elif asset.asset_type == "ATES":
+                            size = asset.attributes["maxChargeRate"]
                             if size == 0.0:
-                                continue
-                        except KeyError:
-                            return 0.0
-                    cost_value = cost_value / size
-                elif per_unit != UnitEnum.WATT and asset.asset_type != "GasStorage":
-                    message = (
-                        f"Expected the specified OPEX for asset {asset.name} to be per W or m3, "
-                        f"but they are provided in {per_unit} instead."
-                    )
-                    self._log_and_report_issue(message, asset.id)
-                    continue
-                # still to decide if the cost is per kg or per m3
-                elif per_unit != UnitEnum.GRAM and asset.asset_type == "GasStorage":
-                    message = (
-                        f"Expected the specified OPEX for asset {asset.name} to be per GRAM, "
-                        f"but they are provided in {per_unit} instead."
-                    )
-                    self._log_and_report_issue(message, asset.id)
-                    continue
+                                size = asset.attributes["capacity"] / (
+                                    365 * 24 * 3600 / 2
+                                )  # only half a year it can load
+                                if size == 0.0:
+                                    RuntimeWarning(
+                                        f"{asset.name} has not capacity or maximum charge rate set"
+                                    )
+                                    return 0.0
+                        else:
+                            try:
+                                size = asset.attributes["power"]
+                                if size == 0.0:
+                                    continue
+                            except KeyError:
+                                return 0.0
+                        cost_value = cost_value / size
+                    elif per_unit != UnitEnum.WATT and asset.asset_type != "GasStorage":
+                        message = (
+                            f"Expected the specified OPEX for asset {asset.name} to be per W or m3, "
+                            f"but they are provided in {per_unit} instead."
+                        )
+                        self._log_and_report_issue(message, asset.id)
+                        continue
+                    # still to decide if the cost is per kg or per m3
+                    elif per_unit != UnitEnum.GRAM and asset.asset_type == "GasStorage":
+                        message = (
+                            f"Expected the specified OPEX for asset {asset.name} to be per GRAM, "
+                            f"but they are provided in {per_unit} instead."
+                        )
+                        self._log_and_report_issue(message, asset.id)
+                        continue
 
                 value += cost_value
         return value
@@ -1340,6 +1342,15 @@ class _AssetToComponentBase:
         """
 
         cost_info = asset.attributes["costInformation"].installationCosts
+        combined_cost_string = "Combined investment and installation costs"
+        if asset.attributes["costInformation"].investmentCosts is not None:
+            cost_type_note = asset.attributes["costInformation"].investmentCosts.name
+            if cost_type_note is not None and cost_type_note.strip():
+                if cost_type_note == combined_cost_string:
+                    logger.warning(
+                        f"{combined_cost_string} for asset {asset.name}"
+                    )
+                    return 0.0
         if cost_info is None:
             message = f"No installation cost information provided for asset {asset.name}."
             self._log_and_report_issue(message, asset.id)
@@ -1463,7 +1474,7 @@ class _AssetToComponentBase:
                     "temperature"
                 ]
                 delta_temp = supply_temp - return_temp
-                m3_to_joule_factor = delta_temp * HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS
+                m3_to_joule_factor = delta_temp * HEAT_STORAGE_M3_WATER_PER_DEGREE_CELSIUS
                 return cost_value / m3_to_joule_factor
             else:
                 message = (
