@@ -8,6 +8,7 @@ HEAT_AND_COOL_NETWORK_ERRORS = "heat_and_cool_network"
 CUSTOM_ERRORS = "custom_errors"  # an example of custom stuff that can be added in the future
 NO_POTENTIAL_ERRORS_CHECK = "no_potential_errors"
 
+
 def mesido_issue_type_gen_message(issue_type: MesidoAssetIssueType) -> str:
     """
     Get general message per issue type.

@@ -2,6 +2,7 @@ from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.techno_economic_mixin import TechnoEconomicMixin
+from mesido.workflows.utils.error_types import NO_POTENTIAL_ERRORS_CHECK
 
 import numpy as np
 
@@ -9,7 +10,6 @@ from rtctools.data.storage import DataStore
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
-from mesido.workflows.utils.error_types import NO_POTENTIAL_ERRORS_CHECK, potential_error_to_error
 from rtctools.optimization.goal_programming_mixin import Goal, GoalProgrammingMixin
 from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
@@ -167,7 +167,7 @@ if __name__ == "__main__":
     start_time = time.time()
 
     solution = run_end_scenario_sizing(
-        TestEndScenarioSizingStaged,  # Use TestEndScenarioSizingStaged instead of EndScenarioSizingStaged
+        TestEndScenarioSizingStaged,
         esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,

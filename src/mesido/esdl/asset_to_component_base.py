@@ -1229,9 +1229,9 @@ class _AssetToComponentBase:
                         continue
                     if per_unit == UnitEnum.CUBIC_METRE and asset.asset_type != "GasStorage":
                         # index is 0 because buffers only have one in out port
-                        supply_temp = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
-                            "temperature"
-                        ]
+                        supply_temp = asset.global_properties["carriers"][
+                            asset.in_ports[0].carrier.id
+                        ]["temperature"]
                         return_temp = asset.global_properties["carriers"][
                             asset.out_ports[0].carrier.id
                         ]["temperature"]
@@ -1278,8 +1278,8 @@ class _AssetToComponentBase:
                         cost_value = cost_value / size
                     elif per_unit != UnitEnum.WATT and asset.asset_type != "GasStorage":
                         message = (
-                            f"Expected the specified OPEX for asset {asset.name} to be per W or m3, "
-                            f"but they are provided in {per_unit} instead."
+                            f"Expected the specified OPEX for asset {asset.name} to be per W or m3,"
+                            f" but they are provided in {per_unit} instead."
                         )
                         self._log_and_report_issue(message, asset.id)
                         continue
@@ -1347,9 +1347,7 @@ class _AssetToComponentBase:
             cost_type_note = asset.attributes["costInformation"].investmentCosts.name
             if cost_type_note is not None and cost_type_note.strip():
                 if cost_type_note == combined_cost_string:
-                    logger.warning(
-                        f"{combined_cost_string} for asset {asset.name}"
-                    )
+                    logger.warning(f"{combined_cost_string} for asset {asset.name}")
                     return 0.0
         if cost_info is None:
             message = f"No installation cost information provided for asset {asset.name}."
