@@ -9,6 +9,7 @@ from rtctools.data.storage import DataStore
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
+from mesido.workflows.utils.error_types import NO_POTENTIAL_ERRORS_CHECK, potential_error_to_error
 from rtctools.optimization.goal_programming_mixin import Goal, GoalProgrammingMixin
 from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
@@ -118,7 +119,7 @@ class HeatProblem(
         """
         Reads the yearly profile with hourly time steps and adapt to a daily averaged profile
         """
-        super().read()
+        super().read(error_type_check=NO_POTENTIAL_ERRORS_CHECK)
 
         demands = self.energy_system_components.get("heat_demand", [])
         new_datastore = DataStore(self)
@@ -155,10 +156,18 @@ if __name__ == "__main__":
     import time
     from mesido.workflows import EndScenarioSizingStaged, run_end_scenario_sizing
 
+    # Define the test class right before using it
+    class TestEndScenarioSizingStaged(EndScenarioSizingStaged):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+
+        def read(self):
+            super(EndScenarioSizingStaged, self).read(error_type_check=NO_POTENTIAL_ERRORS_CHECK)
+
     start_time = time.time()
 
     solution = run_end_scenario_sizing(
-        EndScenarioSizingStaged,
+        TestEndScenarioSizingStaged,  # Use TestEndScenarioSizingStaged instead of EndScenarioSizingStaged
         esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,

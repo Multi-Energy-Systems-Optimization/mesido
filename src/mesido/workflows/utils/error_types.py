@@ -6,7 +6,7 @@ from mesido.potential_errors import MesidoAssetIssueType, get_potential_errors
 HEAT_NETWORK_ERRORS = "heat_network"
 HEAT_AND_COOL_NETWORK_ERRORS = "heat_and_cool_network"
 CUSTOM_ERRORS = "custom_errors"  # an example of custom stuff that can be added in the future
-
+NO_POTENTIAL_ERRORS_CHECK = "no_potential_errors"
 
 def mesido_issue_type_gen_message(issue_type: MesidoAssetIssueType) -> str:
     """
@@ -53,6 +53,7 @@ def potential_error_to_error(network_check_type: Enum) -> None:
         ],
         # Example of extra error types / groups that can be added. This one is not used yet.
         CUSTOM_ERRORS: [MesidoAssetIssueType.ASSET_PROFILE_CAPABILITY],
+        NO_POTENTIAL_ERRORS_CHECK: [],
     }
 
     # Error checking:

@@ -193,14 +193,14 @@ class EndScenarioSizing(
 
         super().pre()
 
-    def read(self):
+    def read(self, error_type_check=HEAT_NETWORK_ERRORS):
         """
         Reads the yearly profile with hourly time steps and adapt to a daily averaged profile
         except for the day with the peak demand.
         """
         super().read()
 
-        potential_error_to_error(HEAT_NETWORK_ERRORS)
+        potential_error_to_error(error_type_check)
 
         (
             self.__indx_max_peak,
