@@ -1,5 +1,5 @@
 
-# [Unreleased-main] - 2025-04-14
+# [Unreleased-main] - 2025-04-15
 
 ## Added
 - Default database for gas pipe dimensions based on the ASA pipe schedule with thicknesses from the standard class
@@ -12,6 +12,8 @@
 - Generic functions for postprocessing are added.
 - Generic function to adapt timeseries from hourly timesteps to user-defined timesteps by averaging.
 - Error check for NaN values in profile data (csv & influxDB)
+- Specify package (deepdiff used in pandapipes validation test) version number in test environment
+- Reset POTENTIAL_ERRORS class instance (Singleton) in grow_workflow due to it being persistent
 
 ## Changed
 - Updated the Financial section of the documentation to explain the annualized discounted costs calculation.
@@ -23,7 +25,6 @@
 - Option for electricity cables to be unidirectional
 - Upgraded rtctools to v 2.6.1
 - Updated Casadi to 3.6.7 with gil fixes (see https://github.com/casadi/casadi/releases/tag/nightly-gil_release)
-- Reset POTENTIAL_ERRORS class instance (Singleton) in grow_workflow due to it being persistent
 
 ## Fixed
 - Bugfix: gas boiler mass flow constraint units

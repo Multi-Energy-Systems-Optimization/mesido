@@ -198,9 +198,3 @@ class TestAtesTemperature(TestCase):
                 * (ates_temperature[demand_not_matched] - ates_temp_ret)
             ),
         )
-
-
-if __name__ == "__main__":
-    a = TestAtesTemperature()
-    a.test_ates_temperature()
-    a.test_ates_max_flow()
