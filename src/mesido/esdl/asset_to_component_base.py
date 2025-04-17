@@ -1102,10 +1102,10 @@ class _AssetToComponentBase:
             value = 1.0
         return value
 
-    def _log_and_report_issue(self, message: str, asset_id, optional: bool = False) -> None:
+    def _log_and_report_issue(self, message: str, asset_id, optional_attribute: bool = False) -> None:
         """Helper function to log warnings and report issues."""
         logger.warning(message)
-        if not optional:
+        if not optional_attribute:
             get_potential_errors().add_potential_issue(
                 MesidoAssetIssueType.ASSET_COST_INFORMATION, asset_id, message
             )
@@ -1214,7 +1214,7 @@ class _AssetToComponentBase:
 
         if all(cost_info is None for cost_info in cost_infos.values()):
             message = f"No fixed OPEX cost information specified for asset {asset.name}"
-            self._log_and_report_issue(message, asset.id, optional=True)
+            self._log_and_report_issue(message, asset.id, optional_attribute=True)
             value = 0.0
         else:
             value = 0.0

@@ -148,7 +148,7 @@ class EndScenarioSizing(
     2. minimize TCO = Capex + Opex*lifetime
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, error_type_check=HEAT_NETWORK_ERRORS, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         # default setting to cater for ~ 10kW heat, DN800 pipe at dT = 40 degrees Celcuis
@@ -163,6 +163,8 @@ class EndScenarioSizing(
 
         self.__indx_max_peak = None
         self.__day_steps = 5
+
+        self._error_type_check = error_type_check
 
         # self._override_pipe_classes = {}
 
@@ -193,14 +195,14 @@ class EndScenarioSizing(
 
         super().pre()
 
-    def read(self, error_type_check=HEAT_NETWORK_ERRORS):
+    def read(self):
         """
         Reads the yearly profile with hourly time steps and adapt to a daily averaged profile
         except for the day with the peak demand.
         """
         super().read()
 
-        potential_error_to_error(error_type_check)
+        potential_error_to_error(self._error_type_check)
 
         (
             self.__indx_max_peak,

@@ -156,22 +156,15 @@ if __name__ == "__main__":
     import time
     from mesido.workflows import EndScenarioSizingStaged, run_end_scenario_sizing
 
-    # Define the test class right before using it
-    class TestEndScenarioSizingStaged(EndScenarioSizingStaged):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-
-        def read(self):
-            super(EndScenarioSizingStaged, self).read(error_type_check=NO_POTENTIAL_ERRORS_CHECK)
-
     start_time = time.time()
 
     solution = run_end_scenario_sizing(
-        TestEndScenarioSizingStaged,
+        EndScenarioSizingStaged,
         esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,
         input_timeseries_file="Warmte_test.csv",
+        error_type_check=NO_POTENTIAL_ERRORS_CHECK  # Pass the error type here
     )
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
