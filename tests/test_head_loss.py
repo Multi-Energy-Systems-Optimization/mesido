@@ -569,7 +569,7 @@ class TestHeadLoss(TestCase):
             # Compare the hydraulic power to hard-coded values. Difference expected if an error
             # occours in the calculation of the gas kinematic viscosity.
             if head_loss_option_setting == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY:
-                np.testing.assert_allclose(head_loss_v_point_1, 1298.1537098750562)
+                np.testing.assert_allclose(head_loss_v_point_1, 1339.4824830351974)
 
             delta_volumetric_flow = (v_points[1] * np.pi * pipe_diameter**2 / 4.0) - (
                 v_points[0] * np.pi * pipe_diameter**2 / 4.0

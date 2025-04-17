@@ -1,4 +1,5 @@
 from mesido.pycml import Variable
+from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 from numpy import nan
 
@@ -6,12 +7,20 @@ from .electricity_base import ElectricityTwoPort
 from .._internal import BaseAsset
 
 
+@add_variables_documentation_automatically
 class ElectricityCable(ElectricityTwoPort, BaseAsset):
     """
     The electricity cable component is used to model voltage and power drops in the electricity
     lines. We model the power losses by over estimating them with the maximum current. We ensure
     that the power is always less than what the current is able to carry by an equality constraint
     at the demand where we enforce the minimum voltage.
+
+    Variables created:
+        {add_variable_names_for_documentation_here}
+
+    Parameters:
+        name : The name of the asset. \n
+        modifiers : Dictionary with asset information.
     """
 
     def __init__(self, name, **modifiers):
@@ -30,7 +39,7 @@ class ElectricityCable(ElectricityTwoPort, BaseAsset):
         self.max_voltage = self.min_voltage * 2.0
         self.nominal_current = nan
         self.nominal_voltage = nan
-        self.r = 1.0e-6 * self.length  # TODO: temporary value
+        self.r = nan
         self.nominal_voltage_loss = (self.nominal_current * self.r * self.nominal_voltage) ** 0.5
         self.power_loss_nominal = self.r * self.max_current * self.nominal_current
         # We accept lower accuracy in the loss computation to improve scaling in case the nominals

@@ -1,15 +1,38 @@
 
-
-# [Unreleased] - 2025-04-17
+# [Unreleased-main] - 2025-04-15
 
 ## Added
-- xx
+- Default database for gas pipe dimensions based on the ASA pipe schedule with thicknesses from the standard class
+- Gas and electricity workflow has been added. Still a work in progress
+- Internal energy content function added for natural gas and hydrogen
+- OPEX added for gas and electricity source
+- Commodity annotation for assets, to allow for easier postprocessing
+- Added function to make pickle usable (exceptions) in the OMOTES back end
+- More of the existing classes added to __init_ for local runs using the grow_workflow
+- Generic functions for postprocessing are added.
+- Generic function to adapt timeseries from hourly timesteps to user-defined timesteps by averaging.
+- Error check for NaN values in profile data (csv & influxDB)
+- Specify package (deepdiff used in pandapipes validation test) version number in test environment
+- Reset POTENTIAL_ERRORS class instance (Singleton) in grow_workflow due to it being persistent
 
 ## Changed
-- Updated the Financial section of the documentation to explain the annualized discounted costs calculation
-- Handle potential errors in asset cost information to ensure that error messages are communicated to the front end.
+- Updated the Financial section of the documentation to explain the annualized discounted costs calculation.
+- Write output to json also saves the solver statistics.
+- Updates in asset conversion from ESDL to pycml; gas and heat pipe split, generic conversion better specified.
+- Adapt profiles for heating and cooling peak day separately & add test case
+- For gas: Use energy content (heating value) instead of internal energy 
+- Option was added to allow a bypass of the heat exchanger, possible on both sides of the heat exchanger
+- Option for electricity cables to be unidirectional
+- Upgraded rtctools to v 2.6.1
+- Updated Casadi to 3.6.7 with gil fixes (see https://github.com/casadi/casadi/releases/tag/nightly-gil_release)
+
 ## Fixed
-- xx
+- Bugfix: gas boiler mass flow constraint units
+- Bugfix: same mip gap settings for all solvers in grow_workflow.
+- Bugfix: head loss test case when minimum_velocity = 0.0
+- Bugs: state update of heat pump, heat buffer volume & ates charge rates update in ESDL, heat storage asset data output to influxDB  
+- Bugfix: get_density + get_internal_energy updated to ensure it checks commodity type for heat instead of the carrier name
+- Bug: pipe class bounds when pipe DN none results from stage 1 in the grow_workflow
 
 
 # [0.1.8.5] - 2025-02-12
@@ -46,7 +69,8 @@
 - xx
 
 ## Fixed
-- xx
+- Bugfix: same mip gap settings for all solvers in grow_workflow.
+- Bugfix: head loss test case when minimum_velocity = 0.0
 
 
 # [0.1.8.2] - 2024-11-15

@@ -437,6 +437,11 @@ class InfluxDBProfileReader(BaseProfileReader):
                     f"The timestep for variable {profile.field} between {d1} and {d2} isn't "
                     f"exactly 1 hour"
                 )
+        # Check if any NaN values exist
+        if profile_time_series.isnull().any().any():
+            raise Exception(
+                f"Nan value was encountered in the profile data for variable {profile.field}"
+            )
 
     def _convert_profile_to_correct_unit(
         self, profile_time_series: pd.Series, profile: esdl.InfluxDBProfile
@@ -528,6 +533,12 @@ class ProfileReaderFromFile(BaseProfileReader):
         ensemble_size: int,
     ) -> None:
         data = pd.read_csv(self._file_path)
+
+        if len(data.filter(like="Unnamed").columns) > 0:
+            raise Exception(
+                f"An unnamed column has been found in profile source file: {self._file_path}"
+            )
+
         try:
             timeseries_import_times = [
                 datetime.datetime.strptime(entry.replace("Z", ""), "%Y-%m-%d %H:%M:%S").replace(
@@ -562,7 +573,14 @@ class ProfileReaderFromFile(BaseProfileReader):
             for component_type, var_name in self.component_type_to_var_name_map.items():
                 for component_name in energy_system_components.get(component_type, []):
                     try:
-                        values = data[f"{component_name.replace(' ', '')}"].to_numpy()
+                        column_name = f"{component_name.replace(' ', '')}"
+                        values = data[column_name].to_numpy()
+                        if np.isnan(values).any():
+                            raise Exception(
+                                f"Column name: {column_name}, NaN exists in the profile source"
+                                f" file {self._file_path}."
+                                f" Detials: {data[data[column_name].isnull()]}"
+                            )
                     except KeyError:
                         pass
                     else:
@@ -571,6 +589,11 @@ class ProfileReaderFromFile(BaseProfileReader):
                 carrier_name = properties.get("name")
                 try:
                     values = data[carrier_name].to_numpy()
+                    if np.isnan(values).any():
+                        raise Exception(
+                            f"Carrier name: {carrier_name}, NaN exists in the profile source file"
+                            f" {self._file_path}. Details: {data[data[carrier_name].isnull()]}"
+                        )
                 except KeyError:
                     pass
                 else:

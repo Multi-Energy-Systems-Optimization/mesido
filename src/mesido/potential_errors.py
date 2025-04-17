@@ -14,6 +14,7 @@ class MesidoAssetIssueType(Enum):
     HEAT_DEMAND_TYPE = "heat_demand.type"
     ASSET_PROFILE_CAPABILITY = "asset_profile.capability"
     ASSET_COST_INFORMATION = "asset_cost_information"
+    HEAT_EXCHANGER_TEMPERATURES = "heat_exchanger.temperature"
 
 
 class PotentialErrors:
@@ -62,8 +63,14 @@ class PotentialErrors:
         )
 
 
+# When adding POTENTIAL_ERRORS to a workflow a reset thereof is required due to it being a
+# persistent object
 POTENTIAL_ERRORS = PotentialErrors()
 
 
 def get_potential_errors() -> PotentialErrors:
     return POTENTIAL_ERRORS
+
+
+def reset_potential_errors() -> None:
+    POTENTIAL_ERRORS._gathered_potential_issues = {}

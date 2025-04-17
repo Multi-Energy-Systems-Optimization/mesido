@@ -183,22 +183,19 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
         for pipe_name in self.energy_system_components.get("gas_pipe", []):
             head_loss_var = f"{pipe_name}.__head_loss"
+            commodity = self.energy_system_components_commodity.get(pipe_name)
             # Note we always use the gas network type for the naming of variables, independent of
             # the gas mixture used.
             initialized_vars = self._gn_head_loss_class.initialize_variables_nominals_and_bounds(
                 self,
-                self.gas_network_settings["network_type"],
+                commodity,
                 pipe_name,
                 self.gas_network_settings,
             )
             if initialized_vars[0] != {}:
-                self.__gas_pipe_head_bounds[
-                    f"{pipe_name}.{NetworkSettings.NETWORK_TYPE_GAS}In.H"
-                ] = initialized_vars[0]
+                self.__gas_pipe_head_bounds[f"{pipe_name}.{commodity}In.H"] = initialized_vars[0]
             if initialized_vars[1] != {}:
-                self.__gas_pipe_head_bounds[
-                    f"{pipe_name}.{NetworkSettings.NETWORK_TYPE_GAS}Out.H"
-                ] = initialized_vars[1]
+                self.__gas_pipe_head_bounds[f"{pipe_name}.{commodity}Out.H"] = initialized_vars[1]
             if initialized_vars[2] != {}:
                 self.__gas_pipe_head_loss_zero_bounds[f"{pipe_name}.dH"] = initialized_vars[2]
             if initialized_vars[3] != {}:

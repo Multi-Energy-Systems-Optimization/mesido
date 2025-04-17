@@ -1,4 +1,5 @@
 import datetime
+import operator
 import unittest
 import unittest.mock
 from pathlib import Path
@@ -11,6 +12,7 @@ from mesido.esdl.profile_parser import InfluxDBProfileReader, ProfileReaderFromF
 from mesido.exceptions import MesidoAssetIssueError
 from mesido.potential_errors import MesidoAssetIssueType, PotentialErrors
 from mesido.workflows import EndScenarioSizingStaged
+from mesido.workflows.utils.adapt_profiles import adapt_hourly_profile_averages_timestep_size
 from mesido.workflows.utils.error_types import mesido_issue_type_gen_message
 
 import numpy as np
@@ -33,7 +35,55 @@ class MockInfluxDBProfileReader(InfluxDBProfileReader):
         return self._loaded_profiles[profile.id]
 
 
-class TestPotentialErros(unittest.TestCase):
+class TestProfileUpdating(unittest.TestCase):
+    def test_profile_updating(self):
+        """
+        Tests the updating of the profiles.
+        The peak day hourly with averaged 5 days is currently tested in test_cold_demand.py.
+        This test covers the profile updating with varies timescales. Of amongst others the
+        adapt_hourly_profile_averages_timestep_size method in adapt_profiles.py
+        Returns:
+
+        """
+        import models.unit_cases.case_3a.src.run_3a as run_3a
+        from models.unit_cases.case_3a.src.run_3a import HeatProblem
+
+        base_folder = Path(run_3a.__file__).resolve().parent.parent
+        model_folder = base_folder / "model"
+        input_folder = base_folder / "input"
+
+        problem_step_size = 8
+
+        class ProfileUpdateHourly(HeatProblem):
+            def read(self):
+                """
+                Reads the yearly profile with hourly time steps and adapt to a daily averaged
+                profile except for the day with the peak demand.
+                """
+                super().read()
+
+                adapt_hourly_profile_averages_timestep_size(self, problem_step_size)
+
+        problem = ProfileUpdateHourly(
+            esdl_parser=ESDLFileParser,
+            base_folder=base_folder,
+            model_folder=model_folder,
+            input_folder=input_folder,
+            esdl_file_name="3a.esdl",
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.xml",
+        )
+        problem.pre()
+
+        timeseries_updated = problem.io.datetimes
+        dts = list(map(operator.sub, timeseries_updated[1:], timeseries_updated[0:-1]))
+        assert all(dt.seconds == 3600 * problem_step_size for dt in dts[:-1])
+        assert dts[-1].seconds <= 3600 * problem_step_size
+
+        # TODO: also check the values of the averages
+
+
+class TestPotentialErrors(unittest.TestCase):
     def test_asset_potential_errors(self):
         """
         This test checks that the error checks in the code for sufficient installed cool/heatig
@@ -306,7 +356,7 @@ class TestProfileLoading(unittest.TestCase):
 if __name__ == "__main__":
     # unittest.main()
     a = TestProfileLoading()
-    b = TestPotentialErros()
+    b = TestPotentialErrors()
     b.test_asset_potential_errors()
     a.test_loading_from_influx()
     a.test_loading_from_csv()

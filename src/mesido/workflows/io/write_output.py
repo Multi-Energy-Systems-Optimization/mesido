@@ -7,7 +7,9 @@ import os
 import sys
 import traceback
 import uuid
+from collections import OrderedDict
 from pathlib import Path
+from typing import Dict, Union
 
 import esdl
 from esdl.profiles.influxdbprofilemanager import ConnectionSettings
@@ -17,15 +19,16 @@ from esdl.profiles.profilemanager import ProfileManager
 import mesido.esdl.esdl_parser
 from mesido.constants import GRAVITATIONAL_CONSTANT
 from mesido.esdl.edr_pipe_class import EDRPipeClass
+from mesido.network_common import NetworkSettings
+from mesido.post_processing.post_processing_utils import pipe_pressure, pipe_velocity
 from mesido.workflows.utils.helpers import _sort_numbered
 
 import numpy as np
 
 import pandas as pd
 
-
+from rtctools._internal.alias_tools import AliasDict
 from rtctools.optimization.timeseries import Timeseries
-
 
 logger = logging.getLogger("mesido")
 
@@ -1125,21 +1128,30 @@ class ScenarioOutput:
                     # These variables exist for all the assets. Variables that only exist for
                     # specific
                     # assets are only added later, like Pump_power
-                    variables_one_hydraulic_system = ["HeatIn.Q", "Heat_flow"]
+                    commodity = self.energy_system_components_commodity.get(asset_name)
+
+                    variables_one_hydraulic_system = [f"{commodity}In.Q"]
                     variables_two_hydraulic_system = [
-                        "Primary.HeatIn.Q",
-                        "Secondary.HeatIn.Q",
-                        "Heat_flow",
+                        f"Primary.{commodity}In.Q",
+                        f"Secondary.{commodity}In.Q",
                     ]
+                    if commodity == NetworkSettings.NETWORK_TYPE_HEAT:
+                        variables_one_hydraulic_system.append("Heat_flow")
+                        variables_two_hydraulic_system.append("Heat_flow")
+                    elif commodity == NetworkSettings.NETWORK_TYPE_GAS:
+                        variables_one_hydraulic_system.append(f"{commodity}In.mass_flow")
+                        variables_two_hydraulic_system.append(f"{commodity}In.mass_flow")
+
+                    post_processed = {}
 
                     # Update/overwrite each asset variable list due to:
                     # - the addition of head loss minimization: head variable and pump power
                     # - only a specific variable required for a specific asset: pump power
                     # - addition of post processed variables: pipe velocity
                     if self.heat_network_settings["minimize_head_losses"]:
-                        variables_one_hydraulic_system.append("HeatIn.H")
-                        variables_two_hydraulic_system.append("Primary.HeatIn.H")
-                        variables_two_hydraulic_system.append("Secondary.HeatIn.H")
+                        variables_one_hydraulic_system.append(f"{commodity}In.H")
+                        variables_two_hydraulic_system.append(f"Primary.{commodity}In.H")
+                        variables_two_hydraulic_system.append(f"Secondary.{commodity}In.H")
                         if asset_name in [
                             *self.energy_system_components.get("heat_source", []),
                             *self.energy_system_components.get("heat_buffer", []),
@@ -1152,13 +1164,22 @@ class ScenarioOutput:
                         elif asset_name in [*self.energy_system_components.get("pump", [])]:
                             variables_one_hydraulic_system = ["Pump_power"]
                             variables_two_hydraulic_system = ["Pump_power"]
-                    if asset_name in [*self.energy_system_components.get("heat_pipe", [])]:
+                    if asset_name in [
+                        *self.energy_system_components.get("heat_pipe", []),
+                        *self.energy_system_components.get("gas_pipe", []),
+                    ]:
                         variables_one_hydraulic_system.append("PostProc.Velocity")
                         variables_two_hydraulic_system.append("PostProc.Velocity")
                         # Velocity at the pipe outlet [m/s]
-                        post_processed_velocity = (
-                            results[f"{asset_name}.HeatOut.Q"] / parameters[f"{asset_name}.area"]
+                        post_processed["PostProc.Velocity"] = pipe_velocity(
+                            asset_name, commodity, results, parameters
                         )
+                        variables_one_hydraulic_system.append("PostProc.Pressure")
+                        # TODO: seems unnecessary, pipes always only have 1 hydraulic system
+                        variables_two_hydraulic_system.append("PostProc.Pressure")
+                        post_processed["PostProc.Pressure"] = pipe_pressure(
+                            asset_name, commodity, results, parameters
+                        )  # Pa
 
                     # Depending on the port set, different carriers are assigned
                     if port:
@@ -1292,9 +1313,9 @@ class ScenarioOutput:
                                             )
                                         )
                                     elif variable in [
-                                        "HeatIn.H",
-                                        "Primary.HeatIn.H",
-                                        "Secondary.HeatIn.H",
+                                        f"{commodity}In.H",
+                                        f"Primary.{commodity}In.H",
+                                        f"Secondary.{commodity}In.H",
                                     ]:
                                         profile_attributes.profileQuantityAndUnit = (
                                             esdl.esdl.QuantityAndUnitType(
@@ -1304,9 +1325,9 @@ class ScenarioOutput:
                                             )
                                         )
                                     elif variable in [
-                                        "HeatIn.Q",
-                                        "Primary.HeatIn.Q",
-                                        "Secondary.HeatIn.Q",
+                                        f"{commodity}In.Q",
+                                        f"Primary.{commodity}In.Q",
+                                        f"Secondary.{commodity}In.Q",
                                     ]:
                                         profile_attributes.profileQuantityAndUnit = (
                                             esdl.esdl.QuantityAndUnitType(
@@ -1336,21 +1357,21 @@ class ScenarioOutput:
                                 # Add variable values in new column
                                 conversion_factor = 0.0
                                 if variable in [
-                                    "HeatIn.H",
-                                    "Primary.HeatIn.H",
-                                    "Secondary.HeatIn.H",
+                                    f"{commodity}In.H",
+                                    f"Primary.{commodity}In.H",
+                                    f"Secondary.{commodity}In.H",
                                 ]:
                                     conversion_factor = GRAVITATIONAL_CONSTANT * 988.0
                                 else:
                                     conversion_factor = 1.0
-                                if variable not in ["PostProc.Velocity"]:
+                                if variable not in ["PostProc.Velocity", "PostProc.Pressure"]:
                                     data_row.append(
                                         results[f"{asset_name}." + variable][ii] * conversion_factor
                                     )
                                 # The variable evaluation below seems unnecessary, but it would be
                                 # used we expand the list of post process type variables
-                                elif variable in ["PostProc.Velocity"]:
-                                    data_row.append(post_processed_velocity[ii])
+                                elif variable in ["PostProc.Velocity", "PostProc.Pressure"]:
+                                    data_row.append(post_processed[variable][ii])
 
                             profiles.profile_data_list.append(data_row)
                         # end time steps
@@ -1500,12 +1521,28 @@ class ScenarioOutput:
         #         )
         #     esh.save(str(filename))
 
-    def _write_json_output(self):
-        # TODO: still add solver stats as json output
-        results = self.extract_results()
+    def _write_json_output(
+        self,
+        results: Union[AliasDict, Dict],
+        parameters: Union[AliasDict, Dict],
+        bounds: Union[AliasDict, Dict],
+        aliases: OrderedDict,
+        solver_stats: Dict,
+    ):
+        """
+        The results, parameters, bounds are saved as json files which can be used for further
+        processing. Aliases are also saved as this allows us to only save the necessary variables.
+        :param results: dictionary or Alias dictionary with the results of the optimization problem
+        :param parameters: dictionary or Alias dictionary with the parameters of the optimization
+        problem
+        :param bounds: dictionary or Alias dictionary with the bounds of the optimization problem
+        :param aliases: Alias dictionary describing all the aliases for the variables used
+        :param solver_stats: solver statistics provided by the solver
+        :return:
+        """
+
         workdir = self.output_folder
 
-        parameters = self.parameters(0)
         parameters_dict = dict()
         parameter_path = os.path.join(workdir, "parameters.json")
         for key, value in parameters.items():
@@ -1514,7 +1551,6 @@ class ScenarioOutput:
         with open(parameter_path, "w") as file:
             json.dump(parameters_dict, fp=file)
 
-        bounds = self.bounds()
         bounds_dict = dict()
         bounds_path = os.path.join(workdir, "bounds.json")
         for key, value in bounds.items():
@@ -1527,7 +1563,6 @@ class ScenarioOutput:
             json.dump(bounds_dict, fp=file)
 
         results_dict = dict()
-
         for key, values in results.items():
             new_value = values.tolist()
             if len(new_value) == 1:
@@ -1540,7 +1575,6 @@ class ScenarioOutput:
 
         # save aliases
         alias_dict = {}
-        aliases = self.alias_relation._canonical_variables_map
         for key, values in aliases.items():
             new_value = values
             alias_dict[key] = new_value
@@ -1548,3 +1582,9 @@ class ScenarioOutput:
         aliases_path = os.path.join(workdir, "aliases.json")
         with open(aliases_path, "w") as file:
             json.dump(alias_dict, fp=file)
+
+        # save solver_stats
+        solver_stats_dict = solver_stats
+        solver_stats_path = os.path.join(workdir, "solver_stats.json")
+        with open(solver_stats_path, "w") as file:
+            json.dump(solver_stats_dict, fp=file)

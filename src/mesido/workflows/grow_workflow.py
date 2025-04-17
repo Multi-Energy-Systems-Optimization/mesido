@@ -8,6 +8,7 @@ from typing import Dict
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.head_loss_class import HeadLossOption
+from mesido.potential_errors import reset_potential_errors
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.goals.minimize_tco_goal import MinimizeTCO
 from mesido.workflows.io.write_output import ScenarioOutput
@@ -150,6 +151,8 @@ class EndScenarioSizing(
 
     def __init__(self, error_type_check=HEAT_NETWORK_ERRORS, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        reset_potential_errors()  # This needed to clear the Singleton which is persistent
 
         # default setting to cater for ~ 10kW heat, DN800 pipe at dT = 40 degrees Celcuis
         self.heat_network_settings["minimum_velocity"] = 1.0e-4
@@ -408,7 +411,10 @@ class EndScenarioSizing(
                 logger.warning(f"For demand {d} the target is not matched by {delta_energy} GJ")
 
         if os.path.exists(self.output_folder) and self._save_json:
-            self._write_json_output()
+            bounds = self.bounds()
+            aliases = self.alias_relation._canonical_variables_map
+            solver_stats = self.solver_stats
+            self._write_json_output(results, parameters, bounds, aliases, solver_stats)
 
 
 class EndScenarioSizingHIGHS(EndScenarioSizing):

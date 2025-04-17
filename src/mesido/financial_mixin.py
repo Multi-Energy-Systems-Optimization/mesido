@@ -242,8 +242,15 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 )
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
-            elif asset_name in [*self.energy_system_components.get("gas_demand", [])]:
-                nominal_fixed_operational = bounds[f"{asset_name}.Gas_demand_mass_flow"][1]
+            elif asset_name in [
+                *self.energy_system_components.get("gas_demand", []),
+                *self.energy_system_components.get("gas_source", []),
+            ]:
+                if asset_name in [*self.energy_system_components.get("gas_demand", [])]:
+                    nominal_fixed_operational = bounds[f"{asset_name}.Gas_demand_mass_flow"][1]
+                elif asset_name in [*self.energy_system_components.get("gas_source", [])]:
+                    nominal_fixed_operational = bounds[f"{asset_name}.Gas_source_mass_flow"][1]
+
                 nominal_fixed_operational = (
                     nominal_fixed_operational
                     if isinstance(nominal_fixed_operational, float)
@@ -925,9 +932,12 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             assert len(self.get_electricity_carriers().keys()) <= 1
 
             if len(self.get_electricity_carriers().keys()) == 1:
-                price_profile = self.get_timeseries(
-                    f"{list(self.get_electricity_carriers().values())[0]['name']}.price_profile"
-                )
+                try:
+                    price_profile = self.get_timeseries(
+                        f"{list(self.get_electricity_carriers().values())[0]['name']}.price_profile"
+                    )
+                except KeyError:
+                    price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
             else:
                 price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
 
@@ -1001,6 +1011,46 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             for i in range(1, len(self.times())):
                 sum += variable_operational_cost_coefficient * gas_mass_flow[i] * timesteps[i - 1]
 
+            constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
+
+        for gs in self.energy_system_components.get("gas_source", []):
+            gas_produced_g_s = self.__state_vector_scaled(
+                f"{gs}.Gas_source_mass_flow", ensemble_member
+            )
+            variable_operational_cost_var = self._asset_variable_operational_cost_map[gs]
+            variable_operational_cost = self.extra_variable(
+                variable_operational_cost_var, ensemble_member
+            )
+            nominal = self.variable_nominal(variable_operational_cost_var)
+            variable_operational_cost_coefficient = parameters[  # euro / g
+                f"{gs}.variable_operational_cost_coefficient"
+            ]
+            timesteps = np.diff(self.times())
+            sum = 0.0
+            for i in range(1, len(self.times())):
+                sum += (
+                    variable_operational_cost_coefficient * gas_produced_g_s[i] * timesteps[i - 1]
+                )  # [euro/g] * [g/s] * [s]
+            constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
+
+        for es in self.energy_system_components.get("electricity_source", []):
+            elec_produced_w = self.__state_vector_scaled(
+                f"{es}.Electricity_source", ensemble_member
+            )
+            variable_operational_cost_var = self._asset_variable_operational_cost_map[es]
+            variable_operational_cost = self.extra_variable(
+                variable_operational_cost_var, ensemble_member
+            )
+            nominal = self.variable_nominal(variable_operational_cost_var)
+            variable_operational_cost_coefficient = parameters[  # euro / Wh
+                f"{es}.variable_operational_cost_coefficient"
+            ]
+            timesteps = np.diff(self.times()) / 3600.0  # convert dt from [s] to [hr]
+            sum = 0.0
+            for i in range(1, len(self.times())):
+                sum += (
+                    variable_operational_cost_coefficient * elec_produced_w[i] * timesteps[i - 1]
+                )  # [euro/Wh] * [W] * [hr]
             constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
 
         # for a in self.heat_network_components.get("ates", []):

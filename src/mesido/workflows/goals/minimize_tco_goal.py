@@ -43,6 +43,8 @@ class MinimizeTCO(Goal):
                 "pump",
                 "heat_exchanger",
                 "heat_buffer",
+                "gas_source",  # TODO still to add other costs for this asset_type
+                "electricity_source",  # TODO still to add other costs for this asset_type
             },
             "fixed_operational": {
                 "heat_source",

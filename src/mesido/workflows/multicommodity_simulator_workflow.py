@@ -607,7 +607,7 @@ class MultiCommoditySimulator(
 
         options["solver"] = "highs"
         highs_options = options["highs"] = {}
-        highs_options["presolve"] = "off"
+        highs_options["presolve"] = "on"
 
         return options
 
@@ -639,7 +639,9 @@ class MultiCommoditySimulator(
         )
         logger.info(f"Goal with priority {priority} has been completed")
         if priority == 1 and self.objective_value > 1e-6:
-            raise RuntimeError("The heating demand is not matched")
+            raise RuntimeError(
+                f"The heating demand is not matched, objective value is {self.objective_value}"
+            )
 
     def __state_vector_scaled(self, variable, ensemble_member):
         canonical, sign = self.alias_relation.canonical_signed(variable)

@@ -43,7 +43,7 @@
           <marginalCosts xsi:type="esdl:SingleValue" value="1.0" id="d18bb16f-094c-451d-bb74-943b7d6ddad1" name="Electrolyzer_6327-MarginalCosts"/>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:GasDemand" name="GasDemand_4146" power="500000000.0" technicalLifetime="20.0" id="41466625-a14b-43a9-9a13-93d34a4ea6ff">
+      <asset xsi:type="esdl:GasDemand" name="GasDemand_4146" power="50000000000.0" technicalLifetime="20.0" id="41466625-a14b-43a9-9a13-93d34a4ea6ff">
         <port xsi:type="esdl:InPort" name="In" carrier="14831e6c-c3bb-4763-8300-9658a365ee54" connectedTo="f0b7ab61-b983-45ed-9274-887ccaadfce0" id="121a1b8d-758b-4b35-92fa-894435965e85"/>
         <geometry xsi:type="esdl:Point" lon="4.707641601562501" lat="52.633062890594374" CRS="WGS84"/>
         <costInformation xsi:type="esdl:CostInformation" id="14964bd8-8eb0-4525-bcb4-0d03c1252a2b">
