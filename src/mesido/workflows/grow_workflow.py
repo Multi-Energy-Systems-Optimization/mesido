@@ -15,7 +15,7 @@ from mesido.workflows.io.write_output import ScenarioOutput
 from mesido.workflows.utils.adapt_profiles import (
     adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
 )
-from mesido.workflows.utils.error_types import HEAT_NETWORK_ERRORS, potential_error_to_error
+from mesido.workflows.utils.error_types import NO_POTENTIAL_ERRORS_CHECK, potential_error_to_error
 from mesido.workflows.utils.helpers import main_decorator, run_optimization_problem_solver
 
 import numpy as np
@@ -149,7 +149,7 @@ class EndScenarioSizing(
     2. minimize TCO = Capex + Opex*lifetime
     """
 
-    def __init__(self, error_type_check=HEAT_NETWORK_ERRORS, *args, **kwargs):
+    def __init__(self, error_type_check=NO_POTENTIAL_ERRORS_CHECK, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         reset_potential_errors()  # This needed to clear the Singleton which is persistent
