@@ -12,7 +12,7 @@ if __name__ == "__main__":
     solution = run_end_scenario_sizing(
         EndScenarioSizingStaged,
         base_folder=base_folder,
-        esdl_file_name="graph_HDemands_incl_demand_4.esdl",
+        esdl_file_name="Base Netwerk Delft.esdl",
         esdl_parser=ESDLFileParser,
     )
 
