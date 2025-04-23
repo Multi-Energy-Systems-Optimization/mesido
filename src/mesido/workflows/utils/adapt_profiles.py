@@ -217,6 +217,51 @@ def adapt_hourly_profile_averages_timestep_size(problem, problem_step_size_hours
     logger.info("Profile data has been adapted to a common format")
 
 
+def adapt_profile_to_copy_for_number_of_years(problem, number_of_years: int):
+    """
+    Adapt yearly profile to a multi-year profile.
+    Copying the profile for the given number of years.
+    Needs to be applied before
+
+    """
+
+    new_datastore = DataStore(problem)
+    new_datastore.reference_datetime = problem.io.datetimes[0]
+
+    org_timeseries = problem.io.datetimes
+
+    for ensemble_member in range(problem.ensemble_size):
+        parameters = problem.parameters(ensemble_member)
+
+        new_date_times = list()
+
+        new_date_times = problem.io.datetimes[:-1].copy()
+        for year in range(1, number_of_years):
+            if year == number_of_years - 1:
+                new_date_times.extend([i + datetime.timedelta(days=365) for i in problem.io.datetimes])
+            else:
+                new_date_times.extend(
+                    [i + datetime.timedelta(days=365) for i in problem.io.datetimes[:-1]])
+
+        new_date_times = np.asarray(new_date_times)
+        parameters["times"] = [x.timestamp() for x in new_date_times]
+
+        for var_name in problem.io.get_timeseries_names():
+            old_data = problem.io.get_timeseries(var_name)[1]
+            new_data = np.append(np.tile(old_data[:-1], number_of_years), old_data[-1])
+            new_datastore.set_timeseries(
+                variable=var_name,
+                datetimes=new_date_times,
+                values=np.asarray(new_data),
+                ensemble_member=ensemble_member,
+                check_duplicates=True,
+            )
+
+
+    problem.io = new_datastore
+
+    logger.info("Profile data has been adapted to a common format")
+
 def select_profiles_for_update(
     problem, new_datastore: DataStore, new_date_times: np.array, ensemble_member: int
 ):

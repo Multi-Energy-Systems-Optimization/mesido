@@ -12,7 +12,8 @@ from mesido.esdl.profile_parser import InfluxDBProfileReader, ProfileReaderFromF
 from mesido.exceptions import MesidoAssetIssueError
 from mesido.potential_errors import MesidoAssetIssueType, PotentialErrors
 from mesido.workflows import EndScenarioSizingStaged
-from mesido.workflows.utils.adapt_profiles import adapt_hourly_profile_averages_timestep_size
+from mesido.workflows.utils.adapt_profiles import adapt_hourly_profile_averages_timestep_size, \
+    adapt_profile_to_copy_for_number_of_years
 from mesido.workflows.utils.error_types import mesido_issue_type_gen_message
 
 import numpy as np
@@ -81,6 +82,35 @@ class TestProfileUpdating(unittest.TestCase):
         assert dts[-1].seconds <= 3600 * problem_step_size
 
         # TODO: also check the values of the averages
+
+        problem_years = 3
+        class ProfileUpdateMultiYear(HeatProblem):
+            def read(self):
+                """
+                Reads the yearly profile with unspecified time steps and copies the profile for
+                multiple years.
+                """
+                super().read()
+
+                adapt_profile_to_copy_for_number_of_years(self, problem_years)
+
+        problem = ProfileUpdateMultiYear(
+            esdl_parser=ESDLFileParser,
+            base_folder=base_folder,
+            model_folder=model_folder,
+            input_folder=input_folder,
+            esdl_file_name="3a.esdl",
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.xml",
+        )
+        problem.pre()
+
+        len_org_time_serie = 45 - 1 # the last timestep is not copied
+        timeseries_updated = problem.io.datetimes
+        dts = list(map(operator.sub, timeseries_updated[1:-len_org_time_serie],
+                       timeseries_updated[len_org_time_serie:-1]))
+        assert len(timeseries_updated) == len_org_time_serie * problem_years + 1
+        assert all(dt.days == 365 for dt in dts)
 
 
 class TestPotentialErrors(unittest.TestCase):
