@@ -235,13 +235,14 @@ def adapt_profile_to_copy_for_number_of_years(problem, number_of_years: int):
 
         new_date_times = list()
 
-        new_date_times = problem.io.datetimes[:-1].copy()
+        new_date_times = org_timeseries[:-1].copy()
         for year in range(1, number_of_years):
             if year == number_of_years - 1:
-                new_date_times.extend([i + datetime.timedelta(days=365) for i in problem.io.datetimes])
+                new_date_times.extend([i + datetime.timedelta(days=365) for i in org_timeseries])
             else:
                 new_date_times.extend(
-                    [i + datetime.timedelta(days=365) for i in problem.io.datetimes[:-1]])
+                    [i + datetime.timedelta(days=365) for i in org_timeseries[:-1]]
+                )
 
         new_date_times = np.asarray(new_date_times)
         parameters["times"] = [x.timestamp() for x in new_date_times]
@@ -257,10 +258,10 @@ def adapt_profile_to_copy_for_number_of_years(problem, number_of_years: int):
                 check_duplicates=True,
             )
 
-
     problem.io = new_datastore
 
     logger.info("Profile data has been adapted to a common format")
+
 
 def select_profiles_for_update(
     problem, new_datastore: DataStore, new_date_times: np.array, ensemble_member: int
