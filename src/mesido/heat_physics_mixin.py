@@ -187,6 +187,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         self.__ates_max_stored_heat_bounds = {}
         self.__ates_max_stored_heat_nominals = {}
 
+        self.__ates_is_charging_var = {}
+        self.__ates_is_charging_bounds = {}
+
         # Integer variable whether discrete temperature option has been selected
         self.__carrier_selected_var = {}
         self.__carrier_selected_var_bounds = {}
@@ -427,6 +430,12 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             )
             self.__ates_max_stored_heat_bounds[ates_max_stored_heat_var_name] = (0, max_heat)
             self.__ates_max_stored_heat_nominals[ates_max_stored_heat_var_name] = max_heat / 2
+
+            # TODO: dictionary only needs to be filled for very specific models for instance when
+            #  temperature modelling of ATES
+            ates_is_charing_var_name = ates_max_stored_heat_var_name = f"{ates}__is_charging"
+            self.__ates_is_charging_var[ates_is_charing_var_name] = ca.MX.sym(ates_is_charing_var_name)
+            self.__ates_is_charging_bounds[ates_is_charing_var_name] = (0, 1)
 
         for _carrier, temperatures in self.temperature_carriers().items():
             carrier_id_number_mapping = str(temperatures["id_number_mapping"])
@@ -688,6 +697,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         variables.extend(self.__pipe_heat_loss_path_var.values())
         variables.extend(self.__ates_temperature_ordering_var.values())
         variables.extend(self.__ates_temperature_disc_ordering_var.values())
+        variables.extend(self.__ates_is_charging_var.values())
         variables.extend(self.__carrier_temperature_disc_ordering_var.values())
         return variables
 
@@ -707,6 +717,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             or variable in self.__disabled_hex_var
             or variable in self.__ates_temperature_ordering_var
             or variable in self.__ates_temperature_disc_ordering_var
+            or variable in self.__ates_is_charging_var
             or variable in self.__carrier_temperature_disc_ordering_var
         ):
             return True
@@ -754,6 +765,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         bounds.update(self.__ates_temperature_disc_ordering_var_bounds)
         bounds.update(self.__carrier_temperature_disc_ordering_var_bounds)
         bounds.update(self.__ates_max_stored_heat_bounds)
+        bounds.update(self.__ates_is_charging_bounds)
 
         for k, v in self.__pipe_head_bounds.items():
             bounds[k] = self.merge_bounds(bounds[k], v)
@@ -2389,6 +2401,10 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             # are guaranteed to have the same sign.
             flow_dir_var = self._heat_pipe_to_flow_direct_map[hot_pipe]
             is_buffer_charging = self.state(flow_dir_var)
+
+            if b in self.energy_system_components.get("ates",[]):
+                ates_charging_var =  self.state(f"{b}__is_charging")
+                constraints.append((is_buffer_charging - ates_charging_var, 0.0, 0.0))
 
             big_m = 2.0 * np.max(
                 np.abs((*self.bounds()[f"{b}.HeatIn.Heat"], *self.bounds()[f"{b}.HeatOut.Heat"]))

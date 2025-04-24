@@ -17,6 +17,7 @@ map_comp_type_to_control_variable = {
         ".Primary_heat",
     ],  # Used in HP setpoint constraints. Two are needed to constrain the HP in a steady state
     # operation
+    "ates": "__is_charging",
 }
 
 # These are the mapping of component type to which variables are returned in the result by default.
