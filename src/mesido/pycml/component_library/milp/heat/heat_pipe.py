@@ -1,10 +1,12 @@
 from mesido.pycml import Variable
+from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 from numpy import nan, pi
 
 from ._non_storage_component import _NonStorageComponent
 
 
+@add_variables_documentation_automatically
 class HeatPipe(_NonStorageComponent):
     """
     The pipe component is to model the pressure drop (and optionally hydraulic power) and
@@ -19,6 +21,14 @@ class HeatPipe(_NonStorageComponent):
     throughout the network. Meaning that the flow does lose energy but not temperature. In this
     manner the energy losses will always be overestimated as in reality the
     flow will also have a temperature drop.
+
+    Variables created:
+        {add_variable_names_for_documentation_here}
+
+    Parameters:
+        name : The name of the asset. \n
+        modifiers : Dictionary with asset information.
+
     """
 
     def __init__(self, name, **modifiers):

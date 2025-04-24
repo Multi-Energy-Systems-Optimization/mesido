@@ -1,31 +1,12 @@
-from mesido.pycml import Component
+from mesido.network_common import NetworkSettings
+from mesido.pycml.component_library.milp._internal.base_component import BaseAsset
 
-from numpy import nan
 
-
-class HeatComponent(Component):
+class HeatComponent(BaseAsset):
     """
     Base milp component nothing to add here yet.
     """
 
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
-
-
-class BaseAsset(Component):
-    """
-    A base asset that carries properties used throughout the different commodities. In this case
-    only the financial structure is used in all commodities.
-    """
-
-    def __init__(self, name, **modifiers):
-        super().__init__(name, **modifiers)
-        self.state = 1
-
-        self.variable_operational_cost_coefficient = 0.0
-        self.fixed_operational_cost_coefficient = 0.0
-        self.investment_cost_coefficient = 0.0
-        self.installation_cost = 0.0
-
-        self.technical_life = nan
-        self.discount_rate = nan
+        self.network_type = NetworkSettings.NETWORK_TYPE_HEAT

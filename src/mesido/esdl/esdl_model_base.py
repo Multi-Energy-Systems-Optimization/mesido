@@ -34,15 +34,11 @@ class _ESDLModelBase(_Model):
         at the connections specified in the esdl and create the relevant maps between ports to then
         also connect the pycml ports of the assets.
 
-        Parameters
-        ----------
-        converter : class with the different converter functions for all asset types.
-        assets : a dict with all the parsed esdl assets and their attributes
-        prefix : prefix for the name of the model type Heat or QTH at the moment
+        Parameters:
+            converter : class with the different converter functions for all asset types.
+            assets : a dict with all the parsed esdl assets and their attributes
+            prefix : prefix for the name of the model type Heat or QTH at the moment
 
-        Returns
-        -------
-        None
         """
         # Sometimes we need information of one component in order to convert
         # another. For example, the nominal discharge of a pipe is used to set
