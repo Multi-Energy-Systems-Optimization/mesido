@@ -88,6 +88,7 @@ class TestProfileUpdating(unittest.TestCase):
         # TODO: also check the values of the averages
 
         import models.test_case_small_network_ates_buffer_optional_assets.src.run_ates as run_ates
+
         base_folder = Path(run_ates.__file__).resolve().parent.parent
         model_folder = base_folder / "model"
         input_folder = base_folder / "input"
@@ -114,7 +115,7 @@ class TestProfileUpdating(unittest.TestCase):
         )
         problem.pre()
 
-        #TODO: update checks
+        # TODO: update checks
         len_org_time_serie = 8760  # the last timestep is not copied
         timeseries_updated = problem.io.datetimes
         dts = list(

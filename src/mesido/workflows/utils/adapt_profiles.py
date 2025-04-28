@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime
 import logging
 import operator
+import sys
 
 import numpy as np
 
@@ -230,14 +231,15 @@ def adapt_profile_to_copy_for_number_of_years(problem, number_of_years: int):
 
     org_timeseries = problem.io.datetimes
 
-    #If a problem has already been modified, the last timestamp should be exactly 1 year after
+    # If a problem has already been modified, the last timestamp should be exactly 1 year after
     # the first timestamp.
 
     skip_last_day = False
-    if org_timeseries[-1] == org_timeseries[0]+datetime.timedelta(days=365):
+    if org_timeseries[-1] == org_timeseries[0] + datetime.timedelta(days=365):
         skip_last_day = True
-    elif (org_timeseries[0]+datetime.timedelta(days=365) - org_timeseries[-1] <=
-          datetime.timedelta(hours=1)):
+    elif org_timeseries[0] + datetime.timedelta(days=365) - org_timeseries[
+        -1
+    ] <= datetime.timedelta(hours=1):
         skip_last_day = False
     else:
         sys.exit("The profile should be a year profile.")
@@ -246,15 +248,16 @@ def adapt_profile_to_copy_for_number_of_years(problem, number_of_years: int):
         parameters = problem.parameters(ensemble_member)
 
         new_date_times = list()
-        if skip_last_day==False:
+        if skip_last_day is False:
             new_date_times = org_timeseries.copy()
         else:
             new_date_times = org_timeseries[:-1].copy()
 
         for year in range(1, number_of_years):
-            if year == number_of_years - 1 or skip_last_day==False:
-                new_date_times.extend([i + year* datetime.timedelta(days=365) for i in
-                                            org_timeseries])
+            if year == number_of_years - 1 or skip_last_day is False:
+                new_date_times.extend(
+                    [i + year * datetime.timedelta(days=365) for i in org_timeseries]
+                )
             else:
                 new_date_times.extend(
                     [i + year * datetime.timedelta(days=365) for i in org_timeseries[:-1]]
