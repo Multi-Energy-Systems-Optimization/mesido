@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime
 import logging
 import operator
+import sys
 
 import numpy as np
 
@@ -211,6 +212,73 @@ def adapt_hourly_profile_averages_timestep_size(problem, problem_step_size_hours
         parameters["times"] = [x.timestamp() for x in new_date_times]
 
         select_profiles_for_update(problem, new_datastore, new_date_times, ensemble_member)
+
+    problem.io = new_datastore
+
+    logger.info("Profile data has been adapted to a common format")
+
+
+def adapt_profile_to_copy_for_number_of_years(problem, number_of_years: int):
+    """
+    Adapt yearly profile to a multi-year profile.
+    Copying the profile for the given number of years, where the timeline is updated with the
+    sequential years.
+
+    """
+
+    new_datastore = DataStore(problem)
+    new_datastore.reference_datetime = problem.io.datetimes[0]
+
+    org_timeseries = problem.io.datetimes
+
+    # If a problem has already been modified, the last timestamp should be exactly 1 year after
+    # the first timestamp.
+
+    skip_last_day = False
+    if org_timeseries[-1] == org_timeseries[0] + datetime.timedelta(days=365):
+        skip_last_day = True
+    elif org_timeseries[0] + datetime.timedelta(days=365) - org_timeseries[
+        -1
+    ] <= datetime.timedelta(hours=1):
+        skip_last_day = False
+    else:
+        sys.exit("The profile should be a year profile.")
+
+    for ensemble_member in range(problem.ensemble_size):
+        parameters = problem.parameters(ensemble_member)
+
+        new_date_times = list()
+        if skip_last_day is False:
+            new_date_times = org_timeseries.copy()
+        else:
+            new_date_times = org_timeseries[:-1].copy()
+
+        for year in range(1, number_of_years):
+            if year == number_of_years - 1 or skip_last_day is False:
+                new_date_times.extend(
+                    [i + year * datetime.timedelta(days=365) for i in org_timeseries]
+                )
+            else:
+                new_date_times.extend(
+                    [i + year * datetime.timedelta(days=365) for i in org_timeseries[:-1]]
+                )
+
+        new_date_times = np.asarray(new_date_times)
+        parameters["times"] = [x.timestamp() for x in new_date_times]
+
+        for var_name in problem.io.get_timeseries_names():
+            old_data = problem.io.get_timeseries(var_name)[1]
+            if skip_last_day:
+                new_data = np.append(np.tile(old_data[:-1], number_of_years), old_data[-1])
+            else:
+                new_data = np.tile(old_data, number_of_years)
+            new_datastore.set_timeseries(
+                variable=var_name,
+                datetimes=new_date_times,
+                values=np.asarray(new_data),
+                ensemble_member=ensemble_member,
+                check_duplicates=True,
+            )
 
     problem.io = new_datastore
 

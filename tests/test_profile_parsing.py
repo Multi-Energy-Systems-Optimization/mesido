@@ -12,7 +12,10 @@ from mesido.esdl.profile_parser import InfluxDBProfileReader, ProfileReaderFromF
 from mesido.exceptions import MesidoAssetIssueError
 from mesido.potential_errors import MesidoAssetIssueType, PotentialErrors
 from mesido.workflows import EndScenarioSizingStaged
-from mesido.workflows.utils.adapt_profiles import adapt_hourly_profile_averages_timestep_size
+from mesido.workflows.utils.adapt_profiles import (
+    adapt_hourly_profile_averages_timestep_size,
+    adapt_profile_to_copy_for_number_of_years,
+)
 from mesido.workflows.utils.error_types import mesido_issue_type_gen_message
 
 import numpy as np
@@ -40,8 +43,10 @@ class TestProfileUpdating(unittest.TestCase):
         """
         Tests the updating of the profiles.
         The peak day hourly with averaged 5 days is currently tested in test_cold_demand.py.
-        This test covers the profile updating with varies timescales. Of amongst others the
-        adapt_hourly_profile_averages_timestep_size method in adapt_profiles.py
+        This test covers the profile updating with varying timescales. Of amongst others the
+        adapt_hourly_profile_averages_timestep_size method and the
+        adapt_profile_to_copy_for_number_of_years method in adapt_profiles.py
+
         Returns:
 
         """
@@ -57,8 +62,8 @@ class TestProfileUpdating(unittest.TestCase):
         class ProfileUpdateHourly(HeatProblem):
             def read(self):
                 """
-                Reads the yearly profile with hourly time steps and adapt to a daily averaged
-                profile except for the day with the peak demand.
+                Reads a profile with hourly time steps and adapts and adapts to averages over the
+                specified number of hours.
                 """
                 super().read()
 
@@ -81,6 +86,47 @@ class TestProfileUpdating(unittest.TestCase):
         assert dts[-1].seconds <= 3600 * problem_step_size
 
         # TODO: also check the values of the averages
+
+        import models.test_case_small_network_ates_buffer_optional_assets.src.run_ates as run_ates
+
+        base_folder = Path(run_ates.__file__).resolve().parent.parent
+        model_folder = base_folder / "model"
+        input_folder = base_folder / "input"
+        problem_years = 3
+
+        class ProfileUpdateMultiYear(HeatProblem):
+            def read(self):
+                """
+                Reads the yearly profile with unspecified time steps and copies the profile for
+                multiple years.
+                """
+                super().read()
+
+                adapt_profile_to_copy_for_number_of_years(self, problem_years)
+
+        problem = ProfileUpdateMultiYear(
+            esdl_parser=ESDLFileParser,
+            base_folder=base_folder,
+            model_folder=model_folder,
+            input_folder=input_folder,
+            esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="Warmte_test.csv",
+        )
+        problem.pre()
+
+        # TODO: update checks
+        len_org_time_serie = 8760  # the last timestep is not copied
+        timeseries_updated = problem.io.datetimes
+        dts = list(
+            map(
+                operator.sub,
+                timeseries_updated[len_org_time_serie:-1],
+                timeseries_updated[0:-len_org_time_serie],
+            )
+        )
+        assert len(timeseries_updated) == len_org_time_serie * problem_years
+        assert all(dt.days == 365 for dt in dts)
 
 
 class TestPotentialErrors(unittest.TestCase):
