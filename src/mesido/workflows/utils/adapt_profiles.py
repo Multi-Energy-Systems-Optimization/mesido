@@ -301,8 +301,12 @@ def select_profiles_for_update(
     Returns:
 
     """
+    # TODO: function can be generalized and thereby shortened, has to be done later, due to time
+    #  pressure.
+
     heat_demands = problem.energy_system_components.get("heat_demand", [])
     cold_demands = problem.energy_system_components.get("cold_demand", [])
+    electricity_demands = problem.energy_system_components.get("electricity_demand", [])
 
     for demand in heat_demands:
         var_name = f"{demand}.target_heat_demand"
@@ -316,6 +320,15 @@ def select_profiles_for_update(
 
     for demand in cold_demands:
         var_name = f"{demand}.target_cold_demand"
+        set_data_with_averages(
+            datastore=new_datastore,
+            variable_name=var_name,
+            ensemble_member=ensemble_member,
+            new_date_times=new_date_times,
+            problem=problem,
+        )
+    for demand in electricity_demands:
+        var_name = f"{demand}.target_electricity_demand"
         set_data_with_averages(
             datastore=new_datastore,
             variable_name=var_name,
