@@ -36,7 +36,7 @@ def mesido_issue_type_gen_message(issue_type: MesidoAssetIssueType) -> str:
 
 
 def potential_error_to_error(network_check_type: Enum) -> None:
-    """ 
+    """
     Convert potential errors to errors for the define error types
 
     """

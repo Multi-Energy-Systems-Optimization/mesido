@@ -1247,7 +1247,9 @@ class _AssetToComponentBase:
             value = 1.0
         return value
 
-    def _log_and_report_issue(self, message: str, asset_id, cost_error_type: str= None, report_issue: bool = True) -> None:
+    def _log_and_report_issue(
+        self, message: str, asset_id, cost_error_type: str = None, report_issue: bool = True
+    ) -> None:
         """Helper function to log warnings and report issues."""
         logger.warning(message)
         if report_issue:

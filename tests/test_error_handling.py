@@ -10,8 +10,8 @@ class TestLogAndReportIssue(unittest.TestCase):
     Tests logging and error reporting functionality.
     """
 
-    @patch('builtins.open')
-    @patch('json.load')
+    @patch("builtins.open")
+    @patch("json.load")
     def setUp(self, mock_json_load: MagicMock, mock_open: MagicMock) -> None:
         """Set up test fixtures before each test method."""
         self.message = "Test warning message"
@@ -19,7 +19,6 @@ class TestLogAndReportIssue(unittest.TestCase):
         self.mock_instance = _AssetToComponentBase()
         # Mock JSON data
         mock_json_load.return_value = {}
-
 
     @patch("mesido.esdl.asset_to_component_base.logger")
     @patch("mesido.esdl.asset_to_component_base.get_potential_errors")
@@ -38,17 +37,13 @@ class TestLogAndReportIssue(unittest.TestCase):
 
         # Act
         self.mock_instance._log_and_report_issue(
-            self.message,
-            self.asset_id,
-            cost_error_type="incorrect"
+            self.message, self.asset_id, cost_error_type="incorrect"
         )
 
         # Assert
         mock_logger.warning.assert_called_once_with(self.message)
         mock_potential_errors.add_potential_issue.assert_called_once_with(
-            MesidoAssetIssueType.ASSET_COST_ATTRIBUTE_INCORRECT,
-            self.asset_id,
-            self.message
+            MesidoAssetIssueType.ASSET_COST_ATTRIBUTE_INCORRECT, self.asset_id, self.message
         )
 
     @patch("mesido.esdl.asset_to_component_base.logger")
@@ -68,17 +63,13 @@ class TestLogAndReportIssue(unittest.TestCase):
 
         # Act
         self.mock_instance._log_and_report_issue(
-            self.message,
-            self.asset_id,
-            cost_error_type="missing"
+            self.message, self.asset_id, cost_error_type="missing"
         )
 
         # Assert
         mock_logger.warning.assert_called_once_with(self.message)
         mock_potential_errors.add_potential_issue.assert_called_once_with(
-            MesidoAssetIssueType.ASSET_COST_ATTRIBUTE_MISSING,
-            self.asset_id,
-            self.message
+            MesidoAssetIssueType.ASSET_COST_ATTRIBUTE_MISSING, self.asset_id, self.message
         )
 
     @patch("mesido.esdl.asset_to_component_base.logger")
@@ -106,6 +97,7 @@ class TestLogAndReportIssue(unittest.TestCase):
         # Assert
         mock_logger.warning.assert_called_once_with(self.message)
         mock_potential_errors.add_potential_issue.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -165,7 +165,7 @@ if __name__ == "__main__":
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,
         input_timeseries_file="Warmte_test.csv",
-        error_type_check=HEAT_NETWORK_ERRORS
+        error_type_check=HEAT_NETWORK_ERRORS,
     )
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
