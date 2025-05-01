@@ -10,22 +10,23 @@ class TestLogAndReportIssue(unittest.TestCase):
     Tests logging and error reporting functionality.
     """
 
-    def setUp(self) -> None:
+    @patch('builtins.open')
+    @patch('json.load')
+    def setUp(self, mock_json_load: MagicMock, mock_open: MagicMock) -> None:
         """Set up test fixtures before each test method."""
         self.message = "Test warning message"
         self.asset_id = 12345
         self.mock_instance = _AssetToComponentBase()
+        # Mock JSON data
+        mock_json_load.return_value = {}
 
-    @patch('builtins.open')
-    @patch('json.load')
+
     @patch("mesido.esdl.asset_to_component_base.logger")
     @patch("mesido.esdl.asset_to_component_base.get_potential_errors")
     def test_log_and_report_issue_incorrect(
         self,
         mock_get_potential_errors: MagicMock,
         mock_logger: MagicMock,
-        mock_json_load: MagicMock,
-        mock_open: MagicMock
     ) -> None:
         """
         Test that _log_and_report_issue correctly logs warning message
@@ -34,7 +35,6 @@ class TestLogAndReportIssue(unittest.TestCase):
         # Arrange
         mock_potential_errors = MagicMock()
         mock_get_potential_errors.return_value = mock_potential_errors
-        mock_json_load.return_value = {}  # Mock JSON data
 
         # Act
         self.mock_instance._log_and_report_issue(
@@ -51,16 +51,12 @@ class TestLogAndReportIssue(unittest.TestCase):
             self.message
         )
 
-    @patch('builtins.open')
-    @patch('json.load')
     @patch("mesido.esdl.asset_to_component_base.logger")
     @patch("mesido.esdl.asset_to_component_base.get_potential_errors")
     def test_log_and_report_issue_incorrect(
         self,
         mock_get_potential_errors: MagicMock,
         mock_logger: MagicMock,
-        mock_json_load: MagicMock,
-        mock_open: MagicMock
     ) -> None:
         """
         Test that _log_and_report_issue correctly logs warning message
@@ -69,7 +65,6 @@ class TestLogAndReportIssue(unittest.TestCase):
         # Arrange
         mock_potential_errors = MagicMock()
         mock_get_potential_errors.return_value = mock_potential_errors
-        mock_json_load.return_value = {}  # Mock JSON data
 
         # Act
         self.mock_instance._log_and_report_issue(
@@ -86,17 +81,12 @@ class TestLogAndReportIssue(unittest.TestCase):
             self.message
         )
 
-    @patch('builtins.open')
-    @patch('json.load')
     @patch("mesido.esdl.asset_to_component_base.logger")
     @patch("mesido.esdl.asset_to_component_base.get_potential_errors")
     def test_log_and_no_report_issue(
         self,
         mock_get_potential_errors: MagicMock,
         mock_logger: MagicMock,
-        mock_json_load: MagicMock,
-        mock_open: MagicMock
-
     ) -> None:
         """
         Test that _log_and_report_issue correctly logs warning message
@@ -105,7 +95,6 @@ class TestLogAndReportIssue(unittest.TestCase):
         # Arrange
         mock_potential_errors = MagicMock()
         mock_get_potential_errors.return_value = mock_potential_errors
-        mock_json_load.return_value = {}  # Mock JSON data
 
         # Act
         self.mock_instance._log_and_report_issue(
