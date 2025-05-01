@@ -12,12 +12,12 @@ class TestLogAndReportIssue(unittest.TestCase):
         mock_potential_errors = MagicMock()
         mock_get_potential_errors.return_value = mock_potential_errors
 
-        mock_instance = _AssetToComponentBase()  # Replace `YourClass` with the actual class name
+        mock_instance = _AssetToComponentBase()
         message = "Test warning message"
         asset_id = 12345
 
         # Act
-        mock_instance._log_and_report_issue(message, asset_id)
+        mock_instance._log_and_report_issue(message, asset_id, cost_error_type="incorrect")
 
         # Assert
         # Check that logger.warning was called with the correct message
@@ -26,7 +26,7 @@ class TestLogAndReportIssue(unittest.TestCase):
         # Check that get_potential_errors().add_potential_issue
         # was called with the correct arguments
         mock_potential_errors.add_potential_issue.assert_called_once_with(
-            MesidoAssetIssueType.ASSET_COST_INFORMATION, asset_id, message
+            MesidoAssetIssueType.ASSET_COST_ATTRIBUTE_INCORRECT, asset_id, message
         )
 
 

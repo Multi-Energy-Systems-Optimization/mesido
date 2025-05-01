@@ -1247,13 +1247,16 @@ class _AssetToComponentBase:
             value = 1.0
         return value
 
-    def _log_and_report_issue(self, message: str, asset_id, optional_attribute: bool = False) -> None:
+    def _log_and_report_issue(self, message: str, asset_id, cost_error_type: str= None, report_issue: bool = True) -> None:
         """Helper function to log warnings and report issues."""
         logger.warning(message)
-        if not optional_attribute:
-            get_potential_errors().add_potential_issue(
-                MesidoAssetIssueType.ASSET_COST_INFORMATION, asset_id, message
-            )
+        if report_issue:
+            error_type_mapping = {
+                "incorrect": MesidoAssetIssueType.ASSET_COST_ATTRIBUTE_INCORRECT,
+                "missing": MesidoAssetIssueType.ASSET_COST_ATTRIBUTE_MISSING,
+            }
+            error_type = error_type_mapping.get(cost_error_type)
+            get_potential_errors().add_potential_issue(error_type, asset_id, message)
 
     def get_variable_opex_costs(self, asset: Asset) -> float:
         """
@@ -1286,7 +1289,7 @@ class _AssetToComponentBase:
 
         if all(cost_info is None for cost_info in cost_infos.values()):
             message = f"No variable OPEX cost information specified for asset {asset.name}"
-            self._log_and_report_issue(message, asset.id)
+            self._log_and_report_issue(message, asset.id, report_issue=False)
         value = 0.0
 
         for cost_info in cost_infos.values():
@@ -1295,21 +1298,21 @@ class _AssetToComponentBase:
             cost_value, unit, per_unit, per_time = self.get_cost_value_and_unit(cost_info)
             if unit != UnitEnum.EURO:
                 message = f"Expected cost information {cost_info} to provide a cost in euros."
-                self._log_and_report_issue(message, asset.id)
+                self._log_and_report_issue(message, asset.id, cost_error_type="incorrect")
                 continue
             if per_time != TimeUnitEnum.NONE:
                 message = (
                     f"Specified OPEX for asset {asset.name} include a "
                     f"component per time, but should be None."
                 )
-                self._log_and_report_issue(message, asset.id)
+                self._log_and_report_issue(message, asset.id, cost_error_type="incorrect")
                 continue
             if per_unit != UnitEnum.WATTHOUR and asset.asset_type not in gas_assets:
                 message = (
                     f"Expected the specified OPEX for asset {asset.name} to be per Wh, "
                     f"but they are provided in {per_unit} instead."
                 )
-                self._log_and_report_issue(message, asset.id)
+                self._log_and_report_issue(message, asset.id, cost_error_type="incorrect")
                 continue
             if asset.asset_type in gas_assets and per_unit != UnitEnum.GRAM:
                 message = (
@@ -1320,14 +1323,14 @@ class _AssetToComponentBase:
                 # However, the check per_time != TimeUnitEnum.NONE above assumes that
                 # no time units are provided. Please check if for for gas assets an exception
                 # is necessary in the check "per_time != TimeUnitEnum.NONE"
-                self._log_and_report_issue(message, asset.id)
+                self._log_and_report_issue(message, asset.id, cost_error_type="incorrect")
                 continue
             if cost_value < 0.0:
                 message = (
                     f"Specified OPEX for asset {asset.name} is {cost_value}, "
                     f"but should be non-negative."
                 )
-                self._log_and_report_issue(message, asset.id)
+                self._log_and_report_issue(message, asset.id, cost_error_type="incorrect")
                 continue
 
             value += cost_value
@@ -1359,7 +1362,7 @@ class _AssetToComponentBase:
 
         if all(cost_info is None for cost_info in cost_infos.values()):
             message = f"No fixed OPEX cost information specified for asset {asset.name}"
-            self._log_and_report_issue(message, asset.id, optional_attribute=True)
+            self._log_and_report_issue(message, asset.id, report_issue=False)
             value = 0.0
         else:
             value = 0.0
@@ -1370,7 +1373,7 @@ class _AssetToComponentBase:
                 if cost_value is not None and cost_value > 0.0:
                     if unit != UnitEnum.EURO:
                         message = f"Expected cost information {cost_info} to be provided in euros."
-                        self._log_and_report_issue(message, asset.id)
+                        self._log_and_report_issue(message, asset.id, cost_error_type="incorrect")
                         continue
                     if per_unit == UnitEnum.CUBIC_METRE and asset.asset_type != "GasStorage":
                         # index is 0 because buffers only have one in out port
@@ -1426,7 +1429,7 @@ class _AssetToComponentBase:
                             f"Expected the specified OPEX for asset {asset.name} to be per W or m3,"
                             f" but they are provided in {per_unit} instead."
                         )
-                        self._log_and_report_issue(message, asset.id)
+                        self._log_and_report_issue(message, asset.id, cost_error_type="incorrect")
                         continue
                     # still to decide if the cost is per kg or per m3
                     elif per_unit != UnitEnum.GRAM and asset.asset_type == "GasStorage":
@@ -1434,7 +1437,7 @@ class _AssetToComponentBase:
                             f"Expected the specified OPEX for asset {asset.name} to be per GRAM, "
                             f"but they are provided in {per_unit} instead."
                         )
-                        self._log_and_report_issue(message, asset.id)
+                        self._log_and_report_issue(message, asset.id, cost_error_type="incorrect")
                         continue
 
                 value += cost_value
@@ -1496,7 +1499,7 @@ class _AssetToComponentBase:
                     return 0.0
         if cost_info is None:
             message = f"No installation cost information provided for asset {asset.name}."
-            self._log_and_report_issue(message, asset.id)
+            self._log_and_report_issue(message, asset.id, cost_error_type="missing")
             return 0.0
 
         cost_value, unit, per_unit, per_time = self.get_cost_value_and_unit(cost_info)
@@ -1532,7 +1535,7 @@ class _AssetToComponentBase:
 
         for condition, message in validations:
             if condition:
-                self._log_and_report_issue(message, asset.id)
+                self._log_and_report_issue(message, asset.id, cost_error_type="incorrect")
 
         return cost_value
 
@@ -1553,7 +1556,8 @@ class _AssetToComponentBase:
 
         cost_info = asset.attributes["costInformation"].investmentCosts
         if cost_info is None:
-            RuntimeWarning(f"No investment costs provided for asset " f"{asset.name}.")
+            message = f"No investment costs provided for asset " f"{asset.name}."
+            self._log_and_report_issue(message, asset.id, cost_error_type="missing")
             return 0.0
         (
             cost_value,
@@ -1563,7 +1567,7 @@ class _AssetToComponentBase:
         ) = self.get_cost_value_and_unit(cost_info)
         if unit_provided != UnitEnum.EURO:
             message = f"Expected cost information {cost_info} to be provided in euros."
-            self._log_and_report_issue(message, asset.id)
+            self._log_and_report_issue(message, asset.id, cost_error_type="incorrect")
             return 0.0
         if not per_time_provided == TimeUnitEnum.NONE:
             message = (
@@ -1571,7 +1575,7 @@ class _AssetToComponentBase:
                 f" include a component per time, which we "
                 f"cannot handle."
             )
-            self._log_and_report_issue(message, asset.id)
+            self._log_and_report_issue(message, asset.id, cost_error_type="incorrect")
             return 0.0
         if per_unit == UnitEnum.WATT:
             if not per_unit_provided == UnitEnum.WATT:
@@ -1581,7 +1585,7 @@ class _AssetToComponentBase:
                     f"are provided in {per_unit_provided} "
                     f"instead."
                 )
-                self._log_and_report_issue(message, asset.id)
+                self._log_and_report_issue(message, asset.id, cost_error_type="incorrect")
             return cost_value
         elif per_unit == UnitEnum.WATTHOUR:
             if not per_unit_provided == UnitEnum.WATTHOUR:
@@ -1591,7 +1595,7 @@ class _AssetToComponentBase:
                     f"are provided in {per_unit_provided} "
                     f"instead."
                 )
-                self._log_and_report_issue(message, asset.id)
+                self._log_and_report_issue(message, asset.id, cost_error_type="incorrect")
                 return 0.0
             return cost_value
         elif per_unit == UnitEnum.METRE:
@@ -1602,7 +1606,7 @@ class _AssetToComponentBase:
                     f"are provided in {per_unit_provided} "
                     f"instead."
                 )
-                self._log_and_report_issue(message, asset.id)
+                self._log_and_report_issue(message, asset.id, cost_error_type="incorrect")
                 return 0.0
             return cost_value
         elif per_unit == UnitEnum.JOULE:
@@ -1626,9 +1630,9 @@ class _AssetToComponentBase:
                     f"they are provided in {per_unit_provided} "
                     f"instead."
                 )
-                self._log_and_report_issue(message, asset.id)
+                self._log_and_report_issue(message, asset.id, cost_error_type="incorrect")
                 return 0.0
         else:
             message(f"Cannot provide investment costs for asset " f"{asset.name} per {per_unit}")
-            self._log_and_report_issue(message, asset.id)
+            self._log_and_report_issue(message, asset.id, cost_error_type="incorrect")
             return 0.0
