@@ -48,7 +48,7 @@ class TestLogAndReportIssue(unittest.TestCase):
 
     @patch("mesido.esdl.asset_to_component_base.logger")
     @patch("mesido.esdl.asset_to_component_base.get_potential_errors")
-    def test_log_and_report_issue_incorrect(
+    def test_log_and_report_issue_missing(
         self,
         mock_get_potential_errors: MagicMock,
         mock_logger: MagicMock,

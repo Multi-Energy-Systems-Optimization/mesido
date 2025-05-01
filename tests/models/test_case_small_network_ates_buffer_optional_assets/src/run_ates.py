@@ -2,7 +2,7 @@ from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.techno_economic_mixin import TechnoEconomicMixin
-from mesido.workflows.utils.error_types import HEAT_NETWORK_ERRORS, NO_POTENTIAL_ERRORS_CHECK
+from mesido.workflows.utils.error_types import HEAT_NETWORK_ERRORS
 
 import numpy as np
 

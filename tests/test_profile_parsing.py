@@ -13,7 +13,7 @@ from mesido.exceptions import MesidoAssetIssueError
 from mesido.potential_errors import MesidoAssetIssueType, PotentialErrors
 from mesido.workflows import EndScenarioSizingStaged
 from mesido.workflows.utils.adapt_profiles import adapt_hourly_profile_averages_timestep_size
-from mesido.workflows.utils.error_types import mesido_issue_type_gen_message, HEAT_NETWORK_ERRORS
+from mesido.workflows.utils.error_types import HEAT_NETWORK_ERRORS, mesido_issue_type_gen_message
 
 
 import numpy as np
