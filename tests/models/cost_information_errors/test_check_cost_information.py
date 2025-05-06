@@ -25,9 +25,9 @@ if __name__ == "__main__":
     solution = run_end_scenario_sizing(
         EndScenarioSizingStaged,
         base_folder=base_folder,
-        esdl_file_name="graph_HDemands_incl_demand_4_fail.esdl",
+        esdl_file_name="graph_HDemands_incl_demand_4_missing.esdl",
         esdl_parser=ESDLFileParser,
-        error_type_check=HEAT_NETWORK_ERRORS
+        error_type_check=NO_POTENTIAL_ERRORS_CHECK
     )
 
 
@@ -35,7 +35,7 @@ if __name__ == "__main__":
     solution = run_end_scenario_sizing(
         EndScenarioSizingStaged,
         base_folder=base_folder,
-        esdl_file_name="graph_HDemands_incl_demand_4_fail.esdl",
+        esdl_file_name="graph_HDemands_incl_demand_4_incorrect.esdl",
         esdl_parser=ESDLFileParser,
         error_type_check=NO_POTENTIAL_ERRORS_CHECK
     )

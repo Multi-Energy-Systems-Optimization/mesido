@@ -6,13 +6,11 @@ from typing import Optional
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.workflows import EndScenarioSizingStaged
 from mesido.workflows.utils.error_types import HEAT_NETWORK_ERRORS, NO_POTENTIAL_ERRORS_CHECK
+from mesido.exceptions import MesidoAssetIssueError
+from mesido.potential_errors import MesidoAssetIssueType
 
 class TestCostInformationErrors(TestCase):
-    """Test suite for checking cost information errors in ESDL files.
-    
-    This test suite validates the behavior of cost information processing
-    in ESDL files under different scenarios.
-    """
+    """Test suite for checking cost information errors in ESDL files."""
     
     @classmethod
     def setUpClass(cls) -> None:
@@ -33,15 +31,11 @@ class TestCostInformationErrors(TestCase):
         print(f"Test {self._testMethodName} took: {time.strftime('%M:%S', time.gmtime(elapsed_time))}")
 
     def create_instance(self, file_name: str, error_check: Optional[dict] = HEAT_NETWORK_ERRORS) -> EndScenarioSizingStaged:
-        """Create a test instance with specified parameters.
-        
-        Args:
-            file_name: Name of the ESDL file to test
-            error_check: Type of error checking to perform (default: HEAT_NETWORK_ERRORS)
+        """Create a test instance with specified parameters."""
+        esdl_file_path = self.model_folder / file_name
+        if not esdl_file_path.exists():
+            raise FileNotFoundError(f"ESDL file not found: {esdl_file_path}")
             
-        Returns:
-            EndScenarioSizingStaged: Configured instance for testing
-        """
         return EndScenarioSizingStaged(
             model_folder=self.model_folder,
             esdl_file_name=file_name,
@@ -50,31 +44,46 @@ class TestCostInformationErrors(TestCase):
         )
 
     def run_preprocess(self, instance: EndScenarioSizingStaged) -> None:
-        """Run preprocess function from parent class.
-        
-        Args:
-            instance: The EndScenarioSizingStaged instance to preprocess
-            
-        Raises:
-            Any exceptions from the pre() method
-        """
+        """Run preprocess function and handle exceptions appropriately."""
+        instance.pre()
+
+
+    def assert_error_raised(self, file_name: str, expected_issue: MesidoAssetIssueType) -> None:
+        """Helper method to assert that a specific error is raised during preprocessing."""
+        instance = self.create_instance(file_name)
         try:
-            instance.pre()
+            print(f"Running preprocess for {file_name}, expecting {expected_issue}")
+            self.run_preprocess(instance)
+            print("No exception was raised!")
+        except MesidoAssetIssueError as e:
+            print("Full error")
+            print(e)
+            print(f"Exception raised: {e.error_type}")
+            self.assertEqual(
+                e.error_type,
+                expected_issue,
+                f"Expected {expected_issue} error, got {e.error_type}"
+            )
+            return
         except Exception as e:
-            print(f"Preprocessing failed: {str(e)}")
+            print(f"Unexpected exception type: {type(e).__name__}: {e}")
             raise
+        
+        self.fail(f"Expected {MesidoAssetIssueError.__name__} with issue type {expected_issue}, but no exception was raised")
+
 
     def test_valid_esdl(self) -> None:
         """Test that valid ESDL file passes preprocessing."""
         instance = self.create_instance(self.valid_esdl_file)
         self.run_preprocess(instance)
 
-    def test_invalid_esdl_with_error_check(self) -> None:
-        """Test that invalid ESDL file fails cost information check."""
-        instance = self.create_instance(self.invalid_esdl_file)
-        with self.assertRaises(Exception) as context:
-            self.run_preprocess(instance)
-        self.assertTrue(len(str(context.exception)) > 0, "Exception message should not be empty")
+    def test_missing_cost_attribute(self) -> None:
+        """Test that ESDL file with missing cost attributes raises appropriate error."""
+        self.assert_error_raised(self.invalid_esdl_file, MesidoAssetIssueType.ASSET_COST_ATTRIBUTE_MISSING)
+
+    def test_incorrect_cost_attribute(self) -> None:
+        """Test that ESDL file with incorrect cost attributes raises appropriate error."""
+        self.assert_error_raised(self.invalid_esdl_file, MesidoAssetIssueType.ASSET_COST_ATTRIBUTE_INCORRECT)
 
     def test_invalid_esdl_without_error_check(self) -> None:
         """Test that invalid ESDL file passes when error checking is disabled."""
@@ -82,7 +91,10 @@ class TestCostInformationErrors(TestCase):
             self.invalid_esdl_file,
             error_check=NO_POTENTIAL_ERRORS_CHECK
         )
-        self.run_preprocess(instance)
+        try:
+            self.run_preprocess(instance)
+        except Exception as e:
+            self.fail(f"Unexpected exception raised: {e}")
 
 if __name__ == "__main__":
     from unittest import main
