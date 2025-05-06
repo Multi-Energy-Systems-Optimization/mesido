@@ -1113,17 +1113,18 @@ class AssetToHeatComponent(_AssetToComponentBase):
             _, modifiers = self.convert_air_water_heat_pump_elec(asset)
             return AirWaterHeatPumpElec, modifiers
 
-        if not asset.attributes["power"]:
-            raise _ESDLInputException(f"{asset.name} has no power specified")
-        else:
-            power_electrical = asset.attributes["power"]
-
         if not asset.attributes["COP"]:
             raise _ESDLInputException(
                 f"{asset.name} has not COP specified, this is required for the model"
             )
         else:
             cop = asset.attributes["COP"]
+
+        if not asset.attributes["power"]:
+            raise _ESDLInputException(f"{asset.name} has no power specified")
+        else:
+            power_secondary = asset.attributes["power"]
+            power_electrical = power_secondary/cop
 
         params_t = self._supply_return_temperature_modifiers(asset)
         params_q = self._get_connected_q_nominal(asset)
