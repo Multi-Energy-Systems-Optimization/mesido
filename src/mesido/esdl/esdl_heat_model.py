@@ -1115,7 +1115,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         if not asset.attributes["COP"]:
             raise _ESDLInputException(
-                f"{asset.name} has not COP specified, this is required for the model"
+                f"{asset.name} has no COP specified, this is required for the model"
             )
         else:
             cop = asset.attributes["COP"]
