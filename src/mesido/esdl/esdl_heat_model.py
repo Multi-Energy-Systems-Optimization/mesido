@@ -1124,7 +1124,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             raise _ESDLInputException(f"{asset.name} has no power specified")
         else:
             power_secondary = asset.attributes["power"]
-            power_electrical = power_secondary/cop
+            power_electrical = power_secondary / cop
 
         params_t = self._supply_return_temperature_modifiers(asset)
         params_q = self._get_connected_q_nominal(asset)
