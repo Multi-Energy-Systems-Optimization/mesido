@@ -301,79 +301,9 @@ def select_profiles_for_update(
     Returns:
 
     """
-    heat_demands = problem.energy_system_components.get("heat_demand", [])
-    cold_demands = problem.energy_system_components.get("cold_demand", [])
 
-    for demand in heat_demands:
-        var_name = f"{demand}.target_heat_demand"
-        set_data_with_averages(
-            datastore=new_datastore,
-            variable_name=var_name,
-            ensemble_member=ensemble_member,
-            new_date_times=new_date_times,
-            problem=problem,
-        )
-
-    for demand in cold_demands:
-        var_name = f"{demand}.target_cold_demand"
-        set_data_with_averages(
-            datastore=new_datastore,
-            variable_name=var_name,
-            ensemble_member=ensemble_member,
-            new_date_times=new_date_times,
-            problem=problem,
-        )
-
-    # TODO: this has not been tested but is required if a production profile is included
-    #  in the data
-    for source in problem.energy_system_components.get("heat_source", []):
-        var_name = f"{source}.maximum_heat_source"
-        try:
-            problem.get_timeseries(variable=var_name, ensemble_member=ensemble_member)
-        except KeyError:
-            logger.debug(
-                f"Source {source} has no production profile, thus it also will "
-                f"not be adapted to a different time scales."
-            )
-            continue
-
-        set_data_with_averages(
-            datastore=new_datastore,
-            variable_name=var_name,
-            ensemble_member=ensemble_member,
-            new_date_times=new_date_times,
-            problem=problem,
-        )
-
-    for source in problem.energy_system_components.get("electricity_source", []):
-        var_name = f"{source}.maximum_electricity_source"
-        try:
-            problem.get_timeseries(variable=var_name, ensemble_member=ensemble_member)
-        except KeyError:
-            logger.debug(
-                f"Source {source} has no production profile, thus it also will "
-                f"not be adapted to a different time scales."
-            )
-            continue
-
-        set_data_with_averages(
-            datastore=new_datastore,
-            variable_name=var_name,
-            ensemble_member=ensemble_member,
-            new_date_times=new_date_times,
-            problem=problem,
-        )
-
-    for carrier_properties in problem.esdl_carriers.values():
-        carrier_name = carrier_properties["name"]
-        var_name = f"{carrier_name}.price_profile"
-        try:
-            problem.get_timeseries(variable=var_name, ensemble_member=ensemble_member)
-        except KeyError:
-            logger.debug(
-                f"Carrier {carrier_name} has no price profile, thus it also will "
-                f"not be adapted to different time scales."
-            )
+    timeseries_names = problem.io.get_timeseries_names()
+    for var_name in timeseries_names:
         set_data_with_averages(
             datastore=new_datastore,
             variable_name=var_name,
