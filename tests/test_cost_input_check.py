@@ -19,7 +19,8 @@ class TestCostInformationErrors(TestCase):
         cls.model_folder = Path(test_check_cost_information.__file__).resolve().parent / "model"
         cls.esdl_parser = ESDLFileParser
         cls.valid_esdl_file = "graph_HDemands_incl_demand_4.esdl"
-        cls.invalid_esdl_file = "graph_HDemands_incl_demand_4_fail.esdl"
+        cls.incorrect_cost_esdl_file = "graph_HDemands_incl_demand_4_incorrect.esdl"
+        cls.missing_cost_esdl_file = "graph_HDemands_incl_demand_4_missing.esdl"
 
     def setUp(self) -> None:
         """Set up test fixtures before each test method."""
@@ -43,9 +44,9 @@ class TestCostInformationErrors(TestCase):
             error_type_check=error_check
         )
 
-    def run_preprocess(self, instance: EndScenarioSizingStaged) -> None:
-        """Run preprocess function and handle exceptions appropriately."""
-        instance.pre()
+    # def run_read(self, instance: EndScenarioSizingStaged) -> None:
+    #     """Run preprocess function and handle exceptions appropriately."""
+    #     instance.read()
 
 
     def assert_error_raised(self, file_name: str, expected_issue: MesidoAssetIssueType) -> None:
@@ -53,7 +54,7 @@ class TestCostInformationErrors(TestCase):
         instance = self.create_instance(file_name)
         try:
             print(f"Running preprocess for {file_name}, expecting {expected_issue}")
-            self.run_preprocess(instance)
+            instance.read()
             print("No exception was raised!")
         except MesidoAssetIssueError as e:
             print("Full error")
@@ -75,24 +76,24 @@ class TestCostInformationErrors(TestCase):
     def test_valid_esdl(self) -> None:
         """Test that valid ESDL file passes preprocessing."""
         instance = self.create_instance(self.valid_esdl_file)
-        self.run_preprocess(instance)
+        instance.read(instance)
 
     def test_missing_cost_attribute(self) -> None:
         """Test that ESDL file with missing cost attributes raises appropriate error."""
-        self.assert_error_raised(self.invalid_esdl_file, MesidoAssetIssueType.ASSET_COST_ATTRIBUTE_MISSING)
+        self.assert_error_raised(self.missing_cost_esdl_file, MesidoAssetIssueType.ASSET_COST_ATTRIBUTE_MISSING)
 
     def test_incorrect_cost_attribute(self) -> None:
         """Test that ESDL file with incorrect cost attributes raises appropriate error."""
-        self.assert_error_raised(self.invalid_esdl_file, MesidoAssetIssueType.ASSET_COST_ATTRIBUTE_INCORRECT)
+        self.assert_error_raised(self.incorrect_cost_esdl_file, MesidoAssetIssueType.ASSET_COST_ATTRIBUTE_INCORRECT)
 
     def test_invalid_esdl_without_error_check(self) -> None:
         """Test that invalid ESDL file passes when error checking is disabled."""
         instance = self.create_instance(
-            self.invalid_esdl_file,
+            self.incorrect_cost_esdl_file,
             error_check=NO_POTENTIAL_ERRORS_CHECK
         )
         try:
-            self.run_preprocess(instance)
+            instance.read()
         except Exception as e:
             self.fail(f"Unexpected exception raised: {e}")
 
