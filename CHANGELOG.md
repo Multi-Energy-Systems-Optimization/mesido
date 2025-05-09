@@ -34,6 +34,7 @@
 - Bugs: state update of heat pump, heat buffer volume & ates charge rates update in ESDL, heat storage asset data output to influxDB  
 - Bugfix: get_density + get_internal_energy updated to ensure it checks commodity type for heat instead of the carrier name
 - Bug: pipe class bounds when pipe DN none results from stage 1 in the grow_workflow
+- check something
 
 
 # [0.1.8.5] - 2025-02-12
