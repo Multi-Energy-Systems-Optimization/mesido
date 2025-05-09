@@ -87,6 +87,64 @@ def _mip_gap_settings(mip_gap_name: str, problem) -> Dict[str, float]:
     return options
 
 
+def estimate_progress(self, priority, **kwargs):
+    """Estimate the progress of the optimization workflow """
+    # TODO: the estimates below needs to be improved in the future instead of using task numbers
+    if self._total_stages == 1:
+        denominator = 2.0
+        if priority == 1:
+            numerator = 1.0
+        elif priority == 2:
+            numerator = 2.0
+        else:
+            logger.exit(
+                f"The function does not cater for stage number:{self._stage} & priority:{priority}"
+            )
+    elif self._total_stages == 2:
+        denominator = 4.0 + 2.0 * self.heat_network_settings["minimize_head_losses"]
+        if priority == 1 and self._stage == 1:
+            numerator = 1.0
+        elif priority == 2 and self._stage == 1:
+            numerator = 2.0
+        elif priority > 2 and self._stage == 1:
+            logger.exit(
+                f"The function does not cater for stage number:{self._stage} & priority:{priority}"
+            )
+        elif priority == 1 and self._stage == 2:
+            numerator = 3.0
+        elif priority == 2 and self._stage == 2:
+            numerator = 4.0
+        elif priority == (2**31 - 2) and self._stage == 2:  # head loss optimization
+            numerator = 5.0
+        elif priority == (2**31 - 1) and self._stage == 2:  # hydraulic power optimization
+            numerator = 6.0
+        else:
+            logger.exit(
+                f"The function does not cater for stage number:{self._stage} & priority:{priority}"
+            )
+    else:
+        logger.error(
+            f"The stage number: {self._stage} is higher then the total stages"
+            " expected: {self._total_stages}. Assuming the stage numbering starts at 1."
+        )
+        sys.exit(1)
+    try:
+        # This kwarg only exists when the code is used in OMOTES backend
+        update_progress_function = temp + kwargs["update_progress_function"]
+        task_quantity_perc_completed = numerator / denominator
+        update_progress_function(
+            task_quantity_perc_completed,
+            "Optimization task {numerator} out of {denominator} has completed",
+        )  # In the future this ratio might differ from the step being completed
+    except KeyError:
+        pass  # The case when the code is not used in the OMOTES backend
+    except Exception as e:
+        logger.error(
+            f"An unknown error occurred when trying to update the progress: {e}"
+        )
+        sys.exit(1)
+
+
 class SolverHIGHS:
     def solver_options(self):
         options = super().solver_options()
@@ -332,8 +390,8 @@ class EndScenarioSizing(
 
         super().priority_started(priority)
 
-    def priority_completed(self, priority):
-        super().priority_completed(priority)
+    def priority_completed(self, priority, **kwargs):
+        super().priority_completed(priority, **kwargs)
 
         self._hot_start = True
 
@@ -349,6 +407,8 @@ class EndScenarioSizing(
         )
         if priority == 1 and self.objective_value > 1e-6:
             raise RuntimeError("The heating demand is not matched")
+
+        estimate_progress(self, priority, **kwargs)
 
     def post(self):
         # In case the solver fails, we do not get in priority_completed(). We
