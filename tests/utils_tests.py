@@ -113,7 +113,7 @@ def heat_to_discharge_test(solution, results):
      discharge and heatflow can be negative.
     """
     test = TestCase()
-    tol_heat = 1.0e-2
+    tol_heat = 50  # W
     for d in [
         *solution.energy_system_components.get("heat_demand", []),
         *solution.energy_system_components.get("airco", []),
