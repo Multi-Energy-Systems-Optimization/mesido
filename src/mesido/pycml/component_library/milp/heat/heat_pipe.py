@@ -34,10 +34,6 @@ class HeatPipe(_NonStorageComponent):
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
 
-        # away to create variables with a constant value over time is using the add_variable
-        # fixed, it does create variabeles for all timesteps
-        # self.add_variable(Variable, "_cost_test", min=0.0, fixed=True)
-
         self.component_type = "heat_pipe"
         self.disconnectable = False
         self.has_control_valve = False
@@ -64,8 +60,6 @@ class HeatPipe(_NonStorageComponent):
         self.Heat_loss = nan
 
         self.add_variable(Variable, "dH")
-
-        print(modifiers["HeatIn"]["Heat"], modifiers["HeatOut"]["Heat"])
 
         self.add_variable(DiscreteVariable, "__flow_direct_var", min=0.0, max=1.0)
 

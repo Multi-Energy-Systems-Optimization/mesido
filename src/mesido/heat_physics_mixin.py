@@ -312,7 +312,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         for v in self.energy_system_components.get("control_valve", []):
             flow_dir_var = f"{v}.__flow_direct_var"
-            #
             self.__control_valve_direction_map[v] = flow_dir_var
 
         for ates, (
@@ -1606,7 +1605,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             carrier = parameters[f"{p}.carrier_id"]
             temperatures = self.temperature_regimes(carrier)
 
-            #TODO: flowdir can be 1 or 0 when Q==0.0, so heat needs to be explicitely set to be
+            # TODO: flowdir can be 1 or 0 when Q==0.0, so heat needs to be explicitely set to be
             # negative or possitive based on flowdir
 
             for heat in [scaled_heat_in, scaled_heat_out]:
@@ -1655,8 +1654,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     # temperature.
                     temp = max(parameters[f"{p}.temperature"], parameters[f"{p}.T_ground"])
                     assert big_m > 0.0
-
-                    # big_m = big_m * 10   # kvr: This was needed to get the pipeline to pass
 
                     carrier = parameters[f"{p}.carrier_id"]
                     temperatures = self.temperature_regimes(carrier)

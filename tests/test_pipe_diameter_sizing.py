@@ -63,7 +63,7 @@ class TestPipeDiameterSizingExample(TestCase):
         parameters = problem.parameters(0)
         diameters = {p: parameters[f"{p}.diameter"] for p in problem.hot_pipes}
         results = problem.extract_results()
-        
+
         # Check that half the network is removed, i.e. 4 pipes. Note that it
         # is equally possible for the left or right side of the network to be
         # removed.
@@ -129,10 +129,7 @@ class TestPipeDiameterSizingExample(TestCase):
             if pipe in pipes_removed:
                 hydraulic_power_sum += sum(abs(results[f"{pipe}.Hydraulic_power"]))
         np.testing.assert_allclose(
-            hydraulic_power_sum,
-            0.0,
-            err_msg="Hydraulic power exists for a removed pipe",
-            atol=1e-9
+            hydraulic_power_sum, 0.0, err_msg="Hydraulic power exists for a removed pipe", atol=1e-9
         )
 
         # Hydraulic power = delta pressure * Q = f(Q^3), where delta pressure = f(Q^2)
