@@ -2107,6 +2107,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 heat_ates_max = bounds[f"{ates}.Heat_ates"][1]
                 heat_ates = self.state(f"{ates}.Heat_ates")
                 stored_heat = self.state(f"{ates}.Stored_heat")
+                ates_flow = self.state(f"{ates}.Q")
 
                 big_m = 2.0 * max(bounds[f"{ates}.Temperature_change_charging"][1], 1e-5)
 
@@ -2143,6 +2144,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 # )
                 max_t = max(supply_temperatures)
                 min_t = min(supply_temperatures)
+                # set temperature change during charging
                 for ates_t in supply_temperatures:
                     ates_t_selected = self.state(f"{ates}__temperature_disc_{ates_t}")
                     if ates_t != max_t:# and ates_t != supply_temperatures[1]:
@@ -2231,19 +2233,46 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         )
 
                         # under discharge
+                        # constraints.append(
+                        #     (
+                        #         (
+                        #             ates_dt_loss_vec
+                        #             - (a * stored_heat_vec / heat_stored_max + b)
+                        #             + big_m * (1.0 - ates_temperature_is_selected_vec)
+                        #             + big_m * is_buffer_charging_vec
+                        #         )
+                        #         / ates_temperature_loss_nominal,
+                        #         0.0,
+                        #         np.inf,
+                        #     )
+                        # )
+                        a=8.9286e-5 #8.9286e-5=0.015°C/week/m3h
                         constraints.append(
                             (
                                 (
-                                    ates_dt_loss_vec
-                                    - (a * stored_heat_vec / heat_stored_max + b)
-                                    + big_m * (1.0 - ates_temperature_is_selected_vec)
-                                    + big_m * is_buffer_charging_vec
+                                        ates_dt_loss_vec
+                                        - (-a * ates_flow)
+                                        + big_m * (1.0 - ates_temperature_is_selected_vec)
+                                        + big_m * is_buffer_charging_vec
                                 )
                                 / ates_temperature_loss_nominal,
                                 0.0,
                                 np.inf,
                             )
                         )
+                        # constraints.append(
+                        #     (
+                        #         (
+                        #                 ates_dt_loss_vec
+                        #                 - 1*(-a * ates_flow)
+                        #                 - big_m * (1.0 - ates_temperature_is_selected_vec)
+                        #                 - big_m * is_buffer_charging_vec
+                        #         )
+                        #         / ates_temperature_loss_nominal,
+                        #         -np.inf,
+                        #         0.0,
+                        #     )
+                        # )
 
                         # #under charge dt_loss=0
                         # constraints.append(
@@ -2306,39 +2335,85 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 and ates in self.energy_system_components.get("ates", [])
             ):
                 big_m_heatloss = 2 * heat_loss_nominal
-                for ates_temperature in supply_temperatures:
-                    ates_temperature_is_selected = self.state(
-                        f"{ates}__temperature_disc_{ates_temperature}"
+                coeff_efficiency_ates = parameters[f"{ates}.heat_loss_coeff"]
+                # if self._stage != 1:
+                constraints.append(
+                    (
+                        (heat_loss - stored_heat * coeff_efficiency_ates) / heat_loss_nominal,
+                        0.0,
+                        np.inf, #0.0
                     )
-                    # linearisation of heatloss
-                    a, b = self.__get_linear_heatloss_vs_storedheat(
-                        heat_stored_max, ates_temperature, temperature_ambient=soil_temperature
-                    )
-                    stored_heat_vec = ca.repmat(stored_heat, len(a))
-                    ates_heat_loss_vec = ca.repmat(heat_loss, len(a))
-                    ates_temperature_is_selected_vec = ca.repmat(
-                        ates_temperature_is_selected, len(a)
-                    )
-                    constraints.append(
-                        (
-                            (
-                                ates_heat_loss_vec
-                                - (a * stored_heat_vec + b)
-                                + big_m_heatloss * (1 - ates_temperature_is_selected_vec)
-                            )
-                            / heat_loss_nominal,
-                            0.0,
-                            np.inf,
-                        )
-                    )
-                    # TODO: check if needed: add the constraint below incase we want piecewise
-                    #  linear equality for the ates heat loss
-                    # constraints.append(
-                    #     ((ates_heat_loss_vec - (a * stored_heat_vec + b) - big_m_heatloss * (
-                    #             1 - ates_temperature_is_selected_vec)) / heat_loss_nominal,
-                    #             -np.inf,
-                    #      0.0)
-                    # )
+                )
+                # ates_is_charging = self.state(f"{ates}__is_charging")
+                # heat_ates = self.state(f"{ates}.Heat_flow")
+                # big_m = 2 * bounds[f"{ates}.Heat_flow"][1]
+                #
+                # constraints.append(
+                #     (
+                #         (heat_loss + 0.4 * heat_ates + big_m * ates_is_charging) /
+                #         heat_loss_nominal,
+                #         0.0,
+                #         np.inf,
+                #     )
+                # )
+                # constraints.append(
+                #     (
+                #         (heat_loss + 0.4 * heat_ates - big_m * ates_is_charging) /
+                #         heat_loss_nominal,
+                #         -np.inf,
+                #         0.0,
+                #     )
+                # )
+                # constraints.append(
+                #     (
+                #         (heat_loss + big_m * (1-ates_is_charging)) / heat_loss_nominal,
+                #         0.0,
+                #         np.inf,
+                #     )
+                # )
+                # constraints.append(
+                #     (
+                #         (heat_loss - big_m * (1-ates_is_charging)) /
+                #         heat_loss_nominal,
+                #         -np.inf,
+                #         0.0,
+                #     )
+                # )
+
+                #
+                # for ates_temperature in supply_temperatures:
+                #     ates_temperature_is_selected = self.state(
+                #         f"{ates}__temperature_disc_{ates_temperature}"
+                #     )
+                #     # linearisation of heatloss
+                #     a, b = self.__get_linear_heatloss_vs_storedheat(
+                #         heat_stored_max, ates_temperature, temperature_ambient=soil_temperature
+                #     )
+                #     stored_heat_vec = ca.repmat(stored_heat, len(a))
+                #     ates_heat_loss_vec = ca.repmat(heat_loss, len(a))
+                #     ates_temperature_is_selected_vec = ca.repmat(
+                #         ates_temperature_is_selected, len(a)
+                #     )
+                #     constraints.append(
+                #         (
+                #             (
+                #                 ates_heat_loss_vec
+                #                 - (a * stored_heat_vec + b)
+                #                 + big_m_heatloss * (1 - ates_temperature_is_selected_vec)
+                #             )
+                #             / heat_loss_nominal,
+                #             0.0,
+                #             np.inf,
+                #         )
+                #     )
+                #     # TODO: check if needed: add the constraint below incase we want piecewise
+                #     #  linear equality for the ates heat loss
+                #     # constraints.append(
+                #     #     ((ates_heat_loss_vec - (a * stored_heat_vec + b) - big_m_heatloss * (
+                #     #             1 - ates_temperature_is_selected_vec)) / heat_loss_nominal,
+                #     #             -np.inf,
+                #     #      0.0)
+                #     # )
             else:
                 # no temperature states available
                 coeff_efficiency_ates = parameters[f"{ates}.heat_loss_coeff"]
@@ -3505,12 +3580,12 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     # ates_temp_disc = self.state(f"{ates}__temperature_ates_disc")
                     # ates_temp = self.state(f"{ates}.Temperature_ates")
 
-                    # ordering should be 1. if temperature is larger than temperature selected.
+                    # # ordering should be 1. if temperature is larger than temperature selected.
                     # constraints.append(((temperature - ates_temp_disc + big_m * ordering_disc),
                     # min_dt / 2., np.inf))
                     # constraints.append(((temperature - ates_temp_disc - big_m * (
                     # 1. - ordering_disc)), -np.inf, 0.))
-                    #
+
                     # constraints.append(
                     #     ((temperature - ates_temp + big_m * ordering), 0., np.inf))
                     # constraints.append(
@@ -3658,8 +3733,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints.extend(self.__check_valve_head_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__control_valve_head_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__network_temperature_path_constraints(ensemble_member))
-        constraints.extend(self.__ates_temperature_path_constraints(ensemble_member))
-        constraints.extend(self.__ates_temperature_changing_path_constraints(ensemble_member))
+        if not self._stage == 3:
+            constraints.extend(self.__ates_temperature_path_constraints(ensemble_member))
+            constraints.extend(self.__ates_temperature_changing_path_constraints(ensemble_member))
         constraints.extend(self.__ates_heat_losses_path_constraints(ensemble_member))
         constraints.extend(self.__ates_temperature_ordering_path_constraints(ensemble_member))
         constraints.extend(self.__heat_pump_cop_path_constraints(ensemble_member))
