@@ -8,6 +8,8 @@ from mesido.exceptions import MesidoAssetIssueError
 from mesido.potential_errors import MesidoAssetIssueType, PotentialErrors
 from mesido.util import run_esdl_mesido_optimization
 from mesido.workflows.utils.error_types import mesido_issue_type_gen_message
+from mesido.workflows import EndScenarioSizing
+from models.cost_information_errors import test_check_cost_information
 
 import numpy as np
 
@@ -36,11 +38,6 @@ class TestCostInputCheck(TestCase):
         3. The error contains the specific asset ID and a detailed message explaining the problem
         """
 
-        from models.cost_information_errors import test_check_cost_information
-        from mesido.workflows import EndScenarioSizing
-        from mesido.workflows.utils.error_types import HEAT_NETWORK_ERRORS, NO_POTENTIAL_ERRORS_CHECK
-
-
         base_folder = Path(test_check_cost_information.__file__).resolve().parent
 
         with self.assertRaises(MesidoAssetIssueError) as cm, unittest.mock.patch(
@@ -51,7 +48,6 @@ class TestCostInputCheck(TestCase):
                 base_folder=base_folder,
                 esdl_file_name="graph_HDemands_incl_demand_4_incorrect.esdl",
                 esdl_parser=ESDLFileParser,
-                error_type_check=HEAT_NETWORK_ERRORS
             )
 
         # Check that the cold demand had an error
@@ -84,11 +80,6 @@ class TestCostInputCheck(TestCase):
         3. The error contains the specific asset ID and a detailed message explaining the problem
         """
 
-        from models.cost_information_errors import test_check_cost_information
-        from mesido.workflows import EndScenarioSizing
-        from mesido.workflows.utils.error_types import HEAT_NETWORK_ERRORS, NO_POTENTIAL_ERRORS_CHECK
-
-
         base_folder = Path(test_check_cost_information.__file__).resolve().parent
 
         with self.assertRaises(MesidoAssetIssueError) as cm, unittest.mock.patch(
@@ -99,7 +90,6 @@ class TestCostInputCheck(TestCase):
                 base_folder=base_folder,
                 esdl_file_name="graph_HDemands_incl_demand_4_missing.esdl",
                 esdl_parser=ESDLFileParser,
-                error_type_check=HEAT_NETWORK_ERRORS
             )
 
         # Check that the cold demand had an error
