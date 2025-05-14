@@ -1140,7 +1140,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         params["Primary"] = {**params_t["Primary"], **params_q["Primary"], **prim_heat}
         params["Secondary"] = {**params_t["Secondary"], **params_q["Secondary"], **sec_heat}
 
-        max_power = power_electrical * (1.0 + cop)  # TODO: dit kan zijn power_electrical*cop
+        max_power = power_secondary
 
         modifiers = dict(
             COP=cop,
