@@ -130,7 +130,7 @@ def estimate_progress(self, priority, **kwargs):
         sys.exit(1)
     try:
         # This kwarg only exists when the code is used in OMOTES backend
-        update_progress_function = temp + kwargs["update_progress_function"]
+        update_progress_function = kwargs["update_progress_function"]
         task_quantity_perc_completed = numerator / denominator
         update_progress_function(
             task_quantity_perc_completed,
