@@ -129,11 +129,10 @@ def estimate_progress(self, priority, **kwargs):
         )
         sys.exit(1)
 
-    if "update_progress_function" in kwargs:
+    if self._workflow_progress_status is not None:
         # This kwarg only exists when the code is used in OMOTES backend
-        update_progress_function = kwargs["update_progress_function"]
         task_quantity_perc_completed = numerator / denominator
-        update_progress_function(
+        self._workflow_progress_status(
             task_quantity_perc_completed,
             "Optimization task {numerator} out of {denominator} has completed",
         )  # In the future this ratio might differ from the step being completed
@@ -235,6 +234,11 @@ class EndScenarioSizing(
         self.__heat_demand_nominal = dict()
 
         self._save_json = False
+
+        if "update_progress_function" in kwargs:
+            self._workflow_progress_status = kwargs["update_progress_function"]
+        else:
+            self._workflow_progress_status = None
 
     def parameters(self, ensemble_member):
         parameters = super().parameters(ensemble_member)
@@ -384,8 +388,8 @@ class EndScenarioSizing(
 
         super().priority_started(priority)
 
-    def priority_completed(self, priority, **kwargs):
-        super().priority_completed(priority, **kwargs)
+    def priority_completed(self, priority):
+        super().priority_completed(priority)
 
         self._hot_start = True
 
@@ -402,7 +406,7 @@ class EndScenarioSizing(
         if priority == 1 and self.objective_value > 1e-6:
             raise RuntimeError("The heating demand is not matched")
 
-        estimate_progress(self, priority, **kwargs)
+        estimate_progress(self, priority)
 
     def post(self):
         # In case the solver fails, we do not get in priority_completed(). We
