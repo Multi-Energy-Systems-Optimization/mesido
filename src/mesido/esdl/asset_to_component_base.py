@@ -230,6 +230,80 @@ class _AssetToComponentBase:
         "CheckValve": "check_valve",
     }
 
+    # Dictionary mapping asset types to cost attribute requirements
+    # Values: "required", "optional", "not supported"
+    ASSET_COST_REQUIREMENTS = {
+        "heat_pump": {
+            "investmentCosts": "required",
+            "installationCosts": "required",
+            "variableOperationalCosts": "required",
+            "fixedMaintenanceCosts": "optional",
+            "fixedOperationalCosts": "optional"
+        },
+        "heat_source": {  # Includes GeothermalSource, ResidualHeatSource, HeatProducer
+            "investmentCosts": "required",
+            "installationCosts": "required",
+            "variableOperationalCosts": "required",
+            "fixedMaintenanceCosts": "optional",
+            "fixedOperationalCosts": "optional"
+        },
+        "heat_demand": {
+            "investmentCosts": "optional",
+            "installationCosts": "optional",
+            "variableOperationalCosts": "not supported",
+            "fixedMaintenanceCosts": "optional",
+            "fixedOperationalCosts": "not supported"
+        },
+        "heat_buffer": {  # Surface Tank Storage
+            "investmentCosts": "required",
+            "installationCosts": "required",
+            "variableOperationalCosts": "not supported",
+            "fixedMaintenanceCosts": "optional",
+            "fixedOperationalCosts": "optional"
+        },
+        "ates": {  # HT-ATES (high)
+            "investmentCosts": "required",
+            "installationCosts": "required",
+            "variableOperationalCosts": "not supported",
+            "fixedMaintenanceCosts": "optional",
+            "fixedOperationalCosts": "required"
+        },
+        "pipe": {
+            "investmentCosts": "optional",
+            "installationCosts": "not supported",
+            "variableOperationalCosts": "not supported",
+            "fixedMaintenanceCosts": "not supported",
+            "fixedOperationalCosts": "not supported"
+        },
+        "heat_exchanger": {
+            "investmentCosts": "required",
+            "installationCosts": "required",
+            "variableOperationalCosts": "not supported",
+            "fixedMaintenanceCosts": "optional",
+            "fixedOperationalCosts": "required"
+        }
+    }
+
+    COST_VALIDATION_COMPONENT_TO_ASSET_TYPE = {
+        "HeatPump": "heat_pump",
+        "HeatingDemand": "heat_demand",
+        "ResidualHeatSource": "heat_source",
+        "GeothermalSource": "heat_source",
+        "HeatProducer": "heat_source",
+        "HeatStorage": "heat_buffer",
+        "ATES": "ates",
+        "Pipe": "pipe",
+        "HeatExchange": "heat_exchanger",
+    }
+
+    COST_ATTRIBUTE_TO_STRING = {
+        "investmentCosts": "investment costs",
+        "installationCosts": "installation costs",
+        "variableOperationalCosts": "variable operational costs",
+        "fixedMaintenanceCosts": "fixed maintenance costs",
+        "fixedOperationalCosts": "fixed operational costs"
+    }
+
     primary_port_name_convention = "primary"
     secondary_port_name_convention = "secondary"
 
@@ -1260,6 +1334,51 @@ class _AssetToComponentBase:
             error_type = error_type_mapping.get(cost_error_type)
             get_potential_errors().add_potential_issue(error_type, asset_id, message)
 
+    def _check_cost_attribute_requirement(self, component_type, cost_attribute):
+        """
+        Check if a cost attribute is required, optional, or not supported for a component type.
+
+        Args:
+            component_type: The component type (e.g., "heat_pump", "pipe")
+            cost_attribute: The cost attribute to check (e.g., "investmentCosts")
+
+        Returns:
+            str: "required", "optional" or "not supported"
+        """
+        asset_type = self.COST_VALIDATION_COMPONENT_TO_ASSET_TYPE.get(component_type)
+        if not asset_type or asset_type not in self.ASSET_COST_REQUIREMENTS:
+            return "unknown"
+
+        return self.ASSET_COST_REQUIREMENTS[asset_type].get(cost_attribute, "unknown")
+
+    def _validate_cost_attribute(self, asset, cost_attribute, cost_info):
+        """
+        Validate a cost attribute for an asset.
+
+        Args:
+            asset: The asset object
+            cost_attribute: The name of the cost attribute
+            cost_info: The cost information object
+
+        Returns:
+            bool: True if the attribute is valid and should be processed further, False otherwise
+        """
+        cost_check = self._check_cost_attribute_requirement(asset.asset_type, cost_attribute)
+        cost_string_name = self.COST_ATTRIBUTE_TO_STRING.get(cost_attribute, cost_attribute)
+
+        if cost_info is None:
+            if cost_check == "required":
+                message = f"No {cost_string_name} information specified for asset {asset.name}"
+                self._log_and_add_potential_issue(message, asset.id, cost_error_type="missing")
+            return False
+
+        if cost_check == "not supported":
+            message = f"The {cost_attribute} for asset {asset.name} is not supported"
+            self._log_and_add_potential_issue(message, asset.id, report_issue=False)
+            return False
+
+        return True
+
     def get_variable_opex_costs(self, asset: Asset) -> float:
         """
         Returns the variable opex costs coefficient of an asset in Euros per Wh.
@@ -1294,8 +1413,8 @@ class _AssetToComponentBase:
             self._log_and_add_potential_issue(message, asset.id, report_issue=False)
         value = 0.0
 
-        for cost_info in cost_infos.values():
-            if cost_info is None:
+        for cost_attribute, cost_info in cost_infos.items():
+            if not self._validate_cost_attribute(asset, cost_attribute, cost_info):
                 continue
             cost_value, unit, per_unit, per_time = self.get_cost_value_and_unit(cost_info)
             if unit != UnitEnum.EURO:
@@ -1359,88 +1478,87 @@ class _AssetToComponentBase:
         if all(cost_info is None for cost_info in cost_infos.values()):
             message = f"No fixed OPEX cost information specified for asset {asset.name}"
             self._log_and_add_potential_issue(message, asset.id, report_issue=False)
-            value = 0.0
-        else:
-            value = 0.0
-            for cost_info in cost_infos.values():
-                if cost_info is None:
+
+        value = 0.0
+        for cost_attribute, cost_info in cost_infos.items():
+            if not self._validate_cost_attribute(asset, cost_attribute, cost_info):
+                continue
+            cost_value, unit, per_unit, per_time = self.get_cost_value_and_unit(cost_info)
+            if cost_value is not None and cost_value > 0.0:
+                if unit != UnitEnum.EURO:
+                    message = f"Expected cost information {cost_info} to be provided in euros."
+                    self._log_and_add_potential_issue(
+                        message, asset.id, cost_error_type="incorrect"
+                    )
                     continue
-                cost_value, unit, per_unit, per_time = self.get_cost_value_and_unit(cost_info)
-                if cost_value is not None and cost_value > 0.0:
-                    if unit != UnitEnum.EURO:
-                        message = f"Expected cost information {cost_info} to be provided in euros."
-                        self._log_and_add_potential_issue(
-                            message, asset.id, cost_error_type="incorrect"
-                        )
-                        continue
-                    if per_unit == UnitEnum.CUBIC_METRE and asset.asset_type != "GasStorage":
-                        # index is 0 because buffers only have one in out port
-                        supply_temp = asset.global_properties["carriers"][
-                            asset.in_ports[0].carrier.id
-                        ]["temperature"]
-                        return_temp = asset.global_properties["carriers"][
-                            asset.out_ports[0].carrier.id
-                        ]["temperature"]
-                        delta_temp = supply_temp - return_temp
-                        m3_to_joule_factor = delta_temp * HEAT_STORAGE_M3_WATER_PER_DEGREE_CELSIUS
-                        cost_value = cost_value / m3_to_joule_factor
-                    elif per_unit == UnitEnum.NONE:
-                        if asset.asset_type == "HeatStorage":
-                            size = asset.attributes["capacity"]
+                if per_unit == UnitEnum.CUBIC_METRE and asset.asset_type != "GasStorage":
+                    # index is 0 because buffers only have one in out port
+                    supply_temp = asset.global_properties["carriers"][
+                        asset.in_ports[0].carrier.id
+                    ]["temperature"]
+                    return_temp = asset.global_properties["carriers"][
+                        asset.out_ports[0].carrier.id
+                    ]["temperature"]
+                    delta_temp = supply_temp - return_temp
+                    m3_to_joule_factor = delta_temp * HEAT_STORAGE_M3_WATER_PER_DEGREE_CELSIUS
+                    cost_value = cost_value / m3_to_joule_factor
+                elif per_unit == UnitEnum.NONE:
+                    if asset.asset_type == "HeatStorage":
+                        size = asset.attributes["capacity"]
+                        if size == 0.0:
+                            # index is 0 because buffers only have one in out port
+                            supply_temp = asset.global_properties["carriers"][
+                                asset.in_ports[0].carrier.id
+                            ]["temperature"]
+                            return_temp = asset.global_properties["carriers"][
+                                asset.out_ports[0].carrier.id
+                            ]["temperature"]
+                            delta_temp = supply_temp - return_temp
+                            m3_to_joule_factor = (
+                                delta_temp * HEAT_STORAGE_M3_WATER_PER_DEGREE_CELSIUS
+                            )
+                            size = asset.attributes["volume"] * m3_to_joule_factor
                             if size == 0.0:
-                                # index is 0 because buffers only have one in out port
-                                supply_temp = asset.global_properties["carriers"][
-                                    asset.in_ports[0].carrier.id
-                                ]["temperature"]
-                                return_temp = asset.global_properties["carriers"][
-                                    asset.out_ports[0].carrier.id
-                                ]["temperature"]
-                                delta_temp = supply_temp - return_temp
-                                m3_to_joule_factor = (
-                                    delta_temp * HEAT_STORAGE_M3_WATER_PER_DEGREE_CELSIUS
-                                )
-                                size = asset.attributes["volume"] * m3_to_joule_factor
-                                if size == 0.0:
-                                    RuntimeWarning(f"{asset.name} has not capacity or volume set")
-                                    return 0.0
-                        elif asset.asset_type == "ATES":
-                            size = asset.attributes["maxChargeRate"]
-                            if size == 0.0:
-                                size = asset.attributes["capacity"] / (
-                                    365 * 24 * 3600 / 2
-                                )  # only half a year it can load
-                                if size == 0.0:
-                                    RuntimeWarning(
-                                        f"{asset.name} has not capacity or maximum charge rate set"
-                                    )
-                                    return 0.0
-                        else:
-                            try:
-                                size = asset.attributes["power"]
-                                if size == 0.0:
-                                    continue
-                            except KeyError:
+                                RuntimeWarning(f"{asset.name} has not capacity or volume set")
                                 return 0.0
-                        cost_value = cost_value / size
-                    elif per_unit != UnitEnum.WATT and asset.asset_type != "GasStorage":
-                        message = (
-                            f"Expected the specified OPEX for asset {asset.name} to be per W or m3,"
-                            f" but they are provided in {per_unit} instead."
-                        )
-                        self._log_and_add_potential_issue(
-                            message, asset.id, cost_error_type="incorrect"
-                        )
-                        continue
-                    # still to decide if the cost is per kg or per m3
-                    elif per_unit != UnitEnum.GRAM and asset.asset_type == "GasStorage":
-                        message = (
-                            f"Expected the specified OPEX for asset {asset.name} to be per GRAM, "
-                            f"but they are provided in {per_unit} instead."
-                        )
-                        self._log_and_add_potential_issue(
-                            message, asset.id, cost_error_type="incorrect"
-                        )
-                        continue
+                    elif asset.asset_type == "ATES":
+                        size = asset.attributes["maxChargeRate"]
+                        if size == 0.0:
+                            size = asset.attributes["capacity"] / (
+                                365 * 24 * 3600 / 2
+                            )  # only half a year it can load
+                            if size == 0.0:
+                                RuntimeWarning(
+                                    f"{asset.name} has not capacity or maximum charge rate set"
+                                )
+                                return 0.0
+                    else:
+                        try:
+                            size = asset.attributes["power"]
+                            if size == 0.0:
+                                continue
+                        except KeyError:
+                            return 0.0
+                    cost_value = cost_value / size
+                elif per_unit != UnitEnum.WATT and asset.asset_type != "GasStorage":
+                    message = (
+                        f"Expected the specified OPEX for asset {asset.name} to be per W or m3,"
+                        f" but they are provided in {per_unit} instead."
+                    )
+                    self._log_and_add_potential_issue(
+                        message, asset.id, cost_error_type="incorrect"
+                    )
+                    continue
+                # still to decide if the cost is per kg or per m3
+                elif per_unit != UnitEnum.GRAM and asset.asset_type == "GasStorage":
+                    message = (
+                        f"Expected the specified OPEX for asset {asset.name} to be per GRAM, "
+                        f"but they are provided in {per_unit} instead."
+                    )
+                    self._log_and_add_potential_issue(
+                        message, asset.id, cost_error_type="incorrect"
+                    )
+                    continue
 
                 value += cost_value
         return value

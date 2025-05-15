@@ -14,9 +14,8 @@ if __name__ == "__main__":
     solution = run_end_scenario_sizing(
         EndScenarioSizingStaged,
         base_folder=base_folder,
-        esdl_file_name="graph_HDemands_incl_demand_4_incorrect.esdl",
+        esdl_file_name="graph_HDemands_incl_demand_4_missing_operational.esdl",
         esdl_parser=ESDLFileParser,
-        error_type_check=HEAT_NETWORK_ERRORS,
     )
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
