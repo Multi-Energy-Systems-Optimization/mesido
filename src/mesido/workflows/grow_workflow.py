@@ -128,7 +128,8 @@ def estimate_progress(self, priority, **kwargs):
             " expected: {self._total_stages}. Assuming the stage numbering starts at 1."
         )
         sys.exit(1)
-    try:
+
+    if "update_progress_function" in kwargs:
         # This kwarg only exists when the code is used in OMOTES backend
         update_progress_function = kwargs["update_progress_function"]
         task_quantity_perc_completed = numerator / denominator
@@ -136,13 +137,6 @@ def estimate_progress(self, priority, **kwargs):
             task_quantity_perc_completed,
             "Optimization task {numerator} out of {denominator} has completed",
         )  # In the future this ratio might differ from the step being completed
-    except KeyError:
-        pass  # The case when the code is not used in the OMOTES backend
-    except Exception as e:
-        logger.error(
-            f"An unknown error occurred when trying to update the progress: {e}"
-        )
-        sys.exit(1)
 
 
 class SolverHIGHS:
