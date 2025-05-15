@@ -13,7 +13,7 @@ from mesido.exceptions import MesidoAssetIssueError
 from mesido.potential_errors import MesidoAssetIssueType, PotentialErrors
 from mesido.workflows import EndScenarioSizingStaged
 from mesido.workflows.utils.adapt_profiles import adapt_hourly_profile_averages_timestep_size
-from mesido.workflows.utils.error_types import HEAT_NETWORK_ERRORS, mesido_issue_type_gen_message
+from mesido.workflows.utils.error_types import mesido_issue_type_gen_message
 
 
 import numpy as np
@@ -116,7 +116,6 @@ class TestPotentialErrors(unittest.TestCase):
                 esdl_file_name="1a_with_influx_profiles_error_check_1.esdl",
                 profile_reader=MockInfluxDBProfileReader,
                 input_timeseries_file="influx_mock.csv",
-                error_type_check=HEAT_NETWORK_ERRORS,  # Pass the error type here
             )
             problem.pre()
 
@@ -155,7 +154,6 @@ class TestPotentialErrors(unittest.TestCase):
                 esdl_file_name="1a_with_influx_profiles_error_check_2.esdl",
                 profile_reader=MockInfluxDBProfileReader,
                 input_timeseries_file="influx_mock.csv",
-                error_type_check=HEAT_NETWORK_ERRORS,
             )
             problem.pre()
         # Check that the heat demand had an error
@@ -183,7 +181,6 @@ class TestPotentialErrors(unittest.TestCase):
                 esdl_file_name="1a_with_influx_profiles_error_check_3.esdl",
                 profile_reader=MockInfluxDBProfileReader,
                 input_timeseries_file="influx_mock.csv",
-                error_type_check=HEAT_NETWORK_ERRORS,
             )
             problem.pre()
         # Check that the joint has an error

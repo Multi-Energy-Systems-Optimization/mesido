@@ -1318,13 +1318,9 @@ class _AssetToComponentBase:
                 continue
             if asset.asset_type in gas_assets and per_unit != UnitEnum.GRAM:
                 message = (
-                    f"Expected the specified OPEX for asset {asset.name} to be per g/s, "
-                    f"but they are provided in {per_unit}/{per_time} instead."
+                    f"Expected the specified OPEX for asset {asset.name} to be per EURO/g, "
+                    f"but they are provided in {unit}/{per_unit} instead."
                 )
-                # NOTE: This check considers per_time units for gas assets.
-                # However, the check per_time != TimeUnitEnum.NONE above assumes that
-                # no time units are provided. Please check if for for gas assets an exception
-                # is necessary in the check "per_time != TimeUnitEnum.NONE"
                 self._log_and_add_potential_issue(message, asset.id, cost_error_type="incorrect")
                 continue
             if cost_value < 0.0:

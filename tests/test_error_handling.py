@@ -6,7 +6,7 @@ from mesido.esdl.asset_to_component_base import MesidoAssetIssueType, _AssetToCo
 
 class TestLogAndReportIssue(unittest.TestCase):
     """
-    Test suite for _log_and_report_issue method of AssetToComponentBase class.
+    Test suite for _log_and_add_potential_issue method of AssetToComponentBase class.
     Tests logging and error reporting functionality.
     """
 
@@ -22,13 +22,13 @@ class TestLogAndReportIssue(unittest.TestCase):
 
     @patch("mesido.esdl.asset_to_component_base.logger")
     @patch("mesido.esdl.asset_to_component_base.get_potential_errors")
-    def test_log_and_report_issue_incorrect(
+    def test_log_and_add_potential_issue_incorrect_cost(
         self,
         mock_get_potential_errors: MagicMock,
         mock_logger: MagicMock,
     ) -> None:
         """
-        Test that _log_and_report_issue correctly logs warning message
+        Test that _log_and_add_potential_issue correctly logs warning message
         and reports issue when cost information is incorrect.
         """
         # Arrange
@@ -36,7 +36,7 @@ class TestLogAndReportIssue(unittest.TestCase):
         mock_get_potential_errors.return_value = mock_potential_errors
 
         # Act
-        self.mock_instance._log_and_report_issue(
+        self.mock_instance._log_and_add_potential_issue(
             self.message, self.asset_id, cost_error_type="incorrect"
         )
 
@@ -48,13 +48,13 @@ class TestLogAndReportIssue(unittest.TestCase):
 
     @patch("mesido.esdl.asset_to_component_base.logger")
     @patch("mesido.esdl.asset_to_component_base.get_potential_errors")
-    def test_log_and_report_issue_missing(
+    def test_log_and_add_potential_issue_missing_cost(
         self,
         mock_get_potential_errors: MagicMock,
         mock_logger: MagicMock,
     ) -> None:
         """
-        Test that _log_and_report_issue correctly logs warning message
+        Test that _log_and_add_potential_issue correctly logs warning message
         and reports issue when required attribute is missing.
         """
         # Arrange
@@ -62,7 +62,7 @@ class TestLogAndReportIssue(unittest.TestCase):
         mock_get_potential_errors.return_value = mock_potential_errors
 
         # Act
-        self.mock_instance._log_and_report_issue(
+        self.mock_instance._log_and_add_potential_issue(
             self.message, self.asset_id, cost_error_type="missing"
         )
 
@@ -74,7 +74,7 @@ class TestLogAndReportIssue(unittest.TestCase):
 
     @patch("mesido.esdl.asset_to_component_base.logger")
     @patch("mesido.esdl.asset_to_component_base.get_potential_errors")
-    def test_log_and_no_report_issue(
+    def test_log_and_do_not_add_potential_issue(
         self,
         mock_get_potential_errors: MagicMock,
         mock_logger: MagicMock,
@@ -88,7 +88,7 @@ class TestLogAndReportIssue(unittest.TestCase):
         mock_get_potential_errors.return_value = mock_potential_errors
 
         # Act
-        self.mock_instance._log_and_report_issue(
+        self.mock_instance._log_and_add_potential_issue(
             self.message,
             self.asset_id,
             report_issue=False,
