@@ -975,9 +975,9 @@ class ScenarioOutput:
                         * parameters[f"{name}.dT"]
                     )
                 elif asset.name in self.energy_system_components.get("heat_pump", []):
-                    # Note: Electrical capacity and not the heat capacity
+                    # Note: The heat capacity and not the electrical capacity
                     # TODO: in the future we need to cater for varying COP as well
-                    asset.power = results[f"{name}__max_size"][0] / parameters[f"{name}.COP"]
+                    asset.power = results[f"{name}__max_size"][0]
                 else:
                     asset.power = max_size
                 if not placed:

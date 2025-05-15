@@ -25,6 +25,7 @@
 - Option for electricity cables to be unidirectional
 - Upgraded rtctools to v 2.6.1
 - Updated Casadi to 3.6.7 with gil fixes (see https://github.com/casadi/casadi/releases/tag/nightly-gil_release)
+- Definition of power attribute of water-to-water heat pump is changed from electrical power to secondary heat power
 
 ## Fixed
 - Bugfix: gas boiler mass flow constraint units
