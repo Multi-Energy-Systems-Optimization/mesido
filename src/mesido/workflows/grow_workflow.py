@@ -87,7 +87,7 @@ def _mip_gap_settings(mip_gap_name: str, problem) -> Dict[str, float]:
     return options
 
 
-def estimate_and_update_progress_status(self, priority, **kwargs):
+def estimate_and_update_progress_status(self, priority):
     """Estimate the progress of the optimization workflow. Currently the tasks completed in this
     workflow is used to estimate the progress (ratio between 0 and 1). The task completed ratio is
     the number of tasks completed divided by the total number of tasks. The total number of tasks
@@ -131,7 +131,7 @@ def estimate_and_update_progress_status(self, priority, **kwargs):
     else:
         logger.error(
             f"The stage number: {self._stage} is higher then the total stages"
-            " expected: {self._total_stages}. Assuming the stage numbering starts at 1."
+            f" expected: {self._total_stages}. Assuming the stage numbering starts at 1."
         )
         sys.exit(1)
 
@@ -139,7 +139,7 @@ def estimate_and_update_progress_status(self, priority, **kwargs):
     task_quantity_perc_completed = numerator / denominator
     self._workflow_progress_status(
         task_quantity_perc_completed,
-        "Optimization task {numerator} out of {denominator} has completed",
+        f"Optimization task {numerator} out of {denominator} has completed",
     )  # In the future this ratio might differ from the step being completed
 
 
