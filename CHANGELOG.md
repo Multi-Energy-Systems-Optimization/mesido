@@ -26,7 +26,7 @@
 - Upgraded rtctools to v 2.6.1
 - Updated Casadi to 3.6.7 with gil fixes (see https://github.com/casadi/casadi/releases/tag/nightly-gil_release)
 - Definition of power attribute of water-to-water heat pump is changed from electrical power to secondary heat power
-- Enforce water-to-water heat pump upper bound heat capacity to conform the elect_power*cop
+- Enforce water-to-water heat pump upper bound heat capacity to conform to elect_power*cop
 
 ## Fixed
 - Bugfix: gas boiler mass flow constraint units
