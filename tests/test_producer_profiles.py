@@ -52,3 +52,9 @@ class TestProducerMaxProfile(TestCase):
         # check that heat produced is smaller than the profile
         biggerthen = all(heat_producer_profile_full + tol >= heat_producer)
         self.assertTrue(biggerthen)
+
+
+if __name__ == "__main__":
+
+    a = TestProducerMaxProfile()
+    a.test_max_producer_profile()
