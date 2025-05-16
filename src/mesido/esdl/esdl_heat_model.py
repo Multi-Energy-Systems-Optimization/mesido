@@ -1140,7 +1140,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         params["Primary"] = {**params_t["Primary"], **params_q["Primary"], **prim_heat}
         params["Secondary"] = {**params_t["Secondary"], **params_q["Secondary"], **sec_heat}
 
-        max_power = power_secondary
+        max_power_heat = power_secondary
 
         modifiers = dict(
             COP=cop,
@@ -1156,9 +1156,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
             ),
             Power_elec=dict(min=0.0, max=power_electrical, nominal=power_electrical / 2.0),
-            Primary_heat=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
-            Secondary_heat=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
-            Heat_flow=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
+            Primary_heat=dict(min=0.0, max=max_power_heat, nominal=max_power_heat / 2.0),
+            Secondary_heat=dict(min=0.0, max=max_power_heat, nominal=max_power_heat / 2.0),
+            Heat_flow=dict(min=0.0, max=max_power_heat, nominal=max_power_heat / 2.0),
             state=self.get_state(asset),
             **self._get_cost_figure_modifiers(asset),
             **params,

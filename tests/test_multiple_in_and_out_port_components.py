@@ -313,6 +313,8 @@ class TestHP(TestCase):
         - Standard checks for demand matching, heat to discharge and energy conservation
         - Check that the heat pump is producing according to its COP
         - Check that Secondary source use in minimized
+        - Check that the upper bound value for heat producing capacity is the same as specified in
+        the esdl
 
 
         """
@@ -383,6 +385,14 @@ class TestHP(TestCase):
         # We check the energy converted betweeen the commodities
         np.testing.assert_allclose(power_elec * parameters["GenericConversion_3d3f.COP"], sec_heat)
         np.testing.assert_allclose(power_elec + prim_heat, sec_heat)
+
+        # Check that the heat pump upper bound
+        for key in solution.esdl_assets.keys():
+            if solution.esdl_assets[key].asset_type == "HeatPump":
+                np.testing.assert_equal(
+                    solution.bounds()["GenericConversion_3d3f.Heat_flow"][1],
+                    solution.esdl_assets[key].attributes["power"],
+                )
 
 
 if __name__ == "__main__":
