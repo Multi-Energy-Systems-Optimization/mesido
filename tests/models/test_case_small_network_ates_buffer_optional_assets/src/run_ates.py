@@ -2,7 +2,6 @@ from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.techno_economic_mixin import TechnoEconomicMixin
-from mesido.workflows.utils.error_types import HEAT_NETWORK_ERRORS
 
 import numpy as np
 
@@ -161,19 +160,6 @@ if __name__ == "__main__":
 
     solution = run_end_scenario_sizing(
         EndScenarioSizingStaged,
-        esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
-        esdl_parser=ESDLFileParser,
-        profile_reader=ProfileReaderFromFile,
-        input_timeseries_file="Warmte_test.csv",
-        error_type_check=HEAT_NETWORK_ERRORS,
-    )
-
-    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
-
-    start_time = time.time()
-
-    solution = run_end_scenario_sizing(
-        HeatProblem,
         esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,
