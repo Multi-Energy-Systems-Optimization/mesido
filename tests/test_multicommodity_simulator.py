@@ -625,8 +625,8 @@ class TestMultiCommoditySimulator(TestCase):
             if len(key.split("__")) > 1 and key.split("__")[1] == "gas_flow_direct_var":
                 # For the scenario when Q is -0 and 0 then gas_flow_direct_var 0 or 1 for the same
                 # volumetric flow rate of zero. So only check gas_flow_direct_var when Q != zero
-                zero_staged = results_staged[f"{key.split('__')[0]}.GasIn.Q"] != 0
-                zero_unstaged = results_unstaged[f"{key.split('__')[0]}.GasIn.Q"] != 0
+                zero_staged = results_staged[f"{key.split('__')[0]}GasIn.Q"] != 0
+                zero_unstaged = results_unstaged[f"{key.split('__')[0]}GasIn.Q"] != 0
                 np.testing.assert_allclose(value[zero_staged], value_staged[zero_unstaged])
             else:
                 np.testing.assert_allclose(value, value_staged)

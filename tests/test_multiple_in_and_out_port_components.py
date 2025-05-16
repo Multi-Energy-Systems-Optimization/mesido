@@ -75,7 +75,7 @@ class TestHEX(TestCase):
 
         prim_heat = results["HeatExchange_39ed.Primary_heat"]
         sec_heat = results["HeatExchange_39ed.Secondary_heat"]
-        disabled = results["HeatExchange_39ed__disabled"]
+        disabled = results["HeatExchange_39ed.__disabled"]
 
         # We check the energy converted betweeen the commodities
         eff = parameters["HeatExchange_39ed.efficiency"]
@@ -163,8 +163,8 @@ class TestHEX(TestCase):
         hex_active = "HeatExchange_e410_copy"
         hex_bypass = "HeatExchange_e410"
 
-        np.testing.assert_allclose(results[f"{hex_active}__disabled"][:-1], 0)
-        np.testing.assert_allclose(results[f"{hex_bypass}__disabled"][:-1], 1)
+        np.testing.assert_allclose(results[f"{hex_active}.__disabled"][:-1], 0)
+        np.testing.assert_allclose(results[f"{hex_bypass}.__disabled"][:-1], 1)
 
         np.testing.assert_array_less(0.001, results[f"{hex_active}.Primary.Q"][:-1])
         np.testing.assert_array_less(0.001, results[f"{hex_bypass}.Primary.Q"][:-1])
@@ -285,8 +285,8 @@ class TestHEX(TestCase):
         hex_active = "HeatExchange_e410_copy"
         hex_bypass = "HeatExchange_e410"
 
-        np.testing.assert_allclose(results[f"{hex_active}__disabled"][:-1], 0)
-        np.testing.assert_allclose(results[f"{hex_bypass}__disabled"][:-1], 1)
+        np.testing.assert_allclose(results[f"{hex_active}.__disabled"][:-1], 0)
+        np.testing.assert_allclose(results[f"{hex_bypass}.__disabled"][:-1], 1)
 
         np.testing.assert_array_less(0.001, results[f"{hex_active}.Primary.Q"][:-1])
         np.testing.assert_array_less(0.001, results[f"{hex_bypass}.Primary.Q"][:-1])

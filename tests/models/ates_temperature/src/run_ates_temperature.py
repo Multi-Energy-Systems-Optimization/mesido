@@ -181,7 +181,7 @@ class HeatProblem(
             *self.energy_system_components.get("heat_pump"),
             *self.energy_system_components.get("heat_exchanger"),
         ]:
-            disabled_var = self.state(f"{asset}__disabled")
+            disabled_var = self.state(f"{asset}.__disabled")
             sum_disabled_vars += disabled_var
 
         constraints.append((sum_disabled_vars, 1.0, 2.0))
