@@ -87,14 +87,24 @@ def _mip_gap_settings(mip_gap_name: str, problem) -> Dict[str, float]:
     return options
 
 
-def estimate_progress(self, priority, **kwargs):
-    """Estimate the progress of the optimization workflow """
+def estimate_and_update_progress_status(self, priority, **kwargs):
+    """Estimate the progress of the optimization workflow. Currently the tasks completed in this
+    workflow is used to estimate the progress (ratio between 0 and 1). The task completed ratio is
+    the number of tasks completed divided by the total number of tasks. The total number of tasks
+    is estimated based on the stage number and the priority of the task. The progress is then
+    passed to the workflow progress status function (OMOTES back end)."""
     # TODO: the estimates below needs to be improved in the future instead of using task numbers
+
+    if self._workflow_progress_status is None:
+        logger.error(
+            "The workflow progress status function is not set. Cannot estimate progress."
+        )
+
     if self._total_stages == 1:
         denominator = 2.0
-        if priority == 1:
+        if priority == 1:  # match heat demand
             numerator = 1.0
-        elif priority == 2:
+        elif priority == 2:  # minimize TCO
             numerator = 2.0
         else:
             logger.exit(
@@ -102,17 +112,13 @@ def estimate_progress(self, priority, **kwargs):
             )
     elif self._total_stages == 2:
         denominator = 4.0 + 2.0 * self.heat_network_settings["minimize_head_losses"]
-        if priority == 1 and self._stage == 1:
+        if priority == 1 and self._stage == 1:  # match heat demand
             numerator = 1.0
-        elif priority == 2 and self._stage == 1:
+        elif priority == 2 and self._stage == 1:  # minimize TCO
             numerator = 2.0
-        elif priority > 2 and self._stage == 1:
-            logger.exit(
-                f"The function does not cater for stage number:{self._stage} & priority:{priority}"
-            )
-        elif priority == 1 and self._stage == 2:
+        elif priority == 1 and self._stage == 2:  # match heat demand
             numerator = 3.0
-        elif priority == 2 and self._stage == 2:
+        elif priority == 2 and self._stage == 2:  # minimize TCO
             numerator = 4.0
         elif priority == (2**31 - 2) and self._stage == 2:  # head loss optimization
             numerator = 5.0
@@ -129,13 +135,12 @@ def estimate_progress(self, priority, **kwargs):
         )
         sys.exit(1)
 
-    if self._workflow_progress_status is not None:
-        # This kwarg only exists when the code is used in OMOTES backend
-        task_quantity_perc_completed = numerator / denominator
-        self._workflow_progress_status(
-            task_quantity_perc_completed,
-            "Optimization task {numerator} out of {denominator} has completed",
-        )  # In the future this ratio might differ from the step being completed
+    # This kwarg only exists when the code is used in OMOTES backend
+    task_quantity_perc_completed = numerator / denominator
+    self._workflow_progress_status(
+        task_quantity_perc_completed,
+        "Optimization task {numerator} out of {denominator} has completed",
+    )  # In the future this ratio might differ from the step being completed
 
 
 class SolverHIGHS:
@@ -406,7 +411,8 @@ class EndScenarioSizing(
         if priority == 1 and self.objective_value > 1e-6:
             raise RuntimeError("The heating demand is not matched")
 
-        estimate_progress(self, priority)
+        if self._workflow_progress_status is not None:
+            estimate_and_update_progress_status(self, priority)
 
     def post(self):
         # In case the solver fails, we do not get in priority_completed(). We
