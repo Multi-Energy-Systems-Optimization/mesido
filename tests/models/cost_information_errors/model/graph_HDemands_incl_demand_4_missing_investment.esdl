@@ -446,7 +446,7 @@
           <point xsi:type="esdl:Point" lat="52.35147420412955" lon="4.8408301011772625"/>
         </geometry>
       </asset>
-      <asset xsi:type="esdl:GenericProducer" name="Producer_2" id="f4fd7ca1-3f10-4bdb-88b3-daf8c456d959" state="OPTIONAL" power="4000000.0">
+      <asset xsi:type="esdl:HeatProducer" name="Producer_2" id="f4fd7ca1-3f10-4bdb-88b3-daf8c456d959" state="OPTIONAL" power="4000000.0">
         <costInformation xsi:type="esdl:CostInformation" id="8be54ab3-7189-4fad-9825-1900b6433ed4">
           <variableOperationalCosts xsi:type="esdl:SingleValue" id="d1b1594a-8490-4332-98ab-a5843cd94fb2" value="0.1">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perMultiplier="KILO" physicalQuantity="COST" perUnit="WATTHOUR" unit="EURO" id="7c6459a9-f4cc-4b10-9716-3aa19716c9ba" description="Cost in EUR/kWh"/>

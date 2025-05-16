@@ -83,6 +83,8 @@ class TestCostInputCheck(TestCase):
         3. The error contains the specific asset ID and a detailed message explaining the problem
         """
 
+        # Test missing investment cost, which is required for HeatProducer
+
         base_folder = Path(test_check_cost_information.__file__).resolve().parent
 
         with self.assertRaises(MesidoAssetIssueError) as cm, unittest.mock.patch(
@@ -91,7 +93,7 @@ class TestCostInputCheck(TestCase):
             _ = run_esdl_mesido_optimization(
                 EndScenarioSizing,
                 base_folder=base_folder,
-                esdl_file_name="graph_HDemands_incl_demand_4_missing.esdl",
+                esdl_file_name="graph_HDemands_incl_demand_4_missing_investment.esdl",
                 esdl_parser=ESDLFileParser,
             )
 
@@ -105,7 +107,35 @@ class TestCostInputCheck(TestCase):
         )
         np.testing.assert_equal(
             cm.exception.message_per_asset_id["f4fd7ca1-3f10-4bdb-88b3-daf8c456d959"],
-            "No investment costs provided for asset Producer_2.",
+            "No investment costs information specified for Producer_2 of type HeatProducer.",
+        )
+
+        # Test missing operational cost, which is required for HeatProducer
+
+        with self.assertRaises(MesidoAssetIssueError) as cm, unittest.mock.patch(
+            "mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()
+        ):
+            _ = run_esdl_mesido_optimization(
+                EndScenarioSizing,
+                base_folder=base_folder,
+                esdl_file_name="graph_HDemands_incl_demand_4_missing_operational.esdl",
+                esdl_parser=ESDLFileParser,
+            )
+
+        # Check that the cold demand had an error
+        np.testing.assert_equal(
+            cm.exception.error_type, MesidoAssetIssueType.ASSET_COST_ATTRIBUTE_MISSING
+        )
+        np.testing.assert_equal(
+            cm.exception.general_issue,
+            mesido_issue_type_gen_message(MesidoAssetIssueType.ASSET_COST_ATTRIBUTE_MISSING),
+        )
+        np.testing.assert_equal(
+            cm.exception.message_per_asset_id["f4fd7ca1-3f10-4bdb-88b3-daf8c456d959"],
+            (
+                "No variable operational costs information specified for Producer_2 "
+                "of type HeatProducer."
+            ),
         )
 
 

@@ -18,7 +18,8 @@ class MesidoAssetIssueType(Enum):
     - HEAT_DEMAND_POWER, COLD_DEMAND_POWER: Validate that installed capacity meets demand
     - HEAT_DEMAND_TYPE: Validate correct asset type for heat demand
     - ASSET_PROFILE_CAPABILITY: Validate profile assignment capabilities
-    - ASSET_COST_ATTRIBUTE_INCORRECT: Validate that existing cost attributes have correct values/units
+    - ASSET_COST_ATTRIBUTE_INCORRECT: Validate that existing cost attributes have
+        correct values/units
     - ASSET_COST_ATTRIBUTE_MISSING: Validate that required cost attributes are present
     - HEAT_EXCHANGER_TEMPERATURES: Validate temperature settings for heat exchangers
 

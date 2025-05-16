@@ -2,7 +2,6 @@ from pathlib import Path
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.workflows import EndScenarioSizingStaged, run_end_scenario_sizing
-from mesido.workflows.utils.error_types import HEAT_NETWORK_ERRORS
 
 
 if __name__ == "__main__":
@@ -14,7 +13,7 @@ if __name__ == "__main__":
     solution = run_end_scenario_sizing(
         EndScenarioSizingStaged,
         base_folder=base_folder,
-        esdl_file_name="graph_HDemands_incl_demand_4_missing_operational.esdl",
+        esdl_file_name="graph_HDemands_incl_demand_4_missing_investment.esdl",
         esdl_parser=ESDLFileParser,
     )
 

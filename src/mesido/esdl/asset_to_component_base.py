@@ -238,50 +238,50 @@ class _AssetToComponentBase:
             "installationCosts": "required",
             "variableOperationalCosts": "required",
             "fixedMaintenanceCosts": "optional",
-            "fixedOperationalCosts": "optional"
+            "fixedOperationalCosts": "optional",
         },
         "heat_source": {  # Includes GeothermalSource, ResidualHeatSource, HeatProducer
             "investmentCosts": "required",
             "installationCosts": "required",
             "variableOperationalCosts": "required",
             "fixedMaintenanceCosts": "optional",
-            "fixedOperationalCosts": "optional"
+            "fixedOperationalCosts": "optional",
         },
         "heat_demand": {
             "investmentCosts": "optional",
             "installationCosts": "optional",
             "variableOperationalCosts": "not supported",
             "fixedMaintenanceCosts": "optional",
-            "fixedOperationalCosts": "not supported"
+            "fixedOperationalCosts": "not supported",
         },
         "heat_buffer": {  # Surface Tank Storage
             "investmentCosts": "required",
             "installationCosts": "required",
             "variableOperationalCosts": "not supported",
             "fixedMaintenanceCosts": "optional",
-            "fixedOperationalCosts": "optional"
+            "fixedOperationalCosts": "optional",
         },
         "ates": {  # HT-ATES (high)
             "investmentCosts": "required",
             "installationCosts": "required",
             "variableOperationalCosts": "not supported",
             "fixedMaintenanceCosts": "optional",
-            "fixedOperationalCosts": "required"
+            "fixedOperationalCosts": "required",
         },
         "pipe": {
             "investmentCosts": "optional",
             "installationCosts": "not supported",
             "variableOperationalCosts": "not supported",
             "fixedMaintenanceCosts": "not supported",
-            "fixedOperationalCosts": "not supported"
+            "fixedOperationalCosts": "not supported",
         },
         "heat_exchanger": {
             "investmentCosts": "required",
             "installationCosts": "required",
             "variableOperationalCosts": "not supported",
             "fixedMaintenanceCosts": "optional",
-            "fixedOperationalCosts": "required"
-        }
+            "fixedOperationalCosts": "required",
+        },
     }
 
     COST_VALIDATION_COMPONENT_TO_ASSET_TYPE = {
@@ -301,7 +301,7 @@ class _AssetToComponentBase:
         "installationCosts": "installation costs",
         "variableOperationalCosts": "variable operational costs",
         "fixedMaintenanceCosts": "fixed maintenance costs",
-        "fixedOperationalCosts": "fixed operational costs"
+        "fixedOperationalCosts": "fixed operational costs",
     }
 
     primary_port_name_convention = "primary"
@@ -1364,16 +1364,22 @@ class _AssetToComponentBase:
             bool: True if the attribute is valid and should be processed further, False otherwise
         """
         cost_check = self._check_cost_attribute_requirement(asset.asset_type, cost_attribute)
-        cost_string_name = self.COST_ATTRIBUTE_TO_STRING.get(cost_attribute, cost_attribute)
+        cost_attribute_name = self.COST_ATTRIBUTE_TO_STRING.get(cost_attribute, cost_attribute)
 
         if cost_info is None:
             if cost_check == "required":
-                message = f"No {cost_string_name} information specified for asset {asset.name}"
+                message = (
+                    f"No {cost_attribute_name} information specified for {asset.name} "
+                    f"of type {asset.asset_type}."
+                )
                 self._log_and_add_potential_issue(message, asset.id, cost_error_type="missing")
             return False
 
         if cost_check == "not supported":
-            message = f"The {cost_attribute} for asset {asset.name} is not supported"
+            message = (
+                f"The {cost_attribute_name} for asset {asset.name} "
+                f"of type {asset.asset_type} is not supported."
+            )
             self._log_and_add_potential_issue(message, asset.id, report_issue=False)
             return False
 
@@ -1423,28 +1429,28 @@ class _AssetToComponentBase:
                 continue
             if per_time != TimeUnitEnum.NONE:
                 message = (
-                    f"Specified OPEX for asset {asset.name} include a "
+                    f"Specified OPEX for asset {asset.name} of type {asset.name} includes a "
                     f"component per time, but should be None."
                 )
                 self._log_and_add_potential_issue(message, asset.id, cost_error_type="incorrect")
                 continue
             if per_unit != UnitEnum.WATTHOUR and asset.asset_type not in gas_assets:
                 message = (
-                    f"Expected the specified OPEX for asset {asset.name} to be per Wh, "
-                    f"but they are provided in {per_unit} instead."
+                    f"Expected the specified OPEX for asset {asset.name} of type {asset.name} "
+                    f"to be per Wh, but they are provided in {per_unit} instead."
                 )
                 self._log_and_add_potential_issue(message, asset.id, cost_error_type="incorrect")
                 continue
             if asset.asset_type in gas_assets and per_unit != UnitEnum.GRAM:
                 message = (
-                    f"Expected the specified OPEX for asset {asset.name} to be per EURO/g, "
-                    f"but they are provided in {unit}/{per_unit} instead."
+                    f"Expected the specified OPEX for asset {asset.name} of type {asset.name} "
+                    f"to be per EURO/g, but they are provided in {unit}/{per_unit} instead."
                 )
                 self._log_and_add_potential_issue(message, asset.id, cost_error_type="incorrect")
                 continue
             if cost_value < 0.0:
                 message = (
-                    f"Specified OPEX for asset {asset.name} is {cost_value}, "
+                    f"Specified OPEX for asset {asset.name} of type {asset.name} is {cost_value}, "
                     f"but should be non-negative."
                 )
                 self._log_and_add_potential_issue(message, asset.id, cost_error_type="incorrect")
@@ -1493,9 +1499,9 @@ class _AssetToComponentBase:
                     continue
                 if per_unit == UnitEnum.CUBIC_METRE and asset.asset_type != "GasStorage":
                     # index is 0 because buffers only have one in out port
-                    supply_temp = asset.global_properties["carriers"][
-                        asset.in_ports[0].carrier.id
-                    ]["temperature"]
+                    supply_temp = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
+                        "temperature"
+                    ]
                     return_temp = asset.global_properties["carriers"][
                         asset.out_ports[0].carrier.id
                     ]["temperature"]
@@ -1609,6 +1615,8 @@ class _AssetToComponentBase:
         If asset is None or required attributes are missing.
         """
 
+        cost_attribute = "installationCosts"
+
         cost_info = asset.attributes["costInformation"].installationCosts
         combined_cost_string = "Combined investment and installation costs"
         if asset.attributes["costInformation"].investmentCosts is not None:
@@ -1617,9 +1625,7 @@ class _AssetToComponentBase:
                 if cost_type_note == combined_cost_string:
                     logger.warning(f"{combined_cost_string} for asset {asset.name}")
                     return 0.0
-        if cost_info is None:
-            message = f"No installation cost information provided for asset {asset.name}."
-            self._log_and_add_potential_issue(message, asset.id, cost_error_type="missing")
+        if not self._validate_cost_attribute(asset, cost_attribute, cost_info):
             return 0.0
 
         cost_value, unit, per_unit, per_time = self.get_cost_value_and_unit(cost_info)
@@ -1628,7 +1634,7 @@ class _AssetToComponentBase:
         validations = [
             (
                 unit != UnitEnum.EURO,
-                f"Expected cost information for {cost_info} in euros",
+                f"Expected cost information for {cost_info} in euros.",
             ),
             (
                 per_time != TimeUnitEnum.NONE,
@@ -1674,10 +1680,10 @@ class _AssetToComponentBase:
         float for the investment cost coefficient.
         """
 
+        cost_attribute = "investmentCosts"
         cost_info = asset.attributes["costInformation"].investmentCosts
-        if cost_info is None:
-            message = f"No investment costs provided for asset " f"{asset.name}."
-            self._log_and_add_potential_issue(message, asset.id, cost_error_type="missing")
+
+        if not self._validate_cost_attribute(asset, cost_attribute, cost_info):
             return 0.0
         (
             cost_value,
