@@ -96,9 +96,8 @@ def estimate_and_update_progress_status(self, priority):
     # TODO: the estimates below needs to be improved in the future instead of using task numbers
 
     if self._workflow_progress_status is None:
-        logger.error(
-            "The workflow progress status function is not set. Cannot estimate progress."
-        )
+        logger.error("The workflow progress status function is not set. Cannot estimate progress.")
+        exit(1)
 
     if self._total_stages == 1:
         denominator = 2.0
