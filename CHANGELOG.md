@@ -1,5 +1,5 @@
 
-# [Unreleased-main] - 2025-04-15
+# [Unreleased-main] - 2025-05-07
 
 ## Added
 - Default database for gas pipe dimensions based on the ASA pipe schedule with thicknesses from the standard class
@@ -25,6 +25,7 @@
 - Option for electricity cables to be unidirectional
 - Upgraded rtctools to v 2.6.1
 - Updated Casadi to 3.6.7 with gil fixes (see https://github.com/casadi/casadi/releases/tag/nightly-gil_release)
+- Definition of power attribute of water-to-water heat pump is changed from electrical power to secondary heat power
 
 ## Fixed
 - Bugfix: gas boiler mass flow constraint units
