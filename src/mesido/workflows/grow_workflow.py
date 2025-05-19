@@ -106,7 +106,7 @@ def estimate_and_update_progress_status(self, priority):
         elif priority == 2:  # minimize TCO
             numerator = 2.0
         else:
-            logger.exit(
+            sys.exit(
                 f"The function does not cater for stage number:{self._stage} & priority:{priority}"
             )
     elif self._total_stages == 2:
@@ -124,15 +124,14 @@ def estimate_and_update_progress_status(self, priority):
         elif priority == (2**31 - 1) and self._stage == 2:  # hydraulic power optimization
             numerator = 6.0
         else:
-            logger.exit(
+            sys.exit(
                 f"The function does not cater for stage number:{self._stage} & priority:{priority}"
             )
     else:
-        logger.error(
+        sys.exit(
             f"The stage number: {self._stage} is higher then the total stages"
             f" expected: {self._total_stages}. Assuming the stage numbering starts at 1."
         )
-        sys.exit(1)
 
     # This kwarg only exists when the code is used in OMOTES backend
     task_quantity_perc_completed = numerator / denominator
@@ -240,6 +239,7 @@ class EndScenarioSizing(
         self._save_json = False
 
         self._workflow_progress_status = kwargs.get("update_progress_function", None)
+
     def parameters(self, ensemble_member):
         parameters = super().parameters(ensemble_member)
         parameters["peak_day_index"] = self.__indx_max_peak
