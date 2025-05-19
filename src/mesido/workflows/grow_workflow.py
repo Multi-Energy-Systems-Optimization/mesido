@@ -239,11 +239,7 @@ class EndScenarioSizing(
 
         self._save_json = False
 
-        if "update_progress_function" in kwargs:
-            self._workflow_progress_status = kwargs["update_progress_function"]
-        else:
-            self._workflow_progress_status = None
-
+        self._workflow_progress_status = kwargs.get("update_progress_function", None)
     def parameters(self, ensemble_member):
         parameters = super().parameters(ensemble_member)
         parameters["peak_day_index"] = self.__indx_max_peak
