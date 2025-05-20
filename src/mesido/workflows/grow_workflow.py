@@ -204,9 +204,9 @@ class EndScenarioSizing(
     """
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
         reset_potential_errors()  # This needed to clear the Singleton which is persistent
+
+        super().__init__(*args, **kwargs)
 
         # default setting to cater for ~ 10kW heat, DN800 pipe at dT = 40 degrees Celcuis
         self.heat_network_settings["minimum_velocity"] = 1.0e-4
