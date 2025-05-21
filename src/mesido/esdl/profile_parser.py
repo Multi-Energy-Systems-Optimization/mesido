@@ -41,6 +41,7 @@ class BaseProfileReader:
     }
 
     carrier_profile_var_name: str = ".price_profile"
+    source_capacity_profile_var_name: str = ".source_capacity_profile" # Profile Constraint
 
     def __init__(self, energy_system: esdl.EnergySystem, file_path: Optional[Path]):
         self._profiles: Dict[int, Dict[str, np.ndarray]] = defaultdict(dict)
@@ -290,9 +291,15 @@ class InfluxDBProfileReader(BaseProfileReader):
             )
 
             container = profile.eContainer()
-            if isinstance(container, esdl.Commodity):
+            if isinstance(container, esdl.ProfileConstraint): # Profile Constraint
+                variable_suffix = self.source_capacity_profile_var_name
+                var_base_name = container.name
+            elif isinstance(container, esdl.Commodity):
                 variable_suffix = self.carrier_profile_var_name
                 var_base_name = container.name
+            # if isinstance(container, esdl.Commodity):
+            #     variable_suffix = self.carrier_profile_var_name
+            #     var_base_name = container.name
             elif isinstance(container, esdl.Port):
                 asset = container.energyasset
                 var_base_name = asset.name
