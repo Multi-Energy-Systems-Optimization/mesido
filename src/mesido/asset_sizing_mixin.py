@@ -921,6 +921,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 if not isinstance(bounds[f"{asset_name}.Electricity_source"][1], Timeseries)
                 else np.max(bounds[f"{asset_name}.Electricity_source"][1].values)
             )
+            ub = ub if ub>0.0 else 1.0
             lb = 0.0 if parameters[f"{asset_name}.state"] == 2 else ub
             _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
 

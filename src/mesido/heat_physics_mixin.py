@@ -2098,7 +2098,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             sup_carrier = parameters[f"{ates}.T_supply_id"]
             supply_temperatures = self.temperature_regimes(sup_carrier)
 
-            if options["include_ates_temperature_options"] and len(supply_temperatures) != 0:
+            if self._stage == 3:
+                pass
+            elif (options["include_ates_temperature_options"] and len(supply_temperatures) != 0):
                 soil_temperature = parameters[f"{ates}.T_amb"]
 
                 flow_dir_var = self._heat_pipe_to_flow_direct_map[hot_pipe]
