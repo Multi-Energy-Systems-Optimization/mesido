@@ -4,7 +4,7 @@
 - xx
 
 ## Changed
-- xx
+- Updated pyESDL to v25.5.1
 
 ## Fixed
 - xx
