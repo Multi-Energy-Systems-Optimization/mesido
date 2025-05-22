@@ -1,5 +1,28 @@
+# [Unreleased-main] - 2025-05-21
 
-# [Unreleased-main] - 2025-05-07
+## Added
+- xx
+
+## Changed
+- xx
+
+## Fixed
+- xx
+
+
+# [0.1.11] - 2025-05-21
+
+## Added
+- xx
+
+## Changed
+- Updated pyESDL to v25.5.1
+
+## Fixed
+- xx
+
+
+# [0.1.10] - 2025-05-20
 
 ## Added
 - Default database for gas pipe dimensions based on the ASA pipe schedule with thicknesses from the standard class
@@ -14,6 +37,7 @@
 - Error check for NaN values in profile data (csv & influxDB)
 - Specify package (deepdiff used in pandapipes validation test) version number in test environment
 - Reset POTENTIAL_ERRORS class instance (Singleton) in grow_workflow due to it being persistent
+- Estimate grow worlfow progress status and update OMOTES progress status 
 
 ## Changed
 - Updated the Financial section of the documentation to explain the annualized discounted costs calculation.
@@ -26,6 +50,7 @@
 - Upgraded rtctools to v 2.6.1
 - Updated Casadi to 3.6.7 with gil fixes (see https://github.com/casadi/casadi/releases/tag/nightly-gil_release)
 - Definition of power attribute of water-to-water heat pump is changed from electrical power to secondary heat power
+- Enforce water-to-water heat pump upper bound heat capacity to conform to elect_power*cop
 
 ## Fixed
 - Bugfix: gas boiler mass flow constraint units
