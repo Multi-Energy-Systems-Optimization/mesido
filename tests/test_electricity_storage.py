@@ -51,9 +51,9 @@ class TestMILPElectricSourceSink(TestCase):
         storage_name = solution.energy_system_components.get("electricity_storage")[0]
         charge_eff = parameters[f"{storage_name}.charge_efficiency"]
         discharge_eff = parameters[f"{storage_name}.discharge_efficiency"]
-        is_charging = results[f"{storage_name}__is_charging"]
+        is_charging = results[f"{storage_name}.__is_charging"]
         eff_power_change_bat = results[f"{storage_name}.Effective_power_charging"]
-        eff_power_change_discharge_bat = results[f"{storage_name}__effective_power_discharging"]
+        eff_power_change_discharge_bat = results[f"{storage_name}.__effective_power_discharging"]
         power_bat_network = results[f"{storage_name}.ElectricityIn.Power"]
         stored_el = results[f"{storage_name}.Stored_electricity"]
 

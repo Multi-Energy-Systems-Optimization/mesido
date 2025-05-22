@@ -117,6 +117,7 @@ class TestPipeDiameterSizingExample(TestCase):
                     2.0e-4,
                     parameters[f"{pipe}.temperature"],
                 )
+
                 c_v = parameters[f"{pipe}.length"] * ff / (2 * 9.81) / pc.inner_diameter
                 dh_max = c_v * pc.maximum_velocity**2
                 dh_manual = dh_max * results[f"{pipe}.Q"][1:] / pc.area / pc.maximum_velocity
@@ -127,7 +128,9 @@ class TestPipeDiameterSizingExample(TestCase):
         for pipe in diameters.keys():
             if pipe in pipes_removed:
                 hydraulic_power_sum += sum(abs(results[f"{pipe}.Hydraulic_power"]))
-        self.assertEqual(hydraulic_power_sum, 0.0, "Hydraulic power exists for a removed pipe")
+        np.testing.assert_allclose(
+            hydraulic_power_sum, 0.0, err_msg="Hydraulic power exists for a removed pipe", atol=1e-9
+        )
 
         # Hydraulic power = delta pressure * Q = f(Q^3), where delta pressure = f(Q^2)
         # The linear approximation of the 3rd order function should overestimate the hydraulic

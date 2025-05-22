@@ -108,6 +108,13 @@ class Variable(BaseVariable):
         return hasattr(self, "_derivative")
 
 
+class DiscreteVariable(BaseVariable):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.discrete = True
+        self.python_type = int
+
+
 class ControlInput(BaseVariable):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -201,7 +208,7 @@ class Model:
         else:
             var = self._variables[var_name] = type_(f"{self.__prefix}{var_name}", **kwargs)
 
-        if isinstance(var, (Variable, ControlInput, ConstantInput)) and (
+        if isinstance(var, (DiscreteVariable, Variable, ControlInput, ConstantInput)) and (
             isinstance(var.value, (ca.MX, BaseVariable)) or not np.isnan(var.value)
         ):
             # For states and algebraic states, we move the "value" part to an equation

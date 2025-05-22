@@ -1,4 +1,4 @@
-from mesido.pycml import Variable
+from mesido.pycml import DiscreteVariable, Variable
 from mesido.pycml.component_library.milp._internal import BaseAsset
 from mesido.pycml.component_library.milp.heat.heat_four_port import HeatFourPort
 from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
@@ -58,6 +58,7 @@ class HeatExchanger(HeatFourPort, BaseAsset):
         self.add_variable(Variable, "Heat_flow", nominal=self.nominal)
         self.add_variable(Variable, "dH_prim")
         self.add_variable(Variable, "dH_sec")
+        self.add_variable(DiscreteVariable, "__disabled", min=0.0, max=1.0)
 
         # Hydraulically decoupled so Heads remain the same
         self.add_equation(self.dH_prim - (self.Primary.HeatOut.H - self.Primary.HeatIn.H))

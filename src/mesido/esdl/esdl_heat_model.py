@@ -140,6 +140,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         cp=4200.0,
         min_fraction_tank_volume=0.05,
         v_max_gas=15.0,
+        energy_system_options=None,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
@@ -150,6 +151,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         self.cp = cp
         self.v_max_gas = v_max_gas
         self.min_fraction_tank_volume = min_fraction_tank_volume
+        self.energy_system_options = dict() if not energy_system_options else energy_system_options
         if "primary_port_name_convention" in kwargs.keys():
             self.primary_port_name_convention = kwargs["primary_port_name_convention"]
         if "secondary_port_name_convention" in kwargs.keys():
@@ -1740,6 +1742,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
             min_voltage=v_min,
             max_capacity=max_capacity,
             Stored_electricity=dict(min=0.0, max=max_capacity),
+            discharge_var=self.energy_system_options.get(
+                "electricity_storage_discharge_variables", False
+            ),
             ElectricityIn=dict(
                 V=dict(min=v_min, nominal=v_min),
                 I=dict(min=-i_max, max=i_max, nominal=i_nom),
@@ -2172,6 +2177,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
             Q_nominal=q_nominal,
             density=density,
             efficiency=eff_max,
+            include_asset_is_switched_on=self.energy_system_options["include_asset_is_switched_on"],
+            electrolyzer_efficiency_option=self.energy_system_options["electrolyzer_efficiency"],
             GasOut=dict(
                 Q=dict(
                     min=0.0,
@@ -2237,6 +2244,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             Q_nominal=q_nominal,
             density=density,
             volume=asset.attributes["workingVolume"],
+            discharge_var=self.energy_system_options.get("gas_storage_discharge_variables", False),
             # Gas_tank_flow=dict(min=-hydrogen_specific_energy*asset.attributes["maxDischargeRate"],
             # max=hydrogen_specific_energy*asset.attributes["maxChargeRate"]),
             # TODO: Fix -> Gas network is currenlty non-limiting, mass flow is decoupled from the

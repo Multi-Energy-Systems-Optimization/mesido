@@ -56,16 +56,12 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
         # Variable for when in time an asset switched on due to meeting a requirement
         self.__asset_is_switched_on_map = {}
-        self.__asset_is_switched_on_var = {}
-        self.__asset_is_switched_on_bounds = {}
 
         self.__electricity_producer_upper_bounds = {}
 
         self._electricity_cable_topo_cable_class_map = {}
 
         # Boolean path-variable for the charging of storage assets
-        self.__storage_charging_var = {}
-        self.__storage_charging_bounds = {}
         self.__storage_charging_map = {}
 
         self.__set_point_var = {}
@@ -74,11 +70,8 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
         # Boolean path-variable for the equality constraint of the electrolyzer
         self.__electrolyzer_is_active_linear_segment_map = {}
-        self.__electrolyzer_is_active_linear_segment_var = {}
-        self.__electrolyzer_is_active_linear_segment_bounds = {}
-        self.__electricity_storage_discharge_var = {}
+
         self.__electricity_storage_discharge_bounds = {}
-        self.__electricity_storage_discharge_nominals = {}
         self.__electricity_storage_discharge_map = {}
 
         # Map for setting node nominals in case of logical links.
@@ -123,10 +116,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             for asset in [
                 *self.energy_system_components.get("electrolyzer", []),
             ]:
-                var_name = f"{asset}__asset_is_switched_on"
-                self.__asset_is_switched_on_map[asset] = var_name
-                self.__asset_is_switched_on_var[var_name] = ca.MX.sym(var_name)
-                self.__asset_is_switched_on_bounds[var_name] = (0.0, 1.0)
+                self.__asset_is_switched_on_map[asset] = f"{asset}.__asset_is_switched_on"
 
         if options["electrolyzer_efficiency"] == ElectrolyzerOption.LINEARIZED_THREE_LINES_EQUALITY:
             for asset in [
@@ -135,32 +125,23 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                 self.__electrolyzer_is_active_linear_segment_map[asset] = {}
                 n_lines = 3
                 for n_line in range(n_lines):
-                    var_name = f"{asset}__line_{n_line}_active"
-
+                    var_name = f"{asset}.__line_{n_line}_active"
                     self.__electrolyzer_is_active_linear_segment_map[asset][
                         f"line_{n_line}"
                     ] = var_name
-                    self.__electrolyzer_is_active_linear_segment_var[var_name] = ca.MX.sym(var_name)
-                    self.__electrolyzer_is_active_linear_segment_bounds[var_name] = (0.0, 1.0)
 
         for asset in [*self.energy_system_components.get("electricity_storage", [])]:
-            var_name = f"{asset}__is_charging"
+            var_name = f"{asset}.__is_charging"
             self.__storage_charging_map[asset] = var_name
-            self.__storage_charging_var[var_name] = ca.MX.sym(var_name)
-            self.__storage_charging_bounds[var_name] = (0.0, 1.0)
 
             if options["electricity_storage_discharge_variables"]:
                 bound_storage = -self.bounds()[f"{asset}.Effective_power_charging"][0]
                 if isinstance(bound_storage, Timeseries):
                     bound_storage = copy.deepcopy(bound_storage)
                     bound_storage.values[bound_storage.values < 0] = 0.0
-                var_name = f"{asset}__effective_power_discharging"
+                var_name = f"{asset}.__effective_power_discharging"
                 self.__electricity_storage_discharge_map[asset] = var_name
-                self.__electricity_storage_discharge_var[var_name] = ca.MX.sym(var_name)
                 self.__electricity_storage_discharge_bounds[var_name] = (0, bound_storage)
-                self.__electricity_storage_discharge_nominals[var_name] = self.variable_nominal(
-                    f"{asset}.Effective_power_charging"
-                )
 
         for asset in [*self.energy_system_components.get("electricity_source", [])]:
             if isinstance(self.bounds()[f"{asset}.Electricity_source"][1], Timeseries):
@@ -223,11 +204,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         """
         variables = super().path_variables.copy()
 
-        variables.extend(self.__asset_is_switched_on_var.values())
-        variables.extend(self.__storage_charging_var.values())
         variables.extend(self.__set_point_var.values())
-        variables.extend(self.__electrolyzer_is_active_linear_segment_var.values())
-        variables.extend(self.__electricity_storage_discharge_var.values())
 
         return variables
 
@@ -236,22 +213,14 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         All variables that only can take integer values should be added to this function.
         """
 
-        if variable in self.__electrolyzer_is_active_linear_segment_var:
-            return True
-        if variable in self.__asset_is_switched_on_var:
-            return True
-        if variable in self.__storage_charging_var:
-            return True
-        else:
-            return super().variable_is_discrete(variable)
+        return super().variable_is_discrete(variable)
 
     def variable_nominal(self, variable):
         """
         In this function we add all the nominals for the variables defined/added in the HeatMixin.
         """
-        if variable in self.__electricity_storage_discharge_nominals:
-            return self.__electricity_storage_discharge_nominals[variable]
-        elif variable in self.__bus_variable_nominal:
+
+        if variable in self.__bus_variable_nominal:
             return self.__bus_variable_nominal[variable]
         else:
             return super().variable_nominal(variable)
@@ -263,9 +232,6 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         """
         bounds = super().bounds()
 
-        bounds.update(self.__electrolyzer_is_active_linear_segment_bounds)
-        bounds.update(self.__asset_is_switched_on_bounds)
-        bounds.update(self.__storage_charging_bounds)
         bounds.update(self.__electricity_producer_upper_bounds)
         bounds.update(self.__set_point_bounds)
         bounds.update(self.__electricity_storage_discharge_bounds)
@@ -568,7 +534,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
             # is_charging is 1 if charging and powerin>0
             big_m = 2 * max(np.abs(self.bounds()[f"{asset}.ElectricityIn.Power"]))
-            is_charging = self.state(f"{asset}__is_charging")
+            is_charging = self.state(f"{asset}.__is_charging")
             constraints.append(((power_in + (1 - is_charging) * big_m) / power_nom, 0.0, np.inf))
             constraints.append(((power_in - is_charging * big_m) / power_nom, -np.inf, 0.0))
 
@@ -647,7 +613,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             for storage in self.energy_system_components.get("electricity_storage", []):
                 storage_eff_power_charge_var = self.state(f"{storage}.Effective_power_charging")
                 discharge_var_name = self.__electricity_storage_discharge_map[storage]
-                storage_discharge_var = self.__electricity_storage_discharge_var[discharge_var_name]
+                storage_discharge_var = self.state(discharge_var_name)
                 nominal = self.variable_nominal(discharge_var_name)
 
                 # P_effective_charge represents both charging and discharing based on the sign.

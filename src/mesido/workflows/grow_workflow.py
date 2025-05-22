@@ -742,9 +742,9 @@ def run_end_scenario_sizing(
             if p in solution.hot_pipes and parameters[f"{p}.area"] > 0.0:
                 lb = []
                 ub = []
-                bounds_pipe = bounds[f"{p}__flow_direct_var"]
+                bounds_pipe = bounds[f"{p}.__flow_direct_var"]
                 for i in range(len(t)):
-                    r = results[f"{p}__flow_direct_var"][i]
+                    r = results[f"{p}.__flow_direct_var"][i]
                     # bound to roughly represent 4km of milp losses in pipes
                     lb.append(
                         r
@@ -757,7 +757,7 @@ def run_end_scenario_sizing(
                         else bounds_pipe[1]
                     )
 
-                boolean_bounds[f"{p}__flow_direct_var"] = (Timeseries(t, lb), Timeseries(t, ub))
+                boolean_bounds[f"{p}.__flow_direct_var"] = (Timeseries(t, lb), Timeseries(t, ub))
                 try:
                     r = results[f"{p}__is_disconnected"]
                     boolean_bounds[f"{p}__is_disconnected"] = (Timeseries(t, r), Timeseries(t, r))
