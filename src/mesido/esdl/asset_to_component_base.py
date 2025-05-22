@@ -1343,7 +1343,7 @@ class _AssetToComponentBase:
             cost_attribute: The cost attribute to check (e.g., "investmentCosts")
 
         Returns:
-            str: "required", "optional" or "not supported"
+            str: "required", "optional", "not supported" or "unknown"
         """
         asset_type = self.COST_VALIDATION_COMPONENT_TO_ASSET_TYPE.get(component_type)
         if not asset_type or asset_type not in self.ASSET_COST_REQUIREMENTS:
@@ -1388,6 +1388,9 @@ class _AssetToComponentBase:
     def get_variable_opex_costs(self, asset: Asset) -> float:
         """
         Returns the variable opex costs coefficient of an asset in Euros per Wh.
+        If a variable operational cost is required for the asset but not provided,
+        or if the cost information is inconsistent, a potential MesidoAssetIssueType
+        is added to the gathered_potential_issues dictionary.
 
         Parameters
         ----------
@@ -1396,10 +1399,6 @@ class _AssetToComponentBase:
         Returns
         -------
         float for the variable operational cost coefficient.
-
-        Rises
-        -----
-        ValueError if the asset has no cost information checks did not pass.
 
         """
 
@@ -1463,6 +1462,11 @@ class _AssetToComponentBase:
     def get_fixed_opex_costs(self, asset: Asset) -> float:
         """
         Returns the fixed opex cost coefficient of an asset in Euros per W.
+
+        Returns the fixed opex cost coefficient of an asset in Euros per W.
+        If a fixed opex cost is required for the asset but not provided,
+        or if the cost information is inconsistent, a potential MesidoAssetIssueType
+        is added to the gathered_potential_issues dictionary.
 
         Parameters
         ----------
@@ -1601,6 +1605,11 @@ class _AssetToComponentBase:
         Return the installation cost coefficient in EUR for a single aggregation
         count.
 
+        If an installation cost is required for the asset but not provided,
+        or if the cost information is inconsistent, a potential MesidoAssetIssueType
+        is added to the gathered_potential_issues dictionary.
+
+
         Parameters
         ----------
         asset : The asset object for retrieving the cost information from.
@@ -1609,10 +1618,6 @@ class _AssetToComponentBase:
         -------
         A float with the installation cost coefficient in EUR.
 
-        Raises
-        ------
-        ValueError
-        If asset is None or required attributes are missing.
         """
 
         cost_attribute = "installationCosts"
@@ -1668,6 +1673,10 @@ class _AssetToComponentBase:
     def get_investment_costs(self, asset: Asset, per_unit: UnitEnum = UnitEnum.WATT) -> float:
         """
         Returns the investment cost coefficient of an asset in Euros per size unit (mostly W).
+
+        If an investment cost is required for the asset but not provided,
+        or if the cost information is inconsistent, a potential MesidoAssetIssueType
+        is added to the gathered_potential_issues dictionary.
 
         Parameters
         ----------
