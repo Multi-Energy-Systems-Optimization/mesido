@@ -1113,17 +1113,18 @@ class AssetToHeatComponent(_AssetToComponentBase):
             _, modifiers = self.convert_air_water_heat_pump_elec(asset)
             return AirWaterHeatPumpElec, modifiers
 
-        if not asset.attributes["power"]:
-            raise _ESDLInputException(f"{asset.name} has no power specified")
-        else:
-            power_electrical = asset.attributes["power"]
-
         if not asset.attributes["COP"]:
             raise _ESDLInputException(
-                f"{asset.name} has not COP specified, this is required for the model"
+                f"{asset.name} has no COP specified, this is required for the model"
             )
         else:
             cop = asset.attributes["COP"]
+
+        if not asset.attributes["power"]:
+            raise _ESDLInputException(f"{asset.name} has no power specified")
+        else:
+            power_secondary = asset.attributes["power"]
+            power_electrical = power_secondary / cop
 
         params_t = self._supply_return_temperature_modifiers(asset)
         params_q = self._get_connected_q_nominal(asset)
@@ -1139,7 +1140,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         params["Primary"] = {**params_t["Primary"], **params_q["Primary"], **prim_heat}
         params["Secondary"] = {**params_t["Secondary"], **params_q["Secondary"], **sec_heat}
 
-        max_power_heat = power_secondary
+        max_power = power_electrical * (1.0 + cop)  # TODO: dit kan zijn power_electrical*cop
 
         modifiers = dict(
             COP=cop,
@@ -1155,9 +1156,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
             ),
             Power_elec=dict(min=0.0, max=power_electrical, nominal=power_electrical / 2.0),
-            Primary_heat=dict(min=0.0, max=max_power_heat, nominal=max_power_heat / 2.0),
-            Secondary_heat=dict(min=0.0, max=max_power_heat, nominal=max_power_heat / 2.0),
-            Heat_flow=dict(min=0.0, max=max_power_heat, nominal=max_power_heat / 2.0),
+            Primary_heat=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
+            Secondary_heat=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
+            Heat_flow=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
             state=self.get_state(asset),
             **self._get_cost_figure_modifiers(asset),
             **params,

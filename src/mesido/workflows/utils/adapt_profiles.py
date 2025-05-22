@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime
 import logging
 import operator
+import sys
 
 import numpy as np
 
@@ -217,6 +218,73 @@ def adapt_hourly_profile_averages_timestep_size(problem, problem_step_size_hours
     logger.info("Profile data has been adapted to a common format")
 
 
+def adapt_profile_to_copy_for_number_of_years(problem, number_of_years: int):
+    """
+    Adapt yearly profile to a multi-year profile.
+    Copying the profile for the given number of years, where the timeline is updated with the
+    sequential years.
+
+    """
+
+    new_datastore = DataStore(problem)
+    new_datastore.reference_datetime = problem.io.datetimes[0]
+
+    org_timeseries = problem.io.datetimes
+
+    # If a problem has already been modified, the last timestamp should be exactly 1 year after
+    # the first timestamp.
+
+    skip_last_day = False
+    if org_timeseries[-1] == org_timeseries[0] + datetime.timedelta(days=365):
+        skip_last_day = True
+    elif org_timeseries[0] + datetime.timedelta(days=365) - org_timeseries[
+        -1
+    ] <= datetime.timedelta(hours=1):
+        skip_last_day = False
+    else:
+        sys.exit("The profile should be a year profile.")
+
+    for ensemble_member in range(problem.ensemble_size):
+        parameters = problem.parameters(ensemble_member)
+
+        new_date_times = list()
+        if skip_last_day is False:
+            new_date_times = org_timeseries.copy()
+        else:
+            new_date_times = org_timeseries[:-1].copy()
+
+        for year in range(1, number_of_years):
+            if year == number_of_years - 1 or skip_last_day is False:
+                new_date_times.extend(
+                    [i + year * datetime.timedelta(days=365) for i in org_timeseries]
+                )
+            else:
+                new_date_times.extend(
+                    [i + year * datetime.timedelta(days=365) for i in org_timeseries[:-1]]
+                )
+
+        new_date_times = np.asarray(new_date_times)
+        parameters["times"] = [x.timestamp() for x in new_date_times]
+
+        for var_name in problem.io.get_timeseries_names():
+            old_data = problem.io.get_timeseries(var_name)[1]
+            if skip_last_day:
+                new_data = np.append(np.tile(old_data[:-1], number_of_years), old_data[-1])
+            else:
+                new_data = np.tile(old_data, number_of_years)
+            new_datastore.set_timeseries(
+                variable=var_name,
+                datetimes=new_date_times,
+                values=np.asarray(new_data),
+                ensemble_member=ensemble_member,
+                check_duplicates=True,
+            )
+
+    problem.io = new_datastore
+
+    logger.info("Profile data has been adapted to a common format")
+
+
 def select_profiles_for_update(
     problem, new_datastore: DataStore, new_date_times: np.array, ensemble_member: int
 ):
@@ -233,79 +301,9 @@ def select_profiles_for_update(
     Returns:
 
     """
-    heat_demands = problem.energy_system_components.get("heat_demand", [])
-    cold_demands = problem.energy_system_components.get("cold_demand", [])
 
-    for demand in heat_demands:
-        var_name = f"{demand}.target_heat_demand"
-        set_data_with_averages(
-            datastore=new_datastore,
-            variable_name=var_name,
-            ensemble_member=ensemble_member,
-            new_date_times=new_date_times,
-            problem=problem,
-        )
-
-    for demand in cold_demands:
-        var_name = f"{demand}.target_cold_demand"
-        set_data_with_averages(
-            datastore=new_datastore,
-            variable_name=var_name,
-            ensemble_member=ensemble_member,
-            new_date_times=new_date_times,
-            problem=problem,
-        )
-
-    # TODO: this has not been tested but is required if a production profile is included
-    #  in the data
-    for source in problem.energy_system_components.get("heat_source", []):
-        var_name = f"{source}.maximum_heat_source"
-        try:
-            problem.get_timeseries(variable=var_name, ensemble_member=ensemble_member)
-        except KeyError:
-            logger.debug(
-                f"Source {source} has no production profile, thus it also will "
-                f"not be adapted to a different time scales."
-            )
-            continue
-
-        set_data_with_averages(
-            datastore=new_datastore,
-            variable_name=var_name,
-            ensemble_member=ensemble_member,
-            new_date_times=new_date_times,
-            problem=problem,
-        )
-
-    for source in problem.energy_system_components.get("electricity_source", []):
-        var_name = f"{source}.maximum_electricity_source"
-        try:
-            problem.get_timeseries(variable=var_name, ensemble_member=ensemble_member)
-        except KeyError:
-            logger.debug(
-                f"Source {source} has no production profile, thus it also will "
-                f"not be adapted to a different time scales."
-            )
-            continue
-
-        set_data_with_averages(
-            datastore=new_datastore,
-            variable_name=var_name,
-            ensemble_member=ensemble_member,
-            new_date_times=new_date_times,
-            problem=problem,
-        )
-
-    for carrier_properties in problem.esdl_carriers.values():
-        carrier_name = carrier_properties["name"]
-        var_name = f"{carrier_name}.price_profile"
-        try:
-            problem.get_timeseries(variable=var_name, ensemble_member=ensemble_member)
-        except KeyError:
-            logger.debug(
-                f"Carrier {carrier_name} has no price profile, thus it also will "
-                f"not be adapted to different time scales."
-            )
+    timeseries_names = problem.io.get_timeseries_names()
+    for var_name in timeseries_names:
         set_data_with_averages(
             datastore=new_datastore,
             variable_name=var_name,
