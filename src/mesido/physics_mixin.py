@@ -133,8 +133,9 @@ class PhysicsMixin(
         bounds.update(self._change_setpoint_bounds)
         return bounds
 
-    def __setpoint_constraint(
-        self, ensemble_member, component_name, windowsize_hr, setpointchanges
+    def _setpoint_constraint(
+        self, ensemble_member, component_name, windowsize_hr, setpointchanges,
+            variable_name=None
     ):
         r"""Constraints that can switch only every n time steps of setpoint.
         A component can only switch setpoint every <windowsize_hr> hours.
@@ -173,6 +174,8 @@ class PhysicsMixin(
         control_vars = map_comp_type_to_control_variable[comp_type]
         if not isinstance(control_vars, list):
             control_vars = [control_vars]
+        if variable_name is not None:
+            control_vars = [variable_name]
 
         for var_name in control_vars:
             # Retrieve the relevant variable names
@@ -287,7 +290,7 @@ class PhysicsMixin(
 
         for component_name, params in self._timed_setpoints.items():
             constraints.extend(
-                self.__setpoint_constraint(ensemble_member, component_name, params[0], params[1])
+                self._setpoint_constraint(ensemble_member, component_name, params[0], params[1])
             )
 
         return constraints
