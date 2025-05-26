@@ -3,6 +3,8 @@ from typing import List, Set
 
 import casadi as ca
 
+import esdl
+
 from mesido._heat_loss_u_values_pipe import pipe_heat_loss
 from mesido.base_component_type_mixin import BaseComponentTypeMixin
 from mesido.demand_insulation_class import DemandInsulationClass
@@ -1870,15 +1872,61 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             try:
                 profile = self.get_timeseries(f"{s}.maximum_heat_source").values
-                profile_scaled = profile / max(profile)
+
+                # still to delete
+                profile *= 0.75e6
+                # for ii in range(len(profile)):
+                    # profile[ii] *= 1e6
+
+                max_profile_value = max(profile)
+                profile_scaled = profile / max_profile_value
                 for i in range(0, len(self.times())):
-                    constraints.append(
-                        (
-                            (profile_scaled[i] * max_heat - heat_source[i]) / constraint_nominal,
-                            0.0,
-                            np.inf,
+
+                    if (
+                        len(
+                            self.esdl_assets[
+                                self.esdl_asset_name_to_id_map[s]
+                            ].in_ports[0].profile.items
+                        ) > 0
+                        and self.esdl_assets[
+                            self.esdl_asset_name_to_id_map[s]
+                        ].in_ports[0].profile.items[0].profileQuantityAndUnit.reference.unit
+                        == esdl.UnitEnum.WATT
+                        # or s =="GeothermalSource_b702"  # still to delete
+                        or s == "HeatProducer_b702"  # still to delete
+                    ):  # enabled
+                        if i == 0:
+                            constraints.append(
+                                (
+                                    (max_heat - max_profile_value)  # this is needed when the asset is OPTIONAL, else the result is max_heat = 0.0. Shouls watts input ven be allowed to be optional?
+                                    / constraint_nominal,
+                                    0.0,
+                                    np.inf,
+                                )
+                            )
+                        constraints.append(
+                            (
+                                (profile[i] - heat_source[i]) / constraint_nominal,
+                                0.0,
+                                np.inf,
+                            )
                         )
-                    )
+                    # elif (
+                    #     self.esdl_assets["79d559de-54f2-40b9-af9a-c62f499db523"].in_ports[0].profile.items[0].profileQuantityAndUnit.reference.unit == esdl.UnitEnum.PERCENT
+                    # ) or 
+                    #     (
+
+                    #     ):
+                    else:  # currently from csv, future-> csv and case (0-1.0) where qty == %  and unit === None, still to add (0-100.0) where qty == %  and unit === %
+                    # optional, changes needed profile_scaled ? if watts specified, power specified==peak of profile additional contraint needed. else this works
+                        constraints.append(
+                            (
+                                (profile_scaled[i] * max_heat - heat_source[i])
+                                / constraint_nominal,
+                                0.0,
+                                np.inf,
+                            )
+                        )
             except KeyError:
                 constraints.append(
                     (

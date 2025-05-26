@@ -285,7 +285,7 @@ class HeatProblemTvarret(
         return constraints
 
 
-class HeatProblemProdProfile(
+class HeatProblemNoProfile(
     _GoalsAndOptions,
     TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
@@ -293,16 +293,6 @@ class HeatProblemProdProfile(
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
-    def read(self):
-        super().read()
-
-        for s in self.energy_system_components["heat_source"]:
-            demand_timeseries = self.get_timeseries("HeatingDemand_a3b8.target_heat_demand")
-            new_timeseries = np.ones(len(demand_timeseries.values)) * 1
-            ind_hlf = int(len(demand_timeseries.values) / 2)
-            new_timeseries[ind_hlf : ind_hlf + 4] = np.ones(4) * 0.10
-            self.set_timeseries(f"{s}.maximum_heat_source", new_timeseries)
-
     def energy_system_options(self):
         options = super().energy_system_options()
         options["heat_loss_disconnected_pipe"] = True
@@ -322,6 +312,18 @@ class HeatProblemProdProfile(
             goals.append(MinimizeSourcesHeatGoal(s))
 
         return goals
+
+
+class HeatProblemProdProfile(HeatProblemNoProfile):
+    def read(self):
+        super().read()
+
+        for s in self.energy_system_components["heat_source"]:
+            demand_timeseries = self.get_timeseries("HeatingDemand_a3b8.target_heat_demand")
+            new_timeseries = np.ones(len(demand_timeseries.values)) * 1
+            ind_hlf = int(len(demand_timeseries.values) / 2)
+            new_timeseries[ind_hlf : ind_hlf + 4] = np.ones(4) * 0.10
+            self.set_timeseries(f"{s}.maximum_heat_source", new_timeseries)
 
 
 class QTHProblem(
