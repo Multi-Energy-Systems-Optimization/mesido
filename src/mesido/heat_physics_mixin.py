@@ -445,14 +445,20 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             if len(temperature_regimes) == 0:
                 temperature = temperatures["temperature"]
                 self.__temperature_regime_var_bounds[temp_var_name] = (temperature, temperature)
-            elif len(temperature_regimes) == 1:
-                temperature = temperature_regimes[0]
-                self.__temperature_regime_var_bounds[temp_var_name] = (temperature, temperature)
             else:
-                self.__temperature_regime_var_bounds[temp_var_name] = (
-                    min(temperature_regimes),
-                    max(temperature_regimes),
-                )
+                if max(temperature_regimes) >= temperatures["temperature"]:
+                    logger.error(f"The temperature provided for carrier with name "
+                                   f"{temperatures['name']} and id {temperatures['id']} is "
+                                   f"smaller than the largest value in the temperature regime "
+                                   f"provided for this carrier, please update the esdl.")
+                if len(temperature_regimes) == 1:
+                    temperature = temperature_regimes[0]
+                    self.__temperature_regime_var_bounds[temp_var_name] = (temperature, temperature)
+                else:
+                    self.__temperature_regime_var_bounds[temp_var_name] = (
+                        min(temperature_regimes),
+                        max(temperature_regimes),
+                    )
 
             for temperature_regime in temperature_regimes:
                 carrier_selected_var = carrier_id_number_mapping + f"_{temperature_regime}"
@@ -3735,8 +3741,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints.extend(self.__check_valve_head_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__control_valve_head_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__network_temperature_path_constraints(ensemble_member))
+        constraints.extend(self.__ates_temperature_path_constraints(ensemble_member))
         if not self._stage == 3:
-            constraints.extend(self.__ates_temperature_path_constraints(ensemble_member))
             constraints.extend(self.__ates_temperature_changing_path_constraints(ensemble_member))
         constraints.extend(self.__ates_heat_losses_path_constraints(ensemble_member))
         constraints.extend(self.__ates_temperature_ordering_path_constraints(ensemble_member))
