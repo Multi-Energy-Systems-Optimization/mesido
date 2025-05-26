@@ -32,11 +32,10 @@ class TestProducerMaxProfile(TestCase):
         solution = run_esdl_mesido_optimization(
             HeatProblemProdProfile,
             base_folder=base_folder,
-            # esdl_file_name="3a.esdl",
-            esdl_file_name="3a_esdl_profile.esdl",
+            esdl_file_name="3a.esdl",
             esdl_parser=ESDLFileParser,
-            # profile_reader=ProfileReaderFromFile,
-            # input_timeseries_file="timeseries_import.xml",
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.xml",
         )
         results = solution.extract_results()
 
@@ -67,8 +66,18 @@ class TestProducerMaxProfile(TestCase):
             # HeatProblemNoProfile,
             base_folder=base_folder,
             esdl_file_name="3a_esdl_profile.esdl",
+
+            # esdl_file_name="3a_esdl_source_profile.esdl",
             esdl_parser=ESDLFileParser,
         )
+        # solution = run_esdl_mesido_optimization(
+        #     HeatProblemProdProfile,
+        #     base_folder=base_folder,
+        #     esdl_file_name="3a_esdl_source_profile.esdl",
+        #     esdl_parser=ESDLFileParser,
+        #     profile_reader=ProfileReaderFromFile,
+        #     input_timeseries_file="timeseries_import.xml",
+        # )
         results = solution.extract_results()
 
         demand_matching_test(solution, results)
