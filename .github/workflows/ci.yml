@@ -56,7 +56,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ !github.event.pull_request.draft }}
     env:
-      TOXENV: py38
+      TOXENV: py313
     steps:
       - uses: actions/checkout@v3
 
@@ -76,7 +76,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ !github.event.pull_request.draft }}
     env:
-      TOXENV: py38
+      TOXENV: py313
     steps:
       - uses: actions/checkout@v3
 
@@ -112,7 +112,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ !github.event.pull_request.draft }}
     env:
-      TOXENV: py38
+      TOXENV: py313
     steps:
       - uses: actions/checkout@v3
 
