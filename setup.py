@@ -34,7 +34,7 @@ min_version = (3, 9)
 max_version = (3, 13)  # Match the python_requires parameter
 
 if not (min_version <= sys.version_info[:2] <= max_version):
-    py_version = '.'.join(map(str, sys.version_info[:3]))
+    py_version = ".".join(map(str, sys.version_info[:3]))
     error_msg = (
         f"Python {min_version[0]}.{min_version[1]} to {max_version[0]}.{max_version[1]} "
         f"is required. You are using Python {py_version}"
