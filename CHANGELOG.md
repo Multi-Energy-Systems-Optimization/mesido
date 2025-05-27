@@ -1,7 +1,7 @@
-# [Unreleased-main] - 2025-05-21
+# [Unreleased-main] - 2025-05-27
 
 ## Added
-- xx
+- Improved error handling for asset cost information to prevent potential failures and ensure more robust processing of asset-related data.
 
 ## Changed
 - xx
