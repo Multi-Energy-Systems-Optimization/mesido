@@ -52,167 +52,79 @@ def get_cost_value_and_unit(cost_info: esdl.SingleValue):
     return cost_value, unit, per_unit, per_time_uni
 
 
-class MinimizeOPEX(Goal):
+class MinimizeVariableOPEX(Goal):
     order = 1
 
-    def __init__(self, hourly_steps=24, years=25, priority=None):
+    def __init__(self, year_step_size=10, priority=1):
         self.priority = priority
-        self.year_steps = years
-        self.hourly_steps = hourly_steps
+        self.year_step_size = year_step_size
 
     def function(self, optimization_problem, ensemble_member):
         obj = 0
         parameters = optimization_problem.parameters(ensemble_member)
 
-        for source in optimization_problem.heat_network_components.get("heat_source", []):
-            asset = optimization_problem.get_asset_from_asset_name(source)
-            opex_costs = self.get_variable_opex_costs(asset) * 1.0e6  # to make costs per MWh
-            for i in range(optimization_problem._days):
-                opt_var = optimization_problem.extra_variable(
-                    optimization_problem._source_daily_avg_map[source] + f"_{i}", ensemble_member
-                )
-                obj += opt_var * self.hourly_steps * self.year_steps * opex_costs
+        asset_varopex_map = optimization_problem._asset_variable_operational_cost_map
 
-            if source == "GeoSource":
-                wells = optimization_problem.extra_variable(
-                    f"{source}__number_of_wells", ensemble_member
-                )
-                single_well_power = parameters[f"{source}.single_doublet_power"]
-                fixed_operational_cost = self.get_fixed_opex_costs(asset)
-                obj += wells * single_well_power * fixed_operational_cost * self.year_steps
+        for asset in [*optimization_problem.energy_system_components.get("heat_source", []),
+                      *optimization_problem.energy_system_components.get("ates", [])]:
 
-        for ates in optimization_problem.heat_network_components.get("ates", []):
-            single_doublet_power = parameters[f"{ates}.single_doublet_power"]
-            doublets = optimization_problem.extra_variable(
-                f"{ates}__number_of_doublets", ensemble_member
-            )
-            asset = optimization_problem.get_asset_from_asset_name(ates)
-            fixed_operational_cost = self.get_fixed_opex_costs(asset)
-            obj += doublets * fixed_operational_cost * single_doublet_power * self.year_steps
-            charge = optimization_problem.get_ates_charge_amount(ates, ensemble_member)
-            discharge = optimization_problem.get_ates_discharging_amount(ates, ensemble_member)
-            opex_costs = self.get_variable_opex_costs(asset) * 1.0e6  # to make costs per MWh
-            obj += (sum(charge) + sum(discharge)) * self.hourly_steps * self.year_steps * opex_costs
+            extra_var = optimization_problem.extra_variable(asset_varopex_map.get(asset, 0.0))
+            obj += extra_var * self.year_step_size
+
+        # for source in optimization_problem.heat_network_components.get("heat_source", []):
+        #
+        #     # asset_var_opex_var = optimization_problem.get_asset_from_asset_name(source)
+        #     # opex_costs = self.get_variable_opex_costs(asset) * 1.0e6  # to make costs per MWh
+        #
+        #     # for i in range(optimization_problem._days):
+        #     #     opt_var = optimization_problem.extra_variable(
+        #     #         optimization_problem._source_daily_avg_map[source] + f"_{i}", ensemble_member
+        #     #     )
+        #     #     obj += opt_var * self.hourly_steps * self.year_steps * opex_costs
+        #     #
+        #     # if source == "GeoSource":
+        #     #     wells = optimization_problem.extra_variable(
+        #     #         f"{source}__number_of_wells", ensemble_member
+        #     #     )
+        #     #     single_well_power = parameters[f"{source}.single_doublet_power"]
+        #     #     fixed_operational_cost = self.get_fixed_opex_costs(asset)
+        #     #     obj += wells * single_well_power * fixed_operational_cost * self.year_steps
+        #
+        # for ates in optimization_problem.heat_network_components.get("ates", []):
+        #
+        #     # single_doublet_power = parameters[f"{ates}.single_doublet_power"]
+        #     # doublets = optimization_problem.extra_variable(
+        #     #     f"{ates}__number_of_doublets", ensemble_member
+        #     # )
+        #     # asset = optimization_problem.get_asset_from_asset_name(ates)
+        #     # fixed_operational_cost = self.get_fixed_opex_costs(asset)
+        #     # obj += doublets * fixed_operational_cost * single_doublet_power * self.year_steps
+        #     # charge = optimization_problem.get_ates_charge_amount(ates, ensemble_member)
+        #     # discharge = optimization_problem.get_ates_discharging_amount(ates, ensemble_member)
+        #     # opex_costs = self.get_variable_opex_costs(asset) * 1.0e6  # to make costs per MWh
+        #     # obj += (sum(charge) + sum(discharge)) * self.hourly_steps * self.year_steps * opex_costs
 
         return obj / 1.0e6
 
-    def get_variable_opex_costs(self, asset: Asset):
-        """
-        Returns the variable opex costs of an asset in Euros per Wh
-        """
-        cost_infos = {}
-        cost_infos["variableOperationalAndMaintenanceCosts"] = asset.attributes[
-            "costInformation"].variableOperationalAndMaintenanceCosts
-        if asset.attributes["costInformation"].variableOperationalAndMaintenanceCosts is None:
-            cost_infos["variableOperationalCosts"] = asset.attributes[
-                "costInformation"].variableOperationalCosts
-            cost_infos["variableMaintenanceCosts"] = asset.attributes[
-                "costInformation"].variableMaintenanceCosts
-
-        value = 0.
-        for key, cost_info in cost_infos.items():
-            if cost_info is None:
-                logger.info(f"No {key} OPEX provided for asset {asset.name}")
-                continue
-            cost_value, unit, per_unit, per_time = get_cost_value_and_unit(cost_info)
-            value += cost_value
-            if unit != UnitEnum.EURO:
-                raise RuntimeError(
-                    f"Expected cost information {cost_info} to " f"provide a cost in euros."
-                )
-            if per_time != TimeUnitEnum.NONE:
-                raise RuntimeError(
-                    f"Specified OPEX for asset {asset.name} include a "
-                    f"component per time, which we cannot handle."
-                )
-            if per_unit != UnitEnum.WATTHOUR:
-                raise RuntimeError(
-                    f"Expected the specified OPEX for asset "
-                    f"{asset.name} to be per Wh, but they are provided "
-                    f"in {per_unit} instead."
-                )
-        return value
-
-    def get_fixed_opex_costs(self, asset: Asset):
-        """
-        Returns the fixed opex costs of an asset in Euros per W
-        """
-        cost_infos = {}
-        if asset.attributes["costInformation"].fixedOperationalAndMaintenanceCosts is None:
-            logger.info(f"No combined operational and maintenance costs provided for {asset}, "
-                        f"using the separately specified costs instead")
-            cost_infos["fixedOperationalCosts"] = \
-                asset.attributes["costInformation"].fixedOperationalCosts
-            cost_infos["fixedMaintenanceCosts"] = \
-                asset.attributes["costInformation"].fixedMaintenanceCosts
-        else:
-            cost_infos["fixedOperationalAndMaintenanceCosts"] = asset.attributes[
-                "costInformation"].fixedOperationalAndMaintenanceCosts
-
-        value = 0.
-        for key, cost_info in cost_infos.items():
-            if cost_info is None:
-                logger.info(f"No {key} provided for asset {asset.name}")
-                continue
-            cost_value, unit, per_unit, per_time = get_cost_value_and_unit(cost_info)
-            value += cost_value
-            if unit != UnitEnum.EURO:
-                raise RuntimeError(
-                    f"Expected cost information {cost_info} to provide a cost in euros."
-                )
-            if per_time != TimeUnitEnum.NONE:
-                raise RuntimeError(
-                    f"Specified OPEX for asset {asset.name} include a "
-                    f"component per time, which we cannot handle."
-                )
-            if per_unit != UnitEnum.WATT:
-                raise RuntimeError(
-                    f"Expected the specified OPEX for asset "
-                    f"{asset.name} to be per W, but they are provided "
-                    f"in {per_unit} instead."
-                )
-        return value
 
 
-class MaximizeRevenueComparedToOpexCosts(MinimizeOPEX):
+class MaximizeRevenueCosts(Goal):
+    #TODO: minimize opex can in the def goals, instead of pathgoals as we can add the opex
+    # variable from financial mixin for each asset
 
     order = 1
 
-    def __init__(self, is_placed_vars, priority=None):
-        super().__init__(priority=priority)
+    def __init__(self, is_placed_vars, year_step_size=10, priority=None):
+        self.priority = priority
         self.is_placed_vars = is_placed_vars
+        self.year_step_size = year_step_size
 
     def function(self, optimization_problem, ensemble_member: int) -> ca.MX:
         obj = 0.0
-        # obj += self.capex_asset(optimization_problem, ensemble_member)
-        obj += optimization_problem._horizon / optimization_problem._years \
-            * self.opex_assets(optimization_problem, ensemble_member)
-        obj -= optimization_problem._horizon / optimization_problem._years \
+        obj -= self.year_step_size \
             * self.revenue_heat_delivered(optimization_problem, ensemble_member)
 
         return obj / 1.e6
-
-    def opex_assets(self, optimization_problem, ensemble_member: int) -> ca.MX:
-        obj = 0
-
-        timesteps = np.diff(optimization_problem.times()) / 3600.0
-
-        for source in optimization_problem.energy_system_components.get("heat_source", []):
-            asset = optimization_problem.get_asset_from_asset_name(source)
-            opex_costs = self.get_variable_opex_costs(asset)
-            obj += optimization_problem.state(f"{source}.Heat_source") * timesteps * opex_costs
-
-        ## becomes relevant when we have the ATES we are now lacking the correct variables
-        # for ates in optimization_problem.energy_system_components.get("ates", []):
-        #
-        #
-        #     # charge = optimization_problem.get_ates_charge_amount(ates, ensemble_member)
-        #     # discharge = optimization_problem.get_ates_discharging_amount(ates, ensemble_member)
-        #     # opex_costs = self.FunctionsFromScenarioGoal.get_variable_opex_costs(asset)
-        #     # obj += (sum(charge) + sum(
-        #     #     discharge)) * 24 * opex_costs
-
-        return obj
 
     def revenue_heat_delivered(self, optimization_problem,
                                ensemble_member: int) -> ca.MX:
@@ -220,7 +132,8 @@ class MaximizeRevenueComparedToOpexCosts(MinimizeOPEX):
         market_price = 125./1.e6  # 50 / 1.e6 # [€/Wh]
         timesteps = np.diff(optimization_problem.times()) / 3600.0
         for demand in optimization_problem.energy_system_components.get("heat_demand", []):
-            obj += optimization_problem.state(f"{demand}.Heat_demand") * timesteps * market_price
+            obj += (optimization_problem.state(f"{demand}.Heat_demand") * timesteps *
+                    market_price)
         return obj
 
 
@@ -246,7 +159,6 @@ class MinimizeCAPEXAssetsCosts(Goal):
     def __init__(self, percentage_is_placed_vars, priority=None):
         self.percentage_is_placed_vars = percentage_is_placed_vars
         self.priority = priority
-        self.FunctionsFromScenarioGoal = MinimizeOPEX()
 
 
     def function(self, optimization_problem, ensemble_member):
@@ -332,13 +244,15 @@ class MinimizeCAPEXAssetsCosts(Goal):
         return obj
 
 
-class MinimizeRolloutFixedOperationalCosts(MinimizeOPEX):
+class MinimizeRolloutFixedOperationalCosts(Goal):
 
     order = 1
 
-    def __init__(self, is_placed_vars, priority=None):
-        super().__init__(priority=priority)
+    def __init__(self, is_placed_vars, hourly_steps=24, years=25, priority=1):
         self.is_placed_vars = is_placed_vars
+        self.priority = priority
+        self.year_steps = years
+        self.hourly_steps = hourly_steps
 
     def function(self, optimization_problem, ensemble_member: int) -> ca.MX:
         obj = 0.0
@@ -358,6 +272,46 @@ class MinimizeRolloutFixedOperationalCosts(MinimizeOPEX):
             obj += self.fixed_opex_of_asset(optimization_problem, ates)
 
         return obj
+
+    def get_fixed_opex_costs(self, asset: Asset):
+        """
+        Returns the fixed opex costs of an asset in Euros per W
+        """
+        cost_infos = {}
+        if asset.attributes["costInformation"].fixedOperationalAndMaintenanceCosts is None:
+            logger.info(f"No combined operational and maintenance costs provided for {asset}, "
+                        f"using the separately specified costs instead")
+            cost_infos["fixedOperationalCosts"] = \
+                asset.attributes["costInformation"].fixedOperationalCosts
+            cost_infos["fixedMaintenanceCosts"] = \
+                asset.attributes["costInformation"].fixedMaintenanceCosts
+        else:
+            cost_infos["fixedOperationalAndMaintenanceCosts"] = asset.attributes[
+                "costInformation"].fixedOperationalAndMaintenanceCosts
+
+        value = 0.
+        for key, cost_info in cost_infos.items():
+            if cost_info is None:
+                logger.info(f"No {key} provided for asset {asset.name}")
+                continue
+            cost_value, unit, per_unit, per_time = get_cost_value_and_unit(cost_info)
+            value += cost_value
+            if unit != UnitEnum.EURO:
+                raise RuntimeError(
+                    f"Expected cost information {cost_info} to provide a cost in euros."
+                )
+            if per_time != TimeUnitEnum.NONE:
+                raise RuntimeError(
+                    f"Specified OPEX for asset {asset.name} include a "
+                    f"component per time, which we cannot handle."
+                )
+            if per_unit != UnitEnum.WATT:
+                raise RuntimeError(
+                    f"Expected the specified OPEX for asset "
+                    f"{asset.name} to be per W, but they are provided "
+                    f"in {per_unit} instead."
+                )
+        return value
 
     def fixed_opex_of_asset(self, optimization_problem, asset_name):
         obj = 0
