@@ -25,7 +25,7 @@ jobs:
 
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.8"
+          python-version: "3.13"
 
       - name: deps
         run: python -m pip install -U tox
@@ -42,7 +42,7 @@ jobs:
 
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.8"
+          python-version: "3.13"
 
       - name: deps
         run: python -m pip install -U wheel setuptools build
@@ -62,7 +62,7 @@ jobs:
 
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.8"
+          python-version: "3.13"
 
       - name: deps
         run: python -m pip install -U tox
@@ -82,7 +82,7 @@ jobs:
 
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.8"
+          python-version: "3.13"
 
       - name: deps
         run: python -m pip install -U tox
@@ -118,7 +118,7 @@ jobs:
 
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.8"
+          python-version: "3.13"
 
       - name: deps
         run: python -m pip install -U tox
@@ -146,7 +146,7 @@ jobs:
 
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.8"
+          python-version: "3.13"
 
       - name: Generate documentation
         run: |

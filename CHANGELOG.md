@@ -4,7 +4,9 @@
 - xx
 
 ## Changed
-- xx
+- Update supported Python versions (3.9-3.13)
+- Update RTC-Tools version 2.7.0
+- Update Casadi version 3.7, which includes Highs 1.10  
 
 ## Fixed
 - xx

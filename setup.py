@@ -30,11 +30,16 @@ Operating System :: Unix
 Operating System :: MacOS
 """
 
-if sys.version_info < (3, 8):
-    sys.exit(f"Sorry, Python 3.8 to 3.10 is required. You are using {sys.version_info}")
+min_version = (3, 9)
+max_version = (3, 13)  # Match the python_requires parameter
 
-if sys.version_info > (3, 11):
-    sys.exit(f"Sorry, Python 3.8 to 3.10 is required. You are using {sys.version_info}")
+if not (min_version <= sys.version_info[:2] <= max_version):
+    py_version = '.'.join(map(str, sys.version_info[:3]))
+    error_msg = (
+        f"Python {min_version[0]}.{min_version[1]} to {max_version[0]}.{max_version[1]} "
+        f"is required. You are using Python {py_version}"
+    )
+    sys.exit(error_msg)
 
 setup(
     name="mesido",
@@ -58,16 +63,16 @@ setup(
         "influxdb >= 5.3.1",
         "pyecore >= 0.13.2",
         "pymoca >= 0.9.0",
-        "rtc-tools-gil-comp == 2.6.1",
+        "rtc-tools == 2.7.0",
         "pyesdl == 25.5.1",
         "pandas >= 1.3.1, < 2.0",
-        "casadi-gil-comp == 3.6.7",
+        "casadi == 3.7.0",
         "StrEnum == 0.4.15",
         "CoolProp==6.6.0",
     ],
     tests_require=["pytest", "pytest-runner", "numpy"],
     include_package_data=True,
-    python_requires=">=3.8,<3.11",
+    python_requires=">=3.9,<=3.13",
     cmdclass=versioneer.get_cmdclass(),
     entry_points={"rtctools.libraries.modelica": ["library_folder = mesido:modelica"]},
 )
