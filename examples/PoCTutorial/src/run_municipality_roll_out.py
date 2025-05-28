@@ -17,3 +17,20 @@ if __name__ == "__main__":
         esdl_file_name="PoC Tutorial_2ndsource.esdl", #"GROW_withATES_Prod_install.esdl",
         esdl_parser=ESDLFileParser,
     )
+    results = solution.extract_results()
+
+
+    for source in [*solution.energy_system_components.get("heat_source", []),
+                   *solution.energy_system_components.get("heat_demand", []),
+                   *solution.hot_pipes,]:
+        print(f"{source} is placed over time: {[results[f'{source}__is_placed_{year}'] for year in range(solution._years)]}")
+        try:
+            print(
+                f"{source} is placed over time: {[results[f'{source}__asset_is_realized_{year}']for year in range(solution._years)]}")
+        except:
+            pass
+        print(f"{source} has a cumulative investment over time of: {[results[f'{source}__cumulative_investments_made_in_eur_year_{year}']for year in range(solution._years)]}")
+    print(f"Yearly capex spent: "
+          f"{[results[f'yearly_capex_{year}'] for year in range(solution._years)]}")
+
+    print('Done')
