@@ -236,6 +236,8 @@ class RollOutProblem(
                 self.__asset_percentage_placed_var_bounds[asset_percentage_placed_var] = (
                 0.0, 1.0)
 
+        #TODO still needs to be checked if this is also properly added to financial mixing for
+        # asset_is_realized for the doublets.
         for asset in [*self.energy_system_components.get("ates", [])]:
             for year in range(self._years):
                 N_doublets = self.parameters(0)[f"{asset}.nr_of_doublets"]
@@ -311,11 +313,11 @@ class RollOutProblem(
 
     def __ates_doublet_sums(self, s):
         ates_N_doublets = self.parameters(0)[f"{s}.nr_of_doublets"]
-        ates_doublet_sums = self.get_asset_is__placed_symbols(f"{s}_doublet_{1}")
+        ates_doublet_sums = self.get_asset_is__realized_symbols(f"{s}_doublet_{1}")
         ates_doublet_percentage_sums = self.get_asset_percentage__placed_symbols(
             f"{s}_doublet_{1}")
         for N in range(1, ates_N_doublets):
-            ates_doublet_sums += self.get_asset_is__placed_symbols(f"{s}_doublet_{N + 1}")
+            ates_doublet_sums += self.get_asset_is__realized_symbols(f"{s}_doublet_{N + 1}")
             ates_doublet_percentage_sums += self.get_asset_percentage__placed_symbols(
                 f"{s}_doublet_{N + 1}")
 
@@ -335,7 +337,7 @@ class RollOutProblem(
             big_m = 2.0 * max(abs(x) for x in bounds[f"{s}.Heat_ates"])
 
             # enforces ATES to only charge or discharge when placed
-            ates_is_placed = self.get_asset_is__placed_symbols(s)
+            ates_is_placed = self.get_asset_is__realized_symbols(s)
             # for year in range(self._years):
             #     constraints.append(
             #         ((ates_daily_heat[year*self._days:year*self._days+self._days] - big_m * ates_is_placed[year]) / (big_m), -np.inf, 0.0))
@@ -351,7 +353,7 @@ class RollOutProblem(
             ates_is_placed_doublet = []
             for N in range(0, ates_N_doublets):
                 ates_is_placed_doublet.append(
-                    self.get_asset_is__placed_symbols(f"{s}_doublet_{N + 1}"))
+                    self.get_asset_is__realized_symbols(f"{s}_doublet_{N + 1}"))
             for year in range(self._years):
                 constraints.append((
                     (ates_state[year * self._days:(year + 1) * self._days] - ates_doublet_sums[
@@ -408,7 +410,7 @@ class RollOutProblem(
 
         for asset, asset_is_placed_var in self._asset_is_placed_map.items():
             # asset_is_placed_vector = self.state_vector(asset_is_placed_var, ensemble_member)
-            asset_is_placed_vector = self.get_asset_is__placed_symbols(asset)
+            asset_is_placed_vector = self.get_asset_is__realized_symbols(asset)
 
             for i in range(1, self._years):
                 constraints.append(((asset_is_placed_vector[i] - asset_is_placed_vector[i-1]), 0.0, np.inf))
@@ -424,7 +426,7 @@ class RollOutProblem(
 
         for asset, asset_percentage_placed_name in self._asset_percentage_placed_map.items():
             asset_percentage_placed = self.get_asset_percentage__placed_symbols(asset)
-            asset_is_placed_name = self.get_asset_is__placed_symbols(asset)
+            asset_is_placed_name = self.get_asset_is__realized_symbols(asset)
             for i in range(0, self._years):
                 constraints.append((asset_is_placed_name[i] - asset_percentage_placed[i], -np.inf,
                                     0.0))
@@ -438,12 +440,9 @@ class RollOutProblem(
 
         # Constraint to enforce matching demands if is_placed
         for d in self.energy_system_components.get("heat_demand", []):
-            heat_demand_placed = self.get_asset_is__placed_symbols(d)
-
             heat_demand = self.__state_vector_scaled(f"{d}.Heat_demand", ensemble_member)
             target = self.get_timeseries(f"{d}.target_heat_demand")
-            # heat_demand_placed = self.state_vector(f"{d}__is_placed", ensemble_member)
-            heat_demand_placed = self.get_asset_is__placed_symbols(d)
+
             big_M = 2. * np.max(target.values)
             for year in range(self._years):
                 time_start = year * 3600 * 8760
@@ -462,71 +461,7 @@ class RollOutProblem(
 
         return constraints
 
-    def __source_placed_constraints(self, ensemble_member):
-        constraints = []
 
-        bounds = self.bounds()
-
-        source_capex_dict = {}
-        # Constraint to ensure no production if not placed
-        # for s in self.energy_system_components.get("heat_source", []):
-        #     asset_is_realized = self.__state_vector_scaled(f"{s}__asset_is_realized",
-        #                                                    ensemble_member)
-        #     # heat_source_placed = self.state_vector(f"{s}__is_placed", ensemble_member)
-        #     heat_source_placed = self.get_asset_is__placed_symbols(s)
-        #     big_M = 2.0 * bounds[f"{s}__asset_is_realized"][1]
-        #
-        #     for year in range(self._years):
-        #         constraints.append(
-        #             ((asset_is_realized[year * self._days:year * self._days + self._days] - big_M *
-        #               heat_source_placed[year]) / big_M, -np.inf, 0))
-        for s in self.energy_system_components.get("heat_source", []):
-            heat_source = self.__state_vector_scaled(f"{s}.Heat_source", ensemble_member)
-            # heat_source_placed = self.state_vector(f"{s}__is_placed", ensemble_member)
-            heat_source_placed = self.get_asset_is__placed_symbols(s)
-            big_M = 2. * bounds[f"{s}.Heat_source"][1]
-
-            for year in range(self._years):
-                constraints.append(
-                    ((heat_source[year * self._days:year * self._days + self._days] - big_M *
-                      heat_source_placed[year]) / big_M, -np.inf, 0))
-
-        return constraints
-
-    def __transport_placed_constraints(self, ensemble_member):
-        constraints = []
-
-        parameters = self.parameters(ensemble_member)
-
-        bounds = self.bounds()
-
-        # Constraint to ensure no production if not placed
-        for pipe in self.hot_pipes:
-            q_pipe = self.__state_vector_scaled(f"{pipe}.Q", ensemble_member)
-            # pipe_placed = self.state_vector(f"{pipe}__is_placed", ensemble_member)
-            pipe_placed = self.get_asset_is__placed_symbols(pipe)
-            # asset_is_realized = self.__state_vector_scaled(f"{pipe}__asset_is_realized",
-            #                                                ensemble_member)
-            # TODO: hier moeten we de max flow velocity ophalen uit heat_mixin
-            options = self.energy_system_options()
-            big_M = 2. * (parameters[f"{pipe}.diameter"] / 2.) ** 2 * np.pi * \
-                    self.heat_network_settings[
-                        "maximum_velocity"]
-            # big_M = 2.0 * bounds[f"{pipe}__asset_is_realized"][1]
-            for year in range(self._years):
-                # constraints.append(
-                #     ((asset_is_realized[year * self._days:year * self._days + self._days] - big_M *
-                #       pipe_placed[year]) / big_M, -np.inf, 0))
-                constraints.append(
-                    ((q_pipe[year * self._days:year * self._days + self._days] - big_M *
-                      pipe_placed[year]) / big_M, -np.inf, 0.0)
-                )
-                constraints.append(
-                    ((q_pipe[year * self._days:year * self._days + self._days] + big_M *
-                      pipe_placed[year]) / big_M, 0.0, np.inf)
-                )
-
-        return constraints
 
     def __yearly_investment_constraints_old(self, ensemble_member):
         constraints = []
@@ -645,7 +580,7 @@ class RollOutProblem(
         for asset, asset_is_placed_var in self._asset_is_placed_map.items():
             if asset not in self.energy_system_components.get("geothermal_source", []):
                 continue
-            geo_is_placed = self.get_asset_is__placed_symbols(asset)
+            geo_is_placed = self.get_asset_is__realized_symbols(asset)
             heat_produced = self.__state_vector_scaled(f"{asset}.Heat_source", ensemble_member)
             max_heat = bounds[f"{asset}.Heat_source"][1]
             max_heat_year = max_heat * self._days
@@ -699,7 +634,7 @@ class RollOutProblem(
         return self.extra_variable_vector(symbols, 0)
 
     def get_asset_is__realized_symbols(self, asset_name):
-        symbols = [f"{asset_name}__is_realized_{year}" for year in range(self._years)]
+        symbols = [f"{asset_name}__asset_is_realized_{year}" for year in range(self._years)]
 
         return self.extra_variable_vector(symbols, 0)
 
