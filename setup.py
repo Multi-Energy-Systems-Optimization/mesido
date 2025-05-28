@@ -65,7 +65,7 @@ setup(
         "pymoca >= 0.9.0",
         "rtc-tools == 2.7.0",
         "pyesdl == 25.5.1",
-        "pandas >= 1.3.1, < 2.0",
+        "pandas >= 1.3.1, < 3.0",
         "casadi == 3.7.0",
         "StrEnum == 0.4.15",
         "CoolProp==6.6.0",
