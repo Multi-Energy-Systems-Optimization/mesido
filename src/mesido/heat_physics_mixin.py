@@ -2352,6 +2352,14 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         np.inf, #0.0
                     )
                 )
+                # upper limit to prevent unrealistic heat loss
+                constraints.append(
+                    (
+                        (heat_loss - stored_heat * 1.2 * coeff_efficiency_ates) / heat_loss_nominal,
+                        -np.inf,
+                        0.0,  # 0.0
+                    )
+                )
                 # ates_is_charging = self.state(f"{ates}__is_charging")
                 # heat_ates = self.state(f"{ates}.Heat_flow")
                 # big_m = 2 * bounds[f"{ates}.Heat_flow"][1]
