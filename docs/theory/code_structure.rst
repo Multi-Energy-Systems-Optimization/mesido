@@ -3,9 +3,9 @@
 Code Structure
 ==============
 
-Rtc-tools is used as the framework to define optimization problems, https://gitlab.com/deltares/rtc-tools.
-Rtc-tools is a tool-box in which time-horizon optimization problems can be defined. It utilizes the Casadi package to parse the problems in formats that allow solvers such as Highs and Gurobi to solve the problem.
-Internally rtc-tools makes heavy use of the python mixin (inheritance) structure, which results that MESIDO also adheres to the mixin structure that rtc-tools uses.
+RTC-Tools is used as the framework to define optimization problems, https://github.com/Deltares/rtc-tools.
+RTC-Tools is a tool-box in which time-horizon optimization problems can be defined. It utilizes the Casadi package to parse the problems in formats that allow solvers such as Highs and Gurobi to solve the problem.
+Internally RTC-Tools makes heavy use of the python mixin (inheritance) structure, which results that MESIDO also adheres to the mixin structure that rtc-tools uses.
 
 Although the full structure is even more elaborate, the basic methods in the mixin are:
 

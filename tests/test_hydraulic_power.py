@@ -540,7 +540,7 @@ class TestHydraulicPower(TestCase):
             hydraulic_sum = 0.0
 
             for i_conn, (_pipe, orientation) in connected_pipes.items():
-                hydraulic_sum += results[f"{node}.GasConn[{i_conn+1}].Q"] * orientation
+                hydraulic_sum += results[f"{node}.GasConn[{i_conn + 1}].Q"] * orientation
 
             np.testing.assert_allclose(hydraulic_sum, 0.0, atol=1.0e-3)
 

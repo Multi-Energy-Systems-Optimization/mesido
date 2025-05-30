@@ -53,10 +53,10 @@ class TestWarmingUpUnitCases(TestCase):
             heat_sum = 0.0
 
             for i_conn, (_pipe, orientation) in connected_pipes.items():
-                discharge_sum += results[f"{node}.HeatConn[{i_conn+1}].Q"] * orientation
-                heat_sum += results[f"{node}.HeatConn[{i_conn+1}].Heat"] * orientation
+                discharge_sum += results[f"{node}.HeatConn[{i_conn + 1}].Q"] * orientation
+                heat_sum += results[f"{node}.HeatConn[{i_conn + 1}].Heat"] * orientation
                 np.testing.assert_allclose(
-                    results[f"{node}.HeatConn[{i_conn+1}].H"], results[f"{node}.H"], atol=1.0e-6
+                    results[f"{node}.HeatConn[{i_conn + 1}].H"], results[f"{node}.H"], atol=1.0e-6
                 )
 
             np.testing.assert_allclose(discharge_sum, 0.0, atol=1.0e-12)

@@ -150,8 +150,9 @@ class TestPotentialErrors(unittest.TestCase):
 
         logger, logs_list = create_log_list_scaling("WarmingUP-MPC")
 
-        with self.assertRaises(MesidoAssetIssueError) as cm, unittest.mock.patch(
-            "mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()
+        with (
+            self.assertRaises(MesidoAssetIssueError) as cm,
+            unittest.mock.patch("mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()),
         ):
             problem = EndScenarioSizingStaged(
                 esdl_parser=ESDLFileParser,
@@ -188,8 +189,9 @@ class TestPotentialErrors(unittest.TestCase):
         np.testing.assert_equal(len(cm.exception.message_per_asset_id), 3.0)
 
         # Check heating demand type error
-        with self.assertRaises(MesidoAssetIssueError) as cm, unittest.mock.patch(
-            "mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()
+        with (
+            self.assertRaises(MesidoAssetIssueError) as cm,
+            unittest.mock.patch("mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()),
         ):
             problem = EndScenarioSizingStaged(
                 esdl_parser=ESDLFileParser,
@@ -215,8 +217,9 @@ class TestPotentialErrors(unittest.TestCase):
         np.testing.assert_equal(len(cm.exception.message_per_asset_id), 1.0)
 
         # Check asset profile capability
-        with self.assertRaises(MesidoAssetIssueError) as cm, unittest.mock.patch(
-            "mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()
+        with (
+            self.assertRaises(MesidoAssetIssueError) as cm,
+            unittest.mock.patch("mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()),
         ):
             problem = EndScenarioSizingStaged(
                 esdl_parser=ESDLFileParser,

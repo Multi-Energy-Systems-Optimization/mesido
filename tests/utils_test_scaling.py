@@ -108,5 +108,5 @@ def problem_scaling_check(logs_list, logger, order_diff=1e6):
             else:
                 range_data["objective"] = [float(data_str[1]), float(data_str[0])]
     for k, v in range_data.items():
-        logger.info(f"{k,v}")
+        logger.info(f"{k, v}")
     check_order(range_data, order_diff)

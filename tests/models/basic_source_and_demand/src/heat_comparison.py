@@ -3,6 +3,9 @@ from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.physics_mixin import PhysicsMixin
 from mesido.pycml.pycml_mixin import PyCMLMixin
 
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
@@ -48,7 +51,16 @@ class HeatModelica(
     ModelicaMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
-    pass
+    def solver_options(self):
+        options = super().solver_options()
+        options["solver"] = 'highs'
+        # options["solver"] = 'cplex'
+        # options["dump_to_file"] = True
+        # options["dump_filename"] = "HeatModelica.lp"
+        # options["dump_out"] = True
+        # options["dump_in"] = True
+        # options["dump_dir"] = "HeatModelica_dump_files"
+        return options
 
 
 class HeatPython(
@@ -76,6 +88,14 @@ class HeatPython(
         bounds["source.Heat_source"] = (75000.0, 125000.0)
         return bounds
 
+    def solver_options(self):
+        options = super().solver_options()
+        # options["solver"] = 'cplex'
+        # highs_options = options["highs"] = {}
+        # highs_options["presolve"] = "off"
+        # options["dump_to_file"] = True
+        # options["dump_filename"] = "HeatPython.lp"
+        return options
 
 class HeatESDL(
     _GoalsAndOptions,
@@ -89,8 +109,30 @@ class HeatESDL(
         bounds["source.Heat_source"] = (75000.0, 125000.0)
         return bounds
 
+    def solver_options(self):
+        options = super().solver_options()
+        # options["solver"] = 'highs'
+        options["solver"] = 'cplex'
+        # options["dump_to_file"] = True
+        options["dump_filename"] = "HeatESDL.lp"
+        # options["dump_out"] = True
+        # options["dump_in"] = True
+        # options["dump_dir"] = "HeatESDL_dump_files"
+        return options
+
 
 if __name__ == "__main__":
     a = run_optimization_problem(HeatModelica)
     b = run_optimization_problem(HeatPython)
-    c = run_optimization_problem(HeatESDL)
+    c = run_optimization_problem(
+        HeatESDL,
+        esdl_file_name="model.esdl",
+        esdl_parser=ESDLFileParser,
+        profile_reader=ProfileReaderFromFile,
+        input_timeseries_file="timeseries.xml",
+    )
+    #print summary: feasible or infeasible
+    print("Modelica: ", a.solver_stats["success"])
+    print("Python: ", b.solver_stats["success"])
+    print("Python: ", c.solver_stats["success"])
+

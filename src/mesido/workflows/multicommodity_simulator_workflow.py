@@ -278,7 +278,7 @@ class MultiCommoditySimulator(
                 asset.attributes["state"] = esdl.AssetStateEnum.ENABLED
                 logger.warning(
                     "The following asset has been specified as OPTIONAL but it has been changed "
-                    f"to be included in the simulation, asset type: {asset.asset_type }, asset "
+                    f"to be included in the simulation, asset type: {asset.asset_type}, asset "
                     f"name: {asset.name}"
                 )
 
