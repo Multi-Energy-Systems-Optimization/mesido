@@ -2254,7 +2254,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         #         np.inf,
                         #     )
                         # )
-                        a=8.9286e-5 #8.9286e-5=0.015°C/week/m3h
+                        a=1.25*8.9286e-5 #8.9286e-5=0.015°C/week/m3h
                         constraints.append(
                             (
                                 (
