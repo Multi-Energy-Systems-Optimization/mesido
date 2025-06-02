@@ -2355,7 +2355,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 # upper limit to prevent unrealistic heat loss
                 constraints.append(
                     (
-                        (heat_loss - stored_heat * 1.2 * coeff_efficiency_ates) / heat_loss_nominal,
+                        (heat_loss - stored_heat * 1.01 * coeff_efficiency_ates) / heat_loss_nominal,
                         -np.inf,
                         0.0,  # 0.0
                     )

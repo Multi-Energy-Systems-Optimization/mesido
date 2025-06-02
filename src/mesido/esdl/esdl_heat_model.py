@@ -1372,7 +1372,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 nominal=q_nominal,
             ),
             single_doublet_power=single_doublet_power,
-            heat_loss_coeff=(1.0 - efficiency ** (1.0 / 100.0)) / (3600.0 * 24.0),
+            heat_loss_coeff=(1.0 - efficiency ** (1.0 / 360.0)) / (3600.0 * 24.0),
             state=self.get_state(asset),
             nr_of_doublets=asset.attributes["aggregationCount"],
             Stored_heat=dict(
