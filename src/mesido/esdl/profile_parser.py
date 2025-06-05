@@ -197,6 +197,8 @@ class InfluxDBProfileReader(BaseProfileReader):
         esdl.esdl.HeatingDemand: ".target_heat_demand",
         esdl.esdl.GenericConsumer: ".target_heat_demand",
         esdl.esdl.HeatProducer: ".maximum_heat_source",
+        esdl.esdl.GeothermalSource: ".maximum_heat_source",
+        esdl.esdl.ResidualHeatSource: ".maximum_heat_source",
         esdl.esdl.ElectricityDemand: ".target_electricity_demand",
         esdl.esdl.ElectricityProducer: ".maximum_electricity_source",
         esdl.esdl.GasDemand: ".target_gas_demand",
@@ -290,11 +292,10 @@ class InfluxDBProfileReader(BaseProfileReader):
             )
 
             container = profile.eContainer()
-            if isinstance(container, esdl.ProfileConstraint): # Profile Constraint
-                # asset = container.power
-                variable_suffix = ".maximum_heat_source" # self.asset_type_to_variable_name_conversion[type(asset)] #self.source_capacity_profile_var_name # self.asset_type_to_variable_name_conversion[type(asset)] # source_capacity_profile_var_name #
-                var_base_name = "GeothermalSource_b702" # container.name
-                # container.eContainer().name
+            if isinstance(container, esdl.ProfileConstraint):
+                asset = container.eContainer()
+                variable_suffix = self.asset_type_to_variable_name_conversion[type(asset)]
+                var_base_name = asset.name
             elif isinstance(container, esdl.Commodity):
                 variable_suffix = self.carrier_profile_var_name
                 var_base_name = container.name

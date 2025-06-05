@@ -1862,7 +1862,6 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 )
             )
 
-            # Same as for the buffer but now for the source
         for s in self.energy_system_components.get("heat_source", []):
             max_var_types.add("heat_source")
             max_var = self._asset_max_size_map[s]
@@ -1871,88 +1870,57 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             constraint_nominal = self.variable_nominal(f"{s}.Heat_source")
 
             try:
-                profile = self.get_timeseries(f"{s}.maximum_heat_source").values
+                profile_non_scaled = self.get_timeseries(f"{s}.maximum_heat_source").values
+                max_profile_value = max(profile_non_scaled)
+                profile_scaled = profile_non_scaled / max_profile_value
 
-                # still to delete
-                # profile *= 0.75e6
-                # for ii in range(len(profile)):
-                    # profile[ii] *= 1e6
-
-                max_profile_value = max(profile)
-
-                # Profile specified in absolute values [W]
+                # Cap the heat produced via a profile. Two profile options below.
+                # Option 1: Profile specified in absolute values [W] via a ProfileConstraint
+                esdl_asset_attributes = self.esdl_assets[
+                    self.esdl_asset_name_to_id_map[s]
+                ].attributes["constraint"]
                 if (
-                    len(
-                        self.esdl_assets[
-                            self.esdl_asset_name_to_id_map[s]
-                        ].in_ports[0].profile.items
-                    ) > 0
-                    and self.esdl_assets[
-                        self.esdl_asset_name_to_id_map[s]
-                    ].in_ports[0].profile.items[0].profileQuantityAndUnit.reference.unit
-                    == esdl.UnitEnum.WATT
-                    # or s =="GeothermalSource_b702"  # still to delete
-                    or s == "HeatProducer_b702"  # still to delete
+                    len(esdl_asset_attributes) > 0
+                    and esdl_asset_attributes.items[
+                        0
+                    ].maximum.profileQuantityAndUnit.reference.unit == esdl.UnitEnum.WATT
                 ):
-                    if self.bounds()[f"{s}.Heat_flow"][1] > max_profile_value:
-                        constraints.append(
-                            (
-                                (max_heat - max_profile_value)
-                                / constraint_nominal,
-                                0.0,
-                                np.inf,
-                            )
-                        )
-
-                profile_scaled = profile / max_profile_value
-
-                for i in range(0, len(self.times())):
-
-                    # if (
-                    #     len(
-                    #         self.esdl_assets[
-                    #             self.esdl_asset_name_to_id_map[s]
-                    #         ].in_ports[0].profile.items
-                    #     ) > 0
-                    #     and self.esdl_assets[
-                    #         self.esdl_asset_name_to_id_map[s]
-                    #     ].in_ports[0].profile.items[0].profileQuantityAndUnit.reference.unit
-                    #     == esdl.UnitEnum.WATT
-                    #     # or s =="GeothermalSource_b702"  # still to delete
-                    #     or s == "HeatProducer_b702"  # still to delete
-                    # ):  # enabled
-                    #     if i == 0:
-                    #         constraints.append(
-                    #             (
-                    #                 (max_heat - max_profile_value)  # this is needed when the asset is OPTIONAL, else the result is max_heat = 0.0. Shouls watts input ven be allowed to be optional?
-                    #                 / constraint_nominal,
-                    #                 0.0,
-                    #                 np.inf,
-                    #             )
-                    #         )
-                    #     constraints.append(
-                    #         (
-                    #             (profile[i] - heat_source[i]) / constraint_nominal,
-                    #             0.0,
-                    #             np.inf,
-                    #         )
-                    #     )
-                    # # elif (
-                    # #     self.esdl_assets["79d559de-54f2-40b9-af9a-c62f499db523"].in_ports[0].profile.items[0].profileQuantityAndUnit.reference.unit == esdl.UnitEnum.PERCENT
-                    # # ) or 
-                    # #     (
-
-                    # #     ):
-                    # else:  # currently from csv, future-> csv and case (0-1.0) where qty == %  and unit === None, still to add (0-100.0) where qty == %  and unit === %
-                    # # optional, changes needed profile_scaled ? if watts specified, power specified==peak of profile additional contraint needed. else this works
+                    # This constraint is needed for when the asset is OPTIONAL, else the
+                    # result is max_heat = 0.0
                     constraints.append(
                         (
-                            (profile_scaled[i] * max_heat - heat_source[i])
+                            (max_heat - max_profile_value)
                             / constraint_nominal,
                             0.0,
                             np.inf,
                         )
                     )
+                    for i in range(0, len(self.times())):
+
+                        constraints.append(
+                            (
+                                (profile_non_scaled[i] - heat_source[i]) / constraint_nominal,
+                                0.0,
+                                np.inf,
+                            )
+                        )
+                # Option 2: Normalised profile (0.0-1.0) shape that scales with maximum size of the
+                # producer
+                # Note: If the asset is not optional then the profile will be scaled to the
+                # installed capacity
+                else:
+                    # TODO: currently this can only be used with a csv file since units must be set
+                    # for ProfileContraint. Future addition can be to use a different unit/quantity
+                    # etc. so that the profile is used in a normalised way and scale to max_size
+                    for i in range(0, len(self.times())):
+                        constraints.append(
+                            (
+                                (profile_scaled[i] * max_heat - heat_source[i])
+                                / constraint_nominal,
+                                0.0,
+                                np.inf,
+                            )
+                        )
             except KeyError:
                 constraints.append(
                     (

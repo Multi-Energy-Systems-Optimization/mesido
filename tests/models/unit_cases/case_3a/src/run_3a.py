@@ -285,7 +285,7 @@ class HeatProblemTvarret(
         return constraints
 
 
-class HeatProblemNoProfile(
+class HeatProblemESDLProdProfile(
     _GoalsAndOptions,
     TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
@@ -314,7 +314,7 @@ class HeatProblemNoProfile(
         return goals
 
 
-class HeatProblemProdProfile(HeatProblemNoProfile):
+class HeatProblemProdProfile(HeatProblemESDLProdProfile):
     def read(self):
         super().read()
 
