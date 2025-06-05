@@ -55,10 +55,10 @@ class HeatSource(_NonStorageComponent):
         )
 
         self.add_equation(self.dH - (self.HeatOut.H - self.HeatIn.H))
-        self.add_equation(
-            (self.Pump_power - (self.HeatOut.Hydraulic_power - self.HeatIn.Hydraulic_power))
-            / (self.Q_nominal * self.nominal_pressure)
-        )
+        # self.add_equation(
+        #     (self.Pump_power - (self.HeatOut.Hydraulic_power - self.HeatIn.Hydraulic_power))
+        #     / (self.Q_nominal * self.nominal_pressure)
+        # )
 
         self.add_equation(
             (self.HeatOut.Heat - (self.HeatIn.Heat + self.Heat_source)) / self.Heat_nominal

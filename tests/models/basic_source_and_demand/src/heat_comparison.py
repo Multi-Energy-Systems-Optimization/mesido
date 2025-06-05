@@ -90,7 +90,10 @@ class HeatPython(
 
     def solver_options(self):
         options = super().solver_options()
-        # options["solver"] = 'cplex'
+        # options["solver"] = 'highs'
+        options["solver"] = 'cplex'
+        options["dump_to_file"] = True
+        options["dump_filename"] = "HeatPython_small.lp"
         # highs_options = options["highs"] = {}
         # highs_options["presolve"] = "off"
         # options["dump_to_file"] = True
@@ -113,7 +116,7 @@ class HeatESDL(
         options = super().solver_options()
         # options["solver"] = 'highs'
         options["solver"] = 'cplex'
-        # options["dump_to_file"] = True
+        options["dump_to_file"] = True
         options["dump_filename"] = "HeatESDL.lp"
         # options["dump_out"] = True
         # options["dump_in"] = True
@@ -122,17 +125,17 @@ class HeatESDL(
 
 
 if __name__ == "__main__":
-    a = run_optimization_problem(HeatModelica)
+    # a = run_optimization_problem(HeatModelica)
     b = run_optimization_problem(HeatPython)
-    c = run_optimization_problem(
-        HeatESDL,
-        esdl_file_name="model.esdl",
-        esdl_parser=ESDLFileParser,
-        profile_reader=ProfileReaderFromFile,
-        input_timeseries_file="timeseries.xml",
-    )
+    # c = run_optimization_problem(
+    #     HeatESDL,
+    #     esdl_file_name="model.esdl",
+    #     esdl_parser=ESDLFileParser,
+    #     profile_reader=ProfileReaderFromFile,
+    #     input_timeseries_file="timeseries.csv",
+    # )
     #print summary: feasible or infeasible
-    print("Modelica: ", a.solver_stats["success"])
+    # print("Modelica: ", a.solver_stats["success"])
     print("Python: ", b.solver_stats["success"])
-    print("Python: ", c.solver_stats["success"])
+    # print("ESDL: ", c.solver_stats["success"])
 
