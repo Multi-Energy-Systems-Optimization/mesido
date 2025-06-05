@@ -3,6 +3,8 @@ from typing import List, Set
 
 import casadi as ca
 
+import esdl
+
 from mesido._heat_loss_u_values_pipe import pipe_heat_loss
 from mesido.base_component_type_mixin import BaseComponentTypeMixin
 from mesido.demand_insulation_class import DemandInsulationClass
@@ -1860,7 +1862,6 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 )
             )
 
-            # Same as for the buffer but now for the source
         for s in self.energy_system_components.get("heat_source", []):
             max_var_types.add("heat_source")
             max_var = self._asset_max_size_map[s]
@@ -1869,16 +1870,55 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             constraint_nominal = self.variable_nominal(f"{s}.Heat_source")
 
             try:
-                profile = self.get_timeseries(f"{s}.maximum_heat_source").values
-                profile_scaled = profile / max(profile)
-                for i in range(0, len(self.times())):
+                profile_non_scaled = self.get_timeseries(f"{s}.maximum_heat_source").values
+                max_profile_value = max(profile_non_scaled)
+                profile_scaled = profile_non_scaled / max_profile_value
+
+                # Cap the heat produced via a profile. Two profile options below.
+                # Option 1: Profile specified in absolute values [W] via a ProfileConstraint
+                esdl_asset_attributes = self.esdl_assets[
+                    self.esdl_asset_name_to_id_map[s]
+                ].attributes["constraint"]
+                if (
+                    len(esdl_asset_attributes) > 0
+                    and esdl_asset_attributes.items[0].maximum.profileQuantityAndUnit.reference.unit
+                    == esdl.UnitEnum.WATT
+                ):
+                    # This constraint is needed for when the asset is OPTIONAL, else the
+                    # result is max_heat = 0.0
                     constraints.append(
                         (
-                            (profile_scaled[i] * max_heat - heat_source[i]) / constraint_nominal,
+                            (max_heat - max_profile_value) / constraint_nominal,
                             0.0,
                             np.inf,
                         )
                     )
+                    for i in range(0, len(self.times())):
+
+                        constraints.append(
+                            (
+                                (profile_non_scaled[i] - heat_source[i]) / constraint_nominal,
+                                0.0,
+                                np.inf,
+                            )
+                        )
+                # Option 2: Normalised profile (0.0-1.0) shape that scales with maximum size of the
+                # producer
+                # Note: If the asset is not optional then the profile will be scaled to the
+                # installed capacity
+                else:
+                    # TODO: currently this can only be used with a csv file since units must be set
+                    # for ProfileContraint. Future addition can be to use a different unit/quantity
+                    # etc. so that the profile is used in a normalised way and scale to max_size
+                    for i in range(0, len(self.times())):
+                        constraints.append(
+                            (
+                                (profile_scaled[i] * max_heat - heat_source[i])
+                                / constraint_nominal,
+                                0.0,
+                                np.inf,
+                            )
+                        )
             except KeyError:
                 constraints.append(
                     (

@@ -371,3 +371,9 @@ class TestDisconnectablePipe(TestCase):
         # (loss) in the system, we expect equal results.
         np.testing.assert_allclose(q_linear, q_dw)
         np.testing.assert_allclose(results_dw["Pipe1__is_disconnected"][1], 1.0)
+
+
+if __name__ == "__main__":
+
+    a = TestHeat()
+    a.test_heat_loss()
