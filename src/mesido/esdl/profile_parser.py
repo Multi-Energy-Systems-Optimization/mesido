@@ -606,8 +606,6 @@ class ProfileReaderFromFile(BaseProfileReader):
                     self._profiles[ensemble_member][
                         carrier_name + self.carrier_profile_var_name
                     ] = values
-            
-        temp = 0.0
 
     def _load_xml(self, energy_system_components, esdl_asset_id_to_name_map):
         timeseries_import_basename = self._file_path.stem

@@ -1881,16 +1881,14 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 ].attributes["constraint"]
                 if (
                     len(esdl_asset_attributes) > 0
-                    and esdl_asset_attributes.items[
-                        0
-                    ].maximum.profileQuantityAndUnit.reference.unit == esdl.UnitEnum.WATT
+                    and esdl_asset_attributes.items[0].maximum.profileQuantityAndUnit.reference.unit
+                    == esdl.UnitEnum.WATT
                 ):
                     # This constraint is needed for when the asset is OPTIONAL, else the
                     # result is max_heat = 0.0
                     constraints.append(
                         (
-                            (max_heat - max_profile_value)
-                            / constraint_nominal,
+                            (max_heat - max_profile_value) / constraint_nominal,
                             0.0,
                             np.inf,
                         )
