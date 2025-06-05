@@ -2164,7 +2164,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                             (
                                 (
                                         ates_dt_charging
-                                        - (a * heat_ates / heat_ates_max + b) * ratio_max_temp
+                                        - (a * heat_ates / heat_ates_max + b) * ratio_max_temp*4
                                         - (2 - is_buffer_charging - ates_t_selected) * big_m
                                 )
                                 / ates_dt_charging_nominal,
