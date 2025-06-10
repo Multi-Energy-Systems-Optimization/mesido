@@ -1,9 +1,12 @@
+from casadi import MX
+
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.physics_mixin import PhysicsMixin
 from mesido.qth_not_maintained.qth_mixin import QTHMixin
 from mesido.techno_economic_mixin import TechnoEconomicMixin
+from mesido.workflows.goals.minimize_tco_goal import MinimizeTCO
 
 import numpy as np
 
@@ -310,6 +313,14 @@ class HeatProblemESDLProdProfile(
 
         for s in self.energy_system_components["heat_source"]:
             goals.append(MinimizeSourcesHeatGoal(s))
+
+        return goals
+
+
+class HeatProblemESDLProdProfileTCO(HeatProblemESDLProdProfile):
+    def goals(self):
+        goals = super().goals().copy()
+        goals.append(MinimizeTCO(priority=20, number_of_years=1))
 
         return goals
 

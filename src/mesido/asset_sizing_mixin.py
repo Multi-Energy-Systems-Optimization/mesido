@@ -1843,6 +1843,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         """
         constraints = []
         bounds = self.bounds()
+        np_ones = np.ones(len(self.times()))
 
         energy_system_component_types = list(self.energy_system_components.keys())
 
@@ -1856,7 +1857,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             constraints.append(
                 (
-                    (np.ones(len(self.times())) * max_heat - stored_heat) / constraint_nominal,
+                    (np_ones * max_heat - stored_heat) / constraint_nominal,
                     0.0,
                     np.inf,
                 )
@@ -1875,7 +1876,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 profile_scaled = profile_non_scaled / max_profile_value
 
                 # Cap the heat produced via a profile. Two profile options below.
-                # Option 1: Profile specified in absolute values [W] via a ProfileConstraint
+                # Option 1: Profile specified in absolute values [W] via a ProfileConstraint 
                 esdl_asset_attributes = self.esdl_assets[
                     self.esdl_asset_name_to_id_map[s]
                 ].attributes["constraint"]
@@ -1884,15 +1885,6 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     and esdl_asset_attributes.items[0].maximum.profileQuantityAndUnit.reference.unit
                     == esdl.UnitEnum.WATT
                 ):
-                    # This constraint is needed for when the asset is OPTIONAL, else the
-                    # result is max_heat = 0.0
-                    constraints.append(
-                        (
-                            (max_heat - max_profile_value) / constraint_nominal,
-                            0.0,
-                            np.inf,
-                        )
-                    )
                     for i in range(0, len(self.times())):
 
                         constraints.append(
@@ -1902,11 +1894,25 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                                 np.inf,
                             )
                         )
+
+                        constraints.append(
+                            (
+                                (np_ones * max_heat - heat_source[i])
+                                / constraint_nominal,
+                                0.0,
+                                np.inf,
+                            )
+                        )
                 # Option 2: Normalised profile (0.0-1.0) shape that scales with maximum size of the
                 # producer
                 # Note: If the asset is not optional then the profile will be scaled to the
                 # installed capacity
-                else:
+                # else:
+                elif (
+                    len(esdl_asset_attributes) == 0  # profile is specified without units (xlm/csv)
+                    or esdl_asset_attributes.items[0].maximum.profileQuantityAndUnit.reference.unit
+                    == esdl.UnitEnum.PERCENT
+                ):
                     # TODO: currently this can only be used with a csv file since units must be set
                     # for ProfileContraint. Future addition can be to use a different unit/quantity
                     # etc. so that the profile is used in a normalised way and scale to max_size
@@ -1919,10 +1925,12 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                                 np.inf,
                             )
                         )
+                else:
+                    RuntimeError(f"{s}: Unforeseen error in adding a profile contraint")
             except KeyError:
                 constraints.append(
                     (
-                        (np.ones(len(self.times())) * max_heat - heat_source) / constraint_nominal,
+                        (np_ones * max_heat - heat_source) / constraint_nominal,
                         0.0,
                         np.inf,
                     )
@@ -1940,7 +1948,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             constraints.append(
                 (
-                    (np.ones(len(self.times())) * max_heat - heat_secondary) / constraint_nominal,
+                    (np_ones * max_heat - heat_secondary) / constraint_nominal,
                     0.0,
                     np.inf,
                 )
@@ -1956,7 +1964,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             )
             constraints.append(
                 (
-                    (np.ones(len(self.times())) * max_heat - heat_demand) / constraint_nominal,
+                    (np_ones * max_heat - heat_demand) / constraint_nominal,
                     0.0,
                     np.inf,
                 )
@@ -1980,14 +1988,14 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             constraints.append(
                 (
-                    (np.ones(len(self.times())) * max_heat - heat_ates) / constraint_nominal,
+                    (np_ones * max_heat - heat_ates) / constraint_nominal,
                     0.0,
                     np.inf,
                 )
             )
             constraints.append(
                 (
-                    (np.ones(len(self.times())) * max_heat + heat_ates) / constraint_nominal,
+                    (np_ones * max_heat + heat_ates) / constraint_nominal,
                     0.0,
                     np.inf,
                 )
@@ -2004,7 +2012,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             constraints.append(
                 (
-                    (np.ones(len(self.times())) * max_power - electricity_demand)
+                    (np_ones * max_power - electricity_demand)
                     / constraint_nominal,
                     0.0,
                     np.inf,
@@ -2022,7 +2030,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             constraints.append(
                 (
-                    (np.ones(len(self.times())) * max_power - electricity_source)
+                    (np_ones * max_power - electricity_source)
                     / constraint_nominal,
                     0.0,
                     np.inf,
@@ -2040,7 +2048,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             constraints.append(
                 (
-                    (np.ones(len(self.times())) * max_stored_energy - electricity_stored)
+                    (np_ones * max_stored_energy - electricity_stored)
                     / constraint_nominal,
                     0.0,
                     np.inf,
@@ -2058,7 +2066,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             constraints.append(
                 (
-                    (np.ones(len(self.times())) * max_power - electricity_electrolyzer)
+                    (np_ones * max_power - electricity_electrolyzer)
                     / constraint_nominal,
                     0.0,
                     np.inf,
@@ -2074,7 +2082,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             constraints.append(
                 (
-                    (np.ones(len(self.times())) * max_size - gas_mass) / constraint_nominal,
+                    (np_ones * max_size - gas_mass) / constraint_nominal,
                     0.0,
                     np.inf,
                 )

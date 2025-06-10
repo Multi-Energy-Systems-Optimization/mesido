@@ -467,7 +467,16 @@ class InfluxDBProfileReader(BaseProfileReader):
         """
         profile_quantity_and_unit = self._get_profile_quantity_and_unit(profile=profile)
         if profile_quantity_and_unit.physicalQuantity == esdl.PhysicalQuantityEnum.POWER:
-            target_unit = POWER_IN_W
+            if profile_quantity_and_unit.unit == esdl.UnitEnum.WATT:
+                target_unit = POWER_IN_W
+            elif profile_quantity_and_unit.unit == esdl.UnitEnum.PERCENT:
+                return profile_time_series  # These profiles are scaled in asset sizing
+            else:
+                raise RuntimeError(
+                    f"Power profiles currently only support units"
+                    f"specified in Watts or Percentage,"
+                    f"{profile} doesn't follow this convention."
+                )
         elif profile_quantity_and_unit.physicalQuantity == esdl.PhysicalQuantityEnum.ENERGY:
             target_unit = ENERGY_IN_J
         elif profile_quantity_and_unit.physicalQuantity == esdl.PhysicalQuantityEnum.COST:

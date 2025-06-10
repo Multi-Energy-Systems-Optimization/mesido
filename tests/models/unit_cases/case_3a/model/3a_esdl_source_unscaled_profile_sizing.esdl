@@ -18,7 +18,7 @@
         <port xsi:type="esdl:InPort" name="In" id="efad2169-5f95-4618-98ce-e89860e2897b" carrier="419b5016-12c9-475a-b46e-9e474b60aa8f" connectedTo="a7c97b65-6bdd-4a00-b9b7-6c8d214053bd"/>
         <port xsi:type="esdl:OutPort" name="out" id="db555a41-d15b-44fb-b994-f5004eb3bc85" carrier="419b5016-12c9-475a-b46e-9e474b60aa8f_ret" connectedTo="776e5a76-57a5-4c03-b361-409ccb548b88"/>
       </asset>
-      <asset xsi:type="esdl:HeatProducer" id="b702bda3-632c-43ff-9867-72cda41f442f" power="5000000.0" name="HeatProducer_b702">
+      <asset xsi:type="esdl:HeatProducer" id="b702bda3-632c-43ff-9867-72cda41f442f" power="5000000.0" name="HeatProducer_b702" state="OPTIONAL">
         <costInformation xsi:type="esdl:CostInformation" id="a668decd-5b98-497b-84c7-b4d11f32648c">
           <variableOperationalCosts xsi:type="esdl:SingleValue" value="1.0" id="bc6341c5-c510-43be-8cfc-3cfaa7a2e621">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" description="COST in EUR/MWh" unit="EURO" physicalQuantity="COST" perMultiplier="MEGA" id="9feaf430-fc73-419c-af6d-c3128091f3aa" perUnit="WATTHOUR"/>
