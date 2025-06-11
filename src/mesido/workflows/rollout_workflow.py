@@ -39,9 +39,6 @@ WATT_TO_MEGA_WATT = 1.0e6
 WATT_TO_KILO_WATT = 1.0e3
 
 
-#TODO: update inheritence such that PhysicsMixin can be replaced with TechnoEconomicMixin (
-# PhysicsMixin was arleady updated from HeatMixin, but this requires also to look at the
-# asset_is_placed variables
 class RollOutProblem(
     SolverCPLEX,
     ScenarioOutput,
@@ -58,6 +55,9 @@ class RollOutProblem(
         self._years = 3 #10
         self._horizon = 30
         self._year_step_size = int(self._horizon/self._years)
+        #TODO: timestep_size and _days can be removed eventually, particularly when averaging
+        # with peak day is used, however one needs to check where self._days and
+        # self._timestep_size is currently affecting the code
         self._timestep_size = 20 * 24
         self._days = int(365/(self._timestep_size/24))+1
 
@@ -355,11 +355,17 @@ class RollOutProblem(
                 ates_is_placed_doublet.append(
                     self.get_asset_is__realized_symbols(f"{s}_doublet_{N + 1}"))
             for year in range(self._years):
+                ates_states_year= self.states_in(f"{s}.Stored_heat", t0=year * self._days*24*3600,
+                                        tf=(year + 1) * self._days*24*3600)
                 constraints.append((
-                    (ates_state[year * self._days:(year + 1) * self._days] - ates_doublet_sums[
-                        year] * bounds[f"{s}.Stored_heat"][1] / ates_N_doublets) / ates_state_big_m,
+                    (ates_states_year - ates_doublet_sums[year] * bounds[f"{s}.Stored_heat"][1] / ates_N_doublets) / ates_state_big_m,
                     -np.inf, 0.0
                 ))
+                # constraints.append((
+                #     (ates_state[year * self._days:(year + 1) * self._days] - ates_doublet_sums[
+                #         year] * bounds[f"{s}.Stored_heat"][1] / ates_N_doublets) / ates_state_big_m,
+                #     -np.inf, 0.0
+                # ))
                 constraints.append((
                     (ates_is_placed[year] - ates_doublet_sums[year], -np.inf, 0.0)
                 ))
@@ -412,24 +418,20 @@ class RollOutProblem(
             # asset_is_placed_vector = self.state_vector(asset_is_placed_var, ensemble_member)
             asset_is_placed_vector = self.get_asset_is__realized_symbols(asset)
 
-            for i in range(1, self._years):
-                constraints.append(((asset_is_placed_vector[i] - asset_is_placed_vector[i-1]), 0.0, np.inf))
-            # constraints.append(((asset_is_placed_vector[1:] - asset_is_placed_vector[:-1]), 0.0, np.inf))
+            constraints.append(((asset_is_placed_vector[1:] - asset_is_placed_vector[:-1]), 0.0, np.inf))
 
 
         for asset, asset_percentage_placed_var in self._asset_percentage_placed_map.items():
             asset_percentage_placed_vector = self.get_asset_percentage__placed_symbols(asset)
-            for i in range(1, self._years):
-                constraints.append(((asset_percentage_placed_vector[i] -
-                                     asset_percentage_placed_vector[i-1]), 0.0, np.inf))
+            constraints.append(((asset_percentage_placed_vector[1:] -
+                                 asset_percentage_placed_vector[:-1]), 0.0, np.inf))
 
 
         for asset, asset_percentage_placed_name in self._asset_percentage_placed_map.items():
             asset_percentage_placed = self.get_asset_percentage__placed_symbols(asset)
             asset_is_placed_name = self.get_asset_is__realized_symbols(asset)
-            for i in range(0, self._years):
-                constraints.append((asset_is_placed_name[i] - asset_percentage_placed[i], -np.inf,
-                                    0.0))
+            constraints.append((asset_is_placed_name - asset_percentage_placed, -np.inf,
+                                0.0))
 
 
         return constraints
@@ -599,15 +601,20 @@ class RollOutProblem(
 
         # constraints.extend(self.__demand_matching_constraints(ensemble_member))
 
+        #TODO: This ensures __asset_is_realized_ and __is_placed_ variables are set equal,
+        # thereby __is_placed can be removed for heat_source, heat_demand and hot_pipes
         for asset in [*self.energy_system_components.get("heat_source", []),
                       *self.energy_system_components.get("heat_demand", []),
                       *self.hot_pipes,
                       # *self.energy_system_components.get("heat_pipe", []),
                       ]:
-            for year in range(self._years):
-                var_placed = self.extra_variable(f"{asset}__is_placed_{year}")
-                var_realized = self.extra_variable(f"{asset}__asset_is_realized_{year}")
-                constraints.append((var_placed-var_realized, 0.0, 0.0))
+            var_placed = self.get_asset_is__placed_symbols(asset)
+            var_realized = self.get_asset_is__realized_symbols(asset)
+            constraints.append((var_placed - var_realized, 0.0, 0.0))
+            # for year in range(self._years):
+            #     var_placed = self.extra_variable(f"{asset}__is_placed_{year}")
+            #     var_realized = self.extra_variable(f"{asset}__asset_is_realized_{year}")
+            #     constraints.append((var_placed-var_realized, 0.0, 0.0))
 
         constraints.extend(self.__ates_placed_balance_constraints(ensemble_member))
         constraints.extend(self.__demand_matching_constraints(ensemble_member))
@@ -643,11 +650,16 @@ class RollOutProblem(
         symbols = [f"{asset_name}__percentage_placed_{year}" for year in range(self._years)]
         return self.extra_variable_vector(symbols, 0)
 
-    #TODO: added it to make it work, needs to be checked if working properly, right now seems
-    # arrays are not the same as slice to be used in constraints directly
     def extra_variable_vector(self, symbols, ensemble_member):
-        return np.array([self.extra_variable(symbol, ensemble_member) for symbol in symbols])
-
+        states = []
+        for symbol in symbols:
+            canonical, sign = self.alias_relation.canonical_signed(symbol)
+            nominal = self.variable_nominal(canonical)
+            state = nominal * self.state_vector(canonical, ensemble_member)
+            states.append(state)
+        extra_var_vector = ca.vertcat(*states)
+        # return np.array([self.extra_variable(symbol, ensemble_member) for symbol in symbols])
+        return extra_var_vector
 
     def history(self, ensemble_member):
         return AliasDict(self.alias_relation)
