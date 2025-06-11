@@ -1870,13 +1870,12 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             heat_source = self.__state_vector_scaled(f"{s}.Heat_source", ensemble_member)
             constraint_nominal = self.variable_nominal(f"{s}.Heat_source")
 
-            try:
+            if f"{s}.maximum_heat_source" in self.io.get_timeseries_names():
                 profile_non_scaled = self.get_timeseries(f"{s}.maximum_heat_source").values
                 max_profile_value = max(profile_non_scaled)
-                profile_scaled = profile_non_scaled / max_profile_value
 
                 # Cap the heat produced via a profile. Two profile options below.
-                # Option 1: Profile specified in absolute values [W] via a ProfileConstraint 
+                # Option 1: Profile specified in absolute values [W] via a ProfileConstraint
                 esdl_asset_attributes = self.esdl_assets[
                     self.esdl_asset_name_to_id_map[s]
                 ].attributes["constraint"]
@@ -1905,15 +1904,28 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 # producer
                 # Note: If the asset is not optional then the profile will be scaled to the
                 # installed capacity
-                # else:
                 elif (
                     len(esdl_asset_attributes) == 0  # profile is specified without units (xlm/csv)
-                    or esdl_asset_attributes.items[0].maximum.profileQuantityAndUnit.reference.unit
-                    == esdl.UnitEnum.PERCENT
+                    or (
+                        esdl_asset_attributes.items[
+                            0
+                        ].maximum.profileQuantityAndUnit.reference.physicalQuantity
+                        == esdl.PhysicalQuantityEnum.COEFFICIENT
+                        and (
+                            esdl_asset_attributes.items[
+                                0
+                            ].maximum.profileQuantityAndUnit.reference.unit == esdl.UnitEnum.PERCENT
+                            or esdl_asset_attributes.items[
+                                0
+                            ].maximum.profileQuantityAndUnit.reference.unit == esdl.UnitEnum.NONE
+                        )
+                    )
                 ):
                     # TODO: currently this can only be used with a csv file since units must be set
                     # for ProfileContraint. Future addition can be to use a different unit/quantity
                     # etc. so that the profile is used in a normalised way and scale to max_size
+                    profile_scaled = profile_non_scaled / max_profile_value
+
                     for i in range(0, len(self.times())):
                         constraints.append(
                             (
@@ -1925,7 +1937,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         )
                 else:
                     RuntimeError(f"{s}: Unforeseen error in adding a profile contraint")
-            except KeyError:
+            else:
                 constraints.append(
                     (
                         (np_ones * max_heat - heat_source) / constraint_nominal,

@@ -294,7 +294,8 @@
   <energySystemInformation xsi:type="esdl:EnergySystemInformation" id="6a1c2e35-b383-4816-af26-14deb41e6d1d">
     <quantityAndUnits xsi:type="esdl:QuantityAndUnits" id="c7104449-b5eb-49c7-b064-a2a4b16ae6e4">
       <quantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="e9405fc8-5e57-4df5-8584-4babee7cdf1b" description="Power in MW" physicalQuantity="POWER" unit="WATT" multiplier="MEGA"/>
-      <quantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="57174dc5-4f95-43dc-af15-311d29c8b207" description="Power in %" physicalQuantity="POWER" unit="PERCENT"/>
+      <quantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="57174dc5-4f95-43dc-af15-311d29c8b207" description="Coefficient in %" physicalQuantity="COEFFICIENT" unit="PERCENT"/>
+      <quantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="57174dc5-4f95-43dc-af15-311d29c8b2071" description="Coefficient" physicalQuantity="COEFFICIENT"/>
     </quantityAndUnits>
     <carriers xsi:type="esdl:Carriers" id="3a4f662c-eb5e-4e08-8e02-bbf2607faf1c">
       <carrier xsi:type="esdl:HeatCommodity" id="419b5016-12c9-475a-b46e-9e474b60aa8f_ret" name="Heat_ret" returnTemperature="40.0"/>

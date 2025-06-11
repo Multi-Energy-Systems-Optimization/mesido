@@ -466,11 +466,17 @@ class InfluxDBProfileReader(BaseProfileReader):
         converted to either Watt or Joules, depending on the quantity used in the profile.
         """
         profile_quantity_and_unit = self._get_profile_quantity_and_unit(profile=profile)
-        if profile_quantity_and_unit.physicalQuantity == esdl.PhysicalQuantityEnum.POWER:
+        if (
+            profile_quantity_and_unit.physicalQuantity == esdl.PhysicalQuantityEnum.POWER
+            or profile_quantity_and_unit.physicalQuantity == esdl.PhysicalQuantityEnum.COEFFICIENT
+        ):
             if profile_quantity_and_unit.unit == esdl.UnitEnum.WATT:
                 target_unit = POWER_IN_W
-            elif profile_quantity_and_unit.unit == esdl.UnitEnum.PERCENT:
+            elif profile_quantity_and_unit.unit == esdl.UnitEnum.PERCENT:  # values 0-100%
+                # TODO: in the future change to ratios if needed
                 return profile_time_series  # These profiles are scaled in asset sizing
+            elif profile_quantity_and_unit.unit == esdl.UnitEnum.NONE:  # ratio 0-1
+                return profile_time_series
             else:
                 raise RuntimeError(
                     f"Power profiles currently only support units"
