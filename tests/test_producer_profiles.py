@@ -106,7 +106,7 @@ class TestProducerMaxProfile(TestCase):
             heat_produced = results["HeatProducer_b702.Heat_source"]
             heat_production_upper_limit = solution.get_timeseries(
                 "HeatProducer_b702.maximum_heat_source"
-            ).values[0:73]
+            ).values
 
             if problem_class == HeatProblemESDLProdProfile:
                 np.testing.assert_array_less(
@@ -120,14 +120,14 @@ class TestProducerMaxProfile(TestCase):
                 )
             elif problem_class == HeatProblemESDLProdProfileTCO:
                 np.testing.assert_allclose(
-                    max(heat_produced),
+                    max(heat_production_upper_limit),
                     results["HeatProducer_b702__max_size"],
                     atol=1e-9
                 )
                 np.testing.assert_array_less(heat_produced - tol, heat_production_upper_limit)
                 np.testing.assert_equal(
                     len(np.where(heat_produced - heat_production_upper_limit == 0)[0]),
-                    3,
+                    6,
                 )
 
     def test_max_producer_esdl_scaled_profile(self):
@@ -174,6 +174,6 @@ class TestProducerMaxProfile(TestCase):
 if __name__ == "__main__":
 
     a = TestProducerMaxProfile()
-    a.test_max_producer_scaled_profile()
+    # a.test_max_producer_scaled_profile()
     a.test_max_producer_esdl_unscaled_profile()
-    a.test_max_producer_esdl_scaled_profile()
+    # a.test_max_producer_esdl_scaled_profile()

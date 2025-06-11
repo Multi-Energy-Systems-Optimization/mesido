@@ -1885,20 +1885,18 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     and esdl_asset_attributes.items[0].maximum.profileQuantityAndUnit.reference.unit
                     == esdl.UnitEnum.WATT
                 ):
+
+                    constraints.append(
+                        (
+                            (max_heat - max_profile_value) / constraint_nominal, 0.0, np.inf
+                        )
+                    )
+
                     for i in range(0, len(self.times())):
 
                         constraints.append(
                             (
                                 (profile_non_scaled[i] - heat_source[i]) / constraint_nominal,
-                                0.0,
-                                np.inf,
-                            )
-                        )
-
-                        constraints.append(
-                            (
-                                (np_ones * max_heat - heat_source[i])
-                                / constraint_nominal,
                                 0.0,
                                 np.inf,
                             )
