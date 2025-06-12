@@ -1,5 +1,6 @@
 import datetime
 import logging
+import sys
 from collections import defaultdict
 from pathlib import Path
 from typing import Dict, Optional, Set
@@ -308,12 +309,31 @@ class InfluxDBProfileReader(BaseProfileReader):
                 asset = container.eContainer()
                 variable_suffix = self.asset_type_to_variable_name_conversion[type(asset)]
                 var_base_name = asset.name
+                if variable_suffix in [
+                    self.asset_type_to_variable_name_conversion[esdl.esdl.GasProducer],
+                    self.asset_type_to_variable_name_conversion[esdl.esdl.ElectricityProducer],
+                ]:
+                    logger.error(
+                        f"Profiles for {var_base_name} from esdl has not been tested yet but only"
+                        " for heat sources"
+                    )
+                    sys.exit(1)
+
             elif isinstance(container, esdl.Commodity):
                 variable_suffix = self.carrier_profile_var_name
                 var_base_name = container.name
             elif isinstance(container, esdl.Port):
                 asset = container.energyasset
                 var_base_name = asset.name
+                if var_base_name in [
+                    self.asset_type_to_variable_name_conversion[esdl.esdl.GasProducer],
+                    self.asset_type_to_variable_name_conversion[esdl.esdl.ElectricityProducer],
+                    self.asset_type_to_variable_name_conversion[esdl.esdl.HeatProducer],
+                ]:
+                    logger.error(
+                        f"Profiles for {var_base_name} from esdl has not been tested yet"
+                    )
+                    sys.exit(1)
                 try:
                     variable_suffix = self.asset_type_to_variable_name_conversion[type(asset)]
                     # For multicommidity work profiles need to be assigned to GenericConsumer, but
