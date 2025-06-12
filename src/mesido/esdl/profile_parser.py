@@ -330,9 +330,7 @@ class InfluxDBProfileReader(BaseProfileReader):
                     self.asset_type_to_variable_name_conversion[esdl.esdl.ElectricityProducer],
                     self.asset_type_to_variable_name_conversion[esdl.esdl.HeatProducer],
                 ]:
-                    logger.error(
-                        f"Profiles for {var_base_name} from esdl has not been tested yet"
-                    )
+                    logger.error(f"Profiles for {var_base_name} from esdl has not been tested yet")
                     sys.exit(1)
                 try:
                     variable_suffix = self.asset_type_to_variable_name_conversion[type(asset)]
