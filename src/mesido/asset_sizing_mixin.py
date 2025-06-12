@@ -1,4 +1,5 @@
 import logging
+import sys
 from typing import List, Set
 
 import casadi as ca
@@ -796,6 +797,21 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         for asset_name in self.energy_system_components.get("heat_source", []):
             ub = bounds[f"{asset_name}.Heat_source"][1]
+
+            # Update bound to account for profile constraint being used instead of 1 value
+            esdl_asset_attributes = self.esdl_assets[
+                self.esdl_asset_name_to_id_map[asset_name]
+            ].attributes["constraint"]
+            if (
+                len(esdl_asset_attributes) > 0
+                and hasattr(esdl_asset_attributes.items[0], "maximum")
+                and esdl_asset_attributes.items[0].maximum.profileQuantityAndUnit.reference.unit
+                == esdl.UnitEnum.WATT
+            ):
+                max_profile = max(self.get_timeseries(f"{asset_name}.maximum_heat_source").values)
+                if ub > max_profile:
+                    ub = max_profile
+
             lb = 0.0 if parameters[f"{asset_name}.state"] != 1 else ub
             _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
 
@@ -1872,7 +1888,8 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             if f"{s}.maximum_heat_source" in self.io.get_timeseries_names():
                 profile_non_scaled = self.get_timeseries(f"{s}.maximum_heat_source").values
-                max_profile_value = max(profile_non_scaled)
+                max_profile_non_scaled = max(profile_non_scaled)
+                profile_scaled = profile_non_scaled / max_profile_non_scaled
 
                 # Cap the heat produced via a profile. Two profile options below.
                 # Option 1: Profile specified in absolute values [W] via a ProfileConstraint
@@ -1881,21 +1898,35 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 ].attributes["constraint"]
                 if (
                     len(esdl_asset_attributes) > 0
+                    and hasattr(esdl_asset_attributes.items[0], "maximum")
                     and esdl_asset_attributes.items[0].maximum.profileQuantityAndUnit.reference.unit
                     == esdl.UnitEnum.WATT
                 ):
+                    parameters = self.parameters(ensemble_member)
 
-                    constraints.append(
-                        (
-                            (max_heat - max_profile_value) / constraint_nominal, 0.0, np.inf
-                        )
-                    )
-
-                    for i in range(0, len(self.times())):
-
+                    if parameters[f"{s}.state"] == 1:  # Enabled asset
                         constraints.append(
                             (
-                                (profile_non_scaled[i] - heat_source[i]) / constraint_nominal,
+                                (max_heat - max_profile_non_scaled) / constraint_nominal,
+                                0.0,
+                                np.inf,
+                            )
+                        )
+                        max_heat_var = max_profile_non_scaled
+
+                    elif parameters[f"{s}.state"] == 2:  # Optional asset
+                        max_heat_var = max_heat
+
+                    else:
+                        state_val = parameters[f"{s}.state"]
+                        logger.error(f"Unexpected state: {state_val}")
+                        sys.exit(1)
+
+                    for i in range(0, len(self.times())):
+                        constraints.append(
+                            (
+                                (profile_scaled[i] * max_heat_var - heat_source[i])
+                                / constraint_nominal,
                                 0.0,
                                 np.inf,
                             )
@@ -1905,7 +1936,8 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 # Note: If the asset is not optional then the profile will be scaled to the
                 # installed capacity
                 elif (
-                    len(esdl_asset_attributes) == 0  # profile is specified without units (xlm/csv)
+                    # profile is specified without units (xlm/csv)
+                    len(esdl_asset_attributes) == 0
                     or (
                         esdl_asset_attributes.items[
                             0
@@ -1914,17 +1946,18 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         and (
                             esdl_asset_attributes.items[
                                 0
-                            ].maximum.profileQuantityAndUnit.reference.unit == esdl.UnitEnum.PERCENT
+                            ].maximum.profileQuantityAndUnit.reference.unit
+                            == esdl.UnitEnum.PERCENT
                             or esdl_asset_attributes.items[
                                 0
-                            ].maximum.profileQuantityAndUnit.reference.unit == esdl.UnitEnum.NONE
+                            ].maximum.profileQuantityAndUnit.reference.unit
+                            == esdl.UnitEnum.NONE
                         )
-                    )
+                    )  # profile from esdl
                 ):
                     # TODO: currently this can only be used with a csv file since units must be set
                     # for ProfileContraint. Future addition can be to use a different unit/quantity
                     # etc. so that the profile is used in a normalised way and scale to max_size
-                    profile_scaled = profile_non_scaled / max_profile_value
 
                     for i in range(0, len(self.times())):
                         constraints.append(
@@ -2022,8 +2055,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             constraints.append(
                 (
-                    (np_ones * max_power - electricity_demand)
-                    / constraint_nominal,
+                    (np_ones * max_power - electricity_demand) / constraint_nominal,
                     0.0,
                     np.inf,
                 )
@@ -2040,8 +2072,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             constraints.append(
                 (
-                    (np_ones * max_power - electricity_source)
-                    / constraint_nominal,
+                    (np_ones * max_power - electricity_source) / constraint_nominal,
                     0.0,
                     np.inf,
                 )
@@ -2058,8 +2089,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             constraints.append(
                 (
-                    (np_ones * max_stored_energy - electricity_stored)
-                    / constraint_nominal,
+                    (np_ones * max_stored_energy - electricity_stored) / constraint_nominal,
                     0.0,
                     np.inf,
                 )
@@ -2076,8 +2106,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             constraints.append(
                 (
-                    (np_ones * max_power - electricity_electrolyzer)
-                    / constraint_nominal,
+                    (np_ones * max_power - electricity_electrolyzer) / constraint_nominal,
                     0.0,
                     np.inf,
                 )

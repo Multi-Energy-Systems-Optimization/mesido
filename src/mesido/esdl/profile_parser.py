@@ -144,6 +144,18 @@ class BaseProfileReader:
                                 " maximum of the heat demand profile "
                                 f"{round(max_profile_value / 1.0e6, 3)}MW",
                             )
+                    elif component_type in ["heat_source"]:
+                        max_profile_value = max(values)
+                        if asset_power < max_profile_value:
+                            asset_id = esdl_asset_names_to_ids[component]
+                            get_potential_errors().add_potential_issue(
+                                MesidoAssetIssueType.HEAT_PRODUCER_POWER,
+                                asset_id,
+                                f"Asset named {component}: The installed capacity of"
+                                f" {round(asset_power / 1.0e6, 3)}MW should be equal or larger than"
+                                " the maximum of the heat producer maximum profile constraint"
+                                f" {round(max_profile_value / 1.0e6, 3)}MW",
+                            )
 
             for properties in carrier_properties.values():
                 carrier_name = properties["name"]
