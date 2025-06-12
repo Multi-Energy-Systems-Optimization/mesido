@@ -328,7 +328,6 @@ class InfluxDBProfileReader(BaseProfileReader):
                 if var_base_name in [
                     self.asset_type_to_variable_name_conversion[esdl.esdl.GasProducer],
                     self.asset_type_to_variable_name_conversion[esdl.esdl.ElectricityProducer],
-                    self.asset_type_to_variable_name_conversion[esdl.esdl.HeatProducer],
                 ]:
                     logger.error(f"Profiles for {var_base_name} from esdl has not been tested yet")
                     sys.exit(1)
