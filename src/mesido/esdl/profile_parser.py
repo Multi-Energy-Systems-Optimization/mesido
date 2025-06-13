@@ -1,5 +1,6 @@
 import datetime
 import logging
+import sys
 from collections import defaultdict
 from pathlib import Path
 from typing import Dict, Optional, Set
@@ -143,6 +144,18 @@ class BaseProfileReader:
                                 f" {round(asset_power / 1.0e6, 3)}MW should be larger than the"
                                 " maximum of the heat demand profile "
                                 f"{round(max_profile_value / 1.0e6, 3)}MW",
+                            )
+                    elif component_type in ["heat_source"]:
+                        max_profile_value = max(values)
+                        if asset_power < max_profile_value:
+                            asset_id = esdl_asset_names_to_ids[component]
+                            get_potential_errors().add_potential_issue(
+                                MesidoAssetIssueType.HEAT_PRODUCER_POWER,
+                                asset_id,
+                                f"Asset named {component}: The installed capacity of"
+                                f" {round(asset_power / 1.0e6, 3)}MW should be equal or larger than"
+                                " the maximum of the heat producer maximum profile constraint"
+                                f" {round(max_profile_value / 1.0e6, 3)}MW",
                             )
 
             for properties in carrier_properties.values():
@@ -290,12 +303,32 @@ class InfluxDBProfileReader(BaseProfileReader):
             )
 
             container = profile.eContainer()
-            if isinstance(container, esdl.Commodity):
+            if isinstance(container, esdl.ProfileConstraint):
+                asset = container.eContainer()
+                variable_suffix = self.asset_type_to_variable_name_conversion[type(asset)]
+                var_base_name = asset.name
+                if variable_suffix in [
+                    self.asset_type_to_variable_name_conversion[esdl.esdl.GasProducer],
+                    self.asset_type_to_variable_name_conversion[esdl.esdl.ElectricityProducer],
+                ]:
+                    logger.error(
+                        f"Profiles for {var_base_name} from esdl has not been tested yet but only"
+                        " for heat sources"
+                    )
+                    sys.exit(1)
+
+            elif isinstance(container, esdl.Commodity):
                 variable_suffix = self.carrier_profile_var_name
                 var_base_name = container.name
             elif isinstance(container, esdl.Port):
                 asset = container.energyasset
                 var_base_name = asset.name
+                if var_base_name in [
+                    self.asset_type_to_variable_name_conversion[esdl.esdl.GasProducer],
+                    self.asset_type_to_variable_name_conversion[esdl.esdl.ElectricityProducer],
+                ]:
+                    logger.error(f"Profiles for {var_base_name} from esdl has not been tested yet")
+                    sys.exit(1)
                 try:
                     variable_suffix = self.asset_type_to_variable_name_conversion[type(asset)]
                     # For multicommidity work profiles need to be assigned to GenericConsumer, but
@@ -460,8 +493,23 @@ class InfluxDBProfileReader(BaseProfileReader):
         converted to either Watt or Joules, depending on the quantity used in the profile.
         """
         profile_quantity_and_unit = self._get_profile_quantity_and_unit(profile=profile)
-        if profile_quantity_and_unit.physicalQuantity == esdl.PhysicalQuantityEnum.POWER:
-            target_unit = POWER_IN_W
+        if (
+            profile_quantity_and_unit.physicalQuantity == esdl.PhysicalQuantityEnum.POWER
+            or profile_quantity_and_unit.physicalQuantity == esdl.PhysicalQuantityEnum.COEFFICIENT
+        ):
+            if profile_quantity_and_unit.unit == esdl.UnitEnum.WATT:
+                target_unit = POWER_IN_W
+            elif profile_quantity_and_unit.unit == esdl.UnitEnum.PERCENT:  # values 0-100%
+                # TODO: in the future change to ratios if needed
+                return profile_time_series  # These profiles are scaled in asset sizing
+            elif profile_quantity_and_unit.unit == esdl.UnitEnum.NONE:  # ratio 0-1
+                return profile_time_series
+            else:
+                raise RuntimeError(
+                    f"Power profiles currently only support units"
+                    f"specified in Watts or Percentage,"
+                    f"{profile} doesn't follow this convention."
+                )
         elif profile_quantity_and_unit.physicalQuantity == esdl.PhysicalQuantityEnum.ENERGY:
             target_unit = ENERGY_IN_J
         elif profile_quantity_and_unit.physicalQuantity == esdl.PhysicalQuantityEnum.COST:

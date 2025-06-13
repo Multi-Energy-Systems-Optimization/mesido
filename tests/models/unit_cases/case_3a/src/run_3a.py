@@ -4,6 +4,7 @@ from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.physics_mixin import PhysicsMixin
 from mesido.qth_not_maintained.qth_mixin import QTHMixin
 from mesido.techno_economic_mixin import TechnoEconomicMixin
+from mesido.workflows.goals.minimize_tco_goal import MinimizeTCO
 
 import numpy as np
 
@@ -285,7 +286,7 @@ class HeatProblemTvarret(
         return constraints
 
 
-class HeatProblemProdProfile(
+class HeatProblemESDLProdProfile(
     _GoalsAndOptions,
     TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
@@ -293,16 +294,6 @@ class HeatProblemProdProfile(
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
-    def read(self):
-        super().read()
-
-        for s in self.energy_system_components["heat_source"]:
-            demand_timeseries = self.get_timeseries("HeatingDemand_a3b8.target_heat_demand")
-            new_timeseries = np.ones(len(demand_timeseries.values)) * 1
-            ind_hlf = int(len(demand_timeseries.values) / 2)
-            new_timeseries[ind_hlf : ind_hlf + 4] = np.ones(4) * 0.10
-            self.set_timeseries(f"{s}.maximum_heat_source", new_timeseries)
-
     def energy_system_options(self):
         options = super().energy_system_options()
         options["heat_loss_disconnected_pipe"] = True
@@ -322,6 +313,26 @@ class HeatProblemProdProfile(
             goals.append(MinimizeSourcesHeatGoal(s))
 
         return goals
+
+
+class HeatProblemESDLProdProfileTCO(HeatProblemESDLProdProfile):
+    def goals(self):
+        goals = super().goals().copy()
+        goals.append(MinimizeTCO(priority=20, number_of_years=1))
+
+        return goals
+
+
+class HeatProblemProdProfile(HeatProblemESDLProdProfile):
+    def read(self):
+        super().read()
+
+        for s in self.energy_system_components["heat_source"]:
+            demand_timeseries = self.get_timeseries("HeatingDemand_a3b8.target_heat_demand")
+            new_timeseries = np.ones(len(demand_timeseries.values)) * 1
+            ind_hlf = int(len(demand_timeseries.values) / 2)
+            new_timeseries[ind_hlf : ind_hlf + 4] = np.ones(4) * 0.10
+            self.set_timeseries(f"{s}.maximum_heat_source", new_timeseries)
 
 
 class QTHProblem(
