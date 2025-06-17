@@ -134,8 +134,9 @@ class TestColdDemand(TestCase):
 
     def test_airco_voc(self):
         """
-        This test checks the cost calculation of the variable operational cost of air-water heatpump. In air-water
-        heatpump the variable operational cost must be function of electricity consumed (secondary heat / cop)
+        This test checks the cost calculation of the variable operational cost of
+        air-water heatpump. In air-water heatpump the variable operational cost
+        must be function of electricity consumed (secondary heat / cop)
         """
         import models.wko.src.example as example
         from models.wko.src.example import HeatProblem
@@ -152,11 +153,13 @@ class TestColdDemand(TestCase):
         )
         parameters = heat_problem.parameters(0)
         results = heat_problem.extract_results()
+
         # Check how variable operation cost is calculated
         np.testing.assert_allclose(
-            parameters['HeatPump_b97e.variable_operational_cost_coefficient'] *
-            sum(results['HeatPump_b97e.Heat_source']) / parameters['HeatPump_b97e.cop_hp'],
-            results['HeatPump_b97e__variable_operational_cost']
+            parameters["HeatPump_b97e.variable_operational_cost_coefficient"]
+            * sum(results["HeatPump_b97e.Heat_source"])
+            / parameters["HeatPump_b97e.cop_hp"],
+            results["HeatPump_b97e__variable_operational_cost"],
         )
 
     def test_wko(self):
