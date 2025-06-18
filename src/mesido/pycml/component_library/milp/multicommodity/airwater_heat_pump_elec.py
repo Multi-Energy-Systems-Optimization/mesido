@@ -38,7 +38,6 @@ class AirWaterHeatPumpElec(AirWaterHeatPump):
 
         self.min_voltage = nan
         self.elec_power_nominal = nan
-        self.cop = nan
 
         # Assumption: heat in/out and added is nonnegative
         # Heat in the return (i.e. cold) line is zero

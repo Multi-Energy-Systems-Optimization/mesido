@@ -19,6 +19,5 @@ class AirWaterHeatPump(HeatSource):
 
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
-        # self.cop = modifiers["cop"]["cop"]
-        self.cop_hp = modifiers["cop_hp"]
+        self.cop = modifiers["cop"]
         self.component_subtype = "air_water_heat_pump"

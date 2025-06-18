@@ -1107,12 +1107,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
             # TODO: the power filled in at the heatpmp should always be the electric power, thus,
             # the max heat supply should be power*cop
             _, modifiers = self.convert_heat_source(asset)
-            modifiers["cop_hp"] = asset.attributes["COP"]
             return AirWaterHeatPump, modifiers
         # In this case we only have the secondary side ports, here we assume a air-water HP elec
         if len(asset.in_ports) == 2 and len(asset.out_ports) == 1:
             _, modifiers = self.convert_air_water_heat_pump_elec(asset)
-            modifiers["cop_hp"] = asset.attributes["COP"]
             return AirWaterHeatPumpElec, modifiers
 
         if not asset.attributes["COP"]:
@@ -1283,10 +1281,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 )
 
             return GeothermalSource, modifiers
-        # elif asset.asset_type == "HeatPump":
-        #     # modifiers["cop"] = dict( cop=asset.attributes["COP"] )
-        #     modifiers["cop"] = asset.attributes["COP"]
-        #     return HeatSource, modifiers # return AirWaterHeatPump, modifiers
+        elif asset.asset_type == "HeatPump":
+            modifiers["cop"] = asset.attributes["COP"]
+            return HeatSource, modifiers
         else:
             return HeatSource, modifiers
 

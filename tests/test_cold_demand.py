@@ -121,44 +121,23 @@ class TestColdDemand(TestCase):
         heat_problem = run_esdl_mesido_optimization(
             HeatProblem,
             base_folder=base_folder,
-            esdl_file_name="airco.esdl",
-            esdl_parser=ESDLFileParser,
-            profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries.csv",
-        )
-        results = heat_problem.extract_results()
-
-        demand_matching_test(heat_problem, results)
-        energy_conservation_test(heat_problem, results)
-        heat_to_discharge_test(heat_problem, results)
-
-    def test_airco_voc(self):
-        """
-        This test checks the cost calculation of the variable operational cost of
-        air-water heatpump. In air-water heatpump the variable operational cost
-        must be function of electricity consumed (secondary heat / cop)
-        """
-        import models.wko.src.example as example
-        from models.wko.src.example import HeatProblem
-
-        base_folder = Path(example.__file__).resolve().parent.parent
-
-        heat_problem = run_esdl_mesido_optimization(
-            HeatProblem,
-            base_folder=base_folder,
             esdl_file_name="airco_voc.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries.csv",
         )
-        parameters = heat_problem.parameters(0)
         results = heat_problem.extract_results()
+        parameters = heat_problem.parameters(0)
+
+        demand_matching_test(heat_problem, results)
+        energy_conservation_test(heat_problem, results)
+        heat_to_discharge_test(heat_problem, results)
 
         # Check how variable operation cost is calculated
         np.testing.assert_allclose(
             parameters["HeatPump_b97e.variable_operational_cost_coefficient"]
             * sum(results["HeatPump_b97e.Heat_source"])
-            / parameters["HeatPump_b97e.cop_hp"],
+            / parameters["HeatPump_b97e.cop"],
             results["HeatPump_b97e__variable_operational_cost"],
         )
 
