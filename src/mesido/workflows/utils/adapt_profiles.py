@@ -9,6 +9,11 @@ import numpy as np
 
 from rtctools.data.storage import DataStore
 
+# TODO: Ignore or include this header import based on the decision of leap year's inclusion in
+#  extension of profile. Should be adjusted based on the decisions
+#  made for the adapt_profile.py
+from dateutil.relativedelta import relativedelta
+
 
 logger = logging.getLogger("WarmingUP-MPC")
 logger.setLevel(logging.INFO)
@@ -255,13 +260,25 @@ def adapt_profile_to_copy_for_number_of_years(problem, number_of_years: int):
 
         for year in range(1, number_of_years):
             if year == number_of_years - 1 or skip_last_day is False:
+                # This peice of code accounts for leap day
                 new_date_times.extend(
                     [i + year * datetime.timedelta(days=365) for i in org_timeseries]
                 )
+                # TODO: Check the code below since it removes the leap day. Decision to be made
+                #  to whether or not include leap year
+                # new_date_times.extend(
+                #     [i + relativedelta(years=year) for i in org_timeseries]
+                # )
             else:
+                # This peice of code accounts for leap day
                 new_date_times.extend(
                     [i + year * datetime.timedelta(days=365) for i in org_timeseries[:-1]]
                 )
+                # TODO: Check the code below since it removes the leap day.
+                #  Decision to be made to whether or not include leap year
+                # new_date_times.extend(
+                #     [i + relativedelta(years=year) for i in org_timeseries[:-1]]
+                # )
 
         new_date_times = np.asarray(new_date_times)
         parameters["times"] = [x.timestamp() for x in new_date_times]

@@ -24,6 +24,11 @@ import pandas as pd
 
 from utils_test_scaling import create_log_list_scaling
 
+# TODO: Ignore or include this header import based on the decision of leap year's inclusion in
+#  extension of profile. Should be adjusted based on the decisions
+#  made for the adapt_profile.py
+from dateutil.relativedelta import relativedelta
+
 
 class MockInfluxDBProfileReader(InfluxDBProfileReader):
     def __init__(self, energy_system: esdl.EnergySystem, file_path: Optional[Path]):
@@ -47,7 +52,15 @@ class TestProfileUpdating(unittest.TestCase):
         adapt_hourly_profile_averages_timestep_size method and the
         adapt_profile_to_copy_for_number_of_years method in adapt_profiles.py
 
-        Returns:
+        Checks:
+        1. ProfileUpdateHourly
+            - Checks if the updated time series is equally spaced/averaged according to
+            the input step_size
+        2. ProfileUpdateMultiYear
+            - Checks if the updated time series has expected amount of entries
+            - Checks if it is consistent/continuous on an hourly basis
+            - Checks if the expected start date and the generated end date matches
+            - Checks if the expected end date and the generated end date matches
 
         """
         import models.unit_cases.case_3a.src.run_3a as run_3a
@@ -102,6 +115,9 @@ class TestProfileUpdating(unittest.TestCase):
                 """
                 super().read()
 
+                self.problem_year = self.io.datetimes[0].year
+                self.original_time_series = self.io.datetimes
+
                 adapt_profile_to_copy_for_number_of_years(self, problem_years)
 
         problem = ProfileUpdateMultiYear(
@@ -127,6 +143,49 @@ class TestProfileUpdating(unittest.TestCase):
         )
         assert len(timeseries_updated) == len_org_time_serie * problem_years
         assert all(dt.days == 365 for dt in dts)
+
+        # Test length of data (duplicate as above, but doesn't break)
+        np.testing.assert_equal(len(timeseries_updated), len_org_time_serie * problem_years)
+
+        # Test consistency and continuity of data
+        # TODO: The tests below have the inclusion/exclusion of leap years. Should be adjusted
+        #  based on the decisions made for the adapt_profile.py
+        # The one immediately below (commented out) is not valid if the year is a leap year,
+        # thus we make an expected date range using pandas, and manually exclude the leap day.
+        # Then check the time delta. In this way, we make sure the datatime generated is hourly
+        # continuous but omits the leap day
+
+        # CHECK FOR THE LEAP YEAR DOES NOT EXIST WITH THIS TEST #
+        np.testing.assert_equal(datetime.timedelta(seconds=3600), np.diff(timeseries_updated))
+
+        # CHECK FOR THE LEAP YEAR EXISTS WITH THIS TEST #
+        # expected_daterange_full = pd.date_range(
+        #     start=problem.original_time_series[0],
+        #     end=problem.original_time_series[-1] + relativedelta(years=problem_years-1),
+        #     freq='H'
+        # )
+        # # Remove leap days
+        # expected_daterange = expected_daterange_full[
+        #     ~((expected_daterange_full.month == 2) & (expected_daterange_full.day == 29))
+        # ]
+        # expected_daterange = list(expected_daterange.to_pydatetime())
+        # np.testing.assert_equal(np.diff(expected_daterange), np.diff(timeseries_updated))
+
+        # Test the consistency of years
+        years_required = [problem.problem_year + i for i in range(problem_years)]
+        timeseries_updated_years = list(set([i.year for i in timeseries_updated]))
+        np.testing.assert_equal(years_required, timeseries_updated_years)
+
+        # TODO: Ignore or include this test based on the decision of leap year's inclusion in
+        #  extension of profile. Should be adjusted based on the decisions made for the
+        #  adapt_profile.py
+        # np.testing.assert_equal(
+        #     problem.original_time_series[-1] + relativedelta(years=problem_years-1),
+        #     timeseries_updated[-1]
+        # )
+
+        # Test if the resulting start date and end date are as expected
+        np.testing.assert_equal(problem.original_time_series[0], timeseries_updated[0])
 
 
 class TestPotentialErrors(unittest.TestCase):
@@ -403,8 +462,10 @@ if __name__ == "__main__":
     # unittest.main()
     a = TestProfileLoading()
     b = TestPotentialErrors()
+    c = TestProfileUpdating()
     b.test_asset_potential_errors()
     a.test_loading_from_influx()
     a.test_loading_from_csv()
     a.test_loading_from_xml()
     a.test_loading_from_csv_with_influx_profiles_given()
+    c.test_profile_updating()
