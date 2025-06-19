@@ -136,7 +136,7 @@ class TestColdDemand(TestCase):
         # Check how variable operation cost is calculated
         np.testing.assert_allclose(
             parameters["HeatPump_b97e.variable_operational_cost_coefficient"]
-            * sum(results["HeatPump_b97e.Heat_source"])
+            * sum(results["HeatPump_b97e.Heat_source"][1:])
             / parameters["HeatPump_b97e.cop"],
             results["HeatPump_b97e__variable_operational_cost"],
         )
