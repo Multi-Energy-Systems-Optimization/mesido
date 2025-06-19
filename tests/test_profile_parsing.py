@@ -27,7 +27,7 @@ from utils_test_scaling import create_log_list_scaling
 # TODO: Ignore or include this header import based on the decision of leap year's inclusion in
 #  extension of profile. Should be adjusted based on the decisions
 #  made for the adapt_profile.py
-from dateutil.relativedelta import relativedelta
+# from dateutil.relativedelta import relativedelta
 
 
 class MockInfluxDBProfileReader(InfluxDBProfileReader):
