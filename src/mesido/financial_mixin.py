@@ -943,7 +943,18 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
             sum = 0.0
             for i in range(1, len(self.times())):
-                sum += variable_operational_cost_coefficient * heat_source[i] * timesteps[i - 1]
+                if s in self.energy_system_components.get(
+                    "air_water_heat_pump", []
+                ) or self.energy_system_components.get("air_water_heat_pump_elec", []):
+                    cop = parameters[f"{s}.cop"]
+                    sum += (
+                        variable_operational_cost_coefficient
+                        * heat_source[i]
+                        * timesteps[i - 1]
+                        / cop
+                    )
+                else:
+                    sum += variable_operational_cost_coefficient * heat_source[i] * timesteps[i - 1]
                 sum += price_profile.values[i] * pump_power[i] * timesteps[i - 1] / eff
 
             constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))

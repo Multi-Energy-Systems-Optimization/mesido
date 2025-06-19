@@ -75,7 +75,7 @@ class TestElecBoiler(TestCase):
         heat_problem = run_esdl_mesido_optimization(
             SourcePipeSink,
             base_folder=base_folder,
-            esdl_file_name="sourcesink_withHP.esdl",
+            esdl_file_name="sourcesink_withHP_voc.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_import.csv",
@@ -93,6 +93,14 @@ class TestElecBoiler(TestCase):
         np.testing.assert_array_less(
             parameters["HeatPump_d8fd.cop"] * results["HeatPump_d8fd.Power_consumed"],
             results["HeatPump_d8fd.Heat_source"] + 1.0e-6,
+        )
+
+        # Check how variable operation cost is calculated
+        np.testing.assert_allclose(
+            parameters["HeatPump_d8fd.variable_operational_cost_coefficient"]
+            * sum(results["HeatPump_d8fd.Heat_source"][1:])
+            / parameters["HeatPump_d8fd.cop"],
+            results["HeatPump_d8fd__variable_operational_cost"],
         )
 
 
