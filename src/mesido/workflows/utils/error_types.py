@@ -17,6 +17,9 @@ def mesido_issue_type_gen_message(issue_type: MesidoAssetIssueType) -> str:
     String message
     """
     type_and_general_meassage = {
+        MesidoAssetIssueType.HEAT_PRODUCER_POWER: "Asset insufficient installed capacity: please"
+        " increase the installed power or reduce the profile constraint peak value of the"
+        " producer(s) listed.",
         MesidoAssetIssueType.HEAT_DEMAND_POWER: "Asset insufficient installed capacity: please"
         " increase the installed power or reduce the demand profile peak value of the demand(s)"
         " listed.",
@@ -40,6 +43,7 @@ def potential_error_to_error(network_check_type: Enum) -> None:
 
     errors_on_types = {
         HEAT_NETWORK_ERRORS: [
+            MesidoAssetIssueType.HEAT_PRODUCER_POWER,
             MesidoAssetIssueType.HEAT_DEMAND_POWER,
             MesidoAssetIssueType.COLD_DEMAND_POWER,
             MesidoAssetIssueType.HEAT_DEMAND_TYPE,

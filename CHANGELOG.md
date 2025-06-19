@@ -1,7 +1,19 @@
-# [Unreleased-main] - 2025-05-21
+# [Unreleased-main] - 2025-06-12
 
 ## Added
 - xx
+
+## Changed
+- xx
+
+## Fixed
+- xx
+
+
+# [0.1.12] - 2025-06-12
+
+## Added
+- Maximum profile contraint (specified in Watts) to some heat producers
 
 ## Changed
 - xx
