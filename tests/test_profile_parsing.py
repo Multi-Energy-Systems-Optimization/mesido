@@ -173,7 +173,7 @@ class TestProfileUpdating(unittest.TestCase):
 
         # Test the consistency of years
         years_required = [problem.problem_year + i for i in range(problem_years)]
-        timeseries_updated_years = list(set([i.year for i in timeseries_updated]))
+        timeseries_updated_years = list({i.year for i in timeseries_updated})
         np.testing.assert_equal(years_required, timeseries_updated_years)
 
         # TODO: Ignore or include this test based on the decision of leap year's inclusion in
