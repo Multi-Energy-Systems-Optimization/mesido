@@ -67,6 +67,14 @@ class TestProfileUpdating(unittest.TestCase):
                 """
                 super().read()
 
+                self.original_time_series = self.io.datetimes
+
+                self.profiles_assets = self.io.get_timeseries_names()
+
+                self.profile_asset_orig = {
+                    key : self.get_timeseries(key).values for key in self.profiles_assets
+                }
+
                 adapt_hourly_profile_averages_timestep_size(self, problem_step_size)
 
         problem = ProfileUpdateHourly(
@@ -85,7 +93,38 @@ class TestProfileUpdating(unittest.TestCase):
         assert all(dt.seconds == 3600 * problem_step_size for dt in dts[:-1])
         assert dts[-1].seconds <= 3600 * problem_step_size
 
+        # Check if the difference in timestamps is total seconds in an hour x the problem
+        # step size. Do not consider the last time step
+        seconds_in_an_hour = 3600
+        np.testing.assert_array_equal(
+            np.diff(timeseries_updated)[:-1],
+            datetime.timedelta(seconds=seconds_in_an_hour * problem_step_size)
+        )
+
+        # Check if the start date is same between the original time series and the updated one,
+        # and if the updated timeseries end date is one hour later than the original time series.
+        np.testing.assert_array_equal(problem.original_time_series[0], timeseries_updated[0])
+        np.testing.assert_array_equal(
+            problem.original_time_series[-1] + datetime.timedelta(seconds=seconds_in_an_hour),
+            timeseries_updated[-1]
+        )
+
         # TODO: also check the values of the averages
+        for asset, original_profile in problem.profile_asset_orig.items():
+            len_perfect_block = len(original_profile) // problem_step_size
+            averages = [original_profile[i * problem_step_size:(i + 1) * problem_step_size].mean()
+                        for i in range(len_perfect_block)]
+
+            # Handle the remainder
+            remainder = len(original_profile) % problem_step_size
+            if remainder:
+                averages.append(original_profile[-remainder:].mean())
+
+            averages.insert(0, averages[0])
+
+            actual_array = problem.get_timeseries(asset).values
+
+            np.testing.assert_array_equal(np.asarray(averages), actual_array)
 
         import models.test_case_small_network_ates_buffer_optional_assets.src.run_ates as run_ates
 
