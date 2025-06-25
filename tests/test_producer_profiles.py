@@ -104,15 +104,15 @@ class TestProducerMaxProfile(TestCase):
             heat_to_discharge_test(solution, results)
             tol = 1e-8
             heat_produced = results["HeatProducer_b702.Heat_source"]
-            heat_production_upper_limit = (
-                solution.get_timeseries("HeatProducer_b702.maximum_heat_source").values
-                / max(solution.get_timeseries("HeatProducer_b702.maximum_heat_source").values)
-                * results["HeatProducer_b702__max_size"]
-            )
 
             if problem_class == HeatProblemESDLProdProfile:
-                np.testing.assert_array_less(
-                    max(heat_production_upper_limit) - tol,
+                heat_production_upper_limit = solution.get_timeseries(
+                    "HeatProducer_b702.maximum_heat_source"
+                ).values
+                np.testing.assert_equal(
+                    solution.esdl_assets[
+                        solution.esdl_asset_name_to_id_map["HeatProducer_b702"]
+                    ].attributes["power"],
                     results["HeatProducer_b702__max_size"],
                 )
                 np.testing.assert_array_less(heat_produced - tol, heat_production_upper_limit)
@@ -121,6 +121,11 @@ class TestProducerMaxProfile(TestCase):
                     5,
                 )
             elif problem_class == HeatProblemESDLProdProfileTCO:
+                heat_production_upper_limit = (
+                    solution.get_timeseries("HeatProducer_b702.maximum_heat_source").values
+                    / max(solution.get_timeseries("HeatProducer_b702.maximum_heat_source").values)
+                    * results["HeatProducer_b702__max_size"]
+                )
                 np.testing.assert_allclose(
                     max(heat_production_upper_limit),
                     results["HeatProducer_b702__max_size"],
