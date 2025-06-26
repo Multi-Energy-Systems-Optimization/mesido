@@ -16,7 +16,7 @@
 - xx
 
 ## Changed
-- xx
+- README update mesido install command for dev
 
 ## Fixed
 - Bug: Producer profiles specified in Watts and asset state=ENABLED
