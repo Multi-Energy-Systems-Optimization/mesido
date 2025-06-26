@@ -21,8 +21,8 @@ class TestProducerMaxProfile(TestCase):
 
     def test_max_producer_scaled_profile(self):
         """
-        Use a scaled profile, where there profile was intentionally reduced for a couple of
-        time-step (reducing the profile value at a few time steps). With the producer size not
+        Use a scaled profile, where the profile was intentionally reduced for a couple of
+        time-steps (reducing the profile value at a few time steps). With the producer size not
         being minimized.
 
         Checks:
@@ -64,7 +64,7 @@ class TestProducerMaxProfile(TestCase):
 
     def test_max_producer_esdl_unscaled_profile(self):
         """
-        Use a profile specified in Watts, where there profile was intentionally modified (via the
+        Use a profile specified in Watts, where the profile was intentionally modified (via the
         profile multiplier) such that it is smaller than the requried heating demand at a couple of
         timesteps. With the producer size being minimized.
 
@@ -139,8 +139,8 @@ class TestProducerMaxProfile(TestCase):
 
     def test_max_producer_esdl_scaled_profile(self):
         """
-        Use a scaled profile, where there profile was intentionally reduced for a couple of
-        time-step (reducing the profile value at a few time steps). With the producer size not
+        Use a scaled profile, where the profile was intentionally reduced for a couple of
+        time-steps (reducing the profile value at a few time steps). With the producer size not
         being minimized.
 
         Checks:
