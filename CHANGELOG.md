@@ -1,4 +1,4 @@
-# [Unreleased-main] - 2025-06-12
+# [Unreleased-main] - 2025-06-25
 
 ## Added
 - xx
@@ -7,7 +7,19 @@
 - xx
 
 ## Fixed
+- xxx
+
+
+# [0.1.13] - 2025-06-25
+
+## Added
 - xx
+
+## Changed
+- README update mesido install command for dev
+
+## Fixed
+- Bug: Producer profiles specified in Watts and asset state=ENABLED
 
 
 # [0.1.12] - 2025-06-12
