@@ -75,7 +75,7 @@ class TestElecBoiler(TestCase):
         heat_problem = run_esdl_mesido_optimization(
             SourcePipeSink,
             base_folder=base_folder,
-            esdl_file_name="sourcesink_withHP_voc.esdl",
+            esdl_file_name="sourcesink_withHP.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_import.csv",

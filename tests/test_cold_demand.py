@@ -121,7 +121,7 @@ class TestColdDemand(TestCase):
         heat_problem = run_esdl_mesido_optimization(
             HeatProblem,
             base_folder=base_folder,
-            esdl_file_name="airco_voc.esdl",
+            esdl_file_name="airco.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries.csv",
@@ -496,7 +496,6 @@ if __name__ == "__main__":
     test_cold_demand.test_cold_demand()
     test_cold_demand.test_wko()
     test_cold_demand.test_airco()
-    test_cold_demand.test_airco_voc()
     test_cold_demand.test_heat_cold_demand_peak_overlap()
     test_cold_demand.test_heat_cold_demand_peak_back_to_back()
     test_cold_demand.test_heat_cold_peak_before()
