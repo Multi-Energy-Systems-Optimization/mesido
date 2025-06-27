@@ -242,5 +242,3 @@ if __name__ == "__main__":
     # for p in elect.energy_system_components.get("heat_pipe", []):
     #     print(p, results[f"{p}__hn_heat_loss"])
     #     print(p, elect.bounds()[f"{p}__hn_heat_loss"])
-
-    a = 1

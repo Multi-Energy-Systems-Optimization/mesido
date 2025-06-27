@@ -1281,6 +1281,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 )
 
             return GeothermalSource, modifiers
+        elif asset.asset_type == "HeatPump":
+            modifiers["cop"] = asset.attributes["COP"]
+            return AirWaterHeatPump, modifiers
         else:
             return HeatSource, modifiers
 
