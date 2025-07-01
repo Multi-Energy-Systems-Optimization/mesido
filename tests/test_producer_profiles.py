@@ -21,8 +21,8 @@ class TestProducerMaxProfile(TestCase):
 
     def test_max_producer_scaled_profile(self):
         """
-        Use a scaled profile, where there profile was intentionally reduced for a couple of
-        time-step (reducing the profile value at a few time steps). With the producer size not
+        Use a scaled profile, where the profile was intentionally reduced for a couple of
+        time-steps (reducing the profile value at a few time steps). With the producer size not
         being minimized.
 
         Checks:
@@ -64,7 +64,7 @@ class TestProducerMaxProfile(TestCase):
 
     def test_max_producer_esdl_unscaled_profile(self):
         """
-        Use a profile specified in Watts, where there profile was intentionally modified (via the
+        Use a profile specified in Watts, where the profile was intentionally modified (via the
         profile multiplier) such that it is smaller than the requried heating demand at a couple of
         timesteps. With the producer size being minimized.
 
@@ -104,15 +104,15 @@ class TestProducerMaxProfile(TestCase):
             heat_to_discharge_test(solution, results)
             tol = 1e-8
             heat_produced = results["HeatProducer_b702.Heat_source"]
-            heat_production_upper_limit = (
-                solution.get_timeseries("HeatProducer_b702.maximum_heat_source").values
-                / max(solution.get_timeseries("HeatProducer_b702.maximum_heat_source").values)
-                * results["HeatProducer_b702__max_size"]
-            )
 
             if problem_class == HeatProblemESDLProdProfile:
-                np.testing.assert_array_less(
-                    max(heat_production_upper_limit) - tol,
+                heat_production_upper_limit = solution.get_timeseries(
+                    "HeatProducer_b702.maximum_heat_source"
+                ).values
+                np.testing.assert_equal(
+                    solution.esdl_assets[
+                        solution.esdl_asset_name_to_id_map["HeatProducer_b702"]
+                    ].attributes["power"],
                     results["HeatProducer_b702__max_size"],
                 )
                 np.testing.assert_array_less(heat_produced - tol, heat_production_upper_limit)
@@ -121,6 +121,11 @@ class TestProducerMaxProfile(TestCase):
                     5,
                 )
             elif problem_class == HeatProblemESDLProdProfileTCO:
+                heat_production_upper_limit = (
+                    solution.get_timeseries("HeatProducer_b702.maximum_heat_source").values
+                    / max(solution.get_timeseries("HeatProducer_b702.maximum_heat_source").values)
+                    * results["HeatProducer_b702__max_size"]
+                )
                 np.testing.assert_allclose(
                     max(heat_production_upper_limit),
                     results["HeatProducer_b702__max_size"],
@@ -134,8 +139,8 @@ class TestProducerMaxProfile(TestCase):
 
     def test_max_producer_esdl_scaled_profile(self):
         """
-        Use a scaled profile, where there profile was intentionally reduced for a couple of
-        time-step (reducing the profile value at a few time steps). With the producer size not
+        Use a scaled profile, where the profile was intentionally reduced for a couple of
+        time-steps (reducing the profile value at a few time steps). With the producer size not
         being minimized.
 
         Checks:
