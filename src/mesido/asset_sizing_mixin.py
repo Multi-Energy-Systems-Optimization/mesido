@@ -807,6 +807,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 and hasattr(esdl_asset_attributes.items[0], "maximum")
                 and esdl_asset_attributes.items[0].maximum.profileQuantityAndUnit.reference.unit
                 == esdl.UnitEnum.WATT
+                and parameters[f"{asset_name}.state"] == 2  # Optional asset
             ):
                 max_profile = max(self.get_timeseries(f"{asset_name}.maximum_heat_source").values)
                 if ub > max_profile:
