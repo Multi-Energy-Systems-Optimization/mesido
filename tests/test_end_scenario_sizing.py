@@ -108,11 +108,7 @@ class TestEndScenarioSizing(TestCase):
             ).attributes["technicalLifetime"]
             if technicalLifetime == 0:
                 technicalLifetime = years
-            obj += (
-                self.results[f"{self.solution._asset_fixed_operational_cost_map[asset]}"]
-                * years
-                * (years / technicalLifetime)
-            )
+            obj += self.results[f"{self.solution._asset_fixed_operational_cost_map[asset]}"] * years
             obj += (
                 self.results[f"{self.solution._asset_variable_operational_cost_map[asset]}"] * years
             )
@@ -214,11 +210,7 @@ class TestEndScenarioSizing(TestCase):
             ).attributes["technicalLifetime"]
             if technicalLifetime == 0:
                 technicalLifetime = years
-            obj += (
-                results[f"{solution_staged._asset_fixed_operational_cost_map[asset]}"]
-                * years
-                * (years / technicalLifetime)
-            )
+            obj += results[f"{solution_staged._asset_fixed_operational_cost_map[asset]}"] * years
             obj += results[f"{solution_staged._asset_variable_operational_cost_map[asset]}"] * years
             obj += results[f"{solution_staged._asset_investment_cost_map[asset]}"] * (
                 years / technicalLifetime

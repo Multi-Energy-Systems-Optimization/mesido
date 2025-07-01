@@ -108,9 +108,11 @@ class MinimizeTCO(Goal):
         If `discounted_annualized_cost` is not defined or False, the operational and
         fixed operational costs are multiplied by the number_of_years.
 
+        'technicalLifetime' is function of installation and investment cost calculations
+
         Default value of 'technicalLifetime' is 0. If the default value is not modified
         in ESDL file, 'technicalLifetime' is taken as 'number_of_years' of optimization
-        in the cost calculation
+        in the cost calculation.
 
         Args:
             optimization_problem (TechnoEconomicMixin): The optimization problem instance.
@@ -138,6 +140,8 @@ class MinimizeTCO(Goal):
                     obj += extra_var
                 elif "operational" in cost_type:
                     obj += extra_var * self.number_of_years
+                elif "fixed_operational" in cost_type:
+                    obj += extra_var
                 else:
                     # These are the CAPEX cost under non-annualized condition
                     obj += extra_var * (self.number_of_years / asset_technicalLifetime)
