@@ -1416,6 +1416,14 @@ class _AssetToComponentBase:
                         f"in {per_unit} instead."
                     )
                     continue
+                elif (asset.asset_type != "HeatStorage") and ((per_unit != UnitEnum.WATT) or (per_unit != UnitEnum.WATT and str(per_time) != 'YEAR')):
+                    raise ValueError(
+                        f"Expected the specified OPEX for asset "f"{asset.name} to per unit in W and/or per time in year , but they are provided "f"in {per_unit} and/or "f"in {per_time} instead."
+                    )
+                elif (asset.asset_type == "HeatStorage") and ((per_unit != UnitEnum.CUBIC_METRE) or (per_unit != UnitEnum.CUBIC_METRE and str(per_time) != 'YEAR')):
+                    raise ValueError(
+                        f"Expected the specified OPEX for asset "f"{asset.name} to per unit in m^3 and/or per time in year , but they are provided "f"in {per_unit} and/or "f"in {per_time} instead."
+                    )
 
                 value += cost_value
         return value
