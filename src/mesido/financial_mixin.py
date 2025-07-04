@@ -944,7 +944,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             denominator = 1.0
             if s in self.energy_system_components.get(
                 "air_water_heat_pump", []
-            ) or self.energy_system_components.get("air_water_heat_pump_elec", []):
+            ) or s in self.energy_system_components.get("air_water_heat_pump_elec", []):
                 denominator = parameters[f"{s}.cop"]
             sum = 0.0
             for i in range(1, len(self.times())):
