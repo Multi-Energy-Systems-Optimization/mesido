@@ -4,7 +4,7 @@
 - xx
 
 ## Changed
-- xx
+- Previously variable operational cost of air-to-water heat pump was based on  the thermal power usage. Now it is based on the electrical power usage
 
 ## Fixed
 - xxx

@@ -95,6 +95,14 @@ class TestElecBoiler(TestCase):
             results["HeatPump_d8fd.Heat_source"] + 1.0e-6,
         )
 
+        # Check how variable operation cost is calculated
+        np.testing.assert_allclose(
+            parameters["HeatPump_d8fd.variable_operational_cost_coefficient"]
+            * sum(results["HeatPump_d8fd.Heat_source"][1:])
+            / parameters["HeatPump_d8fd.cop"],
+            results["HeatPump_d8fd__variable_operational_cost"],
+        )
+
 
 if __name__ == "__main__":
     TestElecBoiler = TestElecBoiler()
