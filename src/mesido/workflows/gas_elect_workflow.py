@@ -9,6 +9,11 @@ from mesido.workflows.goals.minimize_tco_goal import MinimizeTCO
 from mesido.workflows.io.write_output import ScenarioOutput
 from mesido.workflows.utils.helpers import main_decorator
 
+from mesido.workflows.utils.adapt_profiles import (
+    adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
+)
+from mesido.workflows.utils.error_types import HEAT_NETWORK_ERRORS, potential_error_to_error
+
 import numpy as np
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
@@ -78,6 +83,8 @@ class GasElectProblem(
 
         self._save_json = True
 
+        self.__day_steps = 10 # 5
+
     def energy_system_options(self):
         options = super().energy_system_options()
         options["neglect_pipe_heat_losses"] = True
@@ -111,6 +118,7 @@ class GasElectProblem(
         return options
 
     def read(self):
+
         super().read()
 
         # Convert gas demand Nm3/h (data in timeseries source file) to heat demand in watts
@@ -134,6 +142,19 @@ class GasElectProblem(
                 target.values,
                 0,
             )
+        # Following part is taken from Grow Workflow
+        # Preprocessing:
+        # - Read the yearly profile with hourly time steps
+        # - Adapt to a daily averaged profile per self.__day_steps except for the day with the peak day
+        potential_error_to_error(HEAT_NETWORK_ERRORS)
+
+        (
+            self.__indx_max_peak,
+            self.__heat_demand_nominal,
+            _,
+        ) = adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(self, self.__day_steps)
+
+        logger.info("HeatProblem read")
 
     def pre(self):
         super().pre()
