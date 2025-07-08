@@ -7,7 +7,7 @@ from mesido.head_loss_class import HeadLossOption
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.goals.minimize_tco_goal import MinimizeTCO
 from mesido.workflows.io.write_output import ScenarioOutput
-from mesido.workflows.utils.helpers import main_decorator
+from mesido.workflows.utils.helpers import main_decorator, run_optimization_problem_solver
 
 from mesido.workflows.utils.adapt_profiles import (
     adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
@@ -54,13 +54,42 @@ class TargetHeatGoal(Goal):
         return optimization_problem.state(self.state)
 
 
+def _mip_gap_settings(mip_gap_name: str, problem):
+    """Creating the same MIP gap settings for all solvers."""
+
+    options = {}
+    if hasattr(problem, "_stage"):
+        if problem._stage == 1:
+            options[mip_gap_name] = 0.005
+        else:
+            options[mip_gap_name] = 0.02
+    else:
+        options[mip_gap_name] = 0.02
+
+    return options
+
+
+class SolverHIGHS:
+    def solver_options(self):
+        options = super().solver_options()
+        options["casadi_solver"] = self._qpsol
+        options["solver"] = "highs"
+        highs_options = options["highs"] = {}
+        highs_options.update(_mip_gap_settings("mip_rel_gap", self))
+
+        options["gurobi"] = None
+        options["cplex"] = None
+
+        return options
+
+
 class SolverCPLEX:
     def solver_options(self):
         options = super().solver_options()
         options["casadi_solver"] = self._qpsol
         options["solver"] = "cplex"
         cplex_options = options["cplex"] = {}
-        cplex_options["CPX_PARAM_EPGAP"] = 0.00001
+        cplex_options.update(_mip_gap_settings("CPX_PARAM_EPGAP", self)) # cplex_options["CPX_PARAM_EPGAP"] = 0.00001
 
         options["highs"] = None
 
@@ -68,6 +97,7 @@ class SolverCPLEX:
 
 
 class GasElectProblem(
+    SolverHIGHS,
     ScenarioOutput,
     ESDLAdditionalVarsMixin,
     TechnoEconomicMixin,
@@ -79,11 +109,16 @@ class GasElectProblem(
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._number_of_years = 1.0
+        self._number_of_years = 30.0
 
         self._save_json = True
 
+        self.__indx_max_peak = None
         self.__day_steps = 10 # 5
+
+        self.__heat_demand_nominal = dict()
+
+        self.__priority = None
 
     def energy_system_options(self):
         options = super().energy_system_options()
@@ -110,10 +145,17 @@ class GasElectProblem(
 
     def solver_options(self):
         options = super().solver_options()
-        options["casadi_solver"] = self._qpsol
-        options["solver"] = "highs"
-        highs_options = options["highs"] = {}
-        highs_options["mip_abs_gap"] = 1.0e-6
+        # options["casadi_solver"] = self._qpsol
+        # options["solver"] = "highs"
+        # highs_options = options["highs"] = {}
+        # highs_options["mip_abs_gap"] = 1.0e-6
+
+        if options["solver"] == "highs":
+            highs_options = options["highs"]
+            if self.__priority == 1:
+                highs_options["time_limit"] = 600
+            else:
+                highs_options["time_limit"] = 100000
 
         return options
 
@@ -205,6 +247,213 @@ class GasElectProblem(
     def post(self):
         if os.path.exists(self.output_folder) and self._save_json:
             self._write_json_output()
+
+
+class SettingsStaged:
+    """
+    Additional settings to be used when a staged approach should be implemented.
+    Staged approach currently entails 2 stages:
+    1. optimisation.... 1 line
+    2. optimization.... 3 lines
+    """
+
+    _stage = 0  # current stage that is being used
+    _total_stages = 0  # total number of stages to be used
+
+    def __init__(
+        self,
+        stage=None,
+        total_stages=None,
+        boolean_bounds: list = None,
+        priorities_output: list = None,
+        *args,
+        **kwargs,
+    ):
+        super().__init__(*args, **kwargs)
+
+        self._stage = stage
+        self._total_stages = total_stages
+        self.__boolean_bounds = boolean_bounds
+
+        if self._stage == 1:
+            self.gas_network_settings["minimize_head_losses"] = True
+            self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+
+        if self._stage == 2 and priorities_output:
+            self._priorities_output = priorities_output
+            self.gas_network_settings["n_linearization_lines"] = 3
+            self.gas_network_settings["minimize_head_losses"] = False
+            self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
+
+    def bounds(self):
+        bounds = super().bounds()
+
+        if self._stage == 2:
+            bounds.update(self.__boolean_bounds)
+
+        return bounds
+
+
+class GasElectProblemStaged(SettingsStaged, GasElectProblem):
+    pass
+
+
+def run_end_scenario_sizing_for_gas_elect(
+    end_scenario_problem_class,
+    solver_class=None,
+    staged_pipe_optimization=True,
+    **kwargs,
+):
+
+    """
+    This function is used to run end_scenario_sizing problem. There are a few variations of the
+    same basic class. The main functionality this function adds is the staged approach, where ...
+
+
+    Parameters
+    ----------
+    end_scenario_problem_class : The end scenario problem class.
+    solver_class: The solver and its settings to be used to solve the problem.
+    staged_pipe_optimization : Boolean to toggle between the staged or non-staged approach
+
+    Returns
+    -------
+    """
+    import time
+
+    boolean_bounds = {}
+    priorities_output = []
+
+    start_time = time.time()
+    #ToDo: Add stages under this method.
+    # Stage 1: cable & pipe sizing where n_linearization_lines == 1.
+    #          Give bounds for stage 2 by allowing one DN sizes larger than what was found in the stage 1 optimization.
+    # Stage 2: cable & pipe sizing where n_linearization_lines == 3
+    if staged_pipe_optimization == False:
+        solution = run_optimization_problem_solver(
+            end_scenario_problem_class,
+            solver_class=solver_class,
+            stage=1,
+            total_stages=1,
+            **kwargs,
+        )
+    if staged_pipe_optimization and issubclass(end_scenario_problem_class, SettingsStaged):
+        solution = run_optimization_problem_solver(
+            end_scenario_problem_class,
+            solver_class=solver_class,
+            stage=1,
+            total_stages=2,
+            **kwargs,
+        )
+        # Error checking
+        solver_success, _ = solution.solver_success(solution.solver_stats, False)
+        if not solver_success:
+            if (
+                solution.solver_stats["return_status"] == "Time limit reached"
+                and solution.objective_value > 1e-6
+                and solution._stage == 1
+            ):
+                logger.error("Optimization maximum allowed time limit reached for stage_1, goal_1")
+                exit(1)
+            else:
+                logger.error("Unsuccessful: unexpected error for stage_1, goal_1")
+                exit(1)
+
+        results = solution.extract_results()
+        parameters = solution.parameters(0)
+        bounds = solution.bounds()
+
+        # We give bounds for stage 2 by allowing one DN sizes larger than what was found in the
+        # stage 1 optimization. But if the pipe is not to be used class DN none should be used and
+        # all the following pipe clasess should have bounds (0, 0)
+        # Assumptions:
+        # - The fist pipe class in the list of pipe_classes is pipe DN none
+        pc_map = solution.get_pipe_class_map()  # if disconnectable and not connected to source
+        for pipe_classes in pc_map.values():
+            v_prev = 0.0
+            first_pipe_class = True
+            use_pipe_dn_none = False
+            for var_name in pipe_classes.values():
+                v = round(abs(results[var_name][0]))
+                if first_pipe_class and v == 1.0:
+                    boolean_bounds[var_name] = (v, v)
+                    use_pipe_dn_none = True
+                elif v == 1.0:
+                    boolean_bounds[var_name] = (0.0, v)
+                elif not use_pipe_dn_none and v_prev == 1.0:  # This allows one DN larger
+                    boolean_bounds[var_name] = (0.0, 1.0)
+                else:
+                    boolean_bounds[var_name] = (v, v)
+                v_prev = v
+                first_pipe_class = False
+
+        for asset in [
+            *solution.energy_system_components.get("heat_source", []),
+            *solution.energy_system_components.get("heat_buffer", []),
+        ]:
+            var_name = f"{asset}_aggregation_count"
+            round_lb = round(results[var_name][0])
+            ub = solution.bounds()[var_name][1]
+            if round_lb >= 1 and (round_lb <= ub):
+                boolean_bounds[var_name] = (round_lb, ub)
+            elif round_lb > ub:
+                logger.error(
+                    f"{var_name}: The lower bound value {round_lb} > the upper bound {ub} value"
+                )
+                exit(1)
+
+        t = solution.times()
+        from rtctools.optimization.timeseries import Timeseries
+
+        for p in solution.energy_system_components.get("heat_pipe", []):
+            if p in solution.hot_pipes and parameters[f"{p}.area"] > 0.0:
+                lb = []
+                ub = []
+                bounds_pipe = bounds[f"{p}__flow_direct_var"]
+                for i in range(len(t)):
+                    r = results[f"{p}__flow_direct_var"][i]
+                    # bound to roughly represent 4km of milp losses in pipes
+                    lb.append(
+                        r
+                        if abs(results[f"{p}.Q"][i] / parameters[f"{p}.area"]) > 2.5e-2
+                        else bounds_pipe[0]
+                    )
+                    ub.append(
+                        r
+                        if abs(results[f"{p}.Q"][i] / parameters[f"{p}.area"]) > 2.5e-2
+                        else bounds_pipe[1]
+                    )
+
+                boolean_bounds[f"{p}__flow_direct_var"] = (Timeseries(t, lb), Timeseries(t, ub))
+                try:
+                    r = results[f"{p}__is_disconnected"]
+                    boolean_bounds[f"{p}__is_disconnected"] = (Timeseries(t, r), Timeseries(t, r))
+                except KeyError:
+                    pass
+
+        # priorities_output = solution._priorities_output
+
+    # solution = run_optimization_problem_solver(
+    #     end_scenario_problem_class,
+    #     solver_class=solver_class,
+    #     stage=2,
+    #     total_stages=2,
+    #     boolean_bounds=boolean_bounds,
+    #     priorities_output=priorities_output,
+    #     **kwargs,
+    # )
+    solution = run_optimization_problem_solver(
+        end_scenario_problem_class,
+        solver_class=solver_class,
+        stage=2,
+        total_stages=2,
+        boolean_bounds=boolean_bounds,
+        **kwargs,
+    )
+
+    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
+
+    return solution
 
 
 @main_decorator
