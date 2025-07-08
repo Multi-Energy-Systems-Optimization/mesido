@@ -1,7 +1,7 @@
-# [Unreleased-main] - 2025-06-12
+# [Unreleased-main] - 2025-07-08
 
 ## Added
-- xx
+- A check is added to check the input opex cost components has year as a unit per time
 
 ## Changed
 - xx
