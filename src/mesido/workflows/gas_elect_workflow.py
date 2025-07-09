@@ -11,6 +11,8 @@ from mesido.workflows.utils.helpers import main_decorator, run_optimization_prob
 
 from mesido.workflows.utils.adapt_profiles import (
     adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
+    adapt_hourly_profile_averages_timestep_size,
+    adapt_hourly_profile_averages_timestep_size_gas
 )
 from mesido.workflows.utils.error_types import HEAT_NETWORK_ERRORS, potential_error_to_error
 
@@ -115,6 +117,8 @@ class GasElectProblem(
 
         self.__indx_max_peak = None
         self.__day_steps = 10 # 5
+        self.__hour_steps = 240
+        self.__number_of_hours_around_peak = 2
 
         self.__heat_demand_nominal = dict()
 
@@ -190,11 +194,14 @@ class GasElectProblem(
         # - Adapt to a daily averaged profile per self.__day_steps except for the day with the peak day
         potential_error_to_error(HEAT_NETWORK_ERRORS)
 
-        (
-            self.__indx_max_peak,
-            self.__heat_demand_nominal,
-            _,
-        ) = adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(self, self.__day_steps)
+        # (
+        #     self.__indx_max_peak,
+        #     self.__heat_demand_nominal,
+        #     _,
+        # ) = adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(self, self.__day_steps)
+
+        adapt_hourly_profile_averages_timestep_size_gas(self, self.__hour_steps, self.__number_of_hours_around_peak)
+
 
         logger.info("HeatProblem read")
 
@@ -253,8 +260,8 @@ class SettingsStaged:
     """
     Additional settings to be used when a staged approach should be implemented.
     Staged approach currently entails 2 stages:
-    1. optimisation.... 1 line
-    2. optimization.... 3 lines
+    1. optimisation is performed with line headloss linearization
+    2. optimization is performed with 3 lines headloss linearization
     """
 
     _stage = 0  # current stage that is being used

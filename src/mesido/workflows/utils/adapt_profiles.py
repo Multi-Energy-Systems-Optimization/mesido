@@ -181,6 +181,76 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, prob
     return problem_indx_max_peak, heat_demand_nominal, cold_demand_nominal
 
 
+def adapt_hourly_profile_averages_timestep_size_gas(problem, problem_step_size_hours, hours_around_peak):
+    """
+    Adapt yearly porifle with hourly time steps to a common profile with average over a given
+    stepsize in hours.
+
+    Append the stepsize average dataset with the peak hour.
+
+
+
+    Return the following:
+
+    """
+    # Extract heat and cold demand assets
+    heat_demands = problem.energy_system_components.get("heat_demand", [])
+    new_datastore = DataStore(problem)
+    new_datastore.reference_datetime = problem.io.datetimes[0]
+
+    for ensemble_member in range(problem.ensemble_size):
+        parameters = problem.parameters(ensemble_member)
+
+        total_heat_demand = None
+        heat_demand_nominal = dict()
+        # Assemble all demands together to get the peaks.
+        for demand in heat_demands:
+            try:
+                demand_values = problem.get_timeseries(
+                    f"{demand}.target_heat_demand", ensemble_member
+                ).values
+            except KeyError:
+                continue
+            if total_heat_demand is None:
+                total_heat_demand = demand_values
+            else:
+                total_heat_demand += demand_values
+            heat_demand_nominal[f"{demand}.Heat_demand"] = max(demand_values)
+            heat_demand_nominal[f"{demand}.Heat_flow"] = max(demand_values)
+
+    idx_max_hot = int(np.argmax(total_heat_demand))
+
+    # new_datastore = DataStore(problem)
+    # new_datastore.reference_datetime = problem.io.datetimes[0]
+
+    org_timeseries = problem.io.datetimes
+    org_dt = list(map(operator.sub, org_timeseries[1:], org_timeseries[0:-1]))
+    assert all(dt.seconds == 3600 for dt in org_dt)  # checks that the orginal timeseries has
+    # homogenous horizon with equispaced timesteps of 3600s (1hr).
+
+    for ensemble_member in range(problem.ensemble_size):
+        parameters = problem.parameters(ensemble_member)
+
+        new_date_times = list()
+
+        for hour in range(0, len(org_timeseries), problem_step_size_hours):
+            new_date_times.append(problem.io.datetimes[hour])
+            if (hour < idx_max_hot) and (idx_max_hot < hour + problem_step_size_hours):
+                for idx in list(range(-hours_around_peak, hours_around_peak+1)):
+                    new_date_times.append(problem.io.datetimes[idx_max_hot+idx])
+
+        new_date_times.append(problem.io.datetimes[-1] + datetime.timedelta(hours=1))
+
+        new_date_times = np.asarray(new_date_times)
+        parameters["times"] = [x.timestamp() for x in new_date_times]
+
+        select_profiles_for_update(problem, new_datastore, new_date_times, ensemble_member)
+
+    problem.io = new_datastore
+
+    logger.info("Profile data has been adapted to a common format")
+
+
 def adapt_hourly_profile_averages_timestep_size(problem, problem_step_size_hours: int):
     """
     Adapt yearly porifle with hourly time steps to a common profile with average over a given
