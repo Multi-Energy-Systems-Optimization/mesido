@@ -279,8 +279,8 @@ class SettingsStaged:
             self.gas_network_settings["minimize_head_losses"] = True
             self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
 
-        if self._stage == 2 and priorities_output:
-            self._priorities_output = priorities_output
+        if self._stage == 2: # and priorities_output:
+            # self._priorities_output = priorities_output
             self.gas_network_settings["n_linearization_lines"] = 3
             self.gas_network_settings["minimize_head_losses"] = False
             self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
@@ -389,6 +389,7 @@ def run_end_scenario_sizing_for_gas_elect(
 
         for asset in [
             *solution.energy_system_components.get("heat_source", []),
+            *solution.energy_system_components.get("gas_source", []),
             *solution.energy_system_components.get("heat_buffer", []),
         ]:
             var_name = f"{asset}_aggregation_count"
@@ -401,35 +402,7 @@ def run_end_scenario_sizing_for_gas_elect(
                     f"{var_name}: The lower bound value {round_lb} > the upper bound {ub} value"
                 )
                 exit(1)
-
-        t = solution.times()
-        from rtctools.optimization.timeseries import Timeseries
-
-        for p in solution.energy_system_components.get("heat_pipe", []):
-            if p in solution.hot_pipes and parameters[f"{p}.area"] > 0.0:
-                lb = []
-                ub = []
-                bounds_pipe = bounds[f"{p}__flow_direct_var"]
-                for i in range(len(t)):
-                    r = results[f"{p}__flow_direct_var"][i]
-                    # bound to roughly represent 4km of milp losses in pipes
-                    lb.append(
-                        r
-                        if abs(results[f"{p}.Q"][i] / parameters[f"{p}.area"]) > 2.5e-2
-                        else bounds_pipe[0]
-                    )
-                    ub.append(
-                        r
-                        if abs(results[f"{p}.Q"][i] / parameters[f"{p}.area"]) > 2.5e-2
-                        else bounds_pipe[1]
-                    )
-
-                boolean_bounds[f"{p}__flow_direct_var"] = (Timeseries(t, lb), Timeseries(t, ub))
-                try:
-                    r = results[f"{p}__is_disconnected"]
-                    boolean_bounds[f"{p}__is_disconnected"] = (Timeseries(t, r), Timeseries(t, r))
-                except KeyError:
-                    pass
+            a=1
 
         # priorities_output = solution._priorities_output
 
