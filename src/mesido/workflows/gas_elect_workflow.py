@@ -8,7 +8,6 @@ from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.goals.minimize_tco_goal import MinimizeTCO
 from mesido.workflows.io.write_output import ScenarioOutput
 from mesido.workflows.utils.helpers import main_decorator, run_optimization_problem_solver
-
 from mesido.workflows.utils.adapt_profiles import (
     adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
     adapt_hourly_profile_averages_timestep_size,
@@ -167,12 +166,14 @@ class GasElectProblem(
 
         super().read()
 
-        # Convert gas demand Nm3/h (data in timeseries source file) to heat demand in watts
-        # Assumumption:
-        #   - gas heating value (LCV value) = 31.68 * 10^6 (J/m3) at 1bar, 273.15K
-        #   - gas boiler efficiency 80%
-        # TODO: setup a standard way for gas usage and automate the link to heating value & boiler
-        # efficiency (if needed)
+        # 1 - Convert gas demand Nm3/h (data in timeseries source file) to heat demand in watts:
+        #     - Assumumption:
+        #         - gas heating value (LCV value) = 31.68 * 10^6 (J/m3) at 1bar, 273.15K
+        #         - gas boiler efficiency 80%
+        # 2 - Profile adapting:
+        #     - Read the yearly profile with hourly time steps
+        #     - Adapt to a daily averaged profile per self.__day_steps except for the day with the peak day
+        # TODO: setup a standard way for gas usage and automate the link to heating value & boiler efficiency (if needed)
         for demand in self.energy_system_components["heat_demand"]:
             target = self.get_timeseries(f"{demand}.target_heat_demand")
 
@@ -188,10 +189,7 @@ class GasElectProblem(
                 target.values,
                 0,
             )
-        # Following part is taken from Grow Workflow
-        # Preprocessing:
-        # - Read the yearly profile with hourly time steps
-        # - Adapt to a daily averaged profile per self.__day_steps except for the day with the peak day
+
         potential_error_to_error(HEAT_NETWORK_ERRORS)
 
         # (
@@ -252,8 +250,17 @@ class GasElectProblem(
     #     return constraints
 
     def post(self):
+        super().post()
+        results = self.extract_results()
+        parameters = self.parameters(0)
         if os.path.exists(self.output_folder) and self._save_json:
-            self._write_json_output()
+            bounds = self.bounds()
+            aliases = self.alias_relation._canonical_variables_map
+            solver_stats = self.solver_stats
+            self._write_json_output(results, parameters, bounds, aliases, solver_stats)
+
+        # if os.path.exists(self.output_folder) and self._save_json:
+        #     self._write_json_output()
 
 
 class SettingsStaged:
@@ -332,10 +339,7 @@ def run_end_scenario_sizing_for_gas_elect(
     priorities_output = []
 
     start_time = time.time()
-    #ToDo: Add stages under this method.
-    # Stage 1: cable & pipe sizing where n_linearization_lines == 1.
-    #          Give bounds for stage 2 by allowing one DN sizes larger than what was found in the stage 1 optimization.
-    # Stage 2: cable & pipe sizing where n_linearization_lines == 3
+
     if staged_pipe_optimization == False:
         solution = run_optimization_problem_solver(
             end_scenario_problem_class,
