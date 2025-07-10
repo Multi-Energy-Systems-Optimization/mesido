@@ -26,7 +26,7 @@ class MesidoAssetIssueType(Enum):
 
     For cost attributes:
     Cost attributes can be required or optional for each asset.
-    - Required inputs: Must exist in the ESDL file (MISASSET_COST_ATTRIBUTE_MISSINGSING) and
+    - Required inputs: Must exist in the ESDL file (ASSET_COST_ATTRIBUTE_MISSING) and
       have correct values/units (ASSET_COST_ATTRIBUTE_INCORRECT)
     - Optional inputs: Not required to exist, but if present must have correct
       values/units (ASSET_COST_ATTRIBUTE_INCORRECT)

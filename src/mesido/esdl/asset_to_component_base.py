@@ -1459,8 +1459,6 @@ class _AssetToComponentBase:
     def get_fixed_opex_costs(self, asset: Asset) -> float:
         """
         Returns the fixed opex cost coefficient of an asset in Euros per W.
-
-        Returns the fixed opex cost coefficient of an asset in Euros per W.
         If a fixed opex cost is required for the asset but not provided,
         or if the cost information is inconsistent, a potential MesidoAssetIssueType
         is added to the gathered_potential_issues dictionary.
