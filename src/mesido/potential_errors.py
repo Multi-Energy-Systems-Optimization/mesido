@@ -15,6 +15,7 @@ class MesidoAssetIssueType(Enum):
     This enum defines the different types of issues that can occur with assets in the system.
     Each issue type has a specific validation purpose:
 
+    - HEAT_PRODUCER_POWER, Validate if power producers have sufficient installed capacity
     - HEAT_DEMAND_POWER, COLD_DEMAND_POWER: Validate that installed capacity meets demand
     - HEAT_DEMAND_TYPE: Validate correct asset type for heat demand
     - ASSET_PROFILE_CAPABILITY: Validate profile assignment capabilities
