@@ -1,7 +1,31 @@
-# [Unreleased-main] - 2025-05-27
+# [Unreleased-main] - 2025-06-25
+
+## Added
+- xx
+
+## Changed
+- Previously variable operational cost of air-to-water heat pump was based on  the thermal power usage. Now it is based on the electrical power usage
+
+## Fixed
+- xxx
+
+
+# [0.1.13] - 2025-06-25
 
 ## Added
 - Improved error handling for asset cost information to prevent potential failures and ensure more robust processing of asset-related data.
+
+## Changed
+- README update mesido install command for dev
+
+## Fixed
+- Bug: Producer profiles specified in Watts and asset state=ENABLED
+
+
+# [0.1.12] - 2025-06-12
+
+## Added
+- Maximum profile contraint (specified in Watts) to some heat producers
 
 ## Changed
 - xx

@@ -31,6 +31,7 @@ class MesidoAssetIssueType(Enum):
       values/units (ASSET_COST_ATTRIBUTE_INCORRECT)
     """
 
+    HEAT_PRODUCER_POWER = "heat_producer.power"
     HEAT_DEMAND_POWER = "heat_demand.power"
     COLD_DEMAND_POWER = "cold_demand.power"
     HEAT_DEMAND_TYPE = "heat_demand.type"
