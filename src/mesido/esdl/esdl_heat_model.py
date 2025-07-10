@@ -1345,14 +1345,28 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         # TODO: temporary value for standard dT on which capacity is based, Q in m3/s
         temperatures = self._supply_return_temperature_modifiers(asset)
+        if len(asset.in_ports) + len(asset.out_ports)>2:
+            temp = []
+            for p in [*asset.in_ports, *asset.out_ports]:
+                carrier = asset.global_properties["carriers"][p.carrier.id]
+                temp.append(carrier['temperature'])
+            temperatures["T_supply"] = max(temp)
+            temperatures["T_return"] = min(temp)
         dt = temperatures["T_supply"] - temperatures["T_return"]
         rho = self.rho
         cp = self.cp
         q_max_ates = hfr_discharge_max / (cp * rho * dt)
 
-        q_nominal = min(
-            self._get_connected_q_nominal(asset), q_max_ates * asset.attributes["aggregationCount"]
-        )
+        q_nominal = self._get_connected_q_nominal(asset)
+        if isinstance(q_nominal, float):
+            q_nominal = min(
+                self._get_connected_q_nominal(asset), q_max_ates * asset.attributes["aggregationCount"]
+            )
+        elif isinstance(q_nominal, dict):
+            for k,v in q_nominal.items():
+                q_nominal[k]['Q_nominal'] = min(v['Q_nominal'], q_max_ates * asset.attributes[
+                    "aggregationCount"])
+
 
         modifiers = dict(
             technical_life=self.get_asset_attribute_value(

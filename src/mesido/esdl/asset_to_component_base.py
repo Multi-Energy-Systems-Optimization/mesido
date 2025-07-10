@@ -233,6 +233,11 @@ class _AssetToComponentBase:
     primary_port_name_convention = "primary"
     secondary_port_name_convention = "secondary"
 
+    charge_port_name_convention = "charge"
+    discharge_port_name_convention = "discharge"
+    hot_port_name_convention = "hot"
+    cold_port_name_convention = "cold"
+
     __power_keys = ["power", "maxDischargeRate", "maxChargeRate", "capacity"]
 
     def __init__(self, **kwargs):
@@ -982,7 +987,7 @@ class _AssetToComponentBase:
             if q_nominals["Q_nominal"] is not None:
                 self._port_to_q_nominal[asset.out_ports[0]] = q_nominals["Q_nominal"]
                 return q_nominals
-        elif len(asset.in_ports) >= 2 and len(asset.out_ports) == 2:
+        elif len(asset.in_ports) >= 2 and len(asset.out_ports) >= 2:
             q_nominals = {}
             for p in asset.in_ports:
                 if isinstance(p.carrier, esdl.HeatCommodity):
@@ -1010,10 +1015,22 @@ class _AssetToComponentBase:
                     if q_nominal is not None:
                         self._port_to_q_nominal[p] = q_nominal
                         self._port_to_q_nominal[out_port] = q_nominal
-                        if "sec" in p.name.lower():
+                        if self.secondary_port_name_convention in p.name.lower():
                             q_nominals["Secondary"] = {"Q_nominal": q_nominal}
-                        else:
+                        elif self.primary_port_name_convention in p.name.lower():
                             q_nominals["Primary"] = {"Q_nominal": q_nominal}
+                        elif (self.discharge_port_name_convention in p.name.lower() and
+                              self.hot_port_name_convention in p.name.lower()):
+                            q_nominals["DischargeHot"] = {"Q_nominal": q_nominal}
+                        elif (self.discharge_port_name_convention in p.name.lower() and
+                              self.cold_port_name_convention in p.name.lower()):
+                            q_nominals["DischargeCold"] = {"Q_nominal": q_nominal}
+                        elif (self.charge_port_name_convention in p.name.lower() and
+                                self.hot_port_name_convention in p.name.lower()):
+                            q_nominals["ChargeHot"] = {"Q_nominal": q_nominal}
+                        else:
+                            raise Exception(f"{asset.name} has ports that do not comply with any "
+                                            f"convention")
 
             return q_nominals
 
