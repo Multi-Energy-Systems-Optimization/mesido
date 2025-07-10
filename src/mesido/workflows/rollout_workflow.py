@@ -465,62 +465,62 @@ class RollOutProblem(
 
 
 
-    def __yearly_investment_constraints_old(self, ensemble_member):
-        constraints = []
-
-        bounds = self.bounds()
-        for y in range(self._years):
-            year_capex = 0
-
-            # pipes
-            for p in self.hot_pipes:
-                p_capex = self._pipe_capex_dict[p]
-                pipe_percentage_placed = self.get_asset_percentage__placed_symbols(p)
-                if y == 0:
-                    pipe_capex = p_capex * pipe_percentage_placed[0]
-                else:
-                    pipe_capex = p_capex * (pipe_percentage_placed[y] -
-                                            pipe_percentage_placed[(y - 1)])
-                year_capex += pipe_capex
-
-            # sources
-            for s in self.energy_system_components.get("heat_source", []):
-                s_capex = self._source_capex_dict[s]
-                source_percentage_placed = self.get_asset_percentage__placed_symbols(s)
-                if y == 0:
-                    source_capex = s_capex * source_percentage_placed[0]
-                else:
-                    source_capex = s_capex * (source_percentage_placed[y] -
-                                              source_percentage_placed[(y - 1)])
-                year_capex += source_capex
-
-            # consumers
-            for d in self.energy_system_components.get("heat_demand", []):
-                d_capex = self._demand_capex_dict[d]
-                demand_percentage_placed = self.get_asset_percentage__placed_symbols(d)
-                if y == 0:
-                    demand_capex = d_capex * demand_percentage_placed[0]
-                else:
-                    demand_capex = d_capex * (demand_percentage_placed[y] -
-                                              demand_percentage_placed[(y - 1)])
-                year_capex += demand_capex
-
-            # ates
-            for a in self.energy_system_components.get("ates", []):
-                ates_N_doublets = self.parameters(0)[f"{a}.nr_of_doublets"]
-                a_capex = self._ates_capex_dict[a]
-                ates_doublet_sums_percentage = self.__ates_doublet_sums(a)[1]
-                if y == 0:
-                    ates_capex = a_capex / ates_N_doublets * ates_doublet_sums_percentage[y]
-                else:
-                    ates_capex = a_capex / ates_N_doublets * (ates_doublet_sums_percentage[y] -
-                                                              ates_doublet_sums_percentage[y - 1])
-                year_capex += ates_capex
-
-            year_nominal = bounds[f"yearly_capex_{y}"][1]
-            yearly_capex_var = self.__state_vector_scaled(f"yearly_capex_{y}", ensemble_member)
-            constraints.append(((yearly_capex_var - year_capex) / year_nominal, 0.0, 0.0))
-        return constraints
+    # def __yearly_investment_constraints_old(self, ensemble_member):
+    #     constraints = []
+    #
+    #     bounds = self.bounds()
+    #     for y in range(self._years):
+    #         year_capex = 0
+    #
+    #         # pipes
+    #         for p in self.hot_pipes:
+    #             p_capex = self._pipe_capex_dict[p]
+    #             pipe_percentage_placed = self.get_asset_percentage__placed_symbols(p)
+    #             if y == 0:
+    #                 pipe_capex = p_capex * pipe_percentage_placed[0]
+    #             else:
+    #                 pipe_capex = p_capex * (pipe_percentage_placed[y] -
+    #                                         pipe_percentage_placed[(y - 1)])
+    #             year_capex += pipe_capex
+    #
+    #         # sources
+    #         for s in self.energy_system_components.get("heat_source", []):
+    #             s_capex = self._source_capex_dict[s]
+    #             source_percentage_placed = self.get_asset_percentage__placed_symbols(s)
+    #             if y == 0:
+    #                 source_capex = s_capex * source_percentage_placed[0]
+    #             else:
+    #                 source_capex = s_capex * (source_percentage_placed[y] -
+    #                                           source_percentage_placed[(y - 1)])
+    #             year_capex += source_capex
+    #
+    #         # consumers
+    #         for d in self.energy_system_components.get("heat_demand", []):
+    #             d_capex = self._demand_capex_dict[d]
+    #             demand_percentage_placed = self.get_asset_percentage__placed_symbols(d)
+    #             if y == 0:
+    #                 demand_capex = d_capex * demand_percentage_placed[0]
+    #             else:
+    #                 demand_capex = d_capex * (demand_percentage_placed[y] -
+    #                                           demand_percentage_placed[(y - 1)])
+    #             year_capex += demand_capex
+    #
+    #         # ates
+    #         for a in self.energy_system_components.get("ates", []):
+    #             ates_N_doublets = self.parameters(0)[f"{a}.nr_of_doublets"]
+    #             a_capex = self._ates_capex_dict[a]
+    #             ates_doublet_sums_percentage = self.__ates_doublet_sums(a)[1]
+    #             if y == 0:
+    #                 ates_capex = a_capex / ates_N_doublets * ates_doublet_sums_percentage[y]
+    #             else:
+    #                 ates_capex = a_capex / ates_N_doublets * (ates_doublet_sums_percentage[y] -
+    #                                                           ates_doublet_sums_percentage[y - 1])
+    #             year_capex += ates_capex
+    #
+    #         year_nominal = bounds[f"yearly_capex_{y}"][1]
+    #         yearly_capex_var = self.__state_vector_scaled(f"yearly_capex_{y}", ensemble_member)
+    #         constraints.append(((yearly_capex_var - year_capex) / year_nominal, 0.0, 0.0))
+    #     return constraints
 
     def __yearly_investment_constraints(self, ensemble_member):
         constraints = []
