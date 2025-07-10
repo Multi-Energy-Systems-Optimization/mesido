@@ -231,7 +231,9 @@ class _AssetToComponentBase:
     }
 
     # Dictionary mapping asset types to cost attribute requirements
-    # Values: "required", "optional", "not supported"
+    # Values: "required", "optional"
+    # Cost attributes not included in the dictionary as treated as "not supported" 
+    # when checking for potential errors in ASSET_COST_INFORMATION  
     ASSET_COST_REQUIREMENTS = {
         "heat_pump": {
             "investmentCosts": "required",
@@ -250,35 +252,26 @@ class _AssetToComponentBase:
         "heat_demand": {
             "investmentCosts": "optional",
             "installationCosts": "optional",
-            "variableOperationalCosts": "not supported",
             "fixedMaintenanceCosts": "optional",
-            "fixedOperationalCosts": "not supported",
         },
         "heat_buffer": {  # Surface Tank Storage
             "investmentCosts": "required",
             "installationCosts": "required",
-            "variableOperationalCosts": "not supported",
             "fixedMaintenanceCosts": "optional",
             "fixedOperationalCosts": "optional",
         },
         "ates": {  # HT-ATES (high)
             "investmentCosts": "required",
             "installationCosts": "required",
-            "variableOperationalCosts": "not supported",
             "fixedMaintenanceCosts": "optional",
             "fixedOperationalCosts": "required",
         },
         "pipe": {
             "investmentCosts": "optional",
-            "installationCosts": "not supported",
-            "variableOperationalCosts": "not supported",
-            "fixedMaintenanceCosts": "not supported",
-            "fixedOperationalCosts": "not supported",
         },
         "heat_exchanger": {
             "investmentCosts": "required",
             "installationCosts": "required",
-            "variableOperationalCosts": "not supported",
             "fixedMaintenanceCosts": "optional",
             "fixedOperationalCosts": "required",
         },
@@ -1334,24 +1327,28 @@ class _AssetToComponentBase:
             error_type = error_type_mapping.get(cost_error_type)
             get_potential_errors().add_potential_issue(error_type, asset_id, message)
 
-    def _check_cost_attribute_requirement(self, component_type, cost_attribute):
+    def _check_cost_attribute_requirement(self, component_type: str, cost_attribute: str)-> str:
         """
-        Check if a cost attribute is required, optional, or not supported for a component type.
+        Check if a cost attribute is required, optional for a component type.
+        If the cost attribute is neither of those, consider it as "not supported".
+        Similarly, If an asset type is not defined in ASSET_COST_REQUIREMENTS
+        it is considered as not supported asset type.
 
         Args:
             component_type: The component type (e.g., "heat_pump", "pipe")
             cost_attribute: The cost attribute to check (e.g., "investmentCosts")
 
         Returns:
-            str: "required", "optional", "not supported" or "unknown"
+            str: "required", "optional", "not supported",
+            or "unknown or not supported asset type"
         """
         asset_type = self.COST_VALIDATION_COMPONENT_TO_ASSET_TYPE.get(component_type)
         if not asset_type or asset_type not in self.ASSET_COST_REQUIREMENTS:
-            return "unknown"
+            return "unknown or not supported asset type"
 
-        return self.ASSET_COST_REQUIREMENTS[asset_type].get(cost_attribute, "unknown")
+        return self.ASSET_COST_REQUIREMENTS[asset_type].get(cost_attribute, "not supported")
 
-    def _validate_cost_attribute(self, asset, cost_attribute, cost_info):
+    def _validate_cost_attribute(self, asset: Asset, cost_attribute: str, cost_info) -> bool:
         """
         Validate a cost attribute for an asset.
 
@@ -1363,11 +1360,11 @@ class _AssetToComponentBase:
         Returns:
             bool: True if the attribute is valid and should be processed further, False otherwise
         """
-        cost_check = self._check_cost_attribute_requirement(asset.asset_type, cost_attribute)
+        cost_check_message = self._check_cost_attribute_requirement(asset.asset_type, cost_attribute)
         cost_attribute_name = self.COST_ATTRIBUTE_TO_STRING.get(cost_attribute, cost_attribute)
 
         if cost_info is None:
-            if cost_check == "required":
+            if cost_check_message == "required":
                 message = (
                     f"No {cost_attribute_name} information specified for {asset.name} "
                     f"of type {asset.asset_type}."
@@ -1375,10 +1372,10 @@ class _AssetToComponentBase:
                 self._log_and_add_potential_issue(message, asset.id, cost_error_type="missing")
             return False
 
-        if cost_check == "not supported":
+        if cost_check_message in ["not supported", "unknown or not supported asset type"]:
             message = (
                 f"The {cost_attribute_name} for asset {asset.name} "
-                f"of type {asset.asset_type} is not supported."
+                f"of type {asset.asset_type} is {cost_check_message}."
             )
             self._log_and_add_potential_issue(message, asset.id, report_issue=False)
             return False
