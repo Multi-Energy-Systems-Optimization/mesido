@@ -1317,7 +1317,7 @@ class _AssetToComponentBase:
     def _log_and_add_potential_issue(
         self, message: str, asset_id, cost_error_type: str = None, report_issue: bool = True
     ) -> None:
-        """Helper function to log warnings and report issues."""
+        """Helper function to log warnings and potential issues."""
         logger.warning(message)
         if report_issue:
             error_type_mapping = {
@@ -1425,28 +1425,28 @@ class _AssetToComponentBase:
                 continue
             if per_time != TimeUnitEnum.NONE:
                 message = (
-                    f"Specified OPEX for asset {asset.name} of type {asset.name} includes a "
+                    f"Specified OPEX for asset {asset.name} of type {asset.asset_type} includes a "
                     f"component per time, but should be None."
                 )
                 self._log_and_add_potential_issue(message, asset.id, cost_error_type="incorrect")
                 continue
             if per_unit != UnitEnum.WATTHOUR and asset.asset_type not in gas_assets:
                 message = (
-                    f"Expected the specified OPEX for asset {asset.name} of type {asset.name} "
+                    f"Expected the specified OPEX for asset {asset.name} of type {asset.asset_type} "
                     f"to be per Wh, but they are provided in {per_unit} instead."
                 )
                 self._log_and_add_potential_issue(message, asset.id, cost_error_type="incorrect")
                 continue
             if asset.asset_type in gas_assets and per_unit != UnitEnum.GRAM:
                 message = (
-                    f"Expected the specified OPEX for asset {asset.name} of type {asset.name} "
+                    f"Expected the specified OPEX for asset {asset.name} of type {asset.asset_type} "
                     f"to be per EURO/g, but they are provided in {unit}/{per_unit} instead."
                 )
                 self._log_and_add_potential_issue(message, asset.id, cost_error_type="incorrect")
                 continue
             if cost_value < 0.0:
                 message = (
-                    f"Specified OPEX for asset {asset.name} of type {asset.name} is {cost_value}, "
+                    f"Specified OPEX for asset {asset.name} of type {asset.asset_type} is {cost_value}, "
                     f"but should be non-negative."
                 )
                 self._log_and_add_potential_issue(message, asset.id, cost_error_type="incorrect")
