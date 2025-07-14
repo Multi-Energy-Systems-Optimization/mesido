@@ -987,6 +987,34 @@ class ScenarioOutput:
             elif name not in heat_pipes:  # because heat pipes are updated below
                 logger.warning(f"ESDL update: asset {name} has not been updated")
 
+        # Electricity Cable
+        for _, attributes in self.esdl_assets.items():
+            name = attributes.name
+            if name in [*self.energy_system_components.get("electricity_cable", [])]:
+                asset = _name_to_asset(name)
+                asset_placement_var = self._asset_aggregation_count_var_map[name]
+                placed = np.round(results[asset_placement_var][0]) >= 1.
+                # ToDo: Use max_power for capacity and aggregation count for placed to be consistent. Now the both methods have bugs
+                asset.capacity = max(results[f"{name}.ElectricityOut.Power"])
+                if asset.capacity == 0:
+                    asset.delete(recursive=True)
+                else:
+                    asset.state = esdl.AssetStateEnum.ENABLED
+
+        # Gas Pipe
+        for _, attributes in self.esdl_assets.items():
+            name = attributes.name
+            if name in [*self.energy_system_components.get("gas_pipe", [])]:
+                asset = _name_to_asset(name)
+                asset_placement_var = self._asset_aggregation_count_var_map[name]
+                placed = np.round(results[asset_placement_var][0]) >= 1.
+                # ToDo: pick the optimized gas pipe diamter from edr
+                print(name, placed)
+                if results[f"{name}__gn_diameter"][0] == 0:
+                    asset.delete(recursive=True)
+                else:
+                    asset.state = esdl.AssetStateEnum.ENABLED
+
         # Pipes:
         edr_pipe_properties_to_copy = ["innerDiameter", "outerDiameter", "diameter", "material"]
 

@@ -117,7 +117,7 @@ class GasElectProblem(
 
         self.__indx_max_peak = None
         self.__day_steps = 10 # 5
-        self.__hour_steps =  8760 # 240
+        self.__hour_steps = 8760 # 240
         self.__number_of_hours_around_peak = 2
 
         self.__heat_demand_nominal = dict()
@@ -345,7 +345,7 @@ class GasElectProblemStaged(SettingsStaged, GasElectProblem):
 def run_end_scenario_sizing_for_gas_elect(
     end_scenario_problem_class,
     solver_class=None,
-    staged_pipe_optimization=False,
+    staged_pipe_optimization=True,
     **kwargs,
 ):
 
