@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
@@ -98,7 +99,7 @@ class SolverCPLEX:
 
 
 class GasElectProblem(
-    SolverHIGHS,
+    SolverCPLEX,
     ScenarioOutput,
     ESDLAdditionalVarsMixin,
     TechnoEconomicMixin,
@@ -116,7 +117,7 @@ class GasElectProblem(
 
         self.__indx_max_peak = None
         self.__day_steps = 10 # 5
-        self.__hour_steps = 240
+        self.__hour_steps =  8760 # 240
         self.__number_of_hours_around_peak = 2
 
         self.__heat_demand_nominal = dict()
@@ -163,7 +164,7 @@ class GasElectProblem(
         return options
 
     def read(self):
-
+        self.vol_flow_to_watt = False # True: input file unit is Nm3/, False: input file unit is W
         super().read()
 
         # 1 - Convert gas demand Nm3/h (data in timeseries source file) to heat demand in watts:
@@ -174,21 +175,22 @@ class GasElectProblem(
         #     - Read the yearly profile with hourly time steps
         #     - Adapt to a daily averaged profile per self.__day_steps except for the day with the peak day
         # TODO: setup a standard way for gas usage and automate the link to heating value & boiler efficiency (if needed)
-        for demand in self.energy_system_components["heat_demand"]:
-            target = self.get_timeseries(f"{demand}.target_heat_demand")
+        if self.vol_flow_to_watt:
+            for demand in self.energy_system_components["heat_demand"]:
+                target = self.get_timeseries(f"{demand}.target_heat_demand")
 
-            # Manually set heating demand values
-            boiler_efficiency = 0.8
-            gas_heating_value_joule_m3 = 31.68 * 10**6
-            for ii in range(len(target.values)):
-                target.values[ii] *= gas_heating_value_joule_m3 * boiler_efficiency
+                # Manually set heating demand values
+                boiler_efficiency = 0.8
+                gas_heating_value_joule_m3 = 31.68 * 10**6
+                for ii in range(len(target.values)):
+                    target.values[ii] *= gas_heating_value_joule_m3 * boiler_efficiency
 
-            self.io.set_timeseries(
-                f"{demand}.target_heat_demand",
-                self.io._DataStore__timeseries_datetimes,
-                target.values,
-                0,
-            )
+                self.io.set_timeseries(
+                    f"{demand}.target_heat_demand",
+                    self.io._DataStore__timeseries_datetimes,
+                    target.values,
+                    0,
+                )
 
         potential_error_to_error(HEAT_NETWORK_ERRORS)
 
@@ -253,6 +255,34 @@ class GasElectProblem(
         super().post()
         results = self.extract_results()
         parameters = self.parameters(0)
+        # bounds = self.bounds()
+        # Optimized ESDL
+        # Assume there are either no stages (write updated ESDL) or a maximum of 2 stages
+        # (only write final results when the stage number is the final stage)
+        # TODO: once database testing has been added, check that the results have only been written
+        # once.
+        try:
+            if self._stage == 0:
+                logger.error(
+                    f"The stage number is: {self._stage} and it is excpected that the"
+                    " stage numbering starts at 1 instead"
+                )
+                sys.exit(1)
+            if self._total_stages == self._stage:  # When staging does exists
+                self._write_updated_esdl(self._ESDLMixin__energy_system_handler.energy_system)
+            elif self._total_stages < self._stage:
+                logger.error(
+                    f"The stage number: {self._stage} is higher then the total stages"
+                    " expected: {self._total_stages}. Assuming the stage numbering starts at 1"
+                )
+                sys.exit(1)
+
+        except AttributeError:
+            # Staging does not exist
+            self._write_updated_esdl(self._ESDLMixin__energy_system_handler.energy_system)
+        except Exception:
+            logger.error("Unkown error occured when evaluating self._stage for _write_updated_esdl")
+            sys.exit(1)
         if os.path.exists(self.output_folder) and self._save_json:
             bounds = self.bounds()
             aliases = self.alias_relation._canonical_variables_map
@@ -290,12 +320,12 @@ class SettingsStaged:
         self.__boolean_bounds = boolean_bounds
 
         if self._stage == 1:
-            self.gas_network_settings["minimize_head_losses"] = True
+            self.gas_network_settings["minimize_head_losses"] = True # Check this. It could be True
             self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
 
         if self._stage == 2: # and priorities_output:
             # self._priorities_output = priorities_output
-            self.gas_network_settings["n_linearization_lines"] = 3
+            self.gas_network_settings["n_linearization_lines"] = 5
             self.gas_network_settings["minimize_head_losses"] = False
             self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
 
@@ -315,7 +345,7 @@ class GasElectProblemStaged(SettingsStaged, GasElectProblem):
 def run_end_scenario_sizing_for_gas_elect(
     end_scenario_problem_class,
     solver_class=None,
-    staged_pipe_optimization=True,
+    staged_pipe_optimization=False,
     **kwargs,
 ):
 
