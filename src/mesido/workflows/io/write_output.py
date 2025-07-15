@@ -1009,8 +1009,8 @@ class ScenarioOutput:
                 asset_placement_var = self._asset_aggregation_count_var_map[name]
                 placed = np.round(results[asset_placement_var][0]) >= 1.
                 # ToDo: pick the optimized gas pipe diamter from edr
-                print(name, placed)
-                if results[f"{name}__gn_diameter"][0] == 0:
+                print(name, placed, results[f"{name}__gn_diameter"][0])
+                if sum(results[f"{name}.GasOut.mass_flow"]) == 0:
                     asset.delete(recursive=True)
                 else:
                     asset.state = esdl.AssetStateEnum.ENABLED
