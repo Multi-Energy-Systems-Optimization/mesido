@@ -18,7 +18,7 @@ from esdl.profiles.profilemanager import ProfileManager
 
 import mesido.esdl.esdl_parser
 from mesido.constants import GRAVITATIONAL_CONSTANT
-from mesido.esdl.edr_pipe_class import EDRPipeClass
+from mesido.esdl.edr_pipe_class import EDRGasPipeClass, EDRPipeClass
 from mesido.network_common import NetworkSettings
 from mesido.post_processing.post_processing_utils import pipe_pressure, pipe_velocity
 from mesido.workflows.utils.helpers import _sort_numbered
@@ -988,6 +988,7 @@ class ScenarioOutput:
                 logger.warning(f"ESDL update: asset {name} has not been updated")
 
         # Electricity Cable
+        # ToDo: we also need to handle electricity_node asset
         for _, attributes in self.esdl_assets.items():
             name = attributes.name
             if name in [*self.energy_system_components.get("electricity_cable", [])]:
@@ -996,24 +997,78 @@ class ScenarioOutput:
                 placed = np.round(results[asset_placement_var][0]) >= 1.
                 # ToDo: Use max_power for capacity and aggregation count for placed to be consistent. Now the both methods have bugs
                 asset.capacity = max(results[f"{name}.ElectricityOut.Power"])
-                if asset.capacity == 0:
+                if asset.capacity < 1e-9:
                     asset.delete(recursive=True)
                 else:
                     asset.state = esdl.AssetStateEnum.ENABLED
 
         # Gas Pipe
+        edr_pipe_properties_to_copy = ["innerDiameter", "outerDiameter", "diameter", "material"]
+        esh_edr = EnergySystemHandler()
         for _, attributes in self.esdl_assets.items():
-            name = attributes.name
-            if name in [*self.energy_system_components.get("gas_pipe", [])]:
-                asset = _name_to_asset(name)
-                asset_placement_var = self._asset_aggregation_count_var_map[name]
+            pipe = attributes.name
+            if pipe in [*self.energy_system_components.get("gas_pipe", [])]:
+                asset = _name_to_asset(pipe)
+                asset_placement_var = self._asset_aggregation_count_var_map[pipe]
                 placed = np.round(results[asset_placement_var][0]) >= 1.
-                # ToDo: pick the optimized gas pipe diamter from edr
-                print(name, placed, results[f"{name}__gn_diameter"][0])
-                if sum(results[f"{name}.GasOut.mass_flow"]) == 0:
+                # ToDo: pick the optimized gas pipe diameter from edr
+                if sum(results[f"{pipe}.GasOut.mass_flow"]) < 1e-9:
                     asset.delete(recursive=True)
                 else:
                     asset.state = esdl.AssetStateEnum.ENABLED
+                    # pipe_class = self.get_optimized_gas_pipe_class(pipe)
+                    # asset_edr = esh_edr.load_from_string(pipe_class.xml_string)
+                    # for prop in edr_pipe_properties_to_copy:
+                    #     setattr(asset, prop, getattr(asset_edr, prop))
+
+        # # Gas Pipe 2nd trial
+        # edr_pipe_properties_to_copy = ["innerDiameter", "outerDiameter", "diameter", "material"]
+        # esh_edr = EnergySystemHandler()
+        # for pipe in self.energy_system_components.get("gas_pipe", []):
+        #
+        #     pipe_classes = self.gas_pipe_classes(pipe)
+        #     # When a pipe has not been optimized, enforce pipe to be shown in the simulator
+        #     # ESDL.
+        #     if not pipe_classes:
+        #         if not optimizer_sim:
+        #             continue
+        #         else:
+        #             asset.state = esdl.AssetStateEnum.ENABLED
+        #
+        #     if not optimizer_sim:
+        #         pipe_class = self.get_optimized_gas_pipe_class(pipe)
+        #     print(pipe, any(np.abs(results[f"{pipe}.GasOut.mass_flow"]) > 1.0e-9), pipe_class)
+        #     if any(np.abs(results[f"{pipe}.GasOut.mass_flow"])) > 1.0e-9:
+        #         # if not isinstance(pipe_class, EDRPipeClass):
+        #         #     assert pipe_class.name == f"{pipe}_orig"
+        #         #     continue
+        #         # print(results[f"{pipe}.Q"])
+        #         # print(pipe + " has pipeclass: " + pipe_class.name )
+        #         # print(pipe + f" has diameter: " + pipe_class.name)
+        #
+        #         # if not optimizer_sim:
+        #         #     print(pipe, isinstance(pipe_class, EDRGasPipeClass))
+        #         #     assert isinstance(pipe_class, EDRGasPipeClass)
+        #         #     asset_edr = esh_edr.load_from_string(pipe_class.xml_string)
+        #
+        #         asset = _name_to_asset(pipe)
+        #         asset.state = esdl.AssetStateEnum.ENABLED
+        #
+        #         # try:
+        #         #     asset.costInformation.investmentCosts.value = pipe_class.investment_costs
+        #         # except AttributeError:
+        #         #     pass
+        #         #     # do nothing, in the case that no costs have been specified for the return
+        #         #     # pipe in the mapeditor
+        #         # except UnboundLocalError:
+        #         #     pass
+        #         #
+        #         # if not optimizer_sim:
+        #         #     for prop in edr_pipe_properties_to_copy:
+        #         #         setattr(asset, prop, getattr(asset_edr, prop))
+        #     else:
+        #         asset = _name_to_asset(pipe)
+        #         asset.delete(recursive=True)
 
         # Pipes:
         edr_pipe_properties_to_copy = ["innerDiameter", "outerDiameter", "diameter", "material"]

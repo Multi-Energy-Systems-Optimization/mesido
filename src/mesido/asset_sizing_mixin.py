@@ -1051,6 +1051,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         """
         return self.__heat_pipe_topo_pipe_class_result[pipe]
 
+    def get_optimized_gas_pipe_class(self, pipe):
+        return self.__gas_pipe_topo_pipe_class_result[pipe]
+
     def get_optimized_deman_insulation_class(self, demand_insulation: str) -> DemandInsulationClass:
         """
         Return the optimized demand_insulation class for a specific pipe. If no
@@ -2327,6 +2330,23 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
                 for p in [pipe, self.hot_to_cold_pipe(pipe)]:
                     self.__heat_pipe_topo_pipe_class_result[p] = pipe_class
+
+            for pipe in self.energy_system_components.get("gas_pipe", []):
+                pipe_classes = self.gas_pipe_classes(pipe)
+
+                if not pipe_classes:
+                    continue
+                elif len(pipe_classes) == 1:
+                    pipe_class = pipe_classes[0]
+                else:
+                    pipe_class = next(
+                        c
+                        for c, s in self._gas_pipe_topo_pipe_class_map[pipe].items()
+                        if round(results[s][0]) == 1.0
+                    )
+
+                for p in [pipe]:
+                    self.__gas_pipe_topo_pipe_class_result[p] = pipe_class
 
     def _pipe_heat_loss_to_parameters(self):
         """

@@ -111,7 +111,7 @@ class GasElectProblem(
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._number_of_years = 30.0
+        self._number_of_years = 1 # 30
 
         self._save_json = True
 
@@ -164,7 +164,8 @@ class GasElectProblem(
         return options
 
     def read(self):
-        self.vol_flow_to_watt = False # True: input file unit is Nm3/, False: input file unit is W
+        bol_vol_flow_to_watt = False # True: input file unit is Nm3/, False: input file unit is W
+        bol_profile_adaptor_method = True
         super().read()
 
         # 1 - Convert gas demand Nm3/h (data in timeseries source file) to heat demand in watts:
@@ -175,7 +176,7 @@ class GasElectProblem(
         #     - Read the yearly profile with hourly time steps
         #     - Adapt to a daily averaged profile per self.__day_steps except for the day with the peak day
         # TODO: setup a standard way for gas usage and automate the link to heating value & boiler efficiency (if needed)
-        if self.vol_flow_to_watt:
+        if bol_vol_flow_to_watt:
             for demand in self.energy_system_components["heat_demand"]:
                 target = self.get_timeseries(f"{demand}.target_heat_demand")
 
@@ -191,16 +192,16 @@ class GasElectProblem(
                     target.values,
                     0,
                 )
+        if bol_profile_adaptor_method:
+            potential_error_to_error(HEAT_NETWORK_ERRORS)
 
-        potential_error_to_error(HEAT_NETWORK_ERRORS)
+            # (
+            #     self.__indx_max_peak,
+            #     self.__heat_demand_nominal,
+            #     _,
+            # ) = adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(self, self.__day_steps)
 
-        # (
-        #     self.__indx_max_peak,
-        #     self.__heat_demand_nominal,
-        #     _,
-        # ) = adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(self, self.__day_steps)
-
-        adapt_hourly_profile_averages_timestep_size_gas(self, self.__hour_steps, self.__number_of_hours_around_peak)
+            adapt_hourly_profile_averages_timestep_size_gas(self, self.__hour_steps, self.__number_of_hours_around_peak)
 
 
         logger.info("HeatProblem read")
@@ -323,9 +324,13 @@ class SettingsStaged:
             self.gas_network_settings["minimize_head_losses"] = True # Check this. It could be True
             self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
 
+            # self.gas_network_settings["n_linearization_lines"] = 3
+            # self.gas_network_settings["minimize_head_losses"] = False
+            # self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
+
         if self._stage == 2: # and priorities_output:
             # self._priorities_output = priorities_output
-            self.gas_network_settings["n_linearization_lines"] = 5
+            self.gas_network_settings["n_linearization_lines"] = 3
             self.gas_network_settings["minimize_head_losses"] = False
             self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
 
@@ -370,7 +375,7 @@ def run_end_scenario_sizing_for_gas_elect(
 
     start_time = time.time()
 
-    if staged_pipe_optimization == False:
+    if not staged_pipe_optimization:
         solution = run_optimization_problem_solver(
             end_scenario_problem_class,
             solver_class=solver_class,
@@ -409,7 +414,7 @@ def run_end_scenario_sizing_for_gas_elect(
         # all the following pipe clasess should have bounds (0, 0)
         # Assumptions:
         # - The fist pipe class in the list of pipe_classes is pipe DN none
-        pc_map = solution.get_pipe_class_map()  # if disconnectable and not connected to source
+        pc_map = solution.get_gas_pipe_class_map()  # if disconnectable and not connected to source
         for pipe_classes in pc_map.values():
             v_prev = 0.0
             first_pipe_class = True
@@ -427,6 +432,7 @@ def run_end_scenario_sizing_for_gas_elect(
                     boolean_bounds[var_name] = (v, v)
                 v_prev = v
                 first_pipe_class = False
+                # print(var_name, boolean_bounds[var_name])
 
         for asset in [
             *solution.energy_system_components.get("heat_source", []),
@@ -443,7 +449,7 @@ def run_end_scenario_sizing_for_gas_elect(
                     f"{var_name}: The lower bound value {round_lb} > the upper bound {ub} value"
                 )
                 exit(1)
-            a=1
+
 
         # priorities_output = solution._priorities_output
 
