@@ -1002,17 +1002,20 @@ class ScenarioOutput:
                 else:
                     asset.state = esdl.AssetStateEnum.ENABLED
 
-        # Gas Pipe
+        # Gas assets
         edr_pipe_properties_to_copy = ["innerDiameter", "outerDiameter", "diameter", "material"]
         esh_edr = EnergySystemHandler()
         for _, attributes in self.esdl_assets.items():
-            pipe = attributes.name
-            if pipe in [*self.energy_system_components.get("gas_pipe", [])]:
-                asset = _name_to_asset(pipe)
-                asset_placement_var = self._asset_aggregation_count_var_map[pipe]
+            name = attributes.name
+            if name in [*self.energy_system_components.get("node", [])]:
+                asset = _name_to_asset(name)
+                print(name)
+            if name in [*self.energy_system_components.get("gas_pipe", [])]:
+                asset = _name_to_asset(name)
+                asset_placement_var = self._asset_aggregation_count_var_map[name]
                 placed = np.round(results[asset_placement_var][0]) >= 1.
                 # ToDo: pick the optimized gas pipe diameter from edr
-                if sum(results[f"{pipe}.GasOut.mass_flow"]) < 1e-9:
+                if sum(results[f"{name}.GasOut.mass_flow"]) < 1e-9:
                     asset.delete(recursive=True)
                 else:
                     asset.state = esdl.AssetStateEnum.ENABLED
@@ -1020,7 +1023,7 @@ class ScenarioOutput:
                     # asset_edr = esh_edr.load_from_string(pipe_class.xml_string)
                     # for prop in edr_pipe_properties_to_copy:
                     #     setattr(asset, prop, getattr(asset_edr, prop))
-
+        print("----")
         # # Gas Pipe 2nd trial
         # edr_pipe_properties_to_copy = ["innerDiameter", "outerDiameter", "diameter", "material"]
         # esh_edr = EnergySystemHandler()

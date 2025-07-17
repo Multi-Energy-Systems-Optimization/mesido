@@ -165,7 +165,7 @@ class GasElectProblem(
 
     def read(self):
         bol_vol_flow_to_watt = False # True: input file unit is Nm3/, False: input file unit is W
-        bol_profile_adaptor_method = True
+        bol_profile_adaptor_method = False
         super().read()
 
         # 1 - Convert gas demand Nm3/h (data in timeseries source file) to heat demand in watts:
