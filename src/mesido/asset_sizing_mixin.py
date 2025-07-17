@@ -662,8 +662,8 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     min(heat_losses),
                     max(heat_losses),
                 )
-                self._pipe_heat_loss_nominals[heat_loss_var_name] = np.median(
-                    [x for x in heat_losses if x > 0]
+                self._pipe_heat_loss_nominals[heat_loss_var_name] = abs(
+                    np.median([x for x in heat_losses if abs(x) > 0])
                 )
 
                 for ensemble_member in range(self.ensemble_size):
