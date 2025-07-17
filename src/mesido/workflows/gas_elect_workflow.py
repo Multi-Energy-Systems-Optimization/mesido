@@ -99,7 +99,7 @@ class SolverCPLEX:
 
 
 class GasElectProblem(
-    SolverCPLEX,
+    SolverHIGHS,
     ScenarioOutput,
     ESDLAdditionalVarsMixin,
     TechnoEconomicMixin,
@@ -142,7 +142,7 @@ class GasElectProblem(
         # self.gas_network_settings["minimize_head_losses"] = False
         # self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
 
-        self.gas_network_settings["minimize_head_losses"] = True
+        self.gas_network_settings["minimize_head_losses"] = False
         self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
 
         return options
@@ -321,7 +321,7 @@ class SettingsStaged:
         self.__boolean_bounds = boolean_bounds
 
         if self._stage == 1:
-            self.gas_network_settings["minimize_head_losses"] = True # Check this. It could be True
+            self.gas_network_settings["minimize_head_losses"] = False # Check this. It could be True
             self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
 
             # self.gas_network_settings["n_linearization_lines"] = 3
@@ -350,7 +350,7 @@ class GasElectProblemStaged(SettingsStaged, GasElectProblem):
 def run_end_scenario_sizing_for_gas_elect(
     end_scenario_problem_class,
     solver_class=None,
-    staged_pipe_optimization=True,
+    staged_pipe_optimization=False,
     **kwargs,
 ):
 
