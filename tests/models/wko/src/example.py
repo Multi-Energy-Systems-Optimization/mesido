@@ -7,10 +7,7 @@ from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
 from mesido.techno_economic_mixin import TechnoEconomicMixin
-from mesido.workflows.utils.error_types import (
-    HEAT_AND_COOL_NETWORK_ERRORS,
-    potential_error_to_error,
-)
+from mesido.workflows.utils.error_types import NetworkErrors, potential_error_to_error
 
 import numpy as np
 
@@ -173,7 +170,7 @@ class HeatProblem(
         """
         super().read()
 
-        potential_error_to_error(HEAT_AND_COOL_NETWORK_ERRORS)
+        potential_error_to_error(NetworkErrors.HEAT_AND_COOL_NETWORK_ERRORS)
 
     def path_goals(self):
         """

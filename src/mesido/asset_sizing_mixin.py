@@ -831,7 +831,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             ub = bounds[f"{asset_name}.Heat_airco"][1]
             # Note that we only enforce the upper bound in state enabled if it was explicitly
             # specified for the demand
-            lb = 0.0 if np.isinf(bounds[f"{asset_name}.Heat_airco"][1]) else ub
+            lb = 0.0 if parameters[f"{asset_name}.state"] != 1 else ub
             _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
 
         for asset_name in self.energy_system_components.get("cold_demand", []):
@@ -1979,6 +1979,21 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         np.inf,
                     )
                 )
+
+        for ac in self.energy_system_components.get("airco", []):
+            max_var_types.add("airco")
+            max_var = self._asset_max_size_map[ac]
+            max_heat = self.extra_variable(max_var, ensemble_member)
+            heat_airco = self.__state_vector_scaled(f"{ac}.Heat_airco", ensemble_member)
+            constraint_nominal = self.variable_nominal(f"{ac}.Heat_airco")
+
+            constraints.append(
+                (
+                    (np_ones * max_heat - heat_airco) / constraint_nominal,
+                    0.0,
+                    np.inf,
+                )
+            )
 
         for hx in [
             *self.energy_system_components.get("heat_exchanger", []),

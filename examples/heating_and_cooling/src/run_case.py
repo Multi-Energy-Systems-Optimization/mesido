@@ -5,9 +5,13 @@ from unittest import TestCase
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.util import run_esdl_mesido_optimization
+from mesido.workflows import EndScenarioSizingStaged, run_end_scenario_sizing
+from mesido.workflows.grow_workflow import SolverCPLEX
 from mesido.workflows.utils.adapt_profiles import (
     adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
 )
+
+from rtctools.optimization.goal_programming_mixin_base import Goal
 
 logger = logging.getLogger("WarmingUP-MPC")
 logger.setLevel(logging.INFO)
@@ -145,6 +149,105 @@ class HeatColdDemand(TestCase):
         # heat_to_discharge_test(heat_problem, results)
 
 
+class HeatCoolingGrowWorkflow(TestCase):
+
+    def heating_cooling_case(self):
+        """
+        In this case we have a network with an air-water hp, a WKO (warm and cold well) and both
+        hot and cold demand. The heat and cold demand was balanced such that the seasonal storage
+        gets utilized as intended while minizing the TCO.
+        """
+        import os
+        import sys
+
+        from mesido.workflows.utils.error_types import NetworkErrors
+
+        root_folder = os.path.join(Path(__file__).resolve().parent.parent.parent.parent, "tests")
+        sys.path.insert(1, root_folder)
+
+        from models.wko.src.example import HeatProblem
+        from utils_tests import demand_matching_test, energy_conservation_test
+
+        base_folder = Path(__file__).resolve().parent.parent
+
+        class UpdatedProblem(EndScenarioSizingStaged):
+            # TODO: Issue sizing pipes connected to demands, available pipe classes are updated in read(), ESDLAdditionalVarsMixin before the code below. This means the incorrect demand values are then used. 
+            def read(self):
+                super().read()
+
+                # Set the peak of the heating demand since the specified profile is normalized to 1
+
+                for d in self.energy_system_components["heat_demand"]:
+                    target = self.get_timeseries(f"{d}.target_heat_demand")
+                    for ii in range(len(target.values)):
+                        target.values[ii] = target.values[ii] * 7.0e6 # TODO --> use new profile in esdl, but issue with cold profile. So for now reading in profiles from file. Also currently we cannot use a combination of esdl and csv profile inputs, potentially needed?
+
+                    self.io.set_timeseries(
+                        f"{d}.target_heat_demand",
+                        self.io._DataStore__timeseries_datetimes,
+                        target.values,
+                        0,
+                    )
+                # Cold demand specified profile is not normalized
+                # Cold demand value is reduced to get the correct balance between the heat and cold
+                # demand such that the seasonal storage is utilized
+                for d in self.energy_system_components["cold_demand"]:
+                    target = self.get_timeseries(f"{d}.target_cold_demand") # TODO -->> locally do not have access to proifle uploaded in mapediotr
+                    for ii in range(len(target.values)):
+                        target.values[ii] = target.values[ii] * 0.25
+
+                    self.io.set_timeseries(
+                        f"{d}.target_cold_demand",
+                        self.io._DataStore__timeseries_datetimes,
+                        target.values,
+                        0,
+                    )
+
+        kwargs = {
+            # "write_result_db_profiles": True,
+            # # "write_result_db_profiles": False,
+            # "influxdb_host": "localhost",
+            # "influxdb_port": 8086,
+            # "influxdb_username": None,
+            # "influxdb_password": None,
+            # "influxdb_ssl": False,
+            # "influxdb_verify_ssl": False,
+            # # "update_progress_function": {},
+            "network_type_errors": NetworkErrors.HEAT_AND_COOL_NETWORK_ERRORS,
+        }
+
+        solution = run_end_scenario_sizing(
+            # EndScenarioSizingStaged,
+            UpdatedProblem,
+            # solver_class=SolverCPLEX,
+            base_folder=base_folder,
+            esdl_file_name="Heating and cooling network with return network with costs.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_4.csv",
+            **kwargs,
+        )
+
+        results = solution.extract_results()
+
+        demand_matching_test(solution, results)
+        energy_conservation_test(solution, results)
+        heat_to_discharge_test(solution, results)
+        
+        for ac in self.energy_system_components["airco"]:
+            
+            results[f"{ac}__investment_cost"]
+            results[f"{ac}__installation_cost"]
+            results[f"{ac}__fixed_operational_cost"]
+            results[f"{ac}__variable_operational_cost"]
+
+        results[]
+        temp = 1.0
+
+
 if __name__ == "__main__":
-    test_cold_demand = HeatColdDemand()
-    test_cold_demand.heating_cooling_case()
+    # test_cold_demand = HeatColdDemand()
+    # test_cold_demand.heating_cooling_case()
+
+    t2 = HeatCoolingGrowWorkflow()
+    t2.heating_cooling_case()

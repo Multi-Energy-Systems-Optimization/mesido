@@ -454,6 +454,13 @@ class AssetToHeatComponent(_AssetToComponentBase):
         """
         assert asset.asset_type in {"Airco"}
 
+        get_potential_errors().add_potential_issue(
+            MesidoAssetIssueType.COLD_ASSET_TYPE_NOT_SUPPORTED,
+            asset.id,
+            f"Asset named {asset.name}: This is a cooling asset and it should be replaced with a"
+            " supported asset",
+        )
+
         max_ = asset.attributes["power"] if asset.attributes["power"] else math.inf
 
         q_nominal = self._get_connected_q_nominal(asset)
@@ -1392,10 +1399,20 @@ class AssetToHeatComponent(_AssetToComponentBase):
         )
 
         # if no maxStorageTemperature is specified we assume a "regular" HT ATES model
+        low_temp_ates_max_storage_temp_deg = 30.0
         if (
             asset.attributes["maxStorageTemperature"]
-            and asset.attributes["maxStorageTemperature"] <= 30.0
+            and asset.attributes["maxStorageTemperature"] <= low_temp_ates_max_storage_temp_deg
         ):
+            max_store_temp = asset.attributes["maxStorageTemperature"]
+            get_potential_errors().add_potential_issue(
+                MesidoAssetIssueType.COLD_ASSET_TYPE_NOT_SUPPORTED,
+                asset.id,
+                f"Asset named {asset.name}: For this ATES the maxStorageTemperature has been set to"
+                f" {max_store_temp} degrees Celcius, please increase the value such that"
+                f" maxStorageTemperature > {low_temp_ates_max_storage_temp_deg} degrees Celcius",
+            )
+
             modifiers.update(
                 dict(
                     Heat_low_temperature_ates=dict(
@@ -1409,6 +1426,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 "ATES in use: WKO (koude-warmteopslag, cold and heat storage) since the"
                 " maximum temperature has been specified to be <= 30 degrees Celcius"
             )
+
             return LowTemperatureATES, modifiers
         else:
             modifiers.update(

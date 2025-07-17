@@ -15,6 +15,7 @@ class MesidoAssetIssueType(Enum):
     HEAT_DEMAND_TYPE = "heat_demand.type"
     ASSET_PROFILE_CAPABILITY = "asset_profile.capability"
     HEAT_EXCHANGER_TEMPERATURES = "heat_exchanger.temperature"
+    COLD_ASSET_TYPE_NOT_SUPPORTED = "asset.type"
 
 
 class PotentialErrors:
