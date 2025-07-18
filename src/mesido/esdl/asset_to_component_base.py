@@ -1426,7 +1426,8 @@ class _AssetToComponentBase:
                 ):
                     raise ValueError(
                         f"Expected the specified OPEX for asset "
-                        f"{asset.name} to per unit in W and/or per time in year , but they are provided "
+                        f"{asset.name} to per unit in W and/or per time in year , "
+                        f"but they are provided "
                         f"in {per_unit} and/or "
                         f"in {per_time} instead."
                     )
@@ -1436,7 +1437,8 @@ class _AssetToComponentBase:
                 ):
                     raise ValueError(
                         f"Expected the specified OPEX for asset "
-                        f"{asset.name} to per unit in m^3 and/or per time in year , but they are provided "
+                        f"{asset.name} to per unit in m^3 and/or per time in year ,"
+                        f" but they are provided "
                         f"in {per_unit} and/or "
                         f"in {per_time} instead."
                     )
@@ -1446,7 +1448,8 @@ class _AssetToComponentBase:
                 ):
                     raise ValueError(
                         f"Expected the specified OPEX for asset "
-                        f"{asset.name} to per unit in gram and/or per time in year , but they are provided "
+                        f"{asset.name} to per unit in gram and/or per time in year ,"
+                        f" but they are provided "
                         f"in {per_unit} and/or "
                         f"in {per_time} instead."
                     )
