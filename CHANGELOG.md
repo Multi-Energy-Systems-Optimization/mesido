@@ -4,7 +4,7 @@
 - xx
 
 ## Changed
-- Lifetime of an asset is taken into account in optimization for CAPEX and OPEX
+- Lifetime of an asset is taken into account in optimization for CAPEX
 
 ## Fixed
 - xxx
