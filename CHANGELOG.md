@@ -1,4 +1,16 @@
-# [Unreleased-main] - 2025-06-25
+# [Unreleased-main] - 2025-07-18
+
+## Added
+- xx
+
+## Changed
+- Lifetime of an asset is taken into account in optimization for CAPEX
+
+## Fixed
+- xxx
+
+
+# [Unreleased-main] - 2025-06-30
 
 ## Added
 - xx
