@@ -52,9 +52,6 @@ class TestEndScenarioSizing(TestCase):
         - That buffer tank is only used on peak day
         - Check if TCO goal included the desired cost components.
 
-        - Check if lifetime of an asset is taken into account in
-        optimization for CAPEX and Fixed OPEX
-
 
         Missing:
         - Link ATES t0 utilization to state of charge at end of year for optimizations over one
@@ -103,11 +100,10 @@ class TestEndScenarioSizing(TestCase):
             *self.solution.energy_system_components.get("heat_pump", []),
             *self.solution.energy_system_components.get("heat_pipe", []),
         ]:
-            technicalLifetime = self.solution.esdl_assets.get(
-                self.solution.esdl_asset_name_to_id_map[asset], []
-            ).attributes["technicalLifetime"]
-            if technicalLifetime == 0:
+            if asset != self.solution.energy_system_components.get("heat_demand", []):
                 technicalLifetime = years
+            else:
+                technicalLifetime = self.solution.parameters(0)[f"{asset}.technical_life"]
             obj += self.results[f"{self.solution._asset_fixed_operational_cost_map[asset]}"] * years
             obj += (
                 self.results[f"{self.solution._asset_variable_operational_cost_map[asset]}"] * years
@@ -141,8 +137,7 @@ class TestEndScenarioSizing(TestCase):
         function run_end_scenario_sizing with staged_pipe_optimization to False should have
         comparable computation times.
 
-        - Check if lifetime of an asset is taken into account in optimization for
-         CAPEX and Fixed OPEX
+        - Check if TCO goal included the desired cost components
 
         Missing:
         - Link ATES t0 utilization to state of charge at end of year for optimizations over one
@@ -205,11 +200,10 @@ class TestEndScenarioSizing(TestCase):
             *solution_staged.energy_system_components.get("heat_pump", []),
             *solution_staged.energy_system_components.get("heat_pipe", []),
         ]:
-            technicalLifetime = solution_staged.esdl_assets.get(
-                solution_staged.esdl_asset_name_to_id_map[asset], []
-            ).attributes["technicalLifetime"]
-            if technicalLifetime == 0:
+            if asset != solution_staged.energy_system_components.get("heat_demand", []):
                 technicalLifetime = years
+            else:
+                technicalLifetime = solution_staged.parameters(0)[f"{asset}.technical_life"]
             obj += results[f"{solution_staged._asset_fixed_operational_cost_map[asset]}"] * years
             obj += results[f"{solution_staged._asset_variable_operational_cost_map[asset]}"] * years
             obj += results[f"{solution_staged._asset_investment_cost_map[asset]}"] * (
@@ -376,8 +370,8 @@ if __name__ == "__main__":
     start_time = time.time()
     a = TestEndScenarioSizing()
     a.setUpClass()
-    # a.test_end_scenario_sizing()
+    a.test_end_scenario_sizing()
     a.test_end_scenario_sizing_staged()
-    # a.test_end_scenario_sizing_discounted()
-    # a.test_end_scenario_sizing_head_loss()
+    a.test_end_scenario_sizing_discounted()
+    a.test_end_scenario_sizing_head_loss()
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

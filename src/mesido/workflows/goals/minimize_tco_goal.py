@@ -110,9 +110,6 @@ class MinimizeTCO(Goal):
 
         'technicalLifetime' is function of installation and investment cost calculations
 
-        Default value of 'technicalLifetime' is 0. If the default value is not modified
-        in ESDL file, 'technicalLifetime' is taken as 'number_of_years' of optimization
-        in the cost calculation.
 
         Args:
             optimization_problem (TechnoEconomicMixin): The optimization problem instance.
@@ -128,11 +125,12 @@ class MinimizeTCO(Goal):
         obj = 0.0
         for asset_type in asset_types:
             for asset in optimization_problem.energy_system_components.get(asset_type, []):
-                asset_technicalLifetime = optimization_problem.esdl_assets.get(
-                    optimization_problem.esdl_asset_name_to_id_map[asset], []
-                ).attributes["technicalLifetime"]
-                if asset_technicalLifetime == 0:
+                if asset != optimization_problem.energy_system_components.get("heat_demand", []):
                     asset_technicalLifetime = self.number_of_years
+                else:
+                    asset_technicalLifetime = optimization_problem.parameters(0)[
+                        f"{asset}.technical_life"
+                    ]
                 extra_var = optimization_problem.extra_variable(cost_type_map[asset])
                 if options["discounted_annualized_cost"]:
                     # We only want the operational cost for a single year when we use
@@ -140,8 +138,6 @@ class MinimizeTCO(Goal):
                     obj += extra_var
                 elif "operational" in cost_type:
                     obj += extra_var * self.number_of_years
-                elif "fixed_operational" in cost_type:
-                    obj += extra_var
                 else:
                     # These are the CAPEX cost under non-annualized condition
                     obj += extra_var * (self.number_of_years / asset_technicalLifetime)
