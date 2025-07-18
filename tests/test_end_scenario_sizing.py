@@ -101,18 +101,18 @@ class TestEndScenarioSizing(TestCase):
             *self.solution.energy_system_components.get("heat_pipe", []),
         ]:
             if asset != self.solution.energy_system_components.get("heat_demand", []):
-                technicalLifetime = years
+                technical_lifetime = years
             else:
-                technicalLifetime = self.solution.parameters(0)[f"{asset}.technical_life"]
+                technical_lifetime = self.solution.parameters(0)[f"{asset}.technical_life"]
             obj += self.results[f"{self.solution._asset_fixed_operational_cost_map[asset]}"] * years
             obj += (
                 self.results[f"{self.solution._asset_variable_operational_cost_map[asset]}"] * years
             )
             obj += self.results[f"{self.solution._asset_investment_cost_map[asset]}"] * (
-                years / technicalLifetime
+                years / technical_lifetime
             )
             obj += self.results[f"{self.solution._asset_installation_cost_map[asset]}"] * (
-                years / technicalLifetime
+                years / technical_lifetime
             )
 
         np.testing.assert_allclose(obj / 1.0e6, self.solution.objective_value)
@@ -201,16 +201,16 @@ class TestEndScenarioSizing(TestCase):
             *solution_staged.energy_system_components.get("heat_pipe", []),
         ]:
             if asset != solution_staged.energy_system_components.get("heat_demand", []):
-                technicalLifetime = years
+                technical_lifetime = years
             else:
-                technicalLifetime = solution_staged.parameters(0)[f"{asset}.technical_life"]
+                technical_lifetime = solution_staged.parameters(0)[f"{asset}.technical_life"]
             obj += results[f"{solution_staged._asset_fixed_operational_cost_map[asset]}"] * years
             obj += results[f"{solution_staged._asset_variable_operational_cost_map[asset]}"] * years
             obj += results[f"{solution_staged._asset_investment_cost_map[asset]}"] * (
-                years / technicalLifetime
+                years / technical_lifetime
             )
             obj += results[f"{solution_staged._asset_installation_cost_map[asset]}"] * (
-                years / technicalLifetime
+                years / technical_lifetime
             )
 
         np.testing.assert_allclose(obj / 1.0e6, solution_staged.objective_value)

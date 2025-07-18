@@ -126,9 +126,9 @@ class MinimizeTCO(Goal):
         for asset_type in asset_types:
             for asset in optimization_problem.energy_system_components.get(asset_type, []):
                 if asset != optimization_problem.energy_system_components.get("heat_demand", []):
-                    asset_technicalLifetime = self.number_of_years
+                    technical_lifetime = self.number_of_years
                 else:
-                    asset_technicalLifetime = optimization_problem.parameters(0)[
+                    technical_lifetime = optimization_problem.parameters(0)[
                         f"{asset}.technical_life"
                     ]
                 extra_var = optimization_problem.extra_variable(cost_type_map[asset])
@@ -140,7 +140,7 @@ class MinimizeTCO(Goal):
                     obj += extra_var * self.number_of_years
                 else:
                     # These are the CAPEX cost under non-annualized condition
-                    obj += extra_var * (self.number_of_years / asset_technicalLifetime)
+                    obj += extra_var * (self.number_of_years / technical_lifetime)
         return obj
 
     def function(self, optimization_problem: TechnoEconomicMixin, ensemble_member) -> MX:
