@@ -1,7 +1,7 @@
-# [Unreleased-main] - 2025-06-25
+# [Unreleased-main] - 2025-07-08
 
 ## Added
-- xx
+- A check is added to check the input opex cost components has year as a unit per time
 
 ## Changed
 - Previously variable operational cost of air-to-water heat pump was based on  the thermal power usage. Now it is based on the electrical power usage
