@@ -472,6 +472,13 @@ class AssetToHeatComponent(_AssetToComponentBase):
             HeatIn=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
             HeatOut=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
             state=self.get_state(asset),
+            technical_life=self.get_asset_attribute_value(
+                asset,
+                "technicalLifetime",
+                default_value=30.0,
+                min_value=1.0,
+                max_value=50.0,
+            ),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
