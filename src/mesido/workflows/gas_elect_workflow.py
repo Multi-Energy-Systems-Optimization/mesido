@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
@@ -113,28 +114,6 @@ class GasElectProblem(
     def read(self):
         super().read()
 
-        # Convert gas demand Nm3/h (data in timeseries source file) to heat demand in watts
-        # Assumumption:
-        #   - gas heating value (LCV value) = 31.68 * 10^6 (J/m3) at 1bar, 273.15K
-        #   - gas boiler efficiency 80%
-        # TODO: setup a standard way for gas usage and automate the link to heating value & boiler
-        # efficiency (if needed)
-        for demand in self.energy_system_components["heat_demand"]:
-            target = self.get_timeseries(f"{demand}.target_heat_demand")
-
-            # Manually set heating demand values
-            boiler_efficiency = 0.8
-            gas_heating_value_joule_m3 = 31.68 * 10**6
-            for ii in range(len(target.values)):
-                target.values[ii] *= gas_heating_value_joule_m3 * boiler_efficiency
-
-            self.io.set_timeseries(
-                f"{demand}.target_heat_demand",
-                self.io._DataStore__timeseries_datetimes,
-                target.values,
-                0,
-            )
-
     def pre(self):
         super().pre()
 
@@ -182,9 +161,41 @@ class GasElectProblem(
     #     return constraints
 
     def post(self):
-        if os.path.exists(self.output_folder) and self._save_json:
-            self._write_json_output()
+        super().post()
+        results = self.extract_results()
+        parameters = self.parameters(0)
+        # Optimized ESDL
+        # Assume there are either no stages (write updated ESDL) or a maximum of 2 stages
+        # (only write final results when the stage number is the final stage)
+        # TODO: once database testing has been added, check that the results have only been written
+        # once.
+        try:
+            if self._stage == 0:
+                logger.error(
+                    f"The stage number is: {self._stage} and it is excpected that the"
+                    " stage numbering starts at 1 instead"
+                )
+                sys.exit(1)
+            if self._total_stages == self._stage:  # When staging does exists
+                self._write_updated_esdl(self._ESDLMixin__energy_system_handler.energy_system)
+            elif self._total_stages < self._stage:
+                logger.error(
+                    f"The stage number: {self._stage} is higher then the total stages"
+                    " expected: {self._total_stages}. Assuming the stage numbering starts at 1"
+                )
+                sys.exit(1)
 
+        except AttributeError:
+            # Staging does not exist
+            self._write_updated_esdl(self._ESDLMixin__energy_system_handler.energy_system)
+        except Exception:
+            logger.error("Unkown error occured when evaluating self._stage for _write_updated_esdl")
+            sys.exit(1)
+        if os.path.exists(self.output_folder) and self._save_json:
+            bounds = self.bounds()
+            aliases = self.alias_relation._canonical_variables_map
+            solver_stats = self.solver_stats
+            self._write_json_output(results, parameters, bounds, aliases, solver_stats)
 
 @main_decorator
 def main(runinfo_path, log_level):

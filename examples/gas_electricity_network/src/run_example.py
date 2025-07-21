@@ -23,8 +23,34 @@ if __name__ == "__main__":
 
     start_time = time.time()
 
+    class GasElectProblemOld(GasElectProblem):
+        def read(self):
+            super().read()
+
+            # Convert gas demand Nm3/h (data in timeseries source file) to heat demand in watts
+            # Assumumption:
+            #   - gas heating value (LCV value) = 31.68 * 10^6 (J/m3) at 1bar, 273.15K
+            #   - gas boiler efficiency 80%
+            # TODO: setup a standard way for gas usage and automate the link to heating value & boiler
+            # efficiency (if needed)
+            for demand in self.energy_system_components["heat_demand"]:
+                target = self.get_timeseries(f"{demand}.target_heat_demand")
+
+                # Manually set heating demand values
+                boiler_efficiency = 0.8
+                gas_heating_value_joule_m3 = 31.68 * 10**6
+                for ii in range(len(target.values)):
+                    target.values[ii] *= gas_heating_value_joule_m3 * boiler_efficiency
+
+                self.io.set_timeseries(
+                    f"{demand}.target_heat_demand",
+                    self.io._DataStore__timeseries_datetimes,
+                    target.values,
+                    0,
+                )
+
     solution = run_optimization_problem_solver(
-        GasElectProblem,
+        GasElectProblemOld,
         esdl_parser=ESDLFileParser,
         esdl_file_name="Example_gas_elec.esdl",
         profile_reader=ProfileReaderFromFile,
@@ -32,6 +58,7 @@ if __name__ == "__main__":
     )
 
     results = solution.extract_results()
+    parameters = solution.parameters(0)
 
     # ----------------------------------------------------------------------------------------------
     # Do not delete the code below: manual checking and testing of values + usefull prints to
