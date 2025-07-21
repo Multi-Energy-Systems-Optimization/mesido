@@ -1,21 +1,11 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" name="gas_elect_loop_tree" description="" id="cc3b855b-0403-4df8-a84f-8ea6fd25420e" esdlVersion="v250501" version="41">
+<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" name="gas_elect_loop_tree" description="" id="cc3b855b-0403-4df8-a84f-8ea6fd25420e" esdlVersion="v250501" version="42">
   <instance xsi:type="esdl:Instance" id="f2e9533d-015d-445f-8c08-cd035d238eee" name="Untitled instance">
     <area xsi:type="esdl:Area" id="74ab5996-6a79-4cd6-9fa8-4f1a498722f5" name="Untitled area">
       <asset xsi:type="esdl:GasProducer" id="82d5c086-b805-4f89-a2e7-21490ccb2acd" name="GasProducer" power="50000000.0">
         <geometry xsi:type="esdl:Point" lat="51.512969304075085" lon="3.98842715783613" CRS="WGS84"/>
         <port xsi:type="esdl:OutPort" id="f74c1469-0233-4a92-9191-30939a307fb3" name="Out" connectedTo="27c7c352-af9e-48a8-a128-ea9cb5507f7f" carrier="1a8f4b2c-10cb-4a42-9b2e-2217b619c5aa"/>
-        <costInformation xsi:type="esdl:CostInformation" id="a6dd34b3-256d-4f44-bae2-f909599416e6">
-          <variableOperationalCosts xsi:type="esdl:SingleValue" id="7b51faec-55ea-43f7-8ec0-ea0f71c927ab" value="1.0">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR/MWh" id="cc0679ef-0062-4db5-a54e-f9ea28795b90" unit="EURO" perUnit="WATTHOUR" perMultiplier="MEGA"/>
-          </variableOperationalCosts>
-          <investmentCosts xsi:type="esdl:SingleValue" id="f95da2a3-fca2-45c1-933a-07736e07bd61" value="1.0">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR/MW" id="a91829c1-8a4c-45a8-a8d0-b10985c60405" unit="EURO" perMultiplier="MEGA" perUnit="WATT"/>
-          </investmentCosts>
-          <installationCosts xsi:type="esdl:SingleValue" id="04053ea5-3453-4d5d-9de8-2fc54d3f9346" value="1.0">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR" id="453a48c6-e1d5-4253-b916-224694a968eb" unit="EURO"/>
-          </installationCosts>
-        </costInformation>
+        <costInformation xsi:type="esdl:CostInformation" id="a6dd34b3-256d-4f44-bae2-f909599416e6"/>
       </asset>
       <asset xsi:type="esdl:GasHeater" id="d39b63a4-f19d-4144-8168-f89f19d5d8ff" name="GasHeater_1" power="10000000.0" efficiency="0.8" state="OPTIONAL">
         <geometry xsi:type="esdl:Point" lat="51.51466508392328" lon="3.990000486373902"/>
@@ -52,17 +42,7 @@
       <asset xsi:type="esdl:ElectricityProducer" id="52b8de9c-b116-45aa-bc6a-ec35ec048e69" name="ElectricityProducer" power="50000000.0">
         <geometry xsi:type="esdl:Point" lat="51.512882074317375" lon="3.9887687017231026" CRS="WGS84"/>
         <port xsi:type="esdl:OutPort" id="e24aeb1a-b05d-49f0-a8f5-91bee021adff" name="OutPort" connectedTo="8a5750d5-3d76-4c4d-bae2-9c62bcb44c35" carrier="0f43ef33-aca7-473a-88b2-9a10ad995e02"/>
-        <costInformation xsi:type="esdl:CostInformation" id="7ea0e861-befe-44d2-be72-efe589173544">
-          <variableOperationalCosts xsi:type="esdl:SingleValue" id="7dfc3bdd-1e7a-404e-9eab-6652eb71d33c" value="1.0">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR/MWh" id="6e427e5d-eef2-4e5e-b54d-cabbfd1facd7" unit="EURO" perMultiplier="MEGA" perUnit="WATTHOUR"/>
-          </variableOperationalCosts>
-          <investmentCosts xsi:type="esdl:SingleValue" id="32afba21-3c6a-4aeb-af2d-979b8d441ff2" value="1.0">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR/MW" id="4e89c912-4f88-4b66-ae45-76b35f4589e6" unit="EURO" perMultiplier="MEGA" perUnit="WATT"/>
-          </investmentCosts>
-          <installationCosts xsi:type="esdl:SingleValue" id="d5e14812-c945-4eb1-9fa0-967aab1b723b" value="1.0">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR" id="b3abd5f2-4f71-4f2a-adfd-0e21e4e6a444" unit="EURO"/>
-          </installationCosts>
-        </costInformation>
+        <costInformation xsi:type="esdl:CostInformation" id="7ea0e861-befe-44d2-be72-efe589173544"/>
       </asset>
       <asset xsi:type="esdl:HeatPump" id="aa00fac0-ba7f-4f51-b72b-08cad2fabade" name="HeatPump_1" power="10000000.0" COP="4.0" state="OPTIONAL">
         <geometry xsi:type="esdl:Point" lat="51.514578175132144" lon="3.9903623886668753" CRS="WGS84"/>

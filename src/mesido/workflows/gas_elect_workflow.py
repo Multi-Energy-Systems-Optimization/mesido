@@ -56,7 +56,7 @@ class SolverCPLEX:
         options["casadi_solver"] = self._qpsol
         options["solver"] = "cplex"
         cplex_options = options["cplex"] = {}
-        cplex_options["CPX_PARAM_EPGAP"] = 0.00001
+        cplex_options["CPX_PARAM_EPGAP"] = 0.005# 0.00001
 
         options["highs"] = None
 
@@ -97,7 +97,7 @@ class GasElectProblem(
         # self.gas_network_settings["minimize_head_losses"] = False
         # self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
 
-        self.gas_network_settings["minimize_head_losses"] = True
+        self.gas_network_settings["minimize_head_losses"] = False
         self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
 
         return options

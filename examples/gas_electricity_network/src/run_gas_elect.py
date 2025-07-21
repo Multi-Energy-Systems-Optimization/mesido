@@ -1,22 +1,26 @@
 # Note: The commented out items are requried for the manual checks/print outs below in this file
-# import os
-# import sys
-# from pathlib import Path
+import os
+import sys
+from pathlib import Path
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.workflows.gas_elect_workflow import GasElectProblem
 from mesido.workflows.utils.helpers import run_optimization_problem_solver
 
-# root_folder = os.path.join(str(Path(__file__).resolve().parent.parent.parent.parent), "tests")
-# sys.path.insert(1, root_folder)
+from mesido._darcy_weisbach import friction_factor
 
-# from utils_tests import (
-#     demand_matching_test,
-#     electric_power_conservation_test,
-#     energy_conservation_test,
-#     heat_to_discharge_test,
-# )
+import numpy as np
+
+root_folder = os.path.join(str(Path(__file__).resolve().parent.parent.parent.parent), "tests")
+sys.path.insert(1, root_folder)
+
+from utils_tests import (
+    demand_matching_test,
+    electric_power_conservation_test,
+    energy_conservation_test,
+    heat_to_discharge_test,
+)
 
 if __name__ == "__main__":
     import time
@@ -34,42 +38,83 @@ if __name__ == "__main__":
     results = solution.extract_results()
     parameters = solution.parameters(0)
 
+    print('============================')
+    print('============TESTS===========')
+    print('============================')
+
+    # Test: Check if heat demand is equal to the energy supplied by conversion
+    print('===Test 1: Energy Balance in Conversion Assets===')
+    print(results['HeatingDemand_1.HeatOut.Heat'] - ( results['HeatPump_1.HeatOut.Heat'] + results['GasHeater_1.Heat_source'] ))
+    print(results['HeatingDemand_2.HeatOut.Heat'] - ( results['HeatPump_2.HeatOut.Heat'] + results['GasHeater_2.Heat_source'] ))
+    np.testing.assert_allclose(results['HeatingDemand_1.HeatOut.Heat'], ( results['HeatPump_1.HeatOut.Heat'] + results['GasHeater_1.Heat_source'] ))
+    np.testing.assert_allclose(results['HeatingDemand_2.HeatOut.Heat'], ( results['HeatPump_2.HeatOut.Heat'] + results['GasHeater_2.Heat_source'] ))
+
+    a=1
+
+    # # Test: Check if the resulting head loss is matching with the theoretical value of the resulting variables
+    # for pipe in solution.energy_system_components.get("gas_pipe", []):
+    #     if results[f"{pipe}__gn_diameter"] <= 1e-15:
+    #         pass
+    #     else:
+    #         # There is a problem at head-loss calculation. In manual head loss we use max velocity yet head loss in results sections i greater
+    #         pc = solution.get_optimized_gas_pipe_class(pipe)
+    #         ff = friction_factor(
+    #             pc.maximum_velocity,
+    #             pc.inner_diameter,
+    #             wall_roughness=solution.energy_system_options()["wall_roughness"],
+    #             temperature=20,
+    #         )
+    #         # wall_roughness=2.0e-4 # 1.50E-05 # problem.energy_system_options()["wall_roughness"]
+    #         # temperature=20 # is default for gas pipes
+    #
+    #         c_v = parameters[f"{pipe}.length"] * ff / (2 * 9.81) / pc.inner_diameter
+    #         dh_max = c_v * pc.maximum_velocity ** 2
+    #         dh_manual = dh_max * results[f"{pipe}.Q"][1:] / pc.area / pc.maximum_velocity
+    #         print(pipe, -dh_manual, results[f"{pipe}.dH"][1:])
+    #         # np.testing.assert_allclose(-dh_manual, results[f"{pipe}.dH"][1:], atol=1.0e-12)
+    #
+    # print('============================')
+
     # ----------------------------------------------------------------------------------------------
     # Do not delete the code below: manual checking and testing of values + usefull prints to
     # terminal
 
-    # demand_matching_test(solution, results)
-    # energy_conservation_test(solution, results)
-    # heat_to_discharge_test(solution, results)
+    demand_matching_test(solution, results)
+    energy_conservation_test(solution, results)
+    heat_to_discharge_test(solution, results)
 
-    # for asset_name in [*solution.energy_system_components.get("air_water_heat_pump_elec", [])]:
-    #     power_cons = results[f"{asset_name}.Power_consumed"]
-    #     print(f"{asset_name} power consumed: {power_cons}")
+    for asset_name in [*solution.energy_system_components.get("air_water_heat_pump_elec", [])]:
+        power_cons = results[f"{asset_name}.Power_consumed"]
+        # print(f"{asset_name} power consumed: {power_cons}")
 
-    # for asset_name in [*solution.energy_system_components.get("gas_boiler", [])]:
-    #     power_cons = results[f"{asset_name}.Gas_demand_mass_flow"]
-    #     print(f"{asset_name} gas consumed: {power_cons}")
+    for asset_name in [*solution.energy_system_components.get("gas_boiler", [])]:
+        power_cons = results[f"{asset_name}.Gas_demand_mass_flow"]
+        # print(f"{asset_name} gas consumed: {power_cons}")
 
-    # # Check gas consumption vs production balance
-    # total_gas_demand_g = [0] * len(np.diff(solution.times()))
-    # total_gas_source_g = [0] * len(np.diff(solution.times()))
-    # for asset_name in [*solution.energy_system_components.get("gas_boiler", [])]:
-    #     for ii in range(1, len(results[f"{asset_name}.Gas_demand_mass_flow"])):
-    #         total_gas_demand_g[ii - 1] += (
-    #             results[f"{asset_name}.Gas_demand_mass_flow"][ii]
-    #             * np.diff(solution.times())[ii - 1]
-    #         )
+    # Check gas consumption vs production balance
+    total_gas_demand_g = [0] * len(np.diff(solution.times()))
+    total_gas_source_g = [0] * len(np.diff(solution.times()))
+    for asset_name in [*solution.energy_system_components.get("gas_boiler", [])]:
+        for ii in range(1, len(results[f"{asset_name}.Gas_demand_mass_flow"])):
+            total_gas_demand_g[ii - 1] += (
+                results[f"{asset_name}.Gas_demand_mass_flow"][ii]
+                * np.diff(solution.times())[ii - 1]
+            )
 
-    # for asset_name in [*solution.energy_system_components.get("gas_source", [])]:
-    #     for ii in range(1, len(results[f"{asset_name}.Gas_source_mass_flow"])):
-    #         total_gas_source_g[ii - 1] += (
-    #             results[f"{asset_name}.Gas_source_mass_flow"][ii]
-    #             * np.diff(solution.times())[ii - 1]
-    #         )
-    # np.testing.assert_allclose(total_gas_source_g, total_gas_demand_g)
+    for asset_name in [*solution.energy_system_components.get("gas_source", [])]:
+        for ii in range(1, len(results[f"{asset_name}.Gas_source_mass_flow"])):
+            total_gas_source_g[ii - 1] += (
+                results[f"{asset_name}.Gas_source_mass_flow"][ii]
+                * np.diff(solution.times())[ii - 1]
+            )
+    np.testing.assert_allclose(total_gas_source_g, total_gas_demand_g)
+    print('total_gas_source_g: ', total_gas_source_g )
+    print('total_gas_demand_g: ', total_gas_demand_g)
 
-    # # Check elect power demand vs production balance
-    # electric_power_conservation_test(solution, results)
+    # Check elect power demand vs production balance
+    electric_power_conservation_test(solution, results)
+
+    print('============================')
 
     # Check OPEX costs
     # np.testing.assert_allclose(
