@@ -232,8 +232,8 @@ class _AssetToComponentBase:
 
     # Dictionary mapping asset types to cost attribute requirements
     # Values: "required", "optional"
-    # Cost attributes not included in the dictionary as treated as "not supported" 
-    # when checking for potential errors in ASSET_COST_INFORMATION  
+    # Cost attributes not included in the dictionary as treated as "not supported"
+    # when checking for potential errors in ASSET_COST_INFORMATION
     ASSET_COST_REQUIREMENTS = {
         "heat_pump": {
             "investmentCosts": "required",
@@ -1327,7 +1327,7 @@ class _AssetToComponentBase:
             error_type = error_type_mapping.get(cost_error_type)
             get_potential_errors().add_potential_issue(error_type, asset_id, message)
 
-    def _check_cost_attribute_requirement(self, component_type: str, cost_attribute: str)-> str:
+    def _check_cost_attribute_requirement(self, component_type: str, cost_attribute: str) -> str:
         """
         Check if a cost attribute is required, optional for a component type.
         If the cost attribute is neither of those, consider it as "not supported".
@@ -1360,7 +1360,9 @@ class _AssetToComponentBase:
         Returns:
             bool: True if the attribute is valid and should be processed further, False otherwise
         """
-        cost_check_message = self._check_cost_attribute_requirement(asset.asset_type, cost_attribute)
+        cost_check_message = self._check_cost_attribute_requirement(
+            asset.asset_type, cost_attribute
+        )
         cost_attribute_name = self.COST_ATTRIBUTE_TO_STRING.get(cost_attribute, cost_attribute)
 
         if cost_info is None:
@@ -1432,22 +1434,22 @@ class _AssetToComponentBase:
                 continue
             if per_unit != UnitEnum.WATTHOUR and asset.asset_type not in gas_assets:
                 message = (
-                    f"Expected the specified OPEX for asset {asset.name} of type {asset.asset_type} "
-                    f"to be per Wh, but they are provided in {per_unit} instead."
+                    f"Expected the specified OPEX for asset {asset.name} of type {asset.asset_type}"
+                    f" to be per Wh, but they are provided in {per_unit} instead."
                 )
                 self._log_and_add_potential_issue(message, asset.id, cost_error_type="incorrect")
                 continue
             if asset.asset_type in gas_assets and per_unit != UnitEnum.GRAM:
                 message = (
-                    f"Expected the specified OPEX for asset {asset.name} of type {asset.asset_type} "
-                    f"to be per EURO/g, but they are provided in {unit}/{per_unit} instead."
+                    f"Expected the specified OPEX for asset {asset.name} of type {asset.asset_type}"
+                    f" to be per EURO/g, but they are provided in {unit}/{per_unit} instead."
                 )
                 self._log_and_add_potential_issue(message, asset.id, cost_error_type="incorrect")
                 continue
             if cost_value < 0.0:
                 message = (
-                    f"Specified OPEX for asset {asset.name} of type {asset.asset_type} is {cost_value}, "
-                    f"but should be non-negative."
+                    f"Specified OPEX for asset {asset.name} of type {asset.asset_type} "
+                    f"is {cost_value}, but should be non-negative."
                 )
                 self._log_and_add_potential_issue(message, asset.id, cost_error_type="incorrect")
                 continue
