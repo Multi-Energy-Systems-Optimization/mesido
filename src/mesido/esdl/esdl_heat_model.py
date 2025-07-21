@@ -2630,6 +2630,13 @@ class AssetToHeatComponent(_AssetToComponentBase):
         """
         assert asset.asset_type in {"HeatPump"}
 
+        get_potential_errors().add_potential_issue(
+            MesidoAssetIssueType.ELECT_ASSET_TYPE_NOT_SUPPORTED,
+            asset.id,
+            f"Asset named {asset.name}: This is an asset that includes electricity and it should be"
+            " replaced with a supported asset",
+        )
+
         max_supply = asset.attributes["power"]
 
         if not max_supply:
