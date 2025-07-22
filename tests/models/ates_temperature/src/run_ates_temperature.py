@@ -1,9 +1,14 @@
+import os
+from pathlib import Path
+
+import mesido.workflows.utils.adapt_profiles
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.io.write_output import ScenarioOutput
+from mesido.workflows.utils.adapt_profiles import adapt_hourly_profile_averages_timestep_size
 
 import numpy as np
 
@@ -19,6 +24,8 @@ from rtctools.optimization.single_pass_goal_programming_mixin import (
     GoalProgrammingMixin,
 )
 from rtctools.util import run_optimization_problem
+
+from mesido.workflows.utils.helpers import run_optimization_problem_solver
 
 ns = {"fews": "http://www.wldelft.nl/fews", "pi": "http://www.wldelft.nl/fews/PI"}
 
@@ -341,20 +348,98 @@ class HeatProblemMaxFlow(HeatProblem):
         demand_timeseries.values[2] = demand_timeseries.values[2] * 2
         self.set_timeseries("HeatingDemand_1.target_heat_demand", demand_timeseries)
 
+class HeatProblemATESMultiPort(
+    ScenarioOutput,
+    _GoalsAndOptions,
+    TechnoEconomicMixin,
+    LinearizedOrderGoalProgrammingMixin,
+    GoalProgrammingMixin,
+    ESDLMixin,
+    CollocatedIntegratedOptimizationProblem,
+                               ):
+
+    def read(self) -> None:
+        super().read()
+
+        adapt_hourly_profile_averages_timestep_size(self, 24*20)
+
+
+    def energy_system_options(self):
+        # TODO: make empty placeholder in HeatProblem we don't know yet how to put the global
+        #  constraints in the ESDL e.g. min max pressure
+        options = super().energy_system_options()
+        options["maximum_temperature_der"] = np.inf
+        options["heat_loss_disconnected_pipe"] = True
+        options["include_ates_temperature_options"] = True
+        return options
+
+    def constraints(self, ensemble_member):
+        constraints = super().constraints(ensemble_member)
+
+        for a in self.energy_system_components.get("ates", []):
+            stored_heat = self.state_vector(f"{a}.Stored_heat")
+            heat_ates = self.state_vector(f"{a}.Heat_ates")
+            constraints.append((stored_heat[0] - stored_heat[-1], 0.0, 0.0))
+            # stored_volume only to be used if temperature loss ates is also dependent on
+            # stored_volume instead of stored_heat
+            constraints.append((heat_ates[0], 0.0, 0.0))
+            ates_temperature_disc = self.__state_vector_scaled(
+                f"{a}__temperature_ates_disc", ensemble_member
+            )
+            constraints.append(((ates_temperature_disc[-1] - ates_temperature_disc[0]), 0.0, 0.0))
+
+        return constraints
+
+    def __state_vector_scaled(self, variable, ensemble_member):
+        """
+        This functions returns the casadi symbols scaled with their nominal for the entire time
+        horizon.
+        """
+        canonical, sign = self.alias_relation.canonical_signed(variable)
+        return (
+            self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
+        )
+
+class SolverCPLEX:
+    def solver_options(self):
+        options = super().solver_options()
+        # options["casadi_solver"] = self._qpsol
+        options["solver"] = "cplex"
+        cplex_options = options["cplex"] = {}
+        cplex_options["CPX_PARAM_EPGAP"] = 0.001
+
+        options["highs"] = None
+
+        return options
 
 if __name__ == "__main__":
-    import time
-
-    t0 = time.time()
-
-    sol = run_optimization_problem(
-        HeatProblem,
-        esdl_file_name="HP_ATES with return network.esdl",
+    basefolder = Path(os.getcwd()).resolve().parent
+    solution = run_optimization_problem_solver(
+        HeatProblemATESMultiPort,
+        solver_class=SolverCPLEX,
+        base_folder=basefolder,
+        esdl_file_name="ATES_6port_HPelectricity.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,
-        input_timeseries_file="Warmte_test_3.csv",
+        input_timeseries_file="Heatdemand_eprice.csv",
     )
-    # sol._write_updated_esdl()
-    results = sol.extract_results()
-    print(f"time: {time.time() - t0}")
-    a = 1
+
+    results = solution.extract_results()
+    parameters = solution.parameters(0)
+
+    #
+    # import time
+    #
+    # t0 = time.time()
+    #
+    # sol = run_optimization_problem(
+    #     HeatProblem,
+    #     esdl_file_name="HP_ATES with return network.esdl",
+    #     esdl_parser=ESDLFileParser,
+    #     profile_reader=ProfileReaderFromFile,
+    #     input_timeseries_file="Warmte_test_3.csv",
+    # )
+    # # sol._write_updated_esdl()
+    # results = sol.extract_results()
+    # print(f"time: {time.time() - t0}")
+    # a = 1

@@ -305,3 +305,40 @@ class TestAtesTemperature(TestCase):
 
         cp = parameters[f"{ates}.cp"]
         rho = parameters[f"{ates}.rho"]
+
+    def test_ates_multi_port_temperature(self):
+        """
+        check if
+        - discrete temperature ates is equal to temperature of pipe at inport during discharging
+        - discrete temperature ates is equal or lower then temperature ates
+        - discrete temperature ates is equal to the set booleans of ates temperature
+        - temperature change ates continues is equal to the sum of temperature loss and
+        temperature change charging
+
+        - only heatpump or heat exchanger is in operation, solely for charging/discharging ates
+        - if ates is charging (heat_ates>0), hex is enabled. if ates is discharging (heat<0),
+        hp is enabled
+        - Discharge heat and mass flow is corresponding to the temperature regime (flow rate
+        remains the same, but heat changes)
+
+        TODO: still have to add checks:
+        - temperature loss>= relation of temperature loss
+        - temperature addition charging
+        - heat loss ates>= relation of heat loss
+        """
+        import models.ates_temperature.src.run_ates_temperature as run_ates_temperature
+        from models.ates_temperature.src.run_ates_temperature import HeatProblemATESMultiPort
+
+        basefolder = Path(run_ates_temperature.__file__).resolve().parent.parent
+
+        solution = run_esdl_mesido_optimization(
+            HeatProblemATESMultiPort,
+            base_folder=basefolder,
+            esdl_file_name="accel_utes_charge_discharge_ates6port.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="ACCEL_UTES.csv",
+        )
+
+        results = solution.extract_results()
+        parameters = solution.parameters(0)
