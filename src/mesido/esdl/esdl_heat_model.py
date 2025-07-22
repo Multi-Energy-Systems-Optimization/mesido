@@ -17,6 +17,7 @@ from mesido.esdl.esdl_model_base import _ESDLModelBase
 from mesido.potential_errors import MesidoAssetIssueType, get_potential_errors
 from mesido.pycml.component_library.milp import (
     ATES,
+    ATESMultiPort,
     AirWaterHeatPump,
     AirWaterHeatPumpElec,
     Airco,
@@ -1338,6 +1339,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
             "ATES",
         }
 
+        multiport_ates = False
+        if len(asset.in_ports) + len(asset.out_ports)>2:
+            multiport_ates = True
+
         hfr_charge_max = asset.attributes.get("maxChargeRate", math.inf)
         hfr_discharge_max = asset.attributes.get("maxDischargeRate", math.inf)
         single_doublet_power = hfr_discharge_max
@@ -1349,14 +1354,17 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         # TODO: temporary value for standard dT on which capacity is based, Q in m3/s
         temperatures = self._supply_return_temperature_modifiers(asset)
-        if len(asset.in_ports) + len(asset.out_ports)>2:
+        if multiport_ates:
             temp = []
             for p in [*asset.in_ports, *asset.out_ports]:
                 carrier = asset.global_properties["carriers"][p.carrier.id]
                 temp.append(carrier['temperature'])
-            temperatures["T_supply"] = max(temp)
-            temperatures["T_return"] = min(temp)
-        dt = temperatures["T_supply"] - temperatures["T_return"]
+            temp_min = min(temp)
+            temp_max = max(temp)
+        else:
+            temp_max = temperatures["T_supply"]
+            temp_min = temperatures["T_return"]
+        dt = temp_max - temp_min
         rho = self.rho
         cp = self.cp
         q_max_ates = hfr_discharge_max / (cp * rho * dt)
@@ -1370,6 +1378,37 @@ class AssetToHeatComponent(_AssetToComponentBase):
             for k,v in q_nominal.items():
                 q_nominal[k]['Q_nominal'] = min(v['Q_nominal'], q_max_ates * asset.attributes[
                     "aggregationCount"])
+            q_nominal = max([list(v.values())[0] for v in q_nominal.values()])
+
+        params = {}
+        if multiport_ates:
+            params_q = self._get_connected_q_nominal(asset)
+            params_t = temperatures
+            discharge_hot = dict(
+                HeatIn=dict(Hydraulic_power=dict(nominal=params_q["DischargeHot"]["Q_nominal"] *
+                                                         16.0e5)),
+                HeatOut=dict(Hydraulic_power=dict(nominal=params_q["DischargeHot"]["Q_nominal"] * 16.0e5)),
+            )
+            discharge_cold = dict(
+                HeatIn=dict(Hydraulic_power=dict(nominal=params_q["DischargeCold"]["Q_nominal"] *
+                                                         16.0e5)),
+                HeatOut=dict(Hydraulic_power=dict(nominal=params_q["DischargeCold"]["Q_nominal"] *
+                                                          16.0e5)),
+            )
+            charge_hot = dict(
+                HeatIn=dict(
+                    Hydraulic_power=dict(nominal=params_q["ChargeHot"]["Q_nominal"] * 16.0e5)),
+                HeatOut=dict(
+                    Hydraulic_power=dict(nominal=params_q["ChargeHot"]["Q_nominal"] * 16.0e5)),
+            )
+            params["DischargeHot"] = {**params_t["DischargeHot"], **params_q["DischargeHot"], **discharge_hot}
+            params["DischargeCold"] = {**params_t["DischargeCold"], **params_q["DischargeCold"],
+                                      **discharge_cold}
+            params["ChargeHot"] = {**params_t["ChargeHot"], **params_q["ChargeHot"], **charge_hot}
+            params["T_supply"] = temp_max
+            params["T_return"] = temp_min
+        else:
+            params = self._supply_return_temperature_modifiers(asset)
 
 
         modifiers = dict(
@@ -1400,10 +1439,19 @@ class AssetToHeatComponent(_AssetToComponentBase):
             ),
             HeatIn=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
             HeatOut=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
-            **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
+            **params,
         )
+        # if not multiport_ates:
+        #     modifiers.update(
+        #         dict(
+        #             HeatIn=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
+        #             HeatOut=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
+        #     ))
+        # else:
+
+
 
         # if no maxStorageTemperature is specified we assume a "regular" HT ATES model
         if (
@@ -1434,9 +1482,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
                     ),
                     T_amb=asset.attributes["aquiferMidTemperature"],
                     Temperature_ates=dict(
-                        min=temperatures["T_return"],  # or potentially 0
-                        max=temperatures["T_supply"],
-                        nominal=temperatures["T_return"],
+                        min=temp_min,  # or potentially 0
+                        max=temp_max,
+                        nominal=temp_min,
                     ),
                 )
             )
@@ -1444,7 +1492,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 "ATES in use: High Temperature ATES since the maximum temperature has"
                 " been specified to be > 30 degrees Celcius or not specified at all"
             )
-            return ATES, modifiers
+            if not multiport_ates:
+                return ATES, modifiers
+            else:
+                return ATESMultiPort, modifiers
 
     def convert_control_valve(self, asset: Asset) -> Tuple[Type[ControlValve], MODIFIERS]:
         """
