@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" name="gas_elect_loop_tree" description="" id="cc3b855b-0403-4df8-a84f-8ea6fd25420e" esdlVersion="v250501" version="42">
+<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" name="gas_elect_loop_tree" description="" id="cc3b855b-0403-4df8-a84f-8ea6fd25420e" esdlVersion="v250501" version="43">
   <instance xsi:type="esdl:Instance" id="f2e9533d-015d-445f-8c08-cd035d238eee" name="Untitled instance">
     <area xsi:type="esdl:Area" id="74ab5996-6a79-4cd6-9fa8-4f1a498722f5" name="Untitled area">
       <asset xsi:type="esdl:GasProducer" id="82d5c086-b805-4f89-a2e7-21490ccb2acd" name="GasProducer" power="50000000.0">
@@ -90,11 +90,7 @@
       </asset>
       <asset xsi:type="esdl:Pipe" id="7be9a7dd-4f79-4e53-87f9-b5ab2bb5d70e" name="Pipe_prod" innerDiameter="0.3938" outerDiameter="0.56" diameter="DN400" length="130.08" state="OPTIONAL">
         <dataSource xsi:type="esdl:DataSource" name="Logstor Product Catalogue Version 2020.03" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf"/>
-        <costInformation xsi:type="esdl:CostInformation" id="eb801774-2512-4799-b7f7-99268cc6643e">
-          <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="2ab2214c-8d42-4b74-877f-7fb97f6eab86" value="2840.6">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" unit="EURO" perUnit="METRE" description="Costs in EUR/m" id="9169bd50-197f-4d6b-aaac-b383a59c815d"/>
-          </investmentCosts>
-        </costInformation>
+        <costInformation xsi:type="esdl:CostInformation" id="eb801774-2512-4799-b7f7-99268cc6643e"/>
         <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
           <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0063">
             <matter xsi:type="esdl:Material" name="steel" id="74d84321-1767-4cec-b6e7-b90c06020400" thermalConductivity="52.15"/>
@@ -115,11 +111,7 @@
       </asset>
       <asset xsi:type="esdl:Pipe" id="597cad97-1341-4c33-acaf-2fd2ea14f074" name="Pipe_dem_1" innerDiameter="0.3938" outerDiameter="0.56" diameter="DN400" length="87.84" state="OPTIONAL">
         <dataSource xsi:type="esdl:DataSource" name="Logstor Product Catalogue Version 2020.03" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf"/>
-        <costInformation xsi:type="esdl:CostInformation" id="eb801774-2512-4799-b7f7-99268cc6643e">
-          <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="2ab2214c-8d42-4b74-877f-7fb97f6eab86" value="2840.6">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" unit="EURO" perUnit="METRE" description="Costs in EUR/m" id="9169bd50-197f-4d6b-aaac-b383a59c815d"/>
-          </investmentCosts>
-        </costInformation>
+        <costInformation xsi:type="esdl:CostInformation" id="eb801774-2512-4799-b7f7-99268cc6643e"/>
         <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
           <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0063">
             <matter xsi:type="esdl:Material" name="steel" id="74d84321-1767-4cec-b6e7-b90c06020400" thermalConductivity="52.15"/>
@@ -145,11 +137,7 @@
       </asset>
       <asset xsi:type="esdl:Pipe" id="8cbd9995-56d7-453f-bd4b-048202394f24" name="Pipe_left" innerDiameter="0.3938" outerDiameter="0.56" diameter="DN400" length="556.7" state="OPTIONAL">
         <dataSource xsi:type="esdl:DataSource" name="Logstor Product Catalogue Version 2020.03" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf"/>
-        <costInformation xsi:type="esdl:CostInformation" id="4e83435e-f40b-4a40-a02f-22085e5f5cb8">
-          <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="2ab2214c-8d42-4b74-877f-7fb97f6eab86" value="2840.6">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" unit="EURO" perUnit="METRE" description="Costs in EUR/m" id="9169bd50-197f-4d6b-aaac-b383a59c815d"/>
-          </investmentCosts>
-        </costInformation>
+        <costInformation xsi:type="esdl:CostInformation" id="4e83435e-f40b-4a40-a02f-22085e5f5cb8"/>
         <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
           <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0063">
             <matter xsi:type="esdl:Material" name="steel" id="74d84321-1767-4cec-b6e7-b90c06020400" thermalConductivity="52.15"/>
@@ -173,11 +161,7 @@
       </asset>
       <asset xsi:type="esdl:Pipe" id="e5c8a808-95b7-4e87-acd5-c12e10652c6d" name="Pipe_right" innerDiameter="0.3938" outerDiameter="0.56" diameter="DN400" length="309.0" state="OPTIONAL">
         <dataSource xsi:type="esdl:DataSource" name="Logstor Product Catalogue Version 2020.03" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf"/>
-        <costInformation xsi:type="esdl:CostInformation" id="778ed3ff-3fcb-4edf-9186-a4d17c363c98">
-          <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="2ab2214c-8d42-4b74-877f-7fb97f6eab86" value="2840.6">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" unit="EURO" perUnit="METRE" description="Costs in EUR/m" id="9169bd50-197f-4d6b-aaac-b383a59c815d"/>
-          </investmentCosts>
-        </costInformation>
+        <costInformation xsi:type="esdl:CostInformation" id="778ed3ff-3fcb-4edf-9186-a4d17c363c98"/>
         <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
           <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0063">
             <matter xsi:type="esdl:Material" name="steel" id="74d84321-1767-4cec-b6e7-b90c06020400" thermalConductivity="52.15"/>
@@ -201,11 +185,7 @@
       </asset>
       <asset xsi:type="esdl:Pipe" id="4669b4d0-39d3-4770-afe6-7a0a1bf3d41f" name="Pipe_dem_2" innerDiameter="0.3938" outerDiameter="0.56" diameter="DN400" length="28.5" state="OPTIONAL">
         <dataSource xsi:type="esdl:DataSource" name="Logstor Product Catalogue Version 2020.03" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf"/>
-        <costInformation xsi:type="esdl:CostInformation" id="0547ccfa-6793-4f09-b2a5-601ccdd8620c">
-          <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="2ab2214c-8d42-4b74-877f-7fb97f6eab86" value="2840.6">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" unit="EURO" perUnit="METRE" description="Costs in EUR/m" id="9169bd50-197f-4d6b-aaac-b383a59c815d"/>
-          </investmentCosts>
-        </costInformation>
+        <costInformation xsi:type="esdl:CostInformation" id="0547ccfa-6793-4f09-b2a5-601ccdd8620c"/>
         <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
           <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0063">
             <matter xsi:type="esdl:Material" name="steel" id="74d84321-1767-4cec-b6e7-b90c06020400" thermalConductivity="52.15"/>
