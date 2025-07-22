@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" id="78ab6018-fdd7-4ad6-bd6e-2d8a38feeb57_with_return_network" description="" esdlVersion="v2401" name="Heating and cooling network with return network" version="24">
+<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" id="78ab6018-fdd7-4ad6-bd6e-2d8a38feeb57_with_return_network" description="" esdlVersion="v2401" name="Heating and cooling network with return network" version="25">
   <energySystemInformation xsi:type="esdl:EnergySystemInformation" id="bf7d18e8-40c0-4234-af50-a0c72991b8fd">
     <carriers xsi:type="esdl:Carriers" id="222f232f-3510-4270-8e2c-9e713d69f5cc">
       <carrier xsi:type="esdl:HeatCommodity" id="001521ea-9f10-4745-ac3b-6e0c767e16b2" supplyTemperature="22.0" name="LT"/>
@@ -13,6 +13,14 @@
         <port xsi:type="esdl:InPort" id="9400bb52-862c-44b1-9dac-a2190b2087d3" name="In" carrier="001521ea-9f10-4745-ac3b-6e0c767e16b2_ret" connectedTo="1d8186aa-76c7-4d82-bc01-084cdb68e359"/>
         <port xsi:type="esdl:OutPort" id="b87783a5-9683-4bf6-86d9-0a82e26e3313" name="Port" connectedTo="c0b27ede-d8da-4894-a288-291e2dcde7b3" carrier="001521ea-9f10-4745-ac3b-6e0c767e16b2"/>
         <geometry xsi:type="esdl:Point" lat="51.98810497931513" lon="4.3792702277458915" CRS="WGS84"/>
+        <costInformation xsi:type="esdl:CostInformation" id="28afc7a8-780a-48d1-baef-505a5898c258">
+          <investmentCosts xsi:type="esdl:SingleValue" id="b123130f-d1e7-44ec-ab95-d101007a97f2" value="1000.0">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR/MW" id="f1431eeb-3c47-46ea-bc11-c60e4cbbb97e" unit="EURO" perMultiplier="MEGA" perUnit="WATT"/>
+          </investmentCosts>
+          <installationCosts xsi:type="esdl:SingleValue" id="8cccc835-509c-480c-afb5-def7a0784d8c" value="100000.0">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR" id="2b9e72b0-1a65-4e15-aa62-1c9b932b86ce" unit="EURO"/>
+          </installationCosts>
+        </costInformation>
       </asset>
       <asset xsi:type="esdl:ATES" maxChargeRate="5000000.0" name="ATES_1" maxStorageTemperature="26.0" minStorageTemperature="6.0" id="b2219730-9197-4057-9b99-93b32756886a" maxDischargeRate="5000000.0" state="OPTIONAL">
         <port xsi:type="esdl:InPort" id="abeb79f8-9d78-406d-87fc-f71553c15a69" name="In" carrier="001521ea-9f10-4745-ac3b-6e0c767e16b2" connectedTo="7f008df3-cc20-4fc7-852d-e2375dd1eae7"/>

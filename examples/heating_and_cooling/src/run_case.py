@@ -325,6 +325,20 @@ class HeatCoolingGrowWorkflow(TestCase):
         for asset in solution.energy_system_components["heat_pipe"]:
             total_capex += results[f"{asset}__investment_cost"]
 
+        # cold demand
+        investment_cost = 0.0
+        for asset in solution.energy_system_components.get("cold_demand", []):
+            investment_cost += results[f"{asset}__max_size"] * solution.esdl_assets[
+                solution.esdl_asset_name_to_id_map[f"{asset}"]
+            ].attributes["costInformation"].investmentCosts.value / 1.0e6
+        assert (abs(investment_cost - results[f"{asset}__investment_cost"]) < 1.0e-8)
+        installation_cost = 0.0
+        for asset in solution.energy_system_components.get("cold_demand", []):
+            installation_cost += solution.esdl_assets[
+                solution.esdl_asset_name_to_id_map[f"{asset}"]
+            ].attributes["costInformation"].installationCosts.value
+        assert (abs(installation_cost - results[f"{asset}__installation_cost"]) < 1.0e-8)
+
         assert (abs(solution.objective_value - (total_capex + total_opex) / 1.0e6) < 1.0e-8)
 
         temp = 1.0

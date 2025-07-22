@@ -2029,6 +2029,22 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 )
             )
 
+        for d in self.energy_system_components.get("cold_demand", []):
+            max_var_types.add("cold_demand")
+            max_var = self._asset_max_size_map[d]
+            max_cold = self.extra_variable(max_var, ensemble_member)
+            cold_demand = self.__state_vector_scaled(f"{d}.Cold_demand", ensemble_member)
+            constraint_nominal = max(
+                self.variable_nominal(f"{d}.Cold_demand"), self.variable_nominal(f"{d}.HeatIn.Heat")
+            )
+            constraints.append(
+                (
+                    (np_ones * max_cold - cold_demand) / constraint_nominal,
+                    0.0,
+                    np.inf,
+                )
+            )
+
         for a in [
             *self.energy_system_components.get("ates", []),
             *self.energy_system_components.get("low_temperature_ates", []),

@@ -144,6 +144,19 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 )
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
+            elif asset_name in [*self.energy_system_components.get("cold_demand", [])]:
+                nominal_fixed_operational = (
+                    bounds[f"{asset_name}.Cold_demand"][1]
+                    if not np.isinf(bounds[f"{asset_name}.Cold_demand"][1])
+                    else bounds[f"{asset_name}.HeatIn.Heat"][1]  # TODO: This In or Out to be confirmed?
+                )
+                nominal_fixed_operational = (
+                    nominal_fixed_operational
+                    if isinstance(nominal_fixed_operational, float)
+                    else max(nominal_fixed_operational.values)
+                )
+                nominal_variable_operational = nominal_fixed_operational
+                nominal_investment = nominal_fixed_operational
             elif asset_name in [*self.energy_system_components.get("heat_source", [])]:
                 nominal_fixed_operational = self.variable_nominal(f"{asset_name}.Heat_source")
                 nominal_fixed_operational = (
@@ -432,6 +445,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         for asset in [
             *self.energy_system_components.get("heat_source", []),
             *self.energy_system_components.get("heat_demand", []),
+            *self.energy_system_components.get("cold_demand", []),
             *self.energy_system_components.get("ates", []),
             *self.energy_system_components.get("low_temperature_ates", []),
             *self.energy_system_components.get("heat_buffer", []),
@@ -458,6 +472,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             for asset in [
                 *self.energy_system_components.get("heat_source", []),
                 *self.energy_system_components.get("heat_demand", []),
+                *self.energy_system_components.get("cold_demand", []),
                 *self.energy_system_components.get("ates", []),
                 *self.energy_system_components.get("low_temperature_ates", []),
                 *self.energy_system_components.get("heat_buffer", []),
@@ -953,7 +968,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     * timesteps_hr[i - 1]
                     / denominator
                 )
-                sum += price_profile.values[i] * pump_power[i] * timesteps_hr[i - 1] / eff
+                sum += price_profile.values[i] * pump_power[i] * timesteps_hr[i - 1] / eff  # pump_power ?
 
                 # TODO: resolve issue for elect costs fir elec heat pump (ie. heat source), see code below
                 # if (
