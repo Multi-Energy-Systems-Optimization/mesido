@@ -188,12 +188,15 @@ class HeatCoolingGrowWorkflow(TestCase):
                 self.asset_name = asset_name
 
             def function(
-                self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
+                self,
+                ensemble_member: int
             ) -> ca.MX:
 
                 parameters = self.parameters(ensemble_member)
 
-                heat_source = self.__state_vector_scaled(f"{self.asset_name}.Heat_source", ensemble_member)
+                heat_source = self.__state_vector_scaled(
+                    f"{self.asset_name}.Heat_source", ensemble_member
+                )
                 # variable_operational_cost_var = self._asset_variable_operational_cost_map[
                 #     self.asset_name
                 # ]
@@ -204,6 +207,10 @@ class HeatCoolingGrowWorkflow(TestCase):
                 # variable_operational_cost_coefficient = parameters[
                 #     f"{self.asset_name}.variable_operational_cost_coefficient"
                 # ]
+
+                price_profile = self.get_timeseries(
+                    f"{list(self.get_electricity_carriers().values())[0]["Elect"]}.price_profile"
+                )
 
                 sum = 0.0
                 for i in range(1, len(self.times())):
@@ -252,7 +259,7 @@ class HeatCoolingGrowWorkflow(TestCase):
             def goals(self):
 
                 goals = super().goals().copy()
-                
+ 
                 for ac in self.energy_system_components.get("air_water_heat_pump_elec", []):
                     goals.append(MinElectcost(ac))
 
