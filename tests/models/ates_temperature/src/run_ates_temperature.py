@@ -448,8 +448,9 @@ if __name__ == "__main__":
     ates_cold_return_temp = parameters[f"{ates}.T_return"]
     cp = parameters[f"{ates}.cp"]
     rho = parameters[f"{ates}.rho"]
-    ates_discharging = 1-results[f"{ates}__is_charging"]
-    ates_charging = results[f"{ates}__is_charging"]
+    ates_charging = results[f"{ates}__is_charging"].astype(bool)
+    ates_discharging = (1-ates_charging).astype(bool)
+
 
     #ensuring enough ates is charged for this problem to be be realistic.
     np.testing.assert_array_less(1e10, sum(ates_heat[1:]*dt))
@@ -467,7 +468,8 @@ if __name__ == "__main__":
 
     # checks that heatflow of different ports is positive or negative and that the sum is equal
     # to Heat_ates
-    np.testing.assert_allclose(ates_discharge_hot_heat + ates_discharge_cold_heat + ates_charge_hot_heat, ates_heat)
+    np.testing.assert_allclose(ates_discharge_hot_heat + ates_discharge_cold_heat +
+                               ates_charge_hot_heat, ates_heat)
     np.testing.assert_array_less(ates_discharge_cold_heat, epsilon)
     np.testing.assert_array_less(ates_discharge_hot_heat, epsilon)
     np.testing.assert_array_less(-epsilon, ates_charge_hot_heat)
