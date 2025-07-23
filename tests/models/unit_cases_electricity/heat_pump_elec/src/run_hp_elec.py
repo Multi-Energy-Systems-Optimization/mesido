@@ -103,7 +103,17 @@ class MinimizeElectricityGoal(Goal):
         self.function_nominal = 1e6
 
     def function(self, optimization_problem, ensemble_member):
-        return optimization_problem.state(f"{self.source}.Power_elec")
+        var_to_return = ""
+        if self.source in optimization_problem.energy_system_components.get("heat_pump_elec", []):
+            var_to_return = f"{self.source}.Power_elec"
+        elif self.source in optimization_problem.energy_system_components.get(
+            "air_water_heat_pump_elec", []
+        ):
+            var_to_return = f"{self.source}.Power_consumed"
+        else:
+            exit(f"Asset {self.source} is not caterd for in this goal")
+
+        return optimization_problem.state(var_to_return)
 
 
 class HeatProblem(
@@ -232,7 +242,10 @@ class ElectricityProblem(
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        for s in self.energy_system_components["heat_pump_elec"]:
+        for s in [
+            *self.energy_system_components.get("heat_pump_elec", []),
+            *self.energy_system_components.get("air_water_heat_pump_elec", []),
+        ]:
             goals.append(MinimizeElectricityGoal(s))
 
         return goals

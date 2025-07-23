@@ -7,7 +7,12 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
+from utils_tests import (
+    demand_matching_test,
+    electric_power_conservation_test,
+    energy_conservation_test,
+    heat_to_discharge_test,
+)
 
 
 class TestMultiCommodityHeatPump(TestCase):
@@ -187,6 +192,7 @@ class TestMultiCommodityHeatPump(TestCase):
         demand_matching_test(solution, results)
         energy_conservation_test(solution, results)
         heat_to_discharge_test(solution, results)
+        electric_power_conservation_test(solution, results)
 
         tol = 1e-6
         heatsource_prim = results["ResidualHeatSource_61b8.Heat_source"]
@@ -210,6 +216,56 @@ class TestMultiCommodityHeatPump(TestCase):
 
         # check that prim producer is providing more energy to heatpump and primary demand
         np.testing.assert_array_less(heatdemand_prim - (heatsource_prim - heatpump_heat_prim), 0)
+
+    def test_air_to_water_heat_pump_elec_min_elec(self):
+        """
+        Verify that minimisation of the electricity power used, and thus exploiting the heatpump
+
+        Checks:
+        - Standard checks for demand matching, heat to discharge and energy conservation and elect
+        power conervation
+        - Checks for sufficient heat production
+        - Checks for Power = I * V at the heatpump
+
+        """
+        import models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec as run_hp_elec
+        from models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec import (
+            ElectricityProblem,
+        )
+
+        base_folder = Path(run_hp_elec.__file__).resolve().parent.parent
+
+        solution = run_esdl_mesido_optimization(
+            ElectricityProblem,
+            base_folder=base_folder,
+            esdl_file_name="air_to_water_heat_pump_elec.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.xml",
+        )
+        results = solution.extract_results()
+
+        demand_matching_test(solution, results)
+        energy_conservation_test(solution, results)
+        heat_to_discharge_test(solution, results)
+        electric_power_conservation_test(solution, results)
+
+        tol = 1e-6
+
+        # TODO add addtional checks for air to water heat pump like COP etc, and maybe add other
+        # heat sources
+
+        # check that prim producer is providing more energy to heatpump and primary demand
+        np.testing.assert_array_less(
+            results["HeatingDemand_18aa.Heat_flow"],
+            results["HeatPump_0ce6.Heat_flow"],
+        )
+        # check that electricity contraint for power is working
+        np.testing.assert_allclose(
+            results["HeatPump_0ce6.Power_consumed"],
+            results["HeatPump_0ce6.ElectricityIn.I"] * results["HeatPump_0ce6.ElectricityIn.V"],
+            atol=tol,
+        )
 
     def test_heat_pump_elec_price_profile(self):
         """
@@ -276,3 +332,10 @@ class TestMultiCommodityHeatPump(TestCase):
             (price_profile[1:] + var_opex_hp_non_el) * heatpump_power[1:] * timestep
         )
         np.testing.assert_allclose(var_opex_hp_calc, var_opex_hp)
+
+
+if __name__ == "__main__":
+
+    test_cold_demand = TestMultiCommodityHeatPump()
+    test_cold_demand.test_air_to_water_heat_pump_elec_min_elec()
+    # test_cold_demand.test_heat_pump_elec_min_elec()
