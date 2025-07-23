@@ -7,6 +7,7 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
+# from tests.models.ates_temperature.src.run_ates_temperature import SolverCPLEX
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
@@ -333,8 +334,9 @@ class TestAtesTemperature(TestCase):
 
         solution = run_esdl_mesido_optimization(
             HeatProblemATESMultiPort,
+            solver_class=SolverCPLEX,
             base_folder=basefolder,
-            esdl_file_name="accel_utes_charge_discharge_ates6port.esdl",
+            esdl_file_name="ATES_6port_HP_electricity_simplified.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="ACCEL_UTES.csv",
@@ -342,3 +344,8 @@ class TestAtesTemperature(TestCase):
 
         results = solution.extract_results()
         parameters = solution.parameters(0)
+
+        ates = solution.energy_system_components.get("ates")[0]
+        ates_temp = results[f"{ates}.Temperature_ates"]
+        ates_heat = results[f"{ates}.Heat_ates"]
+

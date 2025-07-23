@@ -437,11 +437,11 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             # TODO: dictionary only needs to be filled for very specific models for instance when
             #  temperature modelling of ATES
-            ates_is_charing_var_name = ates_max_stored_heat_var_name = f"{ates}__is_charging"
-            self.__ates_is_charging_var[ates_is_charing_var_name] = ca.MX.sym(
-                ates_is_charing_var_name
+            ates_is_charging_var_name = f"{ates}__is_charging"
+            self.__ates_is_charging_var[ates_is_charging_var_name] = ca.MX.sym(
+                ates_is_charging_var_name
             )
-            self.__ates_is_charging_bounds[ates_is_charing_var_name] = (0, 1)
+            self.__ates_is_charging_bounds[ates_is_charging_var_name] = (0.0, 1.0)
 
         for _carrier, temperatures in self.temperature_carriers().items():
             carrier_id_number_mapping = str(temperatures["id_number_mapping"])
@@ -733,6 +733,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             or variable in self.__ates_temperature_disc_ordering_var
             or variable in self.__ates_is_charging_var
             or variable in self.__carrier_temperature_disc_ordering_var
+            or variable in self.__ates_is_charging_var
         ):
             return True
         else:
@@ -1955,6 +1956,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             flow_dir_var = self._heat_pipe_to_flow_direct_map[hot_pipe]
             is_buffer_charging = self.state(flow_dir_var) * _hot_pipe_orientation
+            if ates_asset in self.energy_system_components.get("ates", []):
+                is_buffer_charging = self.variable(f"{ates_asset}__is_charging")
 
             sup_carrier = parameters[f"{ates_asset}.T_supply_id"]
             if ates_asset not in self.energy_system_components.get("ates_multi_port", []):
@@ -2247,6 +2250,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
                 flow_dir_var = self._heat_pipe_to_flow_direct_map[hot_pipe]
                 is_buffer_charging = self.state(flow_dir_var) * _hot_pipe_orientation
+                if ates in self.energy_system_components.get("ates", []):
+                    is_buffer_charging = self.variable(f"{ates}__is_charging")
                 heat_stored_max = bounds[f"{ates}.Stored_heat"][1]
                 heat_ates_max = bounds[f"{ates}.Heat_ates"][1]
                 heat_ates = self.state(f"{ates}.Heat_ates")
@@ -2609,6 +2614,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             flow_dir_var = self._heat_pipe_to_flow_direct_map[hot_pipe]
             is_buffer_charging = self.state(flow_dir_var)
+            is_buffer_charging = self.variable(f"{ates}__is_charging")
 
             heat_discharge_hot_in = self.state(f"{ates}.DischargeHot.HeatIn.Heat")
             heat_discharge_hot_out = self.state(f"{ates}.DischargeHot.HeatOut.Heat")
@@ -2635,8 +2641,10 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 np.inf))
             constraints.append(((heat_flow_charge_hot) / constraint_nominal, 0.0, np.inf))
             constraints.append((
-                (heat_flow_charge_hot - is_buffer_charging * big_m) / constraint_nominal, -np.inf,
+                (heat_flow_charge_hot - is_buffer_charging * big_m) / constraint_nominal,
+                -np.inf,
                 0.0))
+            #TODO still add constraint for heat_flow_charge_hot to be equal to Q*rho*cp*dt_ates
 
             ates_max_temp = parameters[f"{ates}.T_supply"]
             discharge_hot_return_temp = parameters[f"{ates}.DischargeHot.T_return"]
@@ -2751,6 +2759,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             # are extracting heat from it.
             heat_out = self.state(f"{b}.HeatOut.Heat")
             heat_in = self.state(f"{b}.HeatIn.Heat")
+            heat_ates = self.state(f"{b}.Heat_ates")
 
             # We want an _equality_ constraint between discharge and heat if the buffer is
             # consuming (i.e. behaving like a "demand"). We want an _inequality_
@@ -2760,6 +2769,14 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             # are guaranteed to have the same sign.
             flow_dir_var = self._heat_pipe_to_flow_direct_map[hot_pipe]
             is_buffer_charging = self.state(flow_dir_var)
+            if b in self.energy_system_components.get("ates", []):
+                is_buffer_charging = self.variable(f"{b}__is_charging")
+            flow_big_m = q_nominal*10
+            constraints.append(((discharge - flow_big_m * is_buffer_charging)/q_nominal, -np.inf,
+                                0.0 ))
+            constraints.append(((discharge + flow_big_m * (1 - is_buffer_charging))/q_nominal, 0.0,
+                                np.inf))
+
 
             if b in self.energy_system_components.get("ates", []):
                 ates_charging_var = self.state(f"{b}__is_charging")
@@ -2825,6 +2842,16 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         np.inf,
                     )
                 )
+                # if b in self.energy_system_components.get("ates_multi_port", []):
+                #     constraints.append(((heat_ates - discharge*cp*rho*(temperature_var-parameters[
+                #         f"{b}.T_return"]) + big_m* (1-is_buffer_charging))/constraint_nominal, 0.0,
+                #                         np.inf))
+                #     constraints.append(
+                #         ((heat_ates - discharge * cp * rho * (temperature_var - parameters[
+                #             f"{b}.T_return"]) - big_m * (1 -
+                #                                          is_buffer_charging))/constraint_nominal,
+                #          -np.inf, 0.0))
+
                 for supply_temperature in supply_temperatures:
                     if b not in self.energy_system_components.get("ates_multi_port", []):
                         sup_temperature_is_selected = self.state(f"{sup_carrier}_{supply_temperature}")
@@ -2859,6 +2886,18 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                             0.0,
                         )
                     )
+                    # if b in self.energy_system_components.get("ates_multi_port", []):
+                    #     constraints.append(
+                    #         ((heat_ates - discharge * cp * rho * (temperature_var - parameters[
+                    #             f"{b}.T_return"]) + (1.0 - sup_temperature_is_selected) * big_m
+                    #             + is_buffer_charging * big_m) / constraint_nominal, 0.0,
+                    #          np.inf))
+                    #     constraints.append(
+                    #         ((heat_ates - discharge * cp * rho * (temperature_var - parameters[
+                    #             f"{b}.T_return"]) - (1.0 - sup_temperature_is_selected) * big_m
+                    #             - is_buffer_charging * big_m) / constraint_nominal,
+                    #          -np.inf, 0.0))
+
 
             if len(return_temperatures) == 0:
                 constraint_nominal = (heat_nominal * cp * rho * dt * q_nominal) ** 0.5
@@ -3934,6 +3973,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             flow_dir_var = self._heat_pipe_to_flow_direct_map[hot_pipe]
             is_buffer_charging = self.state(flow_dir_var) * hot_pipe_orientation
+            if b in self.energy_system_components.get("ates", []):
+                is_buffer_charging = self.variable(f"{b}__is_charging")
 
             big_m = (
                 2.0
