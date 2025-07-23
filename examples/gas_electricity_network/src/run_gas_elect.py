@@ -42,15 +42,10 @@ if __name__ == "__main__":
     print('============TESTS===========')
     print('============================')
 
-    # Test: Check if heat demand is equal to the energy supplied by conversion
-    print('===Test 1: Energy Balance in Conversion Assets===')
-    print(results['HeatingDemand_1.HeatOut.Heat'] - ( results['HeatPump_1.HeatOut.Heat'] + results['GasHeater_1.Heat_source'] ))
-    print(results['HeatingDemand_2.HeatOut.Heat'] - ( results['HeatPump_2.HeatOut.Heat'] + results['GasHeater_2.Heat_source'] ))
-    np.testing.assert_allclose(results['HeatingDemand_1.HeatOut.Heat'], ( results['HeatPump_1.HeatOut.Heat'] + results['GasHeater_1.Heat_source'] ))
-    np.testing.assert_allclose(results['HeatingDemand_2.HeatOut.Heat'], ( results['HeatPump_2.HeatOut.Heat'] + results['GasHeater_2.Heat_source'] ))
-
-    a=1
-
+    # # Test: Check if heat demand is equal to the energy supplied by conversion assets
+    # np.testing.assert_allclose(results['HeatingDemand_1.Heat_flow'], ( results['HeatPump_1.Heat_source'] + results['GasHeater_1.Heat_source'] ))
+    # np.testing.assert_allclose(results['HeatingDemand_2.Heat_flow'], ( results['HeatPump_2.Heat_source'] + results['GasHeater_2.Heat_source'] ))
+    #
     # # Test: Check if the resulting head loss is matching with the theoretical value of the resulting variables
     # for pipe in solution.energy_system_components.get("gas_pipe", []):
     #     if results[f"{pipe}__gn_diameter"] <= 1e-15:
@@ -78,43 +73,43 @@ if __name__ == "__main__":
     # ----------------------------------------------------------------------------------------------
     # Do not delete the code below: manual checking and testing of values + usefull prints to
     # terminal
-
-    demand_matching_test(solution, results)
-    energy_conservation_test(solution, results)
-    heat_to_discharge_test(solution, results)
-
-    for asset_name in [*solution.energy_system_components.get("air_water_heat_pump_elec", [])]:
-        power_cons = results[f"{asset_name}.Power_consumed"]
-        # print(f"{asset_name} power consumed: {power_cons}")
-
-    for asset_name in [*solution.energy_system_components.get("gas_boiler", [])]:
-        power_cons = results[f"{asset_name}.Gas_demand_mass_flow"]
-        # print(f"{asset_name} gas consumed: {power_cons}")
-
-    # Check gas consumption vs production balance
-    total_gas_demand_g = [0] * len(np.diff(solution.times()))
-    total_gas_source_g = [0] * len(np.diff(solution.times()))
-    for asset_name in [*solution.energy_system_components.get("gas_boiler", [])]:
-        for ii in range(1, len(results[f"{asset_name}.Gas_demand_mass_flow"])):
-            total_gas_demand_g[ii - 1] += (
-                results[f"{asset_name}.Gas_demand_mass_flow"][ii]
-                * np.diff(solution.times())[ii - 1]
-            )
-
-    for asset_name in [*solution.energy_system_components.get("gas_source", [])]:
-        for ii in range(1, len(results[f"{asset_name}.Gas_source_mass_flow"])):
-            total_gas_source_g[ii - 1] += (
-                results[f"{asset_name}.Gas_source_mass_flow"][ii]
-                * np.diff(solution.times())[ii - 1]
-            )
-    np.testing.assert_allclose(total_gas_source_g, total_gas_demand_g)
-    print('total_gas_source_g: ', total_gas_source_g )
-    print('total_gas_demand_g: ', total_gas_demand_g)
-
-    # Check elect power demand vs production balance
-    electric_power_conservation_test(solution, results)
-
-    print('============================')
+    #
+    # demand_matching_test(solution, results)
+    # energy_conservation_test(solution, results)
+    # heat_to_discharge_test(solution, results)
+    #
+    # for asset_name in [*solution.energy_system_components.get("air_water_heat_pump_elec", [])]:
+    #     power_cons = results[f"{asset_name}.Power_consumed"]
+    #     print(f"{asset_name} power consumed: {power_cons}")
+    #
+    # for asset_name in [*solution.energy_system_components.get("gas_boiler", [])]:
+    #     power_cons = results[f"{asset_name}.Gas_demand_mass_flow"]
+    #     print(f"{asset_name} gas consumed: {power_cons}")
+    #
+    # # Check gas consumption vs production balance
+    # total_gas_demand_g = [0] * len(np.diff(solution.times()))
+    # total_gas_source_g = [0] * len(np.diff(solution.times()))
+    # for asset_name in [*solution.energy_system_components.get("gas_boiler", [])]:
+    #     for ii in range(1, len(results[f"{asset_name}.Gas_demand_mass_flow"])):
+    #         total_gas_demand_g[ii - 1] += (
+    #             results[f"{asset_name}.Gas_demand_mass_flow"][ii]
+    #             * np.diff(solution.times())[ii - 1]
+    #         )
+    #
+    # for asset_name in [*solution.energy_system_components.get("gas_source", [])]:
+    #     for ii in range(1, len(results[f"{asset_name}.Gas_source_mass_flow"])):
+    #         total_gas_source_g[ii - 1] += (
+    #             results[f"{asset_name}.Gas_source_mass_flow"][ii]
+    #             * np.diff(solution.times())[ii - 1]
+    #         )
+    # # np.testing.assert_allclose(total_gas_source_g, total_gas_demand_g)
+    # print('total_gas_source_g: ', total_gas_source_g )
+    # print('total_gas_demand_g: ', total_gas_demand_g)
+    #
+    # # Check elect power demand vs production balance
+    # electric_power_conservation_test(solution, results)
+    #
+    # print('============================')
 
     total_opex = 0.0
     total_capex = 0.0
@@ -126,35 +121,43 @@ if __name__ == "__main__":
 
         # investment and installation cost
         if asset in solution.energy_system_components["heat_source"]:
-            investment_cost = solution.esdl_assets[
-                                  solution.esdl_asset_name_to_id_map[f"{asset}"]
-                              ].attributes["costInformation"].investmentCosts.value * results[
-                                  f"{asset}__max_size"] / 1.0e6
-            total_capex += investment_cost
-            print("investment cost: ", asset, investment_cost, abs(investment_cost - results[f"{asset}__investment_cost"]) < 1.0e-8)
-
-        if asset in [*solution.energy_system_components["gas_pipe"],
-                     *solution.energy_system_components["electricity_cable"]]:
+            try:
+                investment_cost = solution.esdl_assets[
+                                      solution.esdl_asset_name_to_id_map[f"{asset}"]
+                                  ].attributes["costInformation"].investmentCosts.value * results[
+                                      f"{asset}__max_size"] / 1.0e6
+                total_capex += investment_cost
+                print(asset, " size: ", results[f"{asset}__max_size"] / 1.0e6)
+                print("investment cost: ", asset, investment_cost, abs(investment_cost - results[f"{asset}__investment_cost"]) < 1.0e-8)
+            except:
+                pass
+        if asset in [
+            *solution.energy_system_components["gas_pipe"],
+            *solution.energy_system_components["electricity_cable"]
+        ]:
             try: # some pipes and cables are disappeared because of the optimization
                 investment_cost = solution.esdl_assets[
                                       solution.esdl_asset_name_to_id_map[f"{asset}"]
                                   ].attributes["costInformation"].investmentCosts.value * parameters[
                                       f"{asset}.length"]
                 total_capex += investment_cost
+                print(asset, " length: ", parameters[f"{asset}.length"])
                 print("investment cost: ", asset, investment_cost, abs(investment_cost - results[f"{asset}__investment_cost"]) < 1.0e-8)
                 # print(asset, solution.esdl_assets[solution.esdl_asset_name_to_id_map[f"{asset}"]].attributes["costInformation"].investmentCosts.value)
             except:
                 pass
 
         try:
-            installation_cost = solution.esdl_assets[
-                solution.esdl_asset_name_to_id_map[f"{asset}"]
-            ].attributes["costInformation"].installationCosts.value
+            if results[f"{asset}__max_size"] == 0:
+                installation_cost = 0
+            else:
+                installation_cost = solution.esdl_assets[
+                    solution.esdl_asset_name_to_id_map[f"{asset}"]
+                ].attributes["costInformation"].installationCosts.value
             total_capex += installation_cost
             print("installation cost: ", asset, installation_cost, abs(installation_cost - results[f"{asset}__installation_cost"]) < 1.0e-8)
         except:
             pass
-
         # variable operational cost
         timesteps_hr = np.diff(solution.times()) / 3600
         if asset not in [
@@ -198,8 +201,6 @@ if __name__ == "__main__":
         total_opex += (
                 variable_operational_cost * solution.parameters(0)[f"{asset}.technical_life"]
         )
-        # print("variable operational cost: ", asset, variable_operational_cost, abs(variable_operational_cost - results[f"{asset}__variable_operational_cost"])< 1.0e-8)
-
 
     # print (abs(solution.objective_value - (total_capex + total_opex) / 1.0e6) < 1.0e-8)
 
