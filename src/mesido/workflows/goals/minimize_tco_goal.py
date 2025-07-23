@@ -53,6 +53,7 @@ class MinimizeTCO(Goal):
                 "heat_pump",
                 "heat_exchanger",
                 "pump",
+                "heat_demand"
             },
             "investment": {
                 "heat_source",
