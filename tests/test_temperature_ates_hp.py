@@ -227,10 +227,10 @@ class TestAtesTemperature(TestCase):
         solution = run_esdl_mesido_optimization(
             HeatProblemATESMultiPort,
             base_folder=basefolder,
-            esdl_file_name="accel_utes_charge_discharge_ates6port.esdl",
+            esdl_file_name="ATES_6port_HPelectricity.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="ACCEL_UTES.csv",
+            input_timeseries_file="Heatdemand_eprice.csv",
         )
 
         results = solution.extract_results()
