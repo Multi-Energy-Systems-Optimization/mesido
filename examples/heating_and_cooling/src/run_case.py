@@ -3,6 +3,8 @@ import numpy as np
 from pathlib import Path
 from unittest import TestCase
 
+from rtctools.optimization.goal_programming_mixin_base import Goal
+
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.util import run_esdl_mesido_optimization
@@ -173,6 +175,47 @@ class HeatCoolingGrowWorkflow(TestCase):
 
         base_folder = Path(__file__).resolve().parent.parent
 
+        class MinElectcost(Goal):
+
+            priority = 1
+
+            order = 1
+
+            def __init__(self, asset_name: str):
+                # self.target_max = 0.0
+                # self.function_range = (0.0, 1.0e9)
+                # self.function_nominal = 1.0e6
+                self.asset_name = asset_name
+
+            def function(
+                self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
+            ) -> ca.MX:
+
+                parameters = self.parameters(ensemble_member)
+
+                heat_source = self.__state_vector_scaled(f"{self.asset_name}.Heat_source", ensemble_member)
+                # variable_operational_cost_var = self._asset_variable_operational_cost_map[
+                #     self.asset_name
+                # ]
+                # variable_operational_cost = self.extra_variable(
+                #     variable_operational_cost_var, ensemble_member
+                # )
+                # nominal = self.variable_nominal(variable_operational_cost_var)
+                # variable_operational_cost_coefficient = parameters[
+                #     f"{self.asset_name}.variable_operational_cost_coefficient"
+                # ]
+
+                sum = 0.0
+                for i in range(1, len(self.times())):
+                    sum += (
+                        self.price_profile.values[i]
+                        * heat_source[i]
+                        * timesteps_hr[i - 1]
+                        / parameters[f"{self.asset_name}.cop"]
+                    )
+
+                return sum
+
         class UpdatedProblem(EndScenarioSizingStaged):
             # TODO: Issue sizing pipes connected to demands, available pipe classes are updated in read(), ESDLAdditionalVarsMixin before the code below. This means the incorrect demand values are then used. 
             def read(self):
@@ -205,6 +248,15 @@ class HeatCoolingGrowWorkflow(TestCase):
                         target.values,
                         0,
                     )
+
+            def goals(self):
+
+                goals = super().goals().copy()
+                
+                for ac in self.energy_system_components.get("air_water_heat_pump_elec", []):
+                    goals.append(MinElectcost(ac))
+
+                return goals
 
         kwargs = {
             # "write_result_db_profiles": True,
