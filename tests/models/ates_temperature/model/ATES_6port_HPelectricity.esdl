@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" version="90" id="6d632920-deae-4dc7-9870-0df7a8138870" description="" esdlVersion="v2401" name="accel_utes_charge_discharge">
+<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" version="90" id="6d632920-deae-4dc7-9870-0df7a8138870" description="" esdlVersion="v2401" name="ATES6port_HP_electricity">
   <instance xsi:type="esdl:Instance" id="5038aed8-004e-4841-976b-133b75f6264e" name="Untitled instance">
     <area xsi:type="esdl:Area" id="47f70d5c-e1ff-4c95-b27e-3c0801e251c1" name="Untitled area">
       <asset xsi:type="esdl:HeatPump" name="HeatPump_5e09" id="5e090abb-eeb2-4e62-b1db-611bd5874eb0" power="3500000.0" COP="4.0" efficiency="0.5">
