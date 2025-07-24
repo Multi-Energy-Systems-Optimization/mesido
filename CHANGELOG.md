@@ -1,13 +1,13 @@
-# [Unreleased-main] - 2025-06-25
+# [Unreleased-main] - 2025-07-23
 
 ## Added
-- xx
+- Elect test for air_to_water_heat_pump_elec
 
 ## Changed
 - Previously variable operational cost of air-to-water heat pump was based on  the thermal power usage. Now it is based on the electrical power usage
 
 ## Fixed
-- xxx
+- Bug: Add 3 port heat pump to elect demand path constraint
 
 
 # [0.1.13] - 2025-06-25
