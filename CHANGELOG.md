@@ -1,13 +1,17 @@
-# [Unreleased-main] - 2025-06-25
+# [Unreleased-main] - 2025-07-17
 
 ## Added
-- xx
+- Sizing of airco
+- Heating and cooling example with input costs
 
 ## Changed
 - Previously variable operational cost of air-to-water heat pump was based on  the thermal power usage. Now it is based on the electrical power usage
+- Addtion of cooling assests (airco and low_temperature_ates) in the grow_workflow for heating and cooling networks
+- Inclusion of airco and low_temperature_ates in write_output
 
 ## Fixed
-- xxx
+- Bug: 2 port heatpump write result profiles to database 
+- Bug: setting of self._pipe_heat_loss_nominals was not accounting for negative values when T_ground > carrier temperature
 
 
 # [0.1.13] - 2025-06-25

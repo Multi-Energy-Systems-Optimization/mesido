@@ -703,7 +703,10 @@ class ScenarioOutput:
                         flow_variable = results[f"{asset_name}.Heat_demand"][1:]
                     elif asset_name in self.energy_system_components.get("heat_buffer", []):
                         flow_variable = results[f"{asset_name}.Heat_buffer"][1:]
-                    elif asset_name in self.energy_system_components.get("ates", []):
+                    elif asset_name in [
+                        *self.energy_system_components.get("ates", []),
+                        *self.energy_system_components.get("low_temperature_ates", []),
+                    ]:
                         flow_variable = results[f"{asset_name}.Heat_ates"][1:]
                     elif asset_name in self.energy_system_components.get("heat_pipe", []):
                         flow_variable = (
@@ -711,12 +714,13 @@ class ScenarioOutput:
                         )
                     else:
                         flow_variable = ""
-                    if (
-                        asset_name in self.energy_system_components.get("heat_demand", [])
-                        or asset_name in self.energy_system_components.get("heat_buffer", [])
-                        or asset_name in self.energy_system_components.get("ates", [])
-                        or asset_name in self.energy_system_components.get("heat_pipe", [])
-                    ):
+                    if asset_name in [
+                            *self.energy_system_components.get("heat_demand", []),
+                            *self.energy_system_components.get("heat_buffer", []),
+                            *self.energy_system_components.get("ates", []),
+                            *self.energy_system_components.get("low_temperature_ates", []),
+                            *self.energy_system_components.get("heat_pipe", []),
+                    ]:
                         try:
                             total_energy_consumed_locally_wh[subarea.name] += np.sum(
                                 flow_variable * (self.times()[1:] - self.times()[0:-1]) / 3600.0
@@ -956,15 +960,20 @@ class ScenarioOutput:
             if name in [
                 *self.energy_system_components.get("heat_source", []),
                 *self.energy_system_components.get("ates", []),
+                *self.energy_system_components.get("low_temperature_ates", []),
                 *self.energy_system_components.get("heat_buffer", []),
                 *self.energy_system_components.get("heat_pump", []),
+                *self.energy_system_components.get("airco", []),
             ]:
                 asset = _name_to_asset(name)
                 asset_placement_var = self._asset_aggregation_count_var_map[name]
                 placed = np.round(results[asset_placement_var][0]) >= 1.0
                 max_size = results[self._asset_max_size_map[name]][0]
 
-                if asset.name in self.energy_system_components.get("ates", []):
+                if asset.name in [
+                    *self.energy_system_components.get("ates", []),
+                    *self.energy_system_components.get("low_temperature_ates", [])
+                ]:
                     asset.maxChargeRate = results[f"{name}__max_size"][0]
                     asset.maxDischargeRate = results[f"{name}__max_size"][0]
                 elif asset.name in self.energy_system_components.get("heat_buffer", []):
@@ -974,7 +983,10 @@ class ScenarioOutput:
                         * parameters[f"{name}.rho"]
                         * parameters[f"{name}.dT"]
                     )
-                elif asset.name in self.energy_system_components.get("heat_pump", []):
+                elif asset.name in [
+                    *self.energy_system_components.get("heat_pump", []),
+                    *self.energy_system_components.get("airco", []),
+                ]:
                     # Note: The heat capacity and not the electrical capacity
                     # TODO: in the future we need to cater for varying COP as well
                     asset.power = results[f"{name}__max_size"][0]
@@ -1081,8 +1093,10 @@ class ScenarioOutput:
                 *self.energy_system_components.get("heat_pipe", []),
                 *self.energy_system_components.get("heat_buffer", []),
                 *self.energy_system_components.get("ates", []),
+                *self.energy_system_components.get("low_temperature_ates", []),
                 *self.energy_system_components.get("heat_exchanger", []),
                 *self.energy_system_components.get("heat_pump", []),
+                *self.energy_system_components.get("airco", []),
             ]:
                 try:
                     # If the asset has been placed
@@ -1104,19 +1118,32 @@ class ScenarioOutput:
                     port, port_prim, port_sec = 3 * [None]
                     if isinstance(asset, esdl.Transport) or isinstance(asset, esdl.Consumer):
                         port = [port for port in asset.port if isinstance(port, esdl.InPort)][0]
-                    elif isinstance(asset, esdl.Producer):
+                    elif isinstance(asset, esdl.Producer) or isinstance(asset, esdl.Airco):
                         port = [port for port in asset.port if isinstance(port, esdl.OutPort)][0]
                     elif isinstance(asset, esdl.Conversion):
-                        port_prim = [
+                        primary_inports = [
                             port
                             for port in asset.port
                             if isinstance(port, esdl.InPort) and "Prim" in port.name
-                        ][0]
-                        port_sec = [
+                        ]
+                        secondary_outports = [
                             port
                             for port in asset.port
                             if isinstance(port, esdl.OutPort) and "Sec" in port.name
-                        ][0]
+                        ]
+                        if len(primary_inports) == 1 and len(secondary_outports) == 1:
+                            port_prim = primary_inports[0]
+                            port_sec = secondary_outports[0]
+                        elif len(primary_inports) == 0 and len(secondary_outports) == 1:
+                            port_sec = secondary_outports[0]
+                        else:
+                            logger.error(
+                                f"Write to influxdb does not cater for asset: {asset_name}, with"
+                                f" {len(primary_inports)} inports and {len(secondary_outports)}"
+                                " outports"
+                            )
+                            traceback.print_exc()
+                            sys.exit(1)
                     else:
                         NotImplementedError(
                             f"influxdb not included for assets of type {type(asset)}"
@@ -1156,8 +1183,10 @@ class ScenarioOutput:
                             *self.energy_system_components.get("heat_source", []),
                             *self.energy_system_components.get("heat_buffer", []),
                             *self.energy_system_components.get("ates", []),
+                            *self.energy_system_components.get("low_temperature_ates", []),
                             *self.energy_system_components.get("heat_exchanger", []),
                             *self.energy_system_components.get("heat_pump", []),
+                            *self.energy_system_components.get("airco", []),
                         ]:
                             variables_one_hydraulic_system.append("Pump_power")
                             variables_two_hydraulic_system.append("Pump_power")
@@ -1187,6 +1216,10 @@ class ScenarioOutput:
                     elif port_prim and port_sec:
                         carrier_id_dict = {
                             "primary_carrier_id": port_prim.carrier.id,
+                            "secondary_carrier_id": port_sec.carrier.id,
+                        }
+                    elif not port_prim and port_sec:
+                        carrier_id_dict = {
                             "secondary_carrier_id": port_sec.carrier.id,
                         }
                     else:

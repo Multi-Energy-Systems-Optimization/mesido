@@ -662,8 +662,8 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     min(heat_losses),
                     max(heat_losses),
                 )
-                self._pipe_heat_loss_nominals[heat_loss_var_name] = np.median(
-                    [x for x in heat_losses if x > 0]
+                self._pipe_heat_loss_nominals[heat_loss_var_name] = abs(
+                    np.median([x for x in heat_losses if abs(x) > 0])
                 )
 
                 for ensemble_member in range(self.ensemble_size):
@@ -831,7 +831,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             ub = bounds[f"{asset_name}.Heat_airco"][1]
             # Note that we only enforce the upper bound in state enabled if it was explicitly
             # specified for the demand
-            lb = 0.0 if np.isinf(bounds[f"{asset_name}.Heat_airco"][1]) else ub
+            lb = 0.0 if parameters[f"{asset_name}.state"] != 1 else ub
             _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
 
         for asset_name in self.energy_system_components.get("cold_demand", []):
@@ -1980,6 +1980,21 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     )
                 )
 
+        for ac in self.energy_system_components.get("airco", []):
+            max_var_types.add("airco")
+            max_var = self._asset_max_size_map[ac]
+            max_heat = self.extra_variable(max_var, ensemble_member)
+            heat_airco = self.__state_vector_scaled(f"{ac}.Heat_airco", ensemble_member)
+            constraint_nominal = self.variable_nominal(f"{ac}.Heat_airco")
+
+            constraints.append(
+                (
+                    (np_ones * max_heat - heat_airco) / constraint_nominal,
+                    0.0,
+                    np.inf,
+                )
+            )
+
         for hx in [
             *self.energy_system_components.get("heat_exchanger", []),
             *self.energy_system_components.get("heat_pump", []),
@@ -2009,6 +2024,22 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             constraints.append(
                 (
                     (np_ones * max_heat - heat_demand) / constraint_nominal,
+                    0.0,
+                    np.inf,
+                )
+            )
+
+        for d in self.energy_system_components.get("cold_demand", []):
+            max_var_types.add("cold_demand")
+            max_var = self._asset_max_size_map[d]
+            max_cold = self.extra_variable(max_var, ensemble_member)
+            cold_demand = self.__state_vector_scaled(f"{d}.Cold_demand", ensemble_member)
+            constraint_nominal = max(
+                self.variable_nominal(f"{d}.Cold_demand"), self.variable_nominal(f"{d}.HeatIn.Heat")
+            )
+            constraints.append(
+                (
+                    (np_ones * max_cold - cold_demand) / constraint_nominal,
                     0.0,
                     np.inf,
                 )
