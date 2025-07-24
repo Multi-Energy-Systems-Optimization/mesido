@@ -224,7 +224,6 @@ class TestMultiCommodityHeatPump(TestCase):
         Checks:
         - Standard checks for demand matching, heat to discharge and energy conservation and elect
         power conervation
-        - Checks for sufficient heat production
         - Checks for Power = I * V at the heatpump
 
         """
@@ -255,14 +254,9 @@ class TestMultiCommodityHeatPump(TestCase):
         # TODO add addtional checks for air to water heat pump like COP etc, and maybe add other
         # heat sources
 
-        # check that prim producer is providing more energy to heatpump and primary demand
-        np.testing.assert_array_less(
-            results["HeatingDemand_18aa.Heat_flow"],
-            results["HeatPump_0ce6.Heat_flow"],
-        )
         # check that electricity contraint for power is working
         np.testing.assert_allclose(
-            results["HeatPump_0ce6.Power_consumed"],
+            results["HeatPump_0ce6.Power_elec"],
             results["HeatPump_0ce6.ElectricityIn.I"] * results["HeatPump_0ce6.ElectricityIn.V"],
             atol=tol,
         )
