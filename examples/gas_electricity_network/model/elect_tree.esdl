@@ -121,7 +121,7 @@
   </instance>
   <energySystemInformation xsi:type="esdl:EnergySystemInformation" id="1ea9d767-79eb-478b-ac74-ef592b9d68d4">
     <carriers xsi:type="esdl:Carriers" id="496305e0-726d-449e-8969-ec6496a5918e">
-      <carrier xsi:type="esdl:ElectricityCommodity" id="0f43ef33-aca7-473a-88b2-9a10ad995e02" name="Elec" voltage="100000.0"/>
+      <carrier xsi:type="esdl:ElectricityCommodity" id="0f43ef33-aca7-473a-88b2-9a10ad995e02" name="Elec" voltage="230.0"/>
       <carrier xsi:type="esdl:GasCommodity" id="1a8f4b2c-10cb-4a42-9b2e-2217b619c5aa" name="Gas" pressure="5.0"/>
       <carrier xsi:type="esdl:HeatCommodity" id="b73c23fb-3b07-47b3-9c04-47dabc1116a3" name="Heat_sup" supplyTemperature="80.0"/>
       <carrier xsi:type="esdl:HeatCommodity" id="1d5f7417-03b1-4467-9d61-e11e36dcaf43" name="Heat_ret" returnTemperature="40.0"/>

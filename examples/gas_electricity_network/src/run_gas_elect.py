@@ -39,85 +39,74 @@ if __name__ == "__main__":
     results = solution.extract_results()
     parameters = solution.parameters(0)
 
-    print('============================')
-    print('============TESTS===========')
-    print('============================')
+    # # Test: Check if power recieved by heat demand is equal to the power supplied by conversion assets
+    # print('HeatingDemand_1: ',results['HeatingDemand_1.Heat_flow'] )
+    # print('HeatPump_1: ', results['HeatPump_1.Heat_source'])
+    # print('GasHeater_1: ', results['GasHeater_1.Heat_source'])
+    # print('HeatingDemand_2: ', results['HeatingDemand_2.Heat_flow'])
+    # print('HeatPump_2: ', results['HeatPump_2.Heat_source'])
+    # print('GasHeater_2: ', results['GasHeater_2.Heat_source'])
 
-    # # Test: Check if heat demand is equal to the energy supplied by conversion assets
     # np.testing.assert_allclose(results['HeatingDemand_1.Heat_flow'], ( results['HeatPump_1.Heat_source'] + results['GasHeater_1.Heat_source'] ))
     # np.testing.assert_allclose(results['HeatingDemand_2.Heat_flow'], ( results['HeatPump_2.Heat_source'] + results['GasHeater_2.Heat_source'] ))
 
-    # # Test: Check if the resulting head loss is equalt to manual head loss calculation via linear interpolation.
-    # #       Note that this works if HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY is used
-    # for pipe in solution.energy_system_components.get("gas_pipe", []):
-    #     if results[f"{pipe}__gn_diameter"] <= 1e-15:
-    #         pass
-    #     else:
-    #         v_max = solution.gas_network_settings["maximum_velocity"]
-    #         pipe_diameter = results[f"{pipe}__gn_diameter"][0]
-    #         area = np.pi * pipe_diameter ** 2 / 4.0
-    #         pipe_wall_roughness = solution.energy_system_options()["wall_roughness"]
-    #         temperature = 20 # is default for gas pipes
-    #         pipe_length = solution.parameters(0)[f"{pipe}.length"]
-    #
-    #
-    #         ff = friction_factor(
-    #             v_max,
-    #             pipe_diameter,
-    #             wall_roughness=solution.energy_system_options()["wall_roughness"],
-    #             temperature=20,
-    #         )
-    #
-    #         c_v = parameters[f"{pipe}.length"] * ff / (2 * 9.81) / pipe_diameter
-    #         dh_max = c_v * v_max ** 2
-    #         dh_manual = dh_max * ( results[f"{pipe}.Q"] / area ) / v_max
-    #         print(pipe, -dh_manual, results[f"{pipe}.dH"])
-    #         # np.testing.assert_allclose(-dh_manual, results[f"{pipe}.dH"][1:], atol=1.0e-12)
-    #
+    # Test: Check if the resulting head loss is equal to head loss that is manually calculated via linear interpolation.
+    #       This check is only valid for HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY case.
+    #Todo: Calculated head loss is marginally smaller than the result. Check it later.
+    for pipe in solution.energy_system_components.get("gas_pipe", []):
+        if results[f"{pipe}__gn_diameter"] <= 1e-15:
+            pass
+        else:
+            v_max = solution.gas_network_settings["maximum_velocity"]
+            pipe_diameter = results[f"{pipe}__gn_diameter"][0]
+            area = np.pi * pipe_diameter ** 2 / 4.0
+            pipe_wall_roughness = solution.energy_system_options()["wall_roughness"]
+            temperature = 20 # is default for gas pipes
+            pipe_length = solution.parameters(0)[f"{pipe}.length"]
+            v_pipe = results[f"{pipe}.Q"] / area
+            # print("Velocity of ", pipe, v_pipe)
+            # print("Diameter of ", pipe, pipe_diameter)
+            ff = friction_factor(
+                v_max,
+                pipe_diameter,
+                wall_roughness=solution.energy_system_options()["wall_roughness"],
+                temperature=20,
+            )
+            c_v = parameters[f"{pipe}.length"] * ff / (2 * 9.81) / pipe_diameter
+            dh_max = c_v * v_max ** 2
+            dh_manual = dh_max * v_pipe / v_max
+            # print("Calculated head loss in ", pipe, -dh_manual)
+            # print("Resulting head loss in ", pipe, results[f"{pipe}.dH"])
+            # np.testing.assert_allclose(-dh_manual, results[f"{pipe}.dH"][1:], atol=1.0e-12)
 
-    print('============================')
+    # Test: Utils_tests
+    demand_matching_test(solution, results)
+    energy_conservation_test(solution, results)
+    heat_to_discharge_test(solution, results)
+    electric_power_conservation_test(solution, results)
 
-    # ----------------------------------------------------------------------------------------------
-    # Do not delete the code below: manual checking and testing of values + usefull prints to
-    # terminal
-    #
-    # demand_matching_test(solution, results)
-    # energy_conservation_test(solution, results)
-    # heat_to_discharge_test(solution, results)
-    #
-    # for asset_name in [*solution.energy_system_components.get("air_water_heat_pump_elec", [])]:
-    #     power_cons = results[f"{asset_name}.Power_consumed"]
-    #     print(f"{asset_name} power consumed: {power_cons}")
-    #
-    # for asset_name in [*solution.energy_system_components.get("gas_boiler", [])]:
-    #     power_cons = results[f"{asset_name}.Gas_demand_mass_flow"]
-    #     print(f"{asset_name} gas consumed: {power_cons}")
-    #
-    # # Check gas consumption vs production balance
-    # total_gas_demand_g = [0] * len(np.diff(solution.times()))
-    # total_gas_source_g = [0] * len(np.diff(solution.times()))
-    # for asset_name in [*solution.energy_system_components.get("gas_boiler", [])]:
-    #     for ii in range(1, len(results[f"{asset_name}.Gas_demand_mass_flow"])):
-    #         total_gas_demand_g[ii - 1] += (
-    #             results[f"{asset_name}.Gas_demand_mass_flow"][ii]
-    #             * np.diff(solution.times())[ii - 1]
-    #         )
-    #
-    # for asset_name in [*solution.energy_system_components.get("gas_source", [])]:
-    #     for ii in range(1, len(results[f"{asset_name}.Gas_source_mass_flow"])):
-    #         total_gas_source_g[ii - 1] += (
-    #             results[f"{asset_name}.Gas_source_mass_flow"][ii]
-    #             * np.diff(solution.times())[ii - 1]
-    #         )
-    # # np.testing.assert_allclose(total_gas_source_g, total_gas_demand_g)
+    # Test: Check gas consumption vs production balance
+    total_gas_demand_g = [0] * len(np.diff(solution.times()))
+    total_gas_source_g = [0] * len(np.diff(solution.times()))
+    for asset_name in [*solution.energy_system_components.get("gas_boiler", [])]:
+        for ii in range(1, len(results[f"{asset_name}.Gas_demand_mass_flow"])):
+            total_gas_demand_g[ii - 1] += (
+                results[f"{asset_name}.Gas_demand_mass_flow"][ii]
+                * np.diff(solution.times())[ii - 1]
+            )
+    for asset_name in [*solution.energy_system_components.get("gas_source", [])]:
+        for ii in range(1, len(results[f"{asset_name}.Gas_source_mass_flow"])):
+            total_gas_source_g[ii - 1] += (
+                results[f"{asset_name}.Gas_source_mass_flow"][ii]
+                * np.diff(solution.times())[ii - 1]
+            )
     # print('total_gas_source_g: ', total_gas_source_g )
     # print('total_gas_demand_g: ', total_gas_demand_g)
-    #
-    # # Check elect power demand vs production balance
-    # electric_power_conservation_test(solution, results)
-    #
-    print('============================')
+    np.testing.assert_allclose(total_gas_source_g, total_gas_demand_g)
 
+
+
+    # Test: Check if manually calculated TCO is equal to Objective function value
     total_opex = 0.0
     total_capex = 0.0
     for asset in [
@@ -141,7 +130,8 @@ if __name__ == "__main__":
                                           "costInformation"].investmentCosts.value * parameters[f"{asset}.length"]
 
             total_capex += investment_cost
-            print("investment cost: ", asset, investment_cost, abs(investment_cost - results[f"{asset}__investment_cost"]) < 1.0e-8)
+            # print("investment cost: ", asset, investment_cost, abs(investment_cost - results[f"{asset}__investment_cost"]) < 1.0e-8)
+            np.testing.assert_allclose(investment_cost, results[f"{asset}__investment_cost"])
         except:
             pass
 
@@ -153,8 +143,10 @@ if __name__ == "__main__":
                 installation_cost = solution.esdl_assets[
                     solution.esdl_asset_name_to_id_map[f"{asset}"]
                 ].attributes["costInformation"].installationCosts.value
+            # print("installation cost: ", asset, installation_cost,
+            #       abs(installation_cost - results[f"{asset}__installation_cost"]) < 1.0e-8)
             total_capex += installation_cost
-            print("installation cost: ", asset, installation_cost, abs(installation_cost - results[f"{asset}__installation_cost"]) < 1.0e-8)
+            np.testing.assert_allclose(installation_cost, results[f"{asset}__installation_cost"])
         except:
             pass
 
@@ -180,17 +172,18 @@ if __name__ == "__main__":
                             * timesteps_hr[ii - 1]
                             / factor
                     )
-            print("variable operational cost: ", asset, variable_operational_cost,
-                  abs(variable_operational_cost - results[f"{asset}__variable_operational_cost"]) < 1.0e-8)
+                # print("variable operational cost: ", asset, variable_operational_cost,
+                #       abs(variable_operational_cost - results[f"{asset}__variable_operational_cost"]) < 1.0e-8)
+            np.testing.assert_allclose(variable_operational_cost, results[f"{asset}__variable_operational_cost"])
         except:
             pass
 
 
         total_opex += variable_operational_cost
 
-    print("Calculated TCO:  ",(total_capex[0] + total_opex) / 1.0e6)
-    print("Objective Value: ", solution.objective_value)
+    # print("Calculated TCO:  ",(total_capex[0] + total_opex) / 1.0e6)
+    # print("Objective Value: ", solution.objective_value)
+    np.testing.assert_allclose(solution.objective_value, (total_capex[0] + total_opex) / 1.0e6)
 
-    print('============================')
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

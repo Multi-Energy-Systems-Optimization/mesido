@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" name="gas_loop" description="" id="cc3b855b-0403-4df8-a84f-8ea6fd25420e" esdlVersion="v250501" version="59">
+<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" name="gas_loop" description="" id="cc3b855b-0403-4df8-a84f-8ea6fd25420e" esdlVersion="v250501" version="62">
   <instance xsi:type="esdl:Instance" id="f2e9533d-015d-445f-8c08-cd035d238eee" name="Untitled instance">
     <area xsi:type="esdl:Area" id="74ab5996-6a79-4cd6-9fa8-4f1a498722f5" name="Untitled area">
       <asset xsi:type="esdl:GasProducer" id="82d5c086-b805-4f89-a2e7-21490ccb2acd" name="GasProducer" power="50000000.0">
@@ -7,7 +7,7 @@
         <port xsi:type="esdl:OutPort" id="f74c1469-0233-4a92-9191-30939a307fb3" name="Out" connectedTo="27c7c352-af9e-48a8-a128-ea9cb5507f7f" carrier="1a8f4b2c-10cb-4a42-9b2e-2217b619c5aa"/>
         <costInformation xsi:type="esdl:CostInformation" id="a6dd34b3-256d-4f44-bae2-f909599416e6"/>
       </asset>
-      <asset xsi:type="esdl:GasHeater" id="d39b63a4-f19d-4144-8168-f89f19d5d8ff" name="GasHeater_1" power="10000000.0" efficiency="0.8">
+      <asset xsi:type="esdl:GasHeater" id="d39b63a4-f19d-4144-8168-f89f19d5d8ff" name="GasHeater_1" power="10000000.0" efficiency="0.8" state="OPTIONAL">
         <geometry xsi:type="esdl:Point" lat="51.51466508392328" lon="3.990000486373902"/>
         <port xsi:type="esdl:InPort" id="fdb016a7-dfec-44c6-a662-f3c48df32a0a" name="InPort" connectedTo="1038740f-a338-4177-8912-5c4f5a04772a" carrier="1a8f4b2c-10cb-4a42-9b2e-2217b619c5aa"/>
         <port xsi:type="esdl:InPort" id="77a5400d-388d-4818-9f0b-a92dde712f5e" name="InPort_sec" connectedTo="8f52d2ef-2cbb-4226-a99b-67ccb2c8969d" carrier="1d5f7417-03b1-4467-9d61-e11e36dcaf43"/>
@@ -39,12 +39,12 @@
         <port xsi:type="esdl:InPort" id="42355913-2d28-4178-9726-0f163f94b724" name="In" connectedTo="88635197-9a87-4471-bded-374ba2d75b22" carrier="1d5f7417-03b1-4467-9d61-e11e36dcaf43"/>
         <port xsi:type="esdl:OutPort" id="8f52d2ef-2cbb-4226-a99b-67ccb2c8969d" name="Out" connectedTo="77a5400d-388d-4818-9f0b-a92dde712f5e" carrier="1d5f7417-03b1-4467-9d61-e11e36dcaf43"/>
       </asset>
-      <asset xsi:type="esdl:HeatingDemand" id="6c7b50e2-8e58-4bf3-ac78-81fc04f36d9e" name="HeatingDemand_2" power="10000000.0">
+      <asset xsi:type="esdl:HeatingDemand" id="6c7b50e2-8e58-4bf3-ac78-81fc04f36d9e" name="HeatingDemand_2" power="3000000.0">
         <geometry xsi:type="esdl:Point" lat="51.51654851372736" lon="3.9911486308103066"/>
         <port xsi:type="esdl:InPort" id="4c23860c-d861-476b-80ed-2953b71c2990" name="In" connectedTo="cc20ce99-0216-488d-b401-99a6155e0e75" carrier="b73c23fb-3b07-47b3-9c04-47dabc1116a3"/>
         <port xsi:type="esdl:OutPort" id="a7280fbc-a9fe-4cdc-aee6-7a9aa77eca61" name="Out" connectedTo="52906d2f-6d35-4ef0-a152-fe87a7b85b3c" carrier="1d5f7417-03b1-4467-9d61-e11e36dcaf43"/>
       </asset>
-      <asset xsi:type="esdl:GasHeater" id="c0520c1c-85ff-4b34-8467-ea49c9653453" name="GasHeater_2" power="10000000.0" efficiency="0.8">
+      <asset xsi:type="esdl:GasHeater" id="c0520c1c-85ff-4b34-8467-ea49c9653453" name="GasHeater_2" power="3000000.0" efficiency="0.8" state="OPTIONAL">
         <geometry xsi:type="esdl:Point" lat="51.516136714192804" lon="3.990641551792212"/>
         <port xsi:type="esdl:InPort" id="16956b7e-4abf-419d-ba76-c947649471f6" name="InPort" connectedTo="e156978a-8744-4914-8541-0711a97e8131" carrier="1a8f4b2c-10cb-4a42-9b2e-2217b619c5aa"/>
         <port xsi:type="esdl:InPort" id="1263c55d-13b0-43e8-abf6-d30aaff40c2e" name="InPort_sec" connectedTo="da9d1d6f-6f62-4b43-8e22-24a681355c68" carrier="1d5f7417-03b1-4467-9d61-e11e36dcaf43"/>
@@ -216,7 +216,7 @@
   </instance>
   <energySystemInformation xsi:type="esdl:EnergySystemInformation" id="1ea9d767-79eb-478b-ac74-ef592b9d68d4">
     <carriers xsi:type="esdl:Carriers" id="496305e0-726d-449e-8969-ec6496a5918e">
-      <carrier xsi:type="esdl:ElectricityCommodity" id="0f43ef33-aca7-473a-88b2-9a10ad995e02" name="Elec" voltage="10000.0"/>
+      <carrier xsi:type="esdl:ElectricityCommodity" id="0f43ef33-aca7-473a-88b2-9a10ad995e02" name="Elec" voltage="230.0"/>
       <carrier xsi:type="esdl:GasCommodity" id="1a8f4b2c-10cb-4a42-9b2e-2217b619c5aa" name="Gas" pressure="5.0"/>
       <carrier xsi:type="esdl:HeatCommodity" id="b73c23fb-3b07-47b3-9c04-47dabc1116a3" name="Heat_sup" supplyTemperature="80.0"/>
       <carrier xsi:type="esdl:HeatCommodity" id="1d5f7417-03b1-4467-9d61-e11e36dcaf43" name="Heat_ret" returnTemperature="40.0"/>
