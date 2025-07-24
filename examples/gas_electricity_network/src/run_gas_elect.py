@@ -8,7 +8,8 @@ from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.workflows.gas_elect_workflow import GasElectProblem
 from mesido.workflows.utils.helpers import run_optimization_problem_solver
 
-from mesido._darcy_weisbach import friction_factor
+from mesido._darcy_weisbach import friction_factor, head_loss
+from mesido.constants import GRAVITATIONAL_CONSTANT
 
 import numpy as np
 
@@ -45,30 +46,36 @@ if __name__ == "__main__":
     # # Test: Check if heat demand is equal to the energy supplied by conversion assets
     # np.testing.assert_allclose(results['HeatingDemand_1.Heat_flow'], ( results['HeatPump_1.Heat_source'] + results['GasHeater_1.Heat_source'] ))
     # np.testing.assert_allclose(results['HeatingDemand_2.Heat_flow'], ( results['HeatPump_2.Heat_source'] + results['GasHeater_2.Heat_source'] ))
-    #
-    # # Test: Check if the resulting head loss is matching with the theoretical value of the resulting variables
-    # for pipe in solution.energy_system_components.get("gas_pipe", []):
-    #     if results[f"{pipe}__gn_diameter"] <= 1e-15:
-    #         pass
-    #     else:
-    #         # There is a problem at head-loss calculation. In manual head loss we use max velocity yet head loss in results sections i greater
-    #         pc = solution.get_optimized_gas_pipe_class(pipe)
-    #         ff = friction_factor(
-    #             pc.maximum_velocity,
-    #             pc.inner_diameter,
-    #             wall_roughness=solution.energy_system_options()["wall_roughness"],
-    #             temperature=20,
-    #         )
-    #         # wall_roughness=2.0e-4 # 1.50E-05 # problem.energy_system_options()["wall_roughness"]
-    #         # temperature=20 # is default for gas pipes
-    #
-    #         c_v = parameters[f"{pipe}.length"] * ff / (2 * 9.81) / pc.inner_diameter
-    #         dh_max = c_v * pc.maximum_velocity ** 2
-    #         dh_manual = dh_max * results[f"{pipe}.Q"][1:] / pc.area / pc.maximum_velocity
-    #         print(pipe, -dh_manual, results[f"{pipe}.dH"][1:])
-    #         # np.testing.assert_allclose(-dh_manual, results[f"{pipe}.dH"][1:], atol=1.0e-12)
-    #
-    # print('============================')
+
+    # Test: Check if the resulting head loss is equalt to manual head loss calculation via linear interpolation.
+    #       Note that this works if HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY is used
+    for pipe in solution.energy_system_components.get("gas_pipe", []):
+        if results[f"{pipe}__gn_diameter"] <= 1e-15:
+            pass
+        else:
+            v_max = solution.gas_network_settings["maximum_velocity"]
+            pipe_diameter = results[f"{pipe}__gn_diameter"][0]
+            area = np.pi * pipe_diameter ** 2 / 4.0
+            pipe_wall_roughness = solution.energy_system_options()["wall_roughness"]
+            temperature = 20 # is default for gas pipes
+            pipe_length = solution.parameters(0)[f"{pipe}.length"]
+
+
+            ff = friction_factor(
+                v_max,
+                pipe_diameter,
+                wall_roughness=solution.energy_system_options()["wall_roughness"],
+                temperature=20,
+            )
+
+            c_v = parameters[f"{pipe}.length"] * ff / (2 * 9.81) / pipe_diameter
+            dh_max = c_v * v_max ** 2
+            dh_manual = dh_max * ( results[f"{pipe}.Q"] / area ) / v_max
+            print(pipe, -dh_manual, results[f"{pipe}.dH"])
+            # np.testing.assert_allclose(-dh_manual, results[f"{pipe}.dH"][1:], atol=1.0e-12)
+
+
+    print('============================')
 
     # ----------------------------------------------------------------------------------------------
     # Do not delete the code below: manual checking and testing of values + usefull prints to
@@ -119,34 +126,26 @@ if __name__ == "__main__":
         *solution.energy_system_components.get("gas_pipe", []),
     ]:
 
-        # investment and installation cost
-        if asset in solution.energy_system_components["heat_source"]:
-            try:
+        # investment cost
+        try:
+            if asset in solution.energy_system_components["heat_source"]:
                 investment_cost = solution.esdl_assets[
                                       solution.esdl_asset_name_to_id_map[f"{asset}"]
                                   ].attributes["costInformation"].investmentCosts.value * results[
                                       f"{asset}__max_size"] / 1.0e6
-                total_capex += investment_cost
-                print(asset, " size: ", results[f"{asset}__max_size"] / 1.0e6)
-                print("investment cost: ", asset, investment_cost, abs(investment_cost - results[f"{asset}__investment_cost"]) < 1.0e-8)
-            except:
-                pass
-        if asset in [
-            *solution.energy_system_components["gas_pipe"],
-            *solution.energy_system_components["electricity_cable"]
-        ]:
-            try: # some pipes and cables are disappeared because of the optimization
-                investment_cost = solution.esdl_assets[
-                                      solution.esdl_asset_name_to_id_map[f"{asset}"]
-                                  ].attributes["costInformation"].investmentCosts.value * parameters[
-                                      f"{asset}.length"]
-                total_capex += investment_cost
-                print(asset, " length: ", parameters[f"{asset}.length"])
-                print("investment cost: ", asset, investment_cost, abs(investment_cost - results[f"{asset}__investment_cost"]) < 1.0e-8)
-                # print(asset, solution.esdl_assets[solution.esdl_asset_name_to_id_map[f"{asset}"]].attributes["costInformation"].investmentCosts.value)
-            except:
-                pass
+            else:
+                try: # gas pipe
+                    investment_cost = results[f"{asset}__gn_cost"] * parameters[f"{asset}.length"]
+                except:# electric cable
+                    investment_cost = solution.esdl_assets[solution.esdl_asset_name_to_id_map[f"{asset}"]].attributes[
+                                          "costInformation"].investmentCosts.value * parameters[f"{asset}.length"]
 
+            total_capex += investment_cost
+            print("investment cost: ", asset, investment_cost, abs(investment_cost - results[f"{asset}__investment_cost"]) < 1.0e-8)
+        except:
+            pass
+
+        # installation cost
         try:
             if results[f"{asset}__max_size"] == 0:
                 installation_cost = 0
@@ -158,30 +157,23 @@ if __name__ == "__main__":
             print("installation cost: ", asset, installation_cost, abs(installation_cost - results[f"{asset}__installation_cost"]) < 1.0e-8)
         except:
             pass
+
         # variable operational cost
         timesteps_hr = np.diff(solution.times()) / 3600
-        if asset not in [
-            *solution.energy_system_components["gas_pipe"],
-            *solution.energy_system_components["electricity_cable"]
-            ]:
+        variable_operational_cost = 0.0
+        if asset in solution.energy_system_components["heat_source"]:
             var_op_costs = solution.esdl_assets[
                                solution.esdl_asset_name_to_id_map[f"{asset}"]
                            ].attributes["costInformation"].variableOperationalCosts.value / 1.0e6
             assert (var_op_costs > 0)
-        else:
-            var_op_costs = 0.0
-        factor = 1.0
-        if asset in solution.energy_system_components["heat_source"]:
+            factor = 1.0
             if asset in [
-                *solution.energy_system_components.get("air_water_heat_pump", []),
                 *solution.energy_system_components.get("air_water_heat_pump_elec", []),
             ]:
-                # solution.energy_system_components["air_water_heat_pump"]:
                 factor = solution.esdl_assets[
                     solution.esdl_asset_name_to_id_map[f"{asset}"]
                 ].attributes["COP"]
             assert (factor >= 1.0)
-            variable_operational_cost = 0.0
             for ii in range(1, len(solution.times())):
                 variable_operational_cost += (
                         var_op_costs
@@ -189,20 +181,12 @@ if __name__ == "__main__":
                         * timesteps_hr[ii - 1]
                         / factor
                 )
-            if asset in solution.energy_system_components.get("air_water_heat_pump_elec", []):
-                for ii in range(1, len(solution.times())):
-                    variable_operational_cost += (
-                            0 # 0.2e-3  # euro/Wh, carrier cost if elec is used
-                            * results[f"{asset}.Heat_flow"][ii]
-                            * timesteps_hr[ii - 1]
-                            / factor
-                    )
-            print("variable operational cost: ", asset, variable_operational_cost, abs(variable_operational_cost - results[f"{asset}__variable_operational_cost"]) < 1.0e-8)
-        total_opex += (
-                variable_operational_cost * solution.parameters(0)[f"{asset}.technical_life"]
-        )
+        print("variable operational cost: ", asset, variable_operational_cost, abs(variable_operational_cost - results[f"{asset}__variable_operational_cost"]) < 1.0e-8)
 
-    # print (abs(solution.objective_value - (total_capex + total_opex) / 1.0e6) < 1.0e-8)
+        total_opex += variable_operational_cost
+
+    print("Calculated TCO:  ",(total_capex[0] + total_opex) / 1.0e6)
+    print("Objective Value: ", solution.objective_value)
 
     print('============================')
 

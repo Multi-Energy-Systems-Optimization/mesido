@@ -75,7 +75,7 @@ class GasElectProblem(
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._number_of_years = 1.0
+        self._number_of_years = 1 # 30.0
 
         self._save_json = True
 

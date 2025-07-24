@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" name="elect_tree" description="" id="cc3b855b-0403-4df8-a84f-8ea6fd25420e" esdlVersion="v250501" version="55">
+<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" name="elect_tree" description="" id="cc3b855b-0403-4df8-a84f-8ea6fd25420e" esdlVersion="v250501" version="58">
   <instance xsi:type="esdl:Instance" id="f2e9533d-015d-445f-8c08-cd035d238eee" name="Untitled instance">
     <area xsi:type="esdl:Area" id="74ab5996-6a79-4cd6-9fa8-4f1a498722f5" name="Untitled area">
       <asset xsi:type="esdl:HeatingDemand" id="e820e953-45db-410e-b57b-6c0cfd187b79" name="HeatingDemand_1" power="10000000.0">
@@ -49,7 +49,7 @@
         <port xsi:type="esdl:InPort" id="8669f620-cacd-40cd-8f94-4869c17d8f32" name="In" connectedTo="1926c995-82d2-4454-b0db-f88ae2c3c743" carrier="0f43ef33-aca7-473a-88b2-9a10ad995e02"/>
         <port xsi:type="esdl:OutPort" id="7ad98887-687e-4287-88ed-9c789b816451" name="Out" connectedTo="4b1a6427-1e1e-4426-8228-102152167c33 eb0dc0d6-a06e-44f0-be72-929d41b6846c" carrier="0f43ef33-aca7-473a-88b2-9a10ad995e02"/>
       </asset>
-      <asset xsi:type="esdl:ElectricityCable" id="2417971c-82e1-4c29-a420-40dcd3a0aa3e" name="ElectricityCable_prod" length="118.6" capacity="10000000.0">
+      <asset xsi:type="esdl:ElectricityCable" id="2417971c-82e1-4c29-a420-40dcd3a0aa3e" name="ElectricityCable_prod" length="118.6" capacity="10000000.0" state="OPTIONAL">
         <geometry xsi:type="esdl:Line" CRS="WGS84">
           <point xsi:type="esdl:Point" lat="51.512882074317375" lon="3.9887687017231026"/>
           <point xsi:type="esdl:Point" lat="51.513841079206216" lon="3.9895178604003965"/>
@@ -62,7 +62,7 @@
           </investmentCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:ElectricityCable" id="e35b872e-d6bc-4104-bef5-63bbda49869f" name="ElectricityCable_dem_1" length="100.7" capacity="10000000.0">
+      <asset xsi:type="esdl:ElectricityCable" id="e35b872e-d6bc-4104-bef5-63bbda49869f" name="ElectricityCable_dem_1" length="100.7" capacity="10000000.0" state="OPTIONAL">
         <geometry xsi:type="esdl:Line" CRS="WGS84">
           <point xsi:type="esdl:Point" lat="51.513841079206216" lon="3.9895178604003965"/>
           <point xsi:type="esdl:Point" lat="51.514578175132144" lon="3.9903623886668753"/>
@@ -75,7 +75,7 @@
           </investmentCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:ElectricityCable" id="0cac8242-2094-43f7-9819-85b0cac2fabc" name="ElectricityCable_dem_2" length="335.4" capacity="10000000.0">
+      <asset xsi:type="esdl:ElectricityCable" id="0cac8242-2094-43f7-9819-85b0cac2fabc" name="ElectricityCable_dem_2" length="335.4" capacity="10000000.0" state="OPTIONAL">
         <geometry xsi:type="esdl:Line" CRS="WGS84">
           <point xsi:type="esdl:Point" lat="51.513841079206216" lon="3.9895178604003965"/>
           <point xsi:type="esdl:Point" lat="51.513685047322674" lon="3.9901215449743264"/>
@@ -121,7 +121,7 @@
   </instance>
   <energySystemInformation xsi:type="esdl:EnergySystemInformation" id="1ea9d767-79eb-478b-ac74-ef592b9d68d4">
     <carriers xsi:type="esdl:Carriers" id="496305e0-726d-449e-8969-ec6496a5918e">
-      <carrier xsi:type="esdl:ElectricityCommodity" id="0f43ef33-aca7-473a-88b2-9a10ad995e02" name="Elec" voltage="230.0"/>
+      <carrier xsi:type="esdl:ElectricityCommodity" id="0f43ef33-aca7-473a-88b2-9a10ad995e02" name="Elec" voltage="100000.0"/>
       <carrier xsi:type="esdl:GasCommodity" id="1a8f4b2c-10cb-4a42-9b2e-2217b619c5aa" name="Gas" pressure="5.0"/>
       <carrier xsi:type="esdl:HeatCommodity" id="b73c23fb-3b07-47b3-9c04-47dabc1116a3" name="Heat_sup" supplyTemperature="80.0"/>
       <carrier xsi:type="esdl:HeatCommodity" id="1d5f7417-03b1-4467-9d61-e11e36dcaf43" name="Heat_ret" returnTemperature="40.0"/>
