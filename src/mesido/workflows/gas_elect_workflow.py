@@ -164,40 +164,7 @@ class GasElectProblem(
 
     def post(self):
         super().post()
-        # results = self.extract_results()
-        # parameters = self.parameters(0)
-        # # Optimized ESDL
-        # # Assume there are either no stages (write updated ESDL) or a maximum of 2 stages
-        # # (only write final results when the stage number is the final stage)
-        # # TODO: once database testing has been added, check that the results have only been written
-        # # once.
-        # try:
-        #     if self._stage == 0:
-        #         logger.error(
-        #             f"The stage number is: {self._stage} and it is excpected that the"
-        #             " stage numbering starts at 1 instead"
-        #         )
-        #         sys.exit(1)
-        #     if self._total_stages == self._stage:  # When staging does exists
-        #         self._write_updated_esdl(self._ESDLMixin__energy_system_handler.energy_system)
-        #     elif self._total_stages < self._stage:
-        #         logger.error(
-        #             f"The stage number: {self._stage} is higher then the total stages"
-        #             " expected: {self._total_stages}. Assuming the stage numbering starts at 1"
-        #         )
-        #         sys.exit(1)
-        #
-        # except AttributeError:
-        #     # Staging does not exist
-        #     self._write_updated_esdl(self._ESDLMixin__energy_system_handler.energy_system)
-        # except Exception:
-        #     logger.error("Unkown error occured when evaluating self._stage for _write_updated_esdl")
-        #     sys.exit(1)
-        # if os.path.exists(self.output_folder) and self._save_json:
-        #     bounds = self.bounds()
-        #     aliases = self.alias_relation._canonical_variables_map
-        #     solver_stats = self.solver_stats
-        #     self._write_json_output(results, parameters, bounds, aliases, solver_stats)
+        # self._write_updated_esdl(self._ESDLMixin__energy_system_handler.energy_system)
 
 @main_decorator
 def main(runinfo_path, log_level):

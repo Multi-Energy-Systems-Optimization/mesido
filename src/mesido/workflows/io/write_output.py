@@ -1005,7 +1005,6 @@ class ScenarioOutput:
             name = attributes.name
             if name in [*self.energy_system_components.get("node", [])]:
                 asset = _name_to_asset(name)
-                print(name)
             if name in [*self.energy_system_components.get("gas_pipe", [])]:
                 asset = _name_to_asset(name)
                 # ToDo: pick the optimized gas pipe diameter from edr
