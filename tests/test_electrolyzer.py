@@ -76,7 +76,9 @@ class TestElectrolyzer(TestCase):
                 rtol=1e-6,
                 atol=1e-12,
             )
-            np.testing.assert_allclose(-results["Pipe_6ba6.dH"][iv], 2.1760566566624733, rtol=1e-6, atol=1e-12)
+            np.testing.assert_allclose(
+                -results["Pipe_6ba6.dH"][iv], 2.1760566566624733, rtol=1e-6, atol=1e-12
+            )
 
         gas_price_profile = "Hydrogen.price_profile"
         state = "GasDemand_0cf3.Gas_demand_mass_flow"
@@ -189,10 +191,10 @@ class TestElectrolyzer(TestCase):
         # Do cost checks
 
         # Check variable opex: transport cost 0.1 euro/kg H2
-        # TODO: This test is currently commented out because GasDemand variable operational costs 
-        # are not configured in the model. To enable this test, add "gas_demand" entry to 
+        # TODO: This test is currently commented out because GasDemand variable operational costs
+        # are not configured in the model. To enable this test, add "gas_demand" entry to
         # ASSET_COST_REQUIREMENTS dictionary in src/mesido/esdl/asset_to_component_base.py
-        # with "variableOperationalCosts": "required" or "optional", and ensure the 
+        # with "variableOperationalCosts": "required" or "optional", and ensure the
         # COST_VALIDATION_COMPONENT_TO_ASSET_TYPE mapping includes the appropriate component type.
         # gas_tranport_cost = sum(
         #     (
@@ -212,7 +214,7 @@ class TestElectrolyzer(TestCase):
         # Storage reserved size = 500m3
         # TODO: These cost checks are commented out because the cost information is not configured
         # in the model. To enable these tests, add appropriate entries to ASSET_COST_REQUIREMENTS
-        # in src/mesido/esdl/asset_to_component_base.py for gas_storage and electrolyzer asset types.
+        # in src/mesido/esdl/asset_to_component_base.py for gas_storage and electrolyzer types.
         # storage_fixed_opex = 237.15 * 500000.0
         # np.testing.assert_allclose(
         #     storage_fixed_opex,
