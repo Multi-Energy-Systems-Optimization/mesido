@@ -203,7 +203,7 @@ class EndScenarioSizing(
     2. minimize TCO = Capex + Opex*lifetime
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, error_type_check=HEAT_NETWORK_ERRORS, *args, **kwargs):
         reset_potential_errors()  # This needed to clear the Singleton which is persistent
 
         super().__init__(*args, **kwargs)
@@ -220,6 +220,8 @@ class EndScenarioSizing(
 
         self.__indx_max_peak = None
         self.__day_steps = 5
+
+        self._error_type_check = error_type_check
 
         # self._override_pipe_classes = {}
 
@@ -259,7 +261,7 @@ class EndScenarioSizing(
         """
         super().read()
 
-        potential_error_to_error(HEAT_NETWORK_ERRORS)
+        potential_error_to_error(self._error_type_check)
 
         (
             self.__indx_max_peak,
