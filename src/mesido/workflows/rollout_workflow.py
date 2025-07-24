@@ -241,22 +241,22 @@ class RollOutProblem(
         for asset in [*self.energy_system_components.get("ates", [])]:
             for year in range(self._years):
                 N_doublets = self.parameters(0)[f"{asset}.nr_of_doublets"]
-                for i in range(1, N_doublets + 1):
-                    asset_is_placed_var = f"{asset}_doublet_{i}__is_placed_{year}"
-                    self._asset_doublet_is_placed_map[
-                        f"{asset}_doublet_{i}"] = asset_is_placed_var  # might be unnecessary
-                    self._asset_is_placed_map[f"{asset}_doublet_{i}"] = asset_is_placed_var
-                    self.__asset_doublet_is_placed_var[asset_is_placed_var] = ca.MX.sym(asset_is_placed_var)
-                    self.__asset_doublet_is_placed_var_bounds[asset_is_placed_var] = (0.0, 1.0)
-                    # self.__asset_is_placed_var[asset_is_placed_var] = ca.MX.sym(asset_is_placed_var)
-                    # self.__asset_is_placed_var_bounds[asset_is_placed_var] = (0.0, 1.0)
-
-                    asset_percentage_placed_var = f"{asset}_doublet_{i}__percentage_placed_{year}"
-                    self._asset_percentage_placed_map[f"{asset}_doublet_{i}"] = asset_percentage_placed_var
-                    self.__asset_percentage_placed_var[asset_percentage_placed_var] = \
-                        ca.MX.sym(asset_percentage_placed_var)
-                    self.__asset_percentage_placed_var_bounds[asset_percentage_placed_var] = (
-                    0.0, 1.0)
+                # for i in range(1, N_doublets + 1):
+                #     asset_is_placed_var = f"{asset}_doublet_{i}__is_placed_{year}"
+                #     self._asset_doublet_is_placed_map[
+                #         f"{asset}_doublet_{i}"] = asset_is_placed_var  # might be unnecessary
+                #     self._asset_is_placed_map[f"{asset}_doublet_{i}"] = asset_is_placed_var
+                #     self.__asset_doublet_is_placed_var[asset_is_placed_var] = ca.MX.sym(asset_is_placed_var)
+                #     self.__asset_doublet_is_placed_var_bounds[asset_is_placed_var] = (0.0, 1.0)
+                #     # self.__asset_is_placed_var[asset_is_placed_var] = ca.MX.sym(asset_is_placed_var)
+                #     # self.__asset_is_placed_var_bounds[asset_is_placed_var] = (0.0, 1.0)
+                #
+                #     asset_percentage_placed_var = f"{asset}_doublet_{i}__percentage_placed_{year}"
+                #     self._asset_percentage_placed_map[f"{asset}_doublet_{i}"] = asset_percentage_placed_var
+                #     self.__asset_percentage_placed_var[asset_percentage_placed_var] = \
+                #         ca.MX.sym(asset_percentage_placed_var)
+                #     self.__asset_percentage_placed_var_bounds[asset_percentage_placed_var] = (
+                #     0.0, 1.0)
 
                 asset_is_placed_var = f"{asset}__is_placed_{year}"
                 self._asset_is_placed_map[asset] = asset_is_placed_var
@@ -348,36 +348,39 @@ class RollOutProblem(
             ates_state_big_m = 2. * bounds[f"{s}.Stored_heat"][1]
 
             ates_N_doublets = self.parameters(0)[f"{s}.nr_of_doublets"]
-            ates_doublet_sums = self.__ates_doublet_sums(s)[0]
+            # ates_doublet_sums = self.__ates_doublet_sums(s)[0]
+            # ates_doublet_sums = self.get_asset_is__realized_symbols(f"{s}_doublet_{1}")
+
+            #TODO: still add ates cyclic constraint
 
             ates_is_placed_doublet = []
-            for N in range(0, ates_N_doublets):
-                ates_is_placed_doublet.append(
-                    self.get_asset_is__realized_symbols(f"{s}_doublet_{N + 1}"))
-            for year in range(self._years):
-                ates_states_year= self.states_in(f"{s}.Stored_heat", t0=year * self._days*24*3600,
-                                        tf=(year + 1) * self._days*24*3600)
-                constraints.append((
-                    (ates_states_year - ates_doublet_sums[year] * bounds[f"{s}.Stored_heat"][1] / ates_N_doublets) / ates_state_big_m,
-                    -np.inf, 0.0
-                ))
-                # constraints.append((
-                #     (ates_state[year * self._days:(year + 1) * self._days] - ates_doublet_sums[
-                #         year] * bounds[f"{s}.Stored_heat"][1] / ates_N_doublets) / ates_state_big_m,
-                #     -np.inf, 0.0
-                # ))
-                constraints.append((
-                    (ates_is_placed[year] - ates_doublet_sums[year], -np.inf, 0.0)
-                ))
-                for N in range(0, ates_N_doublets):
-                    constraints.append(
-                        (ates_is_placed[year] - ates_is_placed_doublet[N][year], 0.0, np.inf))
-                constraints.append(((ates_daily_heat[year * self._days:(
-                                                                                   year + 1) * self._days] - big_m / 2. / ates_N_doublets *
-                                     ates_doublet_sums[year]) / (big_m), -np.inf, 0.0))
-                constraints.append(((ates_daily_heat[year * self._days:(
-                                                                                   year + 1) * self._days] + big_m / 2. / ates_N_doublets *
-                                     ates_doublet_sums[year]) / (big_m), 0.0, np.inf))
+            # for N in range(0, ates_N_doublets):
+            #     ates_is_placed_doublet.append(
+            #         self.get_asset_is__realized_symbols(f"{s}_doublet_{N + 1}"))
+            # for year in range(self._years):
+            #     ates_states_year= self.states_in(f"{s}.Stored_heat", t0=year * self._days*24*3600,
+            #                             tf=(year + 1) * self._days*24*3600)
+            #     constraints.append((
+            #         (ates_states_year - ates_doublet_sums[year] * bounds[f"{s}.Stored_heat"][1] / ates_N_doublets) / ates_state_big_m,
+            #         -np.inf, 0.0
+            #     ))
+            #     # constraints.append((
+            #     #     (ates_state[year * self._days:(year + 1) * self._days] - ates_doublet_sums[
+            #     #         year] * bounds[f"{s}.Stored_heat"][1] / ates_N_doublets) / ates_state_big_m,
+            #     #     -np.inf, 0.0
+            #     # ))
+            #     constraints.append((
+            #         (ates_is_placed[year] - ates_doublet_sums[year], -np.inf, 0.0)
+            #     ))
+            #     for N in range(0, ates_N_doublets):
+            #         constraints.append(
+            #             (ates_is_placed[year] - ates_is_placed_doublet[N][year], 0.0, np.inf))
+            #     constraints.append(((ates_daily_heat[year * self._days:(
+            #                                                                        year + 1) * self._days] - big_m / 2. / ates_N_doublets *
+            #                          ates_doublet_sums[year]) / (big_m), -np.inf, 0.0))
+            #     constraints.append(((ates_daily_heat[year * self._days:(
+            #                                                                        year + 1) * self._days] + big_m / 2. / ates_N_doublets *
+            #                          ates_doublet_sums[year]) / (big_m), 0.0, np.inf))
 
 
             # For setting the initial state to 0 in the first year the ATES is placed
@@ -465,63 +468,6 @@ class RollOutProblem(
 
 
 
-    # def __yearly_investment_constraints_old(self, ensemble_member):
-    #     constraints = []
-    #
-    #     bounds = self.bounds()
-    #     for y in range(self._years):
-    #         year_capex = 0
-    #
-    #         # pipes
-    #         for p in self.hot_pipes:
-    #             p_capex = self._pipe_capex_dict[p]
-    #             pipe_percentage_placed = self.get_asset_percentage__placed_symbols(p)
-    #             if y == 0:
-    #                 pipe_capex = p_capex * pipe_percentage_placed[0]
-    #             else:
-    #                 pipe_capex = p_capex * (pipe_percentage_placed[y] -
-    #                                         pipe_percentage_placed[(y - 1)])
-    #             year_capex += pipe_capex
-    #
-    #         # sources
-    #         for s in self.energy_system_components.get("heat_source", []):
-    #             s_capex = self._source_capex_dict[s]
-    #             source_percentage_placed = self.get_asset_percentage__placed_symbols(s)
-    #             if y == 0:
-    #                 source_capex = s_capex * source_percentage_placed[0]
-    #             else:
-    #                 source_capex = s_capex * (source_percentage_placed[y] -
-    #                                           source_percentage_placed[(y - 1)])
-    #             year_capex += source_capex
-    #
-    #         # consumers
-    #         for d in self.energy_system_components.get("heat_demand", []):
-    #             d_capex = self._demand_capex_dict[d]
-    #             demand_percentage_placed = self.get_asset_percentage__placed_symbols(d)
-    #             if y == 0:
-    #                 demand_capex = d_capex * demand_percentage_placed[0]
-    #             else:
-    #                 demand_capex = d_capex * (demand_percentage_placed[y] -
-    #                                           demand_percentage_placed[(y - 1)])
-    #             year_capex += demand_capex
-    #
-    #         # ates
-    #         for a in self.energy_system_components.get("ates", []):
-    #             ates_N_doublets = self.parameters(0)[f"{a}.nr_of_doublets"]
-    #             a_capex = self._ates_capex_dict[a]
-    #             ates_doublet_sums_percentage = self.__ates_doublet_sums(a)[1]
-    #             if y == 0:
-    #                 ates_capex = a_capex / ates_N_doublets * ates_doublet_sums_percentage[y]
-    #             else:
-    #                 ates_capex = a_capex / ates_N_doublets * (ates_doublet_sums_percentage[y] -
-    #                                                           ates_doublet_sums_percentage[y - 1])
-    #             year_capex += ates_capex
-    #
-    #         year_nominal = bounds[f"yearly_capex_{y}"][1]
-    #         yearly_capex_var = self.__state_vector_scaled(f"yearly_capex_{y}", ensemble_member)
-    #         constraints.append(((yearly_capex_var - year_capex) / year_nominal, 0.0, 0.0))
-    #     return constraints
-
     def __yearly_investment_constraints(self, ensemble_member):
         constraints = []
 
@@ -554,13 +500,14 @@ class RollOutProblem(
             # ates
             for a in self.energy_system_components.get("ates", []):
                 ates_N_doublets = self.parameters(0)[f"{a}.nr_of_doublets"]
-                a_capex = self._ates_capex_dict[a]
-                ates_doublet_sums_percentage = self.__ates_doublet_sums(a)[1]
-                if y == 0:
-                    ates_capex = a_capex / ates_N_doublets * ates_doublet_sums_percentage[y]
-                else:
-                    ates_capex = a_capex / ates_N_doublets * (ates_doublet_sums_percentage[y] -
-                                                              ates_doublet_sums_percentage[y - 1])
+                ates_capex = 0.0 #TODO: add proper costs ates
+                # a_capex = self._ates_capex_dict[a]
+                # ates_doublet_sums_percentage = self.__ates_doublet_sums(a)[1]
+                # if y == 0:
+                #     ates_capex = a_capex / ates_N_doublets * ates_doublet_sums_percentage[y]
+                # else:
+                #     ates_capex = a_capex / ates_N_doublets * (ates_doublet_sums_percentage[y] -
+                #                                               ates_doublet_sums_percentage[y - 1])
                 cumulative_capex += ates_capex
 
             year_nominal = bounds[f"yearly_capex_{y}"][1]

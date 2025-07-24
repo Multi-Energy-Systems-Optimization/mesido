@@ -14,12 +14,14 @@ if __name__ == "__main__":
     solution = run_end_scenario_sizing(
         RollOutProblem,
         base_folder=base_folder,
-        esdl_file_name="PoC Tutorial_2ndsource.esdl", #"GROW_withATES_Prod_install.esdl",
+        esdl_file_name="PoC_tutorial_incl_ATES.esdl", #"GROW_withATES_Prod_install.esdl",
         esdl_parser=ESDLFileParser,
     )
     results = solution.extract_results()
 
-
+    solution.times()
+    for ates in solution.energy_system_components.get("ates", []):
+        print(results[f"{ates}.Stored_heat"])
     for source in [*solution.energy_system_components.get("heat_source", []),
                    *solution.energy_system_components.get("heat_demand", []),
                    *solution.hot_pipes,]:

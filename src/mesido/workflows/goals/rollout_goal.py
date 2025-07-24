@@ -269,7 +269,8 @@ class MinimizeRolloutFixedOperationalCosts(Goal):
         for ates in optimization_problem.energy_system_components.get("ates", []):
             # TODO: this must be changed if the optimization uses placement of individual doublets
             #  of the assset.
-            obj += self.fixed_opex_of_asset(optimization_problem, ates)
+            # obj += self.fixed_opex_of_asset(optimization_problem, ates)
+            pass
 
         return obj
 
