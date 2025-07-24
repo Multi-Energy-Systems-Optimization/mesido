@@ -44,8 +44,6 @@ class AirWaterHeatPumpElec(AirWaterHeatPump):
         self.add_variable(ElectricityPort, "ElectricityIn")
         self.add_variable(Variable, "Power_elec", min=0.0, nominal=self.elec_power_nominal)
 
-        self.add_equation(
-            ((self.ElectricityIn.Power - self.Power_elec) / self.elec_power_nominal)
-        )
+        self.add_equation(((self.ElectricityIn.Power - self.Power_elec) / self.elec_power_nominal))
 
         self.add_equation(((self.Power_elec * self.cop - self.Heat_source) / self.Heat_nominal))
