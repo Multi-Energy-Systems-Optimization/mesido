@@ -5,6 +5,10 @@ from unittest import TestCase
 
 from rtctools.optimization.goal_programming_mixin_base import Goal
 
+from rtctools.optimization.collocated_integrated_optimization_problem import (
+    CollocatedIntegratedOptimizationProblem,
+)
+
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.util import run_esdl_mesido_optimization
@@ -189,14 +193,21 @@ class HeatCoolingGrowWorkflow(TestCase):
 
             def function(
                 self,
-                ensemble_member: int
-            ) -> ca.MX:
+                optimization_problem: CollocatedIntegratedOptimizationProblem,
+                ensemble_member: int,
+            ):
 
-                parameters = self.parameters(ensemble_member)
-
-                heat_source = self.__state_vector_scaled(
-                    f"{self.asset_name}.Heat_source", ensemble_member
+                parameters = optimization_problem.parameters(ensemble_member)
+                constraint_nominal = (
+                    optimization_problem.variable_nominal(f"{self.asset_name}.Heat_source")
                 )
+                heat_source = optimization_problem.state_vector(
+                    f"{self.asset_name}.Heat_source", ensemble_member
+                ) / 1.e6
+                
+                # heat_source = optimization_problem.__state_vector_scaled(
+                #     f"{self.asset_name}.Heat_source", ensemble_member
+                # )
                 # variable_operational_cost_var = self._asset_variable_operational_cost_map[
                 #     self.asset_name
                 # ]
@@ -207,15 +218,17 @@ class HeatCoolingGrowWorkflow(TestCase):
                 # variable_operational_cost_coefficient = parameters[
                 #     f"{self.asset_name}.variable_operational_cost_coefficient"
                 # ]
+                assert len(optimization_problem.get_electricity_carriers().keys()) <= 1
 
-                price_profile = self.get_timeseries(
-                    f"{list(self.get_electricity_carriers().values())[0]["Elect"]}.price_profile"
+                price_profile = optimization_problem.get_timeseries(
+                    f"{list(optimization_problem.get_electricity_carriers().values())[0]['name']}.price_profile"
                 )
+                timesteps_hr = np.diff(optimization_problem.times()) / 3600
 
                 sum = 0.0
-                for i in range(1, len(self.times())):
+                for i in range(1, len(optimization_problem.times())):
                     sum += (
-                        self.price_profile.values[i]
+                        price_profile.values[i]
                         * heat_source[i]
                         * timesteps_hr[i - 1]
                         / parameters[f"{self.asset_name}.cop"]
@@ -223,7 +236,7 @@ class HeatCoolingGrowWorkflow(TestCase):
 
                 return sum
 
-        class UpdatedProblem(EndScenarioSizingStaged):
+        class UpdatedProblem(EndScenarioSizingStaged, CollocatedIntegratedOptimizationProblem):
             # TODO: Issue sizing pipes connected to demands, available pipe classes are updated in read(), ESDLAdditionalVarsMixin before the code below. This means the incorrect demand values are then used. 
             def read(self):
                 super().read()
@@ -259,7 +272,7 @@ class HeatCoolingGrowWorkflow(TestCase):
             def goals(self):
 
                 goals = super().goals().copy()
- 
+
                 for ac in self.energy_system_components.get("air_water_heat_pump_elec", []):
                     goals.append(MinElectcost(ac))
 
