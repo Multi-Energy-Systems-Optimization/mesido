@@ -7,7 +7,7 @@ import esdl
 import numpy as np
 from mesido.physics_mixin import PhysicsMixin
 from mesido.techno_economic_mixin import TechnoEconomicMixin
-from mesido.workflows.grow_workflow import SolverHIGHS, SolverCPLEX
+from mesido.workflows.grow_workflow import SolverCPLEX
 from mesido.workflows.utils.adapt_profiles import adapt_hourly_profile_averages_timestep_size, \
     adapt_profile_to_copy_for_number_of_years
 
@@ -38,9 +38,22 @@ logger.setLevel(logging.INFO)
 WATT_TO_MEGA_WATT = 1.0e6
 WATT_TO_KILO_WATT = 1.0e3
 
+class SolverHIGHS:
+    def solver_options(self):
+        options = super().solver_options()
+        options["casadi_solver"] = self._qpsol
+        options["solver"] = "highs"
+        highs_options = options["highs"] = {}
+        highs_options["mip_rel_gap"]= 0.01
+
+        options["gurobi"] = None
+        options["cplex"] = None
+
+        return options
 
 class RollOutProblem(
-    SolverCPLEX,
+    # SolverCPLEX,
+    SolverHIGHS,
     ScenarioOutput,
     TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
@@ -73,6 +86,8 @@ class RollOutProblem(
 
         self.heat_network_settings["minimum_velocity"] = 0.0 #important otherwise heatdemands
         # cannot be turned off for specific timesteps
+
+        self._ates_initial_yearly_storage = [0.0, 1E9 * 1000] # initial storage in the ates, each year [J]
 
         self._ates_is_charging_map = {}
         self.__ates_is_charging_var = {}
@@ -542,6 +557,38 @@ class RollOutProblem(
                                     geo_is_placed[year] * self._min_geo_utilization, 0.0, np.inf))
 
         return constraints
+    
+    def __ates_yearly_initial_constraints(self, ensemble_member):       
+        constraints = []
+
+        bounds = self.bounds()
+        for s in self.energy_system_components.get("ates", []):
+            ates_state = self.__state_vector_scaled(f"{s}.Storage_yearly_change", ensemble_member)
+            # zeros_array = np.zeros(len(ates_state))
+            nominal=self.variable_nominal(f"{s}.Storage_yearly_change")
+            for i in range(len(self.times())):
+                if i % self._days != 0:
+                    #set the storage_yearly_change to zero at all days except first day of each year
+                    constraints.append(((ates_state[i])/nominal, 0.0, 0.0))
+
+            # constraints.append(((ates_state)/nominal, 0.0, 0.0))
+        return constraints
+    
+    def __ates_yearly_periodic_constraints(self, ensemble_member):       
+        constraints = []
+
+        bounds = self.bounds()
+        for s in self.energy_system_components.get("ates", []):
+            ates_state = self.__state_vector_scaled(f"{s}.Stored_heat", ensemble_member)
+            nominal=self.variable_nominal(f"{s}.Storage_yearly_change")
+            times = self.times()/3600/24
+            print(times)
+            for i in range(len(times)-1):
+                if i % self._days == 0:
+                    print(i, times[i], i+self._days-1, times[i+self._days-1])
+                    #set the storage first day eqaul to last of each yaer
+                    constraints.append(((ates_state[i]-ates_state[i+self._days-1])/nominal, 0.0, 0.0))
+        return constraints
 
     def constraints(self, ensemble_member):
         constraints = super().constraints(ensemble_member)
@@ -567,6 +614,8 @@ class RollOutProblem(
         constraints.extend(self.__demand_matching_constraints(ensemble_member))
 
         constraints.extend(self.__yearly_asset_is_placed_constraints(ensemble_member))
+        constraints.extend(self.__ates_yearly_initial_constraints(ensemble_member))
+        constraints.extend(self.__ates_yearly_periodic_constraints(ensemble_member))
 
         # # asset cost constraints need to be implemented before yearly investment constraints,
         # # due to dictionaries to be filled with the variable sums.

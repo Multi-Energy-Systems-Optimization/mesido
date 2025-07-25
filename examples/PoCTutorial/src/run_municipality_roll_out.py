@@ -19,9 +19,54 @@ if __name__ == "__main__":
     )
     results = solution.extract_results()
 
+    import matplotlib.pyplot as plt
+
     solution.times()
     for ates in solution.energy_system_components.get("ates", []):
-        print(results[f"{ates}.Stored_heat"])
+        print(results[f"{ates}.Stored_heat"])    
+    
+    figure, ax = plt.subplots()
+    times = solution.times()
+    for ates in solution.energy_system_components.get("ates", []):
+        # stored_heat = [results.get(f"{ates}.Stored_heat", 0) for t in range(times)]
+        plt.plot(times/3600/24, results[f"{ates}.Stored_heat"]/1E9, label=str(ates))
+
+    plt.xlabel("Time [days]")
+    plt.ylabel("Stored Heat [GJ]")
+    plt.title("Heat Storage vs Time")
+    plt.legend()
+    plt.xticks(range(0, int(times[-1]/3600/24) + 1,20), minor=True)  
+    coarse_ticks = [0,  365,  730, 1095]
+    plt.xticks(coarse_ticks, [str(t) for t in coarse_ticks])
+    plt.grid()
+    plt.tight_layout()  
+    plt.show()
+    savefig = base_folder / "heat_storage_vs_time.png"
+    plt.savefig(savefig)
+    plt.close()
+
+    figure, ax = plt.subplots()
+    for ates in solution.energy_system_components.get("ates", []):
+        # stored_heat = [results.get(f"{ates}.Stored_heat", 0) for t in range(times)]
+        plt.plot(times/3600/24, results[f"{ates}.Heat_ates"]/1E6, label=str(ates) + " Heat_ates")
+        plt.plot(times/3600/24, results[f"{ates}.Heat_loss"]/1E6, label=str(ates)+ " Heat_loss")
+        plt.plot(times/3600/24, results[f"{ates}.Storage_yearly_change"]/1E6, label=str(ates) + " Storage_yearly_change")
+
+
+    plt.xlabel("Time [days]")
+    plt.ylabel("Heat [MW]")
+    plt.title("Heat  vs Time")
+    plt.legend()
+    plt.xticks(range(0, int(times[-1]/3600/24) + 1,20), minor=True)  
+    coarse_ticks = [0,  365,  730, 1095]
+    plt.xticks(coarse_ticks, [str(t) for t in coarse_ticks]) 
+    plt.grid()
+    plt.tight_layout()
+    plt.show()
+    savefig = base_folder / "heat_ates_vs_time.png"
+    plt.savefig(savefig)
+    plt.close()
+    
     for source in [*solution.energy_system_components.get("heat_source", []),
                    *solution.energy_system_components.get("heat_demand", []),
                    *solution.hot_pipes,]:
