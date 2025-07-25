@@ -1,5 +1,4 @@
 import logging
-import os
 
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
@@ -55,7 +54,7 @@ class SolverCPLEX:
         options["casadi_solver"] = self._qpsol
         options["solver"] = "cplex"
         cplex_options = options["cplex"] = {}
-        cplex_options["CPX_PARAM_EPGAP"] = 0.00001
+        cplex_options["CPX_PARAM_EPGAP"] = 0.005  # 0.00001
 
         options["highs"] = None
 
@@ -74,9 +73,9 @@ class GasElectProblem(
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._number_of_years = 1.0
+        self._number_of_years = 1  # 30.0
 
-        self._save_json = True
+        self._save_json = False
 
     def energy_system_options(self):
         options = super().energy_system_options()
@@ -96,7 +95,7 @@ class GasElectProblem(
         # self.gas_network_settings["minimize_head_losses"] = False
         # self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
 
-        self.gas_network_settings["minimize_head_losses"] = True
+        self.gas_network_settings["minimize_head_losses"] = False
         self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
 
         return options
@@ -112,28 +111,6 @@ class GasElectProblem(
 
     def read(self):
         super().read()
-
-        # Convert gas demand Nm3/h (data in timeseries source file) to heat demand in watts
-        # Assumumption:
-        #   - gas heating value (LCV value) = 31.68 * 10^6 (J/m3) at 1bar, 273.15K
-        #   - gas boiler efficiency 80%
-        # TODO: setup a standard way for gas usage and automate the link to heating value & boiler
-        # efficiency (if needed)
-        for demand in self.energy_system_components["heat_demand"]:
-            target = self.get_timeseries(f"{demand}.target_heat_demand")
-
-            # Manually set heating demand values
-            boiler_efficiency = 0.8
-            gas_heating_value_joule_m3 = 31.68 * 10**6
-            for ii in range(len(target.values)):
-                target.values[ii] *= gas_heating_value_joule_m3 * boiler_efficiency
-
-            self.io.set_timeseries(
-                f"{demand}.target_heat_demand",
-                self.io._DataStore__timeseries_datetimes,
-                target.values,
-                0,
-            )
 
     def pre(self):
         super().pre()
@@ -182,8 +159,8 @@ class GasElectProblem(
     #     return constraints
 
     def post(self):
-        if os.path.exists(self.output_folder) and self._save_json:
-            self._write_json_output()
+        super().post()
+        # self._write_updated_esdl(self._ESDLMixin__energy_system_handler.energy_system)
 
 
 @main_decorator
