@@ -366,7 +366,10 @@ class HeatProblemATESMultiPort(
     def read(self) -> None:
         super().read()
 
-        adapt_hourly_profile_averages_timestep_size(self, 24*30)
+        adapt_hourly_profile_averages_timestep_size(self, 24*40)
+        for demand in self.energy_system_components.get("heat_demand", []):
+            new_timeseries = self.get_timeseries(f"{demand}.target_heat_demand").values * 0.95
+            self.set_timeseries(f"{demand}.target_heat_demand", new_timeseries)
 
 
     def energy_system_options(self):
@@ -377,7 +380,7 @@ class HeatProblemATESMultiPort(
         options["heat_loss_disconnected_pipe"] = True
         options["include_ates_temperature_options"] = True
         self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
-        # options["neglect_pipe_heat_losses"] = True
+        options["neglect_pipe_heat_losses"] = True
         return options
 
     def constraints(self, ensemble_member):
@@ -422,6 +425,8 @@ class SolverCPLEX:
 
 if __name__ == "__main__":
     basefolder = Path(os.getcwd()).resolve().parent
+
+
     solution = run_optimization_problem_solver(
         HeatProblemATESMultiPort,
         solver_class=SolverCPLEX,
@@ -451,14 +456,15 @@ if __name__ == "__main__":
     ates_cold_return_temp = parameters[f"{ates}.T_return"]
     cp = parameters[f"{ates}.cp"]
     rho = parameters[f"{ates}.rho"]
-    ates_discharging = 1-results[f"{ates}__is_charging"]
-    ates_charging = results[f"{ates}__is_charging"]
 
-    #ensuring enough ates is charged for this problem to be be realistic.
-    np.testing.assert_array_less(1e10, sum(ates_heat[1:]*dt))
-    np.testing.assert_allclose(ates_heat[ates_discharging], ates_flow[ates_discharging] * cp * rho * (
-            ates_temp_disc[ates_discharging]-ates_cold_return_temp))
+    ates_charging = results[f"{ates}__is_charging"].astype(bool)
+    ates_discharging = (1 - ates_charging).astype(bool)
 
+    # ensuring enough ates is charged for this problem to be be realistic.
+    np.testing.assert_array_less(1e10, sum(ates_heat[1:] * dt))
+    np.testing.assert_allclose(ates_heat[ates_discharging],
+                               ates_flow[ates_discharging] * cp * rho * (
+                                       ates_temp_disc[ates_discharging] - ates_cold_return_temp))
 
     ates_discharge_hot_heat = results[f"{ates}.DischargeHot.Heat_flow"]
     ates_discharge_cold_heat = results[f"{ates}.DischargeCold.Heat_flow"]
@@ -482,7 +488,7 @@ if __name__ == "__main__":
     ates_charge_hot_in_heat = results[f"{ates}.ChargeHot.HeatIn.Heat"]
     ates_charge_hot_out_heat = results[f"{ates}.ChargeHot.HeatOut.Heat"]
 
-    #Checks that heatflow is each port group is calculated correctly on their in and out ports
+    # Checks that heatflow is each port group is calculated correctly on their in and out ports
     np.testing.assert_allclose(ates_discharge_hot_in_heat - ates_discharge_hot_out_heat,
                                ates_discharge_hot_heat, atol=1e-6)
     np.testing.assert_allclose(ates_discharge_cold_in_heat - ates_discharge_cold_out_heat,
