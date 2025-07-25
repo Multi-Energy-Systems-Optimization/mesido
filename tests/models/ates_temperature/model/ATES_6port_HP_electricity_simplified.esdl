@@ -503,7 +503,7 @@
       <carrier xsi:type="esdl:HeatCommodity" id="713f7f15-aa81-49f4-b216-be6620ac4046" name="Ates_mid" supplyTemperature="63.0"/>
       <carrier xsi:type="esdl:HeatCommodity" id="bc434cd4-f9c9-4043-bba5-194ff6da8a50" name="Ates_cold" supplyTemperature="30.0"/>
       <carrier xsi:type="esdl:HeatCommodity" id="cdb0f4d4-cbc6-4a2a-88fa-885a6412959f" name="Cold_net_1" supplyTemperature="45.0"/>
-      <carrier xsi:type="esdl:HeatCommodity" id="31e15344-5c5a-42ce-a7b4-8eee2ebd36f9" name="Hot_net_1" supplyTemperature="65.0"/>
+      <carrier xsi:type="esdl:HeatCommodity" id="31e15344-5c5a-42ce-a7b4-8eee2ebd36f9" name="Hot_net_1" supplyTemperature="70.0"/>
       <carrier xsi:type="esdl:HeatCommodity" id="220215f7-1a14-48a9-97cb-aaea7c193068" name="Hot_net_2" supplyTemperature="80.0"/>
       <carrier xsi:type="esdl:HeatCommodity" id="3e394b4f-7857-4d5b-b60f-f6613502c425" name="Hot_net_3" supplyTemperature="90.0"/>
       <carrier xsi:type="esdl:HeatCommodity" id="da9c93be-9585-4c95-bec5-1a97b9b9daf6" name="Hot_net_4" supplyTemperature="50.0"/>

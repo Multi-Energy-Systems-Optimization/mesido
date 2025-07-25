@@ -7,8 +7,10 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
-# from tests.models.ates_temperature.src.run_ates_temperature import SolverCPLEX
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
+from mesido.workflows.utils.helpers import run_optimization_problem_solver
+from models.ates_temperature.src.run_ates_temperature import SolverCPLEX
+from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test, \
+    feasibility_test, _get_component_temperatures
 
 
 class TestAtesTemperature(TestCase):
@@ -200,32 +202,133 @@ class TestAtesTemperature(TestCase):
             ),
         )
 
-    def test_ates_multi_port_temperature(self):
+    def test_ates_multi_port(self):
         """
         check if
-        - discrete temperature ates is equal to temperature of pipe at inport during discharging
-        - discrete temperature ates is equal or lower then temperature ates
-        - discrete temperature ates is equal to the set booleans of ates temperature
-        - temperature change ates continues is equal to the sum of temperature loss and
-        temperature change charging
-
-        - only heatpump or heat exchanger is in operation, solely for charging/discharging ates
-        - if ates is charging (heat_ates>0), hex is enabled. if ates is discharging (heat<0),
-        hp is enabled
-        - Discharge heat and mass flow is corresponding to the temperature regime (flow rate
-        remains the same, but heat changes)
-
-        TODO: still have to add checks:
-        - temperature loss>= relation of temperature loss
-        - temperature addition charging
-        - heat loss ates>= relation of heat loss
+        -
         """
         import models.ates_temperature.src.run_ates_temperature as run_ates_temperature
         from models.ates_temperature.src.run_ates_temperature import HeatProblemATESMultiPort
 
         basefolder = Path(run_ates_temperature.__file__).resolve().parent.parent
 
-        solution = run_esdl_mesido_optimization(
+        class HeatProblemATESMultiPortFixedTemperature(HeatProblemATESMultiPort):
+            def energy_system_options(self):
+                options = super().energy_system_options()
+                options["include_ates_temperature_options"] = False
+                return options
+
+
+        solution = run_optimization_problem_solver(
+            HeatProblemATESMultiPortFixedTemperature,
+            solver_class=SolverCPLEX,
+            base_folder=basefolder,
+            esdl_file_name="ATES_6port_HP_electricity_simplified.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="Heatdemand_eprice.csv",
+        )
+
+        results = solution.extract_results()
+        parameters = solution.parameters(0)
+
+        feasibility_test(solution)
+        demand_matching_test(solution, results)
+
+        epsilon = 1e-6
+        dt = np.diff(solution.times())
+
+        ates = solution.energy_system_components.get("ates")[0]
+        heat_producer = "HeatProducer_4e19"
+        peak_producer = "HeatProducer_Peak"
+        heatpump = "HeatPump_5e09"
+        heatdemand = "HeatingDemand_bf07"
+
+        ates_temp = results[f"{ates}.Temperature_ates"]
+        ates_heat = results[f"{ates}.Heat_ates"]
+        ates_flow = results[f"{ates}.Q"]
+        ates_temp_disc = results[f"{ates}__temperature_ates_disc"]
+        ates_cold_return_temp = parameters[f"{ates}.T_return"]
+        cp = parameters[f"{ates}.cp"]
+        rho = parameters[f"{ates}.rho"]
+        ates_charging = results[f"{ates}__is_charging"].astype(bool)
+        ates_discharging = (1 - ates_charging).astype(bool)
+
+        #temperatures from port groups (supply_t, return_t, dt)
+        temp_discharge_hot = _get_component_temperatures(solution, results, ates,
+                                                        side="DischargeHot")
+        temp_discharge_cold = _get_component_temperatures(solution, results, ates,
+                                                         side="DischargeCold")
+        temp_charge_hot = _get_component_temperatures(solution, results, ates,
+                                                         side="ChargeHot")
+
+        # ensuring enough ates is charged for this problem to be be realistic.
+        np.testing.assert_array_less(1e10, sum(ates_heat[1:] * dt))
+
+        ates_discharge_hot_heat = results[f"{ates}.DischargeHot.Heat_flow"]
+        ates_discharge_cold_heat = results[f"{ates}.DischargeCold.Heat_flow"]
+        ates_charge_hot_heat = results[f"{ates}.ChargeHot.Heat_flow"]
+
+        ates_discharge_hot_out_heat = results[f"{ates}.DischargeHot.HeatOut.Heat"]
+        ates_discharge_cold_out_heat = results[f"{ates}.DischargeCold.HeatOut.Heat"]
+        ates_charge_hot_out_heat = results[f"{ates}.ChargeHot.HeatOut.Heat"]
+
+        #check flows charging discharging only active when charging/discharging
+        ates_discharge_hot_flow = results[f"{ates}.DischargeHot.Q"]
+        ates_discharge_cold_flow = results[f"{ates}.DischargeCold.Q"]
+        ates_charge_hot_flow = results[f"{ates}.ChargeHot.Q"]
+
+        #Since pipe heatlosses are turned off the heatflow should be equal to the calculated
+        np.testing.assert_allclose(-ates_discharge_hot_heat,
+                                   ates_discharge_hot_flow*temp_discharge_hot[2]*cp*rho)
+        np.testing.assert_allclose(ates_discharge_hot_out_heat,
+                                     ates_discharge_hot_flow * temp_discharge_hot[0] * cp * rho)
+        np.testing.assert_allclose(ates_discharge_cold_flow * temp_discharge_cold[2] * cp * rho,
+                                   -ates_discharge_cold_heat)
+        np.testing.assert_allclose(ates_discharge_cold_out_heat,
+                                   ates_discharge_cold_flow * temp_discharge_cold[0] * cp * rho)
+        np.testing.assert_allclose(ates_charge_hot_flow * temp_charge_hot[2] * cp * rho,
+                                   ates_charge_hot_heat)
+        np.testing.assert_allclose(ates_charge_hot_out_heat,
+                                   ates_charge_hot_flow * temp_charge_hot[1] * cp * rho)
+
+        # checks that heatflow of different ports is positive or negative and that the sum is equal
+        # to Heat_ates
+        np.testing.assert_allclose(ates_discharge_hot_heat + ates_discharge_cold_heat +
+                                   ates_charge_hot_heat, ates_heat)
+        np.testing.assert_array_less(ates_discharge_cold_heat, epsilon)
+        np.testing.assert_array_less(ates_discharge_hot_heat, epsilon)
+        np.testing.assert_array_less(-epsilon, ates_charge_hot_heat)
+
+        ates_discharge_hot_in_heat = results[f"{ates}.DischargeHot.HeatIn.Heat"]
+        ates_discharge_hot_out_heat = results[f"{ates}.DischargeHot.HeatOut.Heat"]
+        ates_discharge_cold_in_heat = results[f"{ates}.DischargeCold.HeatIn.Heat"]
+        ates_discharge_cold_out_heat = results[f"{ates}.DischargeCold.HeatOut.Heat"]
+        ates_charge_hot_in_heat = results[f"{ates}.ChargeHot.HeatIn.Heat"]
+        ates_charge_hot_out_heat = results[f"{ates}.ChargeHot.HeatOut.Heat"]
+
+        # Checks that heatflow is each port group is calculated correctly on their in and out ports
+        np.testing.assert_allclose(ates_discharge_hot_in_heat - ates_discharge_hot_out_heat,
+                                   ates_discharge_hot_heat, atol=1e-6)
+        np.testing.assert_allclose(ates_discharge_cold_in_heat - ates_discharge_cold_out_heat,
+                                   ates_discharge_cold_heat, atol=1e-6)
+        np.testing.assert_allclose(ates_charge_hot_in_heat - ates_charge_hot_out_heat,
+                                   ates_charge_hot_heat, atol=1e-6)
+
+        # Checks that ates__is_charging discrete variable is indeed discrete (0 or 1)
+        np.testing.assert_allclose(ates_charging, ates_charging.astype(int))
+
+    def test_ates_multi_port_varying_ates_temperature(self):
+        """
+        check if
+        -
+        """
+        import models.ates_temperature.src.run_ates_temperature as run_ates_temperature
+        from models.ates_temperature.src.run_ates_temperature import HeatProblemATESMultiPort
+
+        basefolder = Path(run_ates_temperature.__file__).resolve().parent.parent
+
+        solution = run_optimization_problem_solver(
             HeatProblemATESMultiPort,
             solver_class=SolverCPLEX,
             base_folder=basefolder,
@@ -238,6 +341,91 @@ class TestAtesTemperature(TestCase):
         results = solution.extract_results()
         parameters = solution.parameters(0)
 
+        feasibility_test(solution)
+        demand_matching_test(solution, results)
+
+        epsilon = 1e-6
+        dt = np.diff(solution.times())
+
         ates = solution.energy_system_components.get("ates")[0]
+        heat_producer = "HeatProducer_4e19"
+        peak_producer = "HeatProducer_Peak"
+        heatpump = "HeatPump_5e09"
+        heatdemand = "HeatingDemand_bf07"
+
         ates_temp = results[f"{ates}.Temperature_ates"]
         ates_heat = results[f"{ates}.Heat_ates"]
+        ates_flow = results[f"{ates}.Q"]
+        ates_temp_disc = results[f"{ates}__temperature_ates_disc"]
+        ates_cold_return_temp = parameters[f"{ates}.T_return"]
+        cp = parameters[f"{ates}.cp"]
+        rho = parameters[f"{ates}.rho"]
+        ates_charging = results[f"{ates}__is_charging"].astype(bool)
+        ates_discharging = (1 - ates_charging).astype(bool)
+
+        # temperatures from port groups (supply_t, return_t, dt)
+        temp_discharge_hot = _get_component_temperatures(solution, results, ates,
+                                                         side="DischargeHot")
+        temp_discharge_cold = _get_component_temperatures(solution, results, ates,
+                                                          side="DischargeCold")
+        temp_charge_hot = _get_component_temperatures(solution, results, ates,
+                                                      side="ChargeHot")
+
+
+        ates_discharge_hot_heat = results[f"{ates}.DischargeHot.Heat_flow"]
+        ates_discharge_cold_heat = results[f"{ates}.DischargeCold.Heat_flow"]
+        ates_charge_hot_heat = results[f"{ates}.ChargeHot.Heat_flow"]
+
+        ates_discharge_hot_in_heat = results[f"{ates}.DischargeHot.HeatIn.Heat"]
+        ates_discharge_hot_out_heat = results[f"{ates}.DischargeHot.HeatOut.Heat"]
+        ates_discharge_cold_in_heat = results[f"{ates}.DischargeCold.HeatIn.Heat"]
+        ates_discharge_cold_out_heat = results[f"{ates}.DischargeCold.HeatOut.Heat"]
+        ates_charge_hot_in_heat = results[f"{ates}.ChargeHot.HeatIn.Heat"]
+        ates_charge_hot_out_heat = results[f"{ates}.ChargeHot.HeatOut.Heat"]
+
+        # check flows charging discharging only active when charging/discharging
+        ates_discharge_hot_flow = results[f"{ates}.DischargeHot.Q"]
+        ates_discharge_cold_flow = results[f"{ates}.DischargeCold.Q"]
+        ates_charge_hot_flow = results[f"{ates}.ChargeHot.Q"]
+
+        # ensuring enough ates is charged for this problem to be be realistic.
+        np.testing.assert_array_less(1e10, sum(ates_heat[1:] * dt))
+        np.testing.assert_allclose(ates_heat[ates_discharging],
+                                   ates_flow[ates_discharging] * cp * rho * (
+                                           ates_temp_disc[
+                                               ates_discharging] - ates_cold_return_temp))
+        # checks that heatflow of different ports is positive or negative and that the sum is equal
+        # to Heat_ates
+        np.testing.assert_allclose(ates_discharge_hot_heat + ates_discharge_cold_heat +
+                                   ates_charge_hot_heat, ates_heat)
+        np.testing.assert_array_less(ates_discharge_cold_heat, 1)
+        np.testing.assert_array_less(ates_discharge_hot_heat, 1)
+        np.testing.assert_array_less(-1, ates_charge_hot_heat)
+
+        # Since pipe heatlosses are turned off the heatflow should be equal to the calculated
+        np.testing.assert_allclose(-ates_discharge_hot_heat,
+                                   ates_discharge_hot_flow * temp_discharge_hot[2] * cp * rho)
+        np.testing.assert_allclose(ates_discharge_hot_out_heat,
+                                   ates_discharge_hot_flow * temp_discharge_hot[0] * cp * rho)
+        np.testing.assert_allclose(ates_discharge_cold_flow * temp_discharge_cold[2] * cp * rho,
+                                   -ates_discharge_cold_heat)
+        np.testing.assert_allclose(ates_discharge_cold_out_heat,
+                                   ates_discharge_cold_flow * temp_discharge_cold[0] * cp * rho)
+        np.testing.assert_allclose(ates_charge_hot_flow * temp_charge_hot[2] * cp * rho,
+                                   ates_charge_hot_heat)
+        np.testing.assert_allclose(ates_charge_hot_out_heat,
+                                   ates_charge_hot_flow * temp_charge_hot[1] * cp * rho)
+
+        # Checks that heatflow is each port group is calculated correctly on their in and out ports
+        np.testing.assert_allclose(ates_discharge_hot_in_heat - ates_discharge_hot_out_heat,
+                                   ates_discharge_hot_heat, atol=1e-6)
+        np.testing.assert_allclose(ates_discharge_cold_in_heat - ates_discharge_cold_out_heat,
+                                   ates_discharge_cold_heat, atol=1e-6)
+        np.testing.assert_allclose(ates_charge_hot_in_heat - ates_charge_hot_out_heat,
+                                   ates_charge_hot_heat, atol=1e-6)
+
+        # Checks that ates__is_charging discrete variable is indeed discrete (0 or 1)
+        np.testing.assert_allclose(ates_charging, ates_charging.astype(int))
+
+        #TODO: still add tests where the temperatures of the carriers are also changing.
+        #TODO: check if it works iwht heatlosses turned on.
