@@ -31,7 +31,7 @@ if __name__ == "__main__":
             # Assumumption:
             #   - gas heating value (LCV value) = 31.68 * 10^6 (J/m3) at 1bar, 273.15K
             #   - gas boiler efficiency 80%
-            # TODO: setup a standard way for gas usage and automate the link to heating value & boiler
+            # TODO: automate the link to heating value & boiler
             # efficiency (if needed)
             for demand in self.energy_system_components["heat_demand"]:
                 target = self.get_timeseries(f"{demand}.target_heat_demand")

@@ -87,7 +87,7 @@ class MinimizeTCO(Goal):
                 "heat_pump",
                 "heat_pipe",
                 "gas_pipe",
-                "electricity_cable"
+                "electricity_cable",
                 "pump",
             },
         }

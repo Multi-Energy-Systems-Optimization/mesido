@@ -1,6 +1,4 @@
 import logging
-import os
-import sys
 
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
@@ -56,7 +54,7 @@ class SolverCPLEX:
         options["casadi_solver"] = self._qpsol
         options["solver"] = "cplex"
         cplex_options = options["cplex"] = {}
-        cplex_options["CPX_PARAM_EPGAP"] = 0.005# 0.00001
+        cplex_options["CPX_PARAM_EPGAP"] = 0.005  # 0.00001
 
         options["highs"] = None
 
@@ -75,11 +73,9 @@ class GasElectProblem(
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._number_of_years = 1 # 30.0
+        self._number_of_years = 1  # 30.0
 
-        self._save_json = True
-
-
+        self._save_json = False
 
     def energy_system_options(self):
         options = super().energy_system_options()
@@ -165,6 +161,7 @@ class GasElectProblem(
     def post(self):
         super().post()
         # self._write_updated_esdl(self._ESDLMixin__energy_system_handler.energy_system)
+
 
 @main_decorator
 def main(runinfo_path, log_level):
