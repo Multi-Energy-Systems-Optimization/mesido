@@ -22,7 +22,7 @@
           </installationCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:ATES" maxChargeRate="5000000.0" name="ATES_1" maxStorageTemperature="26.0" minStorageTemperature="6.0" id="b2219730-9197-4057-9b99-93b32756886a" maxDischargeRate="5000000.0" state="OPTIONAL">
+      <asset xsi:type="esdl:ATES" maxChargeRate="6000000.0" name="ATES_1" maxStorageTemperature="26.0" minStorageTemperature="6.0" id="b2219730-9197-4057-9b99-93b32756886a" maxDischargeRate="6000000.0" state="OPTIONAL">
         <port xsi:type="esdl:InPort" id="abeb79f8-9d78-406d-87fc-f71553c15a69" name="In" carrier="001521ea-9f10-4745-ac3b-6e0c767e16b2" connectedTo="7f008df3-cc20-4fc7-852d-e2375dd1eae7"/>
         <port xsi:type="esdl:OutPort" id="3c7b1a2a-87df-41e3-8823-4100495f52ff" name="ret_port" connectedTo="ed220d84-039a-4432-b5a1-39cc412e3400" carrier="001521ea-9f10-4745-ac3b-6e0c767e16b2_ret"/>
         <geometry xsi:type="esdl:Point" lat="51.989426621710344" lon="4.321046005483394" CRS="WGS84"/>
@@ -50,7 +50,7 @@
           <installationCosts xsi:type="esdl:SingleValue" id="0c40ee90-fb6a-44c5-b7f7-f94c8cc34c17" value="100000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR" id="c260ec96-c491-4ce6-9fc5-96f2ef3286df" unit="EURO"/>
           </installationCosts>
-          <variableOperationalCosts xsi:type="esdl:SingleValue" id="cf3628f3-fa10-4ad6-a97a-220cae4a13d0" value="2.0">
+          <variableOperationalCosts xsi:type="esdl:SingleValue" id="cf3628f3-fa10-4ad6-a97a-220cae4a13d0" value="0.02">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR/MWh" id="b6d575e4-e75a-4a1f-a8bf-4438e9f8f609" unit="EURO" perMultiplier="MEGA" perUnit="WATTHOUR"/>
           </variableOperationalCosts>
           <fixedMaintenanceCosts xsi:type="esdl:SingleValue" id="ac1b4ce0-e458-4c6e-a798-7bcd27122ae3" value="900.0">
