@@ -1509,6 +1509,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             sup_carrier = parameters[f"{s}.T_supply_id"]
             supply_temperatures = self.temperature_regimes(sup_carrier)
+            
             big_m = 2.0 * self.bounds()[f"{s}.HeatOut.Heat"][1]
             big_m = (
                 big_m
@@ -1516,44 +1517,116 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 else 2.0 * self.bounds()[f"{s}.Heat_source"][1] * parameters[f"{s}.T_supply"] / dt
             )
 
-            if len(supply_temperatures) == 0:
+            # Check to see if the cout carrier has a temperature profile assigned to it.
+            carriers = self.esdl_carriers
+            for carrier_id in carriers.keys():
+                if carriers[carrier_id]["id_number_mapping"] == parameters["source.T_supply_id"]:
+                    sup_carrier_name = carriers[carrier_id]["name"]
+            temp_out_profile = None
+            try:
+                temp_out_profile = self.get_timeseries(f"{sup_carrier_name}.price_profile")
+                # TODO: modify profile parser so it is not called a price profile.
+            except KeyError:
+                pass
+
+            if temp_out_profile is None:
+                if len(supply_temperatures) == 0:
+                    constraints.append(
+                        (
+                            (heat_out - discharge * cp * rho * parameters[f"{s}.T_supply"])
+                            / heat_nominal,
+                            0.0,
+                            0.0,
+                        )
+                    )
+                else:
+                    for supply_temperature in supply_temperatures:
+                        sup_temperature_is_selected = self.state(f"{sup_carrier}_{supply_temperature}")
+
+                        constraints.append(
+                            (
+                                (
+                                    heat_out
+                                    - discharge * cp * rho * supply_temperature
+                                    + (1.0 - sup_temperature_is_selected) * big_m
+                                )
+                                / constraint_nominal,
+                                0.0,
+                                np.inf,
+                            )
+                        )
+                        constraints.append(
+                            (
+                                (
+                                    heat_out
+                                    - discharge * cp * rho * supply_temperature
+                                    - (1.0 - sup_temperature_is_selected) * big_m
+                                )
+                                / constraint_nominal,
+                                -np.inf,
+                                0.0,
+                            )
+                        )
+
+        return constraints
+    
+    def __source_heat_to_discharge_variable_temp_constraints(self, ensemble_member):
+            
+        constraints = []
+        parameters = self.parameters(ensemble_member)
+
+        for s in self.energy_system_components.get("heat_source", []):
+            heat_nominal = parameters[f"{s}.Heat_nominal"]
+            q_nominal = self.variable_nominal(f"{s}.Q")
+            cp = parameters[f"{s}.cp"]
+            rho = parameters[f"{s}.rho"]
+            dt = parameters[f"{s}.dT"]
+
+            discharge = self.state(f"{s}.Q")
+            heat_out = self.state(f"{s}.HeatOut.Heat")
+
+            constraint_nominal = (heat_nominal * cp * rho * dt * q_nominal) ** 0.5
+
+            sup_carrier = parameters[f"{s}.T_supply_id"]
+            supply_temperatures = self.temperature_regimes(sup_carrier)
+            
+            big_m = 2.0 * self.bounds()[f"{s}.HeatOut.Heat"][1]
+            big_m = (
+                big_m
+                if big_m != np.inf
+                else 2.0 * self.bounds()[f"{s}.Heat_source"][1] * parameters[f"{s}.T_supply"] / dt
+            )
+
+        # Check to see if the cout carrier has a temperature profile assigned to it.
+            carriers = self.esdl_carriers
+            for carrier_id in carriers.keys():
+                if carriers[carrier_id]["id_number_mapping"] == parameters["source.T_supply_id"]:
+                    sup_carrier_name = carriers[carrier_id]["name"]
+            temp_out_profile = None
+            try:
+                temp_out_profile = self.get_timeseries(f"{sup_carrier_name}.price_profile")
+                # TODO: modify profile parser so it is not called a price profile.
+            except KeyError:
+                pass
+
+            if temp_out_profile is not None: # Case where the out carrier has a temp profile assigned to it.
+                # TODO: figure out why __state_vector_scaled cannot be called from here.
+                canonical, sign = self.alias_relation.canonical_signed(f"{s}.HeatOut.Heat")
+                heat_out_vector = self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
+
+                canonical, sign = self.alias_relation.canonical_signed(f"{s}.Q")
+                discharge_vector = self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
+
+                temp_out_vector = self.get_timeseries(f"{sup_carrier_name}.price_profile").values
+                
                 constraints.append(
-                    (
-                        (heat_out - discharge * cp * rho * parameters[f"{s}.T_supply"])
-                        / heat_nominal,
-                        0.0,
-                        0.0,
-                    )
-                )
-            else:
-                for supply_temperature in supply_temperatures:
-                    sup_temperature_is_selected = self.state(f"{sup_carrier}_{supply_temperature}")
-
-                    constraints.append(
                         (
-                            (
-                                heat_out
-                                - discharge * cp * rho * supply_temperature
-                                + (1.0 - sup_temperature_is_selected) * big_m
-                            )
-                            / constraint_nominal,
+                            (heat_out_vector - discharge_vector * cp * rho * temp_out_vector)
+                            / heat_nominal,
                             0.0,
-                            np.inf,
-                        )
-                    )
-                    constraints.append(
-                        (
-                            (
-                                heat_out
-                                - discharge * cp * rho * supply_temperature
-                                - (1.0 - sup_temperature_is_selected) * big_m
-                            )
-                            / constraint_nominal,
-                            -np.inf,
                             0.0,
                         )
                     )
-
         return constraints
 
     def __cold_demand_heat_to_discharge_path_constraints(self, ensemble_member):
@@ -3750,8 +3823,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints.extend(self.__control_valve_head_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__network_temperature_path_constraints(ensemble_member))
         constraints.extend(self.__ates_temperature_path_constraints(ensemble_member))
-        if not self._stage == 3:
-            constraints.extend(self.__ates_temperature_changing_path_constraints(ensemble_member))
+        # if not self._stage == 3:
+        #     constraints.extend(self.__ates_temperature_changing_path_constraints(ensemble_member))
+        constraints.extend(self.__ates_temperature_changing_path_constraints(ensemble_member))   
         constraints.extend(self.__ates_heat_losses_path_constraints(ensemble_member))
         constraints.extend(self.__ates_temperature_ordering_path_constraints(ensemble_member))
         constraints.extend(self.__heat_pump_cop_path_constraints(ensemble_member))
@@ -3783,6 +3857,13 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             constraints.extend(self.__heat_matching_demand_insulation_constraints(ensemble_member))
 
         constraints.extend(self.__ates_max_stored_heat_constriants(ensemble_member))
+
+        # source_var_temp_constraints = self.__source_heat_to_discharge_variable_temp_constraints(ensemble_member)
+        # if source_var_temp_constraints is not None:
+        #     constraints.extend(source_var_temp_constraints)
+
+        constraints.extend(self.__source_heat_to_discharge_variable_temp_constraints(ensemble_member))
+
         return constraints
 
     def history(self, ensemble_member):

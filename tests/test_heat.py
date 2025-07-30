@@ -88,6 +88,50 @@ class TestHeat(TestCase):
         energy_conservation_test(case, results)
         heat_to_discharge_test(case, results)
 
+    def test_heat_prod_accel(self):
+        """
+        Check the optimiziation function when the zero heat loss is used.
+
+        Checks:
+        - Should check that produced equals consumed.
+        - Should check the heat loss variable being zero
+
+        """
+        import models.source_pipe_sink.src.double_pipe_heat as double_pipe_heat
+        from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
+
+        class Model(SourcePipeSink):
+            def energy_system_options(self):
+                options = super().energy_system_options()
+                options["neglect_pipe_heat_losses"] = True
+
+                return options
+
+        base_folder = Path(double_pipe_heat.__file__).resolve().parent.parent
+
+        case = run_esdl_mesido_optimization(
+            Model,
+            base_folder=base_folder,
+            esdl_file_name="sourcesink_accel_test.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_prod_test.csv",
+        )
+
+        results = case.extract_results()
+        parameters = case.parameters(0)
+
+        for pipe in case.energy_system_components.get("heat_pipe", []):
+            np.testing.assert_allclose(results[f"{pipe}__hn_heat_loss"], 0.0)
+            np.testing.assert_allclose(parameters[f"{pipe}.Heat_loss"], 0.0)
+
+        # demand_matching_test(case, results)
+        # energy_conservation_test(case, results)
+        # heat_to_discharge_test(case, results)
+
+        print(results['Pipe1.HeatIn.Heat'])
+        print(results['Pipe1.HeatIn.Q'])
+
 
 class TestMinMaxPressureOptions(TestCase):
     import models.source_pipe_sink.src.double_pipe_heat as double_pipe_heat
@@ -371,3 +415,7 @@ class TestDisconnectablePipe(TestCase):
         # (loss) in the system, we expect equal results.
         np.testing.assert_allclose(q_linear, q_dw)
         np.testing.assert_allclose(results_dw["Pipe1__is_disconnected"][1], 1.0)
+
+if __name__ == "__main__":
+    test_heat = TestHeat()
+    test_heat.test_heat_prod_accel()
