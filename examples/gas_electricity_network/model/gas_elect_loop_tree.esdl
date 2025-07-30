@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" name="gas_elect_loop_tree" description="" id="cc3b855b-0403-4df8-a84f-8ea6fd25420e" esdlVersion="v250501" version="53">
+<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" name="gas_elect_loop_tree" description="" id="cc3b855b-0403-4df8-a84f-8ea6fd25420e" esdlVersion="v250501" version="54">
   <instance xsi:type="esdl:Instance" id="f2e9533d-015d-445f-8c08-cd035d238eee" name="Untitled instance">
     <area xsi:type="esdl:Area" id="74ab5996-6a79-4cd6-9fa8-4f1a498722f5" name="Untitled area">
       <asset xsi:type="esdl:GasProducer" id="82d5c086-b805-4f89-a2e7-21490ccb2acd" name="GasProducer" power="50000000.0">
@@ -19,7 +19,7 @@
           <installationCosts xsi:type="esdl:SingleValue" id="46a18d85-6fd9-4e70-90ea-80c5b49077d2" value="1.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR" id="7064d00b-e435-418a-84a5-d5c7c1336941" unit="EURO"/>
           </installationCosts>
-          <variableOperationalCosts xsi:type="esdl:SingleValue" id="47fbf4e7-b00d-43aa-964d-195fc336cf5b" value="1.0">
+          <variableOperationalCosts xsi:type="esdl:SingleValue" id="47fbf4e7-b00d-43aa-964d-195fc336cf5b" value="1000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR/MWh" id="29f07a36-b150-402d-965e-e9cd6b9241c0" unit="EURO" perMultiplier="MEGA" perUnit="WATTHOUR"/>
           </variableOperationalCosts>
         </costInformation>
@@ -282,7 +282,7 @@
           <installationCosts xsi:type="esdl:SingleValue" id="1ff7533c-5ab5-47cf-bf15-13c7d2bc2d4d" value="1.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR" id="8743ee3a-5373-4df8-b7b8-391751ec5e9c" unit="EURO"/>
           </installationCosts>
-          <variableOperationalCosts xsi:type="esdl:SingleValue" id="569ed1e4-5246-4eae-b3ea-bd4540982a34" value="1.0">
+          <variableOperationalCosts xsi:type="esdl:SingleValue" id="569ed1e4-5246-4eae-b3ea-bd4540982a34" value="1000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR/MWh" id="fb05c465-b65c-4baa-b3a6-e27853715bdd" unit="EURO" perMultiplier="MEGA" perUnit="WATTHOUR"/>
           </variableOperationalCosts>
         </costInformation>

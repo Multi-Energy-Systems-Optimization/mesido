@@ -32,6 +32,8 @@ class GasBoiler(HeatSource):
             **modifiers,
         )
 
+        self.efficiency = modifiers["efficiency"]
+
         self.Q_nominal_gas = nan
 
         self.component_subtype = "gas_boiler"
@@ -57,7 +59,10 @@ class GasBoiler(HeatSource):
 
         self.add_equation(
             (
-                (self.GasIn.mass_flow / 1000.0 * self.energy_content - self.Heat_source)
+                (
+                    self.GasIn.mass_flow / 1000.0 * self.energy_content * self.efficiency
+                    - self.Heat_source
+                )
                 / self.Heat_nominal
             )
         )

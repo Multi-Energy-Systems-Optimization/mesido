@@ -2471,7 +2471,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
         )
-
+        if not asset.attributes["efficiency"]:
+            raise _ESDLInputException(
+                f"{asset.name} has no efficiency specified, this is required for the model"
+            )
+        else:
+            modifiers["efficiency"] = asset.attributes["efficiency"]
         return GasBoiler, modifiers
 
     def convert_elec_boiler(self, asset: Asset) -> Tuple[ElecBoiler, MODIFIERS]:

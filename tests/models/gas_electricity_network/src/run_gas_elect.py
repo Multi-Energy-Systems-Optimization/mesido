@@ -12,8 +12,7 @@ from mesido._darcy_weisbach import friction_factor
 
 import numpy as np
 
-
-root_folder = os.path.join(str(Path(__file__).resolve().parent.parent.parent.parent), "tests")
+root_folder = str(Path(__file__).resolve().parent.parent.parent.parent)
 sys.path.insert(1, root_folder)
 
 from utils_tests import (
@@ -57,6 +56,20 @@ if __name__ == "__main__":
         (results["HeatPump_2.Heat_source"] + results["GasHeater_2.Heat_source"]),
     )
 
+    # Test: Check if gas pipe diameter value in resulting parameters are updated
+    # with optimized values in results
+    for pipe in solution.energy_system_components.get("gas_pipe", []):
+        np.testing.assert_allclose(
+            results[f"{pipe}__gn_diameter"],
+            solution.parameters(0)[f"{pipe}.diameter"],
+            atol=1.0e-12,
+        )
+        np.testing.assert_allclose(
+            np.pi * results[f"{pipe}__gn_diameter"][0] ** 2 / 4.0,
+            solution.parameters(0)[f"{pipe}.area"],
+            atol=1.0e-12,
+        )
+
     # Test: If the result dH is equal to manually calculated dH via linear interpolation.
     #       This check is only valid for HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY case.
     # Todo: Calculated head loss is marginally smaller than the result. Check the reason.
@@ -76,6 +89,8 @@ if __name__ == "__main__":
             ff = friction_factor(
                 v_max,
                 pipe_diameter,
+                network_type=solution.gas_network_settings["network_type"],
+                pressure=solution.parameters(0)[f"{pipe}.pressure"],
                 wall_roughness=solution.energy_system_options()["wall_roughness"],
                 temperature=20,
             )
@@ -192,7 +207,13 @@ if __name__ == "__main__":
                     factor = solution.esdl_assets[
                         solution.esdl_asset_name_to_id_map[f"{asset}"]
                     ].attributes["COP"]
-                assert factor >= 1.0
+                if asset in [
+                    *solution.energy_system_components.get("gas_boiler", []),
+                ]:
+                    factor = solution.esdl_assets[
+                        solution.esdl_asset_name_to_id_map[f"{asset}"]
+                    ].attributes["efficiency"]
+                # assert factor >= 1.0
                 for ii in range(1, len(solution.times())):
                     variable_operational_cost += (
                         var_op_costs

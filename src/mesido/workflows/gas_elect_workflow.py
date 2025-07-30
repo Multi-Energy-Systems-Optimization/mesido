@@ -7,6 +7,7 @@ from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.goals.minimize_tco_goal import MinimizeTCO
 from mesido.workflows.io.write_output import ScenarioOutput
 from mesido.workflows.utils.helpers import main_decorator
+from mesido.network_common import NetworkSettings
 
 import numpy as np
 
@@ -85,18 +86,23 @@ class GasElectProblem(
         # losses are included
         # options["include_electric_cable_power_loss"] = True
 
+        # Setting for gas type
+        self.gas_network_settings["network_type"] = (
+            NetworkSettings.NETWORK_TYPE_HYDROGEN
+        )  # For natural gas use NetworkSettings.NETWORK_TYPE_GAS
+
         # Setting when started with head loss inclusions
         self.gas_network_settings["minimum_velocity"] = 0.0
         self.gas_network_settings["maximum_velocity"] = 15.0
 
         # TODO: resolve scaling and potential other issues preventing HIGHS to optimize the system
         # when LINEARIZED_N_LINES_EQUALITY head loss setting is used
-        # self.gas_network_settings["n_linearization_lines"] = 3
-        # self.gas_network_settings["minimize_head_losses"] = False
-        # self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
-
+        self.gas_network_settings["n_linearization_lines"] = 3
         self.gas_network_settings["minimize_head_losses"] = False
-        self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+        self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
+        #
+        # self.gas_network_settings["minimize_head_losses"] = False
+        # self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
 
         return options
 
