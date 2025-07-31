@@ -1,5 +1,3 @@
-# Note: The commented out items are requried for the manual checks/print outs below in this file
-import os
 import sys
 from pathlib import Path
 

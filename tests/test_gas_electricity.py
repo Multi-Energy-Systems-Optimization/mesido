@@ -85,7 +85,7 @@ class TestGasElect(TestCase):
             else:
                 v_max = solution.gas_network_settings["maximum_velocity"]
                 pipe_diameter = results[f"{pipe}__gn_diameter"][0]
-                area = np.pi * pipe_diameter ** 2 / 4.0
+                area = np.pi * pipe_diameter**2 / 4.0
                 network_type = solution.gas_network_settings["network_type"]
                 pressure = solution.parameters(0)[f"{pipe}.pressure"]
                 pipe_wall_roughness = solution.energy_system_options()["wall_roughness"]
@@ -94,8 +94,10 @@ class TestGasElect(TestCase):
                 v_pipe = results[f"{pipe}.Q"] / area
                 # print("Velocity of ", pipe, v_pipe)
                 # print("Diameter of ", pipe, pipe_diameter)
-                if str(solution.gas_network_settings[
-                           "head_loss_option"]) == "HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY":
+                if (
+                    str(solution.gas_network_settings["head_loss_option"])
+                    == "HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY"
+                ):
                     ff = friction_factor(
                         velocity=v_max,
                         diameter=pipe_diameter,
@@ -105,14 +107,16 @@ class TestGasElect(TestCase):
                         temperature=temperature,
                     )
                     c_v = parameters[f"{pipe}.length"] * ff / (2 * 9.81) / pipe_diameter
-                    dh_max = c_v * v_max ** 2
+                    dh_max = c_v * v_max**2
                     dh_manual = dh_max * v_pipe / v_max
                     print("Calculated head loss in ", pipe, -dh_manual)
                     print("Resulting head loss in ", pipe, results[f"{pipe}.dH"])
                     np.testing.assert_allclose(-dh_manual, results[f"{pipe}.dH"], atol=1.0e-12)
 
-                elif str(solution.gas_network_settings[
-                             "head_loss_option"]) == "HeadLossOption.LINEARIZED_N_LINES_EQUALITY":
+                elif (
+                    str(solution.gas_network_settings["head_loss_option"])
+                    == "HeadLossOption.LINEARIZED_N_LINES_EQUALITY"
+                ):
                     print("This is a n_line_equality")
                     itime = 1  # 0
                     v_points = np.linspace(
@@ -123,35 +127,34 @@ class TestGasElect(TestCase):
                     v_inspect = v_pipe[itime]
 
                     # Theoretical head loss calc, dH =
-                    # friction_factor * 8 * pipe_length * volumetric_flow^2 / ( pipe_diameter^5 * g * pi^2)
+                    # friction_factor * 8 * pipe_length * volumetric_flow^2
+                    # / ( pipe_diameter^5 * g * pi^2)
                     dh_theory = (
-                            friction_factor(
-                                velocity=v_inspect,
-                                diameter=pipe_diameter,
-                                network_type=network_type,
-                                pressure=pressure,
-                                wall_roughness=pipe_wall_roughness,
-                                temperature=temperature,
-                            )
-                            * 8.0
-                            * pipe_length
-                            * (v_inspect * np.pi * pipe_diameter ** 2 / 4.0) ** 2
-                            / (pipe_diameter ** 5 * GRAVITATIONAL_CONSTANT * np.pi ** 2)
+                        friction_factor(
+                            velocity=v_inspect,
+                            diameter=pipe_diameter,
+                            network_type=network_type,
+                            pressure=pressure,
+                            wall_roughness=pipe_wall_roughness,
+                            temperature=temperature,
+                        )
+                        * 8.0
+                        * pipe_length
+                        * (v_inspect * np.pi * pipe_diameter**2 / 4.0) ** 2
+                        / (pipe_diameter**5 * GRAVITATIONAL_CONSTANT * np.pi**2)
                     )
                     # Approximate dH [m] vs Q [m3/s] with a linear line between between v_points
                     # dH_manual_linear = a*Q + b
                     # Then use this linear function to calculate the head loss
-                    delta_dh_theory = (
-                            head_loss(
-                                velocity=v_points[1],
-                                diameter=pipe_diameter,
-                                length=pipe_length,
-                                network_type=network_type,
-                                pressure=pressure,
-                                wall_roughness=pipe_wall_roughness,
-                                temperature=temperature,
-                            )
-                            - head_loss(
+                    delta_dh_theory = head_loss(
+                        velocity=v_points[1],
+                        diameter=pipe_diameter,
+                        length=pipe_length,
+                        network_type=network_type,
+                        pressure=pressure,
+                        wall_roughness=pipe_wall_roughness,
+                        temperature=temperature,
+                    ) - head_loss(
                         velocity=v_points[0],
                         diameter=pipe_diameter,
                         length=pipe_length,
@@ -160,30 +163,29 @@ class TestGasElect(TestCase):
                         wall_roughness=pipe_wall_roughness,
                         temperature=temperature,
                     )
-                    )
 
-                    delta_volumetric_flow = (v_points[1] * np.pi * pipe_diameter ** 2 / 4.0) - (
-                            v_points[0] * np.pi * pipe_diameter ** 2 / 4.0
+                    delta_volumetric_flow = (v_points[1] * np.pi * pipe_diameter**2 / 4.0) - (
+                        v_points[0] * np.pi * pipe_diameter**2 / 4.0
                     )
 
                     a = delta_dh_theory / delta_volumetric_flow
                     b = delta_dh_theory - a * delta_volumetric_flow
-                    dh_manual_linear = a * (v_inspect * np.pi * pipe_diameter ** 2 / 4.0) + b
+                    dh_manual_linear = a * (v_inspect * np.pi * pipe_diameter**2 / 4.0) + b
 
-                    dh_milp_head_loss_function = (
-                        head_loss(
-                            v_inspect,
-                            pipe_diameter,
-                            pipe_length,
-                            pipe_wall_roughness,
-                            temperature,
-                            network_type=solution.gas_network_settings["network_type"],
-                            pressure=solution.parameters(0)[f"{pipe}.pressure"],
-                        )
+                    dh_milp_head_loss_function = head_loss(
+                        v_inspect,
+                        pipe_diameter,
+                        pipe_length,
+                        pipe_wall_roughness,
+                        temperature,
+                        network_type=solution.gas_network_settings["network_type"],
+                        pressure=solution.parameters(0)[f"{pipe}.pressure"],
                     )
                     np.testing.assert_allclose(dh_theory, dh_milp_head_loss_function)
                     np.testing.assert_array_less(dh_milp_head_loss_function, dh_manual_linear)
-                    np.testing.assert_allclose(results[f"{pipe}.dH"][itime], -dh_manual_linear, atol=1.0e-12)
+                    np.testing.assert_allclose(
+                        results[f"{pipe}.dH"][itime], -dh_manual_linear, atol=1.0e-12
+                    )
 
         # Test: Utils_tests
         demand_matching_test(solution, results)
@@ -330,9 +332,7 @@ class TestGasElect(TestCase):
         print("Calculated TCO:  ", (total_capex[0] + total_opex) / 1.0e6)
         print("Objective Value: ", solution.objective_value)
         np.testing.assert_allclose(
-            solution.objective_value,
-            (total_capex[0] + total_opex) / 1.0e6,
-            atol=1.0e-6
+            solution.objective_value, (total_capex[0] + total_opex) / 1.0e6, atol=1.0e-6
         )
 
 
