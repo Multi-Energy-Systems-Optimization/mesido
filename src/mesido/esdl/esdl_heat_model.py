@@ -432,6 +432,13 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
         )
+        modifiers["technical_life"] = self.get_asset_attribute_value(
+            asset,
+            "technicalLifetime",
+            default_value=30.0,
+            min_value=1.0,
+            max_value=50.0,
+        )
 
         return HeatDemand, modifiers
 

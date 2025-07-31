@@ -5,17 +5,6 @@
 
 ## Changed
 - Lifetime of an asset is taken into account in optimization for CAPEX
-
-## Fixed
-- xxx
-
-
-# [Unreleased-main] - 2025-06-30
-
-## Added
-- xx
-
-## Changed
 - Previously variable operational cost of air-to-water heat pump was based on  the thermal power usage. Now it is based on the electrical power usage
 
 ## Fixed
