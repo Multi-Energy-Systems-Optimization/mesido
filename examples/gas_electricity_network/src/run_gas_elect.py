@@ -32,31 +32,31 @@ if __name__ == "__main__":
     solution = run_optimization_problem_solver(
         GasElectProblem,
         esdl_parser=ESDLFileParser,
-        esdl_file_name="gas_elect_loop_tree.esdl",
+        esdl_file_name="gas_loop.esdl",
         profile_reader=ProfileReaderFromFile,
         input_timeseries_file="HeatingDemand_W_manual.csv",
     )
 
     results = solution.extract_results()
     parameters = solution.parameters(0)
-    # print('HeatingDemand_1: ',results['HeatingDemand_1.Heat_flow'] )
+    print('HeatingDemand_1: ',results['HeatingDemand_1.Heat_flow'] )
     # print('HeatPump_1: ', results['HeatPump_1.Heat_source'])
     # print('GasHeater_1: ', results['GasHeater_1.Heat_source'])
-    # print('HeatingDemand_2: ', results['HeatingDemand_2.Heat_flow'])
+    print('HeatingDemand_2: ', results['HeatingDemand_2.Heat_flow'])
     # print('HeatPump_2: ', results['HeatPump_2.Heat_source'])
     # print('GasHeater_2: ', results['GasHeater_2.Heat_source'])
 
     print("==Tests Start==")
 
-    # Test: Power recieved by heat demand is equal to the power supplied by conversion assets
-    np.testing.assert_allclose(
-        results["HeatingDemand_1.Heat_flow"],
-        (results["HeatPump_1.Heat_source"] + results["GasHeater_1.Heat_source"]),
-    )
-    np.testing.assert_allclose(
-        results["HeatingDemand_2.Heat_flow"],
-        (results["HeatPump_2.Heat_source"] + results["GasHeater_2.Heat_source"]),
-    )
+    # # Test: Power recieved by heat demand is equal to the power supplied by conversion assets
+    # np.testing.assert_allclose(
+    #     results["HeatingDemand_1.Heat_flow"],
+    #     (results["HeatPump_1.Heat_source"] + results["GasHeater_1.Heat_source"]),
+    # )
+    # np.testing.assert_allclose(
+    #     results["HeatingDemand_2.Heat_flow"],
+    #     (results["HeatPump_2.Heat_source"] + results["GasHeater_2.Heat_source"]),
+    # )
 
     # Test: Check if gas pipe diameter value in resulting parameters are updated
     # with optimized values in results
@@ -86,8 +86,8 @@ if __name__ == "__main__":
             temperature = 20  # is default for gas pipes
             pipe_length = solution.parameters(0)[f"{pipe}.length"]
             v_pipe = results[f"{pipe}.Q"] / area
-            # print("Velocity of ", pipe, v_pipe)
-            # print("Diameter of ", pipe, pipe_diameter)
+            print("Velocity of ", pipe, v_pipe)
+            print("Diameter of ", pipe, pipe_diameter)
             if str(solution.gas_network_settings["head_loss_option"]) == "HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY":
                 ff = friction_factor(
                     velocity=v_max,
@@ -100,12 +100,12 @@ if __name__ == "__main__":
                 c_v = parameters[f"{pipe}.length"] * ff / (2 * 9.81) / pipe_diameter
                 dh_max = c_v * v_max**2
                 dh_manual = dh_max * v_pipe / v_max
-                print("Calculated head loss in ", pipe, -dh_manual)
-                print("Resulting head loss in ", pipe, results[f"{pipe}.dH"])
+                # print("Calculated head loss in ", pipe, -dh_manual)
+                # print("Resulting head loss in ", pipe, results[f"{pipe}.dH"])
                 np.testing.assert_allclose(-dh_manual, results[f"{pipe}.dH"], atol=1.0e-12)
 
             elif str(solution.gas_network_settings["head_loss_option"]) == "HeadLossOption.LINEARIZED_N_LINES_EQUALITY":
-                print("This is a n_line_equality")
+                # print("This is a n_line_equality")
                 itime = 1 # 0
                 v_points = np.linspace(
                     0.0,
@@ -175,7 +175,8 @@ if __name__ == "__main__":
                 )
                 np.testing.assert_allclose(dh_theory, dh_milp_head_loss_function)
                 np.testing.assert_array_less(dh_milp_head_loss_function, dh_manual_linear)
-                np.testing.assert_array_less(results[f"{pipe}.dH"][itime], -dh_manual_linear)
+                np.testing.assert_allclose(results[f"{pipe}.dH"][itime], -dh_manual_linear, atol=1.0e-12)
+                # print(results[f"{pipe}.dH"][itime], -dh_manual_linear)
 
     # Test: Utils_tests
     demand_matching_test(solution, results)

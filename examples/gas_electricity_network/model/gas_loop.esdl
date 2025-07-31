@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" name="gas_loop" description="" id="cc3b855b-0403-4df8-a84f-8ea6fd25420e" esdlVersion="v250501" version="62">
+<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" name="gas_loop" description="" id="cc3b855b-0403-4df8-a84f-8ea6fd25420e" esdlVersion="v250501" version="64">
   <instance xsi:type="esdl:Instance" id="f2e9533d-015d-445f-8c08-cd035d238eee" name="Untitled instance">
     <area xsi:type="esdl:Area" id="74ab5996-6a79-4cd6-9fa8-4f1a498722f5" name="Untitled area">
       <asset xsi:type="esdl:GasProducer" id="82d5c086-b805-4f89-a2e7-21490ccb2acd" name="GasProducer" power="50000000.0">
