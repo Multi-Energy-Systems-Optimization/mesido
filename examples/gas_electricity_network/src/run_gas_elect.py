@@ -48,15 +48,15 @@ if __name__ == "__main__":
 
     print("==Tests Start==")
 
-    # # Test: Power recieved by heat demand is equal to the power supplied by conversion assets
-    # np.testing.assert_allclose(
-    #     results["HeatingDemand_1.Heat_flow"],
-    #     (results["HeatPump_1.Heat_source"] + results["GasHeater_1.Heat_source"]),
-    # )
-    # np.testing.assert_allclose(
-    #     results["HeatingDemand_2.Heat_flow"],
-    #     (results["HeatPump_2.Heat_source"] + results["GasHeater_2.Heat_source"]),
-    # )
+    # Test: Power recieved by heat demand is equal to the power supplied by conversion assets
+    np.testing.assert_allclose(
+        results["HeatingDemand_1.Heat_flow"],
+        (results["HeatPump_1.Heat_source"] + results["GasHeater_1.Heat_source"]),
+    )
+    np.testing.assert_allclose(
+        results["HeatingDemand_2.Heat_flow"],
+        (results["HeatPump_2.Heat_source"] + results["GasHeater_2.Heat_source"]),
+    )
 
     # Test: Check if gas pipe diameter value in resulting parameters are updated
     # with optimized values in results
