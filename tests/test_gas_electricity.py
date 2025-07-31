@@ -183,7 +183,7 @@ class TestGasElect(TestCase):
                     )
                     np.testing.assert_allclose(dh_theory, dh_milp_head_loss_function)
                     np.testing.assert_array_less(dh_milp_head_loss_function, dh_manual_linear)
-                    np.testing.assert_array_less(results[f"{pipe}.dH"][itime], -dh_manual_linear)
+                    np.testing.assert_allclose(results[f"{pipe}.dH"][itime], -dh_manual_linear, atol=1.0e-12)
 
         # Test: Utils_tests
         demand_matching_test(solution, results)
