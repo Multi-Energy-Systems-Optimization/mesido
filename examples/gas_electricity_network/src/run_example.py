@@ -42,7 +42,7 @@ if __name__ == "__main__":
     # heat_to_discharge_test(solution, results)
 
     # for asset_name in [*solution.energy_system_components.get("air_water_heat_pump_elec", [])]:
-    #     power_cons = results[f"{asset_name}.Power_consumed"]
+    #     power_cons = results[f"{asset_name}.Power_elec"]
     #     print(f"{asset_name} power consumed: {power_cons}")
 
     # for asset_name in [*solution.energy_system_components.get("gas_boiler", [])]:

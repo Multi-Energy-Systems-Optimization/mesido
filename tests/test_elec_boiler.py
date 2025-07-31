@@ -91,7 +91,7 @@ class TestElecBoiler(TestCase):
         np.testing.assert_array_less(0.0, results["HeatPump_d8fd.Heat_source"])
         np.testing.assert_array_less(0.0, results["ElectricityProducer_4dde.ElectricityOut.Power"])
         np.testing.assert_array_less(
-            parameters["HeatPump_d8fd.cop"] * results["HeatPump_d8fd.Power_consumed"],
+            parameters["HeatPump_d8fd.cop"] * results["HeatPump_d8fd.Power_elec"],
             results["HeatPump_d8fd.Heat_source"] + 1.0e-6,
         )
 

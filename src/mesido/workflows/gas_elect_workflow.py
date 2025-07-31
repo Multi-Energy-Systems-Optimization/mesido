@@ -176,8 +176,8 @@ class GasElectProblem(
     #     constraints = super().path_constraints(ensemble_member)
 
     #     for eb in self.energy_system_components.get("air_water_heat_pump_elec", []):
-    #         power_consumed = self.state(f"{eb}.Power_consumed")
-    #         constraints.append((power_consumed, 0.0, 0.0))
+    #         power_elec = self.state(f"{eb}.Power_elec")
+    #         constraints.append((power_elec, 0.0, 0.0))
 
     #     return constraints
 
