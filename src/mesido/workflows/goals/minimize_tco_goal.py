@@ -6,6 +6,8 @@ from mesido.techno_economic_mixin import TechnoEconomicMixin
 
 from rtctools.optimization.goal_programming_mixin_base import Goal
 
+import esdl
+
 
 class MinimizeTCO(Goal):
     """
@@ -124,15 +126,25 @@ class MinimizeTCO(Goal):
         for asset_type in asset_types:
             for asset in optimization_problem.energy_system_components.get(asset_type, []):
                 extra_var = optimization_problem.extra_variable(cost_type_map[asset])
-                if options["discounted_annualized_cost"]:
-                    # We only want the operational cost for a single year when we use
-                    # annualized CAPEX.
-                    obj += extra_var
-                elif "operational" in cost_type:
-                    obj += extra_var * self.number_of_years
-                else:
-                    # These are the CAPEX cost under non-annualized condition
-                    obj += extra_var
+
+                # For the GROW workflow, we do not add any costs for the asset HeatingDemand since
+                # this is not sized. Thus, we need to exclude this from optimization objective
+                # function (Note that in the post-processing that this is added anyway)
+
+                asset_id = optimization_problem.esdl_asset_name_to_id_map[asset]
+                asset_state = optimization_problem.esdl_assets[asset_id].attributes["state"]
+                asset_type = optimization_problem.esdl_assets[asset_id].asset_type
+
+                if not (asset_type=="HeatingDemand") and asset_state is esdl.AssetStateEnum.ENABLED:
+                    if options["discounted_annualized_cost"]:
+                        # We only want the operational cost for a single year when we use
+                        # annualized CAPEX.
+                        obj += extra_var
+                    elif "operational" in cost_type:
+                        obj += extra_var * self.number_of_years
+                    else:
+                        # These are the CAPEX cost under non-annualized condition
+                        obj += extra_var
         return obj
 
     def function(self, optimization_problem: TechnoEconomicMixin, ensemble_member) -> MX:
