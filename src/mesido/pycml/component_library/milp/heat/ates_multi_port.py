@@ -1,11 +1,12 @@
-import numpy as np
-
 from mesido.pycml import Variable
 from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
+
 from ._non_storage_component import _NonStorageComponent
 
 from .ates import ATES
 from .heat_port import HeatPort
+
+import numpy as np
 
 
 @add_variables_documentation_automatically
@@ -33,9 +34,9 @@ class ATESMultiPort(ATES):
         self.HeatIn.Heat.min, self.HeatIn.Heat.max = (-self.max_heat_flow, self.max_heat_flow)
         self.HeatOut.Heat.min, self.HeatOut.Heat.max = (-self.max_heat_flow, self.max_heat_flow)
 
-        modifiers["DischargeHot"].update({'Q': {'min': 0.0}})
-        modifiers["DischargeCold"].update({'Q': {'min': 0.0}})
-        modifiers["ChargeHot"].update({'Q': {'min': 0.0}})
+        modifiers["DischargeHot"].update({"Q": {"min": 0.0}})
+        modifiers["DischargeCold"].update({"Q": {"min": 0.0}})
+        modifiers["ChargeHot"].update({"Q": {"min": 0.0}})
         self.add_variable(_NonStorageComponent, "DischargeHot", **modifiers["DischargeHot"])
         self.add_variable(_NonStorageComponent, "DischargeCold", **modifiers["DischargeCold"])
         self.add_variable(_NonStorageComponent, "ChargeHot", **modifiers["ChargeHot"])
@@ -44,16 +45,34 @@ class ATESMultiPort(ATES):
         # heat_flow_dischargehot <0
         # heat_flow_dischargecold <0
         # heat_flow_chargehot >0
-        self.add_equation((self.DischargeHot.HeatIn.Heat - self.DischargeHot.HeatOut.Heat -
-                                                            self.DischargeHot.Heat_flow)/self.Heat_nominal)
-        self.add_equation((self.DischargeCold.HeatIn.Heat - self.DischargeCold.HeatOut.Heat -
-                                                            self.DischargeCold.Heat_flow) / self.Heat_nominal)
-        self.add_equation((self.ChargeHot.HeatIn.Heat - self.ChargeHot.HeatOut.Heat -
-                                                             self.ChargeHot.Heat_flow) / self.Heat_nominal)
-
+        self.add_equation(
+            (
+                self.DischargeHot.HeatIn.Heat
+                - self.DischargeHot.HeatOut.Heat
+                - self.DischargeHot.Heat_flow
+            )
+            / self.Heat_nominal
+        )
+        self.add_equation(
+            (
+                self.DischargeCold.HeatIn.Heat
+                - self.DischargeCold.HeatOut.Heat
+                - self.DischargeCold.Heat_flow
+            )
+            / self.Heat_nominal
+        )
+        self.add_equation(
+            (self.ChargeHot.HeatIn.Heat - self.ChargeHot.HeatOut.Heat - self.ChargeHot.Heat_flow)
+            / self.Heat_nominal
+        )
 
         # linking all ports to ates flow and ates heat
-        self.add_equation((self.Heat_ates - self.ChargeHot.Heat_flow - self.DischargeHot.Heat_flow -
-                           self.DischargeCold.Heat_flow) / self.Heat_nominal)
-
-
+        self.add_equation(
+            (
+                self.Heat_ates
+                - self.ChargeHot.Heat_flow
+                - self.DischargeHot.Heat_flow
+                - self.DischargeCold.Heat_flow
+            )
+            / self.Heat_nominal
+        )

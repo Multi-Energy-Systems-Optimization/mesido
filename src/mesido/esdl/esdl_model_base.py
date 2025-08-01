@@ -223,31 +223,47 @@ class _ESDLModelBase(_Model):
                 for p in [*asset.in_ports, *asset.out_ports]:
                     if isinstance(p.carrier, esdl.HeatCommodity):
                         if isinstance(p, InPort):
-                            if (self.discharge_port_name_convention in p.name.lower() and
-                                    self.hot_port_name_convention in p.name.lower()):
+                            if (
+                                self.discharge_port_name_convention in p.name.lower()
+                                and self.hot_port_name_convention in p.name.lower()
+                            ):
                                 port_map[p.id] = getattr(component.DischargeHot, in_suf)
-                            elif (self.discharge_port_name_convention in p.name.lower() and
-                                    self.cold_port_name_convention in p.name.lower()):
+                            elif (
+                                self.discharge_port_name_convention in p.name.lower()
+                                and self.cold_port_name_convention in p.name.lower()
+                            ):
                                 port_map[p.id] = getattr(component.DischargeCold, in_suf)
-                            elif (self.charge_port_name_convention in p.name.lower() and
-                                    self.hot_port_name_convention in p.name.lower()):
+                            elif (
+                                self.charge_port_name_convention in p.name.lower()
+                                and self.hot_port_name_convention in p.name.lower()
+                            ):
                                 port_map[p.id] = getattr(component.ChargeHot, in_suf)
                             else:
-                                raise Exception(f"{asset.name} has 3 inports but not all ports "
-                                                f"are named according to port name convention.")
+                                raise Exception(
+                                    f"{asset.name} has 3 inports but not all ports "
+                                    f"are named according to port name convention."
+                                )
                         else:  # OutPort
-                            if (self.discharge_port_name_convention in p.name.lower() and
-                                  self.hot_port_name_convention in p.name.lower()):
+                            if (
+                                self.discharge_port_name_convention in p.name.lower()
+                                and self.hot_port_name_convention in p.name.lower()
+                            ):
                                 port_map[p.id] = getattr(component.DischargeHot, out_suf)
-                            elif (self.discharge_port_name_convention in p.name.lower() and
-                                  self.cold_port_name_convention in p.name.lower()):
+                            elif (
+                                self.discharge_port_name_convention in p.name.lower()
+                                and self.cold_port_name_convention in p.name.lower()
+                            ):
                                 port_map[p.id] = getattr(component.DischargeCold, out_suf)
-                            elif (self.charge_port_name_convention in p.name.lower() and
-                                    self.hot_port_name_convention in p.name.lower()):
+                            elif (
+                                self.charge_port_name_convention in p.name.lower()
+                                and self.hot_port_name_convention in p.name.lower()
+                            ):
                                 port_map[p.id] = getattr(component.ChargeHot, out_suf)
                             else:
-                                raise Exception(f"{asset.name} has 3 outports but not all ports "
-                                                f"are named according to port name convention.")
+                                raise Exception(
+                                    f"{asset.name} has 3 outports but not all ports "
+                                    f"are named according to port name convention."
+                                )
             elif (
                 asset.asset_type == "GasHeater"
                 and len(asset.out_ports) == 1

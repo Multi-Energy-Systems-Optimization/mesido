@@ -1336,7 +1336,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         }
 
         multiport_ates = False
-        if len(asset.in_ports) + len(asset.out_ports)>2:
+        if len(asset.in_ports) + len(asset.out_ports) > 2:
             multiport_ates = True
 
         hfr_charge_max = asset.attributes.get("maxChargeRate", math.inf)
@@ -1354,7 +1354,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             temp = []
             for p in [*asset.in_ports, *asset.out_ports]:
                 carrier = asset.global_properties["carriers"][p.carrier.id]
-                temp.append(carrier['temperature'])
+                temp.append(carrier["temperature"])
             temp_min = min(temp)
             temp_max = max(temp)
         else:
@@ -1368,12 +1368,14 @@ class AssetToHeatComponent(_AssetToComponentBase):
         q_nominal = self._get_connected_q_nominal(asset)
         if isinstance(q_nominal, float):
             q_nominal = min(
-                self._get_connected_q_nominal(asset), q_max_ates * asset.attributes["aggregationCount"]
+                self._get_connected_q_nominal(asset),
+                q_max_ates * asset.attributes["aggregationCount"],
             )
         elif isinstance(q_nominal, dict):
-            for k,v in q_nominal.items():
-                q_nominal[k]['Q_nominal'] = min(v['Q_nominal'], q_max_ates * asset.attributes[
-                    "aggregationCount"])
+            for k, v in q_nominal.items():
+                q_nominal[k]["Q_nominal"] = min(
+                    v["Q_nominal"], q_max_ates * asset.attributes["aggregationCount"]
+                )
             q_nominal = max([list(v.values())[0] for v in q_nominal.values()])
 
         params = {}
@@ -1381,31 +1383,44 @@ class AssetToHeatComponent(_AssetToComponentBase):
             params_q = self._get_connected_q_nominal(asset)
             params_t = temperatures
             discharge_hot = dict(
-                HeatIn=dict(Hydraulic_power=dict(nominal=params_q["DischargeHot"]["Q_nominal"] *
-                                                         16.0e5)),
-                HeatOut=dict(Hydraulic_power=dict(nominal=params_q["DischargeHot"]["Q_nominal"] * 16.0e5)),
+                HeatIn=dict(
+                    Hydraulic_power=dict(nominal=params_q["DischargeHot"]["Q_nominal"] * 16.0e5)
+                ),
+                HeatOut=dict(
+                    Hydraulic_power=dict(nominal=params_q["DischargeHot"]["Q_nominal"] * 16.0e5)
+                ),
             )
             discharge_cold = dict(
-                HeatIn=dict(Hydraulic_power=dict(nominal=params_q["DischargeCold"]["Q_nominal"] *
-                                                         16.0e5)),
-                HeatOut=dict(Hydraulic_power=dict(nominal=params_q["DischargeCold"]["Q_nominal"] *
-                                                          16.0e5)),
+                HeatIn=dict(
+                    Hydraulic_power=dict(nominal=params_q["DischargeCold"]["Q_nominal"] * 16.0e5)
+                ),
+                HeatOut=dict(
+                    Hydraulic_power=dict(nominal=params_q["DischargeCold"]["Q_nominal"] * 16.0e5)
+                ),
             )
             charge_hot = dict(
                 HeatIn=dict(
-                    Hydraulic_power=dict(nominal=params_q["ChargeHot"]["Q_nominal"] * 16.0e5)),
+                    Hydraulic_power=dict(nominal=params_q["ChargeHot"]["Q_nominal"] * 16.0e5)
+                ),
                 HeatOut=dict(
-                    Hydraulic_power=dict(nominal=params_q["ChargeHot"]["Q_nominal"] * 16.0e5)),
+                    Hydraulic_power=dict(nominal=params_q["ChargeHot"]["Q_nominal"] * 16.0e5)
+                ),
             )
-            params["DischargeHot"] = {**params_t["DischargeHot"], **params_q["DischargeHot"], **discharge_hot}
-            params["DischargeCold"] = {**params_t["DischargeCold"], **params_q["DischargeCold"],
-                                      **discharge_cold}
+            params["DischargeHot"] = {
+                **params_t["DischargeHot"],
+                **params_q["DischargeHot"],
+                **discharge_hot,
+            }
+            params["DischargeCold"] = {
+                **params_t["DischargeCold"],
+                **params_q["DischargeCold"],
+                **discharge_cold,
+            }
             params["ChargeHot"] = {**params_t["ChargeHot"], **params_q["ChargeHot"], **charge_hot}
             params["T_supply"] = temp_max
             params["T_return"] = temp_min
         else:
             params = self._supply_return_temperature_modifiers(asset)
-
 
         modifiers = dict(
             technical_life=self.get_asset_attribute_value(
@@ -1446,8 +1461,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
         #             HeatOut=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
         #     ))
         # else:
-
-
 
         # if no maxStorageTemperature is specified we assume a "regular" HT ATES model
         if (
