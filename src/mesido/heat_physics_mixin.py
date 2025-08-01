@@ -367,8 +367,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         for ates in self.energy_system_components.get("ates", []):
             if ates not in self.energy_system_components.get("ates_multi_port", []):
-                ((hot_pipe, _hot_pipe_orientation), (_cold_pipe, _cold_pipe_orientation)) =  (
-                    self.energy_system_topology.ates[ates])
+                ((hot_pipe, _hot_pipe_orientation), (_cold_pipe, _cold_pipe_orientation)) = (
+                    self.energy_system_topology.ates[ates]
+                )
 
             if ates in self.energy_system_components.get("low_temperature_ates", []):
                 continue
@@ -1817,10 +1818,10 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         for ates_asset in self.energy_system_components.get("ates", []):
             # if ates_asset not in self.energy_system_components.get("ates_multi_port"):
             ((hot_pipe, _hot_pipe_orientation), (_cold_pipe, _cold_pipe_orientation)) = (
-                self.energy_system_topology.ates[ates_asset])
+                self.energy_system_topology.ates[ates_asset]
+            )
             # else:
             #     hot_pipe =
-
 
             if ates_asset in self.energy_system_components.get("low_temperature_ates", []):
                 continue
@@ -1920,14 +1921,18 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     # discr_temp_carrier == discr_temp_ates
                     constraints.append(
                         (
-                            ates_temperature_disc - sup_temperature_disc + is_buffer_charging * big_m,
+                            ates_temperature_disc
+                            - sup_temperature_disc
+                            + is_buffer_charging * big_m,
                             0.0,
                             np.inf,
                         )
                     )
                     constraints.append(
                         (
-                            ates_temperature_disc - sup_temperature_disc - is_buffer_charging * big_m,
+                            ates_temperature_disc
+                            - sup_temperature_disc
+                            - is_buffer_charging * big_m,
                             -np.inf,
                             0.0,
                         )
@@ -1935,7 +1940,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     # inequality constraint when charging, carrier temperature>= ates temperature
                     constraints.append(
                         (
-                            sup_temperature_disc - ates_temperature + (1 - is_buffer_charging) * big_m,
+                            sup_temperature_disc
+                            - ates_temperature
+                            + (1 - is_buffer_charging) * big_m,
                             0.0,
                             np.inf,
                         )
@@ -2330,7 +2337,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         for ates in self.energy_system_components.get("ates_multi_port", []):
             ((hot_pipe, _hot_pipe_orientation), (_cold_pipe, _cold_pipe_orientation)) = (
-                self.energy_system_topology.ates[ates])
+                self.energy_system_topology.ates[ates]
+            )
 
             heat_nominal = parameters[f"{ates}.Heat_nominal"]
             q_nominal = self.variable_nominal(f"{ates}.Q")
@@ -2342,8 +2350,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             temperature_options_ates = parameters[f"{ates}.ates_temperature_options"]
 
             big_m = 2.0 * np.max(
-                np.abs((*self.bounds()[f"{ates}.HeatIn.Heat"],
-                        *self.bounds()[f"{ates}.HeatOut.Heat"]))
+                np.abs(
+                    (*self.bounds()[f"{ates}.HeatIn.Heat"], *self.bounds()[f"{ates}.HeatOut.Heat"])
+                )
             )
 
             flow_dir_var = self._heat_pipe_to_flow_direct_map[hot_pipe]
@@ -2365,7 +2374,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             discharge_disch_cold = self.state(f"{ates}.DischargeCold.Q")
             discharge_ch_hot = self.state(f"{ates}.ChargeHot.Q")
 
-
             # if len(supply_temperatures) == 0:
             constraint_nominal = (heat_nominal * cp * rho * dt * q_nominal) ** 0.5
             # only when discharging the heat_in should match the heat excactly (like producer)
@@ -2374,18 +2382,32 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             # DischargeCold.Heat_flow == 0 if charging else <0
             # ChargeHeat.Heat_flow >= 0 if charging else ==0
             constraints.append(((heat_flow_discharge_hot) / constraint_nominal, -np.inf, 0.0))
-            constraints.append((
-                (heat_flow_discharge_hot + (1-is_buffer_charging) * big_m)/constraint_nominal, 0.0, np.inf))
+            constraints.append(
+                (
+                    (heat_flow_discharge_hot + (1 - is_buffer_charging) * big_m)
+                    / constraint_nominal,
+                    0.0,
+                    np.inf,
+                )
+            )
             constraints.append(((heat_flow_discharge_cold) / constraint_nominal, -np.inf, 0.0))
-            constraints.append((
-                (heat_flow_discharge_cold + (1 - is_buffer_charging) * big_m) / constraint_nominal, 0.0,
-                np.inf))
+            constraints.append(
+                (
+                    (heat_flow_discharge_cold + (1 - is_buffer_charging) * big_m)
+                    / constraint_nominal,
+                    0.0,
+                    np.inf,
+                )
+            )
             constraints.append(((heat_flow_charge_hot) / constraint_nominal, 0.0, np.inf))
-            constraints.append((
-                (heat_flow_charge_hot - is_buffer_charging * big_m) / constraint_nominal,
-                -np.inf,
-                0.0))
-            #TODO still add constraint for heat_flow_charge_hot to be equal to Q*rho*cp*dt_ates
+            constraints.append(
+                (
+                    (heat_flow_charge_hot - is_buffer_charging * big_m) / constraint_nominal,
+                    -np.inf,
+                    0.0,
+                )
+            )
+            # TODO still add constraint for heat_flow_charge_hot to be equal to Q*rho*cp*dt_ates
 
             # flow discharge hot and discharging cold need to be zero during charging,
             # flow charge hot needs to be zero during discharging
@@ -2399,81 +2421,129 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             #     (discharge_ch_hot - is_buffer_charging * 1.0) / 1.0,
             #     -np.inf, 0.0))
 
-
             ates_max_temp = parameters[f"{ates}.T_supply"]
             discharge_hot_return_temp = parameters[f"{ates}.DischargeHot.T_return"]
             ates_cold_return_temp = parameters[f"{ates}.T_return"]
-
-
 
             if options["include_ates_temperature_options"]:
                 for temperature in temperature_options_ates:
                     ates_temp_disc_var = self.state(f"{ates}__temperature_disc_{temperature}")
 
-                    if temperature> discharge_hot_return_temp:
+                    if temperature > discharge_hot_return_temp:
                         # DischargetHot.Heat_flow< (Tatesdisc-Treturn_dischargehot)*rho*cp*self.Q if Treturn_dischargehot<Tatesdisc
                         # q_var is negative when discharging
-                        constraints.append((
-                            (heat_flow_discharge_hot - (temperature - discharge_hot_return_temp) *
-                             rho*cp*q_var + (1- ates_temp_disc_var + is_buffer_charging) *
-                             big_m)/constraint_nominal,
-                            0.0,
-                            np.inf,
-                        ))
+                        constraints.append(
+                            (
+                                (
+                                    heat_flow_discharge_hot
+                                    - (temperature - discharge_hot_return_temp) * rho * cp * q_var
+                                    + (1 - ates_temp_disc_var + is_buffer_charging) * big_m
+                                )
+                                / constraint_nominal,
+                                0.0,
+                                np.inf,
+                            )
+                        )
                     else:
                         # DischargetHot.Heat_flow ==0 if Tatesdisc>= Treturn_dischargehot
-                        constraints.append((
-                            (heat_flow_discharge_hot + (1- ates_temp_disc_var + is_buffer_charging) *
-                             big_m)/constraint_nominal, 0.0, np.inf
-                        ))
+                        constraints.append(
+                            (
+                                (
+                                    heat_flow_discharge_hot
+                                    + (1 - ates_temp_disc_var + is_buffer_charging) * big_m
+                                )
+                                / constraint_nominal,
+                                0.0,
+                                np.inf,
+                            )
+                        )
 
                     # DischargetCold.Heat_flow + DischargetHot.Heat_flow == (Tatesdisc-Tatescoldwell)*rho*cp*self.Q if discharging
-                    constraints.append((
-                        (heat_flow_discharge_cold + heat_flow_discharge_hot - (
-                            temperature-ates_cold_return_temp)*rho*cp*q_var -
-                        (1- ates_temp_disc_var + is_buffer_charging) * big_m)/constraint_nominal,
-                        -np.inf, 0.0
-                    ))
-                    constraints.append((
-                        (heat_flow_discharge_cold + heat_flow_discharge_hot - (
-                                temperature - ates_cold_return_temp) * rho * cp * q_var +
-                        (1 - ates_temp_disc_var + is_buffer_charging) * big_m)/constraint_nominal,
-                        0.0, np.inf
-                    ))
+                    constraints.append(
+                        (
+                            (
+                                heat_flow_discharge_cold
+                                + heat_flow_discharge_hot
+                                - (temperature - ates_cold_return_temp) * rho * cp * q_var
+                                - (1 - ates_temp_disc_var + is_buffer_charging) * big_m
+                            )
+                            / constraint_nominal,
+                            -np.inf,
+                            0.0,
+                        )
+                    )
+                    constraints.append(
+                        (
+                            (
+                                heat_flow_discharge_cold
+                                + heat_flow_discharge_hot
+                                - (temperature - ates_cold_return_temp) * rho * cp * q_var
+                                + (1 - ates_temp_disc_var + is_buffer_charging) * big_m
+                            )
+                            / constraint_nominal,
+                            0.0,
+                            np.inf,
+                        )
+                    )
             else:
-                assert ates_max_temp>discharge_hot_return_temp
-                constraints.append((
-                    (heat_flow_discharge_hot - (ates_max_temp - discharge_hot_return_temp) *
-                     rho * cp * q_var + (is_buffer_charging) * big_m) / constraint_nominal,
-                    0.0,
-                    np.inf,
-                ))
+                assert ates_max_temp > discharge_hot_return_temp
+                constraints.append(
+                    (
+                        (
+                            heat_flow_discharge_hot
+                            - (ates_max_temp - discharge_hot_return_temp) * rho * cp * q_var
+                            + (is_buffer_charging) * big_m
+                        )
+                        / constraint_nominal,
+                        0.0,
+                        np.inf,
+                    )
+                )
                 # DischargetCold.Heat_flow + DischargetHot.Heat_flow == (Tatesdisc-Tatescoldwell)*rho*cp*self.Q if discharging
-                constraints.append((
-                    (heat_flow_discharge_cold + heat_flow_discharge_hot - (
-                            ates_max_temp - ates_cold_return_temp) * rho * cp * q_var -
-                     (is_buffer_charging) * big_m) / constraint_nominal,
-                    -np.inf, 0.0
-                ))
-                constraints.append((
-                    (heat_flow_discharge_cold + heat_flow_discharge_hot - (
-                            ates_max_temp - ates_cold_return_temp) * rho * cp * q_var +
-                     (is_buffer_charging) * big_m) / constraint_nominal,
-                    0.0, np.inf
-                ))
+                constraints.append(
+                    (
+                        (
+                            heat_flow_discharge_cold
+                            + heat_flow_discharge_hot
+                            - (ates_max_temp - ates_cold_return_temp) * rho * cp * q_var
+                            - (is_buffer_charging) * big_m
+                        )
+                        / constraint_nominal,
+                        -np.inf,
+                        0.0,
+                    )
+                )
+                constraints.append(
+                    (
+                        (
+                            heat_flow_discharge_cold
+                            + heat_flow_discharge_hot
+                            - (ates_max_temp - ates_cold_return_temp) * rho * cp * q_var
+                            + (is_buffer_charging) * big_m
+                        )
+                        / constraint_nominal,
+                        0.0,
+                        np.inf,
+                    )
+                )
 
-            def __heat_to_flow_temp_constraint(heat_port: ca.MX, discharge_disch_hot_out: ca.MX,
-                                               t_sup: float, temp_var_selected: Union[ca.MX, float],
-                                               condition_inactive: Union[ca.MX, float],
-                                               big_m: float, nominal: float):
+            def __heat_to_flow_temp_constraint(
+                heat_port: ca.MX,
+                discharge_disch_hot_out: ca.MX,
+                t_sup: float,
+                temp_var_selected: Union[ca.MX, float],
+                condition_inactive: Union[ca.MX, float],
+                big_m: float,
+                nominal: float,
+            ):
                 constraints_sub = []
                 constraints_sub.append(
                     (
                         (
-                                heat_port
-                                - discharge_disch_hot_out * cp * rho * t_sup
-                                + (1.0 - temp_var_selected) * big_m
-                                + (condition_inactive) * big_m
+                            heat_port
+                            - discharge_disch_hot_out * cp * rho * t_sup
+                            + (1.0 - temp_var_selected) * big_m
+                            + (condition_inactive) * big_m
                         )
                         / nominal,
                         0.0,
@@ -2482,9 +2552,11 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 )
                 constraints_sub.append(
                     (
-                        (heat_port - discharge_disch_hot_out * cp * rho * t_sup
-                         - (1.0 - temp_var_selected) * big_m
-                         )
+                        (
+                            heat_port
+                            - discharge_disch_hot_out * cp * rho * t_sup
+                            - (1.0 - temp_var_selected) * big_m
+                        )
                         / nominal,
                         -np.inf,
                         0.0,
@@ -2501,28 +2573,49 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 constraint_nominal = (heat_nominal * cp * rho * dt * q_nominal) ** 0.5
                 t_sup = parameters[f"{ates}.DischargeHot.T_supply"]
 
-                constraints.extend(__heat_to_flow_temp_constraint(heat_discharge_hot_out,
-                                            discharge_disch_hot, t_sup, 1.0,
-                                            0.0, big_m, constraint_nominal))
+                constraints.extend(
+                    __heat_to_flow_temp_constraint(
+                        heat_discharge_hot_out,
+                        discharge_disch_hot,
+                        t_sup,
+                        1.0,
+                        0.0,
+                        big_m,
+                        constraint_nominal,
+                    )
+                )
 
             else:
                 for t_sup in sup_temps_discharge_hot:
-                    constraint_nominal = (heat_nominal * cp * rho * t_sup * q_nominal
-                                         ) ** 0.5
-                    sup_temperature_is_selected = self.state(f"{sup_carrier_discharge_hot}__temperature_disc_{t_sup}")
-                    assert len(ret_temps_discharge_hot) == 0, ("Varying temperatures at the "
-                                                               "DischargeHot inport is not "
-                                                               "supported")
+                    constraint_nominal = (heat_nominal * cp * rho * t_sup * q_nominal) ** 0.5
+                    sup_temperature_is_selected = self.state(
+                        f"{sup_carrier_discharge_hot}__temperature_disc_{t_sup}"
+                    )
+                    assert len(ret_temps_discharge_hot) == 0, (
+                        "Varying temperatures at the " "DischargeHot inport is not " "supported"
+                    )
                     if t_sup <= parameters[f"{ates}.DischargeHot.T_return"]:
-                        #allows for bypassing
-                        constraints.append(((heat_discharge_hot_out-
-                                             heat_discharge_hot_in)/constraint_nominal, 0.0, 0.0))
+                        # allows for bypassing
+                        constraints.append(
+                            (
+                                (heat_discharge_hot_out - heat_discharge_hot_in)
+                                / constraint_nominal,
+                                0.0,
+                                0.0,
+                            )
+                        )
                     else:
-                        constraints.extend(__heat_to_flow_temp_constraint(heat_discharge_hot_out,
-                                                                          discharge_disch_hot,
-                                                                          t_sup, sup_temperature_is_selected,
-                                                                          0.0, big_m,
-                                                                          constraint_nominal))
+                        constraints.extend(
+                            __heat_to_flow_temp_constraint(
+                                heat_discharge_hot_out,
+                                discharge_disch_hot,
+                                t_sup,
+                                sup_temperature_is_selected,
+                                0.0,
+                                big_m,
+                                constraint_nominal,
+                            )
+                        )
 
             sup_carrier_charge_hot = parameters[f"{ates}.ChargeHot.T_supply_id"]
             ret_carrier_charge_hot = parameters[f"{ates}.ChargeHot.T_return_id"]
@@ -2532,39 +2625,43 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 constraint_nominal = (heat_nominal * cp * rho * dt * q_nominal) ** 0.5
                 t_sup = parameters[f"{ates}.ChargeHot.T_return"]
 
-                constraints.extend(__heat_to_flow_temp_constraint(heat_charge_hot_out,
-                                                                  discharge_ch_hot, t_sup, 1.0,
-                                                                  0.0, big_m, constraint_nominal))
+                constraints.extend(
+                    __heat_to_flow_temp_constraint(
+                        heat_charge_hot_out,
+                        discharge_ch_hot,
+                        t_sup,
+                        1.0,
+                        0.0,
+                        big_m,
+                        constraint_nominal,
+                    )
+                )
 
             else:
                 for t_sup in sup_temps_charge_hot:
-                    constraint_nominal = (heat_nominal * cp * rho * t_sup * q_nominal
-                                          ) ** 0.5
-                    sup_temperature_is_selected = self.state(f"{sup_carrier_charge_hot}__temperature_disc_{t_sup}")
-                    constraints.extend(__heat_to_flow_temp_constraint(heat_charge_hot_out,
-                                                                      discharge_ch_hot,
-                                                                      t_sup,
-                                                                      sup_temperature_is_selected,
-                                                                      0.0, big_m,
-                                                                      constraint_nominal))
-
-
-
-
-
-
-
+                    constraint_nominal = (heat_nominal * cp * rho * t_sup * q_nominal) ** 0.5
+                    sup_temperature_is_selected = self.state(
+                        f"{sup_carrier_charge_hot}__temperature_disc_{t_sup}"
+                    )
+                    constraints.extend(
+                        __heat_to_flow_temp_constraint(
+                            heat_charge_hot_out,
+                            discharge_ch_hot,
+                            t_sup,
+                            sup_temperature_is_selected,
+                            0.0,
+                            big_m,
+                            constraint_nominal,
+                        )
+                    )
 
             sup_carrier = parameters[f"{ates}.T_supply_id"]
             ret_carrier = parameters[f"{ates}.T_return_id"]
             supply_temperatures = self.temperature_regimes(sup_carrier)
             return_temperatures = self.temperature_regimes(ret_carrier)
 
-                #TODO still add constraints to split heatflows bassed on temperatures
+            # TODO still add constraints to split heatflows bassed on temperatures
         return constraints
-
-
-
 
     def __storage_heat_to_discharge_path_constraints(self, ensemble_member):
         """
@@ -2623,18 +2720,19 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             is_buffer_charging = self.state(flow_dir_var)
             if b in self.energy_system_components.get("ates", []):
                 is_buffer_charging = self.variable(f"{b}__is_charging")
-            flow_big_m = q_nominal*10
-            constraints.append(((discharge - flow_big_m * is_buffer_charging)/q_nominal, -np.inf,
-                                0.0 ))
-            constraints.append(((discharge + flow_big_m * (1 - is_buffer_charging))/q_nominal, 0.0,
-                                np.inf))
-            constraints.append(((heat_ates - big_m * is_buffer_charging) / heat_nominal, -np.inf,
-                                0.0))
-            constraints.append(((heat_ates + big_m * (1 - is_buffer_charging)) / heat_nominal, 0.0,
-                 np.inf))
-
-
-
+            flow_big_m = q_nominal * 10
+            constraints.append(
+                ((discharge - flow_big_m * is_buffer_charging) / q_nominal, -np.inf, 0.0)
+            )
+            constraints.append(
+                ((discharge + flow_big_m * (1 - is_buffer_charging)) / q_nominal, 0.0, np.inf)
+            )
+            constraints.append(
+                ((heat_ates - big_m * is_buffer_charging) / heat_nominal, -np.inf, 0.0)
+            )
+            constraints.append(
+                ((heat_ates + big_m * (1 - is_buffer_charging)) / heat_nominal, 0.0, np.inf)
+            )
 
             if b not in self.energy_system_components.get("ates_multi_port", []):
                 sup_carrier = parameters[f"{b}.T_supply_id"]
@@ -2704,9 +2802,13 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
                 for supply_temperature in supply_temperatures:
                     if b not in self.energy_system_components.get("ates_multi_port", []):
-                        sup_temperature_is_selected = self.state(f"{sup_carrier}_{supply_temperature}")
+                        sup_temperature_is_selected = self.state(
+                            f"{sup_carrier}_{supply_temperature}"
+                        )
                     else:
-                        sup_temperature_is_selected = self.state(f"{b}__temperature_disc_{supply_temperature}")
+                        sup_temperature_is_selected = self.state(
+                            f"{b}__temperature_disc_{supply_temperature}"
+                        )
 
                     constraint_nominal = (
                         heat_nominal * cp * rho * supply_temperature * q_nominal
@@ -2747,7 +2849,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     #             f"{b}.T_return"]) - (1.0 - sup_temperature_is_selected) * big_m
                     #             - is_buffer_charging * big_m) / constraint_nominal,
                     #          -np.inf, 0.0))
-
 
             if len(return_temperatures) == 0:
                 constraint_nominal = (heat_nominal * cp * rho * dt * q_nominal) ** 0.5
@@ -3913,8 +4014,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints.extend(self.__source_heat_to_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__pipe_heat_to_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__storage_heat_to_discharge_path_constraints(ensemble_member))
-        constraints.extend(self.__ates_multi_port_heat_to_discharge_path_constraints(
-            ensemble_member))
+        constraints.extend(
+            self.__ates_multi_port_heat_to_discharge_path_constraints(ensemble_member)
+        )
         constraints.extend(
             self.__heat_exchanger_heat_to_discharge_path_constraints(ensemble_member)
         )

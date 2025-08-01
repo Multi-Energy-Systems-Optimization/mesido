@@ -1,7 +1,6 @@
 import os
 from pathlib import Path
 
-import mesido.workflows.utils.adapt_profiles
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
@@ -9,6 +8,7 @@ from mesido.head_loss_class import HeadLossOption
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.io.write_output import ScenarioOutput
 from mesido.workflows.utils.adapt_profiles import adapt_hourly_profile_averages_timestep_size
+from mesido.workflows.utils.helpers import run_optimization_problem_solver
 
 import numpy as np
 
@@ -23,9 +23,7 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 from rtctools.optimization.single_pass_goal_programming_mixin import (
     GoalProgrammingMixin,
 )
-from rtctools.util import run_optimization_problem
 
-from mesido.workflows.utils.helpers import run_optimization_problem_solver
 
 ns = {"fews": "http://www.wldelft.nl/fews", "pi": "http://www.wldelft.nl/fews/PI"}
 
@@ -345,6 +343,7 @@ class HeatProblemMaxFlow(HeatProblem):
         demand_timeseries.values[2] = demand_timeseries.values[2] * 2
         self.set_timeseries("HeatingDemand_1.target_heat_demand", demand_timeseries)
 
+
 class HeatProblemATESMultiPort(
     ScenarioOutput,
     _GoalsAndOptions,
@@ -353,21 +352,19 @@ class HeatProblemATESMultiPort(
     GoalProgrammingMixin,
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
-                               ):
+):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.heat_network_settings["minimum_velocity"] = 1e-8
 
-
     def read(self) -> None:
         super().read()
 
-        adapt_hourly_profile_averages_timestep_size(self, 24*40)
+        adapt_hourly_profile_averages_timestep_size(self, 24 * 40)
         for demand in self.energy_system_components.get("heat_demand", []):
             new_timeseries = self.get_timeseries(f"{demand}.target_heat_demand").values * 0.95
             self.set_timeseries(f"{demand}.target_heat_demand", new_timeseries)
-
 
     def energy_system_options(self):
         # TODO: make empty placeholder in HeatProblem we don't know yet how to put the global
@@ -408,6 +405,7 @@ class HeatProblemATESMultiPort(
             self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
         )
 
+
 class SolverCPLEX:
     def solver_options(self):
         options = super().solver_options()
@@ -420,9 +418,9 @@ class SolverCPLEX:
 
         return options
 
+
 if __name__ == "__main__":
     basefolder = Path(os.getcwd()).resolve().parent
-
 
     solution = run_optimization_problem_solver(
         HeatProblemATESMultiPort,
@@ -458,9 +456,13 @@ if __name__ == "__main__":
 
     # ensuring enough ates is charged for this problem to be be realistic.
     np.testing.assert_array_less(1e10, sum(ates_heat[1:] * dt))
-    np.testing.assert_allclose(ates_heat[ates_discharging],
-                               ates_flow[ates_discharging] * cp * rho * (
-                                       ates_temp_disc[ates_discharging] - ates_cold_return_temp))
+    np.testing.assert_allclose(
+        ates_heat[ates_discharging],
+        ates_flow[ates_discharging]
+        * cp
+        * rho
+        * (ates_temp_disc[ates_discharging] - ates_cold_return_temp),
+    )
 
     ates_discharge_hot_heat = results[f"{ates}.DischargeHot.Heat_flow"]
     ates_discharge_cold_heat = results[f"{ates}.DischargeCold.Heat_flow"]
@@ -472,8 +474,9 @@ if __name__ == "__main__":
 
     # checks that heatflow of different ports is positive or negative and that the sum is equal
     # to Heat_ates
-    np.testing.assert_allclose(ates_discharge_hot_heat + ates_discharge_cold_heat +
-                               ates_charge_hot_heat, ates_heat)
+    np.testing.assert_allclose(
+        ates_discharge_hot_heat + ates_discharge_cold_heat + ates_charge_hot_heat, ates_heat
+    )
     np.testing.assert_array_less(ates_discharge_cold_heat, epsilon)
     np.testing.assert_array_less(ates_discharge_hot_heat, epsilon)
     np.testing.assert_array_less(-epsilon, ates_charge_hot_heat)
@@ -486,19 +489,20 @@ if __name__ == "__main__":
     ates_charge_hot_out_heat = results[f"{ates}.ChargeHot.HeatOut.Heat"]
 
     # Checks that heatflow is each port group is calculated correctly on their in and out ports
-    np.testing.assert_allclose(ates_discharge_hot_in_heat - ates_discharge_hot_out_heat,
-                               ates_discharge_hot_heat, atol=1e-6)
-    np.testing.assert_allclose(ates_discharge_cold_in_heat - ates_discharge_cold_out_heat,
-                               ates_discharge_cold_heat, atol=1e-6)
-    np.testing.assert_allclose(ates_charge_hot_in_heat - ates_charge_hot_out_heat,
-                               ates_charge_hot_heat, atol=1e-6)
+    np.testing.assert_allclose(
+        ates_discharge_hot_in_heat - ates_discharge_hot_out_heat, ates_discharge_hot_heat, atol=1e-6
+    )
+    np.testing.assert_allclose(
+        ates_discharge_cold_in_heat - ates_discharge_cold_out_heat,
+        ates_discharge_cold_heat,
+        atol=1e-6,
+    )
+    np.testing.assert_allclose(
+        ates_charge_hot_in_heat - ates_charge_hot_out_heat, ates_charge_hot_heat, atol=1e-6
+    )
 
     # Checks that ates__is_charging discrete variable is indeed discrete (0 or 1)
     np.testing.assert_allclose(ates_charging, ates_charging.astype(int))
-
-
-
-
 
     #
     # import time

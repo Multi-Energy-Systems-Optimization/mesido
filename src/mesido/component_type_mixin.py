@@ -307,7 +307,9 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                 for k in ["In", "Out"]:
                     a_conn = f"{a}.{heat_network_model_type}{k}"
                     prop = (
-                        "T" if heat_network_model_type == "QTH" else NetworkSettings.NETWORK_TYPE_HEAT
+                        "T"
+                        if heat_network_model_type == "QTH"
+                        else NetworkSettings.NETWORK_TYPE_HEAT
                     )
                     aliases = [
                         x
@@ -322,7 +324,9 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                     #     raise Exception(f"Found no connection to {a_conn}")
 
                     in_suffix = ".QTHIn.T" if heat_network_model_type == "QTH" else ".HeatIn.Heat"
-                    out_suffix = ".QTHOut.T" if heat_network_model_type == "QTH" else ".HeatOut.Heat"
+                    out_suffix = (
+                        ".QTHOut.T" if heat_network_model_type == "QTH" else ".HeatOut.Heat"
+                    )
 
                     if aliases[0].endswith(out_suffix):
                         asset_w_orientation = (
@@ -352,7 +356,9 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                 for k in ["In", "Out"]:
                     a_conn = f"{a}.ChargeHot.{heat_network_model_type}{k}"
                     prop = (
-                        "T" if heat_network_model_type == "QTH" else NetworkSettings.NETWORK_TYPE_HEAT
+                        "T"
+                        if heat_network_model_type == "QTH"
+                        else NetworkSettings.NETWORK_TYPE_HEAT
                     )
                     aliases = [
                         x
@@ -367,7 +373,9 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                     #     raise Exception(f"Found no connection to {a_conn}")
 
                     in_suffix = ".QTHIn.T" if heat_network_model_type == "QTH" else ".HeatIn.Heat"
-                    out_suffix = ".QTHOut.T" if heat_network_model_type == "QTH" else ".HeatOut.Heat"
+                    out_suffix = (
+                        ".QTHOut.T" if heat_network_model_type == "QTH" else ".HeatOut.Heat"
+                    )
 
                     if aliases[0].endswith(out_suffix):
                         asset_w_orientation = (
@@ -391,7 +399,6 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                     ates_connections[a].append(asset_w_orientation)
 
                 ates_connections[a] = tuple(ates_connections[a])
-
 
         demand_connections = {}
 

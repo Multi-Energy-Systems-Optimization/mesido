@@ -1019,18 +1019,25 @@ class _AssetToComponentBase:
                             q_nominals["Secondary"] = {"Q_nominal": q_nominal}
                         elif self.primary_port_name_convention in p.name.lower():
                             q_nominals["Primary"] = {"Q_nominal": q_nominal}
-                        elif (self.discharge_port_name_convention in p.name.lower() and
-                              self.hot_port_name_convention in p.name.lower()):
+                        elif (
+                            self.discharge_port_name_convention in p.name.lower()
+                            and self.hot_port_name_convention in p.name.lower()
+                        ):
                             q_nominals["DischargeHot"] = {"Q_nominal": q_nominal}
-                        elif (self.discharge_port_name_convention in p.name.lower() and
-                              self.cold_port_name_convention in p.name.lower()):
+                        elif (
+                            self.discharge_port_name_convention in p.name.lower()
+                            and self.cold_port_name_convention in p.name.lower()
+                        ):
                             q_nominals["DischargeCold"] = {"Q_nominal": q_nominal}
-                        elif (self.charge_port_name_convention in p.name.lower() and
-                                self.hot_port_name_convention in p.name.lower()):
+                        elif (
+                            self.charge_port_name_convention in p.name.lower()
+                            and self.hot_port_name_convention in p.name.lower()
+                        ):
                             q_nominals["ChargeHot"] = {"Q_nominal": q_nominal}
                         else:
-                            raise Exception(f"{asset.name} has ports that do not comply with any "
-                                            f"convention")
+                            raise Exception(
+                                f"{asset.name} has ports that do not comply with any " f"convention"
+                            )
 
             return q_nominals
 
@@ -1242,32 +1249,44 @@ class _AssetToComponentBase:
             sec_return_temperature = None
             for p in asset.in_ports:
                 carrier = asset.global_properties["carriers"][p.carrier.id]
-                if (self.discharge_port_name_convention in p.name.lower() and
-                  self.hot_port_name_convention in p.name.lower()):
+                if (
+                    self.discharge_port_name_convention in p.name.lower()
+                    and self.hot_port_name_convention in p.name.lower()
+                ):
                     discharge_hot_in_temperature_id = carrier["id_number_mapping"]
                     discharge_hot_in_temperature = carrier["temperature"]
-                elif (self.discharge_port_name_convention in p.name.lower() and
-                  self.cold_port_name_convention in p.name.lower()):
+                elif (
+                    self.discharge_port_name_convention in p.name.lower()
+                    and self.cold_port_name_convention in p.name.lower()
+                ):
                     discharge_cold_in_temperature_id = carrier["id_number_mapping"]
                     discharge_cold_in_temperature = carrier["temperature"]
-                elif (self.charge_port_name_convention in p.name.lower() and
-                  self.hot_port_name_convention in p.name.lower()):
+                elif (
+                    self.charge_port_name_convention in p.name.lower()
+                    and self.hot_port_name_convention in p.name.lower()
+                ):
                     charge_hot_in_temperature_id = carrier["id_number_mapping"]
                     charge_hot_in_temperature = carrier["temperature"]
                 else:
                     raise RuntimeError
             for p in asset.out_ports:
                 carrier = asset.global_properties["carriers"][p.carrier.id]
-                if (self.discharge_port_name_convention in p.name.lower() and
-                        self.hot_port_name_convention in p.name.lower()):
+                if (
+                    self.discharge_port_name_convention in p.name.lower()
+                    and self.hot_port_name_convention in p.name.lower()
+                ):
                     discharge_hot_out_temperature_id = carrier["id_number_mapping"]
                     discharge_hot_out_temperature = carrier["temperature"]
-                elif (self.discharge_port_name_convention in p.name.lower() and
-                      self.cold_port_name_convention in p.name.lower()):
+                elif (
+                    self.discharge_port_name_convention in p.name.lower()
+                    and self.cold_port_name_convention in p.name.lower()
+                ):
                     discharge_cold_out_temperature_id = carrier["id_number_mapping"]
                     discharge_cold_out_temperature = carrier["temperature"]
-                elif (self.charge_port_name_convention in p.name.lower() and
-                      self.hot_port_name_convention in p.name.lower()):
+                elif (
+                    self.charge_port_name_convention in p.name.lower()
+                    and self.hot_port_name_convention in p.name.lower()
+                ):
                     charge_hot_out_temperature_id = carrier["id_number_mapping"]
                     charge_hot_out_temperature = carrier["temperature"]
                 else:
@@ -1293,7 +1312,6 @@ class _AssetToComponentBase:
                 },
             }
             return temperatures
-
 
         else:
             # unknown model type
