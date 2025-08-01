@@ -102,8 +102,8 @@ class TestEndScenarioSizing(TestCase):
         ]:
             technical_lifetime = self.solution.parameters(0)[f"{asset}.technical_life"]
             factor = years / technical_lifetime
-            if factor < 1:
-                factor = 1
+            if factor < 1.0:
+                factor = 1.0
             obj += self.results[f"{self.solution._asset_fixed_operational_cost_map[asset]}"] * years
             obj += (
                 self.results[f"{self.solution._asset_variable_operational_cost_map[asset]}"] * years
@@ -198,8 +198,8 @@ class TestEndScenarioSizing(TestCase):
         ]:
             technical_lifetime = solution_staged.parameters(0)[f"{asset}.technical_life"]
             factor = years / technical_lifetime
-            if factor < 1:
-                factor = 1
+            if factor < 1.0:
+                factor = 1.0
             obj += results[f"{solution_staged._asset_fixed_operational_cost_map[asset]}"] * years
             obj += results[f"{solution_staged._asset_variable_operational_cost_map[asset]}"] * years
             obj += results[f"{solution_staged._asset_investment_cost_map[asset]}"] * factor
