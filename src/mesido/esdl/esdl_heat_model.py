@@ -1426,6 +1426,14 @@ class AssetToHeatComponent(_AssetToComponentBase):
         else:
             params = self._supply_return_temperature_modifiers(asset)
 
+        ates_temperature_range = None
+        for constraint in asset.attributes.get("constraint", []):
+            if constraint.name == "ATESDischargeTemperatureRange":
+                ates_temperature_range = (constraint.range.minValue,
+                                                 constraint.range.maxValue)
+            assert ates_temperature_range[1] == params["T_supply"]
+
+
         modifiers = dict(
             technical_life=self.get_asset_attribute_value(
                 asset,
@@ -1454,6 +1462,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             ),
             HeatIn=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
             HeatOut=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
+            ates_temperature_range=ates_temperature_range,
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
             **params,

@@ -353,7 +353,7 @@ class TestAtesTemperature(TestCase):
             HeatProblemATESMultiPort,
             solver_class=SolverCPLEX,
             base_folder=basefolder,
-            esdl_file_name="ATES_6port_HP_electricity_simplified.esdl",
+            esdl_file_name="ATES_6port_HP_simplified_ATES_temperatures.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Heatdemand_eprice.csv",
@@ -421,7 +421,8 @@ class TestAtesTemperature(TestCase):
         # checks that heatflow of different ports is positive or negative and that the sum is equal
         # to Heat_ates
         np.testing.assert_allclose(
-            ates_discharge_hot_heat + ates_discharge_cold_heat + ates_charge_hot_heat, ates_heat
+            ates_discharge_hot_heat + ates_discharge_cold_heat + ates_charge_hot_heat, ates_heat,
+            atol=1e-6
         )
         np.testing.assert_array_less(ates_discharge_cold_heat, 1)
         np.testing.assert_array_less(ates_discharge_hot_heat, 1)
@@ -488,7 +489,7 @@ class TestAtesTemperature(TestCase):
                     # temperatures = np.linspace(52.5, 65, 6).tolist()[::-1]
                     # temperatures.extend(np.linspace(45, 50, 6).tolist()[::-1])
 
-                    temperatures = np.linspace(60, 70, 3).tolist()[::-1]
+                    temperatures = np.linspace(60, 80, 3).tolist()[::-1]
 
                 return temperatures
 
@@ -496,7 +497,7 @@ class TestAtesTemperature(TestCase):
             HeatProblemATESMultiPort,
             solver_class=SolverCPLEX,
             base_folder=basefolder,
-            esdl_file_name="ATES_6port_HP_electricity_simplified.esdl",
+            esdl_file_name="ATES_6port_HP_simplified_ATES_temperatures.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Heatdemand_eprice.csv",

@@ -6,6 +6,7 @@ from numpy import nan
 
 from .heat_two_port import HeatTwoPort
 
+import numpy as np
 
 @add_variables_documentation_automatically
 class ATES(HeatTwoPort, BaseAsset):
@@ -40,6 +41,7 @@ class ATES(HeatTwoPort, BaseAsset):
         self.T_amb = 10
         self.T_supply = nan
         self.T_return = nan
+        self.ates_temperature_range = None
         self.T_supply_id = -1
         self.T_return_id = -1
         self.dT = self.T_supply - self.T_return
@@ -49,6 +51,10 @@ class ATES(HeatTwoPort, BaseAsset):
         self.nominal_pressure = 16.0e5
         self.minimum_pressure_drop = 1.0e5  # 1 bar of pressure drop
         self.pump_efficiency = 0.5
+
+        if self.ates_temperature_range:
+            self.ates_temperature_options = list(np.round(np.linspace(
+                max(self.ates_temperature_range), min(self.ates_temperature_range), 5)))
 
         max_temp_change = self.T_supply / (3600 * 24)  # loses full temperature in a day
         nom_temp_change = max_temp_change / 100  # loses full temperature in 100 days.
