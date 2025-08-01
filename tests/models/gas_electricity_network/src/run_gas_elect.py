@@ -39,7 +39,7 @@ if __name__ == "__main__":
     results = solution.extract_results()
     parameters = solution.parameters(0)
 
-    solution_HighDemand = run_optimization_problem_solver(
+    solution_high_demand = run_optimization_problem_solver(
         GasElectProblem,
         esdl_parser=ESDLFileParser,
         esdl_file_name="gas_elect_loop_tree.esdl",
@@ -47,8 +47,8 @@ if __name__ == "__main__":
         input_timeseries_file="HeatingDemand_W_manual_HighDemand.csv",
     )
 
-    results_HighDemand = solution_HighDemand.extract_results()
-    parameters_HighDemand = solution_HighDemand.parameters(0)
+    results_high_demand = solution_high_demand.extract_results()
+    parameters_high_demand = solution_high_demand.parameters(0)
 
     # ----------------------------------------------------------------------------------------------
     # Do not delete the code below: manual checking and testing of values + usefull prints to

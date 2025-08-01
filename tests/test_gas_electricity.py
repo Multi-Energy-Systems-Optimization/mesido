@@ -3,19 +3,20 @@ from unittest import TestCase
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido._darcy_weisbach import friction_factor, head_loss
 from mesido.workflows.utils.helpers import run_optimization_problem_solver
 
-from mesido._darcy_weisbach import friction_factor, head_loss
-from mesido.head_loss_class import HeadLossOption
 from mesido.constants import GRAVITATIONAL_CONSTANT
+from mesido.head_loss_class import HeadLossOption
+
 
 import numpy as np
 
 from utils_tests import (
     demand_matching_test,
+    electric_power_conservation_test,
     energy_conservation_test,
     heat_to_discharge_test,
-    electric_power_conservation_test,
 )
 
 
@@ -57,7 +58,7 @@ class TestGasElect(TestCase):
         results = solution.extract_results()
         parameters = solution.parameters(0)
 
-        solution_HighDemand = run_optimization_problem_solver(
+        solution_high_demand = run_optimization_problem_solver(
             GasElectProblem,
             base_folder=base_folder,
             esdl_parser=ESDLFileParser,
@@ -66,7 +67,7 @@ class TestGasElect(TestCase):
             input_timeseries_file="HeatingDemand_W_manual_HighDemand.csv",
         )
 
-        results_HighDemand = solution_HighDemand.extract_results()
+        results_high_demand = solution_high_demand.extract_results()
 
         # Test: Power recieved by heat demand is equal to the power supplied by conversion assets
         np.testing.assert_allclose(
@@ -207,16 +208,16 @@ class TestGasElect(TestCase):
                     )
 
         # Test: Show a larger pipe size is need for high heating demand
-        pipe_diameters_HighDemand = []
-        for pipe in solution_HighDemand.energy_system_components.get("gas_pipe", []):
-            if results_HighDemand[f"{pipe}__gn_diameter"] <= 1e-15:
+        pipe_diameters_high_demand = []
+        for pipe in solution_high_demand.energy_system_components.get("gas_pipe", []):
+            if results_high_demand[f"{pipe}__gn_diameter"] <= 1e-15:
                 pass
             else:
-                pipe_diameter = results_HighDemand[f"{pipe}__gn_diameter"][0]
-                pipe_diameters_HighDemand.append(pipe_diameter)
+                pipe_diameter = results_high_demand[f"{pipe}__gn_diameter"][0]
+                pipe_diameters_high_demand.append(pipe_diameter)
                 print("Diameter of ", pipe, pipe_diameter)
         # print(np.array(pipe_diameters), np.array(pipe_diameters_HighDemand))
-        np.testing.assert_array_less(np.array(pipe_diameters), np.array(pipe_diameters_HighDemand))
+        np.testing.assert_array_less(np.array(pipe_diameters), np.array(pipe_diameters_high_demand))
 
         # Test: Utils_tests
         demand_matching_test(solution, results)
