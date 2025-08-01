@@ -2393,6 +2393,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         used in a pycml object.
 
         Required ESDL fields:
+            - efficiency
             - power
             - id (this id must be unique)
             - name (this name must be unique)

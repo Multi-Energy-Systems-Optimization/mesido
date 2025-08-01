@@ -6,6 +6,7 @@ from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.workflows.utils.helpers import run_optimization_problem_solver
 
 from mesido._darcy_weisbach import friction_factor, head_loss
+from mesido.head_loss_class import HeadLossOption
 from mesido.constants import GRAVITATIONAL_CONSTANT
 
 import numpy as np
@@ -21,7 +22,7 @@ from utils_tests import (
 class TestGasElect(TestCase):
     def test_gas_elect(self):
         """
-        Small scaled case that uses gas and electricity commodities is added. Case includes
+        Small scaled case that uses hydrogen and electricity commodities is added. Case includes
         2 Heating demand, 1 gas pipe looped network, 1 electricity network, 2 heat pumps and
         2 gas boilers. Conversion assets have installation (EUR), investment (EUR/MW) and
         variable operational costs (EUR/MWh). Gas pipes and electricity cables have
@@ -34,8 +35,10 @@ class TestGasElect(TestCase):
         2. gas pipe diameter value in resulting parameters are updated with optimized values
         in results
         3. the result dH is equal to manually calculated dH via linear interpolation.
-        4. gas consumption is equal to production
-        5. manually calculated TCO is equal to Objective function value
+        4. higher heating demand require larger size of gas pipes
+        5. heat source energy of gas boiler is equal to consumed gas energy * efficiency
+        6. gas consumption is equal to production
+        7. manually calculated TCO is equal to Objective function value
         """
         import models.gas_electricity_network.src.run_gas_elect as example
         from models.gas_electricity_network.src.run_gas_elect import GasElectProblem
@@ -53,6 +56,17 @@ class TestGasElect(TestCase):
 
         results = solution.extract_results()
         parameters = solution.parameters(0)
+
+        solution_HighDemand = run_optimization_problem_solver(
+            GasElectProblem,
+            base_folder=base_folder,
+            esdl_parser=ESDLFileParser,
+            esdl_file_name="gas_elect_loop_tree.esdl",
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="HeatingDemand_W_manual_HighDemand.csv",
+        )
+
+        results_HighDemand = solution_HighDemand.extract_results()
 
         # Test: Power recieved by heat demand is equal to the power supplied by conversion assets
         np.testing.assert_allclose(
@@ -78,13 +92,15 @@ class TestGasElect(TestCase):
                 atol=1.0e-12,
             )
 
-        # Test: If the result dH is equal to manually calculated dH via linear interpolation.
+        # Test: Check if the result dH is equal to manually calculated dH via linear interpolation.
+        pipe_diameters = []
         for pipe in solution.energy_system_components.get("gas_pipe", []):
             if results[f"{pipe}__gn_diameter"] <= 1e-15:
                 pass
             else:
                 v_max = solution.gas_network_settings["maximum_velocity"]
                 pipe_diameter = results[f"{pipe}__gn_diameter"][0]
+                pipe_diameters.append(pipe_diameter)
                 area = np.pi * pipe_diameter**2 / 4.0
                 network_type = solution.gas_network_settings["network_type"]
                 pressure = solution.parameters(0)[f"{pipe}.pressure"]
@@ -92,11 +108,11 @@ class TestGasElect(TestCase):
                 temperature = 20  # is default for gas pipes
                 pipe_length = solution.parameters(0)[f"{pipe}.length"]
                 v_pipe = results[f"{pipe}.Q"] / area
-                # print("Velocity of ", pipe, v_pipe)
-                # print("Diameter of ", pipe, pipe_diameter)
+                print("Velocity of ", pipe, v_pipe)
+                print("Diameter of ", pipe, pipe_diameter)
                 if (
-                    str(solution.gas_network_settings["head_loss_option"])
-                    == "HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY"
+                    solution.gas_network_settings["head_loss_option"]
+                    == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
                 ):
                     ff = friction_factor(
                         velocity=v_max,
@@ -109,16 +125,15 @@ class TestGasElect(TestCase):
                     c_v = parameters[f"{pipe}.length"] * ff / (2 * 9.81) / pipe_diameter
                     dh_max = c_v * v_max**2
                     dh_manual = dh_max * v_pipe / v_max
-                    print("Calculated head loss in ", pipe, -dh_manual)
-                    print("Resulting head loss in ", pipe, results[f"{pipe}.dH"])
+                    # print("Calculated head loss in ", pipe, -dh_manual)
+                    # print("Resulting head loss in ", pipe, results[f"{pipe}.dH"])
                     np.testing.assert_allclose(-dh_manual, results[f"{pipe}.dH"], atol=1.0e-12)
 
                 elif (
-                    str(solution.gas_network_settings["head_loss_option"])
-                    == "HeadLossOption.LINEARIZED_N_LINES_EQUALITY"
+                    solution.gas_network_settings["head_loss_option"]
+                    == HeadLossOption.LINEARIZED_N_LINES_EQUALITY
                 ):
-                    print("This is a n_line_equality")
-                    itime = 1  # 0
+                    itime = 2  # 0
                     v_points = np.linspace(
                         0.0,
                         v_max,
@@ -146,16 +161,10 @@ class TestGasElect(TestCase):
                     # Approximate dH [m] vs Q [m3/s] with a linear line between between v_points
                     # dH_manual_linear = a*Q + b
                     # Then use this linear function to calculate the head loss
-                    delta_dh_theory = head_loss(
-                        velocity=v_points[1],
-                        diameter=pipe_diameter,
-                        length=pipe_length,
-                        network_type=network_type,
-                        pressure=pressure,
-                        wall_roughness=pipe_wall_roughness,
-                        temperature=temperature,
-                    ) - head_loss(
-                        velocity=v_points[0],
+                    idx = int(np.searchsorted(v_points, v_inspect))
+
+                    dh_theory_idx = head_loss(
+                        velocity=v_points[idx],
                         diameter=pipe_diameter,
                         length=pipe_length,
                         network_type=network_type,
@@ -164,13 +173,22 @@ class TestGasElect(TestCase):
                         temperature=temperature,
                     )
 
-                    delta_volumetric_flow = (v_points[1] * np.pi * pipe_diameter**2 / 4.0) - (
-                        v_points[0] * np.pi * pipe_diameter**2 / 4.0
+                    dh_theory_idx_minus = head_loss(
+                        velocity=v_points[idx - 1],
+                        diameter=pipe_diameter,
+                        length=pipe_length,
+                        network_type=network_type,
+                        pressure=pressure,
+                        wall_roughness=pipe_wall_roughness,
+                        temperature=temperature,
                     )
+                    q_idx = v_points[idx] * np.pi * pipe_diameter**2 / 4.0
+                    q_idx_minus = v_points[idx - 1] * np.pi * pipe_diameter**2 / 4.0
+                    q_inspect = v_inspect * np.pi * pipe_diameter**2 / 4.0
 
-                    a = delta_dh_theory / delta_volumetric_flow
-                    b = delta_dh_theory - a * delta_volumetric_flow
-                    dh_manual_linear = a * (v_inspect * np.pi * pipe_diameter**2 / 4.0) + b
+                    a = (dh_theory_idx - dh_theory_idx_minus) / (q_idx - q_idx_minus)
+                    b = dh_theory_idx - a * q_idx
+                    dh_manual_linear = a * q_inspect + b
 
                     dh_milp_head_loss_function = head_loss(
                         v_inspect,
@@ -181,17 +199,40 @@ class TestGasElect(TestCase):
                         network_type=solution.gas_network_settings["network_type"],
                         pressure=solution.parameters(0)[f"{pipe}.pressure"],
                     )
+                    # print(results[f"{pipe}.dH"][itime], -dh_manual_linear)
                     np.testing.assert_allclose(dh_theory, dh_milp_head_loss_function)
                     np.testing.assert_array_less(dh_milp_head_loss_function, dh_manual_linear)
                     np.testing.assert_allclose(
                         results[f"{pipe}.dH"][itime], -dh_manual_linear, atol=1.0e-12
                     )
 
+        # Test: Show a larger pipe size is need for high heating demand
+        pipe_diameters_HighDemand = []
+        for pipe in solution_HighDemand.energy_system_components.get("gas_pipe", []):
+            if results_HighDemand[f"{pipe}__gn_diameter"] <= 1e-15:
+                pass
+            else:
+                pipe_diameter = results_HighDemand[f"{pipe}__gn_diameter"][0]
+                pipe_diameters_HighDemand.append(pipe_diameter)
+                print("Diameter of ", pipe, pipe_diameter)
+        # print(np.array(pipe_diameters), np.array(pipe_diameters_HighDemand))
+        np.testing.assert_array_less(np.array(pipe_diameters), np.array(pipe_diameters_HighDemand))
+
         # Test: Utils_tests
         demand_matching_test(solution, results)
         energy_conservation_test(solution, results)
         heat_to_discharge_test(solution, results)
         electric_power_conservation_test(solution, results)
+
+        # Test: Check the burning efficiency of gas heaters
+        for asset_name in [*solution.energy_system_components.get("gas_boiler", [])]:
+            np.testing.assert_allclose(
+                parameters[f"{asset_name}.energy_content"]
+                * results[f"{asset_name}.GasIn.mass_flow"]
+                * parameters[f"{asset_name}.efficiency"]
+                / 1000.0,  # [J/kg] * [g/s] / 1000.0 = [J/s]
+                results[f"{asset_name}.Heat_source"],
+            )
 
         # Test: Check gas consumption vs production balance
         total_gas_demand_g = [0] * len(np.diff(solution.times()))

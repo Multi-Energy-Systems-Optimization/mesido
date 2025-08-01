@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" name="gas_elect_loop_tree" description="" id="cc3b855b-0403-4df8-a84f-8ea6fd25420e" esdlVersion="v250501" version="55">
+<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" name="gas_elect_loop_tree" description="" id="cc3b855b-0403-4df8-a84f-8ea6fd25420e" esdlVersion="v250501" version="56">
   <instance xsi:type="esdl:Instance" id="f2e9533d-015d-445f-8c08-cd035d238eee" name="Untitled instance">
     <area xsi:type="esdl:Area" id="74ab5996-6a79-4cd6-9fa8-4f1a498722f5" name="Untitled area">
       <asset xsi:type="esdl:GasProducer" id="82d5c086-b805-4f89-a2e7-21490ccb2acd" name="GasProducer" power="50000000.0">
@@ -7,7 +7,7 @@
         <port xsi:type="esdl:OutPort" id="f74c1469-0233-4a92-9191-30939a307fb3" name="Out" connectedTo="27c7c352-af9e-48a8-a128-ea9cb5507f7f" carrier="1a8f4b2c-10cb-4a42-9b2e-2217b619c5aa"/>
         <costInformation xsi:type="esdl:CostInformation" id="a6dd34b3-256d-4f44-bae2-f909599416e6"/>
       </asset>
-      <asset xsi:type="esdl:GasHeater" id="d39b63a4-f19d-4144-8168-f89f19d5d8ff" name="GasHeater_1" power="10000000.0" efficiency="0.8" state="OPTIONAL">
+      <asset xsi:type="esdl:GasHeater" id="d39b63a4-f19d-4144-8168-f89f19d5d8ff" name="GasHeater_1" power="50000000.0" efficiency="0.8" state="OPTIONAL">
         <geometry xsi:type="esdl:Point" lat="51.51466508392328" lon="3.990000486373902"/>
         <port xsi:type="esdl:InPort" id="fdb016a7-dfec-44c6-a662-f3c48df32a0a" name="InPort" connectedTo="1038740f-a338-4177-8912-5c4f5a04772a" carrier="1a8f4b2c-10cb-4a42-9b2e-2217b619c5aa"/>
         <port xsi:type="esdl:InPort" id="77a5400d-388d-4818-9f0b-a92dde712f5e" name="InPort_sec" connectedTo="8f52d2ef-2cbb-4226-a99b-67ccb2c8969d" carrier="1d5f7417-03b1-4467-9d61-e11e36dcaf43"/>
@@ -24,7 +24,7 @@
           </variableOperationalCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:HeatingDemand" id="e820e953-45db-410e-b57b-6c0cfd187b79" name="HeatingDemand_1" power="10000000.0">
+      <asset xsi:type="esdl:HeatingDemand" id="e820e953-45db-410e-b57b-6c0cfd187b79" name="HeatingDemand_1" power="50000000.0">
         <geometry xsi:type="esdl:Point" lat="51.51515704274855" lon="3.9904332022486737"/>
         <port xsi:type="esdl:InPort" id="6baaa615-3559-4685-aafc-1bf31b3118fa" name="In" connectedTo="37441b6d-d279-4155-af28-430c140bb88f" carrier="b73c23fb-3b07-47b3-9c04-47dabc1116a3"/>
         <port xsi:type="esdl:OutPort" id="88635197-9a87-4471-bded-374ba2d75b22" name="Out" connectedTo="42355913-2d28-4178-9726-0f163f94b724" carrier="1d5f7417-03b1-4467-9d61-e11e36dcaf43"/>
@@ -44,7 +44,7 @@
         <port xsi:type="esdl:OutPort" id="e24aeb1a-b05d-49f0-a8f5-91bee021adff" name="OutPort" connectedTo="8a5750d5-3d76-4c4d-bae2-9c62bcb44c35" carrier="0f43ef33-aca7-473a-88b2-9a10ad995e02"/>
         <costInformation xsi:type="esdl:CostInformation" id="7ea0e861-befe-44d2-be72-efe589173544"/>
       </asset>
-      <asset xsi:type="esdl:HeatPump" id="aa00fac0-ba7f-4f51-b72b-08cad2fabade" name="HeatPump_1" power="10000000.0" COP="4.0" state="OPTIONAL">
+      <asset xsi:type="esdl:HeatPump" id="aa00fac0-ba7f-4f51-b72b-08cad2fabade" name="HeatPump_1" power="50000000.0" COP="4.0" state="OPTIONAL">
         <geometry xsi:type="esdl:Point" lat="51.514578175132144" lon="3.9903623886668753" CRS="WGS84"/>
         <port xsi:type="esdl:InPort" id="044d6e40-a990-4dc2-9820-bacae498b366" name="InPort" connectedTo="25b003b2-4031-472e-8a20-40a40f7960db" carrier="0f43ef33-aca7-473a-88b2-9a10ad995e02"/>
         <port xsi:type="esdl:InPort" id="95669730-c046-4dea-955a-74cca74324a6" name="InPort_sec" connectedTo="8f52d2ef-2cbb-4226-a99b-67ccb2c8969d" carrier="1d5f7417-03b1-4467-9d61-e11e36dcaf43"/>
@@ -61,12 +61,12 @@
           </variableOperationalCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:HeatingDemand" id="6c7b50e2-8e58-4bf3-ac78-81fc04f36d9e" name="HeatingDemand_2" power="10000000.0">
+      <asset xsi:type="esdl:HeatingDemand" id="6c7b50e2-8e58-4bf3-ac78-81fc04f36d9e" name="HeatingDemand_2" power="50000000.0">
         <geometry xsi:type="esdl:Point" lat="51.51654851372736" lon="3.9911486308103066"/>
         <port xsi:type="esdl:InPort" id="4c23860c-d861-476b-80ed-2953b71c2990" name="In" connectedTo="cc20ce99-0216-488d-b401-99a6155e0e75" carrier="b73c23fb-3b07-47b3-9c04-47dabc1116a3"/>
         <port xsi:type="esdl:OutPort" id="a7280fbc-a9fe-4cdc-aee6-7a9aa77eca61" name="Out" connectedTo="52906d2f-6d35-4ef0-a152-fe87a7b85b3c" carrier="1d5f7417-03b1-4467-9d61-e11e36dcaf43"/>
       </asset>
-      <asset xsi:type="esdl:GasHeater" id="c0520c1c-85ff-4b34-8467-ea49c9653453" name="GasHeater_2" power="10000000.0" efficiency="0.8" state="OPTIONAL">
+      <asset xsi:type="esdl:GasHeater" id="c0520c1c-85ff-4b34-8467-ea49c9653453" name="GasHeater_2" power="50000000.0" efficiency="0.8" state="OPTIONAL">
         <geometry xsi:type="esdl:Point" lat="51.516136714192804" lon="3.990641551792212"/>
         <port xsi:type="esdl:InPort" id="16956b7e-4abf-419d-ba76-c947649471f6" name="InPort" connectedTo="e156978a-8744-4914-8541-0711a97e8131" carrier="1a8f4b2c-10cb-4a42-9b2e-2217b619c5aa"/>
         <port xsi:type="esdl:InPort" id="1263c55d-13b0-43e8-abf6-d30aaff40c2e" name="InPort_sec" connectedTo="da9d1d6f-6f62-4b43-8e22-24a681355c68" carrier="1d5f7417-03b1-4467-9d61-e11e36dcaf43"/>
@@ -270,7 +270,7 @@
           </investmentCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:HeatPump" id="5d2aa15d-be0d-4a3c-b62a-53e410577449" name="HeatPump_2" power="10000000.0" state="OPTIONAL" COP="4.0">
+      <asset xsi:type="esdl:HeatPump" id="5d2aa15d-be0d-4a3c-b62a-53e410577449" name="HeatPump_2" power="50000000.0" state="OPTIONAL" COP="4.0">
         <geometry xsi:type="esdl:Point" lat="51.51610553337001" lon="3.991341864275895"/>
         <port xsi:type="esdl:InPort" id="db754d23-ee44-424e-b38c-bc63400bee41" name="SecIn" connectedTo="da9d1d6f-6f62-4b43-8e22-24a681355c68" carrier="1d5f7417-03b1-4467-9d61-e11e36dcaf43"/>
         <port xsi:type="esdl:OutPort" id="018a9a76-16ea-4e0d-8d10-af3222fa3cbb" name="SecOut" connectedTo="37fe23e9-1282-4f27-a8cf-04c1e5d67f54" carrier="b73c23fb-3b07-47b3-9c04-47dabc1116a3"/>

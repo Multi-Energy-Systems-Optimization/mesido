@@ -7,6 +7,8 @@ from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.workflows.gas_elect_workflow import GasElectProblem
 from mesido.workflows.utils.helpers import run_optimization_problem_solver
+from mesido.network_common import NetworkSettings
+from mesido.head_loss_class import HeadLossOption
 
 # root_folder = os.path.join(str(Path(__file__).resolve().parent.parent.parent.parent), "tests")
 # sys.path.insert(1, root_folder)
@@ -24,6 +26,23 @@ if __name__ == "__main__":
     start_time = time.time()
 
     class GasElectProblemOld(GasElectProblem):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+
+        def energy_system_options(self):
+            options = super().energy_system_options()
+
+            # Setting for gas type
+            self.gas_network_settings["network_type"] = NetworkSettings.NETWORK_TYPE_GAS
+
+            # Setting when started with head loss inclusions
+            self.gas_network_settings["minimize_head_losses"] = False
+            self.gas_network_settings["head_loss_option"] = (
+                HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+            )
+
+            return options
+
         def read(self):
             super().read()
 
