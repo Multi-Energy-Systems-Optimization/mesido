@@ -1,12 +1,11 @@
 from pathlib import Path
 from unittest import TestCase
-
-from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido._darcy_weisbach import friction_factor, head_loss
-from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.constants import GRAVITATIONAL_CONSTANT
-from mesido.workflows.utils.helpers import run_optimization_problem_solver
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
+from mesido.workflows.utils.helpers import run_optimization_problem_solver
 
 import numpy as np
 
