@@ -5,8 +5,8 @@ from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.head_loss_class import HeadLossOption
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.goals.minimize_tco_goal import MinimizeTCO
-from mesido.workflows.io.write_output import ScenarioOutput
 from mesido.network_common import NetworkSettings
+from mesido.workflows.io.write_output import ScenarioOutput
 from mesido.workflows.utils.helpers import main_decorator
 
 import numpy as np
