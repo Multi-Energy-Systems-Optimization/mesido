@@ -100,20 +100,16 @@ class TestEndScenarioSizing(TestCase):
             *self.solution.energy_system_components.get("heat_pump", []),
             *self.solution.energy_system_components.get("heat_pipe", []),
         ]:
-            if asset != self.solution.energy_system_components.get("heat_demand", []):
-                technical_lifetime = years
-            else:
-                technical_lifetime = self.solution.parameters(0)[f"{asset}.technical_life"]
+            technical_lifetime = self.solution.parameters(0)[f"{asset}.technical_life"]
+            factor = years / technical_lifetime
+            if factor < 1:
+                factor = 1
             obj += self.results[f"{self.solution._asset_fixed_operational_cost_map[asset]}"] * years
             obj += (
                 self.results[f"{self.solution._asset_variable_operational_cost_map[asset]}"] * years
             )
-            obj += self.results[f"{self.solution._asset_investment_cost_map[asset]}"] * (
-                years / technical_lifetime
-            )
-            obj += self.results[f"{self.solution._asset_installation_cost_map[asset]}"] * (
-                years / technical_lifetime
-            )
+            obj += self.results[f"{self.solution._asset_investment_cost_map[asset]}"] * factor
+            obj += self.results[f"{self.solution._asset_installation_cost_map[asset]}"] * factor
 
         np.testing.assert_allclose(obj / 1.0e6, self.solution.objective_value)
 
