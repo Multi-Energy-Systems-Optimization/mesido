@@ -240,18 +240,43 @@ class AssetToHeatComponent(_AssetToComponentBase):
             logger.warning(warning_msg)
 
     def _generic_modifiers(self, asset):
+        """
+        Args:
+            asset: mesido common asset with all attributes
+
+        Returns: dictionary of the generic heat modifiers: Q_nominal, Heat_flow, and the hydraulic
+        power of HeatIn and HeatOut.
+        """
         modifiers = dict(
-            technical_life = self.get_asset_attribute_value(
+            technical_life=self.get_asset_attribute_value(
                 asset,
                 "technicalLifetime",
                 default_value=30.0,
                 min_value=1.0,
                 max_value=50.0,
             ),
-            discount_rate = self.get_asset_attribute_value(
+            discount_rate=self.get_asset_attribute_value(
                 asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
             ),
-            state = self.get_state(asset),
+            state=self.get_state(asset),
+        )
+        return modifiers
+
+    def _generic_heat_modifiers(self, min_heat, max_heat, q_nominal):
+        """
+        Args:
+            min_heat: minimum heat flow value
+            max_heat: maximum heat flow value
+            q_nominal: flow nominal
+
+        Returns: dictionary of the generic heat modifiers: Q_nominal, Heat_flow, and the hydraulic
+        power of HeatIn and HeatOut.
+        """
+        modifiers = dict(
+            Q_nominal=q_nominal,
+            Heat_flow=dict(min=min_heat, max=max_heat, nominal=max_heat / 2.0),
+            HeatIn=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
+            HeatOut=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
         )
         return modifiers
 
@@ -363,18 +388,15 @@ class AssetToHeatComponent(_AssetToComponentBase):
         q_nominal = self._get_connected_q_nominal(asset)
 
         modifiers = dict(
-            Q_nominal=q_nominal,
             height=r,
             radius=r,
             heat_transfer_coeff=1.0,
             min_fraction_tank_volume=min_fraction_tank_volume,
             Stored_heat=dict(min=min_heat, max=max_heat),
             Heat_buffer=dict(min=-hfr_discharge_max, max=hfr_charge_max),
-            Heat_flow=dict(min=-hfr_discharge_max, max=hfr_charge_max, nominal=hfr_charge_max),
-            HeatIn=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
-            HeatOut=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
             init_Heat=min_heat,
             **self._generic_modifiers(asset),
+            **self._generic_heat_modifiers(-hfr_discharge_max, hfr_charge_max, q_nominal),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
@@ -428,12 +450,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
         q_nominal = self._get_connected_q_nominal(asset)
 
         modifiers = dict(
-            Q_nominal=q_nominal,
             Heat_demand=dict(max=max_demand, nominal=max_demand / 2.0),
-            Heat_flow=dict(max=max_demand, nominal=max_demand / 2.0),
-            HeatIn=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
-            HeatOut=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
             **self._generic_modifiers(asset),
+            **self._generic_heat_modifiers(0.0, max_demand, q_nominal),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
@@ -465,12 +484,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
         q_nominal = self._get_connected_q_nominal(asset)
 
         modifiers = dict(
-            Q_nominal=q_nominal,
             Heat_airco=dict(max=max_, nominal=max_ / 2.0),
-            Heat_flow=dict(max=max_, nominal=max_ / 2.0),
-            HeatIn=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
-            HeatOut=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
             **self._generic_modifiers(asset),
+            **self._generic_heat_modifiers(0.0, max_, q_nominal),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
@@ -500,12 +516,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
         q_nominal = self._get_connected_q_nominal(asset)
 
         modifiers = dict(
-            Q_nominal=q_nominal,
             Cold_demand=dict(min=0.0, max=max_demand, nominal=max_demand / 2.0),
-            Heat_flow=dict(min=0.0, max=max_demand, nominal=max_demand / 2.0),
-            HeatIn=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
-            HeatOut=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
             **self._generic_modifiers(asset),
+            **self._generic_heat_modifiers(0.0, max_demand, q_nominal),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
@@ -1200,12 +1213,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
         q_nominal = self._get_connected_q_nominal(asset)
 
         modifiers = dict(
-            Q_nominal=q_nominal,
             Heat_source=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
-            Heat_flow=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
-            HeatIn=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
-            HeatOut=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
             **self._generic_modifiers(asset),
+            **self._generic_heat_modifiers(0.0, max_supply, q_nominal),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
@@ -1315,7 +1325,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
         )
 
         modifiers = dict(
-            Q_nominal=q_nominal,
             Q=dict(
                 min=-q_max_ates * asset.attributes["aggregationCount"],
                 max=q_max_ates * asset.attributes["aggregationCount"],
@@ -1329,9 +1338,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 max=hfr_charge_max * asset.attributes["aggregationCount"] * 180.0 * 24 * 3600.0,
                 nominal=hfr_charge_max * asset.attributes["aggregationCount"] * 30.0 * 24 * 3600.0,
             ),
-            HeatIn=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
-            HeatOut=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
             **self._generic_modifiers(asset),
+            **self._generic_heat_modifiers(
+                -hfr_discharge_max * asset.attributes["aggregationCount"],
+                hfr_charge_max * asset.attributes["aggregationCount"],
+                q_nominal,
+            ),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
@@ -2384,15 +2396,13 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         modifiers = dict(
             Heat_source=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
-            Heat_flow=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
-            HeatIn=dict(Hydraulic_power=dict(nominal=q_nominals["Q_nominal"] * 16.0e5)),
-            HeatOut=dict(Hydraulic_power=dict(nominal=q_nominals["Q_nominal"] * 16.0e5)),
             id_mapping_carrier=id_mapping,
             density=density,
             energy_content=energy_content,
             GasIn=dict(Q=dict(min=0.0, nominal=q_nominals["Q_nominal_gas"])),
-            **q_nominals,
+            Q_nominal_gas=q_nominals["Q_nominal_gas"],
             **self._generic_modifiers(asset),
+            **self._generic_heat_modifiers(0.0, max_supply, q_nominals["Q_nominal"]),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
@@ -2461,9 +2471,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         modifiers = dict(
             Heat_source=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
-            Heat_flow=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
-            HeatIn=dict(Hydraulic_power=dict(nominal=q_nominal["Q_nominal"] * 16.0e5)),
-            HeatOut=dict(Hydraulic_power=dict(nominal=q_nominal["Q_nominal"] * 16.0e5)),
             id_mapping_carrier=id_mapping,
             ElectricityIn=dict(
                 Power=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
@@ -2473,8 +2480,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
             min_voltage=min_voltage,
             elec_power_nominal=max_supply,
             efficiency=eff,
-            **q_nominal,
             **self._generic_modifiers(asset),
+            **self._generic_heat_modifiers(0.0, max_supply, q_nominal["Q_nominal"]),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
@@ -2542,9 +2549,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         modifiers = dict(
             Heat_source=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
-            Heat_flow=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
-            HeatIn=dict(Hydraulic_power=dict(nominal=q_nominal["Q_nominal"] * 16.0e5)),
-            HeatOut=dict(Hydraulic_power=dict(nominal=q_nominal["Q_nominal"] * 16.0e5)),
             id_mapping_carrier=id_mapping,
             ElectricityIn=dict(
                 Power=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
@@ -2554,8 +2558,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
             min_voltage=min_voltage,
             elec_power_nominal=max_supply,
             cop=cop,
-            **q_nominal,
             **self._generic_modifiers(asset),
+            **self._generic_heat_modifiers(0.0, max_supply, q_nominal["Q_nominal"]),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
