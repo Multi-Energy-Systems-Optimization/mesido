@@ -2970,7 +2970,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             # are extracting heat from it.
             heat_out = self.state(f"{b}.HeatOut.Heat")
             heat_in = self.state(f"{b}.HeatIn.Heat")
-            heat_ates = self.state(f"{b}.Heat_ates")
+            heat_flow = self.state(f"{b}.Heat_flow")
 
             # We want an _equality_ constraint between discharge and heat if the buffer is
             # consuming (i.e. behaving like a "demand"). We want an _inequality_
@@ -2994,10 +2994,10 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 ((discharge + flow_big_m * (1 - is_buffer_charging)) / q_nominal, 0.0, np.inf)
             )
             constraints.append(
-                ((heat_ates - big_m * is_buffer_charging) / heat_nominal, -np.inf, 0.0)
+                ((heat_flow - big_m * is_buffer_charging) / heat_nominal, -np.inf, 0.0)
             )
             constraints.append(
-                ((heat_ates + big_m * (1 - is_buffer_charging)) / heat_nominal, 0.0, np.inf)
+                ((heat_flow + big_m * (1 - is_buffer_charging)) / heat_nominal, 0.0, np.inf)
             )
 
 
