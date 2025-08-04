@@ -359,7 +359,7 @@ class HeatProblemATESMultiPort(
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.heat_network_settings["minimum_velocity"] = 1e-8
+        self.heat_network_settings["minimum_velocity"] = 1e-5
 
     def read(self) -> None:
         super().read()
@@ -429,7 +429,7 @@ if __name__ == "__main__":
         HeatProblemATESMultiPort,
         solver_class=SolverCPLEX,
         base_folder=basefolder,
-        esdl_file_name="ATES_6port_HP_electricity_simplified.esdl",
+        esdl_file_name="ATES_6port_HP_simplified_ATES_temperatures.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,
         input_timeseries_file="Heatdemand_eprice.csv",
