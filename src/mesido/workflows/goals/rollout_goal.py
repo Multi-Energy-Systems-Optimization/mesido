@@ -12,7 +12,7 @@ logger = logging.getLogger("WarmingUP-MPC")
 logger.setLevel(logging.INFO)
 
 
-STANDARD_ASSET_LIFETIME = 30.
+STANDARD_ASSET_LIFETIME = 30.0
 
 
 MULTI_ENUM_NAME_TO_FACTOR = {
@@ -65,8 +65,10 @@ class MinimizeVariableOPEX(Goal):
 
         asset_varopex_map = optimization_problem._asset_variable_operational_cost_map
 
-        for asset in [*optimization_problem.energy_system_components.get("heat_source", []),
-                      *optimization_problem.energy_system_components.get("ates", [])]:
+        for asset in [
+            *optimization_problem.energy_system_components.get("heat_source", []),
+            *optimization_problem.energy_system_components.get("ates", []),
+        ]:
 
             extra_var = optimization_problem.extra_variable(asset_varopex_map.get(asset, 0.0))
             obj += extra_var * self.year_step_size
@@ -107,9 +109,8 @@ class MinimizeVariableOPEX(Goal):
         return obj / 1.0e6
 
 
-
 class MaximizeRevenueCosts(Goal):
-    #TODO: minimize opex can in the def goals, instead of pathgoals as we can add the opex
+    # TODO: minimize opex can in the def goals, instead of pathgoals as we can add the opex
     # variable from financial mixin for each asset
 
     order = 1
@@ -121,19 +122,18 @@ class MaximizeRevenueCosts(Goal):
 
     def function(self, optimization_problem, ensemble_member: int) -> ca.MX:
         obj = 0.0
-        obj -= self.year_step_size \
-            * self.revenue_heat_delivered(optimization_problem, ensemble_member)
+        obj -= self.year_step_size * self.revenue_heat_delivered(
+            optimization_problem, ensemble_member
+        )
 
-        return obj / 1.e6
+        return obj / 1.0e6
 
-    def revenue_heat_delivered(self, optimization_problem,
-                               ensemble_member: int) -> ca.MX:
+    def revenue_heat_delivered(self, optimization_problem, ensemble_member: int) -> ca.MX:
         obj = 0
-        market_price = 125./1.e6  # 50 / 1.e6 # [€/Wh]
+        market_price = 125.0 / 1.0e6  # 50 / 1.e6 # [€/Wh]
         timesteps = np.diff(optimization_problem.times()) / 3600.0
         for demand in optimization_problem.energy_system_components.get("heat_demand", []):
-            obj += (optimization_problem.state(f"{demand}.Heat_demand") * timesteps *
-                    market_price)
+            obj += optimization_problem.state(f"{demand}.Heat_demand") * timesteps * market_price
         return obj
 
 
@@ -145,11 +145,11 @@ class MinimizeATESState(Goal):
         self.priority = priority
 
     def function(self, optimization_problem, ensemble_member):
-        obj = 0.
+        obj = 0.0
         for a in optimization_problem.energy_system_components.get("ates", []):
             obj += optimization_problem.state(f"{a}.Heat_loss")
 
-        return obj / 1.e6
+        return obj / 1.0e6
 
 
 class MinimizeCAPEXAssetsCosts(Goal):
@@ -160,11 +160,10 @@ class MinimizeCAPEXAssetsCosts(Goal):
         self.percentage_is_placed_vars = percentage_is_placed_vars
         self.priority = priority
 
-
     def function(self, optimization_problem, ensemble_member):
-        obj = 0.
+        obj = 0.0
         obj += self.capex_asset(optimization_problem, ensemble_member)
-        return optimization_problem._horizon / optimization_problem._years * obj / 1.e6
+        return optimization_problem._horizon / optimization_problem._years * obj / 1.0e6
 
     def capex_asset(self, optimization_problem, ensemble_member):
         obj = 0.0
@@ -175,16 +174,16 @@ class MinimizeCAPEXAssetsCosts(Goal):
                 asset_name = asset_name.split("_doublet")[0]
             asset = optimization_problem.get_asset_from_asset_name(asset_name=asset_name)
             # use the technical lifetime of the asset, if specified, otherwise fixed to 30
-            if asset.attributes['technicalLifetime'] == 0:
+            if asset.attributes["technicalLifetime"] == 0:
                 tech_lifetime = STANDARD_ASSET_LIFETIME
             else:
-                tech_lifetime = asset.attributes['technicalLifetime']  # in years
+                tech_lifetime = asset.attributes["technicalLifetime"]  # in years
 
             if asset.asset_type == "Pipe":
                 obj += self.capex_pipes(optimization_problem, asset, var_name) / (tech_lifetime)
             else:
-                investment_costs = asset.attributes['costInformation'].investmentCosts
-                installation_costs = asset.attributes['costInformation'].installationCosts
+                investment_costs = asset.attributes["costInformation"].investmentCosts
+                installation_costs = asset.attributes["costInformation"].installationCosts
                 inst_costs = 0.0
                 inv_costs = 0.0
                 if investment_costs is None:
@@ -194,7 +193,8 @@ class MinimizeCAPEXAssetsCosts(Goal):
                     inv_costs = investment_costs.value
                     if not (investment_costs.profileQuantityAndUnit.unit == UnitEnum.EURO):
                         raise RuntimeError(
-                            f"Specified investment and/or installation costs for {asset.name} are not in euro")
+                            f"Specified investment and/or installation costs for {asset.name} are not in euro"
+                        )
                 if installation_costs is None:
                     logger.info(f"Installation costs are not specified for {asset_name}")
                     inst_costs = 0.0
@@ -202,7 +202,8 @@ class MinimizeCAPEXAssetsCosts(Goal):
                     inst_costs = installation_costs.value
                     if not (installation_costs.profileQuantityAndUnit.unit == UnitEnum.EURO):
                         raise RuntimeError(
-                            f"Specified investment and/or installation costs for {asset.name} are not in euro")
+                            f"Specified investment and/or installation costs for {asset.name} are not in euro"
+                        )
 
                     # ensures that cost per doublet are considered.
                 # Yearly depreciation for all other assets based on total investment + installation
@@ -210,14 +211,17 @@ class MinimizeCAPEXAssetsCosts(Goal):
                 # for i in range(optimization_problem._years):
                 #     obj += symbols[i * 365] * (inv_costs + inst_costs) / tech_lifetime
 
-
-                if asset.asset_type == 'ATES':
+                if asset.asset_type == "ATES":
                     ates_N_doublets = parameters[f"{asset_name}.nr_of_doublets"]
                     inst_costs = inst_costs / ates_N_doublets
                     inv_costs = inv_costs / ates_N_doublets
-                    symbols = optimization_problem.get_asset_percentage__placed_symbols(f"{asset_name}_doublet_{1}")
-                    for i in range(1,ates_N_doublets):
-                        symbols += optimization_problem.get_asset_percentage__placed_symbols(f"{asset_name}_doublet_{1+i}")
+                    symbols = optimization_problem.get_asset_percentage__placed_symbols(
+                        f"{asset_name}_doublet_{1}"
+                    )
+                    for i in range(1, ates_N_doublets):
+                        symbols += optimization_problem.get_asset_percentage__placed_symbols(
+                            f"{asset_name}_doublet_{1+i}"
+                        )
                 else:
                     symbols = optimization_problem.get_asset_percentage__placed_symbols(asset_name)
                 for i in range(optimization_problem._years):
@@ -226,14 +230,15 @@ class MinimizeCAPEXAssetsCosts(Goal):
 
         return obj
 
-    def capex_pipes(self, optimization_problem,
-                    asset: Asset, var_name: str) -> ca.MX:
-        length = asset.attributes['length']
-        investment_costs = asset.attributes['costInformation'].investmentCosts
-        if not (investment_costs.profileQuantityAndUnit.unit == UnitEnum.EURO and
-                investment_costs.profileQuantityAndUnit.perUnit == UnitEnum.METRE):
+    def capex_pipes(self, optimization_problem, asset: Asset, var_name: str) -> ca.MX:
+        length = asset.attributes["length"]
+        investment_costs = asset.attributes["costInformation"].investmentCosts
+        if not (
+            investment_costs.profileQuantityAndUnit.unit == UnitEnum.EURO
+            and investment_costs.profileQuantityAndUnit.perUnit == UnitEnum.METRE
+        ):
             raise RuntimeError(f"Specified costs for pipe {asset.name} are not in euro's/meter")
-        obj = 0.
+        obj = 0.0
         # symbols = optimization_problem.state_vector(var_name)
         # for i in range(optimization_problem._years):
         #      obj += symbols[i*365] * length * investment_costs.value
@@ -256,12 +261,16 @@ class MinimizeRolloutFixedOperationalCosts(Goal):
 
     def function(self, optimization_problem, ensemble_member: int) -> ca.MX:
         obj = 0.0
-        obj += optimization_problem._horizon / optimization_problem._years * self.fixed_operational_costs(optimization_problem, ensemble_member)
+        obj += (
+            optimization_problem._horizon
+            / optimization_problem._years
+            * self.fixed_operational_costs(optimization_problem, ensemble_member)
+        )
 
-        return obj / 1.e6
+        return obj / 1.0e6
 
     def fixed_operational_costs(self, optimization_problem, ensemble_member: int) -> ca.MX:
-        obj = 0.
+        obj = 0.0
 
         for source in optimization_problem.energy_system_components.get("heat_source", []):
             obj += self.fixed_opex_of_asset(optimization_problem, source)
@@ -280,17 +289,22 @@ class MinimizeRolloutFixedOperationalCosts(Goal):
         """
         cost_infos = {}
         if asset.attributes["costInformation"].fixedOperationalAndMaintenanceCosts is None:
-            logger.info(f"No combined operational and maintenance costs provided for {asset}, "
-                        f"using the separately specified costs instead")
-            cost_infos["fixedOperationalCosts"] = \
-                asset.attributes["costInformation"].fixedOperationalCosts
-            cost_infos["fixedMaintenanceCosts"] = \
-                asset.attributes["costInformation"].fixedMaintenanceCosts
+            logger.info(
+                f"No combined operational and maintenance costs provided for {asset}, "
+                f"using the separately specified costs instead"
+            )
+            cost_infos["fixedOperationalCosts"] = asset.attributes[
+                "costInformation"
+            ].fixedOperationalCosts
+            cost_infos["fixedMaintenanceCosts"] = asset.attributes[
+                "costInformation"
+            ].fixedMaintenanceCosts
         else:
             cost_infos["fixedOperationalAndMaintenanceCosts"] = asset.attributes[
-                "costInformation"].fixedOperationalAndMaintenanceCosts
+                "costInformation"
+            ].fixedOperationalAndMaintenanceCosts
 
-        value = 0.
+        value = 0.0
         for key, cost_info in cost_infos.items():
             if cost_info is None:
                 logger.info(f"No {key} provided for asset {asset.name}")
@@ -320,10 +334,11 @@ class MinimizeRolloutFixedOperationalCosts(Goal):
 
         is_placed = optimization_problem.get_asset_is__placed_symbols(asset.name)
         fixed_operational_cost = self.get_fixed_opex_costs(asset)
-        max_power = asset.attributes["power"] if (asset_name not in
-                                                  optimization_problem.energy_system_components.get("ates",
-                                                                                    [])) else (
-            asset.attributes["maxChargeRate"])
+        max_power = (
+            asset.attributes["power"]
+            if (asset_name not in optimization_problem.energy_system_components.get("ates", []))
+            else (asset.attributes["maxChargeRate"])
+        )
         if max_power == 0:
             raise RuntimeError(f"Could not determine the max power of asset {asset}")
         for i in range(optimization_problem._years):

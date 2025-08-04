@@ -495,10 +495,12 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     for i in range(self._years):
                         var_name = f"{asset}__cumulative_investments_made_in_eur_year_{i}"
                         self.__cumulative_investments_made_in_eur_map[asset].append(var_name)
-                        self.__cumulative_investments_made_in_eur_var[var_name] = ca.MX.sym(var_name)
+                        self.__cumulative_investments_made_in_eur_var[var_name] = ca.MX.sym(
+                            var_name
+                        )
                         self.__cumulative_investments_made_in_eur_nominals[var_name] = (
-                                self.variable_nominal(f"{asset}__investment_cost")
-                                + self.variable_nominal(f"{asset}__installation_cost")
+                            self.variable_nominal(f"{asset}__investment_cost")
+                            + self.variable_nominal(f"{asset}__installation_cost")
                         )
                         self.__cumulative_investments_made_in_eur_bounds[var_name] = (0.0, np.inf)
 
@@ -516,7 +518,6 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                         if parameters[f"{asset}.state"] == 0:
                             aggr_count_max = 0.0
                         self.__asset_is_realized_bounds[var_name] = (0.0, aggr_count_max)
-
 
     @abstractmethod
     def energy_system_options(self):
@@ -1336,8 +1337,12 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     nominal = self.variable_nominal(var_name)
                     var_name = self.__asset_is_realized_map[asset][i]
                     asset_is_realized = self.extra_variable(var_name)
-                    installation_cost_sym = self.extra_variable(self._asset_installation_cost_map[asset])
-                    investment_cost_sym = self.extra_variable(self._asset_investment_cost_map[asset])
+                    installation_cost_sym = self.extra_variable(
+                        self._asset_installation_cost_map[asset]
+                    )
+                    investment_cost_sym = self.extra_variable(
+                        self._asset_investment_cost_map[asset]
+                    )
                     # TODO: add insulation class cost to the investments made.
                     # if asset in self.heat_network_components.get("demand", []):
                     #     for insulation_class in self.__get_insulation_classes(asset):
@@ -1377,9 +1382,9 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     constraints.append(
                         (
                             (
-                                    cumulative_investments_made
-                                    - capex_sym
-                                    - (1.0 - asset_is_realized) * big_m
+                                cumulative_investments_made
+                                - capex_sym
+                                - (1.0 - asset_is_realized) * big_m
                             )
                             / nominal,
                             -np.inf,
@@ -1415,10 +1420,12 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                                 )
                                 / max(self.get_aggregation_count_max(asset), 1.0)
                             )
-                    constraints.append(((heat_flow[:-1] + asset_is_realized * big_m) / big_m, 0.0,
-                                        np.inf))
-                    constraints.append(((heat_flow[:-1] - asset_is_realized * big_m) / big_m,
-                                        -np.inf, 0.0))
+                    constraints.append(
+                        ((heat_flow[:-1] + asset_is_realized * big_m) / big_m, 0.0, np.inf)
+                    )
+                    constraints.append(
+                        ((heat_flow[:-1] - asset_is_realized * big_m) / big_m, -np.inf, 0.0)
+                    )
 
         return constraints
 
@@ -1580,9 +1587,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         if self.energy_system_options()["discounted_annualized_cost"]:
             constraints.extend(self.__annualized_capex_constraints(ensemble_member))
 
-        constraints.extend(
-            self.__cumulative_investments_made_in_eur_constraints(ensemble_member)
-        )
+        constraints.extend(self.__cumulative_investments_made_in_eur_constraints(ensemble_member))
 
         return constraints
 
