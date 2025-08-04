@@ -3857,11 +3857,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             constraints.extend(self.__heat_matching_demand_insulation_constraints(ensemble_member))
 
         constraints.extend(self.__ates_max_stored_heat_constriants(ensemble_member))
-
-        # source_var_temp_constraints = self.__source_heat_to_discharge_variable_temp_constraints(ensemble_member)
-        # if source_var_temp_constraints is not None:
-        #     constraints.extend(source_var_temp_constraints)
-
         constraints.extend(self.__source_heat_to_discharge_variable_temp_constraints(ensemble_member))
 
         return constraints
