@@ -1518,16 +1518,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             )
 
             # Check to see if the cout carrier has a temperature profile assigned to it.
-            carriers = self.esdl_carriers
-            for carrier_id in carriers.keys():
-                if carriers[carrier_id]["id_number_mapping"] == parameters["source.T_supply_id"]:
-                    sup_carrier_name = carriers[carrier_id]["name"]
-            temp_out_profile = None
-            try:
-                temp_out_profile = self.get_timeseries(f"{sup_carrier_name}.price_profile")
-                # TODO: modify profile parser so it is not called a price profile.
-            except KeyError:
-                pass
+            temp_out_profile, _ = self.__get_out_port_temp_profile(parameters)
 
             if temp_out_profile is None:
                 if len(supply_temperatures) == 0:
@@ -1577,18 +1568,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         for s in self.energy_system_components.get("heat_source", []):
             heat_nominal = parameters[f"{s}.Heat_nominal"]
-            q_nominal = self.variable_nominal(f"{s}.Q")
             cp = parameters[f"{s}.cp"]
             rho = parameters[f"{s}.rho"]
             dt = parameters[f"{s}.dT"]
-
-            discharge = self.state(f"{s}.Q")
-            heat_out = self.state(f"{s}.HeatOut.Heat")
-
-            constraint_nominal = (heat_nominal * cp * rho * dt * q_nominal) ** 0.5
-
-            sup_carrier = parameters[f"{s}.T_supply_id"]
-            supply_temperatures = self.temperature_regimes(sup_carrier)
             
             big_m = 2.0 * self.bounds()[f"{s}.HeatOut.Heat"][1]
             big_m = (
@@ -1597,28 +1579,12 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 else 2.0 * self.bounds()[f"{s}.Heat_source"][1] * parameters[f"{s}.T_supply"] / dt
             )
 
-        # Check to see if the cout carrier has a temperature profile assigned to it.
-            carriers = self.esdl_carriers
-            for carrier_id in carriers.keys():
-                if carriers[carrier_id]["id_number_mapping"] == parameters["source.T_supply_id"]:
-                    sup_carrier_name = carriers[carrier_id]["name"]
-            temp_out_profile = None
-            try:
-                temp_out_profile = self.get_timeseries(f"{sup_carrier_name}.price_profile")
-                # TODO: modify profile parser so it is not called a price profile.
-            except KeyError:
-                pass
+            temp_out_profile, sup_carrier_name = self.__get_out_port_temp_profile(parameters)
 
             if temp_out_profile is not None: # Case where the out carrier has a temp profile assigned to it.
-                # TODO: figure out why __state_vector_scaled cannot be called from here.
-                canonical, sign = self.alias_relation.canonical_signed(f"{s}.HeatOut.Heat")
-                heat_out_vector = self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
-
-                canonical, sign = self.alias_relation.canonical_signed(f"{s}.Q")
-                discharge_vector = self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
-
+                heat_out_vector = self.__state_vector_scaled(f"{s}.HeatOut.Heat", ensemble_member)
+                discharge_vector = self.__state_vector_scaled(f"{s}.Q", ensemble_member)
                 temp_out_vector = self.get_timeseries(f"{sup_carrier_name}.price_profile").values
-                
                 constraints.append(
                         (
                             (heat_out_vector - discharge_vector * cp * rho * temp_out_vector)
@@ -1627,7 +1593,22 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                             0.0,
                         )
                     )
+                
         return constraints
+    
+    def __get_out_port_temp_profile(self, parameters):
+        carriers = self.esdl_carriers
+        temp_out_profile = None
+        for carrier_id in carriers.keys():
+            if carriers[carrier_id]["id_number_mapping"] == parameters["source.T_supply_id"]:
+                sup_carrier_name = carriers[carrier_id]["name"]
+        try:
+            temp_out_profile = self.get_timeseries(f"{sup_carrier_name}.price_profile")
+            # TODO: modify profile parser so it is not called a price profile.
+        except KeyError:
+            pass
+        
+        return temp_out_profile, sup_carrier_name
 
     def __cold_demand_heat_to_discharge_path_constraints(self, ensemble_member):
         """
@@ -1747,8 +1728,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             temperatures = self.temperature_regimes(carrier)
 
             for heat in [scaled_heat_in, scaled_heat_out]:
-                if self.energy_system_options()["neglect_pipe_heat_losses"]:
-                    temp = parameters[f"{p}.temperature"]
+                if self.energy_system_options()["neglect_pipe_heat_losses"]: #TODO: carrier temp profile check should go here.
+                    temp = parameters[f"{p}.temperature"] # TODO: when the carrier has a profile assigned to it, change this for the profile vector.
                     if len(temperatures) == 0:
                         constraints.append(
                             (

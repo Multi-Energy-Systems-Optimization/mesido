@@ -88,7 +88,7 @@ class TestHeat(TestCase):
         energy_conservation_test(case, results)
         heat_to_discharge_test(case, results)
 
-    def test_heat_prod_accel(self):
+    def test_heat_prod_prof(self):
         """
         Check the optimiziation function when the zero heat loss is used.
 
@@ -112,7 +112,7 @@ class TestHeat(TestCase):
         case = run_esdl_mesido_optimization(
             Model,
             base_folder=base_folder,
-            esdl_file_name="sourcesink_accel_test.esdl",
+            esdl_file_name="sourcesink_prof_test.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_prod_test.csv",
@@ -418,4 +418,4 @@ class TestDisconnectablePipe(TestCase):
 
 if __name__ == "__main__":
     test_heat = TestHeat()
-    test_heat.test_heat_prod_accel()
+    test_heat.test_heat_prod_prof()
