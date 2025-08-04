@@ -45,6 +45,27 @@ if __name__ == "__main__":
     plt.savefig(savefig)
     plt.close()
 
+
+    figure, ax = plt.subplots()
+    times = solution.times()
+    for heatsource in solution.energy_system_components.get("heat_source", []):
+        # stored_heat = [results.get(f"{ates}.Stored_heat", 0) for t in range(times)]
+        plt.plot(times/3600/24, results[f"{heatsource}.Heat_source"]/1E6, label=str(heatsource))
+
+    plt.xlabel("Time [days]")
+    plt.ylabel("Heat produced [MW]")
+    plt.title("Heat [produced] vs Time")
+    plt.legend()
+    plt.xticks(range(0, int(times[-1]/3600/24) + 1,20), minor=True)  
+    coarse_ticks = [0,  365,  730, 1095]
+    plt.xticks(coarse_ticks, [str(t) for t in coarse_ticks])
+    plt.grid()
+    plt.tight_layout()  
+    plt.show()
+    savefig = base_folder / "heat_produced_vs_time.png"
+    plt.savefig(savefig)
+    plt.close()
+
     figure, ax = plt.subplots()
     for ates in solution.energy_system_components.get("ates", []):
         # stored_heat = [results.get(f"{ates}.Stored_heat", 0) for t in range(times)]

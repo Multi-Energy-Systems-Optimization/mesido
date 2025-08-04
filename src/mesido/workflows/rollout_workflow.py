@@ -7,7 +7,7 @@ import esdl
 import numpy as np
 from mesido.physics_mixin import PhysicsMixin
 from mesido.techno_economic_mixin import TechnoEconomicMixin
-from mesido.workflows.grow_workflow import SolverCPLEX
+# from mesido.workflows.grow_workflow import SolverCPLEX
 from mesido.workflows.utils.adapt_profiles import adapt_hourly_profile_averages_timestep_size, \
     adapt_profile_to_copy_for_number_of_years
 
@@ -51,9 +51,22 @@ class SolverHIGHS:
 
         return options
 
+class SolverCPLEX:
+    def solver_options(self):
+        options = super().solver_options()
+        options["casadi_solver"] = self._qpsol
+        options["solver"] = "cplex"
+        cplex_options = options["cplex"] = {}
+        # cplex_options.update(_mip_gap_settings("CPX_PARAM_EPGAP", self))
+        cplex_options["CPX_PARAM_EPGAP"] = 0.01
+        options["highs"] = None
+
+        return options
+
+
 class RollOutProblem(
-    # SolverCPLEX,
-    SolverHIGHS,
+    SolverCPLEX,
+    # SolverHIGHS,
     ScenarioOutput,
     TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
@@ -565,7 +578,8 @@ class RollOutProblem(
         for s in self.energy_system_components.get("ates", []):
             ates_state = self.__state_vector_scaled(f"{s}.Storage_yearly_change", ensemble_member)
             # zeros_array = np.zeros(len(ates_state))
-            nominal=self.variable_nominal(f"{s}.Storage_yearly_change")
+            # nominal=self.variable_nominal(f"{s}.Storage_yearly_change")
+            nominal = self.variable_nominal(f"{s}.Heat_ates") 
             for i in range(len(self.times())):
                 if i % self._days != 0:
                     #set the storage_yearly_change to zero at all days except first day of each year
@@ -664,6 +678,7 @@ class RollOutProblem(
         options = super().energy_system_options()
         options["heat_loss_disconnected_pipe"] = False
         options["include_asset_is_realized"] = True
+        options["include_ates_yearly_change_option"] = True
         return options
 
     @property

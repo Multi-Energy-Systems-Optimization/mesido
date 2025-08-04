@@ -623,6 +623,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         The ``include_demand_insulation_options`` options is used, when insulations options per
         demand is specificied, to include heat demand and supply matching via constraints for all
         possible insulation options.
+        
+        TODO: Add description of storage yearly change option for an ates.
         """
 
         options = self._hn_head_loss_class.head_loss_network_options()
@@ -634,6 +636,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         options["heat_loss_disconnected_pipe"] = True
         options["include_demand_insulation_options"] = False
         options["include_ates_temperature_options"] = False
+        options["include_ates_yearly_change_option"] = False
 
         return options
 
