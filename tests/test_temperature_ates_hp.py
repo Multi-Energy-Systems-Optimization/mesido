@@ -70,7 +70,7 @@ class TestAtesTemperature(TestCase):
         energy_conservation_test(solution, results)
         heat_to_discharge_test(solution, results)
 
-        ates_charging = results["Pipe1__flow_direct_var"]  # =1 if charging
+        ates_charging = results[f"ATES_cb47__is_charging"] # =1 if charging
         ates_temperature = results["ATES_cb47.Temperature_ates"]
         ates_temperature_disc = results["ATES_cb47__temperature_ates_disc"]
         carrier_temperature = results["41770304791669983859190_temperature"]
@@ -228,7 +228,7 @@ class TestAtesTemperature(TestCase):
             HeatProblemATESMultiPortFixedTemperature,
             solver_class=SolverCPLEX,
             base_folder=basefolder,
-            esdl_file_name="ATES_6port_HP_electricity_simplified.esdl",
+            esdl_file_name="ATES_6port_HP_simplified_ATES_temperatures.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Heatdemand_eprice.csv",
@@ -351,7 +351,7 @@ class TestAtesTemperature(TestCase):
 
         solution = run_optimization_problem_solver(
             HeatProblemATESMultiPort,
-            solver_class=SolverCPLEX,
+            # solver_class=SolverCPLEX,
             base_folder=basefolder,
             esdl_file_name="ATES_6port_HP_simplified_ATES_temperatures.esdl",
             esdl_parser=ESDLFileParser,
