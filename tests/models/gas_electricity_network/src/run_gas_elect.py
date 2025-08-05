@@ -7,10 +7,8 @@ from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.workflows.gas_elect_workflow import GasElectProblem
 from mesido.workflows.utils.helpers import run_optimization_problem_solver
 
-# from mesido._darcy_weisbach import friction_factor, head_loss
-# from mesido.head_loss_class import HeadLossOption
-# from mesido.constants import GRAVITATIONAL_CONSTANT
-#
+# from mesido.esdl.asset_to_component_base import _AssetToComponentBase
+# from mesido.esdl.edr_pipe_class import EDRGasPipeClass
 # import numpy as np
 
 root_folder = str(Path(__file__).resolve().parent.parent.parent.parent)
@@ -21,6 +19,7 @@ sys.path.insert(1, root_folder)
 #     electric_power_conservation_test,
 #     energy_conservation_test,
 #     heat_to_discharge_test,
+#     gas_pipes_head_loss_test,
 # )
 
 if __name__ == "__main__":
@@ -63,6 +62,19 @@ if __name__ == "__main__":
     # print("HeatPump_2: ", results["HeatPump_2.Heat_source"])
     # print("GasHeater_2: ", results["GasHeater_2.Heat_source"])
     #
+    # # Test: Utils_tests
+    # demand_matching_test(solution, results)
+    # energy_conservation_test(solution, results)
+    # heat_to_discharge_test(solution, results)
+    # electric_power_conservation_test(solution, results)
+    # gas_pipes_head_loss_test(solution, results)
+    #
+    # demand_matching_test(solution_high_demand, results_high_demand)
+    # energy_conservation_test(solution_high_demand, results_high_demand)
+    # heat_to_discharge_test(solution_high_demand, results_high_demand)
+    # electric_power_conservation_test(solution_high_demand, results_high_demand)
+    # gas_pipes_head_loss_test(solution_high_demand, results_high_demand)
+    #
     # # Test: Power recieved by heat demand is equal to the power supplied by conversion assets
     # np.testing.assert_allclose(
     #     results["HeatingDemand_1.Heat_flow"],
@@ -87,137 +99,24 @@ if __name__ == "__main__":
     #         atol=1.0e-12,
     #     )
     #
-    # # Test: Check if the result dH is equal to manually calculated dH via linear interpolation.
+    # # Test: Show a larger pipe size is need for high heating demand
     # pipe_diameters = []
     # for pipe in solution.energy_system_components.get("gas_pipe", []):
     #     if results[f"{pipe}__gn_diameter"] <= 1e-15:
     #         pass
     #     else:
-    #         v_max = solution.gas_network_settings["maximum_velocity"]
-    #         pipe_diameter = results[f"{pipe}__gn_diameter"][0]
-    #         pipe_diameters.append(pipe_diameter)
-    #         area = np.pi * pipe_diameter**2 / 4.0
-    #         network_type = solution.gas_network_settings["network_type"]
-    #         pressure = solution.parameters(0)[f"{pipe}.pressure"]
-    #         pipe_wall_roughness = solution.energy_system_options()["wall_roughness"]
-    #         temperature = 20  # is default for gas pipes
-    #         pipe_length = solution.parameters(0)[f"{pipe}.length"]
-    #         v_pipe = results[f"{pipe}.Q"] / area
-    #         print("Velocity of ", pipe, v_pipe)
-    #         print("Diameter of ", pipe, pipe_diameter)
-    #         if (
-    #             solution.gas_network_settings["head_loss_option"]
-    #             == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
-    #         ):
-    #             ff = friction_factor(
-    #                 velocity=v_max,
-    #                 diameter=pipe_diameter,
-    #                 network_type=network_type,
-    #                 pressure=pressure,
-    #                 wall_roughness=pipe_wall_roughness,
-    #                 temperature=temperature,
-    #             )
-    #             c_v = parameters[f"{pipe}.length"] * ff / (2 * 9.81) / pipe_diameter
-    #             dh_max = c_v * v_max**2
-    #             dh_manual = dh_max * v_pipe / v_max
-    #             # print("Calculated head loss in ", pipe, -dh_manual)
-    #             # print("Resulting head loss in ", pipe, results[f"{pipe}.dH"])
-    #             np.testing.assert_allclose(-dh_manual, results[f"{pipe}.dH"], atol=1.0e-12)
+    #         pipe_diameters.append(results[f"{pipe}__gn_diameter"][0])
     #
-    #         elif (
-    #             solution.gas_network_settings["head_loss_option"]
-    #             == HeadLossOption.LINEARIZED_N_LINES_EQUALITY
-    #         ):
-    #             itime = 2  # 0
-    #             v_points = np.linspace(
-    #                 0.0,
-    #                 v_max,
-    #                 solution.gas_network_settings["n_linearization_lines"] + 1,
-    #             )
-    #             v_inspect = v_pipe[itime]
-    #
-    #             # Theoretical head loss calc, dH =
-    #             # friction_factor * 8 * pipe_length * volumetric_flow^2
-    #             # / ( pipe_diameter^5 * g * pi^2)
-    #             dh_theory = (
-    #                 friction_factor(
-    #                     velocity=v_inspect,
-    #                     diameter=pipe_diameter,
-    #                     network_type=network_type,
-    #                     pressure=pressure,
-    #                     wall_roughness=pipe_wall_roughness,
-    #                     temperature=temperature,
-    #                 )
-    #                 * 8.0
-    #                 * pipe_length
-    #                 * (v_inspect * np.pi * pipe_diameter**2 / 4.0) ** 2
-    #                 / (pipe_diameter**5 * GRAVITATIONAL_CONSTANT * np.pi**2)
-    #             )
-    #             # Approximate dH [m] vs Q [m3/s] with a linear line between between v_points
-    #             # dH_manual_linear = a*Q + b
-    #             # Then use this linear function to calculate the head loss
-    #             idx = int(np.searchsorted(v_points, v_inspect))
-    #
-    #             dh_theory_idx = head_loss(
-    #                 velocity=v_points[idx],
-    #                 diameter=pipe_diameter,
-    #                 length=pipe_length,
-    #                 network_type=network_type,
-    #                 pressure=pressure,
-    #                 wall_roughness=pipe_wall_roughness,
-    #                 temperature=temperature,
-    #             )
-    #
-    #             dh_theory_idx_minus = head_loss(
-    #                 velocity=v_points[idx - 1],
-    #                 diameter=pipe_diameter,
-    #                 length=pipe_length,
-    #                 network_type=network_type,
-    #                 pressure=pressure,
-    #                 wall_roughness=pipe_wall_roughness,
-    #                 temperature=temperature,
-    #             )
-    #             q_idx = v_points[idx] * np.pi * pipe_diameter**2 / 4.0
-    #             q_idx_minus = v_points[idx - 1] * np.pi * pipe_diameter**2 / 4.0
-    #             q_inspect = v_inspect * np.pi * pipe_diameter**2 / 4.0
-    #
-    #             a = (dh_theory_idx - dh_theory_idx_minus) / (q_idx - q_idx_minus)
-    #             b = dh_theory_idx - a * q_idx
-    #             dh_manual_linear = a * q_inspect + b
-    #
-    #             dh_milp_head_loss_function = head_loss(
-    #                 v_inspect,
-    #                 pipe_diameter,
-    #                 pipe_length,
-    #                 pipe_wall_roughness,
-    #                 temperature,
-    #                 network_type=solution.gas_network_settings["network_type"],
-    #                 pressure=solution.parameters(0)[f"{pipe}.pressure"],
-    #             )
-    #             # print(results[f"{pipe}.dH"][itime], -dh_manual_linear)
-    #             np.testing.assert_allclose(dh_theory, dh_milp_head_loss_function)
-    #             np.testing.assert_array_less(dh_milp_head_loss_function, dh_manual_linear)
-    #             np.testing.assert_allclose(
-    #                 results[f"{pipe}.dH"][itime], -dh_manual_linear, atol=1.0e-12
-    #             )
-    #
-    # # Test: Show a larger pipe size is need for high heating demand
-    # pipe_diameters_HighDemand = []
-    # for pipe in solution_HighDemand.energy_system_components.get("gas_pipe", []):
-    #     if results_HighDemand[f"{pipe}__gn_diameter"] <= 1e-15:
+    # pipe_diameters_high_demand = []
+    # for pipe in solution_high_demand.energy_system_components.get("gas_pipe", []):
+    #     if results_high_demand[f"{pipe}__gn_diameter"] <= 1e-15:
     #         pass
     #     else:
-    #         pipe_diameter = results_HighDemand[f"{pipe}__gn_diameter"][0]
-    #         pipe_diameters_HighDemand.append(pipe_diameter)
+    #         pipe_diameter = results_high_demand[f"{pipe}__gn_diameter"][0]
+    #         pipe_diameters_high_demand.append(pipe_diameter)
     #         print("Diameter of ", pipe, pipe_diameter)
     # # print(np.array(pipe_diameters), np.array(pipe_diameters_HighDemand))
-    # np.testing.assert_array_less(np.array(pipe_diameters), np.array(pipe_diameters_HighDemand))
-    #
-    # # # Test: Utils_tests
-    # # demand_matching_test(solution, results)
-    # # energy_conservation_test(solution, results)
-    # # heat_to_discharge_test(solution, results)
-    # # electric_power_conservation_test(solution, results)
+    # np.testing.assert_array_less(np.array(pipe_diameters), np.array(pipe_diameters_high_demand))
     #
     # # Test: Check the burning efficiency of gas heaters
     # for asset_name in [*solution.energy_system_components.get("gas_boiler", [])]:
@@ -249,6 +148,12 @@ if __name__ == "__main__":
     # np.testing.assert_allclose(total_gas_source_g, total_gas_demand_g)
     #
     # # Test: Check if manually calculated TCO is equal to Objective function value
+    # pipe_classes = [
+    #     EDRGasPipeClass.from_edr_class(
+    #         name, edr_class_name, solution.gas_network_settings["maximum_velocity"]
+    #     )
+    #     for name, edr_class_name in _AssetToComponentBase.STEEL_S1_PIPE_EDR_ASSETS.items()
+    # ]
     # total_opex = 0.0
     # total_capex = 0.0
     # for asset in [
@@ -258,24 +163,27 @@ if __name__ == "__main__":
     # ]:
     #
     #     # investment cost
+    #     investment_cost = 0.0
+    #     if asset in [
+    #         *solution.energy_system_components.get("heat_source", []),
+    #         *solution.energy_system_components.get("electricity_cable", []),
+    #     ]:
+    #         investment_cost_info = (
+    #             solution.esdl_assets[solution.esdl_asset_name_to_id_map[f"{asset}"]]
+    #             .attributes["costInformation"]
+    #             .investmentCosts.value
+    #         )
     #     if asset in solution.energy_system_components["heat_source"]:
-    #         investment_cost = (
-    #             solution.esdl_assets[solution.esdl_asset_name_to_id_map[f"{asset}"]]
-    #             .attributes["costInformation"]
-    #             .investmentCosts.value
-    #             * results[f"{asset}__max_size"]
-    #             / 1.0e6
-    #         )
-    #     elif asset in solution.energy_system_components["gas_pipe"]:
-    #         investment_cost = results[f"{asset}__gn_cost"] * parameters[f"{asset}.length"]
+    #         investment_cost = investment_cost_info * results[f"{asset}__max_size"] / 1.0e6
     #     elif asset in solution.energy_system_components["electricity_cable"]:
-    #         investment_cost = (
-    #             solution.esdl_assets[solution.esdl_asset_name_to_id_map[f"{asset}"]]
-    #             .attributes["costInformation"]
-    #             .investmentCosts.value
-    #             * parameters[f"{asset}.length"]
-    #         )
-    #
+    #         investment_cost = investment_cost_info * parameters[f"{asset}.length"]
+    #     elif asset in solution.energy_system_components["gas_pipe"]:
+    #         if parameters[f"{asset}.diameter"] > 0:
+    #             for iter in range(len(pipe_classes)):
+    #                 if pipe_classes[iter].inner_diameter == parameters[f"{asset}.diameter"]:
+    #                     investment_cost = (
+    #                         pipe_classes[iter].investment_costs * parameters[f"{asset}.length"]
+    #                     )
     #     total_capex += investment_cost
     #     print(
     #         "investment cost: ",

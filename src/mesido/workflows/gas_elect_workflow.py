@@ -1,4 +1,5 @@
 import logging
+import os
 
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
@@ -55,14 +56,26 @@ class SolverCPLEX:
         options["casadi_solver"] = self._qpsol
         options["solver"] = "cplex"
         cplex_options = options["cplex"] = {}
-        cplex_options["CPX_PARAM_EPGAP"] = 0.005  # 0.00001
+        cplex_options["CPX_PARAM_EPGAP"] = 1.0e-3
 
         options["highs"] = None
 
         return options
 
 
+class SolverHIGHS:
+    def solver_options(self):
+        options = super().solver_options()
+        options["casadi_solver"] = self._qpsol
+        options["solver"] = "highs"
+        highs_options = options["highs"] = {}
+        highs_options["mip_abs_gap"] = 1.0e-3
+
+        return options
+
+
 class GasElectProblem(
+    SolverHIGHS,
     ScenarioOutput,
     ESDLAdditionalVarsMixin,
     TechnoEconomicMixin,
@@ -74,9 +87,9 @@ class GasElectProblem(
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._number_of_years = 1  # 30.0
+        self._number_of_years = 1
 
-        self._save_json = False
+        self._save_json = True
 
     def energy_system_options(self):
         options = super().energy_system_options()
@@ -110,10 +123,6 @@ class GasElectProblem(
 
     def solver_options(self):
         options = super().solver_options()
-        options["casadi_solver"] = self._qpsol
-        options["solver"] = "highs"
-        highs_options = options["highs"] = {}
-        highs_options["mip_abs_gap"] = 1.0e-6
 
         return options
 
@@ -169,6 +178,13 @@ class GasElectProblem(
     def post(self):
         super().post()
         # self._write_updated_esdl(self._ESDLMixin__energy_system_handler.energy_system)
+        results = self.extract_results()
+        parameters = self.parameters(0)
+        if os.path.exists(self.output_folder) and self._save_json:
+            bounds = self.bounds()
+            aliases = self.alias_relation._canonical_variables_map
+            solver_stats = self.solver_stats
+            self._write_json_output(results, parameters, bounds, aliases, solver_stats)
 
 
 @main_decorator

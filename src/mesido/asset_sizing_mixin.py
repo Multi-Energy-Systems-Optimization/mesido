@@ -2349,8 +2349,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         if round(results[s][0]) == 1.0
                     )
 
-                for p in [pipe]:
-                    self.__gas_pipe_topo_pipe_class_result[p] = pipe_class
+                self.__gas_pipe_topo_pipe_class_result[pipe] = pipe_class
 
     def _pipe_heat_loss_to_parameters(self):
         """
