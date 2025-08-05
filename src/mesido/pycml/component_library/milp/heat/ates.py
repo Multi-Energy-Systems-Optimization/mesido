@@ -53,8 +53,15 @@ class ATES(HeatTwoPort, BaseAsset):
         self.pump_efficiency = 0.5
 
         if self.ates_temperature_range:
-            self.ates_temperature_options = list(np.round(np.linspace(
-                max(self.ates_temperature_range), min(self.ates_temperature_range), 5)))
+            max_t = max(self.ates_temperature_range)
+            min_t = min(self.ates_temperature_range)
+            num_steps = 5
+            dt_step1 = (max_t-min_t)/(num_steps)/2
+            self.ates_temperature_options = [max_t]
+            self.ates_temperature_options.extend(list(np.round(np.linspace(max_t-dt_step1,
+                                                                           min_t+dt_step1,
+                                                                           num_steps))))
+            self.ates_temperature_options.append(min_t)
 
         max_temp_change = self.T_supply / (3600 * 24)  # loses full temperature in a day
         nom_temp_change = max_temp_change / 100  # loses full temperature in 100 days.

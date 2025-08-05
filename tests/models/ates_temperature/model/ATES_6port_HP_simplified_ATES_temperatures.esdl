@@ -9,7 +9,7 @@
         <port xsi:type="esdl:InPort" name="HeatInSecondary" id="1ceff18e-9d8b-4e22-ab38-6470987155b6" connectedTo="2406aa1a-8a3a-4aa5-9ee9-aa51a623b079" carrier="31e15344-5c5a-42ce-a7b4-8eee2ebd36f9"/>
         <port xsi:type="esdl:OutPort" name="HeatOutSecondary" id="14ace9da-997a-42a8-ae45-a7647bf243a8" connectedTo="3f251393-5ae8-42d1-9d2f-9a57dd68bc61" carrier="3e394b4f-7857-4d5b-b60f-f6613502c425"/>
         <costInformation xsi:type="esdl:CostInformation" id="c6d19fbc-999a-48e5-877f-a1a6bc3cccc4">
-          <variableOperationalCosts xsi:type="esdl:SingleValue" id="7591a424-3f88-4337-beb5-b8afd3c50eec" value="1.0">
+          <variableOperationalCosts xsi:type="esdl:SingleValue" id="7591a424-3f88-4337-beb5-b8afd3c50eec" value="3.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR/MWh" id="2737119a-7dac-4b14-99a4-e3ac9b2e68ab" unit="EURO" perMultiplier="MEGA" perUnit="WATTHOUR"/>
           </variableOperationalCosts>
         </costInformation>

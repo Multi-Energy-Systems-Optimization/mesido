@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
@@ -347,6 +348,7 @@ class HeatProblemMaxFlow(HeatProblem):
 class HeatProblemATESMultiPort(
     ScenarioOutput,
     _GoalsAndOptions,
+    ESDLAdditionalVarsMixin,
     TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
     GoalProgrammingMixin,
