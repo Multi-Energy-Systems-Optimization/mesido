@@ -129,8 +129,13 @@ class TestHeat(TestCase):
         # energy_conservation_test(case, results)
         # heat_to_discharge_test(case, results)
 
-        print(results['Pipe1.HeatIn.Heat'])
-        print(results['Pipe1.HeatIn.Q'])
+        heat_flow_in_pipe1 = results["Pipe1.HeatIn.Heat"]
+        heat_flow_out_pipe1 = results["Pipe1.HeatOut.Heat"]
+        vol_flow_pipe1 = results['Pipe1.HeatIn.Q']
+        cp = parameters["Pipe1.cp"]
+        rho = parameters["Pipe1.rho"]
+        temp_pipe1 = heat_flow_out_pipe1 / (cp * rho * vol_flow_pipe1)
+        print(temp_pipe1)
 
 
 class TestMinMaxPressureOptions(TestCase):
