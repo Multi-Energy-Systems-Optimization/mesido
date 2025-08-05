@@ -4,6 +4,7 @@ from mesido.pycml import Variable
 from mesido.pycml.component_library.milp._internal.heat_component import BaseAsset
 from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
+import numpy as np
 from numpy import nan
 
 from .heat_two_port import HeatTwoPort
@@ -57,11 +58,11 @@ class ATES(HeatTwoPort, BaseAsset):
             max_t = max(self.ates_temperature_range)
             min_t = min(self.ates_temperature_range)
             num_steps = 5
-            dt_step1 = (max_t-min_t)/(num_steps)/2
+            dt_step1 = (max_t - min_t) / (num_steps) / 2
             self.ates_temperature_options = [max_t]
-            self.ates_temperature_options.extend(list(np.round(np.linspace(max_t-dt_step1,
-                                                                           min_t+dt_step1,
-                                                                           num_steps))))
+            self.ates_temperature_options.extend(
+                list(np.round(np.linspace(max_t - dt_step1, min_t + dt_step1, num_steps)))
+            )
             self.ates_temperature_options.append(min_t)
 
         max_temp_change = self.T_supply / (3600 * 24)  # loses full temperature in a day
