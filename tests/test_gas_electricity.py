@@ -3,8 +3,8 @@ from unittest import TestCase
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
-from mesido.workflows.utils.helpers import run_optimization_problem_solver
 from mesido.esdl.asset_to_component_base import _AssetToComponentBase
+from mesido.workflows.utils.helpers import run_optimization_problem_solver
 from mesido.esdl.edr_pipe_class import EDRGasPipeClass
 
 import numpy as np
@@ -13,8 +13,8 @@ from utils_tests import (
     demand_matching_test,
     electric_power_conservation_test,
     energy_conservation_test,
-    heat_to_discharge_test,
     gas_pipes_head_loss_test,
+    heat_to_discharge_test,
 )
 
 
