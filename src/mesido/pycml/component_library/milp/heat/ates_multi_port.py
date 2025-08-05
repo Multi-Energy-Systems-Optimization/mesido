@@ -2,9 +2,7 @@ from mesido.pycml import Variable
 from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 from ._non_storage_component import _NonStorageComponent
-
 from .ates import ATES
-from .heat_port import HeatPort
 
 import numpy as np
 

@@ -70,7 +70,7 @@ class TestAtesTemperature(TestCase):
         energy_conservation_test(solution, results)
         heat_to_discharge_test(solution, results)
 
-        ates_charging = results[f"ATES_cb47__is_charging"] # =1 if charging
+        ates_charging = results["ATES_cb47__is_charging"]  # =1 if charging
         ates_temperature = results["ATES_cb47.Temperature_ates"]
         ates_temperature_disc = results["ATES_cb47__temperature_ates_disc"]
         carrier_temperature = results["41770304791669983859190_temperature"]
@@ -244,20 +244,11 @@ class TestAtesTemperature(TestCase):
         dt = np.diff(solution.times())
 
         ates = solution.energy_system_components.get("ates")[0]
-        heat_producer = "HeatProducer_4e19"
-        peak_producer = "HeatProducer_Peak"
-        heatpump = "HeatPump_5e09"
-        heatdemand = "HeatingDemand_bf07"
 
-        ates_temp = results[f"{ates}.Temperature_ates"]
         ates_heat = results[f"{ates}.Heat_ates"]
-        ates_flow = results[f"{ates}.Q"]
-        ates_temp_disc = results[f"{ates}__temperature_ates_disc"]
-        ates_cold_return_temp = parameters[f"{ates}.T_return"]
         cp = parameters[f"{ates}.cp"]
         rho = parameters[f"{ates}.rho"]
         ates_charging = results[f"{ates}__is_charging"].astype(bool)
-        ates_discharging = (1 - ates_charging).astype(bool)
 
         # temperatures from port groups (supply_t, return_t, dt)
         temp_discharge_hot = _get_component_temperatures(
@@ -308,7 +299,9 @@ class TestAtesTemperature(TestCase):
         # checks that heatflow of different ports is positive or negative and that the sum is equal
         # to Heat_ates
         np.testing.assert_allclose(
-            ates_discharge_hot_heat + ates_discharge_cold_heat + ates_charge_hot_heat, ates_heat
+            ates_discharge_hot_heat + ates_discharge_cold_heat + ates_charge_hot_heat,
+            ates_heat,
+            atol=epsilon,
         )
         np.testing.assert_array_less(ates_discharge_cold_heat, epsilon)
         np.testing.assert_array_less(ates_discharge_hot_heat, epsilon)
@@ -365,14 +358,9 @@ class TestAtesTemperature(TestCase):
         feasibility_test(solution)
         demand_matching_test(solution, results)
 
-        epsilon = 1e-6
         dt = np.diff(solution.times())
 
         ates = solution.energy_system_components.get("ates")[0]
-        heat_producer = "HeatProducer_4e19"
-        peak_producer = "HeatProducer_Peak"
-        heatpump = "HeatPump_5e09"
-        heatdemand = "HeatingDemand_bf07"
 
         ates_temp = results[f"{ates}.Temperature_ates"]
         ates_heat = results[f"{ates}.Heat_ates"]
@@ -421,8 +409,9 @@ class TestAtesTemperature(TestCase):
         # checks that heatflow of different ports is positive or negative and that the sum is equal
         # to Heat_ates
         np.testing.assert_allclose(
-            ates_discharge_hot_heat + ates_discharge_cold_heat + ates_charge_hot_heat, ates_heat,
-            atol=1e-6
+            ates_discharge_hot_heat + ates_discharge_cold_heat + ates_charge_hot_heat,
+            ates_heat,
+            atol=1e-6,
         )
         np.testing.assert_array_less(ates_discharge_cold_heat, 1)
         np.testing.assert_array_less(ates_discharge_hot_heat, 1)
@@ -516,7 +505,7 @@ class TestAtesTemperature(TestCase):
                     constraints.append((hex_c1_disabled + hex_d1_disabled, 1.0, 1.0))
                     constraints.append((hex_c1_disabled + is_charging_var, 1.0, 1.0))
                     # Both charge hexes need to be on or off together.
-                    constraints.append((hex_c1_disabled - (1-is_charging_var), 0.0, 0.0))
+                    constraints.append((hex_c1_disabled - (1 - is_charging_var), 0.0, 0.0))
                     # D1 and D3 are on or off together.
                     constraints.append((hex_d1_disabled - is_charging_var, 0.0, 0.0))
 
@@ -527,16 +516,20 @@ class TestAtesTemperature(TestCase):
 
                 for ates in self.energy_system_components.get("ates", []):
                     is_charging_var = self.variable(f"{ates}__is_charging")
-                    carrier_var = self.variable(f"311534455427482369_temperature")
+                    carrier_var = self.variable("311534455427482369_temperature")
                     temp_options = self.temperature_regimes(311534455427482369)
-                    constraints.append((carrier_var-temp_options[-1] + 100*(1-is_charging_var),
-                                        0.0, np.inf))
-                    constraints.append((carrier_var - temp_options[-1] - 100*(1-is_charging_var),
-                                       -np.inf, 0.0))
+                    constraints.append(
+                        (carrier_var - temp_options[-1] + 100 * (1 - is_charging_var), 0.0, np.inf)
+                    )
+                    constraints.append(
+                        (carrier_var - temp_options[-1] - 100 * (1 - is_charging_var), -np.inf, 0.0)
+                    )
                 #
                 #     #if ates discharging specific hex disabled
 
-                constraints.extend(self._heat_exchanger_charge_discharge_path_constraints(ensemble_member))
+                constraints.extend(
+                    self._heat_exchanger_charge_discharge_path_constraints(ensemble_member)
+                )
 
                 return constraints
 
@@ -550,7 +543,7 @@ class TestAtesTemperature(TestCase):
             input_timeseries_file="Heatdemand_eprice.csv",
         )
 
-        tol=1e-6
+        tol = 1e-6
         dt = np.diff(solution.times())
 
         results = solution.extract_results()
@@ -560,17 +553,10 @@ class TestAtesTemperature(TestCase):
         demand_matching_test(solution, results)
 
         carrier_temperature = results[f"311534455427482369_temperature"]
-
-        heat_producer = "HeatProducer_4e19"
         peak_producer = "HeatProducer_Peak"
-        heatpump = "HeatPump_5e09"
-        heatdemand = "HeatingDemand_bf07"
 
         ates = solution.energy_system_components.get("ates")[0]
-        temperature_options = parameters[f"{ates}.ates_temperature_options"]
-        ates_temp = results[f"{ates}.Temperature_ates"]
         ates_heat = results[f"{ates}.Heat_ates"]
-        ates_heat_loss = results[f"{ates}.Heat_loss"]
         ates_flow = results[f"{ates}.Q"]
         ates_temp_disc = results[f"{ates}__temperature_ates_disc"]
         ates_cold_return_temp = parameters[f"{ates}.T_return"]
@@ -579,8 +565,6 @@ class TestAtesTemperature(TestCase):
         ates_charging = results[f"{ates}__is_charging"].astype(bool)
         ates_discharging = (1 - ates_charging).astype(bool)
 
-        ates_discharge_hot_in_heat = results[f"{ates}.DischargeHot.HeatIn.Heat"]
-        ates_discharge_hot_out_heat = results[f"{ates}.DischargeHot.HeatOut.Heat"]
         ates_discharge_hot_heat_flow = results[f"{ates}.DischargeHot.Heat_flow"]
         ates_discharge_cold_heat_flow = results[f"{ates}.DischargeCold.Heat_flow"]
         ates_charge_hot_heat_flow = results[f"{ates}.ChargeHot.Heat_flow"]
@@ -594,16 +578,13 @@ class TestAtesTemperature(TestCase):
         )
         temp_charge_hot = _get_component_temperatures(solution, results, ates, side="ChargeHot")
 
-        #peak producer not to be used, ates used including partial discharge on hot side.
-        np.testing.assert_array_less(peak_producer_heat[1:]-tol,0.0)
-        np.testing.assert_array_less(1, sum(ates_heat<-1e5))
+        # peak producer not to be used, ates used including partial discharge on hot side.
+        np.testing.assert_array_less(peak_producer_heat[1:] - tol, 0.0)
+        np.testing.assert_array_less(1, sum(ates_heat < -1e5))
         np.testing.assert_array_less(1, sum(ates_discharge_hot_heat_flow < -1e5))
 
-        ates_discharge_hot_in_heat = results[f"{ates}.DischargeHot.HeatIn.Heat"]
         ates_discharge_hot_out_heat = results[f"{ates}.DischargeHot.HeatOut.Heat"]
-        ates_discharge_cold_in_heat = results[f"{ates}.DischargeCold.HeatIn.Heat"]
         ates_discharge_cold_out_heat = results[f"{ates}.DischargeCold.HeatOut.Heat"]
-        ates_charge_hot_in_heat = results[f"{ates}.ChargeHot.HeatIn.Heat"]
         ates_charge_hot_out_heat = results[f"{ates}.ChargeHot.HeatOut.Heat"]
 
         # check flows charging discharging only active when charging/discharging
@@ -618,55 +599,67 @@ class TestAtesTemperature(TestCase):
             ates_flow[ates_discharging]
             * cp
             * rho
-            * (ates_temp_disc[ates_discharging] - ates_cold_return_temp), atol=tol
+            * (ates_temp_disc[ates_discharging] - ates_cold_return_temp),
+            atol=tol,
         )
         # checks that heatflow of different ports is positive or negative and that the sum is equal
         # to Heat_ates
         np.testing.assert_allclose(
-            ates_discharge_hot_heat_flow + ates_discharge_cold_heat_flow +
-            ates_charge_hot_heat_flow, ates_heat,
-            atol=tol
+            ates_discharge_hot_heat_flow
+            + ates_discharge_cold_heat_flow
+            + ates_charge_hot_heat_flow,
+            ates_heat,
+            atol=tol,
         )
 
         # Since pipe heatlosses are turned off the heatflow should be equal to the calculated
         np.testing.assert_allclose(
-            -ates_discharge_hot_heat_flow, ates_discharge_hot_flow * temp_discharge_hot[2] * cp *
-                                           rho, atol=tol
+            -ates_discharge_hot_heat_flow,
+            ates_discharge_hot_flow * temp_discharge_hot[2] * cp * rho,
+            atol=tol,
         )
         np.testing.assert_allclose(
-            ates_discharge_hot_out_heat, ates_discharge_hot_flow * temp_discharge_hot[0] * cp *
-                                         rho, atol=tol
+            ates_discharge_hot_out_heat,
+            ates_discharge_hot_flow * temp_discharge_hot[0] * cp * rho,
+            atol=tol,
         )
         np.testing.assert_allclose(
             ates_discharge_cold_flow * temp_discharge_cold[2] * cp * rho,
-            -ates_discharge_cold_heat_flow, atol=tol
+            -ates_discharge_cold_heat_flow,
+            atol=tol,
         )
         np.testing.assert_allclose(
             ates_discharge_cold_out_heat,
             ates_discharge_cold_flow * temp_discharge_cold[0] * cp * rho,
         )
         np.testing.assert_allclose(
-            ates_charge_hot_flow * temp_charge_hot[2] * cp * rho, ates_charge_hot_heat_flow,
-            atol=tol
+            ates_charge_hot_flow * temp_charge_hot[2] * cp * rho,
+            ates_charge_hot_heat_flow,
+            atol=tol,
         )
         np.testing.assert_allclose(
             ates_charge_hot_out_heat, ates_charge_hot_flow * temp_charge_hot[1] * cp * rho, atol=tol
         )
 
-        #if ates is discharging, only deltaT can be achieved over hotdischarge if ates
+        # if ates is discharging, only deltaT can be achieved over hotdischarge if ates
         # temperature is larger than ates dischargehot out.
-        ates_discharge_hot_not60 = np.array((1-ates_charging)*(temp_discharge_hot[0]>60+tol)).astype(bool)
-        np.testing.assert_array_less(temp_discharge_hot[0][ates_discharge_hot_not60],
-                            ates_temp_disc[ates_discharge_hot_not60])
-        np.testing.assert_allclose(60, temp_discharge_hot[0][np.array(1 -
-                                                                      ates_discharge_hot_not60).astype(bool)])
+        ates_discharge_hot_not60 = np.array(
+            (1 - ates_charging) * (temp_discharge_hot[0] > 60 + tol)
+        ).astype(bool)
+        np.testing.assert_array_less(
+            temp_discharge_hot[0][ates_discharge_hot_not60],
+            ates_temp_disc[ates_discharge_hot_not60],
+        )
+        np.testing.assert_allclose(
+            60, temp_discharge_hot[0][np.array(1 - ates_discharge_hot_not60).astype(bool)]
+        )
 
         # ensuring atleast once the carrier temperature on hot side is higher than default
-        np.testing.assert_array_less(0.5, np.sum(carrier_temperature>60.5))
+        np.testing.assert_array_less(0.5, np.sum(carrier_temperature > 60.5))
         np.testing.assert_array_less(0.5, np.sum(ates_temp_disc > 70))
         np.testing.assert_array_less(0.5, np.sum(ates_temp_disc < 60))
-        np.testing.assert_allclose(ates_discharge_hot_heat_flow[ates_temp_disc <= 60], 0.0,
-                                   atol=tol)
+        np.testing.assert_allclose(
+            ates_discharge_hot_heat_flow[ates_temp_disc <= 60], 0.0, atol=tol
+        )
 
-        #TODO still add changing temperatures for discharge cold temperature out
-
+        # TODO still add changing temperatures for discharge cold temperature out
