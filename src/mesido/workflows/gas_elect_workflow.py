@@ -89,7 +89,7 @@ class GasElectProblem(
 
         self._number_of_years = 1
 
-        self._save_json = True
+        self._save_json = False
 
     def energy_system_options(self):
         options = super().energy_system_options()
