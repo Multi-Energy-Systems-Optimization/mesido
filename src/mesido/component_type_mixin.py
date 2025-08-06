@@ -289,10 +289,13 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
 
                 assert asset_w_orientation[0] in pipes_set
 
-                if k == "In":
-                    assert self.is_hot_pipe(asset_w_orientation[0])
-                else:
-                    assert self.is_cold_pipe(asset_w_orientation[0])
+                #TODO: this check can no longer be based on is_hot_pipe or is_cold_pipe,
+                # because the pipes might be drawn separately and then do not have the "related"
+                # attribute in esdl.
+                # if k == "In":
+                #     assert self.is_hot_pipe(asset_w_orientation[0])
+                # else:
+                #     assert self.is_cold_pipe(asset_w_orientation[0])
 
                 buffer_connections[b].append(asset_w_orientation)
 
@@ -336,10 +339,13 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
 
                 assert asset_w_orientation[0] in pipes_set
 
-                if k == "Out":
-                    assert self.is_cold_pipe(asset_w_orientation[0])
-                else:
-                    assert self.is_hot_pipe(asset_w_orientation[0])
+                #TODO: this check can no longer be based on is_hot_pipe or is_cold_pipe,
+                # because the pipes might be drawn separately and then do not have the "related"
+                # attribute in esdl.
+                # if k == "Out":
+                #     assert self.is_cold_pipe(asset_w_orientation[0])
+                # else:
+                #     assert self.is_hot_pipe(asset_w_orientation[0])
 
                 ates_connections[a].append(asset_w_orientation)
 

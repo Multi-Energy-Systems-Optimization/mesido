@@ -443,10 +443,10 @@ def energy_conservation_test(solution, results):
             f"{p}__is_disconnected" in results.keys()
             or f"{solution.cold_to_hot_pipe(p)}__is_disconnected" in results.keys()
         ):
-            if p in solution.hot_pipes:
-                p_discon = results[f"{p}__is_disconnected"].copy()
-            else:
+            if p in solution.cold_pipes:
                 p_discon = results[f"{solution.cold_to_hot_pipe(p)}__is_disconnected"].copy()
+            else:
+                p_discon = results[f"{p}__is_disconnected"].copy()
 
             p_discon[p_discon < 0.5] = 0  # fix for discrete value sometimes being 0.003 or so.
             np.testing.assert_allclose(

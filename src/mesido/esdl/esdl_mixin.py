@@ -189,6 +189,7 @@ class ESDLMixin(
         self.name_to_esdl_id_map = dict()
 
         self._hot_cold_pipe_relations = BiMap()
+        self._unrelated_pipes = list()
         self.hot_cold_pipe_relations()
 
         super().__init__(*args, **kwargs)
@@ -504,7 +505,8 @@ class ESDLMixin(
         -------
         Returns true if the pipe is in the supply network thus not ends with "_ret"
         """
-        return True if pipe not in self.cold_pipes else False
+        # return True if pipe not in self.cold_pipes else False
+        return pipe in self._hot_cold_pipe_relations.keys()
 
     def is_cold_pipe(self, pipe: str) -> bool:
         """
@@ -519,7 +521,8 @@ class ESDLMixin(
         -------
         Returns true if the pipe is in the return network thus ends with "_ret"
         """
-        return pipe.endswith("_ret")
+        # return pipe.endswith("_ret")
+        return pipe in self._hot_cold_pipe_relations.values()
 
     def hot_to_cold_pipe(self, pipe: str) -> str:
         """
@@ -535,7 +538,8 @@ class ESDLMixin(
         -------
         string with the associated return pipe name.
         """
-        return f"{pipe}_ret"
+        return self._hot_cold_pipe_relations.get_by_key(pipe)
+        # return f"{pipe}_ret"
 
     def cold_to_hot_pipe(self, pipe: str) -> str:
         """
@@ -551,9 +555,15 @@ class ESDLMixin(
         -------
         string with the associated hot pipe name.
         """
-        return pipe[:-4]
+        # return pipe[:-4]
+        return self._hot_cold_pipe_relations.get_by_value(pipe)
 
     def hot_cold_pipe_relations(self):
+        #TODO: fix backward compatability, in old esdl files the "related" attribute is not
+        # available. Determine from when it is available and have for old esdl files based on
+        # esdlVersion, set the hot_cold_pipe_relations based on _ret.
+        #TODO: also check if there are goals/constraints and function that should be adapted for
+        # pipes that are not in the realtions list, and thereby not in thet hot_pipes
 
         for asset in self._esdl_assets.values():
             if asset.asset_type == "Pipe":
@@ -568,6 +578,8 @@ class ESDLMixin(
                     elif asset.attributes["port"][0].carrier.returnTemperature: #cold_pipe
                         if asset.name not in self._hot_cold_pipe_relations.values():
                             self._hot_cold_pipe_relations.add(related_asset[0].name, asset.name)
+                else:
+                    self._unrelated_pipes.append(asset.name)
 
 
 
