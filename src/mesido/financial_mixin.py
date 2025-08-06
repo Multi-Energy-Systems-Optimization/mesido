@@ -941,7 +941,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             else:
                 price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
 
-            #ToDo: Currently the variable operational cost unit for gas boiler is euro/Wh_gas
+            # ToDo: Currently the variable operational cost unit for gas boiler is euro/Wh_gas
             # but this can be changed to euro/Nm3
             denominator = 1.0
             if s in self.energy_system_components.get(
