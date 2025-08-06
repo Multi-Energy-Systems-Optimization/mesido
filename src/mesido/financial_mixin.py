@@ -937,7 +937,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                         f"{list(self.get_electricity_carriers().values())[0]['name']}.price_profile"
                     )
                 except KeyError:
-                price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
+                    price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
             else:
                 price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
 
