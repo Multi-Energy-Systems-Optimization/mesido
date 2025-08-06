@@ -45,44 +45,6 @@ class _ESDLInputException(Exception):
     pass
 
 
-
-class BiMap:
-    def __init__(self):
-        self._forward = {}
-        self._backward = {}
-
-    def add(self, key, value):
-        if key in self._forward or value in self._backward:
-            raise ValueError("Duplicate key or value not allowed.")
-        self._forward[key] = value
-        self._backward[value] = key
-
-    def get_by_key(self, key):
-        return self._forward.get(key)
-
-    def get_by_value(self, value):
-        return self._backward.get(value)
-
-    def remove_by_key(self, key):
-        value = self._forward.pop(key, None)
-        if value:
-            self._backward.pop(value, None)
-
-    def remove_by_value(self, value):
-        key = self._backward.pop(value, None)
-        if key:
-            self._forward.pop(key, None)
-
-    def keys(self):
-        return list(self._forward.keys())
-
-    def values(self):
-        return list(self._backward.keys())
-
-    def items(self):
-        return list(self._forward.items())
-
-
 class ESDLMixin(
     ModelicaComponentTypeMixin,
     IOMixin,
@@ -188,8 +150,8 @@ class ESDLMixin(
 
         self.name_to_esdl_id_map = dict()
 
-        self._hot_cold_pipe_relations = BiMap()
-        self._unrelated_pipes = list()
+        self.__hot_cold_pipe_relations = dict()
+        self.__unrelated_pipes = list()
         self.hot_cold_pipe_relations()
 
         super().__init__(*args, **kwargs)
@@ -506,7 +468,7 @@ class ESDLMixin(
         Returns true if the pipe is in the supply network thus not ends with "_ret"
         """
         # return True if pipe not in self.cold_pipes else False
-        return pipe in self._hot_cold_pipe_relations.keys()
+        return pipe in self.hot_to_cold_pipe_map.keys()
 
     def is_cold_pipe(self, pipe: str) -> bool:
         """
@@ -522,7 +484,7 @@ class ESDLMixin(
         Returns true if the pipe is in the return network thus ends with "_ret"
         """
         # return pipe.endswith("_ret")
-        return pipe in self._hot_cold_pipe_relations.values()
+        return pipe in self.hot_to_cold_pipe_map.values()
 
     def hot_to_cold_pipe(self, pipe: str) -> str:
         """
@@ -538,8 +500,7 @@ class ESDLMixin(
         -------
         string with the associated return pipe name.
         """
-        return self._hot_cold_pipe_relations.get_by_key(pipe)
-        # return f"{pipe}_ret"
+        return self.hot_to_cold_pipe_map.get(pipe, None)
 
     def cold_to_hot_pipe(self, pipe: str) -> str:
         """
@@ -555,8 +516,7 @@ class ESDLMixin(
         -------
         string with the associated hot pipe name.
         """
-        # return pipe[:-4]
-        return self._hot_cold_pipe_relations.get_by_value(pipe)
+        return self.cold_to_hot_pipe_map.get(pipe, None)
 
     def hot_cold_pipe_relations(self):
         #TODO: fix backward compatability, in old esdl files the "related" attribute is not
@@ -573,14 +533,26 @@ class ESDLMixin(
                     assert len(related_asset) == 1, "Pipes can only have related supply/return pipe"
                     related = True
                     if asset.attributes["port"][0].carrier.supplyTemperature: #hot_pipe
-                        if asset.name not in self._hot_cold_pipe_relations.keys():
-                            self._hot_cold_pipe_relations.add(asset.name, related_asset[0].name)
+                        if asset.name not in self.__hot_cold_pipe_relations.keys():
+                            self.__hot_cold_pipe_relations[asset.name]= related_asset[0].name
                     elif asset.attributes["port"][0].carrier.returnTemperature: #cold_pipe
-                        if asset.name not in self._hot_cold_pipe_relations.values():
-                            self._hot_cold_pipe_relations.add(related_asset[0].name, asset.name)
+                        if related_asset[0].name not in self.__hot_cold_pipe_relations.keys():
+                            self.__hot_cold_pipe_relations[related_asset[0].name]= asset.name
                 else:
-                    self._unrelated_pipes.append(asset.name)
+                    self.__unrelated_pipes.append(asset.name)
 
+    @property
+    def hot_to_cold_pipe_map(self) -> dict():
+        return self.__hot_cold_pipe_relations
+
+    @property
+    def cold_to_hot_pipe_map(self) -> dict():
+        return dict(map(self.__hot_cold_pipe_relations.values(),
+                        self.__hot_cold_pipe_relations.keys()))
+
+    @property
+    def unrelated_pipes(self) -> list():
+        return self.__unrelated_pipes
 
 
     def pycml_model(self) -> _ESDLModelBase:

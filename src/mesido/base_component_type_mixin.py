@@ -81,8 +81,7 @@ class BaseComponentTypeMixin:
         :returns: True if the pipe has a related pipe, else False.
         """
         related = False
-        if (pipe in self._hot_cold_pipe_relations.keys() or pipe in
-                self._hot_cold_pipe_relations.values()):
+        if (pipe in self.hot_pipes or pipe in self.cold_pipes):
             related = True
         # esdl_asset = self._esdl_assets[self.esdl_asset_name_to_id_map[pipe]]
         # # if self.is_hot_pipe(pipe):
@@ -102,7 +101,7 @@ class BaseComponentTypeMixin:
         """
         This function return a list of all the supply/hot pipe names.
         """
-        return list(self._hot_cold_pipe_relations.keys())
+        return list(self.hot_to_cold_pipe_map.keys())
         # hot_pipes = []
         # for p in self.energy_system_components.get("heat_pipe", []):
         #     esdl_asset = self._esdl_assets[self.esdl_asset_name_to_id_map[p]]
@@ -118,7 +117,7 @@ class BaseComponentTypeMixin:
         """
         This function return a list of all the return/cold pipe names.
         """
-        return list(self._hot_cold_pipe_relations.values())
+        return list(self.cold_to_hot_pipe_map.keys())
         # cold_pipes = []
         # for p in self.energy_system_components.get("heat_pipe", []):
         #     esdl_asset = self._esdl_assets[self.esdl_asset_name_to_id_map[p]]
