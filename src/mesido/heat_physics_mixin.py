@@ -3555,45 +3555,48 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
     def __sink_hydraulic_power_path_constraints(self, ensemble_member):
         """
-                This function adds hydraulic power and pump power contraints for a storage assets. If the
-                head loss option is not enabled then the hydraulic power and pump power are for forced to
-                0.0 but if the head loss option is enabled then:
-                    - The delta hydraulic power is constrained to be equal to f(minimum pressure drop,
-                    volumetric flow rate) when the storage is being charged.
-                    - The pump power is constrained to be equal the delta hydraulic power when the storage
-                    is not being charged.
-                """
+        This function adds hydraulic power and pump power contraints for a storage assets. If the
+        head loss option is not enabled then the hydraulic power and pump power are for forced to
+        0.0 but if the head loss option is enabled then:
+            - The delta hydraulic power is constrained to be equal to f(minimum pressure drop,
+            volumetric flow rate) when the storage is being charged.
+            - The pump power is constrained to be equal the delta hydraulic power when the storage
+            is not being charged.
+        """
         constraints = []
 
         parameters = self.parameters(ensemble_member)
 
-        for asset in {*self.energy_system_components.get("heat_demand", []),
-                      *self.energy_system_components.get("cold_demand", []),
-                      *self.energy_system_components.get("heat_exchanger", []),
-                      *self.energy_system_components.get("heat_pump", [])}:
+        for asset in {
+            *self.energy_system_components.get("heat_demand", []),
+            *self.energy_system_components.get("cold_demand", []),
+            *self.energy_system_components.get("heat_exchanger", []),
+            *self.energy_system_components.get("heat_pump", []),
+        }:
 
             min_dp = parameters[f"{asset}.minimum_pressure_drop"]
 
-            if asset in {*self.energy_system_components.get("heat_exchanger", []),
-                         *self.energy_system_components.get("heat_pump",[])}:
-                asset +=".Primary"
+            if asset in {
+                *self.energy_system_components.get("heat_exchanger", []),
+                *self.energy_system_components.get("heat_pump", []),
+            }:
+                asset += ".Primary"
             discharge = self.state(f"{asset}.HeatIn.Q")
             hp_in = self.state(f"{asset}.HeatIn.Hydraulic_power")
             hp_out = self.state(f"{asset}.HeatOut.Hydraulic_power")
 
             big_m = (
-                    2.0
-                    * self.bounds()[f"{asset}.HeatIn.Q"][1]
-                    * self.__maximum_total_head_loss
-                    * 10.2
-                    * 1.0e3
+                2.0
+                * self.bounds()[f"{asset}.HeatIn.Q"][1]
+                * self.__maximum_total_head_loss
+                * 10.2
+                * 1.0e3
             )
             if self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
                 # A minimum pressure drop needs to be overcome
                 constraints.append(
                     (
-                        (min_dp * discharge - (hp_in - hp_out))
-                        / big_m,
+                        (min_dp * discharge - (hp_in - hp_out)) / big_m,
                         0.0,
                         np.inf,
                     )

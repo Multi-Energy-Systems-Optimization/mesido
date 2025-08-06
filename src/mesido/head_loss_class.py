@@ -1587,10 +1587,8 @@ class HeadLossClass:
             for pipe in optimization_problem.energy_system_components.get(pipe_type, []):
                 hydraulic_power = optimization_problem.state(f"{pipe}.Hydraulic_power")
 
-                nominal = optimization_problem.variable_nominal(
-                    f"{pipe}.Hydraulic_power")
+                nominal = optimization_problem.variable_nominal(f"{pipe}.Hydraulic_power")
 
-                constraints.append((hydraulic_power/nominal, 0.0, 0.0))
-
+                constraints.append((hydraulic_power / nominal, 0.0, 0.0))
 
         return constraints

@@ -896,12 +896,12 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             # which is lots of extra effort for the user.
             assert len(self.get_electricity_carriers().keys()) <= 1
 
-            # if len(self.get_electricity_carriers().keys()) == 1:
-            #     price_profile = self.get_timeseries(
-            #         f"{list(self.get_electricity_carriers().values())[0]['name']}.price_profile"
-            #     )
-            # else:
-            price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
+            if len(self.get_electricity_carriers().keys()) == 1:
+                price_profile = self.get_timeseries(
+                    f"{list(self.get_electricity_carriers().values())[0]['name']}.price_profile"
+                )
+            else:
+                price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
 
             timesteps = np.diff(self.times()) / 3600.0
 
@@ -932,12 +932,12 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             assert len(self.get_electricity_carriers().keys()) <= 1
 
             if len(self.get_electricity_carriers().keys()) == 1:
-                # try:
-                #     price_profile = self.get_timeseries(
-                #         f"{list(self.get_electricity_carriers().values())[0]['name']}.price_profile"
-                #     )
-                # except KeyError:
-                    price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
+                try:
+                    price_profile = self.get_timeseries(
+                        f"{list(self.get_electricity_carriers().values())[0]['name']}.price_profile"
+                    )
+                except KeyError:
+                price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
             else:
                 price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
 
@@ -995,7 +995,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 sum += (
                     variable_operational_cost_coefficient * elec_consumption[i] * timesteps[i - 1]
                 )
-                # sum += price_profile.values[i] * pump_power[i] * timesteps[i - 1] / eff
+                sum += price_profile.values[i] * pump_power[i] * timesteps[i - 1] / eff
                 if hp not in self.energy_system_components.get("heat_pump_elec", []):
                     # assuming that if heatpump has electricity port, the cost for the electricity
                     # are already made by the electricity producer and transport
