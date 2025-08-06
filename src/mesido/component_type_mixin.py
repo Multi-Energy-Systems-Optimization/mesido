@@ -289,7 +289,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
 
                 assert asset_w_orientation[0] in pipes_set
 
-                #TODO: this check can no longer be based on is_hot_pipe or is_cold_pipe,
+                # TODO: this check can no longer be based on is_hot_pipe or is_cold_pipe,
                 # because the pipes might be drawn separately and then do not have the "related"
                 # attribute in esdl.
                 # if k == "In":
@@ -339,7 +339,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
 
                 assert asset_w_orientation[0] in pipes_set
 
-                #TODO: this check can no longer be based on is_hot_pipe or is_cold_pipe,
+                # TODO: this check can no longer be based on is_hot_pipe or is_cold_pipe,
                 # because the pipes might be drawn separately and then do not have the "related"
                 # attribute in esdl.
                 # if k == "Out":

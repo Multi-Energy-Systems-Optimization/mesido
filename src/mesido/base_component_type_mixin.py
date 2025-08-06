@@ -44,18 +44,6 @@ class BaseComponentTypeMixin:
         """
         raise NotImplementedError
 
-    # def is_hot_pipe(self, pipe: str) -> bool:
-    #     """
-    #     The function return true if the pipe is a supply pipe based on a name convention
-    #     """
-    #     return pipe.endswith("_hot")
-    #
-    # def is_cold_pipe(self, pipe: str) -> bool:
-    #     """
-    #     The function return true if the pipe is a return pipe based on a name convention
-    #     """
-    #     return pipe.endswith("_cold")
-
     def hot_to_cold_pipe(self, pipe: str):
         """
         This function returns the name of the associated cold/return pipe of a supply/hot pipe.
@@ -81,19 +69,8 @@ class BaseComponentTypeMixin:
         :returns: True if the pipe has a related pipe, else False.
         """
         related = False
-        if (pipe in self.hot_pipes or pipe in self.cold_pipes):
+        if pipe in self.hot_pipes or pipe in self.cold_pipes:
             related = True
-        # esdl_asset = self._esdl_assets[self.esdl_asset_name_to_id_map[pipe]]
-        # # if self.is_hot_pipe(pipe):
-        # if esdl_asset.attributes['port'][0].carrier.supplyTemperature:
-        #     if esdl_asset.attributes['related']:
-        #     # if self.hot_to_cold_pipe(pipe) in self.energy_system_components.get("heat_pipe", []):
-        #         related = True
-        # # elif self.is_cold_pipe(pipe):
-        # elif esdl_asset.attributes['port'][0].carrier.returnTemperature:
-        #     if esdl_asset.attributes['related']:
-        #     # if self.cold_to_hot_pipe(pipe) in self.energy_system_components.get("heat_pipe", []):
-        #         related = True
         return related
 
     @property
@@ -102,15 +79,6 @@ class BaseComponentTypeMixin:
         This function return a list of all the supply/hot pipe names.
         """
         return list(self.hot_to_cold_pipe_map.keys())
-        # hot_pipes = []
-        # for p in self.energy_system_components.get("heat_pipe", []):
-        #     esdl_asset = self._esdl_assets[self.esdl_asset_name_to_id_map[p]]
-        #     if esdl_asset.attributes['port'][0].carrier.supplyTemperature:
-        #         hot_pipes.append(p)
-        # return hot_pipes
-        # return [
-        #     p for p in self.energy_system_components.get("heat_pipe", []) if self.is_hot_pipe(p)
-        # ]
 
     @property
     def cold_pipes(self) -> List[str]:
@@ -118,12 +86,3 @@ class BaseComponentTypeMixin:
         This function return a list of all the return/cold pipe names.
         """
         return list(self.cold_to_hot_pipe_map.keys())
-        # cold_pipes = []
-        # for p in self.energy_system_components.get("heat_pipe", []):
-        #     esdl_asset = self._esdl_assets[self.esdl_asset_name_to_id_map[p]]
-        #     if esdl_asset.attributes['port'][0].carrier.returnTemperature:
-        #         cold_pipes.append(p)
-        # return cold_pipes
-        # return [
-        #     p for p in self.energy_system_components.get("heat_pipe", []) if self.is_cold_pipe(p)
-        # ]

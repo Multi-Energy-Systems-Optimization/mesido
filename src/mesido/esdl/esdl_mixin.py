@@ -4,7 +4,7 @@ import logging
 import xml.etree.ElementTree as ET  # noqa: N817
 from datetime import timedelta
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import esdl.esdl_handler
 
@@ -467,7 +467,6 @@ class ESDLMixin(
         -------
         Returns true if the pipe is in the supply network thus not ends with "_ret"
         """
-        # return True if pipe not in self.cold_pipes else False
         return pipe in self.hot_to_cold_pipe_map.keys()
 
     def is_cold_pipe(self, pipe: str) -> bool:
@@ -483,7 +482,6 @@ class ESDLMixin(
         -------
         Returns true if the pipe is in the return network thus ends with "_ret"
         """
-        # return pipe.endswith("_ret")
         return pipe in self.hot_to_cold_pipe_map.values()
 
     def hot_to_cold_pipe(self, pipe: str) -> str:
@@ -519,10 +517,10 @@ class ESDLMixin(
         return self.cold_to_hot_pipe_map.get(pipe, None)
 
     def hot_cold_pipe_relations(self):
-        #TODO: fix backward compatability, in old esdl files the "related" attribute is not
+        # TODO: fix backward compatability, in old esdl files the "related" attribute is not
         # available. Determine from when it is available and have for old esdl files based on
         # esdlVersion, set the hot_cold_pipe_relations based on _ret.
-        #TODO: also check if there are goals/constraints and function that should be adapted for
+        # TODO: also check if there are goals/constraints and function that should be adapted for
         # pipes that are not in the realtions list, and thereby not in thet hot_pipes
 
         for asset in self._esdl_assets.values():
@@ -532,28 +530,36 @@ class ESDLMixin(
                 if related_asset:
                     assert len(related_asset) == 1, "Pipes can only have related supply/return pipe"
                     related = True
-                    if asset.attributes["port"][0].carrier.supplyTemperature: #hot_pipe
+                    if asset.attributes["port"][0].carrier.supplyTemperature:  # hot_pipe
                         if asset.name not in self.__hot_cold_pipe_relations.keys():
-                            self.__hot_cold_pipe_relations[asset.name]= related_asset[0].name
-                    elif asset.attributes["port"][0].carrier.returnTemperature: #cold_pipe
+                            self.__hot_cold_pipe_relations[asset.name] = related_asset[0].name
+                    elif asset.attributes["port"][0].carrier.returnTemperature:  # cold_pipe
                         if related_asset[0].name not in self.__hot_cold_pipe_relations.keys():
-                            self.__hot_cold_pipe_relations[related_asset[0].name]= asset.name
-                else:
-                    self.__unrelated_pipes.append(asset.name)
+                            self.__hot_cold_pipe_relations[related_asset[0].name] = asset.name
+            if not related:
+                self.__unrelated_pipes.append(asset.name)
 
     @property
-    def hot_to_cold_pipe_map(self) -> dict():
+    def hot_to_cold_pipe_map(self) -> Dict:
+        """
+        This function return a dictionary of hot pipe names mapped to cold pipe names.
+        """
         return self.__hot_cold_pipe_relations
 
     @property
-    def cold_to_hot_pipe_map(self) -> dict():
-        return dict(map(self.__hot_cold_pipe_relations.values(),
-                        self.__hot_cold_pipe_relations.keys()))
+    def cold_to_hot_pipe_map(self) -> Dict:
+        """
+        This function return a dictionary of cold pipe names mapped to hot pipe names.
+        """
+        return dict(
+            map(self.__hot_cold_pipe_relations.values(), self.__hot_cold_pipe_relations.keys())
+        )
 
     @property
-    def unrelated_pipes(self) -> list():
+    def unrelated_pipes(self) -> List[str]:
+        """This function return a list of pipe names of all the pipes that don't have a related
+        cold/hot pipe."""
         return self.__unrelated_pipes
-
 
     def pycml_model(self) -> _ESDLModelBase:
         """
