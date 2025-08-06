@@ -56,7 +56,7 @@ class BaseESDLParser:
                     id=x.id,
                     id_number_mapping=id_to_idnumber_map[x.id],
                     temperature=temperature,
-                    type="milp",
+                    type="heat",
                 )
             elif isinstance(x, esdl.esdl.ElectricityCommodity):
                 if x.id not in id_to_idnumber_map:

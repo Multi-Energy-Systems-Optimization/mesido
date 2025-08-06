@@ -233,6 +233,11 @@ class _AssetToComponentBase:
     primary_port_name_convention = "primary"
     secondary_port_name_convention = "secondary"
 
+    charge_port_name_convention = "charge"
+    discharge_port_name_convention = "discharge"
+    hot_port_name_convention = "hot"
+    cold_port_name_convention = "cold"
+
     __power_keys = ["power", "maxDischargeRate", "maxChargeRate", "capacity"]
 
     def __init__(self, **kwargs):
@@ -982,7 +987,7 @@ class _AssetToComponentBase:
             if q_nominals["Q_nominal"] is not None:
                 self._port_to_q_nominal[asset.out_ports[0]] = q_nominals["Q_nominal"]
                 return q_nominals
-        elif len(asset.in_ports) >= 2 and len(asset.out_ports) == 2:
+        elif len(asset.in_ports) >= 2 and len(asset.out_ports) >= 2:
             q_nominals = {}
             for p in asset.in_ports:
                 if isinstance(p.carrier, esdl.HeatCommodity):
@@ -1010,10 +1015,29 @@ class _AssetToComponentBase:
                     if q_nominal is not None:
                         self._port_to_q_nominal[p] = q_nominal
                         self._port_to_q_nominal[out_port] = q_nominal
-                        if "sec" in p.name.lower():
+                        if self.secondary_port_name_convention in p.name.lower():
                             q_nominals["Secondary"] = {"Q_nominal": q_nominal}
-                        else:
+                        elif self.primary_port_name_convention in p.name.lower():
                             q_nominals["Primary"] = {"Q_nominal": q_nominal}
+                        elif (
+                            self.discharge_port_name_convention in p.name.lower()
+                            and self.hot_port_name_convention in p.name.lower()
+                        ):
+                            q_nominals["DischargeHot"] = {"Q_nominal": q_nominal}
+                        elif (
+                            self.discharge_port_name_convention in p.name.lower()
+                            and self.cold_port_name_convention in p.name.lower()
+                        ):
+                            q_nominals["DischargeCold"] = {"Q_nominal": q_nominal}
+                        elif (
+                            self.charge_port_name_convention in p.name.lower()
+                            and self.hot_port_name_convention in p.name.lower()
+                        ):
+                            q_nominals["ChargeHot"] = {"Q_nominal": q_nominal}
+                        else:
+                            raise Exception(
+                                f"{asset.name} has ports that do not comply with any " f"convention"
+                            )
 
             return q_nominals
 
@@ -1220,6 +1244,75 @@ class _AssetToComponentBase:
                 },
             }
             return temperatures
+        elif len(asset.in_ports) == 3 and len(asset.out_ports) == 3 and asset.asset_type == "ATES":
+            prim_return_temperature = None
+            sec_return_temperature = None
+            for p in asset.in_ports:
+                carrier = asset.global_properties["carriers"][p.carrier.id]
+                if (
+                    self.discharge_port_name_convention in p.name.lower()
+                    and self.hot_port_name_convention in p.name.lower()
+                ):
+                    discharge_hot_in_temperature_id = carrier["id_number_mapping"]
+                    discharge_hot_in_temperature = carrier["temperature"]
+                elif (
+                    self.discharge_port_name_convention in p.name.lower()
+                    and self.cold_port_name_convention in p.name.lower()
+                ):
+                    discharge_cold_in_temperature_id = carrier["id_number_mapping"]
+                    discharge_cold_in_temperature = carrier["temperature"]
+                elif (
+                    self.charge_port_name_convention in p.name.lower()
+                    and self.hot_port_name_convention in p.name.lower()
+                ):
+                    charge_hot_in_temperature_id = carrier["id_number_mapping"]
+                    charge_hot_in_temperature = carrier["temperature"]
+                else:
+                    raise RuntimeError
+            for p in asset.out_ports:
+                carrier = asset.global_properties["carriers"][p.carrier.id]
+                if (
+                    self.discharge_port_name_convention in p.name.lower()
+                    and self.hot_port_name_convention in p.name.lower()
+                ):
+                    discharge_hot_out_temperature_id = carrier["id_number_mapping"]
+                    discharge_hot_out_temperature = carrier["temperature"]
+                elif (
+                    self.discharge_port_name_convention in p.name.lower()
+                    and self.cold_port_name_convention in p.name.lower()
+                ):
+                    discharge_cold_out_temperature_id = carrier["id_number_mapping"]
+                    discharge_cold_out_temperature = carrier["temperature"]
+                elif (
+                    self.charge_port_name_convention in p.name.lower()
+                    and self.hot_port_name_convention in p.name.lower()
+                ):
+                    charge_hot_out_temperature_id = carrier["id_number_mapping"]
+                    charge_hot_out_temperature = carrier["temperature"]
+                else:
+                    raise RuntimeError
+            temperatures = {
+                "DischargeHot": {
+                    "T_supply": discharge_hot_out_temperature,
+                    "T_return": discharge_hot_in_temperature,
+                    "T_supply_id": discharge_hot_out_temperature_id,
+                    "T_return_id": discharge_hot_in_temperature_id,
+                },
+                "DischargeCold": {
+                    "T_supply": discharge_cold_out_temperature,
+                    "T_return": discharge_cold_in_temperature,
+                    "T_supply_id": discharge_cold_out_temperature_id,
+                    "T_return_id": discharge_cold_in_temperature_id,
+                },
+                "ChargeHot": {
+                    "T_supply": charge_hot_in_temperature,
+                    "T_return": charge_hot_out_temperature,
+                    "T_supply_id": charge_hot_in_temperature_id,
+                    "T_return_id": charge_hot_out_temperature_id,
+                },
+            }
+            return temperatures
+
         else:
             # unknown model type
             return {}

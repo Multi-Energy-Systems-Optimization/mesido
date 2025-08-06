@@ -39,6 +39,7 @@ class LowTemperatureATES(HeatTwoPort, BaseAsset):
         self.T_amb = 10
         self.T_supply = nan
         self.T_return = nan
+        self.ates_temperature_range = None
         self.T_supply_id = -1
         self.T_return_id = -1
         self.dT = self.T_supply - self.T_return

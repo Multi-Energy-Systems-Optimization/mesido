@@ -24,6 +24,10 @@ class _ESDLModelBase(_Model):
 
     primary_port_name_convention = "prim"
     secondary_port_name_convention = "sec"
+    charge_port_name_convention = "charge"
+    discharge_port_name_convention = "discharge"
+    hot_port_name_convention = "hot"
+    cold_port_name_convention = "cold"
 
     def _esdl_convert(
         self, converter: _AssetToComponentBase, assets: Dict, name_to_id_map: Dict, prefix: str
@@ -211,6 +215,55 @@ class _ESDLModelBase(_Model):
                         f"when modelling a water-water HP, or 3 in ports and 2 out ports when the "
                         f"electricity connection of the water-water HP is modelled."
                     )
+            elif (
+                asset.asset_type == "ATES"
+                and len(asset.in_ports) == 3
+                and len(asset.out_ports) == 3
+            ):
+                for p in [*asset.in_ports, *asset.out_ports]:
+                    if isinstance(p.carrier, esdl.HeatCommodity):
+                        if isinstance(p, InPort):
+                            if (
+                                self.discharge_port_name_convention in p.name.lower()
+                                and self.hot_port_name_convention in p.name.lower()
+                            ):
+                                port_map[p.id] = getattr(component.DischargeHot, in_suf)
+                            elif (
+                                self.discharge_port_name_convention in p.name.lower()
+                                and self.cold_port_name_convention in p.name.lower()
+                            ):
+                                port_map[p.id] = getattr(component.DischargeCold, in_suf)
+                            elif (
+                                self.charge_port_name_convention in p.name.lower()
+                                and self.hot_port_name_convention in p.name.lower()
+                            ):
+                                port_map[p.id] = getattr(component.ChargeHot, in_suf)
+                            else:
+                                raise Exception(
+                                    f"{asset.name} has 3 inports but not all ports "
+                                    f"are named according to port name convention."
+                                )
+                        else:  # OutPort
+                            if (
+                                self.discharge_port_name_convention in p.name.lower()
+                                and self.hot_port_name_convention in p.name.lower()
+                            ):
+                                port_map[p.id] = getattr(component.DischargeHot, out_suf)
+                            elif (
+                                self.discharge_port_name_convention in p.name.lower()
+                                and self.cold_port_name_convention in p.name.lower()
+                            ):
+                                port_map[p.id] = getattr(component.DischargeCold, out_suf)
+                            elif (
+                                self.charge_port_name_convention in p.name.lower()
+                                and self.hot_port_name_convention in p.name.lower()
+                            ):
+                                port_map[p.id] = getattr(component.ChargeHot, out_suf)
+                            else:
+                                raise Exception(
+                                    f"{asset.name} has 3 outports but not all ports "
+                                    f"are named according to port name convention."
+                                )
             elif (
                 asset.asset_type == "GasHeater"
                 and len(asset.out_ports) == 1
