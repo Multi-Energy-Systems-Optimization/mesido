@@ -48,13 +48,13 @@ class ColdDemand(_NonStorageComponent):
         self.add_variable(Variable, "Cold_demand", min=0.0, nominal=self.Heat_nominal)
         self.add_variable(Variable, "dH", max=0.0)
         self.add_equation(self.dH - (self.HeatOut.H - self.HeatIn.H))
-        self.add_equation(
-            (
-                self.minimum_pressure_drop * self.Q
-                - (self.HeatIn.Hydraulic_power - self.HeatOut.Hydraulic_power)
-            )
-            / (self.Q_nominal * self.minimum_pressure_drop)
-        )
+        # self.add_equation(
+        #     (
+        #         self.minimum_pressure_drop * self.Q
+        #         - (self.HeatIn.Hydraulic_power - self.HeatOut.Hydraulic_power)
+        #     )
+        #     / (self.Q_nominal * self.minimum_pressure_drop)
+        # )
 
         self.add_equation(
             (self.HeatOut.Heat - (self.HeatIn.Heat + self.Cold_demand)) / self.Heat_nominal
