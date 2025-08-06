@@ -973,18 +973,18 @@ class AssetToHeatComponent(_AssetToComponentBase):
         if asset.asset_type == "GenericConversion":
             max_power = asset.attributes["power"] if asset.attributes["power"] else math.inf
         else:
-            #DTK requires capacity as the maximum power reference and not based on
+            # DTK requires capacity as the maximum power reference and not based on
             # heatTransferCoefficient. Power could also be based on heatTransferCoefficient if we
             # use an option to select it.
-            max_power = (
-                asset.attributes["capacity"] if asset.attributes["capacity"] else math.inf
-            )
+            max_power = asset.attributes["capacity"] if asset.attributes["capacity"] else math.inf
             if max_power == math.inf:
                 get_potential_errors().add_potential_issue(
-                    MesidoAssetIssueType.HEAT_EXCHANGER_POWER, asset.id, \
+                    MesidoAssetIssueType.HEAT_EXCHANGER_POWER,
+                    asset.id,
                     f"Asset name {asset.name}: The capacity of the heat exchanger is "
                     f"not defined. For this workflow the capacity is required and not the "
-                    f"heatTransferCoefficient.")
+                    f"heatTransferCoefficient.",
+                )
                 max_power = (
                     asset.attributes["heatTransferCoefficient"]
                     * (params_t["Primary"]["T_supply"] - params_t["Secondary"]["T_return"])
