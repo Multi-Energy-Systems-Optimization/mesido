@@ -241,6 +241,21 @@ class TestHydraulicPower(TestCase):
             atol=10.0,
         )
 
+        # # NoHeadloss should imply also no hydraulic power and no pump_power
+        # run_hydraulic_power.df_MILP = pd.DataFrame(columns=standard_columns_specified)
+        # run_hydraulic_power.head_loss_setting = HeadLossOption.NO_HEADLOSS
+        # run_esdl_mesido_optimization(
+        #     HeatProblem,
+        #     base_folder=base_folder,
+        #     esdl_file_name="test_simple.esdl",
+        #     esdl_parser=ESDLFileParser,
+        #     profile_reader=ProfileReaderFromFile,
+        #     input_timeseries_file="timeseries_import.xml",
+        # )
+        # for pipe in run_hydraulic_power.df_MILP.energy_system_components
+
+
+
     def test_hydraulic_power_gas(self):
         """
         Checks the logic for the hydraulic power of gas pipes.
