@@ -45,6 +45,44 @@ class _ESDLInputException(Exception):
     pass
 
 
+
+class BiMap:
+    def __init__(self):
+        self._forward = {}
+        self._backward = {}
+
+    def add(self, key, value):
+        if key in self._forward or value in self._backward:
+            raise ValueError("Duplicate key or value not allowed.")
+        self._forward[key] = value
+        self._backward[value] = key
+
+    def get_by_key(self, key):
+        return self._forward.get(key)
+
+    def get_by_value(self, value):
+        return self._backward.get(value)
+
+    def remove_by_key(self, key):
+        value = self._forward.pop(key, None)
+        if value:
+            self._backward.pop(value, None)
+
+    def remove_by_value(self, value):
+        key = self._backward.pop(value, None)
+        if key:
+            self._forward.pop(key, None)
+
+    def keys(self):
+        return list(self._forward.keys())
+
+    def values(self):
+        return list(self._backward.keys())
+
+    def items(self):
+        return list(self._forward.items())
+
+
 class ESDLMixin(
     ModelicaComponentTypeMixin,
     IOMixin,
@@ -149,6 +187,9 @@ class ESDLMixin(
         self.override_gas_pipe_classes()
 
         self.name_to_esdl_id_map = dict()
+
+        self._hot_cold_pipe_relations = BiMap()
+        self.hot_cold_pipe_relations()
 
         super().__init__(*args, **kwargs)
 
@@ -511,6 +552,24 @@ class ESDLMixin(
         string with the associated hot pipe name.
         """
         return pipe[:-4]
+
+    def hot_cold_pipe_relations(self):
+
+        for asset in self._esdl_assets.values():
+            if asset.asset_type == "Pipe":
+                related = False
+                related_asset = asset.attributes.get("related", False)
+                if related_asset:
+                    assert len(related_asset) == 1, "Pipes can only have related supply/return pipe"
+                    related = True
+                    if asset.attributes["port"][0].carrier.supplyTemperature: #hot_pipe
+                        if asset.name not in self._hot_cold_pipe_relations.keys():
+                            self._hot_cold_pipe_relations.add(asset.name, related_asset[0].name)
+                    elif asset.attributes["port"][0].carrier.returnTemperature: #cold_pipe
+                        if asset.name not in self._hot_cold_pipe_relations.values():
+                            self._hot_cold_pipe_relations.add(related_asset[0].name, asset.name)
+
+
 
     def pycml_model(self) -> _ESDLModelBase:
         """
