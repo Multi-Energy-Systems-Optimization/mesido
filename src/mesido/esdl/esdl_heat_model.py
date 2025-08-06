@@ -2393,6 +2393,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         used in a pycml object.
 
         Required ESDL fields:
+            - efficiency
             - power
             - id (this id must be unique)
             - name (this name must be unique)
@@ -2446,6 +2447,11 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         q_nominals = self._get_connected_q_nominal(asset)
 
+        if not asset.attributes["efficiency"]:
+            raise _ESDLInputException(
+                f"{asset.name} has no efficiency specified, this is required for the model"
+            )
+
         modifiers = dict(
             technical_life=self.get_asset_attribute_value(
                 asset,
@@ -2454,6 +2460,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 min_value=1.0,
                 max_value=50.0,
             ),
+            efficiency=asset.attributes["efficiency"],
             discount_rate=self.get_asset_attribute_value(
                 asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
             ),
@@ -2471,7 +2478,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
         )
-
         return GasBoiler, modifiers
 
     def convert_elec_boiler(self, asset: Asset) -> Tuple[ElecBoiler, MODIFIERS]:

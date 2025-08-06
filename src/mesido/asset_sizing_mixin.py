@@ -1051,6 +1051,13 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         """
         return self.__heat_pipe_topo_pipe_class_result[pipe]
 
+    def get_optimized_gas_pipe_class(self, pipe):
+        """
+        Return the optimized gas pipe class for a specific pipe. If no
+        optimized pipe class is available (yet), a `KeyError` is returned.
+        """
+        return self.__gas_pipe_topo_pipe_class_result[pipe]
+
     def get_optimized_deman_insulation_class(self, demand_insulation: str) -> DemandInsulationClass:
         """
         Return the optimized demand_insulation class for a specific pipe. If no
@@ -2328,6 +2335,22 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 for p in [pipe, self.hot_to_cold_pipe(pipe)]:
                     self.__heat_pipe_topo_pipe_class_result[p] = pipe_class
 
+            for pipe in self.energy_system_components.get("gas_pipe", []):
+                pipe_classes = self.gas_pipe_classes(pipe)
+
+                if not pipe_classes:
+                    continue
+                elif len(pipe_classes) == 1:
+                    pipe_class = pipe_classes[0]
+                else:
+                    pipe_class = next(
+                        c
+                        for c, s in self._gas_pipe_topo_pipe_class_map[pipe].items()
+                        if round(results[s][0]) == 1.0
+                    )
+
+                self.__gas_pipe_topo_pipe_class_result[pipe] = pipe_class
+
     def _pipe_heat_loss_to_parameters(self):
         """
         This function is used to set the optimized milp losses in the parameters object.
@@ -2359,6 +2382,11 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     d[f"{p}.diameter"] = pipe_class.inner_diameter
                     d[f"{p}.area"] = pipe_class.area
 
+            for pipe in self._gas_pipe_topo_pipe_class_map:
+                pipe_class = self.get_optimized_gas_pipe_class(pipe)
+                d[f"{pipe}.diameter"] = pipe_class.inner_diameter
+                d[f"{pipe}.area"] = pipe_class.area
+
     def priority_completed(self, priority):
         """
         This function is called after a priority of goals is completed. This function is used to
@@ -2376,6 +2404,13 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             self.heat_network_settings["minimize_head_losses"]
             and self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS
             and priority == self._hn_head_loss_class._hn_minimization_goal_class.priority
+        ):
+            self.__pipe_diameter_to_parameters()
+
+        if (
+            self.gas_network_settings["minimize_head_losses"]
+            and self.gas_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS
+            and priority == self._gn_head_loss_class._hn_minimization_goal_class.priority
         ):
             self.__pipe_diameter_to_parameters()
 
