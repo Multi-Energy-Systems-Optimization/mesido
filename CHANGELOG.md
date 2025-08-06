@@ -8,6 +8,7 @@
 
 ## Fixed
 - Bug: Add 3 port heat pump to elect demand path constraint
+- Error exit when priority 1 reaches time limit in grow workflow for all settings and solvers.
 
 
 # [0.1.13] - 2025-06-25
