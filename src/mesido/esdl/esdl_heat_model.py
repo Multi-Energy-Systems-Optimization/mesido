@@ -973,17 +973,24 @@ class AssetToHeatComponent(_AssetToComponentBase):
         if asset.asset_type == "GenericConversion":
             max_power = asset.attributes["power"] if asset.attributes["power"] else math.inf
         else:
-            # TODO: Current max_power estimation is not very accurate, a more physics based
-            # estimation should be implemented, maybe using other ESDL attributs.
+            #DTK requires capacity as the maximum power reference and not based on
+            # heatTransferCoefficient. Power could also be based on heatTransferCoefficient if we
+            # use an option to select it.
             max_power = (
-                asset.attributes["heatTransferCoefficient"]
-                * (params_t["Primary"]["T_supply"] - params_t["Secondary"]["T_return"])
-                / 2.0
+                asset.attributes["capacity"] if asset.attributes["capacity"] else math.inf
             )
-            if max_power == 0.0:
+            if max_power == math.inf:
+                get_potential_errors().add_potential_issue(
+                    MesidoAssetIssueType.HEAT_EXCHANGER_POWER, asset.id, \
+                    f"Asset name {asset.name}: The capacity of the heat exchanger is "
+                    f"not defined. For this workflow the capacity is required and not the "
+                    f"heatTransferCoefficient.")
                 max_power = (
-                    asset.attributes["capacity"] if asset.attributes["capacity"] else math.inf
+                    asset.attributes["heatTransferCoefficient"]
+                    * (params_t["Primary"]["T_supply"] - params_t["Secondary"]["T_return"])
+                    / 2.0
                 )
+
         # This default delta temperature is used when on the primary or secondary side the
         # temperature difference is 0.0. It is set to 10.0 to ensure that maximum/nominal
         # flowrates and heat transport are set at realistic values.

@@ -30,6 +30,7 @@ def mesido_issue_type_gen_message(issue_type: MesidoAssetIssueType) -> str:
         MesidoAssetIssueType.ASSET_PROFILE_CAPABILITY: "Profile assigment not allowed.",
         MesidoAssetIssueType.HEAT_EXCHANGER_TEMPERATURES: "Temperatures at heat exchanger set "
         "incorrectly.",
+        MesidoAssetIssueType.HEAT_EXCHANGER_POWER: "The capacity of the heat exchanger is not defined",
     }
 
     return type_and_general_meassage[issue_type]
@@ -49,6 +50,7 @@ def potential_error_to_error(network_check_type: Enum) -> None:
             MesidoAssetIssueType.HEAT_DEMAND_TYPE,
             MesidoAssetIssueType.ASSET_PROFILE_CAPABILITY,
             MesidoAssetIssueType.HEAT_EXCHANGER_TEMPERATURES,
+            MesidoAssetIssueType.HEAT_EXCHANGER_POWER,
         ],
         HEAT_AND_COOL_NETWORK_ERRORS: [
             MesidoAssetIssueType.HEAT_DEMAND_POWER,
