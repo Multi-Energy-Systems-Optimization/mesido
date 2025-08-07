@@ -239,6 +239,29 @@ class AssetToHeatComponent(_AssetToComponentBase):
             )
             logger.warning(warning_msg)
 
+    def _get_emission_modifiers(self, asset):
+        """
+        Temporarily the emission information of assets is provided through the KPIs, ideally it
+        should be from the attributes.
+
+        #TODO:add unit check, use multiplier of units to get real value.
+
+        Args:
+            asset: mesido common asset with all attributes
+
+        Returns:
+
+        """
+        value = 0.0
+        kpis = asset.attributes["KPIs"]
+        if kpis:
+            for kpi in kpis.kpi:
+                qua = kpi.quantityAndUnit
+                if qua.physicalQuantity == esdl.PhysicalQuantityEnum.EMISSION:
+                    value = kpi.value
+                    #TODO: multiplier  # to g/Wh
+        return value
+
     def _generic_modifiers(self, asset):
         """
         Args:
@@ -247,6 +270,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         Returns: dictionary of the generic heat modifiers: Q_nominal, Heat_flow, and the hydraulic
         power of HeatIn and HeatOut.
         """
+
         modifiers = dict(
             technical_life=self.get_asset_attribute_value(
                 asset,
@@ -259,6 +283,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
             ),
             state=self.get_state(asset),
+            emission_coeff=self._get_emission_modifiers(asset),
         )
         return modifiers
 
