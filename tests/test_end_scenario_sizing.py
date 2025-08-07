@@ -345,6 +345,28 @@ class TestEndScenarioSizing(TestCase):
                         abs(results[f"{pipe}.dH"][ii]),
                     )
 
+    def test_end_scenario_sizing_pipe_catalog(self):
+        #TODO: also add test to just check if cost values are updated
+        #TODO: this test should contain a test if updated cost values from the pipe catalog in
+        # the ESDL are used
+        import models.test_case_small_network_ates_buffer_optional_assets.src.run_ates \
+            as run_ates
+
+        base_folder = Path(run_ates.__file__).resolve().parent.parent
+
+        # This is an optimization done over a few days
+        solution = run_end_scenario_sizing(
+            EndScenarioSizing,
+            base_folder=base_folder,
+            esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional_pipe_catalog"
+                           ".esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="Warmte_test.csv",
+        )
+
+        results = solution.extract_results()
+        parameters = solution.parameters(0)
 
 if __name__ == "__main__":
     import time
