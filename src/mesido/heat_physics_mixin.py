@@ -1585,9 +1585,11 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 heat_out_vector = self.__state_vector_scaled(f"{s}.HeatOut.Heat", ensemble_member)
                 discharge_vector = self.__state_vector_scaled(f"{s}.Q", ensemble_member)
                 temp_out_vector = self.get_timeseries(f"{sup_carrier_name}.price_profile").values
+                temp_out_start = int(np.where(self.get_timeseries(f"{sup_carrier_name}.price_profile").times == self.times()[0])[0])
+                temp_out_end = int(np.where(self.get_timeseries(f"{sup_carrier_name}.price_profile").times == self.times()[-1])[0])
                 constraints.append(
                         (
-                            (heat_out_vector - discharge_vector * cp * rho * temp_out_vector)
+                            (heat_out_vector - discharge_vector * cp * rho * temp_out_vector[temp_out_start : temp_out_end+1])
                             / heat_nominal,
                             0.0,
                             0.0,
@@ -1725,12 +1727,13 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     # temp_out_vector = self.get_timeseries(f"{sup_carrier_name}.price_profile").values
 
                     pipe_q_vector = self.__state_vector_scaled(f"{p}.Q", ensemble_member)
-                    temp_vector = self.get_timeseries(f"{out_port_carrier_name}.price_profile").values # TODO check this.
-
+                    temp_out_vector = self.get_timeseries(f"{out_port_carrier_name}.price_profile").values # TODO check this.
+                    temp_out_start = int(np.where(self.get_timeseries(f"{out_port_carrier_name}.price_profile").times == self.times()[0])[0])
+                    temp_out_end = int(np.where(self.get_timeseries(f"{out_port_carrier_name}.price_profile").times == self.times()[-1])[0])
 
                     constraints.append(
                         (
-                            (heat - pipe_q_vector * (cp * rho * temp_vector)) / heat_nominal, # TODO: replace all temperatures here for vectors instead of states.
+                            (heat - pipe_q_vector * (cp * rho * temp_out_vector[temp_out_start : temp_out_end+1])) / heat_nominal, # TODO: replace all temperatures here for vectors instead of states.
                             0.0,
                             0.0,
                         )
