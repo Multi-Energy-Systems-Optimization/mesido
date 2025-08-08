@@ -1188,7 +1188,7 @@ class HeadLossClass:
         # Convert minimum pressure at far point from bar to meter (water) head
         min_head_loss = options["minimum_pressure_far_point"] * 10.2
 
-        #TODO: shouldn't the min_head_loss be taken as parameters[f"{asset}.minimum_pressure_drop"]
+        # TODO: shouldn't the min_head_loss be taken as parameters[f"{asset}.minimum_pressure_drop"]
         # Then, options["minimum_pressure_far_point"] * 10.2 could be used to ensure that at each
         # demand f"{d}.HeatIn.H" is bigger than this.
 
