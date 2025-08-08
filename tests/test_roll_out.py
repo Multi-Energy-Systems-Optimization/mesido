@@ -75,7 +75,7 @@ class TestRollOutOptimization(TestCase):
                     break # once an asset is placed it remains placed in the future 
 
         # heat_to_discharge_test(solution, results)
-        # energy_conservation_test(solution, results)
+        energy_conservation_test(solution, results)
      
         for asset in [
             *solution.energy_system_components.get("heat_source", []),                
@@ -87,14 +87,22 @@ class TestRollOutOptimization(TestCase):
             for y in range(solution._years):
                 is_placed = results[f"{asset}__is_placed_{y}"] # is this variable used?
                 asset_is_realized = results[f"{asset}__asset_is_realized_{y}"]
-                np.testing.assert_(is_placed in [0, 1], f"{asset}__is_placed_{y} should be 0 or 1")
-                np.testing.assert_(asset_is_realized in [0, 1], f"{asset}__asset_is_realized_{y} should be 0 or 1")
-             
+                # this fales variables are not integers
+                # np.testing.assert_(is_placed in [0, 1], f"{asset}__is_placed_{y} should be 0 or 1")
+                # np.testing.assert_(asset_is_realized in [0, 1], f"{asset}__asset_is_realized_{y} should be 0 or 1")
+                
+                np.testing.assert_(np.isclose(is_placed, 0, atol=1.0e-6) or np.isclose(is_placed, 1, atol=1.0e-6),
+                                   f"{asset}__is_placed_{y} should be 0 or 1")
+                np.testing.assert_(np.isclose(asset_is_realized , 0, atol=1.0e-6) or np.isclose(asset_is_realized , 1, atol=1.0e-6),
+                                   f"{asset}__asset_is_realized_{y} should be 0 or 1")
+
+
             # If asset placed, also placed for future
             for y in range(solution._years - 1):
                 asset_is_realized = results[f"{asset}__asset_is_realized_{y}"]
                 next_asset_is_realized = results[f"{asset}__asset_is_realized_{y + 1}"]
-                np.testing.assert_(asset_is_realized <= next_asset_is_realized,
+                tol = 1E-6
+                np.testing.assert_(asset_is_realized <= next_asset_is_realized + tol,
                                    f"{asset}__asset_is_realized_{y} should be <= {asset}__asset_is_realized_{y + 1}")  
 
         # Check yearly max investment constraint      
@@ -172,16 +180,18 @@ class TestRollOutOptimization(TestCase):
         ]:
             for y in range(solution._years):
                 asset_fraction_placed = results[f"{asset}__fraction_placed_{y}"]
-                np.testing.assert_(0 <= asset_fraction_placed <= 1, msg="Value is not between 0 and 1") 
+                np.testing.assert_(0 <= asset_fraction_placed <= 1, "Value is not between 0 and 1") 
+                tol = 1E-6
                 if y < solution._years - 1:
                     next_asset_fraction_placed = results[f"{asset}__fraction_placed_{y + 1}"]
-                    np.testing.assert_(asset_fraction_placed <= next_asset_fraction_placed,
+                    np.testing.assert_(asset_fraction_placed <= next_asset_fraction_placed + tol,
                                    f"{asset}__fraction_placed_{y} should be <= {asset}__fraction_placed_{y + 1}")  
 
             for y in range(solution._years - 1):
                 asset_is_realized = results[f"{asset}__asset_is_realized_{y}"]
                 next_asset_is_realized = results[f"{asset}__asset_is_realized_{y + 1}"]
-                np.testing.assert_(asset_is_realized <= next_asset_is_realized,
+                tol = 1E-6
+                np.testing.assert_(asset_is_realized <= next_asset_is_realized + tol,
                                    f"{asset}__asset_is_realized{y} should be <= {asset}__asset_is_realized{y + 1}")  
 
 
