@@ -332,7 +332,7 @@
           </investmentCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:HeatProducer" power="50000000.0" name="HeatProducer_2" id="da00ddfc-cfa4-4f21-b5be-7c69d2bf53bb" state="OPTIONAL">
+      <asset xsi:type="esdl:HeatProducer" power="1000000.0" name="HeatProducer_2" id="da00ddfc-cfa4-4f21-b5be-7c69d2bf53bb" state="OPTIONAL">
         <geometry xsi:type="esdl:Point" lon="4.311726093292237" CRS="WGS84" lat="52.04487621664103"/>
         <port xsi:type="esdl:OutPort" id="886e5430-bec1-44e3-bab6-221c4518c810" connectedTo="bbfed830-071d-4d02-bddd-e709247c8337" carrier="7b32e287-d775-480c-b317-64ffdacf12c9" name="Out"/>
         <port xsi:type="esdl:InPort" connectedTo="df6f89d0-7872-4891-934f-de407f6aa142" id="c7ed8915-ddd0-47f8-93d6-1dabfb5d320b" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret" name="In"/>

@@ -284,6 +284,46 @@ def adapt_profile_to_copy_for_number_of_years(problem, number_of_years: int):
 
     logger.info("Profile data has been adapted to a common format")
 
+def adapt_profile_for_initial_hour_timestep_size(problem):
+    """
+    A small, (1 hour) timestep is inserted as first time step. This is used to in the rollout workflow
+    to allow a yearly change in the storage of the ATES system.
+    The first time step is used to accomodate the (yearly) initial storage level of the ATES.
+
+    """
+
+    new_datastore = DataStore(problem)
+    new_datastore.reference_datetime = problem.io.datetimes[0]
+
+    org_timeseries = problem.io.datetimes
+
+    for ensemble_member in range(problem.ensemble_size):
+        parameters = problem.parameters(ensemble_member)
+
+        timestep_one_hour = org_timeseries[0] + datetime.timedelta(hours=1)
+        new_date_times = list()
+        new_date_times = org_timeseries.copy()
+        new_date_times.insert(1, timestep_one_hour)
+
+        new_date_times = np.asarray(new_date_times)
+        parameters["times"] = [x.timestamp() for x in new_date_times]
+
+        for var_name in problem.io.get_timeseries_names():
+            old_data = problem.io.get_timeseries(var_name)[1]
+            new_data = np.insert(old_data, 1, old_data[0])  # insert the first
+            # value at the second position, so that the first value is repeated
+            # at the second position.   
+            new_datastore.set_timeseries(
+                variable=var_name,
+                datetimes=new_date_times,
+                values=np.asarray(new_data),
+                ensemble_member=ensemble_member,
+                check_duplicates=True,
+            )
+
+    problem.io = new_datastore
+
+    logger.info("Profile data has been adapted to a common format")
 
 def select_profiles_for_update(
     problem, new_datastore: DataStore, new_date_times: np.array, ensemble_member: int
