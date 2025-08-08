@@ -133,7 +133,6 @@ class TestEndScenarioSizing(TestCase):
         function run_end_scenario_sizing with staged_pipe_optimization to False should have
         comparable computation times.
 
-        - Check if TCO goal included the desired cost components
 
         Missing:
         - Link ATES t0 utilization to state of charge at end of year for optimizations over one
