@@ -174,7 +174,7 @@ class HeatProblem(
             # temperatures = np.linspace(52.5, 65, 6).tolist()[::-1]
             # temperatures.extend(np.linspace(45, 50, 6).tolist()[::-1])
 
-            temperatures = np.linspace(40, 70, 7).tolist()[::-1]
+            temperatures = np.linspace(40, 70, 6).tolist()[::-1]
 
         return temperatures
 
@@ -245,7 +245,7 @@ class HeatProblem(
             )
 
             # TODO: check if ordering is possible for ates temperature over time
-            day_step = 28
+            day_step = 40
 
             nr_of_days = len(total_demand) // (24 * day_step)
             new_date_times = list()
