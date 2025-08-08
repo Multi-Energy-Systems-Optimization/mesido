@@ -114,6 +114,8 @@ class MinimizeTCO(Goal):
         If `discounted_annualized_cost` is not defined or False, the operational and
         fixed operational costs are multiplied by the number_of_years.
 
+
+
         Args:
             optimization_problem (TechnoEconomicMixin): The optimization problem instance.
             cost_type (str): The type of cost to calculate ("operational",
@@ -128,6 +130,10 @@ class MinimizeTCO(Goal):
         obj = 0.0
         for asset_type in asset_types:
             for asset in optimization_problem.energy_system_components.get(asset_type, []):
+                technical_lifetime = optimization_problem.parameters(0)[f"{asset}.technical_life"]
+                factor = self.number_of_years / technical_lifetime
+                if factor < 1.0:
+                    factor = 1.0
                 extra_var = optimization_problem.extra_variable(cost_type_map[asset])
                 if options["discounted_annualized_cost"]:
                     # We only want the operational cost for a single year when we use
@@ -137,7 +143,7 @@ class MinimizeTCO(Goal):
                     obj += extra_var * self.number_of_years
                 else:
                     # These are the CAPEX cost under non-annualized condition
-                    obj += extra_var
+                    obj += extra_var * factor
         return obj
 
     def function(self, optimization_problem: TechnoEconomicMixin, ensemble_member) -> MX:
