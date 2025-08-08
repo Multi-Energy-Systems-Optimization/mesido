@@ -15,7 +15,7 @@ if __name__ == "__main__":
     solution = run_end_scenario_sizing(
         RollOutProblem,
         base_folder=base_folder,
-        esdl_file_name="PoC_tutorial_incl_ATES.esdl",  # "GROW_withATES_Prod_install.esdl",
+        esdl_file_name= "PoC_tutorial_incl_ATES.esdl",  # "GROW_withATES_Prod_install.esdl",
         esdl_parser=ESDLFileParser,
     )
     results = solution.extract_results()
@@ -53,6 +53,11 @@ if __name__ == "__main__":
         plt.plot(
             times / 3600 / 24, results[f"{heatsource}.Heat_source"] / 1e6, label=str(heatsource)
         )
+    for d in solution.energy_system_components.get("heat_demand", []):
+        target = solution.get_timeseries(f"{d}.target_heat_demand").values[0: solution._days * solution._years+1]
+        delivered = results[f"{d}.Heat_demand"]
+        print(f"{d}.Heat_demand", target, delivered)
+
 
     plt.xlabel("Time [days]")
     plt.ylabel("Heat produced [MW]")

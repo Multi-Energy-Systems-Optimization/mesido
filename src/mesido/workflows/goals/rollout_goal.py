@@ -156,8 +156,8 @@ class MinimizeCAPEXAssetsCosts(Goal):
 
     order = 1
 
-    def __init__(self, percentage_is_placed_vars, priority=None):
-        self.percentage_is_placed_vars = percentage_is_placed_vars
+    def __init__(self, fraction_is_placed_vars, priority=None):
+        self.fraction_is_placed_vars = fraction_is_placed_vars
         self.priority = priority
 
     def function(self, optimization_problem, ensemble_member):
@@ -168,7 +168,7 @@ class MinimizeCAPEXAssetsCosts(Goal):
     def capex_asset(self, optimization_problem, ensemble_member):
         obj = 0.0
         parameters = optimization_problem.parameters(ensemble_member)
-        for var_name in self.percentage_is_placed_vars:
+        for var_name in self.fraction_is_placed_vars:
             asset_name = var_name.split("__")[0]
             if "_doublet" in asset_name:
                 asset_name = asset_name.split("_doublet")[0]
@@ -215,15 +215,15 @@ class MinimizeCAPEXAssetsCosts(Goal):
                     ates_N_doublets = parameters[f"{asset_name}.nr_of_doublets"]
                     inst_costs = inst_costs / ates_N_doublets
                     inv_costs = inv_costs / ates_N_doublets
-                    symbols = optimization_problem.get_asset_percentage__placed_symbols(
+                    symbols = optimization_problem.get_asset_fraction__placed_symbols(
                         f"{asset_name}_doublet_{1}"
                     )
                     for i in range(1, ates_N_doublets):
-                        symbols += optimization_problem.get_asset_percentage__placed_symbols(
+                        symbols += optimization_problem.get_asset_fraction__placed_symbols(
                             f"{asset_name}_doublet_{1+i}"
                         )
                 else:
-                    symbols = optimization_problem.get_asset_percentage__placed_symbols(asset_name)
+                    symbols = optimization_problem.get_asset_fraction__placed_symbols(asset_name)
                 for i in range(optimization_problem._years):
                     obj += symbols[i] * (inv_costs + inst_costs) / tech_lifetime
                 # obj += optimization_problem.state(var_name) * (inv_costs + inst_costs) / (tech_lifetime * 365)
@@ -242,7 +242,7 @@ class MinimizeCAPEXAssetsCosts(Goal):
         # symbols = optimization_problem.state_vector(var_name)
         # for i in range(optimization_problem._years):
         #      obj += symbols[i*365] * length * investment_costs.value
-        symbols = optimization_problem.get_asset_percentage__placed_symbols(asset.name)
+        symbols = optimization_problem.get_asset_fraction__placed_symbols(asset.name)
         for i in range(optimization_problem._years):
             obj += symbols[i] * length * investment_costs.value
 
