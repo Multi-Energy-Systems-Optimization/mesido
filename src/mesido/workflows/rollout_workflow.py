@@ -160,6 +160,8 @@ class RollOutProblem(
         parameters = super().parameters(ensemble_member)
         for pipe in self.hot_pipes:
             parameters[f"{pipe}.disconnectable"] = True
+        for pipe in self.cold_pipes:
+            parameters[f"{pipe}.disconnectable"] = True
         return parameters
 
     def read(self):
