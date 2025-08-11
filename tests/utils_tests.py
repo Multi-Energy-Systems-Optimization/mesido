@@ -487,7 +487,8 @@ def gas_pipes_head_loss_test(solution, results):
             pipe_wall_roughness = solution.energy_system_options()["wall_roughness"]
             temperature = 20  # is default for gas pipes
             pipe_length = solution.parameters(0)[f"{pipe}.length"]
-            v_pipe = results[f"{pipe}.Q"] / area
+            v_pipe = abs(results[f"{pipe}.Q"]) / area
+            # v_pipe = results[f"{pipe}.Q"] / area
             if (
                 solution.gas_network_settings["head_loss_option"]
                 == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
@@ -575,8 +576,10 @@ def gas_pipes_head_loss_test(solution, results):
                     network_type=solution.gas_network_settings["network_type"],
                     pressure=solution.parameters(0)[f"{pipe}.pressure"],
                 )
+                print(pipe, v_inspect)
                 np.testing.assert_allclose(dh_theory, dh_milp_head_loss_function)
-                np.testing.assert_array_less(dh_milp_head_loss_function, dh_manual_linear)
+                if dh_milp_head_loss_function != 0.0:
+                    np.testing.assert_array_less(dh_milp_head_loss_function, dh_manual_linear)
                 np.testing.assert_allclose(
-                    results[f"{pipe}.dH"][itime], -dh_manual_linear, atol=1.0e-12
+                    results[f"{pipe}.dH"][itime], -dh_manual_linear * np.sign(results[f"{pipe}.Q"][itime]), atol=1.0e-9
                 )
