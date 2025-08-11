@@ -423,7 +423,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         state = asset.attributes["state"]
 
-        if state is esdl.AssetStateEnum.ENABLED:
+        if state==esdl.AssetStateEnum.OPTIONAL:
             get_potential_errors().add_potential_issue(
                 MesidoAssetIssueType.HEAT_DEMAND_STATE,
                 asset.id,
