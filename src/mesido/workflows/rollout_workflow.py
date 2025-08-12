@@ -131,10 +131,6 @@ class RollOutProblem(
         self.__ates_state_heat_var_bounds = {}
         self.__ates_state_heat_var_nominals = {}
 
-        self._asset_is_placed_map = {}
-        self.__asset_is_placed_var = {}
-        self.__asset_is_placed_var_bounds = {}
-
         self._asset_fraction_placed_map = {}
         self.__asset_fraction_placed_var = {}
         self.__asset_fraction_placed_var_bounds = {}
@@ -187,11 +183,6 @@ class RollOutProblem(
             *self.hot_pipes,
         ]:
             for year in range(self._years):
-                asset_is_placed_var = f"{asset}__is_placed_{year}"
-                self._asset_is_placed_map[asset] = asset_is_placed_var
-                self.__asset_is_placed_var[asset_is_placed_var] = ca.MX.sym(asset_is_placed_var)
-                self.__asset_is_placed_var_bounds[asset_is_placed_var] = (0.0, 1.0)
-
                 asset_fraction_placed_var = f"{asset}__fraction_placed_{year}"
                 self._asset_fraction_placed_map[asset] = asset_fraction_placed_var
                 self.__asset_fraction_placed_var[asset_fraction_placed_var] = ca.MX.sym(
@@ -201,30 +192,30 @@ class RollOutProblem(
 
         # TODO still needs to be checked if this is also properly added to financial mixing for
         # asset_is_realized for the doublets.
-        for asset in [*self.energy_system_components.get("ates", [])]:
-            for year in range(self._years):
-                N_doublets = self.parameters(0)[f"{asset}.nr_of_doublets"]
-                # for i in range(1, N_doublets + 1):
-                #     asset_is_placed_var = f"{asset}_doublet_{i}__is_placed_{year}"
-                #     self._asset_doublet_is_placed_map[
-                #         f"{asset}_doublet_{i}"] = asset_is_placed_var  # might be unnecessary
-                #     self._asset_is_placed_map[f"{asset}_doublet_{i}"] = asset_is_placed_var
-                #     self.__asset_doublet_is_placed_var[asset_is_placed_var] = ca.MX.sym(asset_is_placed_var)
-                #     self.__asset_doublet_is_placed_var_bounds[asset_is_placed_var] = (0.0, 1.0)
-                #     # self.__asset_is_placed_var[asset_is_placed_var] = ca.MX.sym(asset_is_placed_var)
-                #     # self.__asset_is_placed_var_bounds[asset_is_placed_var] = (0.0, 1.0)
-                #
-                #     asset_fraction_placed_var = f"{asset}_doublet_{i}__fraction_placed_{year}"
-                #     self._asset_fraction_placed_map[f"{asset}_doublet_{i}"] = asset_fraction_placed_var
-                #     self.__asset_fraction_placed_var[asset_fraction_placed_var] = \
-                #         ca.MX.sym(asset_fraction_placed_var)
-                #     self.__asset_fraction_placed_var_bounds[asset_fraction_placed_var] = (
-                #     0.0, 1.0)
-
-                asset_is_placed_var = f"{asset}__is_placed_{year}"
-                self._asset_is_placed_map[asset] = asset_is_placed_var
-                self.__asset_is_placed_var[asset_is_placed_var] = ca.MX.sym(asset_is_placed_var)
-                self.__asset_is_placed_var_bounds[asset_is_placed_var] = (0.0, 1.0)
+        # for asset in [*self.energy_system_components.get("ates", [])]:
+        #     for year in range(self._years):
+        #         N_doublets = self.parameters(0)[f"{asset}.nr_of_doublets"]
+        #         # for i in range(1, N_doublets + 1):
+        #         #     asset_is_placed_var = f"{asset}_doublet_{i}__is_placed_{year}"
+        #         #     self._asset_doublet_is_placed_map[
+        #         #         f"{asset}_doublet_{i}"] = asset_is_placed_var  # might be unnecessary
+        #         #     self._asset_is_placed_map[f"{asset}_doublet_{i}"] = asset_is_placed_var
+        #         #     self.__asset_doublet_is_placed_var[asset_is_placed_var] = ca.MX.sym(asset_is_placed_var)
+        #         #     self.__asset_doublet_is_placed_var_bounds[asset_is_placed_var] = (0.0, 1.0)
+        #         #     # self.__asset_is_placed_var[asset_is_placed_var] = ca.MX.sym(asset_is_placed_var)
+        #         #     # self.__asset_is_placed_var_bounds[asset_is_placed_var] = (0.0, 1.0)
+        #         #
+        #         #     asset_fraction_placed_var = f"{asset}_doublet_{i}__fraction_placed_{year}"
+        #         #     self._asset_fraction_placed_map[f"{asset}_doublet_{i}"] = asset_fraction_placed_var
+        #         #     self.__asset_fraction_placed_var[asset_fraction_placed_var] = \
+        #         #         ca.MX.sym(asset_fraction_placed_var)
+        #         #     self.__asset_fraction_placed_var_bounds[asset_fraction_placed_var] = (
+        #         #     0.0, 1.0)
+        #
+        #         asset_is_placed_var = f"{asset}__is_placed_{year}"
+        #         self._asset_is_placed_map[asset] = asset_is_placed_var
+        #         self.__asset_is_placed_var[asset_is_placed_var] = ca.MX.sym(asset_is_placed_var)
+        #         self.__asset_is_placed_var_bounds[asset_is_placed_var] = (0.0, 1.0)
 
         for i in range(self._years):
             var_name = f"yearly_capex_{i}"
@@ -238,7 +229,7 @@ class RollOutProblem(
 
         goals.append(
             MaximizeRevenueCosts(
-                is_placed_vars=self._asset_is_placed_map.values(),
+                is_placed_vars=self._asset_is_realized_map.values(),
                 year_step_size=self._year_step_size,
                 priority=1,
             )
@@ -261,7 +252,7 @@ class RollOutProblem(
 
         goals.append(
             MinimizeRolloutFixedOperationalCosts(
-                is_placed_vars=self._asset_is_placed_map.values(), priority=1
+                is_placed_vars=self._asset_is_realized_map.values(), priority=1
             )
         )
 
@@ -369,7 +360,7 @@ class RollOutProblem(
     def __yearly_asset_is_placed_constraints(self, ensemble_member):
         constraints = []
 
-        for asset, asset_is_placed_var in self._asset_is_placed_map.items():
+        for asset, asset_is_placed_var in self._asset_is_realized_map.items():
             # asset_is_placed_vector = self.state_vector(asset_is_placed_var, ensemble_member)
             asset_is_placed_vector = self.get_asset_is__realized_symbols(asset)
 
@@ -496,7 +487,7 @@ class RollOutProblem(
         constraints = []
 
         bounds = self.bounds()
-        for asset, asset_is_placed_var in self._asset_is_placed_map.items():
+        for asset, asset_is_placed_var in self._asset_is_realized_map.items():
             if asset not in self.energy_system_components.get("geothermal_source", []):
                 continue
             geo_is_placed = self.get_asset_is__realized_symbols(asset)
@@ -553,19 +544,6 @@ class RollOutProblem(
 
         # TODO: This ensures __asset_is_realized_ and __is_placed_ variables are set equal,
         # thereby __is_placed can be removed for heat_source, heat_demand and hot_pipes
-        for asset in [
-            *self.energy_system_components.get("heat_source", []),
-            *self.energy_system_components.get("heat_demand", []),
-            *self.hot_pipes,
-            # *self.energy_system_components.get("heat_pipe", []),
-        ]:
-            var_placed = self.get_asset_is__placed_symbols(asset)
-            var_realized = self.get_asset_is__realized_symbols(asset)
-            constraints.append((var_placed - var_realized, 0.0, 0.0))
-            # for year in range(self._years):
-            #     var_placed = self.extra_variable(f"{asset}__is_placed_{year}")
-            #     var_realized = self.extra_variable(f"{asset}__asset_is_realized_{year}")
-            #     constraints.append((var_placed-var_realized, 0.0, 0.0))
 
         constraints.extend(self.__ates_placed_balance_constraints(ensemble_member))
         constraints.extend(self.__demand_matching_constraints(ensemble_member))
@@ -587,11 +565,6 @@ class RollOutProblem(
         constraints = super().path_constraints(ensemble_member)
 
         return constraints
-
-    def get_asset_is__placed_symbols(self, asset_name):
-        symbols = [f"{asset_name}__is_placed_{year}" for year in range(self._years)]
-
-        return self.extra_variable_vector(symbols, 0)
 
     def get_asset_is__realized_symbols(self, asset_name):
         symbols = [f"{asset_name}__asset_is_realized_{year}" for year in range(self._years)]
@@ -628,7 +601,6 @@ class RollOutProblem(
     def extra_variables(self):
         variables = super().extra_variables.copy()
         variables.extend(self._yearly_capex_var.values())
-        variables.extend(self.__asset_is_placed_var.values())
         variables.extend(self.__asset_doublet_is_placed_var.values())
         variables.extend(self.__asset_fraction_placed_var.values())
         return variables
@@ -642,8 +614,7 @@ class RollOutProblem(
     def variable_is_discrete(self, variable):
         if (
             # variable in self.__ates_is_charging_var or \
-            variable in self.__asset_is_placed_var
-            or variable in self.__asset_doublet_is_placed_var
+            variable in self.__asset_doublet_is_placed_var
         ):
             return True
         else:
@@ -659,7 +630,6 @@ class RollOutProblem(
 
     def bounds(self):
         bounds = super().bounds()
-        bounds.update(self.__asset_is_placed_var_bounds)
         bounds.update(self.__asset_doublet_is_placed_var_bounds)
         bounds.update(self.__ates_state_heat_var_bounds)
         bounds.update(self._yearly_capex_var_bounds)

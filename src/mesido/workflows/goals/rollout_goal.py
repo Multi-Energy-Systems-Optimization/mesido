@@ -332,7 +332,7 @@ class MinimizeRolloutFixedOperationalCosts(Goal):
         obj = 0
         asset = optimization_problem.get_asset_from_asset_name(asset_name)
 
-        is_placed = optimization_problem.get_asset_is__placed_symbols(asset.name)
+        is_placed = optimization_problem.get_asset_is__realized_symbols(asset.name)
         fixed_operational_cost = self.get_fixed_opex_costs(asset)
         max_power = (
             asset.attributes["power"]

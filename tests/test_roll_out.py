@@ -85,14 +85,14 @@ class TestRollOutOptimization(TestCase):
         ]:  
             # Check if integer variables are 0 or 1
             for y in range(solution._years):
-                is_placed = results[f"{asset}__is_placed_{y}"] # is this variable used?
+                # is_placed = results[f"{asset}__is_placed_{y}"] # is this variable used?
                 asset_is_realized = results[f"{asset}__asset_is_realized_{y}"]
                 # this fales variables are not integers
                 # np.testing.assert_(is_placed in [0, 1], f"{asset}__is_placed_{y} should be 0 or 1")
                 # np.testing.assert_(asset_is_realized in [0, 1], f"{asset}__asset_is_realized_{y} should be 0 or 1")
                 
-                np.testing.assert_(np.isclose(is_placed, 0, atol=1.0e-6) or np.isclose(is_placed, 1, atol=1.0e-6),
-                                   f"{asset}__is_placed_{y} should be 0 or 1")
+                # np.testing.assert_(np.isclose(is_placed, 0, atol=1.0e-6) or np.isclose(is_placed, 1, atol=1.0e-6),
+                #                    f"{asset}__is_placed_{y} should be 0 or 1")
                 np.testing.assert_(np.isclose(asset_is_realized , 0, atol=1.0e-6) or np.isclose(asset_is_realized , 1, atol=1.0e-6),
                                    f"{asset}__asset_is_realized_{y} should be 0 or 1")
 
@@ -201,7 +201,7 @@ class TestRollOutOptimization(TestCase):
                 *solution.hot_pipes,
         ]:
                 print(
-                    f"{asset} is placed over time: {[results[f'{asset}__is_placed_{year}'] for year in range(solution._years)]}"
+                    f"{asset} is placed over time: {[results[f'{asset}__asset_is_realized_{year}'] for year in range(solution._years)]}"
                 )
                 try:
                     print(
@@ -219,80 +219,80 @@ class TestRollOutOptimization(TestCase):
 
         print("Done")
 
-
-        import matplotlib.pyplot as plt
-
-        solution.times()
-        for ates in solution.energy_system_components.get("ates", []):
-            print(results[f"{ates}.Stored_heat"])
-
-        figure, ax = plt.subplots()
-        times = solution.times()
-        for ates in solution.energy_system_components.get("ates", []):
-            # stored_heat = [results.get(f"{ates}.Stored_heat", 0) for t in range(times)]
-            plt.plot(times / 3600 / 24, results[f"{ates}.Stored_heat"] / 1e9, label=str(ates))
-
-        plt.xlabel("Time [days]")
-        plt.ylabel("Stored Heat [GJ]")
-        plt.title("Heat Storage vs Time")
-        plt.legend()
-        plt.xticks(range(0, int(times[-1] / 3600 / 24) + 1, 20), minor=True)
-        coarse_ticks = [0, 365, 730, 1095]
-        plt.xticks(coarse_ticks, [str(t) for t in coarse_ticks])
-        plt.grid()
-        plt.tight_layout()
-        plt.show()
-        savefig = base_folder / "heat_storage_vs_time.png"
-        plt.savefig(savefig)
-        plt.close()
-
-        figure, ax = plt.subplots()
-        times = solution.times()
-        for heatsource in solution.energy_system_components.get("heat_source", []):
-            # stored_heat = [results.get(f"{ates}.Stored_heat", 0) for t in range(times)]
-            plt.plot(
-                times / 3600 / 24, results[f"{heatsource}.Heat_source"] / 1e6, label=str(heatsource)
-            )
-
-        plt.xlabel("Time [days]")
-        plt.ylabel("Heat produced [MW]")
-        plt.title("Heat [produced] vs Time")
-        plt.legend()
-        plt.xticks(range(0, int(times[-1] / 3600 / 24) + 1, 20), minor=True)
-        coarse_ticks = [0, 365, 730, 1095]
-        plt.xticks(coarse_ticks, [str(t) for t in coarse_ticks])
-        plt.grid()
-        plt.tight_layout()
-        plt.show()
-        savefig = base_folder / "heat_produced_vs_time.png"
-        plt.savefig(savefig)
-        plt.close()
-
-        figure, ax = plt.subplots()
-        for ates in solution.energy_system_components.get("ates", []):
-            # stored_heat = [results.get(f"{ates}.Stored_heat", 0) for t in range(times)]
-            plt.plot(
-                times / 3600 / 24, results[f"{ates}.Heat_ates"] / 1e6, label=str(ates) + " Heat_ates"
-            )
-            plt.plot(
-                times / 3600 / 24, results[f"{ates}.Heat_loss"] / 1e6, label=str(ates) + " Heat_loss"
-            )
-            plt.plot(
-                times / 3600 / 24,
-                results[f"{ates}.Storage_yearly_change"] / 1e6,
-                label=str(ates) + " Storage_yearly_change",
-            )
-
-        plt.xlabel("Time [days]")
-        plt.ylabel("Heat [MW]")
-        plt.title("Heat  vs Time")
-        plt.legend()
-        plt.xticks(range(0, int(times[-1] / 3600 / 24) + 1, 20), minor=True)
-        coarse_ticks = [0, 365, 730, 1095]
-        plt.xticks(coarse_ticks, [str(t) for t in coarse_ticks])
-        plt.grid()
-        plt.tight_layout()
-        plt.show()
-        savefig = base_folder / "heat_ates_vs_time.png"
-        plt.savefig(savefig)
-        plt.close()
+        ##Do not delete the below plotting, this is used for manual debugging!!!
+        # import matplotlib.pyplot as plt
+        #
+        # solution.times()
+        # for ates in solution.energy_system_components.get("ates", []):
+        #     print(results[f"{ates}.Stored_heat"])
+        #
+        # figure, ax = plt.subplots()
+        # times = solution.times()
+        # for ates in solution.energy_system_components.get("ates", []):
+        #     # stored_heat = [results.get(f"{ates}.Stored_heat", 0) for t in range(times)]
+        #     plt.plot(times / 3600 / 24, results[f"{ates}.Stored_heat"] / 1e9, label=str(ates))
+        #
+        # plt.xlabel("Time [days]")
+        # plt.ylabel("Stored Heat [GJ]")
+        # plt.title("Heat Storage vs Time")
+        # plt.legend()
+        # plt.xticks(range(0, int(times[-1] / 3600 / 24) + 1, 20), minor=True)
+        # coarse_ticks = [0, 365, 730, 1095]
+        # plt.xticks(coarse_ticks, [str(t) for t in coarse_ticks])
+        # plt.grid()
+        # plt.tight_layout()
+        # plt.show()
+        # savefig = base_folder / "heat_storage_vs_time.png"
+        # plt.savefig(savefig)
+        # plt.close()
+        #
+        # figure, ax = plt.subplots()
+        # times = solution.times()
+        # for heatsource in solution.energy_system_components.get("heat_source", []):
+        #     # stored_heat = [results.get(f"{ates}.Stored_heat", 0) for t in range(times)]
+        #     plt.plot(
+        #         times / 3600 / 24, results[f"{heatsource}.Heat_source"] / 1e6, label=str(heatsource)
+        #     )
+        #
+        # plt.xlabel("Time [days]")
+        # plt.ylabel("Heat produced [MW]")
+        # plt.title("Heat [produced] vs Time")
+        # plt.legend()
+        # plt.xticks(range(0, int(times[-1] / 3600 / 24) + 1, 20), minor=True)
+        # coarse_ticks = [0, 365, 730, 1095]
+        # plt.xticks(coarse_ticks, [str(t) for t in coarse_ticks])
+        # plt.grid()
+        # plt.tight_layout()
+        # plt.show()
+        # savefig = base_folder / "heat_produced_vs_time.png"
+        # plt.savefig(savefig)
+        # plt.close()
+        #
+        # figure, ax = plt.subplots()
+        # for ates in solution.energy_system_components.get("ates", []):
+        #     # stored_heat = [results.get(f"{ates}.Stored_heat", 0) for t in range(times)]
+        #     plt.plot(
+        #         times / 3600 / 24, results[f"{ates}.Heat_ates"] / 1e6, label=str(ates) + " Heat_ates"
+        #     )
+        #     plt.plot(
+        #         times / 3600 / 24, results[f"{ates}.Heat_loss"] / 1e6, label=str(ates) + " Heat_loss"
+        #     )
+        #     plt.plot(
+        #         times / 3600 / 24,
+        #         results[f"{ates}.Storage_yearly_change"] / 1e6,
+        #         label=str(ates) + " Storage_yearly_change",
+        #     )
+        #
+        # plt.xlabel("Time [days]")
+        # plt.ylabel("Heat [MW]")
+        # plt.title("Heat  vs Time")
+        # plt.legend()
+        # plt.xticks(range(0, int(times[-1] / 3600 / 24) + 1, 20), minor=True)
+        # coarse_ticks = [0, 365, 730, 1095]
+        # plt.xticks(coarse_ticks, [str(t) for t in coarse_ticks])
+        # plt.grid()
+        # plt.tight_layout()
+        # plt.show()
+        # savefig = base_folder / "heat_ates_vs_time.png"
+        # plt.savefig(savefig)
+        # plt.close()

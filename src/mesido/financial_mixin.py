@@ -65,7 +65,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         self.__cumulative_investments_made_in_eur_bounds = {}
 
         # Variable for when in time an asset is realized
-        self.__asset_is_realized_map = {}
+        self._asset_is_realized_map = {}
         self.__asset_is_realized_var = {}
         self.__asset_is_realized_bounds = {}
 
@@ -480,7 +480,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     # variable is zero not milp can be consumed or produced by this asset. When the
                     # integer is >=1 the asset can consume and/or produce according to its increments.
                     var_name = f"{asset}__asset_is_realized"
-                    self.__asset_is_realized_map[asset] = var_name
+                    self._asset_is_realized_map[asset] = var_name
                     self.__asset_is_realized_var[var_name] = ca.MX.sym(var_name)
                     try:
                         aggr_count_max = parameters[f"{asset}.nr_of_doublets"]
@@ -491,7 +491,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     self.__asset_is_realized_bounds[var_name] = (0.0, aggr_count_max)
                 else:
                     self.__cumulative_investments_made_in_eur_map[asset] = []
-                    self.__asset_is_realized_map[asset] = []
+                    self._asset_is_realized_map[asset] = []
                     for i in range(self._years):
                         var_name = f"{asset}__cumulative_investments_made_in_eur_year_{i}"
                         self.__cumulative_investments_made_in_eur_map[asset].append(var_name)
@@ -509,7 +509,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                         # variable is zero not milp can be consumed or produced by this asset. When the
                         # integer is >=1 the asset can consume and/or produce according to its increments.
                         var_name = f"{asset}__asset_is_realized_{i}"
-                        self.__asset_is_realized_map[asset].append(var_name)
+                        self._asset_is_realized_map[asset].append(var_name)
                         self.__asset_is_realized_var[var_name] = ca.MX.sym(var_name)
                         try:
                             aggr_count_max = parameters[f"{asset}.nr_of_doublets"]
@@ -1233,7 +1233,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 var_name = self.__cumulative_investments_made_in_eur_map[asset]
                 cumulative_investments_made = self.state(var_name)
                 nominal = self.variable_nominal(var_name)
-                var_name = self.__asset_is_realized_map[asset]
+                var_name = self._asset_is_realized_map[asset]
                 asset_is_realized = self.state(var_name)
                 installation_cost_sym = self.variable(self._asset_installation_cost_map[asset])
                 investment_cost_sym = self.variable(self._asset_investment_cost_map[asset])
@@ -1335,7 +1335,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     var_name = self.__cumulative_investments_made_in_eur_map[asset][i]
                     cumulative_investments_made = self.extra_variable(var_name)
                     nominal = self.variable_nominal(var_name)
-                    var_name = self.__asset_is_realized_map[asset][i]
+                    var_name = self._asset_is_realized_map[asset][i]
                     asset_is_realized = self.extra_variable(var_name)
                     installation_cost_sym = self.extra_variable(
                         self._asset_installation_cost_map[asset]
