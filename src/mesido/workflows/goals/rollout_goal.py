@@ -73,39 +73,6 @@ class MinimizeVariableOPEX(Goal):
             extra_var = optimization_problem.extra_variable(asset_varopex_map.get(asset, 0.0))
             obj += extra_var * self.year_step_size
 
-        # for source in optimization_problem.heat_network_components.get("heat_source", []):
-        #
-        #     # asset_var_opex_var = optimization_problem.get_asset_from_asset_name(source)
-        #     # opex_costs = self.get_variable_opex_costs(asset) * 1.0e6  # to make costs per MWh
-        #
-        #     # for i in range(optimization_problem._days):
-        #     #     opt_var = optimization_problem.extra_variable(
-        #     #         optimization_problem._source_daily_avg_map[source] + f"_{i}", ensemble_member
-        #     #     )
-        #     #     obj += opt_var * self.hourly_steps * self.year_steps * opex_costs
-        #     #
-        #     # if source == "GeoSource":
-        #     #     wells = optimization_problem.extra_variable(
-        #     #         f"{source}__number_of_wells", ensemble_member
-        #     #     )
-        #     #     single_well_power = parameters[f"{source}.single_doublet_power"]
-        #     #     fixed_operational_cost = self.get_fixed_opex_costs(asset)
-        #     #     obj += wells * single_well_power * fixed_operational_cost * self.year_steps
-        #
-        # for ates in optimization_problem.heat_network_components.get("ates", []):
-        #
-        #     # single_doublet_power = parameters[f"{ates}.single_doublet_power"]
-        #     # doublets = optimization_problem.extra_variable(
-        #     #     f"{ates}__number_of_doublets", ensemble_member
-        #     # )
-        #     # asset = optimization_problem.get_asset_from_asset_name(ates)
-        #     # fixed_operational_cost = self.get_fixed_opex_costs(asset)
-        #     # obj += doublets * fixed_operational_cost * single_doublet_power * self.year_steps
-        #     # charge = optimization_problem.get_ates_charge_amount(ates, ensemble_member)
-        #     # discharge = optimization_problem.get_ates_discharging_amount(ates, ensemble_member)
-        #     # opex_costs = self.get_variable_opex_costs(asset) * 1.0e6  # to make costs per MWh
-        #     # obj += (sum(charge) + sum(discharge)) * self.hourly_steps * self.year_steps * opex_costs
-
         return obj / 1.0e6
 
 
