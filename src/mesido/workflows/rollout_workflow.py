@@ -174,88 +174,6 @@ class RollOutProblem(
         adapt_profile_for_initial_hour_timestep_size(self)
         adapt_profile_to_copy_for_number_of_years(self, self._years)
 
-    # TODO: some of the capex dictionaries are incorrectly defined. Besides that, the information
-    # required to generate these dictionaries and variables can be taken from the mesido
-    # structure including the FinancialMixin
-    def __ates_capex_cost_dict(self):
-        ates_capex_dict = {}
-
-        for s in self.energy_system_components.get("ates", []):
-            ates_capex_dict[s] = 0.0
-            s_esdl = self.get_asset_from_asset_name(s)
-
-            # TODO: from here, all cost related parts, should for a bigger part be in financialmixin
-            #  or technoeconomicmixin
-
-            investment_costs = s_esdl.attributes["costInformation"].investmentCosts
-            installation_costs = s_esdl.attributes["costInformation"].installationCosts
-            inst_costs = 0.0
-            inv_costs = 0.0
-            if investment_costs is None:
-                logger.info(f"Investment costs are not specified for {s}")
-                inv_costs = 0.0
-            elif investment_costs is not None:
-                inv_costs = investment_costs.value
-            if installation_costs is None:
-                logger.info(f"Installation costs are not specified for {s}")
-                inst_costs = 0.0
-            elif installation_costs is not None:
-                inst_costs = installation_costs.value
-
-            ates_capex_dict[s] = inst_costs + inv_costs
-        return ates_capex_dict
-
-    def __demand_capex_cost_dict(self):
-        demand_capex_dict = {}
-        for d in self.energy_system_components.get("heat_demand", []):
-            demand_capex_dict[d] = 0.0
-            d_esdl = self.get_asset_from_asset_name(d)
-            if d_esdl.attributes["costInformation"].installationCosts is not None:
-                ist_costs = d_esdl.attributes["costInformation"].installationCosts
-                demand_capex_dict[d] += ist_costs.value
-            if d_esdl.attributes["costInformation"].investmentCosts is not None:
-                inv_costs = d_esdl.attributes["costInformation"].investmentCosts
-                demand_capex_dict[d] += inv_costs.value
-        return demand_capex_dict
-
-    def __source_capex_cost_dict(self):
-        bounds = self.bounds()
-
-        source_capex_dict = {}
-        for s in self.energy_system_components.get("heat_source", []):
-            source_capex_dict[s] = 0.0
-            s_esdl = self.get_asset_from_asset_name(s)
-            if s_esdl.attributes["costInformation"].installationCosts is not None:
-                ist_costs = s_esdl.attributes["costInformation"].installationCosts
-                source_capex_dict[s] += ist_costs.value
-            if s_esdl.attributes["costInformation"].investmentCosts is not None:
-                inv_costs = s_esdl.attributes["costInformation"].investmentCosts
-                source_capex_dict[s] += inv_costs.value
-
-            if source_capex_dict[s] >= bounds["yearly_capex_0"][1]:
-                logger.info(
-                    f"Asset {s} has higher investment/installation cost than yearly CAPEX constraint, "
-                    f"this makes it impossible for the optimizer to place the asset"
-                )
-        return source_capex_dict
-
-    def __transport_capex_cost_dict(self):
-        pipe_capex_dict = {}
-
-        # retrieve pipe cost information for CAPEX constraint
-        for pipe in self.energy_system_components.get("heat_pipe", []):
-            if pipe in self.hot_pipes:
-                pipe_capex_dict[pipe] = 0.0
-                p_esdl = self.get_asset_from_asset_name(pipe)
-                p_length = p_esdl.attributes["length"]
-                if p_esdl.attributes["costInformation"].investmentCosts is not None:
-                    inv_costs = p_esdl.attributes["costInformation"].investmentCosts
-                    if inv_costs.profileQuantityAndUnit.perUnit == esdl.UnitEnum.from_string(
-                        "METRE"
-                    ):
-                        pipe_capex_dict[pipe] += inv_costs.value * p_length
-        return pipe_capex_dict
-
     def pre(self):
         self._qpsol = CachingQPSol()
 
@@ -314,19 +232,9 @@ class RollOutProblem(
             self._yearly_capex_var_bounds[var_name] = (0, self._yearly_max_capex)
             self._yearly_capex_var_nominals[var_name] = self._yearly_max_capex / 2.0
 
-        # TODO: this should eventually ome from financialmixin
-        self._ates_capex_dict = self.__ates_capex_cost_dict()
-        self._demand_capex_dict = self.__demand_capex_cost_dict()
-        self._source_capex_dict = self.__source_capex_cost_dict()
-        self._pipe_capex_dict = self.__transport_capex_cost_dict()
 
     def path_goals(self):
         goals = super().goals().copy()
-        for demand in self.energy_system_components.get("heat_demand", []):
-            target = self.get_timeseries(f"{demand}.target_heat_demand")
-            state = f"{demand}.Heat_demand"
-
-            # goals.append(TargetHeatGoal(state, target, priority=1))
 
         goals.append(
             MaximizeRevenueCosts(
