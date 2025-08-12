@@ -54,6 +54,7 @@ jobs:
   test_main:
     name: Test main
     runs-on: ubuntu-latest
+    timeout-minutes: 1
     if: ${{ !github.event.pull_request.draft }}
     env:
       TOXENV: py38
