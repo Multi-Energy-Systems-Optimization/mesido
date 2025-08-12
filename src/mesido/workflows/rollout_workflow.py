@@ -229,7 +229,7 @@ class RollOutProblem(
 
         goals.append(
             MaximizeRevenueCosts(
-                is_placed_vars=self._asset_is_realized_map.values(),
+                market_price=125e-6,
                 year_step_size=self._year_step_size,
                 priority=1,
             )

@@ -82,9 +82,9 @@ class MaximizeRevenueCosts(Goal):
 
     order = 1
 
-    def __init__(self, is_placed_vars, year_step_size=10, priority=None):
+    def __init__(self, market_price=50e-6, year_step_size=10, priority=None):
+        self.market_price = market_price #[€/Wh]
         self.priority = priority
-        self.is_placed_vars = is_placed_vars
         self.year_step_size = year_step_size
 
     def function(self, optimization_problem, ensemble_member: int) -> ca.MX:
@@ -97,10 +97,10 @@ class MaximizeRevenueCosts(Goal):
 
     def revenue_heat_delivered(self, optimization_problem, ensemble_member: int) -> ca.MX:
         obj = 0
-        market_price = 125.0 / 1.0e6  # 50 / 1.e6 # [€/Wh]
         timesteps = np.diff(optimization_problem.times()) / 3600.0
         for demand in optimization_problem.energy_system_components.get("heat_demand", []):
-            obj += optimization_problem.state(f"{demand}.Heat_demand") * timesteps * market_price
+            obj += (optimization_problem.state(f"{demand}.Heat_demand") * timesteps *
+                    self.market_price)
         return obj
 
 
