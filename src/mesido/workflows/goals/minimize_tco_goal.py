@@ -65,6 +65,8 @@ class MinimizeTCO(Goal):
                 "heat_exchanger",
                 "heat_pump",
                 "heat_pipe",
+                "gas_pipe",
+                "electricity_cable",
                 "pump",
             },
             "installation": {
@@ -75,6 +77,8 @@ class MinimizeTCO(Goal):
                 "heat_exchanger",
                 "heat_pump",
                 "heat_pipe",
+                "gas_pipe",
+                "electricity_cable",
                 "pump",
             },
             "annualized": {
@@ -85,6 +89,8 @@ class MinimizeTCO(Goal):
                 "heat_exchanger",
                 "heat_pump",
                 "heat_pipe",
+                "gas_pipe",
+                "electricity_cable",
                 "pump",
             },
         }
