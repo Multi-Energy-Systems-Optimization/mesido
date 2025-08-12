@@ -1,6 +1,8 @@
 from pathlib import Path
 from unittest import TestCase
 
+import esdl
+
 import mesido._darcy_weisbach as darcy_weisbach
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
@@ -100,12 +102,22 @@ class TestEndScenarioSizing(TestCase):
             *self.solution.energy_system_components.get("heat_pump", []),
             *self.solution.energy_system_components.get("heat_pipe", []),
         ]:
-            obj += self.results[f"{self.solution._asset_fixed_operational_cost_map[asset]}"] * years
-            obj += (
-                self.results[f"{self.solution._asset_variable_operational_cost_map[asset]}"] * years
-            )
-            obj += self.results[f"{self.solution._asset_investment_cost_map[asset]}"]
-            obj += self.results[f"{self.solution._asset_installation_cost_map[asset]}"]
+            # If heating demand asset's state is enabled, then exclude the costs since it is not
+            # part of the TCO calculation. This is because we do not size heating demand assets in
+            # the optimization
+            asset_id = self.solution.esdl_asset_name_to_id_map[asset]
+            asset_state = self.solution.esdl_assets[asset_id].attributes["state"]
+            asset_type = self.solution.esdl_assets[asset_id].asset_type
+            if not (
+                    (asset_type == "HeatingDemand") and
+                    (asset_state == esdl.AssetStateEnum.ENABLED)
+            ):
+                obj += self.results[f"{self.solution._asset_fixed_operational_cost_map[asset]}"] * years
+                obj += (
+                    self.results[f"{self.solution._asset_variable_operational_cost_map[asset]}"] * years
+                )
+                obj += self.results[f"{self.solution._asset_investment_cost_map[asset]}"]
+                obj += self.results[f"{self.solution._asset_installation_cost_map[asset]}"]
 
         np.testing.assert_allclose(obj / 1.0e6, self.solution.objective_value)
 
@@ -190,10 +202,20 @@ class TestEndScenarioSizing(TestCase):
             *solution_staged.energy_system_components.get("heat_pump", []),
             *solution_staged.energy_system_components.get("heat_pipe", []),
         ]:
-            obj += results[f"{solution_staged._asset_fixed_operational_cost_map[asset]}"] * years
-            obj += results[f"{solution_staged._asset_variable_operational_cost_map[asset]}"] * years
-            obj += results[f"{solution_staged._asset_investment_cost_map[asset]}"]
-            obj += results[f"{solution_staged._asset_installation_cost_map[asset]}"]
+            # If heating demand asset's state is enabled, then exclude the costs since it is not
+            # part of the TCO calculation. This is because we do not size heating demand assets in
+            # the optimization
+            asset_id = self.solution.esdl_asset_name_to_id_map[asset]
+            asset_state = self.solution.esdl_assets[asset_id].attributes["state"]
+            asset_type = self.solution.esdl_assets[asset_id].asset_type
+            if not (
+                    (asset_type == "HeatingDemand") and
+                    (asset_state == esdl.AssetStateEnum.ENABLED)
+            ):
+                obj += results[f"{solution_staged._asset_fixed_operational_cost_map[asset]}"] * years
+                obj += results[f"{solution_staged._asset_variable_operational_cost_map[asset]}"] * years
+                obj += results[f"{solution_staged._asset_investment_cost_map[asset]}"]
+                obj += results[f"{solution_staged._asset_installation_cost_map[asset]}"]
 
         np.testing.assert_allclose(obj / 1.0e6, solution_staged.objective_value)
 
@@ -354,6 +376,6 @@ if __name__ == "__main__":
     a.setUpClass()
     a.test_end_scenario_sizing()
     a.test_end_scenario_sizing_staged()
-    a.test_end_scenario_sizing_discounted()
-    a.test_end_scenario_sizing_head_loss()
+    # a.test_end_scenario_sizing_discounted()
+    # a.test_end_scenario_sizing_head_loss()
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
