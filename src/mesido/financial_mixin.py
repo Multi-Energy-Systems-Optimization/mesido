@@ -941,11 +941,15 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             else:
                 price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
 
+            # ToDo: Currently the variable operational cost unit for gas boiler is euro/Wh_gas
+            # but this can be changed to euro/Nm3
             denominator = 1.0
             if s in self.energy_system_components.get(
                 "air_water_heat_pump", []
             ) or s in self.energy_system_components.get("air_water_heat_pump_elec", []):
                 denominator = parameters[f"{s}.cop"]
+            if s in self.energy_system_components.get("gas_boiler", []):
+                denominator = parameters[f"{s}.efficiency"]
             sum = 0.0
             for i in range(1, len(self.times())):
                 sum += (
