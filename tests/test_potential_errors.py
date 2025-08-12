@@ -7,7 +7,7 @@ from typing import Optional
 import esdl
 
 from mesido.esdl.esdl_parser import ESDLFileParser
-from mesido.esdl.profile_parser import InfluxDBProfileReader, ProfileReaderFromFile
+from mesido.esdl.profile_parser import InfluxDBProfileReader
 from mesido.exceptions import MesidoAssetIssueError
 from mesido.potential_errors import MesidoAssetIssueType, PotentialErrors
 from mesido.workflows import EndScenarioSizingStaged
@@ -31,7 +31,6 @@ class MockInfluxDBProfileReader(InfluxDBProfileReader):
 
     def _load_profile_timeseries_from_database(self, profile: esdl.InfluxDBProfile) -> pd.Series:
         return self._loaded_profiles[profile.id]
-
 
 
 class TestPotentialErrors(unittest.TestCase):
@@ -173,12 +172,12 @@ class TestPotentialErrors(unittest.TestCase):
         np.testing.assert_equal(
             cm.exception.message_per_asset_id["2ab92324-f86e-4976-9a6e-f7454b77ba3c"],
             "Asset named HeatingDemand_2ab9 : The asset should be enabled since there is "
-                f"no sizing optimization on HeatingDemands",
+            "no sizing optimization on HeatingDemands",
         )
         np.testing.assert_equal(
             cm.exception.message_per_asset_id["6662aebb-f85e-4df3-9f7e-c58993586fba"],
             "Asset named HeatingDemand_6662 : The asset should be enabled since there is "
-                f"no sizing optimization on HeatingDemands",
+            "no sizing optimization on HeatingDemands",
         )
         np.testing.assert_equal(len(cm.exception.message_per_asset_id), 2.0)
 

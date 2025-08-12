@@ -1059,7 +1059,7 @@ class _AssetToComponentBase:
                 asset, per_unit=UnitEnum.WATT
             )
             modifiers["installation_cost"] = self.get_installation_costs(asset)
-            modifiers['fixed_operational_cost_coefficient'] = self.get_fixed_opex_costs(asset)
+            modifiers["fixed_operational_cost_coefficient"] = self.get_fixed_opex_costs(asset)
         elif asset.asset_type == "GasDemand":
             modifiers["variable_operational_cost_coefficient"] = self.get_variable_opex_costs(asset)
         elif asset.asset_type == "GasProducer":

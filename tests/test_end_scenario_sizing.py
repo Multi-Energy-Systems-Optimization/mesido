@@ -109,12 +109,15 @@ class TestEndScenarioSizing(TestCase):
             asset_state = self.solution.esdl_assets[asset_id].attributes["state"]
             asset_type = self.solution.esdl_assets[asset_id].asset_type
             if not (
-                    (asset_type == "HeatingDemand") and
-                    (asset_state == esdl.AssetStateEnum.ENABLED)
+                (asset_type == "HeatingDemand") and (asset_state == esdl.AssetStateEnum.ENABLED)
             ):
-                obj += self.results[f"{self.solution._asset_fixed_operational_cost_map[asset]}"] * years
                 obj += (
-                    self.results[f"{self.solution._asset_variable_operational_cost_map[asset]}"] * years
+                    self.results[f"{self.solution._asset_fixed_operational_cost_map[asset]}"]
+                    * years
+                )
+                obj += (
+                    self.results[f"{self.solution._asset_variable_operational_cost_map[asset]}"]
+                    * years
                 )
                 obj += self.results[f"{self.solution._asset_investment_cost_map[asset]}"]
                 obj += self.results[f"{self.solution._asset_installation_cost_map[asset]}"]
@@ -209,11 +212,15 @@ class TestEndScenarioSizing(TestCase):
             asset_state = self.solution.esdl_assets[asset_id].attributes["state"]
             asset_type = self.solution.esdl_assets[asset_id].asset_type
             if not (
-                    (asset_type == "HeatingDemand") and
-                    (asset_state == esdl.AssetStateEnum.ENABLED)
+                (asset_type == "HeatingDemand") and (asset_state == esdl.AssetStateEnum.ENABLED)
             ):
-                obj += results[f"{solution_staged._asset_fixed_operational_cost_map[asset]}"] * years
-                obj += results[f"{solution_staged._asset_variable_operational_cost_map[asset]}"] * years
+                obj += (
+                    results[f"{solution_staged._asset_fixed_operational_cost_map[asset]}"] * years
+                )
+                obj += (
+                    results[f"{solution_staged._asset_variable_operational_cost_map[asset]}"]
+                    * years
+                )
                 obj += results[f"{solution_staged._asset_investment_cost_map[asset]}"]
                 obj += results[f"{solution_staged._asset_installation_cost_map[asset]}"]
 

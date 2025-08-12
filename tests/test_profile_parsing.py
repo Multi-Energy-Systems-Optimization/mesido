@@ -9,20 +9,15 @@ import esdl
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import InfluxDBProfileReader, ProfileReaderFromFile
-from mesido.exceptions import MesidoAssetIssueError
-from mesido.potential_errors import MesidoAssetIssueType, PotentialErrors
 from mesido.workflows import EndScenarioSizingStaged
 from mesido.workflows.utils.adapt_profiles import (
     adapt_hourly_profile_averages_timestep_size,
     adapt_profile_to_copy_for_number_of_years,
 )
-from mesido.workflows.utils.error_types import mesido_issue_type_gen_message
 
 import numpy as np
 
 import pandas as pd
-
-from utils_test_scaling import create_log_list_scaling
 
 
 class MockInfluxDBProfileReader(InfluxDBProfileReader):
@@ -127,9 +122,6 @@ class TestProfileUpdating(unittest.TestCase):
         )
         assert len(timeseries_updated) == len_org_time_serie * problem_years
         assert all(dt.days == 365 for dt in dts)
-
-
-
 
 
 class TestProfileLoading(unittest.TestCase):

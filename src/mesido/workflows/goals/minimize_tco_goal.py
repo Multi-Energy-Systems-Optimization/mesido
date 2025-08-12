@@ -55,7 +55,7 @@ class MinimizeTCO(Goal):
                 "heat_pump",
                 "heat_exchanger",
                 "pump",
-                "heat_demand"
+                "heat_demand",
             },
             "investment": {
                 "heat_source",
@@ -136,8 +136,7 @@ class MinimizeTCO(Goal):
                 asset_type = optimization_problem.esdl_assets[asset_id].asset_type
 
                 if not (
-                        (asset_type=="HeatingDemand") and
-                        (asset_state==esdl.AssetStateEnum.ENABLED)
+                    (asset_type == "HeatingDemand") and (asset_state == esdl.AssetStateEnum.ENABLED)
                 ):
                     if options["discounted_annualized_cost"]:
                         # We only want the operational cost for a single year when we use
