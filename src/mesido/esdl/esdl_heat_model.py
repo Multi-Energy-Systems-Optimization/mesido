@@ -421,6 +421,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         q_nominal = self._get_connected_q_nominal(asset)
 
+        state = asset.attributes["state"]
+
+        if state == esdl.AssetStateEnum.OPTIONAL:
+            get_potential_errors().add_potential_issue(
+                MesidoAssetIssueType.HEAT_DEMAND_STATE,
+                asset.id,
+                f"Asset named {asset.name} : The asset should be enabled since there is "
+                f"no sizing optimization on HeatingDemands",
+            )
+
         modifiers = dict(
             Q_nominal=q_nominal,
             Heat_demand=dict(max=max_demand, nominal=max_demand / 2.0),
