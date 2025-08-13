@@ -36,12 +36,13 @@ class RollOutPost:
         over time and is saved the output folder.
         """
 
-        solution.times()
+
+        results = self.extract_results()
         for ates in solution.energy_system_components.get("ates", []):
             print(results[f"{ates}.Stored_heat"])
 
         figure, ax = plt.subplots()
-        times = solution.times()
+        times = self.times()
         for ates in solution.energy_system_components.get("ates", []):
             # stored_heat = [results.get(f"{ates}.Stored_heat", 0) for t in range(times)]
             plt.plot(times / 3600 / 24, results[f"{ates}.Stored_heat"] / 1e9, label=str(ates))
