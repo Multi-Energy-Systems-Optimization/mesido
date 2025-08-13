@@ -338,9 +338,9 @@ class RollOutProblem(
             constraints.append(((ates_state[0]) / ates_state_big_m, 0.0, 0.0))
 
             #PJPE: testing with this ates heat_to_discharge okay for ates but fails for heatstorage at first timestep
-            # ates_state_big_m = 2.0 * bounds[f"{s}.Heat_ates"][1]
-            # ates_state = self.__state_vector_scaled(f"{s}.Heat_ates", ensemble_member)
-            # constraints.append(((ates_state[0]) / ates_state_big_m, 0.0, 0.0))
+            ates_state_big_m = 2.0 * bounds[f"{s}.Heat_ates"][1]
+            ates_state = self.__state_vector_scaled(f"{s}.Heat_ates", ensemble_member)
+            constraints.append(((ates_state[0]) / ates_state_big_m, 0.0, 0.0))
 
             # for i in range(1, self._years):
             #     constraints.append((
