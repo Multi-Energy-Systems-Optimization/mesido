@@ -61,7 +61,7 @@ class TestAtesTemperature(TestCase):
         energy_conservation_test(solution, results)
         heat_to_discharge_test(solution, results)
 
-        ates_charging = results["Pipe1__flow_direct_var"]  # =1 if charging
+        ates_charging = results[f"ATES_cb47__is_charging"]  # =1 if charging
         ates_temperature = results["ATES_cb47.Temperature_ates"]
         ates_temperature_disc = results["ATES_cb47__temperature_ates_disc"]
         carrier_temperature = results["41770304791669983859190_temperature"]

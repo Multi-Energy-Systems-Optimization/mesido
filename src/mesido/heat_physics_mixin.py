@@ -2335,6 +2335,10 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             heat_in = self.state(f"{b}.HeatIn.Heat")
             heat_flow = self.state(f"{b}.Heat_flow")
 
+            big_m = 2.0 * np.max(
+                np.abs((*self.bounds()[f"{b}.HeatIn.Heat"], *self.bounds()[f"{b}.HeatOut.Heat"]))
+            )
+
             # We want an _equality_ constraint between discharge and heat if the buffer is
             # consuming (i.e. behaving like a "demand"). We want an _inequality_
             # constraint (`|heat| >= |f(Q)|`) just like a "heat_source" component if heat is
@@ -2346,23 +2350,20 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             if b in self.energy_system_components.get("ates", []):
                 is_buffer_charging = self.variable(f"{b}__is_charging")
 
+                #TODO: check if below is necessary.
                 flow_big_m = q_nominal * 10
-                constraints.append(
-                    ((discharge - flow_big_m * is_buffer_charging) / q_nominal, -np.inf, 0.0)
-                )
-                constraints.append(
-                    ((discharge + flow_big_m * (1 - is_buffer_charging)) / q_nominal, 0.0, np.inf)
-                )
-                constraints.append(
-                    ((heat_flow - big_m * is_buffer_charging) / heat_nominal, -np.inf, 0.0)
-                )
-                constraints.append(
-                    ((heat_flow + big_m * (1 - is_buffer_charging)) / heat_nominal, 0.0, np.inf)
-                )
-
-            big_m = 2.0 * np.max(
-                np.abs((*self.bounds()[f"{b}.HeatIn.Heat"], *self.bounds()[f"{b}.HeatOut.Heat"]))
-            )
+                # constraints.append(
+                #     ((discharge - flow_big_m * is_buffer_charging) / q_nominal, -np.inf, 0.0)
+                # )
+                # constraints.append(
+                #     ((discharge + flow_big_m * (1 - is_buffer_charging)) / q_nominal, 0.0, np.inf)
+                # )
+                # constraints.append(
+                #     ((heat_flow - big_m * is_buffer_charging) / heat_nominal, -np.inf, 0.0)
+                # )
+                # constraints.append(
+                #     ((heat_flow + big_m * (1 - is_buffer_charging)) / heat_nominal, 0.0, np.inf)
+                # )
 
             sup_carrier = parameters[f"{b}.T_supply_id"]
             ret_carrier = parameters[f"{b}.T_return_id"]
