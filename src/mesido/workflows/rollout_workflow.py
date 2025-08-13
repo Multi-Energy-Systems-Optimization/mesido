@@ -95,8 +95,10 @@ class RollOutProblem(
         # with peak day is used, however one needs to check where self._days and
         # self._timestep_size is currently affecting the code
         self._timestep_size = 20 * 24
-        self._days = int(365 / (self._timestep_size / 24)) + 1 
-        self._days = self._days + 1 # + 1 because of inserting an 1-hour timestep at the beginning of the year,
+        self._days = int(365 / (self._timestep_size / 24)) + 1
+        self._days = (
+            self._days + 1
+        )  # + 1 because of inserting an 1-hour timestep at the beginning of the year,
         # see the adapt_profile_for_initial_hour_timestep_size
 
         # TODO: get yearly max capex from input
@@ -222,7 +224,6 @@ class RollOutProblem(
             self._yearly_capex_var[var_name] = ca.MX.sym(var_name)
             self._yearly_capex_var_bounds[var_name] = (0, self._yearly_max_capex)
             self._yearly_capex_var_nominals[var_name] = self._yearly_max_capex / 2.0
-
 
     def path_goals(self):
         goals = super().goals().copy()
@@ -396,11 +397,11 @@ class RollOutProblem(
             big_m = 2.0 * np.max(target.values)
             for year in range(self._years):
                 time_start = year * 3600 * 8760
-                time_end = (year + 1) * 3600 * 8760                
+                time_end = (year + 1) * 3600 * 8760
                 start_index = np.where(target.times == time_start)[0][0]
                 end_index = np.where(target.times == time_end)[0][0]
                 demand_states = self.states_in(f"{d}.Heat_demand", time_start, time_end)
-                if year == self._years -1:
+                if year == self._years - 1:
                     end_index += 1
                 else:
                     demand_states = demand_states[:-1]
@@ -408,10 +409,7 @@ class RollOutProblem(
                 # demand matching
                 constraints.append(
                     (
-                        (
-                            demand_states
-                            - asset_is_realized * target.values[start_index:end_index]
-                        )
+                        (demand_states - asset_is_realized * target.values[start_index:end_index])
                         / target.values[start_index:end_index],
                         0.0,
                         0.0,
@@ -614,7 +612,8 @@ class RollOutProblem(
     def variable_is_discrete(self, variable):
         if (
             # variable in self.__ates_is_charging_var or \
-            variable in self.__asset_doublet_is_placed_var
+            variable
+            in self.__asset_doublet_is_placed_var
         ):
             return True
         else:
