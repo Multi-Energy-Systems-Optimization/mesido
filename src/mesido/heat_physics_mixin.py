@@ -1810,10 +1810,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         parameters = self.parameters(ensemble_member)
         options = self.energy_system_options()
 
-        for ates_asset, (
-            (hot_pipe, _hot_pipe_orientation),
-            (_cold_pipe, _cold_pipe_orientation),
-        ) in {**self.energy_system_topology.ates}.items():
+        for ates_asset in self.energy_system_components.get("ates", []):
 
             if ates_asset in self.energy_system_components.get("low_temperature_ates", []):
                 continue
@@ -2080,10 +2077,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         bounds = self.bounds()
         options = self.energy_system_options()
 
-        for ates, (
-            (hot_pipe, _hot_pipe_orientation),
-            (_cold_pipe, _cold_pipe_orientation),
-        ) in {**self.energy_system_topology.ates}.items():
+        for ates in self.energy_system_components.get("ates", []):
 
             if ates in self.energy_system_components.get("low_temperature_ates", []):
                 continue
@@ -2348,8 +2342,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             # are guaranteed to have the same sign.
             flow_dir_var = self._heat_pipe_to_flow_direct_map[hot_pipe]
             is_buffer_charging = self.state(flow_dir_var)
-            if ates in self.energy_system_components.get("ates", []):
-                is_buffer_charging = self.variable(f"{ates}__is_charging")
+            if b in self.energy_system_components.get("ates", []):
+                is_buffer_charging = self.variable(f"{b}__is_charging")
 
             big_m = 2.0 * np.max(
                 np.abs((*self.bounds()[f"{b}.HeatIn.Heat"], *self.bounds()[f"{b}.HeatOut.Heat"]))
@@ -3509,8 +3503,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             flow_dir_var = self._heat_pipe_to_flow_direct_map[hot_pipe]
             is_buffer_charging = self.state(flow_dir_var) * hot_pipe_orientation
-            if ates in self.energy_system_components.get("ates", []):
-                is_buffer_charging = self.variable(f"{ates}__is_charging")
+            if b in self.energy_system_components.get("ates", []):
+                is_buffer_charging = self.variable(f"{b}__is_charging")
 
             big_m = (
                 2.0
