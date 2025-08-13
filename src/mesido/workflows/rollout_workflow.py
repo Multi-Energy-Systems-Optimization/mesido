@@ -37,7 +37,7 @@ from mesido.workflows.goals.rollout_goal import (
     MinimizeATESState,
     MinimizeVariableOPEX,
 )
-from mesido.workflows.io.rollout_post import rollout_post
+#from mesido.workflows.io.rollout_post import rollout_post
 
 logger = logging.getLogger("WarmingUP-MPC")
 logger.setLevel(logging.INFO)
@@ -68,7 +68,7 @@ class SolverCPLEX:
         options["solver"] = "cplex"
         cplex_options = options["cplex"] = {}
         # cplex_options.update(_mip_gap_settings("CPX_PARAM_EPGAP", self))
-        cplex_options["CPX_PARAM_EPGAP"] = 0.01
+        cplex_options["CPX_PARAM_EPGAP"] = 0.001
         options["highs"] = None
 
         return options
@@ -102,7 +102,8 @@ class RollOutProblem(
         # see the adapt_profile_for_initial_hour_timestep_size
 
         # TODO: get yearly max capex from input
-        self._yearly_max_capex = 6.0e6 * self._horizon / self._years  # 20.e6 * self._horizon /
+        self._yearly_max_capex = 6.0e6 if "yearly_max_capex" not in kwargs else kwargs["yearly_max_capex"]   # 20.e6 * self._horizon /
+        self._years_timestep_max_capex = self._yearly_max_capex * self._horizon / self._years  # 20.e6 * self._horizon /
         # self._years
 
         # Fraction of how much heat of the total maximum the geo source can produce it should
@@ -180,12 +181,14 @@ class RollOutProblem(
         # TODO: requires clean_up, but runs now, _asset_is_placed in MESIDO already exists as
         # _asset_is_realized. However the asset_fraction_placed does not yet exist.
         for asset in [
+            *self.energy_system_components.get("ates", []),
             *self.energy_system_components.get("heat_demand", []),
             *self.energy_system_components.get("heat_source", []),
             *self.hot_pipes,
         ]:
             for year in range(self._years):
                 asset_fraction_placed_var = f"{asset}__fraction_placed_{year}"
+                # TODO make a list of assets year variables
                 self._asset_fraction_placed_map[asset] = asset_fraction_placed_var
                 self.__asset_fraction_placed_var[asset_fraction_placed_var] = ca.MX.sym(
                     asset_fraction_placed_var
@@ -222,8 +225,8 @@ class RollOutProblem(
         for i in range(self._years):
             var_name = f"yearly_capex_{i}"
             self._yearly_capex_var[var_name] = ca.MX.sym(var_name)
-            self._yearly_capex_var_bounds[var_name] = (0, self._yearly_max_capex)
-            self._yearly_capex_var_nominals[var_name] = self._yearly_max_capex / 2.0
+            self._yearly_capex_var_bounds[var_name] = (0, self._years_timestep_max_capex)
+            self._yearly_capex_var_nominals[var_name] = self._years_timestep_max_capex / 2.0
 
     def path_goals(self):
         goals = super().goals().copy()
@@ -331,7 +334,13 @@ class RollOutProblem(
             #                          ates_doublet_sums[year]) / (big_m), 0.0, np.inf))
 
             # For setting the initial state to 0 in the first year the ATES is placed
+            # PJPE: should the Storage_yearly_change also put to zero first timestep?
             constraints.append(((ates_state[0]) / ates_state_big_m, 0.0, 0.0))
+
+            #PJPE: testing with this ates heat_to_discharge okay for ates but fails for heatstorage at first timestep
+            # ates_state_big_m = 2.0 * bounds[f"{s}.Heat_ates"][1]
+            # ates_state = self.__state_vector_scaled(f"{s}.Heat_ates", ensemble_member)
+            # constraints.append(((ates_state[0]) / ates_state_big_m, 0.0, 0.0))
 
             # for i in range(1, self._years):
             #     constraints.append((
@@ -455,6 +464,9 @@ class RollOutProblem(
             for a in self.energy_system_components.get("ates", []):
                 ates_N_doublets = self.parameters(0)[f"{a}.nr_of_doublets"]
                 ates_capex = 0.0  # TODO: add proper costs ates
+                ates_capex = self.extra_variable(
+                    f"{a}__cumulative_investments_made_in_eur_year_{y}"
+                )
                 # a_capex = self._ates_capex_dict[a]
                 # ates_doublet_sums_fraction = self.__ates_doublet_sums(a)[1]
                 # if y == 0:
@@ -524,7 +536,7 @@ class RollOutProblem(
 
         for s in self.energy_system_components.get("ates", []):
             ates_state = self.__state_vector_scaled(f"{s}.Stored_heat", ensemble_member)
-            nominal = self.variable_nominal(f"{s}.Storage_yearly_change")
+            nominal = self.variable_nominal(f"{s}.Stored_heat")
             times = self.times() / 3600 / 24
             for i in range(len(times) - 1):
                 if i % self._days == 0:

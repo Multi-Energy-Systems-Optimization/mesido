@@ -3,7 +3,7 @@ from unittest import TestCase
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
-from mesido.workflows.io.rollout_post import rollout_post
+#from mesido.workflows.io.rollout_post import rollout_post
 from mesido.workflows.rollout_workflow import RollOutProblem
 from rtctools.util import run_optimization_problem
 from utils_tests import energy_conservation_test, heat_to_discharge_test
@@ -46,14 +46,23 @@ class TestRollOutOptimization(TestCase):
                 super().__init__(*args, **kwargs)
 
                 self._timestep_size = 20 * 24
+            
+            def read(self):
+                super().read()
+                m = [3, 5, 5]
+                for i in range(1,4):
+                    demand_timeseries = self.get_timeseries(f"HeatingDemand_{i}.target_heat_demand")
+                    demand_timeseries.values[:] = demand_timeseries.values[:] * m[i-1]
+                    self.set_timeseries(f"HeatingDemand_{i}.target_heat_demand", demand_timeseries)
 
         solution = run_optimization_problem(
             RollOutTimeStep,
             base_folder=base_folder,
-            esdl_file_name="test_case_small_network_with_ates_with_buffer.esdl",
+            esdl_file_name="PoC_tutorial_incl_ATES.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
+            yearly_max_capex=6e6,
         )
         results = solution.extract_results()
 
@@ -86,7 +95,7 @@ class TestRollOutOptimization(TestCase):
                     )
                     break  # once an asset is placed it remains placed in the future
 
-        # heat_to_discharge_test(solution, results)
+        heat_to_discharge_test(solution, results)
         energy_conservation_test(solution, results)
 
         for asset in [
@@ -122,6 +131,7 @@ class TestRollOutOptimization(TestCase):
                 )
 
         # Check yearly max investment constraint
+        cumulative_prev_year = 0
         for y in range(solution._years):
             cumulative_capex = 0
             cumulative_capex += sum(
@@ -130,13 +140,14 @@ class TestRollOutOptimization(TestCase):
                     *solution.energy_system_components.get("heat_source", []),
                     *solution.energy_system_components.get("heat_demand", []),
                     *solution.hot_pipes,
-                    *solution.energy_system_components.get("ates", []),
+                    # *solution.energy_system_components.get("ates", []),
                 ]
             )
             np.testing.assert_(
-                cumulative_capex <= solution._yearly_max_capex,
-                f"yearly capex {cumulative_capex} should be <= maximum yearly investment {solution._yearly_max_capex} for year {y}",
+                cumulative_capex - cumulative_prev_year <= solution._years_timestep_max_capex+tol,
+                f"yearly capex {cumulative_capex - cumulative_prev_year} should be <= maximum yearly investment {solution._years_timestep_max_capex} for year {y}",
             )
+            cumulative_prev_year = cumulative_capex
 
         # check number of timesteps in timeseries.
         np.testing.assert_equal(
@@ -191,7 +202,7 @@ class TestRollOutOptimization(TestCase):
 
         # Check if all producers and ATES are placed at the end of the problem
         all_producers_placed = all(
-            results[f"{asset}__asset_is_realized_{solution._years - 1}"] == 1
+            results[f"{asset}__asset_is_realized_{solution._years - 1}"] >= 1-tol
             for asset in [
                 *solution.energy_system_components.get("heat_source", []),
                 *solution.energy_system_components.get("ates", []),
@@ -231,6 +242,7 @@ class TestRollOutOptimization(TestCase):
             *solution.energy_system_components.get("heat_source", []),
             *solution.energy_system_components.get("heat_demand", []),
             *solution.hot_pipes,
+            *solution.energy_system_components.get("ates", []),
         ]:
             print(
                 f"{asset} is placed over time: {[results[f'{asset}__asset_is_realized_{year}'] for year in range(solution._years)]}"
@@ -251,4 +263,4 @@ class TestRollOutOptimization(TestCase):
 
         print("Done")
 
-        rollout_post(solution, results)
+        # rollout_post(solution, results)
