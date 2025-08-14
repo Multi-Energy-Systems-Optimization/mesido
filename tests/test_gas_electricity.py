@@ -4,6 +4,7 @@ from unittest import TestCase
 from mesido.esdl.asset_to_component_base import _AssetToComponentBase
 from mesido.esdl.edr_pipe_class import EDRGasPipeClass
 from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.pipe_class import CableClass
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.workflows.utils.helpers import run_optimization_problem_solver
 
@@ -42,11 +43,33 @@ class TestGasElect(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
+        class GasElectProblemExpensiveCable(GasElectProblem):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+
+            def electricity_cable_classes(self, p):
+                cable_list = [
+                    CableClass(name='None', maximum_current=0.0, resistance=0.0, investment_costs=0.0),
+                    CableClass(name='Cable', maximum_current=11000.0, resistance=3.0, investment_costs=10000.0),
+                ]
+                return cable_list
+
+        class GasElectProblemCheapCable(GasElectProblem):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+
+            def electricity_cable_classes(self, p):
+                cable_list = [
+                    CableClass(name='None', maximum_current=0.0, resistance=0.0, investment_costs=0.0),
+                    CableClass(name='Cable', maximum_current=11000.0, resistance=3.0, investment_costs=1.0),
+                ]
+                return cable_list
+
         solution_expensive_cable = run_optimization_problem_solver(
-            GasElectProblem,
+            GasElectProblemExpensiveCable,
             base_folder=base_folder,
             esdl_parser=ESDLFileParser,
-            esdl_file_name="gas_elect_loop_tree_expensive_cable.esdl",
+            esdl_file_name="gas_elect_loop_tree_NewCosts.esdl",
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="HeatingDemand_W_manual.csv",
         )
@@ -55,10 +78,10 @@ class TestGasElect(TestCase):
         # parameters_expensive_cable = solution_expensive_cable.parameters(0)
 
         solution_cheap_cable = run_optimization_problem_solver(
-            GasElectProblem,
+            GasElectProblemCheapCable,
             base_folder=base_folder,
             esdl_parser=ESDLFileParser,
-            esdl_file_name="gas_elect_loop_tree_cheap_cable.esdl",
+            esdl_file_name="gas_elect_loop_tree_NewCosts.esdl",
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="HeatingDemand_W_manual.csv",
         )
@@ -76,8 +99,8 @@ class TestGasElect(TestCase):
         )
 
         gas_boiler_cheap_cable = (
-            results_expensive_cable["GasHeater_1.Heat_source"][1:]
-            + results_expensive_cable["GasHeater_2.Heat_source"][1:]
+            results_cheap_cable["GasHeater_1.Heat_source"][1:]
+            + results_cheap_cable["GasHeater_2.Heat_source"][1:]
         )
         heat_pump_cheap_cable = (
             results_cheap_cable["HeatPump_1.Heat_source"][1:]
@@ -86,12 +109,10 @@ class TestGasElect(TestCase):
 
         # ToDo: The test does not pass it means that expensive cable does not influence the optimization as we wanted.
         #  Check if cable cost calculations are done correct
-        # np.testing.assert_array_less(heat_pump_expensive_cable, gas_boiler_expensive_cable)
+        np.testing.assert_array_less(heat_pump_expensive_cable, gas_boiler_expensive_cable)
 
         np.testing.assert_array_less(gas_boiler_cheap_cable, heat_pump_cheap_cable)
 
-
-        a = 1
     def test_gas_elect(self):
         """
         Small scaled case that uses hydrogen and electricity commodities is added. Case includes
@@ -122,8 +143,18 @@ class TestGasElect(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
+        class GasElectProblemCheapCable(GasElectProblem):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+
+            def electricity_cable_classes(self, p):
+                cable_list = [
+                    CableClass(name='Cable', maximum_current=11000.0, resistance=3.0, investment_costs=1.0),
+                ]
+                return cable_list
+
         solution = run_optimization_problem_solver(
-            GasElectProblem,
+            GasElectProblemCheapCable,
             base_folder=base_folder,
             esdl_parser=ESDLFileParser,
             esdl_file_name="gas_elect_loop_tree.esdl",
@@ -135,7 +166,7 @@ class TestGasElect(TestCase):
         parameters = solution.parameters(0)
 
         solution_high_demand = run_optimization_problem_solver(
-            GasElectProblem,
+            GasElectProblemCheapCable,
             base_folder=base_folder,
             esdl_parser=ESDLFileParser,
             esdl_file_name="gas_elect_loop_tree.esdl",
