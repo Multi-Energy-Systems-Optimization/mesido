@@ -605,6 +605,7 @@ class RollOutProblem(
         options["heat_loss_disconnected_pipe"] = False
         options["include_asset_is_realized"] = True
         options["include_ates_yearly_change_option"] = True
+        options["yearly_investments"] = True
         return options
 
     @property

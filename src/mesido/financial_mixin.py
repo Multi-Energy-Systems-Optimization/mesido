@@ -527,16 +527,22 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         +--------------------------------------+-----------+-----------------------------+
         | ``discounted_annualized_cost ``       | ``bool``  | ``False``                   |
         +--------------------------------------+-----------+-----------------------------+
+        | ``yearly_investments ``              | ``bool``  | ``False``                   |
+        +--------------------------------------+-----------+-----------------------------+
 
         The ``discounted_annualized_cost`` option computes the annualized discounted costs for
         each asset, and defines the sum of these costs as the total cost of ownership for the
         cost minimization goal.
+
+        The ``yearly_investments`` option computes the cumulative investments made over time (
+        multiple years) and provides constraints for asset_is_realized over multiple years,
+        which is required to determine when investment costs are made.
         """
 
         options = {}
 
         options["discounted_annualized_cost"] = False
-        options["yearly_investments"] = True
+        options["yearly_investments"] = False
 
         return options
 
