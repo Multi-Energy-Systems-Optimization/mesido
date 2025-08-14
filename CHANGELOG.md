@@ -1,10 +1,12 @@
-# [Unreleased-main] - 2025-07-23
+# [Unreleased-main] - 2025-08-14
 
 ## Added
 - Elect test for air_to_water_heat_pump_elec
+- Timelimit for testing in pipeline
 
 ## Changed
 - Previously variable operational cost of air-to-water heat pump was based on  the thermal power usage. Now it is based on the electrical power usage
+- TCO cost calculation objective now used the technical lifetime to determine the frequency of the re-investment costs.
 
 ## Fixed
 - Bug: Add 3 port heat pump to elect demand path constraint
