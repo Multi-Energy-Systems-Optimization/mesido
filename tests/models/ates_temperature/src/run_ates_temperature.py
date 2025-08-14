@@ -1,9 +1,15 @@
+import os
+from pathlib import Path
+
+from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.io.write_output import ScenarioOutput
+from mesido.workflows.utils.adapt_profiles import adapt_hourly_profile_averages_timestep_size
+from mesido.workflows.utils.helpers import run_optimization_problem_solver
 
 import numpy as np
 
@@ -18,7 +24,7 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 from rtctools.optimization.single_pass_goal_programming_mixin import (
     GoalProgrammingMixin,
 )
-from rtctools.util import run_optimization_problem
+
 
 ns = {"fews": "http://www.wldelft.nl/fews", "pi": "http://www.wldelft.nl/fews/PI"}
 
@@ -339,19 +345,180 @@ class HeatProblemMaxFlow(HeatProblem):
         self.set_timeseries("HeatingDemand_1.target_heat_demand", demand_timeseries)
 
 
+class HeatProblemATESMultiPort(
+    ScenarioOutput,
+    _GoalsAndOptions,
+    ESDLAdditionalVarsMixin,
+    TechnoEconomicMixin,
+    LinearizedOrderGoalProgrammingMixin,
+    GoalProgrammingMixin,
+    ESDLMixin,
+    CollocatedIntegratedOptimizationProblem,
+):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.heat_network_settings["minimum_velocity"] = 1e-5
+
+    def read(self) -> None:
+        super().read()
+
+        adapt_hourly_profile_averages_timestep_size(self, 24 * 40)
+        for demand in self.energy_system_components.get("heat_demand", []):
+            new_timeseries = self.get_timeseries(f"{demand}.target_heat_demand").values * 0.95
+            self.set_timeseries(f"{demand}.target_heat_demand", new_timeseries)
+
+    def energy_system_options(self):
+        # TODO: make empty placeholder in HeatProblem we don't know yet how to put the global
+        #  constraints in the ESDL e.g. min max pressure
+        options = super().energy_system_options()
+        options["maximum_temperature_der"] = np.inf
+        options["heat_loss_disconnected_pipe"] = True
+        options["include_ates_temperature_options"] = True
+        self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+        options["neglect_pipe_heat_losses"] = True
+        return options
+
+    def constraints(self, ensemble_member):
+        constraints = super().constraints(ensemble_member)
+
+        for a in self.energy_system_components.get("ates", []):
+            stored_heat = self.state_vector(f"{a}.Stored_heat")
+            heat_ates = self.__state_vector_scaled(f"{a}.Heat_ates", ensemble_member)
+            constraints.append((stored_heat[0] - stored_heat[-1], 0.0, 0.0))
+            # stored_volume only to be used if temperature loss ates is also dependent on
+            # stored_volume instead of stored_heat
+            constraints.append((heat_ates[0], 0.0, 0.0))
+            # constraints.append(((heat_ates[3] -1e5)/1e5, 0.0, 0.0))
+            ates_temperature_disc = self.__state_vector_scaled(
+                f"{a}__temperature_ates_disc", ensemble_member
+            )
+            constraints.append(((ates_temperature_disc[-1] - ates_temperature_disc[0]), 0.0, 0.0))
+
+        return constraints
+
+    def __state_vector_scaled(self, variable, ensemble_member):
+        """
+        This functions returns the casadi symbols scaled with their nominal for the entire time
+        horizon.
+        """
+        canonical, sign = self.alias_relation.canonical_signed(variable)
+        return (
+            self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
+        )
+
+
+class SolverCPLEX:
+    def solver_options(self):
+        options = super().solver_options()
+        # options["casadi_solver"] = self._qpsol
+        options["solver"] = "cplex"
+        cplex_options = options["cplex"] = {}
+        cplex_options["CPX_PARAM_EPGAP"] = 0.001
+
+        options["highs"] = None
+
+        return options
+
+
 if __name__ == "__main__":
-    import time
+    basefolder = Path(os.getcwd()).resolve().parent
 
-    t0 = time.time()
-
-    sol = run_optimization_problem(
-        HeatProblem,
-        esdl_file_name="HP_ATES with return network.esdl",
+    solution = run_optimization_problem_solver(
+        HeatProblemATESMultiPort,
+        solver_class=SolverCPLEX,
+        base_folder=basefolder,
+        esdl_file_name="ATES_6port_HP_simplified_ATES_temperatures.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,
-        input_timeseries_file="Warmte_test_3.csv",
+        input_timeseries_file="Heatdemand_eprice.csv",
     )
-    # sol._write_updated_esdl()
-    results = sol.extract_results()
-    print(f"time: {time.time() - t0}")
-    a = 1
+
+    results = solution.extract_results()
+    parameters = solution.parameters(0)
+
+    epsilon = 1e-16
+    dt = np.diff(solution.times())
+
+    ates = solution.energy_system_components.get("ates")[0]
+    heat_producer = "HeatProducer_4e19"
+    peak_producer = "HeatProducer_Peak"
+    heatpump = "HeatPump_5e09"
+    heatdemand = "HeatingDemand_bf07"
+
+    ates_temp = results[f"{ates}.Temperature_ates"]
+    ates_heat = results[f"{ates}.Heat_ates"]
+    ates_flow = results[f"{ates}.Q"]
+    ates_temp_disc = results[f"{ates}__temperature_ates_disc"]
+    ates_cold_return_temp = parameters[f"{ates}.T_return"]
+    cp = parameters[f"{ates}.cp"]
+    rho = parameters[f"{ates}.rho"]
+    ates_charging = results[f"{ates}__is_charging"].astype(bool)
+    ates_discharging = (1 - ates_charging).astype(bool)
+
+    # ensuring enough ates is charged for this problem to be be realistic.
+    np.testing.assert_array_less(1e10, sum(ates_heat[1:] * dt))
+    np.testing.assert_allclose(
+        ates_heat[ates_discharging],
+        ates_flow[ates_discharging]
+        * cp
+        * rho
+        * (ates_temp_disc[ates_discharging] - ates_cold_return_temp),
+    )
+
+    ates_discharge_hot_heat = results[f"{ates}.DischargeHot.Heat_flow"]
+    ates_discharge_cold_heat = results[f"{ates}.DischargeCold.Heat_flow"]
+    ates_charge_hot_heat = results[f"{ates}.ChargeHot.Heat_flow"]
+
+    ates_discharge_hot_flow = results[f"{ates}.DischargeHot.Q"]
+    ates_discharge_cold_flow = results[f"{ates}.DischargeCold.Q"]
+    ates_charge_hot_flow = results[f"{ates}.ChargeHot.Q"]
+
+    # checks that heatflow of different ports is positive or negative and that the sum is equal
+    # to Heat_ates
+    np.testing.assert_allclose(
+        ates_discharge_hot_heat + ates_discharge_cold_heat + ates_charge_hot_heat, ates_heat
+    )
+    np.testing.assert_array_less(ates_discharge_cold_heat, epsilon)
+    np.testing.assert_array_less(ates_discharge_hot_heat, epsilon)
+    np.testing.assert_array_less(-epsilon, ates_charge_hot_heat)
+
+    ates_discharge_hot_in_heat = results[f"{ates}.DischargeHot.HeatIn.Heat"]
+    ates_discharge_hot_out_heat = results[f"{ates}.DischargeHot.HeatOut.Heat"]
+    ates_discharge_cold_in_heat = results[f"{ates}.DischargeCold.HeatIn.Heat"]
+    ates_discharge_cold_out_heat = results[f"{ates}.DischargeCold.HeatOut.Heat"]
+    ates_charge_hot_in_heat = results[f"{ates}.ChargeHot.HeatIn.Heat"]
+    ates_charge_hot_out_heat = results[f"{ates}.ChargeHot.HeatOut.Heat"]
+
+    # Checks that heatflow is each port group is calculated correctly on their in and out ports
+    np.testing.assert_allclose(
+        ates_discharge_hot_in_heat - ates_discharge_hot_out_heat, ates_discharge_hot_heat, atol=1e-6
+    )
+    np.testing.assert_allclose(
+        ates_discharge_cold_in_heat - ates_discharge_cold_out_heat,
+        ates_discharge_cold_heat,
+        atol=1e-6,
+    )
+    np.testing.assert_allclose(
+        ates_charge_hot_in_heat - ates_charge_hot_out_heat, ates_charge_hot_heat, atol=1e-6
+    )
+
+    # Checks that ates__is_charging discrete variable is indeed discrete (0 or 1)
+    np.testing.assert_allclose(ates_charging, ates_charging.astype(int))
+
+    #
+    # import time
+    #
+    # t0 = time.time()
+    #
+    # sol = run_optimization_problem(
+    #     HeatProblem,
+    #     esdl_file_name="HP_ATES with return network.esdl",
+    #     esdl_parser=ESDLFileParser,
+    #     profile_reader=ProfileReaderFromFile,
+    #     input_timeseries_file="Warmte_test_3.csv",
+    # )
+    # # sol._write_updated_esdl()
+    # results = sol.extract_results()
+    # print(f"time: {time.time() - t0}")
+    # a = 1

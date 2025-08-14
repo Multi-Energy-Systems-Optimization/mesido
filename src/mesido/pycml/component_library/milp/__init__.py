@@ -17,6 +17,7 @@ from .gas.gas_tank_storage import GasTankStorage
 from .heat.air_water_heat_pump import AirWaterHeatPump
 from .heat.airco import Airco
 from .heat.ates import ATES
+from .heat.ates_multi_port import ATESMultiPort
 from .heat.check_valve import CheckValve
 from .heat.cold_demand import ColdDemand
 from .heat.control_valve import ControlValve
@@ -43,6 +44,7 @@ __all__ = [
     "AirWaterHeatPump",
     "AirWaterHeatPumpElec",
     "ATES",
+    "ATESMultiPort",
     "HeatBuffer",
     "CheckValve",
     "ColdDemand",

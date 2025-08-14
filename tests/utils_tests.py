@@ -14,6 +14,11 @@ def feasibility_test(solution):
         assert feasibility.lower() == "optimal"
     elif solution.solver_options()["solver"] == "gurobi":
         assert feasibility.lower() == "optimal"
+    elif solution.solver_options()["solver"] == "cplex":
+        assert (
+            feasibility.lower() == "integer optimal, tolerance"
+            or feasibility.lower() == "integer optimal solution"
+        )
     else:
         RuntimeError(
             f"The solver {solution.solver_options()['solver']} is not used in test to check for "

@@ -301,49 +301,104 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
         ates_connections = {}
 
         for a in atess:
-            ates_connections[a] = []
+            if a not in self.energy_system_components.get("ates_multi_port", []):
+                ates_connections[a] = []
 
-            for k in ["In", "Out"]:
-                a_conn = f"{a}.{heat_network_model_type}{k}"
-                prop = (
-                    "T" if heat_network_model_type == "QTH" else NetworkSettings.NETWORK_TYPE_HEAT
-                )
-                aliases = [
-                    x
-                    for x in self.alias_relation.aliases(f"{a_conn}.{prop}")
-                    if not x.startswith(a) and x.endswith(f".{prop}")
-                ]
-
-                if len(aliases) > 1:
-                    raise Exception(f"More than one connection to {a_conn}")
-                elif len(aliases) == 0:
-                    raise Exception(f"Found no connection to {a_conn}")
-
-                in_suffix = ".QTHIn.T" if heat_network_model_type == "QTH" else ".HeatIn.Heat"
-                out_suffix = ".QTHOut.T" if heat_network_model_type == "QTH" else ".HeatOut.Heat"
-
-                if aliases[0].endswith(out_suffix):
-                    asset_w_orientation = (
-                        aliases[0][: -len(out_suffix)],
-                        NodeConnectionDirection.IN,
+                for k in ["In", "Out"]:
+                    a_conn = f"{a}.{heat_network_model_type}{k}"
+                    prop = (
+                        "T"
+                        if heat_network_model_type == "QTH"
+                        else NetworkSettings.NETWORK_TYPE_HEAT
                     )
-                else:
-                    assert aliases[0].endswith(in_suffix)
-                    asset_w_orientation = (
-                        aliases[0][: -len(in_suffix)],
-                        NodeConnectionDirection.OUT,
+                    aliases = [
+                        x
+                        for x in self.alias_relation.aliases(f"{a_conn}.{prop}")
+                        if not x.startswith(a) and x.endswith(f".{prop}")
+                    ]
+
+                    if len(aliases) > 1:
+                        raise Exception(f"More than one connection to {a_conn}")
+                    elif len(aliases) == 0:
+                        continue
+                    #     raise Exception(f"Found no connection to {a_conn}")
+
+                    in_suffix = ".QTHIn.T" if heat_network_model_type == "QTH" else ".HeatIn.Heat"
+                    out_suffix = (
+                        ".QTHOut.T" if heat_network_model_type == "QTH" else ".HeatOut.Heat"
                     )
 
-                assert asset_w_orientation[0] in pipes_set
+                    if aliases[0].endswith(out_suffix):
+                        asset_w_orientation = (
+                            aliases[0][: -len(out_suffix)],
+                            NodeConnectionDirection.IN,
+                        )
+                    else:
+                        assert aliases[0].endswith(in_suffix)
+                        asset_w_orientation = (
+                            aliases[0][: -len(in_suffix)],
+                            NodeConnectionDirection.OUT,
+                        )
 
-                if k == "Out":
-                    assert self.is_cold_pipe(asset_w_orientation[0])
-                else:
-                    assert self.is_hot_pipe(asset_w_orientation[0])
+                    assert asset_w_orientation[0] in pipes_set
 
-                ates_connections[a].append(asset_w_orientation)
+                    if k == "Out":
+                        assert self.is_cold_pipe(asset_w_orientation[0])
+                    else:
+                        assert self.is_hot_pipe(asset_w_orientation[0])
 
-            ates_connections[a] = tuple(ates_connections[a])
+                    ates_connections[a].append(asset_w_orientation)
+
+                ates_connections[a] = tuple(ates_connections[a])
+            else:
+                ates_connections[a] = []
+
+                for k in ["In", "Out"]:
+                    a_conn = f"{a}.ChargeHot.{heat_network_model_type}{k}"
+                    prop = (
+                        "T"
+                        if heat_network_model_type == "QTH"
+                        else NetworkSettings.NETWORK_TYPE_HEAT
+                    )
+                    aliases = [
+                        x
+                        for x in self.alias_relation.aliases(f"{a_conn}.{prop}")
+                        if not x.startswith(a) and x.endswith(f".{prop}")
+                    ]
+
+                    if len(aliases) > 1:
+                        raise Exception(f"More than one connection to {a_conn}")
+                    elif len(aliases) == 0:
+                        continue
+                    #     raise Exception(f"Found no connection to {a_conn}")
+
+                    in_suffix = ".QTHIn.T" if heat_network_model_type == "QTH" else ".HeatIn.Heat"
+                    out_suffix = (
+                        ".QTHOut.T" if heat_network_model_type == "QTH" else ".HeatOut.Heat"
+                    )
+
+                    if aliases[0].endswith(out_suffix):
+                        asset_w_orientation = (
+                            aliases[0][: -len(out_suffix)],
+                            NodeConnectionDirection.IN,
+                        )
+                    else:
+                        assert aliases[0].endswith(in_suffix)
+                        asset_w_orientation = (
+                            aliases[0][: -len(in_suffix)],
+                            NodeConnectionDirection.OUT,
+                        )
+
+                    assert asset_w_orientation[0] in pipes_set
+
+                    # if k == "Out":
+                    #     assert self.is_cold_pipe(asset_w_orientation[0])
+                    # else:
+                    #     assert self.is_hot_pipe(asset_w_orientation[0])
+
+                    ates_connections[a].append(asset_w_orientation)
+
+                ates_connections[a] = tuple(ates_connections[a])
 
         demand_connections = {}
 
