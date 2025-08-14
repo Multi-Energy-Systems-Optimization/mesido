@@ -75,7 +75,7 @@ class SolverHIGHS:
 
 
 class GasElectProblem(
-    SolverHIGHS,
+    SolverCPLEX,
     ScenarioOutput,
     ESDLAdditionalVarsMixin,
     TechnoEconomicMixin,

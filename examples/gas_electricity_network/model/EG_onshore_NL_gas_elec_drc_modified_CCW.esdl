@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" esdlVersion="v2111" version="64" name="EG_onshore_NL_gas_elec_drc_modified" id="f8f47243-f20d-43a0-8646-5ea02212c0ac" description="TenneT high electricity grid">
+<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" esdlVersion="v2111" version="81" name="EG_onshore_NL_gas_elec_drc_modified_CCW" id="f8f47243-f20d-43a0-8646-5ea02212c0ac" description="TenneT high electricity grid">
   <instance xsi:type="esdl:Instance" id="5e55167c-094a-49aa-b708-499689511e7b" name="Untitled instance">
     <area xsi:type="esdl:Area" id="23ae3043-b224-4644-a5ff-475ad9efe784" name="Netherlands">
       <asset xsi:type="esdl:ElectricityCable" length="107182.1" id="93339914-c7bf-4793-b89a-69fa820747d6" name="ElectricityCable_9333" capacity="4000000000.0">
@@ -42,7 +42,7 @@
           <point xsi:type="esdl:Point" lat="52.529994665670216" lon="6.192147731781007"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="27390c55-fc04-4300-bde3-194dcefe3251">
-          <investmentCosts xsi:type="esdl:SingleValue" id="197dd585-0de0-4cde-b071-d6704400077b" value="2000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="197dd585-0de0-4cde-b071-d6704400077b" value="1000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="30f40f5d-59f4-4c63-8db9-180816f293cf" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -70,7 +70,7 @@
           <point xsi:type="esdl:Point" lat="52.61566717336494" lon="5.810517668724061"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="23dded37-60a9-4b51-9348-4d5a64fb3a27">
-          <investmentCosts xsi:type="esdl:SingleValue" id="83aa4304-5cd6-4436-b26d-8a688380251f" value="2000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="83aa4304-5cd6-4436-b26d-8a688380251f" value="1000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="6e6c1125-3a9b-4867-a6c7-f5687abb945a" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -105,7 +105,7 @@
           <point xsi:type="esdl:Point" lat="52.57654553566356" lon="5.540220737457275"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="3032d11c-b2ba-4d71-9657-ab9120e0cd84">
-          <investmentCosts xsi:type="esdl:SingleValue" id="312bdaac-6a19-4fe6-8e72-0f8ea1d178c3" value="2000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="312bdaac-6a19-4fe6-8e72-0f8ea1d178c3" value="1000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="70e877cc-7bdb-466e-9c40-c12d4088a15f" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -146,7 +146,7 @@
           <point xsi:type="esdl:Point" lat="52.3349063911773" lon="5.015366077423096"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="1b84ed43-909c-4e1d-a61e-899dc6063179">
-          <investmentCosts xsi:type="esdl:SingleValue" id="f3fa06ec-5ad0-474b-9914-1b2943ef90a6" value="2000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="f3fa06ec-5ad0-474b-9914-1b2943ef90a6" value="1000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="301b7db0-073e-4832-88a9-900b8371d76b" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -169,7 +169,7 @@
           <point xsi:type="esdl:Point" lat="52.42888210246025" lon="4.877768754959107"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="e7a8f296-2713-425d-8a4c-6f0a51ba215e">
-          <investmentCosts xsi:type="esdl:SingleValue" id="2732f14f-28ae-4810-860b-51b0aa1b74d9" value="2000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="2732f14f-28ae-4810-860b-51b0aa1b74d9" value="1000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="bf618453-2637-4351-b144-3bd041f1974e" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -203,7 +203,7 @@
           <point xsi:type="esdl:Point" lat="52.473308373359686" lon="4.680476188659669"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="96176591-18e7-426d-97d3-a2c07ca2a7ee">
-          <investmentCosts xsi:type="esdl:SingleValue" id="8d1fdb02-6483-4bd9-9f58-297433f9202e" value="2000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="8d1fdb02-6483-4bd9-9f58-297433f9202e" value="1000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="97074a59-568d-4e7e-9c0b-9879a38c5ca6" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -233,7 +233,7 @@
           <point xsi:type="esdl:Point" lat="52.37544198197317" lon="4.696357548236848"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="16c43ade-8e67-4d4b-8eaf-fcdacdbf9aca">
-          <investmentCosts xsi:type="esdl:SingleValue" id="d39496b2-004c-4afe-a0aa-573d6de4d7ec" value="2000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="d39496b2-004c-4afe-a0aa-573d6de4d7ec" value="1000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="7d47e126-b602-4ce6-9b42-e97d4c9a3687" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -274,7 +274,7 @@
           <point xsi:type="esdl:Point" lat="52.03714186268308" lon="4.530036449432374"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="e3b9a6db-dc00-461d-bb48-9b8aac2bba3c">
-          <investmentCosts xsi:type="esdl:SingleValue" id="e3227563-ce81-4b02-9581-e169348fef0e" value="2000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="e3227563-ce81-4b02-9581-e169348fef0e" value="1000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="ce153399-08bb-40c9-b52e-07127f6e91aa" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -306,7 +306,7 @@
           <point xsi:type="esdl:Point" lat="52.01575984017608" lon="4.308051466941834"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="885759bf-9e14-42f5-8e99-d260b890b0e4">
-          <investmentCosts xsi:type="esdl:SingleValue" id="939b4654-7ae5-4f20-8bd2-d1a0eb8a2265" value="2000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="939b4654-7ae5-4f20-8bd2-d1a0eb8a2265" value="1000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="3f9afaee-4015-4b33-937a-5067b18c8b22" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -325,7 +325,7 @@
           <point xsi:type="esdl:Point" lat="51.98310267050751" lon="4.225112199783326"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="8643ee8d-fe92-4f70-9913-3336a1b14e9f">
-          <investmentCosts xsi:type="esdl:SingleValue" id="ed903072-3eb3-4b4f-9840-573de6861775" value="2000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="ed903072-3eb3-4b4f-9840-573de6861775" value="1000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="5783831d-9bd8-4696-808a-9232a737f449" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -350,7 +350,7 @@
           <point xsi:type="esdl:Point" lat="51.960028816189144" lon="4.1637539863586435"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="3fcb3e4d-4003-49f9-bdf4-78571b4ed103">
-          <investmentCosts xsi:type="esdl:SingleValue" id="c3209226-1976-452a-a2e1-11a74356c587" value="2000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="c3209226-1976-452a-a2e1-11a74356c587" value="1000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="44a39f60-ad1b-4a95-ab9d-ae67a32320cb" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -382,7 +382,7 @@
           <point xsi:type="esdl:Point" lat="51.954322963783504" lon="4.023249149322511"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="43976a8b-fcd0-4730-a50f-4dcc57d03e09">
-          <investmentCosts xsi:type="esdl:SingleValue" id="ffb5dc64-3e18-4c79-9160-b47c67401500" value="2000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="ffb5dc64-3e18-4c79-9160-b47c67401500" value="1000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="03af564b-0f7e-47a0-9971-89e7e64c802c" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -411,7 +411,7 @@
           <point xsi:type="esdl:Point" lat="51.83947996418363" lon="4.264288544654847"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="4074dacb-8a51-4abb-a68a-67533a3ee67a">
-          <investmentCosts xsi:type="esdl:SingleValue" id="c8113004-e7a6-463d-838b-7bcc7d45cf1f" value="2000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="c8113004-e7a6-463d-838b-7bcc7d45cf1f" value="1000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="4dd44532-6695-48ad-8f21-11b1f8c0bf70" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -448,7 +448,7 @@
           <point xsi:type="esdl:Point" lat="51.81296945701616" lon="4.746340513229371"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="0e8851e1-d056-4e4e-b99f-87599adbda63">
-          <investmentCosts xsi:type="esdl:SingleValue" id="db4de91c-d29d-44d0-8e7a-b9cd26420126" value="2000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="db4de91c-d29d-44d0-8e7a-b9cd26420126" value="1000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="e5a83da7-e5c8-4125-8f35-ea477475a1a3" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -474,7 +474,7 @@
           <point xsi:type="esdl:Point" lat="51.91469255840984" lon="4.6343421936035165"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="2fce08bf-a6c7-4f4f-9d54-c7aa1d34f9bd">
-          <investmentCosts xsi:type="esdl:SingleValue" id="0414f3ab-2cf8-4bba-be01-1c47294816e9" value="2000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="0414f3ab-2cf8-4bba-be01-1c47294816e9" value="1000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="9b9d859d-b48a-4764-bd8d-1743adc2cf1b" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -501,7 +501,7 @@
           <point xsi:type="esdl:Point" lat="52.036957066526945" lon="4.531280994415284"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="2d296ed5-26bd-45c8-8543-07eaafd16019">
-          <investmentCosts xsi:type="esdl:SingleValue" id="e2387e06-63e7-4817-ad8a-9640f665708b" value="2000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="e2387e06-63e7-4817-ad8a-9640f665708b" value="1000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="d91da343-3a38-4f7d-b987-ac8cc0af6f12" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -521,7 +521,7 @@
           <point xsi:type="esdl:Point" lat="52.15953312017008" lon="4.985915422439576"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="4c98bb45-a940-4605-aeb6-155f6b1560dd">
-          <investmentCosts xsi:type="esdl:SingleValue" id="87e3c441-74be-47a5-bb66-b7862517b528" value="2000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="87e3c441-74be-47a5-bb66-b7862517b528" value="1000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="5d16cf46-0d99-40a8-9e60-174fdec33653" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -549,7 +549,7 @@
           <point xsi:type="esdl:Point" lat="52.335955306808124" lon="5.012469291687013"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="f5106fed-95ab-4371-8fd1-ec02181f22a9">
-          <investmentCosts xsi:type="esdl:SingleValue" id="fae71d3f-f496-4fa1-b953-09fac704b702" value="2000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="fae71d3f-f496-4fa1-b953-09fac704b702" value="1000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="2090ffa1-8db6-4089-8448-7ab447c981cf" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -591,7 +591,7 @@
           <point xsi:type="esdl:Point" lat="52.24999295505439" lon="6.759467124938966"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="5233d79c-d542-4798-bbcc-8e5406c22cf2">
-          <investmentCosts xsi:type="esdl:SingleValue" id="a67fbe15-99e4-4cca-957e-889447b00938" value="2000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="a67fbe15-99e4-4cca-957e-889447b00938" value="1000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="1c2107af-9a39-4460-854b-2cea50c67aac" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -642,7 +642,7 @@
           <point xsi:type="esdl:Point" lat="51.982762366274564" lon="6.2506574392318734"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="c243aefe-a90e-48ba-879f-55006d6e64a0">
-          <investmentCosts xsi:type="esdl:SingleValue" id="b7dd56b0-e7d1-4358-b1d2-202a0ec751eb" value="2000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="b7dd56b0-e7d1-4358-b1d2-202a0ec751eb" value="1000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="cc0790b7-489a-4952-bd85-4f02d68d1ed5" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -690,7 +690,7 @@
           <point xsi:type="esdl:Point" lat="51.92580927328671" lon="5.6654369831085205"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="d94d90f5-3427-4752-b44c-a1ccefaa676a">
-          <investmentCosts xsi:type="esdl:SingleValue" id="f48b625c-38c8-4367-a8fc-aa9e6340d14d" value="2000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="f48b625c-38c8-4367-a8fc-aa9e6340d14d" value="1000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="dd509f1a-d32d-4af7-95f8-307a71bcbb80" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -719,7 +719,7 @@
           <point xsi:type="esdl:Point" lat="51.637643886208345" lon="5.909598469734193"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="8e2c5c67-6d18-4af0-a7e0-152de38fdfbd">
-          <investmentCosts xsi:type="esdl:SingleValue" id="721dd153-7126-4b3f-b205-6003e8f4e270" value="2000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="721dd153-7126-4b3f-b205-6003e8f4e270" value="1000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="b6f395ca-c9b4-4160-878a-6303d69e01c3" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -748,7 +748,7 @@
           <point xsi:type="esdl:Point" lat="51.150668947213376" lon="5.919227600097656"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="fda79ccb-0db3-4f7a-b5af-33a3ba716ba4">
-          <investmentCosts xsi:type="esdl:SingleValue" id="c3ccc8b7-531f-4fdf-8719-7ef8c59e241f" value="2000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="c3ccc8b7-531f-4fdf-8719-7ef8c59e241f" value="1000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR/m" id="9029da2d-3ab6-4f51-a004-3c9a2548a07e" unit="EURO" perUnit="METRE"/>
           </investmentCosts>
         </costInformation>
@@ -783,7 +783,7 @@
           <point xsi:type="esdl:Point" lat="51.915083013489976" lon="4.633655548095704"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="10429609-ea9e-418c-b7be-72bb1906bb9b">
-          <investmentCosts xsi:type="esdl:SingleValue" id="2b9b43c7-8edc-4e32-94fb-f957dd1668fa" value="2000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="2b9b43c7-8edc-4e32-94fb-f957dd1668fa" value="1000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="6ecc4ad8-4826-4553-a069-48c379eccb4a" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -849,46 +849,23 @@
         </costInformation>
       </asset>
       <asset xsi:type="esdl:Joint" id="ebe08a24-a799-4088-9de7-3815027d2e98" name="Joint_ebe0">
-        <port xsi:type="esdl:InPort" id="927dfa0e-3842-47cd-84c7-28d3411a1915" name="In" connectedTo="4497d08d-4ad9-496d-bd56-973e356ca71c 33d81cad-9bb8-4198-986f-0ea43b087bab" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
-        <port xsi:type="esdl:OutPort" id="c57cd03d-5e35-49e0-8e56-f171249aa668" name="Out" connectedTo="72ab487b-4903-4fcb-95ae-8cc61fec18d5" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
+        <port xsi:type="esdl:InPort" id="927dfa0e-3842-47cd-84c7-28d3411a1915" name="In" connectedTo="4497d08d-4ad9-496d-bd56-973e356ca71c 1d0bcd6c-68a5-4bfc-8d33-56552a8ab04e" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
+        <port xsi:type="esdl:OutPort" id="c57cd03d-5e35-49e0-8e56-f171249aa668" name="Out" connectedTo="c6b8da57-8413-4516-84e4-5ab10d397832" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
         <geometry xsi:type="esdl:Point" lat="52.75790545926437" lon="5.013198852539063"/>
       </asset>
       <asset xsi:type="esdl:Joint" id="15ad6a9c-75c2-44da-bc23-b51126573600" name="Joint_15ad">
-        <port xsi:type="esdl:InPort" id="4d862b35-fb77-4da3-990d-6620362fa1f0" name="In" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76" connectedTo="a00dedf1-783d-4961-9bd7-f11944468ada 61b04bd4-8a71-4fee-9636-83b2d65d6e9c 0325e36c-5cd2-487a-861b-75390e3aca86"/>
-        <port xsi:type="esdl:OutPort" id="f52b0cc4-1c47-4db5-8866-ce45afd913a2" name="Out" connectedTo="2ca05466-cfb9-476b-a700-7f26cd1d7171" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
+        <port xsi:type="esdl:InPort" id="4d862b35-fb77-4da3-990d-6620362fa1f0" name="In" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76" connectedTo="a00dedf1-783d-4961-9bd7-f11944468ada 0325e36c-5cd2-487a-861b-75390e3aca86 28082ca3-d9d3-4bc0-b93a-1a44893f8553"/>
+        <port xsi:type="esdl:OutPort" id="f52b0cc4-1c47-4db5-8866-ce45afd913a2" name="Out" connectedTo="8671b8ca-7716-4aee-92cb-464423c6f6d6" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
         <geometry xsi:type="esdl:Point" lat="51.8544424245821" lon="4.758453369140626"/>
       </asset>
-      <asset xsi:type="esdl:Joint" id="4a548e77-a216-4124-ba3c-49f63dd425ae" name="Joint_4a54">
-        <port xsi:type="esdl:InPort" id="47ef132b-8380-43ba-a5e6-254dd1a75b62" name="In" connectedTo="34d80ad5-aa96-4ea7-aa72-84eec4fe7271" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
-        <port xsi:type="esdl:OutPort" id="6732771b-4496-4521-a2ff-8beb029805fb" name="Out" connectedTo="524d9449-af62-4bf8-b66c-f1ff6a5a6d01" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
-        <geometry xsi:type="esdl:Point" lat="51.82731080690345" CRS="WGS84" lon="5.720422267913818"/>
-      </asset>
-      <asset xsi:type="esdl:Pipe" id="e2a8c21d-202f-42e6-af77-f5562612cbd7" diameter="DN1000" length="6787.44" name="Pipe_e2a8">
-        <port xsi:type="esdl:InPort" id="524d9449-af62-4bf8-b66c-f1ff6a5a6d01" name="In" connectedTo="6732771b-4496-4521-a2ff-8beb029805fb" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
-        <port xsi:type="esdl:OutPort" id="4d6c360c-119b-4f30-83d1-13fefc889196" name="Out" connectedTo="27755afc-72fc-4cc5-b72c-eb1f1e503128" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
-        <geometry xsi:type="esdl:Line">
-          <point xsi:type="esdl:Point" lat="51.82729091455115" lon="5.7204437255859375"/>
-          <point xsi:type="esdl:Point" lat="51.82007604211561" lon="5.710830688476563"/>
-          <point xsi:type="esdl:Point" lat="51.81455800703693" lon="5.697097778320313"/>
-          <point xsi:type="esdl:Point" lat="51.803519909558034" lon="5.672378540039063"/>
-          <point xsi:type="esdl:Point" lat="51.79035556791182" lon="5.660018920898438"/>
-          <point xsi:type="esdl:Point" lat="51.784409121571045" lon="5.66619873046875"/>
-          <point xsi:type="esdl:Point" lat="51.784409121571045" lon="5.665512084960938"/>
-        </geometry>
-        <costInformation xsi:type="esdl:CostInformation" id="02f5e04f-d4ae-48a3-a7e7-caa0fa766b1d">
-          <investmentCosts xsi:type="esdl:SingleValue" id="228314ba-8fe6-4b98-ae5c-8acb0a22d6aa" value="26155.2">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="eeed0db9-b69c-49a0-8a6d-440da4878c57" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
-          </investmentCosts>
-        </costInformation>
-      </asset>
       <asset xsi:type="esdl:Joint" id="54cbddfe-f78f-44d1-9978-e467c0587fda" name="Joint_54cb">
-        <port xsi:type="esdl:InPort" id="27755afc-72fc-4cc5-b72c-eb1f1e503128" name="In" connectedTo="4d6c360c-119b-4f30-83d1-13fefc889196" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
-        <port xsi:type="esdl:OutPort" id="e82f61af-ba6d-4cbe-bfe0-318f3dd038ac" name="Out" connectedTo="4753e5ff-f195-4eea-8683-d780e0a6448e 18a98e0f-bb3d-4c49-9550-02e6080eac78" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
+        <port xsi:type="esdl:InPort" id="27755afc-72fc-4cc5-b72c-eb1f1e503128" name="In" connectedTo="90d533c5-81b1-4234-8614-193ff2af5095" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
+        <port xsi:type="esdl:OutPort" id="e82f61af-ba6d-4cbe-bfe0-318f3dd038ac" name="Out" connectedTo="4753e5ff-f195-4eea-8683-d780e0a6448e c7c64c94-5316-4cf9-b2d7-51da8631639d" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
         <geometry xsi:type="esdl:Point" lat="51.784409121571045" lon="5.665512084960938"/>
       </asset>
       <asset xsi:type="esdl:Joint" id="c1ced69e-4db7-47eb-b195-93ed37aa5868" name="Joint_c1ce">
-        <port xsi:type="esdl:InPort" id="891ccb9a-539d-40e2-8210-18dbc130d809" name="In" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76" connectedTo="1b922630-bbd6-4380-9fbf-2957fdced13e 51f0d172-3db5-4405-a99f-ae69e3e5f07a"/>
-        <port xsi:type="esdl:OutPort" id="a7028b54-194f-4315-b4fe-9d83a9e1a781" name="Out" connectedTo="a0088f34-13d2-478e-9128-a5cae9f67dfe" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
+        <port xsi:type="esdl:InPort" id="891ccb9a-539d-40e2-8210-18dbc130d809" name="In" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76" connectedTo="1b922630-bbd6-4380-9fbf-2957fdced13e 01342cfc-2e55-45ec-b564-3863cb0e27b1"/>
+        <port xsi:type="esdl:OutPort" id="a7028b54-194f-4315-b4fe-9d83a9e1a781" name="Out" connectedTo="a7b85746-834f-4526-9783-0293d7083a01" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
         <geometry xsi:type="esdl:Point" lat="53.15019351038124" CRS="WGS84" lon="6.845684051513673"/>
       </asset>
       <asset xsi:type="esdl:GasProducer" id="5b233069-6071-4b9b-9d3d-19d676e51f4d" name="GasProducer_Eemshaven" power="1000000000.0">
@@ -929,63 +906,6 @@
       <asset xsi:type="esdl:GasProducer" id="49074bcd-2763-4cec-a8da-a27984efb9a5" name="GasProducer_Maasvlakte" power="3000000000.0">
         <geometry xsi:type="esdl:Point" lat="51.97975241057527" lon="4.0457149161826145"/>
         <port xsi:type="esdl:OutPort" id="32cdfe79-8470-4d7f-98cd-7c74c9dd6cfe" name="Out" connectedTo="c5932fd1-9ba7-4510-90d7-0787087ac4e5" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
-      </asset>
-      <asset xsi:type="esdl:Pipe" id="bea7e169-2241-4d5e-9db4-8d44c3e0a806" name="Pipe_bea7" innerDiameter="1.194" outerDiameter="1.4" diameter="DN1000" length="181103.0">
-        <dataSource xsi:type="esdl:DataSource" name="Logstor Product Catalogue Version 2020.03" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf"/>
-        <costInformation xsi:type="esdl:CostInformation" id="f2369071-d155-405b-8691-51082d3b9162">
-          <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="303577c0-b204-4f50-8aae-e54eae034da0" value="26155.2">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" unit="EURO" perUnit="METRE" description="Cost in EUR/m" id="5b3b5b1e-ddce-4c82-b43a-16b03577a143"/>
-          </investmentCosts>
-        </costInformation>
-        <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
-          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0125">
-            <matter xsi:type="esdl:Material" name="steel" id="00ea5714-14d4-40cd-a326-2c083a737d0d" thermalConductivity="52.15"/>
-          </component>
-          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.078">
-            <matter xsi:type="esdl:Material" name="PUR" id="1cd60ec8-d9da-4aad-a4d0-f20b49fe0f0a" thermalConductivity="0.027"/>
-          </component>
-          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0125">
-            <matter xsi:type="esdl:Material" name="HDPE" id="6a9e4795-6b77-4958-8eb5-df8f776cfce3" thermalConductivity="0.4"/>
-          </component>
-        </material>
-        <geometry xsi:type="esdl:Line" CRS="WGS84">
-          <point xsi:type="esdl:Point" lat="53.15019351038124" lon="6.845684051513673"/>
-          <point xsi:type="esdl:Point" lat="53.11299015004823" lon="6.813125159452832"/>
-          <point xsi:type="esdl:Point" lat="53.072583654870606" lon="6.815929367944485"/>
-          <point xsi:type="esdl:Point" lat="53.033759761836116" lon="6.786903827416603"/>
-          <point xsi:type="esdl:Point" lat="53.00495018798517" lon="6.7130459718184055"/>
-          <point xsi:type="esdl:Point" lat="53.00322028700948" lon="6.709998758701372"/>
-          <point xsi:type="esdl:Point" lat="52.95206948175104" lon="6.680256905478449"/>
-          <point xsi:type="esdl:Point" lat="52.922175958855625" lon="6.695364215579993"/>
-          <point xsi:type="esdl:Point" lat="52.71805490440326" lon="6.549683731625737"/>
-          <point xsi:type="esdl:Point" lat="52.69555053505183" lon="6.518211539582387"/>
-          <point xsi:type="esdl:Point" lat="52.685459981247696" lon="6.515464755927579"/>
-          <point xsi:type="esdl:Point" lat="52.682338719258816" lon="6.51718149571183"/>
-          <point xsi:type="esdl:Point" lat="52.67285328207216" lon="6.4890001306203"/>
-          <point xsi:type="esdl:Point" lat="52.611344497212784" lon="6.433038717056419"/>
-          <point xsi:type="esdl:Point" lat="52.5811534641606" lon="6.442380275568912"/>
-          <point xsi:type="esdl:Point" lat="52.526463920772436" lon="6.3884941649212665"/>
-          <point xsi:type="esdl:Point" lat="52.46946076244498" lon="6.343517743726201"/>
-          <point xsi:type="esdl:Point" lat="52.436355176005314" lon="6.336597444591781"/>
-          <point xsi:type="esdl:Point" lat="52.41217882870577" lon="6.326812027821461"/>
-          <point xsi:type="esdl:Point" lat="52.3800209086044" lon="6.310333228714994"/>
-          <point xsi:type="esdl:Point" lat="52.36419197706142" lon="6.30930367630191"/>
-          <point xsi:type="esdl:Point" lat="52.34427509462825" lon="6.302265043186398"/>
-          <point xsi:type="esdl:Point" lat="52.33498277728373" lon="6.2978572540246125"/>
-          <point xsi:type="esdl:Point" lat="52.17314918904446" lon="6.293332635929142"/>
-          <point xsi:type="esdl:Point" lat="51.984555542063916" lon="6.151186581792106"/>
-          <point xsi:type="esdl:Point" lat="51.96926840735886" lon="6.087913131970748"/>
-          <point xsi:type="esdl:Point" lat="51.94748141772564" lon="6.05941525155199"/>
-          <point xsi:type="esdl:Point" lat="51.90662874112336" lon="6.043621245536754"/>
-          <point xsi:type="esdl:Point" lat="51.896453305505865" lon="5.986976922801861"/>
-          <point xsi:type="esdl:Point" lat="51.896453305505865" lon="5.919337375301864"/>
-          <point xsi:type="esdl:Point" lat="51.88268314219581" lon="5.865088398119158"/>
-          <point xsi:type="esdl:Point" lat="51.88056428104559" lon="5.797792198575987"/>
-          <point xsi:type="esdl:Point" lat="51.848142284135605" lon="5.773528578547542"/>
-          <point xsi:type="esdl:Point" lat="51.82731080690345" lon="5.720422267913818"/>
-        </geometry>
-        <port xsi:type="esdl:InPort" id="a0088f34-13d2-478e-9128-a5cae9f67dfe" name="In" connectedTo="a7028b54-194f-4315-b4fe-9d83a9e1a781" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
-        <port xsi:type="esdl:OutPort" id="34d80ad5-aa96-4ea7-aa72-84eec4fe7271" name="Out" connectedTo="47ef132b-8380-43ba-a5e6-254dd1a75b62" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
       </asset>
       <asset xsi:type="esdl:Pipe" id="588f41d3-cb78-448b-8837-456a91f86fe6" name="Pipe_588f" innerDiameter="1.194" outerDiameter="1.4" diameter="DN1000" length="24311.1">
         <dataSource xsi:type="esdl:DataSource" name="Logstor Product Catalogue Version 2020.03" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf"/>
@@ -1057,69 +977,6 @@
         <port xsi:type="esdl:InPort" id="e7ff1f73-e77e-491a-b027-f2f10120f337" name="In" connectedTo="67bc53b9-175d-4c82-8bca-6c3894095335" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
         <port xsi:type="esdl:OutPort" id="a00dedf1-783d-4961-9bd7-f11944468ada" name="Out" connectedTo="4d862b35-fb77-4da3-990d-6620362fa1f0" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
       </asset>
-      <asset xsi:type="esdl:Pipe" id="5529d5d1-addb-4d77-9bb8-5ac00d0349b9" name="Pipe_5529" innerDiameter="1.194" outerDiameter="1.4" diameter="DN1000" length="159525.7">
-        <dataSource xsi:type="esdl:DataSource" name="Logstor Product Catalogue Version 2020.03" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf"/>
-        <costInformation xsi:type="esdl:CostInformation" id="d1620774-4474-4008-9365-bdde1245e01c">
-          <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="303577c0-b204-4f50-8aae-e54eae034da0" value="26155.2">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" unit="EURO" perUnit="METRE" description="Cost in EUR/m" id="5b3b5b1e-ddce-4c82-b43a-16b03577a143"/>
-          </investmentCosts>
-        </costInformation>
-        <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
-          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0125">
-            <matter xsi:type="esdl:Material" name="steel" id="00ea5714-14d4-40cd-a326-2c083a737d0d" thermalConductivity="52.15"/>
-          </component>
-          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.078">
-            <matter xsi:type="esdl:Material" name="PUR" id="1cd60ec8-d9da-4aad-a4d0-f20b49fe0f0a" thermalConductivity="0.027"/>
-          </component>
-          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0125">
-            <matter xsi:type="esdl:Material" name="HDPE" id="6a9e4795-6b77-4958-8eb5-df8f776cfce3" thermalConductivity="0.4"/>
-          </component>
-        </material>
-        <geometry xsi:type="esdl:Line" CRS="WGS84">
-          <point xsi:type="esdl:Point" lat="52.75790545926437" lon="5.013198852539063"/>
-          <point xsi:type="esdl:Point" lat="52.7567184674491" lon="5.0456685386787345"/>
-          <point xsi:type="esdl:Point" lat="52.77001160729121" lon="5.067642807917317"/>
-          <point xsi:type="esdl:Point" lat="52.77686429701823" lon="5.109016236718068"/>
-          <point xsi:type="esdl:Point" lat="52.94306914636596" lon="5.397836160825445"/>
-          <point xsi:type="esdl:Point" lat="52.946585405409294" lon="5.430454216726473"/>
-          <point xsi:type="esdl:Point" lat="52.98898891246092" lon="5.474736551243726"/>
-          <point xsi:type="esdl:Point" lat="53.052170679026126" lon="5.596968423883336"/>
-          <point xsi:type="esdl:Point" lat="53.066404765568706" lon="5.6546508806345805"/>
-          <point xsi:type="esdl:Point" lat="53.06868039450809" lon="5.704072219193463"/>
-          <point xsi:type="esdl:Point" lat="53.064142740530635" lon="5.740467102619859"/>
-          <point xsi:type="esdl:Point" lat="53.05754166315922" lon="5.76518815551325"/>
-          <point xsi:type="esdl:Point" lat="53.0530028357201" lon="5.810166737860972"/>
-          <point xsi:type="esdl:Point" lat="53.05341547615285" lon="5.882613156756894"/>
-          <point xsi:type="esdl:Point" lat="53.06723664736971" lon="5.907334209650283"/>
-          <point xsi:type="esdl:Point" lat="53.09630850989911" lon="5.92724839114775"/>
-          <point xsi:type="esdl:Point" lat="53.10846750576822" lon="5.978750584675687"/>
-          <point xsi:type="esdl:Point" lat="53.14430622767345" lon="5.976690496934573"/>
-          <point xsi:type="esdl:Point" lat="53.16119644395027" lon="6.0082630091528895"/>
-          <point xsi:type="esdl:Point" lat="53.175589550497925" lon="6.065833645558989"/>
-          <point xsi:type="esdl:Point" lat="53.19525026463133" lon="6.098840224985371"/>
-          <point xsi:type="esdl:Point" lat="53.22937283342449" lon="6.165793076571676"/>
-          <point xsi:type="esdl:Point" lat="53.25761638202658" lon="6.255714946748175"/>
-          <point xsi:type="esdl:Point" lat="53.28207050253686" lon="6.307078046746858"/>
-          <point xsi:type="esdl:Point" lat="53.286174761645015" lon="6.4087090419753086"/>
-          <point xsi:type="esdl:Point" lat="53.28248094618691" lon="6.442357141746853"/>
-          <point xsi:type="esdl:Point" lat="53.28576435347325" lon="6.522013867736722"/>
-          <point xsi:type="esdl:Point" lat="53.29315109746162" lon="6.532314306442301"/>
-          <point xsi:type="esdl:Point" lat="53.286991528529086" lon="6.588823928258815"/>
-          <point xsi:type="esdl:Point" lat="53.29027458923527" lon="6.645132993182675"/>
-          <point xsi:type="esdl:Point" lat="53.28083510971852" lon="6.669167350162374"/>
-          <point xsi:type="esdl:Point" lat="53.25455775631214" lon="6.711055800898423"/>
-          <point xsi:type="esdl:Point" lat="53.23483914207766" lon="6.704188841761343"/>
-          <point xsi:type="esdl:Point" lat="53.21983869706613" lon="6.748824076152201"/>
-          <point xsi:type="esdl:Point" lat="53.20758656760504" lon="6.749614100068808"/>
-          <point xsi:type="esdl:Point" lat="53.208717244482635" lon="6.778283654465996"/>
-          <point xsi:type="esdl:Point" lat="53.188669003340884" lon="6.824120606705844"/>
-          <point xsi:type="esdl:Point" lat="53.17039940349216" lon="6.828033530157619"/>
-          <point xsi:type="esdl:Point" lat="53.15434722397989" lon="6.826488464351761"/>
-          <point xsi:type="esdl:Point" lat="53.15019351038124" lon="6.845684051513673"/>
-        </geometry>
-        <port xsi:type="esdl:InPort" id="72ab487b-4903-4fcb-95ae-8cc61fec18d5" name="In" connectedTo="c57cd03d-5e35-49e0-8e56-f171249aa668" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
-        <port xsi:type="esdl:OutPort" id="51f0d172-3db5-4405-a99f-ae69e3e5f07a" name="Out" connectedTo="891ccb9a-539d-40e2-8210-18dbc130d809" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
-      </asset>
       <asset xsi:type="esdl:HeatingDemand" id="f1ba5abf-5b3a-4ccd-89ee-b705d52b10e6" name="HeatingDemand_Borselle" power="1000000000.0">
         <geometry xsi:type="esdl:Point" lat="51.44543476529252" lon="3.7150310317131168"/>
         <port xsi:type="esdl:InPort" id="0b954cfd-6395-4b16-b88b-2aa4bac593bb" name="In" connectedTo="d9d79219-b01c-4c7d-a7ae-10de8037510d" carrier="f73c2bd6-f040-4538-bebe-1efbebd308ff"/>
@@ -1137,7 +994,7 @@
           <installationCosts xsi:type="esdl:SingleValue" id="1df73877-23c2-4042-a8dd-53a4a522c963" value="1000000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="9f0b9f0d-f02b-45ff-9b4f-1b1dab3d1f49" unit="EURO" description="Cost in EUR"/>
           </installationCosts>
-          <variableOperationalCosts xsi:type="esdl:SingleValue" id="39bc920d-8c55-4686-af44-dbecca49056f" value="100.0">
+          <variableOperationalCosts xsi:type="esdl:SingleValue" id="39bc920d-8c55-4686-af44-dbecca49056f" value="200.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="8f3d5553-02e6-47be-89a0-2efc8d24c786" unit="EURO" perMultiplier="MEGA" perUnit="WATTHOUR" description="Cost in EUR/MWh"/>
           </variableOperationalCosts>
         </costInformation>
@@ -1169,7 +1026,7 @@
           <installationCosts xsi:type="esdl:SingleValue" id="bf510a94-e851-44fd-b231-0df694b02b05" value="1000000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR" id="ef8936de-7f26-407f-a601-97685f4fa738" unit="EURO"/>
           </installationCosts>
-          <variableOperationalCosts xsi:type="esdl:SingleValue" id="d1bc986e-bf53-4ec2-aff2-8aa4952eed61" value="100.0">
+          <variableOperationalCosts xsi:type="esdl:SingleValue" id="d1bc986e-bf53-4ec2-aff2-8aa4952eed61" value="200.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR/MWh" id="d5060abc-2571-437a-a335-0f6554e60498" unit="EURO" perMultiplier="MEGA" perUnit="WATTHOUR"/>
           </variableOperationalCosts>
         </costInformation>
@@ -1196,7 +1053,7 @@
           <installationCosts xsi:type="esdl:SingleValue" id="a0013bed-2d81-4b4a-9b24-adf1ab24689c" value="1000000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="73a1c586-2d41-4e56-b8b6-f78873c98090" unit="EURO" description="Cost in EUR"/>
           </installationCosts>
-          <variableOperationalCosts xsi:type="esdl:SingleValue" id="219e01f5-464a-4c99-b30e-0a539d081efb" value="100.0">
+          <variableOperationalCosts xsi:type="esdl:SingleValue" id="219e01f5-464a-4c99-b30e-0a539d081efb" value="200.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="c3b171c6-e9f5-4a83-a197-c0ae4c55222d" unit="EURO" perMultiplier="MEGA" perUnit="WATTHOUR" description="Cost in EUR/MWh"/>
           </variableOperationalCosts>
         </costInformation>
@@ -1228,7 +1085,7 @@
           <installationCosts xsi:type="esdl:SingleValue" id="01167105-5d3f-4146-8f10-a3799940f16f" value="1000000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="8f888527-3f71-4d4a-ae91-2f3e89253fd4" unit="EURO" description="Cost in EUR"/>
           </installationCosts>
-          <variableOperationalCosts xsi:type="esdl:SingleValue" id="55b54268-63a6-4df8-8b1b-65d1f5562be9" value="100.0">
+          <variableOperationalCosts xsi:type="esdl:SingleValue" id="55b54268-63a6-4df8-8b1b-65d1f5562be9" value="200.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="4683b902-0098-405b-8b02-810717f80b83" unit="EURO" perMultiplier="MEGA" perUnit="WATTHOUR" description="Cost in EUR/MWh"/>
           </variableOperationalCosts>
         </costInformation>
@@ -1265,7 +1122,7 @@
           <installationCosts xsi:type="esdl:SingleValue" id="3456bc3b-9ea5-44b2-a524-e2b1e5433c71" value="1000000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="12e20d4f-a5ab-4791-a715-a5b43b4f0952" unit="EURO" description="Cost in EUR"/>
           </installationCosts>
-          <variableOperationalCosts xsi:type="esdl:SingleValue" id="6fb2a4f0-6be5-4b86-af8f-1d6f0d8c4750" value="100.0">
+          <variableOperationalCosts xsi:type="esdl:SingleValue" id="6fb2a4f0-6be5-4b86-af8f-1d6f0d8c4750" value="200.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="55fdde98-5153-437c-a55c-f94ff06a8dfa" unit="EURO" perMultiplier="MEGA" perUnit="WATTHOUR" description="Cost in EUR/MWh"/>
           </variableOperationalCosts>
         </costInformation>
@@ -1361,7 +1218,7 @@
           <installationCosts xsi:type="esdl:SingleValue" id="4e4e6426-4e1f-4399-be0b-4a37cc12004f" value="1000000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR" id="f9aea887-d774-4004-9282-3d3f92d53fd8" unit="EURO"/>
           </installationCosts>
-          <variableOperationalCosts xsi:type="esdl:SingleValue" id="45c1831a-13c0-48bd-ab1d-ca98d1c396ca" value="600.0">
+          <variableOperationalCosts xsi:type="esdl:SingleValue" id="45c1831a-13c0-48bd-ab1d-ca98d1c396ca" value="500.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR/MWh" id="d068d132-44a8-4b09-9f58-d9d82d111220" unit="EURO" perMultiplier="MEGA" perUnit="WATTHOUR"/>
           </variableOperationalCosts>
         </costInformation>
@@ -1378,7 +1235,7 @@
           <installationCosts xsi:type="esdl:SingleValue" id="d49ac517-bcaf-4aab-b4eb-635f742411c0" value="1000000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="5030e10b-f5a0-401b-ae9b-dc67a4cda8b7" unit="EURO" description="Cost in EUR"/>
           </installationCosts>
-          <variableOperationalCosts xsi:type="esdl:SingleValue" id="b17c7109-5fe2-435a-b33c-66dbfbb63032" value="600.0">
+          <variableOperationalCosts xsi:type="esdl:SingleValue" id="b17c7109-5fe2-435a-b33c-66dbfbb63032" value="500.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="bc81bc18-a1d5-4a0b-b117-d892c3c5c412" unit="EURO" perMultiplier="MEGA" perUnit="WATTHOUR" description="Cost in EUR/MWh"/>
           </variableOperationalCosts>
         </costInformation>
@@ -1395,7 +1252,7 @@
           <installationCosts xsi:type="esdl:SingleValue" id="c7203909-d296-42b7-aa54-387fe76006ca" value="1000000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="394ecb1d-bcd1-4f2c-a8d3-9151fdd9b461" unit="EURO" description="Cost in EUR"/>
           </installationCosts>
-          <variableOperationalCosts xsi:type="esdl:SingleValue" id="a0a59830-8506-4ff2-960a-eb5fd5026307" value="600.0">
+          <variableOperationalCosts xsi:type="esdl:SingleValue" id="a0a59830-8506-4ff2-960a-eb5fd5026307" value="500.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="8bb963cf-8861-4b82-876c-9dfdd4590747" unit="EURO" perMultiplier="MEGA" perUnit="WATTHOUR" description="Cost in EUR/MWh"/>
           </variableOperationalCosts>
         </costInformation>
@@ -1412,7 +1269,7 @@
           <installationCosts xsi:type="esdl:SingleValue" id="806804ed-ebd4-427d-b09a-fbc7760d2788" value="1000000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="3775b22e-22d6-4e01-af99-d97840a35cce" unit="EURO" description="Cost in EUR"/>
           </installationCosts>
-          <variableOperationalCosts xsi:type="esdl:SingleValue" id="bb5831e3-aa3e-40f3-a858-7790dcf11302" value="600.0">
+          <variableOperationalCosts xsi:type="esdl:SingleValue" id="bb5831e3-aa3e-40f3-a858-7790dcf11302" value="500.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="ed82d43f-f285-4a63-8ceb-6c0ae8c50c27" unit="EURO" perMultiplier="MEGA" perUnit="WATTHOUR" description="Cost in EUR/MWh"/>
           </variableOperationalCosts>
         </costInformation>
@@ -1429,53 +1286,12 @@
           <installationCosts xsi:type="esdl:SingleValue" id="04e0f75f-5b5a-4b90-a3ec-c08fc4bb9bd5" value="1000000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="7091f7a4-044f-4e50-ab73-c35326fe6d16" unit="EURO" description="Cost in EUR"/>
           </installationCosts>
-          <variableOperationalCosts xsi:type="esdl:SingleValue" id="2c129c71-e835-44c0-a05b-4ef2979d5039" value="600.0">
+          <variableOperationalCosts xsi:type="esdl:SingleValue" id="2c129c71-e835-44c0-a05b-4ef2979d5039" value="500.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="a5506689-d011-481a-bcd7-4fc9074af883" unit="EURO" perMultiplier="MEGA" perUnit="WATTHOUR" description="Cost in EUR/MWh"/>
           </variableOperationalCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:Pipe" id="eed56080-a834-4a72-a51f-449996fadc14" name="Pipe_drc" innerDiameter="0.994" outerDiameter="1.2" diameter="DN1000" length="92898.4" state="ENABLED">
-        <dataSource xsi:type="esdl:DataSource" name="Logstor Product Catalogue Version 2020.03" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf"/>
-        <costInformation xsi:type="esdl:CostInformation" id="aae175d0-5ab6-46b7-9703-8ce35c96da6d">
-          <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="5271c996-fda1-4189-b26e-3c74c93d3783" value="26155.2">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" unit="EURO" perUnit="METRE" description="Costs in EUR/m" id="70ae3d6f-0186-48c7-8b1a-dde64b71a830"/>
-          </investmentCosts>
-        </costInformation>
-        <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
-          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.011">
-            <matter xsi:type="esdl:Material" name="steel" id="a0c06d1a-4353-4987-ad69-647d610f2af5" thermalConductivity="52.15"/>
-          </component>
-          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.081">
-            <matter xsi:type="esdl:Material" name="PUR" id="aab1e5a5-7dd2-41d4-8701-746b2aed68b6" thermalConductivity="0.027"/>
-          </component>
-          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.011">
-            <matter xsi:type="esdl:Material" name="HDPE" id="e675e39e-6cce-486d-957e-068b7f326874" thermalConductivity="0.4"/>
-          </component>
-        </material>
-        <geometry xsi:type="esdl:Line" CRS="WGS84">
-          <point xsi:type="esdl:Point" lat="51.784409121571045" lon="5.665512084960938"/>
-          <point xsi:type="esdl:Point" lat="51.78068962750752" lon="5.653224149421888"/>
-          <point xsi:type="esdl:Point" lat="51.7758053062457" lon="5.600855198680109"/>
-          <point xsi:type="esdl:Point" lat="51.77506199361704" lon="5.600855198680109"/>
-          <point xsi:type="esdl:Point" lat="51.755094159834556" lon="5.574756574048157"/>
-          <point xsi:type="esdl:Point" lat="51.74478815301159" lon="5.573898066658939"/>
-          <point xsi:type="esdl:Point" lat="51.74160025211094" lon="5.5577581277418195"/>
-          <point xsi:type="esdl:Point" lat="51.72470062174811" lon="5.553637292273602"/>
-          <point xsi:type="esdl:Point" lat="51.68541746605967" lon="5.481217508617093"/>
-          <point xsi:type="esdl:Point" lat="51.68626865167468" lon="5.457866107630634"/>
-          <point xsi:type="esdl:Point" lat="51.63942967464109" lon="5.393306351962077"/>
-          <point xsi:type="esdl:Point" lat="51.60107085445523" lon="5.356218832748239"/>
-          <point xsi:type="esdl:Point" lat="51.579746386619206" lon="5.356218832748239"/>
-          <point xsi:type="esdl:Point" lat="51.5678003119773" lon="5.33561465540723"/>
-          <point xsi:type="esdl:Point" lat="51.562679604579074" lon="5.2985271361933926"/>
-          <point xsi:type="esdl:Point" lat="51.5448668646769" lon="5.277650854744458"/>
-          <point xsi:type="esdl:Point" lat="51.53269810930425" lon="5.270439392675117"/>
-          <point xsi:type="esdl:Point" lat="51.8544424245821" lon="4.758453369140626"/>
-        </geometry>
-        <port xsi:type="esdl:InPort" id="18a98e0f-bb3d-4c49-9550-02e6080eac78" name="In" connectedTo="e82f61af-ba6d-4cbe-bfe0-318f3dd038ac" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
-        <port xsi:type="esdl:OutPort" id="61b04bd4-8a71-4fee-9636-83b2d65d6e9c" name="Out" connectedTo="4d862b35-fb77-4da3-990d-6620362fa1f0" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
-      </asset>
-      <asset xsi:type="esdl:ElectricityCable" id="8a9da466-2204-45d6-84ff-df33a2020c3f" name="ElectricityCable_drc" length="112642.4" capacity="4000000000.0" state="ENABLED">
+      <asset xsi:type="esdl:ElectricityCable" id="8a9da466-2204-45d6-84ff-df33a2020c3f" name="ElectricityCable_drc" length="112642.4" capacity="4000000000.0">
         <geometry xsi:type="esdl:Line" CRS="WGS84">
           <point xsi:type="esdl:Point" lat="51.148905672879316" lon="5.918562412261964"/>
           <point xsi:type="esdl:Point" lat="51.153529239327284" lon="5.900566178223428"/>
@@ -1516,12 +1332,12 @@
         <port xsi:type="esdl:InPort" id="f5d6471c-6ec2-47e7-802c-0da25adac0bf" name="In" connectedTo="955c2d5b-812d-4156-aaf7-29389009ab48" carrier="c2bcf264-0b42-4172-97ad-00fd1eb6555a"/>
         <port xsi:type="esdl:OutPort" id="41c012bf-50c7-4f00-aa03-4b9e3239f461" name="Out" connectedTo="de8ec129-3b85-4bfd-a3b6-fde46f6d7c42" carrier="c2bcf264-0b42-4172-97ad-00fd1eb6555a"/>
         <costInformation xsi:type="esdl:CostInformation" id="780ceda6-ee60-4fdb-837f-96ca662e7f3d">
-          <investmentCosts xsi:type="esdl:SingleValue" id="0fd30b9c-d751-44e8-a64e-025acc1f4184" value="2000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="0fd30b9c-d751-44e8-a64e-025acc1f4184" value="1000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="3cbe2188-0315-4a1b-b3b3-58e88513e488" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:Pipe" id="a573cef3-98b8-4d55-bd61-c1af3afb90bb" diameter="DN1000" length="12488.62" name="Pipe_a573">
+      <asset xsi:type="esdl:Pipe" id="a573cef3-98b8-4d55-bd61-c1af3afb90bb" diameter="DN1000" length="12488.62" name="Pipe_eemshaven2delfzijl">
         <port xsi:type="esdl:InPort" id="612d8006-ca77-439e-b2d8-9d82aa733bdc" name="In" connectedTo="6c2d6ca3-8725-4665-9763-9b4090dfd6a8" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
         <port xsi:type="esdl:OutPort" id="d743df35-2416-452a-a4a8-6589b5c95d3b" name="Out" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76" connectedTo="435e389a-e4a4-460b-985f-cbb7067cb69d"/>
         <geometry xsi:type="esdl:Line">
@@ -1576,7 +1392,7 @@
         <port xsi:type="esdl:InPort" id="6bf2d72a-d7be-4b28-93e0-bc708094779b" name="In" connectedTo="67f19ca1-8b4e-42e4-a93e-c76a52bf55a2" carrier="c2bcf264-0b42-4172-97ad-00fd1eb6555a"/>
         <port xsi:type="esdl:OutPort" id="8b329734-4712-4ac0-a97e-8647072e61fd" name="Out" connectedTo="27852c31-da2e-4fbe-ae3e-23a6c1c5051a" carrier="c2bcf264-0b42-4172-97ad-00fd1eb6555a"/>
         <costInformation xsi:type="esdl:CostInformation" id="05b2f3a3-7cdb-4e36-8f91-e2fbab380c50">
-          <investmentCosts xsi:type="esdl:SingleValue" id="71303373-da17-4692-a899-b4936cfdfcd5" value="2000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="71303373-da17-4692-a899-b4936cfdfcd5" value="1000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="908d7371-c67c-4ace-b19f-58b0cf52529c" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -1594,7 +1410,7 @@
         <port xsi:type="esdl:InPort" id="5a2951d3-689d-4d9d-ae5d-95d7e17d9c12" name="In" connectedTo="75f81d10-0a5e-46f8-b40e-dc76242bf547" carrier="c2bcf264-0b42-4172-97ad-00fd1eb6555a"/>
         <port xsi:type="esdl:OutPort" id="ab8bc062-b68e-4f81-b9d5-46e9a47940e7" name="Out" connectedTo="e6f2b55b-ee9b-4848-8de9-7947807fdedf" carrier="c2bcf264-0b42-4172-97ad-00fd1eb6555a"/>
         <costInformation xsi:type="esdl:CostInformation" id="c8e394d5-1ee0-4b0f-afde-5fb66be5cdf0">
-          <investmentCosts xsi:type="esdl:SingleValue" id="be52f48f-6c92-401f-a6d6-9ada0e081538" value="2000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="be52f48f-6c92-401f-a6d6-9ada0e081538" value="1000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="d6a5362f-f1fb-4809-9c07-1df59dd801c7" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -1617,7 +1433,7 @@
         <port xsi:type="esdl:InPort" id="10bead7b-ce3d-45a1-9557-0a52f4f7d074" name="In" connectedTo="b2c14a7a-7187-4959-bc22-0476d3cdcf69" carrier="c2bcf264-0b42-4172-97ad-00fd1eb6555a"/>
         <port xsi:type="esdl:OutPort" id="f1017cd6-780b-49c2-a0be-110590133bd1" name="Out" connectedTo="4d5677e0-7d41-4422-8e1a-dab727a96589" carrier="c2bcf264-0b42-4172-97ad-00fd1eb6555a"/>
         <costInformation xsi:type="esdl:CostInformation" id="68b1e3ef-dcc2-406a-a027-5ebc9c176272">
-          <investmentCosts xsi:type="esdl:SingleValue" id="4d8fe0ac-9694-4002-a45a-375e93f6fbce" value="2000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="4d8fe0ac-9694-4002-a45a-375e93f6fbce" value="1000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="b13568fe-2aee-40ae-85cb-a975dc782139" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -1636,7 +1452,7 @@
         <port xsi:type="esdl:InPort" id="8c0c05f7-625c-44e3-900d-43d8e4eb891b" name="In" connectedTo="2ac72af7-2734-4f07-845a-2457cb5170eb" carrier="c2bcf264-0b42-4172-97ad-00fd1eb6555a"/>
         <port xsi:type="esdl:OutPort" id="08fbd854-cb11-44f6-a470-26cc4c04463d" name="Out" connectedTo="bcf9b55c-7ec4-4c11-9c8f-e51aa0fbc92c" carrier="c2bcf264-0b42-4172-97ad-00fd1eb6555a"/>
         <costInformation xsi:type="esdl:CostInformation" id="4d2b0671-301b-4d5a-bdcb-adda6a0080ed">
-          <investmentCosts xsi:type="esdl:SingleValue" id="dba08b16-b8e9-4729-9b82-f160bed9280b" value="2000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="dba08b16-b8e9-4729-9b82-f160bed9280b" value="1000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="564a3838-d2bc-4849-8bce-410fd1d4d22b" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -1695,7 +1511,7 @@
         <port xsi:type="esdl:InPort" id="befedf4b-43e5-47cd-818a-791f6b934858" name="In" connectedTo="20b09136-bbd4-48f0-b104-641f7e46b519" carrier="c2bcf264-0b42-4172-97ad-00fd1eb6555a"/>
         <port xsi:type="esdl:OutPort" id="f3a3ab9f-64b0-4e55-867c-f4d8ccf37626" name="Out" connectedTo="de8ec129-3b85-4bfd-a3b6-fde46f6d7c42" carrier="c2bcf264-0b42-4172-97ad-00fd1eb6555a"/>
         <costInformation xsi:type="esdl:CostInformation" id="162dd893-bb4d-4c4b-ae75-f24a9669046d">
-          <investmentCosts xsi:type="esdl:SingleValue" id="e25242c4-89a1-4c25-88ec-4a188358dcab" value="2000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="e25242c4-89a1-4c25-88ec-4a188358dcab" value="1000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="e2f3f05e-9b52-4461-b80a-29682504b688" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -1798,56 +1614,14 @@
         <port xsi:type="esdl:OutPort" id="e2c2271d-250c-45ef-b1e1-2d1ae6d6dc80" name="Out" connectedTo="8e5b657c-f3b6-4bac-9fb0-e26120e32149 90cd5fe3-66f6-4b97-b644-a03a23cbd9f3" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
         <geometry xsi:type="esdl:Point" lat="51.435459477005075" lon="3.712676725877953"/>
       </asset>
-      <asset xsi:type="esdl:Pipe" id="0116966a-6e1d-4b0d-ad9f-667d76eff895" name="Pipe_0116" innerDiameter="0.994" outerDiameter="1.2" diameter="DN1000" length="84947.62">
-        <dataSource xsi:type="esdl:DataSource" name="Logstor Product Catalogue Version 2020.03" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf"/>
-        <costInformation xsi:type="esdl:CostInformation" id="c3f9377d-c68e-4920-9304-64e6fc24a5c8">
-          <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="5271c996-fda1-4189-b26e-3c74c93d3783" value="26155.2">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" unit="EURO" perUnit="METRE" description="Costs in EUR/m" id="70ae3d6f-0186-48c7-8b1a-dde64b71a830"/>
-          </investmentCosts>
-        </costInformation>
-        <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
-          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.011">
-            <matter xsi:type="esdl:Material" name="steel" id="a0c06d1a-4353-4987-ad69-647d610f2af5" thermalConductivity="52.15"/>
-          </component>
-          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.081">
-            <matter xsi:type="esdl:Material" name="PUR" id="aab1e5a5-7dd2-41d4-8701-746b2aed68b6" thermalConductivity="0.027"/>
-          </component>
-          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.011">
-            <matter xsi:type="esdl:Material" name="HDPE" id="e675e39e-6cce-486d-957e-068b7f326874" thermalConductivity="0.4"/>
-          </component>
-        </material>
-        <geometry xsi:type="esdl:Line">
-          <point xsi:type="esdl:Point" lat="51.8544424245821" lon="4.758453369140626"/>
-          <point xsi:type="esdl:Point" lat="51.85585860673649" lon="4.759228781581083"/>
-          <point xsi:type="esdl:Point" lat="51.87303811685239" lon="4.753993272556608"/>
-          <point xsi:type="esdl:Point" lat="51.89870921571241" lon="4.723790499151784"/>
-          <point xsi:type="esdl:Point" lat="51.945521588515945" lon="4.726536995689181"/>
-          <point xsi:type="esdl:Point" lat="51.97715098102016" lon="4.663017209889566"/>
-          <point xsi:type="esdl:Point" lat="51.977362541444776" lon="4.6563226245796185"/>
-          <point xsi:type="esdl:Point" lat="52.02459271736628" lon="4.605347750481844"/>
-          <point xsi:type="esdl:Point" lat="52.0315662887333" lon="4.571703167898478"/>
-          <point xsi:type="esdl:Point" lat="52.12040376432821" lon="4.585255535875242"/>
-          <point xsi:type="esdl:Point" lat="52.12335603964445" lon="4.57753101436373"/>
-          <point xsi:type="esdl:Point" lat="52.179158214784145" lon="4.607399361912626"/>
-          <point xsi:type="esdl:Point" lat="52.20400274366743" lon="4.601563056770615"/>
-          <point xsi:type="esdl:Point" lat="52.20610757406809" lon="4.6089442662149525"/>
-          <point xsi:type="esdl:Point" lat="52.21999695427196" lon="4.610145858450064"/>
-          <point xsi:type="esdl:Point" lat="52.23819388507411" lon="4.634006047118869"/>
-          <point xsi:type="esdl:Point" lat="52.27865204203591" lon="4.733569506824212"/>
-          <point xsi:type="esdl:Point" lat="52.29543182102755" lon="4.7049087522394615"/>
-          <point xsi:type="esdl:Point" lat="52.303203162149636" lon="4.715208114254784"/>
-          <point xsi:type="esdl:Point" lat="52.31685221600711" lon="4.689459709216518"/>
-          <point xsi:type="esdl:Point" lat="52.36317847749726" lon="4.758810809324997"/>
-          <point xsi:type="esdl:Point" lat="52.39525600985328" lon="4.6990745096361906"/>
-          <point xsi:type="esdl:Point" lat="52.450341376936386" lon="4.681565594210158"/>
-          <point xsi:type="esdl:Point" lat="52.46625420856721" lon="4.690433152355814"/>
-        </geometry>
-        <port xsi:type="esdl:InPort" id="2ca05466-cfb9-476b-a700-7f26cd1d7171" name="In" connectedTo="f52b0cc4-1c47-4db5-8866-ce45afd913a2" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
-        <port xsi:type="esdl:OutPort" id="79016891-dc72-4e89-b116-d3ba99fe20c3" name="Out" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76" connectedTo="ef107569-2ace-44e8-9d44-c9959f170de8"/>
+      <asset xsi:type="esdl:Joint" id="18ea0904-c7ce-44ae-8f8e-6e8f5f80c76e" name="Joint_18ea">
+        <port xsi:type="esdl:InPort" id="ef107569-2ace-44e8-9d44-c9959f170de8" name="In" connectedTo="64893724-fa1a-4afb-b14a-6a39737e08ac" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
+        <port xsi:type="esdl:OutPort" id="fe27bbf9-ad48-4b46-a06f-db464ce8685d" name="Out" connectedTo="e1cd46e1-44eb-43c7-a8f1-a30f64e793be a7825c6b-eb4f-4088-8625-8a2a3dac9123" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
+        <geometry xsi:type="esdl:Point" lat="52.46625420856721" lon="4.690433152355814"/>
       </asset>
-      <asset xsi:type="esdl:Pipe" id="7224b650-5457-4620-89e9-c307d48c471e" name="Pipe_7224" innerDiameter="0.994" outerDiameter="1.2" diameter="DN1000" length="46113.8">
+      <asset xsi:type="esdl:Pipe" id="f96d4910-3cd0-46e0-95bb-191fcd592876" name="Pipe_drc" innerDiameter="0.994" outerDiameter="1.2" diameter="DN1000" length="92930.3">
         <dataSource xsi:type="esdl:DataSource" name="Logstor Product Catalogue Version 2020.03" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf"/>
-        <costInformation xsi:type="esdl:CostInformation" id="c3f9377d-c68e-4920-9304-64e6fc24a5c8">
+        <costInformation xsi:type="esdl:CostInformation" id="833a863d-9d9e-458c-85a5-0cf69ed4f8ba">
           <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="5271c996-fda1-4189-b26e-3c74c93d3783" value="26155.2">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" unit="EURO" perUnit="METRE" description="Costs in EUR/m" id="70ae3d6f-0186-48c7-8b1a-dde64b71a830"/>
           </investmentCosts>
@@ -1863,33 +1637,217 @@
             <matter xsi:type="esdl:Material" name="HDPE" id="e675e39e-6cce-486d-957e-068b7f326874" thermalConductivity="0.4"/>
           </component>
         </material>
-        <geometry xsi:type="esdl:Line">
-          <point xsi:type="esdl:Point" lat="52.46625420856721" lon="4.690433152355814"/>
-          <point xsi:type="esdl:Point" lat="52.474790100839996" lon="4.695298034150342"/>
-          <point xsi:type="esdl:Point" lat="52.50302344541074" lon="4.70525408409845"/>
-          <point xsi:type="esdl:Point" lat="52.52246254079849" lon="4.695298034150342"/>
-          <point xsi:type="esdl:Point" lat="52.56966580050176" lon="4.716583382315297"/>
-          <point xsi:type="esdl:Point" lat="52.57905861990657" lon="4.735122233942853"/>
-          <point xsi:type="esdl:Point" lat="52.57592790367402" lon="4.75228783730171"/>
-          <point xsi:type="esdl:Point" lat="52.60663905522965" lon="4.768092332777445"/>
-          <point xsi:type="esdl:Point" lat="52.59579177912553" lon="4.821649015257067"/>
-          <point xsi:type="esdl:Point" lat="52.63791422661297" lon="4.8463674840938085"/>
-          <point xsi:type="esdl:Point" lat="52.65041803860461" lon="4.84568085995946"/>
-          <point xsi:type="esdl:Point" lat="52.67416543388754" lon="4.871772577064939"/>
-          <point xsi:type="esdl:Point" lat="52.69332059152137" lon="4.908850280320053"/>
-          <point xsi:type="esdl:Point" lat="52.69914875460173" lon="4.915716521663587"/>
-          <point xsi:type="esdl:Point" lat="52.71829295512756" lon="4.918463018201026"/>
-          <point xsi:type="esdl:Point" lat="52.72286967174427" lon="4.949361104246953"/>
-          <point xsi:type="esdl:Point" lat="52.74848793739282" lon="5.010368860428809"/>
+        <geometry xsi:type="esdl:Line" CRS="WGS84">
+          <point xsi:type="esdl:Point" lat="51.8544424245821" lon="4.758453369140626"/>
+          <point xsi:type="esdl:Point" lat="51.53293520641541" lon="5.2703636759495085"/>
+          <point xsi:type="esdl:Point" lat="51.545048396941404" lon="5.276526801115603"/>
+          <point xsi:type="esdl:Point" lat="51.563200381525476" lon="5.2974688372133825"/>
+          <point xsi:type="esdl:Point" lat="51.56789736223302" lon="5.335576476670059"/>
+          <point xsi:type="esdl:Point" lat="51.58006455520772" lon="5.356346856734252"/>
+          <point xsi:type="esdl:Point" lat="51.60086930934517" lon="5.356003544667078"/>
+          <point xsi:type="esdl:Point" lat="51.63964841441126" lon="5.392740302965523"/>
+          <point xsi:type="esdl:Point" lat="51.68641092746267" lon="5.457797939695577"/>
+          <point xsi:type="esdl:Point" lat="51.685571085941625" lon="5.480799452918115"/>
+          <point xsi:type="esdl:Point" lat="51.72494693970888" lon="5.553238299092468"/>
+          <point xsi:type="esdl:Point" lat="51.74193761226857" lon="5.557365535295747"/>
+          <point xsi:type="esdl:Point" lat="51.74448957859946" lon="5.573157890385905"/>
+          <point xsi:type="esdl:Point" lat="51.755333827404414" lon="5.574531138654605"/>
+          <point xsi:type="esdl:Point" lat="51.77573946867171" lon="5.60096616782722"/>
+          <point xsi:type="esdl:Point" lat="51.78083943783609" lon="5.654522850306842"/>
+          <point xsi:type="esdl:Point" lat="51.784409121571045" lon="5.665512084960938"/>
+        </geometry>
+        <port xsi:type="esdl:InPort" id="8671b8ca-7716-4aee-92cb-464423c6f6d6" name="In" connectedTo="f52b0cc4-1c47-4db5-8866-ce45afd913a2" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
+        <port xsi:type="esdl:OutPort" id="90d533c5-81b1-4234-8614-193ff2af5095" name="Out" connectedTo="27755afc-72fc-4cc5-b72c-eb1f1e503128" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
+      </asset>
+      <asset xsi:type="esdl:Pipe" id="6f685f81-9f35-4b62-9bb3-dca34403c792" name="Pipe_deflfzijl2maasbracht" innerDiameter="0.994" outerDiameter="1.2" diameter="DN1000" length="193625.4">
+        <dataSource xsi:type="esdl:DataSource" name="Logstor Product Catalogue Version 2020.03" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf"/>
+        <costInformation xsi:type="esdl:CostInformation" id="eef6b22e-3ab8-4561-b593-d9ededf2e03d">
+          <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="5271c996-fda1-4189-b26e-3c74c93d3783" value="26155.2">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" unit="EURO" perUnit="METRE" description="Costs in EUR/m" id="70ae3d6f-0186-48c7-8b1a-dde64b71a830"/>
+          </investmentCosts>
+        </costInformation>
+        <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.011">
+            <matter xsi:type="esdl:Material" name="steel" id="a0c06d1a-4353-4987-ad69-647d610f2af5" thermalConductivity="52.15"/>
+          </component>
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.081">
+            <matter xsi:type="esdl:Material" name="PUR" id="aab1e5a5-7dd2-41d4-8701-746b2aed68b6" thermalConductivity="0.027"/>
+          </component>
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.011">
+            <matter xsi:type="esdl:Material" name="HDPE" id="e675e39e-6cce-486d-957e-068b7f326874" thermalConductivity="0.4"/>
+          </component>
+        </material>
+        <geometry xsi:type="esdl:Line" CRS="WGS84">
+          <point xsi:type="esdl:Point" lat="51.784409121571045" lon="5.665512084960938"/>
+          <point xsi:type="esdl:Point" lat="51.79073454097272" lon="5.659697281779261"/>
+          <point xsi:type="esdl:Point" lat="51.80432865828006" lon="5.672399828264806"/>
+          <point xsi:type="esdl:Point" lat="51.82004174781176" lon="5.710164155654267"/>
+          <point xsi:type="esdl:Point" lat="51.82874529031857" lon="5.721836765938289"/>
+          <point xsi:type="esdl:Point" lat="51.84890557336241" lon="5.774020200149211"/>
+          <point xsi:type="esdl:Point" lat="51.88156727827878" lon="5.796678796582904"/>
+          <point xsi:type="esdl:Point" lat="51.88305133775868" lon="5.863967961749635"/>
+          <point xsi:type="esdl:Point" lat="51.89704149002428" lon="5.920271140766655"/>
+          <point xsi:type="esdl:Point" lat="51.897210767278274" lon="5.988265076395094"/>
+          <point xsi:type="esdl:Point" lat="51.907806428320185" lon="6.043881631277765"/>
+          <point xsi:type="esdl:Point" lat="51.949317322545596" lon="6.0583007380992235"/>
+          <point xsi:type="esdl:Point" lat="51.97048156004051" lon="6.0898854482795"/>
+          <point xsi:type="esdl:Point" lat="51.985290581565444" lon="6.152368244505745"/>
+          <point xsi:type="esdl:Point" lat="52.1730263671303" lon="6.29176303205195"/>
+          <point xsi:type="esdl:Point" lat="52.47256468696671" lon="6.341975380773205"/>
+          <point xsi:type="esdl:Point" lat="52.582890873368676" lon="6.451835242269884"/>
+          <point xsi:type="esdl:Point" lat="52.607926366494226" lon="6.421623780358307"/>
+          <point xsi:type="esdl:Point" lat="52.66795319640012" lon="6.476553711106627"/>
+          <point xsi:type="esdl:Point" lat="52.68128130781322" lon="6.520497655705314"/>
+          <point xsi:type="esdl:Point" lat="52.71125469359549" lon="6.520497655705314"/>
+          <point xsi:type="esdl:Point" lat="52.719576981995324" lon="6.5699345933787985"/>
+          <point xsi:type="esdl:Point" lat="52.925346290827946" lon="6.701874407976281"/>
+          <point xsi:type="esdl:Point" lat="52.95515188328571" lon="6.646944477227922"/>
+          <point xsi:type="esdl:Point" lat="53.01139533143179" lon="6.701874407976281"/>
+          <point xsi:type="esdl:Point" lat="53.03371908011022" lon="6.784774250179848"/>
+          <point xsi:type="esdl:Point" lat="53.07211764693605" lon="6.81086596728529"/>
+          <point xsi:type="esdl:Point" lat="53.1108943386286" lon="6.814299087957076"/>
+          <point xsi:type="esdl:Point" lat="53.15019351038124" lon="6.845684051513673"/>
+        </geometry>
+        <port xsi:type="esdl:InPort" id="c7c64c94-5316-4cf9-b2d7-51da8631639d" name="In" connectedTo="e82f61af-ba6d-4cbe-bfe0-318f3dd038ac" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
+        <port xsi:type="esdl:OutPort" id="01342cfc-2e55-45ec-b564-3863cb0e27b1" name="Out" connectedTo="891ccb9a-539d-40e2-8210-18dbc130d809" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
+      </asset>
+      <asset xsi:type="esdl:Pipe" id="b118e1ca-18ef-4f5e-92a3-2c06f648ee36" name="Pipe_eemshaven2denhelder" innerDiameter="0.994" outerDiameter="1.2" diameter="DN1000" length="159619.0">
+        <dataSource xsi:type="esdl:DataSource" name="Logstor Product Catalogue Version 2020.03" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf"/>
+        <costInformation xsi:type="esdl:CostInformation" id="cf05adf3-c43e-4e55-b97f-b03980867a75">
+          <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="5271c996-fda1-4189-b26e-3c74c93d3783" value="26155.2">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" unit="EURO" perUnit="METRE" description="Costs in EUR/m" id="70ae3d6f-0186-48c7-8b1a-dde64b71a830"/>
+          </investmentCosts>
+        </costInformation>
+        <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.011">
+            <matter xsi:type="esdl:Material" name="steel" id="a0c06d1a-4353-4987-ad69-647d610f2af5" thermalConductivity="52.15"/>
+          </component>
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.081">
+            <matter xsi:type="esdl:Material" name="PUR" id="aab1e5a5-7dd2-41d4-8701-746b2aed68b6" thermalConductivity="0.027"/>
+          </component>
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.011">
+            <matter xsi:type="esdl:Material" name="HDPE" id="e675e39e-6cce-486d-957e-068b7f326874" thermalConductivity="0.4"/>
+          </component>
+        </material>
+        <geometry xsi:type="esdl:Line" CRS="WGS84">
+          <point xsi:type="esdl:Point" lat="53.15019351038124" lon="6.845684051513673"/>
+          <point xsi:type="esdl:Point" lat="53.154381896627214" lon="6.825988325077606"/>
+          <point xsi:type="esdl:Point" lat="53.170111973102316" lon="6.827840822377046"/>
+          <point xsi:type="esdl:Point" lat="53.18843156375375" lon="6.824064389638084"/>
+          <point xsi:type="esdl:Point" lat="53.20859464749166" lon="6.778060572636347"/>
+          <point xsi:type="esdl:Point" lat="53.2075279667779" lon="6.747067802638021"/>
+          <point xsi:type="esdl:Point" lat="53.222335986320914" lon="6.74844105090672"/>
+          <point xsi:type="esdl:Point" lat="53.23549437357578" lon="6.705870354576772"/>
+          <point xsi:type="esdl:Point" lat="53.256046259050564" lon="6.7044971063080725"/>
+          <point xsi:type="esdl:Point" lat="53.2938359424872" lon="6.645447430753577"/>
+          <point xsi:type="esdl:Point" lat="53.286444937421855" lon="6.583651258661722"/>
+          <point xsi:type="esdl:Point" lat="53.2938359424872" lon="6.536960817525636"/>
+          <point xsi:type="esdl:Point" lat="53.28562363570646" lon="6.5204818383011265"/>
+          <point xsi:type="esdl:Point" lat="53.28233827097777" lon="6.438086942178628"/>
+          <point xsi:type="esdl:Point" lat="53.28890874785003" lon="6.407875480267051"/>
+          <point xsi:type="esdl:Point" lat="53.28315963584028" lon="6.304881860113905"/>
+          <point xsi:type="esdl:Point" lat="53.147420735295135" lon="5.972555779086508"/>
+          <point xsi:type="esdl:Point" lat="53.10587229333632" lon="5.97592717268812"/>
+          <point xsi:type="esdl:Point" lat="53.09473658396496" lon="5.929236731552035"/>
+          <point xsi:type="esdl:Point" lat="53.067503824406316" lon="5.90863800752143"/>
+          <point xsi:type="esdl:Point" lat="53.055945327349534" lon="5.883232914550298"/>
+          <point xsi:type="esdl:Point" lat="53.051816541078345" lon="5.809764132174423"/>
+          <point xsi:type="esdl:Point" lat="53.06832931267058" lon="5.711576880961765"/>
+          <point xsi:type="esdl:Point" lat="53.065852800412046" lon="5.652527205407308"/>
+          <point xsi:type="esdl:Point" lat="52.99136913297882" lon="5.4699419968438265"/>
+          <point xsi:type="esdl:Point" lat="52.94586267293681" lon="5.423251555707741"/>
+          <point xsi:type="esdl:Point" lat="52.9428360339436" lon="5.396712511816407"/>
+          <point xsi:type="esdl:Point" lat="52.77652676568898" lon="5.108673687454833"/>
+          <point xsi:type="esdl:Point" lat="52.76966995989694" lon="5.066789615259234"/>
+          <point xsi:type="esdl:Point" lat="52.756215149217574" lon="5.044968710879144"/>
           <point xsi:type="esdl:Point" lat="52.75790545926437" lon="5.013198852539063"/>
         </geometry>
-        <port xsi:type="esdl:InPort" id="92811726-89ee-4073-81fd-7b8bbce6b9ad" name="In" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76" connectedTo="fe27bbf9-ad48-4b46-a06f-db464ce8685d"/>
-        <port xsi:type="esdl:OutPort" id="33d81cad-9bb8-4198-986f-0ea43b087bab" name="Out" connectedTo="927dfa0e-3842-47cd-84c7-28d3411a1915" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
+        <port xsi:type="esdl:InPort" id="a7b85746-834f-4526-9783-0293d7083a01" name="In" connectedTo="a7028b54-194f-4315-b4fe-9d83a9e1a781" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
+        <port xsi:type="esdl:OutPort" id="1d0bcd6c-68a5-4bfc-8d33-56552a8ab04e" name="Out" connectedTo="927dfa0e-3842-47cd-84c7-28d3411a1915" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
       </asset>
-      <asset xsi:type="esdl:Joint" id="18ea0904-c7ce-44ae-8f8e-6e8f5f80c76e" name="Joint_18ea">
-        <port xsi:type="esdl:InPort" id="ef107569-2ace-44e8-9d44-c9959f170de8" name="In" connectedTo="79016891-dc72-4e89-b116-d3ba99fe20c3" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
-        <port xsi:type="esdl:OutPort" id="fe27bbf9-ad48-4b46-a06f-db464ce8685d" name="Out" connectedTo="e1cd46e1-44eb-43c7-a8f1-a30f64e793be 92811726-89ee-4073-81fd-7b8bbce6b9ad" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
-        <geometry xsi:type="esdl:Point" lat="52.46625420856721" lon="4.690433152355814"/>
+      <asset xsi:type="esdl:Pipe" id="3238fada-da58-43eb-877a-4eda428e2bb7" name="Pipe_denhelder2beverwijk" innerDiameter="0.994" outerDiameter="1.2" diameter="DN1000" length="45943.3">
+        <dataSource xsi:type="esdl:DataSource" name="Logstor Product Catalogue Version 2020.03" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf"/>
+        <costInformation xsi:type="esdl:CostInformation" id="404adc2a-6d55-4130-826f-7da48f488aac">
+          <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="5271c996-fda1-4189-b26e-3c74c93d3783" value="26155.2">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" unit="EURO" perUnit="METRE" description="Costs in EUR/m" id="70ae3d6f-0186-48c7-8b1a-dde64b71a830"/>
+          </investmentCosts>
+        </costInformation>
+        <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.011">
+            <matter xsi:type="esdl:Material" name="steel" id="a0c06d1a-4353-4987-ad69-647d610f2af5" thermalConductivity="52.15"/>
+          </component>
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.081">
+            <matter xsi:type="esdl:Material" name="PUR" id="aab1e5a5-7dd2-41d4-8701-746b2aed68b6" thermalConductivity="0.027"/>
+          </component>
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.011">
+            <matter xsi:type="esdl:Material" name="HDPE" id="e675e39e-6cce-486d-957e-068b7f326874" thermalConductivity="0.4"/>
+          </component>
+        </material>
+        <geometry xsi:type="esdl:Line" CRS="WGS84">
+          <point xsi:type="esdl:Point" lat="52.75790545926437" lon="5.013198852539063"/>
+          <point xsi:type="esdl:Point" lat="52.74831184690992" lon="5.010463283312841"/>
+          <point xsi:type="esdl:Point" lat="52.72273260764379" lon="4.948323799153772"/>
+          <point xsi:type="esdl:Point" lat="52.7182598985907" lon="4.918455649309369"/>
+          <point xsi:type="esdl:Point" lat="52.69791988478695" lon="4.915747235323203"/>
+          <point xsi:type="esdl:Point" lat="52.6746019071243" lon="4.871116666590206"/>
+          <point xsi:type="esdl:Point" lat="52.651688201096995" lon="4.845711573619075"/>
+          <point xsi:type="esdl:Point" lat="52.63960159151137" lon="4.846398197753424"/>
+          <point xsi:type="esdl:Point" lat="52.59622903495331" lon="4.820993104782332"/>
+          <point xsi:type="esdl:Point" lat="52.60582474358871" lon="4.767436422302712"/>
+          <point xsi:type="esdl:Point" lat="52.57703131113761" lon="4.750270818943854"/>
+          <point xsi:type="esdl:Point" lat="52.579118427604904" lon="4.737224960391134"/>
+          <point xsi:type="esdl:Point" lat="52.56993437190936" lon="4.713879739823091"/>
+          <point xsi:type="esdl:Point" lat="52.52273140119832" lon="4.693281015792446"/>
+          <point xsi:type="esdl:Point" lat="52.50182892801715" lon="4.705640250210817"/>
+          <point xsi:type="esdl:Point" lat="52.46625420856721" lon="4.690433152355814"/>
+        </geometry>
+        <port xsi:type="esdl:InPort" id="c6b8da57-8413-4516-84e4-5ab10d397832" name="In" connectedTo="c57cd03d-5e35-49e0-8e56-f171249aa668" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
+        <port xsi:type="esdl:OutPort" id="64893724-fa1a-4afb-b14a-6a39737e08ac" name="Out" connectedTo="ef107569-2ace-44e8-9d44-c9959f170de8" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
+      </asset>
+      <asset xsi:type="esdl:Pipe" id="46ca0e75-4184-49f8-9eca-25b35ccaf11d" name="Pipe_beverwijk2maasvlakte" innerDiameter="0.994" outerDiameter="1.2" diameter="DN1000" length="84225.8">
+        <dataSource xsi:type="esdl:DataSource" name="Logstor Product Catalogue Version 2020.03" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf"/>
+        <costInformation xsi:type="esdl:CostInformation" id="f730d8b4-4661-42d1-8487-5b637dd96ca3">
+          <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="5271c996-fda1-4189-b26e-3c74c93d3783" value="26155.2">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" unit="EURO" perUnit="METRE" description="Costs in EUR/m" id="70ae3d6f-0186-48c7-8b1a-dde64b71a830"/>
+          </investmentCosts>
+        </costInformation>
+        <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.011">
+            <matter xsi:type="esdl:Material" name="steel" id="a0c06d1a-4353-4987-ad69-647d610f2af5" thermalConductivity="52.15"/>
+          </component>
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.081">
+            <matter xsi:type="esdl:Material" name="PUR" id="aab1e5a5-7dd2-41d4-8701-746b2aed68b6" thermalConductivity="0.027"/>
+          </component>
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.011">
+            <matter xsi:type="esdl:Material" name="HDPE" id="e675e39e-6cce-486d-957e-068b7f326874" thermalConductivity="0.4"/>
+          </component>
+        </material>
+        <geometry xsi:type="esdl:Line" CRS="WGS84">
+          <point xsi:type="esdl:Point" lat="52.46625420856721" lon="4.690433152355814"/>
+          <point xsi:type="esdl:Point" lat="52.450445932316605" lon="4.681560533913297"/>
+          <point xsi:type="esdl:Point" lat="52.394941533105204" lon="4.698726137272114"/>
+          <point xsi:type="esdl:Point" lat="52.36327462911483" lon="4.757805410114871"/>
+          <point xsi:type="esdl:Point" lat="52.31752922366803" lon="4.6905162449481805"/>
+          <point xsi:type="esdl:Point" lat="52.30310107736516" lon="4.715033198638193"/>
+          <point xsi:type="esdl:Point" lat="52.29543474578256" lon="4.705420460757219"/>
+          <point xsi:type="esdl:Point" lat="52.278627184744806" lon="4.733743706299336"/>
+          <point xsi:type="esdl:Point" lat="52.23984893188628" lon="4.634208556131428"/>
+          <point xsi:type="esdl:Point" lat="52.22091625804425" lon="4.610863335563385"/>
+          <point xsi:type="esdl:Point" lat="52.20618526255162" lon="4.609490087294686"/>
+          <point xsi:type="esdl:Point" lat="52.20408043583106" lon="4.601250597682412"/>
+          <point xsi:type="esdl:Point" lat="52.17923595037805" lon="4.606743590757248"/>
+          <point xsi:type="esdl:Point" lat="52.12367453492145" lon="4.57858695711257"/>
+          <point xsi:type="esdl:Point" lat="52.11987874357859" lon="4.584766574321756"/>
+          <point xsi:type="esdl:Point" lat="52.032486294583386" lon="4.574467212306432"/>
+          <point xsi:type="esdl:Point" lat="52.023188149070975" lon="4.604678674218051"/>
+          <point xsi:type="esdl:Point" lat="51.977937779201326" lon="4.654802236025884"/>
+          <point xsi:type="esdl:Point" lat="51.97709154237429" lon="4.663041725638118"/>
+          <point xsi:type="esdl:Point" lat="51.94534612145041" lon="4.728957642536149"/>
+          <point xsi:type="esdl:Point" lat="51.89757500127073" lon="4.7255237951667795"/>
+          <point xsi:type="esdl:Point" lat="51.8544424245821" lon="4.758453369140626"/>
+        </geometry>
+        <port xsi:type="esdl:InPort" id="a7825c6b-eb4f-4088-8625-8a2a3dac9123" name="In" connectedTo="fe27bbf9-ad48-4b46-a06f-db464ce8685d" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
+        <port xsi:type="esdl:OutPort" id="28082ca3-d9d3-4bc0-b93a-1a44893f8553" name="Out" connectedTo="4d862b35-fb77-4da3-990d-6620362fa1f0" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
       </asset>
     </area>
   </instance>
