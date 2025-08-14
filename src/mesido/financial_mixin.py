@@ -476,9 +476,10 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     self.__cumulative_investments_made_in_eur_bounds[var_name] = (0.0, np.inf)
 
                     # This is an integer variable between [0, max_aggregation_count] that allows the
-                    # increments of the asset to become used by the optimizer. Meaning that when this
-                    # variable is zero not milp can be consumed or produced by this asset. When the
-                    # integer is >=1 the asset can consume and/or produce according to its increments.
+                    # increments of the asset to become used by the optimizer. Meaning that when
+                    # this variable is zero not milp can be consumed or produced by this asset.
+                    # When the integer is >=1 the asset can consume and/or produce according to
+                    # its increments.
                     var_name = f"{asset}__asset_is_realized"
                     self._asset_is_realized_map[asset] = var_name
                     self.__asset_is_realized_var[var_name] = ca.MX.sym(var_name)
@@ -504,10 +505,11 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                         )
                         self.__cumulative_investments_made_in_eur_bounds[var_name] = (0.0, np.inf)
 
-                        # This is an integer variable between [0, max_aggregation_count] that allows the
-                        # increments of the asset to become used by the optimizer. Meaning that when this
-                        # variable is zero not milp can be consumed or produced by this asset. When the
-                        # integer is >=1 the asset can consume and/or produce according to its increments.
+                        # This is an integer variable between [0, max_aggregation_count] that allows
+                        # the increments of the asset to become used by the optimizer. Meaning
+                        # that when this variable is zero not milp can be consumed or produced by
+                        # this asset. When the integer is >=1 the asset can consume and/or
+                        # produce according to its increments.
                         var_name = f"{asset}__asset_is_realized_{i}"
                         self._asset_is_realized_map[asset].append(var_name)
                         self.__asset_is_realized_var[var_name] = ca.MX.sym(var_name)

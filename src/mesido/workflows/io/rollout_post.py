@@ -1,11 +1,9 @@
-import json
 import os
-from pathlib import Path
-import xml.etree.ElementTree as ET  # noqa: N817
+
+import matplotlib.patches as mpatches
+from matplotlib import pyplot as plt
 
 import numpy as np
-from matplotlib import pyplot as plt
-import matplotlib.patches as mpatches
 
 
 class RollOutPost:
@@ -36,14 +34,13 @@ class RollOutPost:
         over time and is saved the output folder.
         """
 
-
         results = self.extract_results()
-        for ates in solution.energy_system_components.get("ates", []):
+        for ates in self.energy_system_components.get("ates", []):
             print(results[f"{ates}.Stored_heat"])
 
         figure, ax = plt.subplots()
         times = self.times()
-        for ates in solution.energy_system_components.get("ates", []):
+        for ates in self.energy_system_components.get("ates", []):
             # stored_heat = [results.get(f"{ates}.Stored_heat", 0) for t in range(times)]
             plt.plot(times / 3600 / 24, results[f"{ates}.Stored_heat"] / 1e9, label=str(ates))
 
@@ -62,8 +59,8 @@ class RollOutPost:
         plt.close()
 
         figure, ax = plt.subplots()
-        times = solution.times()
-        for heatsource in solution.energy_system_components.get("heat_source", []):
+        times = self.times()
+        for heatsource in self.energy_system_components.get("heat_source", []):
             # stored_heat = [results.get(f"{ates}.Stored_heat", 0) for t in range(times)]
             plt.plot(
                 times / 3600 / 24, results[f"{heatsource}.Heat_source"] / 1e6, label=str(heatsource)
@@ -84,7 +81,7 @@ class RollOutPost:
         plt.close()
 
         figure, ax = plt.subplots()
-        for ates in solution.energy_system_components.get("ates", []):
+        for ates in self.energy_system_components.get("ates", []):
             # stored_heat = [results.get(f"{ates}.Stored_heat", 0) for t in range(times)]
             plt.plot(
                 times / 3600 / 24,
@@ -135,7 +132,7 @@ class RollOutPost:
         plt.legend(handles=legend_years)
         lat0 = 0.0  # 52.045
         lon0 = 0.0  # 4.315
-        for id, asset in self.problem.esdl_assets.items():
+        for _, asset in self.problem.esdl_assets.items():
             if asset.asset_type == "Pipe":
                 name = asset.name
                 if self.problem.is_cold_pipe(name):
@@ -154,7 +151,6 @@ class RollOutPost:
                     plot_size = np.round(asset.attributes["innerDiameter"] * 20)
                     plt.plot(line_x, line_y, color[int(idx)], linewidth=plot_size)
             if asset.asset_type == "HeatingDemand":
-                b = asset
                 point = asset.attributes["geometry"]
                 line_x = [(point.lon - lon0)]
                 line_y = [(point.lat - lat0)]

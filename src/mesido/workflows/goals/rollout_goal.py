@@ -1,13 +1,12 @@
-import casadi as ca
-
 import logging
 
-import numpy as np
-from esdl import esdl
-from esdl.esdl import UnitEnum, TimeUnitEnum
-from rtctools.optimization.single_pass_goal_programming_mixin import Goal
-from mesido.esdl.common import Asset
+import casadi as ca
+
 from mesido.workflows.utils.helpers import get_cost_value_and_unit
+
+import numpy as np
+
+from rtctools.optimization.single_pass_goal_programming_mixin import Goal
 
 logger = logging.getLogger("WarmingUP-MPC")
 logger.setLevel(logging.INFO)
@@ -26,8 +25,6 @@ class MinimizeVariableOPEX(Goal):
 
     def function(self, optimization_problem, ensemble_member):
         obj = 0
-        parameters = optimization_problem.parameters(ensemble_member)
-
         asset_varopex_map = optimization_problem._asset_variable_operational_cost_map
 
         for asset in [
@@ -88,8 +85,7 @@ class MinimizeCAPEXAssetsCosts(Goal):
 
     order = 1
 
-    def __init__(self, fraction_is_placed_vars, priority=None):
-        self.fraction_is_placed_vars = fraction_is_placed_vars
+    def __init__(self, priority=None):
         self.priority = priority
         self.function_nominal = 1.0e6
 
@@ -98,6 +94,7 @@ class MinimizeCAPEXAssetsCosts(Goal):
         return obj
 
     def capex_assets(self, optimization_problem, ensemble_member):
+        # TODO: Check if cumulative capex costs can be used here.
         obj = 0.0
         parameters = optimization_problem.parameters(ensemble_member)
         bounds = optimization_problem.bounds()
@@ -109,14 +106,15 @@ class MinimizeCAPEXAssetsCosts(Goal):
         ]:
             asset = optimization_problem.get_asset_from_asset_name(asset_name=asset_name)
             tech_lifetime = parameters[f"{asset_name}.technical_life"]
-            #FIXME: temporary as long as generic esdl_heat_model_modifiers are not added everywhere
+            # FIXME: temporary as long as generic esdl_heat_model_modifiers are not added everywhere
             if not tech_lifetime > 0.0:
                 tech_lifetime = STANDARD_ASSET_LIFETIME
 
             if asset.asset_type == "Pipe":
                 is_placed = optimization_problem.get_asset_is__realized_symbols(asset_name)
                 investment_cost_coeff = optimization_problem.get_pipe_investment_cost_coefficient(
-                    asset_name, ensemble_member)
+                    asset_name, ensemble_member
+                )
                 length = parameters[f"{asset_name}.length"]
 
                 costs = investment_cost_coeff * length
@@ -143,8 +141,7 @@ class MinimizeRolloutFixedOperationalCosts(Goal):
 
     order = 1
 
-    def __init__(self, is_placed_vars, years=25, priority=1):
-        self.is_placed_vars = is_placed_vars
+    def __init__(self, years=25, priority=1):
         self.priority = priority
         self.year_steps = years
 
@@ -164,9 +161,9 @@ class MinimizeRolloutFixedOperationalCosts(Goal):
         bounds = optimization_problem.bounds()
         parameters = optimization_problem.parameters(ensemble_member)
         for source in optimization_problem.energy_system_components.get("heat_source", []):
-            obj += self.fixed_opex_of_asset(optimization_problem, source, bounds,parameters)
+            obj += self.fixed_opex_of_asset(optimization_problem, source, bounds, parameters)
 
-        for ates in optimization_problem.energy_system_components.get("ates", []):
+        for _ in optimization_problem.energy_system_components.get("ates", []):
             # TODO: this must be changed if the optimization uses placement of individual doublets
             #  of the assset.
             # obj += self.fixed_opex_of_asset(optimization_problem, ates)
@@ -174,22 +171,22 @@ class MinimizeRolloutFixedOperationalCosts(Goal):
 
         return obj
 
-
     def fixed_opex_of_asset(self, optimization_problem, asset_name, bounds, parameters):
         obj = 0
 
         is_placed = optimization_problem.get_asset_is__realized_symbols(asset_name)
-        fixed_operational_cost_coeff = parameters[f"{asset_name}.fixed_operational_cost_coefficient"]
+        fixed_operational_cost_coeff = parameters[
+            f"{asset_name}.fixed_operational_cost_coefficient"
+        ]
         # fixed_operational_cost = optimization_problem._asset_fixed_operational_cost_map.get(
         #     asset_name)
         max_power = bounds[optimization_problem._asset_max_size_map[asset_name]][1]
         if max_power == 0:
             raise RuntimeError(f"Could not determine the max power of asset {asset_name}")
-        #TODO: this can later be replaced by creating a new variable
+        # TODO: this can later be replaced by creating a new variable
         # {asset}_fix_operational_cost_{year} set equal to is_placed[i] *
         # _asset_fixed_operational_cost_map_var using bigm constraints.
         for i in range(optimization_problem._years):
             obj += is_placed[i] * fixed_operational_cost_coeff * max_power
-
 
         return obj

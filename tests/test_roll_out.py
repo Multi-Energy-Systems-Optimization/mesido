@@ -3,7 +3,8 @@ from unittest import TestCase
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
-#from mesido.workflows.io.rollout_post import rollout_post
+
+# from mesido.workflows.io.rollout_post import rollout_post
 from mesido.workflows.rollout_workflow import RollOutProblem
 from rtctools.util import run_optimization_problem
 from utils_tests import energy_conservation_test, heat_to_discharge_test
@@ -46,13 +47,13 @@ class TestRollOutOptimization(TestCase):
                 super().__init__(*args, **kwargs)
 
                 self._timestep_size = 20 * 24
-            
+
             def read(self):
                 super().read()
                 m = [3, 5, 5]
-                for i in range(1,4):
+                for i in range(1, 4):
                     demand_timeseries = self.get_timeseries(f"HeatingDemand_{i}.target_heat_demand")
-                    demand_timeseries.values[:] = demand_timeseries.values[:] * m[i-1]
+                    demand_timeseries.values[:] = demand_timeseries.values[:] * m[i - 1]
                     self.set_timeseries(f"HeatingDemand_{i}.target_heat_demand", demand_timeseries)
 
         solution = run_optimization_problem(
@@ -144,7 +145,7 @@ class TestRollOutOptimization(TestCase):
                 ]
             )
             np.testing.assert_(
-                cumulative_capex - cumulative_prev_year <= solution._years_timestep_max_capex+tol,
+                cumulative_capex - cumulative_prev_year <= solution._years_timestep_max_capex + tol,
                 f"yearly capex {cumulative_capex - cumulative_prev_year} should be <= maximum yearly investment {solution._years_timestep_max_capex} for year {y}",
             )
             cumulative_prev_year = cumulative_capex
@@ -202,7 +203,7 @@ class TestRollOutOptimization(TestCase):
 
         # Check if all producers and ATES are placed at the end of the problem
         all_producers_placed = all(
-            results[f"{asset}__asset_is_realized_{solution._years - 1}"] >= 1-tol
+            results[f"{asset}__asset_is_realized_{solution._years - 1}"] >= 1 - tol
             for asset in [
                 *solution.energy_system_components.get("heat_source", []),
                 *solution.energy_system_components.get("ates", []),
