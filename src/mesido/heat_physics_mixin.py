@@ -2333,7 +2333,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             # are extracting heat from it.
             heat_out = self.state(f"{b}.HeatOut.Heat")
             heat_in = self.state(f"{b}.HeatIn.Heat")
-            heat_flow = self.state(f"{b}.Heat_flow")
+            # heat_flow = self.state(f"{b}.Heat_flow")
 
             big_m = 2.0 * np.max(
                 np.abs((*self.bounds()[f"{b}.HeatIn.Heat"], *self.bounds()[f"{b}.HeatOut.Heat"]))
@@ -2350,8 +2350,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             if b in self.energy_system_components.get("ates", []):
                 is_buffer_charging = self.variable(f"{b}__is_charging")
 
-                #TODO: check if below is necessary.
-                flow_big_m = q_nominal * 10
+                # TODO: check if below is necessary.
+                # flow_big_m = q_nominal * 10
                 # constraints.append(
                 #     ((discharge - flow_big_m * is_buffer_charging) / q_nominal, -np.inf, 0.0)
                 # )
