@@ -5,6 +5,7 @@ from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.head_loss_class import HeadLossOption
 from mesido.network_common import NetworkSettings
+# from mesido.pipe_class import CableClass
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.goals.minimize_tco_goal import MinimizeTCO
 from mesido.workflows.io.write_output import ScenarioOutput
@@ -186,6 +187,11 @@ class GasElectProblem(
             solver_stats = self.solver_stats
             self._write_json_output(results, parameters, bounds, aliases, solver_stats)
 
+    # def electricity_cable_classes(self, p):
+    #     return [
+    #         CableClass(name='None', maximum_current=0.0, resistance=0.0, investment_costs=0.0),
+    #         CableClass(name='Cable', maximum_current=11000.0, resistance=3.0, investment_costs=10000.0),
+    #     ]
 
 @main_decorator
 def main(runinfo_path, log_level):
