@@ -16,7 +16,7 @@ import numpy.testing
 MIP_TOLERANCE = 1e-8
 
 
-class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):  # TODO this might case an issue
+class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
     """
     Tests the topo variables and constraints of heat_mixin on the Pipe Diameter Sizing example.
     """
