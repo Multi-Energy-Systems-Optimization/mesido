@@ -215,7 +215,7 @@ class TestVaryingTemperature(TestCase):
                 ]
                 np.testing.assert_allclose(heat_loss_opt, heat_loss_calc, atol=1.0e-6)
 
-    def test_hex_temperature_variation(self):
+    def test_hex_temperature_variation(self):#TODO this test is taking way too long.
         """
         This test is to check whether the heat exchanger behaves as expected when optimized under
         varying network temperature. This is of special interest as we want to ensure the
