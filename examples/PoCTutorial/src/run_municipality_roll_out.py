@@ -109,7 +109,7 @@ if __name__ == "__main__":
         *solution.hot_pipes,
     ]:
         print(
-            f"{source} is placed over time: {[results[f'{source}__is_placed_{year}'] for year in range(solution._years)]}"
+            f"{source} is placed over time: {[results[f'{source}__asset_is_realized_{year}'] for year in range(solution._years)]}"
         )
         try:
             print(
