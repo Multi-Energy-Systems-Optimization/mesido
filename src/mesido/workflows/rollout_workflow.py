@@ -196,7 +196,8 @@ class RollOutProblem(
                 self.__asset_fraction_placed_var_bounds[asset_fraction_placed_var] = (0.0, 1.0)
 
         # TODO still needs to be checked if this is also properly added to financial mixing for
-        # asset_is_realized for the doublets.
+        # asset_is_realized for the doublets, then there is no need to do the asset fraction.
+
         # for asset in [*self.energy_system_components.get("ates", [])]:
         #     for year in range(self._years):
         #         N_doublets = self.parameters(0)[f"{asset}.nr_of_doublets"]
@@ -274,64 +275,13 @@ class RollOutProblem(
 
         return ates_doublet_sums, ates_doublet_fraction_sums
 
-    def __ates_placed_balance_constraints(self, ensemble_member):
+    def __ates_initial_constraints(self, ensemble_member):
         constraints = []
 
         bounds = self.bounds()
-        # TODO: modify this to get constraints on the yearly ATES heat balance
-        # We add the ATES to the summed source symbol, the ATES can also consume, naming could be
-        # better
-        # All the supply for each day
-        # summed_source_symbols = [0.0] * self._days
         for s in self.energy_system_components.get("ates", []):
-            ates_daily_heat = self.__state_vector_scaled(f"{s}.Heat_ates", ensemble_member)
-            big_m = 2.0 * max(abs(x) for x in bounds[f"{s}.Heat_ates"])
-
-            # enforces ATES to only charge or discharge when placed
-            ates_is_placed = self.get_asset_is__realized_symbols(s)
-            # for year in range(self._years):
-            #     constraints.append(
-            #         ((ates_daily_heat[year*self._days:year*self._days+self._days] - big_m * ates_is_placed[year]) / (big_m), -np.inf, 0.0))
-            #     constraints.append(
-            #         ((ates_daily_heat[year*self._days:year*self._days+self._days] + big_m * ates_is_placed[year]) / (big_m), 0.0, np.inf))
-
             ates_state = self.__state_vector_scaled(f"{s}.Stored_heat", ensemble_member)
             ates_state_big_m = 2.0 * bounds[f"{s}.Stored_heat"][1]
-
-            ates_N_doublets = self.parameters(0)[f"{s}.nr_of_doublets"]
-            # ates_doublet_sums = self.__ates_doublet_sums(s)[0]
-            # ates_doublet_sums = self.get_asset_is__realized_symbols(f"{s}_doublet_{1}")
-
-            # TODO: still add ates cyclic constraint
-
-            ates_is_placed_doublet = []
-            # for N in range(0, ates_N_doublets):
-            #     ates_is_placed_doublet.append(
-            #         self.get_asset_is__realized_symbols(f"{s}_doublet_{N + 1}"))
-            # for year in range(self._years):
-            #     ates_states_year= self.states_in(f"{s}.Stored_heat", t0=year * self._days*24*3600,
-            #                             tf=(year + 1) * self._days*24*3600)
-            #     constraints.append((
-            #         (ates_states_year - ates_doublet_sums[year] * bounds[f"{s}.Stored_heat"][1] / ates_N_doublets) / ates_state_big_m,
-            #         -np.inf, 0.0
-            #     ))
-            #     # constraints.append((
-            #     #     (ates_state[year * self._days:(year + 1) * self._days] - ates_doublet_sums[
-            #     #         year] * bounds[f"{s}.Stored_heat"][1] / ates_N_doublets) / ates_state_big_m,
-            #     #     -np.inf, 0.0
-            #     # ))
-            #     constraints.append((
-            #         (ates_is_placed[year] - ates_doublet_sums[year], -np.inf, 0.0)
-            #     ))
-            #     for N in range(0, ates_N_doublets):
-            #         constraints.append(
-            #             (ates_is_placed[year] - ates_is_placed_doublet[N][year], 0.0, np.inf))
-            #     constraints.append(((ates_daily_heat[year * self._days:(
-            #                                                                        year + 1) * self._days] - big_m / 2. / ates_N_doublets *
-            #                          ates_doublet_sums[year]) / (big_m), -np.inf, 0.0))
-            #     constraints.append(((ates_daily_heat[year * self._days:(
-            #                                                                        year + 1) * self._days] + big_m / 2. / ates_N_doublets *
-            #                          ates_doublet_sums[year]) / (big_m), 0.0, np.inf))
 
             # For setting the initial state to 0 in the first year the ATES is placed
             # PJPE: should the Storage_yearly_change also put to zero first timestep?
@@ -341,29 +291,6 @@ class RollOutProblem(
             ates_state_big_m = 2.0 * bounds[f"{s}.Heat_ates"][1]
             ates_state = self.__state_vector_scaled(f"{s}.Heat_ates", ensemble_member)
             constraints.append(((ates_state[0]) / ates_state_big_m, 0.0, 0.0))
-
-            # for i in range(1, self._years):
-            #     constraints.append((
-            #         (ates_state[i * self._days+(self._days-1)] - ates_state[(i-1) * self._days+(self._days-1)] - (2. -
-            #                     (ates_is_placed[i * self._days] + ates_is_placed[(i - 1) * self._days])) *
-            #          (big_m * self._days)) / (big_m * self._days), -np.inf, 0.0)
-            #     )
-            #     constraints.append((
-            #         (ates_state[i * self._days] - ates_state[(i-1) * self._days] + (2. -
-            #                     (ates_is_placed[i * self._days] + ates_is_placed[(i - 1) * self._days])) *
-            #          (big_m * self._days)) / (big_m * self._days), 0.0, np.inf)
-            #     )
-            # for i in range(1, self._years):
-            #     constraints.append((
-            #         (ates_state[i * self._days+(self._days-1)] - ates_state[(i-1) * self._days+(self._days-1)] - (2. -
-            #                     (ates_is_placed[i] + ates_is_placed[(i - 1)])) *
-            #          (big_m * self._days)) / (big_m * self._days), -np.inf, 0.0)
-            #     )
-            #     constraints.append((
-            #         (ates_state[i * self._days] - ates_state[(i-1) * self._days] + (2. -
-            #                     (ates_is_placed[i] + ates_is_placed[(i - 1)])) *
-            #          (big_m * self._days)) / (big_m * self._days), 0.0, np.inf)
-            #     )
 
         return constraints
 
@@ -434,7 +361,7 @@ class RollOutProblem(
 
         # Constraint to set yearly maximum CAPEX
         # TODO: CAPEX constraint sources and demands now total capex not yet possible to use
-        #  fraction placed variables. See __yearly_investment_constraints_old for that
+        #  fraction placed variables.
         for y in range(self._years):
             cumulative_capex = 0
 
@@ -550,12 +477,7 @@ class RollOutProblem(
     def constraints(self, ensemble_member):
         constraints = super().constraints(ensemble_member)
 
-        # constraints.extend(self.__demand_matching_constraints(ensemble_member))
-
-        # TODO: This ensures __asset_is_realized_ and __is_placed_ variables are set equal,
-        # thereby __is_placed can be removed for heat_source, heat_demand and hot_pipes
-
-        constraints.extend(self.__ates_placed_balance_constraints(ensemble_member))
+        constraints.extend(self.__ates_initial_constraints(ensemble_member))
         constraints.extend(self.__demand_matching_constraints(ensemble_member))
 
         constraints.extend(self.__yearly_asset_is_placed_constraints(ensemble_member))
@@ -565,7 +487,6 @@ class RollOutProblem(
         # # asset cost constraints need to be implemented before yearly investment constraints,
         # # due to dictionaries to be filled with the variable sums.
         constraints.extend(self.__yearly_investment_constraints(ensemble_member))
-        # constraints.extend(self.__yearly_investment_constraints_old(ensemble_member))
 
         constraints.extend(self.__minimum_operational_constraints(ensemble_member))
 
@@ -594,7 +515,6 @@ class RollOutProblem(
             state = nominal * self.state_vector(canonical, ensemble_member)
             states.append(state)
         extra_var_vector = ca.vertcat(*states)
-        # return np.array([self.extra_variable(symbol, ensemble_member) for symbol in symbols])
         return extra_var_vector
 
     def history(self, ensemble_member):
@@ -717,15 +637,6 @@ class RollOutProblem(
         parameters = self.parameters(0)
 
         super().post()
-
-        # try:
-        #     self._write_updated_esdl(self._ESDLMixin__energy_system_handler.energy_system)
-        # except AttributeError:
-        #     # Staging does not exist
-        #     self._write_updated_esdl(self._ESDLMixin__energy_system_handler.energy_system)
-        # except Exception:
-        #     logger.error("Unkown error occured when evaluating self._stage for _write_updated_esdl")
-        #     sys.exit(1)
 
         if os.path.exists(self.output_folder) and self._save_json:
             bounds = self.bounds()

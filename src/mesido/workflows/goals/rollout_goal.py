@@ -42,7 +42,7 @@ class MinimizeVariableOPEX(Goal):
 
 
 class MaximizeRevenueCosts(Goal):
-    
+
     order = 1
 
     def __init__(self, market_price=50e-6, year_step_size=10, priority=None):
