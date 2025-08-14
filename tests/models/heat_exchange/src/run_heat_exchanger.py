@@ -143,10 +143,7 @@ class HeatProblemTvarGeneral(
         return constraints
 
 
-
-class HeatProblemTvarSecondary(
-    HeatProblemTvarGeneral
-):
+class HeatProblemTvarSecondary(HeatProblemTvarGeneral):
 
     def energy_system_options(self):
         options = super().energy_system_options()
@@ -165,9 +162,7 @@ class HeatProblemTvarSecondary(
         return temperatures
 
 
-class HeatProblemTvar(
-    HeatProblemTvarGeneral
-):
+class HeatProblemTvar(HeatProblemTvarGeneral):
 
     def energy_system_options(self):
         options = super().energy_system_options()
@@ -183,9 +178,7 @@ class HeatProblemTvar(
         return temperatures
 
 
-class HeatProblemTvarDisableHEX(
-    HeatProblemTvarGeneral
-):
+class HeatProblemTvarDisableHEX(HeatProblemTvarGeneral):
     @property
     def esdl_assets(self):
         assets = super().esdl_assets
