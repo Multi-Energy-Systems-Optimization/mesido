@@ -9,7 +9,8 @@ from mesido.techno_economic_mixin import TechnoEconomicMixin
 
 import numpy as np
 from mesido.workflows.utils.adapt_profiles import \
-    adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day
+    adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day, \
+    adapt_hourly_profile_averages_timestep_size
 
 from rtctools.data.storage import DataStore
 from rtctools.optimization.collocated_integrated_optimization_problem import (
@@ -156,43 +157,7 @@ class HeatProblem(
         """
         super().read()
 
-        demands = self.energy_system_components.get("heat_demand", [])
-        new_datastore = DataStore(self)
-        new_datastore.reference_datetime = self.io.datetimes[0]
-
-        for ensemble_member in range(self.ensemble_size):
-            total_demand = sum(
-                self.get_timeseries(f"{demand}.target_heat_demand", ensemble_member).values
-                for demand in demands
-            )
-
-            # TODO: the approach of picking one peak day was introduced for a network with a tree
-            #  layout and all big sources situated at the root of the tree. It is not guaranteed
-            #  that an optimal solution is reached in different network topologies.
-            nr_of_days = len(total_demand) // (24 * 5)
-            new_date_times = list()
-            for day in range(nr_of_days):
-                new_date_times.append(self.io.datetimes[day * 24])
-            new_date_times = np.asarray(new_date_times)
-
-            for demand in demands:
-                var_name = f"{demand}.target_heat_demand"
-                data = self.get_timeseries(
-                    variable=var_name, ensemble_member=ensemble_member
-                ).values
-                new_data = list()
-                for day in range(nr_of_days):
-                    data_for_day = data[day * 24 : (day + 1) * 24]
-                    new_data.append(np.mean(data_for_day))
-                new_datastore.set_timeseries(
-                    variable=var_name,
-                    datetimes=new_date_times,
-                    values=np.asarray(new_data),
-                    ensemble_member=ensemble_member,
-                    check_duplicates=True,
-                )
-
-            self.io = new_datastore
+        adapt_hourly_profile_averages_timestep_size(self, 5*24)
 
 
 class HeatProblemPlacingOverTime(HeatProblem):
@@ -322,7 +287,6 @@ class HeatProblemSetPoints(
         options["solver"] = "highs"
         highs_options = options["highs"] = {}
         highs_options["mip_rel_gap"] = 0.02
-        # highs_options["mip_abs_gap"] = 0.01
 
         return options
 
