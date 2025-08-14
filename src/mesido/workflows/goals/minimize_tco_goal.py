@@ -131,6 +131,11 @@ class MinimizeTCO(Goal):
         for asset_type in asset_types:
             for asset in optimization_problem.energy_system_components.get(asset_type, []):
                 technical_lifetime = optimization_problem.parameters(0)[f"{asset}.technical_life"]
+                #FIXME: This is a temporary fix till in the esdl_heat_model the generic_modifiers
+                # PR is approved.
+                if not technical_lifetime>0.0 and ("gas" in asset_type or "electricity" in
+                                                   asset_type):
+                    technical_lifetime = self.number_of_years
                 factor = self.number_of_years / technical_lifetime
                 if factor < 1.0:
                     factor = 1.0
