@@ -1349,12 +1349,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     investment_cost_sym = self.extra_variable(
                         self._asset_investment_cost_map[asset]
                     )
-                    # TODO: add insulation class cost to the investments made.
-                    # if asset in self.heat_network_components.get("demand", []):
-                    #     for insulation_class in self.__get_insulation_classes(asset):
-                    #         insulation_class_active
-                    #         insulation_class_cost
-                    #         investment_cost_sym += insulation_class_active * insulation_class_cost
+
                     big_m = (
                         1.5
                         * max(
@@ -1399,8 +1394,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     )
 
                     # Once the asset is utilized the asset must be realized
-                    # heat_flow = self.state(f"{asset}.Heat_flow")
-                    heat_flow = self.states_in(f"{asset}.Heat_flow", time_start, time_end)
+                    heat_flow = self.states_in(f"{asset}.Heat_flow", time_start, time_end)[:-1]
                     if not np.isinf(self.bounds()[f"{asset}.Heat_flow"][1]):
                         big_m = (
                             1.5
@@ -1427,10 +1421,10 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                                 / max(self.get_aggregation_count_max(asset), 1.0)
                             )
                     constraints.append(
-                        ((heat_flow[:-1] + asset_is_realized * big_m) / big_m, 0.0, np.inf)
+                        ((heat_flow + asset_is_realized * big_m) / big_m, 0.0, np.inf)
                     )
                     constraints.append(
-                        ((heat_flow[:-1] - asset_is_realized * big_m) / big_m, -np.inf, 0.0)
+                        ((heat_flow - asset_is_realized * big_m) / big_m, -np.inf, 0.0)
                     )
 
         return constraints

@@ -127,8 +127,6 @@ class ATES(HeatTwoPort, BaseAsset):
                 - self.Storage_yearly_change
             )
             / self._heat_loss_eq_nominal_ates
-            # (self.der(self.Stored_heat) - self.Heat_ates + self.Heat_loss)
-            # / self._heat_loss_eq_nominal_ates #add variable zero a.e.
         )
         self.add_equation((self.der(self.Stored_volume) - self.Q) / self.Q_nominal)
 
