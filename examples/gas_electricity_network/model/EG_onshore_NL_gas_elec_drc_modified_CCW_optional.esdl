@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" esdlVersion="v2111" version="81" name="EG_onshore_NL_gas_elec_drc_modified_CCW" id="f8f47243-f20d-43a0-8646-5ea02212c0ac" description="TenneT high electricity grid">
+<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" esdlVersion="v2111" version="83" name="EG_onshore_NL_gas_elec_drc_modified_CCW_optional" id="f8f47243-f20d-43a0-8646-5ea02212c0ac" description="TenneT high electricity grid">
   <instance xsi:type="esdl:Instance" id="5e55167c-094a-49aa-b708-499689511e7b" name="Untitled instance">
     <area xsi:type="esdl:Area" id="23ae3043-b224-4644-a5ff-475ad9efe784" name="Netherlands">
       <asset xsi:type="esdl:ElectricityCable" length="107182.1" id="93339914-c7bf-4793-b89a-69fa820747d6" name="ElectricityCable_9333" capacity="4000000000.0">
@@ -42,7 +42,7 @@
           <point xsi:type="esdl:Point" lat="52.529994665670216" lon="6.192147731781007"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="27390c55-fc04-4300-bde3-194dcefe3251">
-          <investmentCosts xsi:type="esdl:SingleValue" id="197dd585-0de0-4cde-b071-d6704400077b" value="1000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="197dd585-0de0-4cde-b071-d6704400077b" value="60000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="30f40f5d-59f4-4c63-8db9-180816f293cf" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -70,7 +70,7 @@
           <point xsi:type="esdl:Point" lat="52.61566717336494" lon="5.810517668724061"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="23dded37-60a9-4b51-9348-4d5a64fb3a27">
-          <investmentCosts xsi:type="esdl:SingleValue" id="83aa4304-5cd6-4436-b26d-8a688380251f" value="1000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="83aa4304-5cd6-4436-b26d-8a688380251f" value="60000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="6e6c1125-3a9b-4867-a6c7-f5687abb945a" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -105,7 +105,7 @@
           <point xsi:type="esdl:Point" lat="52.57654553566356" lon="5.540220737457275"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="3032d11c-b2ba-4d71-9657-ab9120e0cd84">
-          <investmentCosts xsi:type="esdl:SingleValue" id="312bdaac-6a19-4fe6-8e72-0f8ea1d178c3" value="1000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="312bdaac-6a19-4fe6-8e72-0f8ea1d178c3" value="60000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="70e877cc-7bdb-466e-9c40-c12d4088a15f" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -146,7 +146,7 @@
           <point xsi:type="esdl:Point" lat="52.3349063911773" lon="5.015366077423096"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="1b84ed43-909c-4e1d-a61e-899dc6063179">
-          <investmentCosts xsi:type="esdl:SingleValue" id="f3fa06ec-5ad0-474b-9914-1b2943ef90a6" value="1000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="f3fa06ec-5ad0-474b-9914-1b2943ef90a6" value="60000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="301b7db0-073e-4832-88a9-900b8371d76b" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -169,7 +169,7 @@
           <point xsi:type="esdl:Point" lat="52.42888210246025" lon="4.877768754959107"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="e7a8f296-2713-425d-8a4c-6f0a51ba215e">
-          <investmentCosts xsi:type="esdl:SingleValue" id="2732f14f-28ae-4810-860b-51b0aa1b74d9" value="1000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="2732f14f-28ae-4810-860b-51b0aa1b74d9" value="60000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="bf618453-2637-4351-b144-3bd041f1974e" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -203,7 +203,7 @@
           <point xsi:type="esdl:Point" lat="52.473308373359686" lon="4.680476188659669"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="96176591-18e7-426d-97d3-a2c07ca2a7ee">
-          <investmentCosts xsi:type="esdl:SingleValue" id="8d1fdb02-6483-4bd9-9f58-297433f9202e" value="1000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="8d1fdb02-6483-4bd9-9f58-297433f9202e" value="60000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="97074a59-568d-4e7e-9c0b-9879a38c5ca6" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -233,7 +233,7 @@
           <point xsi:type="esdl:Point" lat="52.37544198197317" lon="4.696357548236848"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="16c43ade-8e67-4d4b-8eaf-fcdacdbf9aca">
-          <investmentCosts xsi:type="esdl:SingleValue" id="d39496b2-004c-4afe-a0aa-573d6de4d7ec" value="1000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="d39496b2-004c-4afe-a0aa-573d6de4d7ec" value="60000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="7d47e126-b602-4ce6-9b42-e97d4c9a3687" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -274,7 +274,7 @@
           <point xsi:type="esdl:Point" lat="52.03714186268308" lon="4.530036449432374"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="e3b9a6db-dc00-461d-bb48-9b8aac2bba3c">
-          <investmentCosts xsi:type="esdl:SingleValue" id="e3227563-ce81-4b02-9581-e169348fef0e" value="1000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="e3227563-ce81-4b02-9581-e169348fef0e" value="60000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="ce153399-08bb-40c9-b52e-07127f6e91aa" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -306,7 +306,7 @@
           <point xsi:type="esdl:Point" lat="52.01575984017608" lon="4.308051466941834"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="885759bf-9e14-42f5-8e99-d260b890b0e4">
-          <investmentCosts xsi:type="esdl:SingleValue" id="939b4654-7ae5-4f20-8bd2-d1a0eb8a2265" value="1000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="939b4654-7ae5-4f20-8bd2-d1a0eb8a2265" value="60000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="3f9afaee-4015-4b33-937a-5067b18c8b22" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -325,7 +325,7 @@
           <point xsi:type="esdl:Point" lat="51.98310267050751" lon="4.225112199783326"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="8643ee8d-fe92-4f70-9913-3336a1b14e9f">
-          <investmentCosts xsi:type="esdl:SingleValue" id="ed903072-3eb3-4b4f-9840-573de6861775" value="1000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="ed903072-3eb3-4b4f-9840-573de6861775" value="60000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="5783831d-9bd8-4696-808a-9232a737f449" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -350,7 +350,7 @@
           <point xsi:type="esdl:Point" lat="51.960028816189144" lon="4.1637539863586435"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="3fcb3e4d-4003-49f9-bdf4-78571b4ed103">
-          <investmentCosts xsi:type="esdl:SingleValue" id="c3209226-1976-452a-a2e1-11a74356c587" value="1000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="c3209226-1976-452a-a2e1-11a74356c587" value="60000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="44a39f60-ad1b-4a95-ab9d-ae67a32320cb" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -382,7 +382,7 @@
           <point xsi:type="esdl:Point" lat="51.954322963783504" lon="4.023249149322511"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="43976a8b-fcd0-4730-a50f-4dcc57d03e09">
-          <investmentCosts xsi:type="esdl:SingleValue" id="ffb5dc64-3e18-4c79-9160-b47c67401500" value="1000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="ffb5dc64-3e18-4c79-9160-b47c67401500" value="60000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="03af564b-0f7e-47a0-9971-89e7e64c802c" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -411,7 +411,7 @@
           <point xsi:type="esdl:Point" lat="51.83947996418363" lon="4.264288544654847"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="4074dacb-8a51-4abb-a68a-67533a3ee67a">
-          <investmentCosts xsi:type="esdl:SingleValue" id="c8113004-e7a6-463d-838b-7bcc7d45cf1f" value="1000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="c8113004-e7a6-463d-838b-7bcc7d45cf1f" value="60000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="4dd44532-6695-48ad-8f21-11b1f8c0bf70" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -448,7 +448,7 @@
           <point xsi:type="esdl:Point" lat="51.81296945701616" lon="4.746340513229371"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="0e8851e1-d056-4e4e-b99f-87599adbda63">
-          <investmentCosts xsi:type="esdl:SingleValue" id="db4de91c-d29d-44d0-8e7a-b9cd26420126" value="1000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="db4de91c-d29d-44d0-8e7a-b9cd26420126" value="60000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="e5a83da7-e5c8-4125-8f35-ea477475a1a3" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -474,7 +474,7 @@
           <point xsi:type="esdl:Point" lat="51.91469255840984" lon="4.6343421936035165"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="2fce08bf-a6c7-4f4f-9d54-c7aa1d34f9bd">
-          <investmentCosts xsi:type="esdl:SingleValue" id="0414f3ab-2cf8-4bba-be01-1c47294816e9" value="1000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="0414f3ab-2cf8-4bba-be01-1c47294816e9" value="60000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="9b9d859d-b48a-4764-bd8d-1743adc2cf1b" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -501,7 +501,7 @@
           <point xsi:type="esdl:Point" lat="52.036957066526945" lon="4.531280994415284"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="2d296ed5-26bd-45c8-8543-07eaafd16019">
-          <investmentCosts xsi:type="esdl:SingleValue" id="e2387e06-63e7-4817-ad8a-9640f665708b" value="1000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="e2387e06-63e7-4817-ad8a-9640f665708b" value="60000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="d91da343-3a38-4f7d-b987-ac8cc0af6f12" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -521,7 +521,7 @@
           <point xsi:type="esdl:Point" lat="52.15953312017008" lon="4.985915422439576"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="4c98bb45-a940-4605-aeb6-155f6b1560dd">
-          <investmentCosts xsi:type="esdl:SingleValue" id="87e3c441-74be-47a5-bb66-b7862517b528" value="1000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="87e3c441-74be-47a5-bb66-b7862517b528" value="60000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="5d16cf46-0d99-40a8-9e60-174fdec33653" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -549,7 +549,7 @@
           <point xsi:type="esdl:Point" lat="52.335955306808124" lon="5.012469291687013"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="f5106fed-95ab-4371-8fd1-ec02181f22a9">
-          <investmentCosts xsi:type="esdl:SingleValue" id="fae71d3f-f496-4fa1-b953-09fac704b702" value="1000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="fae71d3f-f496-4fa1-b953-09fac704b702" value="60000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="2090ffa1-8db6-4089-8448-7ab447c981cf" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -591,7 +591,7 @@
           <point xsi:type="esdl:Point" lat="52.24999295505439" lon="6.759467124938966"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="5233d79c-d542-4798-bbcc-8e5406c22cf2">
-          <investmentCosts xsi:type="esdl:SingleValue" id="a67fbe15-99e4-4cca-957e-889447b00938" value="1000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="a67fbe15-99e4-4cca-957e-889447b00938" value="60000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="1c2107af-9a39-4460-854b-2cea50c67aac" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -642,7 +642,7 @@
           <point xsi:type="esdl:Point" lat="51.982762366274564" lon="6.2506574392318734"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="c243aefe-a90e-48ba-879f-55006d6e64a0">
-          <investmentCosts xsi:type="esdl:SingleValue" id="b7dd56b0-e7d1-4358-b1d2-202a0ec751eb" value="1000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="b7dd56b0-e7d1-4358-b1d2-202a0ec751eb" value="60000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="cc0790b7-489a-4952-bd85-4f02d68d1ed5" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -690,7 +690,7 @@
           <point xsi:type="esdl:Point" lat="51.92580927328671" lon="5.6654369831085205"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="d94d90f5-3427-4752-b44c-a1ccefaa676a">
-          <investmentCosts xsi:type="esdl:SingleValue" id="f48b625c-38c8-4367-a8fc-aa9e6340d14d" value="1000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="f48b625c-38c8-4367-a8fc-aa9e6340d14d" value="60000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="dd509f1a-d32d-4af7-95f8-307a71bcbb80" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -719,7 +719,7 @@
           <point xsi:type="esdl:Point" lat="51.637643886208345" lon="5.909598469734193"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="8e2c5c67-6d18-4af0-a7e0-152de38fdfbd">
-          <investmentCosts xsi:type="esdl:SingleValue" id="721dd153-7126-4b3f-b205-6003e8f4e270" value="1000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="721dd153-7126-4b3f-b205-6003e8f4e270" value="60000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="b6f395ca-c9b4-4160-878a-6303d69e01c3" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -748,7 +748,7 @@
           <point xsi:type="esdl:Point" lat="51.150668947213376" lon="5.919227600097656"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="fda79ccb-0db3-4f7a-b5af-33a3ba716ba4">
-          <investmentCosts xsi:type="esdl:SingleValue" id="c3ccc8b7-531f-4fdf-8719-7ef8c59e241f" value="1000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="c3ccc8b7-531f-4fdf-8719-7ef8c59e241f" value="60000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR/m" id="9029da2d-3ab6-4f51-a004-3c9a2548a07e" unit="EURO" perUnit="METRE"/>
           </investmentCosts>
         </costInformation>
@@ -783,7 +783,7 @@
           <point xsi:type="esdl:Point" lat="51.915083013489976" lon="4.633655548095704"/>
         </geometry>
         <costInformation xsi:type="esdl:CostInformation" id="10429609-ea9e-418c-b7be-72bb1906bb9b">
-          <investmentCosts xsi:type="esdl:SingleValue" id="2b9b43c7-8edc-4e32-94fb-f957dd1668fa" value="1000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="2b9b43c7-8edc-4e32-94fb-f957dd1668fa" value="60000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="6ecc4ad8-4826-4553-a069-48c379eccb4a" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -1218,7 +1218,7 @@
           <installationCosts xsi:type="esdl:SingleValue" id="4e4e6426-4e1f-4399-be0b-4a37cc12004f" value="1000000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR" id="f9aea887-d774-4004-9282-3d3f92d53fd8" unit="EURO"/>
           </installationCosts>
-          <variableOperationalCosts xsi:type="esdl:SingleValue" id="45c1831a-13c0-48bd-ab1d-ca98d1c396ca" value="500.0">
+          <variableOperationalCosts xsi:type="esdl:SingleValue" id="45c1831a-13c0-48bd-ab1d-ca98d1c396ca" value="800.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR/MWh" id="d068d132-44a8-4b09-9f58-d9d82d111220" unit="EURO" perMultiplier="MEGA" perUnit="WATTHOUR"/>
           </variableOperationalCosts>
         </costInformation>
@@ -1235,7 +1235,7 @@
           <installationCosts xsi:type="esdl:SingleValue" id="d49ac517-bcaf-4aab-b4eb-635f742411c0" value="1000000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="5030e10b-f5a0-401b-ae9b-dc67a4cda8b7" unit="EURO" description="Cost in EUR"/>
           </installationCosts>
-          <variableOperationalCosts xsi:type="esdl:SingleValue" id="b17c7109-5fe2-435a-b33c-66dbfbb63032" value="500.0">
+          <variableOperationalCosts xsi:type="esdl:SingleValue" id="b17c7109-5fe2-435a-b33c-66dbfbb63032" value="800.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="bc81bc18-a1d5-4a0b-b117-d892c3c5c412" unit="EURO" perMultiplier="MEGA" perUnit="WATTHOUR" description="Cost in EUR/MWh"/>
           </variableOperationalCosts>
         </costInformation>
@@ -1252,7 +1252,7 @@
           <installationCosts xsi:type="esdl:SingleValue" id="c7203909-d296-42b7-aa54-387fe76006ca" value="1000000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="394ecb1d-bcd1-4f2c-a8d3-9151fdd9b461" unit="EURO" description="Cost in EUR"/>
           </installationCosts>
-          <variableOperationalCosts xsi:type="esdl:SingleValue" id="a0a59830-8506-4ff2-960a-eb5fd5026307" value="500.0">
+          <variableOperationalCosts xsi:type="esdl:SingleValue" id="a0a59830-8506-4ff2-960a-eb5fd5026307" value="800.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="8bb963cf-8861-4b82-876c-9dfdd4590747" unit="EURO" perMultiplier="MEGA" perUnit="WATTHOUR" description="Cost in EUR/MWh"/>
           </variableOperationalCosts>
         </costInformation>
@@ -1269,7 +1269,7 @@
           <installationCosts xsi:type="esdl:SingleValue" id="806804ed-ebd4-427d-b09a-fbc7760d2788" value="1000000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="3775b22e-22d6-4e01-af99-d97840a35cce" unit="EURO" description="Cost in EUR"/>
           </installationCosts>
-          <variableOperationalCosts xsi:type="esdl:SingleValue" id="bb5831e3-aa3e-40f3-a858-7790dcf11302" value="500.0">
+          <variableOperationalCosts xsi:type="esdl:SingleValue" id="bb5831e3-aa3e-40f3-a858-7790dcf11302" value="800.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="ed82d43f-f285-4a63-8ceb-6c0ae8c50c27" unit="EURO" perMultiplier="MEGA" perUnit="WATTHOUR" description="Cost in EUR/MWh"/>
           </variableOperationalCosts>
         </costInformation>
@@ -1286,12 +1286,12 @@
           <installationCosts xsi:type="esdl:SingleValue" id="04e0f75f-5b5a-4b90-a3ec-c08fc4bb9bd5" value="1000000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="7091f7a4-044f-4e50-ab73-c35326fe6d16" unit="EURO" description="Cost in EUR"/>
           </installationCosts>
-          <variableOperationalCosts xsi:type="esdl:SingleValue" id="2c129c71-e835-44c0-a05b-4ef2979d5039" value="500.0">
+          <variableOperationalCosts xsi:type="esdl:SingleValue" id="2c129c71-e835-44c0-a05b-4ef2979d5039" value="800.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="a5506689-d011-481a-bcd7-4fc9074af883" unit="EURO" perMultiplier="MEGA" perUnit="WATTHOUR" description="Cost in EUR/MWh"/>
           </variableOperationalCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:ElectricityCable" id="8a9da466-2204-45d6-84ff-df33a2020c3f" name="ElectricityCable_drc" length="112642.4" capacity="4000000000.0">
+      <asset xsi:type="esdl:ElectricityCable" id="8a9da466-2204-45d6-84ff-df33a2020c3f" name="ElectricityCable_drc" length="112642.4" capacity="4000000000.0" state="OPTIONAL">
         <geometry xsi:type="esdl:Line" CRS="WGS84">
           <point xsi:type="esdl:Point" lat="51.148905672879316" lon="5.918562412261964"/>
           <point xsi:type="esdl:Point" lat="51.153529239327284" lon="5.900566178223428"/>
@@ -1332,7 +1332,7 @@
         <port xsi:type="esdl:InPort" id="f5d6471c-6ec2-47e7-802c-0da25adac0bf" name="In" connectedTo="955c2d5b-812d-4156-aaf7-29389009ab48" carrier="c2bcf264-0b42-4172-97ad-00fd1eb6555a"/>
         <port xsi:type="esdl:OutPort" id="41c012bf-50c7-4f00-aa03-4b9e3239f461" name="Out" connectedTo="de8ec129-3b85-4bfd-a3b6-fde46f6d7c42" carrier="c2bcf264-0b42-4172-97ad-00fd1eb6555a"/>
         <costInformation xsi:type="esdl:CostInformation" id="780ceda6-ee60-4fdb-837f-96ca662e7f3d">
-          <investmentCosts xsi:type="esdl:SingleValue" id="0fd30b9c-d751-44e8-a64e-025acc1f4184" value="1000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="0fd30b9c-d751-44e8-a64e-025acc1f4184" value="60000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="3cbe2188-0315-4a1b-b3b3-58e88513e488" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -1392,7 +1392,7 @@
         <port xsi:type="esdl:InPort" id="6bf2d72a-d7be-4b28-93e0-bc708094779b" name="In" connectedTo="67f19ca1-8b4e-42e4-a93e-c76a52bf55a2" carrier="c2bcf264-0b42-4172-97ad-00fd1eb6555a"/>
         <port xsi:type="esdl:OutPort" id="8b329734-4712-4ac0-a97e-8647072e61fd" name="Out" connectedTo="27852c31-da2e-4fbe-ae3e-23a6c1c5051a" carrier="c2bcf264-0b42-4172-97ad-00fd1eb6555a"/>
         <costInformation xsi:type="esdl:CostInformation" id="05b2f3a3-7cdb-4e36-8f91-e2fbab380c50">
-          <investmentCosts xsi:type="esdl:SingleValue" id="71303373-da17-4692-a899-b4936cfdfcd5" value="1000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="71303373-da17-4692-a899-b4936cfdfcd5" value="60000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="908d7371-c67c-4ace-b19f-58b0cf52529c" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -1410,7 +1410,7 @@
         <port xsi:type="esdl:InPort" id="5a2951d3-689d-4d9d-ae5d-95d7e17d9c12" name="In" connectedTo="75f81d10-0a5e-46f8-b40e-dc76242bf547" carrier="c2bcf264-0b42-4172-97ad-00fd1eb6555a"/>
         <port xsi:type="esdl:OutPort" id="ab8bc062-b68e-4f81-b9d5-46e9a47940e7" name="Out" connectedTo="e6f2b55b-ee9b-4848-8de9-7947807fdedf" carrier="c2bcf264-0b42-4172-97ad-00fd1eb6555a"/>
         <costInformation xsi:type="esdl:CostInformation" id="c8e394d5-1ee0-4b0f-afde-5fb66be5cdf0">
-          <investmentCosts xsi:type="esdl:SingleValue" id="be52f48f-6c92-401f-a6d6-9ada0e081538" value="1000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="be52f48f-6c92-401f-a6d6-9ada0e081538" value="60000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="d6a5362f-f1fb-4809-9c07-1df59dd801c7" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -1433,7 +1433,7 @@
         <port xsi:type="esdl:InPort" id="10bead7b-ce3d-45a1-9557-0a52f4f7d074" name="In" connectedTo="b2c14a7a-7187-4959-bc22-0476d3cdcf69" carrier="c2bcf264-0b42-4172-97ad-00fd1eb6555a"/>
         <port xsi:type="esdl:OutPort" id="f1017cd6-780b-49c2-a0be-110590133bd1" name="Out" connectedTo="4d5677e0-7d41-4422-8e1a-dab727a96589" carrier="c2bcf264-0b42-4172-97ad-00fd1eb6555a"/>
         <costInformation xsi:type="esdl:CostInformation" id="68b1e3ef-dcc2-406a-a027-5ebc9c176272">
-          <investmentCosts xsi:type="esdl:SingleValue" id="4d8fe0ac-9694-4002-a45a-375e93f6fbce" value="1000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="4d8fe0ac-9694-4002-a45a-375e93f6fbce" value="60000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="b13568fe-2aee-40ae-85cb-a975dc782139" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -1452,7 +1452,7 @@
         <port xsi:type="esdl:InPort" id="8c0c05f7-625c-44e3-900d-43d8e4eb891b" name="In" connectedTo="2ac72af7-2734-4f07-845a-2457cb5170eb" carrier="c2bcf264-0b42-4172-97ad-00fd1eb6555a"/>
         <port xsi:type="esdl:OutPort" id="08fbd854-cb11-44f6-a470-26cc4c04463d" name="Out" connectedTo="bcf9b55c-7ec4-4c11-9c8f-e51aa0fbc92c" carrier="c2bcf264-0b42-4172-97ad-00fd1eb6555a"/>
         <costInformation xsi:type="esdl:CostInformation" id="4d2b0671-301b-4d5a-bdcb-adda6a0080ed">
-          <investmentCosts xsi:type="esdl:SingleValue" id="dba08b16-b8e9-4729-9b82-f160bed9280b" value="1000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="dba08b16-b8e9-4729-9b82-f160bed9280b" value="60000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="564a3838-d2bc-4849-8bce-410fd1d4d22b" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -1511,7 +1511,7 @@
         <port xsi:type="esdl:InPort" id="befedf4b-43e5-47cd-818a-791f6b934858" name="In" connectedTo="20b09136-bbd4-48f0-b104-641f7e46b519" carrier="c2bcf264-0b42-4172-97ad-00fd1eb6555a"/>
         <port xsi:type="esdl:OutPort" id="f3a3ab9f-64b0-4e55-867c-f4d8ccf37626" name="Out" connectedTo="de8ec129-3b85-4bfd-a3b6-fde46f6d7c42" carrier="c2bcf264-0b42-4172-97ad-00fd1eb6555a"/>
         <costInformation xsi:type="esdl:CostInformation" id="162dd893-bb4d-4c4b-ae75-f24a9669046d">
-          <investmentCosts xsi:type="esdl:SingleValue" id="e25242c4-89a1-4c25-88ec-4a188358dcab" value="1000.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="e25242c4-89a1-4c25-88ec-4a188358dcab" value="60000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="e2f3f05e-9b52-4461-b80a-29682504b688" unit="EURO" perUnit="METRE" description="Cost in EUR/m"/>
           </investmentCosts>
         </costInformation>
@@ -1619,7 +1619,7 @@
         <port xsi:type="esdl:OutPort" id="fe27bbf9-ad48-4b46-a06f-db464ce8685d" name="Out" connectedTo="e1cd46e1-44eb-43c7-a8f1-a30f64e793be a7825c6b-eb4f-4088-8625-8a2a3dac9123" carrier="ddd5df8f-0bf3-4fcf-b55c-283a5d923e76"/>
         <geometry xsi:type="esdl:Point" lat="52.46625420856721" lon="4.690433152355814"/>
       </asset>
-      <asset xsi:type="esdl:Pipe" id="f96d4910-3cd0-46e0-95bb-191fcd592876" name="Pipe_drc" innerDiameter="0.994" outerDiameter="1.2" diameter="DN1000" length="92930.3">
+      <asset xsi:type="esdl:Pipe" id="f96d4910-3cd0-46e0-95bb-191fcd592876" name="Pipe_drc" innerDiameter="0.994" outerDiameter="1.2" diameter="DN1000" length="92930.3" state="OPTIONAL">
         <dataSource xsi:type="esdl:DataSource" name="Logstor Product Catalogue Version 2020.03" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf"/>
         <costInformation xsi:type="esdl:CostInformation" id="833a863d-9d9e-458c-85a5-0cf69ed4f8ba">
           <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="5271c996-fda1-4189-b26e-3c74c93d3783" value="26155.2">
