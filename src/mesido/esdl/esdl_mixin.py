@@ -1,5 +1,6 @@
 import base64
 import copy
+import dataclasses
 import logging
 import xml.etree.ElementTree as ET  # noqa: N817
 from datetime import timedelta
@@ -101,6 +102,7 @@ class ESDLMixin(
         self._esdl_assets: Dict[str, Asset] = esdl_parser.get_assets()
         self._esdl_carriers: Dict[str, Dict[str, Any]] = esdl_parser.get_carrier_properties()
         self.__energy_system_handler: esdl.esdl_handler.EnergySystemHandler = esdl_parser.get_esh()
+        self._esdl_templates: Dict[str, Asset] = esdl_parser.get_templates()
 
         profile_reader_class = kwargs.get("profile_reader", InfluxDBProfileReader)
         input_file_name = kwargs.get("input_timeseries_file", None)
@@ -197,6 +199,24 @@ class ESDLMixin(
             EDRPipeClass.from_edr_class(name, edr_class_name, maximum_velocity)
             for name, edr_class_name in _AssetToComponentBase.STEEL_S1_PIPE_EDR_ASSETS.items()
         ]
+
+        # Update the pipe costs if a template model in the ESDL was used. This is updated only if
+        # the pipe catalog is available as a template
+        if self._esdl_templates is not None:
+            filter_type = "Pipe"
+            pipe_templates = self.filter_asset_templates(
+                asset_templates=self._esdl_templates,
+                filter_type=filter_type
+            )
+            if pipe_templates is not None:
+                for id, pipe in pipe_templates.items():
+                    diameter = str(pipe.attributes['asset'].diameter)
+                    for i, pipe_class in enumerate(pipe_classes):
+                        if pipe_class.name == diameter:
+                            pipe_classes[i] = dataclasses.replace(
+                                pipe_classes[i],
+                                investment_costs = pipe.attributes['asset'].costInformation.investmentCosts.value
+                            )
 
         # We assert the pipe classes are monotonically increasing in size
         assert np.all(np.diff([pc.inner_diameter for pc in pipe_classes]) > 0)
@@ -645,6 +665,16 @@ class ESDLMixin(
 
         # Write output file to disk
         self.__timeseries_export.write()
+
+    @classmethod
+    def filter_asset_templates(cls, asset_templates: dict[str, Asset], filter_type: str) -> dict[str, Asset]:
+        filtered_assets = dict()
+        for asset_id, asset in asset_templates.items():
+            asset_type = asset.attributes['asset']
+            if isinstance(asset_type, getattr(esdl, filter_type)):
+                filtered_assets[asset_id] = asset
+
+        return filtered_assets
 
 
 class _ESDLInputDataConfig:

@@ -23,6 +23,7 @@ class BaseESDLParser:
         self._energy_system: Optional[esdl.EnergySystem] = None
         self._esdl_string: Optional[str] = None
         self._esdl_path: Optional[Path] = None
+        self._templates: Dict[str, Asset] = dict()
 
     def _load_esdl_model(self) -> None:
         """
@@ -90,57 +91,81 @@ class BaseESDLParser:
         # Component ids are unique, but we require component names to be unique as well.
         component_names = set()
 
+        # Check if the ESDL has asset templates
+        try:
+            asset_templates = list(self._energy_system.templates.eAllContents())
+        except:
+            asset_templates = None
+
         # loop through assets
         for el in self._energy_system.eAllContents():
-            if isinstance(el, esdl.Asset):
-                if hasattr(el, "name") and el.name:
-                    el_name = el.name
-                else:
-                    el_name = el.id
-
-                if "." in el_name:
-                    # Dots indicate hierarchy, so would be very confusing
-                    raise ValueError(f"Dots in component names not supported: '{el_name}'")
-
-                if el_name in component_names:
-                    raise Exception(f"Asset names have to be unique: '{el_name}' already exists")
-                else:
-                    component_names.add(el_name)
-
-                # For some reason `esdl_element.assetType` is `None`, so use the class name
-                asset_type = el.__class__.__name__
-
-                # Every asset should at least have a port to be connected to another asset
-                assert len(el.port) >= 1
-
-                in_ports = None
-                out_ports = None
-                for port in el.port:
-                    if isinstance(port, esdl.InPort):
-                        if in_ports is None:
-                            in_ports = [port]
-                        else:
-                            in_ports.append(port)
-                    elif isinstance(port, esdl.OutPort):
-                        if out_ports is None:
-                            out_ports = [port]
-                        else:
-                            out_ports.append(port)
-                    else:
-                        _ESDLInputException(f"The port for {el_name} is neither an IN or OUT port")
-
-                # Note that e.g. el.__dict__['length'] does not work to get the length of a pipe.
-                # We therefore built this dict ourselves using 'dir' and 'getattr'
-                attributes = {k: getattr(el, k) for k in dir(el)}
-                self._assets[el.id] = Asset(
-                    asset_type,
-                    el.id,
-                    el_name,
-                    in_ports,
-                    out_ports,
-                    attributes,
-                    self._global_properties,
+            # If asset templates exist, collect that in a different dictionary, to be used later in
+            # esdl_mixin to update that information
+            if asset_templates is not None and el in asset_templates:
+                if isinstance(el, esdl.AssetTemplate):
+                    asset_type = el.__class__.__name__
+                    # Note that e.g. el.__dict__['length'] does not work to get the length of a pipe.
+                    # We therefore built this dict ourselves using 'dir' and 'getattr'
+                    attributes = {k: getattr(el, k) for k in dir(el)}
+                    self._templates[el.id] = Asset(
+                        asset_type=asset_type,
+                        id=el.id,
+                        name=el.name,
+                        in_ports=None,
+                        out_ports=None,
+                        attributes=attributes,
+                        global_properties=self._global_properties
                 )
+            else:
+                if isinstance(el, esdl.Asset):
+                    if hasattr(el, "name") and el.name:
+                        el_name = el.name
+                    else:
+                        el_name = el.id
+
+                    if "." in el_name:
+                        # Dots indicate hierarchy, so would be very confusing
+                        raise ValueError(f"Dots in component names not supported: '{el_name}'")
+
+                    if el_name in component_names:
+                        raise Exception(f"Asset names have to be unique: '{el_name}' already exists")
+                    else:
+                        component_names.add(el_name)
+
+                    # For some reason `esdl_element.assetType` is `None`, so use the class name
+                    asset_type = el.__class__.__name__
+
+                    # Every asset should at least have a port to be connected to another asset
+                    assert len(el.port) >= 1
+
+                    in_ports = None
+                    out_ports = None
+                    for port in el.port:
+                        if isinstance(port, esdl.InPort):
+                            if in_ports is None:
+                                in_ports = [port]
+                            else:
+                                in_ports.append(port)
+                        elif isinstance(port, esdl.OutPort):
+                            if out_ports is None:
+                                out_ports = [port]
+                            else:
+                                out_ports.append(port)
+                        else:
+                            _ESDLInputException(f"The port for {el_name} is neither an IN or OUT port")
+
+                    # Note that e.g. el.__dict__['length'] does not work to get the length of a pipe.
+                    # We therefore built this dict ourselves using 'dir' and 'getattr'
+                    attributes = {k: getattr(el, k) for k in dir(el)}
+                    self._assets[el.id] = Asset(
+                        asset_type,
+                        el.id,
+                        el_name,
+                        in_ports,
+                        out_ports,
+                        attributes,
+                        self._global_properties,
+                    )
 
     def get_assets(self) -> Dict[str, Asset]:
         return self._assets
@@ -151,6 +176,8 @@ class BaseESDLParser:
     def get_esh(self) -> esdl.esdl_handler.EnergySystemHandler:
         return self._energy_system_handler
 
+    def get_templates(self) -> Dict[str, Asset]:
+        return self._templates
 
 class ESDLStringParser(BaseESDLParser):
     def __init__(self, **kwargs):
