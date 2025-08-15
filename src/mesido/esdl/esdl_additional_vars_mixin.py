@@ -33,7 +33,13 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
         # ensure that we don't have unneeded large amount of available pipe classes for pipes
         # connected to smaller demands.
         # TODO: add the same for electricity ones we have proper support for that in the ESDLMixin
-        if len(self.temperature_carriers().items()) == 0:
+        varying_temperatures = False
+        for _carrier, temperatures in self.temperature_carriers().items():
+            carrier_id_number_mapping = str(temperatures["id_number_mapping"])
+            temperature_regimes = self.temperature_regimes(int(carrier_id_number_mapping))
+            varying_temperatures = varying_temperatures if len(temperature_regimes)<=1 else True
+
+        if not varying_temperatures:
             for asset, (
                 connected_asset,
                 _orientation,
