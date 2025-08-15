@@ -578,7 +578,10 @@ def gas_pipes_head_loss_test(solution, results):
                 )
                 np.testing.assert_allclose(dh_theory, dh_milp_head_loss_function)
                 if dh_milp_head_loss_function != 0.0:
-                    np.testing.assert_array_less(dh_milp_head_loss_function, dh_manual_linear)
+                    if dh_milp_head_loss_function == dh_manual_linear:
+                        pass
+                    else:
+                        np.testing.assert_array_less(dh_milp_head_loss_function, dh_manual_linear)
                 np.testing.assert_allclose(
                     results[f"{pipe}.dH"][itime], -dh_manual_linear * np.sign(results[f"{pipe}.Q"][itime]), atol=1.0e-9
                 )

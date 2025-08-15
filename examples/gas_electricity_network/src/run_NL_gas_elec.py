@@ -29,7 +29,7 @@ if __name__ == "__main__":
 
     start_time = time.time()
 
-    class GasElectProblemModifiedNetwork(GasElectProblem):
+    class GasElectProblemModified(GasElectProblem):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
 
@@ -52,9 +52,9 @@ if __name__ == "__main__":
             return cable_list
 
     solution = run_optimization_problem_solver(
-        GasElectProblemModifiedNetwork,
+        GasElectProblemModified,
         esdl_parser=ESDLFileParser,
-        esdl_file_name="EG_onshore_NL_gas_elec_drc_modified_CCW_optional.esdl",
+        esdl_file_name="EG_onshore_NL_gas_elec_case_study_all_optional.esdl",
         profile_reader=ProfileReaderFromFile,
         input_timeseries_file="HeatingDemand_W_NL_gas_elec.csv",
     )
@@ -79,21 +79,22 @@ if __name__ == "__main__":
         total_heat_target += solution.get_timeseries(f"{asset}.target_heat_demand").values
     for asset in [*solution.energy_system_components.get("heat_source", [])]:
         total_heat_converted += results[f"{asset}.Heat_flow"]
-    print("Total Heat Demand: ", np.sum(total_heat_demand))
-    print("Total Heat Target: ", np.sum(total_heat_target))
-    print("Total Heat Converted: ", np.sum(total_heat_converted))
+    # print("Total Heat Demand: ", np.sum(total_heat_demand))
+    # print("Total Heat Target: ", np.sum(total_heat_target))
+    # print("Total Heat Converted: ", np.sum(total_heat_converted))
     np.testing.assert_allclose(total_heat_demand, total_heat_target)
     np.testing.assert_allclose(total_heat_converted, total_heat_demand)
 
-
     # Check pipes
+    print("========Maximum Velocity==============")
     for pipe in [*solution.energy_system_components.get("gas_pipe", [])]:
-        print(f"{pipe} Pressure: ", parameters[f"{pipe}.pressure"])
-        print(f"{pipe} Volumetric Flowrate: ", max(results[f"{pipe}.Q"]))
-
-    # pipe = "Pipe_c564"
-    # print(f"{pipe} Pressure: ", parameters[f"{pipe}.pressure"])
-    # print(f"{pipe} Volumetric Flowrate: ", max(results[f"{pipe}.Q"]))
+        pipe_diameter = results[f"{pipe}__gn_diameter"][0]
+        if pipe_diameter == 0.0:
+            print(f"{pipe}: ", "(Disabled)")
+        else:
+            area = np.pi * pipe_diameter ** 2 / 4.0
+            v_pipe = abs(results[f"{pipe}.Q"][1:]) / area
+            print(f"{pipe}: ", np.round(max(v_pipe), 3), " m/s")
 
     # Check heat sources and heat demand
     print("========Conversion Assets==============")
