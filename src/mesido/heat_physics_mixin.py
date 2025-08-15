@@ -2732,7 +2732,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                             )
                         )
 
-            sup_carrier_charge_hot = parameters[f"{ates}.ChargeHot.T_supply_id"]
+            # sup_carrier_charge_hot = parameters[f"{ates}.ChargeHot.T_supply_id"]
             ret_carrier_charge_hot = parameters[f"{ates}.ChargeHot.T_return_id"]
             ret_temps_charge_hot = self.temperature_regimes(ret_carrier_charge_hot)
 

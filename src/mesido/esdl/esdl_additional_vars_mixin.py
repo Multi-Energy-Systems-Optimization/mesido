@@ -37,7 +37,7 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
         for _carrier, temperatures in self.temperature_carriers().items():
             carrier_id_number_mapping = str(temperatures["id_number_mapping"])
             temperature_regimes = self.temperature_regimes(int(carrier_id_number_mapping))
-            varying_temperatures = varying_temperatures if len(temperature_regimes)<=1 else True
+            varying_temperatures = varying_temperatures if len(temperature_regimes) <= 1 else True
 
         if not varying_temperatures:
             for asset, (

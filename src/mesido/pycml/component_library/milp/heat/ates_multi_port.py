@@ -1,10 +1,7 @@
-from mesido.pycml import Variable
 from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 from ._non_storage_component import _NonStorageComponent
 from .ates import ATES
-
-import numpy as np
 
 
 @add_variables_documentation_automatically

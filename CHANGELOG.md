@@ -1,13 +1,14 @@
-# [Unreleased-main] - 2025-06-25
+# [Unreleased-main] - 2025-08-15
 
 ## Added
-- xx
+- ATES multiport asset, which contains functionalities that can only be applied with user-defined constraints.
+- ATES_MULTI_PORT_NOT_SUPPORTED error that ensures that the ATES multiport asset is not used in existing workflows as under development.
 
 ## Changed
 - Previously variable operational cost of air-to-water heat pump was based on  the thermal power usage. Now it is based on the electrical power usage
 
 ## Fixed
-- xxx
+- Check if there are no varying temperatures used to allow for updating pipe diameter bounds connected to demands and producers.
 
 
 # [0.1.13] - 2025-06-25

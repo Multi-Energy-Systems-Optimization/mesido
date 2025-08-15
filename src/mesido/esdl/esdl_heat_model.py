@@ -1342,6 +1342,13 @@ class AssetToHeatComponent(_AssetToComponentBase):
         multiport_ates = False
         if len(asset.in_ports) + len(asset.out_ports) > 2:
             multiport_ates = True
+            get_potential_errors().add_potential_issue(
+                MesidoAssetIssueType.ATES_MULTI_PORT_NOT_SUPPORTED,
+                asset.id,
+                f"Asset named {asset.name}: Contains more than 2 ports. This asset type"
+                f" is not supported in the current workflow. Please update to an ATES with just "
+                f"one InPort and one OutPort",
+            )
 
         hfr_charge_max = asset.attributes.get("maxChargeRate", math.inf)
         hfr_discharge_max = asset.attributes.get("maxDischargeRate", math.inf)
