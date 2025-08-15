@@ -27,8 +27,8 @@ def mesido_issue_type_gen_message(issue_type: MesidoAssetIssueType) -> str:
         MesidoAssetIssueType.ASSET_PROFILE_CAPABILITY: "Profile assigment not allowed.",
         MesidoAssetIssueType.HEAT_EXCHANGER_TEMPERATURES: "Temperatures at heat exchanger set "
         "incorrectly.",
-        MesidoAssetIssueType.ASSET_TYPE_WORKFLOW: "This asset type with current configuration is "
-        "not allowed in this workflow.",
+        MesidoAssetIssueType.ATES_MULTI_PORT_NOT_SUPPORTED: "The ATES with multiple port "
+        "configuration is not allowed in this workflow.",
     }
 
     return type_and_general_meassage[issue_type]
@@ -42,18 +42,20 @@ def potential_error_to_error(network_check_type: Enum) -> None:
 
     errors_on_types = {
         HEAT_NETWORK_ERRORS: [
-            MesidoAssetIssueType.HEAT_DEMAND_POWER,
-            MesidoAssetIssueType.COLD_DEMAND_POWER,
-            MesidoAssetIssueType.HEAT_DEMAND_TYPE,
             MesidoAssetIssueType.ASSET_PROFILE_CAPABILITY,
+            MesidoAssetIssueType.ATES_MULTI_PORT_NOT_SUPPORTED,
+            MesidoAssetIssueType.COLD_DEMAND_POWER,
+            MesidoAssetIssueType.HEAT_DEMAND_POWER,
+            MesidoAssetIssueType.HEAT_DEMAND_TYPE,
             MesidoAssetIssueType.HEAT_EXCHANGER_TEMPERATURES,
-            MesidoAssetIssueType.ASSET_TYPE_WORKFLOW,
+            MesidoAssetIssueType.HEAT_PRODUCER_POWER,
         ],
         HEAT_AND_COOL_NETWORK_ERRORS: [
-            MesidoAssetIssueType.HEAT_DEMAND_POWER,
-            MesidoAssetIssueType.COLD_DEMAND_POWER,
-            MesidoAssetIssueType.HEAT_DEMAND_TYPE,
             MesidoAssetIssueType.ASSET_PROFILE_CAPABILITY,
+            MesidoAssetIssueType.ATES_MULTI_PORT_NOT_SUPPORTED,
+            MesidoAssetIssueType.COLD_DEMAND_POWER,
+            MesidoAssetIssueType.HEAT_DEMAND_POWER,
+            MesidoAssetIssueType.HEAT_DEMAND_TYPE,
             MesidoAssetIssueType.HEAT_EXCHANGER_TEMPERATURES,
         ],
         # Example of extra error types / groups that can be added. This one is not used yet.

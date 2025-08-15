@@ -1,5 +1,53 @@
+# [Unreleased-main] - 2025-08-15
 
-# [Unreleased-main] - 2025-04-15
+## Added
+- ATES multiport asset, which contains functionalities that can only be applied with user-defined constraints.
+- ATES_MULTI_PORT_NOT_SUPPORTED error that ensures that the ATES multiport asset is not used in existing workflows as under development.
+
+## Changed
+- Previously variable operational cost of air-to-water heat pump was based on  the thermal power usage. Now it is based on the electrical power usage
+
+## Fixed
+- Check if there are no varying temperatures used to allow for updating pipe diameter bounds connected to demands and producers.
+
+
+# [0.1.13] - 2025-06-25
+
+## Added
+- xx
+
+## Changed
+- README update mesido install command for dev
+
+## Fixed
+- Bug: Producer profiles specified in Watts and asset state=ENABLED
+
+
+# [0.1.12] - 2025-06-12
+
+## Added
+- Maximum profile contraint (specified in Watts) to some heat producers
+
+## Changed
+- xx
+
+## Fixed
+- xx
+
+
+# [0.1.11] - 2025-05-21
+
+## Added
+- xx
+
+## Changed
+- Updated pyESDL to v25.5.1
+
+## Fixed
+- xx
+
+
+# [0.1.10] - 2025-05-20
 
 ## Added
 - Default database for gas pipe dimensions based on the ASA pipe schedule with thicknesses from the standard class

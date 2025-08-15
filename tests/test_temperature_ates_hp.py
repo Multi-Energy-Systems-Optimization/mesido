@@ -4,19 +4,17 @@ from unittest import TestCase
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.util import run_esdl_mesido_optimization
-
 from mesido.workflows.utils.helpers import run_optimization_problem_solver
-from models.ates_temperature.src.run_ates_temperature import SolverCPLEX
-
-from utils_tests import (
-    demand_matching_test,
-    energy_conservation_test,
-    heat_to_discharge_test,
-    feasibility_test,
-    _get_component_temperatures,
-)
 
 import numpy as np
+
+from utils_tests import (
+    _get_component_temperatures,
+    demand_matching_test,
+    energy_conservation_test,
+    feasibility_test,
+    heat_to_discharge_test,
+)
 
 
 class TestAtesTemperature(TestCase):
@@ -471,7 +469,6 @@ class TestAtesTemperature(TestCase):
 
         ates = solution.energy_system_components.get("ates")[0]
 
-        ates_temp = results[f"{ates}.Temperature_ates"]
         ates_heat = results[f"{ates}.Heat_ates"]
 
         ates_flow = results[f"{ates}.Q"]
@@ -605,11 +602,11 @@ class TestAtesTemperature(TestCase):
                     hex_d1_disabled = self.state("Hex_D1__disabled")
                     hex_c1_disabled = self.state("Hex_C1__disabled")
 
-                    #### Heat exchanger constraints
+                    # Heat exchanger constraints
                     # TODO: These constraints are driven by the state of C1 (charge or
                     # discharge). Once the Ates is introduced, the cycle type will probably be
-                    # controlled by a variable coming from the Ates instead of C1 and these constraints
-                    # will probably need reformulating.
+                    # controlled by a variable coming from the Ates instead of C1 and these
+                    # constraints will probably need reformulating.
 
                     # Only charge or discharge at the same time, based on the state of C1.
                     constraints.append((hex_c1_disabled + hex_d1_disabled, 1.0, 1.0))
@@ -662,7 +659,7 @@ class TestAtesTemperature(TestCase):
         feasibility_test(solution)
         demand_matching_test(solution, results)
 
-        carrier_temperature = results[f"311534455427482369_temperature"]
+        carrier_temperature = results["311534455427482369_temperature"]
         peak_producer = "HeatProducer_Peak"
 
         ates = solution.energy_system_components.get("ates")[0]
