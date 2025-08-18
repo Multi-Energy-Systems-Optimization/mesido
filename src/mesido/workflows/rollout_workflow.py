@@ -115,7 +115,8 @@ class RollOutProblem(
         )
         # cannot be turned off for specific timesteps
 
-        # TODO: remove this once  these variables are created in HeatPhysicsMixin (is under developemnet in another PR)
+        # TODO: remove this once  these variables are created in HeatPhysicsMixin
+        # (is under development in another PR)
         self._ates_is_charging_map = {}
         self.__ates_is_charging_var = {}
         self.__ates_is_charging_var_bounds = {}
