@@ -1,6 +1,7 @@
 import logging
 import os
 
+from esdl import AssetStateEnum
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.head_loss_class import HeadLossOption
@@ -188,10 +189,36 @@ class GasElectProblem(
             self._write_json_output(results, parameters, bounds, aliases, solver_stats)
 
     def electricity_cable_classes(self, p):
-        cable_list = [
-            CableClass(name='None', maximum_current=0.0, resistance=0.0, investment_costs=0.0),
-            CableClass(name='Cable', maximum_current=11000.0, resistance=3.0, investment_costs=1.0),
-        ]
+
+        if (
+            self.esdl_assets[self.esdl_asset_name_to_id_map[p]].attributes["state"]
+            == AssetStateEnum.ENABLED
+        ):
+            cable_list = [
+                CableClass(
+                    name="CableType1", maximum_current=11000.0, resistance=3.0, investment_costs=1.0
+                ),
+            ]
+
+        elif (
+            self.esdl_assets[self.esdl_asset_name_to_id_map[p]].attributes["state"]
+            == AssetStateEnum.DISABLED
+        ):
+            cable_list = [
+                CableClass(name="None", maximum_current=0.0, resistance=0.0, investment_costs=0.0),
+            ]
+
+        elif (
+            self.esdl_assets[self.esdl_asset_name_to_id_map[p]].attributes["state"]
+            == AssetStateEnum.OPTIONAL
+        ):
+            cable_list = [
+                CableClass(name="None", maximum_current=0.0, resistance=0.0, investment_costs=0.0),
+                CableClass(
+                    name="CableType1", maximum_current=11000.0, resistance=3.0, investment_costs=1.0
+                ),
+            ]
+
         return cable_list
 
     def bounds(self):
@@ -200,6 +227,7 @@ class GasElectProblem(
             bounds.update({f"{c}__investment_cost": (0.0, np.inf)})
 
         return bounds
+
 
 @main_decorator
 def main(runinfo_path, log_level):
