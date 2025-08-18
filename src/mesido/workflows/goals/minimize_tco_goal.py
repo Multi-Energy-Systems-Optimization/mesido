@@ -138,11 +138,10 @@ class MinimizeTCO(Goal):
                 # this from optimization objective function. Though the HeatingDemand costs are
                 # added to the TCO while post-processing.
 
-                asset_id = optimization_problem.esdl_asset_name_to_id_map[asset]
-                asset_state = optimization_problem.esdl_assets[asset_id].attributes["state"]
+                asset_state = optimization_problem.parameters(0)[f"{asset}.state"]
 
                 if not (
-                    (asset_type == "heat_demand") and (asset_state == esdl.AssetStateEnum.ENABLED)
+                    (asset_type == "heat_demand") and (asset_state == 1.0)
                 ):
                     if options["discounted_annualized_cost"]:
                         # We only want the operational cost for a single year when we use
