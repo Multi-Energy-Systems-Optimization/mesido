@@ -92,7 +92,7 @@ if __name__ == "__main__":
     solution = run_optimization_problem_solver(
         GasElectProblemModified,
         esdl_parser=ESDLFileParser,
-        esdl_file_name="EG_onshore_NL_gas_elec_case_study_drc.esdl",
+        esdl_file_name="EG_onshore_NL_gas_elec_case_study_drc_efvc_.esdl",
         profile_reader=ProfileReaderFromFile,
         input_timeseries_file="HeatingDemand_W_NL_gas_elec.csv",
     )
