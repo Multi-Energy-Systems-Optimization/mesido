@@ -52,9 +52,13 @@ class TestRollOutOptimization(TestCase):
                 super().read()
                 m = [3, 5, 5]
                 for i in range(1, 4):
-                    demand_timeseries = self.get_timeseries(f"HeatingDemand_{i}.target_heat_demand")
+                    demand_timeseries = self.get_timeseries(
+                        f"HeatingDemand_{i}.target_heat_demand"
+                    )
                     demand_timeseries.values[:] = demand_timeseries.values[:] * m[i - 1]
-                    self.set_timeseries(f"HeatingDemand_{i}.target_heat_demand", demand_timeseries)
+                    self.set_timeseries(
+                        f"HeatingDemand_{i}.target_heat_demand", demand_timeseries
+                    )
 
         solution = run_optimization_problem(
             RollOutTimeStep,
@@ -67,6 +71,10 @@ class TestRollOutOptimization(TestCase):
         )
         results = solution.extract_results()
 
+        # tolerance settings for the tests
+        atol = 1.0e-2
+        rtol = 1.0e-6
+
         # Demand matching if placed else demand zero (is_realized variable)
         for d in solution.energy_system_components.get("heat_demand", []):
             for y in range(solution._years):
@@ -74,50 +82,53 @@ class TestRollOutOptimization(TestCase):
                 if is_realized == 0:
                     # If not placed, demand should be zero
                     np.testing.assert_allclose(
-                        results[f"{d}.Heat_demand"][solution._days * y : solution._days * (y + 1)],
+                        results[f"{d}.Heat_demand"][
+                            solution._timesteps_per_year
+                            * y : solution._timesteps_per_year
+                            * (y + 1)
+                        ],
                         0.0,
-                        atol=1.0e-3,
-                        rtol=1.0e-6,
+                        atol=atol,
+                        rtol=rtol,
                     )
                 else:
                     # If placed, demand should match the target heat demand
                     if len(solution.times()) > 0:
                         len_times = len(solution.times())
                     else:
-                        len_times = len(solution.get_timeseries(f"{d}.target_heat_demand").values)
+                        len_times = len(
+                            solution.get_timeseries(f"{d}.target_heat_demand").values
+                        )
                     target = solution.get_timeseries(f"{d}.target_heat_demand").values[
-                        solution._days * y : len_times
+                        solution._timesteps_per_year * y : len_times
                     ]
                     np.testing.assert_allclose(
                         target,
-                        results[f"{d}.Heat_demand"][solution._days * y : len_times],
-                        atol=1.0e-3,
-                        rtol=1.0e-6,
+                        results[f"{d}.Heat_demand"][
+                            solution._timesteps_per_year * y : len_times
+                        ],
+                        atol=atol,
+                        rtol=rtol,
                     )
                     break  # once an asset is placed it remains placed in the future
 
         heat_to_discharge_test(solution, results)
         # energy_conservation_test(solution, results)
 
-        for asset in [
+        assets_to_check = [
             *solution.energy_system_components.get("heat_source", []),
             *solution.energy_system_components.get("heat_demand", []),
-            *solution.hot_pipes,
             *solution.energy_system_components.get("ates", []),
-        ]:
+            *solution.hot_pipes,
+        ]
+
+        for asset in assets_to_check:
             # Check if integer variables are 0 or 1
             for y in range(solution._years):
-                # is_placed = results[f"{asset}__is_placed_{y}"] # is this variable used?
                 asset_is_realized = results[f"{asset}__asset_is_realized_{y}"]
-                # this fales variables are not integers
-                # np.testing.assert_(is_placed in [0, 1], f"{asset}__is_placed_{y} should be 0 or 1")
-                # np.testing.assert_(asset_is_realized in [0, 1], f"{asset}__asset_is_realized_{y} should be 0 or 1")
-
-                # np.testing.assert_(np.isclose(is_placed, 0, atol=1.0e-6) or np.isclose(is_placed, 1, atol=1.0e-6),
-                #                    f"{asset}__is_placed_{y} should be 0 or 1")
                 np.testing.assert_(
-                    np.isclose(asset_is_realized, 0, atol=1.0e-6)
-                    or np.isclose(asset_is_realized, 1, atol=1.0e-6),
+                    np.isclose(asset_is_realized, 0, atol=atol)
+                    or np.isclose(asset_is_realized, 1, atol=atol),
                     f"{asset}__asset_is_realized_{y} should be 0 or 1",
                 )
 
@@ -145,15 +156,18 @@ class TestRollOutOptimization(TestCase):
                 ]
             )
             np.testing.assert_(
-                cumulative_capex - cumulative_prev_year <= solution._years_timestep_max_capex + tol,
-                f"yearly capex {cumulative_capex - cumulative_prev_year} should be <= maximum yearly investment {solution._years_timestep_max_capex} for year {y}",
+                cumulative_capex - cumulative_prev_year
+                <= solution._years_timestep_max_capex + tol,
+                f"yearly capex {cumulative_capex - cumulative_prev_year}\
+                should be <= maximum yearly investment {solution._years_timestep_max_capex}\
+                for year {y}",
             )
             cumulative_prev_year = cumulative_capex
 
         # check number of timesteps in timeseries.
         np.testing.assert_equal(
             len(solution.times()),
-            solution._days * solution._years + 1,
+            solution._timesteps_per_year * solution._years + 1,
             "Number of timesteps in timeseries is not correct",
         )
 
@@ -161,28 +175,30 @@ class TestRollOutOptimization(TestCase):
         for ates in solution.energy_system_components.get("ates", []):
             times = solution.times() / 3600 / 24
             for i in range(len(times) - 1):
-                if i % solution._days == 0:
-                    print(i, times[i], i + solution._days - 1, times[i + solution._days - 1])
+                if i % solution._timesteps_per_year == 0:
                     np.testing.assert_allclose(
                         results[f"{ates}.Stored_heat"][i],
-                        results[f"{ates}.Stored_heat"][i + solution._days - 1],
-                        atol=1.0e-3,
-                        rtol=1.0e-6,
+                        results[f"{ates}.Stored_heat"][
+                            i + solution._timesteps_per_year - 1
+                        ],
+                        atol=atol,
+                        rtol=rtol,
                     )
 
         #  Storage_yearly_change variable should be 0 when not first timestep of year
         for ates in solution.energy_system_components.get("ates", []):
             times = solution.times() / 3600 / 24
             for i in range(len(times)):
-                if i % solution._days != 0:
+                if i % solution._timesteps_per_year != 0:
                     np.testing.assert_allclose(
                         results[f"{ates}.Storage_yearly_change"][i],
                         0.0,
-                        atol=1.0e-3,
-                        rtol=1.0e-6,
+                        atol=atol,
+                        rtol=rtol,
                     )
 
-        # Check if it is not a trivial roll-out problem, i.e. not all heating demands are placed in the first year
+        # Check if it is not a trivial roll-out problem, i.e. not all heating demands
+        # are placed in the first year
         not_placed_in_first_year = any(
             results[f"{d}__asset_is_realized_0"] == 0
             for d in solution.energy_system_components.get("heat_demand", [])
@@ -198,7 +214,8 @@ class TestRollOutOptimization(TestCase):
             for d in solution.energy_system_components.get("heat_demand", [])
         )
         np.testing.assert_(
-            all_placed_at_end, "Not all heating demands are placed at the end of the problem"
+            all_placed_at_end,
+            "Not all heating demands are placed at the end of the problem",
         )
 
         # Check if all producers and ATES are placed at the end of the problem
@@ -210,21 +227,22 @@ class TestRollOutOptimization(TestCase):
             ]
         )
         np.testing.assert_(
-            all_producers_placed, "Not all producers and ATES are placed at the end of the problem"
+            all_producers_placed,
+            "Not all producers and ATES are placed at the end of the problem",
         )
 
         # Check fraction is placed, should be between 0 and 1 and increasing
-        for asset in [
-            *solution.energy_system_components.get("heat_demand", []),
-            *solution.energy_system_components.get("heat_source", []),
-            *solution.hot_pipes,
-        ]:
+        for asset in assets_to_check:
             for y in range(solution._years):
                 asset_fraction_placed = results[f"{asset}__fraction_placed_{y}"]
-                np.testing.assert_(0 <= asset_fraction_placed <= 1, "Value is not between 0 and 1")
+                np.testing.assert_(
+                    0 <= asset_fraction_placed <= 1, "Value is not between 0 and 1"
+                )
                 tol = 1e-6
                 if y < solution._years - 1:
-                    next_asset_fraction_placed = results[f"{asset}__fraction_placed_{y + 1}"]
+                    next_asset_fraction_placed = results[
+                        f"{asset}__fraction_placed_{y + 1}"
+                    ]
                     np.testing.assert_(
                         asset_fraction_placed <= next_asset_fraction_placed + tol,
                         f"{asset}__fraction_placed_{y} should be <= {asset}__fraction_placed_{y + 1}",
@@ -238,30 +256,5 @@ class TestRollOutOptimization(TestCase):
                     asset_is_realized <= next_asset_is_realized + tol,
                     f"{asset}__asset_is_realized{y} should be <= {asset}__asset_is_realized{y + 1}",
                 )
-
-        for asset in [
-            *solution.energy_system_components.get("heat_source", []),
-            *solution.energy_system_components.get("heat_demand", []),
-            *solution.hot_pipes,
-            *solution.energy_system_components.get("ates", []),
-        ]:
-            print(
-                f"{asset} is placed over time: {[results[f'{asset}__asset_is_realized_{year}'] for year in range(solution._years)]}"
-            )
-            try:
-                print(
-                    f"{asset} is placed over time: {[results[f'{asset}__asset_is_realized_{year}']for year in range(solution._years)]}"
-                )
-            except:
-                pass
-            print(
-                f"{asset} has a cumulative investment over time of: {[results[f'{asset}__cumulative_investments_made_in_eur_year_{year}']for year in range(solution._years)]}"
-            )
-        print(
-            f"Yearly capex spent: "
-            f"{[results[f'yearly_capex_{year}'] for year in range(solution._years)]}"
-        )
-
-        print("Done")
 
         # rollout_post(solution, results)

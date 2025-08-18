@@ -87,29 +87,35 @@ class RollOutProblem(
         self._horizon = 30
         self._year_step_size = int(self._horizon / self._years)
         # TODO: timestep_size and _days can be removed eventually, particularly when averaging
-        # with peak day is used, however one needs to check where self._days and
+        # with peak day is used, however one needs to check where self._timesteps_per_year and
         # self._timestep_size is currently affecting the code
         self._timestep_size = 20 * 24
-        self._days = int(365 / (self._timestep_size / 24)) + 1
-        self._days = (
-            self._days + 1
+        self._timesteps_per_year = int(365 / (self._timestep_size / 24)) + 1
+        self._timesteps_per_year = (
+            self._timesteps_per_year + 1
         )  # + 1 because of inserting an 1-hour timestep at the beginning of the year,
-        # see the adapt_profile_for_initial_hour_timestep_size
+        # see adapt_profile_for_initial_hour_timestep_size()
 
+        # TODO: get yearly max capex from input
         self._yearly_max_capex = (
             6.0e6 if "yearly_max_capex" not in kwargs else kwargs["yearly_max_capex"]
         )
-        self._years_timestep_max_capex = self._yearly_max_capex * self._horizon / self._years
+        self._years_timestep_max_capex = (
+            self._yearly_max_capex * self._horizon / self._years
+        )
 
         # Fraction of how much heat of the total maximum the geo source can produce it should
-        # procude in every year that it is placed
+        # produce in every year that it is placed
         self._min_geo_utilization = 0.7
 
         self._save_json = True
 
-        self.heat_network_settings["minimum_velocity"] = 0.0  # important otherwise heatdemands
+        self.heat_network_settings["minimum_velocity"] = (
+            0.0  # important otherwise heatdemands
+        )
         # cannot be turned off for specific timesteps
 
+        # TODO: remove this once  these variables are created in HeatPhysicsMixin (is under developemnet in another PR)
         self._ates_is_charging_map = {}
         self.__ates_is_charging_var = {}
         self.__ates_is_charging_var_bounds = {}
@@ -138,7 +144,7 @@ class RollOutProblem(
 
     def parameters(self, ensemble_member):
         parameters = super().parameters(ensemble_member)
-        for pipe in self.hot_pipes:
+        for pipe in [*self.hot_pipes, *self.cold_pipes]:
             parameters[f"{pipe}.disconnectable"] = True
         for pipe in self.cold_pipes:
             parameters[f"{pipe}.disconnectable"] = True
@@ -147,11 +153,15 @@ class RollOutProblem(
     def read(self):
         super().read()
 
-        # adapt yearly profile to repeating year profile with desired time-step
-        # day timestep, averaged demand
-
+        # Create yearly profile with desired coarser time-step size by averaging over the hourly data
         adapt_hourly_profile_averages_timestep_size(self, self._timestep_size)
+
+        # A small, (1 hour) timestep is inserted as first time step. This is used in the
+        # rollout workflow to allow a yearly change in the storage of the ATES system.
+        # The first time step is used to accommodate the (yearly) initial storage level of the ATES.
         adapt_profile_for_initial_hour_timestep_size(self)
+
+        # Adapt the profiles to copy for the number of years
         adapt_profile_to_copy_for_number_of_years(self, self._years)
 
     def pre(self):
@@ -173,7 +183,10 @@ class RollOutProblem(
                 self.__asset_fraction_placed_var[asset_fraction_placed_var] = ca.MX.sym(
                     asset_fraction_placed_var
                 )
-                self.__asset_fraction_placed_var_bounds[asset_fraction_placed_var] = (0.0, 1.0)
+                self.__asset_fraction_placed_var_bounds[asset_fraction_placed_var] = (
+                    0.0,
+                    1.0,
+                )
 
         # TODO still needs to be checked if this is also properly added to financial mixing for
         # asset_is_realized for the doublets, then there is no need to do the asset fraction.
@@ -206,8 +219,13 @@ class RollOutProblem(
         for i in range(self._years):
             var_name = f"yearly_capex_{i}"
             self._yearly_capex_var[var_name] = ca.MX.sym(var_name)
-            self._yearly_capex_var_bounds[var_name] = (0, self._years_timestep_max_capex)
-            self._yearly_capex_var_nominals[var_name] = self._years_timestep_max_capex / 2.0
+            self._yearly_capex_var_bounds[var_name] = (
+                0,
+                self._years_timestep_max_capex,
+            )
+            self._yearly_capex_var_nominals[var_name] = (
+                self._years_timestep_max_capex / 2.0
+            )
 
     def path_goals(self):
         goals = super().goals().copy()
@@ -229,7 +247,9 @@ class RollOutProblem(
 
         goals.append(MinimizeCAPEXAssetsCosts(priority=1))
 
-        goals.append(MinimizeVariableOPEX(year_step_size=self._year_step_size, priority=1))
+        goals.append(
+            MinimizeVariableOPEX(year_step_size=self._year_step_size, priority=1)
+        )
 
         goals.append(MinimizeRolloutFixedOperationalCosts(priority=1))
 
@@ -239,9 +259,13 @@ class RollOutProblem(
     def __ates_doublet_sums(self, s):
         ates_N_doublets = self.parameters(0)[f"{s}.nr_of_doublets"]
         ates_doublet_sums = self.get_asset_is__realized_symbols(f"{s}_doublet_{1}")
-        ates_doublet_fraction_sums = self.get_asset_fraction__placed_symbols(f"{s}_doublet_{1}")
+        ates_doublet_fraction_sums = self.get_asset_fraction__placed_symbols(
+            f"{s}_doublet_{1}"
+        )
         for N in range(1, ates_N_doublets):
-            ates_doublet_sums += self.get_asset_is__realized_symbols(f"{s}_doublet_{N + 1}")
+            ates_doublet_sums += self.get_asset_is__realized_symbols(
+                f"{s}_doublet_{N + 1}"
+            )
             ates_doublet_fraction_sums += self.get_asset_fraction__placed_symbols(
                 f"{s}_doublet_{N + 1}"
             )
@@ -257,10 +281,8 @@ class RollOutProblem(
             ates_state_big_m = 2.0 * bounds[f"{s}.Stored_heat"][1]
 
             # For setting the initial state to 0 in the first year the ATES is placed
-            # PJPE: should the Storage_yearly_change also put to zero first timestep?
             constraints.append(((ates_state[0]) / ates_state_big_m, 0.0, 0.0))
 
-            # PJPE: testing with this ates heat_to_discharge okay for ates but fails for heatstorage at first timestep
             ates_state_big_m = 2.0 * bounds[f"{s}.Heat_ates"][1]
             ates_state = self.__state_vector_scaled(f"{s}.Heat_ates", ensemble_member)
             constraints.append(((ates_state[0]) / ates_state_big_m, 0.0, 0.0))
@@ -274,23 +296,37 @@ class RollOutProblem(
             asset_is_placed_vector = self.get_asset_is__realized_symbols(asset)
 
             constraints.append(
-                ((asset_is_placed_vector[1:] - asset_is_placed_vector[:-1]), 0.0, np.inf)
-            )
-
-        for asset, asset_fraction_placed_var in self._asset_fraction_placed_map.items():
-            asset_fraction_placed_vector = self.get_asset_fraction__placed_symbols(asset)
-            constraints.append(
                 (
-                    (asset_fraction_placed_vector[1:] - asset_fraction_placed_vector[:-1]),
+                    (asset_is_placed_vector[1:] - asset_is_placed_vector[:-1]),
                     0.0,
                     np.inf,
                 )
             )
 
-        for asset, asset_fraction_placed_name in self._asset_fraction_placed_map.items():
+        for asset, asset_fraction_placed_var in self._asset_fraction_placed_map.items():
+            asset_fraction_placed_vector = self.get_asset_fraction__placed_symbols(
+                asset
+            )
+            constraints.append(
+                (
+                    (
+                        asset_fraction_placed_vector[1:]
+                        - asset_fraction_placed_vector[:-1]
+                    ),
+                    0.0,
+                    np.inf,
+                )
+            )
+
+        for (
+            asset,
+            asset_fraction_placed_name,
+        ) in self._asset_fraction_placed_map.items():
             asset_fraction_placed = self.get_asset_fraction__placed_symbols(asset)
             asset_is_placed_name = self.get_asset_is__realized_symbols(asset)
-            constraints.append((asset_is_placed_name - asset_fraction_placed, -np.inf, 0.0))
+            constraints.append(
+                (asset_is_placed_name - asset_fraction_placed, -np.inf, 0.0)
+            )
 
         return constraints
 
@@ -299,7 +335,9 @@ class RollOutProblem(
 
         # Constraint to enforce matching demands if is_placed
         for d in self.energy_system_components.get("heat_demand", []):
-            heat_demand = self.__state_vector_scaled(f"{d}.Heat_demand", ensemble_member)
+            heat_demand = self.__state_vector_scaled(
+                f"{d}.Heat_demand", ensemble_member
+            )
             target = self.get_timeseries(f"{d}.target_heat_demand")
 
             big_m = 2.0 * np.max(target.values)
@@ -313,11 +351,16 @@ class RollOutProblem(
                     end_index += 1
                 else:
                     demand_states = demand_states[:-1]
-                asset_is_realized = self.extra_variable(f"{d}__asset_is_realized_{year}")
+                asset_is_realized = self.extra_variable(
+                    f"{d}__asset_is_realized_{year}"
+                )
                 # demand matching
                 constraints.append(
                     (
-                        (demand_states - asset_is_realized * target.values[start_index:end_index])
+                        (
+                            demand_states
+                            - asset_is_realized * target.values[start_index:end_index]
+                        )
                         / target.values[start_index:end_index],
                         0.0,
                         0.0,
@@ -327,6 +370,12 @@ class RollOutProblem(
         return constraints
 
     def __yearly_investment_constraints(self, ensemble_member):
+        """
+        Constraints to set the yearly maximum CAPEX. The CAPEX here is the cumulative investments of the
+        assets placed.
+
+        """
+
         constraints = []
 
         bounds = self.bounds()
@@ -378,11 +427,16 @@ class RollOutProblem(
             year_nominal = bounds[f"yearly_capex_{y}"][1]
             yearly_capex_var = self.extra_variable(f"yearly_capex_{y}", ensemble_member)
             if y == 0:
-                constraints.append(((yearly_capex_var - cumulative_capex) / year_nominal, 0.0, 0.0))
+                constraints.append(
+                    ((yearly_capex_var - cumulative_capex) / year_nominal, 0.0, 0.0)
+                )
             else:
                 constraints.append(
                     (
-                        (yearly_capex_var - (cumulative_capex - cumulative_capex_prev_year))
+                        (
+                            yearly_capex_var
+                            - (cumulative_capex - cumulative_capex_prev_year)
+                        )
                         / year_nominal,
                         0.0,
                         0.0,
@@ -393,6 +447,16 @@ class RollOutProblem(
         return constraints
 
     def __minimum_operational_constraints(self, ensemble_member):
+        """
+        Constraints to ensure that the geothermal source produces at least a minimum amount of heat
+        when it is placed. The minimum amount of heat is defined as a fraction of the maximum
+        heat that the geothermal source can produce in a year.
+
+        """
+
+        logger.error(
+            f"The function {self.__minimum_operational_constraints.__name__} is not tested yet."
+        )
         constraints = []
 
         bounds = self.bounds()
@@ -400,14 +464,20 @@ class RollOutProblem(
             if asset not in self.energy_system_components.get("geothermal_source", []):
                 continue
             geo_is_placed = self.get_asset_is__realized_symbols(asset)
-            heat_produced = self.__state_vector_scaled(f"{asset}.Heat_source", ensemble_member)
+            heat_produced = self.__state_vector_scaled(
+                f"{asset}.Heat_source", ensemble_member
+            )
             max_heat = bounds[f"{asset}.Heat_source"][1]
-            max_heat_year = max_heat * self._days
+            max_heat_year = max_heat * 8760  # 8760 hours in a year
 
             for year in range(self._years):
                 total_heat_year = 0
-                for i in range(self._days):
-                    total_heat_year += heat_produced[year * self._days + i]
+                for i in range(self._timesteps_per_year):
+                    dt = np.diff(self.io.times_sec / 3600)
+                    total_heat_year += (
+                        heat_produced[year * self._timesteps_per_year + i]
+                        * dt[year * self._timesteps_per_year + i]
+                    )
                 constraints.append(
                     (
                         total_heat_year / max_heat_year
@@ -419,18 +489,32 @@ class RollOutProblem(
         return constraints
 
     def __ates_yearly_initial_constraints(self, ensemble_member):
+        """
+        Constraints to set the initial state of an ATES at the first timestep of each year.
+        The storage_yearly_change variable is set to zero at all days except the first timestep of each year.
+        This variable allow the ATES to have a different initial heat storage levels at the beginning of each year.
+
+        """
+
         constraints = []
 
         for s in self.energy_system_components.get("ates", []):
-            ates_state = self.__state_vector_scaled(f"{s}.Storage_yearly_change", ensemble_member)
+            ates_state = self.__state_vector_scaled(
+                f"{s}.Storage_yearly_change", ensemble_member
+            )
             nominal = self.variable_nominal(f"{s}.Heat_ates")
             for i in range(len(self.times())):
-                if i % self._days != 0:
+                if i % self._timesteps_per_year != 0:
                     # set the storage_yearly_change to zero at all days except first timestep of each year
                     constraints.append(((ates_state[i]) / nominal, 0.0, 0.0))
         return constraints
 
     def __ates_yearly_periodic_constraints(self, ensemble_member):
+        """
+        Constraints to set a yearly periodic condition for an ATES so that the stored
+        heat at the end of the year eqauals that of the beginning of the year
+
+        """
         constraints = []
 
         for s in self.energy_system_components.get("ates", []):
@@ -438,11 +522,24 @@ class RollOutProblem(
             nominal = self.variable_nominal(f"{s}.Stored_heat")
             times = self.times() / 3600 / 24
             for i in range(len(times) - 1):
-                if i % self._days == 0:
-                    print(i, times[i], i + self._days - 1, times[i + self._days - 1])
+                if i % self._timesteps_per_year == 0:
+                    print(
+                        i,
+                        times[i],
+                        i + self._timesteps_per_year - 1,
+                        times[i + self._timesteps_per_year - 1],
+                    )
                     # set the storage first timestep equal to last of each year
                     constraints.append(
-                        ((ates_state[i] - ates_state[i + self._days - 1]) / nominal, 0.0, 0.0)
+                        (
+                            (
+                                ates_state[i]
+                                - ates_state[i + self._timesteps_per_year - 1]
+                            )
+                            / nominal,
+                            0.0,
+                            0.0,
+                        )
                     )
         return constraints
 
@@ -470,12 +567,16 @@ class RollOutProblem(
         return constraints
 
     def get_asset_is__realized_symbols(self, asset_name):
-        symbols = [f"{asset_name}__asset_is_realized_{year}" for year in range(self._years)]
+        symbols = [
+            f"{asset_name}__asset_is_realized_{year}" for year in range(self._years)
+        ]
 
         return self.extra_variable_vector(symbols, 0)
 
     def get_asset_fraction__placed_symbols(self, asset_name):
-        symbols = [f"{asset_name}__fraction_placed_{year}" for year in range(self._years)]
+        symbols = [
+            f"{asset_name}__fraction_placed_{year}" for year in range(self._years)
+        ]
         return self.extra_variable_vector(symbols, 0)
 
     def extra_variable_vector(self, symbols, ensemble_member):
@@ -542,16 +643,21 @@ class RollOutProblem(
     def __state_vector_scaled(self, variable, ensemble_member):
         canonical, sign = self.alias_relation.canonical_signed(variable)
         return (
-            self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
+            self.state_vector(canonical, ensemble_member)
+            * self.variable_nominal(canonical)
+            * sign
         )
 
     def solver_success(self, solver_stats, log_solver_failure_as_error):
-        success, log_level = super().solver_success(solver_stats, log_solver_failure_as_error)
+        success, log_level = super().solver_success(
+            solver_stats, log_solver_failure_as_error
+        )
 
         # Allow time-outs for CPLEX and CBC
         if (
             solver_stats["return_status"] == "time limit exceeded"
-            or solver_stats["return_status"] == "stopped - on maxnodes, maxsols, maxtime"
+            or solver_stats["return_status"]
+            == "stopped - on maxnodes, maxsols, maxtime"
         ):
 
             if self.objective_value > 1e10:
