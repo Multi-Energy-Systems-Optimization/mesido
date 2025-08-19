@@ -337,7 +337,7 @@ class TestEndScenarioSizing(TestCase):
             asset_state = self.solution.parameters(0)[f"{asset}.state"]
             asset_type = self.solution.esdl_assets[asset_id].asset_type
             if not (
-                (asset_type == "HeatingDemand") and (asset_state == 1.0)
+                (asset_type == "HeatingDemand") and (asset_state == esdl.AssetStateEnum.ENABLED)
             ):
                 obj += (
                         results[f"{solution._asset_fixed_operational_cost_map[asset]}"] * years

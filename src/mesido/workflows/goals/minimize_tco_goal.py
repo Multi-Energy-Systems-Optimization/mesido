@@ -6,8 +6,6 @@ from mesido.techno_economic_mixin import TechnoEconomicMixin
 
 from rtctools.optimization.goal_programming_mixin_base import Goal
 
-import esdl
-
 
 class MinimizeTCO(Goal):
     """
@@ -108,6 +106,7 @@ class MinimizeTCO(Goal):
         asset_types: Set[str],
         cost_type_map: Dict[str, float],
         options: Dict[str, Any],
+        ensemble_member: int
     ) -> MX:
         """
         Calculate the cost for given asset types using a specified cost map.
@@ -124,6 +123,7 @@ class MinimizeTCO(Goal):
             asset_types (Set[str]): Set of asset types to consider for cost calculation.
             cost_type_map (Dict[str, Any]): Mapping of assets to their respective costs.
             options (Dict[str, Any]): Options dictionary from energy_system_options
+            ensemble_member (int): The current ensemble member being considered in the optimization.
 
         Returns:
             MX object: CasADi expression with total cost for the given asset types.
@@ -138,7 +138,7 @@ class MinimizeTCO(Goal):
                 # this from optimization objective function. Though the HeatingDemand costs are
                 # added to the TCO while post-processing.
 
-                asset_state = optimization_problem.parameters(0)[f"{asset}.state"]
+                asset_state = optimization_problem.parameters(ensemble_member)[f"{asset}.state"]
 
                 if not (
                     (asset_type == "heat_demand") and (asset_state == 1.0)
@@ -191,6 +191,7 @@ class MinimizeTCO(Goal):
                 self.asset_type_maps[cost_type],
                 cost_type_maps[cost_type],
                 options,
+                ensemble_member
             )
 
         return obj
