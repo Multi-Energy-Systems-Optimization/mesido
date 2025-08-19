@@ -106,7 +106,7 @@ class MinimizeTCO(Goal):
         asset_types: Set[str],
         cost_type_map: Dict[str, float],
         options: Dict[str, Any],
-        ensemble_member: int
+        ensemble_member: int,
     ) -> MX:
         """
         Calculate the cost for given asset types using a specified cost map.
@@ -115,6 +115,8 @@ class MinimizeTCO(Goal):
         is considered in the computation of the annualized _annualized_capex_var.
         If `discounted_annualized_cost` is not defined or False, the operational and
         fixed operational costs are multiplied by the number_of_years.
+
+
 
         Args:
             optimization_problem (TechnoEconomicMixin): The optimization problem instance.
@@ -131,6 +133,16 @@ class MinimizeTCO(Goal):
         obj = 0.0
         for asset_type in asset_types:
             for asset in optimization_problem.energy_system_components.get(asset_type, []):
+                technical_lifetime = optimization_problem.parameters(0)[f"{asset}.technical_life"]
+                # FIXME: This is a temporary fix till in the esdl_heat_model the generic_modifiers
+                # PR is approved.
+                if not technical_lifetime > 0.0 and (
+                    "gas" in asset_type or "electricity" in asset_type
+                ):
+                    technical_lifetime = self.number_of_years
+                factor = self.number_of_years / technical_lifetime
+                if factor < 1.0:
+                    factor = 1.0
                 extra_var = optimization_problem.extra_variable(cost_type_map[asset])
 
                 # For the GROW workflow, we do not add any costs for the asset HeatingDemand in the
@@ -140,9 +152,7 @@ class MinimizeTCO(Goal):
 
                 asset_state = optimization_problem.parameters(ensemble_member)[f"{asset}.state"]
 
-                if not (
-                    (asset_type == "heat_demand") and (asset_state == 1.0)
-                ):
+                if not ((asset_type == "heat_demand") and (asset_state == 1.0)):
                     if options["discounted_annualized_cost"]:
                         # We only want the operational cost for a single year when we use
                         # annualized CAPEX.
@@ -191,7 +201,7 @@ class MinimizeTCO(Goal):
                 self.asset_type_maps[cost_type],
                 cost_type_maps[cost_type],
                 options,
-                ensemble_member
+                ensemble_member,
             )
 
         return obj

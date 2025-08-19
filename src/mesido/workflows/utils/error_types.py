@@ -58,7 +58,7 @@ def potential_error_to_error(network_check_type: Enum) -> None:
             MesidoAssetIssueType.HEAT_DEMAND_TYPE,
             MesidoAssetIssueType.ASSET_PROFILE_CAPABILITY,
             MesidoAssetIssueType.HEAT_EXCHANGER_TEMPERATURES,
-            MesidoAssetIssueType.HEAT_DEMAND_STATE
+            MesidoAssetIssueType.HEAT_DEMAND_STATE,
         ],
         # Example of extra error types / groups that can be added. This one is not used yet.
         CUSTOM_ERRORS: [MesidoAssetIssueType.ASSET_PROFILE_CAPABILITY],

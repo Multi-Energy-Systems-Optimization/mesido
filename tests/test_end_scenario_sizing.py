@@ -115,6 +115,7 @@ class TestEndScenarioSizing(TestCase):
         function run_end_scenario_sizing with staged_pipe_optimization to False should have
         comparable computation times.
 
+
         Missing:
         - Link ATES t0 utilization to state of charge at end of year for optimizations over one
         year.
@@ -334,18 +335,13 @@ class TestEndScenarioSizing(TestCase):
             # part of the TCO calculation. This is because we do not size heating demand assets in
             # the optimization
             asset_id = self.solution.esdl_asset_name_to_id_map[asset]
-            asset_state = self.solution.parameters(0)[f"{asset}.state"]
+            asset_state = self.solution.esdl_assets[asset_id].attributes["state"]
             asset_type = self.solution.esdl_assets[asset_id].asset_type
             if not (
                 (asset_type == "HeatingDemand") and (asset_state == esdl.AssetStateEnum.ENABLED)
             ):
-                obj += (
-                        results[f"{solution._asset_fixed_operational_cost_map[asset]}"] * years
-                )
-                obj += (
-                    results[f"{solution._asset_variable_operational_cost_map[asset]}"]
-                    * years
-                )
+                obj += results[f"{solution._asset_fixed_operational_cost_map[asset]}"] * years
+                obj += results[f"{solution._asset_variable_operational_cost_map[asset]}"] * years
                 obj += results[f"{solution._asset_investment_cost_map[asset]}"]
                 obj += results[f"{solution._asset_installation_cost_map[asset]}"]
 
