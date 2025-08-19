@@ -188,45 +188,27 @@ class GasElectProblem(
             solver_stats = self.solver_stats
             self._write_json_output(results, parameters, bounds, aliases, solver_stats)
 
-    def electricity_cable_classes(self, p):
-
-        if (
-            self.esdl_assets[self.esdl_asset_name_to_id_map[p]].attributes["state"]
-            == AssetStateEnum.ENABLED
-        ):
+    def electricity_cable_classes(self, c):
+        cable_state = self.parameters(0)[f"{c}.state"]
+        if cable_state == 0:  # Disabled
+            cable_list = [
+                CableClass(name="None", maximum_current=0.0, resistance=0.0, investment_costs=0.0),
+            ]
+        elif cable_state == 1:  # Enabled
             cable_list = [
                 CableClass(
-                    name="CableType1", maximum_current=11000.0, resistance=3.0, investment_costs=1.0
+                    name="CableType1", maximum_current=11000.0, resistance=3.0, investment_costs=60000.0
                 ),
             ]
-
-        elif (
-            self.esdl_assets[self.esdl_asset_name_to_id_map[p]].attributes["state"]
-            == AssetStateEnum.DISABLED
-        ):
-            cable_list = [
-                CableClass(name="None", maximum_current=0.0, resistance=0.0, investment_costs=0.0),
-            ]
-
-        elif (
-            self.esdl_assets[self.esdl_asset_name_to_id_map[p]].attributes["state"]
-            == AssetStateEnum.OPTIONAL
-        ):
+        elif cable_state == 2:  # Optional
             cable_list = [
                 CableClass(name="None", maximum_current=0.0, resistance=0.0, investment_costs=0.0),
                 CableClass(
-                    name="CableType1", maximum_current=11000.0, resistance=3.0, investment_costs=1.0
+                    name="CableType1", maximum_current=11000.0, resistance=3.0, investment_costs=60000.0
                 ),
             ]
 
         return cable_list
-
-    def bounds(self):
-        bounds = super().bounds()
-        for c in self.energy_system_components.get("electricity_cable", []):
-            bounds.update({f"{c}__investment_cost": (0.0, np.inf)})
-
-        return bounds
 
 
 @main_decorator

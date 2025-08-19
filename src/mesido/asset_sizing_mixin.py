@@ -2345,7 +2345,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
     def __cable_class_to_results(self):
         """
-        This functions writes all resulting pipe class results to a dict.
+        This functions writes all resulting electricity cable class results to a dict.
         """
         for ensemble_member in range(self.ensemble_size):
             results = self.extract_results(ensemble_member)
@@ -2408,7 +2408,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
     def __cable_max_current_and_resistance_to_parameters(self):
         """
-        This function is used to update the parameters object with the results of the pipe class
+        This function is used to update the parameters object with the results of the cable class
         optimization
         """
         for ensemble_member in range(self.ensemble_size):

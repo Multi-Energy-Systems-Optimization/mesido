@@ -95,12 +95,15 @@ class TestGasElect(TestCase):
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
 
-            def electricity_cable_classes(self, p):
-
-                if (
-                    self.esdl_assets[self.esdl_asset_name_to_id_map[p]].attributes["state"]
-                    == AssetStateEnum.ENABLED
-                ):
+            def electricity_cable_classes(self, c):
+                cable_state = self.parameters(0)[f"{c}.state"]
+                if cable_state == 0:  # Disabled
+                    cable_list = [
+                        CableClass(
+                            name="None", maximum_current=0.0, resistance=0.0, investment_costs=0.0
+                        ),
+                    ]
+                elif cable_state == 1:  # Enabled
                     cable_list = [
                         CableClass(
                             name="CableType1",
@@ -109,21 +112,7 @@ class TestGasElect(TestCase):
                             investment_costs=1.0,
                         ),
                     ]
-
-                elif (
-                    self.esdl_assets[self.esdl_asset_name_to_id_map[p]].attributes["state"]
-                    == AssetStateEnum.DISABLED
-                ):
-                    cable_list = [
-                        CableClass(
-                            name="None", maximum_current=0.0, resistance=0.0, investment_costs=0.0
-                        ),
-                    ]
-
-                elif (
-                    self.esdl_assets[self.esdl_asset_name_to_id_map[p]].attributes["state"]
-                    == AssetStateEnum.OPTIONAL
-                ):
+                elif cable_state == 2:  # Optional
                     cable_list = [
                         CableClass(
                             name="None", maximum_current=0.0, resistance=0.0, investment_costs=0.0

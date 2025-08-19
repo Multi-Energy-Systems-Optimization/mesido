@@ -18,18 +18,15 @@ import numpy as np
 root_folder = os.path.join(str(Path(__file__).resolve().parent.parent.parent.parent), "tests")
 sys.path.insert(1, root_folder)
 
-# from utils_tests import (
-#     demand_matching_test,
-#     electric_power_conservation_test,
-#     energy_conservation_test,
-#     heat_to_discharge_test,
-#     gas_pipes_head_loss_test,
-# )
+from utils_tests import (
+    demand_matching_test,
+    electric_power_conservation_test,
+    energy_conservation_test,
+    heat_to_discharge_test,
+    gas_pipes_head_loss_test,
+)
 
 if __name__ == "__main__":
-    import time
-
-    start_time = time.time()
 
     class GasElectProblemModified(GasElectProblem):
         def __init__(self, *args, **kwargs):
@@ -46,12 +43,15 @@ if __name__ == "__main__":
 
             return options
 
-        def electricity_cable_classes(self, p):
-
-            if (
-                self.esdl_assets[self.esdl_asset_name_to_id_map[p]].attributes["state"]
-                == AssetStateEnum.ENABLED
-            ):
+        def electricity_cable_classes(self, c):
+            cable_state = self.parameters(0)[f"{c}.state"]
+            if cable_state == 0:  # Disabled
+                cable_list = [
+                    CableClass(
+                        name="None", maximum_current=0.0, resistance=0.0, investment_costs=0.0
+                    ),
+                ]
+            elif cable_state == 1:  # Enabled
                 cable_list = [
                     CableClass(
                         name="CableType1",
@@ -60,21 +60,7 @@ if __name__ == "__main__":
                         investment_costs=60000.0,
                     ),
                 ]
-
-            elif (
-                self.esdl_assets[self.esdl_asset_name_to_id_map[p]].attributes["state"]
-                == AssetStateEnum.DISABLED
-            ):
-                cable_list = [
-                    CableClass(
-                        name="None", maximum_current=0.0, resistance=0.0, investment_costs=0.0
-                    ),
-                ]
-
-            elif (
-                self.esdl_assets[self.esdl_asset_name_to_id_map[p]].attributes["state"]
-                == AssetStateEnum.OPTIONAL
-            ):
+            elif cable_state == 2:  # Optional
                 cable_list = [
                     CableClass(
                         name="None", maximum_current=0.0, resistance=0.0, investment_costs=0.0
@@ -100,12 +86,12 @@ if __name__ == "__main__":
     results = solution.extract_results()
     parameters = solution.parameters(0)
 
-    # # Test: Utils_tests
-    # demand_matching_test(solution, results)
-    # energy_conservation_test(solution, results)
-    # heat_to_discharge_test(solution, results)
-    # electric_power_conservation_test(solution, results)
-    # gas_pipes_head_loss_test(solution, results)
+    # Test: Utils_tests
+    demand_matching_test(solution, results)
+    energy_conservation_test(solution, results)
+    heat_to_discharge_test(solution, results)
+    electric_power_conservation_test(solution, results)
+    gas_pipes_head_loss_test(solution, results)
 
     # Tests: Check if heat target is matched by resulting heat demands and
     # they are supplied by conversion elements
@@ -118,11 +104,31 @@ if __name__ == "__main__":
         total_heat_target += solution.get_timeseries(f"{asset}.target_heat_demand").values
     for asset in [*solution.energy_system_components.get("heat_source", [])]:
         total_heat_converted += results[f"{asset}.Heat_flow"]
-    # print("Total Heat Demand: ", np.sum(total_heat_demand))
-    # print("Total Heat Target: ", np.sum(total_heat_target))
-    # print("Total Heat Converted: ", np.sum(total_heat_converted))
+    print("Total Heat Demand: ", np.sum(total_heat_demand))
+    print("Total Heat Target: ", np.sum(total_heat_target))
+    print("Total Heat Converted: ", np.sum(total_heat_converted))
     np.testing.assert_allclose(total_heat_demand, total_heat_target)
     np.testing.assert_allclose(total_heat_converted, total_heat_demand)
+
+    # Check gas consumption vs production balance
+    total_gas_demand_g = [0] * len(np.diff(solution.times()))
+    total_gas_source_g = [0] * len(np.diff(solution.times()))
+    for asset_name in [*solution.energy_system_components.get("gas_boiler", [])]:
+        for ii in range(1, len(results[f"{asset_name}.Gas_demand_mass_flow"])):
+            total_gas_demand_g[ii - 1] += (
+                results[f"{asset_name}.Gas_demand_mass_flow"][ii]
+                * np.diff(solution.times())[ii - 1]
+            )
+
+    for asset_name in [*solution.energy_system_components.get("gas_source", [])]:
+        for ii in range(1, len(results[f"{asset_name}.Gas_source_mass_flow"])):
+            total_gas_source_g[ii - 1] += (
+                results[f"{asset_name}.Gas_source_mass_flow"][ii]
+                * np.diff(solution.times())[ii - 1]
+            )
+    print("Total Gas Source: ", total_gas_source_g)
+    print("Total Gas Demand: ", total_gas_demand_g)
+    # np.testing.assert_allclose(total_gas_source_g, total_gas_demand_g)
 
     # Check cables
     print("====================================")
@@ -165,21 +171,26 @@ if __name__ == "__main__":
     print("========Conversion Assets==============")
     print("=======================================")
     industries = ["Borselle", "Vlaardingen", "Beverwijk", "Eemshaven", "Maasbracht"]
+    total_power_heat_demanded = [0.0] * solution.times()[1:]
+    total_power_heat_converted = [0.0] * solution.times()[1:]
     for industry in industries:
         print(f"======{industry}======")
         heatflow_hp_gb = [0.0] * solution.times()[1:]
         for asset in [*solution.energy_system_components.get("heat_source", [])]:
             if industry in asset:
-                heatflow_hp_gb += results[f"{asset}.Heat_flow"][1:]
-                print(asset, results[f"{asset}.Heat_flow"][1:])
+                heatflow_hp_gb += results[f"{asset}.Heat_source"][1:]
+                total_power_heat_converted += heatflow_hp_gb
+                print(asset, results[f"{asset}.Heat_source"][1:])
 
         heatflow_hd = [0.0] * solution.times()[1:]
         for asset in [*solution.energy_system_components.get("heat_demand", [])]:
             if industry in asset:
                 heatflow_hd += results[f"{asset}.Heat_flow"][1:]
+                total_power_heat_demanded += heatflow_hd
                 print(asset, results[f"{asset}.Heat_flow"][1:])
         np.testing.assert_allclose(heatflow_hp_gb, heatflow_hd)
-
+    print(f"---> Total Power Heat Converted: {total_power_heat_converted}")
+    print(f"---> Total Power Heat Demanded: {total_power_heat_demanded}")
     # Check Electricity Sources
     print("===========================================")
     print("========Electricity Producers==============")
@@ -193,29 +204,33 @@ if __name__ == "__main__":
         "Eemshaven",
         "Maasbracht",
     ]
+    total_elec_power_prod = [0.0] * solution.times()[1:]
     for elec_producer in elec_producers:
         # print(f"======{elec_producer}======")
         elec_prod = [0.0] * solution.times()[1:]
         for asset in [*solution.energy_system_components.get("electricity_source", [])]:
             if elec_producer in asset:
-                elec_prod += results[f"{asset}.Electricity_source"][1:]
                 print(asset, results[f"{asset}.Electricity_source"][1:])
+                elec_prod += results[f"{asset}.Electricity_source"][1:]
+                total_elec_power_prod += elec_prod
+    print(f"---> Total Producer Electricity Power: {total_elec_power_prod}")
 
     # Check Gas Sources
     print("===================================")
     print("========Gas Producers==============")
     print("===================================")
     gas_producers = ["Borselle", "Maasvlakte", "DenHelder", "Eemshaven"]
-    energy_content = parameters[
-        "GasHeater_Beverwijk.energy_content"
-    ]  # Currently GasSource has no energy_content attribute
+    energy_content = parameters["GasHeater_Beverwijk.energy_content"]  # Currently GasSource has no energy_content attribute
+    total_gas_power_prod = [0.0] * solution.times()[1:]
     for gas_producer in gas_producers:
         # print(f"======{gas_producer}======")
         gas_prod = [0.0] * solution.times()[1:]
         for asset in [*solution.energy_system_components.get("gas_source", [])]:
             if gas_producer in asset:
-                gas_prod += results[f"{asset}.GasOut.mass_flow"][1:] / 1000.0 * energy_content
                 print(asset, results[f"{asset}.GasOut.mass_flow"][1:] / 1000.0 * energy_content)
+                gas_prod += results[f"{asset}.GasOut.mass_flow"][1:] / 1000.0 * energy_content
+                total_gas_power_prod += gas_prod
+    print(f"---> Total Producer Gas Power: {total_gas_power_prod}")
 
 # Figure
 # Create a figure and a single subplot
