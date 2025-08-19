@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import calendar
+import copy
 import datetime
 import logging
 import operator
 import sys
+from time import strftime
 
 import numpy as np
 
@@ -12,8 +15,8 @@ from rtctools.data.storage import DataStore
 # TODO: Ignore or include this header import based on the decision of leap year's inclusion in
 #  extension of profile. Should be adjusted based on the decisions
 #  made for the adapt_profile.py
-# from dateutil.relativedelta import relativedelta
-
+from dateutil.relativedelta import relativedelta
+import pandas as pd
 
 logger = logging.getLogger("WarmingUP-MPC")
 logger.setLevel(logging.INFO)
@@ -249,6 +252,7 @@ def adapt_profile_to_copy_for_number_of_years(problem, number_of_years: int):
     else:
         sys.exit("The profile should be a year profile.")
 
+    org_timeseries = org_timeseries[1400:1600]
     for ensemble_member in range(problem.ensemble_size):
         parameters = problem.parameters(ensemble_member)
 
@@ -258,37 +262,133 @@ def adapt_profile_to_copy_for_number_of_years(problem, number_of_years: int):
         else:
             new_date_times = org_timeseries[:-1].copy()
 
-        for year in range(1, number_of_years):
-            if year == number_of_years - 1 or skip_last_day is False:
-                # This peice of code accounts for leap day
-                new_date_times.extend(
-                    [i + year * datetime.timedelta(days=365) for i in org_timeseries]
-                )
-                # TODO: Check the code below since it removes the leap day. Decision to be made
-                #  to whether or not include leap year
-                # new_date_times.extend(
-                #     [i + relativedelta(years=year) for i in org_timeseries]
-                # )
-            else:
-                # This peice of code accounts for leap day
-                new_date_times.extend(
-                    [i + year * datetime.timedelta(days=365) for i in org_timeseries[:-1]]
-                )
-                # TODO: Check the code below since it removes the leap day.
-                #  Decision to be made to whether or not include leap year
-                # new_date_times.extend(
-                #     [i + relativedelta(years=year) for i in org_timeseries[:-1]]
-                # )
+        # for year in range(1, number_of_years):
+        #     if year == number_of_years - 1 or skip_last_day is False:
+        #         # This peice of code accounts for leap day
+        #         # new_date_times.extend(
+        #         #     [i + year * datetime.timedelta(days=365) for i in org_timeseries]
+        #         # )
+        #         # TODO: Check the code below since it removes the leap day. Decision to be made
+        #         #  to whether or not include leap year
+        #         new_date_times.extend(
+        #             [i + relativedelta(years=year) for i in org_timeseries]
+        #         )
+        #     else:
+        #         # This peice of code accounts for leap day
+        #         # new_date_times.extend(
+        #         #     [i + year * datetime.timedelta(days=365) for i in org_timeseries[:-1]]
+        #         # )
+        #         # TODO: Check the code below since it removes the leap day.
+        #         #  Decision to be made to whether or not include leap year
+        #         new_date_times.extend(
+        #             [i + relativedelta(years=year) for i in org_timeseries[:-1]]
+        #         )
+
+        years_to_extend = [org_timeseries[0].year + i for i in range(1, number_of_years)]
+        org_timeseries_copy = copy.deepcopy(org_timeseries)
+        len_org_timeseries = len(org_timeseries)
+
+        # If not a full profile (i.e. for an entire year)
+        hourly_time_steps_non_leap_year = 24*365
+        hourly_time_steps_leap_year = hourly_time_steps_non_leap_year + 24
+        if len_org_timeseries not in [hourly_time_steps_leap_year, hourly_time_steps_non_leap_year]:
+
+            logger.warning("Profile not set for a full-year, extending it to one year without "
+                           "filling values")
+
+            for year in years_to_extend:
+                # Profiles can be at any time instant in a year, meaning that it has offset.
+                start_offset = org_timeseries[0].strftime("%m-%d %H:%M")
+                end_offset = org_timeseries[-1].strftime("%m-%d %H:%M")
+
+                # With the knowledge of the actual full year datetime series, extract the required
+                # by masking/slicing
+                year_start = pd.Timestamp(f"{year}-01-01 00:00", tz=org_timeseries[0].tzinfo)
+                year_end = pd.Timestamp(f"{year}-12-31 23:00", tz=org_timeseries[0].tzinfo)
+                full_year = pd.date_range(year_start, year_end, freq="H",tz=datetime.timezone.utc)
+                mask = (full_year.strftime("%m-%d %H:%M") >= start_offset) & \
+                       (full_year.strftime("%m-%d %H:%M") <= end_offset)
+                target_dt = full_year[mask]
+                new_date_times.extend(list(target_dt.to_pydatetime()))
+
+        # For a full year profile, extend as usual
+        else:
+            for year in years_to_extend:
+                start = pd.Timestamp(org_timeseries_copy[0].replace(year=year))
+                end = pd.Timestamp(org_timeseries_copy[-1].replace(year=year))
+                target_date_range = pd.date_range(start, end, freq="H")
+                new_date_times.extend(list(target_date_range.to_pydatetime()))
+
 
         new_date_times = np.asarray(new_date_times)
         parameters["times"] = [x.timestamp() for x in new_date_times]
 
         for var_name in problem.io.get_timeseries_names():
             old_data = problem.io.get_timeseries(var_name)[1]
-            if skip_last_day:
-                new_data = np.append(np.tile(old_data[:-1], number_of_years), old_data[-1])
+            old_data = old_data[1400:1600]
+            # if skip_last_day:
+            #     new_data = np.append(np.tile(old_data[:-1], number_of_years), old_data[-1])
+            # else:
+            #     new_data = np.tile(old_data, number_of_years)
+            len_old_data = len(old_data)
+            new_data = old_data
+            if len_old_data not in [hourly_time_steps_leap_year, hourly_time_steps_non_leap_year]:
+                for i, year in enumerate(years_to_extend):
+                    # Profiles can be at any time instant in a year, meaning that it has offset.
+                    start_offset = org_timeseries[0].strftime("%m-%d %H:%M")
+                    end_offset = org_timeseries[-1].strftime("%m-%d %H:%M")
+                    # With the knowledge of the actual full year datetime series, extract the required
+                    # by masking/slicing
+                    year_start = pd.Timestamp(f"{year}-01-01 00:00", tz=org_timeseries[0].tzinfo)
+                    year_end = pd.Timestamp(f"{year}-12-31 23:00", tz=org_timeseries[0].tzinfo)
+                    full_year = pd.date_range(year_start, year_end, freq="H",
+                                              tz=datetime.timezone.utc)
+                    mask = (full_year.strftime("%m-%d %H:%M") >= start_offset) & \
+                           (full_year.strftime("%m-%d %H:%M") <= end_offset)
+
+                    if calendar.isleap(year):
+                        mask_leap_day = (full_year.strftime("%m-%d %H:%M") >= "02-29 00:00") & \
+                           (full_year.strftime("%m-%d %H:%M") <= "02-29 23:00")
+                        idx_leap_day_start = np.where(mask_leap_day==True)[0][0]
+                        idx_leap_day_end = np.where(mask_leap_day==True)[0][-1] + 1
+                        idx_mask_start = np.where(mask==True)[0][0]
+                        idx_mask_end = np.where(mask==True)[0][-1]
+
+                        # If values fall within leap day
+                        if any(mask_leap_day):
+                            new_data = np.zeros(len(old_data)+24)
+                            new_data[:idx_leap_day_start - idx_mask_start] = old_data[:idx_leap_day_start - idx_mask_start]
+                            new_data[idx_leap_day_end - idx_mask_start:] = old_data[idx_leap_day_start - idx_mask_start : ]
+
+                            x_first = np.linspace(0, 1, len(old_data[:idx_leap_day_start - idx_mask_start]))
+                            last_index = min(24, len(old_data) - (idx_leap_day_end - idx_mask_start))
+                            x_last = np.linspace(0, 1, len(old_data[:idx_leap_day_end - idx_mask_start]))
+                            x_target = np.linspace(0, 1, 24)
+
+                            A_first_interp = np.interp(x_target, x_first, old_data[:idx_leap_day_start - idx_mask_start])
+                            A_last_interp = np.interp(x_target, x_last, old_data[idx_leap_day_start - idx_mask_start:idx_leap_day_start - idx_mask_start + last_index])
+
+                            # Average them
+                            middle = (A_first_interp + A_last_interp) / 2
+
+                            new_data[idx_leap_day_start - idx_mask_start : idx_leap_day_end - idx_mask_start] = np.mean(old_data[:idx_leap_day_start - idx_mask_start], old_data[idx_leap_day_start - idx_mask_start: idx_leap_day_start - idx_mask_start + 24])
+                        leap_day_values = old_data[np.where(mask)[0]]
+                        # If values does not fall within leap day
+
+                    else:
+                        pass
+            # For a full year profile
             else:
-                new_data = np.tile(old_data, number_of_years)
+                for i, year in enumerate(years_to_extend):
+                    if calendar.isleap(year):
+                        pass
+                    else:
+                        if skip_last_day:
+                            new_data = np.append(np.tile(old_data[:-1], number_of_years), old_data[-1])
+                        else:
+                            new_data = np.tile(old_data, number_of_years)
+
+
             new_datastore.set_timeseries(
                 variable=var_name,
                 datetimes=new_date_times,

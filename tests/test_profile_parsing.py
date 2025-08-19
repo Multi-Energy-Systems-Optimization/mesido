@@ -460,8 +460,8 @@ class TestProfileLoading(unittest.TestCase):
 
 if __name__ == "__main__":
     # unittest.main()
-    a = TestProfileLoading()
-    b = TestPotentialErrors()
+    # a = TestProfileLoading()
+    # b = TestPotentialErrors()
     c = TestProfileUpdating()
     # b.test_asset_potential_errors()
     # a.test_loading_from_influx()
