@@ -10,6 +10,7 @@
 
 ## Fixed
 - Bug: Add 3 port heat pump to elect demand path constraint
+- Bug: Replaced one pipe with all pipes in head loss testing in test_end_scenario_sizing.py 
 
 
 # [0.1.13] - 2025-06-25
