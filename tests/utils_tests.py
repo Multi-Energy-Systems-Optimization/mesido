@@ -155,6 +155,7 @@ def heat_to_discharge_test(solution, results):
             results[f"{d}.HeatOut.Heat"], results[f"{d}.Q"] * rho * cp * supply_t
         )
 
+    supply_temp_profiles = []
     for d in solution.energy_system_components.get("heat_source", []):
         cp = solution.parameters(0)[f"{d}.cp"]
         rho = solution.parameters(0)[f"{d}.rho"]
@@ -168,6 +169,10 @@ def heat_to_discharge_test(solution, results):
         # return_t = solution.parameters(0)[f"{d}.T_return"]
         supply_t, return_t, dt = _get_component_temperatures(solution, results, d)
 
+        temp_profile, _, _, _ = solution.get_out_port_carrier_temp_profile(solution.parameters(0), d, "heat_source")
+        if temp_profile is not None:
+            supply_t = temp_profile.values
+            supply_temp_profiles.append(temp_profile.values)
         print(d, max(abs(results[f"{d}.HeatOut.Heat"] - results[f"{d}.Q"] * rho * cp * supply_t)))
         np.testing.assert_allclose(
             results[f"{d}.HeatOut.Heat"],
@@ -282,7 +287,9 @@ def heat_to_discharge_test(solution, results):
         rho = solution.parameters(0)[f"{p}.rho"]
         carrier_id = solution.parameters(0)[f"{p}.carrier_id"]
         indices = results[f"{p}.Q"] > 0
-        if f"{carrier_id}_temperature" in results.keys():
+        if supply_temp_profiles:
+            temperature = max(temp for prof in supply_temp_profiles for temp in prof)
+        elif f"{carrier_id}_temperature" in results.keys():
             temperature = np.clip(
                 results[f"{carrier_id}_temperature"][indices],
                 solution.parameters(0)[f"{p}.T_ground"],

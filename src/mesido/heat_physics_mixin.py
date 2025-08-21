@@ -668,6 +668,30 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         optimized demand insulation class is available (yet), a `KeyError` is returned.
         """
         return self.__demand_insulation_class_result[demand_insulation]
+    
+    def get_out_port_carrier_temp_profile(self, parameters, asset_name, asset_type):
+        # TODO: modify profile parser so the temperature profile is not called a price profile.
+        # TODO: modify this and the profile parser to incorporate the esdl option to use power instead of temperature.
+        # TODO: the start/end indices are needed for a very specific problem-times slicing case. Modify the way problems are sliced to remove this.
+        carriers = self.esdl_carriers
+        temp_out_profile = None
+        temp_out_start = None
+        temp_out_end = None
+        carrier_id_types = {
+            "heat_source" : ".T_supply_id",
+            "heat_pipe" : ".carrier_id"
+        }
+        for carrier_id in carriers.keys():
+            if carriers[carrier_id]["id_number_mapping"] == parameters[f"{asset_name}{carrier_id_types[asset_type]}"]:
+                sup_carrier_name = carriers[carrier_id]["name"]
+        try:
+            temp_out_profile = self.get_timeseries(f"{sup_carrier_name}.price_profile")
+            temp_out_start = int(np.where(self.get_timeseries(f"{sup_carrier_name}.price_profile").times == self.times()[0])[0])
+            temp_out_end = int(np.where(self.get_timeseries(f"{sup_carrier_name}.price_profile").times == self.times()[-1])[0])
+        except KeyError:
+            pass
+        
+        return temp_out_profile, sup_carrier_name, temp_out_start, temp_out_end
 
     @property
     def extra_variables(self):
@@ -1518,7 +1542,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             )
 
             # Check to see if the out carrier has a temperature profile assigned to it.
-            temp_out_profile, _, _, _ = self.__get_out_port_carrier_temp_profile(parameters, s, "heat_source")
+            temp_out_profile, _, _, _ = self.get_out_port_carrier_temp_profile(parameters, s, "heat_source")
 
             if temp_out_profile is None:
                 if len(supply_temperatures) == 0:
@@ -1579,7 +1603,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 else 2.0 * self.bounds()[f"{s}.Heat_source"][1] * parameters[f"{s}.T_supply"] / dt
             )
 
-            temp_out_profile, sup_carrier_name, temp_out_start, temp_out_end = self.__get_out_port_carrier_temp_profile(parameters, s, "heat_source")
+            temp_out_profile, sup_carrier_name, temp_out_start, temp_out_end = self.get_out_port_carrier_temp_profile(parameters, s, "heat_source")
 
             if temp_out_profile is not None: # Case where the out carrier has a temp profile assigned to it.
                 heat_out_vector = self.__state_vector_scaled(f"{s}.HeatOut.Heat", ensemble_member)
@@ -1597,30 +1621,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 
         return constraints
     
-    def __get_out_port_carrier_temp_profile(self, parameters, asset_name, asset_type):
-        # TODO: modify profile parser so the temperature profile is not called a price profile.
-        # TODO: modify this and the profile parser to incorporate the esdl option to use power instead of temperature.
-        # TODO: the start/end indices are needed for a very specific problem-times slicing case. Modify the way problems are sliced to remove this.
-        carriers = self.esdl_carriers
-        temp_out_profile = None
-        temp_out_start = None
-        temp_out_end = None
-        carrier_id_types = {
-            "heat_source" : ".T_supply_id",
-            "heat_pipe" : ".carrier_id"
-        }
-        for carrier_id in carriers.keys():
-            if carriers[carrier_id]["id_number_mapping"] == parameters[f"{asset_name}{carrier_id_types[asset_type]}"]:
-                sup_carrier_name = carriers[carrier_id]["name"]
-        try:
-            temp_out_profile = self.get_timeseries(f"{sup_carrier_name}.price_profile")
-            temp_out_start = int(np.where(self.get_timeseries(f"{sup_carrier_name}.price_profile").times == self.times()[0])[0])
-            temp_out_end = int(np.where(self.get_timeseries(f"{sup_carrier_name}.price_profile").times == self.times()[-1])[0])
-        except KeyError:
-            pass
-        
-        return temp_out_profile, sup_carrier_name, temp_out_start, temp_out_end
-
     def __cold_demand_heat_to_discharge_path_constraints(self, ensemble_member):
         """
         This function adds constraints linking the flow to the thermal power at the cold demand
@@ -1711,7 +1711,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             heat_out_vector = self.__state_vector_scaled(f"{p}.HeatOut.Heat", ensemble_member)
 
             for heat in [heat_in_vector, heat_out_vector]:
-                temp_out_profile, out_port_carrier_name, temp_out_start, temp_out_end = self.__get_out_port_carrier_temp_profile(parameters, p, "heat_pipe")
+                temp_out_profile, out_port_carrier_name, temp_out_start, temp_out_end = self.get_out_port_carrier_temp_profile(parameters, p, "heat_pipe")
                 if self.energy_system_options()["neglect_pipe_heat_losses"] and temp_out_profile is not None:
                     pipe_q_vector = self.__state_vector_scaled(f"{p}.Q", ensemble_member)
                     temp_out_vector = self.get_timeseries(f"{out_port_carrier_name}.price_profile").values
@@ -1777,7 +1777,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             temperatures = self.temperature_regimes(carrier)
 
             for heat in [scaled_heat_in, scaled_heat_out]:
-                temp_out_profile, _, _, _ = self.__get_out_port_carrier_temp_profile(parameters, p, "heat_pipe")
+                temp_out_profile, _, _, _ = self.get_out_port_carrier_temp_profile(parameters, p, "heat_pipe")
                 # temp_out_profile, out_port_carrier = self.__get_pipe_out_port_temp_profile(parameters, p)
                 if self.energy_system_options()["neglect_pipe_heat_losses"] and temp_out_profile is None: 
                     temp = parameters[f"{p}.temperature"] # TODO: when the carrier has a profile assigned to it, change this for the profile vector.
