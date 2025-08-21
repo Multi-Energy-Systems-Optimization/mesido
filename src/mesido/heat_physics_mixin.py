@@ -1724,7 +1724,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         )
                     )
 
-            return constraints 
+        return constraints 
     
     def __pipe_heat_to_discharge_path_constraints(self, ensemble_member):
         """
