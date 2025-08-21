@@ -5,7 +5,6 @@
 
 ## Changed
 - TCO cost calculation objective to now exclude heating demand costs in the grow workflow
-- Tests to exclude heating demand costs since TCO calculation in grow workflow excludes costs
 
 
 # [Unreleased-main] - 2025-08-14
