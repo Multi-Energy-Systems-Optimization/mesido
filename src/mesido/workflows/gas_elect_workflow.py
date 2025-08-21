@@ -77,7 +77,7 @@ class SolverHIGHS:
 
 
 class GasElectProblem(
-    SolverCPLEX,
+    SolverHIGHS,
     ScenarioOutput,
     ESDLAdditionalVarsMixin,
     TechnoEconomicMixin,
@@ -188,25 +188,54 @@ class GasElectProblem(
             solver_stats = self.solver_stats
             self._write_json_output(results, parameters, bounds, aliases, solver_stats)
 
-    def electricity_cable_classes(self, c):
+    def electricity_cable_dict_to_classes(self, c, cables_dict):
+        cable_classes_list = []
+        for cable_name, properties in cables_dict.items():
+            cable_classes_list.append(
+                CableClass(
+                    name=cable_name,
+                    maximum_current=properties['maximum_current'],
+                    resistance=properties['resistance'],
+                    investment_costs=properties['investment_costs']
+                )
+            )
+
         cable_state = self.parameters(0)[f"{c}.state"]
         if cable_state == 0:  # Disabled
-            cable_list = [
-                CableClass(name="None", maximum_current=0.0, resistance=0.0, investment_costs=0.0),
-            ]
+            for cable_class in cable_classes_list:
+                if cable_class.name == "None":
+                    cable_list = [cable_class]
+
         elif cable_state == 1:  # Enabled
-            cable_list = [
-                CableClass(
-                    name="CableType1", maximum_current=11000.0, resistance=3.0, investment_costs=60000.0
-                ),
-            ]
+            for cable_class in cable_classes_list:
+                if cable_class.name == "CableType1":
+                    cable_list = [cable_class]
+
         elif cable_state == 2:  # Optional
-            cable_list = [
-                CableClass(name="None", maximum_current=0.0, resistance=0.0, investment_costs=0.0),
-                CableClass(
-                    name="CableType1", maximum_current=11000.0, resistance=3.0, investment_costs=60000.0
-                ),
-            ]
+            cable_list = cable_classes_list
+
+        return cable_list
+
+    def electricity_cable_classes(self, c):
+        cables_dict = {
+            "None": {
+                "maximum_current": 0.0,
+                "resistance": 0.0,
+                "investment_costs": 0.0,
+            },
+            "CableType1": {
+                "maximum_current": 11000.0,
+                "resistance": 3.0,
+                "investment_costs": 60000.0,
+            },
+            "CableType2": {
+                "maximum_current": 12000.0,
+                "resistance": 4.0,
+                "investment_costs": 65000.0,
+            },
+        }
+
+        cable_list = self.electricity_cable_dict_to_classes(c, cables_dict)
 
         return cable_list
 

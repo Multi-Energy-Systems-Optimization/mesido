@@ -487,8 +487,6 @@ def gas_pipes_head_loss_test(solution, results):
             pipe_wall_roughness = solution.energy_system_options()["wall_roughness"]
             temperature = 20  # is default for gas pipes
             pipe_length = solution.parameters(0)[f"{pipe}.length"]
-            v_pipe = abs(results[f"{pipe}.Q"]) / area
-            # v_pipe = results[f"{pipe}.Q"] / area
             if (
                 solution.gas_network_settings["head_loss_option"]
                 == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
@@ -501,6 +499,7 @@ def gas_pipes_head_loss_test(solution, results):
                     wall_roughness=pipe_wall_roughness,
                     temperature=temperature,
                 )
+                v_pipe = results[f"{pipe}.Q"] / area
                 c_v = solution.parameters(0)[f"{pipe}.length"] * ff / (2 * 9.81) / pipe_diameter
                 dh_max = c_v * v_max**2
                 dh_manual = dh_max * v_pipe / v_max
@@ -510,13 +509,21 @@ def gas_pipes_head_loss_test(solution, results):
                 solution.gas_network_settings["head_loss_option"]
                 == HeadLossOption.LINEARIZED_N_LINES_EQUALITY
             ):
-                itime = 2  # 0
                 v_points = np.linspace(
                     0.0,
                     v_max,
                     solution.gas_network_settings["n_linearization_lines"] + 1,
                 )
+                itime = 2  # index to inspect
+                # v_pipe = abs(results[f"{pipe}.Q"]) / area
+                v_pipe = results[f"{pipe}.Q"] / area
                 v_inspect = v_pipe[itime]
+                if abs(v_inspect - solution.gas_network_settings["minimum_velocity"]) < 1e-12:
+                    v_inspect = solution.gas_network_settings["minimum_velocity"]
+                if abs(v_inspect - solution.gas_network_settings["maximum_velocity"]) < 1e-12:
+                    v_inspect =solution.gas_network_settings["maximum_velocity"]
+                print(pipe, v_inspect, solution.gas_network_settings["minimum_velocity"])
+
 
                 # Theoretical head loss calc, dH =
                 # friction_factor * 8 * pipe_length * volumetric_flow^2
@@ -538,7 +545,7 @@ def gas_pipes_head_loss_test(solution, results):
                 # Approximate dH [m] vs Q [m3/s] with a linear line between between v_points
                 # dH_manual_linear = a*Q + b
                 # Then use this linear function to calculate the head loss
-                idx = int(np.searchsorted(v_points, v_inspect))
+                idx = int(np.searchsorted(v_points, v_inspect - 1e-14)) # Make sure that v_inspect is within velocity bounds
 
                 dh_theory_idx = head_loss(
                     velocity=v_points[idx],
@@ -577,13 +584,9 @@ def gas_pipes_head_loss_test(solution, results):
                     pressure=solution.parameters(0)[f"{pipe}.pressure"],
                 )
                 np.testing.assert_allclose(dh_theory, dh_milp_head_loss_function)
-                if dh_milp_head_loss_function != 0.0:
-                    if dh_milp_head_loss_function == dh_manual_linear:
-                        pass
-                    else:
-                        np.testing.assert_array_less(dh_milp_head_loss_function, dh_manual_linear)
+                np.testing.assert_array_less(dh_milp_head_loss_function, dh_manual_linear+1e-9)  # Small bias is added to manual calculation to makesure that the test passes incase v_inspect is marginally (~1e-15) greater than upper bound
                 np.testing.assert_allclose(
                     results[f"{pipe}.dH"][itime],
-                    -dh_manual_linear * np.sign(results[f"{pipe}.Q"][itime]),
+                    -dh_manual_linear,
                     atol=1.0e-9,
                 )
