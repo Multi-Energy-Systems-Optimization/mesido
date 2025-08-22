@@ -323,7 +323,6 @@ def adapt_profile_for_initial_hour_timestep_size(problem):
         new_date_times = org_timeseries.copy()
         new_date_times.insert(1, timestep_one_hour)
 
-        new_date_times = np.asarray(new_date_times)
         parameters["times"] = [x.timestamp() for x in new_date_times]
 
         for var_name in problem.io.get_timeseries_names():

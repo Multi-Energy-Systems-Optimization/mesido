@@ -49,7 +49,7 @@ class SolverHIGHS:
         options["casadi_solver"] = self._qpsol
         options["solver"] = "highs"
         highs_options = options["highs"] = {}
-        highs_options["mip_rel_gap"] = 0.01
+        highs_options["mip_rel_gap"] = 0.0001
 
         options["gurobi"] = None
         options["cplex"] = None
@@ -89,7 +89,7 @@ class RollOutProblem(
         # TODO: timestep_size and _days can be removed eventually, particularly when averaging
         # with peak day is used, however one needs to check where self._timesteps_per_year and
         # self._timestep_size is currently affecting the code
-        self._timestep_size = 20 * 24
+        self._timestep_size = 30 * 24
         self._timesteps_per_year = int(365 / (self._timestep_size / 24)) + 1
         self._timesteps_per_year = (
             self._timesteps_per_year + 1
@@ -130,6 +130,11 @@ class RollOutProblem(
         self.__asset_doublet_is_placed_var = {}
         self.__asset_doublet_is_placed_var_bounds = {}
 
+        self.__ates_state_heat_var_map = {}
+        self.__ates_state_heat_var = {}
+        self.__ates_state_heat_var_bounds = {}
+        self.__ates_state_heat_var_nominals = {}
+
         self._yearly_capex_var = {}
         self._yearly_capex_var_bounds = {}
         self._yearly_capex_var_nominals = {}
@@ -146,8 +151,6 @@ class RollOutProblem(
     def parameters(self, ensemble_member):
         parameters = super().parameters(ensemble_member)
         for pipe in [*self.hot_pipes, *self.cold_pipes]:
-            parameters[f"{pipe}.disconnectable"] = True
-        for pipe in self.cold_pipes:
             parameters[f"{pipe}.disconnectable"] = True
         return parameters
 
@@ -175,7 +178,7 @@ class RollOutProblem(
             *self.energy_system_components.get("ates", []),
             *self.energy_system_components.get("heat_demand", []),
             *self.energy_system_components.get("heat_source", []),
-            *self.hot_pipes,
+            *self.energy_system_components.get("heat_pipe", []),
         ]:
             self._asset_fraction_placed_map[asset] = []
             for year in range(self._years):
@@ -227,6 +230,14 @@ class RollOutProblem(
             self._yearly_capex_var_nominals[var_name] = (
                 self._years_timestep_max_capex / 2.0
             )
+
+    def energy_system_options(self):
+        options = super().energy_system_options()
+        options["heat_loss_disconnected_pipe"] = False
+        options["include_asset_is_realized"] = True
+        options["include_ates_yearly_change_option"] = True
+        options["yearly_investments"] = True
+        return options
 
     def path_goals(self):
         goals = super().goals().copy()
@@ -372,8 +383,8 @@ class RollOutProblem(
 
     def __yearly_investment_constraints(self, ensemble_member):
         """
-        Constraints to set the yearly maximum CAPEX. The CAPEX here is the cumulative investments of the
-        assets placed.
+        Constraints to set the yearly maximum CAPEX. The CAPEX here is the cumulative investments
+        of the assets placed.
 
         """
 
@@ -384,11 +395,13 @@ class RollOutProblem(
         # Constraint to set yearly maximum CAPEX
         # TODO: CAPEX constraint sources and demands now total capex not yet possible to use
         #  fraction placed variables.
+        cumulative_capex_prev_year = 0
         for y in range(self._years):
             cumulative_capex = 0
 
             # pipes
-            for p in self.hot_pipes:
+            # for p in self.hot_pipes:
+            for p in self.energy_system_components.get("heat_pipe", []):
                 # cumulative_investements_made does not yet cather for fraction_placed
                 cumulative_inv_pipe = self.extra_variable(
                     f"{p}__cumulative_investments_made_in_eur_year_{y}"
@@ -521,15 +534,8 @@ class RollOutProblem(
         for s in self.energy_system_components.get("ates", []):
             ates_state = self.__state_vector_scaled(f"{s}.Stored_heat", ensemble_member)
             nominal = self.variable_nominal(f"{s}.Stored_heat")
-            times = self.times() / 3600 / 24
-            for i in range(len(times) - 1):
+            for i in range(len(self.times()) - 1):
                 if i % self._timesteps_per_year == 0:
-                    print(
-                        i,
-                        times[i],
-                        i + self._timesteps_per_year - 1,
-                        times[i + self._timesteps_per_year - 1],
-                    )
                     # set the storage first timestep equal to last of each year
                     constraints.append(
                         (
@@ -554,8 +560,6 @@ class RollOutProblem(
         constraints.extend(self.__ates_yearly_initial_constraints(ensemble_member))
         constraints.extend(self.__ates_yearly_periodic_constraints(ensemble_member))
 
-        # # asset cost constraints need to be implemented before yearly investment constraints,
-        # # due to dictionaries to be filled with the variable sums.
         constraints.extend(self.__yearly_investment_constraints(ensemble_member))
 
         constraints.extend(self.__minimum_operational_constraints(ensemble_member))
@@ -592,14 +596,6 @@ class RollOutProblem(
 
     def history(self, ensemble_member):
         return AliasDict(self.alias_relation)
-
-    def energy_system_options(self):
-        options = super().energy_system_options()
-        options["heat_loss_disconnected_pipe"] = False
-        options["include_asset_is_realized"] = True
-        options["include_ates_yearly_change_option"] = True
-        options["yearly_investments"] = True
-        return options
 
     @property
     def extra_variables(self):
@@ -700,7 +696,7 @@ class RollOutProblem(
             time_taken = time.time() - self.__priority_timer
             self._priorities_output.append(
                 (
-                    self.__priority,
+                    self._priority,
                     time_taken,
                     False,
                     self.objective_value,
@@ -709,7 +705,6 @@ class RollOutProblem(
             )
 
         # Calculate some additional results required/wanted by the CF
-        times = self.times()
 
         results = self.extract_results()
         parameters = self.parameters(0)

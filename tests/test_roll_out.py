@@ -40,13 +40,12 @@ class TestRollOutOptimization(TestCase):
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
-        # This is an optimization done over a full year with timesteps of 5 days and hour timesteps
-        # for the peak day
+        # This is an optimization done over three years with timesteps of 30 days
         class RollOutTimeStep(RollOutProblem):
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
 
-                self._timestep_size = 20 * 24
+                self._timestep_size = 30 * 24
 
             def read(self):
                 super().read()
@@ -67,7 +66,7 @@ class TestRollOutOptimization(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
-            yearly_max_capex=6e6,
+            yearly_max_capex=7.0e6,
         )
         results = solution.extract_results()
 
@@ -113,13 +112,15 @@ class TestRollOutOptimization(TestCase):
                     break  # once an asset is placed it remains placed in the future
 
         heat_to_discharge_test(solution, results)
+        # TODO uncomment once PR 340 is merged and use a slightly relexed tolerance 
+        # as argument and uncomment next line
         # energy_conservation_test(solution, results)
 
         assets_to_check = [
             *solution.energy_system_components.get("heat_source", []),
             *solution.energy_system_components.get("heat_demand", []),
             *solution.energy_system_components.get("ates", []),
-            *solution.hot_pipes,
+            *solution.energy_system_components.get("heat_pipe", []),
         ]
 
         for asset in assets_to_check:
@@ -148,12 +149,7 @@ class TestRollOutOptimization(TestCase):
             cumulative_capex = 0
             cumulative_capex += sum(
                 results[f"{asset}__cumulative_investments_made_in_eur_year_{y}"]
-                for asset in [
-                    *solution.energy_system_components.get("heat_source", []),
-                    *solution.energy_system_components.get("heat_demand", []),
-                    *solution.hot_pipes,
-                    # *solution.energy_system_components.get("ates", []),
-                ]
+                for asset in assets_to_check
             )
             np.testing.assert_(
                 cumulative_capex - cumulative_prev_year
