@@ -114,8 +114,8 @@ class BaseESDLParser:
                         in_ports=None,
                         out_ports=None,
                         attributes=attributes,
-                        global_properties=self._global_properties
-                )
+                        global_properties=self._global_properties,
+                    )
             else:
                 if isinstance(el, esdl.Asset):
                     if hasattr(el, "name") and el.name:
@@ -128,7 +128,9 @@ class BaseESDLParser:
                         raise ValueError(f"Dots in component names not supported: '{el_name}'")
 
                     if el_name in component_names:
-                        raise Exception(f"Asset names have to be unique: '{el_name}' already exists")
+                        raise Exception(
+                            f"Asset names have to be unique: '{el_name}' already exists"
+                        )
                     else:
                         component_names.add(el_name)
 
@@ -152,7 +154,9 @@ class BaseESDLParser:
                             else:
                                 out_ports.append(port)
                         else:
-                            _ESDLInputException(f"The port for {el_name} is neither an IN or OUT port")
+                            _ESDLInputException(
+                                f"The port for {el_name} is neither an IN or OUT port"
+                            )
 
                     # Note that e.g. el.__dict__['length'] does not work to get the length of a pipe.
                     # We therefore built this dict ourselves using 'dir' and 'getattr'
@@ -178,6 +182,7 @@ class BaseESDLParser:
 
     def get_templates(self) -> Dict[str, Asset]:
         return self._templates
+
 
 class ESDLStringParser(BaseESDLParser):
     def __init__(self, **kwargs):

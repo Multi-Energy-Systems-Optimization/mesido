@@ -631,7 +631,7 @@
   <assetTemplate xsi:type="esdl:AssetTemplate" id="033321ca-4a45-4a34-9042-ab397c4f492d" name="Pipe DN400" description="Pipe DN400">
     <asset xsi:type="esdl:Pipe" id="bc485f99-d368-40be-8e76-94b7c0f3642c" name="DN400 pipe" diameter="DN400">
       <costInformation xsi:type="esdl:CostInformation" id="4bb27801-31aa-43ea-953b-9a074306bd19">
-        <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="63009710-c67a-4ee6-a2a3-c2dfc95bed5a" value="1000.0">
+        <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="63009710-c67a-4ee6-a2a3-c2dfc95bed5a" value="2840.6">
           <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" unit="EURO" perUnit="METRE" description="Cost in EUR/m" id="36d09339-bd33-4bf3-8a3d-4194e72f7ddc" />
           </investmentCosts>
         </costInformation>
@@ -640,7 +640,7 @@
   <assetTemplate xsi:type="esdl:AssetTemplate" id="c51856c0-734d-48d9-a203-9a9ead5dca0d" name="Pipe DN450" description="Pipe DN450">
     <asset xsi:type="esdl:Pipe" id="96e39665-1824-4e60-9c33-4089aeeebf24" name="DN450 pipe" diameter="DN450">
       <costInformation xsi:type="esdl:CostInformation" id="4c31e631-7eda-40ac-b1bf-7c4538187170">
-        <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="e3dfe611-3c1f-461f-a8ce-e73830f97ab8" value="1000.0">
+        <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="e3dfe611-3c1f-461f-a8ce-e73830f97ab8" value="6835.8">
           <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" unit="EURO" perUnit="METRE" description="Cost in EUR/m" id="013dc4b9-9591-403b-9da6-e29c1cd43ef0" />
           </investmentCosts>
         </costInformation>

@@ -1,6 +1,8 @@
 from pathlib import Path
 from unittest import TestCase
 
+import esdl
+
 import mesido._darcy_weisbach as darcy_weisbach
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
@@ -346,11 +348,10 @@ class TestEndScenarioSizing(TestCase):
                     )
 
     def test_end_scenario_sizing_pipe_catalog(self):
-        #TODO: also add test to just check if cost values are updated
-        #TODO: this test should contain a test if updated cost values from the pipe catalog in
+        # TODO: also add test to just check if cost values are updated
+        # TODO: this test should contain a test if updated cost values from the pipe catalog in
         # the ESDL are used
-        import models.test_case_small_network_ates_buffer_optional_assets.src.run_ates \
-            as run_ates
+        import models.test_case_small_network_ates_buffer_optional_assets.src.run_ates as run_ates
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
@@ -359,14 +360,46 @@ class TestEndScenarioSizing(TestCase):
             EndScenarioSizing,
             base_folder=base_folder,
             esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional_pipe_catalog"
-                           ".esdl",
+            ".esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
         )
 
+        # Test if the costs that are used in the problem match the costs from the ESDL Template
+        # ESDL template costs
+        pipe_templates = solution.filter_asset_templates(solution._esdl_templates, "Pipe")
+        pipe_diameter_cost_map = {
+            str(pipe.attributes["asset"].diameter): pipe.attributes[
+                "asset"
+            ].costInformation.investmentCosts.value
+            for pipe in pipe_templates.values()
+        }
+        # Get the costs from the optimization problem
+        # pipe_dia_cost_map_original = dict()
+        # for asset in self.solution.esdl_assets.items():
+        #     if asset.asset_type=='Pipe':
+        #         pipe_dia_cost_map_original[asset['attributes']['diameter']] = (
+        #             asset['attributes'].costInformation.investmentCosts.value)
+        pipe_dia_map = {
+            asset.attributes['name'] : str(asset.attributes['diameter']) for asset_id, asset in solution.esdl_assets.items() if asset.asset_type=="Pipe"
+        }
+
         results = solution.extract_results()
         parameters = solution.parameters(0)
+
+        # Get the costs from the solution parameters
+        pipe_investment_costs_from_parameters = {
+            heat_pipe : parameters.get(f'{heat_pipe}.investment_cost_coefficient') for heat_pipe in solution.energy_system_components.get("heat_pipe")
+        }
+
+        # Asset the same investment costs have been use between the template and the soltuion parameters
+        for pipe, cost in pipe_investment_costs_from_parameters.items():
+            np.testing.assert_equal(pipe_diameter_cost_map[pipe_dia_map[pipe]], cost)
+
+        # Check if the costs have been updated
+        print('Done')
+
 
 if __name__ == "__main__":
     import time
@@ -374,8 +407,9 @@ if __name__ == "__main__":
     start_time = time.time()
     a = TestEndScenarioSizing()
     a.setUpClass()
-    a.test_end_scenario_sizing()
-    a.test_end_scenario_sizing_staged()
-    a.test_end_scenario_sizing_discounted()
-    a.test_end_scenario_sizing_head_loss()
+    # a.test_end_scenario_sizing()
+    # a.test_end_scenario_sizing_staged()
+    # a.test_end_scenario_sizing_discounted()
+    # a.test_end_scenario_sizing_head_loss()
+    a.test_end_scenario_sizing_pipe_catalog()
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
