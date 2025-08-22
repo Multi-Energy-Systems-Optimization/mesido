@@ -93,11 +93,11 @@ class TestHeat(TestCase):
         Test to ensure a carrier on the out port of a producer with a temperature profile
         follows said profile. Two cases are run, the first one with just one producer
         and one consumer. The second one has two producers connected in series. The main goal
-        of the second case is to ensure the system runs when one of the producers has a 
+        of the second case is to ensure the system runs when one of the producers has a
         prescribed out temperature equal to its in one (effectively bypassing it).
 
         Checks:
-        - Checks that the temperatures coming out of the producer match the input temperature profile.
+        - Checks that the temperatures coming out of the producer match the input profile.
 
         """
         import models.source_pipe_sink.src.double_pipe_heat as double_pipe_heat
@@ -129,11 +129,11 @@ class TestHeat(TestCase):
         heat_to_discharge_test(case, results)
 
         heat_flow_out_pipe1 = results["Pipe1.HeatOut.Heat"]
-        vol_flow_pipe1 = results['Pipe1.HeatIn.Q']
+        vol_flow_pipe1 = results["Pipe1.HeatIn.Q"]
         cp = parameters["Pipe1.cp"]
         rho = parameters["Pipe1.rho"]
         temp_pipe1 = heat_flow_out_pipe1 / (cp * rho * vol_flow_pipe1)
-        temp_input_prof = case.get_timeseries(f"heat.price_profile").values
+        temp_input_prof = case.get_timeseries("heat.price_profile").values
         np.testing.assert_array_almost_equal(temp_pipe1, temp_input_prof)
 
         case = run_esdl_mesido_optimization(
@@ -153,11 +153,11 @@ class TestHeat(TestCase):
         heat_to_discharge_test(case, results)
 
         heat_flow_out_pipe1 = results["Pipe1.HeatOut.Heat"]
-        vol_flow_pipe1 = results['Pipe1.HeatIn.Q']
+        vol_flow_pipe1 = results["Pipe1.HeatIn.Q"]
         cp = parameters["Pipe1.cp"]
         rho = parameters["Pipe1.rho"]
         temp_pipe1 = heat_flow_out_pipe1 / (cp * rho * vol_flow_pipe1)
-        temp_input_prof = case.get_timeseries(f"heat.price_profile").values
+        temp_input_prof = case.get_timeseries("heat.price_profile").values
         np.testing.assert_array_almost_equal(temp_pipe1, temp_input_prof)
 
 
@@ -443,6 +443,7 @@ class TestDisconnectablePipe(TestCase):
         # (loss) in the system, we expect equal results.
         np.testing.assert_allclose(q_linear, q_dw)
         np.testing.assert_allclose(results_dw["Pipe1__is_disconnected"][1], 1.0)
+
 
 if __name__ == "__main__":
     test_heat = TestHeat()

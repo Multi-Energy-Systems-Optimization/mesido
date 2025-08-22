@@ -169,7 +169,9 @@ def heat_to_discharge_test(solution, results):
         # return_t = solution.parameters(0)[f"{d}.T_return"]
         supply_t, return_t, dt = _get_component_temperatures(solution, results, d)
 
-        temp_profile, _, _, _ = solution.get_out_port_carrier_temp_profile(solution.parameters(0), d, "heat_source")
+        temp_profile, _, _, _ = solution.get_out_port_carrier_temp_profile(
+            solution.parameters(0), d, "heat_source"
+        )
         if temp_profile is not None:
             supply_t = temp_profile.values
             supply_temp_profiles.append(temp_profile.values)
