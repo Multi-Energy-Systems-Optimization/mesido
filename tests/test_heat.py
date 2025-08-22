@@ -88,6 +88,78 @@ class TestHeat(TestCase):
         energy_conservation_test(case, results)
         heat_to_discharge_test(case, results)
 
+    def test_heat_prod_profile(self):
+        """
+        Test to ensure a carrier on the out port of a producer with a temperature profile
+        follows said profile. Two cases are run, the first one with just one producer
+        and one consumer. The second one has two producers connected in series. The main goal
+        of the second case is to ensure the system runs when one of the producers has a
+        prescribed out temperature equal to its in one (effectively bypassing it).
+
+        Checks:
+        - Checks that the temperatures coming out of the producer match the input profile.
+
+        """
+        import models.source_pipe_sink.src.double_pipe_heat as double_pipe_heat
+        from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
+
+        class Model(SourcePipeSink):
+            def energy_system_options(self):
+                options = super().energy_system_options()
+                options["neglect_pipe_heat_losses"] = True
+
+                return options
+
+        base_folder = Path(double_pipe_heat.__file__).resolve().parent.parent
+
+        case = run_esdl_mesido_optimization(
+            Model,
+            base_folder=base_folder,
+            esdl_file_name="sourcesink_prof_test.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_prod_test.csv",
+        )
+
+        results = case.extract_results()
+        parameters = case.parameters(0)
+
+        demand_matching_test(case, results)
+        energy_conservation_test(case, results)
+        heat_to_discharge_test(case, results)
+
+        heat_flow_out_pipe1 = results["Pipe1.HeatOut.Heat"]
+        vol_flow_pipe1 = results["Pipe1.HeatIn.Q"]
+        cp = parameters["Pipe1.cp"]
+        rho = parameters["Pipe1.rho"]
+        temp_pipe1 = heat_flow_out_pipe1 / (cp * rho * vol_flow_pipe1)
+        temp_input_prof = case.get_timeseries("heat.price_profile").values
+        np.testing.assert_array_almost_equal(temp_pipe1, temp_input_prof)
+
+        case = run_esdl_mesido_optimization(
+            Model,
+            base_folder=base_folder,
+            esdl_file_name="sourcesink_prof_test_2prod.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_prod_test.csv",
+        )
+
+        results = case.extract_results()
+        parameters = case.parameters(0)
+
+        demand_matching_test(case, results)
+        energy_conservation_test(case, results)
+        heat_to_discharge_test(case, results)
+
+        heat_flow_out_pipe1 = results["Pipe1.HeatOut.Heat"]
+        vol_flow_pipe1 = results["Pipe1.HeatIn.Q"]
+        cp = parameters["Pipe1.cp"]
+        rho = parameters["Pipe1.rho"]
+        temp_pipe1 = heat_flow_out_pipe1 / (cp * rho * vol_flow_pipe1)
+        temp_input_prof = case.get_timeseries("heat.price_profile").values
+        np.testing.assert_array_almost_equal(temp_pipe1, temp_input_prof)
+
 
 class TestMinMaxPressureOptions(TestCase):
     import models.source_pipe_sink.src.double_pipe_heat as double_pipe_heat
@@ -371,3 +443,8 @@ class TestDisconnectablePipe(TestCase):
         # (loss) in the system, we expect equal results.
         np.testing.assert_allclose(q_linear, q_dw)
         np.testing.assert_allclose(results_dw["Pipe1__is_disconnected"][1], 1.0)
+
+
+if __name__ == "__main__":
+    test_heat = TestHeat()
+    test_heat.test_heat_prod_profile()
