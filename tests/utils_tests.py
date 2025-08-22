@@ -515,15 +515,14 @@ def gas_pipes_head_loss_test(solution, results):
                     solution.gas_network_settings["n_linearization_lines"] + 1,
                 )
                 itime = 2  # index to inspect
-                # v_pipe = abs(results[f"{pipe}.Q"]) / area
-                v_pipe = results[f"{pipe}.Q"] / area
+                v_pipe = abs(results[f"{pipe}.Q"]) / area
+                # v_pipe = results[f"{pipe}.Q"] / area
                 v_inspect = v_pipe[itime]
+                # Make sure that v_inspect is within velocity bounds
                 if abs(v_inspect - solution.gas_network_settings["minimum_velocity"]) < 1e-12:
                     v_inspect = solution.gas_network_settings["minimum_velocity"]
                 if abs(v_inspect - solution.gas_network_settings["maximum_velocity"]) < 1e-12:
                     v_inspect =solution.gas_network_settings["maximum_velocity"]
-                print(pipe, v_inspect, solution.gas_network_settings["minimum_velocity"])
-
 
                 # Theoretical head loss calc, dH =
                 # friction_factor * 8 * pipe_length * volumetric_flow^2
@@ -545,7 +544,7 @@ def gas_pipes_head_loss_test(solution, results):
                 # Approximate dH [m] vs Q [m3/s] with a linear line between between v_points
                 # dH_manual_linear = a*Q + b
                 # Then use this linear function to calculate the head loss
-                idx = int(np.searchsorted(v_points, v_inspect - 1e-14)) # Make sure that v_inspect is within velocity bounds
+                idx = int(np.searchsorted(v_points, v_inspect))
 
                 dh_theory_idx = head_loss(
                     velocity=v_points[idx],
@@ -584,9 +583,9 @@ def gas_pipes_head_loss_test(solution, results):
                     pressure=solution.parameters(0)[f"{pipe}.pressure"],
                 )
                 np.testing.assert_allclose(dh_theory, dh_milp_head_loss_function)
-                np.testing.assert_array_less(dh_milp_head_loss_function, dh_manual_linear+1e-9)  # Small bias is added to manual calculation to makesure that the test passes incase v_inspect is marginally (~1e-15) greater than upper bound
+                np.testing.assert_array_less(dh_milp_head_loss_function, dh_manual_linear + 1e-9)
                 np.testing.assert_allclose(
                     results[f"{pipe}.dH"][itime],
-                    -dh_manual_linear,
+                    -np.sign(results[f"{pipe}.Q"][itime]) * dh_manual_linear,
                     atol=1.0e-9,
                 )
