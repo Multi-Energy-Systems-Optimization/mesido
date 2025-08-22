@@ -1,6 +1,8 @@
 from pathlib import Path
 from unittest import TestCase
 
+import esdl
+
 import mesido._darcy_weisbach as darcy_weisbach
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
@@ -89,27 +91,7 @@ class TestEndScenarioSizing(TestCase):
                 if i < peak_day_indx or i > (peak_day_indx + 23):
                     np.testing.assert_allclose(heat_buffer[i], 0.0, atol=1.0e-6)
 
-        obj = 0.0
-        years = self.solution.parameters(0)["number_of_years"]
-        for asset in [
-            *self.solution.energy_system_components.get("heat_source", []),
-            *self.solution.energy_system_components.get("ates", []),
-            *self.solution.energy_system_components.get("heat_buffer", []),
-            *self.solution.energy_system_components.get("heat_demand", []),
-            *self.solution.energy_system_components.get("heat_exchanger", []),
-            *self.solution.energy_system_components.get("heat_pump", []),
-            *self.solution.energy_system_components.get("heat_pipe", []),
-        ]:
-            technical_lifetime = self.solution.parameters(0)[f"{asset}.technical_life"]
-            factor = years / technical_lifetime
-            if factor < 1.0:
-                factor = 1.0
-            obj += self.results[f"{self.solution._asset_fixed_operational_cost_map[asset]}"] * years
-            obj += (
-                self.results[f"{self.solution._asset_variable_operational_cost_map[asset]}"] * years
-            )
-            obj += self.results[f"{self.solution._asset_investment_cost_map[asset]}"] * factor
-            obj += self.results[f"{self.solution._asset_installation_cost_map[asset]}"] * factor
+        obj = self.get_objective_value_end_scenario_sizing(self.solution)
 
         np.testing.assert_allclose(obj / 1.0e6, self.solution.objective_value)
 
@@ -184,25 +166,7 @@ class TestEndScenarioSizing(TestCase):
                 if i < peak_day_indx or i > (peak_day_indx + 23):
                     np.testing.assert_allclose(heat_buffer[i], 0.0, atol=1.0e-6)
 
-        obj = 0.0
-        years = solution_staged.parameters(0)["number_of_years"]
-        for asset in [
-            *solution_staged.energy_system_components.get("heat_source", []),
-            *solution_staged.energy_system_components.get("ates", []),
-            *solution_staged.energy_system_components.get("heat_buffer", []),
-            *solution_staged.energy_system_components.get("heat_demand", []),
-            *solution_staged.energy_system_components.get("heat_exchanger", []),
-            *solution_staged.energy_system_components.get("heat_pump", []),
-            *solution_staged.energy_system_components.get("heat_pipe", []),
-        ]:
-            technical_lifetime = solution_staged.parameters(0)[f"{asset}.technical_life"]
-            factor = years / technical_lifetime
-            if factor < 1.0:
-                factor = 1.0
-            obj += results[f"{solution_staged._asset_fixed_operational_cost_map[asset]}"] * years
-            obj += results[f"{solution_staged._asset_variable_operational_cost_map[asset]}"] * years
-            obj += results[f"{solution_staged._asset_investment_cost_map[asset]}"] * factor
-            obj += results[f"{solution_staged._asset_installation_cost_map[asset]}"] * factor
+        obj = self.get_objective_value_end_scenario_sizing(solution_staged)
 
         np.testing.assert_allclose(obj / 1.0e6, solution_staged.objective_value)
 
@@ -354,6 +318,35 @@ class TestEndScenarioSizing(TestCase):
                         abs(results[f"{pipe}.dH"][ii]),
                     )
 
+    def get_objective_value_end_scenario_sizing(self, solution):
+        results = solution.extract_results()
+        obj = 0.0
+        years = solution.parameters(0)["number_of_years"]
+        for asset in [
+            *solution.energy_system_components.get("heat_source", []),
+            *solution.energy_system_components.get("ates", []),
+            *solution.energy_system_components.get("heat_buffer", []),
+            *solution.energy_system_components.get("heat_demand", []),
+            *solution.energy_system_components.get("heat_exchanger", []),
+            *solution.energy_system_components.get("heat_pump", []),
+            *solution.energy_system_components.get("heat_pipe", []),
+        ]:
+            # If heating demand asset's state is enabled, then exclude the costs since it is not
+            # part of the TCO calculation. This is because we do not size heating demand assets in
+            # the optimization
+            asset_id = self.solution.esdl_asset_name_to_id_map[asset]
+            asset_state = self.solution.esdl_assets[asset_id].attributes["state"]
+            asset_type = self.solution.esdl_assets[asset_id].asset_type
+            if not (
+                (asset_type == "HeatingDemand") and (asset_state == esdl.AssetStateEnum.ENABLED)
+            ):
+                obj += results[f"{solution._asset_fixed_operational_cost_map[asset]}"] * years
+                obj += results[f"{solution._asset_variable_operational_cost_map[asset]}"] * years
+                obj += results[f"{solution._asset_investment_cost_map[asset]}"]
+                obj += results[f"{solution._asset_installation_cost_map[asset]}"]
+
+        return obj
+
 
 if __name__ == "__main__":
     import time
@@ -363,6 +356,6 @@ if __name__ == "__main__":
     a.setUpClass()
     a.test_end_scenario_sizing()
     a.test_end_scenario_sizing_staged()
-    a.test_end_scenario_sizing_discounted()
-    a.test_end_scenario_sizing_head_loss()
+    # a.test_end_scenario_sizing_discounted()
+    # a.test_end_scenario_sizing_head_loss()
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

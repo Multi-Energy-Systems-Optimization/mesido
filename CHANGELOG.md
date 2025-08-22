@@ -1,3 +1,12 @@
+# [Unreleased-main] - 2025-08-19
+
+## Added
+- Potential error checks if heating demand state is not set to enabled
+
+## Changed
+- TCO cost calculation objective to now exclude heating demand costs in the grow workflow
+
+
 # [Unreleased-main] - 2025-08-14
 
 ## Added
