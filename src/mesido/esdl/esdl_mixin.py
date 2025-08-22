@@ -219,7 +219,7 @@ class ESDLMixin(
                     if pipe_class.name in pipe_diameter_cost_map.keys():
                         pipe_classes[i] = dataclasses.replace(
                             pipe_classes[i],
-                            investment_costs=pipe_diameter_cost_map[pipe_class.name]
+                            investment_costs=pipe_diameter_cost_map[pipe_class.name],
                         )
             else:
                 pass

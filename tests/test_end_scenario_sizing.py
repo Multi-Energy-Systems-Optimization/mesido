@@ -366,6 +366,9 @@ class TestEndScenarioSizing(TestCase):
             input_timeseries_file="Warmte_test.csv",
         )
 
+        results = solution.extract_results()
+        parameters = solution.parameters(0)
+
         # Test if the costs that are used in the problem match the costs from the ESDL Template
         # ESDL template costs
         pipe_templates = solution.filter_asset_templates(solution._esdl_templates, "Pipe")
@@ -375,30 +378,26 @@ class TestEndScenarioSizing(TestCase):
             ].costInformation.investmentCosts.value
             for pipe in pipe_templates.values()
         }
-        # Get the costs from the optimization problem
-        # pipe_dia_cost_map_original = dict()
-        # for asset in self.solution.esdl_assets.items():
-        #     if asset.asset_type=='Pipe':
-        #         pipe_dia_cost_map_original[asset['attributes']['diameter']] = (
-        #             asset['attributes'].costInformation.investmentCosts.value)
-        pipe_dia_map = {
-            asset.attributes['name'] : str(asset.attributes['diameter']) for asset_id, asset in solution.esdl_assets.items() if asset.asset_type=="Pipe"
+        pipe_classes_dia_map = {
+            solution.pipe_classes(pipe)[1].inner_diameter: solution.pipe_classes(pipe)[1].name
+            for pipe in solution.energy_system_components.get("heat_pipe")
+            if not pipe.endswith("_ret")
         }
-
-        results = solution.extract_results()
-        parameters = solution.parameters(0)
-
         # Get the costs from the solution parameters
-        pipe_investment_costs_from_parameters = {
-            heat_pipe : parameters.get(f'{heat_pipe}.investment_cost_coefficient') for heat_pipe in solution.energy_system_components.get("heat_pipe")
-        }
-
-        # Asset the same investment costs have been use between the template and the soltuion parameters
-        for pipe, cost in pipe_investment_costs_from_parameters.items():
-            np.testing.assert_equal(pipe_diameter_cost_map[pipe_dia_map[pipe]], cost)
-
-        # Check if the costs have been updated
-        print('Done')
+        # Assert the same specific investment costs have been use between the template and the
+        # soltuion parameters
+        for heat_pipe in solution.energy_system_components.get("heat_pipe"):
+            # Check only if the pipe exits. Cost of 0 means the asset has been removed as a result of the sizing optimization
+            if results[f"{solution._asset_investment_cost_map[heat_pipe]}"] > 0.0:
+                investment_cost_specific = (
+                    results[f"{solution._asset_investment_cost_map[heat_pipe]}"]
+                    / parameters[f"{heat_pipe}.length"]
+                )  # [Eur/m]
+                optimized_diameter = parameters[f"{heat_pipe}.diameter"]
+                cost_map_from_template = pipe_diameter_cost_map[
+                    pipe_classes_dia_map[optimized_diameter]
+                ]
+                np.testing.assert_equal(cost_map_from_template, investment_cost_specific)
 
 
 if __name__ == "__main__":
