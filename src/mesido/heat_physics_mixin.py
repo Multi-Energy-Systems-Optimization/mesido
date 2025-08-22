@@ -673,7 +673,13 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         # TODO: modify profile parser so the temperature profile is not called a price profile.
         # TODO: modify this and the profile parser to incorporate the esdl option to use power instead of temperature.
         # TODO: the start/end indices are needed for a very specific problem-times slicing case. Modify the way problems are sliced to remove this.
-        carriers = self.esdl_carriers
+        try:
+            carriers = self.esdl_carriers
+            carriers_ids = carriers.keys()
+        except:
+            carriers = None
+            carriers_ids = []
+            sup_carrier_name = None
         temp_out_profile = None
         temp_out_start = None
         temp_out_end = None
@@ -681,7 +687,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             "heat_source" : ".T_supply_id",
             "heat_pipe" : ".carrier_id"
         }
-        for carrier_id in carriers.keys():
+        for carrier_id in carriers_ids:
             if carriers[carrier_id]["id_number_mapping"] == parameters[f"{asset_name}{carrier_id_types[asset_type]}"]:
                 sup_carrier_name = carriers[carrier_id]["name"]
         try:
@@ -1689,7 +1695,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         return constraints
 
     def __pipe_heat_to_discharge_constraints(self, ensemble_member):
-
+        # TODO: Potentially these constraints are also not necessary, as the sinks and sources define the heat 
+        # flow and the vol flow. As long as HeatIn==HEatOUT when heatlosses are off.
         constraints = []
         parameters = self.parameters(ensemble_member)
 

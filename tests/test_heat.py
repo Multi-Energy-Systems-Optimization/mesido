@@ -91,7 +91,7 @@ class TestHeat(TestCase):
     def test_heat_prod_profile(self):
         """
         Test to ensure a carrier on the out port of a producer with a temperature profile
-        follows said profile. There are two cases run, the first one with just one producer
+        follows said profile. Two cases are run, the first one with just one producer
         and one consumer. The second one has two producers connected in series. The main goal
         of the second case is to ensure the system runs when one of the producers has a 
         prescribed out temperature equal to its in one (effectively bypassing it).
@@ -124,9 +124,9 @@ class TestHeat(TestCase):
         results = case.extract_results()
         parameters = case.parameters(0)
 
-        # demand_matching_test(case, results)
-        # energy_conservation_test(case, results)
-        # heat_to_discharge_test(case, results)
+        demand_matching_test(case, results)
+        energy_conservation_test(case, results)
+        heat_to_discharge_test(case, results)
 
         heat_flow_out_pipe1 = results["Pipe1.HeatOut.Heat"]
         vol_flow_pipe1 = results['Pipe1.HeatIn.Q']
