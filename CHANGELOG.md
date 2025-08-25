@@ -24,7 +24,7 @@
 # [0.1.13] - 2025-06-25
 
 ## Added
-- xx
+- Improved error handling for asset cost information to prevent potential failures and ensure more robust processing of asset-related data.
 
 ## Changed
 - README update mesido install command for dev
