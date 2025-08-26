@@ -1,7 +1,8 @@
-# [Unreleased-main] - 2025-08-19
+# [Unreleased-main] - 2025-08-26
 
 ## Added
 - Potential error checks if heating demand state is not set to enabled
+- Generic modifier functions for consistency across assets.
 
 ## Changed
 - TCO cost calculation objective to now exclude heating demand costs in the grow workflow
