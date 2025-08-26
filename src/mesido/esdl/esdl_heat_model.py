@@ -452,6 +452,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         q_nominal = self._get_connected_q_nominal(asset)
 
+        state = asset.attributes["state"]
+
+        if state == esdl.AssetStateEnum.OPTIONAL:
+            get_potential_errors().add_potential_issue(
+                MesidoAssetIssueType.HEAT_DEMAND_STATE,
+                asset.id,
+                f"Asset named {asset.name} : The asset should be enabled since there is "
+                f"no sizing optimization on HeatingDemands",
+            )
+
         modifiers = dict(
             Heat_demand=dict(max=max_demand, nominal=max_demand / 2.0),
             **self._generic_modifiers(asset),
@@ -2333,6 +2343,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         used in a pycml object.
 
         Required ESDL fields:
+            - efficiency
             - power
             - id (this id must be unique)
             - name (this name must be unique)
@@ -2386,7 +2397,13 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         q_nominals = self._get_connected_q_nominal(asset)
 
+        if not asset.attributes["efficiency"]:
+            raise _ESDLInputException(
+                f"{asset.name} has no efficiency specified, this is required for the model"
+            )
+
         modifiers = dict(
+            efficiency=asset.attributes["efficiency"],
             Heat_source=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
             id_mapping_carrier=id_mapping,
             density=density,
@@ -2399,7 +2416,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
         )
-
         return GasBoiler, modifiers
 
     def convert_elec_boiler(self, asset: Asset) -> Tuple[ElecBoiler, MODIFIERS]:
