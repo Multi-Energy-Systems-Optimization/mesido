@@ -866,7 +866,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         modifiers = dict(
             **self._generic_modifiers(asset),
-            **self._generic_heat_modifiers(q_nominal=q_nominal)
+            **self._generic_heat_modifiers(q_nominal=q_nominal),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
         )
