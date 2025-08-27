@@ -69,7 +69,7 @@ class SolverHIGHS:
         options["casadi_solver"] = self._qpsol
         options["solver"] = "highs"
         highs_options = options["highs"] = {}
-        highs_options["mip_abs_gap"] = 1.0e-3
+        highs_options["mip_rel_gap"] = 1.0e-3
 
         return options
 
