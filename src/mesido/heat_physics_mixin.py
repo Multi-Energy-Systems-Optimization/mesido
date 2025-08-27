@@ -3411,7 +3411,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                                 )
                                 efficiency = parameters[f"{hp}.efficiency"]
                                 t_cond = 273.15 + sec_sup_temp
-                                t_evap = 273.15 + prim_ret_temp
+                                t_evap = 273.15 + prim_sup_temp
 
                                 cop_carnot = efficiency * t_cond / (t_cond - t_evap)
                                 not_selected = (
@@ -3592,6 +3592,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         parameters = self.parameters(ensemble_member)
 
         for asset in {
+            *self.energy_system_components.get("airco", []),
             *self.energy_system_components.get("heat_demand", []),
             *self.energy_system_components.get("cold_demand", []),
             *self.energy_system_components.get("heat_exchanger", []),
