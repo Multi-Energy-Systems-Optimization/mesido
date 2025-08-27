@@ -3593,14 +3593,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 * 1.0e3
             )
             if self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
-                # A minimum pressure drop needs to be overcome
-                # constraints.append(
-                #     (
-                #         (min_dp * discharge - (hp_out - hp_in)) / big_m,
-                #         0.0,
-                #         np.inf,
-                #     )
-                # )
                 constraints.append(
                     (
                         ((hp_in - hp_out) - min_dp * discharge) / big_m,
@@ -3616,9 +3608,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         0.0,
                     )
                 )
-                # constraints.append(
-                #     (pump_power / self.variable_nominal(f"{asset}.Pump_power"), 0.0, 0.0)
-                # )
 
         return constraints
 

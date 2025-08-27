@@ -51,13 +51,6 @@ class Airco(_NonStorageComponent):
         )
 
         self.add_equation(self.dH - (self.HeatOut.H - self.HeatIn.H))
-        # self.add_equation(
-        #     (
-        #         self.minimum_pressure_drop * self.Q
-        #         - (self.HeatIn.Hydraulic_power - self.HeatOut.Hydraulic_power)
-        #     )
-        #     / (self.Q_nominal * self.minimum_pressure_drop)
-        # )
         self.add_equation(
             (self.Pump_power - (self.HeatOut.Hydraulic_power - self.HeatIn.Hydraulic_power))
             / (self.Q_nominal * self.nominal_pressure)
