@@ -1,8 +1,9 @@
-# [Unreleased-main] - 2025-08-26
+# [Unreleased-main] - 2025-08-27
 
 ## Added
 - Potential error checks if heating demand state is not set to enabled
 - Generic modifier functions for consistency across assets.
+- Discrete charge/discharge variable for an ATES asset.
 
 ## Changed
 - TCO cost calculation objective to now exclude heating demand costs in the grow workflow
