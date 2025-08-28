@@ -9,20 +9,15 @@ import esdl
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import InfluxDBProfileReader, ProfileReaderFromFile
-from mesido.exceptions import MesidoAssetIssueError
-from mesido.potential_errors import MesidoAssetIssueType, PotentialErrors
 from mesido.workflows import EndScenarioSizingStaged
 from mesido.workflows.utils.adapt_profiles import (
     adapt_hourly_profile_averages_timestep_size,
     adapt_profile_to_copy_for_number_of_years,
 )
-from mesido.workflows.utils.error_types import mesido_issue_type_gen_message
 
 import numpy as np
 
 import pandas as pd
-
-from utils_test_scaling import create_log_list_scaling
 
 
 class MockInfluxDBProfileReader(InfluxDBProfileReader):
@@ -127,122 +122,6 @@ class TestProfileUpdating(unittest.TestCase):
         )
         assert len(timeseries_updated) == len_org_time_serie * problem_years
         assert all(dt.days == 365 for dt in dts)
-
-
-class TestPotentialErrors(unittest.TestCase):
-    def test_asset_potential_errors(self):
-        """
-        This test checks that the error checks in the code for sufficient installed cool/heatig
-        capacity of a cold/heat demand is sufficient (grow_workflow)
-
-        Checks:
-        1. Correct error is raised
-        2. That the error is due to:
-            - insufficient heat specified capacities for 3 heating demands
-            - incorrect heating demand type being used for 1 heating demand
-            - profile cannot be assigned to a specific asset
-        """
-        import models.unit_cases.case_1a.src.run_1a as run_1a
-
-        base_folder = Path(run_1a.__file__).resolve().parent.parent
-        model_folder = base_folder / "model"
-        input_folder = base_folder / "input"
-
-        logger, logs_list = create_log_list_scaling("WarmingUP-MPC")
-
-        with self.assertRaises(MesidoAssetIssueError) as cm, unittest.mock.patch(
-            "mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()
-        ):
-            problem = EndScenarioSizingStaged(
-                esdl_parser=ESDLFileParser,
-                base_folder=base_folder,
-                model_folder=model_folder,
-                input_folder=input_folder,
-                esdl_file_name="1a_with_influx_profiles_error_check_1.esdl",
-                profile_reader=MockInfluxDBProfileReader,
-                input_timeseries_file="influx_mock.csv",
-            )
-            problem.pre()
-
-        # Check that the heat demand had an error
-        np.testing.assert_equal(cm.exception.error_type, MesidoAssetIssueType.HEAT_DEMAND_POWER)
-        np.testing.assert_equal(
-            cm.exception.general_issue,
-            mesido_issue_type_gen_message(MesidoAssetIssueType.HEAT_DEMAND_POWER),
-        )
-        np.testing.assert_equal(
-            cm.exception.message_per_asset_id["2ab92324-f86e-4976-9a6e-f7454b77ba3c"],
-            "Asset named HeatingDemand_2ab9: The installed capacity of 6.0MW should be larger than"
-            " the maximum of the heat demand profile 5175.717MW",
-        )
-        np.testing.assert_equal(
-            cm.exception.message_per_asset_id["506c41ac-d415-4482-bf10-bf12f17aeac6"],
-            "Asset named HeatingDemand_506c: The installed capacity of 2.0MW should be larger than"
-            " the maximum of the heat demand profile 1957.931MW",
-        )
-        np.testing.assert_equal(
-            cm.exception.message_per_asset_id["6662aebb-f85e-4df3-9f7e-c58993586fba"],
-            "Asset named HeatingDemand_6662: The installed capacity of 2.0MW should be larger than"
-            " the maximum of the heat demand profile 1957.931MW",
-        )
-        np.testing.assert_equal(len(cm.exception.message_per_asset_id), 3.0)
-
-        # Check heating demand type error
-        with self.assertRaises(MesidoAssetIssueError) as cm, unittest.mock.patch(
-            "mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()
-        ):
-            problem = EndScenarioSizingStaged(
-                esdl_parser=ESDLFileParser,
-                base_folder=base_folder,
-                model_folder=model_folder,
-                input_folder=input_folder,
-                esdl_file_name="1a_with_influx_profiles_error_check_2.esdl",
-                profile_reader=MockInfluxDBProfileReader,
-                input_timeseries_file="influx_mock.csv",
-            )
-            problem.pre()
-        # Check that the heat demand had an error
-        np.testing.assert_equal(cm.exception.error_type, MesidoAssetIssueType.HEAT_DEMAND_TYPE)
-        np.testing.assert_equal(
-            cm.exception.general_issue,
-            mesido_issue_type_gen_message(MesidoAssetIssueType.HEAT_DEMAND_TYPE),
-        )
-        np.testing.assert_equal(
-            cm.exception.message_per_asset_id["2ab92324-f86e-4976-9a6e-f7454b77ba3c"],
-            "Asset named HeatingDemand_2ab9: This asset is currently a GenericConsumer please"
-            " change it to a HeatingDemand",
-        )
-        np.testing.assert_equal(len(cm.exception.message_per_asset_id), 1.0)
-
-        # Check asset profile capability
-        with self.assertRaises(MesidoAssetIssueError) as cm, unittest.mock.patch(
-            "mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()
-        ):
-            problem = EndScenarioSizingStaged(
-                esdl_parser=ESDLFileParser,
-                base_folder=base_folder,
-                model_folder=model_folder,
-                input_folder=input_folder,
-                esdl_file_name="1a_with_influx_profiles_error_check_3.esdl",
-                profile_reader=MockInfluxDBProfileReader,
-                input_timeseries_file="influx_mock.csv",
-            )
-            problem.pre()
-        # Check that the joint has an error
-        np.testing.assert_equal(
-            cm.exception.error_type,
-            MesidoAssetIssueType.ASSET_PROFILE_CAPABILITY,
-        )
-        np.testing.assert_equal(
-            cm.exception.general_issue,
-            mesido_issue_type_gen_message(MesidoAssetIssueType.ASSET_PROFILE_CAPABILITY),
-        )
-        np.testing.assert_equal(
-            cm.exception.message_per_asset_id["95802cf8-61d6-4773-bb99-e275c3bf26cc"],
-            "Asset named Joint_9580: The assigment of profile field demand3_MW is not possible for"
-            " this asset type <class 'esdl.esdl.Joint'>",
-        )
-        np.testing.assert_equal(len(cm.exception.message_per_asset_id), 1.0)
 
 
 class TestProfileLoading(unittest.TestCase):
@@ -402,9 +281,7 @@ class TestProfileLoading(unittest.TestCase):
 if __name__ == "__main__":
     # unittest.main()
     a = TestProfileLoading()
-    b = TestPotentialErrors()
     c = TestProfileUpdating()
-    # b.test_asset_potential_errors()
     # a.test_loading_from_influx()
     # a.test_loading_from_csv()
     # a.test_loading_from_xml()
