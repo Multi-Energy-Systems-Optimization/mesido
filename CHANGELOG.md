@@ -1,7 +1,8 @@
 # [Unreleased-main] - 2025-08-27
 
 ## Added
-- Potential error checks if heating demand state is not set to enabled
+- Potential error checks if heating demand state is not set to enabled.
+- Potential error checks if the heat exchanger capacity is set correctly.
 - Generic modifier functions for consistency across assets.
 - Discrete charge/discharge variable for an ATES asset.
 
