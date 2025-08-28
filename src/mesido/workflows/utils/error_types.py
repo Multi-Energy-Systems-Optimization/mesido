@@ -6,6 +6,7 @@ from mesido.potential_errors import MesidoAssetIssueType, get_potential_errors
 HEAT_NETWORK_ERRORS = "heat_network"
 HEAT_AND_COOL_NETWORK_ERRORS = "heat_and_cool_network"
 CUSTOM_ERRORS = "custom_errors"  # an example of custom stuff that can be added in the future
+NO_POTENTIAL_ERRORS_CHECK = "no_potential_errors"
 
 
 def mesido_issue_type_gen_message(issue_type: MesidoAssetIssueType) -> str:
@@ -28,6 +29,8 @@ def mesido_issue_type_gen_message(issue_type: MesidoAssetIssueType) -> str:
         " listed.",
         MesidoAssetIssueType.HEAT_DEMAND_TYPE: "Incorrect asset type: please update.",
         MesidoAssetIssueType.ASSET_PROFILE_CAPABILITY: "Profile assigment not allowed.",
+        MesidoAssetIssueType.ASSET_COST_ATTRIBUTE_INCORRECT: "Incorrect cost information.",
+        MesidoAssetIssueType.ASSET_COST_ATTRIBUTE_MISSING: "Required cost attribute is missing.",
         MesidoAssetIssueType.HEAT_EXCHANGER_TEMPERATURES: "Temperatures at heat exchanger set "
         "incorrectly.",
         MesidoAssetIssueType.HEAT_DEMAND_STATE: "Heating Demand state set to OPTIONAL",
@@ -49,6 +52,8 @@ def potential_error_to_error(network_check_type: Enum) -> None:
             MesidoAssetIssueType.COLD_DEMAND_POWER,
             MesidoAssetIssueType.HEAT_DEMAND_TYPE,
             MesidoAssetIssueType.ASSET_PROFILE_CAPABILITY,
+            MesidoAssetIssueType.ASSET_COST_ATTRIBUTE_INCORRECT,
+            MesidoAssetIssueType.ASSET_COST_ATTRIBUTE_MISSING,
             MesidoAssetIssueType.HEAT_EXCHANGER_TEMPERATURES,
             MesidoAssetIssueType.HEAT_DEMAND_STATE,
         ],
@@ -62,6 +67,7 @@ def potential_error_to_error(network_check_type: Enum) -> None:
         ],
         # Example of extra error types / groups that can be added. This one is not used yet.
         CUSTOM_ERRORS: [MesidoAssetIssueType.ASSET_PROFILE_CAPABILITY],
+        NO_POTENTIAL_ERRORS_CHECK: [],
     }
 
     # Error checking:
