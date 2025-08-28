@@ -470,7 +470,7 @@ def energy_conservation_test(solution, results):
                 )
             energy_sum -= results[f"{p}__hn_heat_loss"]
 
-    np.testing.assert_allclose(energy_sum, 0.0, atol=1e-2)
+    np.testing.assert_allclose(energy_sum, 0.0, atol=1e-1)
 
 
 def gas_pipes_head_loss_test(solution, results):

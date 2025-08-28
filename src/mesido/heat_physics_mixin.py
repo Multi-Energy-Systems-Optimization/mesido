@@ -3577,6 +3577,65 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         return constraints
 
+    def __sink_hydraulic_power_path_constraints(self, ensemble_member):
+        """
+        This function adds hydraulic power and pump power contraints for a storage assets. If the
+        head loss option is not enabled then the hydraulic power and pump power are for forced to
+        0.0 but if the head loss option is enabled then:
+            - The delta hydraulic power is constrained to be equal to f(minimum pressure drop,
+            volumetric flow rate) when the storage is being charged.
+            - The pump power is constrained to be equal the delta hydraulic power when the storage
+            is not being charged.
+        """
+        constraints = []
+
+        parameters = self.parameters(ensemble_member)
+
+        for asset in {
+            *self.energy_system_components.get("airco", []),
+            *self.energy_system_components.get("heat_demand", []),
+            *self.energy_system_components.get("cold_demand", []),
+            *self.energy_system_components.get("heat_exchanger", []),
+            *self.energy_system_components.get("heat_pump", []),
+        }:
+
+            min_dp = parameters[f"{asset}.minimum_pressure_drop"]
+
+            if asset in {
+                *self.energy_system_components.get("heat_exchanger", []),
+                *self.energy_system_components.get("heat_pump", []),
+            }:
+                asset += ".Primary"
+            discharge = self.state(f"{asset}.HeatIn.Q")
+            hp_in = self.state(f"{asset}.HeatIn.Hydraulic_power")
+            hp_out = self.state(f"{asset}.HeatOut.Hydraulic_power")
+
+            big_m = (
+                2.0
+                * self.bounds()[f"{asset}.HeatIn.Q"][1]
+                * self.__maximum_total_head_loss
+                * 10.2
+                * 1.0e3
+            )
+            if self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
+                constraints.append(
+                    (
+                        ((hp_in - hp_out) - min_dp * discharge) / big_m,
+                        0.0,
+                        np.inf,
+                    )
+                )
+            else:
+                constraints.append(
+                    (
+                        (hp_out - hp_in) / self.variable_nominal(f"{asset}.HeatIn.Hydraulic_power"),
+                        0.0,
+                        0.0,
+                    )
+                )
+
+        return constraints
+
     def path_constraints(self, ensemble_member):
         """
         Here we add all the path constraints to the optimization problem. Please note that the
@@ -3621,6 +3680,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints.extend(self.__ates_temperature_ordering_path_constraints(ensemble_member))
         constraints.extend(self.__heat_pump_cop_path_constraints(ensemble_member))
         constraints.extend(self.__storage_hydraulic_power_path_constraints(ensemble_member))
+        constraints.extend(self.__sink_hydraulic_power_path_constraints(ensemble_member))
 
         return constraints
 

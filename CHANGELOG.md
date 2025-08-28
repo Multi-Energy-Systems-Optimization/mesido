@@ -7,6 +7,7 @@
 
 ## Changed
 - TCO cost calculation objective to now exclude heating demand costs in the grow workflow
+- Hydraulic power calculation at "sink" assets is set to 0.0 if headloss calculation is turned off.
 
 
 # [Unreleased-main] - 2025-08-14
