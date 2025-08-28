@@ -94,7 +94,7 @@ class BaseESDLParser:
         # Check if the ESDL has asset templates
         try:
             asset_templates = list(self._energy_system.templates.eAllContents())
-        except:
+        except AttributeError:
             asset_templates = None
 
         # loop through assets
@@ -104,7 +104,8 @@ class BaseESDLParser:
             if asset_templates is not None and el in asset_templates:
                 if isinstance(el, esdl.AssetTemplate):
                     asset_type = el.__class__.__name__
-                    # Note that e.g. el.__dict__['length'] does not work to get the length of a pipe.
+                    # Note that e.g. el.__dict__['length'] does not work to get the length of a
+                    # pipe.
                     # We therefore built this dict ourselves using 'dir' and 'getattr'
                     attributes = {k: getattr(el, k) for k in dir(el)}
                     self._templates[el.id] = Asset(
@@ -158,7 +159,8 @@ class BaseESDLParser:
                                 f"The port for {el_name} is neither an IN or OUT port"
                             )
 
-                    # Note that e.g. el.__dict__['length'] does not work to get the length of a pipe.
+                    # Note that e.g. el.__dict__['length'] does not work to get the length of a
+                    # pipe.
                     # We therefore built this dict ourselves using 'dir' and 'getattr'
                     attributes = {k: getattr(el, k) for k in dir(el)}
                     self._assets[el.id] = Asset(

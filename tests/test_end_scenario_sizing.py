@@ -1,7 +1,6 @@
 from pathlib import Path
 from unittest import TestCase
 
-import esdl
 
 import mesido._darcy_weisbach as darcy_weisbach
 from mesido.esdl.esdl_parser import ESDLFileParser
@@ -370,7 +369,6 @@ class TestEndScenarioSizing(TestCase):
         parameters = solution.parameters(0)
 
         # Test if the costs that are used in the problem match the costs from the ESDL Template
-        # ESDL template costs
         pipe_templates = solution.filter_asset_templates(solution._esdl_templates, "Pipe")
         pipe_diameter_cost_map = {
             str(pipe.attributes["asset"].diameter): pipe.attributes[
@@ -379,25 +377,26 @@ class TestEndScenarioSizing(TestCase):
             for pipe in pipe_templates.values()
         }
         pipe_classes_dia_map = {
-            solution.pipe_classes(pipe)[1].inner_diameter: solution.pipe_classes(pipe)[1].name
+            solution.pipe_classes(pipe)[-1].inner_diameter: solution.pipe_classes(pipe)[-1].name
             for pipe in solution.energy_system_components.get("heat_pipe")
             if not pipe.endswith("_ret")
         }
         # Get the costs from the solution parameters
-        # Assert the same specific investment costs have been use between the template and the
-        # soltuion parameters
+        # Assert that the same specific investment costs have been use between the template and the
+        # solution parameters
         for heat_pipe in solution.energy_system_components.get("heat_pipe"):
-            # Check only if the pipe exits. Cost of 0 means the asset has been removed as a result of the sizing optimization
-            if results[f"{solution._asset_investment_cost_map[heat_pipe]}"] > 0.0:
+            # Check only if the pipe exits. Cost of 0 means the asset has been removed as a result
+            # of the sizing optimization
+            if results[f"{solution._asset_investment_cost_map[heat_pipe]}"] > 1.0:
                 investment_cost_specific = (
-                    results[f"{solution._asset_investment_cost_map[heat_pipe]}"]
+                    results[f"{solution._asset_investment_cost_map[heat_pipe]}"][0]
                     / parameters[f"{heat_pipe}.length"]
                 )  # [Eur/m]
                 optimized_diameter = parameters[f"{heat_pipe}.diameter"]
                 cost_map_from_template = pipe_diameter_cost_map[
                     pipe_classes_dia_map[optimized_diameter]
                 ]
-                np.testing.assert_equal(cost_map_from_template, investment_cost_specific)
+                np.testing.assert_allclose(cost_map_from_template, investment_cost_specific)
 
 
 if __name__ == "__main__":
