@@ -299,7 +299,7 @@ class HeatProblemESDLProdProfile(
         options = super().solver_options()
         options["solver"] = "highs"
         options_highs = options["highs"] = {}
-        options_highs["mip_rel_gap"]=1e-6
+        options_highs["mip_rel_gap"] = 1e-6
         return options
 
     def energy_system_options(self):
