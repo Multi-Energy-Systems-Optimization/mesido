@@ -221,8 +221,6 @@ class ESDLMixin(
                             pipe_classes[i],
                             investment_costs=pipe_diameter_cost_map[pipe_class.name],
                         )
-            else:
-                pass
 
         # We assert the pipe classes are monotonically increasing in size
         assert np.all(np.diff([pc.inner_diameter for pc in pipe_classes]) > 0)

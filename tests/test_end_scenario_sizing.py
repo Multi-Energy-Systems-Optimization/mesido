@@ -377,7 +377,9 @@ class TestEndScenarioSizing(TestCase):
             for pipe in pipe_templates.values()
         }
         pipe_classes_dia_map = {
-            solution.pipe_classes(pipe)[-1].inner_diameter: solution.pipe_classes(pipe)[-1].name
+            solution.get_optimized_pipe_class(pipe)
+            .inner_diameter: solution.get_optimized_pipe_class(pipe)
+            .name
             for pipe in solution.energy_system_components.get("heat_pipe")
             if not pipe.endswith("_ret")
         }
