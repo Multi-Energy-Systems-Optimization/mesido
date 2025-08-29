@@ -74,6 +74,20 @@ class BaseComponentTypeMixin:
         return related
 
     @property
+    def hot_to_cold_pipe_map(self) -> Dict[str, str]:
+        """
+        This function return a dictionary of hot pipe names mapped to cold pipe names.
+        """
+        raise NotImplementedError
+
+    @property
+    def cold_to_hot_pipe_map(self) -> Dict[str, str]:
+        """
+        This function return a dictionary of cold pipe names mapped to hot pipe names.
+        """
+        raise NotImplementedError
+
+    @property
     def hot_pipes(self) -> List[str]:
         """
         This function return a list of all the supply/hot pipe names.
