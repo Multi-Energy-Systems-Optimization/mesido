@@ -5,7 +5,7 @@ import logging
 import xml.etree.ElementTree as ET  # noqa: N817
 from datetime import timedelta
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 import esdl.esdl_handler
 
@@ -146,6 +146,8 @@ class ESDLMixin(
 
             self.__model = ESDLQTHModel(assets, **self.esdl_qth_model_options())
 
+        self.original_pipe_class = list()
+        self.updated_pipe_class = list()
         self._override_pipe_classes = dict()
         self.override_pipe_classes()
         self._override_gas_pipe_classes = dict()
@@ -200,10 +202,10 @@ class ESDLMixin(
             EDRPipeClass.from_edr_class(name, edr_class_name, maximum_velocity)
             for name, edr_class_name in _AssetToComponentBase.STEEL_S1_PIPE_EDR_ASSETS.items()
         ]
-
+        self.original_pipe_class = copy.deepcopy(pipe_classes)
         # Update the pipe costs if a template model in the ESDL was used. This is updated only if
         # the pipe catalog is available as a template
-        if self._esdl_templates is not None:
+        if self._esdl_templates:
             filter_type = "Pipe"
             pipe_templates = self.filter_asset_templates(
                 asset_templates=self._esdl_templates, filter_type=filter_type
@@ -221,6 +223,8 @@ class ESDLMixin(
                             pipe_classes[i],
                             investment_costs=pipe_diameter_cost_map[pipe_class.name],
                         )
+                    else:
+                        del pipe_classes[i]
 
         # We assert the pipe classes are monotonically increasing in size
         assert np.all(np.diff([pc.inner_diameter for pc in pipe_classes]) > 0)
@@ -673,7 +677,7 @@ class ESDLMixin(
     @classmethod
     def filter_asset_templates(
         cls, asset_templates: dict[str, Asset], filter_type: str
-    ) -> Optional[dict[str, Asset]]:
+    ) -> dict[str, Asset] | None:
         filtered_assets = dict()
         for asset_id, asset in asset_templates.items():
             asset_type = asset.attributes["asset"]

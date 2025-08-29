@@ -347,9 +347,7 @@ class TestEndScenarioSizing(TestCase):
                     )
 
     def test_end_scenario_sizing_pipe_catalog(self):
-        # TODO: also add test to just check if cost values are updated
-        # TODO: this test should contain a test if updated cost values from the pipe catalog in
-        # the ESDL are used
+
         import models.test_case_small_network_ates_buffer_optional_assets.src.run_ates as run_ates
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
@@ -383,6 +381,13 @@ class TestEndScenarioSizing(TestCase):
             for pipe in solution.energy_system_components.get("heat_pipe")
             if not pipe.endswith("_ret")
         }
+        original_pipe_class_names = [pipe.name for pipe in solution.original_pipe_class]
+        updated_pipe_class_names = [pipe_name for pipe_name in pipe_diameter_cost_map.keys()]
+        # Check if the pipe classes were updated correctly by matching length
+        np.testing.assert_equal(
+            len(set(original_pipe_class_names).difference(updated_pipe_class_names)),
+            len(original_pipe_class_names) - len(updated_pipe_class_names)
+        )
         # Get the costs from the solution parameters
         # Assert that the same specific investment costs have been use between the template and the
         # solution parameters
