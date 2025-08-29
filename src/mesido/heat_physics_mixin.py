@@ -2265,7 +2265,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             else:
                 supply_temperatures = parameters[f"{ates}.ates_temperature_options"]
 
-            if self._stage == 3:
+            if False:
+            # if self._stage == 3:
                 pass
             elif options["include_ates_temperature_options"] and len(supply_temperatures) != 0:
                 soil_temperature = parameters[f"{ates}.T_amb"]

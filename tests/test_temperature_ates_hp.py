@@ -456,7 +456,7 @@ class TestAtesTemperature(TestCase):
             esdl_file_name="ATES_6port_HP_electricity_simplified.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="ACCEL_UTES.csv",
+            input_timeseries_file="Heatdemand_eprice.csv",
         )
 
         results = solution.extract_results()

@@ -43,6 +43,7 @@ class ATES(HeatTwoPort, BaseAsset):
         self.T_amb = 10
         self.T_supply = nan
         self.T_return = nan
+        self.ates_temperature_range = None
         self.T_supply_id = -1
         self.T_return_id = -1
         self.dT = self.T_supply - self.T_return
@@ -52,7 +53,6 @@ class ATES(HeatTwoPort, BaseAsset):
         self.nominal_pressure = 16.0e5
         self.minimum_pressure_drop = 1.0e5  # 1 bar of pressure drop
         self.pump_efficiency = 0.5
-
 
         if self.ates_temperature_range:
             max_t = max(self.ates_temperature_range)

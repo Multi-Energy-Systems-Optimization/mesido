@@ -1,3 +1,5 @@
+import numpy as np
+
 from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 from ._non_storage_component import _NonStorageComponent
