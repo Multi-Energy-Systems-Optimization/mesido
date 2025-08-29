@@ -259,9 +259,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 qua = kpi.quantityAndUnit
                 if qua.physicalQuantity == esdl.PhysicalQuantityEnum.EMISSION:
                     value = kpi.value
-                    #TODO: multiplier  # to g/Wh
+                    # TODO: multiplier  # to g/Wh
         return value
-
 
     def _generic_modifiers(self, asset):
         """
