@@ -108,7 +108,7 @@ class GasElectProblem(
 
         # Setting when started with head loss inclusions
         self.gas_network_settings["minimum_velocity"] = 0.0
-        self.gas_network_settings["maximum_velocity"] = 15.0
+        self.gas_network_settings["maximum_velocity"] = 60.0
 
         # TODO: resolve scaling and potential other issues preventing HIGHS to optimize the system
         # when LINEARIZED_N_LINES_EQUALITY head loss setting is used
