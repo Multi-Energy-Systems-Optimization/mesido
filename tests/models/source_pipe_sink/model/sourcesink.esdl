@@ -13,6 +13,11 @@
         <port xsi:type="esdl:OutPort" id="b0b1a87c-7b5a-4edb-a732-274d1bf69647" connectedTo="3b5636b1-7b14-46bd-bb27-c0718350b418" carrier="435a0034-fab0-4e7e-9a17-edf8de9a2b11" name="Out"/>
         <port xsi:type="esdl:InPort" id="622d7e19-e360-46af-bfbf-eb35ec14548b" carrier="435a0034-fab0-4e7e-9a17-edf8de9a2b11_ret" name="In" connectedTo="0f11bb2d-fb28-4f9d-8992-8d5901f579d7"/>
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="52.08646829489945" lon="4.386527538299561"/>
+        <KPIs xsi:type="esdl:KPIs" id="84ff0ad8-b14b-40ab-a3a2-18ee867dc231">
+          <kpi xsi:type="esdl:DoubleKPI" id="2a298434-c3ef-4639-87cf-4b9a04bb292a" name="Emission per energy" description="Emission" value="5.0">
+            <quantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="8c555eb2-a87a-4df7-bd6a-0316bb8a3627" physicalQuantity="EMISSION" unit="GRAM" multiplier="KILO" perUnit="WATTHOUR" description="CO2 emission"/>
+          </kpi>
+        </KPIs>
       </asset>
       <asset xsi:type="esdl:HeatingDemand" name="demand" id="f6d5923d-ba9a-409d-80a0-26f73b2a574b" power="10000000.0">
         <port xsi:type="esdl:InPort" id="b8849fb5-fe97-48d9-91a8-9abcbf365738" carrier="435a0034-fab0-4e7e-9a17-edf8de9a2b11" name="In" connectedTo="76679c8a-43ec-4f6d-81c4-9b43e21696cc"/>
