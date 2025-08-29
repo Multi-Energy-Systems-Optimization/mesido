@@ -5,6 +5,7 @@
 - Potential error checks if the heat exchanger capacity is set correctly.
 - Generic modifier functions for consistency across assets.
 - Discrete charge/discharge variable for an ATES asset.
+- Checks if a timelimit is reached in the GROW workflow at each stage.
 
 ## Changed
 - TCO cost calculation objective to now exclude heating demand costs in the grow workflow
@@ -23,6 +24,7 @@
 
 ## Fixed
 - Bug: Add 3 port heat pump to elect demand path constraint
+- Error exit when priority 1 reaches time limit in grow workflow for all settings and solvers.
 
 
 # [0.1.13] - 2025-06-25

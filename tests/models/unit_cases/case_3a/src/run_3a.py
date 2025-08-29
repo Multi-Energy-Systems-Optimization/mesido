@@ -294,6 +294,14 @@ class HeatProblemESDLProdProfile(
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
+
+    def solver_options(self):
+        options = super().solver_options()
+        options["solver"] = "highs"
+        options_highs = options["highs"] = {}
+        options_highs["mip_rel_gap"] = 1e-6
+        return options
+
     def energy_system_options(self):
         options = super().energy_system_options()
         options["heat_loss_disconnected_pipe"] = True
