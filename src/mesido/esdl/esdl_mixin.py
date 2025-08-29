@@ -536,8 +536,8 @@ class ESDLMixin(
                     elif asset.attributes["port"][0].carrier.returnTemperature:  # cold_pipe
                         if related_asset[0].name not in self.__hot_cold_pipe_relations.keys():
                             self.__hot_cold_pipe_relations[related_asset[0].name] = asset.name
-            if not related:
-                self.__unrelated_pipes.append(asset.name)
+                if not related:
+                    self.__unrelated_pipes.append(asset.name)
 
     @property
     def hot_to_cold_pipe_map(self) -> Dict:
@@ -552,7 +552,7 @@ class ESDLMixin(
         This function return a dictionary of cold pipe names mapped to hot pipe names.
         """
         return dict(
-            map(self.__hot_cold_pipe_relations.values(), self.__hot_cold_pipe_relations.keys())
+            zip(self.__hot_cold_pipe_relations.values(), self.__hot_cold_pipe_relations.keys())
         )
 
     @property
