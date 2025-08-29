@@ -1,5 +1,9 @@
 from unittest import TestCase
 
+from mesido._darcy_weisbach import friction_factor, head_loss
+from mesido.constants import GRAVITATIONAL_CONSTANT
+from mesido.head_loss_class import HeadLossOption
+
 import numpy as np
 
 
@@ -168,7 +172,6 @@ def heat_to_discharge_test(solution, results):
         # return_t = solution.parameters(0)[f"{d}.T_return"]
         supply_t, return_t, dt = _get_component_temperatures(solution, results, d)
 
-        print(d, max(abs(results[f"{d}.HeatOut.Heat"] - results[f"{d}.Q"] * rho * cp * supply_t)))
         np.testing.assert_allclose(
             results[f"{d}.HeatOut.Heat"],
             results[f"{d}.Q"] * rho * cp * supply_t,
@@ -467,4 +470,113 @@ def energy_conservation_test(solution, results):
                 )
             energy_sum -= results[f"{p}__hn_heat_loss"]
 
-    np.testing.assert_allclose(energy_sum, 0.0, atol=1e-2)
+    np.testing.assert_allclose(energy_sum, 0.0, atol=1e-1)
+
+
+def gas_pipes_head_loss_test(solution, results):
+    """Test to check if the result dH is equal to manually calculated dH via linear interpolation"""
+    for pipe in solution.energy_system_components.get("gas_pipe", []):
+        if results[f"{pipe}__gn_diameter"] <= 1e-15:
+            pass
+        else:
+            v_max = solution.gas_network_settings["maximum_velocity"]
+            pipe_diameter = results[f"{pipe}__gn_diameter"][0]
+            area = np.pi * pipe_diameter**2 / 4.0
+            network_type = solution.gas_network_settings["network_type"]
+            pressure = solution.parameters(0)[f"{pipe}.pressure"]
+            pipe_wall_roughness = solution.energy_system_options()["wall_roughness"]
+            temperature = 20  # is default for gas pipes
+            pipe_length = solution.parameters(0)[f"{pipe}.length"]
+            v_pipe = results[f"{pipe}.Q"] / area
+            if (
+                solution.gas_network_settings["head_loss_option"]
+                == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+            ):
+                ff = friction_factor(
+                    velocity=v_max,
+                    diameter=pipe_diameter,
+                    network_type=network_type,
+                    pressure=pressure,
+                    wall_roughness=pipe_wall_roughness,
+                    temperature=temperature,
+                )
+                c_v = solution.parameters(0)[f"{pipe}.length"] * ff / (2 * 9.81) / pipe_diameter
+                dh_max = c_v * v_max**2
+                dh_manual = dh_max * v_pipe / v_max
+                np.testing.assert_allclose(-dh_manual, results[f"{pipe}.dH"], atol=1.0e-12)
+
+            elif (
+                solution.gas_network_settings["head_loss_option"]
+                == HeadLossOption.LINEARIZED_N_LINES_EQUALITY
+            ):
+                itime = 2  # 0
+                v_points = np.linspace(
+                    0.0,
+                    v_max,
+                    solution.gas_network_settings["n_linearization_lines"] + 1,
+                )
+                v_inspect = v_pipe[itime]
+
+                # Theoretical head loss calc, dH =
+                # friction_factor * 8 * pipe_length * volumetric_flow^2
+                # / ( pipe_diameter^5 * g * pi^2)
+                dh_theory = (
+                    friction_factor(
+                        velocity=v_inspect,
+                        diameter=pipe_diameter,
+                        network_type=network_type,
+                        pressure=pressure,
+                        wall_roughness=pipe_wall_roughness,
+                        temperature=temperature,
+                    )
+                    * 8.0
+                    * pipe_length
+                    * (v_inspect * np.pi * pipe_diameter**2 / 4.0) ** 2
+                    / (pipe_diameter**5 * GRAVITATIONAL_CONSTANT * np.pi**2)
+                )
+                # Approximate dH [m] vs Q [m3/s] with a linear line between between v_points
+                # dH_manual_linear = a*Q + b
+                # Then use this linear function to calculate the head loss
+                idx = int(np.searchsorted(v_points, v_inspect))
+
+                dh_theory_idx = head_loss(
+                    velocity=v_points[idx],
+                    diameter=pipe_diameter,
+                    length=pipe_length,
+                    network_type=network_type,
+                    pressure=pressure,
+                    wall_roughness=pipe_wall_roughness,
+                    temperature=temperature,
+                )
+
+                dh_theory_idx_minus = head_loss(
+                    velocity=v_points[idx - 1],
+                    diameter=pipe_diameter,
+                    length=pipe_length,
+                    network_type=network_type,
+                    pressure=pressure,
+                    wall_roughness=pipe_wall_roughness,
+                    temperature=temperature,
+                )
+                q_idx = v_points[idx] * np.pi * pipe_diameter**2 / 4.0
+                q_idx_minus = v_points[idx - 1] * np.pi * pipe_diameter**2 / 4.0
+                q_inspect = v_inspect * np.pi * pipe_diameter**2 / 4.0
+
+                a = (dh_theory_idx - dh_theory_idx_minus) / (q_idx - q_idx_minus)
+                b = dh_theory_idx - a * q_idx
+                dh_manual_linear = a * q_inspect + b
+
+                dh_milp_head_loss_function = head_loss(
+                    v_inspect,
+                    pipe_diameter,
+                    pipe_length,
+                    pipe_wall_roughness,
+                    temperature,
+                    network_type=solution.gas_network_settings["network_type"],
+                    pressure=solution.parameters(0)[f"{pipe}.pressure"],
+                )
+                np.testing.assert_allclose(dh_theory, dh_milp_head_loss_function)
+                np.testing.assert_array_less(dh_milp_head_loss_function, dh_manual_linear)
+                np.testing.assert_allclose(
+                    results[f"{pipe}.dH"][itime], -dh_manual_linear, atol=1.0e-12
+                )

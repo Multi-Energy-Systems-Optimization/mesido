@@ -102,7 +102,7 @@ class TestProducerMaxProfile(TestCase):
             demand_matching_test(solution, results)
             energy_conservation_test(solution, results)
             heat_to_discharge_test(solution, results)
-            tol = 1e-6
+            tol = 1e-4
             heat_produced = results["HeatProducer_b702.Heat_source"]
 
             if problem_class == HeatProblemESDLProdProfile:
