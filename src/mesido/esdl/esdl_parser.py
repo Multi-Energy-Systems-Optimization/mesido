@@ -92,7 +92,6 @@ class BaseESDLParser:
 
         # loop through assets
         for el in self._energy_system.eAllContents():
-            skip_profile = False
             if isinstance(el, esdl.Asset):
                 if hasattr(el, "name") and el.name:
                     el_name = el.name
@@ -118,9 +117,12 @@ class BaseESDLParser:
                 out_ports = None
                 for port in el.port:
                     try:
-                        if port.profile.items[0].profileType == esdl.ProfileTypeEnum.OUTPUT:
-                            skip_profile = True
-                            break
+                        indices = []
+                        for idx in range(len(port.profile.items)):
+                            if port.profile.items[idx].profileType == esdl.ProfileTypeEnum.OUTPUT:
+                                indices.append(idx)
+                        for i in sorted(indices, reverse=True):
+                            port.profile.pop(i)
                     except:
                         pass
                     if isinstance(port, esdl.InPort):
@@ -135,10 +137,6 @@ class BaseESDLParser:
                             out_ports.append(port)
                     else:
                         _ESDLInputException(f"The port for {el_name} is neither an IN or OUT port")
-
-                #  This profile in ESDL is defined as output. It is skipped without being read
-                if skip_profile:
-                    continue
 
                 # Note that e.g. el.__dict__['length'] does not work to get the length of a pipe.
                 # We therefore built this dict ourselves using 'dir' and 'getattr'
