@@ -1,7 +1,6 @@
 import logging
 import os
 
-from esdl import AssetStateEnum
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.head_loss_class import HeadLossOption
@@ -194,9 +193,9 @@ class GasElectProblem(
             cable_classes_list.append(
                 CableClass(
                     name=cable_name,
-                    maximum_current=properties['maximum_current'],
-                    resistance=properties['resistance'],
-                    investment_costs=properties['investment_costs']
+                    maximum_current=properties["maximum_current"],
+                    resistance=properties["resistance"],
+                    investment_costs=properties["investment_costs"],
                 )
             )
 

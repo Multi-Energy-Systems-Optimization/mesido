@@ -522,7 +522,7 @@ def gas_pipes_head_loss_test(solution, results):
                 if abs(v_inspect - solution.gas_network_settings["minimum_velocity"]) < 1e-12:
                     v_inspect = solution.gas_network_settings["minimum_velocity"]
                 if abs(v_inspect - solution.gas_network_settings["maximum_velocity"]) < 1e-12:
-                    v_inspect =solution.gas_network_settings["maximum_velocity"]
+                    v_inspect = solution.gas_network_settings["maximum_velocity"]
 
                 # Theoretical head loss calc, dH =
                 # friction_factor * 8 * pipe_length * volumetric_flow^2

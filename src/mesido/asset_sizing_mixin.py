@@ -337,14 +337,6 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     x for x in resistances if x > 0.0
                 )
 
-                for ensemble_member in range(self.ensemble_size):
-                    d = self.__electricity_cable_topo_max_current_resistance_parameters[
-                        ensemble_member
-                    ]
-
-                    d[f"{cable}.max_current"] = np.nan
-                    d[f"{cable}.resistance"] = np.nan
-
                 # Pipe class variables.
                 if not cable_classes or len(cable_classes) == 1:
                     # No pipe class decision to make for this pipe
