@@ -146,8 +146,6 @@ class ESDLMixin(
 
             self.__model = ESDLQTHModel(assets, **self.esdl_qth_model_options())
 
-        self.original_pipe_class = list()
-        self.updated_pipe_class = list()
         self._override_pipe_classes = dict()
         self.override_pipe_classes()
         self._override_gas_pipe_classes = dict()
@@ -202,7 +200,6 @@ class ESDLMixin(
             EDRPipeClass.from_edr_class(name, edr_class_name, maximum_velocity)
             for name, edr_class_name in _AssetToComponentBase.STEEL_S1_PIPE_EDR_ASSETS.items()
         ]
-        self.original_pipe_class = copy.deepcopy(pipe_classes)
         # Update the pipe costs if a template model in the ESDL was used. This is updated only if
         # the pipe catalog is available as a template
         if self._esdl_templates:

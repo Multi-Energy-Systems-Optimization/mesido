@@ -366,7 +366,8 @@ class TestEndScenarioSizing(TestCase):
         results = solution.extract_results()
         parameters = solution.parameters(0)
 
-        # Test if the costs that are used in the problem match the costs from the ESDL Template
+        # Test 1: Check if the solution pipe classes used were of the pipe templates, then we are sure
+        # that (rest of the) EDR pipe classes have not been used
         pipe_templates = solution.filter_asset_templates(solution._esdl_templates, "Pipe")
         pipe_diameter_cost_map = {
             str(pipe.attributes["asset"].diameter): pipe.attributes[
@@ -374,21 +375,23 @@ class TestEndScenarioSizing(TestCase):
             ].costInformation.investmentCosts.value
             for pipe in pipe_templates.values()
         }
-        pipe_classes_dia_map = {
+        solution_pipe_classes = solution.get_unique_pipe_classes()
+        solution_pipe_class_cost_map = {
+            sol_pipe.name : sol_pipe.investment_costs for sol_pipe in solution_pipe_classes
+            if not sol_pipe.name=="None"
+        }
+        np.testing.assert_equal(
+            solution_pipe_class_cost_map.items() <= pipe_diameter_cost_map.items(), True
+        )
+
+        # Test 2: If the costs that are used in the problem match the costs from the ESDL Template
+        # Optimized pipe class map of diameter
+        optimized_pipe_classes_dia_map = {
             solution.get_optimized_pipe_class(pipe)
             .inner_diameter: solution.get_optimized_pipe_class(pipe)
             .name
-            for pipe in solution.energy_system_components.get("heat_pipe")
-            if not pipe.endswith("_ret")
+            for pipe in solution.hot_pipes
         }
-        original_pipe_class_names = [pipe.name for pipe in solution.original_pipe_class]
-        updated_pipe_class_names = [pipe_name for pipe_name in pipe_diameter_cost_map.keys()]
-        # Check if the pipe classes were updated correctly by matching length
-        np.testing.assert_equal(
-            len(set(original_pipe_class_names).difference(updated_pipe_class_names)),
-            len(original_pipe_class_names) - len(updated_pipe_class_names)
-        )
-        # Get the costs from the solution parameters
         # Assert that the same specific investment costs have been use between the template and the
         # solution parameters
         for heat_pipe in solution.energy_system_components.get("heat_pipe"):
@@ -401,7 +404,7 @@ class TestEndScenarioSizing(TestCase):
                 )  # [Eur/m]
                 optimized_diameter = parameters[f"{heat_pipe}.diameter"]
                 cost_map_from_template = pipe_diameter_cost_map[
-                    pipe_classes_dia_map[optimized_diameter]
+                    optimized_pipe_classes_dia_map[optimized_diameter]
                 ]
                 np.testing.assert_allclose(cost_map_from_template, investment_cost_specific)
 
