@@ -3,12 +3,13 @@ from unittest import TestCase
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
-
 # from mesido.workflows.io.rollout_post import rollout_post
+from mesido.util import run_esdl_mesido_optimization
 from mesido.workflows.rollout_workflow import RollOutProblem
-from rtctools.util import run_optimization_problem
-from utils_tests import energy_conservation_test, heat_to_discharge_test
+
 import numpy as np
+
+from utils_tests import energy_conservation_test, heat_to_discharge_test
 
 
 class TestRollOutOptimization(TestCase):
@@ -59,7 +60,7 @@ class TestRollOutOptimization(TestCase):
                         f"HeatingDemand_{i}.target_heat_demand", demand_timeseries
                     )
 
-        solution = run_optimization_problem(
+        solution = run_esdl_mesido_optimization(
             RollOutTimeStep,
             base_folder=base_folder,
             esdl_file_name="PoC_tutorial_incl_ATES.esdl",
@@ -140,7 +141,8 @@ class TestRollOutOptimization(TestCase):
                 tol = 1e-6
                 np.testing.assert_(
                     asset_is_realized <= next_asset_is_realized + tol,
-                    f"{asset}__asset_is_realized_{y} should be <= {asset}__asset_is_realized_{y + 1}",
+                    f"{asset}__asset_is_realized_{y} should be <=\
+                        {asset}__asset_is_realized_{y + 1}",
                 )
 
         # Check yearly max investment constraint
@@ -241,7 +243,8 @@ class TestRollOutOptimization(TestCase):
                     ]
                     np.testing.assert_(
                         asset_fraction_placed <= next_asset_fraction_placed + tol,
-                        f"{asset}__fraction_placed_{y} should be <= {asset}__fraction_placed_{y + 1}",
+                        f"{asset}__fraction_placed_{y} should be <=\
+                            {asset}__fraction_placed_{y + 1}",
                     )
 
             for y in range(solution._years - 1):

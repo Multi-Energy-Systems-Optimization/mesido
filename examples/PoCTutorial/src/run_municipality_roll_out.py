@@ -55,7 +55,7 @@ if __name__ == "__main__":
         )
     for d in solution.energy_system_components.get("heat_demand", []):
         target = solution.get_timeseries(f"{d}.target_heat_demand").values[
-            0 : solution._days * solution._years + 1
+            0 : solution._timesteps_per_year * solution._years + 1
         ]
         delivered = results[f"{d}.Heat_demand"]
         print(f"{d}.Heat_demand", target, delivered)

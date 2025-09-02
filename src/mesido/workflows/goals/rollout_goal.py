@@ -112,9 +112,8 @@ class MinimizeCAPEXAssetsCosts(Goal):
 
             if asset.asset_type == "Pipe":
                 is_placed = optimization_problem.get_asset_is__realized_symbols(asset_name)
-                investment_cost_coeff = optimization_problem.get_pipe_investment_cost_coefficient(
-                    asset_name, ensemble_member
-                )
+                investment_cost_coeff = bounds[f"{asset_name}__hn_cost"][1]
+
                 length = parameters[f"{asset_name}.length"]
 
                 costs = investment_cost_coeff * length

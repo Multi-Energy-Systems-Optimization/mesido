@@ -49,7 +49,7 @@ class SolverHIGHS:
         options["casadi_solver"] = self._qpsol
         options["solver"] = "highs"
         highs_options = options["highs"] = {}
-        highs_options["mip_rel_gap"] = 0.0001
+        highs_options["mip_rel_gap"] = 0.01
 
         options["gurobi"] = None
         options["cplex"] = None
@@ -70,8 +70,8 @@ class SolverCPLEX:
 
 
 class RollOutProblem(
-    SolverCPLEX,
-    # SolverHIGHS,
+    # SolverCPLEX,
+    SolverHIGHS,
     ScenarioOutput,
     TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
