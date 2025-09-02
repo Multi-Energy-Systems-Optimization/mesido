@@ -6,6 +6,7 @@
 - Generic modifier functions for consistency across assets.
 - Discrete charge/discharge variable for an ATES asset.
 - Checks if a timelimit is reached in the GROW workflow at each stage.
+- Optimized esdl is re-usabled
 
 ## Changed
 - TCO cost calculation objective to now exclude heating demand costs in the grow workflow
