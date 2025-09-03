@@ -116,15 +116,12 @@ class BaseESDLParser:
                 in_ports = None
                 out_ports = None
                 for port in el.port:
-                    try:
-                        indices = []
-                        for idx in range(len(port.profile.items)):
-                            if port.profile.items[idx].profileType == esdl.ProfileTypeEnum.OUTPUT:
-                                indices.append(idx)
-                        for i in sorted(indices, reverse=True):
-                            port.profile.pop(i)
-                    except:
-                        pass
+                    if len(port.profile.items) > 0:
+                        port.profile.items = [
+                            item
+                            for item in port.profile.items
+                            if item.profileType != esdl.ProfileTypeEnum.OUTPUT
+                        ]
                     if isinstance(port, esdl.InPort):
                         if in_ports is None:
                             in_ports = [port]
