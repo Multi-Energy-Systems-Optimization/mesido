@@ -207,7 +207,7 @@ class ESDLMixin(
             pipe_templates = self.filter_asset_templates(
                 asset_templates=self._esdl_templates, filter_type=filter_type
             )
-            if pipe_templates is not None:
+            if len(pipe_templates.items()) > 0:
                 pipe_diameter_cost_map = {
                     str(pipe.attributes["asset"].diameter): pipe.attributes[
                         "asset"
@@ -673,8 +673,8 @@ class ESDLMixin(
 
     @classmethod
     def filter_asset_templates(
-        cls, asset_templates: dict[str, Asset], filter_type: str
-    ) -> dict[str, Asset] | None:
+        cls, asset_templates: Dict[str, Asset], filter_type: str
+    ) -> Dict[str, Asset]:
         filtered_assets = dict()
         for asset_id, asset in asset_templates.items():
             asset_type = asset.attributes["asset"]
