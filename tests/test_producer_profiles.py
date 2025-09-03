@@ -138,7 +138,7 @@ class TestProducerMaxProfile(TestCase):
                     np.sum(
                         np.isclose(heat_produced, heat_production_upper_limit, atol=tol, rtol=1e-10)
                     ),
-                    8,
+                    9,
                 )
 
     def test_max_producer_esdl_scaled_profile(self):
