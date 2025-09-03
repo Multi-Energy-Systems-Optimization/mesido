@@ -2,7 +2,7 @@ from pathlib import Path
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.workflows import EndScenarioSizingStaged, run_end_scenario_sizing
-
+from mesido.workflows.grow_workflow import SolverCPLEX
 
 if __name__ == "__main__":
     import time
@@ -12,8 +12,9 @@ if __name__ == "__main__":
 
     solution = run_end_scenario_sizing(
         EndScenarioSizingStaged,
+        solver_class=SolverCPLEX,
         base_folder=base_folder,
-        esdl_file_name="GROW_withATES_Prod_install.esdl",
+        esdl_file_name="GROW_withATES_Prod_install_withoutbuffer.esdl",
         esdl_parser=ESDLFileParser,
     )
 

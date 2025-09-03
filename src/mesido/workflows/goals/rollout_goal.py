@@ -15,13 +15,56 @@ logger.setLevel(logging.INFO)
 STANDARD_ASSET_LIFETIME = 30.0
 
 
+class TargetHeatPlacedGoal(Goal):
+    priority = 1
+
+    order = 1
+
+    def __init__(self, asset, _years):
+        self.asset = asset
+        self._years = _years
+
+    def function(self, optimization_problem, ensemble_member):
+        obj = 0.0
+        state_vector = optimization_problem.state(f"{self.asset}.Heat_demand")
+        self.function_nominal = optimization_problem.variable_nominal(f"{self.asset}.Heat_demand")
+        target = optimization_problem.get_timeseries(f"{self.asset}.target_heat_demand")
+        asset_is_realized_vector = []
+        # for year in range(self._years):
+        #     asset_is_realized_vector.append(self.extra_variable(
+        #             f"{d}__asset_is_realized_{year}"
+        #         ))
+        asset_is_realized_vector = optimization_problem.get_asset_is__realized_symbols(self.asset)
+
+        for year in range(self._years):
+            time_start = year * 3600 * 8760
+            time_end = (year + 1) * 3600 * 8760
+            start_index = np.where(target.times == time_start)[0][0]
+            end_index = np.where(target.times == time_end)[0][0]
+            demand_states = optimization_problem.states_in(f"{self.asset}.Heat_demand", time_start,
+                                                           time_end)
+            if year == self._years - 1:
+                end_index += 1
+            else:
+                demand_states = demand_states[:-1]
+            asset_is_realized = asset_is_realized_vector[year]
+            # asset_is_realized = self.extra_variable(
+            #     f"{d}__asset_is_realized_{year}"
+            # )
+            # demand matching
+            for i in range(start_index-start_index, end_index-start_index):
+                obj += (asset_is_realized * target.values[start_index:end_index][i] -
+                        demand_states[i])
+
+        return obj
+
 class MinimizeVariableOPEX(Goal):
     order = 1
 
     def __init__(self, year_step_size=10, priority=1):
         self.priority = priority
         self.year_step_size = year_step_size
-        self.function_nominal = 1.0e6
+        self.function_nominal = 1.0e9
 
     def function(self, optimization_problem, ensemble_member):
         obj = 0
@@ -46,7 +89,7 @@ class MaximizeRevenueCosts(Goal):
         self.market_price = market_price  # [€/Wh]
         self.priority = priority
         self.year_step_size = year_step_size
-        self.function_nominal = 1.0e6
+        self.function_nominal = 1.0e9
 
     def function(self, optimization_problem, ensemble_member: int) -> ca.MX:
         obj = 0.0
@@ -87,7 +130,7 @@ class MinimizeCAPEXAssetsCosts(Goal):
 
     def __init__(self, priority=None):
         self.priority = priority
-        self.function_nominal = 1.0e6
+        self.function_nominal = 1.0e9
 
     def function(self, optimization_problem, ensemble_member):
         obj = self.capex_assets(optimization_problem, ensemble_member)
@@ -112,9 +155,10 @@ class MinimizeCAPEXAssetsCosts(Goal):
 
             if asset.asset_type == "Pipe":
                 is_placed = optimization_problem.get_asset_is__realized_symbols(asset_name)
-                investment_cost_coeff = optimization_problem.get_pipe_investment_cost_coefficient(
-                    asset_name, ensemble_member
-                )
+                # investment_cost_coeff = optimization_problem.get_pipe_investment_cost_coefficient(
+                #     asset_name, ensemble_member
+                # )
+                investment_cost_coeff = parameters[f"{asset_name}.investment_cost_coefficient"]
                 length = parameters[f"{asset_name}.length"]
 
                 costs = investment_cost_coeff * length
@@ -144,6 +188,7 @@ class MinimizeRolloutFixedOperationalCosts(Goal):
     def __init__(self, years=25, priority=1):
         self.priority = priority
         self.year_steps = years
+        self.function_nominal = 1.0e9
 
     def function(self, optimization_problem, ensemble_member: int) -> ca.MX:
         obj = 0.0
@@ -153,7 +198,7 @@ class MinimizeRolloutFixedOperationalCosts(Goal):
             * self.fixed_operational_costs(optimization_problem, ensemble_member)
         )
 
-        return obj / 1.0e6
+        return obj
 
     def fixed_operational_costs(self, optimization_problem, ensemble_member: int) -> ca.MX:
         obj = 0.0
