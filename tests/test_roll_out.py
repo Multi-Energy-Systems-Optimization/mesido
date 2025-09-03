@@ -93,12 +93,8 @@ class TestRollOutOptimization(TestCase):
                     )
                 else:
                     # If placed, demand should match the target heat demand
-                    if len(solution.times()) > 0:
-                        len_times = len(solution.times())
-                    else:
-                        len_times = len(
-                            solution.get_timeseries(f"{d}.target_heat_demand").values
-                        )
+                    len_times = len(solution.times())
+
                     target = solution.get_timeseries(f"{d}.target_heat_demand").values[
                         solution._timesteps_per_year * y : len_times
                     ]

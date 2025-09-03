@@ -177,15 +177,9 @@ class RollOutProblem(
             "Note: The rollout workflow is still under development and not fully tested yet."
         )
 
-        assets = super().esdl_assets
-        for asset in assets.values():
-            asset_type = asset.asset_type
-            if (
-                asset_type == "LowTemperatureATES"
-                or asset_type == "HeatBuffer"
-                or asset_type == "GeothermalSource"
-                or asset_type == "HeatPump"
-            ):
+        asset_types = ["low_temperature_ates", "heat_buffer", "geothermal_source", "heat_pump"]
+        for asset_type in asset_types:
+            if len(self.energy_system_components.get(asset_type, [])) > 0 :
                 logger.error(
                     f"The asset type {asset_type} is not supported in the rollout workflow."
                 )
