@@ -411,6 +411,22 @@ class InfluxDBProfileReader(BaseProfileReader):
             profile.endDate,
         )
 
+        container = profile.eContainer()
+        asset = container.energyasset
+        if time_series_data.profile_data_list == []:
+            get_potential_errors().add_potential_issue(
+                MesidoAssetIssueType.ASSET_PROFILE_AVAILABILITY,
+                asset.id,
+                f"Asset named {asset.name}: Input profile {profile.field}"
+                f"is not available in the database.",
+            )
+            # TODO: get_potential_errors supposed to print the error_message, but it does not work.
+            #  For the time being, message is manually printed
+            print(
+                f"Asset named {asset.name}: Input profile {profile.field}"
+                f"is not available in the database."
+            )
+
         for x in time_series_data.profile_data_list:
             if len(x) != 2:
                 raise RuntimeError(
