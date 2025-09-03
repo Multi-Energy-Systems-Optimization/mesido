@@ -1,5 +1,5 @@
 import logging
-import os
+import os, sys
 import time
 
 import casadi as ca
@@ -173,6 +173,24 @@ class RollOutProblem(
 
         super().pre()
 
+        logger.warning(
+            "Note: The rollout workflow is still under development and not fully tested yet."
+        )
+
+        assets = super().esdl_assets
+        for asset in assets.values():
+            asset_type = asset.asset_type
+            if (
+                asset_type == "LowTemperatureATES"
+                or asset_type == "HeatBuffer"
+                or asset_type == "GeothermalSource"
+                or asset_type == "HeatPump"
+            ):
+                logger.error(
+                    f"The asset type {asset_type} is not supported in the rollout workflow."
+                )
+                sys.exit(1)
+
         # TODO: The asset_fraction_placed is not yet fully functional, eg. not in objective.
         for asset in [
             *self.energy_system_components.get("ates", []),
@@ -285,6 +303,10 @@ class RollOutProblem(
         return ates_doublet_sums, ates_doublet_fraction_sums
 
     def __ates_initial_constraints(self, ensemble_member):
+        """
+        Initialize ates for first timestep of the simulation.
+
+        """
         constraints = []
 
         bounds = self.bounds()
@@ -467,16 +489,18 @@ class RollOutProblem(
         heat that the geothermal source can produce in a year.
 
         """
-
-        logger.error(
-            f"The function {self.__minimum_operational_constraints.__name__} is not tested yet."
-        )
+        
         constraints = []
 
         bounds = self.bounds()
         for asset, asset_is_placed_var in self._asset_is_realized_map.items():
             if asset not in self.energy_system_components.get("geothermal_source", []):
                 continue
+
+            logger.warning(
+                f"The function {self.__minimum_operational_constraints.__name__} is not tested yet."
+            )
+
             geo_is_placed = self.get_asset_is__realized_symbols(asset)
             heat_produced = self.__state_vector_scaled(
                 f"{asset}.Heat_source", ensemble_member
@@ -486,8 +510,8 @@ class RollOutProblem(
 
             for year in range(self._years):
                 total_heat_year = 0
+                dt = np.diff(self.io.times_sec / 3600)
                 for i in range(self._timesteps_per_year):
-                    dt = np.diff(self.io.times_sec / 3600)
                     total_heat_year += (
                         heat_produced[year * self._timesteps_per_year + i]
                         * dt[year * self._timesteps_per_year + i]
@@ -505,8 +529,9 @@ class RollOutProblem(
     def __ates_yearly_initial_constraints(self, ensemble_member):
         """
         Constraints to set the initial state of an ATES at the first timestep of each year.
-        The storage_yearly_change variable is set to zero at all days except the first timestep of each year.
-        This variable allow the ATES to have a different initial heat storage levels at the beginning of each year.
+        The storage_yearly_change variable is set to zero at all days except the first timestep
+        of each year. This variable allow the ATES to have a different initial heat storage levels
+        at the beginning of each year.
 
         """
 
@@ -519,16 +544,18 @@ class RollOutProblem(
             nominal = self.variable_nominal(f"{s}.Heat_ates")
             for i in range(len(self.times())):
                 if i % self._timesteps_per_year != 0:
-                    # set the storage_yearly_change to zero at all days except first timestep of each year
+                    # set the storage_yearly_change to zero at all days except first timestep
+                    # of each year
                     constraints.append(((ates_state[i]) / nominal, 0.0, 0.0))
         return constraints
 
     def __ates_yearly_periodic_constraints(self, ensemble_member):
         """
         Constraints to set a yearly periodic condition for an ATES so that the stored
-        heat at the end of the year eqauals that of the beginning of the year
+        heat at the end of the year equals that of the beginning of the year.
 
         """
+
         constraints = []
 
         for s in self.energy_system_components.get("ates", []):

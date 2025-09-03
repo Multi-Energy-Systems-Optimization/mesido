@@ -172,15 +172,6 @@ def heat_to_discharge_test(solution, results):
         # return_t = solution.parameters(0)[f"{d}.T_return"]
         supply_t, return_t, dt = _get_component_temperatures(solution, results, d)
 
-        print(
-            d,
-            max(
-                abs(
-                    results[f"{d}.HeatOut.Heat"]
-                    - results[f"{d}.Q"] * rho * cp * supply_t
-                )
-            ),
-        )
         np.testing.assert_allclose(
             results[f"{d}.HeatOut.Heat"],
             results[f"{d}.Q"] * rho * cp * supply_t,
