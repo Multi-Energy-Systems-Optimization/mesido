@@ -1302,6 +1302,7 @@ class ScenarioOutput:
                                         endDate=end_date_time,
                                         id=str(uuid.uuid4()),
                                         filters='"assetId"=' + f"'{str(asset_id)}'",
+                                        profileType=esdl.ProfileTypeEnum.OUTPUT,
                                     )
                                     # Assign quantity and units variable
                                     if variable in ["Heat_flow", "Pump_power"]:

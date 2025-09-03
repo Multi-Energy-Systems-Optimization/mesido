@@ -1,4 +1,4 @@
-# [Unreleased-main] - 2025-08-27
+# [Unreleased-main] - 2025-09-01
 
 ## Added
 - Potential error checks if heating demand state is not set to enabled.
@@ -6,10 +6,12 @@
 - Generic modifier functions for consistency across assets.
 - Discrete charge/discharge variable for an ATES asset.
 - Checks if a timelimit is reached in the GROW workflow at each stage.
+- Optimized esdl is re-usabled
 
 ## Changed
 - TCO cost calculation objective to now exclude heating demand costs in the grow workflow
 - Hydraulic power calculation at "sink" assets is set to 0.0 if headloss calculation is turned off.
+- Updated pyESDL to v25.7
 
 
 # [Unreleased-main] - 2025-08-14
