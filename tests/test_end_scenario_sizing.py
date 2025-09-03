@@ -1,6 +1,7 @@
 from pathlib import Path
 from unittest import TestCase
 
+import esdl
 
 import mesido._darcy_weisbach as darcy_weisbach
 from mesido.esdl.esdl_parser import ESDLFileParser
@@ -90,23 +91,7 @@ class TestEndScenarioSizing(TestCase):
                 if i < peak_day_indx or i > (peak_day_indx + 23):
                     np.testing.assert_allclose(heat_buffer[i], 0.0, atol=1.0e-6)
 
-        obj = 0.0
-        years = self.solution.parameters(0)["number_of_years"]
-        for asset in [
-            *self.solution.energy_system_components.get("heat_source", []),
-            *self.solution.energy_system_components.get("ates", []),
-            *self.solution.energy_system_components.get("heat_buffer", []),
-            *self.solution.energy_system_components.get("heat_demand", []),
-            *self.solution.energy_system_components.get("heat_exchanger", []),
-            *self.solution.energy_system_components.get("heat_pump", []),
-            *self.solution.energy_system_components.get("heat_pipe", []),
-        ]:
-            obj += self.results[f"{self.solution._asset_fixed_operational_cost_map[asset]}"] * years
-            obj += (
-                self.results[f"{self.solution._asset_variable_operational_cost_map[asset]}"] * years
-            )
-            obj += self.results[f"{self.solution._asset_investment_cost_map[asset]}"]
-            obj += self.results[f"{self.solution._asset_installation_cost_map[asset]}"]
+        obj = self.get_objective_value_end_scenario_sizing(self.solution)
 
         np.testing.assert_allclose(obj / 1.0e6, self.solution.objective_value)
 
@@ -129,6 +114,7 @@ class TestEndScenarioSizing(TestCase):
         - Unstaged approaches, using the general function run_optimization_problem and the
         function run_end_scenario_sizing with staged_pipe_optimization to False should have
         comparable computation times.
+
 
         Missing:
         - Link ATES t0 utilization to state of charge at end of year for optimizations over one
@@ -180,21 +166,7 @@ class TestEndScenarioSizing(TestCase):
                 if i < peak_day_indx or i > (peak_day_indx + 23):
                     np.testing.assert_allclose(heat_buffer[i], 0.0, atol=1.0e-6)
 
-        obj = 0.0
-        years = solution_staged.parameters(0)["number_of_years"]
-        for asset in [
-            *solution_staged.energy_system_components.get("heat_source", []),
-            *solution_staged.energy_system_components.get("ates", []),
-            *solution_staged.energy_system_components.get("heat_buffer", []),
-            *solution_staged.energy_system_components.get("heat_demand", []),
-            *solution_staged.energy_system_components.get("heat_exchanger", []),
-            *solution_staged.energy_system_components.get("heat_pump", []),
-            *solution_staged.energy_system_components.get("heat_pipe", []),
-        ]:
-            obj += results[f"{solution_staged._asset_fixed_operational_cost_map[asset]}"] * years
-            obj += results[f"{solution_staged._asset_variable_operational_cost_map[asset]}"] * years
-            obj += results[f"{solution_staged._asset_investment_cost_map[asset]}"]
-            obj += results[f"{solution_staged._asset_installation_cost_map[asset]}"]
+        obj = self.get_objective_value_end_scenario_sizing(solution_staged)
 
         np.testing.assert_allclose(obj / 1.0e6, solution_staged.objective_value)
 
@@ -347,7 +319,6 @@ class TestEndScenarioSizing(TestCase):
                     )
 
     def test_end_scenario_sizing_pipe_catalog(self):
-
         """
         Checks that the problem uses different pipe costs when a pipe catalog is provided along
         with the ESDL.
@@ -387,8 +358,9 @@ class TestEndScenarioSizing(TestCase):
         }
         solution_pipe_classes = solution.get_unique_pipe_classes()
         solution_pipe_class_cost_map = {
-            sol_pipe.name : sol_pipe.investment_costs for sol_pipe in solution_pipe_classes
-            if not sol_pipe.name=="None"
+            sol_pipe.name: sol_pipe.investment_costs
+            for sol_pipe in solution_pipe_classes
+            if not sol_pipe.name == "None"
         }
         np.testing.assert_equal(
             solution_pipe_class_cost_map.items() <= pipe_diameter_cost_map.items(), True
@@ -411,11 +383,13 @@ class TestEndScenarioSizing(TestCase):
         original_problem.pre()
         original_problem_pipe_classes = original_problem.get_unique_pipe_classes()
         original_problem_pipe_class_cost_map = {
-            org_pipe.name : org_pipe.investment_costs for org_pipe in original_problem_pipe_classes
-            if not org_pipe.name=="None"
+            org_pipe.name: org_pipe.investment_costs
+            for org_pipe in original_problem_pipe_classes
+            if not org_pipe.name == "None"
         }
         np.testing.assert_equal(
-            solution_pipe_class_cost_map.items() != original_problem_pipe_class_cost_map.items(), True
+            solution_pipe_class_cost_map.items() != original_problem_pipe_class_cost_map.items(),
+            True,
         )
 
         # Test 3: If the costs that are used in the problem match the costs from the ESDL Template
@@ -441,6 +415,35 @@ class TestEndScenarioSizing(TestCase):
                     optimized_pipe_classes_dia_map[optimized_diameter]
                 ]
                 np.testing.assert_allclose(cost_map_from_template, investment_cost_specific)
+
+    def get_objective_value_end_scenario_sizing(self, solution):
+        results = solution.extract_results()
+        obj = 0.0
+        years = solution.parameters(0)["number_of_years"]
+        for asset in [
+            *solution.energy_system_components.get("heat_source", []),
+            *solution.energy_system_components.get("ates", []),
+            *solution.energy_system_components.get("heat_buffer", []),
+            *solution.energy_system_components.get("heat_demand", []),
+            *solution.energy_system_components.get("heat_exchanger", []),
+            *solution.energy_system_components.get("heat_pump", []),
+            *solution.energy_system_components.get("heat_pipe", []),
+        ]:
+            # If heating demand asset's state is enabled, then exclude the costs since it is not
+            # part of the TCO calculation. This is because we do not size heating demand assets in
+            # the optimization
+            asset_id = self.solution.esdl_asset_name_to_id_map[asset]
+            asset_state = self.solution.esdl_assets[asset_id].attributes["state"]
+            asset_type = self.solution.esdl_assets[asset_id].asset_type
+            if not (
+                (asset_type == "HeatingDemand") and (asset_state == esdl.AssetStateEnum.ENABLED)
+            ):
+                obj += results[f"{solution._asset_fixed_operational_cost_map[asset]}"] * years
+                obj += results[f"{solution._asset_variable_operational_cost_map[asset]}"] * years
+                obj += results[f"{solution._asset_investment_cost_map[asset]}"]
+                obj += results[f"{solution._asset_installation_cost_map[asset]}"]
+
+        return obj
 
 
 if __name__ == "__main__":

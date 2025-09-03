@@ -5,7 +5,7 @@ import logging
 import xml.etree.ElementTree as ET  # noqa: N817
 from datetime import timedelta
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional
 
 import esdl.esdl_handler
 

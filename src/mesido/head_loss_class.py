@@ -1188,6 +1188,10 @@ class HeadLossClass:
         # Convert minimum pressure at far point from bar to meter (water) head
         min_head_loss = options["minimum_pressure_far_point"] * 10.2
 
+        # TODO: shouldn't the min_head_loss be taken as parameters[f"{asset}.minimum_pressure_drop"]
+        # Then, options["minimum_pressure_far_point"] * 10.2 could be used to ensure that at each
+        # demand f"{d}.HeatIn.H" is bigger than this.
+
         for d in components.get("heat_demand", []):
             constraints.append(
                 (
@@ -1583,4 +1587,12 @@ class HeadLossClass:
                             pressure=parameters[f"{pipe}.pressure"],
                         )
                     )
+        else:
+            for pipe in optimization_problem.energy_system_components.get(pipe_type, []):
+                hydraulic_power = optimization_problem.state(f"{pipe}.Hydraulic_power")
+
+                nominal = optimization_problem.variable_nominal(f"{pipe}.Hydraulic_power")
+
+                constraints.append((hydraulic_power / nominal, 0.0, 0.0))
+
         return constraints
