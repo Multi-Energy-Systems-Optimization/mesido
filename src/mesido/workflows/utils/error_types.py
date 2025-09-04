@@ -28,7 +28,8 @@ def mesido_issue_type_gen_message(issue_type: MesidoAssetIssueType) -> str:
         " listed.",
         MesidoAssetIssueType.HEAT_DEMAND_TYPE: "Incorrect asset type: please update.",
         MesidoAssetIssueType.ASSET_PROFILE_CAPABILITY: "Profile assigment not allowed.",
-        MesidoAssetIssueType.ASSET_PROFILE_AVAILABILITY: "Profile is not available in the database.",
+        MesidoAssetIssueType.ASSET_PROFILE_AVAILABILITY: "Profile is not available in the "
+        "database.",
         MesidoAssetIssueType.HEAT_EXCHANGER_TEMPERATURES: "Temperatures at heat exchanger set "
         "incorrectly.",
         MesidoAssetIssueType.HEAT_EXCHANGER_POWER: "The capacity of the heat exchanger is not "
