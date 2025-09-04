@@ -14,7 +14,7 @@ if __name__ == "__main__":
         EndScenarioSizingStaged,
         solver_class=SolverCPLEX,
         base_folder=base_folder,
-        esdl_file_name="GROW_withATES_Prod_install_withoutbuffer.esdl",
+        esdl_file_name="GROW_withATES_Prod_install_withoutbuffer_costs.esdl",
         esdl_parser=ESDLFileParser,
     )
 

@@ -67,6 +67,7 @@ class SolverCPLEX:
         options["solver"] = "cplex"
         cplex_options = options["cplex"] = {}
         cplex_options["CPX_PARAM_EPGAP"] = 0.05
+        cplex_options["CPXPARAM_MIP_Strategy_StartAlgorithm"] = 6 #6
         # cplex_options["CPX_PARAM_MIPEMPHASIS"] = 1
         # cplex_options["CPX_PARAM_THREADS"] = 8
         options["highs"] = None
@@ -88,14 +89,14 @@ class RollOutProblem(
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._years = 4  # 10
+        self._years = 5  # 10
         self._horizon = 30
         self._year_step_size = int(self._horizon / self._years)
         # TODO: timestep_size and _days can be removed eventually, particularly when averaging
         # with peak day is used, however one needs to check where self._timesteps_per_year and
         # self._timestep_size is currently affecting the code
-        self._timestep_size = 40 * 24
-        self._timesteps_per_year = int(365 / (self._timestep_size / 24)) + 2 +24
+        self._timestep_size = 30 * 24
+        self._timesteps_per_year = int(365 / (self._timestep_size / 24)) + 1 + 24
         self._timesteps_per_year = (
             self._timesteps_per_year + 1
         )  # + 1 because of inserting an 1-hour timestep at the beginning of the year,
@@ -111,7 +112,7 @@ class RollOutProblem(
 
         # Fraction of how much heat of the total maximum the geo source can produce it should
         # produce in every year that it is placed
-        self._min_geo_utilization = 0.7
+        self._min_geo_utilization = 0.5
 
         self._save_json = True
 
@@ -164,7 +165,8 @@ class RollOutProblem(
 
         # Create yearly profile with desired coarser time-step size by averaging over the hourly data
         # adapt_hourly_profile_averages_timestep_size(self, self._timestep_size)
-        adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(self,
+        (self.__problem_indx_max_peak, _,
+         _) = adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(self,
                                                                        int(self._timestep_size/24))
 
         # A small, (1 hour) timestep is inserted as first time step. This is used in the
@@ -633,16 +635,38 @@ class RollOutProblem(
             #ensure asset is placed at end of optimization
             constraints.append((asset_realized_vector[-1], 1.0, 1.0))
 
+        # for a in [*self.energy_system_components.get("heat_source", []),
+        #           *self.energy_system_components.get("heat_pipe",[])] :
+        #     asset_realized_vector = self.get_asset_is__realized_symbols(a)
+        #
+        #     #ensure asset is placed at end of optimization
+        #     constraints.append((asset_realized_vector[-1], 1.0, 1.0))
+
         return constraints
 
+    def __heat_buffer_peak_day_constraints(self, ensemble_member):
+        constraints = []
+        for b in self.energy_system_components.get("heat_buffer", {}):
+            vars = self.__state_vector_scaled(f"{b}.Heat_buffer", ensemble_member)
+            symbol_stored_heat = self.state_vector(f"{b}.Stored_heat")
+            # constraints.append((symbol_stored_heat[self.__problem_indx_max_peak], 0.0, 0.0))
+            for year in range(self._years):
+                for i in range(self._timesteps_per_year):
+                    a=self.__problem_indx_max_peak
+                    if not (i > self.__problem_indx_max_peak-1 and i < (
+                            self.__problem_indx_max_peak + 23+2)):
+                        constraints.append((vars[i+year*self._timesteps_per_year], -1.0e3, 1.0e3))
+
+        return constraints
 
     def constraints(self, ensemble_member):
         constraints = super().constraints(ensemble_member)
 
         constraints.extend(self.__ates_initial_constraints(ensemble_member))
         constraints.extend(self.__demand_matching_constraints(ensemble_member))
-        constraints.extend(self.__yearly_disconnectable_pipe(ensemble_member))
+        # constraints.extend(self.__yearly_disconnectable_pipe(ensemble_member))
         constraints.extend(self.__all_demands_placed_constraints(ensemble_member))
+        constraints.extend(self.__heat_buffer_peak_day_constraints(ensemble_member))
 
         constraints.extend(self.__yearly_asset_is_placed_constraints(ensemble_member))
         constraints.extend(self.__ates_yearly_initial_constraints(ensemble_member))

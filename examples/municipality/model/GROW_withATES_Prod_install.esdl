@@ -25,7 +25,7 @@
           <investmentCosts xsi:type="esdl:SingleValue" value="300000.0" id="ee23c233-ea88-4f4f-9685-4187cf8814a6">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="5d37cf6d-ae69-47a1-8aa8-b59dd7676922" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
-          <variableOperationalAndMaintenanceCosts xsi:type="esdl:SingleValue" value="32.0" id="36133d10-eb52-4468-90ba-1a10bb15916b">
+          <variableOperationalAndMaintenanceCosts xsi:type="esdl:SingleValue" value="62.0" id="36133d10-eb52-4468-90ba-1a10bb15916b">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="4ff8b3a2-1a38-41ee-b08b-9d90cc327fef" description="Cost in EUR/MWh" perUnit="WATTHOUR" perMultiplier="MEGA" physicalQuantity="COST" unit="EURO"/>
           </variableOperationalAndMaintenanceCosts>
           <installationCosts xsi:type="esdl:SingleValue" value="300000.0" id="2291626f-7d2b-4fe9-9816-55b04effd6b5">
@@ -41,15 +41,9 @@
           <installationCosts xsi:type="esdl:SingleValue" value="36300000.0" id="9c6bb73b-8430-49e8-85a1-b3d85d6669cb">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="f0ac8533-0914-4776-811e-9db8c0880e8d" description="Cost in EUR" unit="EURO"/>
           </installationCosts>
-          <fixedOperationalCosts xsi:type="esdl:SingleValue" value="51367.0" id="25fafbb2-9fcc-4ac6-904a-f8447e22765c">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="539ee2d5-60b5-4e19-9e9e-384789b91e51" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" physicalQuantity="COST" unit="EURO"/>
-          </fixedOperationalCosts>
-          <variableOperationalAndMaintenanceCosts xsi:type="esdl:SingleValue" value="6.0" id="c1019862-6be2-4a24-aba0-409d28b841b3">
+          <variableOperationalAndMaintenanceCosts xsi:type="esdl:SingleValue" value="2.0" id="c1019862-6be2-4a24-aba0-409d28b841b3">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="c05b676c-30bd-4302-bf9e-f6a6e8b4ce6e" description="Cost in EUR/MWh" perUnit="WATTHOUR" perMultiplier="MEGA" physicalQuantity="COST" unit="EURO"/>
           </variableOperationalAndMaintenanceCosts>
-          <fixedMaintenanceCosts xsi:type="esdl:SingleValue" value="15300.0" id="cfe25a6d-8fe9-4de6-9a24-aef75b77da8d">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="b326553c-4634-440a-9cdd-1c8ec3a7e52c" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" physicalQuantity="COST" unit="EURO"/>
-          </fixedMaintenanceCosts>
         </costInformation>
       </asset>
       <asset xsi:type="esdl:HeatingDemand" name="HeatingDemand_Kleurenbuurt" id="404684bc-3874-42bf-a0d9-5f184591b57a" power="11000000">
@@ -84,7 +78,7 @@
         <port xsi:type="esdl:OutPort" id="57581db4-cc0f-4260-8538-bf2599cdece2" connectedTo="47b7daf3-d849-4176-8825-84e4f1b46b58" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="Out"/>
         <port xsi:type="esdl:InPort" connectedTo="2f3babb2-f6e5-469e-a3b5-374d087ef970" id="d0832916-11c6-4f8f-a601-0fb90b1f5764" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="In"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="100000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <variableOperationalAndMaintenanceCosts xsi:type="esdl:SingleValue" value="200.0" id="f9c3998f-dfcf-4fa1-860f-dfaaf91e7e9c">
@@ -1774,10 +1768,10 @@
         <port xsi:type="esdl:InPort" connectedTo="eb32f4c3-c492-439d-89e8-142ea6882c67" id="6f024397-cf6a-4232-bdb3-e9e4285fed59" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="In"/>
         <port xsi:type="esdl:OutPort" id="5c089df4-9cb1-4249-8e2b-b46994220f62" connectedTo="95416ff8-70ce-48d9-ae41-cdf234f4408f" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="Out"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="69000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/m3" perUnit="CUBIC_METRE" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
-          <installationCosts xsi:type="esdl:SingleValue" value="600000.0" id="cc47852c-c7cc-44b3-abd5-5e14378489e8">
+          <installationCosts xsi:type="esdl:SingleValue" value="300.0" id="cc47852c-c7cc-44b3-abd5-5e14378489e8">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="164720ce-b344-482b-8fb2-9fe2938cfde1" description="Cost in EUR" unit="EURO"/>
           </installationCosts>
         </costInformation>
@@ -1812,7 +1806,7 @@
         <port xsi:type="esdl:InPort" connectedTo="e9411099-f51f-42bc-a28c-34003785ef6e" id="e83e4b67-d962-4158-8cfd-b0d4e6a0dc59" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="In"/>
         <port xsi:type="esdl:OutPort" id="d3308201-f313-4047-8c84-e7d1f3ba6f41" connectedTo="f55dc1fe-acc4-42ec-9167-b959b5e3613b" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="Out"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="690.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/m3" perUnit="CUBIC_METRE" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <installationCosts xsi:type="esdl:SingleValue" value="300.0" id="cc47852c-c7cc-44b3-abd5-5e14378489e8">
@@ -1825,7 +1819,7 @@
         <port xsi:type="esdl:InPort" connectedTo="b0f3d110-2bce-4152-913f-8acdd8250960" id="385cab49-0287-4090-bc88-c2675edcec8e" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="In"/>
         <port xsi:type="esdl:OutPort" id="9b499471-ef6a-496d-9d5a-33b3e80441fa" connectedTo="cc812c98-eca1-4ac7-aa76-2387306e2ba3" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="Out"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="690.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/m3" perUnit="CUBIC_METRE" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <installationCosts xsi:type="esdl:SingleValue" value="300.0" id="cc47852c-c7cc-44b3-abd5-5e14378489e8">
@@ -1838,7 +1832,7 @@
         <port xsi:type="esdl:InPort" connectedTo="6a4f3680-ed3c-4394-bb22-2a641a718b4b" id="9ee4d724-c7b5-46b4-8668-ae642b5eab4e" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="In"/>
         <port xsi:type="esdl:OutPort" id="b00171ec-afff-420e-96f2-c3ddc27514b3" connectedTo="942ae075-61b0-4789-9cbe-b639210a4fc6" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="Out"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="690.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/m3" perUnit="CUBIC_METRE" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <installationCosts xsi:type="esdl:SingleValue" value="300.0" id="cc47852c-c7cc-44b3-abd5-5e14378489e8">
@@ -1851,7 +1845,7 @@
         <port xsi:type="esdl:InPort" connectedTo="6a9e967d-e812-4544-ab3a-b83c2a2c5836" id="70f55bb2-f1e7-4f4e-a2c1-52f858ba600d" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="In"/>
         <port xsi:type="esdl:OutPort" id="1a33dc29-d2c1-46da-a214-ac34db563a56" connectedTo="e23c6609-5456-44e7-bbef-213af17d50f2" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="Out"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="690.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/m3" perUnit="CUBIC_METRE" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <installationCosts xsi:type="esdl:SingleValue" value="300.0" id="cc47852c-c7cc-44b3-abd5-5e14378489e8">
@@ -1864,7 +1858,7 @@
         <port xsi:type="esdl:InPort" connectedTo="38b8ae60-446f-493a-bca2-3add528e4f63" id="c9150c2a-504b-413b-a3aa-d67cc04bd4e1" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="In"/>
         <port xsi:type="esdl:OutPort" id="f6a0a68a-1b36-4692-8513-01fac18923d1" connectedTo="bb90655a-7cef-4708-9d83-189901ee2090" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="Out"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="690.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/m3" perUnit="CUBIC_METRE" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <installationCosts xsi:type="esdl:SingleValue" value="300.0" id="cc47852c-c7cc-44b3-abd5-5e14378489e8">
@@ -1877,7 +1871,7 @@
         <port xsi:type="esdl:InPort" connectedTo="30fa16c4-09e1-4cda-a7d9-675fe8ba27c3" id="95a55199-8a02-406d-be28-3e1488c42d2f" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="In"/>
         <port xsi:type="esdl:OutPort" id="2b1d2659-1961-47b0-a271-e4f4167722db" connectedTo="8c592f69-5d36-4512-b5da-67a6c3174d00" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="Out"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="690.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/m3" perUnit="CUBIC_METRE" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <installationCosts xsi:type="esdl:SingleValue" value="300.0" id="cc47852c-c7cc-44b3-abd5-5e14378489e8">
@@ -1890,7 +1884,7 @@
         <port xsi:type="esdl:InPort" connectedTo="0b813381-3866-47ba-a1f9-af659164d3b2" id="91bb0e50-7375-4a9a-9134-92a0a405c56c" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="In"/>
         <port xsi:type="esdl:OutPort" id="06c7f257-3a41-4f5e-9574-64727cca9a3f" connectedTo="bc6002db-b6fb-4e63-9acb-13aa1367da4c" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="Out"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="690.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/m3" perUnit="CUBIC_METRE" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <installationCosts xsi:type="esdl:SingleValue" value="300.0" id="cc47852c-c7cc-44b3-abd5-5e14378489e8">
@@ -1903,7 +1897,7 @@
         <port xsi:type="esdl:InPort" connectedTo="fb359a59-4718-4c10-b657-5f6c6e588d54" id="d4959b19-f76f-41b4-879c-5dc3115e0663" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="In"/>
         <port xsi:type="esdl:OutPort" id="b8c47d9e-9c4c-4404-80a4-54d139c8ea00" connectedTo="3d47c270-f866-46af-b581-26fb8d9811a4" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="Out"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="690.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/m3" perUnit="CUBIC_METRE" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <installationCosts xsi:type="esdl:SingleValue" value="300.0" id="cc47852c-c7cc-44b3-abd5-5e14378489e8">
@@ -1916,7 +1910,7 @@
         <port xsi:type="esdl:OutPort" id="b9cc1676-2ae4-4c8f-8f2a-b5c30ddc2da1" connectedTo="16982a7c-6dd9-4d28-9625-c237d10ba7ba" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="Out"/>
         <port xsi:type="esdl:InPort" connectedTo="0f8ad5ee-4492-4e07-bb07-e51f8289b390" id="983b16dc-f1ed-47a3-8eef-7116cec4cb5d" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="In"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="100000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <variableOperationalAndMaintenanceCosts xsi:type="esdl:SingleValue" value="200.0" id="f9c3998f-dfcf-4fa1-860f-dfaaf91e7e9c">
@@ -1932,7 +1926,7 @@
         <port xsi:type="esdl:OutPort" id="875796b4-2494-412c-973d-4b701d1f8ce4" connectedTo="2a2133bd-d390-4437-93be-a5395093432f" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="Out"/>
         <port xsi:type="esdl:InPort" connectedTo="cec7a770-b845-44f2-a048-1dd075cf9bc2" id="af926335-28b7-49d3-bb8a-102f5349ec67" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="In"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="100000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <variableOperationalAndMaintenanceCosts xsi:type="esdl:SingleValue" value="200.0" id="f9c3998f-dfcf-4fa1-860f-dfaaf91e7e9c">
@@ -1948,7 +1942,7 @@
         <port xsi:type="esdl:OutPort" id="7e829ee4-d06c-4989-949a-80b2c4b526ff" connectedTo="52fef504-660b-4412-a6c2-7e55e0ff40d4" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="Out"/>
         <port xsi:type="esdl:InPort" connectedTo="87141bc9-eff2-49db-be90-11d0e53ec3a6" id="c57e0353-939f-42ff-b6c0-6be7af99e5fc" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="In"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="100000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <variableOperationalAndMaintenanceCosts xsi:type="esdl:SingleValue" value="200.0" id="f9c3998f-dfcf-4fa1-860f-dfaaf91e7e9c">
@@ -1964,7 +1958,7 @@
         <port xsi:type="esdl:OutPort" id="a1059252-2185-489a-b446-609114b8bf11" connectedTo="c304fb04-593d-4bef-8e35-4f72f9d3251a" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="Out"/>
         <port xsi:type="esdl:InPort" connectedTo="d6caa807-0d17-4fd0-a983-5c1036159a78" id="49295fb9-e5b6-4217-82a3-1ccd76940098" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="In"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="100000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <variableOperationalAndMaintenanceCosts xsi:type="esdl:SingleValue" value="200.0" id="f9c3998f-dfcf-4fa1-860f-dfaaf91e7e9c">
@@ -1980,7 +1974,7 @@
         <port xsi:type="esdl:OutPort" id="baa97c90-387b-4e15-8ef4-a8323e864b89" connectedTo="1c232335-88f9-48e6-9391-7a9c62d24b97" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="Out"/>
         <port xsi:type="esdl:InPort" connectedTo="42ed67c8-1ad9-4f54-a04e-50ae8c419bb2" id="9124da2f-9c41-4217-9ba2-db523680605a" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="In"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="100000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <variableOperationalAndMaintenanceCosts xsi:type="esdl:SingleValue" value="200.0" id="f9c3998f-dfcf-4fa1-860f-dfaaf91e7e9c">
@@ -1996,7 +1990,7 @@
         <port xsi:type="esdl:OutPort" id="5909bc15-6be7-4fbe-962d-bde77cd80556" connectedTo="07af7b95-0734-4c10-85ed-2137da51b226" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="Out"/>
         <port xsi:type="esdl:InPort" connectedTo="1adbcc35-d2b4-4115-b635-ed074a43dc7f" id="ed240007-6411-4983-b2ae-10eeb9d4c735" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="In"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="100000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <variableOperationalAndMaintenanceCosts xsi:type="esdl:SingleValue" value="200.0" id="f9c3998f-dfcf-4fa1-860f-dfaaf91e7e9c">
@@ -2012,7 +2006,7 @@
         <port xsi:type="esdl:OutPort" id="b780bbf5-40ad-4116-b54c-627af1bf664d" connectedTo="716a7cf3-1326-4eb0-8f45-3d40bdecfdbb" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="Out"/>
         <port xsi:type="esdl:InPort" connectedTo="d080f436-4bd8-4cc7-bc75-c38ce217ac88" id="1a6bbd6f-acb3-4ec3-93f0-690c1ed4cc71" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="In"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="100000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <variableOperationalAndMaintenanceCosts xsi:type="esdl:SingleValue" value="200.0" id="f9c3998f-dfcf-4fa1-860f-dfaaf91e7e9c">
@@ -2028,7 +2022,7 @@
         <port xsi:type="esdl:OutPort" id="04b35e4e-fb03-42d5-b923-8a5e0269caa4" connectedTo="11750784-fe1d-417c-946b-26e499eae225" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="Out"/>
         <port xsi:type="esdl:InPort" connectedTo="2af09cda-994d-426f-8b34-9377f3427944" id="88741a34-59fa-455e-828d-a0144a9178bd" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="In"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="100000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <variableOperationalAndMaintenanceCosts xsi:type="esdl:SingleValue" value="200.0" id="f9c3998f-dfcf-4fa1-860f-dfaaf91e7e9c">
@@ -2044,7 +2038,7 @@
         <port xsi:type="esdl:InPort" connectedTo="e9dc6a73-d926-4e52-8308-e35953601f6a" id="784481ed-cfb1-4565-b4c8-182b95daf6e1" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="In"/>
         <port xsi:type="esdl:OutPort" id="87c171ef-0902-49cd-a82c-c44d687aa5d4" connectedTo="876f3a14-19ac-44e6-a746-d509979e459b" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="Out"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="690.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/m3" perUnit="CUBIC_METRE" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <installationCosts xsi:type="esdl:SingleValue" value="300.0" id="cc47852c-c7cc-44b3-abd5-5e14378489e8">
@@ -2418,7 +2412,7 @@
         <port xsi:type="esdl:OutPort" id="048442b5-b987-405f-91de-042ad374e432" connectedTo="57df0793-8665-4d90-af15-f4b9447204f5" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="Out"/>
         <port xsi:type="esdl:InPort" connectedTo="7cc1c74d-db40-45ab-ad50-5ed0b697f795" id="1de51e8b-def4-4443-8ce4-b9eb14dc8e8a" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="In"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="100000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <variableOperationalAndMaintenanceCosts xsi:type="esdl:SingleValue" value="200.0" id="f9c3998f-dfcf-4fa1-860f-dfaaf91e7e9c">
@@ -2534,7 +2528,7 @@
         <port xsi:type="esdl:InPort" connectedTo="4ea44fca-2441-4be7-99fb-95dc2f02bd95" id="6ab1a455-f072-411e-8395-0d3796fcfcd7" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="In"/>
         <port xsi:type="esdl:OutPort" id="fb2de451-5690-47c3-9447-4bcb65f5b683" connectedTo="36be5ca1-5f82-40c1-9845-43f86ea6ec37" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="Out"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="690.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/m3" perUnit="CUBIC_METRE" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <installationCosts xsi:type="esdl:SingleValue" value="300.0" id="cc47852c-c7cc-44b3-abd5-5e14378489e8">
@@ -2547,7 +2541,7 @@
         <port xsi:type="esdl:OutPort" id="5851a97b-a795-469f-8ef9-100e8fadd8d9" connectedTo="f1449c57-1d0e-407b-804a-1552351713a9" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="Out"/>
         <port xsi:type="esdl:InPort" connectedTo="da69fa88-7382-4cd7-9252-e7569aa71709" id="f4cb60f0-0db8-44ca-9e7e-f3952e867f4b" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="In"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="100000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <variableOperationalAndMaintenanceCosts xsi:type="esdl:SingleValue" value="200.0" id="f9c3998f-dfcf-4fa1-860f-dfaaf91e7e9c">
@@ -2827,7 +2821,7 @@
         <port xsi:type="esdl:InPort" connectedTo="34a530ba-1ff9-4515-b958-f0eed2a2ebc9" id="fa7a0ff7-fbc2-47fa-b24a-8a5b0eff235d" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="In"/>
         <port xsi:type="esdl:OutPort" id="b7acc708-f7d2-4dd5-95ae-d5265c59fb13" connectedTo="4d317d5f-fdd9-47b8-b5e7-7789e8aa16eb" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="Out"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="690.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/m3" perUnit="CUBIC_METRE" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <installationCosts xsi:type="esdl:SingleValue" value="300.0" id="cc47852c-c7cc-44b3-abd5-5e14378489e8">
@@ -2840,7 +2834,7 @@
         <port xsi:type="esdl:InPort" connectedTo="9e6e3962-48a6-44b6-b4ed-4aa291015e64" id="3ae7bb41-1706-4b92-9b1d-69bf45707787" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="In"/>
         <port xsi:type="esdl:OutPort" id="d1a8eb75-ec20-49bb-b581-e2f6e48be4a6" connectedTo="1ab46cfb-031a-49f5-a1ea-31dbe10ba17e" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="Out"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="690.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/m3" perUnit="CUBIC_METRE" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <installationCosts xsi:type="esdl:SingleValue" value="300.0" id="cc47852c-c7cc-44b3-abd5-5e14378489e8">
@@ -2853,7 +2847,7 @@
         <port xsi:type="esdl:InPort" connectedTo="fd9d1bb3-97a4-449b-ac31-188a28a653a3" id="6d24513f-b153-4241-a5e6-813ce7a33ccf" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="In"/>
         <port xsi:type="esdl:OutPort" id="acbbb125-fd6a-454e-a645-70ac2e831883" connectedTo="e5a5d161-9a32-4d74-8881-1f4f6848c815" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="Out"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="690.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/m3" perUnit="CUBIC_METRE" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <installationCosts xsi:type="esdl:SingleValue" value="300.0" id="cc47852c-c7cc-44b3-abd5-5e14378489e8">
@@ -2866,7 +2860,7 @@
         <port xsi:type="esdl:InPort" connectedTo="f119a0bf-e439-43dd-8a5c-29d84e45be5d" id="4213513b-398a-4350-bb50-38b447403f0a" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="In"/>
         <port xsi:type="esdl:OutPort" id="079a3f77-803c-487a-b141-a845644b0d5b" connectedTo="ccf83cae-ce9a-4ab7-89f6-180ae3884858" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="Out"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="690.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/m3" perUnit="CUBIC_METRE" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <installationCosts xsi:type="esdl:SingleValue" value="300.0" id="cc47852c-c7cc-44b3-abd5-5e14378489e8">
@@ -2879,7 +2873,7 @@
         <port xsi:type="esdl:InPort" connectedTo="41716cca-e7a3-4f30-96c1-7a1db967a797" id="e9a48e2c-bace-41f7-ad38-e84678dfe345" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="In"/>
         <port xsi:type="esdl:OutPort" id="13874a79-3fbe-418c-a19d-2c0f98228bee" connectedTo="5b07d92e-c441-49eb-a123-e81d02a2a358" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="Out"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="690.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/m3" perUnit="CUBIC_METRE" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <installationCosts xsi:type="esdl:SingleValue" value="300.0" id="cc47852c-c7cc-44b3-abd5-5e14378489e8">
@@ -2892,7 +2886,7 @@
         <port xsi:type="esdl:OutPort" id="9fc6944d-648c-4294-9784-156f8156dd5f" connectedTo="625c9e58-0600-4305-9486-f4b31b6a001e" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="Out"/>
         <port xsi:type="esdl:InPort" connectedTo="b47dfdc3-f363-4220-82d6-a9e73bb84f13" id="74f2d395-2b58-4f92-8253-5996a7e1eada" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="In"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="100000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <variableOperationalAndMaintenanceCosts xsi:type="esdl:SingleValue" value="200.0" id="f9c3998f-dfcf-4fa1-860f-dfaaf91e7e9c">
@@ -2908,7 +2902,7 @@
         <port xsi:type="esdl:OutPort" id="0e5966f7-a348-49b8-9c57-5c79356bd22f" connectedTo="9972a975-06e2-4452-89c0-2b428b97380c" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="Out"/>
         <port xsi:type="esdl:InPort" connectedTo="79fffb1a-d928-48ab-99f2-25e0f5fe9af0" id="d9838289-335e-4070-a7fa-12423f2c62de" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="In"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="100000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <variableOperationalAndMaintenanceCosts xsi:type="esdl:SingleValue" value="200.0" id="f9c3998f-dfcf-4fa1-860f-dfaaf91e7e9c">
@@ -2924,7 +2918,7 @@
         <port xsi:type="esdl:OutPort" id="7ad6ccee-4f96-44bb-aba0-7a6d719bd538" connectedTo="d7f08ab0-2d0e-4ee4-bf34-7e30a6625122" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="Out"/>
         <port xsi:type="esdl:InPort" connectedTo="c44e43f9-9508-4a85-8d9c-c23f9ffd7083" id="b25eaf74-e967-4ca2-b8dc-0f5e2df6f719" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="In"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="100000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <variableOperationalAndMaintenanceCosts xsi:type="esdl:SingleValue" value="200.0" id="f9c3998f-dfcf-4fa1-860f-dfaaf91e7e9c">
@@ -2940,7 +2934,7 @@
         <port xsi:type="esdl:OutPort" id="7f48a3f7-45d9-4fef-bef3-ed371083a026" connectedTo="01bccc70-3665-4c0b-9494-a89ee374d1b1" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="Out"/>
         <port xsi:type="esdl:InPort" connectedTo="a2e00dd2-85d1-4ad5-a8f7-c2258fb36c47" id="88e26467-fe6f-48f2-ae81-a0fe0a44f184" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="In"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="100000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <variableOperationalAndMaintenanceCosts xsi:type="esdl:SingleValue" value="200.0" id="f9c3998f-dfcf-4fa1-860f-dfaaf91e7e9c">
@@ -2956,7 +2950,7 @@
         <port xsi:type="esdl:OutPort" id="a62b4690-0b57-4cbe-bce8-2642b14b2ab7" connectedTo="d332e890-d425-4cbb-b7d8-d6b51922d397" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="Out"/>
         <port xsi:type="esdl:InPort" connectedTo="e1bf78da-811b-4b3f-a3e1-6681a3dd7a77" id="ca759595-c15b-44fe-9e33-2e2ccfd2d459" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="In"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="100000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <variableOperationalAndMaintenanceCosts xsi:type="esdl:SingleValue" value="200.0" id="f9c3998f-dfcf-4fa1-860f-dfaaf91e7e9c">
@@ -3278,7 +3272,7 @@
         <port xsi:type="esdl:InPort" connectedTo="97d14595-b7d3-4796-892a-948e12e451a9" id="e4043477-c159-4288-8613-e54f84d1c68e" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="In"/>
         <port xsi:type="esdl:OutPort" id="1135996f-b4d2-48b7-905a-82be2f2415dd" connectedTo="2fbbe982-4037-4169-a088-28bd455d9da0" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="Out"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="690.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/m3" perUnit="CUBIC_METRE" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <installationCosts xsi:type="esdl:SingleValue" value="300.0" id="cc47852c-c7cc-44b3-abd5-5e14378489e8">
@@ -3291,7 +3285,7 @@
         <port xsi:type="esdl:InPort" connectedTo="be858226-e092-4972-be04-f3ec3a886717" id="0b22f7b5-8f8b-4809-895d-55565bf9b185" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="In"/>
         <port xsi:type="esdl:OutPort" id="340abfbb-4247-49d0-ae09-deff4c6598ce" connectedTo="172d79dd-fa55-4205-9987-60ddc13ef5a6" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="Out"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="690.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/m3" perUnit="CUBIC_METRE" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <installationCosts xsi:type="esdl:SingleValue" value="300.0" id="cc47852c-c7cc-44b3-abd5-5e14378489e8">
@@ -3304,7 +3298,7 @@
         <port xsi:type="esdl:InPort" connectedTo="e28202cd-8322-4828-811b-de02bc77ac79" id="94a73820-d066-4dd5-a305-9c48f9eeabfa" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="In"/>
         <port xsi:type="esdl:OutPort" id="48bfbe22-4e4b-4046-9944-fce648d16f83" connectedTo="d1189e55-b3de-4a66-8a2a-4bb173c3b9bb" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="Out"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="690.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/m3" perUnit="CUBIC_METRE" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <installationCosts xsi:type="esdl:SingleValue" value="300.0" id="cc47852c-c7cc-44b3-abd5-5e14378489e8">
@@ -3317,7 +3311,7 @@
         <port xsi:type="esdl:InPort" connectedTo="d77bfbc6-bb84-44e4-a3a3-4cc17b1b4415" id="79d805dc-a306-4152-9fd6-4630a8152f3c" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="In"/>
         <port xsi:type="esdl:OutPort" id="7757e190-4910-46ca-a000-024abb383b4a" connectedTo="f676d4da-6721-43b5-9bfd-655d86de67d7" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="Out"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="690.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/m3" perUnit="CUBIC_METRE" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <installationCosts xsi:type="esdl:SingleValue" value="300.0" id="cc47852c-c7cc-44b3-abd5-5e14378489e8">
@@ -3330,7 +3324,7 @@
         <port xsi:type="esdl:InPort" connectedTo="c85b795b-7dea-44ca-8adf-91c298c776e4" id="076887b6-4a86-44d3-87bd-831a272c22d6" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="In"/>
         <port xsi:type="esdl:OutPort" id="96a3052d-6237-49d0-85ed-bd65235522d0" connectedTo="103cda9c-f400-4499-ab0d-fe99b25e5c9d" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="Out"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="690.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/m3" perUnit="CUBIC_METRE" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <installationCosts xsi:type="esdl:SingleValue" value="300.0" id="cc47852c-c7cc-44b3-abd5-5e14378489e8">
@@ -3343,7 +3337,7 @@
         <port xsi:type="esdl:InPort" connectedTo="aab5d7f2-b26d-4d00-bc54-f277bb1862b8" id="739dfd0a-f73b-44fa-9d58-3637e3ef8f43" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="In"/>
         <port xsi:type="esdl:OutPort" id="1c6756d2-1797-4221-94d7-e74888cdf112" connectedTo="7dbbd7a6-e225-4778-b65f-a8795c732295" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="Out"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="690.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/m3" perUnit="CUBIC_METRE" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <installationCosts xsi:type="esdl:SingleValue" value="300.0" id="cc47852c-c7cc-44b3-abd5-5e14378489e8">
@@ -3356,7 +3350,7 @@
         <port xsi:type="esdl:InPort" connectedTo="497ba0ee-5326-43ea-bb4f-ca703171460d" id="59f90be4-8cbe-4767-b96b-91146c041ba7" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="In"/>
         <port xsi:type="esdl:OutPort" id="bec0449f-b062-49f5-b4bd-ba9aadf2a76c" connectedTo="d78f6cd1-f89d-41d7-adc0-986f67d9ac60" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="Out"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="690.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/m3" perUnit="CUBIC_METRE" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <installationCosts xsi:type="esdl:SingleValue" value="300.0" id="cc47852c-c7cc-44b3-abd5-5e14378489e8">
@@ -3369,7 +3363,7 @@
         <port xsi:type="esdl:InPort" connectedTo="55819fd4-65f2-4831-bb0e-f4cb519f50b7" id="fa579b86-df33-4338-9867-3304c70c15b3" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="In"/>
         <port xsi:type="esdl:OutPort" id="a863d129-71e2-416d-8c1a-058a380dcd80" connectedTo="b88490b8-5cd4-4563-9903-13efe321a07d" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="Out"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="690.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/m3" perUnit="CUBIC_METRE" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <installationCosts xsi:type="esdl:SingleValue" value="300.0" id="cc47852c-c7cc-44b3-abd5-5e14378489e8">
@@ -3382,7 +3376,7 @@
         <port xsi:type="esdl:InPort" connectedTo="048f78db-b39b-444a-b0d8-4fdfe17eb2c7" id="75ec7e5c-8392-4938-92b5-67edba84ee5d" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="In"/>
         <port xsi:type="esdl:OutPort" id="44ad7156-ef46-4550-974c-fe86d2b34d73" connectedTo="3c8b30af-bfd3-44f9-9653-ac48cac85a32" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="Out"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="690.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/m3" perUnit="CUBIC_METRE" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <installationCosts xsi:type="esdl:SingleValue" value="300.0" id="cc47852c-c7cc-44b3-abd5-5e14378489e8">
@@ -3395,7 +3389,7 @@
         <port xsi:type="esdl:InPort" connectedTo="b6bbce6a-9863-4129-a4b2-6e17d75dedd3" id="e12c2ace-055a-4e68-a00f-a542f914c919" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="In"/>
         <port xsi:type="esdl:OutPort" id="38a7d6c4-b647-47c5-97df-3bfa3cd35fa8" connectedTo="ebc2e9bc-2d17-4398-a182-9eb0026fef52" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="Out"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="690.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/m3" perUnit="CUBIC_METRE" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <installationCosts xsi:type="esdl:SingleValue" value="300.0" id="cc47852c-c7cc-44b3-abd5-5e14378489e8">
@@ -3408,7 +3402,7 @@
         <port xsi:type="esdl:OutPort" id="7d25b81b-272d-4eb7-86d6-c8d68fbf7981" connectedTo="13b89cff-7987-4998-9766-ee3e9bc10b40" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="Out"/>
         <port xsi:type="esdl:InPort" connectedTo="8410eb59-05a7-4f17-aca6-9cca0adcaf05" id="49c5ab59-21bf-4d65-9071-1c73a003cfa5" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="In"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="100000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <variableOperationalAndMaintenanceCosts xsi:type="esdl:SingleValue" value="200.0" id="f9c3998f-dfcf-4fa1-860f-dfaaf91e7e9c">
@@ -3424,7 +3418,7 @@
         <port xsi:type="esdl:OutPort" id="c83f1338-1b0b-4fcb-ac64-cf19d41be72b" connectedTo="d8b610a7-c87e-4aa9-b7a6-edb55f3a8ac6" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="Out"/>
         <port xsi:type="esdl:InPort" connectedTo="32a75cd3-df73-4797-988c-af0b84e781c3" id="b059f601-3773-4380-bc23-34cc480bc769" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="In"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="100000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <variableOperationalAndMaintenanceCosts xsi:type="esdl:SingleValue" value="200.0" id="f9c3998f-dfcf-4fa1-860f-dfaaf91e7e9c">
@@ -3440,7 +3434,7 @@
         <port xsi:type="esdl:OutPort" id="2cb2ce2c-d1bd-4c17-8a73-9b8012f2262e" connectedTo="4477c893-8e56-40cd-a669-fd50ff57698d" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="Out"/>
         <port xsi:type="esdl:InPort" connectedTo="fc239a2f-c737-47ee-89c3-c69baed28e51" id="d4012c03-8dfd-4a9f-8674-9774f1dd612b" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="In"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="100000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <variableOperationalAndMaintenanceCosts xsi:type="esdl:SingleValue" value="200.0" id="f9c3998f-dfcf-4fa1-860f-dfaaf91e7e9c">
@@ -3456,7 +3450,7 @@
         <port xsi:type="esdl:OutPort" id="24d2b55c-4822-4524-9b2a-ebe99070fce1" connectedTo="6532545a-8a96-4a08-bef4-a1b9bd024812" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="Out"/>
         <port xsi:type="esdl:InPort" connectedTo="e238321b-26ad-4b91-8314-7e1624b36a94" id="9548a1f0-f3eb-4a95-a592-2356ab97130c" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="In"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="100000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <variableOperationalAndMaintenanceCosts xsi:type="esdl:SingleValue" value="200.0" id="f9c3998f-dfcf-4fa1-860f-dfaaf91e7e9c">
@@ -3472,7 +3466,7 @@
         <port xsi:type="esdl:OutPort" id="e376e0fc-ed34-4e24-bbb4-37f69445f7a2" connectedTo="8a56e2ae-2090-4578-928a-c5beaf608a32" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="Out"/>
         <port xsi:type="esdl:InPort" connectedTo="f2d22a19-aaeb-418e-8bcb-cdc789d3b956" id="44e1a886-5a4e-41c8-8921-4cb53eef3dc6" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="In"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="100000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <variableOperationalAndMaintenanceCosts xsi:type="esdl:SingleValue" value="200.0" id="f9c3998f-dfcf-4fa1-860f-dfaaf91e7e9c">
@@ -3488,7 +3482,7 @@
         <port xsi:type="esdl:OutPort" id="289cccc1-0ce6-4d43-92f8-4cbe8246476e" connectedTo="87f1d839-d3a5-4660-a4d4-5280d7c4d5b0" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="Out"/>
         <port xsi:type="esdl:InPort" connectedTo="3800b6d2-cfdb-4dd6-8cff-72156de139fe" id="95556d67-1ffd-4d8e-afb1-83c6e63e8f5f" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="In"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="100000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <variableOperationalAndMaintenanceCosts xsi:type="esdl:SingleValue" value="200.0" id="f9c3998f-dfcf-4fa1-860f-dfaaf91e7e9c">
@@ -3504,7 +3498,7 @@
         <port xsi:type="esdl:OutPort" id="7e0e66f1-effe-44c1-b08c-e4628e1511f7" connectedTo="4c9b284f-9a0b-4fe6-8d6c-34343d76e784" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="Out"/>
         <port xsi:type="esdl:InPort" connectedTo="dc290931-0cdf-444e-9f3a-dc8b52ff4920" id="4ffa71aa-a584-41e1-97a1-61199da28891" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="In"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="100000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <variableOperationalAndMaintenanceCosts xsi:type="esdl:SingleValue" value="200.0" id="f9c3998f-dfcf-4fa1-860f-dfaaf91e7e9c">
@@ -3520,7 +3514,7 @@
         <port xsi:type="esdl:OutPort" id="87aab61f-344d-4e1e-a560-b3a1725d2ba8" connectedTo="52349e83-008e-42eb-b009-8d8dee21bd7d" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="Out"/>
         <port xsi:type="esdl:InPort" connectedTo="60b1043e-22bd-4119-98b7-b282144c0967" id="f572e6a0-69de-40e5-ba67-cca9d0eb7452" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="In"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="100000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <variableOperationalAndMaintenanceCosts xsi:type="esdl:SingleValue" value="200.0" id="f9c3998f-dfcf-4fa1-860f-dfaaf91e7e9c">
@@ -3536,7 +3530,7 @@
         <port xsi:type="esdl:OutPort" id="5b0da039-78a0-41a8-98ec-3ca85ff090d5" connectedTo="56900fea-7b65-4f37-9d17-aa99dbb72813" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="Out"/>
         <port xsi:type="esdl:InPort" connectedTo="47411f3a-7951-4684-bc58-dbbc2f86147d" id="b95748d5-64e4-46fd-9dbc-0b3528f6e3ff" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="In"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="100000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <variableOperationalAndMaintenanceCosts xsi:type="esdl:SingleValue" value="200.0" id="f9c3998f-dfcf-4fa1-860f-dfaaf91e7e9c">
@@ -3552,7 +3546,7 @@
         <port xsi:type="esdl:OutPort" id="1241c02e-13e9-4f66-ac45-12344bb3bd47" connectedTo="9cf14369-e908-46c7-95e7-467c79c14198" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="Out"/>
         <port xsi:type="esdl:InPort" connectedTo="e14b3d48-c8d0-47ce-af2e-bcd5173687cd" id="9d08b748-1db7-42fd-ae46-4645ed9b83fd" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="In"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="100000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <variableOperationalAndMaintenanceCosts xsi:type="esdl:SingleValue" value="200.0" id="f9c3998f-dfcf-4fa1-860f-dfaaf91e7e9c">
@@ -3568,7 +3562,7 @@
         <port xsi:type="esdl:OutPort" id="6fea1bf7-5c9a-4d80-b0b3-1a83b1853b10" connectedTo="6cb7b677-a823-477b-ae45-6dc4b931e9be" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="Out"/>
         <port xsi:type="esdl:InPort" connectedTo="b65eee76-8d5c-46f5-aa26-6aa060435ec2" id="04f3033e-e363-4f74-bb59-c1de3f1af911" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="In"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="100000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <variableOperationalAndMaintenanceCosts xsi:type="esdl:SingleValue" value="200.0" id="f9c3998f-dfcf-4fa1-860f-dfaaf91e7e9c">
@@ -4276,7 +4270,7 @@
         <port xsi:type="esdl:InPort" connectedTo="9ba6a0f8-d8e5-4e0e-a4df-2a6f7db320f1" id="55524d39-e69e-4020-9543-64509c16bcff" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="In"/>
         <port xsi:type="esdl:OutPort" id="20653a96-e8e6-40fd-9f5c-fc2d1bb4cc86" connectedTo="5671f07e-0cf8-4a47-8a05-32b05b01bd8b" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="Out"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="690.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="200.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/m3" perUnit="CUBIC_METRE" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
           <installationCosts xsi:type="esdl:SingleValue" value="300.0" id="cc47852c-c7cc-44b3-abd5-5e14378489e8">
