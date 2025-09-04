@@ -12,6 +12,7 @@ from esdl.units.conversion import ENERGY_IN_J, POWER_IN_W, convert_to_unit
 
 from mesido.esdl.common import Asset
 from mesido.potential_errors import MesidoAssetIssueType, get_potential_errors
+from mesido.workflows.utils.error_types import HEAT_NETWORK_ERRORS, potential_error_to_error
 
 import numpy as np
 
@@ -410,6 +411,21 @@ class InfluxDBProfileReader(BaseProfileReader):
             profile.startDate,
             profile.endDate,
         )
+
+        container = profile.eContainer()
+        asset = container.energyasset
+        if time_series_data.profile_data_list == []:
+            get_potential_errors().add_potential_issue(
+                MesidoAssetIssueType.ASSET_PROFILE_AVAILABILITY,
+                asset.id,
+                f"Asset named {asset.name}: Input profile {profile.field}"
+                f" is not available in the database.",
+            )
+            # TODO: potential_error_to_error(HEAT_NETWORK_ERRORS) supposed to be called only after
+            #  read() finishes. However, because of the current error we have not any profile.
+            #  Hence, we cannot continue in read() without having any profile.
+            #  potential_error_to_error(HEAT_NETWORK_ERRORS) is also called here to raise the error
+            potential_error_to_error(HEAT_NETWORK_ERRORS)
 
         for x in time_series_data.profile_data_list:
             if len(x) != 2:
