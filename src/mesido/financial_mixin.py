@@ -4,6 +4,7 @@ from abc import abstractmethod
 import casadi as ca
 
 from mesido.base_component_type_mixin import BaseComponentTypeMixin
+from mesido.esdl.asset_to_component_base import AssetStateEnum
 
 import numpy as np
 
@@ -12,7 +13,6 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
 )
 from rtctools.optimization.timeseries import Timeseries
 
-from mesido.esdl.asset_to_component_base import AssetStateEnum
 
 logger = logging.getLogger("mesido")
 
