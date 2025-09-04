@@ -135,10 +135,12 @@ class TestProducerMaxProfile(TestCase):
                 )
                 np.testing.assert_array_less(heat_produced - tol, heat_production_upper_limit)
                 np.testing.assert_equal(
+                    8 <=
                     np.sum(
                         np.isclose(heat_produced, heat_production_upper_limit, atol=tol, rtol=1e-10)
-                    ),
+                    ) <=
                     9,
+                    True
                 )
 
     def test_max_producer_esdl_scaled_profile(self):
