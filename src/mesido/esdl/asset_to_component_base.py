@@ -1242,14 +1242,11 @@ class _AssetToComponentBase:
         """
 
         if asset.attributes["state"].name == "DISABLED":
-            # value = 0.0
-            value = _AssetStateEnum.DISABLED
+            value = AssetStateEnum.DISABLED
         elif asset.attributes["state"].name == "OPTIONAL":
-            # value = 2.0
-            value = _AssetStateEnum.OPTIONAL
+            value = AssetStateEnum.OPTIONAL
         else:
-            # value = 1.0
-            value = _AssetStateEnum.ENABLED
+            value = AssetStateEnum.ENABLED
         return value
 
     def get_variable_opex_costs(self, asset: Asset) -> float:
@@ -1582,10 +1579,12 @@ class _AssetToComponentBase:
             )
             return 0.0
 
-class _AssetStateEnum(IntEnum):
+
+class AssetStateEnum(IntEnum):
     """
     An Enum class to set the Asset states (DISABLED, ENABLED, OPTIONAL) to IntEnums.
     """
+
     DISABLED = 0
     ENABLED = 1
     OPTIONAL = 2

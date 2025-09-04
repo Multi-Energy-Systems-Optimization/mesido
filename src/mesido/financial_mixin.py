@@ -12,6 +12,8 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
 )
 from rtctools.optimization.timeseries import Timeseries
 
+from mesido.esdl.asset_to_component_base import AssetStateEnum
+
 logger = logging.getLogger("mesido")
 
 
@@ -319,7 +321,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 aggr_count_max = parameters[f"{asset_name}.nr_of_doublets"]
             except KeyError:
                 aggr_count_max = 1.0
-            if parameters[f"{asset_name}.state"] == 0:
+            if parameters[f"{asset_name}.state"] == AssetStateEnum.DISABLED:
                 aggr_count_max = 0.0
             self.__asset_installation_cost_bounds[asset_installation_cost_var] = (
                 0.0,
@@ -484,7 +486,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     aggr_count_max = parameters[f"{asset}.nr_of_doublets"]
                 except KeyError:
                     aggr_count_max = 1.0
-                if parameters[f"{asset}.state"] == 0:
+                if parameters[f"{asset}.state"] == AssetStateEnum.DISABLED:
                     aggr_count_max = 0.0
                 self.__asset_is_realized_bounds[var_name] = (0.0, aggr_count_max)
 
