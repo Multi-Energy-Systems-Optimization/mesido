@@ -47,7 +47,8 @@ class GasElectProblemCheapCable(GasElectProblem):
             },
         }
 
-        cable_list = self.electricity_cable_dict_to_classes(c, cables_dict)
+        enabled_cable_type = "CableType1"
+        cable_list = self.electricity_cable_dict_to_classes(c, cables_dict, enabled_cable_type)
 
         return cable_list
 

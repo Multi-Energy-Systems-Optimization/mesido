@@ -187,7 +187,7 @@ class GasElectProblem(
             solver_stats = self.solver_stats
             self._write_json_output(results, parameters, bounds, aliases, solver_stats)
 
-    def electricity_cable_dict_to_classes(self, c, cables_dict):
+    def electricity_cable_dict_to_classes(self, c, cables_dict, enabled_cable_type):
         cable_classes_list = []
         for cable_name, properties in cables_dict.items():
             cable_classes_list.append(
@@ -207,7 +207,7 @@ class GasElectProblem(
 
         elif cable_state == 1:  # Enabled
             for cable_class in cable_classes_list:
-                if cable_class.name == "CableType1":
+                if cable_class.name == enabled_cable_type:
                     cable_list = [cable_class]
 
         elif cable_state == 2:  # Optional
@@ -234,7 +234,8 @@ class GasElectProblem(
             },
         }
 
-        cable_list = self.electricity_cable_dict_to_classes(c, cables_dict)
+        enabled_cable_type = "CableType1"
+        cable_list = self.electricity_cable_dict_to_classes(c, cables_dict, enabled_cable_type)
 
         return cable_list
 
