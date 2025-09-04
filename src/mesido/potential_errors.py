@@ -40,6 +40,8 @@ class MesidoAssetIssueType(Enum):
     ASSET_COST_ATTRIBUTE_INCORRECT = "asset_cost_attribute.incorrect"
     ASSET_COST_ATTRIBUTE_MISSING = "asset_cost_attribute.missing"
     HEAT_EXCHANGER_TEMPERATURES = "heat_exchanger.temperature"
+    HEAT_EXCHANGER_POWER = "heat_exchanger.capacity"
+    HEAT_DEMAND_STATE = "heat_demand.state"
 
 
 class PotentialErrors:

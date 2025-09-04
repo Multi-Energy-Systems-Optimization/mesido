@@ -2,6 +2,7 @@ import json
 import logging
 import math
 import os
+from enum import IntEnum
 from pathlib import Path
 from typing import Any, Dict, Tuple, Type, Union
 
@@ -1126,6 +1127,7 @@ class _AssetToComponentBase:
                 asset, per_unit=UnitEnum.WATT
             )
             modifiers["installation_cost"] = self.get_installation_costs(asset)
+            modifiers["fixed_operational_cost_coefficient"] = self.get_fixed_opex_costs(asset)
         elif asset.asset_type == "GasDemand":
             modifiers["variable_operational_cost_coefficient"] = self.get_variable_opex_costs(asset)
         elif asset.asset_type == "GasProducer":
@@ -1307,11 +1309,11 @@ class _AssetToComponentBase:
         """
 
         if asset.attributes["state"].name == "DISABLED":
-            value = 0.0
+            value = AssetStateEnum.DISABLED
         elif asset.attributes["state"].name == "OPTIONAL":
-            value = 2.0
+            value = AssetStateEnum.OPTIONAL
         else:
-            value = 1.0
+            value = AssetStateEnum.ENABLED
         return value
 
     def _log_and_add_potential_issue(
@@ -1768,3 +1770,13 @@ class _AssetToComponentBase:
             message(f"Cannot provide investment costs for asset " f"{asset.name} per {per_unit}")
             self._log_and_add_potential_issue(message, asset.id, cost_error_type="incorrect")
             return 0.0
+
+
+class AssetStateEnum(IntEnum):
+    """
+    An Enum class to set the Asset states (DISABLED, ENABLED, OPTIONAL) to IntEnums.
+    """
+
+    DISABLED = 0
+    ENABLED = 1
+    OPTIONAL = 2

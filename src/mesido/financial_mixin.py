@@ -4,6 +4,7 @@ from abc import abstractmethod
 import casadi as ca
 
 from mesido.base_component_type_mixin import BaseComponentTypeMixin
+from mesido.esdl.asset_to_component_base import AssetStateEnum
 
 import numpy as np
 
@@ -11,6 +12,7 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
 from rtctools.optimization.timeseries import Timeseries
+
 
 logger = logging.getLogger("mesido")
 
@@ -319,7 +321,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 aggr_count_max = parameters[f"{asset_name}.nr_of_doublets"]
             except KeyError:
                 aggr_count_max = 1.0
-            if parameters[f"{asset_name}.state"] == 0:
+            if parameters[f"{asset_name}.state"] == AssetStateEnum.DISABLED:
                 aggr_count_max = 0.0
             self.__asset_installation_cost_bounds[asset_installation_cost_var] = (
                 0.0,
@@ -484,7 +486,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     aggr_count_max = parameters[f"{asset}.nr_of_doublets"]
                 except KeyError:
                     aggr_count_max = 1.0
-                if parameters[f"{asset}.state"] == 0:
+                if parameters[f"{asset}.state"] == AssetStateEnum.DISABLED:
                     aggr_count_max = 0.0
                 self.__asset_is_realized_bounds[var_name] = (0.0, aggr_count_max)
 
@@ -941,11 +943,15 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             else:
                 price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
 
+            # ToDo: Currently the variable operational cost unit for gas boiler is euro/Wh_gas
+            # but this can be changed to euro/Nm3
             denominator = 1.0
             if s in self.energy_system_components.get(
                 "air_water_heat_pump", []
             ) or s in self.energy_system_components.get("air_water_heat_pump_elec", []):
                 denominator = parameters[f"{s}.cop"]
+            if s in self.energy_system_components.get("gas_boiler", []):
+                denominator = parameters[f"{s}.efficiency"]
             sum = 0.0
             for i in range(1, len(self.times())):
                 sum += (

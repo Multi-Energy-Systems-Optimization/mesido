@@ -141,6 +141,33 @@ def estimate_and_update_progress_status(self, priority):
     )  # In the future this ratio might differ from the step being completed
 
 
+solver_messages = {
+    "Time_limit": {
+        "highs": "Time limit reached",
+        "cplex": "time limit exceeded",
+        "gurobi": "TIME_LIMIT",
+    }
+}
+
+
+def check_solver_succes_grow_problem(solution):
+    solver_success, _ = solution.solver_success(solution.solver_stats, False)
+    if not solver_success:
+        if (
+            solution.solver_stats["return_status"]
+            == solver_messages["Time_limit"][solution.solver_options]
+            and solution.objective_value > 1e-6
+        ):
+            logger.error(
+                f"Optimization maximum allowed time limit reached for stage_"
+                f"{solution._stage}, goal_1"
+            )
+            exit(1)
+        else:
+            logger.error("Unsuccessful: unexpected error for stage_1, goal_1")
+            exit(1)
+
+
 class SolverHIGHS:
     def solver_options(self):
         options = super().solver_options()
@@ -634,6 +661,7 @@ def run_end_scenario_sizing_no_heat_losses(
         total_stages=1,
         **kwargs,
     )
+    check_solver_succes_grow_problem(solution)
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
 
@@ -681,18 +709,7 @@ def run_end_scenario_sizing(
             **kwargs,
         )
         # Error checking
-        solver_success, _ = solution.solver_success(solution.solver_stats, False)
-        if not solver_success:
-            if (
-                solution.solver_stats["return_status"] == "Time limit reached"
-                and solution.objective_value > 1e-6
-                and solution._stage == 1
-            ):
-                logger.error("Optimization maximum allowed time limit reached for stage_1, goal_1")
-                exit(1)
-            else:
-                logger.error("Unsuccessful: unexpected error for stage_1, goal_1")
-                exit(1)
+        check_solver_succes_grow_problem(solution)
 
         results = solution.extract_results()
         parameters = solution.parameters(0)
@@ -777,6 +794,7 @@ def run_end_scenario_sizing(
         priorities_output=priorities_output,
         **kwargs,
     )
+    check_solver_succes_grow_problem(solution)
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
 
