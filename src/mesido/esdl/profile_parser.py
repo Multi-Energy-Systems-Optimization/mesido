@@ -238,6 +238,8 @@ class InfluxDBProfileReader(BaseProfileReader):
         for profile in [
             x for x in self._energy_system.eAllContents() if isinstance(x, esdl.InfluxDBProfile)
         ]:
+            if profile.profileType == esdl.ProfileTypeEnum.OUTPUT:
+                continue
             if [
                 profile.database,
                 profile.field,
@@ -285,6 +287,8 @@ class InfluxDBProfileReader(BaseProfileReader):
         for profile in [
             x for x in self._energy_system.eAllContents() if isinstance(x, esdl.InfluxDBProfile)
         ]:
+            if profile.profileType == esdl.ProfileTypeEnum.OUTPUT:
+                continue
             index_of_unique_profile = unique_profiles_attributes.index(
                 [
                     profile.database,
