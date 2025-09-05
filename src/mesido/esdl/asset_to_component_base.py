@@ -101,7 +101,7 @@ def get_energy_content(asset_name, carrier) -> float:
     elif str(NetworkSettings.NETWORK_TYPE_HYDROGEN).upper() in str(carrier.name).upper():
         # This value can be lower / higher heating value depending on the case
         # Currently the lower heating value is used below (120.0 MJ/kg)
-        energy_content_j_kg = 120.0 * 10.0**6 / density_kg_m3
+        energy_content_j_kg = 120.0 * 10.0**6
     else:
         raise logger.error(
             f"Neither gas/hydrogen was used in the carrier " f"name of pipe {asset_name}."

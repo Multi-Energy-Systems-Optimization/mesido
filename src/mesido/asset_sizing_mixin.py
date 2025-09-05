@@ -165,6 +165,10 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         self.__electricity_cable_topo_global_cable_class_count_map = {}
         self.__electricity_cable_topo_global_cable_class_count_var_bounds = {}
 
+        # list with entry per ensemble member containing dicts of electricity cable parameter
+        # values for maximum current and resistance
+        self.__electricity_cable_topo_max_current_resistance_parameters = []
+
         # Variable for the maximum size of an asset
         self._asset_max_size_map = {}
         self.__asset_max_size_var = {}
@@ -198,6 +202,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         for _ in range(self.ensemble_size):
             self.__heat_pipe_topo_diameter_area_parameters.append({})
             self.__heat_pipe_topo_heat_loss_parameters.append({})
+            self.__electricity_cable_topo_max_current_resistance_parameters.append({})
 
         unique_pipe_classes = self.get_unique_pipe_classes()
         for pc in unique_pipe_classes:
@@ -308,6 +313,14 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     )
                     if investment_cost == 0.0:
                         RuntimeWarning(f"{cable} has an investment cost of 0. €/m")
+
+                for ensemble_member in range(self.ensemble_size):
+                    d = self.__electricity_cable_topo_max_current_resistance_parameters[
+                        ensemble_member
+                    ]
+
+                    d[f"{cable}.max_current"] = cable_classes[0].maximum_current
+                    d[f"{cable}.resistance"] = resistance
             else:
                 resistances = [c.resistance for c in cable_classes]
                 self.__electricity_cable_topo_resistance_var_bounds[res_var_name] = (
@@ -1052,6 +1065,13 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         """
         return self.__heat_pipe_topo_pipe_class_result[pipe]
 
+    def get_optimized_electricity_cable_class(self, cable):
+        """
+        Return the optimized electricity class for a specific cable. If no
+        optimized cable class is available (yet), a `KeyError` is returned.
+        """
+        return self.__electricity_cable_topo_cable_class_result[cable]
+
     def get_optimized_gas_pipe_class(self, pipe):
         """
         Return the optimized gas pipe class for a specific pipe. If no
@@ -1217,6 +1237,10 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         # parameters in e.g. constraints when those are variable, we set them
         # to NaN in that case. In post(), they are set to their resulting
         # values once again.
+        if self.__electricity_cable_topo_max_current_resistance_parameters:
+            parameters.update(
+                self.__electricity_cable_topo_max_current_resistance_parameters[ensemble_member]
+            )
         if self.__heat_pipe_topo_diameter_area_parameters:
             parameters.update(self.__heat_pipe_topo_diameter_area_parameters[ensemble_member])
         if self.__heat_pipe_topo_heat_loss_parameters:
@@ -2315,6 +2339,29 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         options["resolve_parameter_values"] = True
         return options
 
+    def __cable_class_to_results(self):
+        """
+        This functions writes all resulting electricity cable class results to a dict.
+        """
+        for ensemble_member in range(self.ensemble_size):
+            results = self.extract_results(ensemble_member)
+
+            for cable in self.energy_system_components.get("electricity_cable", []):
+                cable_classes = self.electricity_cable_classes(cable)
+
+                if not cable_classes:
+                    continue
+                elif len(cable_classes) == 1:
+                    cable_class = cable_classes[0]
+                else:
+                    cable_class = next(
+                        c
+                        for c, s in self._electricity_cable_topo_cable_class_map[cable].items()
+                        if round(results[s][0]) == 1.0
+                    )
+
+                self.__electricity_cable_topo_cable_class_result[cable] = cable_class
+
     def __pipe_class_to_results(self):
         """
         This functions writes all resulting pipe class results to a dict.
@@ -2354,6 +2401,18 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     )
 
                 self.__gas_pipe_topo_pipe_class_result[pipe] = pipe_class
+
+    def __cable_max_current_and_resistance_to_parameters(self):
+        """
+        This function is used to update the parameters object with the results of the cable class
+        optimization
+        """
+        for ensemble_member in range(self.ensemble_size):
+            d = self.__electricity_cable_topo_max_current_resistance_parameters[ensemble_member]
+            for cable in self._electricity_cable_topo_cable_class_map:
+                cable_class = self.get_optimized_electricity_cable_class(cable)
+                d[f"{cable}.max_current"] = cable_class.maximum_current
+                d[f"{cable}.resistance"] = cable_class.resistance
 
     def _pipe_heat_loss_to_parameters(self):
         """
@@ -2399,6 +2458,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         """
 
         self.__pipe_class_to_results()
+        self.__cable_class_to_results()
 
         # The head loss mixin wants to do some check for the head loss
         # minimization priority that involves the diameter/area. We assume
@@ -2426,3 +2486,6 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         self.__pipe_class_to_results()
         self.__pipe_diameter_to_parameters()
         self._pipe_heat_loss_to_parameters()
+
+        self.__cable_class_to_results()
+        self.__cable_max_current_and_resistance_to_parameters()

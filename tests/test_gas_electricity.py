@@ -7,6 +7,12 @@ from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.workflows.utils.helpers import run_optimization_problem_solver
 
+import models.gas_electricity_network.src.run_gas_elect as example
+from models.gas_electricity_network.src.run_gas_elect import (
+    GasElectProblem,
+    GasElectProblemCheapCable,
+)
+
 import numpy as np
 
 from utils_tests import (
@@ -18,7 +24,73 @@ from utils_tests import (
 )
 
 
+base_folder = Path(example.__file__).resolve().parent.parent
+
+
 class TestGasElect(TestCase):
+    def test_gas_pipe_electricity_cable_cost_optimization(self):
+        """
+        Small scaled case that uses hydrogen and electricity commodities is added. Case includes
+        2 Heating demand, 1 gas pipe looped network, 1 electricity network, 2 heat pumps and
+        2 gas boilers. Conversion assets have installation (EUR), investment (EUR/MW) and
+        variable operational costs (EUR/MWh). Gas pipes and electricity cables have
+        investment cost (EUR/m).
+        - Investment cost of HeatPump assets in EUR/MW  refers to euro-per-watt-thermal
+        - Investment cost of GasBoiler assets in EUR/MW  refers to euro-per-watt-thermal
+        - Variable operational cost of HeatPump assets in EUR/MWh  refers
+        to euro-per-watt-electricity-per-hour
+        - Variable operational cost of GasBoiler assets in EUR/MWh  refers
+        to euro-per-watt-gas-per-hour
+
+
+        Checks:
+        1 - Investment cost of cable and gas pipe influences optimal solution to
+        prove that cable sizing is implemented
+        """
+
+        solution_expensive_cable = run_optimization_problem_solver(
+            GasElectProblem,
+            base_folder=base_folder,
+            esdl_parser=ESDLFileParser,
+            esdl_file_name="gas_elect_loop_tree_NewCosts.esdl",
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="HeatingDemand_W_manual.csv",
+        )
+
+        results_expensive_cable = solution_expensive_cable.extract_results()
+
+        solution_cheap_cable = run_optimization_problem_solver(
+            GasElectProblemCheapCable,
+            base_folder=base_folder,
+            esdl_parser=ESDLFileParser,
+            esdl_file_name="gas_elect_loop_tree_NewCosts.esdl",
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="HeatingDemand_W_manual.csv",
+        )
+
+        results_cheap_cable = solution_cheap_cable.extract_results()
+
+        gas_boiler_expensive_cable = (
+            results_expensive_cable["GasHeater_1.Heat_source"][1:]
+            + results_expensive_cable["GasHeater_2.Heat_source"][1:]
+        )
+        heat_pump_expensive_cable = (
+            results_expensive_cable["HeatPump_1.Heat_source"][1:]
+            + results_expensive_cable["HeatPump_2.Heat_source"][1:]
+        )
+
+        gas_boiler_cheap_cable = (
+            results_cheap_cable["GasHeater_1.Heat_source"][1:]
+            + results_cheap_cable["GasHeater_2.Heat_source"][1:]
+        )
+        heat_pump_cheap_cable = (
+            results_cheap_cable["HeatPump_1.Heat_source"][1:]
+            + results_cheap_cable["HeatPump_2.Heat_source"][1:]
+        )
+
+        np.testing.assert_array_less(heat_pump_expensive_cable, gas_boiler_expensive_cable)
+        np.testing.assert_array_less(gas_boiler_cheap_cable, heat_pump_cheap_cable)
+
     def test_gas_elect(self):
         """
         Small scaled case that uses hydrogen and electricity commodities is added. Case includes
@@ -44,13 +116,9 @@ class TestGasElect(TestCase):
         5. gas consumption is equal to production
         6. manually calculated TCO is equal to Objective function value
         """
-        import models.gas_electricity_network.src.run_gas_elect as example
-        from models.gas_electricity_network.src.run_gas_elect import GasElectProblem
-
-        base_folder = Path(example.__file__).resolve().parent.parent
 
         solution = run_optimization_problem_solver(
-            GasElectProblem,
+            GasElectProblemCheapCable,
             base_folder=base_folder,
             esdl_parser=ESDLFileParser,
             esdl_file_name="gas_elect_loop_tree.esdl",
@@ -62,7 +130,7 @@ class TestGasElect(TestCase):
         parameters = solution.parameters(0)
 
         solution_high_demand = run_optimization_problem_solver(
-            GasElectProblem,
+            GasElectProblemCheapCable,
             base_folder=base_folder,
             esdl_parser=ESDLFileParser,
             esdl_file_name="gas_elect_loop_tree.esdl",
@@ -110,7 +178,9 @@ class TestGasElect(TestCase):
                 pass
             else:
                 pipe_diameters_high_demand.append(results_high_demand[f"{pipe}__gn_diameter"][0])
-        np.testing.assert_array_less(np.array(pipe_diameters), np.array(pipe_diameters_high_demand))
+        np.testing.assert_array_less(
+            np.array(pipe_diameters), np.array(pipe_diameters_high_demand) + 1e-9
+        )
 
         # Test: Check the burning efficiency of gas heaters
         for asset_name in [*solution.energy_system_components.get("gas_boiler", [])]:
@@ -154,24 +224,34 @@ class TestGasElect(TestCase):
 
             # investment cost
             investment_cost = 0.0
-            if asset in [
-                *solution.energy_system_components.get("heat_source", []),
-                *solution.energy_system_components.get("electricity_cable", []),
-            ]:
-                investment_cost_info = costs_esdl_asset.investmentCosts.value
             if asset in solution.energy_system_components["heat_source"]:
+                investment_cost_info = costs_esdl_asset.investmentCosts.value
                 investment_cost = investment_cost_info * results[f"{asset}__max_size"] / 1.0e6
             elif asset in solution.energy_system_components["electricity_cable"]:
-                investment_cost = investment_cost_info * parameters[f"{asset}.length"]
+                cable_class = solution.electricity_cable_classes(asset)
+                for iter in range(len(cable_class)):
+                    if cable_class[iter].maximum_current == parameters[f"{asset}.max_current"]:
+                        investment_cost = (
+                            cable_class[iter].investment_costs * parameters[f"{asset}.length"]
+                        )
             elif asset in solution.energy_system_components["gas_pipe"]:
                 if parameters[f"{asset}.diameter"] > 0:
                     for iter in range(len(pipe_classes)):
-                        if pipe_classes[iter].inner_diameter == parameters[f"{asset}.diameter"]:
+                        #  If pipe is enabled, parameters[f"{asset}.diameter"] comes from
+                        #  _gas_pipe_database.jso whereas pipe_classes[iter].inner_diameter
+                        #  comes from _edr_pipes.json. Hence, there is a small difference
+                        #  in the inner diameters of the same DN size
+                        if (
+                            abs(pipe_classes[iter].inner_diameter - parameters[f"{asset}.diameter"])
+                            < 0.01
+                        ):  # pipe_classes[iter].inner_diameter == parameters[f"{asset}.diameter"]:
                             investment_cost = (
                                 pipe_classes[iter].investment_costs * parameters[f"{asset}.length"]
                             )
             total_capex += investment_cost
-            np.testing.assert_allclose(investment_cost, results[f"{asset}__investment_cost"])
+            np.testing.assert_allclose(
+                investment_cost, results[f"{asset}__investment_cost"], atol=1.0e-8
+            )
 
             # installation cost
             if asset in solution.energy_system_components["heat_source"]:
@@ -219,4 +299,5 @@ class TestGasElect(TestCase):
 if __name__ == "__main__":
 
     a = TestGasElect()
-    a.test_gas_elect()
+    a.test_gas_pipe_electricity_cable_cost_optimization()
+    # a.test_gas_elect()

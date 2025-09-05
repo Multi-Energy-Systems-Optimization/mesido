@@ -5,6 +5,7 @@ from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.head_loss_class import HeadLossOption
 from mesido.network_common import NetworkSettings
+from mesido.pipe_class import CableClass
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.goals.minimize_tco_goal import MinimizeTCO
 from mesido.workflows.io.write_output import ScenarioOutput
@@ -106,7 +107,7 @@ class GasElectProblem(
 
         # Setting when started with head loss inclusions
         self.gas_network_settings["minimum_velocity"] = 0.0
-        self.gas_network_settings["maximum_velocity"] = 15.0
+        self.gas_network_settings["maximum_velocity"] = 60.0
 
         # TODO: resolve scaling and potential other issues preventing HIGHS to optimize the system
         # when LINEARIZED_N_LINES_EQUALITY head loss setting is used
@@ -185,6 +186,58 @@ class GasElectProblem(
             aliases = self.alias_relation._canonical_variables_map
             solver_stats = self.solver_stats
             self._write_json_output(results, parameters, bounds, aliases, solver_stats)
+
+    def electricity_cable_dict_to_classes(self, c, cables_dict, enabled_cable_type):
+        cable_classes_list = []
+        for cable_name, properties in cables_dict.items():
+            cable_classes_list.append(
+                CableClass(
+                    name=cable_name,
+                    maximum_current=properties["maximum_current"],
+                    resistance=properties["resistance"],
+                    investment_costs=properties["investment_costs"],
+                )
+            )
+
+        cable_state = self.parameters(0)[f"{c}.state"]
+        if cable_state == 0:  # Disabled
+            for cable_class in cable_classes_list:
+                if cable_class.name == "None":
+                    cable_list = [cable_class]
+
+        elif cable_state == 1:  # Enabled
+            for cable_class in cable_classes_list:
+                if cable_class.name == enabled_cable_type:
+                    cable_list = [cable_class]
+
+        elif cable_state == 2:  # Optional
+            cable_list = cable_classes_list
+
+        return cable_list
+
+    def electricity_cable_classes(self, c):
+        cables_dict = {
+            "None": {
+                "maximum_current": 0.0,
+                "resistance": 0.0,
+                "investment_costs": 0.0,
+            },
+            "CableType1": {
+                "maximum_current": 11000.0,
+                "resistance": 3.0,
+                "investment_costs": 60000.0,
+            },
+            "CableType2": {
+                "maximum_current": 12000.0,
+                "resistance": 4.0,
+                "investment_costs": 65000.0,
+            },
+        }
+
+        enabled_cable_type = "CableType1"
+        cable_list = self.electricity_cable_dict_to_classes(c, cables_dict, enabled_cable_type)
+
+        return cable_list
 
 
 @main_decorator

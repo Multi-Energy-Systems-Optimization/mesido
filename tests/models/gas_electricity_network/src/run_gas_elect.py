@@ -9,6 +9,7 @@ from mesido.workflows.utils.helpers import run_optimization_problem_solver
 
 # from mesido.esdl.asset_to_component_base import _AssetToComponentBase
 # from mesido.esdl.edr_pipe_class import EDRGasPipeClass
+#
 # import numpy as np
 
 root_folder = str(Path(__file__).resolve().parent.parent.parent.parent)
@@ -22,13 +23,43 @@ sys.path.insert(1, root_folder)
 #     gas_pipes_head_loss_test,
 # )
 
+
+class GasElectProblemCheapCable(GasElectProblem):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def electricity_cable_classes(self, c):
+        cables_dict = {
+            "None": {
+                "maximum_current": 0.0,
+                "resistance": 0.0,
+                "investment_costs": 0.0,
+            },
+            "CableType1": {
+                "maximum_current": 1100.0,
+                "resistance": 3.0,
+                "investment_costs": 1.0,
+            },
+            "CableType2": {
+                "maximum_current": 12000.0,
+                "resistance": 3.0,
+                "investment_costs": 100.0,
+            },
+        }
+
+        enabled_cable_type = "CableType1"
+        cable_list = self.electricity_cable_dict_to_classes(c, cables_dict, enabled_cable_type)
+
+        return cable_list
+
+
 if __name__ == "__main__":
     import time
 
     start_time = time.time()
 
     solution = run_optimization_problem_solver(
-        GasElectProblem,
+        GasElectProblemCheapCable,
         esdl_parser=ESDLFileParser,
         esdl_file_name="gas_elect_loop_tree.esdl",
         profile_reader=ProfileReaderFromFile,
@@ -39,7 +70,7 @@ if __name__ == "__main__":
     parameters = solution.parameters(0)
 
     solution_high_demand = run_optimization_problem_solver(
-        GasElectProblem,
+        GasElectProblemCheapCable,
         esdl_parser=ESDLFileParser,
         esdl_file_name="gas_elect_loop_tree.esdl",
         profile_reader=ProfileReaderFromFile,
@@ -52,7 +83,7 @@ if __name__ == "__main__":
     # ----------------------------------------------------------------------------------------------
     # Do not delete the code below: manual checking and testing of values + usefull prints to
     # terminal
-    #
+
     # print("==Tests Start==")
     #
     # print("HeatingDemand_1: ", results["HeatingDemand_1.Heat_flow"])
@@ -116,7 +147,9 @@ if __name__ == "__main__":
     #         pipe_diameters_high_demand.append(pipe_diameter)
     #         print("Diameter of ", pipe, pipe_diameter)
     # # print(np.array(pipe_diameters), np.array(pipe_diameters_HighDemand))
-    # np.testing.assert_array_less(np.array(pipe_diameters), np.array(pipe_diameters_high_demand))
+    # np.testing.assert_array_less(
+    #     np.array(pipe_diameters), np.array(pipe_diameters_high_demand) + 1e-9
+    # )
     #
     # # Test: Check the burning efficiency of gas heaters
     # for asset_name in [*solution.energy_system_components.get("gas_boiler", [])]:
@@ -161,26 +194,32 @@ if __name__ == "__main__":
     #     *solution.energy_system_components.get("electricity_cable", []),
     #     *solution.energy_system_components.get("gas_pipe", []),
     # ]:
+    #     esdl_asset = solution.esdl_assets[solution.esdl_asset_name_to_id_map[f"{asset}"]]
+    #     costs_esdl_asset = esdl_asset.attributes["costInformation"]
     #
     #     # investment cost
     #     investment_cost = 0.0
-    #     if asset in [
-    #         *solution.energy_system_components.get("heat_source", []),
-    #         *solution.energy_system_components.get("electricity_cable", []),
-    #     ]:
-    #         investment_cost_info = (
-    #             solution.esdl_assets[solution.esdl_asset_name_to_id_map[f"{asset}"]]
-    #             .attributes["costInformation"]
-    #             .investmentCosts.value
-    #         )
     #     if asset in solution.energy_system_components["heat_source"]:
+    #         investment_cost_info = costs_esdl_asset.investmentCosts.value
     #         investment_cost = investment_cost_info * results[f"{asset}__max_size"] / 1.0e6
     #     elif asset in solution.energy_system_components["electricity_cable"]:
-    #         investment_cost = investment_cost_info * parameters[f"{asset}.length"]
+    #         cable_class = solution.electricity_cable_classes(asset)
+    #         for iter in range(len(cable_class)):
+    #             if cable_class[iter].maximum_current == parameters[f"{asset}.max_current"]:
+    #                 investment_cost = (
+    #                     cable_class[iter].investment_costs * parameters[f"{asset}.length"]
+    #                 )
     #     elif asset in solution.energy_system_components["gas_pipe"]:
     #         if parameters[f"{asset}.diameter"] > 0:
     #             for iter in range(len(pipe_classes)):
-    #                 if pipe_classes[iter].inner_diameter == parameters[f"{asset}.diameter"]:
+    #                 #  If pipe is enabled, parameters[f"{asset}.diameter"] comes from
+    #                 #  _gas_pipe_database.jso whereas pipe_classes[iter].inner_diameter
+    #                 #  comes from _edr_pipes.json. Hence, there is a small difference
+    #                 #  in the inner diameters of the same DN size
+    #                 if (
+    #                     abs(pipe_classes[iter].inner_diameter - parameters[f"{asset}.diameter"])
+    #                     < 0.01
+    #                 ):  # pipe_classes[iter].inner_diameter == parameters[f"{asset}.diameter"]:
     #                     investment_cost = (
     #                         pipe_classes[iter].investment_costs * parameters[f"{asset}.length"]
     #                     )
@@ -191,18 +230,16 @@ if __name__ == "__main__":
     #         investment_cost,
     #         abs(investment_cost - results[f"{asset}__investment_cost"]) < 1.0e-8,
     #     )
-    #     np.testing.assert_allclose(investment_cost, results[f"{asset}__investment_cost"])
+    #     np.testing.assert_allclose(
+    #         investment_cost, results[f"{asset}__investment_cost"], atol=1.0e-8
+    #     )
     #
     #     # installation cost
     #     if asset in solution.energy_system_components["heat_source"]:
     #         if results[f"{asset}__max_size"] < 1e-8:
     #             installation_cost = 0
     #         else:
-    #             installation_cost = (
-    #                 solution.esdl_assets[solution.esdl_asset_name_to_id_map[f"{asset}"]]
-    #                 .attributes["costInformation"]
-    #                 .installationCosts.value
-    #             )
+    #             installation_cost = costs_esdl_asset.installationCosts.value
     #         print(
     #             "installation cost: ",
     #             asset,
@@ -216,30 +253,22 @@ if __name__ == "__main__":
     #     timesteps_hr = np.diff(solution.times()) / 3600
     #     variable_operational_cost = 0.0
     #     if asset in solution.energy_system_components["heat_source"]:
-    #         var_op_costs = (
-    #             solution.esdl_assets[solution.esdl_asset_name_to_id_map[f"{asset}"]]
-    #             .attributes["costInformation"]
-    #             .variableOperationalCosts.value
-    #             / 1.0e6
-    #         )
+    #         var_op_costs = costs_esdl_asset.variableOperationalCosts.value / 1.0e6
     #         assert var_op_costs > 0
     #         factor = 1.0
     #         if asset in [
     #             *solution.energy_system_components.get("air_water_heat_pump_elec", []),
     #         ]:
-    #             factor = solution.esdl_assets[
-    #                 solution.esdl_asset_name_to_id_map[f"{asset}"]
-    #             ].attributes["COP"]
+    #             factor = esdl_asset.attributes["COP"]
     #         if asset in [
     #             *solution.energy_system_components.get("gas_boiler", []),
     #         ]:
-    #             factor = solution.esdl_assets[
-    #                 solution.esdl_asset_name_to_id_map[f"{asset}"]
-    #             ].attributes["efficiency"]
-    #         # assert factor >= 1.0
+    #             factor = esdl_asset.attributes["efficiency"]
     #         for ii in range(1, len(solution.times())):
     #             variable_operational_cost += (
-    #                 var_op_costs * results[f"{asset}.Heat_flow"][ii] * timesteps_hr[ii - 1]
+    #                 var_op_costs
+    #                 * results[f"{asset}.Heat_flow"][ii]
+    #                 * timesteps_hr[ii - 1]
     #                 / factor
     #             )
     #         print(
@@ -253,7 +282,6 @@ if __name__ == "__main__":
     #         variable_operational_cost, results[f"{asset}__variable_operational_cost"]
     #     )
     #     total_opex += variable_operational_cost
-    #
     # print("Calculated TCO:  ", (total_capex[0] + total_opex) / 1.0e6)
     # print("Objective Value: ", solution.objective_value)
     # np.testing.assert_allclose(
