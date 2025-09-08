@@ -8,6 +8,7 @@
 - Generic modifier functions for consistency across assets.
 - Discrete charge/discharge variable for an ATES asset.
 - Checks if a timelimit is reached in the GROW workflow at each stage.
+- Optimized esdl is re-usabled
 - Pipe costs are updated based on the asset templates if they are provided 
 - AssetStateEnums of IntEnum type to describe the state of an asset i.e disabled/enabled/optional
 
@@ -16,7 +17,7 @@
 - TCO cost calculation objective now used the technical lifetime to determine the frequency of the re-investment costs.
 - TCO cost calculation objective to now exclude heating demand costs in the grow workflow
 - Hydraulic power calculation at "sink" assets is set to 0.0 if headloss calculation is turned off.
-
+- Updated pyESDL to v25.7
 
 ## Fixed
 - Bug: Add 3 port heat pump to elect demand path constraint

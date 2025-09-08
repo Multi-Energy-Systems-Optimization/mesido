@@ -1302,6 +1302,7 @@ class ScenarioOutput:
                                         endDate=end_date_time,
                                         id=str(uuid.uuid4()),
                                         filters='"assetId"=' + f"'{str(asset_id)}'",
+                                        profileType=esdl.ProfileTypeEnum.OUTPUT,
                                     )
                                     # Assign quantity and units variable
                                     if variable in ["Heat_flow", "Pump_power"]:
@@ -1352,7 +1353,19 @@ class ScenarioOutput:
                                             f"{asset_name}. + {variable}"
                                         )
 
-                                    asset.port[index_outport].profile.append(profile_attributes)
+                                    # If asset already has a OUTPUT profile comes from re-used esdl,
+                                    # we overwrite on OUTPUT profiles.
+                                    # Otherwise, we create a new one.
+                                    fields_in_esdl = [
+                                        p.field for p in asset.port[index_outport].profile
+                                    ]
+                                    if profile_attributes.field in fields_in_esdl:
+                                        profile_idx = fields_in_esdl.index(profile_attributes.field)
+                                        asset.port[index_outport].profile[
+                                            profile_idx
+                                        ] = profile_attributes
+                                    else:
+                                        asset.port[index_outport].profile.append(profile_attributes)
 
                                 # Add variable values in new column
                                 conversion_factor = 0.0
