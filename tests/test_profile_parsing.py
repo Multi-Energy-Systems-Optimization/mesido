@@ -1,3 +1,4 @@
+import calendar
 import datetime
 import operator
 import unittest
@@ -5,7 +6,10 @@ import unittest.mock
 from pathlib import Path
 from typing import Optional
 
+from dateutil.relativedelta import relativedelta
+
 import esdl
+
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import InfluxDBProfileReader, ProfileReaderFromFile
@@ -20,14 +24,11 @@ from mesido.workflows.utils.error_types import mesido_issue_type_gen_message
 
 import numpy as np
 
+
 import pandas as pd
 
-from utils_test_scaling import create_log_list_scaling
 
-# TODO: Ignore or include this header import based on the decision of leap year's inclusion in
-#  extension of profile. Should be adjusted based on the decisions
-#  made for the adapt_profile.py
-# from dateutil.relativedelta import relativedelta
+from utils_test_scaling import create_log_list_scaling
 
 
 class MockInfluxDBProfileReader(InfluxDBProfileReader):
@@ -58,9 +59,10 @@ class TestProfileUpdating(unittest.TestCase):
             the input step_size
         2. ProfileUpdateMultiYear
             - Checks if the updated time series has expected amount of entries
-            - Checks if it is consistent/continuous on an hourly basis
+            - Checks if it is consistent/continuous on an hourly basis/yearly basis
             - Checks if the expected start date and the generated end date matches
             - Checks if the expected end date and the generated end date matches
+            - Checks if the values set for the assets is tiled as expected
 
         """
         import models.unit_cases.case_3a.src.run_3a as run_3a
@@ -120,72 +122,128 @@ class TestProfileUpdating(unittest.TestCase):
 
                 adapt_profile_to_copy_for_number_of_years(self, problem_years)
 
-        problem = ProfileUpdateMultiYear(
-            esdl_parser=ESDLFileParser,
-            base_folder=base_folder,
-            model_folder=model_folder,
-            input_folder=input_folder,
-            esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
-            profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="Warmte_test.csv",
-        )
-        problem.pre()
-
-        # TODO: update checks
-        len_org_time_serie = 8760  # the last timestep is not copied
-        timeseries_updated = problem.io.datetimes
-        dts = list(
-            map(
-                operator.sub,
-                timeseries_updated[len_org_time_serie:-1],
-                timeseries_updated[0:-len_org_time_serie],
+        # Check for profiles that is of both leap and non-leap years
+        for profile_type in ["Warmte_test.csv", "Warmte_test_leap_year.csv"]:
+            problem = ProfileUpdateMultiYear(
+                esdl_parser=ESDLFileParser,
+                base_folder=base_folder,
+                model_folder=model_folder,
+                input_folder=input_folder,
+                esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
+                profile_reader=ProfileReaderFromFile,
+                input_timeseries_file=profile_type,
             )
-        )
-        assert len(timeseries_updated) == len_org_time_serie * problem_years
-        assert all(dt.days == 365 for dt in dts)
+            problem.pre()
 
-        # Test length of data (duplicate as above, but doesn't break)
-        np.testing.assert_equal(len(timeseries_updated), len_org_time_serie * problem_years)
+            timeseries_updated = problem.io.datetimes
+            org_timeseries = problem.original_time_series
+            original_year = org_timeseries[0].year
+            len_org_time_serie = (
+                8784 if calendar.isleap(original_year) else 8760
+            )  # the last timestep is not copied
+            dts = list(
+                map(
+                    operator.sub,
+                    timeseries_updated[len_org_time_serie:-1],
+                    timeseries_updated[0:-len_org_time_serie],
+                )
+            )
 
-        # Test consistency and continuity of data
-        # TODO: The tests below have the inclusion/exclusion of leap years. Should be adjusted
-        #  based on the decisions made for the adapt_profile.py
-        # The one immediately below (commented out) is not valid if the year is a leap year,
-        # thus we make an expected date range using pandas, and manually exclude the leap day.
-        # Then check the time delta. In this way, we make sure the datatime generated is hourly
-        # continuous but omits the leap day
+            # General test for the length of the adapted time series
+            assert len(timeseries_updated) == len_org_time_serie * problem_years
 
-        # CHECK FOR THE LEAP YEAR DOES NOT EXIST WITH THIS TEST #
-        np.testing.assert_equal(datetime.timedelta(seconds=3600), np.diff(timeseries_updated))
+            # General test on the consistency of years
+            if calendar.isleap(original_year):
+                # If a profile of leap year is given as an input, the datetimes are generated for
+                # the 'n' next (consecutive) leap years. This is because neither of the datetime,
+                # dateutils nor the pandas
+                def years_required_leap_year(start, n):
+                    return [y for y in range(start, start + n * 8) if calendar.isleap(y)][:n]
 
-        # CHECK FOR THE LEAP YEAR EXISTS WITH THIS TEST #
-        # expected_daterange_full = pd.date_range(
-        #     start=problem.original_time_series[0],
-        #     end=problem.original_time_series[-1] + relativedelta(years=problem_years-1),
-        #     freq='H'
-        # )
-        # # Remove leap days
-        # expected_daterange = expected_daterange_full[
-        #     ~((expected_daterange_full.month == 2) & (expected_daterange_full.day == 29))
-        # ]
-        # expected_daterange = list(expected_daterange.to_pydatetime())
-        # np.testing.assert_equal(np.diff(expected_daterange), np.diff(timeseries_updated))
+                years_required = years_required_leap_year(2021, 3)
+            else:
+                years_required = [problem.problem_year + i for i in range(problem_years)]
+            timeseries_updated_years = list({i.year for i in timeseries_updated})
+            np.testing.assert_equal(sorted(years_required), sorted(timeseries_updated_years))
 
-        # Test the consistency of years
-        years_required = [problem.problem_year + i for i in range(problem_years)]
-        timeseries_updated_years = list({i.year for i in timeseries_updated})
-        np.testing.assert_equal(years_required, timeseries_updated_years)
+            # General test if the resulting start and end date are as expected
+            np.testing.assert_equal(problem.original_time_series[0], timeseries_updated[0])
+            if calendar.isleap(original_year):
+                np.testing.assert_equal(
+                    problem.original_time_series[-1]
+                    + relativedelta(years=sorted(years_required)[-1] - original_year),
+                    timeseries_updated[-1],
+                )
+            else:
+                np.testing.assert_equal(
+                    problem.original_time_series[-1] + relativedelta(years=problem_years - 1),
+                    timeseries_updated[-1],
+                )
 
-        # TODO: Ignore or include this test based on the decision of leap year's inclusion in
-        #  extension of profile. Should be adjusted based on the decisions made for the
-        #  adapt_profile.py
-        # np.testing.assert_equal(
-        #     problem.original_time_series[-1] + relativedelta(years=problem_years-1),
-        #     timeseries_updated[-1]
-        # )
+            # General test if profiles have been tiled according to the number of years
+            profile_asset = problem.io.get_timeseries(
+                variable="HeatingDemand_1.target_heat_demand"
+            )[1]
+            np.testing.assert_equal(len(profile_asset) / problem_years, len(org_timeseries))
+            np.testing.assert_allclose(
+                np.sum(profile_asset),
+                np.sum(profile_asset[: len(org_timeseries)] * problem_years),
+                atol=1e-3,
+            )
 
-        # Test if the resulting start date and end date are as expected
-        np.testing.assert_equal(problem.original_time_series[0], timeseries_updated[0])
+            # Test consistency and continuity of data
+            if calendar.isleap(original_year):
+                # There would 3n-1 non-leap years between the consecutive datasets
+                np.testing.assert_equal(
+                    np.sum(
+                        np.diff(timeseries_updated) == datetime.timedelta(days=1095, seconds=3600)
+                    ),
+                    problem_years - 1,
+                )
+            else:
+                if len(org_timeseries) == 8760:
+                    # There would be 'n' leap days skipped as much as 'n' available leap years in
+                    # the extended profile. If a leap day is skipped, timedelta from 28th Feb 23:00
+                    # to 1st March 00:00 is 1 day and 1 hour.
+                    np.testing.assert_equal(
+                        np.sum(np.diff(timeseries_updated) != datetime.timedelta(seconds=3600)),
+                        len(
+                            list(
+                                filter(
+                                    calendar.isleap,
+                                    range(original_year, original_year + problem_years),
+                                )
+                            )
+                        ),
+                    )
+                    np.testing.assert_equal(
+                        np.sum(
+                            np.diff(timeseries_updated) == datetime.timedelta(days=1, seconds=3600)
+                        ),
+                        len(
+                            list(
+                                filter(
+                                    calendar.isleap,
+                                    range(original_year, original_year + problem_years),
+                                )
+                            )
+                        ),
+                    )
+                else:
+                    np.testing.assert_equal(all(dt.days == 365 for dt in dts), True)
+
+                # Expected date ranges against different library (pandas)
+                expected_daterange_full = pd.date_range(
+                    start=problem.original_time_series[0],
+                    end=problem.original_time_series[-1] + relativedelta(years=problem_years - 1),
+                    freq="H",
+                )
+                # Remove leap days
+                expected_daterange = expected_daterange_full[
+                    ~((expected_daterange_full.month == 2) & (expected_daterange_full.day == 29))
+                ]
+                expected_daterange = list(expected_daterange.to_pydatetime())
+                np.testing.assert_equal(np.diff(expected_daterange), np.diff(timeseries_updated))
 
 
 class TestPotentialErrors(unittest.TestCase):
