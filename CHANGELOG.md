@@ -1,28 +1,23 @@
-# [Unreleased-main] - 2025-09-01
+# [Unreleased-main] - 2025-09-04
 
 ## Added
+- Elect test for air_to_water_heat_pump_elec
+- Timelimit for testing in pipeline
 - Potential error checks if heating demand state is not set to enabled.
 - Potential error checks if the heat exchanger capacity is set correctly.
 - Generic modifier functions for consistency across assets.
 - Discrete charge/discharge variable for an ATES asset.
 - Checks if a timelimit is reached in the GROW workflow at each stage.
 - Optimized esdl is re-usabled
-
-## Changed
-- TCO cost calculation objective to now exclude heating demand costs in the grow workflow
-- Hydraulic power calculation at "sink" assets is set to 0.0 if headloss calculation is turned off.
-- Updated pyESDL to v25.7
-
-
-# [Unreleased-main] - 2025-08-14
-
-## Added
-- Elect test for air_to_water_heat_pump_elec
-- Timelimit for testing in pipeline
+- Pipe costs are updated based on the asset templates if they are provided 
+- AssetStateEnums of IntEnum type to describe the state of an asset i.e disabled/enabled/optional
 
 ## Changed
 - Previously variable operational cost of air-to-water heat pump was based on  the thermal power usage. Now it is based on the electrical power usage
 - TCO cost calculation objective now used the technical lifetime to determine the frequency of the re-investment costs.
+- TCO cost calculation objective to now exclude heating demand costs in the grow workflow
+- Hydraulic power calculation at "sink" assets is set to 0.0 if headloss calculation is turned off.
+- Updated pyESDL to v25.7
 
 ## Fixed
 - Bug: Add 3 port heat pump to elect demand path constraint
