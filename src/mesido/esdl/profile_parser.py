@@ -12,7 +12,6 @@ from esdl.units.conversion import ENERGY_IN_J, POWER_IN_W, convert_to_unit
 
 from mesido.esdl.common import Asset
 from mesido.potential_errors import MesidoAssetIssueType, get_potential_errors
-from mesido.workflows.utils.error_types import HEAT_NETWORK_ERRORS, potential_error_to_error
 
 import numpy as np
 
@@ -372,6 +371,13 @@ class InfluxDBProfileReader(BaseProfileReader):
         -------
         A pandas Series of the profile for the asset.
         """
+        # Import is done under the function instead of the top of the file
+        # to avoid circular import issue
+        from mesido.workflows.utils.error_types import (
+            HEAT_NETWORK_ERRORS,
+            potential_error_to_error,
+        )
+
         if profile.id in self._df:
             return self._df[profile.id]
 
@@ -403,7 +409,19 @@ class InfluxDBProfileReader(BaseProfileReader):
             ssl=ssl_setting,
             verify_ssl=ssl_setting,
         )
-        time_series_data = InfluxDBProfileManager(conn_settings)
+
+        try:
+            time_series_data = InfluxDBProfileManager(conn_settings)
+        except Exception:
+            container = profile.eContainer()
+            asset = container.energyasset
+            get_potential_errors().add_potential_issue(
+                MesidoAssetIssueType.ASSET_PROFILE_AVAILABILITY,
+                asset.id,
+                f"Asset named {asset.name}: Database {profile.database}"
+                f" is not available in the host.",
+            )
+            potential_error_to_error(HEAT_NETWORK_ERRORS)
 
         time_series_data.load_influxdb(
             profile.measurement,
@@ -412,14 +430,14 @@ class InfluxDBProfileReader(BaseProfileReader):
             profile.endDate,
         )
 
-        container = profile.eContainer()
-        asset = container.energyasset
         if time_series_data.profile_data_list == []:
+            container = profile.eContainer()
+            asset = container.energyasset
             get_potential_errors().add_potential_issue(
                 MesidoAssetIssueType.ASSET_PROFILE_AVAILABILITY,
                 asset.id,
                 f"Asset named {asset.name}: Input profile {profile.field}"
-                f" is not available in the database.",
+                f" in {profile.measurement} is not available in the database.",
             )
             # TODO: potential_error_to_error(HEAT_NETWORK_ERRORS) supposed to be called only after
             #  read() finishes. However, because of the current error we have not any profile.
