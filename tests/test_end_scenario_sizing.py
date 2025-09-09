@@ -349,6 +349,7 @@ class TestEndScenarioSizing(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
+            error_type_check=NO_POTENTIAL_ERRORS_CHECK,
         )
 
         results = solution.extract_results()

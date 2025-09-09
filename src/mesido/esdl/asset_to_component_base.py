@@ -276,6 +276,17 @@ class _AssetToComponentBase:
             "fixedMaintenanceCosts": "optional",
             "fixedOperationalCosts": "required",
         },
+        "gas_boiler": {  # GasHeater - outside project scope, all costs optional
+            "investmentCosts": "optional",
+            "installationCosts": "optional", 
+            "variableOperationalCosts": "optional",
+            "fixedMaintenanceCosts": "optional",
+            "fixedOperationalCosts": "optional",
+        },
+        "electricity_cable": {  # ElectricityCable - outside project scope, all costs optional
+            "investmentCosts": "optional",
+            "fixedMaintenanceCosts": "optional",
+        },
     }
 
     COST_VALIDATION_COMPONENT_TO_ASSET_TYPE = {
@@ -288,6 +299,8 @@ class _AssetToComponentBase:
         "ATES": "ates",
         "Pipe": "pipe",
         "HeatExchange": "heat_exchanger",
+        "GasHeater": "gas_boiler",
+        "ElectricityCable": "electricity_cable",
     }
 
     COST_ATTRIBUTE_TO_STRING = {
