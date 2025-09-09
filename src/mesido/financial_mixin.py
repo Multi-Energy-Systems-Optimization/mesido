@@ -961,6 +961,16 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 sum += price_profile.values[i] * pump_power[i] * timesteps[i - 1] / eff
 
             constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
+            if s in [
+                *self.energy_system_components.get("geothermal", []),
+                *self.energy_system_components.get("ates", []),
+            ]:
+                big_m = 2 * self.bounds()[f"{asset}_aggregation_count"][1]
+                aggregation_count = self.get_aggregation_count_var(s, ensemble_member)
+                nominal = self.variable_nominal(variable_operational_cost)
+                constraints.append(
+                    ((variable_operational_cost - aggregation_count * big_m), 0.0, np.inf)
+                )
 
         for hp in [
             *self.energy_system_components.get("heat_pump", []),
