@@ -278,7 +278,7 @@ class _AssetToComponentBase:
         },
         "gas_boiler": {  # GasHeater - outside project scope, all costs optional
             "investmentCosts": "optional",
-            "installationCosts": "optional", 
+            "installationCosts": "optional",
             "variableOperationalCosts": "optional",
             "fixedMaintenanceCosts": "optional",
             "fixedOperationalCosts": "optional",
