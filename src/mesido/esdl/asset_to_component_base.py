@@ -1767,7 +1767,7 @@ class _AssetToComponentBase:
                 self._log_and_add_potential_issue(message, asset.id, cost_error_type="incorrect")
                 return 0.0
         else:
-            message(f"Cannot provide investment costs for asset " f"{asset.name} per {per_unit}")
+            message = f"Cannot provide investment costs for asset {asset.name} per {per_unit}"
             self._log_and_add_potential_issue(message, asset.id, cost_error_type="incorrect")
             return 0.0
 
