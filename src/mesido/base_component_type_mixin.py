@@ -44,18 +44,6 @@ class BaseComponentTypeMixin:
         """
         raise NotImplementedError
 
-    def is_hot_pipe(self, pipe: str) -> bool:
-        """
-        The function return true if the pipe is a supply pipe based on a name convention
-        """
-        return pipe.endswith("_hot")
-
-    def is_cold_pipe(self, pipe: str) -> bool:
-        """
-        The function return true if the pipe is a return pipe based on a name convention
-        """
-        return pipe.endswith("_cold")
-
     def hot_to_cold_pipe(self, pipe: str):
         """
         This function returns the name of the associated cold/return pipe of a supply/hot pipe.
@@ -81,28 +69,34 @@ class BaseComponentTypeMixin:
         :returns: True if the pipe has a related pipe, else False.
         """
         related = False
-        if self.is_hot_pipe(pipe):
-            if self.hot_to_cold_pipe(pipe) in self.energy_system_components.get("heat_pipe", []):
-                related = True
-        elif self.is_cold_pipe(pipe):
-            if self.cold_to_hot_pipe(pipe) in self.energy_system_components.get("heat_pipe", []):
-                related = True
+        if pipe in self.hot_pipes or pipe in self.cold_pipes:
+            related = True
         return related
+
+    @property
+    def hot_to_cold_pipe_map(self) -> Dict[str, str]:
+        """
+        This function return a dictionary of hot pipe names mapped to cold pipe names.
+        """
+        raise NotImplementedError
+
+    @property
+    def cold_to_hot_pipe_map(self) -> Dict[str, str]:
+        """
+        This function return a dictionary of cold pipe names mapped to hot pipe names.
+        """
+        raise NotImplementedError
 
     @property
     def hot_pipes(self) -> List[str]:
         """
         This function return a list of all the supply/hot pipe names.
         """
-        return [
-            p for p in self.energy_system_components.get("heat_pipe", []) if self.is_hot_pipe(p)
-        ]
+        return list(self.hot_to_cold_pipe_map.keys())
 
     @property
     def cold_pipes(self) -> List[str]:
         """
         This function return a list of all the return/cold pipe names.
         """
-        return [
-            p for p in self.energy_system_components.get("heat_pipe", []) if self.is_cold_pipe(p)
-        ]
+        return list(self.cold_to_hot_pipe_map.keys())
