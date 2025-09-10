@@ -7,6 +7,36 @@ from mesido.head_loss_class import HeadLossOption
 import numpy as np
 
 
+def __get_out_port_temp_profile(solution, asset_name, asset_type):
+    """
+    Returns the temperature profile specified (if any) for the carrier assigned to
+    the carrier on the out port.
+    """
+
+    parameters = solution.parameters(0)
+    try:
+        carriers = solution.esdl_carriers
+        carriers_ids = carriers.keys()
+    except AttributeError:
+        carriers = None
+        carriers_ids = []
+        sup_carrier_name = None
+    temp_out_profile = None
+    carrier_id_types = {"heat_source": ".T_supply_id", "heat_pipe": ".carrier_id"}
+    for carrier_id in carriers_ids:
+        if (
+            carriers[carrier_id]["id_number_mapping"]
+            == parameters[f"{asset_name}{carrier_id_types[asset_type]}"]
+        ):
+            sup_carrier_name = carriers[carrier_id]["name"]
+    try:
+        temp_out_profile = solution.get_timeseries(f"{sup_carrier_name}.price_profile")
+    except KeyError:
+        pass
+
+    return temp_out_profile
+
+
 def feasibility_test(solution):
     feasibility = solution.solver_stats["return_status"]
 
@@ -159,6 +189,7 @@ def heat_to_discharge_test(solution, results):
             results[f"{d}.HeatOut.Heat"], results[f"{d}.Q"] * rho * cp * supply_t
         )
 
+    supply_temp_profiles = []
     for d in solution.energy_system_components.get("heat_source", []):
         cp = solution.parameters(0)[f"{d}.cp"]
         rho = solution.parameters(0)[f"{d}.rho"]
@@ -171,7 +202,11 @@ def heat_to_discharge_test(solution, results):
         # supply_t = solution.parameters(0)[f"{d}.T_supply"]
         # return_t = solution.parameters(0)[f"{d}.T_return"]
         supply_t, return_t, dt = _get_component_temperatures(solution, results, d)
-
+        temp_profile = __get_out_port_temp_profile(solution, d, "heat_source")
+        if temp_profile is not None:
+            supply_t = temp_profile.values
+            supply_temp_profiles.append(temp_profile.values)
+        print(d, max(abs(results[f"{d}.HeatOut.Heat"] - results[f"{d}.Q"] * rho * cp * supply_t)))
         np.testing.assert_allclose(
             results[f"{d}.HeatOut.Heat"],
             results[f"{d}.Q"] * rho * cp * supply_t,
@@ -285,7 +320,9 @@ def heat_to_discharge_test(solution, results):
         rho = solution.parameters(0)[f"{p}.rho"]
         carrier_id = solution.parameters(0)[f"{p}.carrier_id"]
         indices = results[f"{p}.Q"] > 0
-        if f"{carrier_id}_temperature" in results.keys():
+        if supply_temp_profiles:
+            temperature = max(temp for prof in supply_temp_profiles for temp in prof)
+        elif f"{carrier_id}_temperature" in results.keys():
             temperature = np.clip(
                 results[f"{carrier_id}_temperature"][indices],
                 solution.parameters(0)[f"{p}.T_ground"],
