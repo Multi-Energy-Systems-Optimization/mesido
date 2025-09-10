@@ -1,11 +1,13 @@
 import logging
 import os
 import time
+from symbol import parameters
 
 import casadi as ca
 import numpy as np
 from rtctools.optimization.timeseries import Timeseries
 
+from mesido.head_loss_class import HeadLossOption
 from mesido.physics_mixin import PhysicsMixin
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 
@@ -52,7 +54,7 @@ class SolverHIGHS:
         options["casadi_solver"] = self._qpsol
         options["solver"] = "highs"
         highs_options = options["highs"] = {}
-        highs_options["mip_rel_gap"] = 0.0001
+        highs_options["mip_rel_gap"] = 0.001
 
         options["gurobi"] = None
         options["cplex"] = None
@@ -66,7 +68,7 @@ class SolverCPLEX:
         options["casadi_solver"] = self._qpsol
         options["solver"] = "cplex"
         cplex_options = options["cplex"] = {}
-        cplex_options["CPX_PARAM_EPGAP"] = 0.05
+        cplex_options["CPX_PARAM_EPGAP"] = 0.01
         cplex_options["CPXPARAM_MIP_Strategy_StartAlgorithm"] = 6 #6
         # cplex_options["CPX_PARAM_MIPEMPHASIS"] = 1
         # cplex_options["CPX_PARAM_THREADS"] = 8
@@ -89,14 +91,14 @@ class RollOutProblem(
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._years = 5  # 10
+        self._years = 6  # 10
         self._horizon = 30
         self._year_step_size = int(self._horizon / self._years)
         # TODO: timestep_size and _days can be removed eventually, particularly when averaging
         # with peak day is used, however one needs to check where self._timesteps_per_year and
         # self._timestep_size is currently affecting the code
         self._timestep_size = 30 * 24
-        self._timesteps_per_year = int(365 / (self._timestep_size / 24)) + 1 + 24
+        self._timesteps_per_year = int(365 / (self._timestep_size / 24)) + 2 + 24
         self._timesteps_per_year = (
             self._timesteps_per_year + 1
         )  # + 1 because of inserting an 1-hour timestep at the beginning of the year,
@@ -117,8 +119,9 @@ class RollOutProblem(
         self._save_json = True
 
         self.heat_network_settings["minimum_velocity"] = (
-            0.0  # important otherwise heatdemands
+            0.00001  # important otherwise heatdemands
         )
+        self.heat_network_settings["head_loss_option"]= HeadLossOption.NO_HEADLOSS
         # cannot be turned off for specific timesteps
 
         # TODO: remove this once  these variables are created in HeatPhysicsMixin
@@ -188,6 +191,7 @@ class RollOutProblem(
             *self.energy_system_components.get("heat_demand", []),
             *self.energy_system_components.get("heat_source", []),
             *self.energy_system_components.get("heat_pipe", []),
+            *self.energy_system_components.get("heat_buffer", []),
         ]:
             self._asset_fraction_placed_map[asset] = []
             for year in range(self._years):
@@ -254,7 +258,7 @@ class RollOutProblem(
 
         goals.append(
             MaximizeRevenueCosts(
-                market_price=250e-6,
+                market_price=150e-6,
                 year_step_size=self._year_step_size,
                 priority=2,
             )
@@ -491,6 +495,13 @@ class RollOutProblem(
                 )
                 cumulative_capex += cumulative_inv_source
 
+            # storages
+            for s in self.energy_system_components.get("heat_buffer", []):
+                cumulative_inv_source = self.extra_variable(
+                    f"{s}__cumulative_investments_made_in_eur_year_{y}"
+                )
+                cumulative_capex += cumulative_inv_source
+
             # consumers
             for d in self.energy_system_components.get("heat_demand", []):
                 cumulative_inv_demand = self.extra_variable(
@@ -533,6 +544,58 @@ class RollOutProblem(
                     )
                 )
             cumulative_capex_prev_year = cumulative_capex
+
+        return constraints
+
+    def __yearly_pipe_length_constraints(self, ensemble_member):
+        constraints = []
+
+        bounds = self.bounds()
+        parameters = self.parameters(ensemble_member)
+
+        # Constraint to set yearly maximum CAPEX
+        # TODO: CAPEX constraint sources and demands now total capex not yet possible to use
+        #  fraction placed variables.
+        cumulative_pipe_length_prev_year = 0
+        for y in range(self._years):
+            cumulative_pipe_length = 0
+
+            # pipes
+            # for p in self.hot_pipes:
+            for p in self.energy_system_components.get("heat_pipe", []):
+                pipe_placement = self.extra_variable(
+                    self._asset_is_realized_map[p][y]
+                    # f"{p}__asset_is_realized_{y}"
+                )
+                pipe_length = parameters[f"{p}.length"]
+                print(p, pipe_length, bounds[self._asset_is_realized_map[p][y]])
+                cumulative_pipe_length += pipe_placement * pipe_length
+
+            year_pipe_length = 4.0e3 #m per year
+
+            # if y == 0:
+            #     constraints.append(((year_pipe_length*self._horizon/self._years - cumulative_pipe_length) /
+            #                         year_pipe_length,
+            #                         0.0, np.inf))
+            # else:
+            # constraints.append(
+            #     (
+            #         (year_pipe_length*self._horizon/self._years - (cumulative_pipe_length - cumulative_pipe_length_prev_year))
+            #         / year_pipe_length,
+            #         0.0,
+            #         np.inf,
+            #     )
+            # )
+            if y>-1.0:
+                constraints.append(
+                    (
+                        (year_pipe_length*self._horizon/self._years*(y+1) - cumulative_pipe_length )
+                        / year_pipe_length,
+                        0.0,
+                        np.inf,
+                    )
+                )
+            # cumulative_pipe_length_prev_year = cumulative_pipe_length
 
         return constraints
 
@@ -632,7 +695,7 @@ class RollOutProblem(
         for d in self.energy_system_components.get("heat_demand", []):
             asset_realized_vector = self.get_asset_is__realized_symbols(d)
 
-            #ensure asset is placed at end of optimization
+            # ensure asset is placed at end of optimization
             constraints.append((asset_realized_vector[-1], 1.0, 1.0))
 
         # for a in [*self.energy_system_components.get("heat_source", []),
@@ -654,7 +717,7 @@ class RollOutProblem(
                 for i in range(self._timesteps_per_year):
                     a=self.__problem_indx_max_peak
                     if not (i > self.__problem_indx_max_peak-1 and i < (
-                            self.__problem_indx_max_peak + 23+2)):
+                            self.__problem_indx_max_peak + 23+1)):
                         constraints.append((vars[i+year*self._timesteps_per_year], -1.0e3, 1.0e3))
 
         return constraints
@@ -673,8 +736,9 @@ class RollOutProblem(
         constraints.extend(self.__ates_yearly_periodic_constraints(ensemble_member))
 
         constraints.extend(self.__yearly_investment_constraints(ensemble_member))
+        # constraints.extend(self.__yearly_pipe_length_constraints(ensemble_member))
 
-        constraints.extend(self.__minimum_operational_constraints(ensemble_member))
+        # constraints.extend(self.__minimum_operational_constraints(ensemble_member))
 
         return constraints
 

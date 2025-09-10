@@ -146,6 +146,7 @@ class MinimizeCAPEXAssetsCosts(Goal):
             *optimization_problem.energy_system_components.get("heat_demand", []),
             *optimization_problem.energy_system_components.get("heat_pipe", []),
             *optimization_problem.energy_system_components.get("heat_source", []),
+            *optimization_problem.energy_system_components.get("heat_buffer", []),
         ]:
             asset = optimization_problem.get_asset_from_asset_name(asset_name=asset_name)
             tech_lifetime = parameters[f"{asset_name}.technical_life"]
@@ -205,7 +206,8 @@ class MinimizeRolloutFixedOperationalCosts(Goal):
 
         bounds = optimization_problem.bounds()
         parameters = optimization_problem.parameters(ensemble_member)
-        for source in optimization_problem.energy_system_components.get("heat_source", []):
+        for source in [*optimization_problem.energy_system_components.get("heat_source", []),
+                       *optimization_problem.energy_system_components.get("heat_buffer", [])]:
             obj += self.fixed_opex_of_asset(optimization_problem, source, bounds, parameters)
 
         for _ in optimization_problem.energy_system_components.get("ates", []):
