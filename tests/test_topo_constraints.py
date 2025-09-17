@@ -3,15 +3,15 @@ from pathlib import Path
 from typing import Dict
 from unittest import TestCase
 
+import numpy as np
+import numpy.testing
+
 from mesido._heat_loss_u_values_pipe import pipe_heat_loss
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.pipe_class import PipeClass
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.util import run_esdl_mesido_optimization
-
-import numpy as np
-import numpy.testing
 
 MIP_TOLERANCE = 1e-8
 
@@ -30,9 +30,8 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
         sys.path.insert(1, root_folder)
 
         import examples.pipe_diameter_sizing.src.example  # noqa: E402, I100
-        from examples.pipe_diameter_sizing.src.example import (
-            PipeDiameterSizingProblem,
-        )  # noqa: E402, I100
+        from examples.pipe_diameter_sizing.src.example import \
+            PipeDiameterSizingProblem  # noqa: E402, I100
 
         base_folder = (
             Path(examples.pipe_diameter_sizing.src.example.__file__).resolve().parent.parent

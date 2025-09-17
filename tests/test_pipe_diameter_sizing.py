@@ -2,14 +2,14 @@ import sys
 from pathlib import Path
 from unittest import TestCase
 
+import numpy as np
+from utils_tests import (demand_matching_test, energy_conservation_test,
+                         heat_to_discharge_test)
+
 from mesido._darcy_weisbach import friction_factor
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.util import run_esdl_mesido_optimization
-
-import numpy as np
-
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
 class TestPipeDiameterSizingExample(TestCase):
@@ -37,9 +37,8 @@ class TestPipeDiameterSizingExample(TestCase):
         sys.path.insert(1, root_folder)
 
         import examples.pipe_diameter_sizing.src.example  # noqa: E402, I100
-        from examples.pipe_diameter_sizing.src.example import (
-            PipeDiameterSizingProblem,
-        )  # noqa: E402, I100
+        from examples.pipe_diameter_sizing.src.example import \
+            PipeDiameterSizingProblem  # noqa: E402, I100
 
         base_folder = (
             Path(examples.pipe_diameter_sizing.src.example.__file__).resolve().parent.parent

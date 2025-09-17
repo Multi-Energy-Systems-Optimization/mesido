@@ -1,4 +1,6 @@
-from mesido.pycml import ControlInput, Model as _Model, SymbolicParameter
+from mesido.pycml import ControlInput
+from mesido.pycml import Model as _Model
+from mesido.pycml import SymbolicParameter
 from mesido.pycml.component_library.qth import Demand, Pipe, Pump, Source
 
 

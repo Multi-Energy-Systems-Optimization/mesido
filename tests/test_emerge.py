@@ -16,6 +16,7 @@ class TestEmerge(TestCase):
 
         """
         import models.emerge.src.example as example
+
         from mesido.workflows.emerge import EmergeWorkFlow
 
         base_folder = Path(example.__file__).resolve().parent.parent

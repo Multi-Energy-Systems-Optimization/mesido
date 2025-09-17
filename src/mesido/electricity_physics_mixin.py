@@ -5,16 +5,12 @@ from math import isclose
 from typing import List, Tuple
 
 import casadi as ca
-
-from mesido.base_component_type_mixin import BaseComponentTypeMixin
-
 import numpy as np
-
-from rtctools.optimization.collocated_integrated_optimization_problem import (
-    CollocatedIntegratedOptimizationProblem,
-)
+from rtctools.optimization.collocated_integrated_optimization_problem import \
+    CollocatedIntegratedOptimizationProblem
 from rtctools.optimization.timeseries import Timeseries
 
+from mesido.base_component_type_mixin import BaseComponentTypeMixin
 
 logger = logging.getLogger("mesido")
 

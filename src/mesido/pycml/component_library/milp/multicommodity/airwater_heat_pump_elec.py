@@ -1,9 +1,11 @@
-from mesido.pycml import Variable
-from mesido.pycml.component_library.milp.electricity.electricity_base import ElectricityPort
-from mesido.pycml.component_library.milp.heat.air_water_heat_pump import AirWaterHeatPump
-from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
-
 from numpy import nan
+
+from mesido.pycml import Variable
+from mesido.pycml.component_library.milp.electricity.electricity_base import \
+    ElectricityPort
+from mesido.pycml.component_library.milp.heat.air_water_heat_pump import \
+    AirWaterHeatPump
+from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 
 @add_variables_documentation_automatically

@@ -1,10 +1,11 @@
 import math
 
-from mesido.pycml import Variable
-from mesido.pycml.component_library.milp._internal.heat_component import BaseAsset
-from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
-
 from numpy import nan
+
+from mesido.pycml import Variable
+from mesido.pycml.component_library.milp._internal.heat_component import \
+    BaseAsset
+from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 from .heat_two_port import HeatTwoPort
 

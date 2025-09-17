@@ -1,15 +1,14 @@
 from pathlib import Path
 from unittest import TestCase
 
+import numpy as np
+from rtctools.util import run_optimization_problem
+from utils_tests import (demand_matching_test, energy_conservation_test,
+                         heat_to_discharge_test)
+
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.workflows import NetworkSimulatorHIGHSTestCase
-
-import numpy as np
-
-from rtctools.util import run_optimization_problem
-
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
 class TestNetworkSimulator(TestCase):

@@ -1,15 +1,14 @@
+from rtctools.optimization.collocated_integrated_optimization_problem import \
+    CollocatedIntegratedOptimizationProblem
+from rtctools.optimization.goal_programming_mixin import Goal
+from rtctools.optimization.linearized_order_goal_programming_mixin import \
+    LinearizedOrderGoalProgrammingMixin
+from rtctools.optimization.single_pass_goal_programming_mixin import \
+    SinglePassGoalProgrammingMixin
+from rtctools.util import run_optimization_problem
+
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.techno_economic_mixin import TechnoEconomicMixin
-
-from rtctools.optimization.collocated_integrated_optimization_problem import (
-    CollocatedIntegratedOptimizationProblem,
-)
-from rtctools.optimization.goal_programming_mixin import Goal
-from rtctools.optimization.linearized_order_goal_programming_mixin import (
-    LinearizedOrderGoalProgrammingMixin,
-)
-from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
-from rtctools.util import run_optimization_problem
 
 
 class TargetDemandGoal(Goal):

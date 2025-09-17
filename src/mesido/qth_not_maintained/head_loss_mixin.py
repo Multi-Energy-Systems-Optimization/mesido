@@ -4,19 +4,17 @@ from enum import IntEnum
 from typing import List, Optional, Tuple, Type, Union
 
 import casadi as ca
+import numpy as np
+from rtctools._internal.alias_tools import AliasDict
+from rtctools.optimization.goal_programming_mixin_base import (
+    Goal, _GoalProgrammingMixinBase)
+from rtctools.optimization.optimization_problem import BT, OptimizationProblem
 
 import mesido._darcy_weisbach as darcy_weisbach
 from mesido.base_component_type_mixin import BaseComponentTypeMixin
 
-import numpy as np
-
-from rtctools._internal.alias_tools import AliasDict
-from rtctools.optimization.goal_programming_mixin_base import Goal, _GoalProgrammingMixinBase
-from rtctools.optimization.optimization_problem import BT, OptimizationProblem
-
 from ..constants import GRAVITATIONAL_CONSTANT
 from ..pipe_class import PipeClass
-
 
 logger = logging.getLogger("mesido")
 

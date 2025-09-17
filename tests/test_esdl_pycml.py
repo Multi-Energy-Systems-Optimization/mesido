@@ -1,12 +1,11 @@
 from pathlib import Path
 from unittest import TestCase
 
+import numpy as np
+from rtctools.util import run_optimization_problem
+
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
-
-import numpy as np
-
-from rtctools.util import run_optimization_problem
 
 
 class TestESDL(TestCase):
@@ -20,7 +19,8 @@ class TestESDL(TestCase):
 
         """
         import models.basic_source_and_demand.src.heat_comparison as heat_comparison
-        from models.basic_source_and_demand.src.heat_comparison import HeatESDL, HeatPython
+        from models.basic_source_and_demand.src.heat_comparison import (
+            HeatESDL, HeatPython)
 
         base_folder = Path(heat_comparison.__file__).resolve().parent.parent
         input_folder = base_folder / "input"

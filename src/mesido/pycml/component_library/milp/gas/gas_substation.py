@@ -1,9 +1,9 @@
-from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
-
 from numpy import nan
 
-from .gas_base import GasTwoPort
+from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
+
 from .._internal import BaseAsset
+from .gas_base import GasTwoPort
 
 
 @add_variables_documentation_automatically

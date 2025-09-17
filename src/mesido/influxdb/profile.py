@@ -3,11 +3,9 @@ import sys
 from datetime import timedelta as td
 
 import esdl
+import pandas as pd
 from esdl.profiles.influxdbprofilemanager import InfluxDBProfileManager
 from esdl.units.conversion import ENERGY_IN_J, POWER_IN_W, convert_to_unit
-
-
-import pandas as pd
 
 logger = logging.getLogger()
 

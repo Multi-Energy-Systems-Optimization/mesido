@@ -2,23 +2,16 @@ from pathlib import Path
 from unittest import TestCase
 
 import esdl
+import numpy as np
+from rtctools.util import run_optimization_problem
+from utils_tests import demand_matching_test
 
 import mesido._darcy_weisbach as darcy_weisbach
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
-from mesido.workflows import (
-    EndScenarioSizing,
-    EndScenarioSizingDiscounted,
-    EndScenarioSizingStaged,
-    run_end_scenario_sizing,
-)
+from mesido.workflows import (EndScenarioSizing, EndScenarioSizingDiscounted,
+                              EndScenarioSizingStaged, run_end_scenario_sizing)
 from mesido.workflows.grow_workflow import EndScenarioSizingHeadLossStaged
-
-import numpy as np
-
-from rtctools.util import run_optimization_problem
-
-from utils_tests import demand_matching_test
 
 
 class TestEndScenarioSizing(TestCase):

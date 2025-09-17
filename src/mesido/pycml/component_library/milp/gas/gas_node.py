@@ -1,9 +1,9 @@
 from mesido.pycml import Variable
 from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
-from .gas_base import GasPort
 from .._internal import BaseAsset
 from .._internal.gas_component import GasComponent
+from .gas_base import GasPort
 
 
 @add_variables_documentation_automatically

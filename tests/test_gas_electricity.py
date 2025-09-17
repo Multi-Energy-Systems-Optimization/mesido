@@ -1,21 +1,17 @@
 from pathlib import Path
 from unittest import TestCase
 
+import numpy as np
+from utils_tests import (demand_matching_test,
+                         electric_power_conservation_test,
+                         energy_conservation_test, gas_pipes_head_loss_test,
+                         heat_to_discharge_test)
+
 from mesido.esdl.asset_to_component_base import _AssetToComponentBase
 from mesido.esdl.edr_pipe_class import EDRGasPipeClass
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.workflows.utils.helpers import run_optimization_problem_solver
-
-import numpy as np
-
-from utils_tests import (
-    demand_matching_test,
-    electric_power_conservation_test,
-    energy_conservation_test,
-    gas_pipes_head_loss_test,
-    heat_to_discharge_test,
-)
 
 
 class TestGasElect(TestCase):
@@ -45,7 +41,8 @@ class TestGasElect(TestCase):
         6. manually calculated TCO is equal to Objective function value
         """
         import models.gas_electricity_network.src.run_gas_elect as example
-        from models.gas_electricity_network.src.run_gas_elect import GasElectProblem
+        from models.gas_electricity_network.src.run_gas_elect import \
+            GasElectProblem
 
         base_folder = Path(example.__file__).resolve().parent.parent
 

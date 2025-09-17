@@ -8,10 +8,13 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 import esdl.esdl_handler
+import numpy as np
+import rtctools.data.pi as pi
+from rtctools.optimization.collocated_integrated_optimization_problem import \
+    CollocatedIntegratedOptimizationProblem
+from rtctools.optimization.io_mixin import IOMixin
 
-from mesido.component_type_mixin import (
-    ModelicaComponentTypeMixin,
-)
+from mesido.component_type_mixin import ModelicaComponentTypeMixin
 from mesido.esdl.asset_to_component_base import _AssetToComponentBase
 from mesido.esdl.common import Asset
 from mesido.esdl.edr_pipe_class import EDRGasPipeClass, EDRPipeClass
@@ -24,15 +27,6 @@ from mesido.physics_mixin import PhysicsMixin
 from mesido.pipe_class import GasPipeClass, PipeClass
 from mesido.pycml.pycml_mixin import PyCMLMixin
 from mesido.qth_not_maintained.qth_mixin import QTHMixin
-
-import numpy as np
-
-import rtctools.data.pi as pi
-from rtctools.optimization.collocated_integrated_optimization_problem import (
-    CollocatedIntegratedOptimizationProblem,
-)
-from rtctools.optimization.io_mixin import IOMixin
-
 
 logger = logging.getLogger("mesido")
 

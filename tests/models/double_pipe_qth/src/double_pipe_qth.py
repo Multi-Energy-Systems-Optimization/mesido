@@ -1,17 +1,16 @@
-from mesido.component_type_mixin import ModelicaComponentTypeMixin
-from mesido.qth_not_maintained.bounds_to_pipe_flow_directions_mixin import (
-    BoundsToPipeFlowDirectionsMixin,
-)
-from mesido.qth_not_maintained.qth_mixin import QTHMixin
-
-from rtctools.optimization.collocated_integrated_optimization_problem import (
-    CollocatedIntegratedOptimizationProblem,
-)
+from rtctools.optimization.collocated_integrated_optimization_problem import \
+    CollocatedIntegratedOptimizationProblem
 from rtctools.optimization.csv_mixin import CSVMixin
-from rtctools.optimization.goal_programming_mixin import Goal, GoalProgrammingMixin
+from rtctools.optimization.goal_programming_mixin import (Goal,
+                                                          GoalProgrammingMixin)
 from rtctools.optimization.homotopy_mixin import HomotopyMixin
 from rtctools.optimization.modelica_mixin import ModelicaMixin
 from rtctools.util import run_optimization_problem
+
+from mesido.component_type_mixin import ModelicaComponentTypeMixin
+from mesido.qth_not_maintained.bounds_to_pipe_flow_directions_mixin import \
+    BoundsToPipeFlowDirectionsMixin
+from mesido.qth_not_maintained.qth_mixin import QTHMixin
 
 
 class TargetDemandGoal(Goal):

@@ -1,13 +1,13 @@
 from pathlib import Path
 from unittest import TestCase
 
+import numpy as np
+from utils_tests import (demand_matching_test, energy_conservation_test,
+                         heat_to_discharge_test)
+
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.util import run_esdl_mesido_optimization
-
-import numpy as np
-
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
 class TestMaxSizeAggregationCount(TestCase):
@@ -37,9 +37,8 @@ class TestMaxSizeAggregationCount(TestCase):
 
         """
         import models.test_case_small_network_with_ates_with_buffer.src.run_ates as run_ates
-        from models.test_case_small_network_with_ates_with_buffer.src.run_ates import (
-            HeatProblem,
-        )
+        from models.test_case_small_network_with_ates_with_buffer.src.run_ates import \
+            HeatProblem
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
@@ -135,9 +134,8 @@ class TestMaxSizeAggregationCount(TestCase):
         np.testing.assert_allclose(results["HeatStorage_74c1_aggregation_count"], 1.0)
 
         import models.test_case_small_network_ates_buffer_optional_assets.src.run_ates as run_ates
-        from models.test_case_small_network_ates_buffer_optional_assets.src.run_ates import (
-            HeatProblem,
-        )
+        from models.test_case_small_network_ates_buffer_optional_assets.src.run_ates import \
+            HeatProblem
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 

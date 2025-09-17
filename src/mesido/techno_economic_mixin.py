@@ -1,13 +1,12 @@
 import logging
 
+from rtctools.optimization.collocated_integrated_optimization_problem import \
+    CollocatedIntegratedOptimizationProblem
+
 from mesido.asset_sizing_mixin import AssetSizingMixin
 from mesido.base_component_type_mixin import BaseComponentTypeMixin
 from mesido.financial_mixin import FinancialMixin
 from mesido.physics_mixin import PhysicsMixin
-
-from rtctools.optimization.collocated_integrated_optimization_problem import (
-    CollocatedIntegratedOptimizationProblem,
-)
 
 logger = logging.getLogger("mesido")
 

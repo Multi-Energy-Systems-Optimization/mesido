@@ -1,4 +1,4 @@
-from typing import Dict, TYPE_CHECKING, Tuple, Type
+from typing import TYPE_CHECKING, Dict, Tuple, Type
 
 if TYPE_CHECKING:  # This prevents circular referencing between this file and potential_errors.py
     from mesido.potential_errors import ErrorMessage, MesidoAssetIssueType

@@ -6,16 +6,13 @@ from abc import abstractmethod
 from typing import Dict, List, Type, Union
 
 import casadi as ca
-
 import pymoca
 from pymoca.backends.casadi.model import Model as _Model
-
 from rtctools._internal.alias_tools import AliasDict
 from rtctools._internal.caching import cached
 from rtctools.optimization.optimization_problem import OptimizationProblem
 
 from . import ConstantInput, ControlInput, Model, SymbolicParameter, Variable
-
 
 logger = logging.getLogger("mesido")
 

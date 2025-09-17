@@ -1,12 +1,11 @@
 import unittest
 from pathlib import Path
 
+import numpy as np
+from rtctools.util import run_optimization_problem
+
 from mesido.esdl.esdl_parser import ESDLFileParser, ESDLStringParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
-
-import numpy as np
-
-from rtctools.util import run_optimization_problem
 
 
 class TestESDLParsing(unittest.TestCase):
@@ -18,7 +17,8 @@ class TestESDLParsing(unittest.TestCase):
         from using either the file or the string as input are the same.
         """
         import models.unit_cases_electricity.electrolyzer.src.example as example
-        from models.unit_cases_electricity.electrolyzer.src.example import MILPProblemInequality
+        from models.unit_cases_electricity.electrolyzer.src.example import \
+            MILPProblemInequality
 
         base_folder = Path(example.__file__).resolve().parent.parent
 

@@ -1,7 +1,7 @@
+from numpy import nan, pi
+
 from mesido.pycml import Variable
 from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
-
-from numpy import nan, pi
 
 from ._non_storage_component import _NonStorageComponent
 

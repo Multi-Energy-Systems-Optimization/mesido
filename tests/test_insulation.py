@@ -1,11 +1,11 @@
 from pathlib import Path
 from unittest import TestCase
 
+import numpy as np
+
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.util import run_esdl_mesido_optimization
-
-import numpy as np
 
 
 class TestInsulation(TestCase):

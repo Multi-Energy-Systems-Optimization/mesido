@@ -1,13 +1,12 @@
 from pathlib import Path
 from unittest import TestCase
 
+import numpy as np
+import pytest
+
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.util import run_esdl_mesido_optimization
-
-import numpy as np
-
-import pytest
 
 
 class TestSetpointConstraints(TestCase):
@@ -26,7 +25,8 @@ class TestSetpointConstraints(TestCase):
 
         """
         import models.unit_cases.case_3a.src.run_3a as run_3a
-        from models.unit_cases.case_3a.src.run_3a import HeatProblemSetPointConstraints
+        from models.unit_cases.case_3a.src.run_3a import \
+            HeatProblemSetPointConstraints
 
         base_folder = Path(run_3a.__file__).resolve().parent.parent
 
@@ -109,7 +109,8 @@ class TestSetpointConstraints(TestCase):
 
         """
         import models.test_case_small_network_with_ates.src.run_ates as run_ates
-        from models.test_case_small_network_with_ates.src.run_ates import HeatProblemSetPoints
+        from models.test_case_small_network_with_ates.src.run_ates import \
+            HeatProblemSetPoints
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
@@ -145,7 +146,8 @@ class TestSetpointConstraints(TestCase):
 
         """
         import models.test_case_small_network_with_ates.src.run_ates as run_ates
-        from models.test_case_small_network_with_ates.src.run_ates import HeatProblemSetPoints
+        from models.test_case_small_network_with_ates.src.run_ates import \
+            HeatProblemSetPoints
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
@@ -180,7 +182,8 @@ class TestSetpointConstraints(TestCase):
 
         """
         import models.test_case_small_network_with_ates.src.run_ates as run_ates
-        from models.test_case_small_network_with_ates.src.run_ates import HeatProblemSetPoints
+        from models.test_case_small_network_with_ates.src.run_ates import \
+            HeatProblemSetPoints
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 

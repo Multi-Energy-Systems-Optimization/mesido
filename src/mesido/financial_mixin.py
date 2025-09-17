@@ -2,17 +2,13 @@ import logging
 from abc import abstractmethod
 
 import casadi as ca
+import numpy as np
+from rtctools.optimization.collocated_integrated_optimization_problem import \
+    CollocatedIntegratedOptimizationProblem
+from rtctools.optimization.timeseries import Timeseries
 
 from mesido.base_component_type_mixin import BaseComponentTypeMixin
 from mesido.esdl.asset_to_component_base import AssetStateEnum
-
-import numpy as np
-
-from rtctools.optimization.collocated_integrated_optimization_problem import (
-    CollocatedIntegratedOptimizationProblem,
-)
-from rtctools.optimization.timeseries import Timeseries
-
 
 logger = logging.getLogger("mesido")
 

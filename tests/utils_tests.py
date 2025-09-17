@@ -1,10 +1,10 @@
 from unittest import TestCase
 
+import numpy as np
+
 from mesido._darcy_weisbach import friction_factor, head_loss
 from mesido.constants import GRAVITATIONAL_CONSTANT
 from mesido.head_loss_class import HeadLossOption
-
-import numpy as np
 
 
 def feasibility_test(solution):

@@ -12,23 +12,21 @@ from pathlib import Path
 from typing import Dict, Union
 
 import esdl
-from esdl.profiles.influxdbprofilemanager import ConnectionSettings
-from esdl.profiles.influxdbprofilemanager import InfluxDBProfileManager
+import numpy as np
+import pandas as pd
+from esdl.profiles.influxdbprofilemanager import (ConnectionSettings,
+                                                  InfluxDBProfileManager)
 from esdl.profiles.profilemanager import ProfileManager
+from rtctools._internal.alias_tools import AliasDict
+from rtctools.optimization.timeseries import Timeseries
 
 import mesido.esdl.esdl_parser
 from mesido.constants import GRAVITATIONAL_CONSTANT
 from mesido.esdl.edr_pipe_class import EDRPipeClass
 from mesido.network_common import NetworkSettings
-from mesido.post_processing.post_processing_utils import pipe_pressure, pipe_velocity
+from mesido.post_processing.post_processing_utils import (pipe_pressure,
+                                                          pipe_velocity)
 from mesido.workflows.utils.helpers import _sort_numbered
-
-import numpy as np
-
-import pandas as pd
-
-from rtctools._internal.alias_tools import AliasDict
-from rtctools.optimization.timeseries import Timeseries
 
 logger = logging.getLogger("mesido")
 

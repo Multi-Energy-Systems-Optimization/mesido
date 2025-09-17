@@ -1,8 +1,8 @@
 import math
 
-from mesido.pycml import Variable
-
 from numpy import nan
+
+from mesido.pycml import Variable
 
 from ._fluid_properties_component import _FluidPropertiesComponent
 

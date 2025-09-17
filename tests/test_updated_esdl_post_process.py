@@ -5,13 +5,11 @@ from pathlib import Path
 from unittest import TestCase
 
 import esdl
+import numpy as np
 from esdl.esdl_handler import EnergySystemHandler
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.workflows import EndScenarioSizingStaged
-
-
-import numpy as np
 
 
 class TestUpdatedESDL(TestCase):

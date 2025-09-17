@@ -1,9 +1,10 @@
+from numpy import nan
+
 from mesido.pycml import Variable
 from mesido.pycml.component_library.milp._internal import BaseAsset
-from mesido.pycml.component_library.milp.heat.heat_four_port import HeatFourPort
+from mesido.pycml.component_library.milp.heat.heat_four_port import \
+    HeatFourPort
 from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
-
-from numpy import nan
 
 
 @add_variables_documentation_automatically

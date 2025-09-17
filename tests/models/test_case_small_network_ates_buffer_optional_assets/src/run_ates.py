@@ -1,18 +1,16 @@
+import numpy as np
+from rtctools.data.storage import DataStore
+from rtctools.optimization.collocated_integrated_optimization_problem import \
+    CollocatedIntegratedOptimizationProblem
+from rtctools.optimization.goal_programming_mixin import (Goal,
+                                                          GoalProgrammingMixin)
+from rtctools.optimization.linearized_order_goal_programming_mixin import \
+    LinearizedOrderGoalProgrammingMixin
+
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.techno_economic_mixin import TechnoEconomicMixin
-
-import numpy as np
-
-from rtctools.data.storage import DataStore
-from rtctools.optimization.collocated_integrated_optimization_problem import (
-    CollocatedIntegratedOptimizationProblem,
-)
-from rtctools.optimization.goal_programming_mixin import Goal, GoalProgrammingMixin
-from rtctools.optimization.linearized_order_goal_programming_mixin import (
-    LinearizedOrderGoalProgrammingMixin,
-)
 
 
 class TargetDemandGoal(Goal):
@@ -153,7 +151,9 @@ class HeatProblem(
 
 if __name__ == "__main__":
     import time
-    from mesido.workflows import EndScenarioSizingStaged, run_end_scenario_sizing
+
+    from mesido.workflows import (EndScenarioSizingStaged,
+                                  run_end_scenario_sizing)
 
     start_time = time.time()
 

@@ -1,6 +1,5 @@
-from mesido.pycml.component_library.milp.electricity.electricity_base import (
-    ElectricityPort,
-)
+from mesido.pycml.component_library.milp.electricity.electricity_base import \
+    ElectricityPort
 from mesido.pycml.component_library.milp.heat.heat_pump import HeatPump
 from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 

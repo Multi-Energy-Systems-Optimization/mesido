@@ -2,15 +2,12 @@ import logging
 from typing import List
 
 import esdl
+import numpy as np
+from rtctools.optimization.collocated_integrated_optimization_problem import \
+    CollocatedIntegratedOptimizationProblem
 
 from mesido.network_common import NetworkSettings
 from mesido.pipe_class import PipeClass
-
-import numpy as np
-
-from rtctools.optimization.collocated_integrated_optimization_problem import (
-    CollocatedIntegratedOptimizationProblem,
-)
 
 logger = logging.getLogger("mesido")
 

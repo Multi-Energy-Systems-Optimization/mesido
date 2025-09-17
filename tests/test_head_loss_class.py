@@ -1,12 +1,11 @@
 from pathlib import Path
 from unittest import TestCase
 
+import numpy as np
+from rtctools.util import run_optimization_problem
+
 from mesido.head_loss_class import HeadLossOption
 from mesido.network_common import NetworkSettings
-
-import numpy as np
-
-from rtctools.util import run_optimization_problem
 
 
 class TestHeadLossCalculation(TestCase):
@@ -21,7 +20,8 @@ class TestHeadLossCalculation(TestCase):
         Check whether the returned scalar had the expected value.
         """
         import models.basic_source_and_demand.src.heat_comparison as heat_comparison
-        from models.basic_source_and_demand.src.heat_comparison import HeatPython
+        from models.basic_source_and_demand.src.heat_comparison import \
+            HeatPython
 
         class Model(HeatPython):
             def __init__(self, head_loss_option, *args, **kwargs):

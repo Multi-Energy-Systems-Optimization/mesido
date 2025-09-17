@@ -1,12 +1,12 @@
 from pathlib import Path
 from unittest import TestCase
 
+import numpy as np
+
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
 from mesido.util import run_esdl_mesido_optimization
-
-import numpy as np
 
 
 class TestMILPGasSourceSink(TestCase):
@@ -20,7 +20,8 @@ class TestMILPGasSourceSink(TestCase):
 
         """
         import models.unit_cases_gas.source_sink.src.run_source_sink as example
-        from models.unit_cases_gas.source_sink.src.run_source_sink import GasProblem
+        from models.unit_cases_gas.source_sink.src.run_source_sink import \
+            GasProblem
 
         base_folder = Path(example.__file__).resolve().parent.parent
 

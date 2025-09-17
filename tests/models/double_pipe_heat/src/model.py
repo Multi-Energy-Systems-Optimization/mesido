@@ -1,11 +1,7 @@
-from mesido.pycml import ControlInput, Model as _Model
-from mesido.pycml.component_library.milp import (
-    HeatDemand,
-    HeatPipe,
-    HeatSource,
-    Node,
-    Pump,
-)
+from mesido.pycml import ControlInput
+from mesido.pycml import Model as _Model
+from mesido.pycml.component_library.milp import (HeatDemand, HeatPipe,
+                                                 HeatSource, Node, Pump)
 
 
 class Model(_Model):

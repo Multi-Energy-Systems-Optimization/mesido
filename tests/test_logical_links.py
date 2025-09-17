@@ -1,13 +1,13 @@
 from pathlib import Path
 from unittest import TestCase
 
+import numpy as np
+from utils_tests import (demand_matching_test, energy_conservation_test,
+                         heat_to_discharge_test)
+
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.util import run_esdl_mesido_optimization
-
-import numpy as np
-
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
 class TestLogicalLinks(TestCase):
@@ -22,7 +22,8 @@ class TestLogicalLinks(TestCase):
 
         """
         import models.unit_cases_electricity.bus_networks.src.example as example
-        from models.unit_cases_electricity.bus_networks.src.example import ElectricityProblem
+        from models.unit_cases_electricity.bus_networks.src.example import \
+            ElectricityProblem
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
@@ -54,7 +55,8 @@ class TestLogicalLinks(TestCase):
 
         """
         import models.unit_cases_gas.multi_demand_source_node.src.run_test as example
-        from models.unit_cases_gas.multi_demand_source_node.src.run_test import GasProblem
+        from models.unit_cases_gas.multi_demand_source_node.src.run_test import \
+            GasProblem
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
@@ -84,7 +86,8 @@ class TestLogicalLinks(TestCase):
         """
 
         import models.unit_cases_gas.source_pipe_split_sink.src.run_source_sink as example
-        from models.unit_cases_gas.source_pipe_split_sink.src.run_source_sink import GasProblem
+        from models.unit_cases_gas.source_pipe_split_sink.src.run_source_sink import \
+            GasProblem
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
@@ -126,7 +129,8 @@ class TestLogicalLinks(TestCase):
         """
 
         import models.source_pipe_split_sink.src.double_pipe_heat as example
-        from models.source_pipe_split_sink.src.double_pipe_heat import SourcePipeSink
+        from models.source_pipe_split_sink.src.double_pipe_heat import \
+            SourcePipeSink
 
         base_folder = Path(example.__file__).resolve().parent.parent
 

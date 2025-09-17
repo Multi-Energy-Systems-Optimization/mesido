@@ -2,12 +2,11 @@ import json
 import os
 from typing import Dict, Union
 
+import numpy as np
+from rtctools._internal.alias_tools import AliasDict
+
 from mesido.constants import GRAVITATIONAL_CONSTANT
 from mesido.network_common import NetworkSettings
-
-import numpy as np
-
-from rtctools._internal.alias_tools import AliasDict
 
 
 class AliasDictResults:

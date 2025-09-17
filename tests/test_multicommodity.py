@@ -1,18 +1,14 @@
 from pathlib import Path
 from unittest import TestCase
 
+import numpy as np
+from utils_tests import (demand_matching_test,
+                         electric_power_conservation_test,
+                         energy_conservation_test, heat_to_discharge_test)
+
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.util import run_esdl_mesido_optimization
-
-import numpy as np
-
-from utils_tests import (
-    demand_matching_test,
-    electric_power_conservation_test,
-    energy_conservation_test,
-    heat_to_discharge_test,
-)
 
 
 class TestMultiCommodityHeatPump(TestCase):
@@ -33,7 +29,8 @@ class TestMultiCommodityHeatPump(TestCase):
 
         """
         import models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec as run_hp_elec
-        from models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec import HeatProblem2
+        from models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec import \
+            HeatProblem2
 
         base_folder = Path(run_hp_elec.__file__).resolve().parent.parent
 
@@ -103,7 +100,8 @@ class TestMultiCommodityHeatPump(TestCase):
 
         """
         import models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec as run_hp_elec
-        from models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec import HeatProblem
+        from models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec import \
+            HeatProblem
 
         base_folder = Path(run_hp_elec.__file__).resolve().parent.parent
 
@@ -173,9 +171,8 @@ class TestMultiCommodityHeatPump(TestCase):
 
         """
         import models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec as run_hp_elec
-        from models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec import (
-            ElectricityProblem,
-        )
+        from models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec import \
+            ElectricityProblem
 
         base_folder = Path(run_hp_elec.__file__).resolve().parent.parent
 
@@ -228,9 +225,8 @@ class TestMultiCommodityHeatPump(TestCase):
 
         """
         import models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec as run_hp_elec
-        from models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec import (
-            ElectricityProblem,
-        )
+        from models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec import \
+            ElectricityProblem
 
         base_folder = Path(run_hp_elec.__file__).resolve().parent.parent
 
@@ -273,9 +269,8 @@ class TestMultiCommodityHeatPump(TestCase):
 
         """
         import models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec as run_hp_elec
-        from models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec import (
-            ElectricityProblemPriceProfile,
-        )
+        from models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec import \
+            ElectricityProblemPriceProfile
 
         base_folder = Path(run_hp_elec.__file__).resolve().parent.parent
 

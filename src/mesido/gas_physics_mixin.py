@@ -2,17 +2,14 @@ import copy
 import logging
 
 import casadi as ca
+import numpy as np
+from rtctools.optimization.collocated_integrated_optimization_problem import \
+    CollocatedIntegratedOptimizationProblem
+from rtctools.optimization.timeseries import Timeseries
 
 from mesido.base_component_type_mixin import BaseComponentTypeMixin
 from mesido.head_loss_class import HeadLossClass, HeadLossOption
 from mesido.network_common import NetworkSettings
-
-import numpy as np
-
-from rtctools.optimization.collocated_integrated_optimization_problem import (
-    CollocatedIntegratedOptimizationProblem,
-)
-from rtctools.optimization.timeseries import Timeseries
 
 logger = logging.getLogger("mesido")
 

@@ -3,8 +3,11 @@ import sys
 from typing import List, Set
 
 import casadi as ca
-
 import esdl
+import numpy as np
+from rtctools.optimization.collocated_integrated_optimization_problem import \
+    CollocatedIntegratedOptimizationProblem
+from rtctools.optimization.timeseries import Timeseries
 
 from mesido._heat_loss_u_values_pipe import pipe_heat_loss
 from mesido.base_component_type_mixin import BaseComponentTypeMixin
@@ -13,13 +16,6 @@ from mesido.esdl.asset_to_component_base import AssetStateEnum
 from mesido.head_loss_class import HeadLossOption
 from mesido.network_common import NetworkSettings
 from mesido.pipe_class import CableClass, GasPipeClass, PipeClass
-
-import numpy as np
-
-from rtctools.optimization.collocated_integrated_optimization_problem import (
-    CollocatedIntegratedOptimizationProblem,
-)
-from rtctools.optimization.timeseries import Timeseries
 
 logger = logging.getLogger("mesido")
 

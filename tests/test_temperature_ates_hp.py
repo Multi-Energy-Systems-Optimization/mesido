@@ -1,13 +1,13 @@
 from pathlib import Path
 from unittest import TestCase
 
+import numpy as np
+from utils_tests import (demand_matching_test, energy_conservation_test,
+                         heat_to_discharge_test)
+
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.util import run_esdl_mesido_optimization
-
-import numpy as np
-
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
 class TestAtesTemperature(TestCase):
@@ -37,7 +37,8 @@ class TestAtesTemperature(TestCase):
         - heat loss ates>= relation of heat loss
         """
         import models.ates_temperature.src.run_ates_temperature as run_ates_temperature
-        from models.ates_temperature.src.run_ates_temperature import HeatProblem
+        from models.ates_temperature.src.run_ates_temperature import \
+            HeatProblem
 
         basefolder = Path(run_ates_temperature.__file__).resolve().parent.parent
 
@@ -151,7 +152,8 @@ class TestAtesTemperature(TestCase):
         """
 
         import models.ates_temperature.src.run_ates_temperature as run_ates_temperature
-        from models.ates_temperature.src.run_ates_temperature import HeatProblemMaxFlow
+        from models.ates_temperature.src.run_ates_temperature import \
+            HeatProblemMaxFlow
 
         basefolder = Path(run_ates_temperature.__file__).resolve().parent.parent
 

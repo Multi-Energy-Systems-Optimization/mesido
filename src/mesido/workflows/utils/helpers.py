@@ -6,11 +6,9 @@ import time
 from pathlib import Path
 
 import esdl
-
-from mesido import __version__
-
 from rtctools.util import run_optimization_problem
 
+from mesido import __version__
 
 MULTI_ENUM_NAME_TO_FACTOR = {
     esdl.MultiplierEnum.ATTO: 1e-18,
@@ -105,6 +103,7 @@ def main_decorator(func):
 
         if run_remote:
             import inspect
+
             from warmingup_mpc.amqp_client import AMQPClient
 
             workflow_name = Path(inspect.getfile(func)).stem

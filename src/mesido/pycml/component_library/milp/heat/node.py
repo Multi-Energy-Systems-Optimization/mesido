@@ -1,5 +1,6 @@
 from mesido.pycml import Variable
-from mesido.pycml.component_library.milp._internal import BaseAsset, HeatComponent
+from mesido.pycml.component_library.milp._internal import (BaseAsset,
+                                                           HeatComponent)
 from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 from .heat_port import HeatPort

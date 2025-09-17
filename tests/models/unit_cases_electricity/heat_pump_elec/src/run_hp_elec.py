@@ -1,4 +1,12 @@
 import esdl
+import numpy as np
+from rtctools.optimization.collocated_integrated_optimization_problem import \
+    CollocatedIntegratedOptimizationProblem
+from rtctools.optimization.goal_programming_mixin import (Goal,
+                                                          GoalProgrammingMixin)
+from rtctools.optimization.linearized_order_goal_programming_mixin import \
+    LinearizedOrderGoalProgrammingMixin
+from rtctools.util import run_optimization_problem
 
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
@@ -8,18 +16,6 @@ from mesido.head_loss_class import HeadLossOption
 from mesido.physics_mixin import PhysicsMixin
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.goals.minimize_tco_goal import MinimizeTCO
-
-
-import numpy as np
-
-from rtctools.optimization.collocated_integrated_optimization_problem import (
-    CollocatedIntegratedOptimizationProblem,
-)
-from rtctools.optimization.goal_programming_mixin import Goal, GoalProgrammingMixin
-from rtctools.optimization.linearized_order_goal_programming_mixin import (
-    LinearizedOrderGoalProgrammingMixin,
-)
-from rtctools.util import run_optimization_problem
 
 
 # TODO: check if this run script is still valid as test case for electric heatpump and update with

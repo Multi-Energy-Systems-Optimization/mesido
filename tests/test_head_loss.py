@@ -1,6 +1,9 @@
 from pathlib import Path
 from unittest import TestCase
 
+import numpy as np
+from utils_tests import demand_matching_test
+
 import mesido._darcy_weisbach as darcy_weisbach
 from mesido.constants import GRAVITATIONAL_CONSTANT
 from mesido.esdl.esdl_parser import ESDLFileParser
@@ -8,10 +11,6 @@ from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
 from mesido.network_common import NetworkSettings
 from mesido.util import run_esdl_mesido_optimization
-
-import numpy as np
-
-from utils_tests import demand_matching_test
 
 
 class TestHeadLoss(TestCase):
@@ -249,7 +248,8 @@ class TestHeadLoss(TestCase):
             - LINEARIZED_N_LINES_EQUALITY: velo > min velocity
         """
         import models.source_pipe_split_sink.src.double_pipe_heat as example
-        from models.source_pipe_split_sink.src.double_pipe_heat import SourcePipeSink
+        from models.source_pipe_split_sink.src.double_pipe_heat import \
+            SourcePipeSink
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
@@ -480,7 +480,8 @@ class TestHeadLoss(TestCase):
         """
 
         import models.unit_cases_gas.source_sink.src.run_source_sink as example
-        from models.unit_cases_gas.source_sink.src.run_source_sink import GasProblem
+        from models.unit_cases_gas.source_sink.src.run_source_sink import \
+            GasProblem
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
@@ -642,7 +643,8 @@ class TestHeadLoss(TestCase):
         """
 
         import models.unit_cases_gas.source_pipe_split_sink.src.run_source_sink as example
-        from models.unit_cases_gas.source_pipe_split_sink.src.run_source_sink import GasProblem
+        from models.unit_cases_gas.source_pipe_split_sink.src.run_source_sink import \
+            GasProblem
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
@@ -808,7 +810,8 @@ class TestHeadLoss(TestCase):
         _ That the pipes have the expected head loss given their reference pressures
         """
         import models.multiple_gas_carriers.src.run_multiple_gas_carriers as example
-        from models.multiple_gas_carriers.src.run_multiple_gas_carriers import GasProblem
+        from models.multiple_gas_carriers.src.run_multiple_gas_carriers import \
+            GasProblem
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
@@ -857,7 +860,8 @@ class TestHeadLoss(TestCase):
         _ That the pipes have the expected head loss given their reference pressures
         """
         import models.multiple_gas_carriers.src.run_multiple_gas_carriers as example
-        from models.multiple_gas_carriers.src.run_multiple_gas_carriers import GasProblem
+        from models.multiple_gas_carriers.src.run_multiple_gas_carriers import \
+            GasProblem
 
         base_folder = Path(example.__file__).resolve().parent.parent
 

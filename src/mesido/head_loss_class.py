@@ -4,17 +4,14 @@ from enum import IntEnum
 from typing import List, Optional, Tuple, Type, Union
 
 import casadi as ca
+import numpy as np
+from rtctools.optimization.goal_programming_mixin_base import Goal
+from rtctools.optimization.optimization_problem import BT
 
 import mesido._darcy_weisbach as darcy_weisbach
 from mesido.constants import GRAVITATIONAL_CONSTANT
 from mesido.network_common import NetworkSettings
 from mesido.pipe_class import PipeClass
-
-import numpy as np
-
-from rtctools.optimization.goal_programming_mixin_base import Goal
-from rtctools.optimization.optimization_problem import BT
-
 
 logger = logging.getLogger("mesido")
 

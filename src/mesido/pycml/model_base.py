@@ -1,11 +1,8 @@
 from typing import Dict, List, Tuple, Union
 
 import casadi as ca
-
 import numpy as np
-
 from pymoca.backends.casadi.model import Variable as _Variable
-
 
 MATHEMATICAL_OPERATORS = [
     "__add__",

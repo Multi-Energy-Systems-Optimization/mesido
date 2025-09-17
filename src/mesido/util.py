@@ -1,10 +1,9 @@
+from rtctools.optimization.collocated_integrated_optimization_problem import \
+    CollocatedIntegratedOptimizationProblem
+from rtctools.util import run_optimization_problem
+
 from mesido.esdl.esdl_parser import BaseESDLParser
 from mesido.esdl.profile_parser import BaseProfileReader, InfluxDBProfileReader
-
-from rtctools.optimization.collocated_integrated_optimization_problem import (
-    CollocatedIntegratedOptimizationProblem,
-)
-from rtctools.util import run_optimization_problem
 
 
 def run_esdl_mesido_optimization(

@@ -1,3 +1,13 @@
+import numpy as np
+from rtctools.optimization.collocated_integrated_optimization_problem import \
+    CollocatedIntegratedOptimizationProblem
+from rtctools.optimization.goal_programming_mixin import Goal
+from rtctools.optimization.homotopy_mixin import HomotopyMixin
+from rtctools.optimization.linearized_order_goal_programming_mixin import \
+    LinearizedOrderGoalProgrammingMixin
+from rtctools.optimization.single_pass_goal_programming_mixin import \
+    SinglePassGoalProgrammingMixin
+
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
@@ -5,18 +15,6 @@ from mesido.physics_mixin import PhysicsMixin
 from mesido.qth_not_maintained.qth_mixin import QTHMixin
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.goals.minimize_tco_goal import MinimizeTCO
-
-import numpy as np
-
-from rtctools.optimization.collocated_integrated_optimization_problem import (
-    CollocatedIntegratedOptimizationProblem,
-)
-from rtctools.optimization.goal_programming_mixin import Goal
-from rtctools.optimization.homotopy_mixin import HomotopyMixin
-from rtctools.optimization.linearized_order_goal_programming_mixin import (
-    LinearizedOrderGoalProgrammingMixin,
-)
-from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
 
 
 class TargetDemandGoal(Goal):

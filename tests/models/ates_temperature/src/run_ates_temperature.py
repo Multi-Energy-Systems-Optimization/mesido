@@ -1,24 +1,20 @@
+import numpy as np
+from rtctools.data.storage import DataStore
+from rtctools.optimization.collocated_integrated_optimization_problem import \
+    CollocatedIntegratedOptimizationProblem
+from rtctools.optimization.goal_programming_mixin import Goal
+from rtctools.optimization.linearized_order_goal_programming_mixin import \
+    LinearizedOrderGoalProgrammingMixin
+from rtctools.optimization.single_pass_goal_programming_mixin import \
+    GoalProgrammingMixin
+from rtctools.util import run_optimization_problem
+
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.io.write_output import ScenarioOutput
-
-import numpy as np
-
-from rtctools.data.storage import DataStore
-from rtctools.optimization.collocated_integrated_optimization_problem import (
-    CollocatedIntegratedOptimizationProblem,
-)
-from rtctools.optimization.goal_programming_mixin import Goal
-from rtctools.optimization.linearized_order_goal_programming_mixin import (
-    LinearizedOrderGoalProgrammingMixin,
-)
-from rtctools.optimization.single_pass_goal_programming_mixin import (
-    GoalProgrammingMixin,
-)
-from rtctools.util import run_optimization_problem
 
 ns = {"fews": "http://www.wldelft.nl/fews", "pi": "http://www.wldelft.nl/fews/PI"}
 

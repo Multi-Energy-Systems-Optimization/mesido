@@ -1,6 +1,6 @@
-from mesido.pycml import Variable
-
 from numpy import nan, pi
+
+from mesido.pycml import Variable
 
 from ._fluid_properties_component import _FluidPropertiesComponent
 from ._non_storage_component import _NonStorageComponent

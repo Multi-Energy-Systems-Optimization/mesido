@@ -1,11 +1,11 @@
 from pathlib import Path
 from unittest import TestCase
 
+import numpy as np
+
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.util import run_esdl_mesido_optimization
-
-import numpy as np
 
 
 class TestMILPGasMultiDemandSourceNode(TestCase):
@@ -22,7 +22,8 @@ class TestMILPGasMultiDemandSourceNode(TestCase):
 
         """
         import models.unit_cases_gas.multi_demand_source_node.src.run_test as example
-        from models.unit_cases_gas.multi_demand_source_node.src.run_test import GasProblem
+        from models.unit_cases_gas.multi_demand_source_node.src.run_test import \
+            GasProblem
 
         base_folder = Path(example.__file__).resolve().parent.parent
 

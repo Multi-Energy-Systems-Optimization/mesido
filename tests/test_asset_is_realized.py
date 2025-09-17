@@ -1,11 +1,11 @@
 from pathlib import Path
 from unittest import TestCase
 
+import numpy as np
+
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.util import run_esdl_mesido_optimization
-
-import numpy as np
 
 
 class TestAssetIsRealized(TestCase):
@@ -27,9 +27,8 @@ class TestAssetIsRealized(TestCase):
         - Check that the asset is not used before the asset_is_realized == 1
         """
         import models.test_case_small_network_with_ates.src.run_ates as run_ates
-        from models.test_case_small_network_with_ates.src.run_ates import (
-            HeatProblemPlacingOverTime,
-        )
+        from models.test_case_small_network_with_ates.src.run_ates import \
+            HeatProblemPlacingOverTime
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 

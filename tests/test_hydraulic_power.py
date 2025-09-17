@@ -1,6 +1,10 @@
 from pathlib import Path
 from unittest import TestCase
 
+import numpy as np
+import pandas as pd
+from utils_tests import demand_matching_test
+
 from mesido._darcy_weisbach import head_loss
 from mesido.constants import GRAVITATIONAL_CONSTANT
 from mesido.esdl.esdl_parser import ESDLFileParser
@@ -8,12 +12,6 @@ from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
 from mesido.network_common import NetworkSettings
 from mesido.util import run_esdl_mesido_optimization
-
-import numpy as np
-
-import pandas as pd
-
-from utils_tests import demand_matching_test
 
 
 class TestHydraulicPower(TestCase):
@@ -53,9 +51,7 @@ class TestHydraulicPower(TestCase):
 
         """
         import models.pipe_test.src.run_hydraulic_power as run_hydraulic_power
-        from models.pipe_test.src.run_hydraulic_power import (
-            HeatProblem,
-        )
+        from models.pipe_test.src.run_hydraulic_power import HeatProblem
 
         # Settings
         base_folder = Path(run_hydraulic_power.__file__).resolve().parent.parent
@@ -278,9 +274,8 @@ class TestHydraulicPower(TestCase):
         - demand matching
         """
         import models.unit_cases_gas.source_sink.src.run_source_sink as run_source_sink
-        from models.unit_cases_gas.source_sink.src.run_source_sink import (
-            GasProblem,
-        )
+        from models.unit_cases_gas.source_sink.src.run_source_sink import \
+            GasProblem
 
         # Settings
         base_folder = Path(run_source_sink.__file__).resolve().parent.parent
@@ -408,9 +403,8 @@ class TestHydraulicPower(TestCase):
         - checks if differences of in/out port is equal to the added hydraulic power of that pipe
         """
         import models.unit_cases_gas.multi_demand_source_node.src.run_test as run_test
-        from models.unit_cases_gas.multi_demand_source_node.src.run_test import (
-            GasProblem,
-        )
+        from models.unit_cases_gas.multi_demand_source_node.src.run_test import \
+            GasProblem
 
         # Settings
         base_folder = Path(run_test.__file__).resolve().parent.parent

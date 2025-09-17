@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Any, Dict, Tuple, Type, Union
 
 import CoolProp as cP
-
 import esdl
 from esdl import TimeUnitEnum, UnitEnum
 
@@ -16,7 +15,6 @@ from mesido.esdl.common import Asset
 from mesido.network_common import NetworkSettings
 from mesido.potential_errors import MesidoAssetIssueType, get_potential_errors
 from mesido.pycml import Model as _Model
-
 
 logger = logging.getLogger("mesido")
 

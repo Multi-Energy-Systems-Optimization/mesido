@@ -1,12 +1,11 @@
 from pathlib import Path
 from unittest import TestCase
 
+import numpy as np
+from rtctools.util import run_optimization_problem
+
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
-
-import numpy as np
-
-from rtctools.util import run_optimization_problem
 
 
 class TestEndScenarioSizingAnnualized(TestCase):
@@ -24,17 +23,15 @@ class TestEndScenarioSizingAnnualized(TestCase):
     """
 
     def test_end_scenario_sizing_annualized(self):
-        from models.test_case_small_network_optional_assets_annualized.src.run_ates import (
-            HeatProblem,
-        )
+        from models.test_case_small_network_optional_assets_annualized.src import \
+            run_annualized
         from models.test_case_small_network_optional_assets_annualized.src.run_annualized import (
             HeatProblemDiscAnnualizedCost,
-            HeatProblemDiscAnnualizedCostModifiedParam,
             HeatProblemDiscAnnualizedCostModifiedDiscountRate,
-        )
-        from models.test_case_small_network_optional_assets_annualized.src import (
-            run_annualized,
-        )
+            HeatProblemDiscAnnualizedCostModifiedParam)
+        from models.test_case_small_network_optional_assets_annualized.src.run_ates import \
+            HeatProblem
+
         from mesido.financial_mixin import calculate_annuity_factor
 
         base_folder = Path(run_annualized.__file__).resolve().parent.parent

@@ -1,29 +1,22 @@
 from pathlib import Path
 from unittest import TestCase
 
+import numpy as np
+from rtctools.util import run_optimization_problem
+from utils_test_scaling import (create_problem_with_debug_info,
+                                problem_scaling_check)
+from utils_tests import (demand_matching_test,
+                         electric_power_conservation_test,
+                         energy_conservation_test, feasibility_test)
+
 import mesido._darcy_weisbach as darcy_weisbach
 from mesido.electricity_physics_mixin import ElectrolyzerOption
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.network_common import NetworkSettings
 from mesido.workflows.multicommodity_simulator_workflow import (
-    MultiCommoditySimulator,
-    MultiCommoditySimulatorNoLosses,
-    run_sequatially_staged_simulation,
-)
-
-import numpy as np
-
-from rtctools.util import run_optimization_problem
-
-from utils_test_scaling import create_problem_with_debug_info, problem_scaling_check
-
-from utils_tests import (
-    demand_matching_test,
-    electric_power_conservation_test,
-    energy_conservation_test,
-    feasibility_test,
-)
+    MultiCommoditySimulator, MultiCommoditySimulatorNoLosses,
+    run_sequatially_staged_simulation)
 
 
 def check_electrolyzer_efficiency(tol, electrolyzer_gas, electrolyzer_power, esdl_electrolyzer):

@@ -2,8 +2,8 @@ import glob
 import os
 
 from esdl.profiles.excelprofilemanager import ExcelProfileManager
-from esdl.profiles.influxdbprofilemanager import ConnectionSettings
-from esdl.profiles.influxdbprofilemanager import InfluxDBProfileManager
+from esdl.profiles.influxdbprofilemanager import (ConnectionSettings,
+                                                  InfluxDBProfileManager)
 
 """
 Place raw excel files in fodler: raw_data_files_folder

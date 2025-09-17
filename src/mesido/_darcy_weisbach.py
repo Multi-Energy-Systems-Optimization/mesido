@@ -1,11 +1,10 @@
 import math
 
 import CoolProp as cP
+import numpy as np
 
 from mesido.constants import GRAVITATIONAL_CONSTANT
 from mesido.network_common import NetworkSettings
-
-import numpy as np
 
 
 def _kinematic_viscosity(temperature, network_type=NetworkSettings.NETWORK_TYPE_HEAT, pressure=0.0):

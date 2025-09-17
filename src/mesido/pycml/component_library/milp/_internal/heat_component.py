@@ -1,5 +1,6 @@
 from mesido.network_common import NetworkSettings
-from mesido.pycml.component_library.milp._internal.base_component import BaseAsset
+from mesido.pycml.component_library.milp._internal.base_component import \
+    BaseAsset
 
 
 class HeatComponent(BaseAsset):

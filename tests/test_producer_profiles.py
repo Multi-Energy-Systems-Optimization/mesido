@@ -1,13 +1,13 @@
 from pathlib import Path
 from unittest import TestCase
 
+import numpy as np
+from utils_tests import (demand_matching_test, energy_conservation_test,
+                         heat_to_discharge_test)
+
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.util import run_esdl_mesido_optimization
-
-import numpy as np
-
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
 class TestProducerMaxProfile(TestCase):
@@ -76,9 +76,7 @@ class TestProducerMaxProfile(TestCase):
 
         import models.unit_cases.case_3a.src.run_3a as run_3a
         from models.unit_cases.case_3a.src.run_3a import (
-            HeatProblemESDLProdProfile,
-            HeatProblemESDLProdProfileTCO,
-        )
+            HeatProblemESDLProdProfile, HeatProblemESDLProdProfileTCO)
 
         base_folder = Path(run_3a.__file__).resolve().parent.parent
 
@@ -156,7 +154,8 @@ class TestProducerMaxProfile(TestCase):
         """
 
         import models.unit_cases.case_3a.src.run_3a as run_3a
-        from models.unit_cases.case_3a.src.run_3a import HeatProblemESDLProdProfile
+        from models.unit_cases.case_3a.src.run_3a import \
+            HeatProblemESDLProdProfile
 
         base_folder = Path(run_3a.__file__).resolve().parent.parent
 

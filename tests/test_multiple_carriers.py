@@ -1,11 +1,12 @@
 from pathlib import Path
 from unittest import TestCase
 
+from utils_tests import (demand_matching_test, energy_conservation_test,
+                         heat_to_discharge_test)
+
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.util import run_esdl_mesido_optimization
-
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
 class TestMultipleCarriers(TestCase):
@@ -19,9 +20,8 @@ class TestMultipleCarriers(TestCase):
 
         """
         import models.multiple_carriers.src.run_multiple_carriers as run_multiple_carriers
-        from models.multiple_carriers.src.run_multiple_carriers import (
-            HeatProblem,
-        )
+        from models.multiple_carriers.src.run_multiple_carriers import \
+            HeatProblem
 
         base_folder = Path(run_multiple_carriers.__file__).resolve().parent.parent
 

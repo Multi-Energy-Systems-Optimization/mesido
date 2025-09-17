@@ -1,13 +1,13 @@
 from pathlib import Path
 from unittest import TestCase
 
+import numpy as np
+from utils_tests import (demand_matching_test, energy_conservation_test,
+                         heat_to_discharge_test)
+
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.util import run_esdl_mesido_optimization
-
-import numpy as np
-
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
 class TestHEX(TestCase):
@@ -27,9 +27,7 @@ class TestHEX(TestCase):
 
         """
         import models.heat_exchange.src.run_heat_exchanger as run_heat_exchanger
-        from models.heat_exchange.src.run_heat_exchanger import (
-            HeatProblem,
-        )
+        from models.heat_exchange.src.run_heat_exchanger import HeatProblem
 
         base_folder = Path(run_heat_exchanger.__file__).resolve().parent.parent
         # -----------------------------------------------------------------------------------------
@@ -127,9 +125,7 @@ class TestHEX(TestCase):
         both supply and return on one side have the same temperature.
         """
         import models.heat_exchange.src.run_heat_exchanger as run_heat_exchanger
-        from models.heat_exchange.src.run_heat_exchanger import (
-            HeatProblem,
-        )
+        from models.heat_exchange.src.run_heat_exchanger import HeatProblem
 
         base_folder = Path(run_heat_exchanger.__file__).resolve().parent.parent
 
@@ -197,9 +193,7 @@ class TestHEX(TestCase):
         """
 
         import models.heat_exchange.src.run_heat_exchanger as run_heat_exchanger
-        from models.heat_exchange.src.run_heat_exchanger import (
-            HeatProblem,
-        )
+        from models.heat_exchange.src.run_heat_exchanger import HeatProblem
 
         base_folder = Path(run_heat_exchanger.__file__).resolve().parent.parent
 
@@ -319,9 +313,7 @@ class TestHP(TestCase):
 
         """
         import models.heatpump.src.run_heat_pump as run_heat_pump
-        from models.heatpump.src.run_heat_pump import (
-            HeatProblem,
-        )
+        from models.heatpump.src.run_heat_pump import HeatProblem
 
         base_folder = Path(run_heat_pump.__file__).resolve().parent.parent
 

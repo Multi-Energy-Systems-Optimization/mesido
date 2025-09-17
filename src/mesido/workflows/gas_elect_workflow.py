@@ -1,6 +1,16 @@
 import logging
 import os
 
+import numpy as np
+from rtctools.optimization.collocated_integrated_optimization_problem import \
+    CollocatedIntegratedOptimizationProblem
+from rtctools.optimization.goal_programming_mixin import Goal
+from rtctools.optimization.linearized_order_goal_programming_mixin import \
+    LinearizedOrderGoalProgrammingMixin
+from rtctools.optimization.single_pass_goal_programming_mixin import (
+    CachingQPSol, SinglePassGoalProgrammingMixin)
+from rtctools.util import run_optimization_problem
+
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.head_loss_class import HeadLossOption
@@ -9,21 +19,6 @@ from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.goals.minimize_tco_goal import MinimizeTCO
 from mesido.workflows.io.write_output import ScenarioOutput
 from mesido.workflows.utils.helpers import main_decorator
-
-import numpy as np
-
-from rtctools.optimization.collocated_integrated_optimization_problem import (
-    CollocatedIntegratedOptimizationProblem,
-)
-from rtctools.optimization.goal_programming_mixin import Goal
-from rtctools.optimization.linearized_order_goal_programming_mixin import (
-    LinearizedOrderGoalProgrammingMixin,
-)
-from rtctools.optimization.single_pass_goal_programming_mixin import (
-    CachingQPSol,
-    SinglePassGoalProgrammingMixin,
-)
-from rtctools.util import run_optimization_problem
 
 logger = logging.getLogger("WarmingUP-MPC")
 logger.setLevel(logging.INFO)

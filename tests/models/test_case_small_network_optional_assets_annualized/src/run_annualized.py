@@ -1,18 +1,16 @@
 from typing import Any, Dict, List
 
 import esdl
+from rtctools.optimization.goal_programming_mixin import Goal
+from rtctools.util import run_optimization_problem
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.workflows.goals.minimize_tco_goal import MinimizeTCO
 
-from rtctools.optimization.goal_programming_mixin import Goal
-from rtctools.util import run_optimization_problem
-
 try:
-    from models.test_case_small_network_optional_assets_annualized.src.run_ates import (
-        HeatProblem,
-    )
+    from models.test_case_small_network_optional_assets_annualized.src.run_ates import \
+        HeatProblem
 except ModuleNotFoundError:
     from run_ates import HeatProblem
 

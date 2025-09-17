@@ -2,14 +2,14 @@ import sys
 from pathlib import Path
 from unittest import TestCase
 
+import numpy as np
+from utils_test_scaling import \
+    create_problem_with_debug_info  # , problem_scaling_check
+from utils_tests import (demand_matching_test, energy_conservation_test,
+                         heat_to_discharge_test)
+
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.workflows import run_end_scenario_sizing
-
-import numpy as np
-
-from utils_test_scaling import create_problem_with_debug_info  # , problem_scaling_check
-
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
 class TestUpdatedESDL(TestCase):
@@ -32,7 +32,8 @@ class TestUpdatedESDL(TestCase):
         sys.path.insert(1, root_folder)
 
         import examples.PoCTutorial.src.run_grow_tutorial
-        from examples.PoCTutorial.src.run_grow_tutorial import EndScenarioSizingStagedHighs
+        from examples.PoCTutorial.src.run_grow_tutorial import \
+            EndScenarioSizingStagedHighs
 
         base_folder = (
             Path(examples.PoCTutorial.src.run_grow_tutorial.__file__).resolve().parent.parent

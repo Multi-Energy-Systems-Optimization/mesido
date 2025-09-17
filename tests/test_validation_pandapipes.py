@@ -3,24 +3,20 @@ import sys
 from pathlib import Path
 from unittest import TestCase
 
+import numpy as np
+import pandapipes as pp
+import pandapower.control as control
+import pandas as pd
+from pandapipes.timeseries import run_timeseries
+from pandapower.timeseries import DFData, OutputWriter
+from utils_tests import (demand_matching_test, energy_conservation_test,
+                         heat_to_discharge_test)
+
 from mesido.constants import GRAVITATIONAL_CONSTANT
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
 from mesido.util import run_esdl_mesido_optimization
-
-import numpy as np
-
-import pandapipes as pp
-from pandapipes.timeseries import run_timeseries
-
-import pandapower.control as control
-from pandapower.timeseries import DFData
-from pandapower.timeseries import OutputWriter
-
-import pandas as pd
-
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
 class ValidateWithPandaPipes(TestCase):
@@ -94,7 +90,8 @@ class ValidateWithPandaPipes(TestCase):
         # Setup and run pandapipes
         # ------------------------------------------------------------------------------
         # ------------------------------------------------------------------------------
-        from examples.pandapipes.src.pandapipeesdlparser import PandapipeEsdlParserClass
+        from examples.pandapipes.src.pandapipeesdlparser import \
+            PandapipeEsdlParserClass
 
         esdl_file = os.path.join(base_folder, "model", "Test_Tree_S1C1.esdl")
         esdlparser = PandapipeEsdlParserClass()

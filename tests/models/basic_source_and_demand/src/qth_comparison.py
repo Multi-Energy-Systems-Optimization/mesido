@@ -1,22 +1,20 @@
-from mesido.component_type_mixin import ModelicaComponentTypeMixin
-from mesido.esdl.esdl_mixin import ESDLMixin
-from mesido.pycml.pycml_mixin import PyCMLMixin
-from mesido.qth_not_maintained.bounds_to_pipe_flow_directions_mixin import (
-    BoundsToPipeFlowDirectionsMixin,
-)
-from mesido.qth_not_maintained.qth_mixin import QTHMixin
-
 import numpy as np
-
-from rtctools.optimization.collocated_integrated_optimization_problem import (
-    CollocatedIntegratedOptimizationProblem,
-)
+from rtctools.optimization.collocated_integrated_optimization_problem import \
+    CollocatedIntegratedOptimizationProblem
 from rtctools.optimization.csv_mixin import CSVMixin
-from rtctools.optimization.goal_programming_mixin import Goal, GoalProgrammingMixin
+from rtctools.optimization.goal_programming_mixin import (Goal,
+                                                          GoalProgrammingMixin)
 from rtctools.optimization.homotopy_mixin import HomotopyMixin
 from rtctools.optimization.modelica_mixin import ModelicaMixin
 from rtctools.optimization.timeseries import Timeseries
 from rtctools.util import run_optimization_problem
+
+from mesido.component_type_mixin import ModelicaComponentTypeMixin
+from mesido.esdl.esdl_mixin import ESDLMixin
+from mesido.pycml.pycml_mixin import PyCMLMixin
+from mesido.qth_not_maintained.bounds_to_pipe_flow_directions_mixin import \
+    BoundsToPipeFlowDirectionsMixin
+from mesido.qth_not_maintained.qth_mixin import QTHMixin
 
 if __name__ == "__main__":
     from model_qth import Model

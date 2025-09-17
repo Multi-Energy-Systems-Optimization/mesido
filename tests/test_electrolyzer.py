@@ -1,13 +1,13 @@
 from pathlib import Path
 from unittest import TestCase
 
+import numpy as np
+
 import mesido._darcy_weisbach as darcy_weisbach
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.network_common import NetworkSettings
 from mesido.util import run_esdl_mesido_optimization
-
-import numpy as np
 
 
 class TestElectrolyzer(TestCase):
@@ -27,7 +27,8 @@ class TestElectrolyzer(TestCase):
         - The pipe head loss constraint for a hydrogen network
         """
         import models.unit_cases_electricity.electrolyzer.src.example as example
-        from models.unit_cases_electricity.electrolyzer.src.example import MILPProblemInequality
+        from models.unit_cases_electricity.electrolyzer.src.example import \
+            MILPProblemInequality
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
@@ -246,7 +247,8 @@ class TestElectrolyzer(TestCase):
 
         """
         import models.unit_cases_electricity.electrolyzer.src.example as example
-        from models.unit_cases_electricity.electrolyzer.src.example import MILPProblemInequality
+        from models.unit_cases_electricity.electrolyzer.src.example import \
+            MILPProblemInequality
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
@@ -326,9 +328,8 @@ class TestElectrolyzer(TestCase):
 
         """
         import models.unit_cases_electricity.electrolyzer.src.example as example
-        from models.unit_cases_electricity.electrolyzer.src.example import (
-            MILPProblemConstantEfficiency,
-        )
+        from models.unit_cases_electricity.electrolyzer.src.example import \
+            MILPProblemConstantEfficiency
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
@@ -377,9 +378,8 @@ class TestElectrolyzer(TestCase):
 
         """
         import models.unit_cases_electricity.electrolyzer.src.example as example
-        from models.unit_cases_electricity.electrolyzer.src.example import (
-            MILPProblemEquality,
-        )
+        from models.unit_cases_electricity.electrolyzer.src.example import \
+            MILPProblemEquality
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
@@ -456,9 +456,8 @@ class TestElectrolyzer(TestCase):
 
         """
         import models.unit_cases_electricity.electrolyzer.src.example as example
-        from models.unit_cases_electricity.electrolyzer.src.example import (
-            MILPProblemEquality,
-        )
+        from models.unit_cases_electricity.electrolyzer.src.example import \
+            MILPProblemEquality
 
         base_folder = Path(example.__file__).resolve().parent.parent
 

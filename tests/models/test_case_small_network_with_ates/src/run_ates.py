@@ -1,4 +1,13 @@
 import esdl
+import numpy as np
+from rtctools.optimization.collocated_integrated_optimization_problem import \
+    CollocatedIntegratedOptimizationProblem
+from rtctools.optimization.goal_programming_mixin import Goal
+from rtctools.optimization.linearized_order_goal_programming_mixin import \
+    LinearizedOrderGoalProgrammingMixin
+from rtctools.optimization.single_pass_goal_programming_mixin import (
+    CachingQPSol, SinglePassGoalProgrammingMixin)
+from rtctools.util import run_optimization_problem
 
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
@@ -6,23 +15,7 @@ from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.utils.adapt_profiles import (
     adapt_hourly_profile_averages_timestep_size,
-    adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
-)
-
-import numpy as np
-
-from rtctools.optimization.collocated_integrated_optimization_problem import (
-    CollocatedIntegratedOptimizationProblem,
-)
-from rtctools.optimization.goal_programming_mixin import Goal
-from rtctools.optimization.linearized_order_goal_programming_mixin import (
-    LinearizedOrderGoalProgrammingMixin,
-)
-from rtctools.optimization.single_pass_goal_programming_mixin import (
-    CachingQPSol,
-    SinglePassGoalProgrammingMixin,
-)
-from rtctools.util import run_optimization_problem
+    adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day)
 
 
 class TargetDemandGoal(Goal):

@@ -3,15 +3,13 @@ import time
 from abc import ABCMeta
 from pathlib import Path
 
+from rtctools.optimization.modelica_mixin import ModelicaMixin
+
 from mesido.pycml.pycml_mixin import PyCMLMixin
 from mesido.qth_not_maintained.qth_loop_mixin import (
-    BufferTargetDischargeGoal,
-    QTHLoopMixin,
-)
+    BufferTargetDischargeGoal, QTHLoopMixin)
 from mesido.qth_not_maintained.qth_mixin import QTHMixin
 from mesido.qth_not_maintained.util import run_heat_network_optimization
-
-from rtctools.optimization.modelica_mixin import ModelicaMixin
 
 # We want to import the example we compare with as a module that is somewhat
 # uniquely identifiable. We therefore start from the root.
@@ -19,10 +17,9 @@ root_folder = str(Path(__file__).resolve().parent.parent.parent.parent.parent)
 sys.path.insert(1, root_folder)
 
 import examples.basic_buffer.src.example  # noqa: E402, I100
-from examples.basic_buffer.src.example import (  # noqa: E402, I100
-    HeatProblem as _HeatProblem,
-    QTHProblem as _QTHProblem,
-)
+from examples.basic_buffer.src.example import \
+    HeatProblem as _HeatProblem  # noqa: E402, I100
+from examples.basic_buffer.src.example import QTHProblem as _QTHProblem
 
 base_folder = Path(examples.basic_buffer.src.example.__file__).resolve().parent.parent
 

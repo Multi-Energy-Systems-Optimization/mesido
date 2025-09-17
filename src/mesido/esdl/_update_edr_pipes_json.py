@@ -2,9 +2,9 @@ import json
 import xml.etree.ElementTree as ET  # noqa: N817
 from typing import Tuple
 
-from mesido._heat_loss_u_values_pipe import heat_loss_u_values_pipe
-
 import requests
+
+from mesido._heat_loss_u_values_pipe import heat_loss_u_values_pipe
 
 
 def main():

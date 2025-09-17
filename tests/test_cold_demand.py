@@ -3,25 +3,20 @@ import unittest.mock
 from pathlib import Path
 from unittest import TestCase
 
+import numpy as np
+import pandas as pd
+from utils_test_scaling import create_log_list_scaling
+from utils_tests import (demand_matching_test, energy_conservation_test,
+                         heat_to_discharge_test)
+
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.exceptions import MesidoAssetIssueError
 from mesido.potential_errors import MesidoAssetIssueType, PotentialErrors
 from mesido.util import run_esdl_mesido_optimization
-from mesido.workflows.utils.adapt_profiles import (
-    adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
-)
+from mesido.workflows.utils.adapt_profiles import \
+    adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day
 from mesido.workflows.utils.error_types import mesido_issue_type_gen_message
-
-
-import numpy as np
-
-import pandas as pd
-
-from utils_test_scaling import create_log_list_scaling
-
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
-
 
 logger = logging.getLogger("WarmingUP-MPC")
 logger.setLevel(logging.INFO)

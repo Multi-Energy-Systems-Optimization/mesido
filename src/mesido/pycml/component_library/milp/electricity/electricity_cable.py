@@ -1,10 +1,10 @@
+from numpy import nan
+
 from mesido.pycml import Variable
 from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
-from numpy import nan
-
-from .electricity_base import ElectricityTwoPort
 from .._internal import BaseAsset
+from .electricity_base import ElectricityTwoPort
 
 
 @add_variables_documentation_automatically

@@ -10,13 +10,12 @@ What at least was implement
 from pathlib import Path
 from unittest import TestCase
 
+import numpy as np
+from utils_tests import electric_power_conservation_test
+
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.util import run_esdl_mesido_optimization
-
-import numpy as np
-
-from utils_tests import electric_power_conservation_test
 
 
 class TestMILPbus(TestCase):
@@ -34,7 +33,8 @@ class TestMILPbus(TestCase):
 
         """
         import models.unit_cases_electricity.bus_networks.src.example as example
-        from models.unit_cases_electricity.bus_networks.src.example import ElectricityProblem
+        from models.unit_cases_electricity.bus_networks.src.example import \
+            ElectricityProblem
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
@@ -89,7 +89,8 @@ class TestMILPbus(TestCase):
 
         """
         import models.unit_cases_electricity.bus_networks.src.example as example
-        from models.unit_cases_electricity.bus_networks.src.example import ElectricityProblem
+        from models.unit_cases_electricity.bus_networks.src.example import \
+            ElectricityProblem
 
         base_folder = Path(example.__file__).resolve().parent.parent
 

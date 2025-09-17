@@ -6,18 +6,16 @@ from pathlib import Path
 from typing import Optional
 
 import esdl
+import numpy as np
+import pandas as pd
 
 from mesido.esdl.esdl_parser import ESDLFileParser
-from mesido.esdl.profile_parser import InfluxDBProfileReader, ProfileReaderFromFile
+from mesido.esdl.profile_parser import (InfluxDBProfileReader,
+                                        ProfileReaderFromFile)
 from mesido.workflows import EndScenarioSizingStaged
 from mesido.workflows.utils.adapt_profiles import (
     adapt_hourly_profile_averages_timestep_size,
-    adapt_profile_to_copy_for_number_of_years,
-)
-
-import numpy as np
-
-import pandas as pd
+    adapt_profile_to_copy_for_number_of_years)
 
 
 class MockInfluxDBProfileReader(InfluxDBProfileReader):
@@ -174,7 +172,8 @@ class TestProfileLoading(unittest.TestCase):
         default UTC timezone has been set.
         """
         import models.unit_cases_electricity.electrolyzer.src.example as example
-        from models.unit_cases_electricity.electrolyzer.src.example import MILPProblemInequality
+        from models.unit_cases_electricity.electrolyzer.src.example import \
+            MILPProblemInequality
 
         base_folder = Path(example.__file__).resolve().parent.parent
         model_folder = base_folder / "model"
@@ -245,7 +244,8 @@ class TestProfileLoading(unittest.TestCase):
         if the loaded profiles match those specified in the csv.
         """
         import models.unit_cases_electricity.electrolyzer.src.example as example
-        from models.unit_cases_electricity.electrolyzer.src.example import MILPProblemInequality
+        from models.unit_cases_electricity.electrolyzer.src.example import \
+            MILPProblemInequality
 
         base_folder = Path(example.__file__).resolve().parent.parent
         model_folder = base_folder / "model"

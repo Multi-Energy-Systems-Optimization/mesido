@@ -1,8 +1,8 @@
 from unittest import TestCase
 
-from mesido.pycml import Model, Variable
-
 import numpy as np
+
+from mesido.pycml import Model, Variable
 
 
 class TestPyCML(TestCase):

@@ -1,6 +1,13 @@
 import time
 
 import casadi as ca
+from rtctools.optimization.collocated_integrated_optimization_problem import \
+    CollocatedIntegratedOptimizationProblem
+from rtctools.optimization.goal_programming_mixin_base import Goal
+from rtctools.optimization.linearized_order_goal_programming_mixin import \
+    LinearizedOrderGoalProgrammingMixin
+from rtctools.optimization.single_pass_goal_programming_mixin import \
+    SinglePassGoalProgrammingMixin
 
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
@@ -10,18 +17,7 @@ from mesido.head_loss_class import HeadLossOption
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.io.write_output import ScenarioOutput
 from mesido.workflows.multicommodity_simulator_workflow import (
-    MultiCommoditySimulatorNoLosses,
-    run_sequatially_staged_simulation,
-)
-
-from rtctools.optimization.collocated_integrated_optimization_problem import (
-    CollocatedIntegratedOptimizationProblem,
-)
-from rtctools.optimization.goal_programming_mixin_base import Goal
-from rtctools.optimization.linearized_order_goal_programming_mixin import (
-    LinearizedOrderGoalProgrammingMixin,
-)
-from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
+    MultiCommoditySimulatorNoLosses, run_sequatially_staged_simulation)
 
 
 class MaxHydrogenProduction(Goal):

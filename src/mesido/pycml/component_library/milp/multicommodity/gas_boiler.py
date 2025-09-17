@@ -1,9 +1,9 @@
+from numpy import nan
+
 from mesido.pycml import Variable
 from mesido.pycml.component_library.milp.gas.gas_base import GasPort
 from mesido.pycml.component_library.milp.heat.heat_source import HeatSource
 from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
-
-from numpy import nan
 
 
 @add_variables_documentation_automatically

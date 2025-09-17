@@ -1,18 +1,16 @@
+import numpy as np
+from rtctools.optimization.collocated_integrated_optimization_problem import \
+    CollocatedIntegratedOptimizationProblem
+from rtctools.optimization.goal_programming_mixin import (Goal,
+                                                          GoalProgrammingMixin)
+from rtctools.optimization.homotopy_mixin import HomotopyMixin
+from rtctools.optimization.linearized_order_goal_programming_mixin import \
+    LinearizedOrderGoalProgrammingMixin
+
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.heat_mixin import HeatMixin
 from mesido.qth_mixin import QTHMixin
 from mesido.util import run_heat_network_optimization
-
-import numpy as np
-
-from rtctools.optimization.collocated_integrated_optimization_problem import (
-    CollocatedIntegratedOptimizationProblem,
-)
-from rtctools.optimization.goal_programming_mixin import Goal, GoalProgrammingMixin
-from rtctools.optimization.homotopy_mixin import HomotopyMixin
-from rtctools.optimization.linearized_order_goal_programming_mixin import (
-    LinearizedOrderGoalProgrammingMixin,
-)
 
 
 class TargetDemandGoal(Goal):

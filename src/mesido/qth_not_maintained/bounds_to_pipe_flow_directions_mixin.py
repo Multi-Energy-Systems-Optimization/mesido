@@ -1,11 +1,10 @@
 from typing import Dict
 
+import numpy as np
+from rtctools.optimization.timeseries import Timeseries
+
 from mesido.base_component_type_mixin import BaseComponentTypeMixin
 from mesido.heat_network_common import PipeFlowDirection
-
-import numpy as np
-
-from rtctools.optimization.timeseries import Timeseries
 
 
 class BoundsToPipeFlowDirectionsMixin(BaseComponentTypeMixin):

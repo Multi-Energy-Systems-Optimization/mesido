@@ -5,6 +5,16 @@ import sys
 import time
 from typing import Dict
 
+import numpy as np
+from rtctools._internal.alias_tools import AliasDict
+from rtctools.optimization.collocated_integrated_optimization_problem import \
+    CollocatedIntegratedOptimizationProblem
+from rtctools.optimization.goal_programming_mixin_base import Goal
+from rtctools.optimization.linearized_order_goal_programming_mixin import \
+    LinearizedOrderGoalProgrammingMixin
+from rtctools.optimization.single_pass_goal_programming_mixin import (
+    CachingQPSol, SinglePassGoalProgrammingMixin)
+
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.head_loss_class import HeadLossOption
@@ -12,27 +22,12 @@ from mesido.potential_errors import reset_potential_errors
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.goals.minimize_tco_goal import MinimizeTCO
 from mesido.workflows.io.write_output import ScenarioOutput
-from mesido.workflows.utils.adapt_profiles import (
-    adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
-)
-from mesido.workflows.utils.error_types import HEAT_NETWORK_ERRORS, potential_error_to_error
-from mesido.workflows.utils.helpers import main_decorator, run_optimization_problem_solver
-
-import numpy as np
-
-from rtctools._internal.alias_tools import AliasDict
-from rtctools.optimization.collocated_integrated_optimization_problem import (
-    CollocatedIntegratedOptimizationProblem,
-)
-from rtctools.optimization.goal_programming_mixin_base import Goal
-from rtctools.optimization.linearized_order_goal_programming_mixin import (
-    LinearizedOrderGoalProgrammingMixin,
-)
-from rtctools.optimization.single_pass_goal_programming_mixin import (
-    CachingQPSol,
-    SinglePassGoalProgrammingMixin,
-)
-
+from mesido.workflows.utils.adapt_profiles import \
+    adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day
+from mesido.workflows.utils.error_types import (HEAT_NETWORK_ERRORS,
+                                                potential_error_to_error)
+from mesido.workflows.utils.helpers import (main_decorator,
+                                            run_optimization_problem_solver)
 
 DB_HOST = "172.17.0.2"
 DB_PORT = 8086

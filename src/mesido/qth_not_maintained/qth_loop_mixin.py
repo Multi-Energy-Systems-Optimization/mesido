@@ -1,14 +1,12 @@
 from typing import Dict, List, Tuple
 
 import casadi as ca
-
-from mesido.qth_not_maintained.qth_mixin import HeadLossOption, QTHMixin
-
 import numpy as np
-
 from rtctools._internal.alias_tools import AliasDict
 from rtctools.optimization.goal_programming_mixin_base import Goal
 from rtctools.optimization.timeseries import Timeseries
+
+from mesido.qth_not_maintained.qth_mixin import HeadLossOption, QTHMixin
 
 
 class BufferTargetDischargeGoal(Goal):

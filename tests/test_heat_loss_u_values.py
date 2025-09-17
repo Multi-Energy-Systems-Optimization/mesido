@@ -1,8 +1,8 @@
 from unittest import TestCase
 
-from mesido._heat_loss_u_values_pipe import heat_loss_u_values_pipe
-
 import numpy as np
+
+from mesido._heat_loss_u_values_pipe import heat_loss_u_values_pipe
 
 
 class TestHeatLossUValues(TestCase):
