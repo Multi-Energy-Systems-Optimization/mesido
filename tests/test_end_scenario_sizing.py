@@ -386,6 +386,7 @@ class TestEndScenarioSizing(TestCase):
             esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
+            error_type_check=NO_POTENTIAL_ERRORS_CHECK,
         )
         original_problem.pre()
         original_problem_pipe_classes = original_problem.get_unique_pipe_classes()
@@ -439,9 +440,9 @@ class TestEndScenarioSizing(TestCase):
             # If heating demand asset's state is enabled, then exclude the costs since it is not
             # part of the TCO calculation. This is because we do not size heating demand assets in
             # the optimization
-            asset_id = self.solution.esdl_asset_name_to_id_map[asset]
-            asset_state = self.solution.esdl_assets[asset_id].attributes["state"]
-            asset_type = self.solution.esdl_assets[asset_id].asset_type
+            asset_id = solution.esdl_asset_name_to_id_map[asset]
+            asset_state = solution.esdl_assets[asset_id].attributes["state"]
+            asset_type = solution.esdl_assets[asset_id].asset_type
             if not (
                 (asset_type == "HeatingDemand") and (asset_state == esdl.AssetStateEnum.ENABLED)
             ):

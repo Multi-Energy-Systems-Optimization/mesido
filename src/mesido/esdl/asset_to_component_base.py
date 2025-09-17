@@ -4,7 +4,7 @@ import math
 import os
 from enum import IntEnum
 from pathlib import Path
-from typing import Any, Dict, Tuple, Type, Union
+from typing import Any, Dict, Optional, Tuple, Type, Union
 
 import CoolProp as cP
 
@@ -19,6 +19,9 @@ from mesido.pycml import Model as _Model
 
 
 logger = logging.getLogger("mesido")
+
+# Define locally to avoid circular import with workflows.utils.error_types
+NO_POTENTIAL_ERRORS_CHECK = "no_potential_errors"
 
 MODIFIERS = Dict[str, Union[str, int, float]]
 
@@ -316,15 +319,25 @@ class _AssetToComponentBase:
 
     __power_keys = ["power", "maxDischargeRate", "maxChargeRate", "capacity"]
 
-    def __init__(self, **kwargs):
+    _error_type_check: Optional[str]
+
+    def __init__(self, **kwargs) -> None:
         """
         In this init we initialize some dicts and we load the edr pipes.
+
+        Args:
+            **kwargs: Additional keyword arguments, including 'error_type_check'
+                     for controlling cost validation behavior.
         """
         self._port_to_q_nominal = {}
         self._port_to_q_max = {}
         self._port_to_i_nominal = {}
         self._port_to_i_max = {}
         self._port_to_esdl_component_type = {}
+
+        # Store error type check setting for cost validation
+        self._error_type_check = kwargs.get("error_type_check", None)
+
         self._edr_pipes = json.load(
             open(os.path.join(Path(__file__).parent, "_edr_pipes.json"), "r")
         )
@@ -1367,14 +1380,25 @@ class _AssetToComponentBase:
         """
         Validate a cost attribute for an asset.
 
+        When error checking is disabled (NO_POTENTIAL_ERRORS_CHECK), validation is bypassed
+        and only existence of cost_info is checked to prevent processing errors.
+
         Args:
             asset: The asset object
             cost_attribute: The name of the cost attribute
             cost_info: The cost information object
 
         Returns:
-            bool: True if the attribute is valid and should be processed further, False otherwise
+            bool: True if the attribute exists and should be processed further, False otherwise.
+                  When error checking is disabled, returns True only if cost_info is not None.
+                  When error checking is enabled, performs full validation checks.
         """
+        # If error checking is disabled, bypass all validation and allow processing
+        if self._error_type_check == NO_POTENTIAL_ERRORS_CHECK:
+            # Still return False for None cost_info since we can't process it anyway
+            # But don't validate requirements or log errors
+            return cost_info is not None
+
         cost_check_message = self._check_cost_attribute_requirement(
             asset.asset_type, cost_attribute
         )
