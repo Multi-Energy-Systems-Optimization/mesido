@@ -14,9 +14,9 @@
 	  <area xsi:type="esdl:Area" name="area" id="edaf485c-91c5-47b5-a9e9-9991e782fc4c">
       <asset xsi:type="esdl:HeatProducer" name="Producer_2" id="f4fd7ca1-3f10-4bdb-88b3-daf8c456d959" state="OPTIONAL" power="4000000.0">
         <costInformation xsi:type="esdl:CostInformation" id="8be54ab3-7189-4fad-9825-1900b6433ed4">
-          <variableOperationalCosts xsi:type="esdl:SingleValue" id="d1b1594a-8490-4332-98ab-a5843cd94fb2" value="0.1">
-          <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perMultiplier="KILO" physicalQuantity="COST" perUnit="WATTHOUR" unit="EURO" id="7c6459a9-f4cc-4b10-9716-3aa19716c9ba" description="Cost in EUR/kWh"/>
-          </variableOperationalCosts>
+          <investmentCosts xsi:type="esdl:SingleValue" id="c5d7401d-5eb1-478e-9789-2d5460b79756" value="1000000.0">
+          <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perMultiplier="MEGA" physicalQuantity="COST" perUnit="WATT" unit="EURO" id="c5241482-1819-4858-8483-68d2cf5c72ff" description="Cost in EUR/MW"/>
+          </investmentCosts>
           <installationCosts xsi:type="esdl:SingleValue" id="d5247295-9c46-4dd5-a0cf-a245a03f15f1" value="1000000.0">
           <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perMultiplier="MEGA" physicalQuantity="COST" unit="EURO" id="5b75854e-330b-4a95-adf7-11d1ece8de12" description="Cost in EUR"/>
           </installationCosts>
@@ -64,11 +64,7 @@
         </geometry>
       </asset>
       <asset xsi:type="esdl:HeatingDemand" name="Consumer_19" id="ca8a62f9-8925-457d-8461-aa6aad827302" power="3000000.0">
-        <port xsi:type="esdl:InPort" id="a8d3b032-a099-4411-aa7d-68470ca78ccd" carrier="fe62784e-9752-463f-b6b1-e3077c760627" name="InPort" connectedTo="cc91880f-099c-4bcd-911c-12324fbe9d5d">
-          <profile xsi:type="esdl:InfluxDBProfile" field="demand1_MW" measurement="WarmingUp default profiles" database="energy_profiles" id="39c0c463-717a-4352-bbe4-830879a93438" startDate="2018-12-31T23:00:00.000000+0000" filters="" host="profiles.warmingup.info" port="443" endDate="2019-01-03T00:00:00.000000+0000">
-          <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference" reference="e9405fc8-5e57-4df5-8584-4babee7cdf1b"/>
-          </profile>
-        </port>
+        <port xsi:type="esdl:InPort" id="a8d3b032-a099-4411-aa7d-68470ca78ccd" carrier="fe62784e-9752-463f-b6b1-e3077c760627" name="InPort" connectedTo="cc91880f-099c-4bcd-911c-12324fbe9d5d"/>
         <port xsi:type="esdl:OutPort" id="b59b99b6-f3cb-42b1-858a-017c7060d545" connectedTo="f3b791c7-b2c1-4c9b-95dd-5ff5b88eb1d7" carrier="fe62784e-9752-463f-b6b1-e3077c760627_ret" name="OutPort"/>
         <geometry xsi:type="esdl:Point" lat="52.35147420412955" lon="4.8408301011772625"/>
       </asset>

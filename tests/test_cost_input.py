@@ -4,6 +4,7 @@ from pathlib import Path
 from unittest import TestCase
 
 from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.exceptions import MesidoAssetIssueError
 from mesido.potential_errors import MesidoAssetIssueType, PotentialErrors
 from mesido.util import run_esdl_mesido_optimization
@@ -47,8 +48,10 @@ class TestCostInputCheck(TestCase):
             _ = run_esdl_mesido_optimization(
                 EndScenarioSizing,
                 base_folder=base_folder,
-                esdl_file_name="graph_HDemands_incl_demand_4_incorrect.esdl",
+                esdl_file_name="graph_HDemands_incl_demand_4_incorrect_no_db.esdl",
                 esdl_parser=ESDLFileParser,
+                profile_reader=ProfileReaderFromFile,
+                input_timeseries_file="profiles.csv",
             )
 
         # Check that the cold demand had an error
@@ -93,8 +96,10 @@ class TestCostInputCheck(TestCase):
             _ = run_esdl_mesido_optimization(
                 EndScenarioSizing,
                 base_folder=base_folder,
-                esdl_file_name="graph_HDemands_incl_demand_4_missing_investment.esdl",
+                esdl_file_name="graph_HDemands_incl_demand_4_missing_investment_no_db.esdl",
                 esdl_parser=ESDLFileParser,
+                profile_reader=ProfileReaderFromFile,
+                input_timeseries_file="profiles.csv",
             )
 
         # Check that the cold demand had an error
@@ -118,8 +123,10 @@ class TestCostInputCheck(TestCase):
             _ = run_esdl_mesido_optimization(
                 EndScenarioSizing,
                 base_folder=base_folder,
-                esdl_file_name="graph_HDemands_incl_demand_4_missing_operational.esdl",
+                esdl_file_name="graph_HDemands_incl_demand_4_missing_operational_no_db.esdl",
                 esdl_parser=ESDLFileParser,
+                profile_reader=ProfileReaderFromFile,
+                input_timeseries_file="profiles.csv",
             )
 
         # Check that the cold demand had an error
