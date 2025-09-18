@@ -5,8 +5,8 @@ from mesido.esdl.asset_to_component_base import _AssetToComponentBase
 from mesido.esdl.edr_pipe_class import EDRGasPipeClass
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
-from mesido.workflows.utils.helpers import run_optimization_problem_solver
 from mesido.workflows.utils.error_types import NO_POTENTIAL_ERRORS_CHECK
+from mesido.workflows.utils.helpers import run_optimization_problem_solver
 
 import numpy as np
 

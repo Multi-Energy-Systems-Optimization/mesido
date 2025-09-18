@@ -193,12 +193,14 @@ class TestElectrolyzer(TestCase):
         # Do cost checks
 
         # Check variable opex: transport cost 0.1 euro/kg H2
-        # TODO: This test can now be enabled with NO_POTENTIAL_ERRORS_CHECK to bypass cost validation
-        # Expected value when cost validation bypass is working: gas_tranport_cost ≈ 86.273412
+        # TODO: This test can now be enabled with NO_POTENTIAL_ERRORS_CHECK to bypass cost
+        # validation. Expected value when cost validation bypass is working:
+        # gas_tranport_cost ≈ 86.273412
         # Alternatively, to enable this test with cost attributes validation,
         # add "gas_demand" entry to ASSET_COST_REQUIREMENTS dictionary in
-        # src/mesido/esdl/asset_to_component_base.py with "variableOperationalCosts": "required" or "optional",
-        # and ensure the COST_VALIDATION_COMPONENT_TO_ASSET_TYPE mapping includes the appropriate component type.
+        # src/mesido/esdl/asset_to_component_base.py with "variableOperationalCosts":
+        # "required" or "optional", and ensure the COST_VALIDATION_COMPONENT_TO_ASSET_TYPE
+        # mapping includes the appropriate component type.
         # gas_tranport_cost = sum(
         #     (
         #         solution.get_timeseries(elec_price_profile).times[1:]
@@ -215,8 +217,9 @@ class TestElectrolyzer(TestCase):
 
         # Check storage cost fix opex 10 euro/kgH2/year -> 10*23.715 = 237.15euro/m3
         # Storage reserved size = 500m3
-        # TODO: This test can now be enabled with NO_POTENTIAL_ERRORS_CHECK to bypass cost validation
-        # Expected value when cost validation bypass is working: storage_fixed_opex ≈ 1.18575e+08
+        # TODO: This test can now be enabled with NO_POTENTIAL_ERRORS_CHECK to bypass cost
+        # validation. Expected value when cost validation bypass is working:
+        # storage_fixed_opex ≈ 1.18575e+08
         # Alternatively, to enable these tests with cost attributes validation,
         # add appropriate entries to ASSET_COST_REQUIREMENTS
         # in src/mesido/esdl/asset_to_component_base.py for gas_storage and electrolyzer types.
@@ -227,8 +230,9 @@ class TestElectrolyzer(TestCase):
         # )
 
         # Check electrolyzer fixed opex, based on installed size of 500MW and 10euro/kW
-        # TODO: This test can now be enabled with NO_POTENTIAL_ERRORS_CHECK to bypass cost validation
-        # Expected electrolyzer fixed opex calculation would work with proper cost configuration
+        # TODO: This test can now be enabled with NO_POTENTIAL_ERRORS_CHECK to bypass cost
+        # validation. Expected electrolyzer fixed opex calculation would work with proper cost
+        # configuration
         # electrolyzer_fixed_opex = 1.0 * 500.0e6 / 1.0e3
         # np.testing.assert_allclose(
         #     electrolyzer_fixed_opex,
@@ -236,8 +240,9 @@ class TestElectrolyzer(TestCase):
         # )
 
         # Check electrolyzer investment cost, based on installed size of 500MW and 20euro/kW
-        # TODO: This test can now be enabled with NO_POTENTIAL_ERRORS_CHECK to bypass cost validation
-        # Expected electrolyzer investment cost calculation would work with proper cost configuration
+        # TODO: This test can now be enabled with NO_POTENTIAL_ERRORS_CHECK to bypass cost
+        # validation. Expected electrolyzer investment cost calculation would work with proper
+        # cost configuration
         # electrolyzer_investment_cost = 20.0 * 500.0e6 / 1.0e3
         # np.testing.assert_allclose(
         #     electrolyzer_investment_cost,
