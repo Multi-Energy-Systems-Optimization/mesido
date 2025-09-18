@@ -152,8 +152,8 @@ class RollOutPost:
                     plt.plot(line_x, line_y, color[int(idx)], linewidth=plot_size)
             if asset.asset_type == "HeatingDemand":
                 point = asset.attributes["geometry"]
-                line_x = [(point.lon - lon0)]
-                line_y = [(point.lat - lat0)]
+                line_x = [point.lon - lon0]
+                line_y = [point.lat - lat0]
                 is_placed_list = [
                     self.results[f"{asset.name}__asset_is_realized_{i}"]
                     for i in range(self.problem._years)
@@ -168,8 +168,8 @@ class RollOutPost:
                 or asset.asset_type == "GeothermalSource"
             ):
                 point = asset.attributes["geometry"]
-                line_x = [(point.lon - lon0)]
-                line_y = [(point.lat - lat0)]
+                line_x = [point.lon - lon0]
+                line_y = [point.lat - lat0]
                 is_placed_list = [
                     self.results[f"{asset.name}__asset_is_realized_{i}"]
                     for i in range(self.problem._years)
@@ -179,8 +179,8 @@ class RollOutPost:
                     plt.plot(line_x, line_y, "s", color=color[int(idx)])
             if asset.asset_type == "ATES":
                 point = asset.attributes["geometry"]
-                line_x = [(point.lon - lon0)]
-                line_y = [(point.lat - lat0)]
+                line_x = [point.lon - lon0]
+                line_y = [point.lat - lat0]
                 is_placed_list = [
                     self.results[f"{asset.name}__asset_is_realized_{i}"]
                     for i in range(self.problem._years)

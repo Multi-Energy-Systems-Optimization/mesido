@@ -108,18 +108,19 @@ if __name__ == "__main__":
         *solution.energy_system_components.get("heat_demand", []),
         *solution.hot_pipes,
     ]:
-        print(
-            f"{source} is placed over time: {[results[f'{source}__asset_is_realized_{year}'] for year in range(solution._years)]}"
-        )
         try:
-            print(
-                f"{source} is placed over time: {[results[f'{source}__asset_is_realized_{year}']for year in range(solution._years)]}"
-            )
-        except:
+            placed_over_time = [
+                results[f"{source}__asset_is_realized_{year}"] for year in range(solution._years)
+            ]
+            print(f"{source} is placed over time: {placed_over_time}")
+        except KeyError:
             pass
-        print(
-            f"{source} has a cumulative investment over time of: {[results[f'{source}__cumulative_investments_made_in_eur_year_{year}']for year in range(solution._years)]}"
-        )
+        cumulative_investments = [
+            results[f"{source}__cumulative_investments_made_in_eur_year_{year}"]
+            for year in range(solution._years)
+        ]
+        print(f"{source} has a cumulative investment over time of: {cumulative_investments}")
+
     print(
         f"Yearly capex spent: "
         f"{[results[f'yearly_capex_{year}'] for year in range(solution._years)]}"

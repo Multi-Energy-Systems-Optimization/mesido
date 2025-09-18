@@ -22,9 +22,7 @@ def set_data_with_averages(
     problem: object,
 ):
     try:
-        data = problem.get_timeseries(
-            variable=variable_name, ensemble_member=ensemble_member
-        )
+        data = problem.get_timeseries(variable=variable_name, ensemble_member=ensemble_member)
     except KeyError:
         datastore.set_timeseries(
             variable=variable_name,
@@ -67,9 +65,7 @@ def set_data_with_averages(
     )
 
 
-def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(
-    problem, problem_day_steps: int
-):
+def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, problem_day_steps: int):
     """
     Adapt yearly porifle with hourly time steps to a common profile (daily averaged profile except
     for the day with the peak demand).
@@ -164,9 +160,7 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(
                 peak_day = peak_days[current_peak_idx]
                 if peak_day > day:
                     new_date_times.append(problem.io.datetimes[day * 24])
-                new_date_times.extend(
-                    problem.io.datetimes[peak_day * 24 : peak_day * 24 + 24]
-                )
+                new_date_times.extend(problem.io.datetimes[peak_day * 24 : peak_day * 24 + 24])
                 if (day + day_steps - 1) > peak_day:
                     new_date_times.append(problem.io.datetimes[peak_day * 24 + 24])
                 current_peak_idx += 1
@@ -178,9 +172,7 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(
         new_date_times = np.asarray(new_date_times)
         parameters["times"] = [x.timestamp() for x in new_date_times]
 
-        select_profiles_for_update(
-            problem, new_datastore, new_date_times, ensemble_member
-        )
+        select_profiles_for_update(problem, new_datastore, new_date_times, ensemble_member)
 
     problem.io = new_datastore
 
@@ -203,9 +195,7 @@ def adapt_hourly_profile_averages_timestep_size(problem, problem_step_size_hours
 
     org_timeseries = problem.io.datetimes
     org_dt = list(map(operator.sub, org_timeseries[1:], org_timeseries[0:-1]))
-    assert all(
-        dt.seconds == 3600 for dt in org_dt
-    )  # checks that the orginal timeseries has
+    assert all(dt.seconds == 3600 for dt in org_dt)  # checks that the orginal timeseries has
     # homogenous horizon with equispaced timesteps of 3600s (1hr).
 
     for ensemble_member in range(problem.ensemble_size):
@@ -221,9 +211,7 @@ def adapt_hourly_profile_averages_timestep_size(problem, problem_step_size_hours
         new_date_times = np.asarray(new_date_times)
         parameters["times"] = [x.timestamp() for x in new_date_times]
 
-        select_profiles_for_update(
-            problem, new_datastore, new_date_times, ensemble_member
-        )
+        select_profiles_for_update(problem, new_datastore, new_date_times, ensemble_member)
 
     problem.io = new_datastore
 
@@ -272,10 +260,7 @@ def adapt_profile_to_copy_for_number_of_years(problem, number_of_years: int):
                 )
             else:
                 new_date_times.extend(
-                    [
-                        i + year * datetime.timedelta(days=365)
-                        for i in org_timeseries[:-1]
-                    ]
+                    [i + year * datetime.timedelta(days=365) for i in org_timeseries[:-1]]
                 )
 
         new_date_times = np.asarray(new_date_times)
@@ -284,9 +269,7 @@ def adapt_profile_to_copy_for_number_of_years(problem, number_of_years: int):
         for var_name in problem.io.get_timeseries_names():
             old_data = problem.io.get_timeseries(var_name)[1]
             if skip_last_day:
-                new_data = np.append(
-                    np.tile(old_data[:-1], number_of_years), old_data[-1]
-                )
+                new_data = np.append(np.tile(old_data[:-1], number_of_years), old_data[-1])
             else:
                 new_data = np.tile(old_data, number_of_years)
             new_datastore.set_timeseries(

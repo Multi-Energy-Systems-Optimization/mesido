@@ -2,8 +2,6 @@ import logging
 
 import casadi as ca
 
-from mesido.workflows.utils.helpers import get_cost_value_and_unit
-
 import numpy as np
 
 from rtctools.optimization.single_pass_goal_programming_mixin import Goal
