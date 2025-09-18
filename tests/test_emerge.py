@@ -31,3 +31,9 @@ class TestEmerge(TestCase):
 
         # TODO: checks on values need to be added, not sure if cost values now make sense, scaling
         #  is not too bad, but if presolve of HIGHS is on, it becomes infeasible.
+
+
+if __name__ == "__main__":
+
+    a = TestEmerge()
+    a.test_emerge_workflow()

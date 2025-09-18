@@ -17,6 +17,7 @@ jobs:
   style:
     name: Check style
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     if: ${{ !github.event.pull_request.draft }}
     env:
       TOXENV: flake8,black
@@ -36,6 +37,7 @@ jobs:
   build:
     name: Check build
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     if: ${{ !github.event.pull_request.draft }}
     steps:
       - uses: actions/checkout@v3
@@ -54,6 +56,7 @@ jobs:
   test_main:
     name: Test main
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     if: ${{ !github.event.pull_request.draft }}
     env:
       TOXENV: py38
@@ -74,6 +77,7 @@ jobs:
   test_pre_processing:
     name: Test pre-processing
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     if: ${{ !github.event.pull_request.draft }}
     env:
       TOXENV: py38
@@ -110,6 +114,7 @@ jobs:
     name: Test post-processing
     needs: test_pre_processing
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     if: ${{ !github.event.pull_request.draft }}
     env:
       TOXENV: py38
@@ -140,6 +145,7 @@ jobs:
   documentation:
     name: Generate documentation
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     if: ${{ !github.event.pull_request.draft }}
     steps:
       - uses: actions/checkout@v3

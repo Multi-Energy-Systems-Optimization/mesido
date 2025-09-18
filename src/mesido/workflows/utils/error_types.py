@@ -17,6 +17,9 @@ def mesido_issue_type_gen_message(issue_type: MesidoAssetIssueType) -> str:
     String message
     """
     type_and_general_meassage = {
+        MesidoAssetIssueType.HEAT_PRODUCER_POWER: "Asset insufficient installed capacity: please"
+        " increase the installed power or reduce the profile constraint peak value of the"
+        " producer(s) listed.",
         MesidoAssetIssueType.HEAT_DEMAND_POWER: "Asset insufficient installed capacity: please"
         " increase the installed power or reduce the demand profile peak value of the demand(s)"
         " listed.",
@@ -27,6 +30,9 @@ def mesido_issue_type_gen_message(issue_type: MesidoAssetIssueType) -> str:
         MesidoAssetIssueType.ASSET_PROFILE_CAPABILITY: "Profile assigment not allowed.",
         MesidoAssetIssueType.HEAT_EXCHANGER_TEMPERATURES: "Temperatures at heat exchanger set "
         "incorrectly.",
+        MesidoAssetIssueType.HEAT_EXCHANGER_POWER: "The capacity of the heat exchanger is not "
+        "defined",
+        MesidoAssetIssueType.HEAT_DEMAND_STATE: "Heating Demand state set to OPTIONAL",
     }
 
     return type_and_general_meassage[issue_type]
@@ -40,11 +46,14 @@ def potential_error_to_error(network_check_type: Enum) -> None:
 
     errors_on_types = {
         HEAT_NETWORK_ERRORS: [
+            MesidoAssetIssueType.HEAT_PRODUCER_POWER,
             MesidoAssetIssueType.HEAT_DEMAND_POWER,
             MesidoAssetIssueType.COLD_DEMAND_POWER,
             MesidoAssetIssueType.HEAT_DEMAND_TYPE,
             MesidoAssetIssueType.ASSET_PROFILE_CAPABILITY,
             MesidoAssetIssueType.HEAT_EXCHANGER_TEMPERATURES,
+            MesidoAssetIssueType.HEAT_EXCHANGER_POWER,
+            MesidoAssetIssueType.HEAT_DEMAND_STATE,
         ],
         HEAT_AND_COOL_NETWORK_ERRORS: [
             MesidoAssetIssueType.HEAT_DEMAND_POWER,
@@ -52,6 +61,7 @@ def potential_error_to_error(network_check_type: Enum) -> None:
             MesidoAssetIssueType.HEAT_DEMAND_TYPE,
             MesidoAssetIssueType.ASSET_PROFILE_CAPABILITY,
             MesidoAssetIssueType.HEAT_EXCHANGER_TEMPERATURES,
+            MesidoAssetIssueType.HEAT_DEMAND_STATE,
         ],
         # Example of extra error types / groups that can be added. This one is not used yet.
         CUSTOM_ERRORS: [MesidoAssetIssueType.ASSET_PROFILE_CAPABILITY],

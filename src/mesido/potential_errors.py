@@ -9,11 +9,14 @@ ErrorMessage = str
 
 # Asset error type that can occur
 class MesidoAssetIssueType(Enum):
+    HEAT_PRODUCER_POWER = "heat_producer.power"
     HEAT_DEMAND_POWER = "heat_demand.power"
     COLD_DEMAND_POWER = "cold_demand.power"
     HEAT_DEMAND_TYPE = "heat_demand.type"
     ASSET_PROFILE_CAPABILITY = "asset_profile.capability"
     HEAT_EXCHANGER_TEMPERATURES = "heat_exchanger.temperature"
+    HEAT_EXCHANGER_POWER = "heat_exchanger.capacity"
+    HEAT_DEMAND_STATE = "heat_demand.state"
 
 
 class PotentialErrors:

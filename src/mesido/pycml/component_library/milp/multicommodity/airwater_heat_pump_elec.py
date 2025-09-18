@@ -38,15 +38,12 @@ class AirWaterHeatPumpElec(AirWaterHeatPump):
 
         self.min_voltage = nan
         self.elec_power_nominal = nan
-        self.cop = nan
 
         # Assumption: heat in/out and added is nonnegative
         # Heat in the return (i.e. cold) line is zero
         self.add_variable(ElectricityPort, "ElectricityIn")
-        self.add_variable(Variable, "Power_consumed", min=0.0, nominal=self.elec_power_nominal)
+        self.add_variable(Variable, "Power_elec", min=0.0, nominal=self.elec_power_nominal)
 
-        self.add_equation(
-            ((self.ElectricityIn.Power - self.Power_consumed) / self.elec_power_nominal)
-        )
+        self.add_equation(((self.ElectricityIn.Power - self.Power_elec) / self.elec_power_nominal))
 
-        self.add_equation(((self.Power_consumed * self.cop - self.Heat_source) / self.Heat_nominal))
+        self.add_equation(((self.Power_elec * self.cop - self.Heat_source) / self.Heat_nominal))
