@@ -3317,18 +3317,16 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         return constraints
 
-    def __ates_storage_yearly_change_constraints(self, ensemble_member):
+    def __ates_storage_yearly_change_path_constraints(self, ensemble_member):
         constraints = []
 
-        for ates in [
-            *self.energy_system_components.get("ates", []),
-        ]:
-            ates_state = self.__state_vector_scaled(
-                f"{ates}.Storage_yearly_change", ensemble_member
-            )
-            nominal = self.variable_nominal(f"{ates}.Heat_ates")
-            for i in range(len(self.times())):
-                constraints.append(((ates_state[i]) / nominal, 0.0, 0.0))
+        if not self.energy_system_options()["include_ates_yearly_change_option"]:
+            for ates in [
+                *self.energy_system_components.get("ates", []),
+            ]:
+                ates_state = self.state(f"{ates}.Storage_yearly_change")
+                nominal = self.variable_nominal(f"{ates}.Heat_ates")
+                constraints.append(((ates_state) / nominal, 0.0, 0.0))
 
         return constraints
 
@@ -3615,6 +3613,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints.extend(self.__ates_temperature_ordering_path_constraints(ensemble_member))
         constraints.extend(self.__heat_pump_cop_path_constraints(ensemble_member))
         constraints.extend(self.__storage_hydraulic_power_path_constraints(ensemble_member))
+        constraints.extend(self.__ates_storage_yearly_change_path_constraints(ensemble_member))
 
         return constraints
 
@@ -3642,9 +3641,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             constraints.extend(self.__heat_matching_demand_insulation_constraints(ensemble_member))
 
         constraints.extend(self.__ates_max_stored_heat_constraints(ensemble_member))
-
-        if not self.energy_system_options()["include_ates_yearly_change_option"]:
-            constraints.extend(self.__ates_storage_yearly_change_constraints(ensemble_member))
 
         return constraints
 
