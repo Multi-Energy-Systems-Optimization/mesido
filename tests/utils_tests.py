@@ -293,7 +293,8 @@ def heat_to_discharge_test(solution, results):
             )
         else:
             temperature = max(
-                solution.parameters(0)[f"{p}.temperature"], solution.parameters(0)[f"{p}.T_ground"]
+                solution.parameters(0)[f"{p}.temperature"],
+                solution.parameters(0)[f"{p}.T_ground"],
             )
         test.assertTrue(
             expr=all(
@@ -316,7 +317,8 @@ def heat_to_discharge_test(solution, results):
             )
         else:
             temperature = max(
-                solution.parameters(0)[f"{p}.temperature"], solution.parameters(0)[f"{p}.T_ground"]
+                solution.parameters(0)[f"{p}.temperature"],
+                solution.parameters(0)[f"{p}.T_ground"],
             )
         test.assertTrue(
             expr=all(

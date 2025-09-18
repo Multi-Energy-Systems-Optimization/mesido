@@ -285,6 +285,7 @@ class HeatProblemSetPoints(
         options["solver"] = "highs"
         highs_options = options["highs"] = {}
         highs_options["mip_rel_gap"] = 0.02
+        highs_options["presolve"] = "off"
 
         return options
 
