@@ -6,6 +6,7 @@ import time
 import casadi as ca
 
 from mesido.esdl.esdl_mixin import ESDLMixin
+from mesido.head_loss_class import HeadLossOption
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.goals.rollout_goal import (
     MaximizeRevenueCosts,
@@ -105,6 +106,7 @@ class RollOutProblem(
 
         self._save_json = True
 
+        self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
         self.heat_network_settings["minimum_velocity"] = 0.0  # important otherwise heatdemands
         # cannot be turned off for specific timesteps
 
