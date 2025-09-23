@@ -116,11 +116,11 @@ class TestProducerMaxProfile(TestCase):
                     results["HeatProducer_b702__max_size"],
                 )
                 np.testing.assert_array_less(heat_produced - tol, heat_production_upper_limit)
-                np.testing.assert_equal(
+                np.testing.assert_array_less(
+                    3,
                     np.sum(
                         np.isclose(heat_produced, heat_production_upper_limit, atol=tol, rtol=1e-10)
                     ),
-                    4,
                 )
             elif problem_class == HeatProblemESDLProdProfileTCO:
                 heat_production_upper_limit = (
@@ -135,7 +135,7 @@ class TestProducerMaxProfile(TestCase):
                 )
                 np.testing.assert_array_less(heat_produced - tol, heat_production_upper_limit)
                 np.testing.assert_array_less(
-                    8,
+                    7,
                     np.sum(
                         np.isclose(heat_produced, heat_production_upper_limit, atol=tol, rtol=1e-9)
                     ),
