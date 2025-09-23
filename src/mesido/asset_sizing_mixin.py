@@ -1871,6 +1871,8 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         energy_system_component_types = list(self.energy_system_components.keys())
 
+        parameters = self.parameters(ensemble_member)
+
         max_var_types = set()
         for b in self.energy_system_components.get("heat_buffer", []):
             max_var_types.add("heat_buffer")
@@ -1882,6 +1884,24 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             constraints.append(
                 (
                     (np_ones * max_heat - stored_heat) / constraint_nominal,
+                    0.0,
+                    np.inf,
+                )
+            )
+
+            # Constraint the aggregation_count
+            capacity_joule = (
+                parameters[f"{b}.rho"]
+                * parameters[f"{b}.cp"]
+                * parameters[f"{b}.volume"]
+                * parameters[f"{b}.dT"]
+            )
+            constraints.append(
+                (
+                    (
+                        max_heat / capacity_joule
+                        - self.get_aggregation_count_var(b, ensemble_member)
+                    ),
                     0.0,
                     np.inf,
                 )
@@ -1987,6 +2007,22 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     )
                 )
 
+            # Constraint the aggregation_count
+            if s in [
+                *self.energy_system_components.get("ates", []),
+                *self.energy_system_components.get("geothermal", []),
+
+            ]:
+                constraints.append(
+                    (
+                        self.get_max_size_var(s, ensemble_member)
+                        / parameters[f"{s}.single_doublet_power"]
+                        - self.get_aggregation_count_var(s, ensemble_member),
+                        0,
+                        np.inf,
+                    )
+                )
+
         for hx in [
             *self.energy_system_components.get("heat_exchanger", []),
             *self.energy_system_components.get("heat_pump", []),
@@ -2048,6 +2084,16 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 (
                     (np_ones * max_heat + heat_ates) / constraint_nominal,
                     0.0,
+                    np.inf,
+                )
+            )
+            # Constraint the aggregation_count
+            constraints.append(
+                (
+                    self.get_max_size_var(a, ensemble_member)
+                    / parameters[f"{a}.single_doublet_power"]
+                    - self.get_aggregation_count_var(a, ensemble_member),
+                    0,
                     np.inf,
                 )
             )
