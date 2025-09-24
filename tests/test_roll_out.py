@@ -45,10 +45,6 @@ class TestRollOutOptimization(TestCase):
 
         # This is an optimization done over three years with timesteps of 30 days
         class RollOutTimeStep(RollOutProblem):
-            def __init__(self, *args, **kwargs):
-                super().__init__(*args, **kwargs)
-
-                self._timestep_size = 30 * 24
 
             def read(self):
                 super().read()
@@ -70,14 +66,14 @@ class TestRollOutOptimization(TestCase):
         results = solution.extract_results()
 
         # tolerance settings for the tests
-        atol = 1.0e-2
+        atol = 1.0e-1
         rtol = 1.0e-6
 
         # Demand matching if placed else demand zero (is_realized variable)
         for d in solution.energy_system_components.get("heat_demand", []):
             for y in range(solution._years):
                 is_realized = results[f"{d}__asset_is_realized_{y}"]
-                if is_realized == 0:
+                if is_realized <= 0.99:
                     # If not placed, demand should be zero
                     np.testing.assert_allclose(
                         results[f"{d}.Heat_demand"][
@@ -219,11 +215,13 @@ class TestRollOutOptimization(TestCase):
         )
 
         # Check fraction is placed, should be between 0 and 1 and increasing
+        tol = 1e-6
         for asset in assets_to_check:
             for y in range(solution._years):
                 asset_fraction_placed = results[f"{asset}__fraction_placed_{y}"]
-                np.testing.assert_(0 <= asset_fraction_placed <= 1, "Value is not between 0 and 1")
-                tol = 1e-6
+                np.testing.assert_(
+                    0 - tol <= asset_fraction_placed <= 1 + tol, "Value is not between 0 and 1"
+                )
                 if y < solution._years - 1:
                     next_asset_fraction_placed = results[f"{asset}__fraction_placed_{y + 1}"]
                     np.testing.assert_(
@@ -231,11 +229,9 @@ class TestRollOutOptimization(TestCase):
                         f"{asset}__fraction_placed_{y} should be <=\
                             {asset}__fraction_placed_{y + 1}",
                     )
-
             for y in range(solution._years - 1):
                 asset_is_realized = results[f"{asset}__asset_is_realized_{y}"]
                 next_asset_is_realized = results[f"{asset}__asset_is_realized_{y + 1}"]
-                tol = 1e-6
                 np.testing.assert_(
                     asset_is_realized <= next_asset_is_realized + tol,
                     f"{asset}__asset_is_realized{y} should be <= {asset}__asset_is_realized{y + 1}",

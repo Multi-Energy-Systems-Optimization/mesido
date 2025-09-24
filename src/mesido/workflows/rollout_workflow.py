@@ -87,7 +87,7 @@ class RollOutProblem(
         # TODO: timestep_size and _days can be removed eventually, particularly when averaging
         # with peak day is used, however one needs to check where self._timesteps_per_year and
         # self._timestep_size is currently affecting the code
-        self._timestep_size = 30 * 24
+        self._timestep_size = kwargs.get("_timestep_size", 30 * 24)
         self._timesteps_per_year = int(365 / (self._timestep_size / 24)) + 1
         self._timesteps_per_year = (
             self._timesteps_per_year + 1
@@ -244,6 +244,7 @@ class RollOutProblem(
     def energy_system_options(self):
         options = super().energy_system_options()
         options["heat_loss_disconnected_pipe"] = False
+        options["neglect_pipe_heat_losses"] = True
         options["include_asset_is_realized"] = True
         options["include_ates_yearly_change_option"] = True
         options["yearly_investments"] = True
