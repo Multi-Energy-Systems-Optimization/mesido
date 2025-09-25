@@ -61,7 +61,7 @@ def get_internal_energy(asset_name, carrier):
             "T",
             273.15 + temperature,
             "P",
-            1.0 * 1.0e5,  # TODO: defualt 1 bar pressure should be set for the carrier
+            1.0 * 1.0e5,  # TODO: default 1 bar pressure should be set for the carrier
             "WATER",
         )
     elif NetworkSettings.NETWORK_TYPE_GAS in carrier.name:
@@ -1385,21 +1385,23 @@ class _AssetToComponentBase:
         )
         cost_attribute_name = self.COST_ATTRIBUTE_TO_STRING.get(cost_attribute, cost_attribute)
 
-        # For assets not in validation mappings, apply bypass logic
-        if cost_check_message in ["unknown or not supported asset type"]:
-            if self._error_type_check == NO_POTENTIAL_ERRORS_CHECK:
-                # When error checking is disabled, allow processing any asset with cost info
-                return cost_info is not None
-            else:
-                # When error checking is enabled, block unknown asset types
-                message = (
-                    f"The {cost_attribute_name} for asset {asset.name} "
-                    f"of type {asset.asset_type} is {cost_check_message}."
-                )
-                self._log_and_add_potential_issue(message, asset.id, report_issue=False)
-                return False
+        # When error checking is disabled, bypass all validation for any asset with cost info.
+        # This includes assets that are unknown or not supported, as NO_POTENTIAL_ERRORS_CHECK
+        # is intended to allow cost processing for any asset with cost information
+        # regardless of type.
+        if self._error_type_check == NO_POTENTIAL_ERRORS_CHECK:
+            return cost_info is not None
 
-        # For assets in validation mappings, always apply validation rules
+        # For assets not in validation mappings, block when error checking is enabled
+        if cost_check_message in ["unknown or not supported asset type"]:
+            message = (
+                f"The {cost_attribute_name} for asset {asset.name} "
+                f"of type {asset.asset_type} is {cost_check_message}."
+            )
+            self._log_and_add_potential_issue(message, asset.id, report_issue=False)
+            return False
+
+        # For assets in validation mappings, apply validation rules when error checking is enabled
         if cost_info is None:
             if cost_check_message == "required":
                 message = (
