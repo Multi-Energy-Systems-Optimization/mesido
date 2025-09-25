@@ -46,8 +46,9 @@ class TestColdDemand(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
-        with self.assertRaises(MesidoAssetIssueError) as cm, unittest.mock.patch(
-            "mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()
+        with (
+            self.assertRaises(MesidoAssetIssueError) as cm,
+            unittest.mock.patch("mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()),
         ):
             _ = run_esdl_mesido_optimization(
                 HeatProblem,

@@ -1,4 +1,4 @@
-image: python:3.7
+image: python:3.11
 
 before_script:
   - pip install tox
@@ -13,7 +13,7 @@ stages:
 # style
 style:
   stage: style
-  image: python:3.7
+  image: python:3.11
   script:
     - tox -vv
   variables:
@@ -30,7 +30,7 @@ build:
     expire_in: 1 week
 
 # test
-py37:linux:
+py311:linux:
   stage: test
   script:
     - echo "Demo" > Demo.txt
@@ -39,9 +39,9 @@ py37:linux:
       - ./Demo.txt
       # - ./PoC Tutorial_GrowOptimized.esdl
     expire_in: 1 week
-  image: python:3.7
+  image: python:3.11
   variables:
-    TOXENV: py37
+    TOXENV: py311
 
 # documentation
 pages:
