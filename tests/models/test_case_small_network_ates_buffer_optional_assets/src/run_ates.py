@@ -118,6 +118,7 @@ class HeatProblem(
         """
         Reads the yearly profile with hourly time steps and adapt to a daily averaged profile
         """
+
         super().read()
 
         demands = self.energy_system_components.get("heat_demand", [])

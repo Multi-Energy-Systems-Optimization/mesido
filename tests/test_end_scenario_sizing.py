@@ -13,6 +13,7 @@ from mesido.workflows import (
     run_end_scenario_sizing,
 )
 from mesido.workflows.grow_workflow import EndScenarioSizingHeadLossStaged
+from mesido.workflows.utils.error_types import NO_POTENTIAL_ERRORS_CHECK
 
 import numpy as np
 
@@ -37,6 +38,7 @@ class TestEndScenarioSizing(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
+            error_type_check=NO_POTENTIAL_ERRORS_CHECK,  # Pass the error type here
         )
         cls.results = cls.solution.extract_results()
 
@@ -137,6 +139,7 @@ class TestEndScenarioSizing(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
+            error_type_check=NO_POTENTIAL_ERRORS_CHECK,  # Pass the error type here,
         )
 
         solution_staged = run_end_scenario_sizing(
@@ -146,6 +149,7 @@ class TestEndScenarioSizing(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
+            error_type_check=NO_POTENTIAL_ERRORS_CHECK,  # Pass the error type here,
         )
 
         results = solution_staged.extract_results()
@@ -240,6 +244,7 @@ class TestEndScenarioSizing(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
+            error_type_check=NO_POTENTIAL_ERRORS_CHECK,  # Pass the error type here
         )
 
         results = solution.extract_results()
@@ -289,6 +294,7 @@ class TestEndScenarioSizing(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
+            error_type_check=NO_POTENTIAL_ERRORS_CHECK,  # Pass the error type here
         )
 
         results = solution.extract_results()
@@ -297,10 +303,10 @@ class TestEndScenarioSizing(TestCase):
 
         pipes = solution.energy_system_components.get("heat_pipe")
         for pipe in pipes:
-            pipe_diameter = solution.parameters(0)[f"{pipes[0]}.diameter"]
+            pipe_diameter = solution.parameters(0)[f"{pipe}.diameter"]
             pipe_wall_roughness = solution.energy_system_options()["wall_roughness"]
-            temperature = solution.parameters(0)[f"{pipes[0]}.temperature"]
-            pipe_length = solution.parameters(0)[f"{pipes[0]}.length"]
+            temperature = solution.parameters(0)[f"{pipe}.temperature"]
+            pipe_length = solution.parameters(0)[f"{pipe}.length"]
             if pipe_diameter > 0.0:
                 velocities = results[f"{pipe}.Q"] / solution.parameters(0)[f"{pipe}.area"]
             else:
@@ -343,6 +349,7 @@ class TestEndScenarioSizing(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
+            error_type_check=NO_POTENTIAL_ERRORS_CHECK,
         )
 
         results = solution.extract_results()
@@ -379,6 +386,7 @@ class TestEndScenarioSizing(TestCase):
             esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
+            error_type_check=NO_POTENTIAL_ERRORS_CHECK,
         )
         original_problem.pre()
         original_problem_pipe_classes = original_problem.get_unique_pipe_classes()
@@ -432,9 +440,9 @@ class TestEndScenarioSizing(TestCase):
             # If heating demand asset's state is enabled, then exclude the costs since it is not
             # part of the TCO calculation. This is because we do not size heating demand assets in
             # the optimization
-            asset_id = self.solution.esdl_asset_name_to_id_map[asset]
-            asset_state = self.solution.esdl_assets[asset_id].attributes["state"]
-            asset_type = self.solution.esdl_assets[asset_id].asset_type
+            asset_id = solution.esdl_asset_name_to_id_map[asset]
+            asset_state = solution.esdl_assets[asset_id].attributes["state"]
+            asset_type = solution.esdl_assets[asset_id].asset_type
             if not (
                 (asset_type == "HeatingDemand") and (asset_state == esdl.AssetStateEnum.ENABLED)
             ):
