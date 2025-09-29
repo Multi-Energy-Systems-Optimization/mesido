@@ -3342,13 +3342,14 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
     def __ates_storage_yearly_change_path_constraints(self, ensemble_member):
         constraints = []
 
-        if not self.energy_system_options()["include_ates_yearly_change_option"]:
-            for ates in [
-                *self.energy_system_components.get("ates", []),
-            ]:
-                ates_state = self.state(f"{ates}.Storage_yearly_change")
-                nominal = self.variable_nominal(f"{ates}.Heat_ates")
-                constraints.append(((ates_state) / nominal, 0.0, 0.0))
+        # TODO: Femke check if this code below can be deleted
+        # if not self.energy_system_options()["include_ates_yearly_change_option"]:
+        #     for ates in [
+        #         *self.energy_system_components.get("ates", []),
+        #     ]:
+        #         ates_state = self.state(f"{ates}.Storage_yearly_change")
+        #         nominal = self.variable_nominal(f"{ates}.Heat_ates")
+        #         constraints.append(((ates_state) / nominal, 0.0, 0.0))
 
         return constraints
 

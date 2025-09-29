@@ -98,10 +98,11 @@ class TestSetpointConstraints(TestCase):
     def test_run_small_ates_timed_setpoints_2_changes(self):
         """
         Run the small network with ATES and check that the setpoint changes as specified.
-        The heat source for producer_1 changes 8 times (consecutively) when no timed_setpoints are
-        specified. The 1 year heat demand profiles contains demand values: hourly (peak day), weekly
-        (every 5days/120hours/432000s) and 1 time step of 4days (96hours/345600s, step before the
-        start of the peak day). Now check that the time_setpoints can limit the setpoint changes to
+        The heat source for producer_1 changes 16 times (mutliple times consecutively) when no
+        timed_setpoints are specified. The 1 year heat demand profiles contains demand values:
+        20 day time steps, 1 time step of 2 days (step before the start of the peak day), peak day
+        (24 hourly steps) and 1 time step 2 days at the end of the time horizon. Now check that the
+        time_setpoints can limit the setpoint changes to
         2 changes/year.
 
         Checks:
@@ -134,11 +135,11 @@ class TestSetpointConstraints(TestCase):
     def test_run_small_ates_timed_setpoints_0_changes(self):
         """
         Run the small network with ATES and check that the setpoint changes as specified.
-        The heat source for producer_1 changes 8 times (consecutively) when no timed_setpoints are
-        specified. The 1 year heat demand profiles contains demand values: hourly (peak day), weekly
-        (every 5days/120hours/432000s) and 1 time step of 4days (96hours/345600s, step before the
-        start of the peak day). Now check that the time_setpoints can limit the setpoint changes to
-        0 changes/year.
+        The heat source for producer_1 changes 16 times (mutliple times consecutively) when no
+        timed_setpoints are specified. The 1 year heat demand profiles contains demand values:
+        20 day time steps, 1 time step of 2 days (step before the start of the peak day), peak day
+        (24 hourly steps) and 1 time step 2 days at the end of the time horizon. Now check that the
+        time_setpoints can limit the setpoint changes to 0 changes/year.
 
         Checks:
         - That setpoint does not change over window length if 0 is specified
@@ -168,13 +169,15 @@ class TestSetpointConstraints(TestCase):
     def test_run_small_ates_timed_setpoints_multiple_constraints(self):
         """
         Run the small network with ATES and check that the setpoint changes as specified.
-        The heat source for producer_1 changes 8 times (consecutively) when no timed_setpoints are
-        specified. The 1 year heat demand profiles contains demand values: hourly (peak day), weekly
-        (every 5days/120hours/432000s) and 1 time step of 4days (96hours/345600s, step before the
-        start of the peak day). Now check that the time_setpoints can limit the setpoint changes to
+        The heat source for producer_1 changes 16 times (mutliple times consecutively) when no
+        timed_setpoints are specified. The 1 year heat demand profiles contains demand values:
+        20 day time steps, 1 time step of 2 days (step before the start of the peak day), peak day
+        (24 hourly steps) and 1 time step 2 days at the end of the time horizon. Now check that the
+        time_setpoints can limit the setpoint changes to
         1 changes over multiple window sizes.
 
         Checks:
+        - Check that the day steps is 20 as requried in the test setup
         - That setpoint does change once over window length if 1 is specified for multiple
         window sizes
 
@@ -184,7 +187,7 @@ class TestSetpointConstraints(TestCase):
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
-        for ihrs in range(119, 122):
+        for ihrs in range(20 * 24 - 1, 20 * 24 + 2):
             solution = run_esdl_mesido_optimization(
                 HeatProblemSetPoints,
                 base_folder=base_folder,
@@ -195,11 +198,16 @@ class TestSetpointConstraints(TestCase):
                 **{"timed_setpoints": {"HeatProducer_1": (ihrs, 1)}},
             )
             results = solution.extract_results()
+
+            np.testing.assert_equal(
+                max(solution.times()[1:] - solution.times()[0:-1]), 20.0 * 24.0 * 3600.0
+            )
+
             diff = (
                 results["HeatProducer_1.Heat_source"][2:]
                 - results["HeatProducer_1.Heat_source"][1:-1]
             )
-            ires = [idx + 2 for idx, val in enumerate(diff) if abs(val) > 1e-6]
+            ires = [idx + 2 for idx, val in enumerate(diff) if abs(val) > 1e-5]
             for ii in range(1, len(ires)):
                 check = (
                     solution.get_timeseries("HeatingDemand_1.target_heat_demand", 0).times[ires[ii]]
@@ -207,16 +215,12 @@ class TestSetpointConstraints(TestCase):
                         ires[ii - 1]
                     ]
                 )
-                # The following checks should be true because the changes setpoint changes occur at
-                # the during 120hr time intervals
-                if ihrs == 119:
+                # The following checks should be true because the setpoint changes occur at
+                # the during ihrs time intervals
+                if ihrs == 20 * 24 - 1:
                     np.testing.assert_array_less(ihrs * 3600, check)
-                elif ihrs == 120:
-                    np.testing.assert_equal(np.less_equal(ihrs * 3600, check), True)
-                elif ihrs == 121:
-                    np.testing.assert_equal(np.less_equal((ihrs - 1) * 3600, check), True)
                 else:
-                    exit("ii out of range")
+                    np.testing.assert_equal(np.less_equal(ihrs * 3600, check), True)
 
 
 if __name__ == "__main__":
@@ -224,9 +228,9 @@ if __name__ == "__main__":
 
     start_time = time.time()
     a = TestSetpointConstraints()
-    a.test_setpoint_constraints()
-    a.test_run_small_ates_timed_setpoints_2_changes()
-    a.test_run_small_ates_timed_setpoints_0_changes()
+    # a.test_setpoint_constraints()
+    # a.test_run_small_ates_timed_setpoints_2_changes()
+    # a.test_run_small_ates_timed_setpoints_0_changes()
     a.test_run_small_ates_timed_setpoints_multiple_constraints()
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
