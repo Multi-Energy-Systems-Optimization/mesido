@@ -181,6 +181,39 @@ class ESDLMixin(
                 )
             self.name_to_esdl_id_map[esdl_asset.name] = esdl_id
 
+    def __override_pipe_classes_dicts(self, asset, pipe_classes, no_pipe_class,
+                                      override_classes):
+        p = asset.name
+
+        if asset.attributes["state"].name == "OPTIONAL":
+            c = override_classes[p] = []
+            c.append(no_pipe_class)
+
+            min_size = self.__minimum_pipe_size_name
+            min_size_idx = [idx for idx, pipe in enumerate(pipe_classes) if pipe.name == min_size]
+            assert len(min_size_idx) == 1
+            min_size_idx = min_size_idx[0]
+
+            max_size = asset.attributes["diameter"].name
+
+            max_size_idx = [idx for idx, pipe in enumerate(pipe_classes) if pipe.name == max_size]
+            assert len(max_size_idx) == 1
+            max_size_idx = max_size_idx[0]
+
+            if max_size_idx < min_size_idx:
+                logger.warning(
+                    f"{p} has an upper DN size smaller than the used minimum size "
+                    f"of {self.__minimum_pipe_size_name}, choose at least "
+                    f"{self.__minimum_pipe_size_name}"
+                )
+            elif min_size_idx == max_size_idx:
+                c.append(pipe_classes[min_size_idx])
+            else:
+                c.extend(pipe_classes[min_size_idx : max_size_idx + 1])
+        elif asset.attributes["state"].name == "DISABLED":
+            c = override_classes[p] = []
+            c.append(no_pipe_class)
+
     def override_pipe_classes(self) -> None:
         """
         In this method we populate the _override_pipe_classes dict, which gives a list of possible
@@ -200,6 +233,9 @@ class ESDLMixin(
             EDRPipeClass.from_edr_class(name, edr_class_name, maximum_velocity)
             for name, edr_class_name in _AssetToComponentBase.STEEL_S1_PIPE_EDR_ASSETS.items()
         ]
+
+        override_classes = self._override_pipe_classes
+
         # Update the pipe costs if a template model in the ESDL was used. This is updated only if
         # the pipe catalog is available as a template
         if self._esdl_templates:
@@ -230,40 +266,9 @@ class ESDLMixin(
             if asset.asset_type == "Pipe" and isinstance(
                 asset.in_ports[0].carrier, esdl.HeatCommodity
             ):
-                p = asset.name
-
-                if asset.attributes["state"].name == "OPTIONAL":
-                    c = self._override_pipe_classes[p] = []
-                    c.append(no_pipe_class)
-
-                    min_size = self.__minimum_pipe_size_name
-                    min_size_idx = [
-                        idx for idx, pipe in enumerate(pipe_classes) if pipe.name == min_size
-                    ]
-                    assert len(min_size_idx) == 1
-                    min_size_idx = min_size_idx[0]
-
-                    max_size = asset.attributes["diameter"].name
-
-                    max_size_idx = [
-                        idx for idx, pipe in enumerate(pipe_classes) if pipe.name == max_size
-                    ]
-                    assert len(max_size_idx) == 1
-                    max_size_idx = max_size_idx[0]
-
-                    if max_size_idx < min_size_idx:
-                        logger.warning(
-                            f"{p} has an upper DN size smaller than the used minimum size "
-                            f"of {self.__minimum_pipe_size_name}, choose at least "
-                            f"{self.__minimum_pipe_size_name}"
-                        )
-                    elif min_size_idx == max_size_idx:
-                        c.append(pipe_classes[min_size_idx])
-                    else:
-                        c.extend(pipe_classes[min_size_idx : max_size_idx + 1])
-                elif asset.attributes["state"].name == "DISABLED":
-                    c = self._override_pipe_classes[p] = []
-                    c.append(no_pipe_class)
+                self.__override_pipe_classes_dicts(
+                    asset, pipe_classes, no_pipe_class, override_classes
+                )
 
     def override_gas_pipe_classes(self) -> None:
         """
@@ -288,44 +293,14 @@ class ESDLMixin(
         # We assert the pipe classes are monotonically increasing in size
         assert np.all(np.diff([pc.inner_diameter for pc in pipe_classes]) > 0)
 
+        override_classes = self._override_gas_pipe_classes
+
         for asset in self.esdl_assets.values():
             if asset.asset_type == "Pipe" and isinstance(
                 asset.in_ports[0].carrier, esdl.GasCommodity
             ):
-                p = asset.name
-
-                if asset.attributes["state"].name == "OPTIONAL":
-                    c = self._override_gas_pipe_classes[p] = []
-                    c.append(no_pipe_class)
-
-                    min_size = self.__minimum_pipe_size_name
-                    min_size_idx = [
-                        idx for idx, pipe in enumerate(pipe_classes) if pipe.name == min_size
-                    ]
-                    assert len(min_size_idx) == 1
-                    min_size_idx = min_size_idx[0]
-
-                    max_size = asset.attributes["diameter"].name
-
-                    max_size_idx = [
-                        idx for idx, pipe in enumerate(pipe_classes) if pipe.name == max_size
-                    ]
-                    assert len(max_size_idx) == 1
-                    max_size_idx = max_size_idx[0]
-
-                    if max_size_idx < min_size_idx:
-                        logger.warning(
-                            f"{p} has an upper DN size smaller than the used minimum size "
-                            f"of {self.__minimum_pipe_size_name}, choose at least "
-                            f"{self.__minimum_pipe_size_name}"
-                        )
-                    elif min_size_idx == max_size_idx:
-                        c.append(pipe_classes[min_size_idx])
-                    else:
-                        c.extend(pipe_classes[min_size_idx : max_size_idx + 1])
-                elif asset.attributes["state"].name == "DISABLED":
-                    c = self._override_gas_pipe_classes[p] = []
-                    c.append(no_pipe_class)
+                self.__override_pipe_classes_dicts(asset, pipe_classes, no_pipe_class,
+                                                   override_classes)
 
     @property
     def esdl_assets(self) -> Dict[str, Asset]:
