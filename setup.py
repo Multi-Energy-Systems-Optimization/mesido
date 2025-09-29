@@ -31,10 +31,10 @@ Operating System :: MacOS
 """
 
 if sys.version_info < (3, 10):
-    sys.exit(f"Sorry, Python 3.10 to 3.13 is required. You are using {sys.version_info}")
+    sys.exit(f"Sorry, Python 3.10 to 3.14 is required. You are using {sys.version_info}")
 
-if sys.version_info > (3, 13):
-    sys.exit(f"Sorry, Python 3.10 to 3.13 is required. You are using {sys.version_info}")
+if sys.version_info > (3, 11):
+    sys.exit(f"Sorry, Python 3.10 to 3.14 is required. You are using {sys.version_info}")
 
 setup(
     name="mesido",
@@ -57,6 +57,7 @@ setup(
     install_requires=[
         "influxdb >= 5.3.1",
         "pyecore >= 0.13.2",
+        # "numpy >=1.25.2",
         "pymoca >= 0.9.0",
         "rtc-tools-gil-comp == 2.6.1",
         "pyesdl >= 25.5.1",
@@ -67,7 +68,7 @@ setup(
     ],
     tests_require=["pytest", "pytest-runner", "numpy"],
     include_package_data=True,
-    python_requires=">=3.10,<=3.13",
+    python_requires=">=3.10,<3.12",
     cmdclass=versioneer.get_cmdclass(),
     entry_points={"rtctools.libraries.modelica": ["library_folder = mesido:modelica"]},
 )
