@@ -228,9 +228,9 @@ if __name__ == "__main__":
 
     start_time = time.time()
     a = TestSetpointConstraints()
-    # a.test_setpoint_constraints()
-    # a.test_run_small_ates_timed_setpoints_2_changes()
-    # a.test_run_small_ates_timed_setpoints_0_changes()
+    a.test_setpoint_constraints()
+    a.test_run_small_ates_timed_setpoints_2_changes()
+    a.test_run_small_ates_timed_setpoints_0_changes()
     a.test_run_small_ates_timed_setpoints_multiple_constraints()
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
