@@ -4,6 +4,7 @@ import logging
 import casadi as ca
 
 from mesido.base_component_type_mixin import BaseComponentTypeMixin
+from mesido.base_problem_mixin import BaseProblemMixin
 from mesido.head_loss_class import HeadLossClass, HeadLossOption
 from mesido.network_common import NetworkSettings
 
@@ -17,7 +18,8 @@ from rtctools.optimization.timeseries import Timeseries
 logger = logging.getLogger("mesido")
 
 
-class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
+class GasPhysicsMixin(BaseProblemMixin, BaseComponentTypeMixin,
+                      CollocatedIntegratedOptimizationProblem):
     __allowed_head_loss_options = {
         HeadLossOption.NO_HEADLOSS,
         HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY,
@@ -660,33 +662,6 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             )
 
         return constraints
-
-    def goal_programming_options(self):
-        """
-        Here we set the goal programming configuration. We use soft constraints for consecutive
-        goals.
-        """
-        options = super().goal_programming_options()
-        options["keep_soft_constraints"] = True
-        return options
-
-    def solver_options(self):
-        """
-        Here we define the solver options. By default we use the open-source solver cbc and casadi
-        solver qpsol.
-        """
-        options = super().solver_options()
-        options["casadi_solver"] = "qpsol"
-        options["solver"] = "highs"
-        return options
-
-    def compiler_options(self):
-        """
-        In this function we set the compiler configuration.
-        """
-        options = super().compiler_options()
-        options["resolve_parameter_values"] = True
-        return options
 
     def priority_completed(self, priority):
         """

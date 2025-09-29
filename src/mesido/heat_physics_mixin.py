@@ -6,6 +6,7 @@ import casadi as ca
 
 from mesido._heat_loss_u_values_pipe import pipe_heat_loss
 from mesido.base_component_type_mixin import BaseComponentTypeMixin
+from mesido.base_problem_mixin import BaseProblemMixin
 from mesido.demand_insulation_class import DemandInsulationClass
 from mesido.head_loss_class import HeadLossClass, HeadLossOption
 from mesido.network_common import NetworkSettings
@@ -20,7 +21,8 @@ from rtctools.optimization.timeseries import Timeseries
 logger = logging.getLogger("mesido")
 
 
-class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
+class HeatPhysicsMixin(BaseProblemMixin, BaseComponentTypeMixin,
+                       CollocatedIntegratedOptimizationProblem):
     """
     This class is used to model the physics of a heat district network with its assets. We model
     the different components with a variety of linearization strategies.
@@ -3742,33 +3744,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         # for ates in self.energy_system_components.get("ates", []):
 
         return history
-
-    def goal_programming_options(self):
-        """
-        Here we set the goal programming configuration. We use soft constraints for consecutive
-        goals.
-        """
-        options = super().goal_programming_options()
-        options["keep_soft_constraints"] = True
-        return options
-
-    def solver_options(self):
-        """
-        Here we define the solver options. By default we use the open-source solver highs and casadi
-        solver qpsol.
-        """
-        options = super().solver_options()
-        options["casadi_solver"] = "qpsol"
-        options["solver"] = "highs"
-        return options
-
-    def compiler_options(self):
-        """
-        In this function we set the compiler configuration.
-        """
-        options = super().compiler_options()
-        options["resolve_parameter_values"] = True
-        return options
 
     def priority_completed(self, priority):
         """
