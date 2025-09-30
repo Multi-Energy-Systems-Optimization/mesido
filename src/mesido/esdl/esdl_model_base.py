@@ -122,6 +122,19 @@ class _ESDLModelBase(_Model):
         # index a connection has to use yet.
         port_map = {}
 
+        def __set_primary_secondary_heat_ports():
+            if isinstance(p, InPort):
+                if self.secondary_port_name_convention in p.name.lower():
+                    port_map[p.id] = getattr(component.Secondary, in_suf)
+                else:
+                    port_map[p.id] = getattr(component.Primary, in_suf)
+            else:  # OutPort
+                if self.primary_port_name_convention in p.name.lower():
+                    port_map[p.id] = getattr(component.Primary, out_suf)
+                else:
+                    port_map[p.id] = getattr(component.Secondary, out_suf)
+            # return port_map
+
         for asset in non_node_assets:
             component = getattr(self, asset.name)
             # We assume that every component has 2 ports. Essentially meaning that we are dealing
@@ -141,16 +154,7 @@ class _ESDLModelBase(_Model):
                 if len(asset.in_ports) == 2 and len(asset.out_ports) == 2:
                     for p in [*asset.in_ports, *asset.out_ports]:
                         if isinstance(p.carrier, esdl.HeatCommodity):
-                            if isinstance(p, InPort):
-                                if self.secondary_port_name_convention in p.name.lower():
-                                    port_map[p.id] = getattr(component.Secondary, in_suf)
-                                else:
-                                    port_map[p.id] = getattr(component.Primary, in_suf)
-                            else:  # OutPort
-                                if self.primary_port_name_convention in p.name.lower():
-                                    port_map[p.id] = getattr(component.Primary, out_suf)
-                                else:
-                                    port_map[p.id] = getattr(component.Secondary, out_suf)
+                            __set_primary_secondary_heat_ports()
                         else:
                             raise Exception(
                                 f"{asset.name} has does not have 2 Heat in_ports and 2 Heat "
@@ -165,16 +169,7 @@ class _ESDLModelBase(_Model):
                     p_elec = 0
                     for p in [*asset.in_ports, *asset.out_ports]:
                         if isinstance(p.carrier, esdl.HeatCommodity) and p_heat <= 3:
-                            if isinstance(p, InPort):
-                                if self.secondary_port_name_convention in p.name.lower():
-                                    port_map[p.id] = getattr(component.Secondary, in_suf)
-                                else:
-                                    port_map[p.id] = getattr(component.Primary, in_suf)
-                            else:  # OutPort
-                                if self.primary_port_name_convention in p.name.lower():
-                                    port_map[p.id] = getattr(component.Primary, out_suf)
-                                else:
-                                    port_map[p.id] = getattr(component.Secondary, out_suf)
+                            __set_primary_secondary_heat_ports()
                             p_heat += 1
                         elif isinstance(p.carrier, esdl.ElectricityCommodity) and p_elec == 0:
                             port_map[p.id] = getattr(component, elec_in_suf)
@@ -317,6 +312,45 @@ class _ESDLModelBase(_Model):
         # after.
         connections = set()
 
+        def __set_pipe_port_connections(node_suffixes, type_node_assets):
+            if (
+                connected_to.id in list(port_map.keys())
+                and (assets[name_to_id_map[port_map[connected_to.id].name.split(".")[0]]].asset_type
+                == "Pipe" or assets[
+                                name_to_id_map[port_map[connected_to.id].name.split(".")[0]]
+                            ].asset_type
+                            == "ElectricityCable")
+            ):
+                self.connect(getattr(component, node_suffixes)[i], port_map[connected_to.id])
+            elif connected_to.id not in list(port_map.keys()):
+                # If The asset is not in the
+                # port map means that there is a direct node to node connection with a
+                # logical link. Here we need to do some tricks to recover the correct
+                # port index of the node.
+                for node in type_node_assets:
+                    if connected_to.id in [node.in_ports[0].id, node.out_ports[0].id]:
+                        connected_node_asset = node
+                        count = 1
+                        for ct in [
+                            *list(node.in_ports[0].connectedTo),
+                            *list(node.out_ports[0].connectedTo),
+                        ]:
+                            if ct.id == port.id:
+                                idx = count
+                            else:
+                                count += 1
+                self.connect_logical_links(
+                    getattr(component, node_suffixes)[i],
+                    getattr(getattr(self, connected_node_asset.name), node_suffixes)[idx],
+                )
+            else:
+                # If the Connected asset is not of type pipe, there might be
+                # logical link like source to node.
+                self.connect_logical_links(
+                    getattr(component, node_suffixes)[i], port_map[connected_to.id]
+                )
+            connections.add(conn)
+
         for asset in [*node_assets, *bus_assets, *gas_node_assets]:
             component = getattr(self, asset.name)
 
@@ -326,6 +360,7 @@ class _ESDLModelBase(_Model):
                     f"{asset.name} has !=1 in or out ports, please only use one, "
                     f"multiple connections to a single joint port are allowed"
                 )
+
             for port in (asset.in_ports[0], asset.out_ports[0]):
                 for connected_to in port.connectedTo.items:
                     conn = (port.id, connected_to.id)
@@ -341,117 +376,15 @@ class _ESDLModelBase(_Model):
                         # First we check if the connected_to.id is in the port_map and if the
                         # connected aasset is of type Pipe. In this case we want to fully connect
                         # the model with head losses and hydraulic power.
-                        if (
-                            connected_to.id in list(port_map.keys())
-                            and assets[
-                                name_to_id_map[port_map[connected_to.id].name.split(".")[0]]
-                            ].asset_type
-                            == "Pipe"
-                        ):
-                            self.connect(getattr(component, node_suf)[i], port_map[connected_to.id])
-                        elif connected_to.id not in list(port_map.keys()):
-                            # If The asset is not in the
-                            # port map means that there is a direct node to node connection with a
-                            # logical link. Here we need to do some tricks to recover the correct
-                            # port index of the node.
-                            for node in node_assets:
-                                if connected_to.id in [node.in_ports[0].id, node.out_ports[0].id]:
-                                    connected_node_asset = node
-                                    count = 1
-                                    for ct in [
-                                        *list(node.in_ports[0].connectedTo),
-                                        *list(node.out_ports[0].connectedTo),
-                                    ]:
-                                        if ct.id == port.id:
-                                            idx = count
-                                        else:
-                                            count += 1
-                            self.connect_logical_links(
-                                getattr(component, node_suf)[i],
-                                getattr(getattr(self, connected_node_asset.name), node_suf)[idx],
-                            )
-                        else:
-                            # If the Connected asset is not of type pipe, there might be
-                            # logical link like source to node.
-                            self.connect_logical_links(
-                                getattr(component, node_suf)[i], port_map[connected_to.id]
-                            )
-                        connections.add(conn)
-                        i += 1
+                        __set_pipe_port_connections(node_suf, node_assets)
+                        i+=1
                     elif isinstance(port.carrier, esdl.ElectricityCommodity):
                         # Same logic as for heat see comments there
-                        if (
-                            connected_to.id in list(port_map.keys())
-                            and assets[
-                                name_to_id_map[port_map[connected_to.id].name.split(".")[0]]
-                            ].asset_type
-                            == "ElectricityCable"
-                        ):
-                            self.connect(
-                                getattr(component, elec_node_suf)[i], port_map[connected_to.id]
-                            )
-                        elif connected_to.id not in list(port_map.keys()):
-                            for node in bus_assets:
-                                if connected_to.id in [node.in_ports[0].id, node.out_ports[0].id]:
-                                    connected_node_asset = node
-                                    count = 1
-                                    for ct in [
-                                        *list(node.in_ports[0].connectedTo),
-                                        *list(node.out_ports[0].connectedTo),
-                                    ]:
-                                        if ct.id == port.id:
-                                            idx = count
-                                        else:
-                                            count += 1
-                            self.connect_logical_links(
-                                getattr(component, elec_node_suf)[i],
-                                getattr(getattr(self, connected_node_asset.name), elec_node_suf)[
-                                    idx
-                                ],
-                            )
-                        else:
-                            self.connect_logical_links(
-                                getattr(component, elec_node_suf)[i],
-                                port_map[connected_to.id],
-                            )
-                        connections.add(conn)
+                        __set_pipe_port_connections(elec_node_suf, bus_assets)
                         i += 1
                     elif isinstance(port.carrier, esdl.GasCommodity):
                         # Same logic as for heat see comments there
-                        if (
-                            connected_to.id in list(port_map.keys())
-                            and assets[
-                                name_to_id_map[port_map[connected_to.id].name.split(".")[0]]
-                            ].asset_type
-                            == "Pipe"
-                        ):
-                            self.connect(
-                                getattr(component, gas_node_suf)[i], port_map[connected_to.id]
-                            )
-                        elif connected_to.id not in list(port_map.keys()):
-                            for node in gas_node_assets:
-                                if connected_to.id in [node.in_ports[0].id, node.out_ports[0].id]:
-                                    connected_node_asset = node
-                                    count = 1
-                                    for ct in [
-                                        *list(node.in_ports[0].connectedTo),
-                                        *list(node.out_ports[0].connectedTo),
-                                    ]:
-                                        if ct.id == port.id:
-                                            idx = count
-                                        else:
-                                            count += 1
-                            self.connect_logical_links(
-                                getattr(component, gas_node_suf)[i],
-                                getattr(getattr(self, connected_node_asset.name), gas_node_suf)[
-                                    idx
-                                ],
-                            )
-                        else:
-                            self.connect_logical_links(
-                                getattr(component, gas_node_suf)[i], port_map[connected_to.id]
-                            )
-                        connections.add(conn)
+                        __set_pipe_port_connections(gas_node_suf, gas_node_assets)
                         i += 1
                     else:
                         logger.error(
