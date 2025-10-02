@@ -43,10 +43,6 @@ class HeatExchanger(HeatFourPort, BaseAsset):
         self.component_type = "heat_exchanger"
         self.efficiency = nan
 
-        self.nominal = (
-            self.Secondary.Q_nominal * self.Secondary.rho * self.Secondary.cp * self.Secondary.dT
-        )
-
         self.price = nan
         self.minimum_pressure_drop = 1.0e5  # 1 bar of pressure drop
         self.pump_efficiency = 0.5

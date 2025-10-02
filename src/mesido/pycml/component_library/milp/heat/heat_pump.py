@@ -40,9 +40,7 @@ class HeatPump(HeatFourPort, BaseAsset):
         self.efficiency = nan
         self.COP = nan  # TODO: maybe set this to a standard value if not set in esdl.
         self.minimum_pressure_drop = 1.0e5  # 1 bar of pressure drop
-        self.nominal = (
-            self.Secondary.Q_nominal * self.Secondary.rho * self.Secondary.cp * self.Secondary.dT
-        )
+
         self.pump_efficiency = 0.5
         self.elec_power_nominal = self.nominal / self.COP
 
