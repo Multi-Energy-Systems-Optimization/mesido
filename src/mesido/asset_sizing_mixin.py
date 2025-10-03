@@ -1905,8 +1905,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 (
                     (
                         max_heat / capacity_joule
-                        - asset_placement_ratio
-                        * self.get_aggregation_count_var(b, ensemble_member)
+                        - asset_placement_ratio * self.get_aggregation_count_var(b, ensemble_member)
                     ),
                     0.0,
                     np.inf,
