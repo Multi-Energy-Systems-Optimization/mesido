@@ -24,6 +24,7 @@ class TestHydraulicPower(TestCase):
         Scenario 1. LINEARIZED_N_LINES_WEAK_INEQUALITY (1 line segment)
         Scenario 2. LINEARIZED_ONE_LINE_EQUALITY
         Scenario 3. LINEARIZED_N_LINES_WEAK_INEQUALITY (default line segments = 5)
+        Scenario 4. NO_HEADLOSS
 
         Checks:
         - For all scenarios (unless stated otherwise):
@@ -39,6 +40,8 @@ class TestHydraulicPower(TestCase):
             would be expected because scenario 3 has more linear line segments, theerefore the
             approximation would be closer to the theoretical non-linear curve when compared to 1
             linear line approximation of the theoretical non-linear curve.
+            - Scenario 4: checks that the hydraulic power is 0, and also no hydraulic power or
+            pressure loss is assumed over assets with a minimum pressure drop.
 
         Missing:
         - The way the problems are ran and adapted is different compared to the other tests, where
@@ -240,6 +243,30 @@ class TestHydraulicPower(TestCase):
             hydraulic_power_dw,
             atol=10.0,
         )
+
+        # # NoHeadloss should imply also no hydraulic power and no pump_power
+        run_hydraulic_power.df_MILP = pd.DataFrame(columns=standard_columns_specified)
+        run_hydraulic_power.head_loss_setting = HeadLossOption.NO_HEADLOSS
+        solution = run_esdl_mesido_optimization(
+            HeatProblem,
+            base_folder=base_folder,
+            esdl_file_name="test_simple.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.xml",
+        )
+
+        results = solution.extract_results()
+        for pipe in solution.energy_system_components.get("heat_pipe", []):
+            np.testing.assert_allclose(results[f"{pipe}.Hydraulic_power"], 0.0)
+        for demand in solution.energy_system_components.get("heat_demand", []):
+            hydraulic_power_demand = (
+                results[f"{demand}.HeatIn.Hydraulic_power"]
+                - results[(f"{demand}.HeatOut.Hydraulic_power")]
+            )
+            np.testing.assert_allclose(hydraulic_power_demand, 0.0)
+        for source in solution.energy_system_components.get("heat_source", []):
+            np.testing.assert_allclose(results[f"{source}.Pump_power"], 0.0)
 
     def test_hydraulic_power_gas(self):
         """

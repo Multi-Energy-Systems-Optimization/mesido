@@ -4,6 +4,7 @@ import os
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.head_loss_class import HeadLossOption
+from mesido.network_common import NetworkSettings
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.goals.minimize_tco_goal import MinimizeTCO
 from mesido.workflows.io.write_output import ScenarioOutput
@@ -55,14 +56,26 @@ class SolverCPLEX:
         options["casadi_solver"] = self._qpsol
         options["solver"] = "cplex"
         cplex_options = options["cplex"] = {}
-        cplex_options["CPX_PARAM_EPGAP"] = 0.00001
+        cplex_options["CPX_PARAM_EPGAP"] = 1.0e-3
 
         options["highs"] = None
 
         return options
 
 
+class SolverHIGHS:
+    def solver_options(self):
+        options = super().solver_options()
+        options["casadi_solver"] = self._qpsol
+        options["solver"] = "highs"
+        highs_options = options["highs"] = {}
+        highs_options["mip_rel_gap"] = 1.0e-3
+
+        return options
+
+
 class GasElectProblem(
+    SolverHIGHS,
     ScenarioOutput,
     ESDLAdditionalVarsMixin,
     TechnoEconomicMixin,
@@ -74,9 +87,9 @@ class GasElectProblem(
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._number_of_years = 1.0
+        self._number_of_years = 1
 
-        self._save_json = True
+        self._save_json = False
 
     def energy_system_options(self):
         options = super().energy_system_options()
@@ -86,54 +99,35 @@ class GasElectProblem(
         # losses are included
         # options["include_electric_cable_power_loss"] = True
 
+        # Setting for gas type
+        self.gas_network_settings["network_type"] = (
+            NetworkSettings.NETWORK_TYPE_HYDROGEN
+        )  # For natural gas use NetworkSettings.NETWORK_TYPE_GAS
+
         # Setting when started with head loss inclusions
         self.gas_network_settings["minimum_velocity"] = 0.0
         self.gas_network_settings["maximum_velocity"] = 15.0
 
         # TODO: resolve scaling and potential other issues preventing HIGHS to optimize the system
         # when LINEARIZED_N_LINES_EQUALITY head loss setting is used
-        # self.gas_network_settings["n_linearization_lines"] = 3
-        # self.gas_network_settings["minimize_head_losses"] = False
-        # self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
+        self.gas_network_settings["n_linearization_lines"] = 3
+        self.gas_network_settings["minimize_head_losses"] = False
+        self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
 
-        self.gas_network_settings["minimize_head_losses"] = True
-        self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+        # self.gas_network_settings["minimize_head_losses"] = False
+        # self.gas_network_settings["head_loss_option"] = (
+        #     HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+        # )
 
         return options
 
     def solver_options(self):
         options = super().solver_options()
-        options["casadi_solver"] = self._qpsol
-        options["solver"] = "highs"
-        highs_options = options["highs"] = {}
-        highs_options["mip_abs_gap"] = 1.0e-6
 
         return options
 
     def read(self):
         super().read()
-
-        # Convert gas demand Nm3/h (data in timeseries source file) to heat demand in watts
-        # Assumumption:
-        #   - gas heating value (LCV value) = 31.68 * 10^6 (J/m3) at 1bar, 273.15K
-        #   - gas boiler efficiency 80%
-        # TODO: setup a standard way for gas usage and automate the link to heating value & boiler
-        # efficiency (if needed)
-        for demand in self.energy_system_components["heat_demand"]:
-            target = self.get_timeseries(f"{demand}.target_heat_demand")
-
-            # Manually set heating demand values
-            boiler_efficiency = 0.8
-            gas_heating_value_joule_m3 = 31.68 * 10**6
-            for ii in range(len(target.values)):
-                target.values[ii] *= gas_heating_value_joule_m3 * boiler_efficiency
-
-            self.io.set_timeseries(
-                f"{demand}.target_heat_demand",
-                self.io._DataStore__timeseries_datetimes,
-                target.values,
-                0,
-            )
 
     def pre(self):
         super().pre()
@@ -182,8 +176,15 @@ class GasElectProblem(
     #     return constraints
 
     def post(self):
+        super().post()
+        # self._write_updated_esdl(self._ESDLMixin__energy_system_handler.energy_system)
+        results = self.extract_results()
+        parameters = self.parameters(0)
         if os.path.exists(self.output_folder) and self._save_json:
-            self._write_json_output()
+            bounds = self.bounds()
+            aliases = self.alias_relation._canonical_variables_map
+            solver_stats = self.solver_stats
+            self._write_json_output(results, parameters, bounds, aliases, solver_stats)
 
 
 @main_decorator
