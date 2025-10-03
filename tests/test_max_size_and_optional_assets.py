@@ -17,7 +17,10 @@ class TestMaxSizeAggregationCount(TestCase):
         components associated to those variables.
 
         - the asset size should be at least as large as it's maximum utilization
-        - the asset should be placed when it is utilized
+        - the asset should be placed when it is utilized, even when an asset have not installation
+        cost (geothermal optional source)
+        - the geothermal source has the highest costs, and it specifically has no installation cost
+        to test the aggregation_count constraint
         - the cost components should be present if the asset is placed and used.
         - For this scenario a problem is set-up with two optional sources (with their connection
         pipes) where one source can supply the network by itself. It is expected that only one
@@ -29,7 +32,8 @@ class TestMaxSizeAggregationCount(TestCase):
         Checks:
         - Check that source 1 is utilized and also placed
         - Check that source 2 is utilized and placed
-        - Check that max_size source 1 is zero
+        - Check that the geothermal source is not placed
+        - Check that max_size of source 1 and geothermal is zero
         - Check that max_size source 2 is > utilization
         - Check cost components for source 1 and 2
         - Check max size and placement of ates
@@ -60,8 +64,10 @@ class TestMaxSizeAggregationCount(TestCase):
         # Producer 2 should produce
         heat_1 = results["HeatProducer_1.Heat_source"]
         heat_2 = results["HeatProducer_2.Heat_source"]
+        heat_geo = results["GeothermalSource_50cf.Heat_source"]
         prod_1_placed = results["HeatProducer_1_aggregation_count"]
         prod_2_placed = results["HeatProducer_2_aggregation_count"]
+        geo_placed = results["GeothermalSource_50cf_aggregation_count"]
         var_cost_1 = results["HeatProducer_1__variable_operational_cost"]
         var_cost_2 = results["HeatProducer_2__variable_operational_cost"]
         fix_cost_1 = results["HeatProducer_1__fixed_operational_cost"]
@@ -72,19 +78,23 @@ class TestMaxSizeAggregationCount(TestCase):
         inv_cost_2 = results["HeatProducer_2__investment_cost"]
         max_size_1 = results["HeatProducer_1__max_size"]
         max_size_2 = results["HeatProducer_2__max_size"]
+        max_size_geo = results["GeothermalSource_50cf__max_size"]
 
-        # Test if source 1 is off and 2 is producing
+        # Test if source 1 and the geothermal source is off and 2 is producing
         np.testing.assert_allclose(heat_1, 0.0, atol=1e-6)
+        np.testing.assert_allclose(heat_geo, 0.0, atol=1e-6)
         np.testing.assert_equal(True, heat_2[1:] > 0.0)
 
-        # Test if source 1 is not placed and 2 is placed
+        # Test if source 1 and the geothermal is not placed and 2 is placed
         np.testing.assert_allclose(prod_1_placed, 0.0)
+        np.testing.assert_allclose(geo_placed, 0.0)
         np.testing.assert_allclose(prod_2_placed, 1.0, atol=1.0e-6)
 
         # Test that max size is correct, note that we use an equality check as due to the cost
         # minimization they should be equal.
         np.testing.assert_allclose(max(heat_2), max_size_2)
         np.testing.assert_allclose(max_size_1, 0.0)
+        np.testing.assert_allclose(max_size_geo, 0.0)
 
         # Test that investmentcost is correctly linked to max size
         np.testing.assert_allclose(
@@ -163,3 +173,12 @@ class TestMaxSizeAggregationCount(TestCase):
         demand_matching_test(solution, results)
         energy_conservation_test(solution, results)
         heat_to_discharge_test(solution, results)
+
+
+if __name__ == "__main__":
+    import time
+
+    start_time = time.time()
+
+    a = TestMaxSizeAggregationCount()
+    a.test_max_size_and_aggr_count()
