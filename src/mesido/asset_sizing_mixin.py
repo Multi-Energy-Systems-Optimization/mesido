@@ -2009,7 +2009,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     )
                 )
 
-            # Constraint the aggregation_count
+            # Constraint the aggregation_count to 0.0 when asset is not placed.
             if s in [*self.energy_system_components.get("geothermal", [])]:
                 constraints.append(
                     (
