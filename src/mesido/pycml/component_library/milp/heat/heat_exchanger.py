@@ -50,16 +50,4 @@ class HeatExchanger(HeatFourPort, BaseAsset):
             ((self.Primary_heat * self.efficiency - self.Secondary_heat) / self.nominal)
         )
 
-        self.add_equation(
-            (
-                (self.Primary_heat - (self.Primary.HeatIn.Heat - self.Primary.HeatOut.Heat))
-                / self.nominal
-            )
-        )
-        self.add_equation(
-            (
-                (self.Secondary_heat - (self.Secondary.HeatOut.Heat - self.Secondary.HeatIn.Heat))
-                / self.nominal
-            )
-        )
         self.add_equation((self.Heat_flow - self.Secondary_heat) / self.nominal)
