@@ -474,6 +474,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             constraint_nominal = self.variable_nominal(v_loss)
 
             # TODO: still have to check for proper scaling
+            options = self.energy_system_options()
             if cable in self._electricity_cable_topo_cable_class_map.keys():
                 cable_classes = self._electricity_cable_topo_cable_class_map[cable]
                 variables = {
@@ -487,24 +488,29 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
                 for var_size, variable in variables.items():
                     if var_size != "None":
-                        expr = resistances[var_size] * c_length * current
-                        constraints.append(
-                            (
-                                (v_loss - expr + big_m * (1 - variable)) / constraint_nominal,
-                                0.0,
-                                np.inf,
+                        if options["include_electric_cable_power_loss"]:
+                            expr = resistances[var_size] * c_length * current
+                            constraints.append(
+                                (
+                                    (v_loss - expr + big_m * (1 - variable)) / constraint_nominal,
+                                    0.0,
+                                    np.inf,
+                                )
                             )
-                        )
-                        constraints.append(
-                            (
-                                (v_loss - expr - big_m * (1 - variable)) / constraint_nominal,
-                                -np.inf,
-                                0.0,
+                            constraints.append(
+                                (
+                                    (v_loss - expr - big_m * (1 - variable)) / constraint_nominal,
+                                    -np.inf,
+                                    0.0,
+                                )
                             )
-                        )
-
+                        else:
+                            constraints.append(((v_loss) / v_nom, 0.0, 0.0))
             else:
-                constraints.append(((v_loss - r * current) / constraint_nominal, 0.0, 0.0))
+                if options["include_electric_cable_power_loss"]:
+                    constraints.append(((v_loss - r * current) / constraint_nominal, 0.0, 0.0))
+                else:
+                    constraints.append(((v_loss) / v_nom, 0.0, 0.0))
 
         return constraints
 
