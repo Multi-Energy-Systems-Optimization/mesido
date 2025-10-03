@@ -297,10 +297,10 @@ class TestEndScenarioSizing(TestCase):
 
         pipes = solution.energy_system_components.get("heat_pipe")
         for pipe in pipes:
-            pipe_diameter = solution.parameters(0)[f"{pipes[0]}.diameter"]
+            pipe_diameter = solution.parameters(0)[f"{pipe}.diameter"]
             pipe_wall_roughness = solution.energy_system_options()["wall_roughness"]
-            temperature = solution.parameters(0)[f"{pipes[0]}.temperature"]
-            pipe_length = solution.parameters(0)[f"{pipes[0]}.length"]
+            temperature = solution.parameters(0)[f"{pipe}.temperature"]
+            pipe_length = solution.parameters(0)[f"{pipe}.length"]
             if pipe_diameter > 0.0:
                 velocities = results[f"{pipe}.Q"] / solution.parameters(0)[f"{pipe}.area"]
             else:
