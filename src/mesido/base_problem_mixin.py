@@ -1,7 +1,5 @@
 class BaseProblemMixin:
-    """
-
-    """
+    """ """
 
     def goal_programming_options(self):
         """

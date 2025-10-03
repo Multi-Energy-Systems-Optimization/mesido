@@ -67,7 +67,6 @@ class _ATESBaseAsset(_StorageComponent):
             nominal=self._typical_fill_time * self.Q_nominal,
         )
 
-
         self._heat_loss_error_to_state_factor = 1
         self._nominal_heat_loss = (
             self.Stored_heat.nominal * self.heat_loss_coeff * self._heat_loss_error_to_state_factor

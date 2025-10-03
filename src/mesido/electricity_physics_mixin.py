@@ -42,8 +42,9 @@ class ElectrolyzerOption(IntEnum):
     LINEARIZED_THREE_LINES_EQUALITY = 3
 
 
-class ElectricityPhysicsMixin(BaseProblemMixin, BaseComponentTypeMixin,
-                              CollocatedIntegratedOptimizationProblem):
+class ElectricityPhysicsMixin(
+    BaseProblemMixin, BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem
+):
     """
     This class is used to model the physics of an electricity network with its assets. We model
     the different components with variety of linearization strategies.

@@ -1,4 +1,3 @@
-from mesido.pycml import Variable
 from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 from ._non_storage_component_source_type import _NonStorageComponentSourceType

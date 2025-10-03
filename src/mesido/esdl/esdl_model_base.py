@@ -313,13 +313,11 @@ class _ESDLModelBase(_Model):
         connections = set()
 
         def __set_pipe_port_connections(node_suffixes, type_node_assets):
-            if (
-                connected_to.id in list(port_map.keys())
-                and (assets[name_to_id_map[port_map[connected_to.id].name.split(".")[0]]].asset_type
-                == "Pipe" or assets[
-                                name_to_id_map[port_map[connected_to.id].name.split(".")[0]]
-                            ].asset_type
-                            == "ElectricityCable")
+            if connected_to.id in list(port_map.keys()) and (
+                assets[name_to_id_map[port_map[connected_to.id].name.split(".")[0]]].asset_type
+                == "Pipe"
+                or assets[name_to_id_map[port_map[connected_to.id].name.split(".")[0]]].asset_type
+                == "ElectricityCable"
             ):
                 self.connect(getattr(component, node_suffixes)[i], port_map[connected_to.id])
             elif connected_to.id not in list(port_map.keys()):
@@ -377,7 +375,7 @@ class _ESDLModelBase(_Model):
                         # connected aasset is of type Pipe. In this case we want to fully connect
                         # the model with head losses and hydraulic power.
                         __set_pipe_port_connections(node_suf, node_assets)
-                        i+=1
+                        i += 1
                     elif isinstance(port.carrier, esdl.ElectricityCommodity):
                         # Same logic as for heat see comments there
                         __set_pipe_port_connections(elec_node_suf, bus_assets)

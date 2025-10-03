@@ -21,8 +21,9 @@ from rtctools.optimization.timeseries import Timeseries
 logger = logging.getLogger("mesido")
 
 
-class HeatPhysicsMixin(BaseProblemMixin, BaseComponentTypeMixin,
-                       CollocatedIntegratedOptimizationProblem):
+class HeatPhysicsMixin(
+    BaseProblemMixin, BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem
+):
     """
     This class is used to model the physics of a heat district network with its assets. We model
     the different components with a variety of linearization strategies.

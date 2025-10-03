@@ -18,8 +18,9 @@ from rtctools.optimization.timeseries import Timeseries
 logger = logging.getLogger("mesido")
 
 
-class GasPhysicsMixin(BaseProblemMixin, BaseComponentTypeMixin,
-                      CollocatedIntegratedOptimizationProblem):
+class GasPhysicsMixin(
+    BaseProblemMixin, BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem
+):
     __allowed_head_loss_options = {
         HeadLossOption.NO_HEADLOSS,
         HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY,

@@ -1,11 +1,7 @@
 from mesido.pycml import Variable
-from mesido.pycml.component_library.milp._internal.heat_component import BaseAsset
 from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
-from numpy import nan
-
 from ._ates_base_asset import _ATESBaseAsset
-from .heat_two_port import HeatTwoPort
 
 
 @add_variables_documentation_automatically
@@ -44,4 +40,3 @@ class LowTemperatureATES(_ATESBaseAsset):
         # positive undercharging and negative under discharge
         self.add_variable(Variable, "Heat_low_temperature_ates", nominal=self.Heat_nominal)  # [W]
         self.add_equation((self.Heat_ates - self.Heat_low_temperature_ates) / self.Heat_nominal)
-

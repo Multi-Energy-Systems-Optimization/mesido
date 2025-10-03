@@ -181,8 +181,7 @@ class ESDLMixin(
                 )
             self.name_to_esdl_id_map[esdl_asset.name] = esdl_id
 
-    def __override_pipe_classes_dicts(self, asset, pipe_classes, no_pipe_class,
-                                      override_classes):
+    def __override_pipe_classes_dicts(self, asset, pipe_classes, no_pipe_class, override_classes):
         p = asset.name
 
         if asset.attributes["state"].name == "OPTIONAL":
@@ -299,8 +298,9 @@ class ESDLMixin(
             if asset.asset_type == "Pipe" and isinstance(
                 asset.in_ports[0].carrier, esdl.GasCommodity
             ):
-                self.__override_pipe_classes_dicts(asset, pipe_classes, no_pipe_class,
-                                                   override_classes)
+                self.__override_pipe_classes_dicts(
+                    asset, pipe_classes, no_pipe_class, override_classes
+                )
 
     @property
     def esdl_assets(self) -> Dict[str, Asset]:
