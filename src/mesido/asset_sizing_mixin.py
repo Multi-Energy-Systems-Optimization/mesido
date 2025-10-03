@@ -1874,6 +1874,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         parameters = self.parameters(ensemble_member)
 
+        # Constant used in constraining the aggregation_count to 0.0 when an asset is not placed.
+        asset_placement_ratio = 1.0e-3  # This ratio resembles 0.1%
+
         max_var_types = set()
         for b in self.energy_system_components.get("heat_buffer", []):
             max_var_types.add("heat_buffer")
@@ -1891,7 +1894,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             )
 
             # Constraint the aggregation_count to be 0 when the heat_buffer is not used. Currently
-            # assuming that if it is used, the usage would be > 0.01% of the capacity
+            # assuming that if it is used, the usage ratio would be > asset_placement_ratio
             capacity_joule = (
                 parameters[f"{b}.rho"]
                 * parameters[f"{b}.cp"]
@@ -1902,7 +1905,8 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 (
                     (
                         max_heat / capacity_joule
-                        - 1.0e-3 * self.get_aggregation_count_var(b, ensemble_member)
+                        - asset_placement_ratio
+                        * self.get_aggregation_count_var(b, ensemble_member)
                     ),
                     0.0,
                     np.inf,
@@ -2015,7 +2019,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     (
                         self.get_max_size_var(s, ensemble_member)
                         / parameters[f"{s}.single_doublet_power"]
-                        - 1.0e-3
+                        - asset_placement_ratio
                         * self.get_aggregation_count_var(s, ensemble_member)
                         / self.bounds()[f"{s}_aggregation_count"][1],
                         0,
@@ -2092,7 +2096,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 (
                     self.get_max_size_var(a, ensemble_member)
                     / parameters[f"{a}.single_doublet_power"]
-                    - 1.0e-3
+                    - asset_placement_ratio
                     * self.get_aggregation_count_var(a, ensemble_member)
                     / self.bounds()[f"{a}_aggregation_count"][1],
                     0,
