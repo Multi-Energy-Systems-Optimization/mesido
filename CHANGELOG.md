@@ -22,6 +22,7 @@
 - Bug: Add 3 port heat pump to elect demand path constraint
 - Error exit when priority 1 reaches time limit in grow workflow for all settings and solvers.
 - Bug: Geothermal being placed when not used. General added aggregation_count=0 constraint for heat buffer, ates and goethermal when not being used.
+- Bug: Ensure ATES and Geothermal max_size cannot be smaller than the single_doublet_power.
 
 
 # [0.1.13] - 2025-06-25

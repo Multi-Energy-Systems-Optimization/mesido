@@ -2012,15 +2012,14 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     )
                 )
 
-            # Constraint the aggregation_count to 0.0 when asset is not placed.
+            # Constraint the aggregation_count to 0.0 when asset is not placed. And also ensure the
+            # max_size_var is a factor of single_doublet_power
             if s in [*self.energy_system_components.get("geothermal", [])]:
                 constraints.append(
                     (
                         self.get_max_size_var(s, ensemble_member)
                         / parameters[f"{s}.single_doublet_power"]
-                        - asset_placement_ratio
-                        * self.get_aggregation_count_var(s, ensemble_member)
-                        / self.bounds()[f"{s}_aggregation_count"][1],
+                        - self.get_aggregation_count_var(s, ensemble_member),
                         0,
                         np.inf,
                     )
@@ -2090,14 +2089,13 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     np.inf,
                 )
             )
-            # Constraint the aggregation_count
+            # Constraint the aggregation_count to 0.0 when asset is not placed. And also ensure the
+            # max_size_var is a factor of single_doublet_power
             constraints.append(
                 (
                     self.get_max_size_var(a, ensemble_member)
                     / parameters[f"{a}.single_doublet_power"]
-                    - asset_placement_ratio
-                    * self.get_aggregation_count_var(a, ensemble_member)
-                    / self.bounds()[f"{a}_aggregation_count"][1],
+                    - 1e-3*self.get_aggregation_count_var(a, ensemble_member),
                     0,
                     np.inf,
                 )
