@@ -24,8 +24,6 @@ class ControlValve(_NonStorageComponent):
 
         self.component_type = "control_valve"
 
-        self.add_variable(Variable, "dH")
-
         self.add_equation(self.dH - (self.HeatOut.H - self.HeatIn.H))
         self.add_equation(
             (self.HeatOut.Hydraulic_power - self.HeatIn.Hydraulic_power)

@@ -1,11 +1,11 @@
 from mesido.pycml import Variable
 from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
-from ._non_storage_component import _NonStorageComponent
+from ._non_storage_component_source_type import _NonStorageComponentSourceType
 
 
 @add_variables_documentation_automatically
-class CheckValve(_NonStorageComponent):
+class CheckValve(_NonStorageComponentSourceType):
     """
     The check valve allows the fluid to flow in only one direction. This is done with constraints
     in the HeatMixin.
@@ -31,8 +31,6 @@ class CheckValve(_NonStorageComponent):
         )
 
         self.component_type = "check_valve"
-
-        self.add_variable(Variable, "dH", min=0.0)
 
         self.add_equation(self.dH - (self.HeatOut.H - self.HeatIn.H))
 

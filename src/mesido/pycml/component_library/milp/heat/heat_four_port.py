@@ -2,7 +2,8 @@ from mesido.pycml import Variable
 from mesido.pycml.component_library.milp._internal import HeatComponent
 from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
-from ._non_storage_component import _NonStorageComponent
+from ._non_storage_component_sink_type import _NonStorageComponentSinkType
+from ._non_storage_component_source_type import _NonStorageComponentSourceType
 
 
 @add_variables_documentation_automatically
@@ -28,8 +29,8 @@ class HeatFourPort(HeatComponent):
             ),
         )
 
-        self.add_variable(_NonStorageComponent, "Primary", **modifiers["Primary"])
-        self.add_variable(_NonStorageComponent, "Secondary", **modifiers["Secondary"])
+        self.add_variable(_NonStorageComponentSinkType, "Primary", **modifiers["Primary"])
+        self.add_variable(_NonStorageComponentSourceType, "Secondary", **modifiers["Secondary"])
         self.add_variable(
             Variable,
             "Pump_power",

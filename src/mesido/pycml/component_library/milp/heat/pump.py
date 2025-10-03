@@ -3,11 +3,11 @@ from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 from numpy import nan
 
-from ._non_storage_component import _NonStorageComponent
+from ._non_storage_component_source_type import _NonStorageComponentSourceType
 
 
 @add_variables_documentation_automatically
-class Pump(_NonStorageComponent):
+class Pump(_NonStorageComponentSourceType):
     """
     The pump component is there to add head to the flow. We assume head can only be added for
     positive flow.
@@ -30,7 +30,6 @@ class Pump(_NonStorageComponent):
 
         self.pump_efficiency = 0.5
 
-        self.add_variable(Variable, "dH", min=0.0)
         self.add_variable(
             Variable, "Pump_power", min=0.0, nominal=self.Q_nominal * self.nominal_pressure
         )

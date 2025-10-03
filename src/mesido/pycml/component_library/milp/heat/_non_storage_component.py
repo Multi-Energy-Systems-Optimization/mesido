@@ -57,3 +57,6 @@ class _NonStorageComponent(HeatTwoPort, BaseAsset):
 
         # self.add_equation(self.HeatIn.H - self.H_in)
         # self.add_equation(self.HeatOut.H - self.H_out)
+
+        self.add_variable(Variable, "dH")
+        self.add_equation(self.dH - (self.HeatOut.H - self.HeatIn.H))

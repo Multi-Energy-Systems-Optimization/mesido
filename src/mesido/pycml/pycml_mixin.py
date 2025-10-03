@@ -85,6 +85,8 @@ def add_variables_documentation_automatically(class_: Type):
                             "Primary",
                             "Secondary",
                             "_NonStorageComponent",
+                            "_NonStorageComponentSinkType",
+                            "_NonStorageComponentSourceType",
                         ]:
                             # Follow the port and retrieve all variable names for that port
                             port_name = node.args[1].value
