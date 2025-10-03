@@ -32,6 +32,4 @@ class CheckValve(_NonStorageComponentSourceType):
 
         self.component_type = "check_valve"
 
-        self.add_equation(self.dH - (self.HeatOut.H - self.HeatIn.H))
-
         self.add_equation((self.HeatIn.Heat - self.HeatOut.Heat) / self.Heat_nominal)

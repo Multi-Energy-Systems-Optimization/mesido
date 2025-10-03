@@ -65,10 +65,9 @@ class HeatFourPort(HeatComponent):
         self.add_equation((self.Heat_flow - self.Secondary_heat) / self.nominal)
 
         # Hydraulically decoupled so Heads remain the same
-        self.add_equation(self.dH_prim - (self.Primary.HeatOut.H - self.Primary.HeatIn.H))
-        self.add_equation(self.dH_sec - (self.Secondary.HeatOut.H - self.Secondary.HeatIn.H))
+        self.add_equation(self.dH_prim - self.Primary.dH)
+        self.add_equation(self.dH_sec - self.Secondary.dH)
         self.add_equation(
-            (self.Pump_power - (self.Secondary.HeatOut.Hydraulic_power -
-                                self.Secondary.HeatIn.Hydraulic_power))
+            (self.Pump_power - self.Secondary.Pump_power)
             / (self.Secondary.Q_nominal * self.Secondary.nominal_pressure)
         )

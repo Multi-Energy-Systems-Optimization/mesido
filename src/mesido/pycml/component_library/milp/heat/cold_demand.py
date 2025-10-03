@@ -47,8 +47,6 @@ class ColdDemand(_NonStorageComponentSinkType):
         # Heat in the return (i.e. cold) line is zero
         self.add_variable(Variable, "Cold_demand", min=0.0, nominal=self.Heat_nominal)
 
-        self.add_equation(self.dH - (self.HeatOut.H - self.HeatIn.H))
-
         self.add_equation(
             (self.HeatOut.Heat - (self.HeatIn.Heat + self.Cold_demand)) / self.Heat_nominal
         )
