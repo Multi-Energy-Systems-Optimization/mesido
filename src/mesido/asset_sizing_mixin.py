@@ -2095,7 +2095,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 (
                     self.get_max_size_var(a, ensemble_member)
                     / parameters[f"{a}.single_doublet_power"]
-                    - 1e-3*self.get_aggregation_count_var(a, ensemble_member),
+                    - self.get_aggregation_count_var(a, ensemble_member),
                     0,
                     np.inf,
                 )

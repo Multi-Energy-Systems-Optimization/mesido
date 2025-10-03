@@ -103,6 +103,8 @@ class TestEndScenarioSizing(TestCase):
 
         Checks:
         - Cyclic behaviour for ATES
+        - ATES is placed and that the size matches a single doublet, which is larger than the max
+        heat_flow
         - That buffer tank is only used on peak day
         - demand matching
         - Check if TCO goal included the desired cost components.
@@ -157,6 +159,13 @@ class TestEndScenarioSizing(TestCase):
         for a in solution_staged.energy_system_components.get("ates", []):
             stored_heat = results[f"{a}.Stored_heat"]
             np.testing.assert_allclose(stored_heat[0], stored_heat[-1], atol=1.0)
+        # Check that the ATES is placed and that the size should match the single_doublet_power
+        np.testing.assert_allclose(
+            results[f"{a}__max_size"],
+            self.solution.parameters(0)[f"{a}.single_doublet_power"],
+        )
+        np.testing.assert_array_less(max(results[f"{a}.Heat_flow"]), results[f"{a}__max_size"])
+        np.testing.assert_allclose(results[f"{a}_aggregation_count"], 1)
 
         # Check whether buffer tank is only active in peak day
         peak_day_indx = solution_staged.parameters(0)["peak_day_index"]
@@ -452,9 +461,9 @@ if __name__ == "__main__":
     start_time = time.time()
     a = TestEndScenarioSizing()
     a.setUpClass()
-    a.test_end_scenario_sizing()
+    # a.test_end_scenario_sizing()
     a.test_end_scenario_sizing_staged()
-    a.test_end_scenario_sizing_discounted()
-    a.test_end_scenario_sizing_head_loss()
-    a.test_end_scenario_sizing_pipe_catalog()
-    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
+    # a.test_end_scenario_sizing_discounted()
+    # a.test_end_scenario_sizing_head_loss()
+    # a.test_end_scenario_sizing_pipe_catalog()
+    # print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
