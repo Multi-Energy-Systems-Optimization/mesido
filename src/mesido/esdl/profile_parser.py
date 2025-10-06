@@ -430,7 +430,7 @@ class InfluxDBProfileReader(BaseProfileReader):
             profile.endDate,
         )
 
-        if time_series_data.profile_data_list == []:
+        if not time_series_data.profile_data_list:  # if time_series_data.profile_data_list == []:
             container = profile.eContainer()
             asset = container.energyasset
             get_potential_errors().add_potential_issue(
@@ -439,10 +439,7 @@ class InfluxDBProfileReader(BaseProfileReader):
                 f"Asset named {asset.name}: Input profile {profile.field}"
                 f" in {profile.measurement} is not available in the database.",
             )
-            # TODO: potential_error_to_error(HEAT_NETWORK_ERRORS) supposed to be called only after
-            #  read() finishes. However, because of the current error we have not any profile.
-            #  Hence, we cannot continue in read() without having any profile.
-            #  potential_error_to_error(HEAT_NETWORK_ERRORS) is also called here to raise the error
+
             potential_error_to_error(HEAT_NETWORK_ERRORS)
 
         for x in time_series_data.profile_data_list:
