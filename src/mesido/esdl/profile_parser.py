@@ -214,7 +214,8 @@ class InfluxDBProfileReader(BaseProfileReader):
         esdl.esdl.ElectricityProducer: ".maximum_electricity_source",
         esdl.esdl.GasDemand: ".target_gas_demand",
         esdl.esdl.GasProducer: ".maximum_gas_source",
-        esdl.esdl.ResidualHeatSource: ".maximum_heat_source"
+        esdl.esdl.ResidualHeatSource: ".maximum_heat_source",
+        esdl.esdl.GeothermalSource: ".maximum_heat_source"
     }
 
     def __init__(self, energy_system: esdl.EnergySystem, file_path: Optional[Path]):
