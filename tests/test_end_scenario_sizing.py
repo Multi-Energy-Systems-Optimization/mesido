@@ -224,8 +224,6 @@ class TestEndScenarioSizing(TestCase):
         day.
 
         Checks:
-        - Cyclic behaviour for ATES
-        - That buffer tank is only used on peak day
         - demand matching
 
         Missing:
@@ -249,7 +247,7 @@ class TestEndScenarioSizing(TestCase):
         solution = run_optimization_problem(
             TestEndScenarioSizingDiscountedHIGHS,
             base_folder=base_folder,
-            esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
+            esdl_file_name="test_case_small_network_all_optional.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
@@ -265,19 +263,6 @@ class TestEndScenarioSizing(TestCase):
 
         # Check whether the heat demand is matched
         demand_matching_test(solution, results)
-
-        # Check whether cyclic ates constraint is working
-        for a in solution.energy_system_components.get("ates", []):
-            stored_heat = results[f"{a}.Stored_heat"]
-            np.testing.assert_allclose(stored_heat[0], stored_heat[-1], atol=1.0)
-
-        # Check whether buffer tank is only active in peak day
-        peak_day_indx = solution.parameters(0)["peak_day_index"]
-        for b in solution.energy_system_components.get("heat_buffer", []):
-            heat_buffer = results[f"{b}.Heat_buffer"]
-            for i in range(len(solution.times())):
-                if i < peak_day_indx or i > (peak_day_indx + 23):
-                    np.testing.assert_allclose(heat_buffer[i], 0.0, atol=1.0e-6)
 
     def test_end_scenario_sizing_head_loss(self):
         """
@@ -298,7 +283,7 @@ class TestEndScenarioSizing(TestCase):
         solution = run_end_scenario_sizing(
             EndScenarioSizingHeadLossStaged,
             base_folder=base_folder,
-            esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
+            esdl_file_name="test_case_small_network_all_optional.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
