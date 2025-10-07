@@ -1428,7 +1428,7 @@ class _AssetToComponentBase:
 
         Parameters
         ----------
-        cost_info : QuantityAndUnitType provides the information on the units and multipliers
+        qua : QuantityAndUnitType provides the information on the units and multipliers
 
         Returns
         -------

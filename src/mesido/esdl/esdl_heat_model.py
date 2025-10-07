@@ -241,7 +241,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             )
             logger.warning(warning_msg)
 
-    def _get_emission_modifiers(self, asset):
+    def _get_emission_modifiers(self, asset: Asset) -> float:
         """
         The emission information of assets that is specific to the assets's operation and not the
         carriers is uses, is provided through the inputoutputrelation behaviour of ports.
@@ -274,7 +274,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         return value  # g/Wh
 
-    def _generic_modifiers(self, asset):
+    def _generic_modifiers(self, asset: Asset) -> Dict:
         """
         Args:
             asset: mesido common asset with all attributes
@@ -297,7 +297,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         )
         return modifiers
 
-    def _generic_heat_modifiers(self, min_heat=None, max_heat=None, q_nominal=None):
+    def _generic_heat_modifiers(self, min_heat=None, max_heat=None, q_nominal=None) -> Dict:
         """
         Args:
             min_heat: minimum heat flow value
