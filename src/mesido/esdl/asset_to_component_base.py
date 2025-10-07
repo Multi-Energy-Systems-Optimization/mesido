@@ -1422,6 +1422,31 @@ class _AssetToComponentBase:
         return value
 
     @staticmethod
+    def get_units_multipliers(qua: esdl.QuantityAndUnitType) -> Tuple[float, Any, Any, Any]:
+        """
+        This function returns the units and the related multipliers.
+
+        Parameters
+        ----------
+        cost_info : QuantityAndUnitType provides the information on the units and multipliers
+
+        Returns
+        -------
+        The value with the unit decomposed.
+        """
+        value = 1
+        unit = qua.unit
+        per_time_uni = qua.perTimeUnit
+        per_unit = qua.perUnit
+        multiplier = qua.multiplier
+        per_multiplier = qua.perMultiplier
+
+        value *= MULTI_ENUM_NAME_TO_FACTOR[multiplier]
+        value /= MULTI_ENUM_NAME_TO_FACTOR[per_multiplier]
+
+        return value, unit, per_unit, per_time_uni
+
+    @staticmethod
     def get_cost_value_and_unit(cost_info: esdl.SingleValue) -> Tuple[float, Any, Any, Any]:
         """
         This function returns the cost coefficient with unit information thereof.

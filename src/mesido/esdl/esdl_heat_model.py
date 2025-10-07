@@ -8,6 +8,7 @@ import esdl
 
 from mesido.esdl.asset_to_component_base import (
     MODIFIERS,
+    WATTHOUR_TO_JOULE,
     _AssetToComponentBase,
     get_density,
     get_energy_content,
@@ -55,6 +56,7 @@ from mesido.pycml.component_library.milp import (
 )
 
 from scipy.optimize import fsolve
+
 
 logger = logging.getLogger("mesido")
 
@@ -241,10 +243,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
     def _get_emission_modifiers(self, asset):
         """
-        Temporarily the emission information of assets is provided through the KPIs, ideally it
-        should be from the attributes.
-
-        #TODO:add unit check, use multiplier of units to get real value.
+        The emission information of assets that is specific to the assets's operation and not the
+        carriers is uses, is provided through the inputoutputrelation behaviour of ports.
 
         Args:
             asset: mesido common asset with all attributes
@@ -253,14 +253,26 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         """
         value = 0.0
-        kpis = asset.attributes["KPIs"]
-        if kpis:
-            for kpi in kpis.kpi:
-                qua = kpi.quantityAndUnit
+        behaviour = asset.attributes["behaviour"]
+        if behaviour:
+            for b in behaviour:
+                port_relation = b.mainPortRelation[0]
+                # if port_relation.port.name == "EmissionPort":
+                qua = port_relation.quantityAndUnit
                 if qua.physicalQuantity == esdl.PhysicalQuantityEnum.EMISSION:
-                    value = kpi.value
-                    # TODO: multiplier  # to g/Wh
-        return value
+                    value = port_relation.ratio
+                    multiplier, unit, per_unit, per_time_unit = self.get_units_multipliers(qua)
+                    value *= multiplier
+                    if per_unit == esdl.UnitEnum.JOULE:
+                        per_unit_watthour = 1 * WATTHOUR_TO_JOULE
+                    else:
+                        assert per_unit == esdl.UnitEnum.WATTHOUR
+                        per_unit_watthour = 1
+                    value *= per_unit_watthour
+                    assert unit == esdl.UnitEnum.GRAM
+                    assert per_time_unit == esdl.TimeUnitEnum.NONE
+
+        return value  # g/Wh
 
     def _generic_modifiers(self, asset):
         """
