@@ -40,8 +40,8 @@ class TestMaxSizeAggregationCount(TestCase):
         - Fixed operational cost for sources
 
         """
-        import models.test_case_small_network_with_ates_with_buffer.src.run_ates as run_ates
-        from models.test_case_small_network_with_ates_with_buffer.src.run_ates import (
+        import models.test_case_small_network_with_ates_buffer_geo.src.run_ates as run_ates
+        from models.test_case_small_network_with_ates_buffer_geo.src.run_ates import (
             HeatProblem,
         )
 
@@ -51,7 +51,7 @@ class TestMaxSizeAggregationCount(TestCase):
         solution = run_esdl_mesido_optimization(
             HeatProblem,
             base_folder=base_folder,
-            esdl_file_name="test_case_small_network_with_ates_with_buffer.esdl",
+            esdl_file_name="test_case_small_network_with_ates_buffer_geo.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
@@ -60,7 +60,7 @@ class TestMaxSizeAggregationCount(TestCase):
         results = solution.extract_results()
         parameters = solution.parameters(0)
 
-        # Producer 1 should not produce due to higher cost
+        # Producer 1 and geothermal source should not produce due to higher cost
         # Producer 2 should produce
         heat_1 = results["HeatProducer_1.Heat_source"]
         heat_2 = results["HeatProducer_2.Heat_source"]
@@ -83,12 +83,27 @@ class TestMaxSizeAggregationCount(TestCase):
         # Test if source 1 and the geothermal source is off and 2 is producing
         np.testing.assert_allclose(heat_1, 0.0, atol=1e-6)
         np.testing.assert_allclose(heat_geo, 0.0, atol=1e-6)
+
         np.testing.assert_equal(True, heat_2[1:] > 0.0)
 
         # Test if source 1 and the geothermal is not placed and 2 is placed
         np.testing.assert_allclose(prod_1_placed, 0.0)
-        np.testing.assert_allclose(geo_placed, 0.0)
         np.testing.assert_allclose(prod_2_placed, 1.0, atol=1.0e-6)
+        # Geothermal should not be placed while only having an investment cost (high) input
+        np.testing.assert_allclose(geo_placed, 0.0)
+        np.testing.assert_allclose(
+            solution.parameters(0)["GeothermalSource_50cf.investment_cost_coefficient"],
+            100.0,  # euro/W, value was specifcially chosen this high top prevent its usage
+            atol=1.0e-6,
+        )
+        geo_cost_exists = True
+        try:
+            geo_cost_exists = solution.parameters(0)[
+                "GeothermalSource_50cf.installation_cost_coefficient"
+            ]
+        except KeyError:
+            geo_cost_exists = False
+        np.testing.assert_equal(geo_cost_exists, True)
 
         # Test that max size is correct, note that we use an equality check as due to the cost
         # minimization they should be equal.
@@ -157,7 +172,9 @@ class TestMaxSizeAggregationCount(TestCase):
         solution = run_esdl_mesido_optimization(
             HeatProblem,
             base_folder=base_folder,
-            esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
+            esdl_file_name=(
+                "test_case_small_network_with_ates_with_buffer_all_optional_not_placed.esdl"
+            ),
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",

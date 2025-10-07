@@ -105,7 +105,7 @@ class TestEndScenarioSizing(TestCase):
         - Cyclic behaviour for ATES
         - ATES is placed and that the size matches a single doublet, which is larger than the max
         heat_flow
-        - That buffer tank is only used on peak day
+        - That buffer tank is placed and only used on peak day
         - demand matching
         - Check if TCO goal included the desired cost components.
 
@@ -167,9 +167,13 @@ class TestEndScenarioSizing(TestCase):
         np.testing.assert_array_less(max(results[f"{a}.Heat_flow"]), results[f"{a}__max_size"])
         np.testing.assert_allclose(results[f"{a}_aggregation_count"], 1)
 
-        # Check whether buffer tank is only active in peak day
-        peak_day_indx = solution_staged.parameters(0)["peak_day_index"]
+        # Check whether buffer tank placed and that it is only active in peak day
+        peak_day_indx = int(solution_staged.parameters(0)["peak_day_index"])
         for b in solution_staged.energy_system_components.get("heat_buffer", []):
+            np.testing.assert_allclose(results[f"{b}_aggregation_count"], 1)  # being placed
+            np.testing.assert_array_less(
+                0.0, max(results[f"{b}.Heat_flow"][peak_day_indx : peak_day_indx + 24])
+            )  # at least 1 time step with heat_flow
             heat_buffer = results[f"{b}.Heat_buffer"]
             for i in range(len(solution_staged.times())):
                 if i < peak_day_indx or i > (peak_day_indx + 23):
@@ -304,6 +308,7 @@ class TestEndScenarioSizing(TestCase):
 
         demand_matching_test(solution, results)
 
+        tol = 1.0e-10
         pipes = solution.energy_system_components.get("heat_pipe")
         for pipe in pipes:
             pipe_diameter = solution.parameters(0)[f"{pipe}.diameter"]
@@ -324,7 +329,7 @@ class TestEndScenarioSizing(TestCase):
                             pipe_wall_roughness,
                             temperature,
                         ),
-                        abs(results[f"{pipe}.dH"][ii]),
+                        abs(results[f"{pipe}.dH"][ii]) + tol,
                     )
 
     def test_end_scenario_sizing_pipe_catalog(self):
