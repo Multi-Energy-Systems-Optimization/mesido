@@ -195,8 +195,7 @@ class TestPotentialErrors(unittest.TestCase):
             )
             problem.pre()
         np.testing.assert_equal(
-            cm.exception.error_type,
-            MesidoAssetIssueType.ASSET_PROFILE_AVAILABILITY
+            cm.exception.error_type, MesidoAssetIssueType.ASSET_PROFILE_AVAILABILITY
         )
         np.testing.assert_equal(
             cm.exception.message_per_asset_id["2ab92324-f86e-4976-9a6e-f7454b77ba3c"],
