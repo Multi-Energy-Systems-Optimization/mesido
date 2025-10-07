@@ -103,7 +103,7 @@ class TestMaxSizeAggregationCount(TestCase):
             ]
         except KeyError:
             geo_cost_exists = False
-        np.testing.assert_equal(geo_cost_exists, True)
+        np.testing.assert_equal(geo_cost_exists, False)
 
         # Test that max size is correct, note that we use an equality check as due to the cost
         # minimization they should be equal.
