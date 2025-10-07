@@ -187,8 +187,9 @@ class TestPotentialErrors(unittest.TestCase):
 
         # Check the a new type of potential error which raises when the profile name indicated
         # in esdl is not available in the database
-        with self.assertRaises(MesidoAssetIssueError) as cm, unittest.mock.patch(
-            "mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()
+        with (
+            self.assertRaises(MesidoAssetIssueError) as cm,
+            unittest.mock.patch("mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()),
         ):
             problem = EndScenarioSizingStaged(
                 esdl_parser=ESDLFileParser,
@@ -198,6 +199,7 @@ class TestPotentialErrors(unittest.TestCase):
                 esdl_file_name="1a_with_influx_profiles_wrong_name.esdl",
             )
             problem.pre()
+        # Check that the asset profile had an error
         np.testing.assert_equal(
             cm.exception.error_type, MesidoAssetIssueType.ASSET_PROFILE_AVAILABILITY
         )
