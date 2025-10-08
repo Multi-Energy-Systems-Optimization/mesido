@@ -2,6 +2,7 @@ import json
 import logging
 import math
 import os
+from enum import IntEnum
 from pathlib import Path
 from typing import Any, Dict, Tuple, Type, Union
 
@@ -1247,11 +1248,11 @@ class _AssetToComponentBase:
         """
 
         if asset.attributes["state"].name == "DISABLED":
-            value = 0.0
+            value = AssetStateEnum.DISABLED
         elif asset.attributes["state"].name == "OPTIONAL":
-            value = 2.0
+            value = AssetStateEnum.OPTIONAL
         else:
-            value = 1.0
+            value = AssetStateEnum.ENABLED
         return value
 
     def get_variable_opex_costs(self, asset: Asset) -> float:
@@ -1608,3 +1609,13 @@ class _AssetToComponentBase:
                 f"Cannot provide investment costs for asset " f"{asset.name} per {per_unit}"
             )
             return 0.0
+
+
+class AssetStateEnum(IntEnum):
+    """
+    An Enum class to set the Asset states (DISABLED, ENABLED, OPTIONAL) to IntEnums.
+    """
+
+    DISABLED = 0
+    ENABLED = 1
+    OPTIONAL = 2
