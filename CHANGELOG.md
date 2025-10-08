@@ -1,4 +1,4 @@
-# [Unreleased-main] - 2025-09-04
+# [Unreleased-main] - 2025-10-06
 
 ## Added
 - Elect test for air_to_water_heat_pump_elec
@@ -8,22 +8,21 @@
 - Generic modifier functions for consistency across assets.
 - Discrete charge/discharge variable for an ATES asset.
 - Checks if a timelimit is reached in the GROW workflow at each stage.
-- Pipe costs are updated based on the asset templates if they are provided 
+- Pipe costs are updated based on the asset templates if they are provided
 - AssetStateEnums of IntEnum type to describe the state of an asset i.e disabled/enabled/optional
+- A new type of potential error is added if the profile name indicated in esdl is not available in the database
 
 ## Changed
 - Removed support of python versions 3.9 and older.
 - Previously variable operational cost of air-to-water heat pump was based on  the thermal power usage. Now it is based on the electrical power usage
 - TCO cost calculation objective now used the technical lifetime to determine the frequency of the re-investment costs.
 - TCO cost calculation objective to now exclude heating demand costs in the grow workflow
-- Hydraulic power calculation at "sink" assets is set to 0.0 if headloss calculation is turned off.
-
+- Hydraulic power calculation at "sink" assets is set to 0.0 if headloss calculation is turned off
 
 ## Fixed
 - Bug: Add 3 port heat pump to elect demand path constraint
 - Error exit when priority 1 reaches time limit in grow workflow for all settings and solvers.
-- Bug: Replaced one pipe with all pipes in head loss testing in test_end_scenario_sizing.py 
-
+- Bug: Replaced one pipe with all pipes in head loss testing in test_end_scenario_sizing.py
 
 # [0.1.13] - 2025-06-25
 
