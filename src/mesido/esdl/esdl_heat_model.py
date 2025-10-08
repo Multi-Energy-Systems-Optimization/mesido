@@ -2,7 +2,7 @@ import ast
 import inspect
 import logging
 import math
-from typing import Dict, Tuple, Type, Union
+from typing import Any, Dict, Tuple, Type, Union
 
 import esdl
 
@@ -215,8 +215,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
         )
         return attribute_value
 
+    @staticmethod
     def validate_attribute_input(
-        self,
         asset_name: str,
         attribute_name: str,
         input_value: float,
@@ -250,14 +250,13 @@ class AssetToHeatComponent(_AssetToComponentBase):
             asset: mesido common asset with all attributes
 
         Returns:
-
+            value: the equivalent CO2 emissions in g/Wh
         """
         value = 0.0
         behaviour = asset.attributes["behaviour"]
         if behaviour:
             for b in behaviour:
                 port_relation = b.mainPortRelation[0]
-                # if port_relation.port.name == "EmissionPort":
                 qua = port_relation.quantityAndUnit
                 if qua.physicalQuantity == esdl.PhysicalQuantityEnum.EMISSION:
                     value = port_relation.ratio
@@ -297,7 +296,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
         )
         return modifiers
 
-    def _generic_heat_modifiers(self, min_heat=None, max_heat=None, q_nominal=None) -> Dict:
+    @staticmethod
+    def _generic_heat_modifiers(min_heat=None, max_heat=None, q_nominal=None) -> Dict:
         """
         Args:
             min_heat: minimum heat flow value
@@ -1045,7 +1045,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         dt_prim = params_t["Primary"]["T_supply"] - params_t["Primary"]["T_return"]
         dt_prim = dt_prim if dt_prim > 0.0 else default_dt
         params_t["Primary"]["dT"] = dt_prim
-        max_heat_transport = params_t["Primary"]["T_supply"] * max_power / (dt_prim)
+        max_heat_transport = params_t["Primary"]["T_supply"] * max_power / dt_prim
 
         q_nominal_prim = params_q["Primary"][
             "Q_nominal"
@@ -1601,7 +1601,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         return ElectricityDemand, modifiers
 
-    def convert_import(self, asset: Asset):
+    def convert_import(self, asset: Asset) -> Tuple[Any, MODIFIERS]:
         """
         The definition of an Import asset, is an asset that imports energy, thus adds energy to
         the network, thereby it acts as a producer."
@@ -1618,7 +1618,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 f"{asset.name} cannot be converted"
             )
 
-    def convert_export(self, asset: Asset):
+    def convert_export(self, asset: Asset) -> Tuple[Any, MODIFIERS]:
         """
         The definition of an Export asset, is an asset that exports energy from the network, thus
         extracts energy to the network, thereby it acts as a consumer."
@@ -2461,7 +2461,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         )
         return GasBoiler, modifiers
 
-    def convert_elec_boiler(self, asset: Asset) -> Tuple[ElecBoiler, MODIFIERS]:
+    def convert_elec_boiler(self, asset: Asset) -> Tuple[ElecBoiler | HeatSource, MODIFIERS]:
         """
         This function converts the ElectricBoiler object in esdl to a set of modifiers that can be
         used in a pycml object.
