@@ -129,7 +129,9 @@ class BaseESDLParser:
                         raise ValueError(f"Dots in component names not supported: '{el_name}'")
 
                     if el_name in component_names:
-                        raise Exception(f"Asset names have to be unique: '{el_name}' already exists")
+                        raise Exception(
+                            f"Asset names have to be unique: '{el_name}' already exists"
+                        )
                     else:
                         component_names.add(el_name)
 

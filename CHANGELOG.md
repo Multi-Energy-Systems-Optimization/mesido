@@ -10,7 +10,8 @@
 - Checks if a timelimit is reached in the GROW workflow at each stage.
 - Pipe costs are updated based on the asset templates if they are provided
 - AssetStateEnums of IntEnum type to describe the state of an asset i.e disabled/enabled/optional
-- A new type of potential error is added if the profile name indicated in esdl is not available in the database
+- A new type of potential error is added if the profile name indicated in esdl is not available in the database.
+- Parsing of emission factors for specific sources not related to carriers.
 
 ## Changed
 - Removed support of python versions 3.9 and older.
