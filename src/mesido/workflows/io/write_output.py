@@ -916,11 +916,44 @@ class ScenarioOutput:
 
         # end KPIs
 
+    def _remove_result_profiles(
+            self,
+            energy_system,
+    ):
+        def _name_to_asset(name):
+            return next(
+                (x for x in energy_system.eAllContents() if hasattr(x, "name") and x.name == name)
+            )
+
+        for asset_name in [
+            *self.energy_system_components.get("heat_source", []),
+            *self.energy_system_components.get("heat_demand", []),
+            *self.energy_system_components.get("heat_pipe", []),
+            *self.energy_system_components.get("heat_buffer", []),
+            *self.energy_system_components.get("ates", []),
+            *self.energy_system_components.get("heat_exchanger", []),
+            # *self.energy_system_components.get("heat_pump", []),
+        ]:
+            asset = _name_to_asset(asset_name)
+            for iport in range(len(asset.port)):
+                if isinstance(asset.port[iport], esdl.OutPort):
+                    profiles_to_remove = []
+                    for iprofile in range(len(asset.port[iport].profile)):
+                        if (
+                            asset.port[iport].profile[iprofile].profileType == esdl.ProfileTypeEnum.OUTPUT
+                        ):
+                            # Get the OUTPUT type objects to the list to be removed
+                            profiles_to_remove.append(asset.port[iport].profile[iprofile])
+                    # Remove the objects from the EOrderedSet
+                    for object_to_remove in profiles_to_remove:
+                        asset.port[iport].profile.remove(object_to_remove)
+
     def _write_updated_esdl(
         self,
         energy_system,
         optimizer_sim: bool = False,
         add_kpis: bool = True,
+        remove_output_profiles: bool = True,
     ):
         from esdl.esdl_handler import EnergySystemHandler
 
@@ -944,6 +977,9 @@ class ScenarioOutput:
             return next(
                 (x for x in energy_system.eAllContents() if hasattr(x, "name") and x.name == name)
             )
+
+        if remove_output_profiles:
+            self._remove_result_profiles(energy_system)
 
         if add_kpis:
             self._add_kpis_to_energy_system(energy_system, optimizer_sim)
@@ -1352,20 +1388,6 @@ class ScenarioOutput:
                                             f"No profile units will be written to the ESDL for: "
                                             f"{asset_name}. + {variable}"
                                         )
-
-                                    # If asset already has a OUTPUT profile comes from re-used esdl,
-                                    # we overwrite on OUTPUT profiles.
-                                    # Otherwise, we create a new one.
-                                    fields_in_esdl = [
-                                        p.field for p in asset.port[index_outport].profile
-                                    ]
-                                    if profile_attributes.field in fields_in_esdl:
-                                        profile_idx = fields_in_esdl.index(profile_attributes.field)
-                                        asset.port[index_outport].profile[
-                                            profile_idx
-                                        ] = profile_attributes
-                                    else:
-                                        asset.port[index_outport].profile.append(profile_attributes)
 
                                 # Add variable values in new column
                                 conversion_factor = 0.0
