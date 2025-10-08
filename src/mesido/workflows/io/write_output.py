@@ -917,8 +917,8 @@ class ScenarioOutput:
         # end KPIs
 
     def _remove_result_profiles(
-            self,
-            energy_system,
+        self,
+        energy_system,
     ):
         def _name_to_asset(name):
             return next(
@@ -940,7 +940,8 @@ class ScenarioOutput:
                     profiles_to_remove = []
                     for iprofile in range(len(asset.port[iport].profile)):
                         if (
-                            asset.port[iport].profile[iprofile].profileType == esdl.ProfileTypeEnum.OUTPUT
+                            asset.port[iport].profile[iprofile].profileType
+                            == esdl.ProfileTypeEnum.OUTPUT
                         ):
                             # Get the OUTPUT type objects to the list to be removed
                             profiles_to_remove.append(asset.port[iport].profile[iprofile])
