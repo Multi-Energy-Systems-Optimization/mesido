@@ -298,13 +298,13 @@ class InfluxDBProfileReader(BaseProfileReader):
             )
             series = unique_series[index_of_unique_profile]
             self._check_profile_time_series(profile_time_series=series, profile=profile)
+            container = profile.eContainer()
+            asset = container.eContainer()
             converted_dataframe = self._convert_profile_to_correct_unit(
-                profile_time_series=series, profile=profile
+                profile_time_series=series, profile=profile, asset=asset
             )
 
-            container = profile.eContainer()
             if isinstance(container, esdl.ProfileConstraint):
-                asset = container.eContainer()
                 variable_suffix = self.asset_type_to_variable_name_conversion[type(asset)]
                 var_base_name = asset.name
                 if variable_suffix in [
@@ -477,7 +477,7 @@ class InfluxDBProfileReader(BaseProfileReader):
             )
 
     def _convert_profile_to_correct_unit(
-        self, profile_time_series: pd.Series, profile: esdl.InfluxDBProfile
+        self, profile_time_series: pd.Series, profile: esdl.InfluxDBProfile, asset:esdl.Asset
     ) -> pd.Series:
         """
         Conversion function to change the values in the provided series to the correct unit
@@ -499,11 +499,14 @@ class InfluxDBProfileReader(BaseProfileReader):
         ):
             if profile_quantity_and_unit.unit == esdl.UnitEnum.WATT:
                 target_unit = POWER_IN_W
-            elif profile_quantity_and_unit.unit == esdl.UnitEnum.PERCENT:  # values 0-100%
+            elif (profile_quantity_and_unit.unit == esdl.UnitEnum.PERCENT) or (profile_quantity_and_unit.unit == esdl.UnitEnum.NONE):  # values 0-100%
                 # TODO: in the future change to ratios if needed
-                return profile_time_series  # These profiles are scaled in asset sizing
-            elif profile_quantity_and_unit.unit == esdl.UnitEnum.NONE:  # ratio 0-1
-                return profile_time_series
+                # return profile_time_series  # These profiles are scaled in asset sizing
+                return profile_time_series * convert_to_unit(
+                    value=1.0, source_unit=profile_quantity_and_unit, target_unit=profile_quantity_and_unit
+                ) * asset.power
+            # elif profile_quantity_and_unit.unit == esdl.UnitEnum.NONE:  # ratio 0-1
+            #     return profile_time_series
             else:
                 raise RuntimeError(
                     f"Power profiles currently only support units"
