@@ -932,7 +932,7 @@ class ScenarioOutput:
             *self.energy_system_components.get("heat_buffer", []),
             *self.energy_system_components.get("ates", []),
             *self.energy_system_components.get("heat_exchanger", []),
-            # *self.energy_system_components.get("heat_pump", []),
+            *self.energy_system_components.get("heat_pump", []),
         ]:
             asset = _name_to_asset(asset_name)
             for iport in range(len(asset.port)):
@@ -1389,6 +1389,9 @@ class ScenarioOutput:
                                             f"No profile units will be written to the ESDL for: "
                                             f"{asset_name}. + {variable}"
                                         )
+
+                                # Write result OUTPUT profiles on the optimized esdl
+                                asset.port[index_outport].profile.append(profile_attributes)
 
                                 # Add variable values in new column
                                 conversion_factor = 0.0
