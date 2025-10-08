@@ -206,7 +206,6 @@ class TestAtesTemperature(TestCase):
             ),
         )
 
-
     def test_ates_temperature_fixed_flow(self):
         """
         Checks if the maximum flow is limiting due to the decreased temperature and not the
@@ -221,8 +220,8 @@ class TestAtesTemperature(TestCase):
 
         basefolder = Path(run_ates_temperature.__file__).resolve().parent.parent
 
-        #flow instead of heat constraint, doesn't allow the temperature of the ates to go up.
-        #makes sense as higher temperature means higher losses and thereby higher costs for the
+        # flow instead of heat constraint, doesn't allow the temperature of the ates to go up.
+        # makes sense as higher temperature means higher losses and thereby higher costs for the
         # producers. No other incentive with current optimization to produce as as high
         # temperature as possible
         # heat_flow_list = [-2e6, -1e6] + [-1e6] * 3 + [3e6] * 5 + [-2e6]
@@ -259,7 +258,6 @@ class TestAtesTemperature(TestCase):
                         self.state_vector(canonical) * self.variable_nominal(
                     canonical) * sign
                 )
-
 
         solution = run_esdl_mesido_optimization(
             HeatProblemFixedChargeDischarge,
@@ -310,10 +308,8 @@ class TestAtesTemperature(TestCase):
         print("ates_flow", ates_flow, "with bound", ates_flow_bound)
         print("average_efficiency", ates_heat_efficiency)
 
-
         cp = parameters[f"{ates}.cp"]
         rho = parameters[f"{ates}.rho"]
-
 
     def test_ates_multi_port(self):
         """
@@ -639,6 +635,43 @@ class TestAtesTemperature(TestCase):
                 )
 
                 return constraints
+
+            def constraints(self, ensemble_member):
+                constraints = super().constraints(ensemble_member)
+
+                heatproducer = self.__state_vector_scaled("HeatProducer_4e19.Heat_flow",
+                                                          ensemble_member)
+                bounds_heatproducer = self.bounds()["HeatProducer_4e19.Heat_flow"]
+                constraints.append(((heatproducer[1:2]-0.6*bounds_heatproducer[
+                    1])/bounds_heatproducer[1],
+                                    -np.inf, 0.0))
+                constraints.append(
+                    (
+                        (heatproducer[-1] - 0.5*bounds_heatproducer[1]) / bounds_heatproducer[1],
+                        -np.inf,
+                        0.0,
+                    )
+                )
+                constraints.append(
+                    (
+                        (heatproducer[-2] - 0.5 * bounds_heatproducer[1]) / bounds_heatproducer[1],
+                        -np.inf,
+                        0.0,
+                    )
+                )
+                return constraints
+
+            def __state_vector_scaled(self, variable, ensemble_member):
+                """
+                This functions returns the casadi symbols scaled with their nominal for the entire time
+                horizon.
+                """
+                canonical, sign = self.alias_relation.canonical_signed(variable)
+                return (
+                    self.state_vector(canonical, ensemble_member)
+                    * self.variable_nominal(canonical)
+                    * sign
+                )
 
         solution = run_optimization_problem_solver(
             HeatProblemATESMultiPortVaryingTemperature,

@@ -2266,7 +2266,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 supply_temperatures = parameters[f"{ates}.ates_temperature_options"]
 
             if False:
-            # if self._stage == 3:
+                # if self._stage == 3:
                 pass
             elif options["include_ates_temperature_options"] and len(supply_temperatures) != 0:
                 soil_temperature = parameters[f"{ates}.T_amb"]
@@ -2627,6 +2627,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             )
 
             heat_nominal = parameters[f"{ates}.Heat_nominal"]
+            heat_ates = self.state(f"{ates}.Heat_ates")
             q_nominal = self.variable_nominal(f"{ates}.Q")
             q_var = self.state(f"{ates}.Q")
             cp = parameters[f"{ates}.cp"]
@@ -2644,6 +2645,19 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             flow_dir_var = self._heat_pipe_to_flow_direct_map[hot_pipe]
             is_buffer_charging = self.state(flow_dir_var)
             is_buffer_charging = self.variable(f"{ates}__is_charging")
+
+            # constraints.append((
+            # (heat_ates - rho * cp * dt * q_var - (1-is_buffer_charging) * big_m)/ heat_nominal,
+            # -np.inf, 0.0,
+            # ))
+            constraints.append(
+                (
+                    (heat_ates - rho * cp * dt * 0.1*q_var + (1 - is_buffer_charging) * big_m)
+                    / heat_nominal,
+                    0.0,
+                    np.inf,
+                )
+            )
 
             heat_discharge_hot_in = self.state(f"{ates}.DischargeHot.HeatIn.Heat")
             heat_discharge_hot_out = self.state(f"{ates}.DischargeHot.HeatOut.Heat")
