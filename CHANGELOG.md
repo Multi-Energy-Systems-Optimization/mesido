@@ -13,6 +13,7 @@
 - AssetStateEnums of IntEnum type to describe the state of an asset i.e disabled/enabled/optional
 
 ## Changed
+- Removed support of python versions 3.9 and older.
 - Previously variable operational cost of air-to-water heat pump was based on  the thermal power usage. Now it is based on the electrical power usage
 - TCO cost calculation objective now used the technical lifetime to determine the frequency of the re-investment costs.
 - TCO cost calculation objective to now exclude heating demand costs in the grow workflow
@@ -22,6 +23,7 @@
 ## Fixed
 - Bug: Add 3 port heat pump to elect demand path constraint
 - Error exit when priority 1 reaches time limit in grow workflow for all settings and solvers.
+- Bug: Replaced one pipe with all pipes in head loss testing in test_end_scenario_sizing.py 
 
 
 # [0.1.13] - 2025-06-25

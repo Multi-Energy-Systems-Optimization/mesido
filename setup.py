@@ -30,11 +30,11 @@ Operating System :: Unix
 Operating System :: MacOS
 """
 
-if sys.version_info < (3, 8):
-    sys.exit(f"Sorry, Python 3.8 to 3.10 is required. You are using {sys.version_info}")
+if sys.version_info < (3, 10):
+    sys.exit(f"Sorry, Python 3.10 to 3.11 is required. You are using {sys.version_info}")
 
-if sys.version_info > (3, 11):
-    sys.exit(f"Sorry, Python 3.8 to 3.10 is required. You are using {sys.version_info}")
+if sys.version_info >= (3, 12):
+    sys.exit(f"Sorry, Python 3.10 to 3.11 is required. You are using {sys.version_info}")
 
 setup(
     name="mesido",
@@ -67,7 +67,7 @@ setup(
     ],
     tests_require=["pytest", "pytest-runner", "numpy"],
     include_package_data=True,
-    python_requires=">=3.8,<3.11",
+    python_requires=">=3.10,<3.12",
     cmdclass=versioneer.get_cmdclass(),
     entry_points={"rtctools.libraries.modelica": ["library_folder = mesido:modelica"]},
 )
