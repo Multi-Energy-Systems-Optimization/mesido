@@ -185,6 +185,30 @@ class TestPotentialErrors(unittest.TestCase):
         )
         np.testing.assert_equal(len(cm.exception.message_per_asset_id), 2.0)
 
+        # Check the a new type of potential error which raises when the profile name indicated
+        # in esdl is not available in the database
+        with (
+            self.assertRaises(MesidoAssetIssueError) as cm,
+            unittest.mock.patch("mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()),
+        ):
+            problem = EndScenarioSizingStaged(
+                esdl_parser=ESDLFileParser,
+                base_folder=base_folder,
+                model_folder=model_folder,
+                input_folder=input_folder,
+                esdl_file_name="1a_with_influx_profiles_wrong_name.esdl",
+            )
+            problem.pre()
+        # Check that the asset profile had an error
+        np.testing.assert_equal(
+            cm.exception.error_type, MesidoAssetIssueType.ASSET_PROFILE_AVAILABILITY
+        )
+        np.testing.assert_equal(
+            cm.exception.message_per_asset_id["2ab92324-f86e-4976-9a6e-f7454b77ba3c"],
+            "Asset named HeatingDemand_2ab9: Input profile "
+            "demand1_MW_wrong_name in Unittests profiledata is not available in the database.",
+        )
+
 
 if __name__ == "__main__":
     a = TestPotentialErrors()
