@@ -98,11 +98,7 @@ class TestMaxSizeAggregationCount(TestCase):
         )
         geo_cost_exists = True
         try:
-            geo_cost_exists = solution.parameters(0)[
-                "GeothermalSource_50cf.installation_cost_coefficient"
-            ]
-        except KeyError:
-            geo_cost_exists = False
+            geo_cost_exists = solution.parameters(0).get("GeothermalSource_50cf.installation_cost_coefficient", False)
         np.testing.assert_equal(geo_cost_exists, False)
 
         # Test that max size is correct, note that we use an equality check as due to the cost
