@@ -916,14 +916,15 @@ class ScenarioOutput:
 
         # end KPIs
 
+    def _name_to_asset(self, energy_system, name):
+        return next(
+            (x for x in energy_system.eAllContents() if hasattr(x, "name") and x.name == name)
+        )
+
     def _remove_result_profiles(
         self,
         energy_system,
     ):
-        def _name_to_asset(name):
-            return next(
-                (x for x in energy_system.eAllContents() if hasattr(x, "name") and x.name == name)
-            )
 
         for asset_name in [
             *self.energy_system_components.get("heat_source", []),
@@ -934,7 +935,7 @@ class ScenarioOutput:
             *self.energy_system_components.get("heat_exchanger", []),
             *self.energy_system_components.get("heat_pump", []),
         ]:
-            asset = _name_to_asset(asset_name)
+            asset = self._name_to_asset(energy_system, asset_name)
             for iport in range(len(asset.port)):
                 if isinstance(asset.port[iport], esdl.OutPort):
                     profiles_to_remove = []
@@ -974,11 +975,6 @@ class ScenarioOutput:
         else:  # network optimization
             energy_system.name = energy_system.name + "_GrowOptimized"
 
-        def _name_to_asset(name):
-            return next(
-                (x for x in energy_system.eAllContents() if hasattr(x, "name") and x.name == name)
-            )
-
         if remove_output_profiles:
             self._remove_result_profiles(energy_system)
 
@@ -996,7 +992,7 @@ class ScenarioOutput:
                 *self.energy_system_components.get("heat_buffer", []),
                 *self.energy_system_components.get("heat_pump", []),
             ]:
-                asset = _name_to_asset(name)
+                asset = self._name_to_asset(energy_system, name)
                 asset_placement_var = self._asset_aggregation_count_var_map[name]
                 placed = np.round(results[asset_placement_var][0]) >= 1.0
                 max_size = results[self._asset_max_size_map[name]][0]
@@ -1055,7 +1051,7 @@ class ScenarioOutput:
                     assert isinstance(pipe_class, EDRPipeClass)
                     asset_edr = esh_edr.load_from_string(pipe_class.xml_string)
 
-                asset = _name_to_asset(pipe)
+                asset = self._name_to_asset(energy_system, pipe)
                 asset.state = esdl.AssetStateEnum.ENABLED
 
                 try:
@@ -1071,7 +1067,7 @@ class ScenarioOutput:
                     for prop in edr_pipe_properties_to_copy:
                         setattr(asset, prop, getattr(asset_edr, prop))
             else:
-                asset = _name_to_asset(pipe)
+                asset = self._name_to_asset(energy_system, pipe)
                 asset.delete(recursive=True)
 
         # ------------------------------------------------------------------------------------------
@@ -1123,7 +1119,7 @@ class ScenarioOutput:
             ]:
                 try:
                     # If the asset has been placed
-                    asset = _name_to_asset(asset_name)
+                    asset = self._name_to_asset(energy_system, asset_name)
                     asset_class = asset.__class__.__name__
                     asset_id = asset.id
                     capability = [c for c in capabilities if c in asset.__class__.__mro__][
