@@ -1,4 +1,4 @@
-# [Unreleased-main] - 2025-10-06
+# [Unreleased-main] - 2025-10-09
 
 ## Added
 - Elect test for air_to_water_heat_pump_elec
@@ -22,7 +22,10 @@
 ## Fixed
 - Bug: Add 3 port heat pump to elect demand path constraint
 - Error exit when priority 1 reaches time limit in grow workflow for all settings and solvers.
-- Bug: Replaced one pipe with all pipes in head loss testing in test_end_scenario_sizing.py
+- Bug: Replaced one pipe with all pipes in head loss testing in test_end_scenario_sizing.py 
+- Bug: Geothermal being placed when not used. General added aggregation_count=0 constraint for heat buffer, ates and goethermal when not being used.
+- Bug: Ensure ATES and Geothermal max_size cannot be smaller than the single_doublet_power if placed.
+
 
 # [0.1.13] - 2025-06-25
 
