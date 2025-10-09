@@ -96,10 +96,9 @@ class TestMaxSizeAggregationCount(TestCase):
             100.0,  # euro/W, value was specifcially chosen this high top prevent its usage
             atol=1.0e-6,
         )
-        geo_cost_exists = True
-        try:
-            geo_cost_exists = solution.parameters(0).get("GeothermalSource_50cf.installation_cost_coefficient", False)
-        np.testing.assert_equal(geo_cost_exists, False)
+        np.testing.assert_allclose(
+            0.0, solution.parameters(0)["GeothermalSource_50cf.installation_cost"], atol=1.0e-9
+        )
 
         # Test that max size is correct, note that we use an equality check as due to the cost
         # minimization they should be equal.
