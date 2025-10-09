@@ -172,8 +172,8 @@ class TestEndScenarioSizing(TestCase):
         for b in solution_staged.energy_system_components.get("heat_buffer", []):
             np.testing.assert_allclose(results[f"{b}_aggregation_count"], 1)  # being placed
             np.testing.assert_array_less(
-                0.0, max(results[f"{b}.Heat_flow"][peak_day_indx : peak_day_indx + 24])
-            )  # at least 1 time step with heat_flow
+                1.0e3, max(results[f"{b}.Heat_flow"][peak_day_indx : peak_day_indx + 24])
+            )  # at least 1 time step with such a heat_flow is expected in this network
             heat_buffer = results[f"{b}.Heat_buffer"]
             for i in range(len(solution_staged.times())):
                 if i < peak_day_indx or i > (peak_day_indx + 23):
@@ -456,4 +456,4 @@ if __name__ == "__main__":
     a.test_end_scenario_sizing_discounted()
     a.test_end_scenario_sizing_head_loss()
     a.test_end_scenario_sizing_pipe_catalog()
-    # print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
+    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
