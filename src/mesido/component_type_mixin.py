@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Set
+from typing import Dict, List, Set, Tuple
 
 from mesido.base_component_type_mixin import BaseComponentTypeMixin
 from mesido.heat_network_common import NodeConnectionDirection
@@ -105,7 +105,17 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
 
         node_to_node_logical_link_map = {}
 
-        def __get_aliases_asset(asset, asset_conn):
+        def __get_aliases_asset(asset: str, asset_conn: str) -> List[str]:
+            """
+            Extracts a list of aliases for a specific variable.
+
+            Args:
+                asset: asset name
+                asset_conn: asset variable string including port excluding property
+
+            Returns:
+                List of aliases for a port property connection
+            """
             aliases = [
                 x
                 for x in self.alias_relation.aliases(f"{asset_conn}.{prop}")
@@ -255,7 +265,15 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                 raise Exception(f"Pipes in series {ps} do not all have the same orientation")
             pipe_series.append([name for name, _ in ps])
 
-        def __get_asset_orientation(in_suffix, out_suffix):
+        def __get_asset_orientation(in_suffix: str, out_suffix: str) -> Tuple[str, str]:
+            """
+            Extracts the orientation for the connecting pipes to the asset.
+            Args:
+                in_suffix: string consisting of inport and property variable name
+                out_suffix: string consisting of outport and property variable name
+
+            Returns:
+            """
             if aliases[0].endswith(out_suffix):
                 asset_w_orientation = (
                     aliases[0][: -len(out_suffix)],
@@ -268,12 +286,26 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                 )
             return asset_w_orientation
 
-        def __get_asset_orientation_heat_storages():
+        def __get_asset_orientation_heat_storages() -> Tuple[str, str]:
+            """
+            Extracts the orientation of heat storage assets.
+            """
             in_suffix = ".QTHIn.T" if heat_network_model_type == "QTH" else ".HeatIn.Heat"
             out_suffix = ".QTHOut.T" if heat_network_model_type == "QTH" else ".HeatOut.Heat"
             return __get_asset_orientation(in_suffix, out_suffix)
 
-        def __get_aliases_asset_non_node(asset, asset_conn):
+        def __get_asset_orientation_source_sink() -> Tuple[str, str]:
+            """
+            Extracts the orientation of source and sink (demand) assets.
+            """
+            in_suffix = f".{network_type}In.{prop}"
+            out_suffix = f".{network_type}Out.{prop}"
+            return __get_asset_orientation(in_suffix, out_suffix)
+
+        def __get_aliases_asset_non_node(asset: str, asset_conn: str) -> List[str]:
+            """
+            The aliases of non node assets
+            """
             aliases = __get_aliases_asset(asset, asset_conn)
             if len(aliases) > 1:
                 raise Exception(f"More than one connection to {asset_conn}")
@@ -333,11 +365,6 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
             ates_connections[a] = tuple(ates_connections[a])
 
         demand_connections = {}
-
-        def __get_asset_orientation_source_sink():
-            in_suffix = f".{network_type}In.{prop}"
-            out_suffix = f".{network_type}Out.{prop}"
-            return __get_asset_orientation(in_suffix, out_suffix)
 
         for a in demands:
             if a in components.get("heat_demand", []):

@@ -4,7 +4,7 @@ import dataclasses
 import logging
 from datetime import timedelta
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import esdl.esdl_handler
 
@@ -180,7 +180,17 @@ class ESDLMixin(
                 )
             self.name_to_esdl_id_map[esdl_asset.name] = esdl_id
 
-    def __override_pipe_classes_dicts(self, asset, pipe_classes, no_pipe_class, override_classes):
+    def __override_pipe_classes_dicts(
+        self,
+        asset: Asset,
+        pipe_classes: List[EDRPipeClass],
+        no_pipe_class: PipeClass,
+        override_classes: dict,
+    ) -> None:
+        """
+        Overrides the pipe class dictionaries based on the minimum pipe sizes that are required.
+        """
+
         p = asset.name
 
         if asset.attributes["state"].name == "OPTIONAL":

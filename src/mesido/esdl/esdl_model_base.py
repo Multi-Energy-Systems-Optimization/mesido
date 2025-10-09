@@ -1,10 +1,11 @@
 import logging
-from typing import Dict
+from typing import Dict, List
 
 import esdl
 from esdl import InPort, OutPort
 
 from mesido.esdl.asset_to_component_base import _AssetToComponentBase
+from mesido.esdl.common import Asset
 from mesido.pycml import Model as _Model
 
 logger = logging.getLogger("mesido")
@@ -123,6 +124,10 @@ class _ESDLModelBase(_Model):
         port_map = {}
 
         def __set_primary_secondary_heat_ports():
+            """
+            Identifies and sets the primary and secondary side heat ports of assets in the
+            port_map.
+            """
             if isinstance(p, InPort):
                 if self.secondary_port_name_convention in p.name.lower():
                     port_map[p.id] = getattr(component.Secondary, in_suf)
@@ -133,7 +138,6 @@ class _ESDLModelBase(_Model):
                     port_map[p.id] = getattr(component.Primary, out_suf)
                 else:
                     port_map[p.id] = getattr(component.Secondary, out_suf)
-            # return port_map
 
         for asset in non_node_assets:
             component = getattr(self, asset.name)
@@ -312,7 +316,15 @@ class _ESDLModelBase(_Model):
         # after.
         connections = set()
 
-        def __set_pipe_port_connections(node_suffixes, type_node_assets):
+        def __set_pipe_port_connections(
+            node_suffixes: List[str], type_node_assets: List[Asset]
+        ) -> None:
+            """
+            Setting the connections between assets in mesido based on the asset type and port maps.
+            Args:
+                node_suffixes:  list of the suffixes of connecting nodes
+                type_node_assets: list of node assets of a specific commodity.
+            """
             if connected_to.id in list(port_map.keys()) and (
                 assets[name_to_id_map[port_map[connected_to.id].name.split(".")[0]]].asset_type
                 == "Pipe"

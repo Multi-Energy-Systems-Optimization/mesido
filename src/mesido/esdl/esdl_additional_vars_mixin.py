@@ -34,7 +34,11 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
         # connected to smaller demands.
         # TODO: add the same for electricity ones we have proper support for that in the ESDLMixin
 
-        def __limit_list_available_heat_pipe_classes_max_power(max_power):
+        def __limit_list_available_heat_pipe_classes_max_power(max_power: float) -> None:
+            """
+            Limits the available heat pipe classes for optimization based on the maximum power
+            that can be connected.
+            """
             new_pcs = []
             found_pc_large_enough = False
             for pc in self.pipe_classes(connected_asset):
