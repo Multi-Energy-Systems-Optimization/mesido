@@ -59,11 +59,7 @@ class _ESDLModelBase(_Model):
         # We create an assets sorted to first loop over specific assets (the transport assets),
         # before parsing the other assets. This is because the properties of the transport assets
         # are used to set nominals for other assets that are then parsed later.
-        assets_sorted = {}
-        assets_sorted.update(assets_transport)
-        assets_sorted.update(assets_other)
-        # TODO: replace when python 3.8 is no longer supported
-        # assets_sorted = assets_transport | assets_other
+        assets_sorted = assets_transport | assets_other
 
         for asset in list(assets.values()):
             converter.port_asset_type_connections(asset)
