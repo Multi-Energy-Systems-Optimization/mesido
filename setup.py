@@ -30,8 +30,8 @@ Operating System :: Unix
 Operating System :: MacOS
 """
 
-if sys.version_info < (3, 10):
-    sys.exit(f"Sorry, Python 3.10 to 3.11 is required. You are using {sys.version_info}")
+if sys.version_info < (3, 9):
+    sys.exit(f"Sorry, Python 3.9 to 3.11 is required. You are using {sys.version_info}")
 
 if sys.version_info >= (3, 12):
     sys.exit(f"Sorry, Python 3.10 to 3.11 is required. You are using {sys.version_info}")
