@@ -277,13 +277,47 @@ class TestProfileLoading(unittest.TestCase):
             expected_array, problem.get_timeseries("Hydrogen.price_profile").values
         )
 
+    def test_loading_profile_from_esdl(self):
+        import models.unit_cases.case_3a.src.run_3a as run_3a
+        from models.unit_cases.case_3a.src.run_3a import HeatProblemESDLProdProfile
+
+        base_folder = Path(run_3a.__file__).resolve().parent.parent
+        model_folder = base_folder / "model"
+        input_folder = base_folder / "input"
+        problem = HeatProblemESDLProdProfile(
+            base_folder=base_folder,
+            model_folder=model_folder,
+            esdl_file_name="3a_with_res_heat_source with return network.esdl",
+            esdl_parser=ESDLFileParser,
+        )
+        problem.pre()
+
+        # expected_values = [......]
+        # np.testing.assert_equal(
+        #     problem.get_timeseries("HeatProducer_b702.maximum_heat_source").values,
+        #     expected_values,
+        # )
+        # expected_values = [......]
+        # np.testing.assert_equal(
+        #     problem.get_timeseries("GeoProducer_b702.maximum_heat_source").values,
+        #     expected_values,
+        # )
+        # expected_values = [......]
+        # np.testing.assert_equal(
+        #     problem.get_timeseries("ResidualProducer_b702.maximum_heat_source").values,
+        #     expected_values,
+        # )
+
+        print("DOne")
+
 
 if __name__ == "__main__":
     # unittest.main()
     a = TestProfileLoading()
-    c = TestProfileUpdating()
+    # c = TestProfileUpdating()
     # a.test_loading_from_influx()
     # a.test_loading_from_csv()
     # a.test_loading_from_xml()
     # a.test_loading_from_csv_with_influx_profiles_given()
-    c.test_profile_updating()
+    # c.test_profile_updating()
+    a.test_loading_profile_from_esdl()
