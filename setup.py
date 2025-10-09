@@ -67,7 +67,7 @@ setup(
     ],
     tests_require=["pytest", "pytest-runner", "numpy"],
     include_package_data=True,
-    python_requires=">=3.10,<3.12",
+    python_requires=">=3.9,<3.12",
     cmdclass=versioneer.get_cmdclass(),
     entry_points={"rtctools.libraries.modelica": ["library_folder = mesido:modelica"]},
 )
