@@ -477,7 +477,7 @@ class InfluxDBProfileReader(BaseProfileReader):
             )
 
     def _convert_profile_to_correct_unit(
-        self, profile_time_series: pd.Series, profile: esdl.InfluxDBProfile, asset:esdl.Asset
+        self, profile_time_series: pd.Series, profile: esdl.InfluxDBProfile, asset: esdl.Asset
     ) -> pd.Series:
         """
         Conversion function to change the values in the provided series to the correct unit
@@ -499,14 +499,24 @@ class InfluxDBProfileReader(BaseProfileReader):
         ):
             if profile_quantity_and_unit.unit == esdl.UnitEnum.WATT:
                 target_unit = POWER_IN_W
-            elif (profile_quantity_and_unit.unit == esdl.UnitEnum.PERCENT) or (profile_quantity_and_unit.unit == esdl.UnitEnum.NONE):  # values 0-100%
+            elif (profile_quantity_and_unit.unit == esdl.UnitEnum.PERCENT) or (
+                profile_quantity_and_unit.unit == esdl.UnitEnum.NONE
+            ):  # values 0-100% or values 0 - 1
                 if not profile.multiplier == 1.0:
-                    raise RuntimeError(
-                        f"Asset {asset.name} has unit's multiplier specified incorrectly. Multiplier should be 1.0, when the unit is specified in {profile_quantity_and_unit.description}"
+                    get_potential_errors().add_potential_issue(
+                        MesidoAssetIssueType.ASSET_PROFILE_MULTIPLIER,
+                        asset.id,
+                        f", {asset.name} has unit's multiplier specified incorrectly. Multiplier should be 1.0, when the unit is specified in {profile_quantity_and_unit.description}",
                     )
-                return profile_time_series * convert_to_unit(
-                    value=1.0, source_unit=profile_quantity_and_unit, target_unit=profile_quantity_and_unit
-                ) * asset.power
+                return (
+                    profile_time_series
+                    * convert_to_unit(
+                        value=1.0,
+                        source_unit=profile_quantity_and_unit,
+                        target_unit=profile_quantity_and_unit,
+                    )
+                    * asset.power
+                )
             else:
                 raise RuntimeError(
                     f"Power profiles currently only support units"

@@ -17,6 +17,7 @@ class MesidoAssetIssueType(Enum):
     HEAT_EXCHANGER_TEMPERATURES = "heat_exchanger.temperature"
     HEAT_EXCHANGER_POWER = "heat_exchanger.capacity"
     HEAT_DEMAND_STATE = "heat_demand.state"
+    ASSET_PROFILE_MULTIPLIER = "asset_profile.multiplier"
 
 
 class PotentialErrors:
