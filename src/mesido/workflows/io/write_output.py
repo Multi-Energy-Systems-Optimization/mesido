@@ -944,7 +944,7 @@ class ScenarioOutput:
                             asset.port[iport].profile[iprofile].profileType
                             == esdl.ProfileTypeEnum.OUTPUT
                         ):
-                            # Get OUTPUT type objects to the list to be removed
+                            # Get OUTPUT the type objects to the list to be removed
                             profiles_to_remove.append(asset.port[iport].profile[iprofile])
                     # Remove the objects from the EOrderedSet
                     for object_to_remove in profiles_to_remove:
