@@ -1,11 +1,5 @@
 # [Unreleased-main] - 2025-10-10
 
-## Changed
-- Testing of network simulator workflow
-
-
-# [Unreleased-main] - 2025-10-09
-
 ## Added
 - Elect test for air_to_water_heat_pump_elec
 - Timelimit for testing in pipeline
@@ -24,6 +18,7 @@
 - TCO cost calculation objective now used the technical lifetime to determine the frequency of the re-investment costs.
 - TCO cost calculation objective to now exclude heating demand costs in the grow workflow
 - Hydraulic power calculation at "sink" assets is set to 0.0 if headloss calculation is turned off
+- Testing of network simulator workflow
 
 ## Fixed
 - Bug: Add 3 port heat pump to elect demand path constraint
