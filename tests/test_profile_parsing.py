@@ -1,5 +1,6 @@
 import datetime
 import operator
+import os
 import unittest
 import unittest.mock
 from pathlib import Path
@@ -278,6 +279,11 @@ class TestProfileLoading(unittest.TestCase):
         )
 
     def test_loading_profile_from_esdl(self):
+        """
+        This test loads a problem using an ESDL file which has influxDB profiles
+        specified, and checks if the profile_parser correctly loads those profiles
+        and checks for their correctness against a manually loaded csv file with the same profiles.
+        """
         import models.unit_cases.case_3a.src.run_3a as run_3a
         from models.unit_cases.case_3a.src.run_3a import HeatProblemESDLProdProfile
 
@@ -292,29 +298,24 @@ class TestProfileLoading(unittest.TestCase):
         )
         problem.pre()
 
-        # expected_values = [......]
-        # np.testing.assert_equal(
-        #     problem.get_timeseries("HeatProducer_b702.maximum_heat_source").values,
-        #     expected_values,
-        # )
-        # expected_values = [......]
-        # np.testing.assert_equal(
-        #     problem.get_timeseries("GeoProducer_b702.maximum_heat_source").values,
-        #     expected_values,
-        # )
-        # expected_values = [......]
-        # np.testing.assert_equal(
-        #     problem.get_timeseries("ResidualProducer_b702.maximum_heat_source").values,
-        #     expected_values,
-        # )
-
-        print("DOne")
+        expected_values_file = pd.read_csv(
+            os.path.join(input_folder, "SpaceHeat&HotWater_PowerProfile_2000_2010.csv")
+        )
+        expected_values = expected_values_file["Ruimte&Tap_W"]
+        for asset in problem.energy_system_components.get("heat_source"):
+            asset_id = problem.esdl_asset_name_to_id_map[f"{asset}"]
+            asset_power = problem.esdl_assets[f"{asset_id}"].attributes["power"]
+            np.testing.assert_allclose(
+                problem.get_timeseries(f"{asset}.maximum_heat_source").values,
+                expected_values * asset_power,
+                atol=1e-2,
+            )
 
 
 if __name__ == "__main__":
     # unittest.main()
     a = TestProfileLoading()
-    # c = TestProfileUpdating()
+    c = TestProfileUpdating()
     # a.test_loading_from_influx()
     # a.test_loading_from_csv()
     # a.test_loading_from_xml()
