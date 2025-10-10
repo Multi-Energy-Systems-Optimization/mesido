@@ -209,6 +209,25 @@ class TestPotentialErrors(unittest.TestCase):
             "demand1_MW_wrong_name in Unittests profiledata is not available in the database.",
         )
 
+        # Check that the ResidualHeatSource multiplier's error is picked up
+        with (
+            self.assertRaises(MesidoAssetIssueError) as cm,
+            unittest.mock.patch("mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()),
+        ):
+            problem = EndScenarioSizingStaged(
+                esdl_parser=ESDLFileParser,
+                base_folder=base_folder,
+                model_folder=model_folder,
+                input_folder=input_folder,
+                esdl_file_name="1a_with_influx_profiles_error_check_4_dup.esdl",
+                profile_reader=InfluxDBProfileReader,
+            )
+            problem.pre()
+        np.testing.assert_equal(
+            cm.exception.message_per_asset_id["8172d5d3-61a4-4d0b-a26f-5e61c2a22c64"],
+            "GenericProducer_8172 has unit's multiplier specified incorrectly. Multiplier should be 1.0, when the unit is specified in Coefficient in %"
+        )
+
 
 if __name__ == "__main__":
     a = TestPotentialErrors()
