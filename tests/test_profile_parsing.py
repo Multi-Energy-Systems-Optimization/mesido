@@ -293,7 +293,7 @@ class TestProfileLoading(unittest.TestCase):
         problem = HeatProblemESDLProdProfile(
             base_folder=base_folder,
             model_folder=model_folder,
-            esdl_file_name="3a_with_res_heat_source_scaled_profile.esdl",
+            esdl_file_name="3a_esdl_multiple_heat_sources_unscaled_profile.esdl",
             esdl_parser=ESDLFileParser,
         )
         problem.pre()
@@ -303,11 +303,9 @@ class TestProfileLoading(unittest.TestCase):
         )
         expected_values = expected_values_file["Ruimte&Tap_W"]
         for asset in problem.energy_system_components.get("heat_source"):
-            asset_id = problem.esdl_asset_name_to_id_map[f"{asset}"]
-            asset_power = problem.esdl_assets[f"{asset_id}"].attributes["power"]
             np.testing.assert_allclose(
                 problem.get_timeseries(f"{asset}.maximum_heat_source").values,
-                expected_values * asset_power,
+                expected_values * 1e6,
                 atol=1e-2,
             )
 
