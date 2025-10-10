@@ -40,22 +40,6 @@ class TestNetworkSimulator(TestCase):
             def times(self, variable=None) -> np.ndarray:
                 return super().times(variable)[:5]
 
-            # def read(self):
-            #     super().read()
-            #     # for d in self.energy_system_components["heat_demand"]:
-            #     #     target = self.get_timeseries(f"{d}.target_heat_demand")
-            #     #     for ii in range(len(target.values)):
-            #     #         target.values[ii] = target.values[ii] * 1.0e-3
-
-            #     #     self.io.set_timeseries(
-            #     #         f"{d}.target_heat_demand",
-            #     #         self.io._DataStore__timeseries_datetimes,
-            #     #         target.values,
-            #     #         0,
-            #     #     )
-
-            #     adapt_hourly_profile_averages_timestep_size(self, 1000)
-
         solution = run_optimization_problem(
             NetworkSimulatorHIGHSTestCase,
             base_folder=base_folder,
