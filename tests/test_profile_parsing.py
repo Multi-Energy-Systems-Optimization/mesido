@@ -293,7 +293,7 @@ class TestProfileLoading(unittest.TestCase):
         problem = HeatProblemESDLProdProfile(
             base_folder=base_folder,
             model_folder=model_folder,
-            esdl_file_name="3a_with_res_heat_source with return network.esdl",
+            esdl_file_name="3a_with_res_heat_source_scaled_profile.esdl",
             esdl_parser=ESDLFileParser,
         )
         problem.pre()
