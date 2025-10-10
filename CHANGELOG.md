@@ -11,6 +11,7 @@
 - Pipe costs are updated based on the asset templates if they are provided
 - AssetStateEnums of IntEnum type to describe the state of an asset i.e disabled/enabled/optional
 - A new type of potential error is added if the profile name indicated in esdl is not available in the database
+- Capability of ResidualHeatSource and GeothermalHeatSource to also have profile constraints that can be read from InfluxDB
 
 ## Changed
 - Removed support of python versions 3.9 and older.
