@@ -8,9 +8,11 @@
 - Generic modifier functions for consistency across assets.
 - Discrete charge/discharge variable for an ATES asset.
 - Checks if a timelimit is reached in the GROW workflow at each stage.
-- Pipe costs are updated based on the asset templates if they are provided
+- Optimized esdl is re-usabled
+- Pipe costs are updated based on the asset templates if they are provided 
 - AssetStateEnums of IntEnum type to describe the state of an asset i.e disabled/enabled/optional
 - A new type of potential error is added if the profile name indicated in esdl is not available in the database
+- Capability of ResidualHeatSource and GeothermalHeatSource to also have profile constraints that can be read from InfluxDB
 
 ## Changed
 - Removed support of python versions 3.9 and older.
@@ -18,6 +20,8 @@
 - TCO cost calculation objective now used the technical lifetime to determine the frequency of the re-investment costs.
 - TCO cost calculation objective to now exclude heating demand costs in the grow workflow
 - Hydraulic power calculation at "sink" assets is set to 0.0 if headloss calculation is turned off
+- Hydraulic power calculation at "sink" assets is set to 0.0 if headloss calculation is turned off.
+- Updated pyESDL to v25.7
 - Testing of network simulator workflow
 
 ## Fixed

@@ -916,11 +916,46 @@ class ScenarioOutput:
 
         # end KPIs
 
+    def _name_to_asset(self, energy_system, name):
+        return next(
+            (x for x in energy_system.eAllContents() if hasattr(x, "name") and x.name == name)
+        )
+
+    def _remove_result_profiles(
+        self,
+        energy_system,
+    ):
+
+        for asset_name in [
+            *self.energy_system_components.get("heat_source", []),
+            *self.energy_system_components.get("heat_demand", []),
+            *self.energy_system_components.get("heat_pipe", []),
+            *self.energy_system_components.get("heat_buffer", []),
+            *self.energy_system_components.get("ates", []),
+            *self.energy_system_components.get("heat_exchanger", []),
+            *self.energy_system_components.get("heat_pump", []),
+        ]:
+            asset = self._name_to_asset(energy_system, asset_name)
+            for iport in range(len(asset.port)):
+                if isinstance(asset.port[iport], esdl.OutPort):
+                    profiles_to_remove = []
+                    for iprofile in range(len(asset.port[iport].profile)):
+                        if (
+                            asset.port[iport].profile[iprofile].profileType
+                            == esdl.ProfileTypeEnum.OUTPUT
+                        ):
+                            # Get OUTPUT the type objects to the list to be removed
+                            profiles_to_remove.append(asset.port[iport].profile[iprofile])
+                    # Remove the objects from the EOrderedSet
+                    for object_to_remove in profiles_to_remove:
+                        asset.port[iport].profile.remove(object_to_remove)
+
     def _write_updated_esdl(
         self,
         energy_system,
         optimizer_sim: bool = False,
         add_kpis: bool = True,
+        remove_output_profiles: bool = True,
     ):
         from esdl.esdl_handler import EnergySystemHandler
 
@@ -940,10 +975,8 @@ class ScenarioOutput:
         else:  # network optimization
             energy_system.name = energy_system.name + "_GrowOptimized"
 
-        def _name_to_asset(name):
-            return next(
-                (x for x in energy_system.eAllContents() if hasattr(x, "name") and x.name == name)
-            )
+        if remove_output_profiles:
+            self._remove_result_profiles(energy_system)
 
         if add_kpis:
             self._add_kpis_to_energy_system(energy_system, optimizer_sim)
@@ -959,7 +992,7 @@ class ScenarioOutput:
                 *self.energy_system_components.get("heat_buffer", []),
                 *self.energy_system_components.get("heat_pump", []),
             ]:
-                asset = _name_to_asset(name)
+                asset = self._name_to_asset(energy_system, name)
                 asset_placement_var = self._asset_aggregation_count_var_map[name]
                 placed = np.round(results[asset_placement_var][0]) >= 1.0
                 max_size = results[self._asset_max_size_map[name]][0]
@@ -1018,7 +1051,7 @@ class ScenarioOutput:
                     assert isinstance(pipe_class, EDRPipeClass)
                     asset_edr = esh_edr.load_from_string(pipe_class.xml_string)
 
-                asset = _name_to_asset(pipe)
+                asset = self._name_to_asset(energy_system, pipe)
                 asset.state = esdl.AssetStateEnum.ENABLED
 
                 try:
@@ -1034,7 +1067,7 @@ class ScenarioOutput:
                     for prop in edr_pipe_properties_to_copy:
                         setattr(asset, prop, getattr(asset_edr, prop))
             else:
-                asset = _name_to_asset(pipe)
+                asset = self._name_to_asset(energy_system, pipe)
                 asset.delete(recursive=True)
 
         # ------------------------------------------------------------------------------------------
@@ -1086,7 +1119,7 @@ class ScenarioOutput:
             ]:
                 try:
                     # If the asset has been placed
-                    asset = _name_to_asset(asset_name)
+                    asset = self._name_to_asset(energy_system, asset_name)
                     asset_class = asset.__class__.__name__
                     asset_id = asset.id
                     capability = [c for c in capabilities if c in asset.__class__.__mro__][
@@ -1302,6 +1335,7 @@ class ScenarioOutput:
                                         endDate=end_date_time,
                                         id=str(uuid.uuid4()),
                                         filters='"assetId"=' + f"'{str(asset_id)}'",
+                                        profileType=esdl.ProfileTypeEnum.OUTPUT,
                                     )
                                     # Assign quantity and units variable
                                     if variable in ["Heat_flow", "Pump_power"]:
@@ -1352,7 +1386,8 @@ class ScenarioOutput:
                                             f"{asset_name}. + {variable}"
                                         )
 
-                                    asset.port[index_outport].profile.append(profile_attributes)
+                                # Write result OUTPUT profiles on the optimized esdl
+                                asset.port[index_outport].profile.append(profile_attributes)
 
                                 # Add variable values in new column
                                 conversion_factor = 0.0

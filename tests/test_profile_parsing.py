@@ -1,5 +1,6 @@
 import datetime
 import operator
+import os
 import unittest
 import unittest.mock
 from pathlib import Path
@@ -277,6 +278,37 @@ class TestProfileLoading(unittest.TestCase):
             expected_array, problem.get_timeseries("Hydrogen.price_profile").values
         )
 
+    def test_loading_profile_from_esdl(self):
+        """
+        This test loads a problem using an ESDL file which has influxDB profiles
+        specified, and checks if the profile_parser correctly loads those profiles
+        and checks for their correctness against a manually loaded csv file with the same profiles.
+        """
+        import models.unit_cases.case_3a.src.run_3a as run_3a
+        from models.unit_cases.case_3a.src.run_3a import HeatProblemESDLProdProfile
+
+        base_folder = Path(run_3a.__file__).resolve().parent.parent
+        model_folder = base_folder / "model"
+        input_folder = base_folder / "input"
+        problem = HeatProblemESDLProdProfile(
+            base_folder=base_folder,
+            model_folder=model_folder,
+            esdl_file_name="3a_esdl_multiple_heat_sources_unscaled_profile.esdl",
+            esdl_parser=ESDLFileParser,
+        )
+        problem.pre()
+
+        expected_values_file = pd.read_csv(
+            os.path.join(input_folder, "SpaceHeat&HotWater_PowerProfile_2000_2010.csv")
+        )
+        expected_values = expected_values_file["Ruimte&Tap_W"]
+        for asset in problem.energy_system_components.get("heat_source"):
+            np.testing.assert_allclose(
+                problem.get_timeseries(f"{asset}.maximum_heat_source").values,
+                expected_values * 1e6,
+                atol=1e-2,
+            )
+
 
 if __name__ == "__main__":
     # unittest.main()
@@ -286,4 +318,5 @@ if __name__ == "__main__":
     # a.test_loading_from_csv()
     # a.test_loading_from_xml()
     # a.test_loading_from_csv_with_influx_profiles_given()
-    c.test_profile_updating()
+    # c.test_profile_updating()
+    a.test_loading_profile_from_esdl()
