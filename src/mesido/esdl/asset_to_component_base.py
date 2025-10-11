@@ -545,7 +545,7 @@ class _AssetToComponentBase:
 
         Parameters
         ----------
-        asset : the ass
+        asset : the asset
         q_max : float of the max flow through that pipe
 
         Returns
