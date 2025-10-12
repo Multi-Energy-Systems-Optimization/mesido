@@ -2351,13 +2351,13 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 is_buffer_charging = self.variable(f"{b}__is_charging")
 
                 # TODO: check if below is necessary.
-                # flow_big_m = q_nominal * 10
-                # constraints.append(
-                #     ((discharge - flow_big_m * is_buffer_charging) / q_nominal, -np.inf, 0.0)
-                # )
-                # constraints.append(
-                #     ((discharge + flow_big_m * (1 - is_buffer_charging)) / q_nominal, 0.0, np.inf)
-                # )
+                flow_big_m = q_nominal * 10
+                constraints.append(
+                    ((discharge - flow_big_m * is_buffer_charging) / q_nominal, -np.inf, 0.0)
+                )
+                constraints.append(
+                    ((discharge + flow_big_m * (1 - is_buffer_charging)) / q_nominal, 0.0, np.inf)
+                )
                 # constraints.append(
                 #     ((heat_flow - big_m * is_buffer_charging) / heat_nominal, -np.inf, 0.0)
                 # )
@@ -2920,7 +2920,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             # side as the secondary side implicetly follows from the energy balance constraints.
             # similar logic in the other blocks
             # This constraints ensures that is_disabled is 0 when heat_primary > 0
-            constraints.append(((heat_primary - (1.0 - is_disabled) * big_m) / big_m, -np.inf, 0.0))
+            constraints.append(((heat_primary - (1.0 - is_disabled) * big_m - tol) / big_m,
+                                -np.inf, 0.0))
             # This constraints ensures that is_disabled is 1 when heat_primary < tol
             constraints.append(
                 (
@@ -3411,7 +3412,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                                 )
                                 efficiency = parameters[f"{hp}.efficiency"]
                                 t_cond = 273.15 + sec_sup_temp
-                                t_evap = 273.15 + prim_sup_temp
+                                t_evap = 273.15 + prim_ret_temp
 
                                 cop_carnot = efficiency * t_cond / (t_cond - t_evap)
                                 not_selected = (
