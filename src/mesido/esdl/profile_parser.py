@@ -543,7 +543,9 @@ class InfluxDBProfileReader(BaseProfileReader):
                     get_potential_errors().add_potential_issue(
                         MesidoAssetIssueType.ASSET_PROFILE_MULTIPLIER,
                         asset.id,
-                        f", {asset.name} has unit's multiplier specified incorrectly. Multiplier should be 1.0, when the unit is specified in {profile_quantity_and_unit.description}",
+                        f", {asset.name} has unit's multiplier specified incorrectly. "
+                        f"Multiplier should be 1.0, when the unit is specified in "
+                        f"{profile_quantity_and_unit.description}",
                     )
                 return (
                     profile_time_series

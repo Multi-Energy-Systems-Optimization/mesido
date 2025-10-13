@@ -219,13 +219,14 @@ class TestPotentialErrors(unittest.TestCase):
                 base_folder=base_folder,
                 model_folder=model_folder,
                 input_folder=input_folder,
-                esdl_file_name="1a_with_influx_profiles_error_check_4_dup.esdl",
+                esdl_file_name="1a_with_influx_profiles_error_check_5.esdl",
                 profile_reader=InfluxDBProfileReader,
             )
             problem.pre()
         np.testing.assert_equal(
             cm.exception.message_per_asset_id["8172d5d3-61a4-4d0b-a26f-5e61c2a22c64"],
-            "GenericProducer_8172 has unit's multiplier specified incorrectly. Multiplier should be 1.0, when the unit is specified in Coefficient in %"
+            ", GenericProducer_8172 has unit's multiplier specified incorrectly. "
+            "Multiplier should be 1.0, when the unit is specified in Coefficient in %",
         )
 
 
