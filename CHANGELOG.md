@@ -20,9 +20,8 @@
 - TCO cost calculation objective now used the technical lifetime to determine the frequency of the re-investment costs.
 - TCO cost calculation objective to now exclude heating demand costs in the grow workflow
 - Hydraulic power calculation at "sink" assets is set to 0.0 if headloss calculation is turned off
-- Hydraulic power calculation at "sink" assets is set to 0.0 if headloss calculation is turned off.
 - Updated pyESDL to v25.7
-- Testing of network simulator workflow
+- Removed the ATES from network simulator workflow test 
 
 ## Fixed
 - Bug: Add 3 port heat pump to elect demand path constraint
