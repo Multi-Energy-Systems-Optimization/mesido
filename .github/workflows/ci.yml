@@ -52,9 +52,9 @@ jobs:
       - name: Check build
         run: python setup.py sdist bdist_wheel
   
-  # Main testing
-  test_main:
-    name: Test main
+  # Main testing part 1
+  test_main_1:
+    name: Test main - 1
     runs-on: ubuntu-latest
     timeout-minutes: 10
     if: ${{ !github.event.pull_request.draft }}
@@ -71,7 +71,28 @@ jobs:
         run: python -m pip install -U tox
   
       - name: Check test
-        run: tox -vv -etest_env_main
+        run: tox -vv -etest_env_main_1
+
+  # Main testing part 2
+  test_main_2:
+    name: Test main - 2
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: ${{ !github.event.pull_request.draft }}
+    env:
+      TOXENV: py311
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: deps
+        run: python -m pip install -U tox
+  
+      - name: Check test
+        run: tox -vv -etest_env_main_2
   
   # Pre-processing testing
   test_pre_processing:
