@@ -1895,8 +1895,14 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             constraint_nominal = self.variable_nominal(f"{s}.Heat_source")
 
             if f"{s}.maximum_heat_source" in self.io.get_timeseries_names():
-                profile_non_scaled = self.get_timeseries(f"{s}.maximum_heat_source").values
-                max_profile_non_scaled = max(profile_non_scaled)
+                ts = self.get_timeseries(f"{s}.maximum_heat_source")
+                query_times = self.times()
+                profile_non_scaled = np.array([ts.values[np.where(ts.times == t)] for t in
+                        query_times if (t in ts.times)])
+                if len(query_times) < len(profile_non_scaled):
+                    max_profile_non_scaled = self.bounds()[f"{s}__max_size"]
+                else:
+                    max_profile_non_scaled = max(profile_non_scaled)
                 profile_scaled = profile_non_scaled / max_profile_non_scaled
 
                 # Cap the heat produced via a profile. Two profile options below.
