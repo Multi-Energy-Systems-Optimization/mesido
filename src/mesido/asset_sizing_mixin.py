@@ -1899,7 +1899,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 query_times = self.times()
                 profile_non_scaled = np.array([ts.values[np.where(ts.times == t)] for t in
                         query_times if (t in ts.times)])
-                if len(query_times) < len(profile_non_scaled):
+                if len(query_times) < len(ts.values):
                     max_profile_non_scaled = self.bounds()[f"{s}__max_size"][1]
                 else:
                     max_profile_non_scaled = max(profile_non_scaled)
