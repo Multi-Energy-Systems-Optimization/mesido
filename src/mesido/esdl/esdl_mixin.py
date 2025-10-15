@@ -563,10 +563,10 @@ class ESDLMixin(
                         elif asset.attributes["port"][0].carrier.returnTemperature:  # cold_pipe
                             if related_asset[0].name not in self.__hot_cold_pipe_relations.keys():
                                 self.__hot_cold_pipe_relations[related_asset[0].name] = asset.name
-                    if not related:
+                    if not related and asset.name not in self.__unrelated_pipes:
                         self.__unrelated_pipes.append(asset.name)
         else:
-            pipes = self.energy_system_components.get("pipe", [])
+            pipes = self.energy_system_components.get("heat_pipe", [])
             for pipe in pipes:
                 related = False
                 # test if hot_pipe
@@ -582,7 +582,7 @@ class ESDLMixin(
                         related = True
                         if hot_pipe not in self.__hot_cold_pipe_relations.keys():
                             self.__hot_cold_pipe_relations[hot_pipe] = pipe
-                if not related:
+                if not related and pipe not in self.__unrelated_pipes:
                     self.__unrelated_pipes.append(pipe)
 
     @property

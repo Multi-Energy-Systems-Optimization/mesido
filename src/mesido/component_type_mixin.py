@@ -538,7 +538,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
         # esdlVersion, set the hot_cold_pipe_relations based on _ret.
         # TODO: also check if there are goals/constraints and function that should be adapted for
         # pipes that are not in the realtions list, and thereby not in thet hot_pipes
-        pipes = self.energy_system_components.get("pipe", [])
+        pipes = self.energy_system_components.get("heat_pipe", [])
         for pipe in pipes:
             related = False
             # test if hot_pipe
@@ -554,5 +554,5 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                     related = True
                     if hot_pipe not in self.__hot_cold_pipe_relations.keys():
                         self.__hot_cold_pipe_relations[hot_pipe] = pipe
-            if not related:
+            if not related and pipe not in self.__unrelated_pipes:
                 self.__unrelated_pipes.append(pipe)
