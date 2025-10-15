@@ -44,6 +44,18 @@ class BaseComponentTypeMixin:
         """
         raise NotImplementedError
 
+    def is_hot_pipe(self, pipe: str) -> bool:
+        """
+        The function return true if the pipe is a supply pipe based on a name convention
+        """
+        return pipe.endswith("_hot")
+
+    def is_cold_pipe(self, pipe: str) -> bool:
+        """
+        The function return true if the pipe is a return pipe based on a name convention
+        """
+        return pipe.endswith("_cold")
+
     def hot_to_cold_pipe(self, pipe: str):
         """
         This function returns the name of the associated cold/return pipe of a supply/hot pipe.
