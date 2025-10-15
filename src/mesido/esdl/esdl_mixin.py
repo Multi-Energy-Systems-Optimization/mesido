@@ -155,7 +155,6 @@ class ESDLMixin(
 
         self.__hot_cold_pipe_relations = dict()
         self.__unrelated_pipes = list()
-        self.hot_cold_pipe_relations()
 
         super().__init__(*args, **kwargs)
 
@@ -547,22 +546,44 @@ class ESDLMixin(
         # esdlVersion, set the hot_cold_pipe_relations based on _ret.
         # TODO: also check if there are goals/constraints and function that should be adapted for
         # pipes that are not in the realtions list, and thereby not in thet hot_pipes
-
-        for asset in self._esdl_assets.values():
-            if asset.asset_type == "Pipe":
+        # ESDL version before v2110 don't have the related attribute
+        energy_handler = self.__energy_system_handler
+        esdl_version = self.__energy_system_handler.energy_system.esdlVersion
+        if esdl_version is not None and esdl_version >= 'v2110':
+            for asset in self._esdl_assets.values():
+                if asset.asset_type == "Pipe":
+                    related = False
+                    related_asset = asset.attributes.get("related", False)
+                    if related_asset:
+                        assert len(related_asset) == 1, "Pipes can only have related supply/return pipe"
+                        related = True
+                        if asset.attributes["port"][0].carrier.supplyTemperature:  # hot_pipe
+                            if asset.name not in self.__hot_cold_pipe_relations.keys():
+                                self.__hot_cold_pipe_relations[asset.name] = related_asset[0].name
+                        elif asset.attributes["port"][0].carrier.returnTemperature:  # cold_pipe
+                            if related_asset[0].name not in self.__hot_cold_pipe_relations.keys():
+                                self.__hot_cold_pipe_relations[related_asset[0].name] = asset.name
+                    if not related:
+                        self.__unrelated_pipes.append(asset.name)
+        else:
+            pipes = self.energy_system_components.get("pipe", [])
+            for pipe in pipes:
                 related = False
-                related_asset = asset.attributes.get("related", False)
-                if related_asset:
-                    assert len(related_asset) == 1, "Pipes can only have related supply/return pipe"
-                    related = True
-                    if asset.attributes["port"][0].carrier.supplyTemperature:  # hot_pipe
-                        if asset.name not in self.__hot_cold_pipe_relations.keys():
-                            self.__hot_cold_pipe_relations[asset.name] = related_asset[0].name
-                    elif asset.attributes["port"][0].carrier.returnTemperature:  # cold_pipe
-                        if related_asset[0].name not in self.__hot_cold_pipe_relations.keys():
-                            self.__hot_cold_pipe_relations[related_asset[0].name] = asset.name
+                # test if hot_pipe
+                if not pipe.endswith("_ret"):
+                    cold_pipe = f"{pipe}_ret"
+                    if cold_pipe in pipes:
+                        related = True
+                        if pipe not in self.__hot_cold_pipe_relations.keys():
+                            self.__hot_cold_pipe_relations[pipe] = cold_pipe
+                elif pipe.endswith("_ret"):
+                    hot_pipe = pipe[:-4]
+                    if hot_pipe in pipes:
+                        related = True
+                        if hot_pipe not in self.__hot_cold_pipe_relations.keys():
+                            self.__hot_cold_pipe_relations[hot_pipe] = pipe
                 if not related:
-                    self.__unrelated_pipes.append(asset.name)
+                    self.__unrelated_pipes.append(pipe)
 
     @property
     def hot_to_cold_pipe_map(self) -> Dict:
@@ -610,6 +631,7 @@ class ESDLMixin(
         super().read()
         energy_system_components = self.energy_system_components
         esdl_carriers = self.esdl_carriers
+        self.hot_cold_pipe_relations()
         io = self.io
         self.__profile_reader.read_profiles(
             energy_system_components=energy_system_components,
