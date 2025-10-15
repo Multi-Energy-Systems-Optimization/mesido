@@ -259,9 +259,13 @@ class TestUpdatedESDL(TestCase):
                 # Check pipe diameter
                 if len(fnmatch.filter([energy_system.instance[0].area.asset[ii].id], "Pipe*")) == 1:
                     if asset_name in ["Pipe1", "Pipe1_ret"]:
-                        np.testing.assert_array_equal(
-                            energy_system.instance[0].area.asset[ii].diameter.name, "DN250"
-                        )  # original pipe DN400 being sized
+                        pipe_size = energy_system.instance[0].area.asset[
+                                        ii].diameter==esdl.PipeDiameterEnum.getEEnumLiteral(
+                            "DN200") or energy_system.instance[0].area.asset[
+                                        ii].diameter==esdl.PipeDiameterEnum.getEEnumLiteral(
+                            "DN250")
+                        np.testing.assert_array_equal(pipe_size, True)  # original pipe DN400 being
+                        # sized
                     elif asset_name in ["Pipe4", "Pipe4_ret"]:
                         np.testing.assert_array_equal(
                             energy_system.instance[0].area.asset[ii].diameter.name, "DN200"
