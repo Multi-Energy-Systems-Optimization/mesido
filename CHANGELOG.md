@@ -11,7 +11,8 @@
 - Optimized esdl is re-usabled
 - Pipe costs are updated based on the asset templates if they are provided 
 - AssetStateEnums of IntEnum type to describe the state of an asset i.e disabled/enabled/optional
-- A new type of potential error is added if the profile name indicated in esdl is not available in the database
+- A new type of potential error is added if the profile name indicated in esdl is not available in the database.
+- Parsing of emission factors for specific sources not related to carriers.
 - Capability of ResidualHeatSource and GeothermalHeatSource to also have profile constraints that can be read from InfluxDB
 
 ## Changed
