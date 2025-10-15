@@ -1,5 +1,6 @@
 import base64
 import copy
+import dataclasses
 import logging
 import xml.etree.ElementTree as ET  # noqa: N817
 from datetime import timedelta
@@ -77,8 +78,9 @@ class ESDLMixin(
         We set file locations for the input files and for the diagnostic file.
 
         We create a dict with all possible pipe classes for the optional pipes to later add them
-        to the optimization problem. This is done in this Mixin as we here use the information of
-        the EDR database which is linked to ESDL and the Mapeditor.
+        to the optimization problem. Additionally, we change the investment cost figures if an
+        asset pipe template is provided. This is done in this Mixin as we here use the information
+        of the EDR database which is linked to ESDL and the Mapeditor.
 
         Parameters
         ----------
@@ -101,6 +103,7 @@ class ESDLMixin(
         self._esdl_assets: Dict[str, Asset] = esdl_parser.get_assets()
         self._esdl_carriers: Dict[str, Dict[str, Any]] = esdl_parser.get_carrier_properties()
         self.__energy_system_handler: esdl.esdl_handler.EnergySystemHandler = esdl_parser.get_esh()
+        self._esdl_templates: Dict[str, Asset] = esdl_parser.get_templates()
 
         profile_reader_class = kwargs.get("profile_reader", InfluxDBProfileReader)
         input_file_name = kwargs.get("input_timeseries_file", None)
@@ -201,6 +204,28 @@ class ESDLMixin(
             EDRPipeClass.from_edr_class(name, edr_class_name, maximum_velocity)
             for name, edr_class_name in _AssetToComponentBase.STEEL_S1_PIPE_EDR_ASSETS.items()
         ]
+        # Update the pipe costs if a template model in the ESDL was used. This is updated only if
+        # the pipe catalog is available as a template
+        if self._esdl_templates:
+            filter_type = "Pipe"
+            pipe_templates = self.filter_asset_templates(
+                asset_templates=self._esdl_templates, filter_type=filter_type
+            )
+            if len(pipe_templates.items()) > 0:
+                pipe_diameter_cost_map = {
+                    str(pipe.attributes["asset"].diameter): pipe.attributes[
+                        "asset"
+                    ].costInformation.investmentCosts.value
+                    for pipe in pipe_templates.values()
+                }
+                for i, pipe_class in enumerate(pipe_classes):
+                    if pipe_class.name in pipe_diameter_cost_map.keys():
+                        pipe_classes[i] = dataclasses.replace(
+                            pipe_classes[i],
+                            investment_costs=pipe_diameter_cost_map[pipe_class.name],
+                        )
+                    else:
+                        del pipe_classes[i]
 
         # We assert the pipe classes are monotonically increasing in size
         assert np.all(np.diff([pc.inner_diameter for pc in pipe_classes]) > 0)
@@ -694,6 +719,18 @@ class ESDLMixin(
 
         # Write output file to disk
         self.__timeseries_export.write()
+
+    @classmethod
+    def filter_asset_templates(
+        cls, asset_templates: Dict[str, Asset], filter_type: str
+    ) -> Dict[str, Asset]:
+        filtered_assets = dict()
+        for asset_id, asset in asset_templates.items():
+            asset_type = asset.attributes["asset"]
+            if isinstance(asset_type, getattr(esdl, filter_type)):
+                filtered_assets[asset_id] = asset
+
+        return filtered_assets
 
 
 class _ESDLInputDataConfig:
