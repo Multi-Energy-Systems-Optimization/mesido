@@ -1069,9 +1069,10 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 )  # [euro/Wh] * [W] * [hr]
             constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
 
-        # for a in self.heat_network_components.get("ates", []):
+        # for a in self.energy_system_components.get("ates", []):
         # TODO: needs to be replaced with the positive or abs value of this, see varOPEX,
         #  then ates varopex also needs to be added to the mnimize_tco_goal
+        # ates_is_charging = self.__state_vector_scaled(f"{a}__is_charging", ensemble_member)
         # heat_ates = self.__state_vector_scaled(f"{a}.Heat_ates", ensemble_member)
         # variable_operational_cost_var = self._asset_variable_operational_cost_map[a]
         # variable_operational_cost = self.extra_variable(
