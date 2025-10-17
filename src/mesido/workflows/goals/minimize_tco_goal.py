@@ -2,6 +2,7 @@ from typing import Any, Dict, Optional, Set
 
 from casadi import MX
 
+from mesido.esdl.asset_to_component_base import AssetStateEnum
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 
 from rtctools.optimization.goal_programming_mixin_base import Goal
@@ -152,7 +153,7 @@ class MinimizeTCO(Goal):
 
                 asset_state = optimization_problem.parameters(ensemble_member)[f"{asset}.state"]
 
-                if not ((asset_type == "heat_demand") and (asset_state == 1.0)):
+                if not ((asset_type == "heat_demand") and (asset_state == AssetStateEnum.ENABLED)):
                     if options["discounted_annualized_cost"]:
                         # We only want the operational cost for a single year when we use
                         # annualized CAPEX.
