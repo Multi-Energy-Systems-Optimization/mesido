@@ -1069,31 +1069,6 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 )  # [euro/Wh] * [W] * [hr]
             constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
 
-        # for a in self.energy_system_components.get("ates", []):
-        # TODO: needs to be replaced with the positive or abs value of this, see varOPEX,
-        #  then ates varopex also needs to be added to the mnimize_tco_goal
-        # ates_is_charging = self.__state_vector_scaled(f"{a}__is_charging", ensemble_member)
-        # heat_ates = self.__state_vector_scaled(f"{a}.Heat_ates", ensemble_member)
-        # variable_operational_cost_var = self._asset_variable_operational_cost_map[a]
-        # variable_operational_cost = self.extra_variable(
-        #     variable_operational_cost_var, ensemble_member
-        # )
-        # nominal = self.variable_nominal(variable_operational_cost_var)
-        # variable_operational_cost_coefficient = parameters[
-        #     f"{a}.variable_operational_cost_coefficient"
-        # ]
-        # timesteps = np.diff(self.times()) / 3600.0
-        #
-        # sum = 0.0
-        #
-        # for i in range(1, len(self.times())):
-        #     varOPEX_dt = (variable_operational_cost_coefficient * heat_ates[i]
-        #     * timesteps[i - 1])
-        #     constraints.append(((varOPEX-varOPEX_dt)/nominal,0.0, np,inf))
-        #     #varOPEX would be a variable>0 for everyt timestep
-        #     sum += varOPEX
-        # constraints.append(((variable_operational_cost - sum) / (nominal), 0.0, 0.0))
-
         for electrolyzer in self.energy_system_components.get("electrolyzer", []):
             power_consumer = self.__state_vector_scaled(
                 f"{electrolyzer}.Gas_mass_flow_out", ensemble_member
@@ -1119,6 +1094,35 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
             constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
 
+        for a in self.energy_system_components.get("ates", []):
+            # Todo: This cost component still is not fully functioning
+            ates_is_charging = self.__state_vector_scaled(f"{a}__is_charging", ensemble_member)
+            heat_ates = self.__state_vector_scaled(f"{a}.Heat_ates", ensemble_member)
+            variable_operational_cost_var = self._asset_variable_operational_cost_map[a]
+            variable_operational_cost = self.extra_variable(
+                variable_operational_cost_var, ensemble_member
+            )
+            nominal = self.variable_nominal(variable_operational_cost_var)
+            variable_operational_cost_coefficient = parameters[
+                f"{a}.variable_operational_cost_coefficient"
+            ]
+            timesteps = np.diff(self.times()) / 3600.0
+
+            sum = 0.0
+            for i in range(1, len(self.times())):
+                # If ates is charging, ates_is_charging is 1 and flow_direction is 1.
+                # If ates is discharging , ates_is_charging is 0 and flow direction 0
+                # Hence, varOPEX would be a variable>0 for everyt timestep
+                flow_direction = ates_is_charging[i] * 2.0 - 1.0
+                varOPEX = (
+                        variable_operational_cost_coefficient
+                        * heat_ates[i]
+                        * flow_direction
+                        * timesteps[i - 1]
+                )
+                sum += varOPEX
+            constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
+
         # for a in self.heat_network_components.get("ates", []):
         # TODO: needs to be replaced with the positive or abs value of this, see varOPEX,
         #  then ates varopex also needs to be added to the mnimize_tco_goal
@@ -1138,7 +1142,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         # for i in range(1, len(self.times())):
         #     varOPEX_dt = (variable_operational_cost_coefficient * heat_ates[i]
         #     * timesteps[i - 1])
-        #     constraints.append(((varOPEX-varOPEX_dt)/nominal,0.0, np,inf))
+        #     constraints.append(((varOPEX-varOPEX_dt)/nominal,0.0, np.inf))
         #     #varOPEX would be a variable>0 for everyt timestep
         #     sum += varOPEX
         # constraints.append(((variable_operational_cost - sum) / (nominal), 0.0, 0.0))
