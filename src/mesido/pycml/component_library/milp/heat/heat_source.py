@@ -3,11 +3,11 @@ from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 from numpy import nan
 
-from ._non_storage_component import _NonStorageComponent
+from ._non_storage_component_source_type import _NonStorageComponentSourceType
 
 
 @add_variables_documentation_automatically
-class HeatSource(_NonStorageComponent):
+class HeatSource(_NonStorageComponentSourceType):
     """
     The source component is there to insert thermal power (Heat) into the network.
 
@@ -49,16 +49,6 @@ class HeatSource(_NonStorageComponent):
         # Heat in the return (i.e. cold) line is zero
         self.add_variable(Variable, "Heat_source", min=0.0, nominal=self.Heat_nominal)
         self.add_variable(Variable, "Emission", min=0.0, nominal=self.Heat_nominal)
-        self.add_variable(Variable, "dH", min=0.0)
-        self.add_variable(
-            Variable, "Pump_power", min=0.0, nominal=self.Q_nominal * self.nominal_pressure
-        )
-
-        self.add_equation(self.dH - (self.HeatOut.H - self.HeatIn.H))
-        self.add_equation(
-            (self.Pump_power - (self.HeatOut.Hydraulic_power - self.HeatIn.Hydraulic_power))
-            / (self.Q_nominal * self.nominal_pressure)
-        )
 
         self.add_equation(
             (self.HeatOut.Heat - (self.HeatIn.Heat + self.Heat_source)) / self.Heat_nominal

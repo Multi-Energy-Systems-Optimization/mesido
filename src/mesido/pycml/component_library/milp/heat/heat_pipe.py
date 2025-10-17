@@ -59,8 +59,6 @@ class HeatPipe(_NonStorageComponent):
 
         self.Heat_loss = nan
 
-        self.add_variable(Variable, "dH")
-
         # rho * ff * length * area / 2 / diameter * velocity**3
         ff = 0.02  # Order of magnitude expected with 0.05-2.5m/s in 20mm-1200mm diameter pipe
         velo = self.Q_nominal / self.area
