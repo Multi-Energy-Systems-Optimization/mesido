@@ -547,15 +547,16 @@ class ESDLMixin(
         # TODO: also check if there are goals/constraints and function that should be adapted for
         # pipes that are not in the realtions list, and thereby not in thet hot_pipes
         # ESDL version before v2110 don't have the related attribute
-        energy_handler = self.__energy_system_handler
         esdl_version = self.__energy_system_handler.energy_system.esdlVersion
-        if esdl_version is not None and esdl_version >= 'v2110':
+        if esdl_version is not None and esdl_version >= "v2110":
             for asset in self._esdl_assets.values():
                 if asset.asset_type == "Pipe":
                     related = False
                     related_asset = asset.attributes.get("related", False)
                     if related_asset:
-                        assert len(related_asset) == 1, "Pipes can only have related supply/return pipe"
+                        assert (
+                            len(related_asset) == 1
+                        ), "Pipes can only have related supply/return pipe"
                         related = True
                         if asset.attributes["port"][0].carrier.supplyTemperature:  # hot_pipe
                             if asset.name not in self.__hot_cold_pipe_relations.keys():
