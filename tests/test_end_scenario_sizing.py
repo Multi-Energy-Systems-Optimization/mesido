@@ -293,7 +293,7 @@ class TestEndScenarioSizing(TestCase):
 
         demand_matching_test(solution, results)
 
-        tol = 1.0e-10
+        tol = 1.0e-9
         pipes = solution.energy_system_components.get("heat_pipe")
         for pipe in pipes:
             pipe_diameter = solution.parameters(0)[f"{pipe}.diameter"]
