@@ -408,7 +408,7 @@ def electric_power_conservation_test(solution, results, atol=1e-2):
     np.testing.assert_allclose(energy_sum, 0.0, atol=atol)
 
 
-def energy_conservation_test(solution, results, atol=1e-3):
+def energy_conservation_test(solution, results, atol=1e-3, atol_total=1e-1):
     """Test to check if the energy is conserved at each timestep"""
     energy_sum = np.zeros(len(solution.times()))
 
@@ -471,8 +471,7 @@ def energy_conservation_test(solution, results, atol=1e-3):
                 )
             energy_sum -= results[f"{p}__hn_heat_loss"]
 
-    # TODO: fix hardcoded atol
-    np.testing.assert_allclose(energy_sum, 0.0, atol=1e-1)
+    np.testing.assert_allclose(energy_sum, 0.0, atol=atol_total)
 
 
 def gas_pipes_head_loss_test(solution, results, atol=1e-12):
