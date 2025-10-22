@@ -78,9 +78,9 @@ def _mip_gap_settings(mip_gap_name: str, problem) -> Dict[str, float]:
     options = {}
     if hasattr(problem, "_stage"):
         if problem._stage == 1:
-            options[mip_gap_name] = 0.005
+            options[mip_gap_name] = 0.05#0.10
         else:
-            options[mip_gap_name] = 0.02
+            options[mip_gap_name] = 0.05#0.20
     else:
         options[mip_gap_name] = 0.02
 
@@ -204,6 +204,7 @@ class SolverCPLEX:
         options["solver"] = "cplex"
         cplex_options = options["cplex"] = {}
         cplex_options.update(_mip_gap_settings("CPX_PARAM_EPGAP", self))
+        cplex_options["CPXPARAM_Threads"] = 10
 
         options["highs"] = None
 
@@ -263,7 +264,7 @@ class EndScenarioSizing(
         self.__heat_demand_bounds = dict()
         self.__heat_demand_nominal = dict()
 
-        self._save_json = False
+        self._save_json = True
 
         self._workflow_progress_status = kwargs.get("update_progress_function", None)
 
@@ -588,6 +589,9 @@ class SettingsStaged:
             self.heat_network_settings["minimize_head_losses"] = False
 
         if self._stage == 2 and priorities_output:
+            self.heat_network_settings["minimum_velocity"] = 0.0
+            self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+            self.heat_network_settings["minimize_head_losses"] = False
             self._priorities_output = priorities_output
 
     def energy_system_options(self):
@@ -721,20 +725,24 @@ def run_end_scenario_sizing(
         pc_map = solution.get_pipe_class_map()  # if disconnectable and not connected to source
         for pipe_classes in pc_map.values():
             v_prev = 0.0
+            v_prev_2 = 0.0
             first_pipe_class = True
             use_pipe_dn_none = False
             for var_name in pipe_classes.values():
                 v = round(abs(results[var_name][0]))
                 if first_pipe_class and v == 1.0:
-                    boolean_bounds[var_name] = (v, v)
-                    use_pipe_dn_none = True
+                    boolean_bounds[var_name] = (0.0, v)
+                    # use_pipe_dn_none = True
                 elif v == 1.0:
                     boolean_bounds[var_name] = (0.0, v)
-                elif not use_pipe_dn_none and v_prev == 1.0:  # This allows one DN larger
+                elif (not use_pipe_dn_none and v_prev == 1.0) or (not use_pipe_dn_none and v_prev_2
+                                                                 == 1.0):  # This allows one DN larger
                     boolean_bounds[var_name] = (0.0, 1.0)
                 else:
                     boolean_bounds[var_name] = (v, v)
-                v_prev = v
+                v_prev_2 = v_prev
+                v_prev = v #if v>=0.999 else v_prev
+
                 first_pipe_class = False
 
         for asset in [
@@ -775,11 +783,11 @@ def run_end_scenario_sizing(
                     )
 
                 boolean_bounds[f"{p}__flow_direct_var"] = (Timeseries(t, lb), Timeseries(t, ub))
-                try:
-                    r = results[f"{p}__is_disconnected"]
-                    boolean_bounds[f"{p}__is_disconnected"] = (Timeseries(t, r), Timeseries(t, r))
-                except KeyError:
-                    pass
+                # try:
+                #     r = results[f"{p}__is_disconnected"]
+                #     boolean_bounds[f"{p}__is_disconnected"] = (Timeseries(t, r), Timeseries(t, r))
+                # except KeyError:
+                #     pass
 
         priorities_output = solution._priorities_output
 
