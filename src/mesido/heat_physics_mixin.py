@@ -2422,7 +2422,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         #         np.inf,
                         #     )
                         # )
-                        a = 1.25 * 8.9286e-5  # 8.9286e-5=0.015°C/week/m3h
+                        a = 1.6e-4
                         constraints.append(
                             (
                                 (
@@ -2967,10 +2967,11 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             else:
                 for t_sup in sup_temps_discharge_cold:
                     constraint_nominal = (heat_nominal * cp * rho * t_sup * q_nominal) ** 0.5
-                    sup_temperature_is_selected = self.state(f"{sup_temps_discharge_cold}_{t_sup}")
-                    assert len(ret_temps_discharge_cold) == 0, (
-                        "Varying temperatures at the " "DischargeHot inport is not " "supported"
-                    )
+                    sup_carrier_discharge_cold = parameters[f"{ates}.DischargeCold.T_supply_id"]
+                    sup_temperature_is_selected = self.state(f"{sup_carrier_discharge_cold}_{t_sup}")
+                    # assert len(ret_temps_discharge_cold) == 0, (
+                    #     "Varying temperatures at the " "DischargeHot inport is not " "supported"
+                    # )
                     if t_sup <= parameters[f"{ates}.DischargeCold.T_return"]:
                         # allows for bypassing
                         constraints.append(
