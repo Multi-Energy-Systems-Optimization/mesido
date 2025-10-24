@@ -1098,7 +1098,10 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         for a in self.energy_system_components.get("ates", []):
             # Todo: This cost component still is not fully functioning
             ates_is_charging = self.__state_vector_scaled(f"{a}__is_charging", ensemble_member)
+            flow_direction = self.__state_vector_scaled(f"{a}.Flow_direction", ensemble_member)
             heat_ates = self.__state_vector_scaled(f"{a}.Heat_ates", ensemble_member)
+            heat_ates_abs = self.__state_vector_scaled(f"{a}.Heat_ates_abs", ensemble_member)
+            # heat_ates_abs = self.state(f"{a}.Heat_ates_abs")
             heat_ates_nominal = self.bounds()[f"{a}.Heat_ates"][1] / 2
             variable_operational_cost_var = self._asset_variable_operational_cost_map[a]
             variable_operational_cost = self.extra_variable(
@@ -1116,12 +1119,12 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 # If ates is discharging , ates_is_charging is 0 and flow direction 0
                 # Hence, varOPEX would be a variable>0 for everyt timestep
 
-                flow_direction = ates_is_charging[i] * 2.0 - 1.0
+                # flow_direction = ates_is_charging[i] * 2.0 - 1.0
 
                 varOPEX = (
                         variable_operational_cost_coefficient
                         * heat_ates[i]
-                        * flow_direction
+                        * flow_direction[i]
                         * timesteps[i - 1]
                 )
                 sum += varOPEX
