@@ -42,8 +42,9 @@ class TestCostInputCheck(TestCase):
 
         base_folder = Path(test_check_cost_information.__file__).resolve().parent
 
-        with self.assertRaises(MesidoAssetIssueError) as cm, unittest.mock.patch(
-            "mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()
+        with (
+            self.assertRaises(MesidoAssetIssueError) as cm,
+            unittest.mock.patch("mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()),
         ):
             _ = run_esdl_mesido_optimization(
                 EndScenarioSizing,
@@ -90,8 +91,9 @@ class TestCostInputCheck(TestCase):
 
         base_folder = Path(test_check_cost_information.__file__).resolve().parent
 
-        with self.assertRaises(MesidoAssetIssueError) as cm, unittest.mock.patch(
-            "mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()
+        with (
+            self.assertRaises(MesidoAssetIssueError) as cm,
+            unittest.mock.patch("mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()),
         ):
             _ = run_esdl_mesido_optimization(
                 EndScenarioSizing,
@@ -117,8 +119,9 @@ class TestCostInputCheck(TestCase):
 
         # Test missing operational cost, which is required for HeatProducer
 
-        with self.assertRaises(MesidoAssetIssueError) as cm, unittest.mock.patch(
-            "mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()
+        with (
+            self.assertRaises(MesidoAssetIssueError) as cm,
+            unittest.mock.patch("mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()),
         ):
             _ = run_esdl_mesido_optimization(
                 EndScenarioSizing,
