@@ -21,7 +21,7 @@ def feasibility_test(solution):
         )
 
 
-def demand_matching_test(solution, results):
+def demand_matching_test(solution, results, atol=1.0e-3, rtol=1.0e-6):
     """ "Test function to check whether the milp demand of each consumer is matched"""
     for d in solution.energy_system_components.get("heat_demand", []):
         if len(solution.times()) > 0:
@@ -29,14 +29,14 @@ def demand_matching_test(solution, results):
         else:
             len_times = len(solution.get_timeseries(f"{d}.target_heat_demand").values)
         target = solution.get_timeseries(f"{d}.target_heat_demand").values[0:len_times]
-        np.testing.assert_allclose(target, results[f"{d}.Heat_demand"], atol=1.0e-3, rtol=1.0e-6)
+        np.testing.assert_allclose(target, results[f"{d}.Heat_demand"], atol=atol, rtol=rtol)
     for d in solution.energy_system_components.get("cold_demand", []):
         if len(solution.times()) > 0:
             len_times = len(solution.times())
         else:
             len_times = len(solution.get_timeseries(f"{d}.target_cold_demand").values)
         target = solution.get_timeseries(f"{d}.target_cold_demand").values[0:len_times]
-        np.testing.assert_allclose(target, results[f"{d}.Cold_demand"], atol=1.0e-3, rtol=1.0e-6)
+        np.testing.assert_allclose(target, results[f"{d}.Cold_demand"], atol=atol, rtol=rtol)
     for d in solution.energy_system_components.get("gas_demand", []):
         timeseries_name = f"{d}.target_gas_demand"
         if timeseries_name in solution.io.get_timeseries_names():
@@ -46,7 +46,7 @@ def demand_matching_test(solution, results):
                 len_times = len(solution.get_timeseries(timeseries_name).values)
             target = solution.get_timeseries(timeseries_name).values[0:len_times]
             np.testing.assert_allclose(
-                target, results[f"{d}.Gas_demand_mass_flow"], atol=1.0e-3, rtol=1.0e-6
+                target, results[f"{d}.Gas_demand_mass_flow"], atol=atol, rtol=rtol
             )
     for d in solution.energy_system_components.get("electricity_demand", []):
         timeseries_name = f"{d}.target_electricity_demand"
@@ -57,7 +57,7 @@ def demand_matching_test(solution, results):
                 len_times = len(solution.get_timeseries(timeseries_name).values)
             target = solution.get_timeseries(timeseries_name).values[0:len_times]
             np.testing.assert_allclose(
-                target, results[f"{d}.Electricity_demand"], atol=1.0e-3, rtol=1.0e-6
+                target, results[f"{d}.Electricity_demand"], atol=atol, rtol=rtol
             )
 
 
@@ -102,7 +102,7 @@ def _get_component_temperatures(solution, results, component, side=None):
     return supply_t, return_t, dt
 
 
-def heat_to_discharge_test(solution, results):
+def heat_to_discharge_test(solution, results, atol=1e-2, rtol=1.0e-4):
     """
     Test to check if the discharge and milp flow are correlated as how the constraints are intented:
     - demand clusters: HeatIn should be smaller or equal to discharge multiplied with the supply
@@ -117,7 +117,6 @@ def heat_to_discharge_test(solution, results):
      discharge and heatflow can be negative.
     """
     test = TestCase()
-    tol = 1.0e-2
     for d in [
         *solution.energy_system_components.get("heat_demand", []),
         *solution.energy_system_components.get("airco", []),
@@ -140,7 +139,7 @@ def heat_to_discharge_test(solution, results):
         np.testing.assert_allclose(
             results[f"{d}.Heat_flow"],
             results[f"{d}.HeatIn.Heat"] - results[f"{d}.HeatOut.Heat"],
-            atol=tol,
+            atol=atol,
         )
         np.testing.assert_allclose(
             results[f"{d}.HeatOut.Heat"], results[f"{d}.Q"] * rho * cp * return_t
@@ -153,7 +152,7 @@ def heat_to_discharge_test(solution, results):
         np.testing.assert_allclose(
             results[f"{d}.Cold_demand"],
             results[f"{d}.HeatOut.Heat"] - results[f"{d}.HeatIn.Heat"],
-            atol=tol,
+            atol=atol,
         )
         np.testing.assert_allclose(
             results[f"{d}.HeatOut.Heat"], results[f"{d}.Q"] * rho * cp * supply_t
@@ -172,11 +171,12 @@ def heat_to_discharge_test(solution, results):
         # return_t = solution.parameters(0)[f"{d}.T_return"]
         supply_t, return_t, dt = _get_component_temperatures(solution, results, d)
 
+        # TODO: fix hardcoded atol
         np.testing.assert_allclose(
             results[f"{d}.HeatOut.Heat"],
             results[f"{d}.Q"] * rho * cp * supply_t,
             atol=5.0,
-            rtol=1.0e-4,
+            rtol=rtol,
         )
 
     for d in [
@@ -197,13 +197,13 @@ def heat_to_discharge_test(solution, results):
             np.testing.assert_allclose(
                 results[f"{d}.Heat_ates"],
                 results[f"{d}.HeatIn.Heat"] - results[f"{d}.HeatOut.Heat"],
-                atol=tol,
+                atol=atol,
             )
         except KeyError:
             np.testing.assert_allclose(
                 results[f"{d}.Heat_buffer"],
                 results[f"{d}.HeatIn.Heat"] - results[f"{d}.HeatOut.Heat"],
-                atol=tol,
+                atol=atol,
             )
         supply_temp, return_temp, dt = _get_component_temperatures(solution, results, d)
         indices = results[f"{d}.HeatIn.Q"] >= 0
@@ -218,13 +218,13 @@ def heat_to_discharge_test(solution, results):
         test.assertTrue(
             expr=all(
                 results[f"{d}.HeatIn.Heat"][indices]
-                <= (results[f"{d}.HeatIn.Q"][indices] * rho * cp * supply_t + tol)
+                <= (results[f"{d}.HeatIn.Q"][indices] * rho * cp * supply_t + atol)
             )
         )
         np.testing.assert_allclose(
             results[f"{d}.HeatOut.Heat"][indices],
             results[f"{d}.HeatIn.Q"][indices] * rho * cp * return_t,
-            atol=tol,
+            atol=atol,
         )
         indices = results[f"{d}.HeatIn.Q"] <= 0
         if isinstance(supply_t, float):
@@ -238,13 +238,13 @@ def heat_to_discharge_test(solution, results):
         np.testing.assert_allclose(
             results[f"{d}.HeatIn.Heat"][indices],
             results[f"{d}.HeatIn.Q"][indices] * rho * cp * supply_t,
-            atol=tol,
+            atol=atol,
         )
 
         test.assertTrue(
             expr=all(
                 results[f"{d}.HeatOut.Heat"][indices]
-                >= (results[f"{d}.HeatIn.Q"][indices] * rho * cp * return_t - tol)
+                >= (results[f"{d}.HeatIn.Q"][indices] * rho * cp * return_t - atol)
             )
         )
 
@@ -272,13 +272,13 @@ def heat_to_discharge_test(solution, results):
             heat = results[f"{d}.{p}_heat"]
 
             if p == "Primary":
-                np.testing.assert_allclose(heat_out, discharge * rho * cp * return_t, atol=tol)
-                test.assertTrue(expr=all(heat_in <= discharge * rho * cp * supply_t + tol))
-                test.assertTrue(expr=all(heat <= discharge * rho * cp * dt + tol))
+                np.testing.assert_allclose(heat_out, discharge * rho * cp * return_t, atol=atol)
+                test.assertTrue(expr=all(heat_in <= discharge * rho * cp * supply_t + atol))
+                test.assertTrue(expr=all(heat <= discharge * rho * cp * dt + atol))
             elif p == "Secondary":
-                test.assertTrue(expr=all(heat >= discharge * rho * cp * dt - tol))
-                np.testing.assert_allclose(heat_out, discharge * rho * cp * supply_t, atol=tol)
-                test.assertTrue(expr=all(heat_in <= discharge * rho * cp * return_t + tol))
+                test.assertTrue(expr=all(heat >= discharge * rho * cp * dt - atol))
+                np.testing.assert_allclose(heat_out, discharge * rho * cp * supply_t, atol=atol)
+                test.assertTrue(expr=all(heat_in <= discharge * rho * cp * return_t + atol))
 
     for p in solution.energy_system_components.get("heat_pipe", []):
         cp = solution.parameters(0)[f"{p}.cp"]
@@ -293,7 +293,8 @@ def heat_to_discharge_test(solution, results):
             )
         else:
             temperature = max(
-                solution.parameters(0)[f"{p}.temperature"], solution.parameters(0)[f"{p}.T_ground"]
+                solution.parameters(0)[f"{p}.temperature"],
+                solution.parameters(0)[f"{p}.T_ground"],
             )
         test.assertTrue(
             expr=all(
@@ -304,7 +305,7 @@ def heat_to_discharge_test(solution, results):
         test.assertTrue(
             expr=all(
                 results[f"{p}.HeatOut.Heat"][indices]
-                <= results[f"{p}.Q"][indices] * rho * cp * temperature + tol
+                <= results[f"{p}.Q"][indices] * rho * cp * temperature + atol
             )
         )
         indices = results[f"{p}.Q"] < 0
@@ -316,18 +317,19 @@ def heat_to_discharge_test(solution, results):
             )
         else:
             temperature = max(
-                solution.parameters(0)[f"{p}.temperature"], solution.parameters(0)[f"{p}.T_ground"]
+                solution.parameters(0)[f"{p}.temperature"],
+                solution.parameters(0)[f"{p}.T_ground"],
             )
         test.assertTrue(
             expr=all(
                 results[f"{p}.HeatIn.Heat"][indices]
-                >= results[f"{p}.Q"][indices] * rho * cp * temperature - tol
+                >= results[f"{p}.Q"][indices] * rho * cp * temperature - atol
             )
         )
         test.assertTrue(
             expr=all(
                 results[f"{p}.HeatOut.Heat"][indices]
-                >= results[f"{p}.Q"][indices] * rho * cp * temperature - tol
+                >= results[f"{p}.Q"][indices] * rho * cp * temperature - atol
             )
         )
         indices = results[f"{p}.Q"] == 0
@@ -338,18 +340,18 @@ def heat_to_discharge_test(solution, results):
         np.testing.assert_allclose(
             results[f"{p}.HeatIn.Heat"][indices],
             results[f"{p}.Q"][indices] * rho * cp * temperature,
-            atol=tol,
+            atol=atol,
             err_msg=f"{p} has mismatch in milp to discharge",
         )
         np.testing.assert_allclose(
             results[f"{p}.HeatOut.Heat"][indices],
             results[f"{p}.Q"][indices] * rho * cp * temperature,
-            atol=tol,
+            atol=atol,
             err_msg=f"{p} has mismatch in milp to discharge",
         )
 
 
-def electric_power_conservation_test(solution, results):
+def electric_power_conservation_test(solution, results, atol=1e-2):
     """
     Test to check if the electric power is conserved at every timestep.
     High level checks:
@@ -358,7 +360,6 @@ def electric_power_conservation_test(solution, results):
     - Power and current conservation in busses.
     - Power conservation in transformers, upto now no losses in transformer.
     """
-    tol = 1e-2
     energy_sum = np.zeros(len(solution.times()))
 
     consumers = solution.energy_system_components_get(
@@ -386,7 +387,7 @@ def electric_power_conservation_test(solution, results):
         np.testing.assert_allclose(
             results[f"{asset}.Power_loss"],
             results[f"{asset}.ElectricityIn.Power"] - results[f"{asset}.ElectricityOut.Power"],
-            atol=tol,
+            atol=atol,
         )
 
     for asset, connected_cables in solution.energy_system_topology.busses.items():
@@ -395,8 +396,8 @@ def electric_power_conservation_test(solution, results):
         for i_conn, (_cable, orientation) in connected_cables.items():
             sum_bus_power += orientation * results[f"{asset}.ElectricityConn[{i_conn + 1}].Power"]
             sum_bus_current += orientation * results[f"{asset}.ElectricityConn[{i_conn + 1}].I"]
-        np.testing.assert_allclose(sum_bus_power, 0.0, atol=tol)
-        np.testing.assert_allclose(sum_bus_current, 0.0, atol=tol)
+        np.testing.assert_allclose(sum_bus_power, 0.0, atol=atol)
+        np.testing.assert_allclose(sum_bus_current, 0.0, atol=atol)
 
     for asset in transformers:
         np.testing.assert_allclose(
@@ -404,10 +405,10 @@ def electric_power_conservation_test(solution, results):
             results[f"{asset}.ElectricityOut.Power"],
         )
 
-    np.testing.assert_allclose(energy_sum, 0.0, atol=tol)
+    np.testing.assert_allclose(energy_sum, 0.0, atol=atol)
 
 
-def energy_conservation_test(solution, results):
+def energy_conservation_test(solution, results, atol=1e-3):
     """Test to check if the energy is conserved at each timestep"""
     energy_sum = np.zeros(len(solution.times()))
 
@@ -452,7 +453,7 @@ def energy_conservation_test(solution, results):
             np.testing.assert_allclose(
                 results[f"{p}__hn_heat_loss"] * (1 - p_discon),
                 results[f"{p}.HeatIn.Heat"] - results[f"{p}.HeatOut.Heat"],
-                atol=1e-3,
+                atol=atol,
             )
             energy_sum -= results[f"{p}__hn_heat_loss"] * (1 - p_discon)
         else:
@@ -460,20 +461,21 @@ def energy_conservation_test(solution, results):
                 np.testing.assert_allclose(
                     results[f"{p}__hn_heat_loss"][0],
                     results[f"{p}.HeatIn.Heat"] - results[f"{p}.HeatOut.Heat"],
-                    atol=1e-3,
+                    atol=atol,
                 )
             else:
                 np.testing.assert_allclose(
                     results[f"{p}__hn_heat_loss"],
                     results[f"{p}.HeatIn.Heat"] - results[f"{p}.HeatOut.Heat"],
-                    atol=1e-3,
+                    atol=atol,
                 )
             energy_sum -= results[f"{p}__hn_heat_loss"]
 
+    # TODO: fix hardcoded atol
     np.testing.assert_allclose(energy_sum, 0.0, atol=1e-1)
 
 
-def gas_pipes_head_loss_test(solution, results):
+def gas_pipes_head_loss_test(solution, results, atol=1e-12):
     """Test to check if the result dH is equal to manually calculated dH via linear interpolation"""
     for pipe in solution.energy_system_components.get("gas_pipe", []):
         if results[f"{pipe}__gn_diameter"] <= 1e-15:
@@ -503,7 +505,7 @@ def gas_pipes_head_loss_test(solution, results):
                 c_v = solution.parameters(0)[f"{pipe}.length"] * ff / (2 * 9.81) / pipe_diameter
                 dh_max = c_v * v_max**2
                 dh_manual = dh_max * v_pipe / v_max
-                np.testing.assert_allclose(-dh_manual, results[f"{pipe}.dH"], atol=1.0e-12)
+                np.testing.assert_allclose(-dh_manual, results[f"{pipe}.dH"], atol=atol)
 
             elif (
                 solution.gas_network_settings["head_loss_option"]
@@ -578,5 +580,5 @@ def gas_pipes_head_loss_test(solution, results):
                 np.testing.assert_allclose(dh_theory, dh_milp_head_loss_function)
                 np.testing.assert_array_less(dh_milp_head_loss_function, dh_manual_linear)
                 np.testing.assert_allclose(
-                    results[f"{pipe}.dH"][itime], -dh_manual_linear, atol=1.0e-12
+                    results[f"{pipe}.dH"][itime], -dh_manual_linear, atol=atol
                 )

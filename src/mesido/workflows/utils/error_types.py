@@ -29,6 +29,8 @@ def mesido_issue_type_gen_message(issue_type: MesidoAssetIssueType) -> str:
         " listed.",
         MesidoAssetIssueType.HEAT_DEMAND_TYPE: "Incorrect asset type: please update.",
         MesidoAssetIssueType.ASSET_PROFILE_CAPABILITY: "Profile assigment not allowed.",
+        MesidoAssetIssueType.ASSET_PROFILE_AVAILABILITY: "Profile is not available in the "
+        "database.",
         MesidoAssetIssueType.ASSET_COST_ATTRIBUTE_INCORRECT: "Incorrect cost information.",
         MesidoAssetIssueType.ASSET_COST_ATTRIBUTE_MISSING: "Required cost attribute is missing.",
         MesidoAssetIssueType.HEAT_EXCHANGER_TEMPERATURES: "Temperatures at heat exchanger set "
@@ -54,6 +56,7 @@ def potential_error_to_error(network_check_type: Enum) -> None:
             MesidoAssetIssueType.COLD_DEMAND_POWER,
             MesidoAssetIssueType.HEAT_DEMAND_TYPE,
             MesidoAssetIssueType.ASSET_PROFILE_CAPABILITY,
+            MesidoAssetIssueType.ASSET_PROFILE_AVAILABILITY,
             MesidoAssetIssueType.ASSET_COST_ATTRIBUTE_INCORRECT,
             MesidoAssetIssueType.ASSET_COST_ATTRIBUTE_MISSING,
             MesidoAssetIssueType.HEAT_EXCHANGER_TEMPERATURES,
@@ -65,6 +68,7 @@ def potential_error_to_error(network_check_type: Enum) -> None:
             MesidoAssetIssueType.COLD_DEMAND_POWER,
             MesidoAssetIssueType.HEAT_DEMAND_TYPE,
             MesidoAssetIssueType.ASSET_PROFILE_CAPABILITY,
+            MesidoAssetIssueType.ASSET_PROFILE_AVAILABILITY,
             MesidoAssetIssueType.HEAT_EXCHANGER_TEMPERATURES,
             MesidoAssetIssueType.HEAT_DEMAND_STATE,
         ],

@@ -37,6 +37,7 @@ class MesidoAssetIssueType(Enum):
     COLD_DEMAND_POWER = "cold_demand.power"
     HEAT_DEMAND_TYPE = "heat_demand.type"
     ASSET_PROFILE_CAPABILITY = "asset_profile.capability"
+    ASSET_PROFILE_AVAILABILITY = "asset_profile.availability"
     ASSET_COST_ATTRIBUTE_INCORRECT = "asset_cost_attribute.incorrect"
     ASSET_COST_ATTRIBUTE_MISSING = "asset_cost_attribute.missing"
     HEAT_EXCHANGER_TEMPERATURES = "heat_exchanger.temperature"

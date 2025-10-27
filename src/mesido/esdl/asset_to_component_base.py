@@ -23,7 +23,7 @@ logger = logging.getLogger("mesido")
 # Define locally to avoid circular import with workflows.utils.error_types
 NO_POTENTIAL_ERRORS_CHECK = "no_potential_errors"
 
-MODIFIERS = Dict[str, Union[str, int, float]]
+MODIFIERS = Dict[str, Union[str, int, float, dict]]
 
 HEAT_STORAGE_M3_WATER_PER_DEGREE_CELSIUS = 4200 * 988
 WATTHOUR_TO_JOULE = 3600
@@ -50,7 +50,7 @@ MULTI_ENUM_NAME_TO_FACTOR = {
 }
 
 
-def get_internal_energy(asset_name, carrier):
+def get_internal_energy(asset_name: str, carrier: esdl.Carrier) -> float:
     # The default of 20°C is also used in the head_loss_class. Thus, when updating ensure it
     # is also updated in the head_loss_class.
     temperature = 20.0
@@ -91,7 +91,7 @@ def get_internal_energy(asset_name, carrier):
     return internal_energy  # [J/kg]
 
 
-def get_energy_content(asset_name, carrier) -> float:
+def get_energy_content(asset_name: str, carrier: esdl.Carrier) -> float:
     # Return the heating value
     energy_content_j_kg = 0.0  # [J/kg]
     density_kg_m3 = (
@@ -112,7 +112,12 @@ def get_energy_content(asset_name, carrier) -> float:
     return energy_content_j_kg
 
 
-def get_density(asset_name, carrier, temperature_degrees_celsius=20.0, pressure_pa=None):
+def get_density(
+    asset_name: str,
+    carrier: esdl.Carrier,
+    temperature_degrees_celsius: float = 20.0,
+    pressure_pa=None,
+) -> float:
     # TODO: gas carrier temperature still needs to be resolved.
     # The default for temperature_degrees_celsius=20.0, this should be the same as the value (20°C)
     # used in the head_loss_class for the calculation of the friction factor
@@ -344,7 +349,7 @@ class _AssetToComponentBase:
         dispatch_method_name = f"convert_{self.component_map[asset.asset_type]}"
         return getattr(self, dispatch_method_name)(asset)
 
-    def port_asset_type_connections(self, asset):
+    def port_asset_type_connections(self, asset: Asset):
         """
         Here we populate a map between ports and asset types that we need before we can convert
         the individual assets. This is because for the parsing of some assets we need to know if
@@ -353,7 +358,7 @@ class _AssetToComponentBase:
 
         Parameters
         ----------
-        asset : Asset pipe object with it's properties from ESDL
+        asset : Asset pipe object with its properties from ESDL
 
         Returns
         -------
@@ -377,7 +382,7 @@ class _AssetToComponentBase:
         warnings when either of these two variables are specified in combination with the pipe DN)
         Parameters
         ----------
-        asset : Asset pipe object with it's properties from ESDL
+        asset : Asset pipe object with its properties from ESDL
 
         Returns
         -------
@@ -511,7 +516,7 @@ class _AssetToComponentBase:
 
         Parameters
         ----------
-        asset : Asset cable object with it's properties from ESDL
+        asset : Asset cable object with its properties from ESDL
 
         Returns
         -------
@@ -541,7 +546,7 @@ class _AssetToComponentBase:
 
         Parameters
         ----------
-        asset : The asset object of an pipe
+        asset : The asset object of a pipe
 
         Returns
         -------
@@ -620,7 +625,7 @@ class _AssetToComponentBase:
 
         Parameters
         ----------
-        asset :
+        asset : the asset
         q_max : float of the max flow through that pipe
 
         Returns
@@ -646,7 +651,8 @@ class _AssetToComponentBase:
         Parameters
         ----------
         asset :
-        q_max : float of the electricity current nominal
+        i_nom : float of the electricity current nominal
+        i_max : float of the electricity current max
 
         Returns
         -------
@@ -1606,6 +1612,31 @@ class _AssetToComponentBase:
 
                 value += cost_value
         return value
+
+    @staticmethod
+    def get_units_multipliers(qua: esdl.QuantityAndUnitType) -> Tuple[float, Any, Any, Any]:
+        """
+        This function returns the units and the related multipliers.
+
+        Parameters
+        ----------
+        qua : QuantityAndUnitType provides the information on the units and multipliers
+
+        Returns
+        -------
+        The value with the unit decomposed.
+        """
+        value = 1
+        unit = qua.unit
+        per_time_uni = qua.perTimeUnit
+        per_unit = qua.perUnit
+        multiplier = qua.multiplier
+        per_multiplier = qua.perMultiplier
+
+        value *= MULTI_ENUM_NAME_TO_FACTOR[multiplier]
+        value /= MULTI_ENUM_NAME_TO_FACTOR[per_multiplier]
+
+        return value, unit, per_unit, per_time_uni
 
     @staticmethod
     def get_cost_value_and_unit(cost_info: esdl.SingleValue) -> Tuple[float, Any, Any, Any]:
