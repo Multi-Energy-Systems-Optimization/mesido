@@ -1127,16 +1127,17 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                         * flow_direction[i]
                         * timesteps[i - 1]
                 )
+
                 sum += varOPEX
             constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
 
         # ## Option II:
         # for a in self.energy_system_components.get("ates", []):
         #     # Todo: This cost component still is not fully functioning
-        #     # ates_is_charging = self.__state_vector_scaled(f"{a}__is_charging", ensemble_member)
-        #     ates_is_charging_state = self.state(f"{a}__is_charging")
-        #     ates_is_charging_nominal = self.bounds()[f"{a}__is_charging"][1] / 2
+        #     ates_is_charging = self.__state_vector_scaled(f"{a}__is_charging", ensemble_member)
+        #     flow_direction = self.__state_vector_scaled(f"{a}.Flow_direction", ensemble_member)
         #     heat_ates = self.__state_vector_scaled(f"{a}.Heat_ates", ensemble_member)
+        #     heat_ates_abs = self.__state_vector_scaled(f"{a}.Heat_ates_abs", ensemble_member)
         #     heat_ates_nominal = self.bounds()[f"{a}.Heat_ates"][1] / 2
         #     variable_operational_cost_var = self._asset_variable_operational_cost_map[a]
         #     variable_operational_cost = self.extra_variable(
@@ -1153,38 +1154,26 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         #         # If ates is charging, ates_is_charging is 1 and flow_direction is 1.
         #         # If ates is discharging , ates_is_charging is 0 and flow direction 0
         #         # Hence, varOPEX would be a variable>0 for everyt timestep
-        #         heat_ates_i_positive = ca.MX.sym(f"{a}_{i}__heat_ates_i_positive")
-        #         heat_ates_i_negative = ca.MX.sym(f"{a}_{i}__heat_ates_i_negative")
         #
-        #         big_m = heat_ates_nominal * 10
         #         constraints.append(
         #             (
-        #                 (
-        #                         heat_ates_i_positive
-        #                         - heat_ates[i]
-        #                         * ates_is_charging_state[i]
-        #                 )
-        #                 / heat_ates_nominal[i],
+        #                 (-heat_ates[i] + heat_ates_abs[i]),
         #                 0.0,
-        #                 0.0,
+        #                 np.inf,
         #             )
         #         )
+        #
         #         constraints.append(
         #             (
-        #                 (
-        #                         heat_ates_i_negative
-        #                         - heat_ates[i]
-        #                         * (1 - ates_is_charging_state[i])
-        #                 )
-        #                 / heat_ates_nominal[i],
+        #                 (heat_ates[i] + heat_ates_abs[i]),
         #                 0.0,
-        #                 0.0,
+        #                 np.inf,
         #             )
         #         )
         #
         #         varOPEX = (
         #                 variable_operational_cost_coefficient
-        #                 * (heat_ates_i_positive - heat_ates_i_negative)
+        #                 * heat_ates_abs[i]
         #                 * timesteps[i - 1]
         #         )
         #
@@ -1193,61 +1182,9 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
         # ## Option III:
         # for a in self.energy_system_components.get("ates", []):
-        #     # Todo: This cost component still is not fully functioning
-        #     # ates_is_charging = self.__state_vector_scaled(f"{a}__is_charging", ensemble_member)
-        #     ates_is_charging_state = self.state(f"{a}__is_charging")
-        #     ates_is_charging_nominal = self.bounds()[f"{a}__is_charging"][1] / 2
         #     heat_ates = self.__state_vector_scaled(f"{a}.Heat_ates", ensemble_member)
-        #     heat_ates_nominal = self.bounds()[f"{a}.Heat_ates"][1] / 2
-        #     variable_operational_cost_var = self._asset_variable_operational_cost_map[a]
-        #     variable_operational_cost = self.extra_variable(
-        #         variable_operational_cost_var, ensemble_member
-        #     )
-        #     nominal = self.variable_nominal(variable_operational_cost_var)
-        #     variable_operational_cost_coefficient = parameters[
-        #         f"{a}.variable_operational_cost_coefficient"
-        #     ]
-        #
-        #     varOPEX_list = [ca.MX.sym(f"varOPEX_{i}") for i in range(1, len(self.times()))]
-        #
-        #     timesteps = np.diff(self.times()) / 3600.0
-        #
-        #     sum = 0.0
-        #     for i in range(1, len(self.times())):
-        #         # If ates is charging, ates_is_charging is 1 and flow_direction is 1.
-        #         # If ates is discharging , ates_is_charging is 0 and flow direction 0
-        #         # Hence, varOPEX would be a variable>0 for everyt timestep
-        #
-        #         varOPEX_expr = (
-        #             variable_operational_cost_coefficient
-        #             * heat_ates[i]
-        #             * timesteps[i - 1]
-        #         )
-        #
-        #         constraints.append(
-        #             (
-        #                 varOPEX_list[i-1] - varOPEX_expr,
-        #                 0.0,
-        #                 np.inf,
-        #             )
-        #         )
-        #         constraints.append(
-        #             (
-        #                 varOPEX_list[i-1] + varOPEX_expr,
-        #                 0.0,
-        #                 np.inf,
-        #             )
-        #         )
-        #
-        #         sum += varOPEX_list[i-1]
-        #     constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
-
-        # ## Option IV:
-        # for a in self.energy_system_components.get("ates", []):
-        #     # Todo: This cost component still is not fully functioning
-        #     ates_is_charging_state = self.state(f"{a}__is_charging")
-        #     ates_is_charging_nominal = self.bounds()[f"{a}__is_charging"][1] / 2
-        #     heat_ates = self.__state_vector_scaled(f"{a}.Heat_ates", ensemble_member)
+        #     # varOPEX = self.variable(f"{a}.varOPEX")
+        #     varOPEX = self.__state_vector_scaled(f"{a}.varOPEX", ensemble_member)
         #     variable_operational_cost_var = self._asset_variable_operational_cost_map[a]
         #     variable_operational_cost = self.extra_variable(
         #         variable_operational_cost_var, ensemble_member
@@ -1259,71 +1196,44 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         #     timesteps = np.diff(self.times()) / 3600.0
         #
         #     sum = 0.0
+        #
         #     for i in range(1, len(self.times())):
-        #         # If ates is charging, ates_is_charging is 1 and flow_direction is 1.
-        #         # If ates is discharging , ates_is_charging is 0 and flow direction 0
-        #         # Hence, varOPEX would be a variable>0 for everyt timestep
-        #
-        #         # flow_direction = self.extra_variable(f"{a}__flow_direction", ensemble_member)
-        #         flow_direction = ca.MX.sym(f"{a}_{i}__flow_direction")
-        #
-        #         big_m = 100
-        #         constraints.append(
-        #             (
-        #                 (
-        #                         flow_direction
-        #                         - (-1)
-        #                         + ates_is_charging_state[i] * big_m
-        #                 )
-        #                 / ates_is_charging_nominal[i],
-        #                 0.0,
-        #                 np.inf,
-        #             )
-        #         )
-        #         constraints.append(
-        #             (
-        #                 (
-        #                         flow_direction
-        #                         - (-1)
-        #                         - ates_is_charging_state[i] * big_m
-        #                 )
-        #                 / ates_is_charging_nominal[i],
-        #                 -np.inf,
-        #                 0.0,
-        #             )
-        #         )
-        #         constraints.append(
-        #             (
-        #                 (
-        #                         flow_direction
-        #                         - (+1)
-        #                         + (1 - ates_is_charging_state[i]) * big_m
-        #                 )
-        #                 / ates_is_charging_nominal[i],
-        #                 0.0,
-        #                 np.inf,
-        #             )
-        #         )
-        #         constraints.append(
-        #             (
-        #                 (
-        #                         flow_direction
-        #                         - (+1)
-        #                         - (1 - ates_is_charging_state[i]) * big_m
-        #                 )
-        #                 / ates_is_charging_nominal[i],
-        #                 -np.inf,
-        #                 0.0,
-        #             )
-        #         )
-        #         varOPEX = (
+        #         varOPEX_dt = (
         #                 variable_operational_cost_coefficient
         #                 * heat_ates[i]
-        #                 * flow_direction
         #                 * timesteps[i - 1]
         #         )
-        #         sum += varOPEX
-        #     constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
+        #
+        #         constraints.append(
+        #             (
+        #                 (-varOPEX_dt + varOPEX[i])
+        #                 /nominal,
+        #                 0.0,
+        #                 np.inf,
+        #             )
+        #         )
+        #
+        #         constraints.append(
+        #             (
+        #                 (varOPEX_dt + varOPEX[i])
+        #                 /nominal,
+        #                 0.0,
+        #                 np.inf,
+        #             )
+        #         )
+        #
+        #
+        #         #varOPEX would be a variable>0 for everyt timestep
+        #         sum += varOPEX[i]
+        #     constraints.append(
+        #         (
+        #             (variable_operational_cost - sum)
+        #             / nominal,
+        #             0.0,
+        #             0.0,
+        #         )
+        #
+        #     )
 
         #========================================================
 
