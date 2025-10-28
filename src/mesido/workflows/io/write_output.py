@@ -22,6 +22,7 @@ from mesido.esdl.edr_pipe_class import EDRPipeClass
 from mesido.network_common import NetworkSettings
 from mesido.post_processing.post_processing_utils import pipe_pressure, pipe_velocity
 from mesido.workflows.utils.helpers import _sort_numbered
+from mesido.financial_mixin import calculate_annuity_factor
 
 import numpy as np
 
@@ -334,18 +335,26 @@ class ScenarioOutput:
         else:
             logger.error("Variable optimizer_sim has not been set")
 
+        discounted_annualized_cost = self.energy_system_options()["discounted_annualized_cost"]
+
         for _key, asset in self.esdl_assets.items():
             asset_placement_var = self._asset_aggregation_count_var_map[asset.name]
             placed = np.round(results[asset_placement_var][0]) >= 1.0
 
-            if np.isnan(parameters[f"{asset.name}.technical_life"]) or np.isclose(
-                parameters[f"{asset.name}.technical_life"], 0.0
-            ):
-                capex_factor = 1.0
+            if not discounted_annualized_cost:
+                if np.isnan(parameters[f"{asset.name}.technical_life"]) or np.isclose(
+                    parameters[f"{asset.name}.technical_life"], 0.0
+                ):
+                    capex_factor = 1.0
+                else:
+                    capex_factor = math.ceil(
+                        optim_time_horizon / parameters[f"{asset.name}.technical_life"]
+                    )
             else:
-                capex_factor = math.ceil(
-                    optim_time_horizon / parameters[f"{asset.name}.technical_life"]
-                )
+                asset_life_years = parameters[f"{asset.name}.technical_life"]
+                discount_rate = parameters[f"{asset.name}.discount_rate"] / 100.0
+                annuity_factor = calculate_annuity_factor(discount_rate, asset_life_years)
+                capex_factor = annuity_factor
 
             if placed:
                 try:
@@ -482,7 +491,7 @@ class ScenarioOutput:
             )
         )
 
-        if not optimizer_sim:
+        if not optimizer_sim and not discounted_annualized_cost:
             kpis_top_level.kpi.append(
                 esdl.DistributionKPI(
                     name=f"High level cost breakdown [EUR] ({optim_time_horizon} year period)",
@@ -530,7 +539,7 @@ class ScenarioOutput:
                 ),
             )
         )
-        if not optimizer_sim:
+        if not optimizer_sim and not discounted_annualized_cost:
             kpis_top_level.kpi.append(
                 esdl.DistributionKPI(
                     name=f"Overall cost breakdown [EUR] ({optim_time_horizon} year period)",
@@ -587,7 +596,7 @@ class ScenarioOutput:
                 ),
             )
         )
-        if not optimizer_sim:
+        if not optimizer_sim and not discounted_annualized_cost:
             kpis_top_level.kpi.append(
                 esdl.DistributionKPI(
                     name=f"OPEX breakdown [EUR] ({optim_time_horizon} year period)",
