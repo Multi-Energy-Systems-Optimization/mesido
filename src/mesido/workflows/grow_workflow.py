@@ -313,7 +313,7 @@ class EndScenarioSizing(
         #  constraints in the ESDL e.g. min max pressure
         options = super().energy_system_options()
         options["maximum_temperature_der"] = np.inf
-        options["heat_loss_disconnected_pipe"] = True
+        options["heat_loss_disconnected_pipe"] = False
         return options
 
     def path_goals(self):
