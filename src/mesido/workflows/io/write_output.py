@@ -352,7 +352,7 @@ class ScenarioOutput:
                         optim_time_horizon / parameters[f"{asset.name}.technical_life"]
                     )
             else:
-                kpi_type = " EAC - "
+                kpi_type = "EAC - "
                 asset_life_years = parameters[f"{asset.name}.technical_life"]
                 discount_rate = parameters[f"{asset.name}.discount_rate"] / 100.0
                 annuity_factor = calculate_annuity_factor(discount_rate, asset_life_years)
