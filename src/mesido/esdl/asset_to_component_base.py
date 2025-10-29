@@ -1470,8 +1470,10 @@ class _AssetToComponentBase:
                 continue
             if per_time != TimeUnitEnum.NONE:
                 message = (
-                    f"Specified OPEX for asset {asset.name} of type {asset.asset_type} includes a "
-                    f"component per time, but should be None."
+                    f"Specified variable OPEX for asset {asset.name} of type {asset.asset_type} "
+                    f"includes a component per time '{per_time}', but variable OPEX should be "
+                    f"specified as EUR/Wh (energy-based), with perTimeUnit set to 'NONE' instead "
+                    f"of '{per_time}'."
                 )
                 self._log_and_add_potential_issue(message, asset.id, cost_error_type="incorrect")
                 continue
@@ -1537,6 +1539,15 @@ class _AssetToComponentBase:
             if cost_value is not None and cost_value > 0.0:
                 if unit != UnitEnum.EURO:
                     message = f"Expected cost information {cost_info} to be provided in euros."
+                    self._log_and_add_potential_issue(
+                        message, asset.id, cost_error_type="incorrect"
+                    )
+                    continue
+                if per_time != TimeUnitEnum.NONE and per_time != TimeUnitEnum.YEAR:
+                    message = (
+                        f"Specified fixed OPEX for asset {asset.name} of type {asset.asset_type} "
+                        f"includes a component per time '{per_time}', but should be None or YEAR."
+                    )
                     self._log_and_add_potential_issue(
                         message, asset.id, cost_error_type="incorrect"
                     )
