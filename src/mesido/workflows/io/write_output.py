@@ -342,6 +342,7 @@ class ScenarioOutput:
             placed = np.round(results[asset_placement_var][0]) >= 1.0
 
             if not discounted_annualized_cost:
+                kpi_type = ""
                 if np.isnan(parameters[f"{asset.name}.technical_life"]) or np.isclose(
                     parameters[f"{asset.name}.technical_life"], 0.0
                 ):
@@ -351,10 +352,12 @@ class ScenarioOutput:
                         optim_time_horizon / parameters[f"{asset.name}.technical_life"]
                     )
             else:
+                kpi_type = " EAC - "
                 asset_life_years = parameters[f"{asset.name}.technical_life"]
                 discount_rate = parameters[f"{asset.name}.discount_rate"] / 100.0
                 annuity_factor = calculate_annuity_factor(discount_rate, asset_life_years)
                 capex_factor = annuity_factor
+                optim_time_horizon = 1.0
 
             if placed:
                 try:
@@ -466,35 +469,35 @@ class ScenarioOutput:
                 #         * (self.times()[1:] - self.times()[0:-1])
                 #         / 3600
                 #     )
-
-        kpis_top_level.kpi.append(
-            esdl.DistributionKPI(
-                name="High level cost breakdown [EUR] (yearly averaged)",
-                distribution=esdl.StringLabelDistribution(
-                    stringItem=[
-                        esdl.StringItem(
-                            label="CAPEX",
-                            value=(
-                                tot_timehorizon_install_cost_euro + tot_timehorizon_invest_cost_euro
-                            )
-                            / optim_time_horizon,
-                        ),
-                        esdl.StringItem(
-                            label="OPEX",
-                            value=tot_variable_opex_cost_euro + tot_fixed_opex_cost_euro,
-                        ),
-                    ]
-                ),
-                quantityAndUnit=esdl.esdl.QuantityAndUnitType(
-                    physicalQuantity=esdl.PhysicalQuantityEnum.COST, unit=esdl.UnitEnum.EURO
-                ),
-            )
-        )
-
-        if not optimizer_sim and not discounted_annualized_cost:
+        if not discounted_annualized_cost:
             kpis_top_level.kpi.append(
                 esdl.DistributionKPI(
-                    name=f"High level cost breakdown [EUR] ({optim_time_horizon} year period)",
+                    name="High level cost breakdown [EUR] (yearly averaged)",
+                    distribution=esdl.StringLabelDistribution(
+                        stringItem=[
+                            esdl.StringItem(
+                                label="CAPEX",
+                                value=(
+                                    tot_timehorizon_install_cost_euro + tot_timehorizon_invest_cost_euro
+                                )
+                                / optim_time_horizon,
+                            ),
+                            esdl.StringItem(
+                                label="OPEX",
+                                value=tot_variable_opex_cost_euro + tot_fixed_opex_cost_euro,
+                            ),
+                        ]
+                    ),
+                    quantityAndUnit=esdl.esdl.QuantityAndUnitType(
+                        physicalQuantity=esdl.PhysicalQuantityEnum.COST, unit=esdl.UnitEnum.EURO
+                    ),
+                )
+            )
+
+        if not optimizer_sim:
+            kpis_top_level.kpi.append(
+                esdl.DistributionKPI(
+                    name=f"{kpi_type}High level cost breakdown [EUR] ({optim_time_horizon} year period)",
                     distribution=esdl.StringLabelDistribution(
                         stringItem=[
                             esdl.StringItem(
@@ -517,32 +520,34 @@ class ScenarioOutput:
                 )
             )
 
-        kpis_top_level.kpi.append(
-            esdl.DistributionKPI(
-                name="Overall cost breakdown [EUR] (yearly averaged)",
-                distribution=esdl.StringLabelDistribution(
-                    stringItem=[
-                        esdl.StringItem(
-                            label="Installation",
-                            value=(tot_timehorizon_install_cost_euro / optim_time_horizon),
-                        ),
-                        esdl.StringItem(
-                            label="Investment",
-                            value=(tot_timehorizon_invest_cost_euro / optim_time_horizon),
-                        ),
-                        esdl.StringItem(label="Variable OPEX", value=tot_variable_opex_cost_euro),
-                        esdl.StringItem(label="Fixed OPEX", value=tot_fixed_opex_cost_euro),
-                    ]
-                ),
-                quantityAndUnit=esdl.esdl.QuantityAndUnitType(
-                    physicalQuantity=esdl.PhysicalQuantityEnum.COST, unit=esdl.UnitEnum.EURO
-                ),
-            )
-        )
-        if not optimizer_sim and not discounted_annualized_cost:
+        if not discounted_annualized_cost:
             kpis_top_level.kpi.append(
                 esdl.DistributionKPI(
-                    name=f"Overall cost breakdown [EUR] ({optim_time_horizon} year period)",
+                    name="Overall cost breakdown [EUR] (yearly averaged)",
+                    distribution=esdl.StringLabelDistribution(
+                        stringItem=[
+                            esdl.StringItem(
+                                label="Installation",
+                                value=(tot_timehorizon_install_cost_euro / optim_time_horizon),
+                            ),
+                            esdl.StringItem(
+                                label="Investment",
+                                value=(tot_timehorizon_invest_cost_euro / optim_time_horizon),
+                            ),
+                            esdl.StringItem(label="Variable OPEX", value=tot_variable_opex_cost_euro),
+                            esdl.StringItem(label="Fixed OPEX", value=tot_fixed_opex_cost_euro),
+                        ]
+                    ),
+                    quantityAndUnit=esdl.esdl.QuantityAndUnitType(
+                        physicalQuantity=esdl.PhysicalQuantityEnum.COST, unit=esdl.UnitEnum.EURO
+                    ),
+                )
+            )
+
+        if not optimizer_sim:
+            kpis_top_level.kpi.append(
+                esdl.DistributionKPI(
+                    name=f"{kpi_type}Overall cost breakdown [EUR] ({optim_time_horizon} year period)",
                     distribution=esdl.StringLabelDistribution(
                         stringItem=[
                             esdl.StringItem(
@@ -569,7 +574,7 @@ class ScenarioOutput:
 
             kpis_top_level.kpi.append(
                 esdl.DistributionKPI(
-                    name=f"CAPEX breakdown [EUR] ({optim_time_horizon} year period)",
+                    name=f"{kpi_type}CAPEX breakdown [EUR] ({optim_time_horizon} year period)",
                     distribution=esdl.StringLabelDistribution(
                         stringItem=[
                             esdl.StringItem(label=key, value=value)
@@ -582,24 +587,26 @@ class ScenarioOutput:
                 )
             )
 
-        kpis_top_level.kpi.append(
-            esdl.DistributionKPI(
-                name="OPEX breakdown [EUR] (yearly averaged)",
-                distribution=esdl.StringLabelDistribution(
-                    stringItem=[
-                        esdl.StringItem(label=key, value=value)
-                        for key, value in asset_opex_breakdown.items()
-                    ]
-                ),
-                quantityAndUnit=esdl.esdl.QuantityAndUnitType(
-                    physicalQuantity=esdl.PhysicalQuantityEnum.COST, unit=esdl.UnitEnum.EURO
-                ),
-            )
-        )
-        if not optimizer_sim and not discounted_annualized_cost:
+        if not discounted_annualized_cost:
             kpis_top_level.kpi.append(
                 esdl.DistributionKPI(
-                    name=f"OPEX breakdown [EUR] ({optim_time_horizon} year period)",
+                    name="OPEX breakdown [EUR] (yearly averaged)",
+                    distribution=esdl.StringLabelDistribution(
+                        stringItem=[
+                            esdl.StringItem(label=key, value=value)
+                            for key, value in asset_opex_breakdown.items()
+                        ]
+                    ),
+                    quantityAndUnit=esdl.esdl.QuantityAndUnitType(
+                        physicalQuantity=esdl.PhysicalQuantityEnum.COST, unit=esdl.UnitEnum.EURO
+                    ),
+                )
+            )
+
+        if not optimizer_sim:
+            kpis_top_level.kpi.append(
+                esdl.DistributionKPI(
+                    name=f"{kpi_type}OPEX breakdown [EUR] ({optim_time_horizon} year period)",
                     distribution=esdl.StringLabelDistribution(
                         stringItem=[
                             esdl.StringItem(label=key, value=value)
