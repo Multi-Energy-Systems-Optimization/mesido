@@ -699,6 +699,10 @@ class ScenarioOutput:
                         self._asset_fixed_operational_cost_map[asset_name]
                     ][0]
 
+                    if discounted_annualized_cost:
+                        area_investment_cost *= capex_factor
+                        area_installation_cost *= capex_factor
+
                     # Calculate the total energy [Wh] consumed/produced in an are.
                     # Note: milp losses of buffers, ATES' and pipes are included in the area energy
                     # consumption
@@ -875,7 +879,7 @@ class ScenarioOutput:
 
             # Create plots in the dashboard
             # Top level KPIs: Cost breakdown in a polygon area (for all assest grouped together)
-            kpi_name = f"{subarea.name}: Asset cost breakdown [EUR]"
+            kpi_name = f"{kpi_type}{subarea.name}: Asset cost breakdown [EUR]"
             if (area_installation_cost > 0.0 or area_investment_cost > 0.0) and (
                 area_variable_opex_cost > 0.0 or area_fixed_opex_cost > 0.0
             ):
