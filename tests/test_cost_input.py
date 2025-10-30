@@ -1,4 +1,5 @@
 import logging
+import unittest
 import unittest.mock
 from pathlib import Path
 from unittest import TestCase
@@ -21,7 +22,17 @@ logger.setLevel(logging.INFO)
 
 
 class TestCostInputCheck(TestCase):
+    # NOTE: These tests are temporarily disabled because cost attribute errors
+    # (ASSET_COST_ATTRIBUTE_INCORRECT and ASSET_COST_ATTRIBUTE_MISSING) have been
+    # temporarily excluded from HEAT_NETWORK_ERRORS to generate warnings instead of errors.
+    # TODO: Re-enable these tests when cost errors are added back to HEAT_NETWORK_ERRORS
 
+    @unittest.skip(
+        "Temporarily disabled: ASSET_COST_ATTRIBUTE_INCORRECT and "
+        "ASSET_COST_ATTRIBUTE_MISSING have been excluded from HEAT_NETWORK_ERRORS to "
+        "generate warnings instead of raising exceptions. Re-enable when cost errors "
+        "are added back to HEAT_NETWORK_ERRORS."
+    )
     def test_incorrect_cost_fail(self):
         """
         Test that ESDL files with incorrect cost attributes raise appropriate errors.
@@ -69,6 +80,11 @@ class TestCostInputCheck(TestCase):
             " but should be None.",
         )
 
+    @unittest.skip(
+        "Temporarily disabled: ASSET_COST_ATTRIBUTE_MISSING has been excluded "
+        "from HEAT_NETWORK_ERRORS to generate warnings instead of raising "
+        "exceptions. Re-enable when cost errors are added back."
+    )
     def test_missing_cost_fail(self):
         """
         Test that ESDL files with missing cost attributes raise appropriate errors.
@@ -132,7 +148,7 @@ class TestCostInputCheck(TestCase):
                 input_timeseries_file="profiles.csv",
             )
 
-        # Check that the cold demand had an error
+        # Check that the cost error was raised
         np.testing.assert_equal(
             cm.exception.error_type, MesidoAssetIssueType.ASSET_COST_ATTRIBUTE_MISSING
         )

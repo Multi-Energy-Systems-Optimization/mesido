@@ -1338,7 +1338,14 @@ class _AssetToComponentBase:
     def _log_and_add_potential_issue(
         self, message: str, asset_id, cost_error_type: str = None, report_issue: bool = True
     ) -> None:
-        """Helper function to log warnings and potential issues."""
+        """
+        Helper function to log warnings and potential issues.
+
+        Always logs warnings. When report_issue is True, also adds the issue to the potential
+        errors dictionary. Whether the issue is converted to an exception depends on the error
+        type and the error_type_check configuration (e.g., HEAT_NETWORK_ERRORS), as defined in
+        workflows/utils/error_types.py::potential_error_to_error().
+        """
         logger.warning(message)
         if report_issue:
             error_type_mapping = {
