@@ -1,15 +1,14 @@
 import os
 
-import matplotlib.patches as mpatches
-
 from esdl import esdl
+from esdl.esdl_handler import EnergySystemHandler
+
+import matplotlib.patches as mpatches
 from matplotlib import pyplot as plt
 
-import numpy as np
-
-
-from esdl.esdl_handler import EnergySystemHandler
 from mesido.post_processing.post_processing_utils import extract_data_results_alias
+
+import numpy as np
 
 
 class RollOutPost:
@@ -31,7 +30,7 @@ class RollOutPost:
         self.bounds = raw_data["bounds"]
 
         self.times = np.asarray(self.parameters["times"])
-        self.years = int((self.times[-1] - self.times[0])/8760/3600)
+        self.years = int((self.times[-1] - self.times[0]) / 8760 / 3600)
 
         self.esh = EnergySystemHandler()
         self.esh.load_file(os.path.join(self.model_folder, self.esdl_file_name))
@@ -53,17 +52,14 @@ class RollOutPost:
         """
         results = self.results
         ates_assets = self.esh.get_all_instances_of_type(esdl.ATES)
-        for ates in ates_assets:
-            print(results[f"{ates.name}.Stored_heat"])
 
         figure, ax = plt.subplots()
         times = np.asarray(self.parameters["times"])
         times = times - times[0]
-        # times = self.times()
         for ates in ates_assets:
-            # stored_heat = [results.get(f"{ates}.Stored_heat", 0) for t in range(times)]
-            plt.plot(times / 3600 / 24, results[f"{ates.name}.Stored_heat"] / 1e9,
-                     label=str(ates.name))
+            plt.plot(
+                times / 3600 / 24, results[f"{ates.name}.Stored_heat"] / 1e9, label=str(ates.name)
+            )
 
         plt.xlabel("Time [days]")
         plt.ylabel("Stored Heat [GJ]")
@@ -81,10 +77,10 @@ class RollOutPost:
         figure, ax = plt.subplots()
         heat_sources = self.esh.get_all_instances_of_type(esdl.HeatProducer)
         for heatsource in heat_sources:
-            # stored_heat = [results.get(f"{ates}.Stored_heat", 0) for t in range(times)]
             plt.plot(
-                times / 3600 / 24, results[f"{heatsource.name}.Heat_source"] / 1e6, label=str(
-                    heatsource)
+                times / 3600 / 24,
+                results[f"{heatsource.name}.Heat_source"] / 1e6,
+                label=str(heatsource),
             )
 
         plt.xlabel("Time [days]")
@@ -103,7 +99,6 @@ class RollOutPost:
         figure, ax = plt.subplots()
         for ates_asset in ates_assets:
             ates = ates_asset.name
-            # stored_heat = [results.get(f"{ates}.Stored_heat", 0) for t in range(times)]
             plt.plot(
                 times / 3600 / 24,
                 results[f"{ates}.Heat_ates"] / 1e6,
@@ -138,7 +133,6 @@ class RollOutPost:
             total_pipe_length += pipe.length
         print(total_pipe_length)
 
-
     def plot_geograph_time(self):
         """
         This function plots the placements of assets (demands, pipes, storages, sources)
@@ -149,9 +143,9 @@ class RollOutPost:
         color = ["b", "g", "r", "c", "m", "k", "y", "orange", "lime", "teal"]
 
         legend_years = []
-        problem_horizon = 30 #years
+        problem_horizon = 30  # years
         times = self.times
-        problem_years = int((times[-1] - times[0])/8760/3600)
+        problem_years = int((times[-1] - times[0]) / 8760 / 3600)
         yearstep = int(problem_horizon / problem_years)
         for i in range(problem_years):
             legend_years.append(
@@ -172,8 +166,7 @@ class RollOutPost:
                     line_x.append((point.lon - lon0))
                     line_y.append((point.lat - lat0))
                 is_placed_list = [
-                    self.results[f"{name}__asset_is_realized_{i}"]
-                    for i in range(problem_years)
+                    self.results[f"{name}__asset_is_realized_{i}"] for i in range(problem_years)
                 ]
                 if 1 in is_placed_list:
                     idx = np.round(is_placed_list.index(1))
@@ -181,8 +174,8 @@ class RollOutPost:
                     plt.plot(line_x, line_y, color[int(idx)], linewidth=plot_size)
             elif isinstance(asset, esdl.HeatingDemand):
                 point = asset.geometry
-                line_x = [(point.lon - lon0)]
-                line_y = [(point.lat - lat0)]
+                line_x = [point.lon - lon0]
+                line_y = [point.lat - lat0]
                 is_placed_list = [
                     self.results[f"{asset.name}__asset_is_realized_{i}"]
                     for i in range(problem_years)
@@ -193,8 +186,8 @@ class RollOutPost:
                     plt.plot(line_x, line_y, "o", color=color[int(idx)], markersize=plot_size)
             elif isinstance(asset, esdl.HeatProducer):
                 point = asset.geometry
-                line_x = [(point.lon - lon0)]
-                line_y = [(point.lat - lat0)]
+                line_x = [point.lon - lon0]
+                line_y = [point.lat - lat0]
                 is_placed_list = [
                     self.results[f"{asset.name}__asset_is_realized_{i}"]
                     for i in range(problem_years)
@@ -205,8 +198,8 @@ class RollOutPost:
                     plt.plot(line_x, line_y, "s", color=color[int(idx)], markersize=plot_size)
             elif isinstance(asset, esdl.ATES):
                 point = asset.geometry
-                line_x = [(point.lon - lon0)]
-                line_y = [(point.lat - lat0)]
+                line_x = [point.lon - lon0]
+                line_y = [point.lat - lat0]
                 is_placed_list = [
                     self.results[f"{asset.name}__asset_is_realized_{i}"]
                     for i in range(problem_years)
@@ -217,8 +210,8 @@ class RollOutPost:
                     plt.plot(line_x, line_y, ">", color=color[int(idx)], markersize=plot_size)
             elif isinstance(asset, esdl.HeatStorage):
                 point = asset.geometry
-                line_x = [(point.lon - lon0)]
-                line_y = [(point.lat - lat0)]
+                line_x = [point.lon - lon0]
+                line_y = [point.lat - lat0]
                 is_placed_list = [
                     self.results[f"{asset.name}__asset_is_realized_{i}"]
                     for i in range(problem_years)
@@ -237,42 +230,46 @@ class RollOutPost:
     def plot_financials(self):
         parameters = self.parameters
         bounds = self.bounds
-        # fixed opex
         fixed_opex_type = {}
         variable_opex_type = {}
         capex_cumulative_type = {}
         dt = np.diff(self.times)
         steps_per_year = int(len(self.times) / self.years)
-        capex_year_totals= [0 for _ in range(self.years)]
+        capex_year_totals = [0 for _ in range(self.years)]
         opex_year_totals = [0 for _ in range(self.years)]
         for asset in self.esh.get_all_instances_of_type(esdl.EnergyAsset):
-            if asset in [*self.esh.get_all_instances_of_type(esdl.HeatingDemand),
-                      *self.esh.get_all_instances_of_type(esdl.HeatProducer),
-                         *self.esh.get_all_instances_of_type(esdl.HeatStorage),
-                         *self.esh.get_all_instances_of_type(esdl.Pipe)]:
+            if asset in [
+                *self.esh.get_all_instances_of_type(esdl.HeatingDemand),
+                *self.esh.get_all_instances_of_type(esdl.HeatProducer),
+                *self.esh.get_all_instances_of_type(esdl.HeatStorage),
+                *self.esh.get_all_instances_of_type(esdl.Pipe),
+            ]:
                 asset_name = asset.name
                 asset_type = str(type(asset))
                 is_placed = self.get_asset_is__realized_symbols(asset_name)
-                cumulative_capex_var = self.get_cumulative_capex_symbols(
-                    asset_name)
+                cumulative_capex_var = self.get_cumulative_capex_symbols(asset_name)
                 fixed_operational_cost_coeff = parameters[
                     f"{asset_name}.fixed_operational_cost_coefficient"
                 ]
                 variable_operational_cost_coeff = parameters[
-                        f"{asset_name}.variable_operational_cost_coefficient"]
-                # fixed_operational_cost = optimization_problem._asset_fixed_operational_cost_map.get(
+                    f"{asset_name}.variable_operational_cost_coefficient"
+                ]
+                # fixed_operational_cost =
+                # optimization_problem._asset_fixed_operational_cost_map.get(
                 #     asset_name)
                 heat_flow_var = self.results[f"{asset_name}.Heat_flow"]
                 max_power = 0.0
                 if not isinstance(asset, esdl.Pipe):
                     max_power = bounds[f"{asset_name}__max_size"][1]
                     if max_power == 0:
-                        raise RuntimeError(f"Could not determine the max power of asset {asset_name}")
+                        raise RuntimeError(
+                            f"Could not determine the max power of asset {asset_name}"
+                        )
                 # TODO: this can later be replaced by creating a new variable
                 # {asset}_fix_operational_cost_{year} set equal to is_placed[i] *
                 # _asset_fixed_operational_cost_map_var using bigm constraints.
 
-                var_opex_costs = heat_flow_var[1:] * variable_operational_cost_coeff * dt/3600
+                var_opex_costs = heat_flow_var[1:] * variable_operational_cost_coeff * dt / 3600
                 if asset_type not in variable_opex_type.keys():
                     variable_opex_type[asset_type] = var_opex_costs
                 else:
@@ -282,7 +279,7 @@ class RollOutPost:
                     if asset_type not in fixed_opex_type.keys():
                         fixed_opex_type[asset_type] = []
                     fixed_opex_costs = is_placed[i] * fixed_operational_cost_coeff * max_power
-                    if len(fixed_opex_type[asset_type]) == i+1:
+                    if len(fixed_opex_type[asset_type]) == i + 1:
                         fixed_opex_type[asset_type][i] += fixed_opex_costs
                     else:
                         fixed_opex_type[asset_type].append(fixed_opex_costs)
@@ -290,20 +287,21 @@ class RollOutPost:
                     if asset_type not in capex_cumulative_type.keys():
                         capex_cumulative_type[asset_type] = []
                     cumulative_capex_costs = cumulative_capex_var[i]
-                    if len(capex_cumulative_type[asset_type]) == i+1:
+                    if len(capex_cumulative_type[asset_type]) == i + 1:
                         capex_cumulative_type[asset_type][i] += cumulative_capex_costs
                     else:
                         capex_cumulative_type[asset_type].append(cumulative_capex_costs)
 
                     capex_year_totals[i] += cumulative_capex_costs
-                    opex_year_totals[i] += fixed_opex_costs + sum(var_opex_costs[i*steps_per_year:(
-                                                                                                       i+1)*steps_per_year])
+                    opex_year_totals[i] += fixed_opex_costs + sum(
+                        var_opex_costs[i * steps_per_year : (i + 1) * steps_per_year]
+                    )
 
         years = [i * 30 / self.years for i in range(self.years)]
 
         capex_year_totals = np.asarray(capex_year_totals)
         opex_year_totals = np.asarray(opex_year_totals)
-        cumulative_opex_totals = np.cumsum(opex_year_totals * 30/self.years)
+        cumulative_opex_totals = np.cumsum(opex_year_totals * 30 / self.years)
 
         plt.figure()
         plt.plot(years, capex_year_totals + cumulative_opex_totals, label="costs")
@@ -352,7 +350,8 @@ class RollOutPost:
     #             if 1 in is_placed_list:
     #                 idx = np.round(is_placed_list.index(1))
     #                 if idx == i - 1:
-    #                     plot_size = np.round(max(results[f"{asset.name}.Heat_demand"]) / 1.0e6 * 3)
+    #                     plot_size =
+    #                     np.round(max(results[f"{asset.name}.Heat_demand"]) / 1.0e6 * 3)
     #                     plt.plot(line_x, line_y, "o", color=color[int(idx)], markersize=plot_size)
     #                     # line.set_data(line_x, line_y)
     #         if (
@@ -386,6 +385,7 @@ class RollOutPost:
         return [self.results[var_n] for var_n in var_names]
 
     def get_cumulative_capex_symbols(self, asset_name):
-        var_names = [f"{asset_name}__cumulative_investments_made_in_eur_year_{y}" for y in range(
-            self.years)]
+        var_names = [
+            f"{asset_name}__cumulative_investments_made_in_eur_year_{y}" for y in range(self.years)
+        ]
         return [self.results[var_n] for var_n in var_names]
