@@ -736,12 +736,13 @@ def run_end_scenario_sizing(
                 elif v == 1.0:
                     boolean_bounds[var_name] = (0.0, v)
                 elif (not use_pipe_dn_none and v_prev == 1.0) or (not use_pipe_dn_none and v_prev_2
-                                                                 == 1.0):  # This allows one DN larger
+                                                                 == 1.0):  # This allows two DN
+                    # larger
                     boolean_bounds[var_name] = (0.0, 1.0)
                 else:
                     boolean_bounds[var_name] = (v, v)
                 v_prev_2 = v_prev
-                v_prev = v #if v>=0.999 else v_prev
+                v_prev = v 
 
                 first_pipe_class = False
 
