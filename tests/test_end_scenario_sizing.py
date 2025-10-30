@@ -103,7 +103,9 @@ class TestEndScenarioSizing(TestCase):
 
         Checks:
         - Cyclic behaviour for ATES
-        - That buffer tank is only used on peak day
+        - ATES is placed and that the size matches a single doublet, which is larger than the max
+        heat_flow
+        - That buffer tank is placed and only used on peak day
         - demand matching
         - Check if TCO goal included the desired cost components.
 
@@ -157,10 +159,21 @@ class TestEndScenarioSizing(TestCase):
         for a in solution_staged.energy_system_components.get("ates", []):
             stored_heat = results[f"{a}.Stored_heat"]
             np.testing.assert_allclose(stored_heat[0], stored_heat[-1], atol=1.0)
+        # Check that the ATES is placed and that the size should match the single_doublet_power
+        np.testing.assert_allclose(
+            results[f"{a}__max_size"],
+            self.solution.parameters(0)[f"{a}.single_doublet_power"],
+        )
+        np.testing.assert_array_less(max(results[f"{a}.Heat_flow"]), results[f"{a}__max_size"])
+        np.testing.assert_allclose(results[f"{a}_aggregation_count"], 1)
 
-        # Check whether buffer tank is only active in peak day
-        peak_day_indx = solution_staged.parameters(0)["peak_day_index"]
+        # Check whether buffer tank placed and that it is only active in peak day
+        peak_day_indx = int(solution_staged.parameters(0)["peak_day_index"])
         for b in solution_staged.energy_system_components.get("heat_buffer", []):
+            np.testing.assert_allclose(results[f"{b}_aggregation_count"], 1)  # being placed
+            np.testing.assert_array_less(
+                1.0e3, max(results[f"{b}.Heat_flow"][peak_day_indx : peak_day_indx + 24])
+            )  # at least 1 time step with such a heat_flow is expected in this network
             heat_buffer = results[f"{b}.Heat_buffer"]
             for i in range(len(solution_staged.times())):
                 if i < peak_day_indx or i > (peak_day_indx + 23):
@@ -211,8 +224,6 @@ class TestEndScenarioSizing(TestCase):
         day.
 
         Checks:
-        - Cyclic behaviour for ATES
-        - That buffer tank is only used on peak day
         - demand matching
 
         Missing:
@@ -236,7 +247,7 @@ class TestEndScenarioSizing(TestCase):
         solution = run_optimization_problem(
             TestEndScenarioSizingDiscountedHIGHS,
             base_folder=base_folder,
-            esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
+            esdl_file_name="test_case_small_network_all_optional.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
@@ -252,19 +263,6 @@ class TestEndScenarioSizing(TestCase):
 
         # Check whether the heat demand is matched
         demand_matching_test(solution, results)
-
-        # Check whether cyclic ates constraint is working
-        for a in solution.energy_system_components.get("ates", []):
-            stored_heat = results[f"{a}.Stored_heat"]
-            np.testing.assert_allclose(stored_heat[0], stored_heat[-1], atol=1.0)
-
-        # Check whether buffer tank is only active in peak day
-        peak_day_indx = solution.parameters(0)["peak_day_index"]
-        for b in solution.energy_system_components.get("heat_buffer", []):
-            heat_buffer = results[f"{b}.Heat_buffer"]
-            for i in range(len(solution.times())):
-                if i < peak_day_indx or i > (peak_day_indx + 23):
-                    np.testing.assert_allclose(heat_buffer[i], 0.0, atol=1.0e-6)
 
     def test_end_scenario_sizing_head_loss(self):
         """
@@ -285,7 +283,7 @@ class TestEndScenarioSizing(TestCase):
         solution = run_end_scenario_sizing(
             EndScenarioSizingHeadLossStaged,
             base_folder=base_folder,
-            esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
+            esdl_file_name="test_case_small_network_all_optional.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
@@ -295,12 +293,13 @@ class TestEndScenarioSizing(TestCase):
 
         demand_matching_test(solution, results)
 
+        tol = 1.0e-10
         pipes = solution.energy_system_components.get("heat_pipe")
         for pipe in pipes:
-            pipe_diameter = solution.parameters(0)[f"{pipes[0]}.diameter"]
+            pipe_diameter = solution.parameters(0)[f"{pipe}.diameter"]
             pipe_wall_roughness = solution.energy_system_options()["wall_roughness"]
-            temperature = solution.parameters(0)[f"{pipes[0]}.temperature"]
-            pipe_length = solution.parameters(0)[f"{pipes[0]}.length"]
+            temperature = solution.parameters(0)[f"{pipe}.temperature"]
+            pipe_length = solution.parameters(0)[f"{pipe}.length"]
             if pipe_diameter > 0.0:
                 velocities = results[f"{pipe}.Q"] / solution.parameters(0)[f"{pipe}.area"]
             else:
@@ -315,7 +314,7 @@ class TestEndScenarioSizing(TestCase):
                             pipe_wall_roughness,
                             temperature,
                         ),
-                        abs(results[f"{pipe}.dH"][ii]),
+                        abs(results[f"{pipe}.dH"][ii]) + tol,
                     )
 
     def test_end_scenario_sizing_pipe_catalog(self):

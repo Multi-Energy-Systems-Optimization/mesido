@@ -121,21 +121,6 @@ def main_decorator(func):
     return main
 
 
-def get_cost_value_and_unit(cost_info: esdl.SingleValue):
-    cost_value = cost_info.value
-    unit_info = cost_info.profileQuantityAndUnit
-    unit = unit_info.unit
-    per_time_uni = unit_info.perTimeUnit
-    per_unit = unit_info.perUnit
-    multiplier = unit_info.multiplier
-    per_multiplier = unit_info.perMultiplier
-
-    cost_value *= MULTI_ENUM_NAME_TO_FACTOR[multiplier]
-    cost_value /= MULTI_ENUM_NAME_TO_FACTOR[per_multiplier]
-
-    return cost_value, unit, per_unit, per_time_uni
-
-
 def run_optimization_problem_solver(
     scenario_problem_class,
     solver_class=None,
