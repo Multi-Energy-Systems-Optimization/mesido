@@ -39,7 +39,7 @@ class TestRollOutOptimization(TestCase):
         """
 
         # TODO: update location of model also update model & inputfile in run.
-        import models.test_case_small_network_with_ates_with_buffer.src.run_ates as run_ates
+        import models.test_case_small_network_ates_buffer_optional_assets.src.run_ates as run_ates
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
