@@ -478,7 +478,8 @@ class ScenarioOutput:
                             esdl.StringItem(
                                 label="CAPEX",
                                 value=(
-                                    tot_timehorizon_install_cost_euro + tot_timehorizon_invest_cost_euro
+                                    tot_timehorizon_install_cost_euro
+                                    + tot_timehorizon_invest_cost_euro
                                 )
                                 / optim_time_horizon,
                             ),
@@ -497,7 +498,8 @@ class ScenarioOutput:
         if not optimizer_sim:
             kpis_top_level.kpi.append(
                 esdl.DistributionKPI(
-                    name=f"{kpi_type}High level cost breakdown [EUR] ({optim_time_horizon} year period)",
+                    name=f"{kpi_type}High level cost breakdown [EUR]"
+                    f" ({optim_time_horizon} year period)",
                     distribution=esdl.StringLabelDistribution(
                         stringItem=[
                             esdl.StringItem(
@@ -534,7 +536,9 @@ class ScenarioOutput:
                                 label="Investment",
                                 value=(tot_timehorizon_invest_cost_euro / optim_time_horizon),
                             ),
-                            esdl.StringItem(label="Variable OPEX", value=tot_variable_opex_cost_euro),
+                            esdl.StringItem(
+                                label="Variable OPEX", value=tot_variable_opex_cost_euro
+                            ),
                             esdl.StringItem(label="Fixed OPEX", value=tot_fixed_opex_cost_euro),
                         ]
                     ),
@@ -547,7 +551,8 @@ class ScenarioOutput:
         if not optimizer_sim:
             kpis_top_level.kpi.append(
                 esdl.DistributionKPI(
-                    name=f"{kpi_type}Overall cost breakdown [EUR] ({optim_time_horizon} year period)",
+                    name=f"{kpi_type}Overall cost breakdown [EUR] "
+                    f"({optim_time_horizon} year period)",
                     distribution=esdl.StringLabelDistribution(
                         stringItem=[
                             esdl.StringItem(

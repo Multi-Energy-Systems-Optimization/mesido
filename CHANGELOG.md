@@ -1,4 +1,4 @@
-# [Unreleased-main] - 2025-10-09
+# [Unreleased-main] - 2025-10-30
 
 ## Added
 - Elect test for air_to_water_heat_pump_elec
@@ -14,6 +14,7 @@
 - A new type of potential error is added if the profile name indicated in esdl is not available in the database.
 - Parsing of emission factors for specific sources not related to carriers.
 - Capability of ResidualHeatSource and GeothermalHeatSource to also have profile constraints that can be read from InfluxDB
+- Writing KPIs back for discounted CAPEX
 
 ## Changed
 - Removed support of python versions 3.9 and older.

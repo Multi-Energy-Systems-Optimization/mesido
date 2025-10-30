@@ -9,14 +9,17 @@ from esdl.esdl_handler import EnergySystemHandler
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.financial_mixin import calculate_annuity_factor
-from mesido.workflows import EndScenarioSizingStaged, EndScenarioSizingDiscountedStaged, run_end_scenario_sizing
+from mesido.workflows import (
+    EndScenarioSizingStaged,
+    EndScenarioSizingDiscountedStaged,
+    run_end_scenario_sizing,
+)
 
 
 import numpy as np
 
 
 class TestUpdatedESDL(TestCase):
-
 
     def test_updated_esdl(self):
         """
@@ -317,7 +320,15 @@ class TestUpdatedESDL(TestCase):
 
     def test_updated_esdl_eac(self):
         """
+        Ensure that the updated ESDL, generated through optimization using the
+        "discounted_annualized_cost" objective, includes KPIs relevant to the
+        Equivalent Annuity Cost (EAC).
 
+        Checks:
+        - Confirm that the number of KPIs in the output ESDL matches the expected
+            count of KPIs related to EAC.
+        - Verify that the EAC CAPEX and EAC OPEX values shown in the KPI figures
+            are correctly calculated.
         """
 
         root_folder = str(Path(__file__).resolve().parent.parent)
@@ -328,8 +339,6 @@ class TestUpdatedESDL(TestCase):
         base_folder = (
             Path(examples.PoCTutorial.src.run_grow_tutorial.__file__).resolve().parent.parent
         )
-        model_folder = base_folder / "model"
-        input_folder = base_folder / "input"
 
         solution = run_end_scenario_sizing(
             EndScenarioSizingDiscountedStaged,
@@ -341,7 +350,6 @@ class TestUpdatedESDL(TestCase):
 
         results = solution.extract_results()
         parameters = solution.parameters(0)
-
 
         # Load in optimized esdl in the form of the actual optimized esdl file created by MESIDO
         esdl_path = os.path.join(base_folder, "model", "PoC Tutorial Discount5_GrowOptimized.esdl")
@@ -376,7 +384,6 @@ class TestUpdatedESDL(TestCase):
                 len(energy_system.instance[0].area.KPIs.kpi), len(all_high_level_kpis)
             )
 
-
             # Check if EAC calculation is matching with KPI values
 
             for ii in range(len(energy_system.instance[0].area.KPIs.kpi)):
@@ -385,36 +392,40 @@ class TestUpdatedESDL(TestCase):
                 asset = "ResidualHeatSource_72d7"
 
                 if kpi_name == "EAC - CAPEX breakdown [EUR] (1.0 year period)":
-                    stringItems = energy_system.instance[0].area.KPIs.kpi[ii].distribution.stringItem.items
+                    stringItems = (
+                        energy_system.instance[0].area.KPIs.kpi[ii].distribution.stringItem.items
+                    )
 
                     for stringItems_asset in stringItems:
-                        if stringItems_asset.label == 'ResidualHeatSource':
+                        if stringItems_asset.label == "ResidualHeatSource":
                             value = stringItems_asset.value
 
                             investment_cost = results[f"{asset}__investment_cost"]
                             installation_cost = results[f"{asset}__installation_cost"]
                             asset_life_years = parameters[f"{asset}.technical_life"]
                             discount_rate = parameters[f"{asset}.discount_rate"] / 100.0
-                            annuity_factor = calculate_annuity_factor(discount_rate, asset_life_years)
+                            annuity_factor = calculate_annuity_factor(
+                                discount_rate, asset_life_years
+                            )
                             CAPEX_EAC = (investment_cost + installation_cost) * annuity_factor
 
                             np.testing.assert_allclose(value, CAPEX_EAC)
 
                 if kpi_name == "EAC - OPEX breakdown [EUR] (1.0 year period)":
-                    stringItems = energy_system.instance[0].area.KPIs.kpi[ii].distribution.stringItem.items
+                    stringItems = (
+                        energy_system.instance[0].area.KPIs.kpi[ii].distribution.stringItem.items
+                    )
 
                     for stringItems_asset in stringItems:
-                        if stringItems_asset.label == 'ResidualHeatSource':
+                        if stringItems_asset.label == "ResidualHeatSource":
                             value = stringItems_asset.value
 
                             var_opex_cost = results[f"{asset}__variable_operational_cost"]
                             fix_opex_cost = results[f"{asset}__fixed_operational_cost"]
 
-                            OPEX_EAC = (var_opex_cost + fix_opex_cost)
+                            OPEX_EAC = var_opex_cost + fix_opex_cost
 
                             np.testing.assert_allclose(value, OPEX_EAC)
-
-
 
 
 if __name__ == "__main__":
