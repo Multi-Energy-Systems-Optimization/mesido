@@ -10,8 +10,8 @@ from esdl.esdl_handler import EnergySystemHandler
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.financial_mixin import calculate_annuity_factor
 from mesido.workflows import (
-    EndScenarioSizingStaged,
     EndScenarioSizingDiscountedStaged,
+    EndScenarioSizingStaged,
     run_end_scenario_sizing,
 )
 
@@ -392,13 +392,13 @@ class TestUpdatedESDL(TestCase):
                 asset = "ResidualHeatSource_72d7"
 
                 if kpi_name == "EAC - CAPEX breakdown [EUR] (1.0 year period)":
-                    stringItems = (
+                    string_items = (
                         energy_system.instance[0].area.KPIs.kpi[ii].distribution.stringItem.items
                     )
 
-                    for stringItems_asset in stringItems:
-                        if stringItems_asset.label == "ResidualHeatSource":
-                            value = stringItems_asset.value
+                    for string_items_asset in string_items:
+                        if string_items_asset.label == "ResidualHeatSource":
+                            value = string_items_asset.value
 
                             investment_cost = results[f"{asset}__investment_cost"]
                             installation_cost = results[f"{asset}__installation_cost"]
@@ -407,25 +407,25 @@ class TestUpdatedESDL(TestCase):
                             annuity_factor = calculate_annuity_factor(
                                 discount_rate, asset_life_years
                             )
-                            CAPEX_EAC = (investment_cost + installation_cost) * annuity_factor
+                            capex_eac = (investment_cost + installation_cost) * annuity_factor
 
-                            np.testing.assert_allclose(value, CAPEX_EAC)
+                            np.testing.assert_allclose(value, capex_eac)
 
                 if kpi_name == "EAC - OPEX breakdown [EUR] (1.0 year period)":
-                    stringItems = (
+                    string_items = (
                         energy_system.instance[0].area.KPIs.kpi[ii].distribution.stringItem.items
                     )
 
-                    for stringItems_asset in stringItems:
-                        if stringItems_asset.label == "ResidualHeatSource":
-                            value = stringItems_asset.value
+                    for string_items_asset in string_items:
+                        if string_items_asset.label == "ResidualHeatSource":
+                            value = string_items_asset.value
 
                             var_opex_cost = results[f"{asset}__variable_operational_cost"]
                             fix_opex_cost = results[f"{asset}__fixed_operational_cost"]
 
-                            OPEX_EAC = var_opex_cost + fix_opex_cost
+                            opex_eac = var_opex_cost + fix_opex_cost
 
-                            np.testing.assert_allclose(value, OPEX_EAC)
+                            np.testing.assert_allclose(value, opex_eac)
 
 
 if __name__ == "__main__":
