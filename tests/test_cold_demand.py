@@ -46,8 +46,9 @@ class TestColdDemand(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
-        with self.assertRaises(MesidoAssetIssueError) as cm, unittest.mock.patch(
-            "mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()
+        with (
+            self.assertRaises(MesidoAssetIssueError) as cm,
+            unittest.mock.patch("mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()),
         ):
             _ = run_esdl_mesido_optimization(
                 HeatProblem,
@@ -127,10 +128,19 @@ class TestColdDemand(TestCase):
             input_timeseries_file="timeseries.csv",
         )
         results = heat_problem.extract_results()
+        parameters = heat_problem.parameters(0)
 
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
+
+        # Check how variable operation cost is calculated
+        np.testing.assert_allclose(
+            parameters["HeatPump_b97e.variable_operational_cost_coefficient"]
+            * sum(results["HeatPump_b97e.Heat_source"][1:])
+            / parameters["HeatPump_b97e.cop"],
+            results["HeatPump_b97e__variable_operational_cost"],
+        )
 
     def test_wko(self):
         """

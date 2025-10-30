@@ -2,7 +2,6 @@ import logging
 
 import casadi as ca
 
-from mesido.workflows.utils.helpers import get_cost_value_and_unit
 
 import numpy as np
 
@@ -160,6 +159,7 @@ class MinimizeCAPEXAssetsCosts(Goal):
                 #     asset_name, ensemble_member
                 # )
                 investment_cost_coeff = parameters[f"{asset_name}.investment_cost_coefficient"]
+                # investment_cost_coeff = bounds[f"{asset_name}__hn_cost"][1]
                 length = parameters[f"{asset_name}.length"]
 
                 costs = investment_cost_coeff * length

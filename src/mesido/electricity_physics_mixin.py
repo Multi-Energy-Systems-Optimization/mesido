@@ -301,6 +301,8 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         )
 
     def __update_electricity_producer_upper_bounds(self):
+        # TODO: When a profile is assigned via esdl, this code below needs to be aligned with
+        # profile constraints implemented for heat to ensure compatibility
         t = self.times()
 
         timeseries_io_names = self.io.get_timeseries_names()
@@ -320,6 +322,9 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         value.
         """
         constraints = []
+
+        # TODO: When a profile is assigned via esdl, this code below needs to be aligned with
+        # profile constraints implemented for heat to ensure compatibility
 
         for asset in [*self.energy_system_components.get("electricity_source", [])]:
             if asset in self.__set_point_map.keys():
@@ -519,6 +524,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             *self.energy_system_components.get("heat_pump_elec", []),
             *self.energy_system_components.get("electrolyzer", []),
             *self.energy_system_components.get("transformer", []),
+            *self.energy_system_components.get("air_water_heat_pump_elec", []),
         ]:
             min_voltage = parameters[f"{elec_demand}.min_voltage"]
             voltage = self.state(f"{elec_demand}.ElectricityIn.V")

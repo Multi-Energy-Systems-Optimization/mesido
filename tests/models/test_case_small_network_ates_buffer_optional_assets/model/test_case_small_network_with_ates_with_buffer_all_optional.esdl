@@ -188,7 +188,7 @@
           </investmentCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:HeatProducer" power="3000000.0" name="HeatProducer_1" id="324b0371-b738-4f55-a978-3306ee81638c" state="OPTIONAL">
+      <asset xsi:type="esdl:HeatProducer" power="3000000.0" name="HeatProducer_1" id="324b0371-b738-4f55-a978-3306ee81638c" state="OPTIONAL" technicalLifetime="50.0">
         <geometry xsi:type="esdl:Point" lat="52.04476403847825" lon="4.309977293014527"/>
         <port xsi:type="esdl:OutPort" id="45bfc7d0-ef59-4f49-b37a-867b18e04b86" connectedTo="b462d564-a8c0-4ae0-a4af-36958f2455ea" carrier="7b32e287-d775-480c-b317-64ffdacf12c9" name="Out"/>
         <port xsi:type="esdl:InPort" connectedTo="e31e12c2-8f80-4aed-9e4b-918445a32996" id="ba9ca084-b71f-42a3-884a-f2f2b3ae4265" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret" name="In"/>
@@ -228,10 +228,10 @@
           <variableOperationalCosts xsi:type="esdl:SingleValue" value="6.0" id="7a789b95-93bb-415b-abbd-4ecbb6ad60c9">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="c52334c9-bc5d-41f4-b93d-10e7b769f281" description="Cost in EUR/MWh" perUnit="WATTHOUR" perMultiplier="MEGA" unit="EURO" physicalQuantity="COST"/>
           </variableOperationalCosts>
-          <investmentCosts xsi:type="esdl:SingleValue" value="233359.0">
+          <investmentCosts xsi:type="esdl:SingleValue" value="23335.90">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="a3b5cdd9-364b-4262-bce5-4658c5f1bac9" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" unit="EURO"/>
           </investmentCosts>
-          <installationCosts xsi:type="esdl:SingleValue" value="1000000.0" id="22528972-1920-42d8-9e0c-115f419c31d1">
+          <installationCosts xsi:type="esdl:SingleValue" value="100000.0" id="22528972-1920-42d8-9e0c-115f419c31d1">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="620a8529-43ec-4674-8ed3-10befaff0742" physicalQuantity="COST" description="Cost in EUR" unit="EURO"/>
           </installationCosts>
         </costInformation>
@@ -329,7 +329,7 @@
           </investmentCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:HeatProducer" power="50000000.0" name="HeatProducer_2" id="da00ddfc-cfa4-4f21-b5be-7c69d2bf53bb" state="OPTIONAL">
+      <asset xsi:type="esdl:HeatProducer" power="1000000.0" name="HeatProducer_2" id="da00ddfc-cfa4-4f21-b5be-7c69d2bf53bb" state="OPTIONAL" technicalLifetime="20.0">
         <geometry xsi:type="esdl:Point" lon="4.311726093292237" CRS="WGS84" lat="52.04487621664103"/>
         <port xsi:type="esdl:OutPort" id="886e5430-bec1-44e3-bab6-221c4518c810" connectedTo="bbfed830-071d-4d02-bddd-e709247c8337" carrier="7b32e287-d775-480c-b317-64ffdacf12c9" name="Out"/>
         <port xsi:type="esdl:InPort" connectedTo="df6f89d0-7872-4891-934f-de407f6aa142" id="c7ed8915-ddd0-47f8-93d6-1dabfb5d320b" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret" name="In"/>

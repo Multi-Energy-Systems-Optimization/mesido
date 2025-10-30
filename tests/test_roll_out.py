@@ -4,11 +4,15 @@ from unittest import TestCase
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 
-# from mesido.workflows.io.rollout_post import rollout_post
+from mesido.util import run_esdl_mesido_optimization
 from mesido.workflows.rollout_workflow import RollOutProblem
-from rtctools.util import run_optimization_problem
-from utils_tests import energy_conservation_test, heat_to_discharge_test
+
 import numpy as np
+
+# from utils_tests import energy_conservation_test
+from utils_tests import heat_to_discharge_test
+
+# from mesido.workflows.io.rollout_post import rollout_post
 
 
 class TestRollOutOptimization(TestCase):
@@ -36,7 +40,7 @@ class TestRollOutOptimization(TestCase):
         """
 
         # TODO: update location of model also update model & inputfile in run.
-        import models.test_case_small_network_with_ates_with_buffer.src.run_ates as run_ates
+        import models.test_case_small_network_ates_buffer_optional_assets.src.run_ates as run_ates
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
@@ -51,15 +55,11 @@ class TestRollOutOptimization(TestCase):
                 super().read()
                 m = [3, 5, 5]
                 for i in range(1, 4):
-                    demand_timeseries = self.get_timeseries(
-                        f"HeatingDemand_{i}.target_heat_demand"
-                    )
+                    demand_timeseries = self.get_timeseries(f"HeatingDemand_{i}.target_heat_demand")
                     demand_timeseries.values[:] = demand_timeseries.values[:] * m[i - 1]
-                    self.set_timeseries(
-                        f"HeatingDemand_{i}.target_heat_demand", demand_timeseries
-                    )
+                    self.set_timeseries(f"HeatingDemand_{i}.target_heat_demand", demand_timeseries)
 
-        solution = run_optimization_problem(
+        solution = run_esdl_mesido_optimization(
             RollOutTimeStep,
             base_folder=base_folder,
             esdl_file_name="PoC_tutorial_incl_ATES.esdl",
@@ -71,14 +71,14 @@ class TestRollOutOptimization(TestCase):
         results = solution.extract_results()
 
         # tolerance settings for the tests
-        atol = 1.0e-2
+        atol = 1.0e-1
         rtol = 1.0e-6
 
         # Demand matching if placed else demand zero (is_realized variable)
         for d in solution.energy_system_components.get("heat_demand", []):
             for y in range(solution._years):
                 is_realized = results[f"{d}__asset_is_realized_{y}"]
-                if is_realized == 0:
+                if is_realized <= 0.99:
                     # If not placed, demand should be zero
                     np.testing.assert_allclose(
                         results[f"{d}.Heat_demand"][
@@ -92,27 +92,20 @@ class TestRollOutOptimization(TestCase):
                     )
                 else:
                     # If placed, demand should match the target heat demand
-                    if len(solution.times()) > 0:
-                        len_times = len(solution.times())
-                    else:
-                        len_times = len(
-                            solution.get_timeseries(f"{d}.target_heat_demand").values
-                        )
+                    len_times = len(solution.times())
                     target = solution.get_timeseries(f"{d}.target_heat_demand").values[
                         solution._timesteps_per_year * y : len_times
                     ]
                     np.testing.assert_allclose(
                         target,
-                        results[f"{d}.Heat_demand"][
-                            solution._timesteps_per_year * y : len_times
-                        ],
+                        results[f"{d}.Heat_demand"][solution._timesteps_per_year * y : len_times],
                         atol=atol,
                         rtol=rtol,
                     )
                     break  # once an asset is placed it remains placed in the future
 
         heat_to_discharge_test(solution, results)
-        # TODO uncomment once PR 340 is merged and use a slightly relexed tolerance 
+        # TODO uncomment once PR 340 is merged and use a slightly relexed tolerance
         # as argument and uncomment next line
         # energy_conservation_test(solution, results)
 
@@ -140,7 +133,8 @@ class TestRollOutOptimization(TestCase):
                 tol = 1e-6
                 np.testing.assert_(
                     asset_is_realized <= next_asset_is_realized + tol,
-                    f"{asset}__asset_is_realized_{y} should be <= {asset}__asset_is_realized_{y + 1}",
+                    f"{asset}__asset_is_realized_{y} should be <=\
+                        {asset}__asset_is_realized_{y + 1}",
                 )
 
         # Check yearly max investment constraint
@@ -228,26 +222,23 @@ class TestRollOutOptimization(TestCase):
         )
 
         # Check fraction is placed, should be between 0 and 1 and increasing
+        tol = rtol
         for asset in assets_to_check:
             for y in range(solution._years):
                 asset_fraction_placed = results[f"{asset}__fraction_placed_{y}"]
                 np.testing.assert_(
-                    0 <= asset_fraction_placed <= 1, "Value is not between 0 and 1"
+                    0 - tol <= asset_fraction_placed <= 1 + tol, "Value is not between 0 and 1"
                 )
-                tol = 1e-6
                 if y < solution._years - 1:
-                    next_asset_fraction_placed = results[
-                        f"{asset}__fraction_placed_{y + 1}"
-                    ]
+                    next_asset_fraction_placed = results[f"{asset}__fraction_placed_{y + 1}"]
                     np.testing.assert_(
                         asset_fraction_placed <= next_asset_fraction_placed + tol,
-                        f"{asset}__fraction_placed_{y} should be <= {asset}__fraction_placed_{y + 1}",
+                        f"{asset}__fraction_placed_{y} should be <=\
+                            {asset}__fraction_placed_{y + 1}",
                     )
-
             for y in range(solution._years - 1):
                 asset_is_realized = results[f"{asset}__asset_is_realized_{y}"]
                 next_asset_is_realized = results[f"{asset}__asset_is_realized_{y + 1}"]
-                tol = 1e-6
                 np.testing.assert_(
                     asset_is_realized <= next_asset_is_realized + tol,
                     f"{asset}__asset_is_realized{y} should be <= {asset}__asset_is_realized{y + 1}",

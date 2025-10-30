@@ -1,6 +1,7 @@
 import os
 
 import matplotlib.patches as mpatches
+
 from esdl import esdl
 from matplotlib import pyplot as plt
 
@@ -19,7 +20,6 @@ class RollOutPost:
     """
 
     def __init__(self, **kwargs):
-
         self.output_folder = kwargs.get("output_folder")
         self.input_folder = kwargs.get("input_folder", self.output_folder)
         self.model_folder = kwargs.get("model_folder", self.output_folder)
@@ -51,7 +51,6 @@ class RollOutPost:
         This function plots the allocation of assets (demands, pipes, storages, sources)
         over time and is saved the output folder.
         """
-
         results = self.results
         ates_assets = self.esh.get_all_instances_of_type(esdl.ATES)
         for ates in ates_assets:
@@ -138,6 +137,7 @@ class RollOutPost:
         for pipe in self.esh.get_all_instances_of_type(esdl.Pipe):
             total_pipe_length += pipe.length
         print(total_pipe_length)
+
 
     def plot_geograph_time(self):
         """
@@ -399,3 +399,4 @@ if __name__ == "__main__":
                               r"\figures"}
     rolloutpost = RollOutPost(**kwargs)
     rolloutpost.all_plots()
+

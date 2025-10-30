@@ -4,6 +4,7 @@ from abc import abstractmethod
 import casadi as ca
 
 from mesido.base_component_type_mixin import BaseComponentTypeMixin
+from mesido.esdl.asset_to_component_base import AssetStateEnum
 
 import numpy as np
 
@@ -11,6 +12,7 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
 from rtctools.optimization.timeseries import Timeseries
+
 
 logger = logging.getLogger("mesido")
 
@@ -319,7 +321,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 aggr_count_max = parameters[f"{asset_name}.nr_of_doublets"]
             except KeyError:
                 aggr_count_max = 1.0
-            if parameters[f"{asset_name}.state"] == 0:
+            if parameters[f"{asset_name}.state"] == AssetStateEnum.DISABLED:
                 aggr_count_max = 0.0
             self.__asset_installation_cost_bounds[asset_installation_cost_var] = (
                 0.0,
@@ -487,7 +489,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                         aggr_count_max = parameters[f"{asset}.nr_of_doublets"]
                     except KeyError:
                         aggr_count_max = 1.0
-                    if parameters[f"{asset}.state"] == 0:
+                    if parameters[f"{asset}.state"] == AssetStateEnum.DISABLED:
                         aggr_count_max = 0.0
                     self.__asset_is_realized_bounds[var_name] = (0.0, aggr_count_max)
                 else:
@@ -517,7 +519,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                             aggr_count_max = parameters[f"{asset}.nr_of_doublets"]
                         except KeyError:
                             aggr_count_max = 1.0
-                        if parameters[f"{asset}.state"] == 0:
+                        if parameters[f"{asset}.state"] == AssetStateEnum.DISABLED:
                             aggr_count_max = 0.0
                         self.__asset_is_realized_bounds[var_name] = (0.0, aggr_count_max)
 
@@ -985,9 +987,23 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             else:
                 price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
 
+            # ToDo: Currently the variable operational cost unit for gas boiler is euro/Wh_gas
+            # but this can be changed to euro/Nm3
+            denominator = 1.0
+            if s in self.energy_system_components.get(
+                "air_water_heat_pump", []
+            ) or s in self.energy_system_components.get("air_water_heat_pump_elec", []):
+                denominator = parameters[f"{s}.cop"]
+            if s in self.energy_system_components.get("gas_boiler", []):
+                denominator = parameters[f"{s}.efficiency"]
             sum = 0.0
             for i in range(1, len(self.times())):
-                sum += variable_operational_cost_coefficient * heat_source[i] * timesteps[i - 1]
+                sum += (
+                    variable_operational_cost_coefficient
+                    * heat_source[i]
+                    * timesteps[i - 1]
+                    / denominator
+                )
                 sum += price_profile.values[i] * pump_power[i] * timesteps[i - 1] / eff
 
             constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
@@ -1216,8 +1232,8 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         return constraints
 
     def __cumulative_investments_made_in_eur_path_constraints(self, ensemble_member):
-        r"""
-        These constraints are linking the cummulitive investments made to the possiblity of
+        """
+        These constraints are linking the cumulative investments made to the possibility of
         utilizing an asset. The investments made are sufficient for that asset to be realized it
         becomes available.
 
@@ -1314,15 +1330,16 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
         return constraints
 
-    def __cumulative_investments_made_in_eur_constraints(self, ensemble_member):
-        r"""
-        These constraints are linking the cummulitive investments made to the possiblity of
-        utilizing an asset. The investments made are sufficient for that asset to be realized it
-        becomes available.
+
+    def __cumulative_capex_made_in_eur_constraints(self, ensemble_member):
+        """
+        These constraints are linking the cumulative capex made to the possibility of
+        utilizing an asset. If the cumulative capex made are sufficient (equal or
+        more than a required amount) for an asset to be realized it becomes available for operation.
 
         Meaning that an asset requires 1million euro investment to be realized
-        and the investments made at timestep i are sufficient the asset also is realized (becomes
-        available) in that same timestep.
+        and the investments made upto and including timestep i are sufficient the asset also is
+        realized (becomes available) in that same timestep.
         """
         constraints = []
         options = self.energy_system_options()
@@ -1589,7 +1606,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         if self.energy_system_options()["discounted_annualized_cost"]:
             constraints.extend(self.__annualized_capex_constraints(ensemble_member))
 
-        constraints.extend(self.__cumulative_investments_made_in_eur_constraints(ensemble_member))
+        constraints.extend(self.__cumulative_capex_made_in_eur_constraints(ensemble_member))
 
         return constraints
 

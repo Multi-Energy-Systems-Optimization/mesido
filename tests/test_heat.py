@@ -47,6 +47,10 @@ class TestHeat(TestCase):
         energy_conservation_test(case, results)
         heat_to_discharge_test(case, results)
 
+        # Check emission information is passed to parameters
+        parameters = case.parameters(0)
+        np.testing.assert_allclose(parameters["source.emission_coeff"], 20 * 1e-6 * 3600)
+
     def test_zero_heat_loss(self):
         """
         Check the optimiziation function when the zero heat loss is used.
@@ -371,3 +375,9 @@ class TestDisconnectablePipe(TestCase):
         # (loss) in the system, we expect equal results.
         np.testing.assert_allclose(q_linear, q_dw)
         np.testing.assert_allclose(results_dw["Pipe1__is_disconnected"][1], 1.0)
+
+
+if __name__ == "__main__":
+
+    a = TestHeat()
+    a.test_heat_loss()

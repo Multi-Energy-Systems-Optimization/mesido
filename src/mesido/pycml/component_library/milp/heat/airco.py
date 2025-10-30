@@ -46,13 +46,14 @@ class Airco(_NonStorageComponent):
         # Heat in the return (i.e. cold) line is zero
         self.add_variable(Variable, "Heat_airco", min=0.0, nominal=self.Heat_nominal)
         self.add_variable(Variable, "dH", max=0.0)
+        self.add_variable(
+            Variable, "Pump_power", min=0.0, nominal=self.Q_nominal * self.nominal_pressure
+        )
+
         self.add_equation(self.dH - (self.HeatOut.H - self.HeatIn.H))
         self.add_equation(
-            (
-                self.minimum_pressure_drop * self.Q
-                - (self.HeatIn.Hydraulic_power - self.HeatOut.Hydraulic_power)
-            )
-            / (self.Q_nominal * self.minimum_pressure_drop)
+            (self.Pump_power - (self.HeatOut.Hydraulic_power - self.HeatIn.Hydraulic_power))
+            / (self.Q_nominal * self.nominal_pressure)
         )
 
         self.add_equation(
