@@ -2352,33 +2352,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             is_buffer_charging = self.state(flow_dir_var)
             if b in self.energy_system_components.get("ates", []):
                 is_buffer_charging = self.variable(f"{b}__is_charging")
-                ates_flow_direction = self.state(f"{b}.Flow_direction")
-                ates_heat = self.variable(f"{b}.Heat_ates")
-                ates_heat_abs = self.variable(f"{b}.Heat_ates_abs")
-                ates_flow_direction_nominal = self.variable_nominal(f"{b}.Flow_direction")
-                constraints.append(
-                    (
-                        (ates_flow_direction - (2 * is_buffer_charging - 1)),
-                        0.0,
-                        0.0,
-                    )
-                )
-
-                constraints.append(
-                    (
-                        (-ates_heat + ates_heat_abs),
-                        0.0,
-                        np.inf,
-                    )
-                )
-
-                constraints.append(
-                    (
-                        (ates_heat + ates_heat_abs),
-                        0.0,
-                        np.inf,
-                    )
-                )
 
                 # TODO: check if below is necessary.
                 # flow_big_m = q_nominal * 10

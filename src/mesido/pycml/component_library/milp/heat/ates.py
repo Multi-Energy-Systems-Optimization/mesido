@@ -64,27 +64,6 @@ class ATES(HeatTwoPort, BaseAsset):
             nominal=nom_temp_change,
         )
 
-        self.add_variable(
-            Variable,
-            "Flow_direction",
-            # min=-1.01,
-            # max=+1.01,
-            # nominal=1.0,
-        )
-
-        self.add_variable(
-            Variable,
-            "Heat_ates_abs",
-            min=0.0,
-        )
-
-        self.add_variable(
-            Variable,
-            "varOPEX",
-            # min=0.0,
-        )
-
-
         self.heat_loss_coeff = 0.005 / (24.0 * 3600.0)
         self.single_doublet_power = nan
         self.nr_of_doublets = 1.0
