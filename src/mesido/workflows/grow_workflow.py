@@ -313,7 +313,8 @@ class EndScenarioSizing(
         #  constraints in the ESDL e.g. min max pressure
         options = super().energy_system_options()
         options["maximum_temperature_der"] = np.inf
-        options["heat_loss_disconnected_pipe"] = False
+        options["heat_loss_disconnected_pipe"] = True
+
         return options
 
     def path_goals(self):
@@ -590,15 +591,14 @@ class SettingsStaged:
 
         if self._stage == 2 and priorities_output:
             self.heat_network_settings["minimum_velocity"] = 0.0
-            self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
-            self.heat_network_settings["minimize_head_losses"] = False
             self._priorities_output = priorities_output
 
     def energy_system_options(self):
         options = super().energy_system_options()
         if self._stage == 1:
             options["neglect_pipe_heat_losses"] = True
-            self.heat_network_settings["minimum_velocity"] = 0.0
+        elif self._stage == 2:
+            options["heat_loss_disconnected_pipe"] = False
 
         return options
 
@@ -745,10 +745,13 @@ def run_end_scenario_sizing(
 
                 first_pipe_class = False
 
+        producer_input_timeseries = False
         for asset in [
             *solution.energy_system_components.get("heat_source", []),
             *solution.energy_system_components.get("heat_buffer", []),
         ]:
+            if f"{asset}.maximum_heat_source" in solution.io.get_timeseries_names():
+                producer_input_timeseries = True
             var_name = f"{asset}_aggregation_count"
             round_lb = round(results[var_name][0])
             ub = solution.bounds()[var_name][1]
@@ -783,11 +786,14 @@ def run_end_scenario_sizing(
                     )
 
                 boolean_bounds[f"{p}__flow_direct_var"] = (Timeseries(t, lb), Timeseries(t, ub))
-                # try:
-                #     r = results[f"{p}__is_disconnected"]
-                #     boolean_bounds[f"{p}__is_disconnected"] = (Timeseries(t, r), Timeseries(t, r))
-                # except KeyError:
-                #     pass
+                if not producer_input_timeseries:
+                    try:
+                        r = results[f"{p}__is_disconnected"]
+                        r_low = np.zeros(len(r))
+                        boolean_bounds[f"{p}__is_disconnected"] = (Timeseries(t, r_low), Timeseries(t,
+                                                                    r))
+                    except KeyError:
+                        pass
 
         priorities_output = solution._priorities_output
 
