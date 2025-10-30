@@ -2,8 +2,8 @@ from pathlib import Path
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.workflows import run_end_scenario_sizing
-from mesido.workflows.rollout_workflow import RollOutProblem  # not yet added to init of workflows
-
+from mesido.workflows.rollout_workflow import RollOutProblem, \
+    SolverCPLEX  # not yet added to init of workflows
 # as this is still work in progress, and shouldn't be used yet.
 
 if __name__ == "__main__":
@@ -14,11 +14,12 @@ if __name__ == "__main__":
 
     solution = run_end_scenario_sizing(
         RollOutProblem,
+        solver_class=SolverCPLEX,
         base_folder=base_folder,
-        esdl_file_name="PoC_tutorial_incl_ATES.esdl",
+        esdl_file_name="PoC_tutorial_incl_ATES.esdl",  # "GROW_withATES_Prod_install.esdl",
         esdl_parser=ESDLFileParser,
+        yearly_max_capex=15e6,
     )
-    results = solution.extract_results()
 
     # DO NOT DELETE, for manual checking of results.
     # import matplotlib.pyplot as plt

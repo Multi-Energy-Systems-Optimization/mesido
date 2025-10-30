@@ -260,7 +260,9 @@ def heat_to_discharge_test(solution, results, atol=1e-2, rtol=1.0e-4):
             # supply_id = solution.parameters(0)[f"{d}.{p}.T_supply_id"]
             # supply_t = results[f"{supply_id}_temperature"]
             # dt = supply_t - return_t
-            supply_t, return_t, dt = _get_component_temperatures(solution, results, d, p)
+            supply_t, return_t, dt = _get_component_temperatures(
+                solution, results, d, p
+            )
             # dt = solution.parameters(0)[f"{d}.{p}.dT"]
             # supply_t = solution.parameters(0)[f"{d}.{p}.T_supply"]
             # return_t = solution.parameters(0)[f"{d}.{p}.T_return"]
@@ -447,9 +449,13 @@ def energy_conservation_test(solution, results, atol=1e-3):
             if p in solution.hot_pipes:
                 p_discon = results[f"{p}__is_disconnected"].copy()
             else:
-                p_discon = results[f"{solution.cold_to_hot_pipe(p)}__is_disconnected"].copy()
+                p_discon = results[
+                    f"{solution.cold_to_hot_pipe(p)}__is_disconnected"
+                ].copy()
 
-            p_discon[p_discon < 0.5] = 0  # fix for discrete value sometimes being 0.003 or so.
+            p_discon[p_discon < 0.5] = (
+                0  # fix for discrete value sometimes being 0.003 or so.
+            )
             np.testing.assert_allclose(
                 results[f"{p}__hn_heat_loss"] * (1 - p_discon),
                 results[f"{p}.HeatIn.Heat"] - results[f"{p}.HeatOut.Heat"],

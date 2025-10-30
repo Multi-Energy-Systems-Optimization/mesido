@@ -1330,6 +1330,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
         return constraints
 
+
     def __cumulative_capex_made_in_eur_constraints(self, ensemble_member):
         """
         These constraints are linking the cumulative capex made to the possibility of

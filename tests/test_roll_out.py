@@ -3,6 +3,7 @@ from unittest import TestCase
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
+
 from mesido.util import run_esdl_mesido_optimization
 from mesido.workflows.rollout_workflow import RollOutProblem
 
@@ -45,6 +46,10 @@ class TestRollOutOptimization(TestCase):
 
         # This is an optimization done over three years with timesteps of 30 days
         class RollOutTimeStep(RollOutProblem):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+
+                self._timestep_size = 30 * 24
 
             def read(self):
                 super().read()
@@ -88,7 +93,6 @@ class TestRollOutOptimization(TestCase):
                 else:
                     # If placed, demand should match the target heat demand
                     len_times = len(solution.times())
-
                     target = solution.get_timeseries(f"{d}.target_heat_demand").values[
                         solution._timesteps_per_year * y : len_times
                     ]
@@ -142,7 +146,8 @@ class TestRollOutOptimization(TestCase):
                 for asset in assets_to_check
             )
             np.testing.assert_(
-                cumulative_capex - cumulative_prev_year <= solution._years_timestep_max_capex + tol,
+                cumulative_capex - cumulative_prev_year
+                <= solution._years_timestep_max_capex + tol,
                 f"yearly capex {cumulative_capex - cumulative_prev_year}\
                 should be <= maximum yearly investment {solution._years_timestep_max_capex}\
                 for year {y}",
@@ -163,7 +168,9 @@ class TestRollOutOptimization(TestCase):
                 if i % solution._timesteps_per_year == 0:
                     np.testing.assert_allclose(
                         results[f"{ates}.Stored_heat"][i],
-                        results[f"{ates}.Stored_heat"][i + solution._timesteps_per_year - 1],
+                        results[f"{ates}.Stored_heat"][
+                            i + solution._timesteps_per_year - 1
+                        ],
                         atol=atol,
                         rtol=rtol,
                     )
@@ -215,7 +222,7 @@ class TestRollOutOptimization(TestCase):
         )
 
         # Check fraction is placed, should be between 0 and 1 and increasing
-        tol = 1e-6
+        tol = rtol
         for asset in assets_to_check:
             for y in range(solution._years):
                 asset_fraction_placed = results[f"{asset}__fraction_placed_{y}"]

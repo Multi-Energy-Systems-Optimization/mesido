@@ -78,9 +78,9 @@ def _mip_gap_settings(mip_gap_name: str, problem) -> Dict[str, float]:
     options = {}
     if hasattr(problem, "_stage"):
         if problem._stage == 1:
-            options[mip_gap_name] = 0.005
+            options[mip_gap_name] = 0.0001
         else:
-            options[mip_gap_name] = 0.02
+            options[mip_gap_name] = 0.0001
     else:
         options[mip_gap_name] = 0.02
 

@@ -26,10 +26,10 @@ class AliasDictResults:
 
     def __getitem__(self, name: str) -> list:
         if name in self.results.keys():
-            return self.results[name]
+            return np.asarray(self.results[name])
         else:
             alias = self._aliases[name]
-            return alias[1] * self.results[alias[0]]
+            return alias[1] * np.asarray(self.results[alias[0]])
 
     def get_results_as_array(self, name: str) -> np.array:
         return np.array(self.results[name])
