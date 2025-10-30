@@ -84,7 +84,11 @@ def add_variables_documentation_automatically(class_: Type):
                             "GasPort",
                             "Primary",
                             "Secondary",
+                            "_ATESBaseAsset",
                             "_NonStorageComponent",
+                            "_NonStorageComponentSinkType",
+                            "_NonStorageComponentSourceType",
+                            "_StorageComponent",
                         ]:
                             # Follow the port and retrieve all variable names for that port
                             port_name = node.args[1].value
