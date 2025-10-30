@@ -285,6 +285,7 @@ class HeatProblemSetPoints(
         options["solver"] = "highs"
         highs_options = options["highs"] = {}
         highs_options["mip_rel_gap"] = 0.02
+        highs_options["presolve"] = "on"
 
         return options
 
@@ -310,7 +311,7 @@ class HeatProblemSetPoints(
             self.__cold_demand_nominal,
         ) = adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(
             self,
-            10,
+            20,  # This specific value is needed for testing purposes
         )
 
 

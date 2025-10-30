@@ -937,7 +937,9 @@ class ScenarioOutput:
         ]:
             asset = self._name_to_asset(energy_system, asset_name)
             for iport in range(len(asset.port)):
-                if isinstance(asset.port[iport], esdl.OutPort):
+                if isinstance(asset.port[iport], esdl.OutPort) or isinstance(
+                    asset.port[iport], esdl.InPort
+                ):
                     profiles_to_remove = []
                     for iprofile in range(len(asset.port[iport].profile)):
                         if (
