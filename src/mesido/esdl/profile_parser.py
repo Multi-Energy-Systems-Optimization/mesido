@@ -536,9 +536,11 @@ class InfluxDBProfileReader(BaseProfileReader):
         ):
             if profile_quantity_and_unit.unit == esdl.UnitEnum.WATT:
                 target_unit = POWER_IN_W
-            elif (profile_quantity_and_unit.unit == esdl.UnitEnum.PERCENT) or (
-                profile_quantity_and_unit.unit == esdl.UnitEnum.NONE
-            ):  # values 0-100% or values 0 - 1
+            elif (
+                profile_quantity_and_unit.unit == esdl.UnitEnum.PERCENT
+                or profile_quantity_and_unit.unit == esdl.UnitEnum.NONE
+            ):  # values 0-100% or ratio 0-1
+                factor = 1.0  # needed when the coef is a ratio 0-1
                 if not profile.multiplier == 1.0:
                     get_potential_errors().add_potential_issue(
                         MesidoAssetIssueType.ASSET_PROFILE_MULTIPLIER,
@@ -547,15 +549,9 @@ class InfluxDBProfileReader(BaseProfileReader):
                         f"Multiplier should be 1.0, when the unit is specified in "
                         f"{profile_quantity_and_unit.description}",
                     )
-                return (
-                    profile_time_series
-                    * convert_to_unit(
-                        value=1.0,
-                        source_unit=profile_quantity_and_unit,
-                        target_unit=profile_quantity_and_unit,
-                    )
-                    * asset.power
-                )
+                if profile_quantity_and_unit.unit == esdl.UnitEnum.PERCENT:
+                    factor /= 100.0  # needed when the coef is a percentage 0-100%
+                return profile_time_series * factor * asset.power
             else:
                 raise RuntimeError(
                     f"Power profiles currently only support units"

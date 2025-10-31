@@ -173,6 +173,7 @@ class TestProducerMaxProfile(TestCase):
         heat_produced = results["HeatProducer_b702.Heat_source"]
         heat_production_upper_limit = (
             solution.get_timeseries("HeatProducer_b702.maximum_heat_source").values
+            / max(solution.get_timeseries("HeatProducer_b702.maximum_heat_source").values)
             * results["HeatProducer_b702__max_size"]
         )
 
@@ -186,6 +187,6 @@ class TestProducerMaxProfile(TestCase):
 if __name__ == "__main__":
 
     a = TestProducerMaxProfile()
-    a.test_max_producer_scaled_profile()
-    a.test_max_producer_esdl_unscaled_profile()
+    # a.test_max_producer_scaled_profile()
+    # a.test_max_producer_esdl_unscaled_profile()
     a.test_max_producer_esdl_scaled_profile()
