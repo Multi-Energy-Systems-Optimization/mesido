@@ -465,17 +465,13 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         for asset in [
             *self.energy_system_components.get("ates", []),
         ]:
-            self.__ates_variable_operational_cost_per_time_map[asset] = []
-            for i in range(1, len(self.times())):
-                var_name = f"{asset}__ates_variable_operational_cost_per_time_{i}"
-                self.__ates_variable_operational_cost_per_time_map[asset].append(var_name)
-                self.__ates_variable_operational_cost_per_time_var[var_name] = ca.MX.sym(
-                    var_name
-                )
-                self.__ates_variable_operational_cost_per_time_nominals[var_name] = (
-                        self.variable_nominal(f"{asset}__variable_operational_cost")
-                )
-                self.__ates_variable_operational_cost_per_time_bounds[var_name] = (0.0, np.inf)
+            var_name = f"{asset}__ates_variable_operational_cost_per_time"
+            self.__ates_variable_operational_cost_per_time_map[asset] = var_name
+            self.__ates_variable_operational_cost_per_time_var[var_name] = ca.MX.sym(var_name)
+            self.__ates_variable_operational_cost_per_time_nominals[var_name] = (
+                    self.variable_nominal(f"{asset}__variable_operational_cost")
+            )
+            self.__ates_variable_operational_cost_per_time_bounds[var_name] = (0.0, np.inf)
 
 
         if options["include_asset_is_realized"]:
@@ -1198,35 +1194,34 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             # Todo: This cost component still is not fully functioning
             ates_is_charging = self.__state_vector_scaled(f"{ates}__is_charging", ensemble_member)
             heat_ates = self.__state_vector_scaled(f"{ates}.Heat_ates", ensemble_member)
-            heat_ates_nominal = self.bounds()[f"{ates}.Heat_ates"][1] / 2
-            variable_operational_cost_var = self._asset_variable_operational_cost_map[a]
+
+            variable_operational_cost_var = self._asset_variable_operational_cost_map[ates]
             variable_operational_cost = self.extra_variable(
                 variable_operational_cost_var, ensemble_member
             )
+            nominal = self.variable_nominal(variable_operational_cost_var)
             variable_operational_cost_coefficient = parameters[
                 f"{ates}.variable_operational_cost_coefficient"
             ]
 
-            var_name = self.__ates_variable_operational_cost_per_time_map[a]
-            ates_variable_operational_cost_per_time = self.state(var_name)
-            nominal = self.variable_nominal(var_name)
+            ates_variable_operational_cost_per_time_var = self.__ates_variable_operational_cost_per_time_map[ates]
+            ates_variable_operational_cost_per_time = self.__state_vector_scaled(
+                ates_variable_operational_cost_per_time_var, ensemble_member)
+            # ates_variable_operational_cost_per_time = self.extra_variable(
+            #     ates_variable_operational_cost_per_time_var)
+            nominal_per_time = self.variable_nominal(ates_variable_operational_cost_per_time_var)
 
-            big_m = 1000  # ToDo: select big_m as a function of theoretical limit of Var Opex of Ates
+            big_m = 10000  # ToDo: select big_m as a function of theoretical limit of Var Opex of Ates per time step
 
             timesteps = np.diff(self.times()) / 3600.0
-
             sum = 0.0
             for i in range(1, len(self.times())):
-                # If ates is charging, ates_is_charging is 1 and flow_direction is 1.
-                # If ates is discharging , ates_is_charging is 0 and flow direction 0
-                # Hence, varOPEX would be a variable>0 for everyt timestep
-
                 varOPEX_dt = (
                         variable_operational_cost_coefficient
                         * heat_ates[i]
                         * timesteps[i - 1]
                 )
-
+                # ates_variable_operational_cost_per_time would be a variable>0 for everyt timestep
                 constraints.append(
                     (
                         (
@@ -1234,12 +1229,11 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                                 - varOPEX_dt
                                 + (1.0 - ates_is_charging) * big_m
                         )
-                        / nominal,
+                        / nominal, # _per_time,
                         0.0,
                         np.inf,
                     )
                 )
-
                 constraints.append(
                     (
                         (
@@ -1247,7 +1241,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                                 + varOPEX_dt
                                 + ates_is_charging * big_m
                         )
-                        / nominal,
+                        / nominal, #_per_time,
                         0.0,
                         np.inf,
                     )
