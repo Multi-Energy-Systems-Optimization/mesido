@@ -26,6 +26,10 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
         self.__hn_component_types = None
         self.__commodity_types = None
 
+        self.__hot_cold_pipe_relations = dict()
+        self.__unrelated_pipes = list()
+        self.hot_cold_pipe_relations()
+
     def pre(self):
         """
         In this function the topology object of the milp network is constructed. Meaning that for
@@ -289,10 +293,13 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
 
                 assert asset_w_orientation[0] in pipes_set
 
-                if k == "In":
-                    assert self.is_hot_pipe(asset_w_orientation[0])
-                else:
-                    assert self.is_cold_pipe(asset_w_orientation[0])
+                # TODO: this check can no longer be based on is_hot_pipe or is_cold_pipe,
+                # because the pipes might be drawn separately and then do not have the "related"
+                # attribute in esdl.
+                # if k == "In":
+                #     assert self.is_hot_pipe(asset_w_orientation[0])
+                # else:
+                #     assert self.is_cold_pipe(asset_w_orientation[0])
 
                 buffer_connections[b].append(asset_w_orientation)
 
@@ -336,10 +343,13 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
 
                 assert asset_w_orientation[0] in pipes_set
 
-                if k == "Out":
-                    assert self.is_cold_pipe(asset_w_orientation[0])
-                else:
-                    assert self.is_hot_pipe(asset_w_orientation[0])
+                # TODO: this check can no longer be based on is_hot_pipe or is_cold_pipe,
+                # because the pipes might be drawn separately and then do not have the "related"
+                # attribute in esdl.
+                # if k == "Out":
+                #     assert self.is_cold_pipe(asset_w_orientation[0])
+                # else:
+                #     assert self.is_hot_pipe(asset_w_orientation[0])
 
                 ates_connections[a].append(asset_w_orientation)
 
@@ -505,3 +515,44 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
         with directions on the ports that are needed in the constraints.
         """
         return self.__topology
+
+    @property
+    def hot_to_cold_pipe_map(self) -> Dict:
+        """
+        This function return a dictionary of hot pipe names mapped to cold pipe names.
+        """
+        return self.__hot_cold_pipe_relations
+
+    @property
+    def cold_to_hot_pipe_map(self) -> Dict:
+        """
+        This function return a dictionary of cold pipe names mapped to hot pipe names.
+        """
+        return dict(
+            zip(self.__hot_cold_pipe_relations.values(), self.__hot_cold_pipe_relations.keys())
+        )
+
+    def hot_cold_pipe_relations(self):
+        # TODO: fix backward compatability, in old esdl files the "related" attribute is not
+        # available. Determine from when it is available and have for old esdl files based on
+        # esdlVersion, set the hot_cold_pipe_relations based on _ret.
+        # TODO: also check if there are goals/constraints and function that should be adapted for
+        # pipes that are not in the realtions list, and thereby not in thet hot_pipes
+        pipes = self.energy_system_components.get("heat_pipe", [])
+        for pipe in pipes:
+            related = False
+            # test if hot_pipe
+            if self.is_hot_pipe(pipe):
+                cold_pipe = self.hot_to_cold_pipe(pipe)
+                if cold_pipe in pipes:
+                    related = True
+                    if pipe not in self.__hot_cold_pipe_relations.keys():
+                        self.__hot_cold_pipe_relations[pipe] = cold_pipe
+            elif self.is_cold_pipe(pipe):
+                hot_pipe = self.cold_to_hot_pipe(pipe)
+                if hot_pipe in pipes:
+                    related = True
+                    if hot_pipe not in self.__hot_cold_pipe_relations.keys():
+                        self.__hot_cold_pipe_relations[hot_pipe] = pipe
+            if not related and pipe not in self.__unrelated_pipes:
+                self.__unrelated_pipes.append(pipe)
