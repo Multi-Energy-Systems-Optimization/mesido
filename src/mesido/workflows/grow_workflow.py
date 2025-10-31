@@ -155,7 +155,7 @@ def check_solver_succes_grow_problem(solution):
     if not solver_success:
         if (
             solution.solver_stats["return_status"]
-            == solver_messages["Time_limit"][solution.solver_options]
+            == solver_messages["Time_limit"][solution.solver_options["solver"]]
             and solution.objective_value > 1e-6
         ):
             logger.error(
@@ -725,7 +725,7 @@ def run_end_scenario_sizing(
         pc_map = solution.get_pipe_class_map()  # if disconnectable and not connected to source
         for pipe_classes in pc_map.values():
             v_prev = 0.0
-            # v_prev_2 = 0.0
+            v_prev_2 = 0.0
             first_pipe_class = True
             use_pipe_dn_none = False
             for var_name in pipe_classes.values():
@@ -735,13 +735,13 @@ def run_end_scenario_sizing(
                     # use_pipe_dn_none = True
                 elif v == 1.0:
                     boolean_bounds[var_name] = (0.0, v)
-                elif not use_pipe_dn_none and v_prev == 1.0:  # or (
-                    # not use_pipe_dn_none and v_prev_2 == 1.0):  # This allows two DN
+                elif not use_pipe_dn_none and v_prev == 1.0 or (
+                    not use_pipe_dn_none and v_prev_2 == 1.0):  # This allows two DN
                     # larger
                     boolean_bounds[var_name] = (0.0, 1.0)
                 else:
                     boolean_bounds[var_name] = (v, v)
-                # v_prev_2 = v_prev
+                v_prev_2 = v_prev
                 v_prev = v
 
                 first_pipe_class = False
