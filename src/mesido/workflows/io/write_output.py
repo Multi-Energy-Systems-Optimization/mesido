@@ -581,7 +581,7 @@ class ScenarioOutput:
             kpis_top_level.kpi.append(
                 esdl.DistributionKPI(
                     name=f"{cost_type_prefix}CAPEX breakdown [EUR] "
-                         f"({optim_time_horizon} year period)",
+                    f"({optim_time_horizon} year period)",
                     distribution=esdl.StringLabelDistribution(
                         stringItem=[
                             esdl.StringItem(label=key, value=value)
@@ -614,7 +614,7 @@ class ScenarioOutput:
             kpis_top_level.kpi.append(
                 esdl.DistributionKPI(
                     name=f"{cost_type_prefix}OPEX breakdown [EUR] "
-                         f"({optim_time_horizon} year period)",
+                    f"({optim_time_horizon} year period)",
                     distribution=esdl.StringLabelDistribution(
                         stringItem=[
                             esdl.StringItem(label=key, value=value)
