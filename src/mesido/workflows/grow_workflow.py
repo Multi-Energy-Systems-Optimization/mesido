@@ -403,6 +403,8 @@ class EndScenarioSizing(
                 return success, log_level
 
             return True, logging.INFO
+        elif solver_stats["return_status"] == "integer optimal with unscaled infeasibilities":
+            return True, logging.INFO
         else:
             return success, log_level
 
