@@ -345,7 +345,6 @@ class TestUpdatedESDL(TestCase):
             base_folder=base_folder,
             esdl_file_name="PoC Tutorial Discount5.esdl",
             esdl_parser=ESDLFileParser,
-            # **kwargs,
         )
 
         results = solution.extract_results()

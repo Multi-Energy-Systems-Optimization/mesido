@@ -341,8 +341,8 @@ class ScenarioOutput:
             asset_placement_var = self._asset_aggregation_count_var_map[asset.name]
             placed = np.round(results[asset_placement_var][0]) >= 1.0
 
+            cost_type_prefix = ""
             if not discounted_annualized_cost:
-                kpi_type = ""
                 if np.isnan(parameters[f"{asset.name}.technical_life"]) or np.isclose(
                     parameters[f"{asset.name}.technical_life"], 0.0
                 ):
@@ -352,11 +352,12 @@ class ScenarioOutput:
                         optim_time_horizon / parameters[f"{asset.name}.technical_life"]
                     )
             else:
-                kpi_type = "EAC - "
+                cost_type_prefix = "EAC - "
                 asset_life_years = parameters[f"{asset.name}.technical_life"]
                 discount_rate = parameters[f"{asset.name}.discount_rate"] / 100.0
                 annuity_factor = calculate_annuity_factor(discount_rate, asset_life_years)
                 capex_factor = annuity_factor
+                # EAC is annualized, so 1-year time horizon is used
                 optim_time_horizon = 1.0
 
             if placed:
@@ -498,7 +499,7 @@ class ScenarioOutput:
         if not optimizer_sim:
             kpis_top_level.kpi.append(
                 esdl.DistributionKPI(
-                    name=f"{kpi_type}High level cost breakdown [EUR]"
+                    name=f"{cost_type_prefix}High level cost breakdown [EUR]"
                     f" ({optim_time_horizon} year period)",
                     distribution=esdl.StringLabelDistribution(
                         stringItem=[
@@ -551,7 +552,7 @@ class ScenarioOutput:
         if not optimizer_sim:
             kpis_top_level.kpi.append(
                 esdl.DistributionKPI(
-                    name=f"{kpi_type}Overall cost breakdown [EUR] "
+                    name=f"{cost_type_prefix}Overall cost breakdown [EUR] "
                     f"({optim_time_horizon} year period)",
                     distribution=esdl.StringLabelDistribution(
                         stringItem=[
@@ -579,7 +580,8 @@ class ScenarioOutput:
 
             kpis_top_level.kpi.append(
                 esdl.DistributionKPI(
-                    name=f"{kpi_type}CAPEX breakdown [EUR] ({optim_time_horizon} year period)",
+                    name=f"{cost_type_prefix}CAPEX breakdown [EUR] "
+                         f"({optim_time_horizon} year period)",
                     distribution=esdl.StringLabelDistribution(
                         stringItem=[
                             esdl.StringItem(label=key, value=value)
@@ -611,7 +613,8 @@ class ScenarioOutput:
         if not optimizer_sim:
             kpis_top_level.kpi.append(
                 esdl.DistributionKPI(
-                    name=f"{kpi_type}OPEX breakdown [EUR] ({optim_time_horizon} year period)",
+                    name=f"{cost_type_prefix}OPEX breakdown [EUR] "
+                         f"({optim_time_horizon} year period)",
                     distribution=esdl.StringLabelDistribution(
                         stringItem=[
                             esdl.StringItem(label=key, value=value)
@@ -884,7 +887,7 @@ class ScenarioOutput:
 
             # Create plots in the dashboard
             # Top level KPIs: Cost breakdown in a polygon area (for all assest grouped together)
-            kpi_name = f"{kpi_type}{subarea.name}: Asset cost breakdown [EUR]"
+            kpi_name = f"{cost_type_prefix}{subarea.name}: Asset cost breakdown [EUR]"
             if (area_installation_cost > 0.0 or area_investment_cost > 0.0) and (
                 area_variable_opex_cost > 0.0 or area_fixed_opex_cost > 0.0
             ):
