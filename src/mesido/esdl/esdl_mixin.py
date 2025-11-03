@@ -597,11 +597,11 @@ class ESDLMixin(
             zip(self.__hot_cold_pipe_relations.values(), self.__hot_cold_pipe_relations.keys())
         )
 
-    # @property
-    # def unrelated_pipes(self) -> List[str]:
-    #     """This function return a list of pipe names of all the pipes that don't have a related
-    #     cold/hot pipe."""
-    #     return self.__unrelated_pipes
+    @property
+    def unrelated_pipes(self) -> List[str]:
+        """This function return a list of pipe names of all the pipes that don't have a related
+        cold/hot pipe."""
+        return self.__unrelated_pipes
 
     def pycml_model(self) -> _ESDLModelBase:
         """
