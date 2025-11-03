@@ -112,3 +112,9 @@ class BaseComponentTypeMixin:
         This function return a list of all the return/cold pipe names.
         """
         return list(self.cold_to_hot_pipe_map.keys())
+
+    @property
+    def unrelated_pipes(self) -> List[str]:
+        """This function return a list of pipe names of all the pipes that don't have a related
+        cold/hot pipe."""
+        raise NotImplementedError

@@ -541,12 +541,7 @@ class ESDLMixin(
         return self.cold_to_hot_pipe_map.get(pipe, None)
 
     def hot_cold_pipe_relations(self):
-        # TODO: fix backward compatability, in old esdl files the "related" attribute is not
-        # available. Determine from when it is available and have for old esdl files based on
-        # esdlVersion, set the hot_cold_pipe_relations based on _ret.
-        # TODO: also check if there are goals/constraints and function that should be adapted for
-        # pipes that are not in the realtions list, and thereby not in thet hot_pipes
-        # ESDL version before v2110 don't have the related attribute
+        # Backward compatability: ESDL version before v2110 don't have the related attribute
         esdl_version = self.__energy_system_handler.energy_system.esdlVersion
         if esdl_version is not None and esdl_version >= "v2110":
             for asset in self._esdl_assets.values():
@@ -602,11 +597,11 @@ class ESDLMixin(
             zip(self.__hot_cold_pipe_relations.values(), self.__hot_cold_pipe_relations.keys())
         )
 
-    @property
-    def unrelated_pipes(self) -> List[str]:
-        """This function return a list of pipe names of all the pipes that don't have a related
-        cold/hot pipe."""
-        return self.__unrelated_pipes
+    # @property
+    # def unrelated_pipes(self) -> List[str]:
+    #     """This function return a list of pipe names of all the pipes that don't have a related
+    #     cold/hot pipe."""
+    #     return self.__unrelated_pipes
 
     def pycml_model(self) -> _ESDLModelBase:
         """

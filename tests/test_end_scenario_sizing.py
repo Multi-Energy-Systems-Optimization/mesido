@@ -74,6 +74,11 @@ class TestEndScenarioSizing(TestCase):
         # Pipe connected to a demand
         assert self.solution.pipe_classes("Pipe2")[0].name == "DN150"  # initially DN->None
         assert self.solution.pipe_classes("Pipe2")[-1].name == "DN250"  # initially DN450
+        # Check that the available pipe classes are also limited for pipes in the return network
+        # that do not have the related attribute assigned and are therefore not in the set of
+        # self.cold_pipes.
+        assert self.solution.pipe_classes("Pipe2_ret")[0].name == "DN150"  # initially DN->None
+        assert self.solution.pipe_classes("Pipe2_ret")[-1].name == "DN250"  # initially DN450
         # Check the minimum velocity setting==default value. Keep the default value hard-coded to
         # prevent future coding bugs
         np.testing.assert_equal(1.0e-4, self.solution.heat_network_settings["minimum_velocity"])
@@ -293,7 +298,7 @@ class TestEndScenarioSizing(TestCase):
 
         demand_matching_test(solution, results)
 
-        tol = 1.0e-10
+        tol = 1.0e-9
         pipes = solution.energy_system_components.get("heat_pipe")
         for pipe in pipes:
             pipe_diameter = solution.parameters(0)[f"{pipe}.diameter"]

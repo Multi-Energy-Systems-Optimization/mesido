@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Set
+from typing import Dict, List, Set
 
 from mesido.base_component_type_mixin import BaseComponentTypeMixin
 from mesido.heat_network_common import NodeConnectionDirection
@@ -85,6 +85,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
 
             # Look for aliases only in the hot pipes. All cold pipes are zero by convention anyway.
             hot_pipes = self.hot_pipes.copy()
+            hot_pipes.extend(self.unrelated_pipes.copy())
 
             pipes_map = {f"{pipe}.HeatIn.Heat": pipe for pipe in hot_pipes}
             pipes_map.update({f"{pipe}.HeatOut.Heat": pipe for pipe in hot_pipes})
@@ -556,3 +557,9 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                         self.__hot_cold_pipe_relations[hot_pipe] = pipe
             if not related and pipe not in self.__unrelated_pipes:
                 self.__unrelated_pipes.append(pipe)
+
+    @property
+    def unrelated_pipes(self) -> List[str]:
+        """This function return a list of pipe names of all the pipes that don't have a related
+        cold/hot pipe."""
+        return self.__unrelated_pipes
