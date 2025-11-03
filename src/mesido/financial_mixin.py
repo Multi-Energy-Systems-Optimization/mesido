@@ -49,7 +49,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         self.__asset_variable_operational_cost_nominals = {}
 
         # Variable for variable operational cost for ates per timestep
-        self.__ates_variable_operational_cost_per_time_map = {}
+        self._ates_variable_operational_cost_per_time_map = {}
         self.__ates_variable_operational_cost_per_time_var = {}
         self.__ates_variable_operational_cost_per_time_bounds = {}
         self.__ates_variable_operational_cost_per_time_nominals = {}
@@ -316,6 +316,24 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 if nominal_variable_operational is not None
                 else 1.0e2
             )
+            
+            if asset_name in [
+                *self.energy_system_components.get("ates", []),
+            ]:
+                var_name = f"{asset_name}__ates_variable_operational_cost_per_time"
+                self._ates_variable_operational_cost_per_time_map[asset_name] = var_name
+                self.__ates_variable_operational_cost_per_time_var[var_name] = ca.MX.sym(var_name)
+                self.__ates_variable_operational_cost_per_time_nominals[var_name] = (
+                    max(
+                    parameters[f"{asset_name}.variable_operational_cost_coefficient"]
+                    * nominal_variable_operational
+                    * 24.0,
+                    1.0e2,
+                    )
+                    if nominal_variable_operational is not None
+                    else 1.0e2
+                )
+                self.__ates_variable_operational_cost_per_time_bounds[var_name] = (0.0, np.inf)
 
             # installation cost
             asset_installation_cost_var = f"{asset_name}__installation_cost"
@@ -462,17 +480,16 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 installation_cost_symbol_name
             ) + self.variable_nominal(investment_cost_symbol_name)
 
-        for asset in [
-            *self.energy_system_components.get("ates", []),
-        ]:
-            var_name = f"{asset}__ates_variable_operational_cost_per_time"
-            self.__ates_variable_operational_cost_per_time_map[asset] = var_name
-            self.__ates_variable_operational_cost_per_time_var[var_name] = ca.MX.sym(var_name)
-            self.__ates_variable_operational_cost_per_time_nominals[var_name] = (
-                    self.variable_nominal(f"{asset}__variable_operational_cost")
-            )
-            self.__ates_variable_operational_cost_per_time_bounds[var_name] = (0.0, np.inf)
-
+        # for asset in [
+        #     *self.energy_system_components.get("ates", []),
+        # ]:
+        #     var_name = f"{asset}__ates_variable_operational_cost_per_time"
+        #     self._ates_variable_operational_cost_per_time_map[asset] = var_name
+        #     self.__ates_variable_operational_cost_per_time_var[var_name] = ca.MX.sym(var_name)
+        #     self.__ates_variable_operational_cost_per_time_nominals[var_name] = self.variable_nominal(
+        #         var_name
+        #     )
+        #     self.__ates_variable_operational_cost_per_time_bounds[var_name] = (0.0, np.inf)
 
         if options["include_asset_is_realized"]:
             for asset in [
@@ -731,14 +748,11 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         """
         variables = super().path_variables.copy()
 
-        for asset in [
-            *self.energy_system_components.get("ates", []),
-        ]:
-            variables.extend(self.__ates_variable_operational_cost_per_time_var.values())
-
         if not self.energy_system_options()["yearly_investments"]:
             variables.extend(self.__cumulative_investments_made_in_eur_var.values())
             variables.extend(self.__asset_is_realized_var.values())
+
+        variables.extend(self.__ates_variable_operational_cost_per_time_var.values())
         return variables
 
     def variable_is_discrete(self, variable):
@@ -1204,42 +1218,45 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 f"{ates}.variable_operational_cost_coefficient"
             ]
 
-            ates_variable_operational_cost_per_time_var = self.__ates_variable_operational_cost_per_time_map[ates]
-            ates_variable_operational_cost_per_time = self.__state_vector_scaled(
-                ates_variable_operational_cost_per_time_var, ensemble_member)
-            # ates_variable_operational_cost_per_time = self.extra_variable(
-            #     ates_variable_operational_cost_per_time_var)
-            nominal_per_time = self.variable_nominal(ates_variable_operational_cost_per_time_var)
 
-            big_m = 10000  # ToDo: select big_m as a function of theoretical limit of Var Opex of Ates per time step
+            ates_variable_operational_cost_per_time_var = self._ates_variable_operational_cost_per_time_map[ates]
+            ates_variable_operational_cost_per_time = self.__state_vector_scaled(
+                ates_variable_operational_cost_per_time_var, ensemble_member
+            )
+
+            # nominal_per_time = self.variable_nominal(ates_variable_operational_cost_per_time_var)
+
+            big_m = 1e4  # ToDo: select big_m as a function of theoretical limit of Var Opex of Ates per time step
 
             timesteps = np.diff(self.times()) / 3600.0
-            sum = 0.0
-            for i in range(1, len(self.times())):
+            timesteps = np.append(0, timesteps) # make the same length as times()
+            ates_sum = 0.0
+            for i in range(0, len(self.times())):
                 varOPEX_dt = (
-                        variable_operational_cost_coefficient
+                        variable_operational_cost_coefficient * 1.e-3  # temporary hard-coded value
                         * heat_ates[i]
-                        * timesteps[i - 1]
+                        * timesteps[i]
                 )
                 # ates_variable_operational_cost_per_time would be a variable>0 for everyt timestep
                 constraints.append(
                     (
                         (
-                                ates_variable_operational_cost_per_time[i]
-                                - varOPEX_dt
-                                + (1.0 - ates_is_charging) * big_m
+                            ates_variable_operational_cost_per_time[i]
+                            - varOPEX_dt
+                            + (1.0 - ates_is_charging[i]) * big_m
                         )
                         / nominal, # _per_time,
                         0.0,
                         np.inf,
                     )
                 )
+
                 constraints.append(
                     (
                         (
-                                ates_variable_operational_cost_per_time[i]
-                                + varOPEX_dt
-                                + ates_is_charging * big_m
+                            ates_variable_operational_cost_per_time[i]
+                            + varOPEX_dt
+                            + ates_is_charging[i] * big_m
                         )
                         / nominal, #_per_time,
                         0.0,
@@ -1247,8 +1264,9 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     )
                 )
 
-                sum += ates_variable_operational_cost_per_time[i]
-            constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
+                ates_sum += ates_variable_operational_cost_per_time[i]
+            # constraints.append(((variable_operational_cost - ates_sum) / nominal, 0.0, 0.0))
+            # constraints.append(((variable_operational_cost - ates_sum) / 50.e3, 0., 0.0))
 
         return constraints
 
@@ -1648,6 +1666,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         constraints.extend(
             self.__cumulative_investments_made_in_eur_path_constraints(ensemble_member)
         )
+        # cons...... can potential add here, if I split the constraints normal and path
 
         return constraints
 
