@@ -31,6 +31,7 @@ class RollOutPost:
 
         self.times = np.asarray(self.parameters["times"])
         self.years = int((self.times[-1] - self.times[0]) / 8760 / 3600)
+        self._horizon = 30  # total years that are represented by the self.years
 
         self.esh = EnergySystemHandler()
         self.esh.load_file(os.path.join(self.model_folder, self.esdl_file_name))
@@ -143,10 +144,9 @@ class RollOutPost:
         color = ["b", "g", "r", "c", "m", "k", "y", "orange", "lime", "teal"]
 
         legend_years = []
-        problem_horizon = 30  # years
         times = self.times
         problem_years = int((times[-1] - times[0]) / 8760 / 3600)
-        yearstep = int(problem_horizon / problem_years)
+        yearstep = int(self._horizon / problem_years)
         for i in range(problem_years):
             legend_years.append(
                 mpatches.Patch(color=color[i], label=f"year {i * yearstep} {(i + 1) * yearstep}")
@@ -297,7 +297,7 @@ class RollOutPost:
                         var_opex_costs[i * steps_per_year : (i + 1) * steps_per_year]
                     )
 
-        years = [i * 30 / self.years for i in range(self.years)]
+        years = [i * self._horizon / self.years for i in range(self.years)]
 
         capex_year_totals = np.asarray(capex_year_totals)
         opex_year_totals = np.asarray(opex_year_totals)
@@ -317,6 +317,7 @@ class RollOutPost:
         plt.savefig(savefig)
         plt.show()
 
+    # DO NOT DELETE: potential future use of post processing
     # def animate_init():
     #     line.set_data([], [])
     #     return (line,)
