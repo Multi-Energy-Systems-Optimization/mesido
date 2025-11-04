@@ -264,7 +264,7 @@ class EndScenarioSizing(
         self.__heat_demand_bounds = dict()
         self.__heat_demand_nominal = dict()
 
-        self._save_json = True
+        self._save_json = False
 
         self._workflow_progress_status = kwargs.get("update_progress_function", None)
 
@@ -719,9 +719,8 @@ def run_end_scenario_sizing(
         parameters = solution.parameters(0)
         bounds = solution.bounds()
 
-        # We give bounds for stage 2 by allowing one DN sizes larger than what was found in the
-        # stage 1 optimization. But if the pipe is not to be used class DN none should be used and
-        # all the following pipe clasess should have bounds (0, 0)
+        # We give bounds for stage 2 by allowing two DN sizes larger than what was found in the
+        # stage 1 optimization.
         # Assumptions:
         # - The fist pipe class in the list of pipe_classes is pipe DN none
         pc_map = solution.get_pipe_class_map()  # if disconnectable and not connected to source
@@ -729,17 +728,13 @@ def run_end_scenario_sizing(
             v_prev = 0.0
             v_prev_2 = 0.0
             first_pipe_class = True
-            use_pipe_dn_none = False
             for var_name in pipe_classes.values():
                 v = round(abs(results[var_name][0]))
                 if first_pipe_class and v == 1.0:
                     boolean_bounds[var_name] = (0.0, v)
-                    # use_pipe_dn_none = True
                 elif v == 1.0:
                     boolean_bounds[var_name] = (0.0, v)
-                elif not use_pipe_dn_none and v_prev == 1.0 or (
-                    not use_pipe_dn_none and v_prev_2 == 1.0):  # This allows two DN
-                    # larger
+                elif v_prev == 1.0 or v_prev_2 == 1.0:  # This allows two DNs larger
                     boolean_bounds[var_name] = (0.0, 1.0)
                 else:
                     boolean_bounds[var_name] = (v, v)
