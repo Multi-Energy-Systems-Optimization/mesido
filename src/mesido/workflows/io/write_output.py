@@ -343,9 +343,12 @@ class ScenarioOutput:
             ):
                 capex_factor = 1.0
             else:
-                capex_factor = math.ceil(
-                    optim_time_horizon / parameters[f"{asset.name}.technical_life"]
+                capex_factor = (
+                    optim_time_horizon
+                    / parameters[f"{asset.name}.technical_life"]
                 )
+                if capex_factor < 1.0:
+                    capex_factor = 1.0
 
             if placed:
                 try:
