@@ -502,13 +502,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
             )
 
         modifiers = dict(
-            technical_life=self.get_asset_attribute_value(
-                asset,
-                "technicalLifetime",
-                default_value=30.0,
-                min_value=1.0,
-                max_value=50.0,
-            ),
             Q_nominal=q_nominal,
             Heat_demand=dict(max=max_demand, nominal=max_demand / 2.0),
             **self._generic_modifiers(asset),
