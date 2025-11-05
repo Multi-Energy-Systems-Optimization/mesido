@@ -325,17 +325,21 @@ class ScenarioOutput:
         tot_timehorizon_install_cost_euro = 0.0
         tot_timehorizon_invest_cost_euro = 0.0
 
+        discounted_annualized_cost = self.energy_system_options()["discounted_annualized_cost"]
+
         # Specify the correct time horizon:
-        # Optimization=number of year: since it is taken into account in TCO minimization
+        # TCO Optimized=number of year: since it is taken into account in TCO minimization
+        # EAC Optimized=1: since it is taken into account in EAC minimization
         # Simulator=1: since 30 years of optimization is not applicable for the network simulator
         if not optimizer_sim:  # optimization mode
-            optim_time_horizon = parameters["number_of_years"]
+            if not discounted_annualized_cost:  # TCO optimized
+                optim_time_horizon = parameters["number_of_years"]
+            else:  # EAC optimized
+                optim_time_horizon = 1.0
         elif optimizer_sim:  # network simulator mode
             optim_time_horizon = 1.0
         else:
             logger.error("Variable optimizer_sim has not been set")
-
-        discounted_annualized_cost = self.energy_system_options()["discounted_annualized_cost"]
 
         for _key, asset in self.esdl_assets.items():
             asset_placement_var = self._asset_aggregation_count_var_map[asset.name]
@@ -355,10 +359,7 @@ class ScenarioOutput:
                 cost_type_prefix = "EAC - "
                 asset_life_years = parameters[f"{asset.name}.technical_life"]
                 discount_rate = parameters[f"{asset.name}.discount_rate"] / 100.0
-                annuity_factor = calculate_annuity_factor(discount_rate, asset_life_years)
-                capex_factor = annuity_factor
-                # EAC is annualized, so 1-year time horizon is used
-                optim_time_horizon = 1.0
+                capex_factor = calculate_annuity_factor(discount_rate, asset_life_years)
 
             if placed:
                 try:
