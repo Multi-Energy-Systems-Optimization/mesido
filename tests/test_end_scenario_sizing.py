@@ -92,6 +92,7 @@ class TestEndScenarioSizing(TestCase):
                     np.testing.assert_allclose(heat_buffer[i], 0.0, atol=1.0e-6)
 
         obj = 0.0
+        excluded_costs_in_obj = 0.0  # Fixed costs excluded in the optim objective function
         years = self.solution.parameters(0)["number_of_years"]
         for asset in [
             *self.solution.energy_system_components.get("heat_source", []),
@@ -112,8 +113,16 @@ class TestEndScenarioSizing(TestCase):
             )
             obj += self.results[f"{self.solution._asset_investment_cost_map[asset]}"] * factor
             obj += self.results[f"{self.solution._asset_installation_cost_map[asset]}"] * factor
+            if asset in [*self.solution.energy_system_components.get("heat_demand", [])]:
+                excluded_costs_in_obj += (
+                    self.results[f"{self.solution._asset_installation_cost_map[asset]}"] * factor
+                )
 
-        np.testing.assert_allclose(obj / 1.0e6, self.solution.objective_value)
+        np.testing.assert_allclose(
+            obj / 1.0e6,
+            self.solution.objective_value + excluded_costs_in_obj / 1.0e6,
+        )
+        np.testing.assert_array_less(self.solution.objective_value, obj / 1.0e6)
 
     def test_end_scenario_sizing_staged(self):
         """
