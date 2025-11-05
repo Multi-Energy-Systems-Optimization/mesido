@@ -502,7 +502,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
             )
 
         modifiers = dict(
-            Q_nominal=q_nominal,
             Heat_demand=dict(max=max_demand, nominal=max_demand / 2.0),
             **self._generic_modifiers(asset),
             **self._generic_heat_modifiers(0.0, max_demand, q_nominal),
