@@ -1,4 +1,4 @@
-# [Unreleased-main] - 2025-11-05
+# [Unreleased-main] - 2025-11-06
 
 ## Added
 - Elect test for air_to_water_heat_pump_elec
@@ -30,6 +30,7 @@
 - Bug: Replaced one pipe with all pipes in head loss testing in test_end_scenario_sizing.py 
 - Bug: Geothermal being placed when not used. General added aggregation_count=0 constraint for heat buffer, ates and goethermal when not being used.
 - Bug: Ensure ATES and Geothermal max_size cannot be smaller than the single_doublet_power if placed.
+- Bug: Upper limit of available pipe classes when using producer profiles
 
 
 # [0.1.13] - 2025-06-25
