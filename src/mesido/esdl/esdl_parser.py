@@ -149,7 +149,9 @@ class BaseESDLParser:
                                 in_ports = [port]
                             else:
                                 in_ports.append(port)
-                        elif isinstance(port, esdl.OutPort):
+                        elif isinstance(port, esdl.OutPort) and port.name != "EmissionPort":
+                            # TODO: need to check if we can have a clearer identifier to the
+                            # emissionport such that it is not considered as a connecting port.
                             if out_ports is None:
                                 out_ports = [port]
                             else:

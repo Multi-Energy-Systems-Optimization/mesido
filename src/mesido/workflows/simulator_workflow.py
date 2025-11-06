@@ -324,18 +324,6 @@ class NetworkSimulatorHIGHS(NetworkSimulator):
         return options
 
 
-class NetworkSimulatorHIGHSTestCase(NetworkSimulatorHIGHS):
-    def times(self, variable=None) -> np.ndarray:
-        return super().times(variable)[:5]
-
-    def energy_system_options(self):
-        options = super().energy_system_options()
-
-        options["heat_loss_disconnected_pipe"] = False
-
-        return options
-
-
 class NetworkSimulatorHIGHSWeeklyTimeStep(NetworkSimulatorHIGHS):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

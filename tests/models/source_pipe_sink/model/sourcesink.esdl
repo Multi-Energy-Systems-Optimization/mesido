@@ -5,6 +5,10 @@
       <carrier xsi:type="esdl:HeatCommodity" id="435a0034-fab0-4e7e-9a17-edf8de9a2b11" supplyTemperature="70.0" name="heat"/>
       <carrier xsi:type="esdl:HeatCommodity" returnTemperature="40.0" id="435a0034-fab0-4e7e-9a17-edf8de9a2b11_ret" name="heat_ret"/>
       <carrier xsi:type="esdl:ElectricityCommodity" id="355f3a2f-dac4-4484-b3db-a99b086cbe39" voltage="400.0" name="elec"/>
+      <carrier xsi:type="esdl:EnergyCarrier" id="47213979-189c-4537-8eca-5f79e70810e1" name="CO2 emissions">
+        <energyContentUnit xsi:type="esdl:QuantityAndUnitType" id="390087fb-e6c0-46d5-b030-0e4c740c0346" physicalQuantity="ENERGY"/>
+        <emissionUnit xsi:type="esdl:QuantityAndUnitType" id="fba0235e-ddb6-4330-aaf1-b2f5d845f951" unit="GRAM" multiplier="KILO" perUnit="JOULE" perMultiplier="GIGA" physicalQuantity="EMISSION"/>
+      </carrier>
     </carriers>
   </energySystemInformation>
   <instance xsi:type="esdl:Instance" id="90e7e098-038e-4462-89fe-a8852c501753" name="Untitled instance">
@@ -13,6 +17,13 @@
         <port xsi:type="esdl:OutPort" id="b0b1a87c-7b5a-4edb-a732-274d1bf69647" connectedTo="3b5636b1-7b14-46bd-bb27-c0718350b418" carrier="435a0034-fab0-4e7e-9a17-edf8de9a2b11" name="Out"/>
         <port xsi:type="esdl:InPort" id="622d7e19-e360-46af-bfbf-eb35ec14548b" carrier="435a0034-fab0-4e7e-9a17-edf8de9a2b11_ret" name="In" connectedTo="0f11bb2d-fb28-4f9d-8992-8d5901f579d7"/>
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="52.08646829489945" lon="4.386527538299561"/>
+        <port xsi:type="esdl:OutPort" id="417ab7fa-d210-469c-9c40-b7762909e99c" name="EmissionPort" carrier="47213979-189c-4537-8eca-5f79e70810e1"/>
+        <behaviour xsi:type="esdl:InputOutputRelation" id="f64bc866-cf41-48ee-8bd4-ce8920f4b00c" name="NewInputOutputRelation" mainPort="b0b1a87c-7b5a-4edb-a732-274d1bf69647">
+          <mainPortRelation xsi:type="esdl:PortRelation" port="417ab7fa-d210-469c-9c40-b7762909e99c" ratio="20.0">
+            <quantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="9fe88aa4-4976-45c6-a27d-bf0ea83b8cf0" physicalQuantity="EMISSION" unit="GRAM" multiplier="KILO" perMultiplier="GIGA" perUnit="JOULE"/>
+          </mainPortRelation>
+          <mainPortQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="f84c981a-0107-46ce-bcfe-aef8483a5d02" physicalQuantity="ENERGY" unit="JOULE" multiplier="GIGA"/>
+        </behaviour>
       </asset>
       <asset xsi:type="esdl:HeatingDemand" name="demand" id="f6d5923d-ba9a-409d-80a0-26f73b2a574b" power="10000000.0">
         <port xsi:type="esdl:InPort" id="b8849fb5-fe97-48d9-91a8-9abcbf365738" carrier="435a0034-fab0-4e7e-9a17-edf8de9a2b11" name="In" connectedTo="76679c8a-43ec-4f6d-81c4-9b43e21696cc"/>
