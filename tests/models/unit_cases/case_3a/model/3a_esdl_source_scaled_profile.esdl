@@ -34,7 +34,7 @@
         <port xsi:type="esdl:OutPort" name="Out" id="f31879b6-efa1-4b2c-8740-80bebb9500a7" carrier="419b5016-12c9-475a-b46e-9e474b60aa8f" connectedTo="7cec87b6-9928-4cfb-9b7b-fe7b51908911"/>
         <port xsi:type="esdl:InPort" name="in" id="02be741c-673b-4c30-8bad-dee320e26924" carrier="419b5016-12c9-475a-b46e-9e474b60aa8f_ret" connectedTo="53542379-cead-4b7c-97f5-891e1985a8cc"/>
         <constraint xsi:type="esdl:ProfileConstraint" id="d3e3906c-2075-4be5-b4fd-7e58fd542d3a" name="Producer_capping" description="" attributeReference="power">
-          <maximum xsi:type="esdl:InfluxDBProfile" id="c9bcdbee-56d0-4350-8a94-a30580daa864" multiplier="1.4525258478172953" measurement="Space Heat default profiles" field="SpaceHeat_and_HotWater_PowerProfile_2000_2010" host="https://profiles.warmingup.info" database="energy_profiles" filters="" startDate="2018-12-31T23:00:00.000000+0000" endDate="2019-01-03T23:00:00.000000+0000">
+          <maximum xsi:type="esdl:InfluxDBProfile" id="c9bcdbee-56d0-4350-8a94-a30580daa864" multiplier="1.0" measurement="Space Heat default profiles" field="SpaceHeat_and_HotWater_PowerProfile_2000_2010" host="https://profiles.warmingup.info" database="energy_profiles" filters="" startDate="2018-12-31T23:00:00.000000+0000" endDate="2019-01-03T23:00:00.000000+0000">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference" reference="57174dc5-4f95-43dc-af15-311d29c8b207"/>
           </maximum>
         </constraint>

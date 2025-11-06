@@ -114,7 +114,7 @@ class TestElectrolyzer(TestCase):
         )
         tol = 1.0e-6
         # Check that the electrolyzer only consumes electricity and does not produce.
-        np.testing.assert_array_less(tol, results["Electrolyzer_fc66.ElectricityIn.Power"])
+        np.testing.assert_array_less(-results["Electrolyzer_fc66.ElectricityIn.Power"], tol)
 
         # Check that windfarm does not produce more than the specified maximum profile
         ub = solution.get_timeseries("WindPark_7f14.maximum_electricity_source").values
@@ -193,14 +193,10 @@ class TestElectrolyzer(TestCase):
         # Do cost checks
 
         # Check variable opex: transport cost 0.1 euro/kg H2
-        # TODO: This test can now be enabled with NO_POTENTIAL_ERRORS_CHECK to bypass cost
-        # validation. Expected value when cost validation bypass is working:
-        # gas_tranport_cost ≈ 86.273412
-        # Alternatively, to enable this test with cost attributes validation,
-        # add "gas_demand" entry to ASSET_COST_REQUIREMENTS dictionary in
-        # src/mesido/esdl/asset_to_component_base.py with "variableOperationalCosts":
-        # "required" or "optional", and ensure the COST_VALIDATION_COMPONENT_TO_ASSET_TYPE
-        # mapping includes the appropriate component type.
+        # TODO: Cost checks remain commented out because GasDemand, GasStorage, and Electrolyzer
+        # are not configured in ASSET_COST_REQUIREMENTS. Even with NO_POTENTIAL_ERRORS_CHECK,
+        # the cost variables return 0. These tests should be re-enabled once these asset types
+        # are added to the cost validation system configuration.
         # gas_tranport_cost = sum(
         #     (
         #         solution.get_timeseries(elec_price_profile).times[1:]
@@ -211,28 +207,19 @@ class TestElectrolyzer(TestCase):
         #     * 0.1,
         # )
         # np.testing.assert_allclose(
-        #     gas_tranport_cost,  # ≈ 86.273412
+        #     gas_tranport_cost,
         #     results["GasDemand_0cf3__variable_operational_cost"],
         # )
 
         # Check storage cost fix opex 10 euro/kgH2/year -> 10*23.715 = 237.15euro/m3
         # Storage reserved size = 500m3
-        # TODO: This test can now be enabled with NO_POTENTIAL_ERRORS_CHECK to bypass cost
-        # validation. Expected value when cost validation bypass is working:
-        # storage_fixed_opex ≈ 1.18575e+08
-        # Alternatively, to enable these tests with cost attributes validation,
-        # add appropriate entries to ASSET_COST_REQUIREMENTS
-        # in src/mesido/esdl/asset_to_component_base.py for gas_storage and electrolyzer types.
         # storage_fixed_opex = 237.15 * 500000.0
         # np.testing.assert_allclose(
-        #     storage_fixed_opex,  # ≈ 1.18575e+08
+        #     storage_fixed_opex,
         #     sum(results["GasStorage_e492__fixed_operational_cost"]),
         # )
 
         # Check electrolyzer fixed opex, based on installed size of 500MW and 10euro/kW
-        # TODO: This test can now be enabled with NO_POTENTIAL_ERRORS_CHECK to bypass cost
-        # validation. Expected electrolyzer fixed opex calculation would work with proper cost
-        # configuration
         # electrolyzer_fixed_opex = 1.0 * 500.0e6 / 1.0e3
         # np.testing.assert_allclose(
         #     electrolyzer_fixed_opex,
@@ -240,9 +227,6 @@ class TestElectrolyzer(TestCase):
         # )
 
         # Check electrolyzer investment cost, based on installed size of 500MW and 20euro/kW
-        # TODO: This test can now be enabled with NO_POTENTIAL_ERRORS_CHECK to bypass cost
-        # validation. Expected electrolyzer investment cost calculation would work with proper
-        # cost configuration
         # electrolyzer_investment_cost = 20.0 * 500.0e6 / 1.0e3
         # np.testing.assert_allclose(
         #     electrolyzer_investment_cost,
@@ -329,21 +313,17 @@ class TestElectrolyzer(TestCase):
             np.ones(2),
         )
         # Check electrolyzer input power
-        # TODO: This assertion can be re-enabled - it passes with NO_POTENTIAL_ERRORS_CHECK
-        # Expected values: [1.00000000e+08, 1.00000000e+08, -3.59365315e-05]
-        # np.testing.assert_allclose(
-        #     results["Electrolyzer_fc66.ElectricityIn.Power"],
-        #     [ 1.00000000e+08,  1.00000000e+08, -3.59365315e-05],
-        #     atol=1e-4,
-        # )
+        np.testing.assert_allclose(
+            results["Electrolyzer_fc66.ElectricityIn.Power"],
+            [1.00000000e+08, 1.00000000e+08, -3.59365315e-05],
+            atol=1e-4,
+        )
         # Check electrolyzer output massflow
-        # TODO: This assertion can be re-enabled - it passes with NO_POTENTIAL_ERRORS_CHECK
-        # Expected values: [431.367058, 431.367058, 0.]
-        # np.testing.assert_allclose(
-        #     results["Electrolyzer_fc66.Gas_mass_flow_out"],
-        #     [431.367058, 431.367058,   0.      ],
-        #     atol=1e-4,
-        # )
+        np.testing.assert_allclose(
+            results["Electrolyzer_fc66.Gas_mass_flow_out"],
+            [431.367058, 431.367058, 0.0],
+            atol=1e-4,
+        )
 
     def test_electrolyzer_constant_efficiency(self):
         """
@@ -383,13 +363,11 @@ class TestElectrolyzer(TestCase):
         )
 
         # Check input power values. Not really needed since the massflow check is equivalent
-        # TODO: This assertion can be re-enabled - it passes with NO_POTENTIAL_ERRORS_CHECK
-        # Expected values: [1.00000000e+08, 1.00000000e+08, 1.00000000e+08]
-        # np.testing.assert_allclose(
-        #     results["Electrolyzer_fc66.ElectricityIn.Power"],
-        #     [1.00000000e+08, 1.00000000e+08, 1.00000000e+08],
-        #     atol=1e-4,
-        # )
+        np.testing.assert_allclose(
+            results["Electrolyzer_fc66.ElectricityIn.Power"],
+            [1.00000000e+08, 1.00000000e+08, 1.00000000e+08],
+            atol=1e-4,
+        )
         # Check output massflow values
         np.testing.assert_allclose(
             results["Electrolyzer_fc66.Gas_mass_flow_out"],

@@ -162,7 +162,7 @@ class MinimizeTCO(Goal):
                         obj += extra_var * self.number_of_years
                     else:
                         # These are the CAPEX cost under non-annualized condition
-                        obj += extra_var
+                        obj += extra_var * factor
         return obj
 
     def function(self, optimization_problem: TechnoEconomicMixin, ensemble_member) -> MX:
