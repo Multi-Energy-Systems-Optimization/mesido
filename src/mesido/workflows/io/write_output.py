@@ -1,7 +1,6 @@
 import datetime
 import json
 import logging
-import math
 import numbers
 import os
 import sys
@@ -343,9 +342,9 @@ class ScenarioOutput:
             ):
                 capex_factor = 1.0
             else:
-                capex_factor = math.ceil(
-                    optim_time_horizon / parameters[f"{asset.name}.technical_life"]
-                )
+                capex_factor = optim_time_horizon / parameters[f"{asset.name}.technical_life"]
+                if capex_factor < 1.0:
+                    capex_factor = 1.0
 
             if placed:
                 try:
@@ -937,7 +936,9 @@ class ScenarioOutput:
         ]:
             asset = self._name_to_asset(energy_system, asset_name)
             for iport in range(len(asset.port)):
-                if isinstance(asset.port[iport], esdl.OutPort):
+                if isinstance(asset.port[iport], esdl.OutPort) or isinstance(
+                    asset.port[iport], esdl.InPort
+                ):
                     profiles_to_remove = []
                     for iprofile in range(len(asset.port[iport].profile)):
                         if (

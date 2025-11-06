@@ -635,6 +635,8 @@ class HeatPhysicsMixin(
         The ``include_demand_insulation_options`` options is used, when insulations options per
         demand is specificied, to include heat demand and supply matching via constraints for all
         possible insulation options.
+
+        TODO: Add description of storage yearly change option for an ates.
         """
 
         options = self._hn_head_loss_class.head_loss_network_options()
@@ -646,6 +648,7 @@ class HeatPhysicsMixin(
         options["heat_loss_disconnected_pipe"] = True
         options["include_demand_insulation_options"] = False
         options["include_ates_temperature_options"] = False
+        options["include_ates_yearly_change_option"] = False
 
         return options
 
@@ -3322,7 +3325,7 @@ class HeatPhysicsMixin(
 
         return constraints
 
-    def __ates_max_stored_heat_constriants(self, ensemble_member):
+    def __ates_max_stored_heat_constraints(self, ensemble_member):
         constraints = []
 
         for ates in [
@@ -3336,6 +3339,20 @@ class HeatPhysicsMixin(
             constraints.append(
                 ((stored_heat - np.ones(len(self.times())) * max_var) / nominal, -np.inf, 0.0)
             )
+
+        return constraints
+
+    def __ates_storage_yearly_change_path_constraints(self, ensemble_member):
+        constraints = []
+
+        # TODO: Femke check if this code below can be deleted
+        # if not self.energy_system_options()["include_ates_yearly_change_option"]:
+        #     for ates in [
+        #         *self.energy_system_components.get("ates", []),
+        #     ]:
+        #         ates_state = self.state(f"{ates}.Storage_yearly_change")
+        #         nominal = self.variable_nominal(f"{ates}.Heat_ates")
+        #         constraints.append(((ates_state) / nominal, 0.0, 0.0))
 
         return constraints
 
@@ -3683,6 +3700,7 @@ class HeatPhysicsMixin(
         constraints.extend(self.__ates_temperature_ordering_path_constraints(ensemble_member))
         constraints.extend(self.__heat_pump_cop_path_constraints(ensemble_member))
         constraints.extend(self.__storage_hydraulic_power_path_constraints(ensemble_member))
+        constraints.extend(self.__ates_storage_yearly_change_path_constraints(ensemble_member))
         constraints.extend(self.__sink_hydraulic_power_path_constraints(ensemble_member))
 
         return constraints
@@ -3710,7 +3728,8 @@ class HeatPhysicsMixin(
         if self.energy_system_options()["include_demand_insulation_options"]:
             constraints.extend(self.__heat_matching_demand_insulation_constraints(ensemble_member))
 
-        constraints.extend(self.__ates_max_stored_heat_constriants(ensemble_member))
+        constraints.extend(self.__ates_max_stored_heat_constraints(ensemble_member))
+
         return constraints
 
     def history(self, ensemble_member):

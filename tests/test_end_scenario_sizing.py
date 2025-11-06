@@ -92,8 +92,21 @@ class TestEndScenarioSizing(TestCase):
                     np.testing.assert_allclose(heat_buffer[i], 0.0, atol=1.0e-6)
 
         obj = self.get_objective_value_end_scenario_sizing(self.solution)
-
+        excluded_costs_in_obj = 0.0  # Fixed costs excluded in the optim objective function
+        years = self.solution.parameters(0)["number_of_years"]
+        for asset in [*self.solution.energy_system_components.get("heat_demand", [])]:
+            technical_lifetime = self.solution.parameters(0)[f"{asset}.technical_life"]
+            factor = years / technical_lifetime
+            if factor < 1.0:
+                factor = 1.0
+            if asset in [*self.solution.energy_system_components.get("heat_demand", [])]:
+                excluded_costs_in_obj += (
+                    self.results[f"{self.solution._asset_installation_cost_map[asset]}"] * factor
+                )
         np.testing.assert_allclose(obj / 1.0e6, self.solution.objective_value)
+        np.testing.assert_array_less(
+            self.solution.objective_value, (obj + excluded_costs_in_obj) / 1.0e6
+        )
 
     def test_end_scenario_sizing_staged(self):
         """
@@ -180,7 +193,6 @@ class TestEndScenarioSizing(TestCase):
                     np.testing.assert_allclose(heat_buffer[i], 0.0, atol=1.0e-6)
 
         obj = self.get_objective_value_end_scenario_sizing(solution_staged)
-
         np.testing.assert_allclose(obj / 1.0e6, solution_staged.objective_value)
 
         # comparing results of staged and unstaged problem definition. For larger systems there
@@ -416,6 +428,9 @@ class TestEndScenarioSizing(TestCase):
                 np.testing.assert_allclose(cost_map_from_template, investment_cost_specific)
 
     def get_objective_value_end_scenario_sizing(self, solution):
+        # If heating demand asset's state is enabled, then exclude the costs since it is not
+        # part of the TCO calculation. This is because we do not size heating demand assets in
+        # the optimization
         results = solution.extract_results()
         obj = 0.0
         years = solution.parameters(0)["number_of_years"]
@@ -428,19 +443,20 @@ class TestEndScenarioSizing(TestCase):
             *solution.energy_system_components.get("heat_pump", []),
             *solution.energy_system_components.get("heat_pipe", []),
         ]:
-            # If heating demand asset's state is enabled, then exclude the costs since it is not
-            # part of the TCO calculation. This is because we do not size heating demand assets in
-            # the optimization
             asset_id = self.solution.esdl_asset_name_to_id_map[asset]
             asset_state = self.solution.esdl_assets[asset_id].attributes["state"]
             asset_type = self.solution.esdl_assets[asset_id].asset_type
             if not (
                 (asset_type == "HeatingDemand") and (asset_state == esdl.AssetStateEnum.ENABLED)
             ):
+                technical_lifetime = self.solution.parameters(0)[f"{asset}.technical_life"]
+                factor = years / technical_lifetime
+                if factor < 1.0:
+                    factor = 1.0
                 obj += results[f"{solution._asset_fixed_operational_cost_map[asset]}"] * years
                 obj += results[f"{solution._asset_variable_operational_cost_map[asset]}"] * years
-                obj += results[f"{solution._asset_investment_cost_map[asset]}"]
-                obj += results[f"{solution._asset_installation_cost_map[asset]}"]
+                obj += results[f"{solution._asset_investment_cost_map[asset]}"] * factor
+                obj += results[f"{solution._asset_installation_cost_map[asset]}"] * factor
 
         return obj
 

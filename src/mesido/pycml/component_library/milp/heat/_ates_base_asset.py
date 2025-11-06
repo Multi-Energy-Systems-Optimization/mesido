@@ -83,3 +83,11 @@ class _ATESBaseAsset(_StorageComponent):
         self.add_equation((self.der(self.Stored_volume) - self.Q) / self.Q_nominal)
 
         self.add_equation((self.Heat_flow - self.Heat_ates) / self.Heat_nominal)
+
+        self.add_variable(
+            Variable,
+            "Storage_yearly_change",
+            nominal=self._nominal_stored_heat,
+        )
+
+        self.add_equation((self.der(self.Stored_volume) - self.Q) / self.Q_nominal)
