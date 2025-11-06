@@ -18,8 +18,8 @@ class _ATESBaseAsset(_StorageComponent):
 
     Please note that:
     The user is responsible to implement the cyclic behaviour in their workflow constraints.
-    Meaning that the heat stored at the 1st and last time step should be equal. Furthermore, due
-    to the implicit solving note that the energy out of the ATES should be 0 for the 1st time step.
+    Meaning that the heat stored at the 1st and last timestamp should be equal. Furthermore, due
+    to the implicit solving, note that the energy out of the ATES should be 0 for the 1st time step.
 
     Variables created:
         {add_variable_names_for_documentation_here}

@@ -10,7 +10,8 @@ class _StorageComponent(HeatTwoPort, BaseAsset):
     """
     A storage component is an asset type that does have states that have interdependent
     time-steps, it does have time-varying states like Heat_flow. In the StorageComponent we
-    define most of the properties being utilized by all storage components, like rho and cp.
+    define most of the properties and variables being utilized by all storage components,
+    like heat_nominal (property), heat_flow (variable).
 
     Variables created:
         {add_variable_names_for_documentation_here}

@@ -29,9 +29,10 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
         # ------------------------------------------------------------------------------------------
         # Limit available pipe classes
         # TODO: cater for varying temperature when limiting pipe classes below
-        # Here we do a check between the available pipe classes and the demand profiles. This is to
-        # ensure that we don't have unneeded large amount of available pipe classes for pipes
-        # connected to smaller demands.
+        # Here we do a check between the available pipe classes and the connected assets. For
+        # demands this refers to the demand profiles and for producers to their maximum capacity.
+        # This is to ensure that we don't have unneeded large amount of available pipe classes
+        # for pipes connected to smaller demands and producers.
         # TODO: add the same for electricity ones we have proper support for that in the ESDLMixin
 
         def __limit_list_available_heat_pipe_classes_max_power(max_power: float) -> None:
