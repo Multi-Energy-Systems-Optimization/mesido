@@ -1,4 +1,4 @@
-# [Unreleased-main] - 2025-10-09
+# [Unreleased-main] - 2025-11-06
 
 ## Added
 - Elect test for air_to_water_heat_pump_elec
@@ -14,6 +14,7 @@
 - A new type of potential error is added if the profile name indicated in esdl is not available in the database.
 - Parsing of emission factors for specific sources not related to carriers.
 - Capability of ResidualHeatSource and GeothermalHeatSource to also have profile constraints that can be read from InfluxDB
+- Roll out workflow setup.
 
 ## Changed
 - Removed support of python versions 3.9 and older.
@@ -29,6 +30,7 @@
 - Bug: Replaced one pipe with all pipes in head loss testing in test_end_scenario_sizing.py 
 - Bug: Geothermal being placed when not used. General added aggregation_count=0 constraint for heat buffer, ates and goethermal when not being used.
 - Bug: Ensure ATES and Geothermal max_size cannot be smaller than the single_doublet_power if placed.
+- Bug: Upper limit of available pipe classes when using producer profiles
 
 
 # [0.1.13] - 2025-06-25
