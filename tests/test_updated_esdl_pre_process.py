@@ -3,7 +3,10 @@ from pathlib import Path
 from unittest import TestCase
 
 from mesido.esdl.esdl_parser import ESDLFileParser
-from mesido.workflows import run_end_scenario_sizing
+from mesido.workflows import (
+    EndScenarioSizingDiscountedStaged,
+    run_end_scenario_sizing
+)
 
 import numpy as np
 
@@ -13,6 +16,45 @@ from utils_tests import demand_matching_test, energy_conservation_test, heat_to_
 
 
 class TestUpdatedESDL(TestCase):
+
+
+    def test_updated_esdl_eac(self):
+        """
+        Ensure that the updated ESDL, generated through optimization using the
+        "discounted_annualized_cost" objective, includes KPIs relevant to the
+        Equivalent Annuity Cost (EAC).
+
+        Checks:
+        - Utils tests pass
+        """
+
+        root_folder = str(Path(__file__).resolve().parent.parent)
+        sys.path.insert(1, root_folder)
+
+        import examples.PoCTutorial.src.run_grow_tutorial
+
+        base_folder = (
+            Path(examples.PoCTutorial.src.run_grow_tutorial.__file__).resolve().parent.parent
+        )
+
+        optimscaling, logger, logs_list = create_problem_with_debug_info(
+            EndScenarioSizingDiscountedStaged
+        )
+
+        problem = run_end_scenario_sizing(
+            optimscaling,
+            base_folder=base_folder,
+            esdl_file_name="PoC Tutorial Discount5.esdl",
+            esdl_parser=ESDLFileParser,
+        )
+
+        # This code below is used to do manual check. Do not delete
+        # problem_scaling_check(logs_list, logger)
+
+        demand_matching_test(problem, problem.extract_results())
+        energy_conservation_test(problem, problem.extract_results())
+        heat_to_discharge_test(problem, problem.extract_results())
+
     def test_updated_esdl(self):
         """
         Check that the updated ESDL resulting from optmizing a network, is correct by using the
@@ -131,6 +173,7 @@ if __name__ == "__main__":
     start_time = time.time()
 
     a = TestUpdatedESDL()
+    a.test_updated_esdl_eac()
     a.test_updated_esdl()
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

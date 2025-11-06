@@ -339,7 +339,23 @@ class TestUpdatedESDL(TestCase):
         base_folder = (
             Path(examples.PoCTutorial.src.run_grow_tutorial.__file__).resolve().parent.parent
         )
+        model_folder = base_folder / "model"
+        input_folder = base_folder / "input"
 
+        problem = EndScenarioSizingDiscountedStaged(
+            esdl_file_name="PoC Tutorial Discount5.esdl",
+            esdl_parser=ESDLFileParser,
+            base_folder=base_folder,
+            model_folder=model_folder,
+            input_folder=input_folder,
+        )
+        problem.pre()
+
+        # Load in optimized esdl in the form of the actual optimized esdl file created by MESIDO
+        esdl_path = os.path.join(base_folder, "model", "PoC Tutorial Discount5_GrowOptimized.esdl")
+        energy_system = problem._ESDLMixin__energy_system_handler.load_file(esdl_path)
+
+        # Run the case in order to have access to results and solutions
         solution = run_end_scenario_sizing(
             EndScenarioSizingDiscountedStaged,
             base_folder=base_folder,
@@ -350,81 +366,74 @@ class TestUpdatedESDL(TestCase):
         results = solution.extract_results()
         parameters = solution.parameters(0)
 
-        # Load in optimized esdl in the form of the actual optimized esdl file created by MESIDO
-        esdl_path = os.path.join(base_folder, "model", "PoC Tutorial Discount5_GrowOptimized.esdl")
-        optimized_energy_system = solution._ESDLMixin__energy_system_handler.load_file(esdl_path)
 
-        optimized_energy_systems = [optimized_energy_system]
+        # Test KPIs in optimized ESDL
+        # High level checks of KPIs
+        number_of_kpis_top_level_in_esdl = 8
+        high_level_kpis_euro = [
+            "EAC - High level cost breakdown [EUR] (1.0 year period)",
+            "EAC - Overall cost breakdown [EUR] (1.0 year period)",
+            "EAC - CAPEX breakdown [EUR] (1.0 year period)",
+            "EAC - OPEX breakdown [EUR] (1.0 year period)",
+            "EAC - Area_76a7: Asset cost breakdown [EUR]",
+            "EAC - Area_9d0f: Asset cost breakdown [EUR]",
+            "EAC - Area_a58a: Asset cost breakdown [EUR]",
+        ]
+        high_level_kpis_wh = [
+            "Energy production [Wh] (yearly averaged)",
+        ]
+        all_high_level_kpis = []
+        all_high_level_kpis = high_level_kpis_euro + high_level_kpis_wh
 
-        for energy_system in optimized_energy_systems:
-            # Test KPIs in optimized ESDL
+        np.testing.assert_allclose(
+            len(energy_system.instance[0].area.KPIs.kpi), number_of_kpis_top_level_in_esdl
+        )
+        np.testing.assert_allclose(
+            len(energy_system.instance[0].area.KPIs.kpi), len(all_high_level_kpis)
+        )
 
-            # High level checks of KPIs
-            number_of_kpis_top_level_in_esdl = 8
-            high_level_kpis_euro = [
-                "EAC - High level cost breakdown [EUR] (1.0 year period)",
-                "EAC - Overall cost breakdown [EUR] (1.0 year period)",
-                "EAC - CAPEX breakdown [EUR] (1.0 year period)",
-                "EAC - OPEX breakdown [EUR] (1.0 year period)",
-                "EAC - Area_76a7: Asset cost breakdown [EUR]",
-                "EAC - Area_9d0f: Asset cost breakdown [EUR]",
-                "EAC - Area_a58a: Asset cost breakdown [EUR]",
-            ]
-            high_level_kpis_wh = [
-                "Energy production [Wh] (yearly averaged)",
-            ]
-            all_high_level_kpis = []
-            all_high_level_kpis = high_level_kpis_euro + high_level_kpis_wh
+        # Check if EAC calculation is matching with KPI values
 
-            np.testing.assert_allclose(
-                len(energy_system.instance[0].area.KPIs.kpi), number_of_kpis_top_level_in_esdl
-            )
-            np.testing.assert_allclose(
-                len(energy_system.instance[0].area.KPIs.kpi), len(all_high_level_kpis)
-            )
+        for ii in range(len(energy_system.instance[0].area.KPIs.kpi)):
+            kpi_name = energy_system.instance[0].area.KPIs.kpi[ii].name
 
-            # Check if EAC calculation is matching with KPI values
+            asset = "ResidualHeatSource_72d7"
 
-            for ii in range(len(energy_system.instance[0].area.KPIs.kpi)):
-                kpi_name = energy_system.instance[0].area.KPIs.kpi[ii].name
+            if kpi_name == "EAC - CAPEX breakdown [EUR] (1.0 year period)":
+                string_items = (
+                    energy_system.instance[0].area.KPIs.kpi[ii].distribution.stringItem.items
+                )
 
-                asset = "ResidualHeatSource_72d7"
+                for string_items_asset in string_items:
+                    if string_items_asset.label == "ResidualHeatSource":
+                        value = string_items_asset.value
 
-                if kpi_name == "EAC - CAPEX breakdown [EUR] (1.0 year period)":
-                    string_items = (
-                        energy_system.instance[0].area.KPIs.kpi[ii].distribution.stringItem.items
-                    )
+                        investment_cost = results[f"{asset}__investment_cost"]
+                        installation_cost = results[f"{asset}__installation_cost"]
+                        asset_life_years = parameters[f"{asset}.technical_life"]
+                        discount_rate = parameters[f"{asset}.discount_rate"] / 100.0
+                        annuity_factor = calculate_annuity_factor(
+                            discount_rate, asset_life_years
+                        )
+                        capex_eac = (investment_cost + installation_cost) * annuity_factor
 
-                    for string_items_asset in string_items:
-                        if string_items_asset.label == "ResidualHeatSource":
-                            value = string_items_asset.value
+                        np.testing.assert_allclose(value, capex_eac)
 
-                            investment_cost = results[f"{asset}__investment_cost"]
-                            installation_cost = results[f"{asset}__installation_cost"]
-                            asset_life_years = parameters[f"{asset}.technical_life"]
-                            discount_rate = parameters[f"{asset}.discount_rate"] / 100.0
-                            annuity_factor = calculate_annuity_factor(
-                                discount_rate, asset_life_years
-                            )
-                            capex_eac = (investment_cost + installation_cost) * annuity_factor
+            if kpi_name == "EAC - OPEX breakdown [EUR] (1.0 year period)":
+                string_items = (
+                    energy_system.instance[0].area.KPIs.kpi[ii].distribution.stringItem.items
+                )
 
-                            np.testing.assert_allclose(value, capex_eac)
+                for string_items_asset in string_items:
+                    if string_items_asset.label == "ResidualHeatSource":
+                        value = string_items_asset.value
 
-                if kpi_name == "EAC - OPEX breakdown [EUR] (1.0 year period)":
-                    string_items = (
-                        energy_system.instance[0].area.KPIs.kpi[ii].distribution.stringItem.items
-                    )
+                        var_opex_cost = results[f"{asset}__variable_operational_cost"]
+                        fix_opex_cost = results[f"{asset}__fixed_operational_cost"]
 
-                    for string_items_asset in string_items:
-                        if string_items_asset.label == "ResidualHeatSource":
-                            value = string_items_asset.value
+                        opex_eac = var_opex_cost + fix_opex_cost
 
-                            var_opex_cost = results[f"{asset}__variable_operational_cost"]
-                            fix_opex_cost = results[f"{asset}__fixed_operational_cost"]
-
-                            opex_eac = var_opex_cost + fix_opex_cost
-
-                            np.testing.assert_allclose(value, opex_eac)
+                        np.testing.assert_allclose(value, opex_eac)
 
 
 if __name__ == "__main__":
