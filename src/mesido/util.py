@@ -1,6 +1,5 @@
 from mesido.esdl.esdl_parser import BaseESDLParser
 from mesido.esdl.profile_parser import BaseProfileReader, InfluxDBProfileReader
-from mesido.potential_errors import get_potential_errors
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
@@ -50,11 +49,6 @@ def run_esdl_mesido_optimization(
         input_timeseries_file=input_timeseries_file,
         **kwargs,
     )
-
-    # Attach validation warnings that were not converted to exceptions
-    # This allows the frontend to access validation issues (e.g., cost attribute warnings)
-    # that didn't block execution but should still be displayed to the user
-    solution.mesido_warnings = get_potential_errors().get_all_issues()
 
     feasibility = solution.solver_stats["return_status"]
 
