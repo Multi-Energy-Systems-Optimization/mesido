@@ -80,7 +80,7 @@ def _mip_gap_settings(mip_gap_name: str, problem) -> Dict[str, float]:
         if problem._stage == 1:
             options[mip_gap_name] = 0.005
         else:
-            options[mip_gap_name] = 0.02
+            options[mip_gap_name] = 0.01
     else:
         options[mip_gap_name] = 0.02
 
@@ -155,7 +155,7 @@ def check_solver_succes_grow_problem(solution):
     if not solver_success:
         if (
             solution.solver_stats["return_status"]
-            == solver_messages["Time_limit"][solution.solver_options]
+            == solver_messages["Time_limit"][solution.solver_options["solver"]]
             and solution.objective_value > 1e-6
         ):
             logger.error(
@@ -204,6 +204,7 @@ class SolverCPLEX:
         options["solver"] = "cplex"
         cplex_options = options["cplex"] = {}
         cplex_options.update(_mip_gap_settings("CPX_PARAM_EPGAP", self))
+        cplex_options["CPXPARAM_Threads"] = 10
 
         options["highs"] = None
 
@@ -313,6 +314,7 @@ class EndScenarioSizing(
         options = super().energy_system_options()
         options["maximum_temperature_der"] = np.inf
         options["heat_loss_disconnected_pipe"] = True
+
         return options
 
     def path_goals(self):
@@ -400,6 +402,8 @@ class EndScenarioSizing(
                 # found, this is typically something like 1E50.
                 return success, log_level
 
+            return True, logging.INFO
+        elif solver_stats["return_status"] == "integer optimal with unscaled infeasibilities":
             return True, logging.INFO
         else:
             return success, log_level
@@ -588,13 +592,15 @@ class SettingsStaged:
             self.heat_network_settings["minimize_head_losses"] = False
 
         if self._stage == 2 and priorities_output:
+            self.heat_network_settings["minimum_velocity"] = 0.0
             self._priorities_output = priorities_output
 
     def energy_system_options(self):
         options = super().energy_system_options()
         if self._stage == 1:
             options["neglect_pipe_heat_losses"] = True
-            self.heat_network_settings["minimum_velocity"] = 0.0
+        elif self._stage == 2:
+            options["heat_loss_disconnected_pipe"] = False
 
         return options
 
@@ -713,34 +719,37 @@ def run_end_scenario_sizing(
         parameters = solution.parameters(0)
         bounds = solution.bounds()
 
-        # We give bounds for stage 2 by allowing one DN sizes larger than what was found in the
-        # stage 1 optimization. But if the pipe is not to be used class DN none should be used and
-        # all the following pipe clasess should have bounds (0, 0)
+        # We give bounds for stage 2 by allowing two DN sizes larger than what was found in the
+        # stage 1 optimization.
         # Assumptions:
         # - The fist pipe class in the list of pipe_classes is pipe DN none
         pc_map = solution.get_pipe_class_map()  # if disconnectable and not connected to source
         for pipe_classes in pc_map.values():
             v_prev = 0.0
+            v_prev_2 = 0.0
             first_pipe_class = True
-            use_pipe_dn_none = False
             for var_name in pipe_classes.values():
                 v = round(abs(results[var_name][0]))
                 if first_pipe_class and v == 1.0:
-                    boolean_bounds[var_name] = (v, v)
-                    use_pipe_dn_none = True
+                    boolean_bounds[var_name] = (0.0, v)
                 elif v == 1.0:
                     boolean_bounds[var_name] = (0.0, v)
-                elif not use_pipe_dn_none and v_prev == 1.0:  # This allows one DN larger
+                elif v_prev == 1.0 or v_prev_2 == 1.0:  # This allows two DNs larger
                     boolean_bounds[var_name] = (0.0, 1.0)
                 else:
                     boolean_bounds[var_name] = (v, v)
+                v_prev_2 = v_prev
                 v_prev = v
+
                 first_pipe_class = False
 
+        producer_input_timeseries = False
         for asset in [
             *solution.energy_system_components.get("heat_source", []),
             *solution.energy_system_components.get("heat_buffer", []),
         ]:
+            if f"{asset}.maximum_heat_source" in solution.io.get_timeseries_names():
+                producer_input_timeseries = True
             var_name = f"{asset}_aggregation_count"
             round_lb = round(results[var_name][0])
             ub = solution.bounds()[var_name][1]
@@ -775,11 +784,16 @@ def run_end_scenario_sizing(
                     )
 
                 boolean_bounds[f"{p}__flow_direct_var"] = (Timeseries(t, lb), Timeseries(t, ub))
-                try:
-                    r = results[f"{p}__is_disconnected"]
-                    boolean_bounds[f"{p}__is_disconnected"] = (Timeseries(t, r), Timeseries(t, r))
-                except KeyError:
-                    pass
+                if not producer_input_timeseries:
+                    try:
+                        r = results[f"{p}__is_disconnected"]
+                        r_low = np.zeros(len(r))
+                        boolean_bounds[f"{p}__is_disconnected"] = (
+                            Timeseries(t, r_low),
+                            Timeseries(t, r),
+                        )
+                    except KeyError:
+                        pass
 
         priorities_output = solution._priorities_output
 
