@@ -1,3 +1,4 @@
+import copy
 from enum import Enum
 from typing import Dict, List, NoReturn
 
@@ -89,6 +90,46 @@ class PotentialErrors:
             error_type=issue_type,
             message_per_asset_id=self._gathered_potential_issues[issue_type],
         )
+
+    def get_all_issues(self) -> Dict[MesidoAssetIssueType, Dict[AssetId, ErrorMessage]]:
+        """
+        Retrieve all gathered potential issues (both warnings and errors).
+
+        This method provides access to all validation issues that have been collected,
+        including those that were not converted to exceptions. This is useful for:
+        - Retrieving warnings that don't block execution
+        - Frontend display of validation issues
+        - Logging and debugging purposes
+
+        Returns
+        -------
+        Dict mapping issue types to a dict of asset IDs and their error messages.
+        Returns a deep copy to prevent external modification of internal state.
+
+        Notes
+        -----
+        Uses deep copy to ensure the singleton's internal state cannot be mutated
+        by external code. This is appropriate given the method is called infrequently
+        (once per optimization) and the data size is typically small (<10 issues).
+        """
+        return copy.deepcopy(self._gathered_potential_issues)
+
+    def get_issues_by_type(self, issue_type: MesidoAssetIssueType) -> Dict[AssetId, ErrorMessage]:
+        """
+        Retrieve all issues for a specific issue type.
+
+        Parameters
+        ----------
+        issue_type : MesidoAssetIssueType
+            The type of issue to retrieve (e.g., ASSET_COST_ATTRIBUTE_INCORRECT)
+
+        Returns
+        -------
+        Dict mapping asset IDs to error messages for the given issue type.
+        Returns empty dict if no issues exist for that type.
+        Returns a deep copy to prevent external modification of internal state.
+        """
+        return copy.deepcopy(self._gathered_potential_issues.get(issue_type, {}))
 
 
 # When adding POTENTIAL_ERRORS to a workflow a reset thereof is required due to it being a
