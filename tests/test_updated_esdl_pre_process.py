@@ -3,10 +3,7 @@ from pathlib import Path
 from unittest import TestCase
 
 from mesido.esdl.esdl_parser import ESDLFileParser
-from mesido.workflows import (
-    EndScenarioSizingDiscountedStaged,
-    run_end_scenario_sizing
-)
+from mesido.workflows import EndScenarioSizingDiscountedStaged, run_end_scenario_sizing
 
 import numpy as np
 
@@ -16,7 +13,6 @@ from utils_tests import demand_matching_test, energy_conservation_test, heat_to_
 
 
 class TestUpdatedESDL(TestCase):
-
 
     def test_updated_esdl_eac(self):
         """

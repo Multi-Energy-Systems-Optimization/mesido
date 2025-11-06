@@ -366,7 +366,6 @@ class TestUpdatedESDL(TestCase):
         results = solution.extract_results()
         parameters = solution.parameters(0)
 
-
         # Test KPIs in optimized ESDL
         # High level checks of KPIs
         number_of_kpis_top_level_in_esdl = 8
@@ -412,9 +411,7 @@ class TestUpdatedESDL(TestCase):
                         installation_cost = results[f"{asset}__installation_cost"]
                         asset_life_years = parameters[f"{asset}.technical_life"]
                         discount_rate = parameters[f"{asset}.discount_rate"] / 100.0
-                        annuity_factor = calculate_annuity_factor(
-                            discount_rate, asset_life_years
-                        )
+                        annuity_factor = calculate_annuity_factor(discount_rate, asset_life_years)
                         capex_eac = (investment_cost + installation_cost) * annuity_factor
 
                         np.testing.assert_allclose(value, capex_eac)
