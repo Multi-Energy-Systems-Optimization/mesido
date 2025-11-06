@@ -284,6 +284,16 @@ class _AssetToComponentBase:
             "fixedMaintenanceCosts": "optional",
             "fixedOperationalCosts": "required",
         },
+        "gas_demand": {
+            "variableOperationalCosts": "required",
+        },
+        "gas_tank_storage": {
+            "fixedOperationalCosts": "required",
+        },
+        "electrolyzer": {
+            "investmentCosts": "required",
+            "fixedOperationalCosts": "required",
+        },
     }
 
     COST_VALIDATION_COMPONENT_TO_ASSET_TYPE = {
@@ -296,6 +306,9 @@ class _AssetToComponentBase:
         "ATES": "ates",
         "Pipe": "pipe",
         "HeatExchange": "heat_exchanger",
+        "GasDemand": "gas_demand",
+        "GasStorage": "gas_tank_storage",
+        "Electrolyzer": "electrolyzer",
     }
 
     COST_ATTRIBUTE_TO_STRING = {
