@@ -23,6 +23,7 @@
 - TCO cost calculation objective to now exclude heating demand costs in the grow workflow
 - Hydraulic power calculation at "sink" assets is set to 0.0 if headloss calculation is turned off
 - Updated pyESDL to v25.7
+- Allowing 2 additional pipe sizes (instead of 1) in stage 2 compared to the result of stage 1 of the grow_workflow.
 
 ## Fixed
 - Bug: Add 3 port heat pump to elect demand path constraint
@@ -31,6 +32,7 @@
 - Bug: Geothermal being placed when not used. General added aggregation_count=0 constraint for heat buffer, ates and goethermal when not being used.
 - Bug: Ensure ATES and Geothermal max_size cannot be smaller than the single_doublet_power if placed.
 - Bug: Upper limit of available pipe classes when using producer profiles
+- Bug: Removed the parsing of is_disconnected pipe between stage 1 and 2 of the grow_workflow. 
 
 
 # [0.1.13] - 2025-06-25
