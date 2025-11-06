@@ -311,7 +311,7 @@ class TestElectrolyzer(TestCase):
         # Check electrolyzer input power
         np.testing.assert_allclose(
             results["Electrolyzer_fc66.ElectricityIn.Power"],
-            [1.00000000e+08, 1.00000000e+08, -3.59365315e-05],
+            [1.00000000e08, 1.00000000e08, -3.59365315e-05],
             atol=1e-4,
         )
         # Check electrolyzer output massflow
@@ -361,7 +361,7 @@ class TestElectrolyzer(TestCase):
         # Check input power values. Not really needed since the massflow check is equivalent
         np.testing.assert_allclose(
             results["Electrolyzer_fc66.ElectricityIn.Power"],
-            [1.00000000e+08, 1.00000000e+08, 1.00000000e+08],
+            [1.00000000e08, 1.00000000e08, 1.00000000e08],
             atol=1e-4,
         )
         # Check output massflow values

@@ -1393,33 +1393,43 @@ class _AssetToComponentBase:
         """
         Validate a cost attribute for an asset.
 
-        For assets in ASSET_COST_REQUIREMENTS, cost information is always processed according
-        to validation rules (required/optional). When NO_POTENTIAL_ERRORS_CHECK is used,
-        any asset with cost information can have it processed, regardless of whether it's
-        in validation mappings or not.
+        Behavior:
+        - With NO_POTENTIAL_ERRORS_CHECK: Returns cost_info is not None (bypasses validation,
+          logs warnings for unknown asset types)
+        - Without NO_POTENTIAL_ERRORS_CHECK:
+          - Assets in ASSET_COST_REQUIREMENTS: Enforces required/optional rules
+          - Assets NOT in ASSET_COST_REQUIREMENTS: Blocked (returns False, logs warning)
 
         Args:
             asset: The asset object
-            cost_attribute: The name of the cost attribute
-            cost_info: The cost information object
+            cost_attribute: The name of the cost attribute (e.g., "investmentCosts")
+            cost_info: The cost information object from ESDL (None if not present)
 
         Returns:
-            bool: True if the attribute exists and should be processed further, False otherwise.
+            bool: True if the cost attribute should be processed, False to skip it.
         """
         cost_check_message = self._check_cost_attribute_requirement(
             asset.asset_type, cost_attribute
         )
         cost_attribute_name = self.COST_ATTRIBUTE_TO_STRING.get(cost_attribute, cost_attribute)
 
-        # When error checking is disabled, bypass all validation for any asset with cost info.
-        # This includes assets that are unknown or not supported, as NO_POTENTIAL_ERRORS_CHECK
-        # is intended to allow cost processing for any asset with cost information
-        # regardless of type.
+        # NO_POTENTIAL_ERRORS_CHECK mode: Bypass validation, process any cost_info that exists.
+        # Returns False for None cost_info to skip processing (contributes 0.0 naturally).
+        # Logs warning (without reporting issue) for unknown asset types with cost data.
         if self._error_type_check == NO_POTENTIAL_ERRORS_CHECK:
+            if (
+                cost_check_message == "unknown or not supported asset type"
+                and cost_info is not None
+            ):
+                message = (
+                    f"The {cost_attribute_name} for asset {asset.name} "
+                    f"of type {asset.asset_type} is {cost_check_message}."
+                )
+                self._log_and_add_potential_issue(message, asset.id, report_issue=False)
             return cost_info is not None
 
-        # For assets not in validation mappings, block when error checking is enabled
-        if cost_check_message in ["unknown or not supported asset type"]:
+        # Validation mode: Block unknown asset types
+        if cost_check_message == "unknown or not supported asset type":
             message = (
                 f"The {cost_attribute_name} for asset {asset.name} "
                 f"of type {asset.asset_type} is {cost_check_message}."
@@ -1427,7 +1437,7 @@ class _AssetToComponentBase:
             self._log_and_add_potential_issue(message, asset.id, report_issue=False)
             return False
 
-        # For assets in validation mappings, apply validation rules when error checking is enabled
+        # Validation mode: Enforce required/optional rules for known assets
         if cost_info is None:
             if cost_check_message == "required":
                 message = (
