@@ -204,8 +204,7 @@ class TestCostValidationBypass(TestCase):
         # warnings
         self.assertFalse(
             result,
-            "ATES validation should return False for None cost_info to skip "
-            "processing cleanly",
+            "ATES validation should return False for None cost_info to skip " "processing cleanly",
         )
 
         # Test with present cost_info
