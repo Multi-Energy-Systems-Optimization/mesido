@@ -2645,6 +2645,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             flow_dir_var = self._heat_pipe_to_flow_direct_map[hot_pipe]
             is_buffer_charging = self.state(flow_dir_var)
             is_buffer_charging = self.variable(f"{ates}__is_charging")
+            delta_ates_on = self.state(f"{ates}__is_active")
 
             # constraints.append((
             # (heat_ates - rho * cp * dt * q_var - (1-is_buffer_charging) * big_m)/ heat_nominal,
@@ -2652,7 +2653,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             # ))
             constraints.append(
                 (
-                    (heat_ates - rho * cp * dt * 0.1*q_var + (1 - is_buffer_charging) * big_m)
+                    (heat_ates - rho * cp * dt * 0.1*q_var + (2 - delta_ates_on -
+                                                              is_buffer_charging) * big_m)
                     / heat_nominal,
                     0.0,
                     np.inf,
@@ -3243,6 +3245,19 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                             / constraint_nominal,
                             -np.inf,
                             0.0,
+                        )
+                    )
+                    constraints.append(
+                        (
+                            (
+                                    heat_in
+                                    - 0.95*discharge * cp * rho * supply_temperature
+                                    + (1.0 - sup_temperature_is_selected) * big_m
+                                    + (1-is_buffer_charging) * big_m
+                            )
+                            / constraint_nominal,
+                            0.0,
+                            np.inf,
                         )
                     )
                     # if b in self.energy_system_components.get("ates_multi_port", []):
