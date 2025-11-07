@@ -61,7 +61,7 @@ class SolverCPLEX:
         options["casadi_solver"] = self._qpsol
         options["solver"] = "cplex"
         cplex_options = options["cplex"] = {}
-        cplex_options["CPX_PARAM_EPGAP"] = 0.001
+        cplex_options["CPX_PARAM_EPGAP"] = 0.01
         options["highs"] = None
 
         return options
@@ -610,6 +610,25 @@ class RollOutProblem(
                     )
         return constraints
 
+    def __heat_buffer_peak_day_constraints(self, ensemble_member):
+        constraints = []
+        for b in self.energy_system_components.get("heat_buffer", {}):
+            vars = self.__state_vector_scaled(f"{b}.Heat_buffer", ensemble_member)
+            symbol_stored_heat = self.state_vector(f"{b}.Stored_heat")
+            # constraints.append((symbol_stored_heat[self.__problem_indx_max_peak], 0.0, 0.0))
+            for year in range(self._years):
+                for i in range(self._timesteps_per_year):
+                    a = self.__problem_indx_max_peak
+                    if not (
+                        i > self.__problem_indx_max_peak - 1
+                        and i < (self.__problem_indx_max_peak + 23 + 1)
+                    ):
+                        constraints.append(
+                            (vars[i + year * self._timesteps_per_year], -1.0e3, 1.0e3)
+                        )
+
+        return constraints
+
     def constraints(self, ensemble_member):
         constraints = super().constraints(ensemble_member)
 
@@ -619,6 +638,7 @@ class RollOutProblem(
         constraints.extend(self.__yearly_asset_is_placed_constraints(ensemble_member))
         constraints.extend(self.__ates_yearly_initial_constraints(ensemble_member))
         constraints.extend(self.__ates_yearly_periodic_constraints(ensemble_member))
+        constraints.extend(self.__heat_buffer_peak_day_constraints(ensemble_member))
 
         constraints.extend(self.__all_demands_placed_constraints(ensemble_member))
         constraints.extend(self.__yearly_investment_constraints(ensemble_member))

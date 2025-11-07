@@ -2,7 +2,11 @@ from pathlib import Path
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.workflows import run_end_scenario_sizing
-from mesido.workflows.rollout_workflow import RollOutProblem, SolverCPLEX  # not yet added to init of workflows
+from mesido.workflows.rollout_workflow import (
+    RollOutProblem,
+    SolverCPLEX,
+)  # not yet added to init of workflows
+
 # as this is still work in progress, and shouldn't be used yet.
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 
@@ -39,10 +43,13 @@ if __name__ == "__main__":
     )
     results = solution.extract_results()
 
-    kwargs = {'output_folder': base_folder / "output",
-              'esdl_file_name': base_folder / "model" /
-              "GROW_withATES_Prod_install_withoutbuffer_costs_GrowOptimized.esdl",
-              'figure_folder': base_folder / "output" / "figures"}
+    kwargs = {
+        "output_folder": base_folder / "output",
+        "esdl_file_name": base_folder
+        / "model"
+        / "GROW_withATES_Prod_install_withoutbuffer_costs_GrowOptimized.esdl",
+        "figure_folder": base_folder / "output" / "figures",
+    }
 
     rolloutpost = RollOutPost(**kwargs)
     rolloutpost.all_plots()
