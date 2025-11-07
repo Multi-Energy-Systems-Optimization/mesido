@@ -328,6 +328,8 @@ class TestUpdatedESDL(TestCase):
         Checks:
         - Confirm that the number of KPIs in the output ESDL matches the expected
             count of KPIs related to EAC.
+        - Confirm that the name of KPIs in the output ESDL matches the expected
+            name of KPIs related to EAC.
         - Verify that the EAC CAPEX and EAC OPEX values shown in the KPI figures
             are correctly calculated.
         """
@@ -398,11 +400,15 @@ class TestUpdatedESDL(TestCase):
         )
 
         # Check if EAC calculation is matching with KPI values
-
+        asset = "ResidualHeatSource_72d7"
         for ii in range(len(energy_system.instance[0].area.KPIs.kpi)):
             kpi_name = energy_system.instance[0].area.KPIs.kpi[ii].name
 
-            asset = "ResidualHeatSource_72d7"
+            np.testing.assert_array_equal(
+                kpi_name in all_high_level_kpis,
+                True,
+                err_msg=f"KPI name {kpi_name} was not expected in the ESDL",
+            )
 
             if kpi_name == "EAC - CAPEX breakdown [EUR] (1.0 year period)":
                 string_items = (
