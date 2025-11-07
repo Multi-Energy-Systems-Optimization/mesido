@@ -374,6 +374,21 @@ class RollOutProblem(
 
         return constraints
 
+    def __all_demands_placed_constraints(self, ensemble_member):
+        """
+        Constraint to ensure all heating demands are placed at the end of the optimization
+
+        """
+        constraints = []
+
+        for d in self.energy_system_components.get("heat_demand", []):
+            asset_realized_vector = self.get_asset_is__realized_symbols(d)
+
+            # ensure asset is placed at end of optimization
+            constraints.append((asset_realized_vector[-1], 1.0, 1.0))
+
+        return constraints
+
     def __yearly_investment_constraints(self, ensemble_member):
         """
         Constraints to set the yearly maximum CAPEX. The CAPEX here is the cumulative investments
@@ -475,7 +490,7 @@ class RollOutProblem(
                 # print(p, pipe_length, bounds[self._asset_is_realized_map[p][y]])
                 cumulative_pipe_length += pipe_placement * pipe_length
 
-            #TODO: should be set by kwargs
+            # TODO: should be set by kwargs
             year_pipe_length = 1.0e3  # m per year
 
             # if y == 0:
@@ -605,6 +620,7 @@ class RollOutProblem(
         constraints.extend(self.__ates_yearly_initial_constraints(ensemble_member))
         constraints.extend(self.__ates_yearly_periodic_constraints(ensemble_member))
 
+        constraints.extend(self.__all_demands_placed_constraints(ensemble_member))
         constraints.extend(self.__yearly_investment_constraints(ensemble_member))
         constraints.extend(self.__yearly_pipe_length_constraints(ensemble_member))
 
