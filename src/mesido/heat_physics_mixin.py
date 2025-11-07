@@ -3247,19 +3247,19 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                             0.0,
                         )
                     )
-                    constraints.append(
-                        (
-                            (
-                                    heat_in
-                                    - 0.95*discharge * cp * rho * supply_temperature
-                                    + (1.0 - sup_temperature_is_selected) * big_m
-                                    + (1-is_buffer_charging) * big_m
-                            )
-                            / constraint_nominal,
-                            0.0,
-                            np.inf,
-                        )
-                    )
+                    # constraints.append(
+                    #     (
+                    #         (
+                    #                 heat_in
+                    #                 - 0.9*discharge * cp * rho * supply_temperature
+                    #                 + (1.0 - sup_temperature_is_selected) * big_m
+                    #                 + (1-is_buffer_charging) * big_m
+                    #         )
+                    #         / constraint_nominal,
+                    #         0.0,
+                    #         np.inf,
+                    #     )
+                    # )
                     # if b in self.energy_system_components.get("ates_multi_port", []):
                     #     constraints.append(
                     #         ((heat_ates - discharge * cp * rho * (temperature_var - parameters[
