@@ -448,6 +448,65 @@ class RollOutProblem(
 
         return constraints
 
+    def __yearly_pipe_length_constraints(self, ensemble_member):
+        """
+        Constraints to set the yearly maximum pipe length that can be placed.
+        """
+        constraints = []
+
+        bounds = self.bounds()
+        parameters = self.parameters(ensemble_member)
+
+        # Constraint to set yearly maximum CAPEX
+        # TODO: CAPEX constraint sources and demands now total capex not yet possible to use
+        #  fraction placed variables.
+        cumulative_pipe_length_prev_year = 0
+        for y in range(self._years):
+            cumulative_pipe_length = 0
+
+            # pipes
+            # for p in self.hot_pipes:
+            for p in self.energy_system_components.get("heat_pipe", []):
+                pipe_placement = self.extra_variable(
+                    self._asset_is_realized_map[p][y]
+                    # f"{p}__asset_is_realized_{y}"
+                )
+                pipe_length = parameters[f"{p}.length"]
+                # print(p, pipe_length, bounds[self._asset_is_realized_map[p][y]])
+                cumulative_pipe_length += pipe_placement * pipe_length
+
+            #TODO: should be set by kwargs
+            year_pipe_length = 1.0e3  # m per year
+
+            # if y == 0:
+            #     constraints.append(((year_pipe_length*self._horizon/self._years - cumulative_pipe_length) /
+            #                         year_pipe_length,
+            #                         0.0, np.inf))
+            # else:
+            # constraints.append(
+            #     (
+            #         (year_pipe_length*self._horizon/self._years - (cumulative_pipe_length - cumulative_pipe_length_prev_year))
+            #         / year_pipe_length,
+            #         0.0,
+            #         np.inf,
+            #     )
+            # )
+            if y > -1.0:
+                constraints.append(
+                    (
+                        (
+                            year_pipe_length * self._horizon / self._years * (y + 1)
+                            - cumulative_pipe_length
+                        )
+                        / year_pipe_length,
+                        0.0,
+                        np.inf,
+                    )
+                )
+            # cumulative_pipe_length_prev_year = cumulative_pipe_length
+
+        return constraints
+
     def __minimum_operational_constraints(self, ensemble_member):
         """
         Constraints to ensure that the geothermal source produces at least a minimum amount of heat
@@ -547,6 +606,7 @@ class RollOutProblem(
         constraints.extend(self.__ates_yearly_periodic_constraints(ensemble_member))
 
         constraints.extend(self.__yearly_investment_constraints(ensemble_member))
+        constraints.extend(self.__yearly_pipe_length_constraints(ensemble_member))
 
         constraints.extend(self.__minimum_operational_constraints(ensemble_member))
 
