@@ -2,23 +2,50 @@ from pathlib import Path
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.workflows import run_end_scenario_sizing
-from mesido.workflows.rollout_workflow import RollOutProblem  # not yet added to init of workflows
-
+from mesido.workflows.rollout_workflow import RollOutProblem, SolverCPLEX  # not yet added to init of workflows
 # as this is still work in progress, and shouldn't be used yet.
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+
+from mesido.workflows.io.rollout_post import RollOutPost
 
 if __name__ == "__main__":
     import time
 
     start_time = time.time()
-    base_folder = Path(__file__).resolve().parent.parent
+    base_folder = Path(__file__).resolve().parent.parent.parent
+    base_folder = base_folder / "municipality"
+
+    class RollOutTimeStep(RollOutProblem):
+        pass
+        # def read(self):
+        #     super().read()
+        #     m = [3, 5, 5]
+        #     for i in range(1, 4):
+        #         demand_timeseries = self.get_timeseries(f"HeatingDemand_{i}.target_heat_demand")
+        #         demand_timeseries.values[:] = demand_timeseries.values[:] * m[i - 1]
+        #         self.set_timeseries(f"HeatingDemand_{i}.target_heat_demand", demand_timeseries)
 
     solution = run_end_scenario_sizing(
-        RollOutProblem,
+        RollOutTimeStep,
+        solver_class=SolverCPLEX,
         base_folder=base_folder,
-        esdl_file_name="PoC_tutorial_incl_ATES.esdl",
+        # esdl_file_name="PoC_tutorial_incl_ATES copy.esdl",
+        esdl_file_name="GROW_withATES_Prod_install_withoutbuffer_costs_GrowOptimized.esdl",
+        # esdl_file_name="test_case_small_network_with_ates_with_buffer.esdl", # gives an error
         esdl_parser=ESDLFileParser,
+        # profile_reader=ProfileReaderFromFile,
+        # input_timeseries_file="Warmte_test.csv",
+        yearly_max_capex=3.0e6,
     )
     results = solution.extract_results()
+
+    kwargs = {'output_folder': base_folder / "output",
+              'esdl_file_name': base_folder / "model" /
+              "GROW_withATES_Prod_install_withoutbuffer_costs_GrowOptimized.esdl",
+              'figure_folder': base_folder / "output" / "figures"}
+
+    rolloutpost = RollOutPost(**kwargs)
+    rolloutpost.all_plots()
 
     # DO NOT DELETE, for manual checking of results.
     # import matplotlib.pyplot as plt
