@@ -24,7 +24,7 @@ class ATESMultiPort(ATES):
         super().__init__(name, **modifiers)
         self.component_subtype = "ates_multi_port"
 
-        self.ates_temperature_options = list(np.round(np.linspace(self.T_supply, 40, 5)))
+        self.ates_temperature_options = list(np.array([90, 85, 80, 75, 70, 65, 60, 50, 40]))
 
         self.max_heat_flow = self.cp * self.rho * self.dT * self.Q.max
 
