@@ -3,7 +3,6 @@ import os
 import sys
 from pathlib import Path
 from unittest import TestCase
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 import esdl
 from esdl.esdl_handler import EnergySystemHandler
@@ -15,6 +14,8 @@ from mesido.workflows import (
     EndScenarioSizingStaged,
     run_end_scenario_sizing,
 )
+
+from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
 import numpy as np
