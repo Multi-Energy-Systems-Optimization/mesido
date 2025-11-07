@@ -3,6 +3,7 @@ import os
 import sys
 from pathlib import Path
 from unittest import TestCase
+from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 import esdl
 from esdl.esdl_handler import EnergySystemHandler
@@ -342,6 +343,17 @@ class TestUpdatedESDL(TestCase):
         model_folder = base_folder / "model"
         input_folder = base_folder / "input"
 
+        # Run the case in order to have access to results and solutions
+        solution = run_end_scenario_sizing(
+            EndScenarioSizingDiscountedStaged,
+            base_folder=base_folder,
+            esdl_file_name="PoC Tutorial Discount5.esdl",
+            esdl_parser=ESDLFileParser,
+        )
+
+        results = solution.extract_results()
+        parameters = solution.parameters(0)
+
         problem = EndScenarioSizingDiscountedStaged(
             esdl_file_name="PoC Tutorial Discount5.esdl",
             esdl_parser=ESDLFileParser,
@@ -355,16 +367,10 @@ class TestUpdatedESDL(TestCase):
         esdl_path = os.path.join(base_folder, "model", "PoC Tutorial Discount5_GrowOptimized.esdl")
         energy_system = problem._ESDLMixin__energy_system_handler.load_file(esdl_path)
 
-        # Run the case in order to have access to results and solutions
-        solution = run_end_scenario_sizing(
-            EndScenarioSizingDiscountedStaged,
-            base_folder=base_folder,
-            esdl_file_name="PoC Tutorial Discount5.esdl",
-            esdl_parser=ESDLFileParser,
-        )
-
-        results = solution.extract_results()
-        parameters = solution.parameters(0)
+        # Util test
+        demand_matching_test(solution, solution.extract_results())
+        energy_conservation_test(solution, solution.extract_results())
+        heat_to_discharge_test(solution, solution.extract_results())
 
         # Test KPIs in optimized ESDL
         # High level checks of KPIs
