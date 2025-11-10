@@ -5,6 +5,7 @@ from mesido.esdl.asset_to_component_base import _AssetToComponentBase
 from mesido.esdl.edr_pipe_class import EDRGasPipeClass
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.workflows.utils.error_types import NO_POTENTIAL_ERRORS_CHECK
 from mesido.workflows.utils.helpers import run_optimization_problem_solver
 
 import numpy as np
@@ -56,6 +57,7 @@ class TestGasElect(TestCase):
             esdl_file_name="gas_elect_loop_tree.esdl",
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="HeatingDemand_W_manual.csv",
+            error_type_check=NO_POTENTIAL_ERRORS_CHECK,
         )
 
         results = solution.extract_results()
@@ -68,6 +70,7 @@ class TestGasElect(TestCase):
             esdl_file_name="gas_elect_loop_tree.esdl",
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="HeatingDemand_W_manual_HighDemand.csv",
+            error_type_check=NO_POTENTIAL_ERRORS_CHECK,
         )
 
         results_high_demand = solution_high_demand.extract_results()
