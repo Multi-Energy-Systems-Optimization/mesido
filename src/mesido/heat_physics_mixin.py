@@ -3288,7 +3288,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         (
                             heat_out
                             - discharge * cp * rho * parameters[f"{b}.T_return"]
-                            - (1.0 - is_buffer_charging) * big_m
+                            # - (1.0 - is_buffer_charging) * big_m
                         )
                         / constraint_nominal,
                         -np.inf,
