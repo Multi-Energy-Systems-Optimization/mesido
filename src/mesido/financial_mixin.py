@@ -306,6 +306,14 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 0.0,
                 np.inf,
             )
+            # check someting
+            # if asset_name in [
+            #     *self.energy_system_components.get("ates", []),
+            # ]:
+            #     self.__asset_variable_operational_cost_bounds[variable_operational_cost_var] = (
+            #         -np.inf,
+            #         np.inf,
+            #     )
             self.__asset_variable_operational_cost_nominals[variable_operational_cost_var] = (
                 max(
                     parameters[f"{asset_name}.variable_operational_cost_coefficient"]
@@ -320,10 +328,10 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             if asset_name in [
                 *self.energy_system_components.get("ates", []),
             ]:
-                var_name = f"{asset_name}__ates_variable_operational_cost_per_time"
-                self._ates_variable_operational_cost_per_time_map[asset_name] = var_name
-                self.__ates_variable_operational_cost_per_time_var[var_name] = ca.MX.sym(var_name)
-                self.__ates_variable_operational_cost_per_time_nominals[var_name] = (
+                cost_var_name = f"{asset_name}__ates_variable_operational_cost_per_time"
+                self._ates_variable_operational_cost_per_time_map[asset_name] = cost_var_name
+                self.__ates_variable_operational_cost_per_time_var[cost_var_name] = ca.MX.sym(cost_var_name)
+                self.__ates_variable_operational_cost_per_time_nominals[cost_var_name] = (
                     max(
                     parameters[f"{asset_name}.variable_operational_cost_coefficient"]
                     * nominal_variable_operational
@@ -333,7 +341,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     if nominal_variable_operational is not None
                     else 1.0e2
                 )
-                self.__ates_variable_operational_cost_per_time_bounds[var_name] = (0.0, np.inf)
+                self.__ates_variable_operational_cost_per_time_bounds[cost_var_name] = (0.0, np.inf)
 
             # installation cost
             asset_installation_cost_var = f"{asset_name}__installation_cost"
@@ -962,41 +970,43 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
         parameters = self.parameters(ensemble_member)
 
-        for asset in [
-            *self.energy_system_components.get("ates", []),
-            *self.energy_system_components.get("low_temperature_ates", []),
-            *self.energy_system_components.get("heat_buffer", []),
-            *self.energy_system_components.get("pump", []),
-            *self.energy_system_components.get("heat_exchanger", []),
-        ]:
-            variable_operational_cost_var = self._asset_variable_operational_cost_map[asset]
-            variable_operational_cost = self.extra_variable(
-                variable_operational_cost_var, ensemble_member
-            )
-            nominal = self.variable_nominal(variable_operational_cost_var)
 
-            pump_power = self.__state_vector_scaled(f"{asset}.Pump_power", ensemble_member)
-            eff = parameters[f"{asset}.pump_efficiency"]
+        # The code below has to be fixed!!!
+        # for asset in [
+        #     *self.energy_system_components.get("ates", []),
+        #     *self.energy_system_components.get("low_temperature_ates", []),
+        #     *self.energy_system_components.get("heat_buffer", []),
+        #     *self.energy_system_components.get("pump", []),
+        #     *self.energy_system_components.get("heat_exchanger", []),
+        # ]:
+        #     variable_operational_cost_var = self._asset_variable_operational_cost_map[asset]
+        #     variable_operational_cost = self.extra_variable(
+        #         variable_operational_cost_var, ensemble_member
+        #     )
+        #     nominal = self.variable_nominal(variable_operational_cost_var)
 
-            # We assume that only one electricity carrier is specified, to compute the cost with.
-            # Otherwise we need to link the electricity carrier somehow to the source and pump asset
-            # which is lots of extra effort for the user.
-            assert len(self.get_electricity_carriers().keys()) <= 1
+        #     pump_power = self.__state_vector_scaled(f"{asset}.Pump_power", ensemble_member)
+        #     eff = parameters[f"{asset}.pump_efficiency"]
 
-            if len(self.get_electricity_carriers().keys()) == 1:
-                price_profile = self.get_timeseries(
-                    f"{list(self.get_electricity_carriers().values())[0]['name']}.price_profile"
-                )
-            else:
-                price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
+        #     # We assume that only one electricity carrier is specified, to compute the cost with.
+        #     # Otherwise we need to link the electricity carrier somehow to the source and pump asset
+        #     # which is lots of extra effort for the user.
+        #     assert len(self.get_electricity_carriers().keys()) <= 1
 
-            timesteps = np.diff(self.times()) / 3600.0
+        #     if len(self.get_electricity_carriers().keys()) == 1:
+        #         price_profile = self.get_timeseries(
+        #             f"{list(self.get_electricity_carriers().values())[0]['name']}.price_profile"
+        #         )
+        #     else:
+        #         price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
 
-            sum = 0.0
-            for i in range(1, len(self.times())):
-                sum += price_profile.values[i] * pump_power[i] * timesteps[i - 1] / eff
+        #     timesteps = np.diff(self.times()) / 3600.0
 
-            constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
+        #     sum = 0.0
+        #     for i in range(1, len(self.times())):
+        #         sum += price_profile.values[i] * pump_power[i] * timesteps[i - 1] / eff
+
+        #     constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
 
         for s in self.energy_system_components.get("heat_source", []):
             heat_source = self.__state_vector_scaled(f"{s}.Heat_source", ensemble_member)
@@ -1219,21 +1229,23 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             ]
 
 
-            ates_variable_operational_cost_per_time_var = self._ates_variable_operational_cost_per_time_map[ates]
+            ates_variable_operational_cost_per_time_var = (
+                self._ates_variable_operational_cost_per_time_map[ates]
+            )
             ates_variable_operational_cost_per_time = self.__state_vector_scaled(
                 ates_variable_operational_cost_per_time_var, ensemble_member
             )
 
             # nominal_per_time = self.variable_nominal(ates_variable_operational_cost_per_time_var)
 
-            big_m = 1e4  # ToDo: select big_m as a function of theoretical limit of Var Opex of Ates per time step
+            big_m = 1e6  # ToDo: select big_m as a function of theoretical limit of Var Opex of Ates per time step
 
             timesteps = np.diff(self.times()) / 3600.0
             timesteps = np.append(0, timesteps) # make the same length as times()
             ates_sum = 0.0
             for i in range(0, len(self.times())):
                 varOPEX_dt = (
-                        variable_operational_cost_coefficient * 1.e-3  # temporary hard-coded value
+                        variable_operational_cost_coefficient # * 1.e-3  # temporary hard-coded value
                         * heat_ates[i]
                         * timesteps[i]
                 )
@@ -1265,7 +1277,11 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 )
 
                 ates_sum += ates_variable_operational_cost_per_time[i]
-            # constraints.append(((variable_operational_cost - ates_sum) / nominal, 0.0, 0.0))
+            #     # ates_sum += ates_is_charging[i]
+            
+            # constraints.append(((variable_operational_cost + heat_ates[1] * timesteps[1]/1.e6) / nominal, 0.0, 0.0))
+            # constraints.append(((variable_operational_cost - ates_sum) / nominal, -np.inf, np.inf))
+            constraints.append(((variable_operational_cost - ates_sum) / nominal, 0.0, 0.0))
             # constraints.append(((variable_operational_cost - ates_sum) / 50.e3, 0., 0.0))
 
         return constraints
