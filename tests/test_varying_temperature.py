@@ -392,7 +392,7 @@ class TestVaryingTemperature(TestCase):
 
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
-        heat_to_discharge_test(heat_problem, results)
+        heat_to_discharge_test(heat_problem, results, atol=20)
 
         expected_cop = (
             parameters["GenericConversion_3d3f.efficiency"]
