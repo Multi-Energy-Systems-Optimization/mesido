@@ -492,7 +492,7 @@ class RollOutProblem(
 
             # TODO: should be set by kwargs
             year_pipe_length = 1.0e3  # m per year
-
+            #TODO: get the differences per year to work
             # if y == 0:
             #     constraints.append(((year_pipe_length*self._horizon/self._years - cumulative_pipe_length) /
             #                         year_pipe_length,
@@ -613,6 +613,8 @@ class RollOutProblem(
     def __heat_buffer_peak_day_constraints(self, ensemble_member):
         constraints = []
         for b in self.energy_system_components.get("heat_buffer", {}):
+            #TODO: check constraint, normalisation and the upper and lower bound (tolerance).
+            # Also to be checked in test
             vars = self.__state_vector_scaled(f"{b}.Heat_buffer", ensemble_member)
             symbol_stored_heat = self.state_vector(f"{b}.Stored_heat")
             # constraints.append((symbol_stored_heat[self.__problem_indx_max_peak], 0.0, 0.0))
