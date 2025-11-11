@@ -154,7 +154,9 @@ class MinimizeTCO(Goal):
                 asset_state = optimization_problem.parameters(ensemble_member)[f"{asset}.state"]
 
                 if "operational" in cost_type:
-                    if not ((asset_type == "heat_demand") and (asset_state == AssetStateEnum.ENABLED)):
+                    if not (
+                        (asset_type == "heat_demand") and (asset_state == AssetStateEnum.ENABLED)
+                    ):
                         if options["discounted_annualized_cost"]:
                             # We only want the operational cost for a single year when we use
                             # annualized CAPEX.
