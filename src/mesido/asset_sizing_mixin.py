@@ -686,16 +686,17 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 for c in pipe_classes:
                     neighbour = self.has_related_pipe(pipe)
                     if neighbour and pipe not in set_self_hot_pipes:
-                        cold_pipe = self.cold_to_hot_pipe(pipe)
-                        pipe_class_var_name = f"{cold_pipe}__hn_pipe_class_{c.name}"
+                        # pipe is cold_pipe
+                        hot_pipe = self.cold_to_hot_pipe(pipe)
+                        pipe_class_var_name = f"{hot_pipe}__hn_pipe_class_{c.name}"
                         pipe_class_ordering_name = (
-                            f"{cold_pipe}__hn_pipe_class_{c.name}_discharge_ordering"
+                            f"{hot_pipe}__hn_pipe_class_{c.name}_discharge_ordering"
                         )
                         pipe_class_cost_ordering_name = (
-                            f"{cold_pipe}__hn_pipe_class_{c.name}_cost_ordering"
+                            f"{hot_pipe}__hn_pipe_class_{c.name}_cost_ordering"
                         )
                         pipe_class_heat_loss_ordering_name = (
-                            f"{cold_pipe}__hn_pipe_class_{c.name}_heat_loss_ordering"
+                            f"{hot_pipe}__hn_pipe_class_{c.name}_heat_loss_ordering"
                         )
                     else:
                         pipe_class_var_name = f"{pipe}__hn_pipe_class_{c.name}"
@@ -1421,7 +1422,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                             self._pipe_heat_losses[self.hot_to_cold_pipe(pipe)],
                         )
                     ]
-                elif pipe in set_self_hot_pipes and not self.has_related_pipe(pipe):
+                elif pipe not in set_self_hot_pipes and not self.has_related_pipe(pipe):
                     heat_loss_sym_name = self._pipe_heat_loss_map[pipe]
                     heat_loss_sym = self.extra_variable(heat_loss_sym_name, ensemble_member)
 
