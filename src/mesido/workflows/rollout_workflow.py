@@ -145,7 +145,7 @@ class RollOutProblem(
 
     def parameters(self, ensemble_member):
         parameters = super().parameters(ensemble_member)
-        for pipe in [*self.hot_pipes, *self.cold_pipes]:
+        for pipe in self.energy_system_components.get("heat_pipe", []):
             parameters[f"{pipe}.disconnectable"] = True
         return parameters
 
