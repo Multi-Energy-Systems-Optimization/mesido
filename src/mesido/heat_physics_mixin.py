@@ -4446,9 +4446,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints.extend(self.__control_valve_head_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__network_temperature_path_constraints(ensemble_member))
         constraints.extend(self.__ates_temperature_path_constraints(ensemble_member))
-        # if not self._stage == 3:
-        #     constraints.extend(self.__ates_temperature_changing_path_constraints(ensemble_member))
-        constraints.extend(self.__ates_temperature_changing_path_constraints(ensemble_member))
+        if not self._stage == 3:
+            constraints.extend(self.__ates_temperature_changing_path_constraints(ensemble_member))
+        # constraints.extend(self.__ates_temperature_changing_path_constraints(ensemble_member))
         constraints.extend(self.__ates_heat_losses_path_constraints(ensemble_member))
         constraints.extend(self.__ates_temperature_ordering_path_constraints(ensemble_member))
         constraints.extend(self.__heat_pump_cop_path_constraints(ensemble_member))
