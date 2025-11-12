@@ -4,7 +4,7 @@
 - xx
 
 ## Changed
-- xx
+- Minimize TCO objective in the grow_workflow is now only based on capex and opex that can be influenced.
 
 ## Fixed
 - xx
