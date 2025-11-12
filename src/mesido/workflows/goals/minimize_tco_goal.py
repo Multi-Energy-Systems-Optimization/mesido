@@ -167,7 +167,11 @@ class MinimizeTCO(Goal):
                     if not asset_state == AssetStateEnum.ENABLED:
                         # The capex of enabled assets should not be a part of the objective
                         # function as it cannot be influenced.
-                        obj += extra_var * factor
+                        if options["discounted_annualized_cost"]:
+                            # Annualized CAPEX is used.
+                            obj += extra_var
+                        else:
+                            obj += extra_var * factor
         return obj
 
     def function(self, optimization_problem: TechnoEconomicMixin, ensemble_member) -> MX:
