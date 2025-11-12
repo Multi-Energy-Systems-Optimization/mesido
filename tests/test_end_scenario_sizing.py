@@ -110,29 +110,27 @@ class TestEndScenarioSizing(TestCase):
             self.solution.objective_value, (obj + excluded_costs_in_obj) / 1.0e6
         )
 
-
         # Check the variable operational cost of ates
-        # timesteps_hr = np.diff(self.solution.times()) / 3600
-        # variable_operational_cost = 0.0
-        # for asset in self.solution.energy_system_components["ates"]:
-        #     esdl_asset = self.solution.esdl_assets[self.solution.esdl_asset_name_to_id_map[f"{asset}"]]
-        #     costs_esdl_asset = esdl_asset.attributes["costInformation"]
+        timesteps_hr = np.diff(self.solution.times()) / 3600
+        variable_operational_cost = 0.0
+        for asset in self.solution.energy_system_components["ates"]:
+            esdl_asset = self.solution.esdl_assets[
+                self.solution.esdl_asset_name_to_id_map[f"{asset}"]
+            ]
+            costs_esdl_asset = esdl_asset.attributes["costInformation"]
 
-        #     var_op_costs = costs_esdl_asset.variableOperationalCosts.value / 1.0e6
+            var_op_costs = costs_esdl_asset.variableOperationalCosts.value / 1.0e6
 
+            for ii in range(1, len(self.solution.times())):
+                variable_operational_cost += (
+                    var_op_costs
+                    * abs(self.results[f"{asset}.Heat_ates"][ii])
+                    * timesteps_hr[ii - 1]
+                )
 
-        #     for ii in range(1, len(self.solution.times())):
-        #         variable_operational_cost += (
-        #             var_op_costs
-        #             * self.results[f"{asset}.Heat_ates"][ii]
-        #             * (2 * self.results[f"{asset}__is_charging"][ii] - 1)
-        #             * timesteps_hr[ii - 1]
-        #         )
-
-        #     np.testing.assert_allclose(
-        #         variable_operational_cost, self.results[f"{asset}__variable_operational_cost"]
-        #     )
-
+            np.testing.assert_allclose(
+                variable_operational_cost, self.results[f"{asset}__variable_operational_cost"]
+            )
 
     def test_end_scenario_sizing_staged(self):
         """
