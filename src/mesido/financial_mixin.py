@@ -48,7 +48,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         self.__asset_variable_operational_cost_bounds = {}
         self.__asset_variable_operational_cost_nominals = {}
 
-        # Variable for variable operational cost for ates per timestep
+        # Variable for variable operational cost per timestep
         self._variable_operational_cost_per_time_map = {}
         self.__variable_operational_cost_per_time_var = {}
         self.__variable_operational_cost_per_time_bounds = {}
@@ -738,11 +738,9 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         time-step.
         """
         variables = super().path_variables.copy()
-
         if not self.energy_system_options()["yearly_investments"]:
             variables.extend(self.__cumulative_investments_made_in_eur_var.values())
             variables.extend(self.__asset_is_realized_var.values())
-
         variables.extend(self.__variable_operational_cost_per_time_var.values())
         return variables
 
