@@ -306,14 +306,6 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 0.0,
                 np.inf,
             )
-            # check someting
-            # if asset_name in [
-            #     *self.energy_system_components.get("ates", []),
-            # ]:
-            #     self.__asset_variable_operational_cost_bounds[variable_operational_cost_var] = (
-            #         -np.inf,
-            #         np.inf,
-            #     )
             self.__asset_variable_operational_cost_nominals[variable_operational_cost_var] = (
                 max(
                     parameters[f"{asset_name}.variable_operational_cost_coefficient"]
@@ -1658,7 +1650,6 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         constraints.extend(
             self.__cumulative_investments_made_in_eur_path_constraints(ensemble_member)
         )
-        # cons...... can potential add here, if I split the constraints normal and path
 
         return constraints
 
