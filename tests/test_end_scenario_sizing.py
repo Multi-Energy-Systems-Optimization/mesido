@@ -55,6 +55,7 @@ class TestEndScenarioSizing(TestCase):
         - Cyclic behaviour for ATES
         - That buffer tank is only used on peak day
         - Check if TCO goal included the desired cost components.
+        - Check if variable operational cost of ates is calculated as it supposed to be
 
 
         Missing:
@@ -118,16 +119,13 @@ class TestEndScenarioSizing(TestCase):
                 self.solution.esdl_asset_name_to_id_map[f"{asset}"]
             ]
             costs_esdl_asset = esdl_asset.attributes["costInformation"]
-
             var_op_costs = costs_esdl_asset.variableOperationalCosts.value / 1.0e6
-
             for ii in range(1, len(self.solution.times())):
                 variable_operational_cost += (
                     var_op_costs
                     * abs(self.results[f"{asset}.Heat_ates"][ii])
                     * timesteps_hr[ii - 1]
                 )
-
             np.testing.assert_allclose(
                 variable_operational_cost, self.results[f"{asset}__variable_operational_cost"]
             )
@@ -498,8 +496,8 @@ if __name__ == "__main__":
     a = TestEndScenarioSizing()
     a.setUpClass()
     a.test_end_scenario_sizing()
-    # a.test_end_scenario_sizing_staged()
-    # a.test_end_scenario_sizing_discounted()
-    # a.test_end_scenario_sizing_head_loss()
+    a.test_end_scenario_sizing_staged()
+    a.test_end_scenario_sizing_discounted()
+    a.test_end_scenario_sizing_head_loss()
     a.test_end_scenario_sizing_pipe_catalog()
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

@@ -490,17 +490,6 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 installation_cost_symbol_name
             ) + self.variable_nominal(investment_cost_symbol_name)
 
-        # for asset in [
-        #     *self.energy_system_components.get("ates", []),
-        # ]:
-        #     var_name = f"{asset}__variable_operational_cost_per_time"
-        #     self._variable_operational_cost_per_time_map[asset] = var_name
-        #     self.__variable_operational_cost_per_time_var[var_name] = ca.MX.sym(var_name)
-        #     self.__variable_operational_cost_per_time_nominals[var_name] = self.variable_nominal(
-        #         var_name
-        #     )
-        #     self.__variable_operational_cost_per_time_bounds[var_name] = (0.0, np.inf)
-
         if options["include_asset_is_realized"]:
             for asset in [
                 *self.energy_system_components.get("heat_source", []),
@@ -1163,30 +1152,6 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 )  # [euro/Wh] * [W] * [hr]
             constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
 
-        # for a in self.heat_network_components.get("ates", []):
-        # TODO: needs to be replaced with the positive or abs value of this, see varOPEX,
-        #  then ates varopex also needs to be added to the mnimize_tco_goal
-        # heat_ates = self.__state_vector_scaled(f"{a}.Heat_ates", ensemble_member)
-        # variable_operational_cost_var = self._asset_variable_operational_cost_map[a]
-        # variable_operational_cost = self.extra_variable(
-        #     variable_operational_cost_var, ensemble_member
-        # )
-        # nominal = self.variable_nominal(variable_operational_cost_var)
-        # variable_operational_cost_coefficient = parameters[
-        #     f"{a}.variable_operational_cost_coefficient"
-        # ]
-        # timesteps = np.diff(self.times()) / 3600.0
-        #
-        # sum = 0.0
-        #
-        # for i in range(1, len(self.times())):
-        #     var_opex_dt = (variable_operational_cost_coefficient * heat_ates[i]
-        #     * timesteps[i - 1])
-        #     constraints.append(((varOPEX-var_opex_dt)/nominal,0.0, np,inf))
-        #     #varOPEX would be a variable>0 for everyt timestep
-        #     sum += varOPEX
-        # constraints.append(((variable_operational_cost - sum) / (nominal), 0.0, 0.0))
-
         for electrolyzer in self.energy_system_components.get("electrolyzer", []):
             power_consumer = self.__state_vector_scaled(
                 f"{electrolyzer}.Gas_mass_flow_out", ensemble_member
@@ -1213,7 +1178,6 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
 
         for ates in self.energy_system_components.get("ates", []):
-            # Todo: This cost component still is not fully functioning
             ates_is_charging = self.__state_vector_scaled(f"{ates}__is_charging", ensemble_member)
             heat_ates = self.__state_vector_scaled(f"{ates}.Heat_ates", ensemble_member)
 
@@ -1255,8 +1219,13 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 self.esdl_assets[asset_id].attributes["maxChargeRate"],
                 self.esdl_assets[asset_id].attributes["maxDischargeRate"],
             )
+            aggregation_count = self.esdl_assets[asset_id].attributes["aggregationCount"]
             big_m = (
-                2 * variable_operational_cost_coefficient * max_carge_discarge_rate * timesteps[0]
+                2
+                * variable_operational_cost_coefficient
+                * max_carge_discarge_rate
+                * aggregation_count
+                * timesteps[0]
             )
             ates_sum = 0.0
             for i in range(0, len(self.times())):
