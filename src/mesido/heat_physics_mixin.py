@@ -2422,7 +2422,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         #         np.inf,
                         #     )
                         # )
-                        a = 1.6e-4
+                        a = 1.4e-4 #1.6e-4
                         constraints.append(
                             (
                                 (
