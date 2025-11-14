@@ -129,6 +129,9 @@ class TestEndScenarioSizing(TestCase):
             np.testing.assert_allclose(
                 variable_operational_cost, self.results[f"{asset}__variable_operational_cost"]
             )
+            np.testing.assert_allclose(
+                variable_operational_cost, np.sum(self.results[f"{asset}__variable_operational_cost_per_time"])
+            )
 
     def test_end_scenario_sizing_staged(self):
         """
