@@ -1,7 +1,7 @@
-# [Unreleased-main] - 2025-11-07
+# [Unreleased-main] - 2025-11-13
 
 ## Added
-- xx
+- Variable operational cost of ATES is added to objective function
 
 ## Changed
 - xx
