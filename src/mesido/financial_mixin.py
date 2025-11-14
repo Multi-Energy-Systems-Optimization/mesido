@@ -1220,7 +1220,8 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             ates_sum = 0.0
             for i in range(0, len(self.times())):
                 var_opex_dt = variable_operational_cost_coefficient * heat_ates[i] * timesteps[i]
-                # ates_variable_operational_cost_per_time is equal to the absolute value of var_opex_dt
+                # ates_variable_operational_cost_per_time is equal to
+                # the absolute value of var_opex_dt
                 constraints.append(
                     (
                         (
