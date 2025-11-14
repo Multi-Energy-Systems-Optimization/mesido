@@ -77,7 +77,7 @@ jobs:
   test_main_2:
     name: Test main - 2
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 7
     if: ${{ !github.event.pull_request.draft }}
     env:
       TOXENV: py311
