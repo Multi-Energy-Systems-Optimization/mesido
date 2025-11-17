@@ -603,7 +603,11 @@ class SettingsStaged:
         if self._stage == 1:
             options["neglect_pipe_heat_losses"] = True
         elif self._stage == 2:
-            options["heat_loss_disconnected_pipe"] = False
+            # only if there are producer profiles available for a heat_source, set the
+            # heat_loss_disconnected_pipe option to False.
+            for asset in self.energy_system_components.get("heat_source", []):
+                if f"{asset}.maximum_heat_source" in self.io.get_timeseries_names():
+                    options["heat_loss_disconnected_pipe"] = False
 
         return options
 
