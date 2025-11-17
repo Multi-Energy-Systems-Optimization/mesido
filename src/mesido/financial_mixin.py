@@ -1013,6 +1013,29 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
             constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
 
+        for s in self.energy_system_components.get("airco", []):
+            heat_source = self.__state_vector_scaled(f"{s}.Heat_flow", ensemble_member)
+            variable_operational_cost_var = self._asset_variable_operational_cost_map[s]
+            variable_operational_cost = self.extra_variable(
+                variable_operational_cost_var, ensemble_member
+            )
+            nominal = self.variable_nominal(variable_operational_cost_var)
+            variable_operational_cost_coefficient = parameters[
+                f"{s}.variable_operational_cost_coefficient"
+            ]
+            timesteps = np.diff(self.times()) / 3600.0
+
+            # We assume that only one electricity carrier is specified, to compute the cost with.
+            # Otherwise we need to link the electricity carrier somehow to the source and pump asset
+            # which is lots of extra effort for the user.
+            assert len(self.get_electricity_carriers().keys()) <= 1
+
+            sum = 0.0
+            for i in range(1, len(self.times())):
+                sum += variable_operational_cost_coefficient * heat_source[i] * timesteps[i - 1]
+
+            constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
+
         for gs in self.energy_system_components.get("gas_source", []):
             gas_produced_g_s = self.__state_vector_scaled(
                 f"{gs}.Gas_source_mass_flow", ensemble_member

@@ -45,6 +45,7 @@ class MinimizeTCO(Goal):
                 "heat_buffer",
                 "gas_source",  # TODO still to add other costs for this asset_type
                 "electricity_source",  # TODO still to add other costs for this asset_type
+                "airco",
             },
             "fixed_operational": {
                 "heat_source",
