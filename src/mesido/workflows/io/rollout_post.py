@@ -1,15 +1,14 @@
 import os
 
-import matplotlib.patches as mpatches
-
 from esdl import esdl
+from esdl.esdl_handler import EnergySystemHandler
+
+import matplotlib.patches as mpatches
 from matplotlib import pyplot as plt
 
-import numpy as np
-
-
-from esdl.esdl_handler import EnergySystemHandler
 from mesido.post_processing.post_processing_utils import extract_data_results_alias
+
+import numpy as np
 
 
 class RollOutPost:
@@ -264,7 +263,8 @@ class RollOutPost:
                 variable_operational_cost_coeff = parameters[
                     f"{asset_name}.variable_operational_cost_coefficient"
                 ]
-                # fixed_operational_cost = optimization_problem._asset_fixed_operational_cost_map.get(
+                # fixed_operational_cost =
+                # optimization_problem._asset_fixed_operational_cost_map.get(
                 #     asset_name)
                 heat_flow_var = self.results[f"{asset_name}.Heat_flow"]
                 max_power = 0.0
@@ -361,7 +361,8 @@ class RollOutPost:
     #             if 1 in is_placed_list:
     #                 idx = np.round(is_placed_list.index(1))
     #                 if idx == i - 1:
-    #                     plot_size = np.round(max(results[f"{asset.name}.Heat_demand"]) / 1.0e6 * 3)
+    #                     plot_size =
+    #                         np.round(max(results[f"{asset.name}.Heat_demand"]) / 1.0e6 * 3)
     #                     plt.plot(line_x, line_y, "o", color=color[int(idx)], markersize=plot_size)
     #                     # line.set_data(line_x, line_y)
     #         if (

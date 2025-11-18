@@ -361,7 +361,7 @@
         <port xsi:type="esdl:InPort" id="ee6d54fe-eb02-4ed5-998b-e8a002e93770" name="In" connectedTo="b492d36d-73aa-478b-80eb-a1b4851580a5" carrier="9f6aeb1a-138b-4bb9-9a09-d524e94658e6"/>
         <port xsi:type="esdl:OutPort" id="436f4984-1634-4c95-bb58-706678112e05" name="Out" connectedTo="aaf4710f-7cc4-47c4-92ca-f281b215f3d4" carrier="9f6aeb1a-138b-4bb9-9a09-d524e94658e6_ret"/>
       </asset>
-      <asset xsi:type="esdl:Pipe" id="198cc55b-f3c3-4a47-9f38-13999a947d58" name="Pipe_198c" innerDiameter="0.3938" outerDiameter="0.56" diameter="DN400" length="233.5">
+      <asset xsi:type="esdl:Pipe" id="198cc55b-f3c3-4a47-9f38-13999a947d58" name="Pipe_198_ret" innerDiameter="0.3938" outerDiameter="0.56" diameter="DN400" length="233.5">
         <dataSource xsi:type="esdl:DataSource" name="Logstor Product Catalogue Version 2020.03" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf"/>
         <costInformation xsi:type="esdl:CostInformation" id="f46fa939-146f-4194-b756-bf9d5a3db68a">
           <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="2ab2214c-8d42-4b74-877f-7fb97f6eab86" value="2840.6">

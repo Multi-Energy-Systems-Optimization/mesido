@@ -2,15 +2,15 @@ from pathlib import Path
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.workflows import run_end_scenario_sizing
+from mesido.workflows.io.rollout_post import RollOutPost
 from mesido.workflows.rollout_workflow import (
     RollOutProblem,
     SolverCPLEX,
 )  # not yet added to init of workflows
 
 # as this is still work in progress, and shouldn't be used yet.
-from mesido.esdl.profile_parser import ProfileReaderFromFile
+# from mesido.esdl.profile_parser import ProfileReaderFromFile
 
-from mesido.workflows.io.rollout_post import RollOutPost
 
 if __name__ == "__main__":
     import time

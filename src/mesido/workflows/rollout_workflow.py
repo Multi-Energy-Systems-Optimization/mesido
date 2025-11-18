@@ -16,7 +16,8 @@ from mesido.workflows.goals.rollout_goal import (
 )
 from mesido.workflows.io.write_output import ScenarioOutput
 from mesido.workflows.utils.adapt_profiles import (
-    adapt_hourly_profile_averages_timestep_size,
+    # adapt_hourly_profile_averages_timestep_size,
+    adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
     adapt_profile_for_initial_hour_timestep_size,
     adapt_profile_to_copy_for_number_of_years,
 )
@@ -89,14 +90,18 @@ class RollOutProblem(
         # self._timestep_size is currently affecting the code
         self._timestep_size = kwargs.get("_timestep_size", 30 * 24)
         self._timesteps_per_year = int(365 / (self._timestep_size / 24)) + 1
-        self._timesteps_per_year = (
-            self._timesteps_per_year + 1
-        )  # + 1 because of inserting an 1-hour timestep at the beginning of the year,
-        # see adapt_profile_for_initial_hour_timestep_size()
+        self._timesteps_per_year += 1 + 25
+        # + 1 because of inserting an 1-hour timestep at the beginning of the year,
+        # (see adapt_profile_for_initial_hour_timestep_size)
+        # + 25 needed if peak day is included with hourly timesteps
+        # (see adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day)
 
         # TODO: get yearly max capex from input
         self._yearly_max_capex = (
             6.0e6 if "yearly_max_capex" not in kwargs else kwargs["yearly_max_capex"]
+        )
+        self._yearly_max_pipe_length = (
+            1.0e3 if "yearly_max_pipe_length" not in kwargs else kwargs["yearly_max_pipe_length"]
         )
         self._years_timestep_max_capex = self._yearly_max_capex * self._horizon / self._years
 
@@ -154,13 +159,26 @@ class RollOutProblem(
 
         # Create yearly profile with desired coarser time-step size by
         # averaging over the hourly data
-        adapt_hourly_profile_averages_timestep_size(self, self._timestep_size)
+        # adapt_hourly_profile_averages_timestep_size(self, self._timestep_size)
+
+        # Adapt yearly profile with hourly time steps to a common profile (averaged profile except
+        # for the day with the peak demand).
+        (
+            self.__problem_indx_max_peak,
+            self.__heat_demand_nominal,
+            self.__cold_demand_nominal,
+        ) = adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(
+            self,
+            self._timestep_size // 24,  # number of days in timestep TODO check if this is correct
+        )
 
         # A small, (1 hour) timestep is inserted as first time step. This is used in the
         # rollout workflow to allow a yearly change in the storage of the ATES system.
         # The first time step is used to accommodate the (yearly) initial storage
         # level of the ATES.
         adapt_profile_for_initial_hour_timestep_size(self)
+        # This also affects self.__problem_indx_max_peak, which is now increased by 1
+        self.__problem_indx_max_peak += 1
 
         # Adapt the profiles to copy for the number of years
         adapt_profile_to_copy_for_number_of_years(self, self._years)
@@ -174,7 +192,8 @@ class RollOutProblem(
             "Note: The rollout workflow is still under development and not fully tested yet."
         )
 
-        asset_types = ["low_temperature_ates", "heat_buffer", "geothermal_source", "heat_pump"]
+        # asset_types = ["low_temperature_ates", "heat_buffer", "geothermal_source", "heat_pump"]
+        asset_types = ["low_temperature_ates", "geothermal_source", "heat_pump"]
         for asset_type in asset_types:
             if len(self.energy_system_components.get(asset_type, [])) > 0:
                 logger.error(
@@ -469,56 +488,26 @@ class RollOutProblem(
         """
         constraints = []
 
-        bounds = self.bounds()
         parameters = self.parameters(ensemble_member)
 
-        # Constraint to set yearly maximum CAPEX
-        # TODO: CAPEX constraint sources and demands now total capex not yet possible to use
-        #  fraction placed variables.
-        cumulative_pipe_length_prev_year = 0
+        allowed_length = self._yearly_max_pipe_length * self._horizon / self._years
+        total_length = 0
         for y in range(self._years):
             cumulative_pipe_length = 0
-
-            # pipes
-            # for p in self.hot_pipes:
             for p in self.energy_system_components.get("heat_pipe", []):
-                pipe_placement = self.extra_variable(
-                    self._asset_is_realized_map[p][y]
-                    # f"{p}__asset_is_realized_{y}"
-                )
+                pipe_placement = self.extra_variable(self._asset_is_realized_map[p][y])
                 pipe_length = parameters[f"{p}.length"]
-                # print(p, pipe_length, bounds[self._asset_is_realized_map[p][y]])
                 cumulative_pipe_length += pipe_placement * pipe_length
+            used_length_year = cumulative_pipe_length - total_length
+            total_length += used_length_year
 
-            # TODO: should be set by kwargs
-            year_pipe_length = 1.0e3  # m per year
-            #TODO: get the differences per year to work
-            # if y == 0:
-            #     constraints.append(((year_pipe_length*self._horizon/self._years - cumulative_pipe_length) /
-            #                         year_pipe_length,
-            #                         0.0, np.inf))
-            # else:
-            # constraints.append(
-            #     (
-            #         (year_pipe_length*self._horizon/self._years - (cumulative_pipe_length - cumulative_pipe_length_prev_year))
-            #         / year_pipe_length,
-            #         0.0,
-            #         np.inf,
-            #     )
-            # )
-            if y > -1.0:
-                constraints.append(
-                    (
-                        (
-                            year_pipe_length * self._horizon / self._years * (y + 1)
-                            - cumulative_pipe_length
-                        )
-                        / year_pipe_length,
-                        0.0,
-                        np.inf,
-                    )
+            constraints.append(
+                (
+                    (allowed_length - used_length_year) / self._yearly_max_pipe_length,
+                    0.0,
+                    np.inf,
                 )
-            # cumulative_pipe_length_prev_year = cumulative_pipe_length
+            )
 
         return constraints
 
@@ -613,21 +602,22 @@ class RollOutProblem(
     def __heat_buffer_peak_day_constraints(self, ensemble_member):
         constraints = []
         for b in self.energy_system_components.get("heat_buffer", {}):
-            #TODO: check constraint, normalisation and the upper and lower bound (tolerance).
-            # Also to be checked in test
+            nominal = self.variable_nominal(f"{b}.Stored_heat")
             vars = self.__state_vector_scaled(f"{b}.Heat_buffer", ensemble_member)
             symbol_stored_heat = self.state_vector(f"{b}.Stored_heat")
-            # constraints.append((symbol_stored_heat[self.__problem_indx_max_peak], 0.0, 0.0))
             for year in range(self._years):
                 for i in range(self._timesteps_per_year):
-                    a = self.__problem_indx_max_peak
+                    if i == self.__problem_indx_max_peak:
+                        constraints.append(
+                            (symbol_stored_heat[self.__problem_indx_max_peak] / nominal, 0.0, 0.0)
+                        )
                     if not (
                         i > self.__problem_indx_max_peak - 1
                         and i < (self.__problem_indx_max_peak + 23 + 1)
                     ):
                         constraints.append(
-                            (vars[i + year * self._timesteps_per_year], -1.0e3, 1.0e3)
-                        )
+                            (vars[i + year * self._timesteps_per_year] / nominal, -1.0e-6, 1.0e-6)
+                        )  # both values taking 0.0 lead to infeasibility
 
         return constraints
 
