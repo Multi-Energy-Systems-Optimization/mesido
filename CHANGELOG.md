@@ -1,10 +1,21 @@
-# [Unreleased-main] - 2025-11-07
+# [Unreleased-main] - 2025-11-19
 
 ## Added
 - xx
 
 ## Changed
 - xx
+
+## Fixed
+- xx
+
+# [0.1.15] - 2025-11-19
+
+## Added
+- xx
+
+## Changed
+- Reduce computational effort stage 2 grow_workflow -> options["heat_loss_disconnected_pipe"] setting
 
 ## Fixed
 - xx
