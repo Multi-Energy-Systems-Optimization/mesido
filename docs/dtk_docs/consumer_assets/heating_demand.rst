@@ -3,6 +3,6 @@ HeatingDemand: Substation (WOS)
 
 Basic attributes
 
-Pots
+Ports
 
 Cost information

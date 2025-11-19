@@ -3,6 +3,6 @@ Heat Producer
 
 Basic attributes
 
-Pots
+Ports
 
 Cost information

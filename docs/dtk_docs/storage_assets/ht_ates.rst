@@ -3,6 +3,6 @@ HT-ATES (high)
 
 Basic attributes
 
-Pots
+Pors
 
 Cost information

@@ -3,6 +3,6 @@ Water to Water Heat Pump
 
 Basic attributes
 
-Pots
+Ports
 
 Cost information

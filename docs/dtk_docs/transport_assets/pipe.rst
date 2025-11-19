@@ -3,6 +3,6 @@ Pipe
 
 Basic attributes
 
-Pots
+Ports
 
 Cost information
