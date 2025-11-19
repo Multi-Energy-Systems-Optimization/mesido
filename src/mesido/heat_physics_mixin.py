@@ -2436,19 +2436,20 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                                 np.inf,
                             )
                         )
-                        # constraints.append(
-                        #     (
-                        #         (
-                        #                 ates_dt_loss_vec
-                        #                 - 1*(-a * ates_flow)
-                        #                 - big_m * (1.0 - ates_temperature_is_selected_vec)
-                        #                 - big_m * is_buffer_charging_vec
-                        #         )
-                        #         / ates_temperature_loss_nominal,
-                        #         -np.inf,
-                        #         0.0,
-                        #     )
-                        # )
+                        if self._stage == 1:
+                            constraints.append(
+                                (
+                                    (
+                                            ates_dt_loss_vec
+                                            - 1.05*(-a * ates_flow)
+                                            - big_m * (1.0 - ates_temperature_is_selected_vec)
+                                            - big_m * is_buffer_charging_vec
+                                    )
+                                    / ates_temperature_loss_nominal,
+                                    -np.inf,
+                                    0.0,
+                                )
+                            )
 
                         # #under charge dt_loss=0
                         # constraints.append(
