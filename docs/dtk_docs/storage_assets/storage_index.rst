@@ -6,4 +6,5 @@ Storage Assets
    :maxdepth: 5
    :numbered:
 
+   heat_storage
    ht_ates

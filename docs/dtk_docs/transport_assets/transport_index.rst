@@ -6,3 +6,4 @@ Transport Assets
    :numbered:
 
    pipe
+   heat_exchange
