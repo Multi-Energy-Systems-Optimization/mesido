@@ -4,15 +4,19 @@ Water to Water Heat Pump
 
 
 .. list-table:: Asset Attributes
-   :widths: 30 25 25 25 25 25 50
+   :widths: 35 25 60 25 25 35 70
    :header-rows: 1
 
    * - ESDL attribute category
      - ESDL attribute
      - Definition
+
+       (as interpreted by the simulator / optimizer)
      - Units
      - Required/Optional
      - Default value
+
+       (in the front end)
      - Optimizer use
    * - Basic attributes
      - Name
@@ -32,5 +36,100 @@ Water to Water Heat Pump
 
        OPTIONAL:
        allows the optimizer to determine if the asset is required
+
        (if not then it will be removed from the network), else if
+
        the asset is required then it will be sized appropriately"
+
+   * - Basic attributes
+     - Technical Lifetime
+     - Operational lifetime of the asset (min=1, max 50)
+     - Years
+     - Optional
+     - \-
+     - Once-off costs occur once per lifetime span
+   * - Basic attributes
+     - Power
+     - Size of the heat pump in terms electical power input.
+
+       Must be > 0.0
+     - Watts
+     - Required
+     - 5000000
+     - The electrical power capacity is used in conjuction with the COP
+
+       to determine the heat produced on the heat pump secondary side
+
+       If state=OPTIONAL: the Power is used as the upper limit for sizing the asset
+
+   * - Basic attributes
+     - COP
+     - Coefficient of performance of the heat pump
+     - \-
+     - Required
+     - 3.7
+     - See heat pump Power attribute
+   * - Ports
+     - Inport and OutPort (2 of each)
+     - Both the primary and secondary sides of heat pump have in-port
+
+       and out-port.
+
+       Required port naming convention is PrimIn, PrimOut, SecIn, SecOut.
+
+       The primary and secondary side should be connected to hydraulically
+
+       decoupled networks.
+
+       Each port must have a carrier assigned to it.
+
+       Required carrier temperatures are :math:`T_{PrimIn} > T_{PrimOut}`
+
+       & :math:`T_{SecOut} > T_{SecIn}`
+     - \-
+     - Required
+     - \-
+     - Heat is transferred from the primary side to the secondary side
+
+       (2 hydraulically decoupled networks).
+   * - Cost Information
+     - Investment Costs
+     - CAPEX: Once-off cost linked to the size (secondary heat produced) of the asset
+     - EUR/MW
+     - Required
+     - \-
+     - \-
+   * - Cost Information
+     - Installation Costs
+     - CAPEX: Once-off cost
+     - EUR
+     - Required
+     - \-
+     - \-
+   * - Cost Information
+     - Variable Operational Costs
+     - OPEX: cost linked to electrical power consumption over time of the asset
+     - EUR/MWh
+     - Required
+     - \-
+     - \-
+   * - Cost Information
+     - Fixed Maintenance Costs
+     - OPEX: Cost per year linked to the size (secondary heat produced)  of the asset
+     - EUR/MW or
+       EUR/MW/yr or
+       EUR/kW or
+       EUR/kW/yr
+     - Optional
+     - \-
+     - \-
+   * - Cost Information
+     - Fixed Operational Costs
+     - OPEX: Cost per year linked to the size  (secondary heat produced)  of the asset
+     - EUR/MW or
+       EUR/MW/yr or
+       EUR/kW or
+       EUR/kW/yr
+     - Optional
+     - \-
+     - \-
