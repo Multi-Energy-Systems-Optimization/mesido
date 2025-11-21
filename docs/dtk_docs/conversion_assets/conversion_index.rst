@@ -2,7 +2,7 @@ Conversion Assets
 ==================
 
 .. toctree::
-   :maxdepth: 5
+   :maxdepth: 1
    :numbered:
 
    water_to_water_heat_pump

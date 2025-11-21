@@ -2,8 +2,7 @@ Design Tool Kit Documentation
 =============================
 
 .. toctree::
-   :maxdepth: 5
-   :numbered:
+   :maxdepth: 2
 
    conversion_assets/conversion_index
    production_assets/production_index

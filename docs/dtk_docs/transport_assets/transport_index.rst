@@ -2,7 +2,7 @@ Transport Assets
 ==================
 
 .. toctree::
-   :maxdepth: 5
+   :maxdepth: 1
    :numbered:
 
    pipe

@@ -1,9 +1,8 @@
 Storage Assets
 ==============
 
-
 .. toctree::
-   :maxdepth: 5
+   :maxdepth: 1
    :numbered:
 
    heat_storage
