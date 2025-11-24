@@ -7,18 +7,6 @@
 - xx
 
 ## Fixed
-- xx
-
-
-# [0.1.16] - 2025-11-24
-
-## Added
-- xx
-
-## Changed
-- xx
-
-## Fixed
 - Include GenericProducer in producer profile reading from influx
 
 
