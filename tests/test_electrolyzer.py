@@ -6,6 +6,7 @@ from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.network_common import NetworkSettings
 from mesido.util import run_esdl_mesido_optimization
+from mesido.workflows.utils.error_types import NO_POTENTIAL_ERRORS_CHECK
 
 import numpy as np
 
@@ -47,6 +48,7 @@ class TestElectrolyzer(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_electrolyzer_general.csv",
+            error_type_check=NO_POTENTIAL_ERRORS_CHECK,
         )
 
         results = solution.extract_results()
@@ -73,8 +75,12 @@ class TestElectrolyzer(TestCase):
             np.testing.assert_allclose(
                 v_inspect[iv] / solution.gas_network_settings["maximum_velocity"] * head_loss_max,
                 2.1760566566624733,
+                rtol=1e-6,
+                atol=1e-12,
             )
-            np.testing.assert_allclose(-results["Pipe_6ba6.dH"][iv], 2.1760566566624733)
+            np.testing.assert_allclose(
+                -results["Pipe_6ba6.dH"][iv], 2.1760566566624733, rtol=1e-6, atol=1e-12
+            )
 
         gas_price_profile = "Hydrogen.price_profile"
         state = "GasDemand_0cf3.Gas_demand_mass_flow"
@@ -266,6 +272,7 @@ class TestElectrolyzer(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_minimum_electrolyzer_power.csv",
+            error_type_check=NO_POTENTIAL_ERRORS_CHECK,
         )
 
         results = solution.extract_results()
@@ -302,17 +309,17 @@ class TestElectrolyzer(TestCase):
             np.ones(2),
         )
         # Check electrolyzer input power
-        # np.testing.assert_allclose(
-        #     results["Electrolyzer_fc66.ElectricityIn.Power"],
-        #     [ 1.00000000e+08,  1.00000000e+08, -3.59365315e-05],
-        #     atol=1e-4,
-        # )
+        np.testing.assert_allclose(
+            results["Electrolyzer_fc66.ElectricityIn.Power"],
+            [1.00000000e08, 1.00000000e08, -3.59365315e-05],
+            atol=1e-4,
+        )
         # Check electrolyzer output massflow
-        # np.testing.assert_allclose(
-        #     results["Electrolyzer_fc66.Gas_mass_flow_out"],
-        #     [431.367058, 431.367058,   0.      ],
-        #     atol=1e-4,
-        # )
+        np.testing.assert_allclose(
+            results["Electrolyzer_fc66.Gas_mass_flow_out"],
+            [431.367058, 431.367058, 0.0],
+            atol=1e-4,
+        )
 
     def test_electrolyzer_constant_efficiency(self):
         """
@@ -339,6 +346,7 @@ class TestElectrolyzer(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_electrolyzer_general.csv",
+            error_type_check=NO_POTENTIAL_ERRORS_CHECK,
         )
 
         results = solution.extract_results()
@@ -351,11 +359,11 @@ class TestElectrolyzer(TestCase):
         )
 
         # Check input power values. Not really needed since the massflow check is equivalent
-        # np.testing.assert_allclose(
-        #     results["Electrolyzer_fc66.ElectricityIn.Power"],
-        #     [1.00000000e+08, 1.00000000e+08, 1.00000000e+08],
-        #     atol=1e-4,
-        # )
+        np.testing.assert_allclose(
+            results["Electrolyzer_fc66.ElectricityIn.Power"],
+            [1.00000000e08, 1.00000000e08, 1.00000000e08],
+            atol=1e-4,
+        )
         # Check output massflow values
         np.testing.assert_allclose(
             results["Electrolyzer_fc66.Gas_mass_flow_out"],
@@ -390,6 +398,7 @@ class TestElectrolyzer(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_equality_constraints.csv",
+            error_type_check=NO_POTENTIAL_ERRORS_CHECK,
         )
 
         results = solution.extract_results()
@@ -469,6 +478,7 @@ class TestElectrolyzer(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_minimum_electrolyzer_power.csv",
+            error_type_check=NO_POTENTIAL_ERRORS_CHECK,
         )
 
         results = solution.extract_results()

@@ -1,4 +1,27 @@
-# [Unreleased-main] - 2025-11-06
+# [Unreleased-main] - 2025-11-19
+
+## Added
+- xx
+
+## Changed
+- xx
+
+## Fixed
+- xx
+
+# [0.1.15] - 2025-11-19
+
+## Added
+- xx
+
+## Changed
+- Reduce computational effort stage 2 grow_workflow -> options["heat_loss_disconnected_pipe"] setting
+
+## Fixed
+- xx
+
+
+# [0.1.14] - 2025-11-07
 
 ## Added
 - Elect test for air_to_water_heat_pump_elec
@@ -14,7 +37,9 @@
 - A new type of potential error is added if the profile name indicated in esdl is not available in the database.
 - Parsing of emission factors for specific sources not related to carriers.
 - Capability of ResidualHeatSource and GeothermalHeatSource to also have profile constraints that can be read from InfluxDB
+- Writing KPIs back for discounted CAPEX
 - Roll out workflow setup.
+- Improved error handling for asset cost information to prevent potential failures and ensure more robust processing of asset-related data.
 
 ## Changed
 - Removed support of python versions 3.9 and older.

@@ -231,8 +231,11 @@ class EndScenarioSizing(
     2. minimize TCO = Capex + Opex*lifetime
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, error_type_check: str = HEAT_NETWORK_ERRORS, *args, **kwargs) -> None:
         reset_potential_errors()  # This needed to clear the Singleton which is persistent
+
+        # Set error type check before calling super().__init__ so it's available during init
+        self._error_type_check = error_type_check
 
         super().__init__(*args, **kwargs)
 
@@ -287,7 +290,7 @@ class EndScenarioSizing(
         """
         super().read()
 
-        potential_error_to_error(HEAT_NETWORK_ERRORS)
+        potential_error_to_error(self._error_type_check)
 
         (
             self.__indx_max_peak,
@@ -600,7 +603,12 @@ class SettingsStaged:
         if self._stage == 1:
             options["neglect_pipe_heat_losses"] = True
         elif self._stage == 2:
-            options["heat_loss_disconnected_pipe"] = False
+            # If at least 1 heat_source has a producer profile assigned, set the
+            # heat_loss_disconnected_pipe option to False
+            for asset in self.energy_system_components.get("heat_source", []):
+                if f"{asset}.maximum_heat_source" in self.io.get_timeseries_names():
+                    options["heat_loss_disconnected_pipe"] = False
+                    break
 
         return options
 

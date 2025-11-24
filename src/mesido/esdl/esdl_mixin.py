@@ -435,13 +435,19 @@ class ESDLMixin(
 
         Returns
         -------
-        dict with estimated and maximum velocity
+        dict with estimated and maximum velocity, and error type check setting for asset converters
         """
         energy_system_options = self.energy_system_options()
         v_nominal = energy_system_options["estimated_velocity"]
         v_max = self.heat_network_settings["maximum_velocity"]
         v_max_gas = self.gas_network_settings["maximum_velocity"]
-        return dict(v_nominal=v_nominal, v_max=v_max, v_max_gas=v_max_gas)
+
+        # Pass error type check setting to asset converter
+        error_type_check = getattr(self, "_error_type_check", None)
+
+        return dict(
+            v_nominal=v_nominal, v_max=v_max, v_max_gas=v_max_gas, error_type_check=error_type_check
+        )
 
     def esdl_qth_model_options(self) -> Dict:
         """
