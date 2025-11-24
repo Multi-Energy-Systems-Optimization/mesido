@@ -4,7 +4,7 @@
 - xx
 
 ## Changed
-- xx
+- Clean up of old code and removing duplicates.
 
 ## Fixed
 - xx
