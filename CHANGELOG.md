@@ -1,4 +1,4 @@
-# [Unreleased-main] - 2025-11-19
+# [Unreleased-main] - 2025-11-24
 
 ## Added
 - xx
@@ -8,6 +8,19 @@
 
 ## Fixed
 - xx
+
+
+# [0.1.16] - 2025-11-24
+
+## Added
+- xx
+
+## Changed
+- xx
+
+## Fixed
+- Include GenericProducer in producer profile reading from influx
+
 
 # [0.1.15] - 2025-11-19
 

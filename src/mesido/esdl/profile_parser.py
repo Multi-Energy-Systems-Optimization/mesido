@@ -210,6 +210,7 @@ class InfluxDBProfileReader(BaseProfileReader):
         esdl.esdl.HeatingDemand: ".target_heat_demand",
         esdl.esdl.GenericConsumer: ".target_heat_demand",
         esdl.esdl.HeatProducer: ".maximum_heat_source",
+        esdl.esdl.GenericProducer: ".maximum_heat_source",
         esdl.esdl.ElectricityDemand: ".target_electricity_demand",
         esdl.esdl.ElectricityProducer: ".maximum_electricity_source",
         esdl.esdl.GasDemand: ".target_gas_demand",
