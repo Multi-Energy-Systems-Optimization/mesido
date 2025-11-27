@@ -476,8 +476,20 @@ if __name__ == "__main__":
     a = TestEndScenarioSizing()
     a.setUpClass()
     a.test_end_scenario_sizing()
+    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
+
+    start_time = time.time()
     a.test_end_scenario_sizing_staged()
+    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
+
+    start_time = time.time()
     a.test_end_scenario_sizing_discounted()
+    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
+
+    start_time = time.time()
     a.test_end_scenario_sizing_head_loss()
+    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
+
+    start_time = time.time()
     a.test_end_scenario_sizing_pipe_catalog()
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
