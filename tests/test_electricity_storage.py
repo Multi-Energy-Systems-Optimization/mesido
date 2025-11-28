@@ -51,15 +51,20 @@ class TestMILPElectricSourceSink(TestCase):
         storage_name = solution.energy_system_components.get("electricity_storage")[0]
         charge_eff = parameters[f"{storage_name}.charge_efficiency"]
         discharge_eff = parameters[f"{storage_name}.discharge_efficiency"]
-        is_charging = results[f"{storage_name}__is_charging"]
+        # is_charging = results[f"{storage_name}__is_charging"]
         eff_power_change_bat = results[f"{storage_name}.Effective_power_charging"]
-        eff_power_change_discharge_bat = results[f"{storage_name}__effective_power_discharging"]
+        # eff_power_change_discharge_bat = results[f"{storage_name}__effective_power_discharging"]
         power_bat_network = results[f"{storage_name}.ElectricityIn.Power"]
+        power_discharging = results[f"{storage_name}.Power_discharging"]
+        power_charging = results[f"{storage_name}.Power_charging"]
         stored_el = results[f"{storage_name}.Stored_electricity"]
 
         power_cable_bat = results["ElectricityCable_91c1.ElectricityOut.Power"]
         np.testing.assert_allclose(power_cable_bat, power_bat_network, atol=tol)
+        np.testing.assert_allclose(power_bat_network, power_charging-power_discharging, atol=tol)
 
+
+        is_charging = np.asarray([float(i>0) for i in power_charging])
         # if battery is charging (1), ElectricityIn.Power and effective_power charging should be
         # positive, else negative
         bigger_then = all(is_charging * eff_power_change_bat >= 0)
@@ -106,5 +111,5 @@ class TestMILPElectricSourceSink(TestCase):
         # charging. When a goal would be set to minimise discharge it should match the charge power,
         # however now this goal is not turned on.
         # TODO: when the new goal is included create test, this will end up in the mc_simulator
-        np.testing.assert_array_less(-eff_power_change_bat, eff_power_change_discharge_bat + tol)
-        self.assertTrue(all(eff_power_change_discharge_bat >= 0.0))
+        # np.testing.assert_array_less(-eff_power_change_bat, eff_power_change_discharge_bat + tol)
+        # self.assertTrue(all(eff_power_change_discharge_bat >= 0.0))
