@@ -143,24 +143,24 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                     self.__electrolyzer_is_active_linear_segment_var[var_name] = ca.MX.sym(var_name)
                     self.__electrolyzer_is_active_linear_segment_bounds[var_name] = (0.0, 1.0)
 
-        for asset in [*self.energy_system_components.get("electricity_storage", [])]:
-            var_name = f"{asset}__is_charging"
-            self.__storage_charging_map[asset] = var_name
-            self.__storage_charging_var[var_name] = ca.MX.sym(var_name)
-            self.__storage_charging_bounds[var_name] = (0.0, 1.0)
-
-            if options["electricity_storage_discharge_variables"]:
-                bound_storage = -self.bounds()[f"{asset}.Effective_power_charging"][0]
-                if isinstance(bound_storage, Timeseries):
-                    bound_storage = copy.deepcopy(bound_storage)
-                    bound_storage.values[bound_storage.values < 0] = 0.0
-                var_name = f"{asset}__effective_power_discharging"
-                self.__electricity_storage_discharge_map[asset] = var_name
-                self.__electricity_storage_discharge_var[var_name] = ca.MX.sym(var_name)
-                self.__electricity_storage_discharge_bounds[var_name] = (0, bound_storage)
-                self.__electricity_storage_discharge_nominals[var_name] = self.variable_nominal(
-                    f"{asset}.Effective_power_charging"
-                )
+        # for asset in [*self.energy_system_components.get("electricity_storage", [])]:
+        #     var_name = f"{asset}__is_charging"
+        #     self.__storage_charging_map[asset] = var_name
+        #     self.__storage_charging_var[var_name] = ca.MX.sym(var_name)
+        #     self.__storage_charging_bounds[var_name] = (0.0, 1.0)
+        #
+        #     if options["electricity_storage_discharge_variables"]:
+        #         bound_storage = -self.bounds()[f"{asset}.Effective_power_charging"][0]
+        #         if isinstance(bound_storage, Timeseries):
+        #             bound_storage = copy.deepcopy(bound_storage)
+        #             bound_storage.values[bound_storage.values < 0] = 0.0
+        #         var_name = f"{asset}__effective_power_discharging"
+        #         self.__electricity_storage_discharge_map[asset] = var_name
+        #         self.__electricity_storage_discharge_var[var_name] = ca.MX.sym(var_name)
+        #         self.__electricity_storage_discharge_bounds[var_name] = (0, bound_storage)
+        #         self.__electricity_storage_discharge_nominals[var_name] = self.variable_nominal(
+        #             f"{asset}.Effective_power_charging"
+        #         )
 
         for asset in [*self.energy_system_components.get("electricity_source", [])]:
             if isinstance(self.bounds()[f"{asset}.Electricity_source"][1], Timeseries):
@@ -571,27 +571,50 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             curr_nom = self.variable_nominal(f"{asset}.ElectricityIn.I")
             power_in = self.state(f"{asset}.ElectricityIn.Power")
             current_in = self.state(f"{asset}.ElectricityIn.I")
+            power_discharging = self.state(f"{asset}.Power_discharging")
+            power_discharging_max = self.bounds()[f"{asset}.Power_discharging"][1]
+            power_charging = self.state(f"{asset}.Power_charging")
+            power_charging_max = self.bounds()[f"{asset}.Power_charging"][1]
 
             # is_charging is 1 if charging and powerin>0
             big_m = 2 * max(np.abs(self.bounds()[f"{asset}.ElectricityIn.Power"]))
-            is_charging = self.state(f"{asset}__is_charging")
-            constraints.append(((power_in + (1 - is_charging) * big_m) / power_nom, 0.0, np.inf))
-            constraints.append(((power_in - is_charging * big_m) / power_nom, -np.inf, 0.0))
+            # is_charging = self.state(f"{asset}__is_charging")
+            # constraints.append(((power_in + (1 - is_charging) * big_m) / power_nom, 0.0, np.inf))
+            # constraints.append(((power_in - is_charging * big_m) / power_nom, -np.inf, 0.0))
 
+            # constraints.append(
+            #     (
+            #         (power_in - min_voltage * current_in + (1 - is_charging) * big_m)
+            #         / (power_nom * curr_nom * min_voltage) ** 0.5,
+            #         0,
+            #         np.inf,
+            #     )
+            # )
+            # constraints.append(
+            #     (
+            #         (power_in - min_voltage * current_in - (1 - is_charging) * big_m)
+            #         / (power_nom * curr_nom * min_voltage) ** 0.5,
+            #         -np.inf,
+            #         0,
+            #     )
+            # )
+
+            # if the storage is discharging, current_in would be negative.
             constraints.append(
                 (
-                    (power_in - min_voltage * current_in + (1 - is_charging) * big_m)
+                    (power_charging - min_voltage * current_in)
                     / (power_nom * curr_nom * min_voltage) ** 0.5,
-                    0,
+                    0.0,
                     np.inf,
                 )
             )
+            #to ensure power_charging is equal to min_voltage*current, only when charging
             constraints.append(
                 (
-                    (power_in - min_voltage * current_in - (1 - is_charging) * big_m)
+                    (power_charging - min_voltage * current_in - power_discharging)
                     / (power_nom * curr_nom * min_voltage) ** 0.5,
                     -np.inf,
-                    0,
+                    0.0,
                 )
             )
 
@@ -599,34 +622,58 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             eff_power = self.state(f"{asset}.Effective_power_charging")
             discharge_eff = parameters[f"{asset}.discharge_efficiency"]
             charge_eff = parameters[f"{asset}.charge_efficiency"]
-            # charging
+            #moved to electricity_storage
+            # # charging
+            # constraints.append(
+            #     (
+            #         (eff_power - charge_eff * power_in + (1 - is_charging) * big_m) / power_nom,
+            #         0,
+            #         np.inf,
+            #     )
+            # )
+            # constraints.append(
+            #     (
+            #         (eff_power - charge_eff * power_in - (1 - is_charging) * big_m) / power_nom,
+            #         -np.inf,
+            #         0,
+            #     )
+            # )
+            # # discharging
+            # constraints.append(
+            #     (
+            #         (eff_power * discharge_eff - power_in + is_charging * big_m) / power_nom,
+            #         0,
+            #         np.inf,
+            #     )
+            # )
+            # constraints.append(
+            #     (
+            #         (eff_power * discharge_eff - power_in - is_charging * big_m) / power_nom,
+            #         -np.inf,
+            #         0,
+            #     )
+            # )
+
+            # # can be moved to asset problem.
+            # constraints.append(
+            #     (
+            #         (eff_power - charge_eff * power_charging + 1/discharge_eff * power_discharging)
+            #         / power_nom,
+            #         0,
+            #         0.0,
+            #     )
+            # )
+            # reduces problem size
+            # charging/max_charging + discharging/max_discharging <=1
             constraints.append(
                 (
-                    (eff_power - charge_eff * power_in + (1 - is_charging) * big_m) / power_nom,
-                    0,
-                    np.inf,
-                )
-            )
-            constraints.append(
-                (
-                    (eff_power - charge_eff * power_in - (1 - is_charging) * big_m) / power_nom,
+                    (
+                        power_charging/power_charging_max +
+                        power_discharging/power_discharging_max -1
+                    )
+                    / power_nom,
                     -np.inf,
-                    0,
-                )
-            )
-            # discharging
-            constraints.append(
-                (
-                    (eff_power * discharge_eff - power_in + is_charging * big_m) / power_nom,
-                    0,
-                    np.inf,
-                )
-            )
-            constraints.append(
-                (
-                    (eff_power * discharge_eff - power_in - is_charging * big_m) / power_nom,
-                    -np.inf,
-                    0,
+                    0.0,
                 )
             )
 
@@ -649,18 +696,18 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         constraints = []
         options = self.energy_system_options()
 
-        if options["electricity_storage_discharge_variables"]:
-            for storage in self.energy_system_components.get("electricity_storage", []):
-                storage_eff_power_charge_var = self.state(f"{storage}.Effective_power_charging")
-                discharge_var_name = self.__electricity_storage_discharge_map[storage]
-                storage_discharge_var = self.__electricity_storage_discharge_var[discharge_var_name]
-                nominal = self.variable_nominal(discharge_var_name)
-
-                # P_effective_charge represents both charging and discharing based on the sign.
-                # P_discharge >= -P_effective_charge
-                constraints.append(
-                    ((storage_discharge_var + storage_eff_power_charge_var) / nominal, 0.0, np.inf)
-                )
+        # if options["electricity_storage_discharge_variables"]:
+        #     for storage in self.energy_system_components.get("electricity_storage", []):
+        #         storage_eff_power_charge_var = self.state(f"{storage}.Effective_power_charging")
+        #         discharge_var_name = self.__electricity_storage_discharge_map[storage]
+        #         storage_discharge_var = self.__electricity_storage_discharge_var[discharge_var_name]
+        #         nominal = self.variable_nominal(discharge_var_name)
+        #
+        #         # P_effective_charge represents both charging and discharging based on the sign.
+        #         # P_discharge >= -P_effective_charge
+        #         constraints.append(
+        #             ((storage_discharge_var + storage_eff_power_charge_var) / nominal, 0.0, np.inf)
+        #         )
 
         return constraints
 

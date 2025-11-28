@@ -301,8 +301,8 @@ class MultiCommoditySimulator(
             "gas_source": "Gas_source_mass_flow",
             "gas_tank_storage": {"charge": "Gas_tank_flow", "discharge": "__Q_discharge"},
             "electricity_storage": {
-                "charge": "Effective_power_charging",
-                "discharge": "__effective_power_discharging",
+                "charge": "Power_charging",
+                "discharge": ".Power_discharging",
             },
             "electrolyzer": "Power_consumed",
         }

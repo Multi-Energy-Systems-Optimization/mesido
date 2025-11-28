@@ -50,6 +50,36 @@ class ElectricityStorage(ElectricityComponent, BaseAsset):
             nominal=self.ElectricityIn.Power.nominal,
             max=self.ElectricityIn.Power.max,
         )
+        self.add_variable(
+            Variable,
+            "Power_charging",
+            min=0.0,
+            max=self.ElectricityIn.Power.max,
+            nominal=self.ElectricityIn.Power.nominal,
+        )
+        self.add_variable(
+            Variable,
+            "Power_discharging",
+            min=0.0,
+            max=self.ElectricityIn.Power.max,
+            nominal=self.ElectricityIn.Power.nominal,
+        )
+
+        self.add_equation(
+            (
+                (self.ElectricityIn.Power - (self.Power_charging-self.Power_discharging))
+                / self.ElectricityIn.Power.nominal
+            )
+        )
+
+        self.add_equation(
+            (
+                (self.Effective_power_charging - self.charge_efficiency * self.Power_charging +
+                 1/self.discharge_efficiency * self.Power_discharging
+                )
+                / self.ElectricityIn.Power.nominal
+            )
+        )
 
         self.add_equation(
             (
