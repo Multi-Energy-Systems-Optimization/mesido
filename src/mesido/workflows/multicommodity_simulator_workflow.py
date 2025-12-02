@@ -36,7 +36,7 @@ DB_NAME = "Warmtenetten"
 DB_USER = "admin"
 DB_PASSWORD = "admin"
 
-logger = logging.getLogger("WarmingUP-MPC")
+logger = logging.getLogger("mesido")
 logger.setLevel(logging.INFO)
 
 locale.setlocale(locale.LC_ALL, "")

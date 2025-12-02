@@ -1,8 +1,7 @@
-import copy
 import logging
 from enum import IntEnum
 from math import isclose
-from typing import List, Tuple
+from typing import Tuple
 
 import casadi as ca
 
@@ -557,14 +556,13 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
             power_nom = self.variable_nominal(f"{asset}.ElectricityIn.Power")
             curr_nom = self.variable_nominal(f"{asset}.ElectricityIn.I")
-            power_in = self.state(f"{asset}.ElectricityIn.Power")
             current_in = self.state(f"{asset}.ElectricityIn.I")
             power_discharging = self.state(f"{asset}.Power_discharging")
             power_discharging_max = self.bounds()[f"{asset}.Power_discharging"][1]
             power_charging = self.state(f"{asset}.Power_charging")
             power_charging_max = self.bounds()[f"{asset}.Power_charging"][1]
 
-            #For now below is commented out, incase boolean charging variable is needed again for
+            # For now below is commented out, incase boolean charging variable is needed again for
             # other constraints, it can easily be added.
             # is_charging is 1 if charging and powerin>0
             # big_m = 2 * max(np.abs(self.bounds()[f"{asset}.ElectricityIn.Power"]))
@@ -581,7 +579,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                     np.inf,
                 )
             )
-            #to ensure power_charging is equal to min_voltage*current, only when charging
+            # to ensure power_charging is equal to min_voltage*current, only when charging
             constraints.append(
                 (
                     (power_charging - min_voltage * current_in - power_discharging)
@@ -591,14 +589,14 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                 )
             )
 
-
             # reduces problem size
             # charging/max_charging + discharging/max_discharging <=1
             constraints.append(
                 (
                     (
-                        power_charging/power_charging_max +
-                        power_discharging/power_discharging_max -1
+                        power_charging / power_charging_max
+                        + power_discharging / power_discharging_max
+                        - 1
                     )
                     / power_nom,
                     -np.inf,

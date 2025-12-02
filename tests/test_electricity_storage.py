@@ -61,7 +61,7 @@ class TestMILPElectricSourceSink(TestCase):
 
         power_cable_bat = results["ElectricityCable_91c1.ElectricityOut.Power"]
         np.testing.assert_allclose(power_cable_bat, power_bat_network, atol=tol)
-        np.testing.assert_allclose(power_bat_network, power_charging-power_discharging, atol=tol)
+        np.testing.assert_allclose(power_bat_network, power_charging - power_discharging, atol=tol)
 
         count_discrete_path, count_discrete_var = 0.0, 0.0
         for var in solution.path_variables:
@@ -73,7 +73,7 @@ class TestMILPElectricSourceSink(TestCase):
         np.testing.assert_allclose(0.0, count_discrete_path, atol=tol)
         np.testing.assert_array_less(count_discrete_var, 8.0)
 
-        is_charging = np.asarray([float(i>0) for i in power_charging])
+        is_charging = np.asarray([float(i > 0) for i in power_charging])
         # if battery is charging (1), ElectricityIn.Power and effective_power charging should be
         # positive, else negative
         bigger_then = all(is_charging * eff_power_change_bat >= 0)

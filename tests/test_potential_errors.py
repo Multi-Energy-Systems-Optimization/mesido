@@ -53,7 +53,7 @@ class TestPotentialErrors(unittest.TestCase):
         model_folder = base_folder / "model"
         input_folder = base_folder / "input"
 
-        logger, logs_list = create_log_list_scaling("WarmingUP-MPC")
+        logger, logs_list = create_log_list_scaling("mesido")
 
         with (
             self.assertRaises(MesidoAssetIssueError) as cm,
