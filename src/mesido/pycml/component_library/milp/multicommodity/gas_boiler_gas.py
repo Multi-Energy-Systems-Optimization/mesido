@@ -1,13 +1,13 @@
 from mesido.pycml import Variable
 from mesido.pycml.component_library.milp.gas.gas_base import GasPort
-from mesido.pycml.component_library.milp.heat.heat_source import HeatSource
+from mesido.pycml.component_library.milp.heat.gas_boiler import GasBoiler
 from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 from numpy import nan
 
 
 @add_variables_documentation_automatically
-class GasBoiler(HeatSource):
+class GasBoilerGas(GasBoiler):
     """
     The source component is there to insert thermal power (Heat) into the network.
 
@@ -31,12 +31,6 @@ class GasBoiler(HeatSource):
             name,
             **modifiers,
         )
-
-        self.efficiency = nan
-
-        self.Q_nominal_gas = nan
-
-        self.component_subtype = "gas_boiler"
 
         self.energy_content = nan  # [J/kg]
         self.density = 2.5e3  # H2 density [g/m3] at 30bar

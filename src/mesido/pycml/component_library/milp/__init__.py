@@ -36,7 +36,7 @@ from .heat.pump import Pump
 from .multicommodity.airwater_heat_pump_elec import AirWaterHeatPumpElec
 from .multicommodity.electro_boiler import ElecBoiler
 from .multicommodity.electrolyzer import Electrolyzer
-from .multicommodity.gas_boiler import GasBoiler
+from .multicommodity.gas_boiler_gas import GasBoilerGas
 
 __all__ = [
     "Airco",
@@ -56,7 +56,7 @@ __all__ = [
     "ElectricitySource",
     "ElectricityStorage",
     "Electrolyzer",
-    "GasBoiler",
+    "GasBoilerGas",
     "GasDemand",
     "GasNode",
     "GasPipe",

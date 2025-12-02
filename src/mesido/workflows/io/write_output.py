@@ -1178,7 +1178,8 @@ class ScenarioOutput:
                         secondary_outports = [
                             port
                             for port in asset.port
-                            if isinstance(port, esdl.OutPort) and "Sec" in port.name
+                            if isinstance(port, esdl.OutPort)
+                            and (("Out" if asset_class == "GasHeater" else "Sec") in port.name)
                         ]
                         if len(primary_inports) == 1 and len(secondary_outports) == 1:
                             port_prim = primary_inports[0]

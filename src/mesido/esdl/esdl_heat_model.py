@@ -32,7 +32,7 @@ from mesido.pycml.component_library.milp import (
     ElectricitySource,
     ElectricityStorage,
     Electrolyzer,
-    GasBoiler,
+    GasBoilerGas,
     GasDemand,
     GasNode,
     GasPipe,
@@ -2380,7 +2380,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         return Compressor, modifiers
 
-    def convert_gas_boiler(self, asset: Asset) -> Tuple[GasBoiler, MODIFIERS]:
+    def convert_gas_boiler(self, asset: Asset) -> Tuple[GasBoilerGas, MODIFIERS]:
         """
         This function converts the GasHeater object in esdl to a set of modifiers that can be
         used in a pycml object.
@@ -2459,7 +2459,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
         )
-        return GasBoiler, modifiers
+        return GasBoilerGas, modifiers
 
     def convert_elec_boiler(self, asset: Asset) -> Tuple[Union[ElecBoiler, HeatSource], MODIFIERS]:
         """
