@@ -521,7 +521,6 @@ class MultiCommoditySimulator(
         options["estimated_velocity"] = 7.5
 
         options["gas_storage_discharge_variables"] = True
-        options["electricity_storage_discharge_variables"] = True
 
         return options
 

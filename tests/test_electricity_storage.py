@@ -63,6 +63,15 @@ class TestMILPElectricSourceSink(TestCase):
         np.testing.assert_allclose(power_cable_bat, power_bat_network, atol=tol)
         np.testing.assert_allclose(power_bat_network, power_charging-power_discharging, atol=tol)
 
+        count_discrete_path, count_discrete_var = 0.0, 0.0
+        for var in solution.path_variables:
+            if solution.variable_is_discrete(var.name()):
+                count_discrete_path += 1
+        for var in solution.extra_variables:
+            if solution.variable_is_discrete(var.name()):
+                count_discrete_var += 1
+        np.testing.assert_allclose(0.0, count_discrete_path, atol=tol)
+        np.testing.assert_array_less(count_discrete_var, 8.0)
 
         is_charging = np.asarray([float(i>0) for i in power_charging])
         # if battery is charging (1), ElectricityIn.Power and effective_power charging should be
