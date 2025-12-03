@@ -1,11 +1,11 @@
 from mesido.pycml import Variable
 from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
-from ._non_storage_component import _NonStorageComponent
+from ._non_storage_component_sink_type import _NonStorageComponentSinkType
 
 
 @add_variables_documentation_automatically
-class ColdDemand(_NonStorageComponent):
+class ColdDemand(_NonStorageComponentSinkType):
     """
     The cold demand component is there to add thermal power (Heat) out of the network. Typically,
     this component is used to model aggregated demands.
@@ -46,8 +46,6 @@ class ColdDemand(_NonStorageComponent):
         # Assumption: heat in/out and extracted is nonnegative
         # Heat in the return (i.e. cold) line is zero
         self.add_variable(Variable, "Cold_demand", min=0.0, nominal=self.Heat_nominal)
-        self.add_variable(Variable, "dH", max=0.0)
-        self.add_equation(self.dH - (self.HeatOut.H - self.HeatIn.H))
 
         self.add_equation(
             (self.HeatOut.Heat - (self.HeatIn.Heat + self.Cold_demand)) / self.Heat_nominal

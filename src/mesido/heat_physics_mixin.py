@@ -6,6 +6,7 @@ import casadi as ca
 
 from mesido._heat_loss_u_values_pipe import pipe_heat_loss
 from mesido.base_component_type_mixin import BaseComponentTypeMixin
+from mesido.base_problem_mixin import BaseProblemMixin
 from mesido.demand_insulation_class import DemandInsulationClass
 from mesido.head_loss_class import HeadLossClass, HeadLossOption
 from mesido.network_common import NetworkSettings
@@ -20,7 +21,9 @@ from rtctools.optimization.timeseries import Timeseries
 logger = logging.getLogger("mesido")
 
 
-class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
+class HeatPhysicsMixin(
+    BaseProblemMixin, BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem
+):
     """
     This class is used to model the physics of a heat district network with its assets. We model
     the different components with a variety of linearization strategies.
@@ -3609,7 +3612,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         parameters = self.parameters(ensemble_member)
 
         for asset in {
-            *self.energy_system_components.get("airco", []),
             *self.energy_system_components.get("heat_demand", []),
             *self.energy_system_components.get("cold_demand", []),
             *self.energy_system_components.get("heat_exchanger", []),
@@ -3670,11 +3672,11 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 self._hn_head_loss_class._demand_head_loss_path_constraints(self, ensemble_member)
             )
 
-        constraints.extend(
-            self._hn_head_loss_class._pipe_hydraulic_power_path_constraints(
-                self, self.__maximum_total_head_loss, ensemble_member
-            )
-        )
+        # constraints.extend(
+        #     self._hn_head_loss_class._pipe_hydraulic_power_path_constraints(
+        #         self, self.__maximum_total_head_loss, ensemble_member
+        #     )
+        # )
         constraints.extend(self.__flow_direction_path_constraints(ensemble_member))
         constraints.extend(self.__node_heat_mixing_path_constraints(ensemble_member))
         constraints.extend(self.__node_hydraulic_power_mixing_path_constraints(ensemble_member))
@@ -3696,9 +3698,24 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints.extend(self.__ates_heat_losses_path_constraints(ensemble_member))
         constraints.extend(self.__ates_temperature_ordering_path_constraints(ensemble_member))
         constraints.extend(self.__heat_pump_cop_path_constraints(ensemble_member))
-        constraints.extend(self.__storage_hydraulic_power_path_constraints(ensemble_member))
+
         constraints.extend(self.__ates_storage_yearly_change_path_constraints(ensemble_member))
-        constraints.extend(self.__sink_hydraulic_power_path_constraints(ensemble_member))
+        if self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
+            constraints.extend(
+                self._hn_head_loss_class._pipe_hydraulic_power_path_constraints(
+                    self, self.__maximum_total_head_loss, ensemble_member
+                )
+            )
+            constraints.extend(self.__sink_hydraulic_power_path_constraints(ensemble_member))
+            constraints.extend(self.__storage_hydraulic_power_path_constraints(ensemble_member))
+        else:
+            for asset_list in self.energy_system_components.values():
+                for asset in asset_list:
+                    try:
+                        var = self.state(f"{asset}.Pump_power")
+                        constraints.append((var, 0.0, 1.0e-4))
+                    except KeyError:
+                        pass
 
         return constraints
 
@@ -3761,33 +3778,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         # for ates in self.energy_system_components.get("ates", []):
 
         return history
-
-    def goal_programming_options(self):
-        """
-        Here we set the goal programming configuration. We use soft constraints for consecutive
-        goals.
-        """
-        options = super().goal_programming_options()
-        options["keep_soft_constraints"] = True
-        return options
-
-    def solver_options(self):
-        """
-        Here we define the solver options. By default we use the open-source solver highs and casadi
-        solver qpsol.
-        """
-        options = super().solver_options()
-        options["casadi_solver"] = "qpsol"
-        options["solver"] = "highs"
-        return options
-
-    def compiler_options(self):
-        """
-        In this function we set the compiler configuration.
-        """
-        options = super().compiler_options()
-        options["resolve_parameter_values"] = True
-        return options
 
     def priority_completed(self, priority):
         """

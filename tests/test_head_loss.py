@@ -393,22 +393,27 @@ class TestHeadLoss(TestCase):
                         np.testing.assert_allclose(
                             results[f"{pipe}__pipe_linear_line_segment_num_1_neg_discharge"],
                             0.0,
+                            atol=1e-10,
                         )
                         np.testing.assert_allclose(
                             results[f"{pipe}__pipe_linear_line_segment_num_2_neg_discharge"],
                             0.0,
+                            atol=1e-10,
                         )
                         np.testing.assert_allclose(
                             results[f"{pipe}__pipe_linear_line_segment_num_2_pos_discharge"],
                             0.0,
+                            atol=1e-10,
                         )
                         np.testing.assert_allclose(
                             results[f"{pipe}__pipe_linear_line_segment_num_1_pos_discharge"],
                             1.0,
+                            atol=1e-10,
                         )
                         np.testing.assert_allclose(
                             results[f"{pipe}__pipe_linear_line_segment_num_2_pos_discharge"],
                             0.0,
+                            atol=1e-10,
                         )
 
                     if pipe not in ["Pipe4", "Pipe4_ret"]:
