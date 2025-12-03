@@ -147,3 +147,22 @@ class ATES(HeatTwoPort, BaseAsset):
             (self.HeatIn.Heat - (self.HeatOut.Heat + self.Heat_ates)) / self.Heat_nominal
         )
         self.add_equation((self.Heat_flow - self.Heat_ates) / self.Heat_nominal)
+
+        self.add_variable(
+            Variable,
+            "Heat_flow_charging",
+            min=0.0,
+            max=self.Heat_flow.max,
+            nominal=self.Heat_flow.nominal,
+        )
+
+        self.add_variable(
+            Variable,
+            "Heat_flow_discharging",
+            min=0.0,
+            max=abs(self.Heat_flow.min),
+            nominal=self.Heat_flow.nominal,
+        )
+
+        self.add_equation((self.Heat_flow - (self.Heat_flow_charging - self.Heat_flow_discharging)
+                                             ) / self.Heat_nominal)
