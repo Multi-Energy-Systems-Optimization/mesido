@@ -175,7 +175,7 @@ def heat_to_discharge_test(solution, results, atol=1e-2, rtol=1.0e-4):
         np.testing.assert_allclose(
             results[f"{d}.HeatOut.Heat"],
             results[f"{d}.Q"] * rho * cp * supply_t,
-            atol=5.0,
+            atol=atol,
             rtol=rtol,
         )
 

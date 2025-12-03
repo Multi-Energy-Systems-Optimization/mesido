@@ -183,7 +183,7 @@ class TestRollOutOptimization(TestCase):
         # Check if it is not a trivial roll-out problem, i.e. not all heating demands
         # are placed in the first year
         not_placed_in_first_year = any(
-            results[f"{d}__asset_is_realized_0"] == 0
+            results[f"{d}__asset_is_realized_0"] <= atol
             for d in solution.energy_system_components.get("heat_demand", [])
         )
         np.testing.assert_(

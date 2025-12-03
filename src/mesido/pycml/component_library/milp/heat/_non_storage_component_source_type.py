@@ -31,7 +31,7 @@ class _NonStorageComponentSourceType(_NonStorageComponent):
             Variable, "Pump_power", min=0.0, nominal=self.Q_nominal * self.nominal_pressure
         )
 
-        # self.add_equation(
-        #     (self.Pump_power - (self.HeatOut.Hydraulic_power - self.HeatIn.Hydraulic_power))
-        #     / (self.Q_nominal * self.nominal_pressure)
-        # )
+        self.add_equation(
+            (self.Pump_power - (self.HeatOut.Hydraulic_power - self.HeatIn.Hydraulic_power))
+            / (self.Q_nominal * self.nominal_pressure)
+        )
