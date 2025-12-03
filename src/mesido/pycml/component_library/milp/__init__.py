@@ -20,6 +20,7 @@ from .heat.ates import ATES
 from .heat.check_valve import CheckValve
 from .heat.cold_demand import ColdDemand
 from .heat.control_valve import ControlValve
+from .heat.gas_boiler import GasBoiler
 from .heat.geothermal_source import GeothermalSource
 from .heat.heat_buffer import HeatBuffer
 from .heat.heat_demand import HeatDemand
@@ -56,6 +57,7 @@ __all__ = [
     "ElectricitySource",
     "ElectricityStorage",
     "Electrolyzer",
+    "GasBoiler",
     "GasBoilerGas",
     "GasDemand",
     "GasNode",
