@@ -2403,6 +2403,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                                 -np.inf, 1.0))
 
             if len(supply_temperatures) == 0:
+                # if self.heat_network_settings["storage_charging_variables"]:
                 constraint_nominal = (heat_nominal * cp * rho * dt * q_nominal) ** 0.5
                 # only when discharging the heat_in should match the heat excactly (like producer)
                 constraints.append(
