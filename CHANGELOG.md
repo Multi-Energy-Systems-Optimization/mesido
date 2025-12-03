@@ -1,13 +1,24 @@
-# [Unreleased-main] - 2025-11-014
+# [Unreleased-main] - 2025-11-19
 
 ## Added
-- xx
+- Gas Boiler with 2 ports (no gas port) is supported for DTK and its cost attributes are supported in Mesido
 
 ## Changed
 - xx
 
 ## Fixed
 - Bug: Write updated esdl for 2 port heat pump
+
+# [0.1.15] - 2025-11-19
+
+## Added
+- xx
+
+## Changed
+- Reduce computational effort stage 2 grow_workflow -> options["heat_loss_disconnected_pipe"] setting
+
+## Fixed
+- xx
 
 
 # [0.1.14] - 2025-11-07
