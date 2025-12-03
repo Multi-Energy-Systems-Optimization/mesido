@@ -3612,7 +3612,6 @@ class HeatPhysicsMixin(
         parameters = self.parameters(ensemble_member)
 
         for asset in {
-            *self.energy_system_components.get("airco", []),
             *self.energy_system_components.get("heat_demand", []),
             *self.energy_system_components.get("cold_demand", []),
             *self.energy_system_components.get("heat_exchanger", []),
@@ -3673,11 +3672,11 @@ class HeatPhysicsMixin(
                 self._hn_head_loss_class._demand_head_loss_path_constraints(self, ensemble_member)
             )
 
-        constraints.extend(
-            self._hn_head_loss_class._pipe_hydraulic_power_path_constraints(
-                self, self.__maximum_total_head_loss, ensemble_member
-            )
-        )
+        # constraints.extend(
+        #     self._hn_head_loss_class._pipe_hydraulic_power_path_constraints(
+        #         self, self.__maximum_total_head_loss, ensemble_member
+        #     )
+        # )
         constraints.extend(self.__flow_direction_path_constraints(ensemble_member))
         constraints.extend(self.__node_heat_mixing_path_constraints(ensemble_member))
         constraints.extend(self.__node_hydraulic_power_mixing_path_constraints(ensemble_member))
@@ -3699,9 +3698,24 @@ class HeatPhysicsMixin(
         constraints.extend(self.__ates_heat_losses_path_constraints(ensemble_member))
         constraints.extend(self.__ates_temperature_ordering_path_constraints(ensemble_member))
         constraints.extend(self.__heat_pump_cop_path_constraints(ensemble_member))
-        constraints.extend(self.__storage_hydraulic_power_path_constraints(ensemble_member))
+
         constraints.extend(self.__ates_storage_yearly_change_path_constraints(ensemble_member))
-        constraints.extend(self.__sink_hydraulic_power_path_constraints(ensemble_member))
+        if self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
+            constraints.extend(
+                self._hn_head_loss_class._pipe_hydraulic_power_path_constraints(
+                    self, self.__maximum_total_head_loss, ensemble_member
+                )
+            )
+            constraints.extend(self.__sink_hydraulic_power_path_constraints(ensemble_member))
+            constraints.extend(self.__storage_hydraulic_power_path_constraints(ensemble_member))
+        else:
+            for asset_list in self.energy_system_components.values():
+                for asset in asset_list:
+                    try:
+                        var = self.state(f"{asset}.Pump_power")
+                        constraints.append((var, 0.0, 1.0e-4))
+                    except:
+                        print(asset)
 
         return constraints
 
