@@ -3714,8 +3714,8 @@ class HeatPhysicsMixin(
                     try:
                         var = self.state(f"{asset}.Pump_power")
                         constraints.append((var, 0.0, 1.0e-4))
-                    except:
-                        print(asset)
+                    except KeyError:
+                        pass
 
         return constraints
 
