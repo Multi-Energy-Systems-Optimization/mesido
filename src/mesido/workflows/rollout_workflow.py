@@ -16,7 +16,7 @@ from mesido.workflows.goals.rollout_goal import (
 )
 from mesido.workflows.io.write_output import ScenarioOutput
 from mesido.workflows.utils.adapt_profiles import (
-    # adapt_hourly_profile_averages_timestep_size,
+    adapt_hourly_profile_averages_timestep_size,
     adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
     adapt_profile_for_initial_hour_timestep_size,
     adapt_profile_to_copy_for_number_of_years,
@@ -82,27 +82,29 @@ class RollOutProblem(
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._years = 3  # 10
+        self._years = 3
         self._horizon = 30
         self._year_step_size = int(self._horizon / self._years)
         # TODO: timestep_size and _days can be removed eventually, particularly when averaging
         # with peak day is used, however one needs to check where self._timesteps_per_year and
         # self._timestep_size is currently affecting the code
         self._timestep_size = kwargs.get("_timestep_size", 30 * 24)
+
         self._timesteps_per_year = int(365 / (self._timestep_size / 24)) + 1
-        self._timesteps_per_year += 1 + 25
+
         # + 1 because of inserting an 1-hour timestep at the beginning of the year,
         # (see adapt_profile_for_initial_hour_timestep_size)
-        # + 25 needed if peak day is included with hourly timesteps
-        # (see adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day)
+        self._timesteps_per_year += 1
 
-        # TODO: get yearly max capex from input
-        self._yearly_max_capex = (
-            6.0e6 if "yearly_max_capex" not in kwargs else kwargs["yearly_max_capex"]
-        )
-        self._yearly_max_pipe_length = (
-            1.0e3 if "yearly_max_pipe_length" not in kwargs else kwargs["yearly_max_pipe_length"]
-        )
+        self._include_peak_day = kwargs.get("include_peak_day", False)
+        if self._include_peak_day:
+            self._timesteps_per_year += 25
+            # + 25 needed if peak day is included with hourly timesteps
+            # (see adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day)
+
+        self._yearly_max_capex = kwargs.get("yearly_max_capex", 6.0e6)
+        self._yearly_max_pipe_length = kwargs.get("yearly_max_pipe_length", 1.0e3)
+
         self._years_timestep_max_capex = self._yearly_max_capex * self._horizon / self._years
 
         # Fraction of how much heat of the total maximum the geo source can produce it should
@@ -157,28 +159,32 @@ class RollOutProblem(
     def read(self):
         super().read()
 
-        # Create yearly profile with desired coarser time-step size by
-        # averaging over the hourly data
-        # adapt_hourly_profile_averages_timestep_size(self, self._timestep_size)
-
-        # Adapt yearly profile with hourly time steps to a common profile (averaged profile except
-        # for the day with the peak demand).
-        (
-            self.__problem_indx_max_peak,
-            self.__heat_demand_nominal,
-            self.__cold_demand_nominal,
-        ) = adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(
-            self,
-            self._timestep_size // 24,  # number of days in timestep TODO check if this is correct
-        )
+        if self._include_peak_day:
+            # Adapt yearly profile with hourly time steps to a common profile (averaged profile 
+            # except for the day with the peak demand).
+            (
+                self.__problem_indx_max_peak,
+                self.__heat_demand_nominal,
+                self.__cold_demand_nominal,
+            ) = adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(
+                self,
+                self._timestep_size // 24,  # number of days in timestep
+            )
+        else:
+            # Create yearly profile with desired coarser time-step size by
+            # averaging over the hourly data
+            adapt_hourly_profile_averages_timestep_size(self, self._timestep_size)
 
         # A small, (1 hour) timestep is inserted as first time step. This is used in the
         # rollout workflow to allow a yearly change in the storage of the ATES system.
         # The first time step is used to accommodate the (yearly) initial storage
         # level of the ATES.
         adapt_profile_for_initial_hour_timestep_size(self)
-        # This also affects self.__problem_indx_max_peak, which is now increased by 1
-        self.__problem_indx_max_peak += 1
+
+        if self._include_peak_day:
+            # Insertion of the one hour timestep affects self.__problem_indx_max_peak,
+            # which is now increased by 1
+            self.__problem_indx_max_peak += 1
 
         # Adapt the profiles to copy for the number of years
         adapt_profile_to_copy_for_number_of_years(self, self._years)
@@ -192,7 +198,6 @@ class RollOutProblem(
             "Note: The rollout workflow is still under development and not fully tested yet."
         )
 
-        # asset_types = ["low_temperature_ates", "heat_buffer", "geothermal_source", "heat_pump"]
         asset_types = ["low_temperature_ates", "geothermal_source", "heat_pump"]
         for asset_type in asset_types:
             if len(self.energy_system_components.get(asset_type, [])) > 0:
@@ -207,6 +212,7 @@ class RollOutProblem(
             *self.energy_system_components.get("heat_demand", []),
             *self.energy_system_components.get("heat_source", []),
             *self.energy_system_components.get("heat_pipe", []),
+            *self.energy_system_components.get("heat_buffer", []),
         ]:
             self._asset_fraction_placed_map[asset] = []
             for year in range(self._years):
@@ -267,6 +273,7 @@ class RollOutProblem(
         options["include_asset_is_realized"] = True
         options["include_ates_yearly_change_option"] = True
         options["yearly_investments"] = True
+        options["min_fraction_tank_volume"] = 0.0
         return options
 
     def path_goals(self):
@@ -465,6 +472,13 @@ class RollOutProblem(
                 #                                               ates_doublet_sums_fraction[y - 1])
                 cumulative_capex += ates_capex
 
+            # heat buffers
+            for b in self.energy_system_components.get("heat_buffer", []):
+                cumulative_inv_buffer = self.extra_variable(
+                    f"{b}__cumulative_investments_made_in_eur_year_{y}"
+                )
+                cumulative_capex += cumulative_inv_buffer
+
             year_nominal = bounds[f"yearly_capex_{y}"][1]
             yearly_capex_var = self.extra_variable(f"yearly_capex_{y}", ensemble_member)
             if y == 0:
@@ -600,24 +614,29 @@ class RollOutProblem(
         return constraints
 
     def __heat_buffer_peak_day_constraints(self, ensemble_member):
+        """
+        Constraints to ensure that the heat buffer is active only during the 24 hourly timestepping
+        period during the peak day.
+
+        """
+
         constraints = []
         for b in self.energy_system_components.get("heat_buffer", {}):
-            nominal = self.variable_nominal(f"{b}.Stored_heat")
-            vars = self.__state_vector_scaled(f"{b}.Heat_buffer", ensemble_member)
-            symbol_stored_heat = self.state_vector(f"{b}.Stored_heat")
+            var_stored_heat = self.state_vector(f"{b}.Stored_heat")
+
             for year in range(self._years):
                 for i in range(self._timesteps_per_year):
-                    if i == self.__problem_indx_max_peak:
-                        constraints.append(
-                            (symbol_stored_heat[self.__problem_indx_max_peak] / nominal, 0.0, 0.0)
-                        )
                     if not (
                         i > self.__problem_indx_max_peak - 1
                         and i < (self.__problem_indx_max_peak + 23 + 1)
                     ):
                         constraints.append(
-                            (vars[i + year * self._timesteps_per_year] / nominal, -1.0e-6, 1.0e-6)
-                        )  # both values taking 0.0 lead to infeasibility
+                            (
+                                var_stored_heat[i + year * self._timesteps_per_year],
+                                0.0,
+                                0.0,
+                            )
+                        )
 
         return constraints
 
@@ -630,7 +649,9 @@ class RollOutProblem(
         constraints.extend(self.__yearly_asset_is_placed_constraints(ensemble_member))
         constraints.extend(self.__ates_yearly_initial_constraints(ensemble_member))
         constraints.extend(self.__ates_yearly_periodic_constraints(ensemble_member))
-        constraints.extend(self.__heat_buffer_peak_day_constraints(ensemble_member))
+
+        if self._include_peak_day:
+            constraints.extend(self.__heat_buffer_peak_day_constraints(ensemble_member))
 
         constraints.extend(self.__all_demands_placed_constraints(ensemble_member))
         constraints.extend(self.__yearly_investment_constraints(ensemble_member))

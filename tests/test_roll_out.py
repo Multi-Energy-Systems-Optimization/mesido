@@ -4,14 +4,13 @@ from unittest import TestCase
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.util import run_esdl_mesido_optimization
+# from mesido.workflows.io.rollout_post import rollout_post
 from mesido.workflows.rollout_workflow import RollOutProblem
 
 import numpy as np
 
 # from utils_tests import energy_conservation_test
 from utils_tests import heat_to_discharge_test
-
-# from mesido.workflows.io.rollout_post import rollout_post
 
 
 class TestRollOutOptimization(TestCase):
@@ -68,6 +67,7 @@ class TestRollOutOptimization(TestCase):
             input_timeseries_file="Warmte_test.csv",
             yearly_max_capex=7.0e6,
             yearly_max_pipe_length=1.0e3,  # m per year
+            include_peak_day=True,
         )
         results = solution.extract_results()
 
@@ -261,16 +261,6 @@ class TestRollOutOptimization(TestCase):
                     used {used_length_year}, allowed {allowed_length}",
             )
 
-        # Testing total_length = total_length_last_year (should be the same)
-        # Remove this code after testing
-        # print("Total placed pipe length (a):", total_length)
-        # total_length_last_year = 0
-        # for p in solution.energy_system_components.get("heat_pipe", []):
-        #     pipe_is_realized = results[f"{p}__asset_is_realized_{solution._years -1}"]
-        #     pipe_length = solution.parameters(0)[f"{p}.length"]
-        #     total_length_last_year += pipe_is_realized * pipe_length
-        # print("Total placed pipe length (b):", total_length_last_year)
-
         # Check if all demands placed
         for d in solution.energy_system_components.get("heat_demand", []):
             np.testing.assert_(
@@ -280,7 +270,7 @@ class TestRollOutOptimization(TestCase):
 
         # Heat buffer peak day constraints
         for b in solution.energy_system_components.get("heat_buffer", {}):
-            nominal = solution.variable_nominal(f"{b}.Stored_heat")
+            used_buffer = False
             for year in range(solution._years):
                 for i in range(solution._timesteps_per_year):
                     if not (
@@ -288,11 +278,30 @@ class TestRollOutOptimization(TestCase):
                         and i < (solution._RollOutProblem__problem_indx_max_peak + 23 + 1)
                     ):
                         np.testing.assert_allclose(
-                            results[f"{b}.Heat_buffer"][i + year * solution._timesteps_per_year]
-                            / nominal,
+                            results[f"{b}.Stored_heat"][i + year * solution._timesteps_per_year],
                             0.0,
                             atol=atol,
                             rtol=rtol,
                         )
+                        if not i == 0 and not year == 0:
+                            np.testing.assert_allclose(
+                                results[f"{b}.Heat_buffer"][
+                                    i + year * solution._timesteps_per_year
+                                ],
+                                0.0,
+                                atol=atol,
+                                rtol=rtol,
+                            )
+                    else:
+                        if (
+                            results[f"{b}.Heat_buffer"][
+                                i + year * solution._timesteps_per_year
+                            ]
+                            > 1e3
+                        ):
+                            used_buffer = True
+
+            np.testing.assert_(used_buffer,
+                               f"{b} Heat buffer has not been used in the entire problem")
 
         # rollout_post(solution, results)
