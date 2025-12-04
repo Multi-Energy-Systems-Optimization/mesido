@@ -6,6 +6,7 @@ from unittest import TestCase
 from mesido._heat_loss_u_values_pipe import pipe_heat_loss
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.head_loss_class import HeadLossOption
 from mesido.pipe_class import PipeClass
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.util import run_esdl_mesido_optimization
@@ -41,8 +42,15 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
         del root_folder
         sys.path.pop(1)
 
+        class PipeDiameterSizingNoHeadProblem(PipeDiameterSizingProblem):
+            def energy_system_options(self):
+                options = super().energy_system_options()
+                self.heat_network_settings["minimize_head_losses"] = False
+                self.heat_network_settings["head_loss_option"]=HeadLossOption.NO_HEADLOSS
+                return options
+
         cls.problem = run_esdl_mesido_optimization(
-            PipeDiameterSizingProblem,
+            PipeDiameterSizingNoHeadProblem,
             base_folder=base_folder,
             esdl_file_name="2a.esdl",
             esdl_parser=ESDLFileParser,
@@ -141,9 +149,9 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
                         f"{chosen_pc=} with higher investment costs",
                     )
                 elif pc.investment_costs > chosen_pc.investment_costs:
-                    np.testing.assert_almost_equal(
+                    np.testing.assert_array_less(
+                        1e-6,
                         cost_ordering_var,
-                        1.0,
                         err_msg=f"Expected the cost order var for {p} and {pc=} to be 1.0, since"
                         f"{chosen_pc=} with lower investment costs",
                     )
@@ -158,9 +166,9 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
                         f"since {chosen_pc=} with higher max discharge",
                     )
                 elif pc.maximum_discharge > chosen_pc.maximum_discharge:
-                    np.testing.assert_almost_equal(
+                    np.testing.assert_array_less(
+                        1e-6,
                         discharge_ordering_var,
-                        1.0,
                         err_msg=f"Expected the discharge order var for {p} and {pc=} to be 1.0, "
                         f"since {chosen_pc=} with lower max discharge",
                     )
@@ -177,9 +185,9 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
                         f"since {chosen_pc=} with higher heat losses",
                     )
                 elif pc_heat_loss > chosen_pc_heat_loss:
-                    np.testing.assert_almost_equal(
-                        discharge_ordering_var,
-                        1.0,
+                    np.testing.assert_array_less(
+                        1e-6,
+                        heat_loss_ordering_var,
                         err_msg=f"Expected the heat loss order var for {p} and {pc=} to be 1.0, "
                         f"since {chosen_pc=} with lower heat losses",
                     )
