@@ -1,4 +1,27 @@
-# [Unreleased-main] - 2025-10-09
+# [Unreleased-main] - 2025-11-19
+
+## Added
+- xx
+
+## Changed
+- xx
+
+## Fixed
+- xx
+
+# [0.1.15] - 2025-11-19
+
+## Added
+- xx
+
+## Changed
+- Reduce computational effort stage 2 grow_workflow -> options["heat_loss_disconnected_pipe"] setting
+
+## Fixed
+- xx
+
+
+# [0.1.14] - 2025-11-07
 
 ## Added
 - Elect test for air_to_water_heat_pump_elec
@@ -14,6 +37,9 @@
 - A new type of potential error is added if the profile name indicated in esdl is not available in the database.
 - Parsing of emission factors for specific sources not related to carriers.
 - Capability of ResidualHeatSource and GeothermalHeatSource to also have profile constraints that can be read from InfluxDB
+- Writing KPIs back for discounted CAPEX
+- Roll out workflow setup.
+- Improved error handling for asset cost information to prevent potential failures and ensure more robust processing of asset-related data.
 
 ## Changed
 - Removed support of python versions 3.9 and older.
@@ -22,6 +48,8 @@
 - TCO cost calculation objective to now exclude heating demand costs in the grow workflow
 - Hydraulic power calculation at "sink" assets is set to 0.0 if headloss calculation is turned off
 - Updated pyESDL to v25.7
+- Allowing 2 additional pipe sizes (instead of 1) in stage 2 compared to the result of stage 1 of the grow_workflow.
+- Calculation of capex for TCO optimization KPI is changed to make it the same as in the TCO calc in the code
 
 ## Fixed
 - Bug: Add 3 port heat pump to elect demand path constraint
@@ -29,6 +57,8 @@
 - Bug: Replaced one pipe with all pipes in head loss testing in test_end_scenario_sizing.py 
 - Bug: Geothermal being placed when not used. General added aggregation_count=0 constraint for heat buffer, ates and goethermal when not being used.
 - Bug: Ensure ATES and Geothermal max_size cannot be smaller than the single_doublet_power if placed.
+- Bug: Upper limit of available pipe classes when using producer profiles
+- Bug: Removed the parsing of is_disconnected pipe between stage 1 and 2 of the grow_workflow. 
 
 
 # [0.1.13] - 2025-06-25

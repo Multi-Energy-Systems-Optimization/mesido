@@ -8,10 +8,16 @@ import esdl
 from esdl.esdl_handler import EnergySystemHandler
 
 from mesido.esdl.esdl_parser import ESDLFileParser
-from mesido.workflows import EndScenarioSizingStaged
-
+from mesido.financial_mixin import calculate_annuity_factor
+from mesido.workflows import (
+    EndScenarioSizingDiscountedStaged,
+    EndScenarioSizingStaged,
+    run_end_scenario_sizing,
+)
 
 import numpy as np
+
+from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
 class TestUpdatedESDL(TestCase):
@@ -323,6 +329,131 @@ class TestUpdatedESDL(TestCase):
                 len(energy_system.instance[0].area.area), number_of_areas_in_esdl
             )
 
+    def test_updated_esdl_eac(self):
+        """
+        Ensure that the updated ESDL, generated through optimization using the
+        "discounted_annualized_cost" objective, includes KPIs relevant to the
+        Equivalent Annuity Cost (EAC).
+
+        Checks:
+        - Confirm that the number of KPIs in the output ESDL matches the expected
+            count of KPIs related to EAC.
+        - Confirm that the name of KPIs in the output ESDL matches the expected
+            name of KPIs related to EAC.
+        - Verify that the EAC CAPEX and EAC OPEX values shown in the KPI figures
+            are correctly calculated.
+        """
+
+        root_folder = str(Path(__file__).resolve().parent.parent)
+        sys.path.insert(1, root_folder)
+
+        import examples.PoCTutorial.src.run_grow_tutorial
+
+        base_folder = (
+            Path(examples.PoCTutorial.src.run_grow_tutorial.__file__).resolve().parent.parent
+        )
+        model_folder = base_folder / "model"
+        input_folder = base_folder / "input"
+
+        # Run the case in order to have access to results and solutions
+        solution = run_end_scenario_sizing(
+            EndScenarioSizingDiscountedStaged,
+            base_folder=base_folder,
+            esdl_file_name="PoC Tutorial Discount5.esdl",
+            esdl_parser=ESDLFileParser,
+        )
+
+        results = solution.extract_results()
+        parameters = solution.parameters(0)
+
+        problem = EndScenarioSizingDiscountedStaged(
+            esdl_file_name="PoC Tutorial Discount5.esdl",
+            esdl_parser=ESDLFileParser,
+            base_folder=base_folder,
+            model_folder=model_folder,
+            input_folder=input_folder,
+        )
+        problem.pre()
+
+        # Load in optimized esdl in the form of the actual optimized esdl file created by MESIDO
+        esdl_path = os.path.join(base_folder, "model", "PoC Tutorial Discount5_GrowOptimized.esdl")
+        energy_system = problem._ESDLMixin__energy_system_handler.load_file(esdl_path)
+
+        # Util test
+        demand_matching_test(solution, solution.extract_results())
+        energy_conservation_test(solution, solution.extract_results())
+        heat_to_discharge_test(solution, solution.extract_results())
+
+        # Test KPIs in optimized ESDL
+        # High level checks of KPIs
+        number_of_kpis_top_level_in_esdl = 8
+        high_level_kpis_euro = [
+            "EAC - High level cost breakdown [EUR] (1.0 year period)",
+            "EAC - Overall cost breakdown [EUR] (1.0 year period)",
+            "EAC - CAPEX breakdown [EUR] (1.0 year period)",
+            "EAC - OPEX breakdown [EUR] (1.0 year period)",
+            "EAC - Area_76a7: Asset cost breakdown [EUR]",
+            "EAC - Area_9d0f: Asset cost breakdown [EUR]",
+            "EAC - Area_a58a: Asset cost breakdown [EUR]",
+        ]
+        high_level_kpis_wh = [
+            "Energy production [Wh] (yearly averaged)",
+        ]
+        all_high_level_kpis = []
+        all_high_level_kpis = high_level_kpis_euro + high_level_kpis_wh
+
+        np.testing.assert_allclose(
+            len(energy_system.instance[0].area.KPIs.kpi), number_of_kpis_top_level_in_esdl
+        )
+        np.testing.assert_allclose(
+            len(energy_system.instance[0].area.KPIs.kpi), len(all_high_level_kpis)
+        )
+
+        # Check if EAC calculation is matching with KPI values
+        asset = "ResidualHeatSource_72d7"
+        for ii in range(len(energy_system.instance[0].area.KPIs.kpi)):
+            kpi_name = energy_system.instance[0].area.KPIs.kpi[ii].name
+
+            np.testing.assert_array_equal(
+                kpi_name in all_high_level_kpis,
+                True,
+                err_msg=f"KPI name {kpi_name} was not expected in the ESDL",
+            )
+
+            if kpi_name == "EAC - CAPEX breakdown [EUR] (1.0 year period)":
+                string_items = (
+                    energy_system.instance[0].area.KPIs.kpi[ii].distribution.stringItem.items
+                )
+
+                for string_items_asset in string_items:
+                    if string_items_asset.label == "ResidualHeatSource":
+                        value = string_items_asset.value
+
+                        investment_cost = results[f"{asset}__investment_cost"]
+                        installation_cost = results[f"{asset}__installation_cost"]
+                        asset_life_years = parameters[f"{asset}.technical_life"]
+                        discount_rate = parameters[f"{asset}.discount_rate"] / 100.0
+                        annuity_factor = calculate_annuity_factor(discount_rate, asset_life_years)
+                        capex_eac = (investment_cost + installation_cost) * annuity_factor
+
+                        np.testing.assert_allclose(value, capex_eac)
+
+            if kpi_name == "EAC - OPEX breakdown [EUR] (1.0 year period)":
+                string_items = (
+                    energy_system.instance[0].area.KPIs.kpi[ii].distribution.stringItem.items
+                )
+
+                for string_items_asset in string_items:
+                    if string_items_asset.label == "ResidualHeatSource":
+                        value = string_items_asset.value
+
+                        var_opex_cost = results[f"{asset}__variable_operational_cost"]
+                        fix_opex_cost = results[f"{asset}__fixed_operational_cost"]
+
+                        opex_eac = var_opex_cost + fix_opex_cost
+
+                        np.testing.assert_allclose(value, opex_eac)
+
 
 if __name__ == "__main__":
     import time
@@ -331,5 +462,6 @@ if __name__ == "__main__":
 
     a = TestUpdatedESDL()
     a.test_updated_esdl()
+    a.test_updated_esdl_eac()
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
