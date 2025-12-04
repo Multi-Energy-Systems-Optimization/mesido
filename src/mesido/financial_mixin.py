@@ -927,8 +927,9 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             *self.energy_system_components.get("heat_buffer", []),
         ]:
             heat_charge = self.__state_vector_scaled(f"{asset}.Heat_flow_charging", ensemble_member)
-            heat_discharge = self.__state_vector_scaled(f"{asset}.Heat_flow_discharging",
-                                                      ensemble_member)
+            heat_discharge = self.__state_vector_scaled(
+                f"{asset}.Heat_flow_discharging", ensemble_member
+            )
             variable_operational_cost_var = self._asset_variable_operational_cost_map[asset]
             variable_operational_cost = self.extra_variable(
                 variable_operational_cost_var, ensemble_member
@@ -961,7 +962,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             for i in range(1, len(self.times())):
                 sum += (
                     variable_operational_cost_coefficient
-                    * (heat_charge[i]+heat_discharge[i])
+                    * (heat_charge[i] + heat_discharge[i])
                     * timesteps[i - 1]
                 )
                 sum += price_profile.values[i] * pump_power[i] * timesteps[i - 1] / eff

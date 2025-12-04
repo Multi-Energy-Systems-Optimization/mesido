@@ -1816,8 +1816,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         options = self.energy_system_options()
 
         for ates_asset, (
-                (hot_pipe, _hot_pipe_orientation),
-                (_cold_pipe, _cold_pipe_orientation),
+            (hot_pipe, _hot_pipe_orientation),
+            (_cold_pipe, _cold_pipe_orientation),
         ) in self.energy_system_topology.ates.items():
             # for ates_asset in self.energy_system_components.get("ates", []):
 
@@ -2398,9 +2398,13 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             heat_discharging = self.state(f"{b}.Heat_flow_discharging")
             heat_charging_max = bounds[f"{b}.Heat_flow_charging"][1]
             heat_discharging_max = bounds[f"{b}.Heat_flow_discharging"][1]
-            constraints.append((heat_charging/heat_charging_max +
-                                heat_discharging/heat_discharging_max,
-                                -np.inf, 1.0))
+            constraints.append(
+                (
+                    heat_charging / heat_charging_max + heat_discharging / heat_discharging_max,
+                    -np.inf,
+                    1.0,
+                )
+            )
 
             if len(supply_temperatures) == 0:
                 # if self.heat_network_settings["storage_charging_variables"]:
