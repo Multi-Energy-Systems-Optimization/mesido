@@ -925,6 +925,50 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             *self.energy_system_components.get("ates", []),
             *self.energy_system_components.get("low_temperature_ates", []),
             *self.energy_system_components.get("heat_buffer", []),
+        ]:
+            heat_charge = self.__state_vector_scaled(f"{asset}.Heat_flow_charging", ensemble_member)
+            heat_discharge = self.__state_vector_scaled(f"{asset}.Heat_flow_discharging",
+                                                      ensemble_member)
+            variable_operational_cost_var = self._asset_variable_operational_cost_map[asset]
+            variable_operational_cost = self.extra_variable(
+                variable_operational_cost_var, ensemble_member
+            )
+            nominal = self.variable_nominal(variable_operational_cost_var)
+            variable_operational_cost_coefficient = parameters[
+                f"{asset}.variable_operational_cost_coefficient"
+            ]
+            timesteps = np.diff(self.times()) / 3600.0
+
+            pump_power = self.__state_vector_scaled(f"{asset}.Pump_power", ensemble_member)
+            eff = parameters[f"{asset}.pump_efficiency"]
+
+            # We assume that only one electricity carrier is specified, to compute the cost with.
+            # Otherwise we need to link the electricity carrier somehow to the source and pump asset
+            # which is lots of extra effort for the user.
+            assert len(self.get_electricity_carriers().keys()) <= 1
+
+            if len(self.get_electricity_carriers().keys()) == 1:
+                try:
+                    price_profile = self.get_timeseries(
+                        f"{list(self.get_electricity_carriers().values())[0]['name']}.price_profile"
+                    )
+                except KeyError:
+                    price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
+            else:
+                price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
+
+            sum = 0.0
+            for i in range(1, len(self.times())):
+                sum += (
+                    variable_operational_cost_coefficient
+                    * (heat_charge[i]+heat_discharge[i])
+                    * timesteps[i - 1]
+                )
+                sum += price_profile.values[i] * pump_power[i] * timesteps[i - 1] / eff
+
+            constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
+
+        for asset in [
             *self.energy_system_components.get("pump", []),
             *self.energy_system_components.get("heat_exchanger", []),
         ]:
@@ -1048,9 +1092,6 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     sum += price_profile.values[i] * elec_consumption[i] * timesteps[i - 1]
 
             constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
-
-        for _ in self.energy_system_components.get("heat_buffer", []):
-            pass
 
         for demand in self.energy_system_components.get("gas_demand", []):
             gas_mass_flow = self.__state_vector_scaled(
