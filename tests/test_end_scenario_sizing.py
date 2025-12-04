@@ -88,10 +88,10 @@ class TestEndScenarioSizing(TestCase):
             heat_ates = self.results[f"{a}.Heat_ates"]
             heat_flow_charging = self.results[f"{a}.Heat_flow_charging"]
             heat_flow_discharging = self.results[f"{a}.Heat_flow_discharging"]
-            np.testing.assert_allclose(heat_ates, heat_flow_charging - heat_flow_discharging, atol=1.0)
-            np.testing.assert_array_less(heat_flow_charging[heat_flow_discharging>1e3], 1e3,
-                                         atol=1.0
+            np.testing.assert_allclose(
+                heat_ates, heat_flow_charging - heat_flow_discharging, atol=1.0
             )
+            np.testing.assert_array_less(heat_flow_charging[heat_flow_discharging > 1e3], 1e3)
 
         # Check whether buffer tank is only active in peak day
         peak_day_indx = self.solution.parameters(0)["peak_day_index"]
