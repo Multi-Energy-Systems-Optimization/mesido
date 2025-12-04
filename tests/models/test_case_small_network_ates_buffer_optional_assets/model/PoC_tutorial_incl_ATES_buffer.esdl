@@ -11,7 +11,7 @@
   </energySystemInformation>
   <instance xsi:type="esdl:Instance" id="9af52a01-24e2-4bbe-a7b8-f868161e6ca3" name="Untitled instance">
     <area xsi:type="esdl:Area" name="Untitled area" id="9edf5aa3-3855-4dac-b6f5-01c2edf1a43a">
-      <asset xsi:type="esdl:ResidualHeatSource" power="10000000.0" name="ResidualHeatSource_72d7" id="72d74fb5-134f-4bfb-829e-220ab76a8a7b" state="OPTIONAL">
+      <asset xsi:type="esdl:ResidualHeatSource" power="8000000.0" name="ResidualHeatSource_72d7" id="72d74fb5-134f-4bfb-829e-220ab76a8a7b" state="OPTIONAL">
         <geometry xsi:type="esdl:Point" lon="4.372987747192384" lat="52.00467202060717" CRS="WGS84"/>
         <port xsi:type="esdl:OutPort" id="d890f8aa-9b94-493d-b017-bd7cebaf8c77" name="Out" connectedTo="07c2f88e-85be-4b8b-a72e-14364a3810c9" carrier="9f6aeb1a-138b-4bb9-9a09-d524e94658e6"/>
         <port xsi:type="esdl:InPort" id="4d6c18cd-cc52-443d-8e53-96cd188dd1a8" name="In" connectedTo="c0a27794-98e2-4119-a363-cec4f0b525cd" carrier="9f6aeb1a-138b-4bb9-9a09-d524e94658e6_ret"/>
@@ -347,7 +347,7 @@
         <port xsi:type="esdl:InPort" id="c1007ef6-edd1-453c-86a7-953b79117655" name="In" connectedTo="3535f436-1270-4b1b-a326-41d69cd6e330" carrier="9f6aeb1a-138b-4bb9-9a09-d524e94658e6"/>
         <port xsi:type="esdl:OutPort" id="45ddacdd-b128-440b-bbde-68e611973793" name="Out" connectedTo="d0b773ac-1f87-46e2-9a73-4066a55e5085" carrier="9f6aeb1a-138b-4bb9-9a09-d524e94658e6"/>
       </asset>
-      <asset xsi:type="esdl:HeatStorage" id="0f5232be-f0e5-44ae-88a3-078889213a75" name="HeatStorage_0f52" volume="100.0" capacity="1000000000.0">
+      <asset xsi:type="esdl:HeatStorage" id="0f5232be-f0e5-44ae-88a3-078889213a75" name="HeatStorage_0f52" volume="1000.0" capacity="10000000000.0">
         <dataSource xsi:type="esdl:DataSource" name="WarmingUp factsheet: Surface Tank Storage" description="This data was generated using the 'kosten_per_asset.xslx' file in the 'Kentallen' directory of WarmingUp project 1D" attribution=""/>
         <costInformation xsi:type="esdl:CostInformation">
           <investmentCosts xsi:type="esdl:SingleValue" value="800.0">
@@ -361,7 +361,7 @@
         <port xsi:type="esdl:InPort" id="ee6d54fe-eb02-4ed5-998b-e8a002e93770" name="In" connectedTo="b492d36d-73aa-478b-80eb-a1b4851580a5" carrier="9f6aeb1a-138b-4bb9-9a09-d524e94658e6"/>
         <port xsi:type="esdl:OutPort" id="436f4984-1634-4c95-bb58-706678112e05" name="Out" connectedTo="aaf4710f-7cc4-47c4-92ca-f281b215f3d4" carrier="9f6aeb1a-138b-4bb9-9a09-d524e94658e6_ret"/>
       </asset>
-      <asset xsi:type="esdl:Pipe" id="198cc55b-f3c3-4a47-9f38-13999a947d58" name="Pipe_198_ret" innerDiameter="0.3938" outerDiameter="0.56" diameter="DN400" length="233.5">
+      <asset xsi:type="esdl:Pipe" id="198cc55b-f3c3-4a47-9f38-13999a947d58" name="Pipe_97d4_ret" innerDiameter="0.3938" outerDiameter="0.56" diameter="DN400" length="233.5">
         <dataSource xsi:type="esdl:DataSource" name="Logstor Product Catalogue Version 2020.03" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf"/>
         <costInformation xsi:type="esdl:CostInformation" id="f46fa939-146f-4194-b756-bf9d5a3db68a">
           <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="2ab2214c-8d42-4b74-877f-7fb97f6eab86" value="2840.6">
