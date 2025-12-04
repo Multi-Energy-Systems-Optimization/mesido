@@ -31,6 +31,7 @@ class RollOutPost:
 
         self.times = np.asarray(self.parameters["times"])
         self.years = int((self.times[-1] - self.times[0]) / 8760 / 3600)
+        self._horizon = 30  # total years that are represented by the self.years
 
         self.esh = EnergySystemHandler()
         self.esh.load_file(os.path.join(self.model_folder, self.esdl_file_name))
@@ -52,19 +53,13 @@ class RollOutPost:
         """
         results = self.results
         ates_assets = self.esh.get_all_instances_of_type(esdl.ATES)
-        for ates in ates_assets:
-            print(results[f"{ates.name}.Stored_heat"])
 
         figure, ax = plt.subplots()
         times = np.asarray(self.parameters["times"])
         times = times - times[0]
-        # times = self.times()
         for ates in ates_assets:
-            # stored_heat = [results.get(f"{ates}.Stored_heat", 0) for t in range(times)]
             plt.plot(
-                times / 3600 / 24,
-                np.array(results[f"{ates.name}.Stored_heat"]) / 1e9,
-                label=str(ates.name),
+                times / 3600 / 24, results[f"{ates.name}.Stored_heat"] / 1e9, label=str(ates.name)
             )
 
         plt.xlabel("Time [days]")
@@ -83,10 +78,9 @@ class RollOutPost:
         figure, ax = plt.subplots()
         heat_sources = self.esh.get_all_instances_of_type(esdl.HeatProducer)
         for heatsource in heat_sources:
-            # stored_heat = [results.get(f"{ates}.Stored_heat", 0) for t in range(times)]
             plt.plot(
                 times / 3600 / 24,
-                np.array(results[f"{heatsource.name}.Heat_source"]) / 1e6,
+                results[f"{heatsource.name}.Heat_source"] / 1e6,
                 label=str(heatsource),
             )
 
@@ -106,7 +100,6 @@ class RollOutPost:
         figure, ax = plt.subplots()
         for ates_asset in ates_assets:
             ates = ates_asset.name
-            # stored_heat = [results.get(f"{ates}.Stored_heat", 0) for t in range(times)]
             plt.plot(
                 times / 3600 / 24,
                 np.array(results[f"{ates}.Heat_ates"]) / 1e6,
@@ -151,10 +144,9 @@ class RollOutPost:
         color = ["b", "g", "r", "c", "m", "k", "y", "orange", "lime", "teal"]
 
         legend_years = []
-        problem_horizon = 30  # years
         times = self.times
         problem_years = int((times[-1] - times[0]) / 8760 / 3600)
-        yearstep = int(problem_horizon / problem_years)
+        yearstep = int(self._horizon / problem_years)
         for i in range(problem_years):
             legend_years.append(
                 mpatches.Patch(color=color[i], label=f"year {i * yearstep} {(i + 1) * yearstep}")
@@ -238,7 +230,6 @@ class RollOutPost:
     def plot_financials(self):
         parameters = self.parameters
         bounds = self.bounds
-        # fixed opex
         fixed_opex_type = {}
         variable_opex_type = {}
         capex_cumulative_type = {}
@@ -278,9 +269,7 @@ class RollOutPost:
                 # {asset}_fix_operational_cost_{year} set equal to is_placed[i] *
                 # _asset_fixed_operational_cost_map_var using bigm constraints.
 
-                var_opex_costs = (
-                    np.array(heat_flow_var[1:]) * variable_operational_cost_coeff * dt / 3600
-                )
+                var_opex_costs = heat_flow_var[1:] * variable_operational_cost_coeff * dt / 3600
                 if asset_type not in variable_opex_type.keys():
                     variable_opex_type[asset_type] = var_opex_costs
                 else:
@@ -308,7 +297,7 @@ class RollOutPost:
                         var_opex_costs[i * steps_per_year : (i + 1) * steps_per_year]
                     )
 
-        years = [i * 30 / self.years for i in range(self.years)]
+        years = [i * self._horizon / self.years for i in range(self.years)]
 
         capex_year_totals = np.asarray(capex_year_totals)
         opex_year_totals = np.asarray(opex_year_totals)
@@ -328,6 +317,7 @@ class RollOutPost:
         plt.savefig(savefig)
         plt.show()
 
+    # DO NOT DELETE: potential future use of post processing
     # def animate_init():
     #     line.set_data([], [])
     #     return (line,)
@@ -362,7 +352,7 @@ class RollOutPost:
     #                 idx = np.round(is_placed_list.index(1))
     #                 if idx == i - 1:
     #                     plot_size =
-    #                         np.round(max(results[f"{asset.name}.Heat_demand"]) / 1.0e6 * 3)
+    #                     np.round(max(results[f"{asset.name}.Heat_demand"]) / 1.0e6 * 3)
     #                     plt.plot(line_x, line_y, "o", color=color[int(idx)], markersize=plot_size)
     #                     # line.set_data(line_x, line_y)
     #         if (

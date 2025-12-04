@@ -13,6 +13,7 @@ from utils_tests import demand_matching_test, energy_conservation_test, heat_to_
 
 
 class TestUpdatedESDL(TestCase):
+
     def test_updated_esdl(self):
         """
         Check that the updated ESDL resulting from optmizing a network, is correct by using the

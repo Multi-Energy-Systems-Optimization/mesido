@@ -13,6 +13,7 @@ from mesido.workflows import (
     run_end_scenario_sizing,
 )
 from mesido.workflows.grow_workflow import EndScenarioSizingHeadLossStaged
+from mesido.workflows.utils.error_types import NO_POTENTIAL_ERRORS_CHECK
 
 import numpy as np
 
@@ -37,6 +38,7 @@ class TestEndScenarioSizing(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
+            error_type_check=NO_POTENTIAL_ERRORS_CHECK,  # Pass the error type here
         )
         cls.results = cls.solution.extract_results()
 
@@ -92,8 +94,21 @@ class TestEndScenarioSizing(TestCase):
                     np.testing.assert_allclose(heat_buffer[i], 0.0, atol=1.0e-6)
 
         obj = self.get_objective_value_end_scenario_sizing(self.solution)
-
+        excluded_costs_in_obj = 0.0  # Fixed costs excluded in the optim objective function
+        years = self.solution.parameters(0)["number_of_years"]
+        for asset in [*self.solution.energy_system_components.get("heat_demand", [])]:
+            technical_lifetime = self.solution.parameters(0)[f"{asset}.technical_life"]
+            factor = years / technical_lifetime
+            if factor < 1.0:
+                factor = 1.0
+            if asset in [*self.solution.energy_system_components.get("heat_demand", [])]:
+                excluded_costs_in_obj += (
+                    self.results[f"{self.solution._asset_installation_cost_map[asset]}"] * factor
+                )
         np.testing.assert_allclose(obj / 1.0e6, self.solution.objective_value)
+        np.testing.assert_array_less(
+            self.solution.objective_value, (obj + excluded_costs_in_obj) / 1.0e6
+        )
 
     def test_end_scenario_sizing_staged(self):
         """
@@ -139,6 +154,7 @@ class TestEndScenarioSizing(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
+            error_type_check=NO_POTENTIAL_ERRORS_CHECK,  # Pass the error type here,
         )
 
         solution_staged = run_end_scenario_sizing(
@@ -148,6 +164,7 @@ class TestEndScenarioSizing(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
+            error_type_check=NO_POTENTIAL_ERRORS_CHECK,  # Pass the error type here,
         )
 
         results = solution_staged.extract_results()
@@ -180,7 +197,6 @@ class TestEndScenarioSizing(TestCase):
                     np.testing.assert_allclose(heat_buffer[i], 0.0, atol=1.0e-6)
 
         obj = self.get_objective_value_end_scenario_sizing(solution_staged)
-
         np.testing.assert_allclose(obj / 1.0e6, solution_staged.objective_value)
 
         # comparing results of staged and unstaged problem definition. For larger systems there
@@ -251,6 +267,7 @@ class TestEndScenarioSizing(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
+            error_type_check=NO_POTENTIAL_ERRORS_CHECK,  # Pass the error type here
         )
 
         results = solution.extract_results()
@@ -287,6 +304,7 @@ class TestEndScenarioSizing(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
+            error_type_check=NO_POTENTIAL_ERRORS_CHECK,  # Pass the error type here
         )
 
         results = solution.extract_results()
@@ -342,6 +360,7 @@ class TestEndScenarioSizing(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
+            error_type_check=NO_POTENTIAL_ERRORS_CHECK,
         )
 
         results = solution.extract_results()
@@ -378,6 +397,7 @@ class TestEndScenarioSizing(TestCase):
             esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
+            error_type_check=NO_POTENTIAL_ERRORS_CHECK,
         )
         original_problem.pre()
         original_problem_pipe_classes = original_problem.get_unique_pipe_classes()
@@ -416,6 +436,9 @@ class TestEndScenarioSizing(TestCase):
                 np.testing.assert_allclose(cost_map_from_template, investment_cost_specific)
 
     def get_objective_value_end_scenario_sizing(self, solution):
+        # If heating demand asset's state is enabled, then exclude the costs since it is not
+        # part of the TCO calculation. This is because we do not size heating demand assets in
+        # the optimization
         results = solution.extract_results()
         obj = 0.0
         years = solution.parameters(0)["number_of_years"]
@@ -428,19 +451,20 @@ class TestEndScenarioSizing(TestCase):
             *solution.energy_system_components.get("heat_pump", []),
             *solution.energy_system_components.get("heat_pipe", []),
         ]:
-            # If heating demand asset's state is enabled, then exclude the costs since it is not
-            # part of the TCO calculation. This is because we do not size heating demand assets in
-            # the optimization
-            asset_id = self.solution.esdl_asset_name_to_id_map[asset]
-            asset_state = self.solution.esdl_assets[asset_id].attributes["state"]
-            asset_type = self.solution.esdl_assets[asset_id].asset_type
+            asset_id = solution.esdl_asset_name_to_id_map[asset]
+            asset_state = solution.esdl_assets[asset_id].attributes["state"]
+            asset_type = solution.esdl_assets[asset_id].asset_type
             if not (
                 (asset_type == "HeatingDemand") and (asset_state == esdl.AssetStateEnum.ENABLED)
             ):
+                technical_lifetime = solution.parameters(0)[f"{asset}.technical_life"]
+                factor = years / technical_lifetime
+                if factor < 1.0:
+                    factor = 1.0
                 obj += results[f"{solution._asset_fixed_operational_cost_map[asset]}"] * years
                 obj += results[f"{solution._asset_variable_operational_cost_map[asset]}"] * years
-                obj += results[f"{solution._asset_investment_cost_map[asset]}"]
-                obj += results[f"{solution._asset_installation_cost_map[asset]}"]
+                obj += results[f"{solution._asset_investment_cost_map[asset]}"] * factor
+                obj += results[f"{solution._asset_installation_cost_map[asset]}"] * factor
 
         return obj
 
