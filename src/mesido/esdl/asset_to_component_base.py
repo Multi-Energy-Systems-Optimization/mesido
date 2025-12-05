@@ -294,6 +294,13 @@ class _AssetToComponentBase:
             "investmentCosts": "required",
             "fixedOperationalCosts": "required",
         },
+        "gas_boiler": {  # Includes GeothermalSource, ResidualHeatSource, HeatProducer
+            "investmentCosts": "required",
+            "installationCosts": "required",
+            "variableOperationalCosts": "required",
+            "fixedMaintenanceCosts": "optional",
+            "fixedOperationalCosts": "optional",
+        },
     }
 
     COST_VALIDATION_COMPONENT_TO_ASSET_TYPE = {
@@ -309,6 +316,7 @@ class _AssetToComponentBase:
         "GasDemand": "gas_demand",
         "GasStorage": "gas_tank_storage",
         "Electrolyzer": "electrolyzer",
+        "GasHeater": "gas_boiler",
     }
 
     COST_ATTRIBUTE_TO_STRING = {

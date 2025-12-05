@@ -20,6 +20,7 @@ from .heat.ates import ATES
 from .heat.check_valve import CheckValve
 from .heat.cold_demand import ColdDemand
 from .heat.control_valve import ControlValve
+from .heat.gas_boiler import GasBoiler
 from .heat.geothermal_source import GeothermalSource
 from .heat.heat_buffer import HeatBuffer
 from .heat.heat_demand import HeatDemand
@@ -36,7 +37,7 @@ from .heat.pump import Pump
 from .multicommodity.airwater_heat_pump_elec import AirWaterHeatPumpElec
 from .multicommodity.electro_boiler import ElecBoiler
 from .multicommodity.electrolyzer import Electrolyzer
-from .multicommodity.gas_boiler import GasBoiler
+from .multicommodity.gas_boiler_gas import GasBoilerGas
 
 __all__ = [
     "Airco",
@@ -57,6 +58,7 @@ __all__ = [
     "ElectricityStorage",
     "Electrolyzer",
     "GasBoiler",
+    "GasBoilerGas",
     "GasDemand",
     "GasNode",
     "GasPipe",
