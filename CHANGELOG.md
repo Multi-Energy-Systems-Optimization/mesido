@@ -1,4 +1,4 @@
-# [Unreleased-main] - 2025-11-19
+# [Unreleased-main] - 2025-12-05
 
 ## Added
 - xx
@@ -7,7 +7,7 @@
 - xx
 
 ## Fixed
-- xx
+- Bug: Write updated esdl for 2 port heat pump
 
 # [0.1.15] - 2025-11-19
 
