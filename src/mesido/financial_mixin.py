@@ -310,7 +310,8 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 max(
                     parameters[f"{asset_name}.variable_operational_cost_coefficient"]
                     * nominal_variable_operational
-                    * 24.0,
+                    # * 24.0,  # not sure why this value was used, the substitution below would be better
+                    * (self.times()[-1] - self.times()[0]) / 3600.0,
                     1.0e2,
                 )
                 if nominal_variable_operational is not None
@@ -325,11 +326,13 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 self.__variable_operational_cost_per_time_var[cost_var_name] = ca.MX.sym(
                     cost_var_name
                 )
-                self.__variable_operational_cost_per_time_nominals[cost_var_name] = (
+                self.__variable_operational_cost_per_time_nominals[cost_var_name] = (  # should ratehr use __variable_operational_cost stuff / year * max time step size?
                     max(
                         parameters[f"{asset_name}.variable_operational_cost_coefficient"]
                         * nominal_variable_operational
-                        * 24.0,
+                        # * 24.0
+                        # * self.times()[-1] - self.times()[0]) / 3600.0
+                        * max(self.times()) / 3600.0,  # This would probably be better
                         1.0e2,
                     )
                     if nominal_variable_operational is not None
@@ -1186,6 +1189,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             ates_variable_operational_cost_per_time = self.__state_vector_scaled(
                 ates_variable_operational_cost_per_time_var, ensemble_member
             )
+            nominal_per_time = self.variable_nominal(ates_variable_operational_cost_per_time_var) #this would be needed below for the per_time constraint
 
             pump_power = self.__state_vector_scaled(f"{ates}.Pump_power", ensemble_member)
             eff = parameters[f"{ates}.pump_efficiency"]
@@ -1212,10 +1216,11 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             aggregation_count = self.esdl_assets[asset_id].attributes["aggregationCount"]
             big_m = (
                 2
-                * variable_operational_cost_coefficient
-                * max_carge_discarge_rate
+                * variable_operational_cost_coefficient# per_time?
+                * max_carge_discarge_rate # spelling
                 * aggregation_count
                 * timesteps[0]
+                # * 10000.0# timesteps[0]  # ? big_m is zero
             )
             ates_sum = 0.0
             for i in range(0, len(self.times())):
@@ -1229,7 +1234,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                             - var_opex_dt
                             + (1.0 - ates_is_charging[i]) * big_m
                         )
-                        / nominal,
+                        / nominal_per_time, # ...per_time to be used
                         0.0,
                         np.inf,
                     )
@@ -1242,14 +1247,14 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                             + var_opex_dt
                             + ates_is_charging[i] * big_m
                         )
-                        / nominal,
+                        / nominal_per_time, # ...per_time to be used
                         0.0,
                         np.inf,
                     )
                 )
 
                 ates_sum += ates_variable_operational_cost_per_time[i]
-                ates_sum += price_profile.values[i] * pump_power[i] * timesteps[i - 1] / eff
+                ates_sum += price_profile.values[i] * pump_power[i] * timesteps[i] / eff  # index [i - 1]-> [0 -1] = [-1], accessing the last index of time steps?
             constraints.append(((variable_operational_cost - ates_sum) / nominal, 0.0, 0.0))
         return constraints
 
