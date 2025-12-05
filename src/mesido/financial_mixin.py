@@ -332,7 +332,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                         * nominal_variable_operational
                         # * 24.0
                         # * self.times()[-1] - self.times()[0]) / 3600.0
-                        * max(self.times()) / 3600.0,  # This would probably be better
+                        * max(np.diff(self.times())) / 3600.0,  # This would probably be better
                         1.0e2,
                     )
                     if nominal_variable_operational is not None
