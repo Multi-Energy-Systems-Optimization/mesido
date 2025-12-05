@@ -256,7 +256,7 @@ class TestVaryingTemperature(TestCase):
         # Verify that also the integer is correctly set
         np.testing.assert_allclose(results[f"{33638164429859421}_69.0"], 0.0)
         np.testing.assert_allclose(results[f"{33638164429859421}_80.0"], 1.0)
-        np.testing.assert_allclose(results[f"{33638164429859421}_90.0"], 0.0)
+        np.testing.assert_allclose(results[f"{33638164429859421}_90.0"], 0.0, atol=1e-12)
 
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
