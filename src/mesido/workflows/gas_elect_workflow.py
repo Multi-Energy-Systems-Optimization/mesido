@@ -85,6 +85,10 @@ class GasElectProblem(
     CollocatedIntegratedOptimizationProblem,
 ):
     def __init__(self, *args, **kwargs):
+        # Extract error_type_check parameter before calling super().__init__
+        # This allows cost validation bypass when NO_POTENTIAL_ERRORS_CHECK is used
+        self._error_type_check = kwargs.get("error_type_check", None)
+
         super().__init__(*args, **kwargs)
 
         self._number_of_years = 1
