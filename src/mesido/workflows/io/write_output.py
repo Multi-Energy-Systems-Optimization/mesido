@@ -1170,30 +1170,32 @@ class ScenarioOutput:
                     elif isinstance(asset, esdl.Producer):
                         port = [port for port in asset.port if isinstance(port, esdl.OutPort)][0]
                     elif isinstance(asset, esdl.Conversion):
-                        primary_inports = [
-                            port
-                            for port in asset.port
-                            if isinstance(port, esdl.InPort) and "Prim" in port.name
-                        ]
-                        secondary_outports = [
-                            port
-                            for port in asset.port
-                            if isinstance(port, esdl.OutPort)
-                            and (("Out" if asset_class == "GasHeater" else "Sec") in port.name)
-                        ]
-                        if len(primary_inports) == 1 and len(secondary_outports) == 1:
-                            port_prim = primary_inports[0]
-                            port_sec = secondary_outports[0]
-                        elif len(primary_inports) == 0 and len(secondary_outports) == 1:
-                            port_sec = secondary_outports[0]
+                        if asset_class == "GasHeater":
+                            port = [port for port in asset.port if isinstance(port, esdl.OutPort)][0]
                         else:
-                            logger.error(
-                                f"Write to influxdb does not cater for asset: {asset_name}, with"
-                                f" {len(primary_inports)} inports and {len(secondary_outports)}"
-                                " outports"
-                            )
-                            traceback.print_exc()
-                            sys.exit(1)
+                            primary_inports = [
+                                port
+                                for port in asset.port
+                                if isinstance(port, esdl.InPort) and "Prim" in port.name
+                            ]
+                            secondary_outports = [
+                                port
+                                for port in asset.port
+                                if isinstance(port, esdl.OutPort) and "Sec" in port.name
+                            ]
+                            if len(primary_inports) == 1 and len(secondary_outports) == 1:
+                                port_prim = primary_inports[0]
+                                port_sec = secondary_outports[0]
+                            elif len(primary_inports) == 0 and len(secondary_outports) == 1:
+                                port_sec = secondary_outports[0]
+                            else:
+                                logger.error(
+                                    f"Write to influxdb does not cater for asset: {asset_name}, with"
+                                    f" {len(primary_inports)} inports and {len(secondary_outports)}"
+                                    " outports"
+                                )
+                                traceback.print_exc()
+                                sys.exit(1)
                     else:
                         NotImplementedError(
                             f"influxdb not included for assets of type {type(asset)}"

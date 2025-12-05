@@ -31,6 +31,7 @@ class GasBoilerGas(GasBoiler):
             name,
             **modifiers,
         )
+        self.Q_nominal_gas = nan
 
         self.energy_content = nan  # [J/kg]
         self.density = 2.5e3  # H2 density [g/m3] at 30bar

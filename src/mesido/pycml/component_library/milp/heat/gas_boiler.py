@@ -32,8 +32,4 @@ class GasBoiler(HeatSource):
 
         self.efficiency = nan
 
-        self.Q_nominal_gas = nan
-
         self.component_subtype = "gas_boiler"
-
-        # self.id_mapping_carrier = -1

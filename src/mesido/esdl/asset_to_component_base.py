@@ -294,7 +294,7 @@ class _AssetToComponentBase:
             "investmentCosts": "required",
             "fixedOperationalCosts": "required",
         },
-        "gas_boiler": {  # Includes GeothermalSource, ResidualHeatSource, HeatProducer
+        "gas_boiler": {
             "investmentCosts": "required",
             "installationCosts": "required",
             "variableOperationalCosts": "required",
