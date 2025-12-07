@@ -1171,7 +1171,9 @@ class ScenarioOutput:
                         port = [port for port in asset.port if isinstance(port, esdl.OutPort)][0]
                     elif isinstance(asset, esdl.Conversion):
                         if asset_class == "GasHeater":
-                            port = [port for port in asset.port if isinstance(port, esdl.OutPort)][0]
+                            port = [port for port in asset.port if isinstance(port, esdl.OutPort)][
+                                0
+                            ]
                         else:
                             primary_inports = [
                                 port
@@ -1190,9 +1192,9 @@ class ScenarioOutput:
                                 port_sec = secondary_outports[0]
                             else:
                                 logger.error(
-                                    f"Write to influxdb does not cater for asset: {asset_name}, with"
-                                    f" {len(primary_inports)} inports and {len(secondary_outports)}"
-                                    " outports"
+                                    f"Write to influxdb does not cater for asset: {asset_name}"
+                                    f", with {len(primary_inports)} inports and "
+                                    f"{len(secondary_outports)} outports"
                                 )
                                 traceback.print_exc()
                                 sys.exit(1)

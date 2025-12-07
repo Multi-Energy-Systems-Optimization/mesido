@@ -117,7 +117,7 @@ class TestGasBoiler(TestCase):
             timesteps_hr = np.diff(solution.times()) / 3600
             variable_operational_cost = 0.0
             var_op_costs = costs_esdl_asset.variableOperationalCosts.value / 1.0e6
-            efficiency = esdl_asset.attributes['efficiency']
+            efficiency = esdl_asset.attributes["efficiency"]
             for ii in range(1, len(solution.times())):
                 variable_operational_cost += (
                     var_op_costs
