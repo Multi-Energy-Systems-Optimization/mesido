@@ -1,10 +1,10 @@
-# [Unreleased-main] - 2025-11-19
+# [Unreleased-main] - 2025-12-08
 
 ## Added
 - xx
 
 ## Changed
-- xx
+- Templates are replated by measures. Now pipe costs are updated based on the asset measures if they are provided 
 
 ## Fixed
 - xx
