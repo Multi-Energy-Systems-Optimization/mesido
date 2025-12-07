@@ -5,7 +5,7 @@ from numpy import nan
 
 
 @add_variables_documentation_automatically
-class GasBoiler(HeatSource):
+class HeatSourceGas(HeatSource):
     """
     The source component is there to insert thermal power (Heat) into the network.
 

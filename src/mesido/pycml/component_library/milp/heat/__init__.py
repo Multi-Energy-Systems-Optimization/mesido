@@ -4,7 +4,6 @@ from .ates import ATES
 from .check_valve import CheckValve
 from .cold_demand import ColdDemand
 from .control_valve import ControlValve
-from .gas_boiler import GasBoiler
 from .geothermal_source import GeothermalSource
 from .heat_buffer import HeatBuffer
 from .heat_demand import HeatDemand
@@ -14,6 +13,7 @@ from .heat_pipe import HeatPipe
 from .heat_port import HeatPort
 from .heat_pump import HeatPump
 from .heat_source import HeatSource
+from .heat_source_gas import HeatSourceGas
 from .heat_two_port import HeatTwoPort
 from .low_temperature_ates import LowTemperatureATES
 from .node import Node
@@ -28,7 +28,7 @@ __all__ = [
     "ColdDemand",
     "ControlValve",
     "HeatDemand",
-    "GasBoiler",
+    "HeatSourceGas",
     "GeothermalSource",
     "HeatExchanger",
     "HeatFourPort",
