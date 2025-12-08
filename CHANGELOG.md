@@ -2,6 +2,10 @@
 
 ## Added
 - ATES variable cost calculation utilizing a split ates charging and discharging variable.
+- Rollout workflow may optionally include phasing of heat buffers for handling peak day constraints and demands
+- Inclusion of maximum allowed yearly pipe placement length constraint for the rollout workflow
+- Adding constraint so that all heating demands are placed at the end of the simulation
+
 
 ## Changed
 - Minimize TCO objective in the grow_workflow is now only based on capex and opex that can be influenced.
