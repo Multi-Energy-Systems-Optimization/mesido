@@ -307,7 +307,7 @@ class TestEndScenarioSizing(TestCase):
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
 
-                self.heat_network_settings["n_linearization_lines"]=3
+                self.heat_network_settings["n_linearization_lines"] = 3
 
         solution = run_end_scenario_sizing(
             EndScenarioSizingHeadLossStagedNLines,
@@ -367,8 +367,7 @@ class TestEndScenarioSizing(TestCase):
         solution = run_end_scenario_sizing(
             EndScenarioSizing,
             base_folder=base_folder,
-            esdl_file_name="test_case_small_network_all_optional_pipe_catalog"
-            ".esdl",
+            esdl_file_name="test_case_small_network_all_optional_pipe_catalog" ".esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",

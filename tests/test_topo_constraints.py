@@ -46,7 +46,7 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
             def energy_system_options(self):
                 options = super().energy_system_options()
                 self.heat_network_settings["minimize_head_losses"] = False
-                self.heat_network_settings["head_loss_option"]=HeadLossOption.NO_HEADLOSS
+                self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
                 return options
 
         cls.problem = run_esdl_mesido_optimization(
