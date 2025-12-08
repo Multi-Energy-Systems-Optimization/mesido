@@ -304,7 +304,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 max(
                     parameters[f"{asset_name}.variable_operational_cost_coefficient"]
                     * nominal_variable_operational
-                    * self.times()[-1]
+                    * (self.times()[-1] - self.times()[0])
                     / 3600,
                     1.0e2,
                 )

@@ -1819,7 +1819,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             (hot_pipe, _hot_pipe_orientation),
             (_cold_pipe, _cold_pipe_orientation),
         ) in self.energy_system_topology.ates.items():
-            # for ates_asset in self.energy_system_components.get("ates", []):
 
             if ates_asset in self.energy_system_components.get("low_temperature_ates", []):
                 continue
@@ -2093,7 +2092,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             (hot_pipe, _hot_pipe_orientation),
             (_cold_pipe, _cold_pipe_orientation),
         ) in self.energy_system_topology.ates.items():
-            # for ates in self.energy_system_components.get("ates", []):
 
             if ates in self.energy_system_components.get("low_temperature_ates", []):
                 continue
@@ -2407,7 +2405,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             )
 
             if len(supply_temperatures) == 0:
-                # if self.heat_network_settings["storage_charging_variables"]:
                 constraint_nominal = (heat_nominal * cp * rho * dt * q_nominal) ** 0.5
                 # only when discharging the heat_in should match the heat excactly (like producer)
                 constraints.append(
