@@ -303,8 +303,14 @@ class TestEndScenarioSizing(TestCase):
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
+        class EndScenarioSizingHeadLossStagedNLines(EndScenarioSizingHeadLossStaged):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+
+                self.heat_network_settings["n_linearization_lines"]=3
+
         solution = run_end_scenario_sizing(
-            EndScenarioSizingHeadLossStaged,
+            EndScenarioSizingHeadLossStagedNLines,
             base_folder=base_folder,
             esdl_file_name="test_case_small_network_all_optional.esdl",
             esdl_parser=ESDLFileParser,
@@ -361,7 +367,7 @@ class TestEndScenarioSizing(TestCase):
         solution = run_end_scenario_sizing(
             EndScenarioSizing,
             base_folder=base_folder,
-            esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional_pipe_catalog"
+            esdl_file_name="test_case_small_network_all_optional_pipe_catalog"
             ".esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
