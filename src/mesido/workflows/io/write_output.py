@@ -1188,8 +1188,8 @@ class ScenarioOutput:
                         else:
                             logger.error(
                                 f"Write to influxdb does not cater for asset: {asset_name}, with"
-                                f" {len(primary_inports)} inport(s) and {len(secondary_outports)}"
-                                " outport(s)."
+                                f" {len(primary_inports)} primary inport(s) and"
+                                f" {len(secondary_outports)} secondary outport(s)."
                             )
                             traceback.print_exc()
                             sys.exit(1)
