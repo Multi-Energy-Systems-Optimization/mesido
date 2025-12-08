@@ -463,9 +463,11 @@ class ESDLMixin(
         error_type_check = getattr(self, "_error_type_check", None)
 
         return dict(
-            v_nominal=v_nominal, v_max=v_max, v_max_gas=v_max_gas,
+            v_nominal=v_nominal,
+            v_max=v_max,
+            v_max_gas=v_max_gas,
             error_type_check=error_type_check,
-            min_fraction_tank_volume=min_fraction_tank_volume
+            min_fraction_tank_volume=min_fraction_tank_volume,
         )
 
     def esdl_qth_model_options(self) -> Dict:

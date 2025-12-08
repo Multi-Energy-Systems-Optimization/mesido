@@ -160,7 +160,7 @@ class RollOutProblem(
         super().read()
 
         if self._include_peak_day:
-            # Adapt yearly profile with hourly time steps to a common profile (averaged profile 
+            # Adapt yearly profile with hourly time steps to a common profile (averaged profile
             # except for the day with the peak demand).
             (
                 self.__problem_indx_max_peak,

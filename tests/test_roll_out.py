@@ -4,6 +4,7 @@ from unittest import TestCase
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.util import run_esdl_mesido_optimization
+
 # from mesido.workflows.io.rollout_post import rollout_post
 from mesido.workflows.rollout_workflow import RollOutProblem
 
@@ -294,14 +295,13 @@ class TestRollOutOptimization(TestCase):
                             )
                     else:
                         if (
-                            results[f"{b}.Heat_buffer"][
-                                i + year * solution._timesteps_per_year
-                            ]
+                            results[f"{b}.Heat_buffer"][i + year * solution._timesteps_per_year]
                             > 1e3
                         ):
                             used_buffer = True
 
-            np.testing.assert_(used_buffer,
-                               f"{b} Heat buffer has not been used in the entire problem")
+            np.testing.assert_(
+                used_buffer, f"{b} Heat buffer has not been used in the entire problem"
+            )
 
         # rollout_post(solution, results)

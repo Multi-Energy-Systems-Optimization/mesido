@@ -52,7 +52,11 @@ def run_esdl_mesido_optimization(
 
     feasibility = solution.solver_stats["return_status"]
 
-    assert feasibility.lower() in ["optimal", "finished", "integer optimal solution",
-                                   "integer optimal, tolerance"]
+    assert feasibility.lower() in [
+        "optimal",
+        "finished",
+        "integer optimal solution",
+        "integer optimal, tolerance",
+    ]
 
     return solution
