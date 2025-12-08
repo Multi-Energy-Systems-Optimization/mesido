@@ -4,7 +4,6 @@ from unittest import TestCase
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.util import run_esdl_mesido_optimization
-# from mesido.workflows.io.rollout_post import rollout_post
 from mesido.workflows.rollout_workflow import RollOutProblem
 
 import numpy as np
