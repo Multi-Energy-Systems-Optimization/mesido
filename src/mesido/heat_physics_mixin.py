@@ -3410,9 +3410,13 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                                     if len(prim_ret_temps) > 0
                                     else 0
                                 )
-                                efficiency = parameters[f"{hp}.efficiency"]
+
                                 t_cond = 273.15 + sec_sup_temp
                                 t_evap = 273.15 + prim_ret_temp
+                                if prim_ret_temp < 10.0:
+                                    efficiency = 1.3421 * parameters[f"{hp}.efficiency"]
+                                else:
+                                    efficiency = parameters[f"{hp}.efficiency"]
 
                                 cop_carnot = efficiency * t_cond / (t_cond - t_evap)
                                 not_selected = (
