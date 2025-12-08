@@ -4,10 +4,11 @@
 - ATES variable cost calculation utilizing a split ates charging and discharging variable.
 
 ## Changed
-- xx
+- Minimize TCO objective in the grow_workflow is now only based on capex and opex that can be influenced.
 
 ## Fixed
 - Bug: Write updated esdl for 2 port heat pump
+
 
 # [0.1.15] - 2025-11-19
 
