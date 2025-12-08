@@ -98,9 +98,9 @@ class RollOutProblem(
 
         self._include_peak_day = kwargs.get("include_peak_day", False)
         if self._include_peak_day:
-            self._timesteps_per_year += 25
             # + 25 needed if peak day is included with hourly timesteps
             # (see adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day)
+            self._timesteps_per_year += 25
 
         self._yearly_max_capex = kwargs.get("yearly_max_capex", 6.0e6)
         self._yearly_max_pipe_length = kwargs.get("yearly_max_pipe_length", 1.0e3)
