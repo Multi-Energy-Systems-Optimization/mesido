@@ -80,10 +80,18 @@ class TestEndScenarioSizing(TestCase):
         # prevent future coding bugs
         np.testing.assert_equal(1.0e-4, self.solution.heat_network_settings["minimum_velocity"])
 
-        # Check whether cyclic ates constraint is working
+        # Check whether cyclic ates constraint is working and split between the charging and
+        # discharging heat_flow variables
         for a in self.solution.energy_system_components.get("ates", []):
             stored_heat = self.results[f"{a}.Stored_heat"]
             np.testing.assert_allclose(stored_heat[0], stored_heat[-1], atol=1.0)
+            heat_ates = self.results[f"{a}.Heat_ates"]
+            heat_flow_charging = self.results[f"{a}.Heat_flow_charging"]
+            heat_flow_discharging = self.results[f"{a}.Heat_flow_discharging"]
+            np.testing.assert_allclose(
+                heat_ates, heat_flow_charging - heat_flow_discharging, atol=1.0
+            )
+            np.testing.assert_array_less(heat_flow_charging[heat_flow_discharging > 1e3], 1e3)
 
         # Check whether buffer tank is only active in peak day
         peak_day_indx = self.solution.parameters(0)["peak_day_index"]
@@ -92,6 +100,11 @@ class TestEndScenarioSizing(TestCase):
             for i in range(len(self.solution.times())):
                 if i < peak_day_indx or i > (peak_day_indx + 23):
                     np.testing.assert_allclose(heat_buffer[i], 0.0, atol=1.0e-6)
+            heat_flow_charging = self.results[f"{b}.Heat_flow_charging"]
+            heat_flow_discharging = self.results[f"{b}.Heat_flow_discharging"]
+            np.testing.assert_allclose(
+                heat_buffer, heat_flow_charging - heat_flow_discharging, atol=1.0
+            )
 
         obj = self.calculate_objective_value_end_scenario_sizing_all_optional(self.solution)
         excluded_costs_in_obj = self.calculate_heat_demand_costs_end_scenario_sizing()  # Fixed

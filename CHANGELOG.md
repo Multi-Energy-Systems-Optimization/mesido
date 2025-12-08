@@ -1,10 +1,32 @@
-# [Unreleased-main] - 2025-11-07
+# [Unreleased-main] - 2025-12-8
 
 ## Added
 - xx
 
 ## Changed
 - Minimize TCO objective in the grow_workflow is now only based on capex and opex that can be influenced.
+
+## Fixed
+- xx
+
+# [Unreleased-main] - 2025-12-8
+
+## Added
+- ATES variable cost calculation utilizing a split ates charging and discharging variable.
+
+## Changed
+- xx
+
+## Fixed
+- xx
+
+# [0.1.15] - 2025-11-19
+
+## Added
+- xx
+
+## Changed
+- Reduce computational effort stage 2 grow_workflow -> options["heat_loss_disconnected_pipe"] setting
 
 ## Fixed
 - xx
