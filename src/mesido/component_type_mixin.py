@@ -534,11 +534,6 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
         )
 
     def hot_cold_pipe_relations(self):
-        # TODO: fix backward compatability, in old esdl files the "related" attribute is not
-        # available. Determine from when it is available and have for old esdl files based on
-        # esdlVersion, set the hot_cold_pipe_relations based on _ret.
-        # TODO: also check if there are goals/constraints and function that should be adapted for
-        # pipes that are not in the realtions list, and thereby not in thet hot_pipes
         pipes = self.energy_system_components.get("heat_pipe", [])
         for pipe in pipes:
             related = False
