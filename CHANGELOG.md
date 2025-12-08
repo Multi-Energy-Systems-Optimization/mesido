@@ -1,4 +1,15 @@
-# [Unreleased-main] - 2025-11-19
+# [Unreleased-main] - 2025-12-8
+
+## Added
+- xx
+
+## Changed
+- Minimize TCO objective in the grow_workflow is now only based on capex and opex that can be influenced.
+
+## Fixed
+- xx
+
+# [Unreleased-main] - 2025-12-8
 
 ## Added
 - ATES variable cost calculation utilizing a split ates charging and discharging variable.

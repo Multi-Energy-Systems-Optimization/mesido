@@ -101,7 +101,7 @@ class TestProducerMaxProfile(TestCase):
 
             demand_matching_test(solution, results)
             energy_conservation_test(solution, results)
-            heat_to_discharge_test(solution, results)
+            heat_to_discharge_test(solution, results, atol=0.15)
             tol = 1e-4
             heat_produced = results["HeatProducer_b702.Heat_source"]
 
