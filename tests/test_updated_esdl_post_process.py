@@ -17,9 +17,9 @@ from mesido.workflows import (
 
 import numpy as np
 
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
-
 import pytest
+
+from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
 class TestUpdatedESDL(TestCase):

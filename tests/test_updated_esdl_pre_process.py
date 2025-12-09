@@ -9,9 +9,9 @@ import numpy as np
 
 from utils_test_scaling import create_problem_with_debug_info  # , problem_scaling_check
 
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
-
 import pytest
+
+from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
 class TestUpdatedESDL(TestCase):
