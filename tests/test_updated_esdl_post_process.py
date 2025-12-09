@@ -17,11 +17,14 @@ from mesido.workflows import (
 
 import numpy as np
 
+import pytest
+
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
 class TestUpdatedESDL(TestCase):
 
+    @pytest.mark.post_process
     def test_updated_esdl(self):
         """
         Check that the updated ESDL resulting from the optmizer, is correct by using the PoCTutorial
@@ -329,6 +332,7 @@ class TestUpdatedESDL(TestCase):
                 len(energy_system.instance[0].area.area), number_of_areas_in_esdl
             )
 
+    @pytest.mark.post_process
     def test_updated_esdl_eac(self):
         """
         Ensure that the updated ESDL, generated through optimization using the

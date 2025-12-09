@@ -23,6 +23,7 @@ from utils_tests import demand_matching_test
 
 
 class TestEndScenarioSizing(TestCase):
+
     @classmethod
     def setUpClass(cls) -> None:
         import models.test_case_small_network_ates_buffer_optional_assets.src.run_ates as run_ates
