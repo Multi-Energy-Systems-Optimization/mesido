@@ -1192,9 +1192,9 @@ class ScenarioOutput:
                                 port_sec = secondary_outports[0]
                             else:
                                 logger.error(
-                                    f"Write to influxdb does not cater for asset: {asset_name}"
-                                    f", with {len(primary_inports)} inports and "
-                                    f"{len(secondary_outports)} outports"
+                                    f"Write to influxdb does not cater for asset: {asset_name}, "
+                                    f"with {len(primary_inports)} primary inport(s) and"
+                                    f" {len(secondary_outports)} secondary outport(s)."
                                 )
                                 traceback.print_exc()
                                 sys.exit(1)
