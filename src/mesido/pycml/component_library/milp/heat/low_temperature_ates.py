@@ -129,3 +129,56 @@ class LowTemperatureATES(HeatTwoPort, BaseAsset):
             (self.Heat_flow - (self.Heat_flow_charging - self.Heat_flow_discharging))
             / self.Heat_nominal
         )
+
+        self.add_variable(
+            Variable,
+            "HeatIn_Heat_charging",
+            min=0.0,
+            max=self.HeatIn.Heat.max,
+            nominal=self.Heat_nominal,
+        )
+
+        self.add_variable(
+            Variable,
+            "HeatIn_Heat_discharging",
+            min=0.0,
+            max=abs(self.HeatIn.Heat.min),
+            nominal=self.Heat_nominal,
+        )
+
+        self.add_equation(
+            (self.HeatIn.Heat - (self.HeatIn_Heat_charging - self.HeatIn_Heat_discharging))
+            / self.Heat_nominal
+        )
+
+        self.add_variable(
+            Variable,
+            "HeatOut_Heat_charging",
+            min=0.0,
+            max=self.HeatOut.Heat.max,
+            nominal=self.Heat_nominal,
+        )
+
+        self.add_variable(
+            Variable,
+            "HeatOut_Heat_discharging",
+            min=0.0,
+            max=abs(self.HeatOut.Heat.min),
+            nominal=self.Heat_nominal,
+        )
+
+        self.add_equation(
+            (self.HeatOut.Heat - (self.HeatOut_Heat_charging - self.HeatOut_Heat_discharging))
+            / self.Heat_nominal
+        )
+
+        self.add_equation(
+            (self.HeatIn_Heat_charging - (self.HeatOut_Heat_charging + self.Heat_flow_charging)) /
+            self.Heat_nominal
+        )
+
+        self.add_equation(
+            (self.HeatIn_Heat_discharging - (self.HeatOut_Heat_discharging +
+                                             self.Heat_flow_discharging))
+            / self.Heat_nominal
+        )
