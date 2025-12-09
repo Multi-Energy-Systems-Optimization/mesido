@@ -17,14 +17,11 @@ from mesido.workflows import (
 
 import numpy as np
 
-import pytest
-
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
 class TestUpdatedESDL(TestCase):
 
-    @pytest.mark.post_process
     def test_updated_esdl(self):
         """
         Check that the updated ESDL resulting from the optmizer, is correct by using the PoCTutorial
@@ -268,19 +265,9 @@ class TestUpdatedESDL(TestCase):
                 # Check pipe diameter
                 if len(fnmatch.filter([energy_system.instance[0].area.asset[ii].id], "Pipe*")) == 1:
                     if asset_name in ["Pipe1", "Pipe1_ret"]:
-                        pipe_size = energy_system.instance[0].area.asset[
-                            ii
-                        ].diameter == esdl.PipeDiameterEnum.getEEnumLiteral(
-                            "DN200"
-                        ) or energy_system.instance[
-                            0
-                        ].area.asset[
-                            ii
-                        ].diameter == esdl.PipeDiameterEnum.getEEnumLiteral(
-                            "DN250"
-                        )
-                        np.testing.assert_array_equal(pipe_size, True)  # original pipe DN400 being
-                        # sized
+                        np.testing.assert_array_equal(
+                            energy_system.instance[0].area.asset[ii].diameter.name, "DN250"
+                        )  # original pipe DN400 being sized
                     elif asset_name in ["Pipe4", "Pipe4_ret"]:
                         np.testing.assert_array_equal(
                             energy_system.instance[0].area.asset[ii].diameter.name, "DN200"
@@ -332,7 +319,6 @@ class TestUpdatedESDL(TestCase):
                 len(energy_system.instance[0].area.area), number_of_areas_in_esdl
             )
 
-    @pytest.mark.post_process
     def test_updated_esdl_eac(self):
         """
         Ensure that the updated ESDL, generated through optimization using the
