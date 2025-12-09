@@ -52,9 +52,9 @@ jobs:
       - name: Check build
         run: python setup.py sdist bdist_wheel
   
-  # Main testing part 1
-  test_main_1:
-    name: Test main - 1
+  # Main testing part
+  test_main:
+    name: Test main
     runs-on: ubuntu-latest
     timeout-minutes: 10
     if: ${{ !github.event.pull_request.draft }}

@@ -20,6 +20,7 @@ class TestProducerMaxProfile(TestCase):
     couple of timesteps
 
     """
+
     @pytest.mark.slow_1
     def test_max_producer_scaled_profile(self):
         """
