@@ -72,27 +72,6 @@ jobs:
   
       - name: Check test
         run: tox -vv -etest_env_main_1
-
-  # Main testing part 2
-  test_main_2:
-    name: Test main - 2
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    if: ${{ !github.event.pull_request.draft }}
-    env:
-      TOXENV: py311
-    steps:
-      - uses: actions/checkout@v3
-
-      - uses: actions/setup-python@v4
-        with:
-          python-version: "3.11"
-
-      - name: deps
-        run: python -m pip install -U tox
-  
-      - name: Check test
-        run: tox -vv -etest_env_main_2
   
   # Pre-processing testing
   test_pre_processing:

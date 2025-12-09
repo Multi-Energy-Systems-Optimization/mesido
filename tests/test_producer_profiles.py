@@ -9,6 +9,8 @@ import numpy as np
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
+import pytest
+
 
 class TestProducerMaxProfile(TestCase):
     """
@@ -18,7 +20,7 @@ class TestProducerMaxProfile(TestCase):
     couple of timesteps
 
     """
-
+    @pytest.mark.slow_1
     def test_max_producer_scaled_profile(self):
         """
         Use a scaled profile, where the profile was intentionally reduced for a couple of
@@ -62,6 +64,7 @@ class TestProducerMaxProfile(TestCase):
         biggerthen = all(heat_producer_profile_full + tol >= heat_producer)
         self.assertTrue(biggerthen)
 
+    @pytest.mark.slow_1
     def test_max_producer_esdl_unscaled_profile(self):
         """
         Use a profile specified in Watts, where the profile was intentionally modified (via the
@@ -141,6 +144,7 @@ class TestProducerMaxProfile(TestCase):
                     ),
                 )
 
+    @pytest.mark.slow_1
     def test_max_producer_esdl_scaled_profile(self):
         """
         Use a scaled profile, where the profile was intentionally reduced for a couple of
