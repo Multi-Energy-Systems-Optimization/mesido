@@ -149,9 +149,9 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
                         f"{chosen_pc=} with higher investment costs",
                     )
                 elif pc.investment_costs > chosen_pc.investment_costs:
-                    np.testing.assert_array_less(
-                        1e-6,
+                    np.testing.assert_almost_equal(
                         cost_ordering_var,
+                        1.0,
                         err_msg=f"Expected the cost order var for {p} and {pc=} to be 1.0, since"
                         f"{chosen_pc=} with lower investment costs",
                     )
@@ -166,9 +166,9 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
                         f"since {chosen_pc=} with higher max discharge",
                     )
                 elif pc.maximum_discharge > chosen_pc.maximum_discharge:
-                    np.testing.assert_array_less(
-                        1e-6,
+                    np.testing.assert_almost_equal(
                         discharge_ordering_var,
+                        1.0,
                         err_msg=f"Expected the discharge order var for {p} and {pc=} to be 1.0, "
                         f"since {chosen_pc=} with lower max discharge",
                     )
@@ -185,9 +185,9 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
                         f"since {chosen_pc=} with higher heat losses",
                     )
                 elif pc_heat_loss > chosen_pc_heat_loss:
-                    np.testing.assert_array_less(
-                        1e-6,
+                    np.testing.assert_almost_equal(
                         heat_loss_ordering_var,
+                        1.0,
                         err_msg=f"Expected the heat loss order var for {p} and {pc=} to be 1.0, "
                         f"since {chosen_pc=} with lower heat losses",
                     )
