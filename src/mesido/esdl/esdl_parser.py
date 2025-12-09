@@ -99,7 +99,7 @@ class BaseESDLParser:
 
         # loop through assets
         for el in self._energy_system.eAllContents():
-            # If asset templates exist, collect that in a different dictionary, to be used later in
+            # If asset measures exist, collect that in a different dictionary, to be used later in
             # esdl_mixin to update that information
             if asset_measures is not None and el in asset_measures:
                 if isinstance(el, esdl.Measure):

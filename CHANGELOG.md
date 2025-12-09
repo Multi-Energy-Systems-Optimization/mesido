@@ -4,7 +4,7 @@
 - xx
 
 ## Changed
-- Templates are replated by measures. Now pipe costs are updated based on the asset measures if they are provided 
+- Templates are replaced by measures. Now pipe costs are updated based on the asset measures if they are provided 
 
 ## Fixed
 - xx
