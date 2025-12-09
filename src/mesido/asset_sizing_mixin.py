@@ -1130,9 +1130,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         if (
             variable in self.__heat_pipe_topo_pipe_class_var
             or variable in self.__asset_aggregation_count_var
-            # or variable in self.__heat_pipe_topo_pipe_class_discharge_ordering_var
-            # or variable in self.__heat_pipe_topo_pipe_class_cost_ordering_var
-            # or variable in self.__heat_pipe_topo_pipe_class_heat_loss_ordering_var
+            or variable in self.__heat_pipe_topo_pipe_class_discharge_ordering_var
+            or variable in self.__heat_pipe_topo_pipe_class_cost_ordering_var
+            or variable in self.__heat_pipe_topo_pipe_class_heat_loss_ordering_var
             or variable in self.__gas_pipe_topo_pipe_class_discharge_ordering_var
             or variable in self.__gas_pipe_topo_pipe_class_cost_ordering_var
             or variable in self.__gas_pipe_topo_pipe_class_var
