@@ -457,12 +457,17 @@ class ESDLMixin(
         v_nominal = energy_system_options["estimated_velocity"]
         v_max = self.heat_network_settings["maximum_velocity"]
         v_max_gas = self.gas_network_settings["maximum_velocity"]
+        min_fraction_tank_volume = energy_system_options.get("min_fraction_tank_volume", 0.05)
 
         # Pass error type check setting to asset converter
         error_type_check = getattr(self, "_error_type_check", None)
 
         return dict(
-            v_nominal=v_nominal, v_max=v_max, v_max_gas=v_max_gas, error_type_check=error_type_check
+            v_nominal=v_nominal,
+            v_max=v_max,
+            v_max_gas=v_max_gas,
+            error_type_check=error_type_check,
+            min_fraction_tank_volume=min_fraction_tank_volume,
         )
 
     def esdl_qth_model_options(self) -> Dict:
