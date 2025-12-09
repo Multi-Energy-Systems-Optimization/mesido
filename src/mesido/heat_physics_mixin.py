@@ -258,6 +258,11 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         # pipes in the network.
         set_self_hot_pipes = set(self.hot_pipes)
 
+        minimum_velocity = self.heat_network_settings["minimum_velocity"]
+        self.flow_dir_vars_avail = not (self.heat_network_settings["head_loss_option"] ==
+                               HeadLossOption.NO_HEADLOSS and self.energy_system_options()["neglect_pipe_heat_losses"] and minimum_velocity <=
+                               0.0)
+        self.flow_dir_vars_avail = True
         for pipe_name in self.energy_system_components.get("heat_pipe", []):
             commodity = self.energy_system_components_commodity.get(pipe_name)
             head_loss_var = f"{pipe_name}.__head_loss"
@@ -300,9 +305,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     ] = initialized_vars[10][pipe_linear_line_segment_var_name]
 
             neighbour = self.has_related_pipe(pipe_name)
-            minimum_velocity = self.heat_network_settings["minimum_velocity"]
-            if not (self.energy_system_options()["neglect_pipe_heat_losses"] and minimum_velocity <=
-                    0.0):
+            if self.flow_dir_vars_avail:
                 if neighbour and pipe_name not in set_self_hot_pipes:
                     flow_dir_var = f"{self.cold_to_hot_pipe(pipe_name)}__flow_direct_var"
                 else:
@@ -331,6 +334,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 else:
                     self.__heat_flow_direct_bounds[flow_dir_var] = (0.0, 1.0)
 
+                if heat_in_ub <= 0.0 and heat_out_lb >= 0.0:
+                    raise Exception(f"Heat flow rate in/out of pipe '{pipe_name}' cannot be zero.")
+
             if parameters[f"{pipe_name}.disconnectable"]:
                 neighbour = self.has_related_pipe(pipe_name)
                 if neighbour and pipe_name not in set_self_hot_pipes:
@@ -341,9 +347,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 self._heat_pipe_disconnect_map[pipe_name] = disconnected_var
                 self.__heat_pipe_disconnect_var[disconnected_var] = ca.MX.sym(disconnected_var)
                 self.__heat_pipe_disconnect_var_bounds[disconnected_var] = (0.0, 1.0)
-
-            if heat_in_ub <= 0.0 and heat_out_lb >= 0.0:
-                raise Exception(f"Heat flow rate in/out of pipe '{pipe_name}' cannot be zero.")
 
         # Integers for disabling the HEX temperature constraints
         for hex in [
@@ -1328,9 +1331,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             # when DN=0 the flow_dir variable can be 0 or 1, thus these constraints then need to be
             # disabled
 
-
-            if not (self.energy_system_options()["neglect_pipe_heat_losses"] and minimum_velocity <=
-                    0.0):
+            if self.flow_dir_vars_avail:
                 flow_dir_var = self._heat_pipe_to_flow_direct_map[p]
                 flow_dir = self.state(flow_dir_var)
                 constraints.append(
@@ -1382,7 +1383,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     )
                 )
 
-
             # If a pipe is disconnected, the discharge should be zero
             if is_disconnected_var is not None:
                 big_m = 2.0 * (maximum_discharge + minimum_discharge)
@@ -1408,8 +1408,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 )
 
         # Pipes that are connected in series should have the same heat direction.
-        if not (self.energy_system_options()["neglect_pipe_heat_losses"] and minimum_velocity <=
-                0.0):
+        if self.flow_dir_vars_avail:
             for pipes in self.energy_system_topology.pipe_series:
                 if len(pipes) <= 1:
                     continue
@@ -2427,22 +2426,40 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 )
             )
 
+            heat_in_charging = self.state(f"{b}.HeatIn_Heat_charging")
+            heat_in_discharging = self.state(f"{b}.HeatIn_Heat_discharging")
+            heat_out_charging = self.state(f"{b}.HeatOut_Heat_charging")
+            heat_out_discharging = self.state(f"{b}.HeatOut_Heat_discharging")
             if len(supply_temperatures) == 0:
                 # if self.heat_network_settings["storage_charging_variables"]:
                 constraint_nominal = (heat_nominal * cp * rho * dt * q_nominal) ** 0.5
                 # only when discharging the heat_in should match the heat excactly (like producer)
-                constraints.append(
-                    (
+                if self.heat_network_settings["storage_charging_variables"]:
+                    constraints.append(
                         (
-                            heat_in
-                            - discharge * cp * rho * parameters[f"{b}.T_supply"]
-                            + is_buffer_charging * big_m
+                            (
+                                heat_in
+                                + discharge * cp * rho * parameters[f"{b}.T_supply"]
+                                + is_buffer_charging * big_m
+                            )
+                            / constraint_nominal,
+                            0.0,
+                            np.inf,
                         )
-                        / constraint_nominal,
-                        0.0,
-                        np.inf,
                     )
-                )
+                else:
+                    constraints.append(
+                        (
+                            (
+                                heat_in_discharging
+                                + discharge * cp * rho * parameters[f"{b}.T_supply"]
+                                # + is_buffer_charging * big_m
+                            )
+                            / constraint_nominal,
+                            0.0,
+                            np.inf,
+                        )
+                    )
                 constraints.append(
                     (
                         (heat_in - discharge * cp * rho * parameters[f"{b}.T_supply"])
@@ -2514,18 +2531,32 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         np.inf,
                     )
                 )
-                constraints.append(
-                    (
+                if self.heat_network_settings["storage_charging_variables"]:
+                    constraints.append(
                         (
-                            heat_out
-                            - discharge * cp * rho * parameters[f"{b}.T_return"]
-                            - (1.0 - is_buffer_charging) * big_m
+                            (
+                                heat_out
+                                - discharge * cp * rho * parameters[f"{b}.T_return"]
+                                - (1.0 - is_buffer_charging) * big_m
+                            )
+                            / constraint_nominal,
+                            -np.inf,
+                            0.0,
                         )
-                        / constraint_nominal,
-                        -np.inf,
-                        0.0,
                     )
-                )
+                else:
+                    constraints.append(
+                        (
+                            (
+                                heat_out_charging
+                                - discharge * cp * rho * parameters[f"{b}.T_return"]
+                                # - (1.0 - is_buffer_charging) * big_m
+                            )
+                            / constraint_nominal,
+                            0.0,
+                            np.inf,
+                        )
+                    )
             else:
                 for return_temperature in return_temperatures:
                     ret_temperature_is_selected = self.state(f"{ret_carrier}_{return_temperature}")
