@@ -300,33 +300,36 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     ] = initialized_vars[10][pipe_linear_line_segment_var_name]
 
             neighbour = self.has_related_pipe(pipe_name)
-            if neighbour and pipe_name not in set_self_hot_pipes:
-                flow_dir_var = f"{self.cold_to_hot_pipe(pipe_name)}__flow_direct_var"
-            else:
-                flow_dir_var = f"{pipe_name}__flow_direct_var"
+            minimum_velocity = self.heat_network_settings["minimum_velocity"]
+            if not (self.energy_system_options()["neglect_pipe_heat_losses"] and minimum_velocity <=
+                    0.0):
+                if neighbour and pipe_name not in set_self_hot_pipes:
+                    flow_dir_var = f"{self.cold_to_hot_pipe(pipe_name)}__flow_direct_var"
+                else:
+                    flow_dir_var = f"{pipe_name}__flow_direct_var"
 
-            self._heat_pipe_to_flow_direct_map[pipe_name] = flow_dir_var
-            self.__heat_flow_direct_var[flow_dir_var] = ca.MX.sym(flow_dir_var)
+                self._heat_pipe_to_flow_direct_map[pipe_name] = flow_dir_var
+                self.__heat_flow_direct_var[flow_dir_var] = ca.MX.sym(flow_dir_var)
 
-            # Fix the directions that are already implied by the bounds on heat
-            # Nonnegative heat implies that flow direction Boolean is equal to one.
-            # Nonpositive heat implies that flow direction Boolean is equal to zero.
+                # Fix the directions that are already implied by the bounds on heat
+                # Nonnegative heat implies that flow direction Boolean is equal to one.
+                # Nonpositive heat implies that flow direction Boolean is equal to zero.
 
-            heat_in_lb = _get_min_bound(bounds[f"{pipe_name}.HeatIn.Heat"][0])
-            heat_in_ub = _get_max_bound(bounds[f"{pipe_name}.HeatIn.Heat"][1])
-            heat_out_lb = _get_min_bound(bounds[f"{pipe_name}.HeatOut.Heat"][0])
-            heat_out_ub = _get_max_bound(bounds[f"{pipe_name}.HeatOut.Heat"][1])
+                heat_in_lb = _get_min_bound(bounds[f"{pipe_name}.HeatIn.Heat"][0])
+                heat_in_ub = _get_max_bound(bounds[f"{pipe_name}.HeatIn.Heat"][1])
+                heat_out_lb = _get_min_bound(bounds[f"{pipe_name}.HeatOut.Heat"][0])
+                heat_out_ub = _get_max_bound(bounds[f"{pipe_name}.HeatOut.Heat"][1])
 
-            if (heat_in_lb >= 0.0 and heat_in_ub >= 0.0) or (
-                heat_out_lb >= 0.0 and heat_out_ub >= 0.0
-            ):
-                self.__heat_flow_direct_bounds[flow_dir_var] = (1.0, 1.0)
-            elif (heat_in_lb <= 0.0 and heat_in_ub <= 0.0) or (
-                heat_out_lb <= 0.0 and heat_out_ub <= 0.0
-            ):
-                self.__heat_flow_direct_bounds[flow_dir_var] = (0.0, 0.0)
-            else:
-                self.__heat_flow_direct_bounds[flow_dir_var] = (0.0, 1.0)
+                if (heat_in_lb >= 0.0 and heat_in_ub >= 0.0) or (
+                    heat_out_lb >= 0.0 and heat_out_ub >= 0.0
+                ):
+                    self.__heat_flow_direct_bounds[flow_dir_var] = (1.0, 1.0)
+                elif (heat_in_lb <= 0.0 and heat_in_ub <= 0.0) or (
+                    heat_out_lb <= 0.0 and heat_out_ub <= 0.0
+                ):
+                    self.__heat_flow_direct_bounds[flow_dir_var] = (0.0, 0.0)
+                else:
+                    self.__heat_flow_direct_bounds[flow_dir_var] = (0.0, 1.0)
 
             if parameters[f"{pipe_name}.disconnectable"]:
                 neighbour = self.has_related_pipe(pipe_name)
@@ -1282,9 +1285,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         # Also ensure that the discharge has the same sign as the heat.
         for p in self.energy_system_components.get("heat_pipe", []):
-            flow_dir_var = self._heat_pipe_to_flow_direct_map[p]
-            flow_dir = self.state(flow_dir_var)
-
             is_disconnected_var = self._heat_pipe_disconnect_map.get(p)
 
             if is_disconnected_var is None:
@@ -1327,54 +1327,61 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             # when DN=0 the flow_dir variable can be 0 or 1, thus these constraints then need to be
             # disabled
-            constraints.append(
-                (
+
+
+            if not (self.energy_system_options()["neglect_pipe_heat_losses"] and minimum_velocity <=
+                    0.0):
+                flow_dir_var = self._heat_pipe_to_flow_direct_map[p]
+                flow_dir = self.state(flow_dir_var)
+                constraints.append(
                     (
-                        q_pipe
-                        - big_m * (flow_dir + dn_none)
-                        + (1 - is_disconnected) * minimum_discharge
-                    )
-                    / constraint_nominal,
-                    -np.inf,
-                    0.0,
-                )
-            )
-            constraints.append(
-                (
-                    (
-                        q_pipe
-                        + big_m * (1 - flow_dir + dn_none)
-                        - (1 - is_disconnected) * minimum_discharge
-                    )
-                    / constraint_nominal,
-                    0.0,
-                    np.inf,
-                )
-            )
-            big_m = 2.0 * np.max(
-                np.abs(
-                    (
-                        *self.bounds()[f"{p}.HeatIn.Heat"],
-                        *self.bounds()[f"{p}.HeatOut.Heat"],
+                        (
+                            q_pipe
+                            - big_m * (flow_dir + dn_none)
+                            + (1 - is_disconnected) * minimum_discharge
+                        )
+                        / constraint_nominal,
+                        -np.inf,
+                        0.0,
                     )
                 )
-            )
-            # Note we only need one on the heat as the desired behaviour is propegated by the
-            # constraints heat_in - heat_out - heat_loss == 0.
-            constraints.append(
-                (
-                    (heat_in - big_m * flow_dir) / big_m,
-                    -np.inf,
-                    0.0,
+                constraints.append(
+                    (
+                        (
+                            q_pipe
+                            + big_m * (1 - flow_dir + dn_none)
+                            - (1 - is_disconnected) * minimum_discharge
+                        )
+                        / constraint_nominal,
+                        0.0,
+                        np.inf,
+                    )
                 )
-            )
-            constraints.append(
-                (
-                    (heat_in + big_m * (1 - flow_dir)) / big_m,
-                    0.0,
-                    np.inf,
+                big_m = 2.0 * np.max(
+                    np.abs(
+                        (
+                            *self.bounds()[f"{p}.HeatIn.Heat"],
+                            *self.bounds()[f"{p}.HeatOut.Heat"],
+                        )
+                    )
                 )
-            )
+                # Note we only need one on the heat as the desired behaviour is propegated by the
+                # constraints heat_in - heat_out - heat_loss == 0.
+                constraints.append(
+                    (
+                        (heat_in - big_m * flow_dir) / big_m,
+                        -np.inf,
+                        0.0,
+                    )
+                )
+                constraints.append(
+                    (
+                        (heat_in + big_m * (1 - flow_dir)) / big_m,
+                        0.0,
+                        np.inf,
+                    )
+                )
+
 
             # If a pipe is disconnected, the discharge should be zero
             if is_disconnected_var is not None:
@@ -1401,19 +1408,21 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 )
 
         # Pipes that are connected in series should have the same heat direction.
-        for pipes in self.energy_system_topology.pipe_series:
-            if len(pipes) <= 1:
-                continue
+        if not (self.energy_system_options()["neglect_pipe_heat_losses"] and minimum_velocity <=
+                0.0):
+            for pipes in self.energy_system_topology.pipe_series:
+                if len(pipes) <= 1:
+                    continue
 
-            assert (
-                len({p for p in pipes if self.is_cold_pipe(p)}) == 0
-            ), "Pipe series for Heat models should only contain hot pipes"
+                assert (
+                    len({p for p in pipes if self.is_cold_pipe(p)}) == 0
+                ), "Pipe series for Heat models should only contain hot pipes"
 
-            base_flow_dir_var = self.state(self._heat_pipe_to_flow_direct_map[pipes[0]])
+                base_flow_dir_var = self.state(self._heat_pipe_to_flow_direct_map[pipes[0]])
 
-            for p in pipes[1:]:
-                flow_dir_var = self.state(self._heat_pipe_to_flow_direct_map[p])
-                constraints.append((base_flow_dir_var - flow_dir_var, 0.0, 0.0))
+                for p in pipes[1:]:
+                    flow_dir_var = self.state(self._heat_pipe_to_flow_direct_map[p])
+                    constraints.append((base_flow_dir_var - flow_dir_var, 0.0, 0.0))
 
         return constraints
 
@@ -1654,11 +1663,11 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             cp = parameters[f"{p}.cp"]
             rho = parameters[f"{p}.rho"]
 
-            flow_dir_var = self._heat_pipe_to_flow_direct_map[p]
-            flow_dir = self.state(flow_dir_var)
             scaled_heat_in = self.state(f"{p}.HeatIn.Heat")  # * heat_to_discharge_fac
             scaled_heat_out = self.state(f"{p}.HeatOut.Heat")  # * heat_to_discharge_fac
             pipe_q = self.state(f"{p}.Q")
+            pipe_q_pos = self.state(f"{p}.Q_p")
+            pipe_q_neg = self.state(f"{p}.Q_n")
             heat_nominal = self.variable_nominal(f"{p}.HeatIn.Heat")
 
             # We do not want Big M to be too tight in this case, as it results
@@ -1681,6 +1690,20 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                                 (heat - pipe_q * (cp * rho * temp)) / heat_nominal,
                                 0.0,
                                 0.0,
+                            )
+                        )
+                        constraints.append(
+                            (
+                                (heat - pipe_q_pos * (cp * rho * temp)) / heat_nominal,
+                                -np.inf,
+                                0.0,
+                            )
+                        )
+                        constraints.append(
+                            (
+                                (heat + pipe_q_neg * (cp * rho * temp)) / heat_nominal,
+                                0.0,
+                                np.inf,
                             )
                         )
                     else:
@@ -1716,6 +1739,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     # In this case we have to bound the heat flowing in the line with the ground
                     # temperature instead, as the line can heat up to at maximum the ground
                     # temperature.
+                    flow_dir_var = self._heat_pipe_to_flow_direct_map[p]
+                    flow_dir = self.state(flow_dir_var)
                     temp = max(parameters[f"{p}.temperature"], parameters[f"{p}.T_ground"])
                     assert big_m > 0.0
 

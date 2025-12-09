@@ -78,5 +78,10 @@ class HeatPipe(_NonStorageComponent):
 
         self.add_equation(((self.Heat_flow - self.HeatIn.Heat) / self.Heat_nominal))
 
+        self.add_variable(Variable, "Q_p", min=0.0, max=self.Q.max, nominal=self.Q_nominal)
+        self.add_variable(Variable, "Q_n", min=0.0, max=abs(self.Q.min), nominal=self.Q_nominal)
+
+        self.add_equation((self.Q - (self.Q_p - self.Q_n))/self.Q_nominal)
+
         # Note: Heat loss is added in the mixin, because it depends on the flow direction
         # * heat loss equation: (HeatOut.Heat - (HeatIn.Heat +/- Heat_loss)) = 0.
