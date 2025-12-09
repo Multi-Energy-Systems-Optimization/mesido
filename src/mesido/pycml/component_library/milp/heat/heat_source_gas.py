@@ -32,4 +32,4 @@ class HeatSourceGas(HeatSource):
 
         self.efficiency = nan
 
-        self.component_subtype = "gas_boiler"
+        self.component_subtype = "heat_source_gas"

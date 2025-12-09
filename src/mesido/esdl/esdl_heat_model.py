@@ -2385,7 +2385,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         return Compressor, modifiers
 
-    def convert_gas_boiler(self, asset: Asset) -> Tuple[GasHeatSourceGas, MODIFIERS]:
+    def convert_heat_source_gas(self, asset: Asset) -> Tuple[GasHeatSourceGas, MODIFIERS]:
         """
         This function converts the GasHeater object in esdl to a set of modifiers that can be
         used in a pycml object.
@@ -2427,10 +2427,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
         if not max_supply:
             logger.error(f"{asset.asset_type} '{asset.name}' has no max power specified. ")
         assert max_supply > 0.0
-
-        # if len(asset.in_ports) == 1:
-        #     heat_source_object, modifiers = self.convert_heat_source(asset)
-        #     return heat_source_object, modifiers
 
         if len(asset.in_ports) == 1:
             _, modifiers = self.convert_heat_source(asset)

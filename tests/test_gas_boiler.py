@@ -12,7 +12,7 @@ from utils_tests import demand_matching_test, energy_conservation_test, heat_to_
 
 
 class TestGasBoiler(TestCase):
-    def test_gas_boiler(self):
+    def test_gas_heat_source_gas(self):
         """
         This tests checks the gas boiler for the standard checks and the energy conservation over
         the commodity change.
@@ -64,7 +64,7 @@ class TestGasBoiler(TestCase):
             parameters["Pipe_a7b5.diameter"] ** 2 / 4 * math.pi * v_max_gas,
         )
 
-    def test_gas_boiler_no_gas(self):
+    def test_heat_source_gas(self):
         """
         This tests checks the gas boiler without gas inlet port for the standard checks
         and GasHeater cost components
@@ -133,5 +133,5 @@ class TestGasBoiler(TestCase):
 if __name__ == "__main__":
 
     a = TestGasBoiler()
-    a.test_gas_boiler()
-    a.test_gas_boiler_no_gas()
+    a.test_gas_heat_source_gas()
+    a.test_heat_source_gas()

@@ -31,6 +31,8 @@ class GasHeatSourceGas(HeatSourceGas):
             name,
             **modifiers,
         )
+        self.component_subtype = "gas_heat_source_gas"
+
         self.Q_nominal_gas = nan
 
         self.energy_content = nan  # [J/kg]

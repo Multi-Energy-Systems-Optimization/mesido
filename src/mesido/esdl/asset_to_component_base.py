@@ -213,7 +213,7 @@ class _AssetToComponentBase:
         "HeatExchange": "heat_exchanger",
         "HeatingDemand": "heat_demand",
         "HeatPump": "heat_pump",
-        "GasHeater": "gas_boiler",
+        "GasHeater": "heat_source_gas",
         "GasProducer": "gas_source",
         "GasDemand": "gas_demand",
         "GasConversion": "gas_substation",
@@ -294,7 +294,7 @@ class _AssetToComponentBase:
             "investmentCosts": "required",
             "fixedOperationalCosts": "required",
         },
-        "gas_boiler": {
+        "heat_source_gas": {
             "investmentCosts": "required",
             "installationCosts": "required",
             "variableOperationalCosts": "required",
@@ -316,7 +316,7 @@ class _AssetToComponentBase:
         "GasDemand": "gas_demand",
         "GasStorage": "gas_tank_storage",
         "Electrolyzer": "electrolyzer",
-        "GasHeater": "gas_boiler",
+        "GasHeater": "heat_source_gas",
     }
 
     COST_ATTRIBUTE_TO_STRING = {
@@ -1025,7 +1025,9 @@ class _AssetToComponentBase:
                     if q_nominal is not None:
                         self._set_q_nominal(asset, q_nominal)
                         return q_nominal
-        elif len(asset.in_ports) == 2 and len(asset.out_ports) == 1:  # for gas_boiler or e_boiler
+        elif (
+            len(asset.in_ports) == 2 and len(asset.out_ports) == 1
+        ):  # for heat_source_gas or e_boiler
             q_nominals = {}
             try:
                 for port in asset.in_ports:
