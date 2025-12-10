@@ -35,8 +35,9 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
         # for pipes connected to smaller demands and producers.
         # TODO: add the same for electricity ones we have proper support for that in the ESDLMixin
 
-        def __limit_list_available_heat_pipe_classes_max_power(max_power: float, demand: bool) ->\
-                None:
+        def __limit_list_available_heat_pipe_classes_max_power(
+            max_power: float, demand: bool
+        ) -> None:
             """
             Limits the available heat pipe classes for optimization based on the maximum power
             that can be connected.
@@ -58,9 +59,7 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
 
             if not self.is_hot_pipe(self.hot_to_cold_pipe(connected_asset)):
                 if self.has_related_pipe(connected_asset):
-                    self._override_pipe_classes[self.hot_to_cold_pipe(connected_asset)] = (
-                        new_pcs
-                    )
+                    self._override_pipe_classes[self.hot_to_cold_pipe(connected_asset)] = new_pcs
                 else:
                     # TODO: temporarily fix for pipes that don't have related attribute,
                     # but are connected to demands, to still limit the classes. To be

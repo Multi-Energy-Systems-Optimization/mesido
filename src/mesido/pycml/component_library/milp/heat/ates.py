@@ -55,4 +55,3 @@ class ATES(_ATESBaseAsset):
                 / nom_temp_change
             )
         )
-
