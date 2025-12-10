@@ -15,7 +15,7 @@ from mesido.workflows.io.write_output import ScenarioOutput
 from mesido.workflows.utils.adapt_profiles import (
     adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
 )
-from mesido.workflows.utils.error_types import NetworkErrors, potential_error_to_error
+from mesido.workflows.utils.error_types import HEAT_NETWORK_ERRORS, potential_error_to_error
 from mesido.workflows.utils.helpers import main_decorator, run_optimization_problem_solver
 
 import numpy as np
@@ -80,7 +80,7 @@ def _mip_gap_settings(mip_gap_name: str, problem) -> Dict[str, float]:
         if problem._stage == 1:
             options[mip_gap_name] = 0.005
         else:
-            options[mip_gap_name] = 0.02
+            options[mip_gap_name] = 0.01
     else:
         options[mip_gap_name] = 0.02
 
@@ -141,6 +141,33 @@ def estimate_and_update_progress_status(self, priority):
     )  # In the future this ratio might differ from the step being completed
 
 
+solver_messages = {
+    "Time_limit": {
+        "highs": "Time limit reached",
+        "cplex": "time limit exceeded",
+        "gurobi": "TIME_LIMIT",
+    }
+}
+
+
+def check_solver_succes_grow_problem(solution):
+    solver_success, _ = solution.solver_success(solution.solver_stats, False)
+    if not solver_success:
+        if (
+            solution.solver_stats["return_status"]
+            == solver_messages["Time_limit"][solution.solver_options["solver"]]
+            and solution.objective_value > 1e-6
+        ):
+            logger.error(
+                f"Optimization maximum allowed time limit reached for stage_"
+                f"{solution._stage}, goal_1"
+            )
+            exit(1)
+        else:
+            logger.error("Unsuccessful: unexpected error for stage_1, goal_1")
+            exit(1)
+
+
 class SolverHIGHS:
     def solver_options(self):
         options = super().solver_options()
@@ -177,6 +204,7 @@ class SolverCPLEX:
         options["solver"] = "cplex"
         cplex_options = options["cplex"] = {}
         cplex_options.update(_mip_gap_settings("CPX_PARAM_EPGAP", self))
+        cplex_options["CPXPARAM_Threads"] = 10
 
         options["highs"] = None
 
@@ -203,8 +231,11 @@ class EndScenarioSizing(
     2. minimize TCO = Capex + Opex*lifetime
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, error_type_check: str = HEAT_NETWORK_ERRORS, *args, **kwargs) -> None:
         reset_potential_errors()  # This needed to clear the Singleton which is persistent
+
+        # Set error type check before calling super().__init__ so it's available during init
+        self._error_type_check = error_type_check
 
         super().__init__(*args, **kwargs)
 
@@ -240,11 +271,6 @@ class EndScenarioSizing(
 
         self._workflow_progress_status = kwargs.get("update_progress_function", None)
 
-        self._network_type_errors = kwargs.get(
-            "network_type_errors",
-            NetworkErrors.HEAT_NETWORK_ERRORS,
-        )
-
     def parameters(self, ensemble_member):
         parameters = super().parameters(ensemble_member)
         parameters["peak_day_index"] = self.__indx_max_peak
@@ -264,7 +290,7 @@ class EndScenarioSizing(
         """
         super().read()
 
-        potential_error_to_error(self._network_type_errors)
+        potential_error_to_error(self._error_type_check)
 
         (
             self.__indx_max_peak,
@@ -294,6 +320,7 @@ class EndScenarioSizing(
         options = super().energy_system_options()
         options["maximum_temperature_der"] = np.inf
         options["heat_loss_disconnected_pipe"] = True
+
         return options
 
     def path_goals(self):
@@ -421,6 +448,8 @@ class EndScenarioSizing(
                 # found, this is typically something like 1E50.
                 return success, log_level
 
+            return True, logging.INFO
+        elif solver_stats["return_status"] == "integer optimal with unscaled infeasibilities":
             return True, logging.INFO
         else:
             return success, log_level
@@ -609,13 +638,20 @@ class SettingsStaged:
             self.heat_network_settings["minimize_head_losses"] = False
 
         if self._stage == 2 and priorities_output:
+            self.heat_network_settings["minimum_velocity"] = 0.0
             self._priorities_output = priorities_output
 
     def energy_system_options(self):
         options = super().energy_system_options()
         if self._stage == 1:
             options["neglect_pipe_heat_losses"] = True
-            self.heat_network_settings["minimum_velocity"] = 0.0
+        elif self._stage == 2:
+            # If at least 1 heat_source has a producer profile assigned, set the
+            # heat_loss_disconnected_pipe option to False
+            for asset in self.energy_system_components.get("heat_source", []):
+                if f"{asset}.maximum_heat_source" in self.io.get_timeseries_names():
+                    options["heat_loss_disconnected_pipe"] = False
+                    break
 
         return options
 
@@ -679,6 +715,7 @@ def run_end_scenario_sizing_no_heat_losses(
         total_stages=1,
         **kwargs,
     )
+    check_solver_succes_grow_problem(solution)
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
 
@@ -726,51 +763,43 @@ def run_end_scenario_sizing(
             **kwargs,
         )
         # Error checking
-        solver_success, _ = solution.solver_success(solution.solver_stats, False)
-        if not solver_success:
-            if (
-                solution.solver_stats["return_status"] == "Time limit reached"
-                and solution.objective_value > 1e-6
-                and solution._stage == 1
-            ):
-                logger.error("Optimization maximum allowed time limit reached for stage_1, goal_1")
-                exit(1)
-            else:
-                logger.error("Unsuccessful: unexpected error for stage_1, goal_1")
-                exit(1)
+        check_solver_succes_grow_problem(solution)
 
         results = solution.extract_results()
         parameters = solution.parameters(0)
         bounds = solution.bounds()
 
-        # We give bounds for stage 2 by allowing one DN sizes larger than what was found in the
-        # stage 1 optimization. But if the pipe is not to be used class DN none should be used and
-        # all the following pipe clasess should have bounds (0, 0)
+        # We give bounds for stage 2 by allowing two DN sizes larger than what was found in the
+        # stage 1 optimization.
         # Assumptions:
         # - The fist pipe class in the list of pipe_classes is pipe DN none
         pc_map = solution.get_pipe_class_map()  # if disconnectable and not connected to source
         for pipe_classes in pc_map.values():
             v_prev = 0.0
+            v_prev_2 = 0.0
             first_pipe_class = True
-            use_pipe_dn_none = False
             for var_name in pipe_classes.values():
                 v = round(abs(results[var_name][0]))
                 if first_pipe_class and v == 1.0:
-                    boolean_bounds[var_name] = (v, v)
-                    use_pipe_dn_none = True
+                    boolean_bounds[var_name] = (0.0, v)
                 elif v == 1.0:
                     boolean_bounds[var_name] = (0.0, v)
-                elif not use_pipe_dn_none and v_prev == 1.0:  # This allows one DN larger
+                elif v_prev == 1.0 or v_prev_2 == 1.0:  # This allows two DNs larger
                     boolean_bounds[var_name] = (0.0, 1.0)
                 else:
                     boolean_bounds[var_name] = (v, v)
+                v_prev_2 = v_prev
                 v_prev = v
+
                 first_pipe_class = False
 
+        producer_input_timeseries = False
         for asset in [
             *solution.energy_system_components.get("heat_source", []),
             *solution.energy_system_components.get("heat_buffer", []),
         ]:
+            if f"{asset}.maximum_heat_source" in solution.io.get_timeseries_names():
+                producer_input_timeseries = True
             var_name = f"{asset}_aggregation_count"
             round_lb = round(results[var_name][0])
             ub = solution.bounds()[var_name][1]
@@ -786,7 +815,7 @@ def run_end_scenario_sizing(
         from rtctools.optimization.timeseries import Timeseries
 
         for p in solution.energy_system_components.get("heat_pipe", []):
-            if p in solution.hot_pipes and parameters[f"{p}.area"] > 0.0:
+            if p not in solution.cold_pipes and parameters[f"{p}.area"] > 0.0:
                 lb = []
                 ub = []
                 bounds_pipe = bounds[f"{p}__flow_direct_var"]
@@ -805,11 +834,16 @@ def run_end_scenario_sizing(
                     )
 
                 boolean_bounds[f"{p}__flow_direct_var"] = (Timeseries(t, lb), Timeseries(t, ub))
-                try:
-                    r = results[f"{p}__is_disconnected"]
-                    boolean_bounds[f"{p}__is_disconnected"] = (Timeseries(t, r), Timeseries(t, r))
-                except KeyError:
-                    pass
+                if not producer_input_timeseries:
+                    try:
+                        r = results[f"{p}__is_disconnected"]
+                        r_low = np.zeros(len(r))
+                        boolean_bounds[f"{p}__is_disconnected"] = (
+                            Timeseries(t, r_low),
+                            Timeseries(t, r),
+                        )
+                    except KeyError:
+                        pass
 
         priorities_output = solution._priorities_output
 
@@ -822,6 +856,7 @@ def run_end_scenario_sizing(
         priorities_output=priorities_output,
         **kwargs,
     )
+    check_solver_succes_grow_problem(solution)
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
 

@@ -214,6 +214,8 @@ class InfluxDBProfileReader(BaseProfileReader):
         esdl.esdl.ElectricityProducer: ".maximum_electricity_source",
         esdl.esdl.GasDemand: ".target_gas_demand",
         esdl.esdl.GasProducer: ".maximum_gas_source",
+        esdl.esdl.ResidualHeatSource: ".maximum_heat_source",
+        esdl.esdl.GeothermalSource: ".maximum_heat_source",
     }
 
     def __init__(self, energy_system: esdl.EnergySystem, file_path: Optional[Path]):
@@ -238,6 +240,8 @@ class InfluxDBProfileReader(BaseProfileReader):
         for profile in [
             x for x in self._energy_system.eAllContents() if isinstance(x, esdl.InfluxDBProfile)
         ]:
+            if profile.profileType == esdl.ProfileTypeEnum.OUTPUT:
+                continue
             if [
                 profile.database,
                 profile.field,
@@ -285,6 +289,8 @@ class InfluxDBProfileReader(BaseProfileReader):
         for profile in [
             x for x in self._energy_system.eAllContents() if isinstance(x, esdl.InfluxDBProfile)
         ]:
+            if profile.profileType == esdl.ProfileTypeEnum.OUTPUT:
+                continue
             index_of_unique_profile = unique_profiles_attributes.index(
                 [
                     profile.database,
@@ -298,13 +304,13 @@ class InfluxDBProfileReader(BaseProfileReader):
             )
             series = unique_series[index_of_unique_profile]
             self._check_profile_time_series(profile_time_series=series, profile=profile)
+            container = profile.eContainer()
+            asset = container.eContainer()
             converted_dataframe = self._convert_profile_to_correct_unit(
-                profile_time_series=series, profile=profile
+                profile_time_series=series, profile=profile, asset=asset
             )
 
-            container = profile.eContainer()
             if isinstance(container, esdl.ProfileConstraint):
-                asset = container.eContainer()
                 variable_suffix = self.asset_type_to_variable_name_conversion[type(asset)]
                 var_base_name = asset.name
                 if variable_suffix in [
@@ -371,6 +377,13 @@ class InfluxDBProfileReader(BaseProfileReader):
         -------
         A pandas Series of the profile for the asset.
         """
+        # Import is done under the function instead of the top of the file
+        # to avoid circular import issue
+        from mesido.workflows.utils.error_types import (
+            HEAT_NETWORK_ERRORS,
+            potential_error_to_error,
+        )
+
         if profile.id in self._df:
             return self._df[profile.id]
 
@@ -402,7 +415,19 @@ class InfluxDBProfileReader(BaseProfileReader):
             ssl=ssl_setting,
             verify_ssl=ssl_setting,
         )
-        time_series_data = InfluxDBProfileManager(conn_settings)
+
+        try:
+            time_series_data = InfluxDBProfileManager(conn_settings)
+        except Exception:
+            container = profile.eContainer()
+            asset = container.energyasset
+            get_potential_errors().add_potential_issue(
+                MesidoAssetIssueType.ASSET_PROFILE_AVAILABILITY,
+                asset.id,
+                f"Asset named {asset.name}: Database {profile.database}"
+                f" is not available in the host.",
+            )
+            potential_error_to_error(HEAT_NETWORK_ERRORS)
 
         time_series_data.load_influxdb(
             profile.measurement,
@@ -410,6 +435,18 @@ class InfluxDBProfileReader(BaseProfileReader):
             profile.startDate,
             profile.endDate,
         )
+
+        if not time_series_data.profile_data_list:  # if time_series_data.profile_data_list == []:
+            container = profile.eContainer()
+            asset = container.energyasset
+            get_potential_errors().add_potential_issue(
+                MesidoAssetIssueType.ASSET_PROFILE_AVAILABILITY,
+                asset.id,
+                f"Asset named {asset.name}: Input profile {profile.field}"
+                f" in {profile.measurement} is not available in the database.",
+            )
+
+            potential_error_to_error(HEAT_NETWORK_ERRORS)
 
         for x in time_series_data.profile_data_list:
             if len(x) != 2:
@@ -477,7 +514,7 @@ class InfluxDBProfileReader(BaseProfileReader):
             )
 
     def _convert_profile_to_correct_unit(
-        self, profile_time_series: pd.Series, profile: esdl.InfluxDBProfile
+        self, profile_time_series: pd.Series, profile: esdl.InfluxDBProfile, asset: esdl.Asset
     ) -> pd.Series:
         """
         Conversion function to change the values in the provided series to the correct unit
@@ -499,11 +536,22 @@ class InfluxDBProfileReader(BaseProfileReader):
         ):
             if profile_quantity_and_unit.unit == esdl.UnitEnum.WATT:
                 target_unit = POWER_IN_W
-            elif profile_quantity_and_unit.unit == esdl.UnitEnum.PERCENT:  # values 0-100%
-                # TODO: in the future change to ratios if needed
-                return profile_time_series  # These profiles are scaled in asset sizing
-            elif profile_quantity_and_unit.unit == esdl.UnitEnum.NONE:  # ratio 0-1
-                return profile_time_series
+            elif (
+                profile_quantity_and_unit.unit == esdl.UnitEnum.PERCENT
+                or profile_quantity_and_unit.unit == esdl.UnitEnum.NONE
+            ):  # values 0-100% or ratio 0-1
+                factor = 1.0  # needed when the coef is a ratio 0-1
+                if not profile.multiplier == 1.0:
+                    get_potential_errors().add_potential_issue(
+                        MesidoAssetIssueType.ASSET_PROFILE_MULTIPLIER,
+                        asset.id,
+                        f", {asset.name} has unit's multiplier specified incorrectly. "
+                        f"Multiplier should be 1.0, when the unit is specified in "
+                        f"{profile_quantity_and_unit.description}",
+                    )
+                if profile_quantity_and_unit.unit == esdl.UnitEnum.PERCENT:
+                    factor /= 100.0  # needed when the coef is a percentage 0-100%
+                return profile_time_series * factor * asset.power
             else:
                 raise RuntimeError(
                     f"Power profiles currently only support units"

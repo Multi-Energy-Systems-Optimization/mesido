@@ -1,17 +1,76 @@
-# [Unreleased-main] - 2025-07-17
+# [Unreleased-main] - 2025-12-08
 
 ## Added
+- ATES variable cost calculation utilizing a split ates charging and discharging variable.
+- Rollout workflow may optionally include phasing of heat buffers for handling peak day constraints and demands
+- Inclusion of maximum allowed yearly pipe placement length constraint for the rollout workflow
+- Adding constraint so that all heating demands are placed at the end of the simulation
 - Sizing of airco
 - Heating and cooling example with input costs
 
+
 ## Changed
-- Previously variable operational cost of air-to-water heat pump was based on  the thermal power usage. Now it is based on the electrical power usage
+- Minimize TCO objective in the grow_workflow is now only based on capex and opex that can be influenced.
+- Removed the requirement of "_ret" for the return network pipes, for ESDLversion 21.10 and later. The relation between supply and return pipes is now based on the "related" attribute in the esdl.
 - Addtion of cooling assests (airco and low_temperature_ates) in the grow_workflow for heating and cooling networks
 - Inclusion of airco and low_temperature_ates in write_output
 
 ## Fixed
+- Bug: Write updated esdl for 2 port heat pump
 - Bug: 2 port heatpump write result profiles to database 
 - Bug: setting of self._pipe_heat_loss_nominals was not accounting for negative values when T_ground > carrier temperature
+
+
+# [0.1.15] - 2025-11-19
+
+## Added
+- xx
+
+## Changed
+- Reduce computational effort stage 2 grow_workflow -> options["heat_loss_disconnected_pipe"] setting
+
+## Fixed
+- xx
+
+
+# [0.1.14] - 2025-11-07
+
+## Added
+- Elect test for air_to_water_heat_pump_elec
+- Timelimit for testing in pipeline
+- Potential error checks if heating demand state is not set to enabled.
+- Potential error checks if the heat exchanger capacity is set correctly.
+- Generic modifier functions for consistency across assets.
+- Discrete charge/discharge variable for an ATES asset.
+- Checks if a timelimit is reached in the GROW workflow at each stage.
+- Optimized esdl is re-usabled
+- Pipe costs are updated based on the asset templates if they are provided 
+- AssetStateEnums of IntEnum type to describe the state of an asset i.e disabled/enabled/optional
+- A new type of potential error is added if the profile name indicated in esdl is not available in the database.
+- Parsing of emission factors for specific sources not related to carriers.
+- Capability of ResidualHeatSource and GeothermalHeatSource to also have profile constraints that can be read from InfluxDB
+- Writing KPIs back for discounted CAPEX
+- Roll out workflow setup.
+- Improved error handling for asset cost information to prevent potential failures and ensure more robust processing of asset-related data.
+
+## Changed
+- Removed support of python versions 3.9 and older.
+- Previously variable operational cost of air-to-water heat pump was based on  the thermal power usage. Now it is based on the electrical power usage
+- TCO cost calculation objective now used the technical lifetime to determine the frequency of the re-investment costs.
+- TCO cost calculation objective to now exclude heating demand costs in the grow workflow
+- Hydraulic power calculation at "sink" assets is set to 0.0 if headloss calculation is turned off
+- Updated pyESDL to v25.7
+- Allowing 2 additional pipe sizes (instead of 1) in stage 2 compared to the result of stage 1 of the grow_workflow.
+- Calculation of capex for TCO optimization KPI is changed to make it the same as in the TCO calc in the code
+
+## Fixed
+- Bug: Add 3 port heat pump to elect demand path constraint
+- Error exit when priority 1 reaches time limit in grow workflow for all settings and solvers.
+- Bug: Replaced one pipe with all pipes in head loss testing in test_end_scenario_sizing.py 
+- Bug: Geothermal being placed when not used. General added aggregation_count=0 constraint for heat buffer, ates and goethermal when not being used.
+- Bug: Ensure ATES and Geothermal max_size cannot be smaller than the single_doublet_power if placed.
+- Bug: Upper limit of available pipe classes when using producer profiles
+- Bug: Removed the parsing of is_disconnected pipe between stage 1 and 2 of the grow_workflow. 
 
 
 # [0.1.13] - 2025-06-25

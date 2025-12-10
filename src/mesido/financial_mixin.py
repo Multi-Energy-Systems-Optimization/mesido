@@ -4,6 +4,7 @@ from abc import abstractmethod
 import casadi as ca
 
 from mesido.base_component_type_mixin import BaseComponentTypeMixin
+from mesido.esdl.asset_to_component_base import AssetStateEnum
 
 import numpy as np
 
@@ -11,6 +12,7 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
 from rtctools.optimization.timeseries import Timeseries
+
 
 logger = logging.getLogger("mesido")
 
@@ -65,7 +67,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         self.__cumulative_investments_made_in_eur_bounds = {}
 
         # Variable for when in time an asset is realized
-        self.__asset_is_realized_map = {}
+        self._asset_is_realized_map = {}
         self.__asset_is_realized_var = {}
         self.__asset_is_realized_bounds = {}
 
@@ -315,7 +317,8 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 max(
                     parameters[f"{asset_name}.variable_operational_cost_coefficient"]
                     * nominal_variable_operational
-                    * 24.0,
+                    * (self.times()[-1] - self.times()[0])
+                    / 3600,
                     1.0e2,
                 )
                 if nominal_variable_operational is not None
@@ -332,7 +335,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 aggr_count_max = parameters[f"{asset_name}.nr_of_doublets"]
             except KeyError:
                 aggr_count_max = 1.0
-            if parameters[f"{asset_name}.state"] == 0:
+            if parameters[f"{asset_name}.state"] == AssetStateEnum.DISABLED:
                 aggr_count_max = 0.0
             self.__asset_installation_cost_bounds[asset_installation_cost_var] = (
                 0.0,
@@ -473,35 +476,68 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 *self.energy_system_components.get("heat_source", []),
                 *self.energy_system_components.get("heat_demand", []),
                 *self.energy_system_components.get("cold_demand", []),
+                *self.energy_system_components.get("heat_pipe", []),
                 *self.energy_system_components.get("ates", []),
                 *self.energy_system_components.get("low_temperature_ates", []),
                 *self.energy_system_components.get("heat_buffer", []),
                 *self.energy_system_components.get("heat_exchanger", []),
                 *self.energy_system_components.get("heat_pump", []),
             ]:
-                var_name = f"{asset}__cumulative_investments_made_in_eur"
-                self.__cumulative_investments_made_in_eur_map[asset] = var_name
-                self.__cumulative_investments_made_in_eur_var[var_name] = ca.MX.sym(var_name)
-                self.__cumulative_investments_made_in_eur_nominals[var_name] = (
-                    self.variable_nominal(f"{asset}__investment_cost")
-                    + self.variable_nominal(f"{asset}__installation_cost")
-                )
-                self.__cumulative_investments_made_in_eur_bounds[var_name] = (0.0, np.inf)
+                if not options["yearly_investments"]:
+                    var_name = f"{asset}__cumulative_investments_made_in_eur"
+                    self.__cumulative_investments_made_in_eur_map[asset] = var_name
+                    self.__cumulative_investments_made_in_eur_var[var_name] = ca.MX.sym(var_name)
+                    self.__cumulative_investments_made_in_eur_nominals[var_name] = (
+                        self.variable_nominal(f"{asset}__investment_cost")
+                        + self.variable_nominal(f"{asset}__installation_cost")
+                    )
+                    self.__cumulative_investments_made_in_eur_bounds[var_name] = (0.0, np.inf)
 
-                # This is an integer variable between [0, max_aggregation_count] that allows the
-                # increments of the asset to become used by the optimizer. Meaning that when this
-                # variable is zero not milp can be consumed or produced by this asset. When the
-                # integer is >=1 the asset can consume and/or produce according to its increments.
-                var_name = f"{asset}__asset_is_realized"
-                self.__asset_is_realized_map[asset] = var_name
-                self.__asset_is_realized_var[var_name] = ca.MX.sym(var_name)
-                try:
-                    aggr_count_max = parameters[f"{asset}.nr_of_doublets"]
-                except KeyError:
-                    aggr_count_max = 1.0
-                if parameters[f"{asset}.state"] == 0:
-                    aggr_count_max = 0.0
-                self.__asset_is_realized_bounds[var_name] = (0.0, aggr_count_max)
+                    # This is an integer variable between [0, max_aggregation_count] that allows the
+                    # increments of the asset to become used by the optimizer. Meaning that when
+                    # this variable is zero not milp can be consumed or produced by this asset.
+                    # When the integer is >=1 the asset can consume and/or produce according to
+                    # its increments.
+                    var_name = f"{asset}__asset_is_realized"
+                    self._asset_is_realized_map[asset] = var_name
+                    self.__asset_is_realized_var[var_name] = ca.MX.sym(var_name)
+                    try:
+                        aggr_count_max = parameters[f"{asset}.nr_of_doublets"]
+                    except KeyError:
+                        aggr_count_max = 1.0
+                    if parameters[f"{asset}.state"] == AssetStateEnum.DISABLED:
+                        aggr_count_max = 0.0
+                    self.__asset_is_realized_bounds[var_name] = (0.0, aggr_count_max)
+                else:
+                    self.__cumulative_investments_made_in_eur_map[asset] = []
+                    self._asset_is_realized_map[asset] = []
+                    for i in range(self._years):
+                        var_name = f"{asset}__cumulative_investments_made_in_eur_year_{i}"
+                        self.__cumulative_investments_made_in_eur_map[asset].append(var_name)
+                        self.__cumulative_investments_made_in_eur_var[var_name] = ca.MX.sym(
+                            var_name
+                        )
+                        self.__cumulative_investments_made_in_eur_nominals[var_name] = (
+                            self.variable_nominal(f"{asset}__investment_cost")
+                            + self.variable_nominal(f"{asset}__installation_cost")
+                        )
+                        self.__cumulative_investments_made_in_eur_bounds[var_name] = (0.0, np.inf)
+
+                        # This is an integer variable between [0, max_aggregation_count] that allows
+                        # the increments of the asset to become used by the optimizer. Meaning
+                        # that when this variable is zero not milp can be consumed or produced by
+                        # this asset. When the integer is >=1 the asset can consume and/or
+                        # produce according to its increments.
+                        var_name = f"{asset}__asset_is_realized_{i}"
+                        self._asset_is_realized_map[asset].append(var_name)
+                        self.__asset_is_realized_var[var_name] = ca.MX.sym(var_name)
+                        try:
+                            aggr_count_max = parameters[f"{asset}.nr_of_doublets"]
+                        except KeyError:
+                            aggr_count_max = 1.0
+                        if parameters[f"{asset}.state"] == AssetStateEnum.DISABLED:
+                            aggr_count_max = 0.0
+                        self.__asset_is_realized_bounds[var_name] = (0.0, aggr_count_max)
 
     @abstractmethod
     def energy_system_options(self):
@@ -511,15 +547,22 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         +--------------------------------------+-----------+-----------------------------+
         | ``discounted_annualized_cost ``       | ``bool``  | ``False``                   |
         +--------------------------------------+-----------+-----------------------------+
+        | ``yearly_investments ``              | ``bool``  | ``False``                   |
+        +--------------------------------------+-----------+-----------------------------+
 
         The ``discounted_annualized_cost`` option computes the annualized discounted costs for
         each asset, and defines the sum of these costs as the total cost of ownership for the
         cost minimization goal.
+
+        The ``yearly_investments`` option computes the cumulative investments made over time (
+        multiple years) and provides constraints for asset_is_realized over multiple years,
+        which is required to determine when investment costs are made.
         """
 
         options = {}
 
         options["discounted_annualized_cost"] = False
+        options["yearly_investments"] = False
 
         return options
 
@@ -666,6 +709,9 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         problem. Note that these are only the normal variables not path variables.
         """
         variables = super().extra_variables.copy()
+        if self.energy_system_options()["yearly_investments"]:
+            variables.extend(self.__cumulative_investments_made_in_eur_var.values())
+            variables.extend(self.__asset_is_realized_var.values())
         variables.extend(self.__asset_fixed_operational_cost_var.values())
         variables.extend(self.__asset_investment_cost_var.values())
         variables.extend(self.__asset_installation_cost_var.values())
@@ -682,8 +728,9 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         time-step.
         """
         variables = super().path_variables.copy()
-        variables.extend(self.__cumulative_investments_made_in_eur_var.values())
-        variables.extend(self.__asset_is_realized_var.values())
+        if not self.energy_system_options()["yearly_investments"]:
+            variables.extend(self.__cumulative_investments_made_in_eur_var.values())
+            variables.extend(self.__asset_is_realized_var.values())
         return variables
 
     def variable_is_discrete(self, variable):
@@ -896,6 +943,51 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             *self.energy_system_components.get("ates", []),
             *self.energy_system_components.get("low_temperature_ates", []),
             *self.energy_system_components.get("heat_buffer", []),
+        ]:
+            heat_charge = self.__state_vector_scaled(f"{asset}.Heat_flow_charging", ensemble_member)
+            heat_discharge = self.__state_vector_scaled(
+                f"{asset}.Heat_flow_discharging", ensemble_member
+            )
+            variable_operational_cost_var = self._asset_variable_operational_cost_map[asset]
+            variable_operational_cost = self.extra_variable(
+                variable_operational_cost_var, ensemble_member
+            )
+            nominal = self.variable_nominal(variable_operational_cost_var)
+            variable_operational_cost_coefficient = parameters[
+                f"{asset}.variable_operational_cost_coefficient"
+            ]
+            timesteps = np.diff(self.times()) / 3600.0
+
+            pump_power = self.__state_vector_scaled(f"{asset}.Pump_power", ensemble_member)
+            eff = parameters[f"{asset}.pump_efficiency"]
+
+            # We assume that only one electricity carrier is specified, to compute the cost with.
+            # Otherwise we need to link the electricity carrier somehow to the source and pump asset
+            # which is lots of extra effort for the user.
+            assert len(self.get_electricity_carriers().keys()) <= 1
+
+            if len(self.get_electricity_carriers().keys()) == 1:
+                try:
+                    price_profile = self.get_timeseries(
+                        f"{list(self.get_electricity_carriers().values())[0]['name']}.price_profile"
+                    )
+                except KeyError:
+                    price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
+            else:
+                price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
+
+            sum = 0.0
+            for i in range(1, len(self.times())):
+                sum += (
+                    variable_operational_cost_coefficient
+                    * (heat_charge[i] + heat_discharge[i])
+                    * timesteps[i - 1]
+                )
+                sum += price_profile.values[i] * pump_power[i] * timesteps[i - 1] / eff
+
+            constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
+
+        for asset in [
             *self.energy_system_components.get("pump", []),
             *self.energy_system_components.get("heat_exchanger", []),
         ]:
@@ -955,11 +1047,15 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             else:
                 price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
 
+            # ToDo: Currently the variable operational cost unit for gas boiler is euro/Wh_gas
+            # but this can be changed to euro/Nm3
             denominator = 1.0
             if s in self.energy_system_components.get(
                 "air_water_heat_pump", []
             ) or s in self.energy_system_components.get("air_water_heat_pump_elec", []):
                 denominator = parameters[f"{s}.cop"]
+            if s in self.energy_system_components.get("gas_boiler", []):
+                denominator = parameters[f"{s}.efficiency"]
             sum = 0.0
             for i in range(1, len(self.times())):
                 sum += (
@@ -1043,9 +1139,6 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 sum += variable_operational_cost_coefficient * heat_airco[i] * timesteps_hr[i - 1]
 
             constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
-
-        for _ in self.energy_system_components.get("heat_buffer", []):
-            pass
 
         for demand in self.energy_system_components.get("gas_demand", []):
             gas_mass_flow = self.__state_vector_scaled(
@@ -1229,8 +1322,8 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         return constraints
 
     def __cumulative_investments_made_in_eur_path_constraints(self, ensemble_member):
-        r"""
-        These constraints are linking the cummulitive investments made to the possiblity of
+        """
+        These constraints are linking the cumulative investments made to the possibility of
         utilizing an asset. The investments made are sufficient for that asset to be realized it
         becomes available.
 
@@ -1240,10 +1333,11 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         """
         constraints = []
         options = self.energy_system_options()
-        if options["include_asset_is_realized"]:
+        if options["include_asset_is_realized"] and not options["yearly_investments"]:
             for asset in [
-                # *self.energy_system_components.get("heat_demand", []),
+                *self.energy_system_components.get("heat_demand", []),
                 *self.energy_system_components.get("heat_source", []),
+                *self.energy_system_components.get("heat_pipe", []),
                 *self.energy_system_components.get("ates", []),
                 *self.energy_system_components.get("low_temperature_ates", []),
                 *self.energy_system_components.get("heat_buffer", []),
@@ -1253,7 +1347,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 var_name = self.__cumulative_investments_made_in_eur_map[asset]
                 cumulative_investments_made = self.state(var_name)
                 nominal = self.variable_nominal(var_name)
-                var_name = self.__asset_is_realized_map[asset]
+                var_name = self._asset_is_realized_map[asset]
                 asset_is_realized = self.state(var_name)
                 installation_cost_sym = self.variable(self._asset_installation_cost_map[asset])
                 investment_cost_sym = self.variable(self._asset_investment_cost_map[asset])
@@ -1323,6 +1417,123 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                         )
                 constraints.append(((heat_flow + asset_is_realized * big_m) / big_m, 0.0, np.inf))
                 constraints.append(((heat_flow - asset_is_realized * big_m) / big_m, -np.inf, 0.0))
+
+        return constraints
+
+    def __cumulative_capex_made_in_eur_constraints(self, ensemble_member):
+        """
+        These constraints are linking the cumulative capex made to the possibility of
+        utilizing an asset. If the cumulative capex made are sufficient (equal or
+        more than a required amount) for an asset to be realized it becomes available for operation.
+
+        Meaning that an asset requires 1million euro investment to be realized
+        and the investments made upto and including timestep i are sufficient the asset also is
+        realized (becomes available) in that same timestep.
+        """
+        constraints = []
+        options = self.energy_system_options()
+        if options["include_asset_is_realized"] and options["yearly_investments"]:
+            for asset in [
+                *self.energy_system_components.get("heat_demand", []),
+                *self.energy_system_components.get("heat_source", []),
+                *self.energy_system_components.get("heat_pipe", []),
+                *self.energy_system_components.get("ates", []),
+                *self.energy_system_components.get("low_temperature_ates", []),
+                *self.energy_system_components.get("heat_buffer", []),
+                *self.energy_system_components.get("heat_exchanger", []),
+                *self.energy_system_components.get("heat_pump", []),
+            ]:
+                for i in range(self._years):
+                    time_start = i * 3600 * 8760
+                    time_end = (i + 1) * 3600 * 8760
+                    var_name = self.__cumulative_investments_made_in_eur_map[asset][i]
+                    cumulative_investments_made = self.extra_variable(var_name)
+                    nominal = self.variable_nominal(var_name)
+                    var_name = self._asset_is_realized_map[asset][i]
+                    asset_is_realized = self.extra_variable(var_name)
+                    installation_cost_sym = self.extra_variable(
+                        self._asset_installation_cost_map[asset]
+                    )
+                    investment_cost_sym = self.extra_variable(
+                        self._asset_investment_cost_map[asset]
+                    )
+
+                    big_m = (
+                        1.5
+                        * max(
+                            self.bounds()[f"{asset}__investment_cost"][1]
+                            + self.bounds()[f"{asset}__installation_cost"][1],
+                            1.0,
+                        )
+                        / max(self.get_aggregation_count_max(asset), 1.0)
+                    )
+
+                    # Asset can be realized once the investments made equal the installation and
+                    # investment cost
+                    capex_sym = 0.0
+                    if self.variable_nominal(self._asset_installation_cost_map[asset]) > 1.0e2:
+                        capex_sym = capex_sym + installation_cost_sym
+                    if self.variable_nominal(self._asset_investment_cost_map[asset]) > 1.0e2:
+                        capex_sym = capex_sym + investment_cost_sym
+
+                    constraints.append(
+                        (
+                            (
+                                cumulative_investments_made
+                                - capex_sym
+                                + (1.0 - asset_is_realized) * big_m
+                            )
+                            / nominal,
+                            0.0,
+                            np.inf,
+                        )
+                    )
+                    constraints.append(
+                        (
+                            (
+                                cumulative_investments_made
+                                - capex_sym
+                                - (1.0 - asset_is_realized) * big_m
+                            )
+                            / nominal,
+                            -np.inf,
+                            0.0,
+                        )
+                    )
+
+                    # Once the asset is utilized the asset must be realized
+                    heat_flow = self.states_in(f"{asset}.Heat_flow", time_start, time_end)[:-1]
+                    if not np.isinf(self.bounds()[f"{asset}.Heat_flow"][1]):
+                        big_m = (
+                            1.5
+                            * self.bounds()[f"{asset}.Heat_flow"][1]
+                            / max(self.get_aggregation_count_max(asset), 1.0)
+                        )
+                    else:
+                        try:
+                            big_m = (
+                                1.5
+                                * max(
+                                    self.bounds()[f"{asset}.HeatOut.Heat"][1],
+                                    self.bounds()[f"{asset}.HeatIn.Heat"][1],
+                                )
+                                / max(self.get_aggregation_count_max(asset), 1.0)
+                            )
+                        except KeyError:
+                            big_m = (
+                                1.5
+                                * max(
+                                    self.bounds()[f"{asset}.Primary.HeatOut.Heat"][1],
+                                    self.bounds()[f"{asset}.Primary.HeatIn.Heat"][1],
+                                )
+                                / max(self.get_aggregation_count_max(asset), 1.0)
+                            )
+                    constraints.append(
+                        ((heat_flow + asset_is_realized * big_m) / big_m, 0.0, np.inf)
+                    )
+                    constraints.append(
+                        ((heat_flow - asset_is_realized * big_m) / big_m, -np.inf, 0.0)
+                    )
 
         return constraints
 
@@ -1483,6 +1694,8 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
         if self.energy_system_options()["discounted_annualized_cost"]:
             constraints.extend(self.__annualized_capex_constraints(ensemble_member))
+
+        constraints.extend(self.__cumulative_capex_made_in_eur_constraints(ensemble_member))
 
         return constraints
 

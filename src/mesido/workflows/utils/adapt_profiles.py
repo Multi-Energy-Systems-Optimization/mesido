@@ -67,7 +67,7 @@ def set_data_with_averages(
 
 def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, problem_day_steps: int):
     """
-    Adapt yearly porifle with hourly time steps to a common profile (daily averaged profile except
+    Adapt yearly profile with hourly time steps to a common profile (daily averaged profile except
     for the day with the peak demand).
 
     Return the following:
@@ -183,7 +183,7 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, prob
 
 def adapt_hourly_profile_averages_timestep_size(problem, problem_step_size_hours: int):
     """
-    Adapt yearly porifle with hourly time steps to a common profile with average over a given
+    Adapt yearly profile with hourly time steps to a common profile with average over a given
     stepsize in hours.
 
     Return the following:
@@ -272,6 +272,47 @@ def adapt_profile_to_copy_for_number_of_years(problem, number_of_years: int):
                 new_data = np.append(np.tile(old_data[:-1], number_of_years), old_data[-1])
             else:
                 new_data = np.tile(old_data, number_of_years)
+            new_datastore.set_timeseries(
+                variable=var_name,
+                datetimes=new_date_times,
+                values=np.asarray(new_data),
+                ensemble_member=ensemble_member,
+                check_duplicates=True,
+            )
+
+    problem.io = new_datastore
+
+    logger.info("Profile data has been adapted to a common format")
+
+
+def adapt_profile_for_initial_hour_timestep_size(problem):
+    """
+    A small, (1 hour) timestep is inserted as first time step. This is used in the
+    rollout workflow to allow a yearly change in the storage of the ATES system.
+    The first time step is used to accommodate the (yearly) initial storage level of the ATES.
+
+    """
+
+    new_datastore = DataStore(problem)
+    new_datastore.reference_datetime = problem.io.datetimes[0]
+
+    org_timeseries = problem.io.datetimes
+
+    for ensemble_member in range(problem.ensemble_size):
+        parameters = problem.parameters(ensemble_member)
+
+        timestep_one_hour = org_timeseries[0] + datetime.timedelta(hours=1)
+        new_date_times = list()
+        new_date_times = org_timeseries.copy()
+        new_date_times.insert(1, timestep_one_hour)
+
+        parameters["times"] = [x.timestamp() for x in new_date_times]
+
+        for var_name in problem.io.get_timeseries_names():
+            old_data = problem.io.get_timeseries(var_name)[1]
+            new_data = np.insert(old_data, 1, old_data[0])  # insert the first
+            # value at the second position, so that the first value is repeated
+            # at the second position.
             new_datastore.set_timeseries(
                 variable=var_name,
                 datetimes=new_date_times,

@@ -32,11 +32,13 @@ class GasBoiler(HeatSource):
             **modifiers,
         )
 
+        self.efficiency = nan
+
         self.Q_nominal_gas = nan
 
         self.component_subtype = "gas_boiler"
 
-        self.energy_content = nan
+        self.energy_content = nan  # [J/kg]
         self.density = 2.5e3  # H2 density [g/m3] at 30bar
 
         self.id_mapping_carrier = -1
@@ -46,7 +48,7 @@ class GasBoiler(HeatSource):
         self.add_variable(GasPort, "GasIn")
         self.add_variable(
             Variable, "Gas_demand_mass_flow", min=0.0, nominal=self.Q_nominal_gas * self.density
-        )
+        )  # [g/s]
 
         self.add_equation(
             (
@@ -55,9 +57,13 @@ class GasBoiler(HeatSource):
             )
         )
 
+        # Heat_source [J/s] = mass_flow [g/s] / 1000 [g/kg] * energy_content [J/kg] * efficiency [-]
         self.add_equation(
             (
-                (self.GasIn.mass_flow / 1000.0 * self.energy_content - self.Heat_source)
+                (
+                    self.GasIn.mass_flow / 1000.0 * self.energy_content * self.efficiency
+                    - self.Heat_source
+                )
                 / self.Heat_nominal
             )
         )
