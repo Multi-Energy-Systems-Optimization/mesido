@@ -154,6 +154,7 @@ class HeatProblem(
         self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
         options["neglect_pipe_heat_losses"] = True
         options["include_ates_temperature_options"] = True
+        self.heat_network_settings["storage_charging_variables"] = True
         return options
 
     def temperature_carriers(self):

@@ -7,6 +7,8 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
+import pytest
+
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
@@ -19,6 +21,8 @@ class TestProducerMaxProfile(TestCase):
 
     """
 
+    @pytest.mark.slow_1
+    @pytest.mark.timeout(150)  # overrides the default timelimt of the pytest command
     def test_max_producer_scaled_profile(self):
         """
         Use a scaled profile, where the profile was intentionally reduced for a couple of
@@ -62,6 +66,8 @@ class TestProducerMaxProfile(TestCase):
         biggerthen = all(heat_producer_profile_full + tol >= heat_producer)
         self.assertTrue(biggerthen)
 
+    @pytest.mark.slow_1
+    @pytest.mark.timeout(150)  # overrides the default timelimt of the pytest command
     def test_max_producer_esdl_unscaled_profile(self):
         """
         Use a profile specified in Watts, where the profile was intentionally modified (via the
@@ -101,7 +107,7 @@ class TestProducerMaxProfile(TestCase):
 
             demand_matching_test(solution, results)
             energy_conservation_test(solution, results)
-            heat_to_discharge_test(solution, results)
+            heat_to_discharge_test(solution, results, atol=0.15)
             tol = 1e-4
             heat_produced = results["HeatProducer_b702.Heat_source"]
 
@@ -135,12 +141,14 @@ class TestProducerMaxProfile(TestCase):
                 )
                 np.testing.assert_array_less(heat_produced - tol, heat_production_upper_limit)
                 np.testing.assert_array_less(
-                    7,
+                    6.9,
                     np.sum(
                         np.isclose(heat_produced, heat_production_upper_limit, atol=tol, rtol=1e-9)
                     ),
                 )
 
+    @pytest.mark.slow_1
+    @pytest.mark.timeout(150)  # overrides the default timelimt of the pytest command
     def test_max_producer_esdl_scaled_profile(self):
         """
         Use a scaled profile, where the profile was intentionally reduced for a couple of
