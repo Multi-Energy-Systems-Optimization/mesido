@@ -23,6 +23,7 @@ from utils_tests import demand_matching_test
 
 
 class TestEndScenarioSizing(TestCase):
+
     @classmethod
     def setUpClass(cls) -> None:
         import models.test_case_small_network_ates_buffer_optional_assets.src.run_ates as run_ates
@@ -76,14 +77,28 @@ class TestEndScenarioSizing(TestCase):
         # Pipe connected to a demand
         assert self.solution.pipe_classes("Pipe2")[0].name == "DN150"  # initially DN->None
         assert self.solution.pipe_classes("Pipe2")[-1].name == "DN250"  # initially DN450
+        # Check that the available pipe classes are also limited for pipes in the return network
+        # that do not have the related attribute assigned and are therefore not in the set of
+        # self.cold_pipes.
+        assert len(self.solution.unrelated_pipes) >= 1.0
+        assert self.solution.pipe_classes("Pipe2_ret")[0].name == "DN150"  # initially DN->None
+        assert self.solution.pipe_classes("Pipe2_ret")[-1].name == "DN250"  # initially DN450
         # Check the minimum velocity setting==default value. Keep the default value hard-coded to
         # prevent future coding bugs
         np.testing.assert_equal(1.0e-4, self.solution.heat_network_settings["minimum_velocity"])
 
-        # Check whether cyclic ates constraint is working
+        # Check whether cyclic ates constraint is working and split between the charging and
+        # discharging heat_flow variables
         for a in self.solution.energy_system_components.get("ates", []):
             stored_heat = self.results[f"{a}.Stored_heat"]
             np.testing.assert_allclose(stored_heat[0], stored_heat[-1], atol=1.0)
+            heat_ates = self.results[f"{a}.Heat_ates"]
+            heat_flow_charging = self.results[f"{a}.Heat_flow_charging"]
+            heat_flow_discharging = self.results[f"{a}.Heat_flow_discharging"]
+            np.testing.assert_allclose(
+                heat_ates, heat_flow_charging - heat_flow_discharging, atol=1.0
+            )
+            np.testing.assert_array_less(heat_flow_charging[heat_flow_discharging > 1e3], 1e3)
 
         # Check whether buffer tank is only active in peak day
         peak_day_indx = self.solution.parameters(0)["peak_day_index"]
@@ -92,19 +107,18 @@ class TestEndScenarioSizing(TestCase):
             for i in range(len(self.solution.times())):
                 if i < peak_day_indx or i > (peak_day_indx + 23):
                     np.testing.assert_allclose(heat_buffer[i], 0.0, atol=1.0e-6)
+            heat_flow_charging = self.results[f"{b}.Heat_flow_charging"]
+            heat_flow_discharging = self.results[f"{b}.Heat_flow_discharging"]
+            np.testing.assert_allclose(
+                heat_buffer, heat_flow_charging - heat_flow_discharging, atol=1.0
+            )
 
-        obj = self.get_objective_value_end_scenario_sizing(self.solution)
-        excluded_costs_in_obj = 0.0  # Fixed costs excluded in the optim objective function
-        years = self.solution.parameters(0)["number_of_years"]
-        for asset in [*self.solution.energy_system_components.get("heat_demand", [])]:
-            technical_lifetime = self.solution.parameters(0)[f"{asset}.technical_life"]
-            factor = years / technical_lifetime
-            if factor < 1.0:
-                factor = 1.0
-            if asset in [*self.solution.energy_system_components.get("heat_demand", [])]:
-                excluded_costs_in_obj += (
-                    self.results[f"{self.solution._asset_installation_cost_map[asset]}"] * factor
-                )
+        obj = self.calculate_objective_value_end_scenario_sizing_all_optional(self.solution)
+        excluded_costs_in_obj = self.calculate_heat_demand_costs_end_scenario_sizing()  # Fixed
+        # costs excluded in the optim objective function
+
+        # Since all assets are optional, the objective value should be close to the calculated tco
+        # excluding heating demands.
         np.testing.assert_allclose(obj / 1.0e6, self.solution.objective_value)
         np.testing.assert_array_less(
             self.solution.objective_value, (obj + excluded_costs_in_obj) / 1.0e6
@@ -196,7 +210,7 @@ class TestEndScenarioSizing(TestCase):
                 if i < peak_day_indx or i > (peak_day_indx + 23):
                     np.testing.assert_allclose(heat_buffer[i], 0.0, atol=1.0e-6)
 
-        obj = self.get_objective_value_end_scenario_sizing(solution_staged)
+        obj = self.calculate_objective_value_end_scenario_sizing_all_optional(solution_staged)
         np.testing.assert_allclose(obj / 1.0e6, solution_staged.objective_value)
 
         # comparing results of staged and unstaged problem definition. For larger systems there
@@ -297,8 +311,14 @@ class TestEndScenarioSizing(TestCase):
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
+        class EndScenarioSizingHeadLossStagedNLines(EndScenarioSizingHeadLossStaged):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+
+                self.heat_network_settings["n_linearization_lines"] = 3
+
         solution = run_end_scenario_sizing(
-            EndScenarioSizingHeadLossStaged,
+            EndScenarioSizingHeadLossStagedNLines,
             base_folder=base_folder,
             esdl_file_name="test_case_small_network_all_optional.esdl",
             esdl_parser=ESDLFileParser,
@@ -311,7 +331,7 @@ class TestEndScenarioSizing(TestCase):
 
         demand_matching_test(solution, results)
 
-        tol = 1.0e-10
+        tol = 1.0e-9
         pipes = solution.energy_system_components.get("heat_pipe")
         for pipe in pipes:
             pipe_diameter = solution.parameters(0)[f"{pipe}.diameter"]
@@ -355,8 +375,7 @@ class TestEndScenarioSizing(TestCase):
         solution = run_end_scenario_sizing(
             EndScenarioSizing,
             base_folder=base_folder,
-            esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional_pipe_catalog"
-            ".esdl",
+            esdl_file_name="test_case_small_network_all_optional_pipe_catalog" ".esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
@@ -435,7 +454,21 @@ class TestEndScenarioSizing(TestCase):
                 ]
                 np.testing.assert_allclose(cost_map_from_template, investment_cost_specific)
 
-    def get_objective_value_end_scenario_sizing(self, solution):
+    def calculate_heat_demand_costs_end_scenario_sizing(self):
+        excluded_costs_in_obj = 0.0  # Fixed costs excluded in the optim objective function
+        years = self.solution.parameters(0)["number_of_years"]
+        for asset in [*self.solution.energy_system_components.get("heat_demand", [])]:
+            technical_lifetime = self.solution.parameters(0)[f"{asset}.technical_life"]
+            factor = years / technical_lifetime
+            if factor < 1.0:
+                factor = 1.0
+            if asset in [*self.solution.energy_system_components.get("heat_demand", [])]:
+                excluded_costs_in_obj += (
+                    self.results[f"{self.solution._asset_installation_cost_map[asset]}"] * factor
+                )
+        return excluded_costs_in_obj
+
+    def calculate_objective_value_end_scenario_sizing_all_optional(self, solution):
         # If heating demand asset's state is enabled, then exclude the costs since it is not
         # part of the TCO calculation. This is because we do not size heating demand assets in
         # the optimization

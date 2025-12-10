@@ -102,17 +102,17 @@ class RollOutPost:
             ates = ates_asset.name
             plt.plot(
                 times / 3600 / 24,
-                results[f"{ates}.Heat_ates"] / 1e6,
+                np.array(results[f"{ates}.Heat_ates"]) / 1e6,
                 label=str(ates) + " Heat_ates",
             )
             plt.plot(
                 times / 3600 / 24,
-                results[f"{ates}.Heat_loss"] / 1e6,
+                np.array(results[f"{ates}.Heat_loss"]) / 1e6,
                 label=str(ates) + " Heat_loss",
             )
             plt.plot(
                 times / 3600 / 24,
-                results[f"{ates}.Storage_yearly_change"] / 1e6,
+                np.array(results[f"{ates}.Storage_yearly_change"]) / 1e6,
                 label=str(ates) + " Storage_yearly_change",
             )
 
@@ -390,3 +390,13 @@ class RollOutPost:
             f"{asset_name}__cumulative_investments_made_in_eur_year_{y}" for y in range(self.years)
         ]
         return [self.results[var_n] for var_n in var_names]
+
+
+if __name__ == "__main__":
+    kwargs = {
+        "output_folder": r"C:\git\mesido\examples\municipality" r"\test2",
+        "esdl_file_name": "GROW_withATES_Prod_install_full_GrowOptimized_costsupdated.esdl",
+        "figure_folder": r"C:\git\mesido\examples\municipality\test2" r"\figures",
+    }
+    rolloutpost = RollOutPost(**kwargs)
+    rolloutpost.all_plots()

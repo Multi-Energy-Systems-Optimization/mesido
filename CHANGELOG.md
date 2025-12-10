@@ -1,13 +1,19 @@
-# [Unreleased-main] - 2025-11-19
+# [Unreleased-main] - 2025-12-08
 
 ## Added
-- xx
+- ATES variable cost calculation utilizing a split ates charging and discharging variable.
+- Rollout workflow may optionally include phasing of heat buffers for handling peak day constraints and demands
+- Inclusion of maximum allowed yearly pipe placement length constraint for the rollout workflow
+- Adding constraint so that all heating demands are placed at the end of the simulation
+
 
 ## Changed
-- xx
+- Minimize TCO objective in the grow_workflow is now only based on capex and opex that can be influenced.
+- Removed the requirement of "_ret" for the return network pipes, for ESDLversion 21.10 and later. The relation between supply and return pipes is now based on the "related" attribute in the esdl.
 
 ## Fixed
-- xx
+- Bug: Write updated esdl for 2 port heat pump
+
 
 # [0.1.15] - 2025-11-19
 
