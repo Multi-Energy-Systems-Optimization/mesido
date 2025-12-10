@@ -2494,19 +2494,34 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     constraint_nominal = (
                         heat_nominal * cp * rho * supply_temperature * q_nominal
                     ) ** 0.5
-                    constraints.append(
-                        (
+                    if self.heat_network_settings["storage_charging_variables"]:
+                        constraints.append(
                             (
-                                heat_in
-                                - discharge * cp * rho * supply_temperature
-                                + (1.0 - sup_temperature_is_selected) * big_m
-                                + is_buffer_charging * big_m
+                                (
+                                    heat_in
+                                    - discharge * cp * rho * supply_temperature
+                                    + (1.0 - sup_temperature_is_selected) * big_m
+                                    + is_buffer_charging * big_m
+                                )
+                                / constraint_nominal,
+                                0.0,
+                                np.inf,
                             )
-                            / constraint_nominal,
-                            0.0,
-                            np.inf,
                         )
-                    )
+                    else:
+                        constraints.append(
+                            (
+                                (
+                                        heat_in_discharging
+                                        - discharge * cp * rho * supply_temperature
+                                        + (1.0 - sup_temperature_is_selected) * big_m
+                                        # + is_buffer_charging * big_m
+                                )
+                                / constraint_nominal,
+                                0.0,
+                                np.inf,
+                            )
+                        )
                     constraints.append(
                         (
                             (
@@ -2575,18 +2590,32 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                             np.inf,
                         )
                     )
-                    constraints.append(
-                        (
+                    if self.heat_network_settings["storage_charging_variables"]:
+                        constraints.append(
                             (
-                                heat_out
-                                - discharge * cp * rho * return_temperature
-                                - (2.0 - ret_temperature_is_selected - is_buffer_charging) * big_m
+                                (
+                                    heat_out
+                                    - discharge * cp * rho * return_temperature
+                                    - (2.0 - ret_temperature_is_selected - is_buffer_charging) * big_m
+                                )
+                                / constraint_nominal,
+                                -np.inf,
+                                0.0,
                             )
-                            / constraint_nominal,
-                            -np.inf,
-                            0.0,
                         )
-                    )
+                    else:
+                        constraints.append(
+                            (
+                                (
+                                        heat_out_charging
+                                        - discharge * cp * rho * return_temperature
+                                        - (1.0 - ret_temperature_is_selected) * big_m
+                                )
+                                / constraint_nominal,
+                                -np.inf,
+                                0.0,
+                            )
+                        )
 
         return constraints
 
