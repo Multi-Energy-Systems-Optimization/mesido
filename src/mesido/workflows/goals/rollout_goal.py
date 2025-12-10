@@ -101,6 +101,7 @@ class MinimizeCAPEXAssetsCosts(Goal):
             *optimization_problem.energy_system_components.get("heat_demand", []),
             *optimization_problem.energy_system_components.get("heat_pipe", []),
             *optimization_problem.energy_system_components.get("heat_source", []),
+            *optimization_problem.energy_system_components.get("heat_buffer", []),
         ]:
             asset = optimization_problem.get_asset_from_asset_name(asset_name=asset_name)
             tech_lifetime = parameters[f"{asset_name}.technical_life"]

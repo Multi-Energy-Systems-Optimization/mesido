@@ -67,7 +67,7 @@ def set_data_with_averages(
 
 def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, problem_day_steps: int):
     """
-    Adapt yearly porifle with hourly time steps to a common profile (daily averaged profile except
+    Adapt yearly profile with hourly time steps to a common profile (daily averaged profile except
     for the day with the peak demand).
 
     Return the following:

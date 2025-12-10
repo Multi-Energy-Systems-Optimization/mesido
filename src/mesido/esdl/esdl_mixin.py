@@ -152,6 +152,9 @@ class ESDLMixin(
 
         self.name_to_esdl_id_map = dict()
 
+        self.__hot_cold_pipe_relations = dict()
+        self.__unrelated_pipes = list()
+
         super().__init__(*args, **kwargs)
 
     @property
@@ -441,12 +444,17 @@ class ESDLMixin(
         v_nominal = energy_system_options["estimated_velocity"]
         v_max = self.heat_network_settings["maximum_velocity"]
         v_max_gas = self.gas_network_settings["maximum_velocity"]
+        min_fraction_tank_volume = energy_system_options.get("min_fraction_tank_volume", 0.05)
 
         # Pass error type check setting to asset converter
         error_type_check = getattr(self, "_error_type_check", None)
 
         return dict(
-            v_nominal=v_nominal, v_max=v_max, v_max_gas=v_max_gas, error_type_check=error_type_check
+            v_nominal=v_nominal,
+            v_max=v_max,
+            v_max_gas=v_max_gas,
+            error_type_check=error_type_check,
+            min_fraction_tank_volume=min_fraction_tank_volume,
         )
 
     def esdl_qth_model_options(self) -> Dict:
@@ -478,7 +486,7 @@ class ESDLMixin(
         -------
         Returns true if the pipe is in the supply network thus not ends with "_ret"
         """
-        return True if pipe not in self.cold_pipes else False
+        return pipe in self.hot_to_cold_pipe_map.keys()
 
     def is_cold_pipe(self, pipe: str) -> bool:
         """
@@ -493,7 +501,7 @@ class ESDLMixin(
         -------
         Returns true if the pipe is in the return network thus ends with "_ret"
         """
-        return pipe.endswith("_ret")
+        return pipe in self.hot_to_cold_pipe_map.values()
 
     def hot_to_cold_pipe(self, pipe: str) -> str:
         """
@@ -509,7 +517,7 @@ class ESDLMixin(
         -------
         string with the associated return pipe name.
         """
-        return f"{pipe}_ret"
+        return self.hot_to_cold_pipe_map.get(pipe, None)
 
     def cold_to_hot_pipe(self, pipe: str) -> str:
         """
@@ -525,7 +533,70 @@ class ESDLMixin(
         -------
         string with the associated hot pipe name.
         """
-        return pipe[:-4]
+        return self.cold_to_hot_pipe_map.get(pipe, None)
+
+    def hot_cold_pipe_relations(self):
+        # Backward compatability: ESDL version before v2110 don't have the related attribute
+        esdl_version = self.__energy_system_handler.energy_system.esdlVersion
+        if esdl_version is not None and esdl_version >= "v2110":
+            for asset in self._esdl_assets.values():
+                if asset.asset_type == "Pipe":
+                    related = False
+                    related_asset = asset.attributes.get("related", False)
+                    if related_asset:
+                        assert (
+                            len(related_asset) == 1
+                        ), "Pipes can only have related supply/return pipe"
+                        related = True
+                        if asset.attributes["port"][0].carrier.supplyTemperature:  # hot_pipe
+                            if asset.name not in self.__hot_cold_pipe_relations.keys():
+                                self.__hot_cold_pipe_relations[asset.name] = related_asset[0].name
+                        elif asset.attributes["port"][0].carrier.returnTemperature:  # cold_pipe
+                            if related_asset[0].name not in self.__hot_cold_pipe_relations.keys():
+                                self.__hot_cold_pipe_relations[related_asset[0].name] = asset.name
+                    if not related and asset.name not in self.__unrelated_pipes:
+                        self.__unrelated_pipes.append(asset.name)
+        else:
+            pipes = self.energy_system_components.get("heat_pipe", [])
+            for pipe in pipes:
+                related = False
+                # test if hot_pipe
+                if not pipe.endswith("_ret"):
+                    cold_pipe = f"{pipe}_ret"
+                    if cold_pipe in pipes:
+                        related = True
+                        if pipe not in self.__hot_cold_pipe_relations.keys():
+                            self.__hot_cold_pipe_relations[pipe] = cold_pipe
+                elif pipe.endswith("_ret"):
+                    hot_pipe = pipe[:-4]
+                    if hot_pipe in pipes:
+                        related = True
+                        if hot_pipe not in self.__hot_cold_pipe_relations.keys():
+                            self.__hot_cold_pipe_relations[hot_pipe] = pipe
+                if not related and pipe not in self.__unrelated_pipes:
+                    self.__unrelated_pipes.append(pipe)
+
+    @property
+    def hot_to_cold_pipe_map(self) -> Dict:
+        """
+        This function return a dictionary of hot pipe names mapped to cold pipe names.
+        """
+        return self.__hot_cold_pipe_relations
+
+    @property
+    def cold_to_hot_pipe_map(self) -> Dict:
+        """
+        This function return a dictionary of cold pipe names mapped to hot pipe names.
+        """
+        return dict(
+            zip(self.__hot_cold_pipe_relations.values(), self.__hot_cold_pipe_relations.keys())
+        )
+
+    @property
+    def unrelated_pipes(self) -> List[str]:
+        """This function return a list of pipe names of all the pipes that don't have a related
+        cold/hot pipe."""
+        return self.__unrelated_pipes
 
     def pycml_model(self) -> _ESDLModelBase:
         """
@@ -551,6 +622,7 @@ class ESDLMixin(
         super().read()
         energy_system_components = self.energy_system_components
         esdl_carriers = self.esdl_carriers
+        self.hot_cold_pipe_relations()
         io = self.io
         self.__profile_reader.read_profiles(
             energy_system_components=energy_system_components,

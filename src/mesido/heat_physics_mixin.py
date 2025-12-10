@@ -111,6 +111,7 @@ class HeatPhysicsMixin(
             "pipe_minimum_pressure": -np.inf,
             "pipe_maximum_pressure": np.inf,
             "heat_exchanger_bypass": False,
+            "storage_charging_variables": False,
         }
         self._hn_head_loss_class = HeadLossClass(self.heat_network_settings)
         self.__pipe_head_bounds = {}
@@ -434,11 +435,12 @@ class HeatPhysicsMixin(
             self.__ates_max_stored_heat_bounds[ates_max_stored_heat_var_name] = (0, max_heat)
             self.__ates_max_stored_heat_nominals[ates_max_stored_heat_var_name] = max_heat / 2
 
-            ates_is_charging_var_name = f"{ates}__is_charging"
-            self.__ates_is_charging_var[ates_is_charging_var_name] = ca.MX.sym(
-                ates_is_charging_var_name
-            )
-            self.__ates_is_charging_bounds[ates_is_charging_var_name] = (0.0, 1.0)
+            if self.heat_network_settings["storage_charging_variables"]:
+                ates_is_charging_var_name = f"{ates}__is_charging"
+                self.__ates_is_charging_var[ates_is_charging_var_name] = ca.MX.sym(
+                    ates_is_charging_var_name
+                )
+                self.__ates_is_charging_bounds[ates_is_charging_var_name] = (0.0, 1.0)
 
         for _carrier, temperatures in self.temperature_carriers().items():
             carrier_id_number_mapping = str(temperatures["id_number_mapping"])
@@ -1816,12 +1818,18 @@ class HeatPhysicsMixin(
         parameters = self.parameters(ensemble_member)
         options = self.energy_system_options()
 
-        for ates_asset in self.energy_system_components.get("ates", []):
+        for ates_asset, (
+            (hot_pipe, _hot_pipe_orientation),
+            (_cold_pipe, _cold_pipe_orientation),
+        ) in self.energy_system_topology.ates.items():
 
             if ates_asset in self.energy_system_components.get("low_temperature_ates", []):
                 continue
-
-            is_buffer_charging = self.variable(f"{ates_asset}__is_charging")
+            if self.heat_network_settings["storage_charging_variables"]:
+                is_buffer_charging = self.variable(f"{ates_asset}__is_charging")
+            else:
+                flow_dir_var = self._heat_pipe_to_flow_direct_map[hot_pipe]
+                is_buffer_charging = self.state(flow_dir_var)
 
             sup_carrier = parameters[f"{ates_asset}.T_supply_id"]
             supply_temperatures = self.temperature_regimes(sup_carrier)
@@ -2083,7 +2091,10 @@ class HeatPhysicsMixin(
         bounds = self.bounds()
         options = self.energy_system_options()
 
-        for ates in self.energy_system_components.get("ates", []):
+        for ates, (
+            (hot_pipe, _hot_pipe_orientation),
+            (_cold_pipe, _cold_pipe_orientation),
+        ) in self.energy_system_topology.ates.items():
 
             if ates in self.energy_system_components.get("low_temperature_ates", []):
                 continue
@@ -2100,7 +2111,12 @@ class HeatPhysicsMixin(
             if options["include_ates_temperature_options"] and len(supply_temperatures) != 0:
                 soil_temperature = parameters[f"{ates}.T_amb"]
 
-                is_buffer_charging = self.variable(f"{ates}__is_charging")
+                if self.heat_network_settings["storage_charging_variables"]:
+                    is_buffer_charging = self.variable(f"{ates}__is_charging")
+                else:
+                    flow_dir_var = self._heat_pipe_to_flow_direct_map[hot_pipe]
+                    is_buffer_charging = self.state(flow_dir_var)
+
                 heat_stored_max = bounds[f"{ates}.Stored_heat"][1]
                 heat_ates_max = bounds[f"{ates}.Heat_ates"][1]
                 heat_ates = self.state(f"{ates}.Heat_ates")
@@ -2319,6 +2335,7 @@ class HeatPhysicsMixin(
         """
         constraints = []
         parameters = self.parameters(ensemble_member)
+        bounds = self.bounds()
 
         for b, (
             (hot_pipe, _hot_pipe_orientation),
@@ -2354,7 +2371,8 @@ class HeatPhysicsMixin(
             flow_dir_var = self._heat_pipe_to_flow_direct_map[hot_pipe]
             is_buffer_charging = self.state(flow_dir_var)
             if b in self.energy_system_components.get("ates", []):
-                is_buffer_charging = self.variable(f"{b}__is_charging")
+                if self.heat_network_settings["storage_charging_variables"]:
+                    is_buffer_charging = self.variable(f"{b}__is_charging")
 
                 # TODO: check if below is necessary.
                 # flow_big_m = q_nominal * 10
@@ -2375,6 +2393,19 @@ class HeatPhysicsMixin(
             ret_carrier = parameters[f"{b}.T_return_id"]
             supply_temperatures = self.temperature_regimes(sup_carrier)
             return_temperatures = self.temperature_regimes(ret_carrier)
+
+            # reducing problem size without is_charging variables
+            heat_charging = self.state(f"{b}.Heat_flow_charging")
+            heat_discharging = self.state(f"{b}.Heat_flow_discharging")
+            heat_charging_max = bounds[f"{b}.Heat_flow_charging"][1]
+            heat_discharging_max = bounds[f"{b}.Heat_flow_discharging"][1]
+            constraints.append(
+                (
+                    heat_charging / heat_charging_max + heat_discharging / heat_discharging_max,
+                    -np.inf,
+                    1.0,
+                )
+            )
 
             if len(supply_temperatures) == 0:
                 constraint_nominal = (heat_nominal * cp * rho * dt * q_nominal) ** 0.5
@@ -3540,7 +3571,8 @@ class HeatPhysicsMixin(
             flow_dir_var = self._heat_pipe_to_flow_direct_map[hot_pipe]
             is_buffer_charging = self.state(flow_dir_var) * hot_pipe_orientation
             if b in self.energy_system_components.get("ates", []):
-                is_buffer_charging = self.variable(f"{b}__is_charging")
+                if self.heat_network_settings["storage_charging_variables"]:
+                    is_buffer_charging = self.variable(f"{b}__is_charging")
 
             big_m = (
                 2.0
@@ -3672,11 +3704,6 @@ class HeatPhysicsMixin(
                 self._hn_head_loss_class._demand_head_loss_path_constraints(self, ensemble_member)
             )
 
-        # constraints.extend(
-        #     self._hn_head_loss_class._pipe_hydraulic_power_path_constraints(
-        #         self, self.__maximum_total_head_loss, ensemble_member
-        #     )
-        # )
         constraints.extend(self.__flow_direction_path_constraints(ensemble_member))
         constraints.extend(self.__node_heat_mixing_path_constraints(ensemble_member))
         constraints.extend(self.__node_hydraulic_power_mixing_path_constraints(ensemble_member))
@@ -3698,8 +3725,8 @@ class HeatPhysicsMixin(
         constraints.extend(self.__ates_heat_losses_path_constraints(ensemble_member))
         constraints.extend(self.__ates_temperature_ordering_path_constraints(ensemble_member))
         constraints.extend(self.__heat_pump_cop_path_constraints(ensemble_member))
-
         constraints.extend(self.__ates_storage_yearly_change_path_constraints(ensemble_member))
+
         if self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
             constraints.extend(
                 self._hn_head_loss_class._pipe_hydraulic_power_path_constraints(
