@@ -51,9 +51,7 @@ class TestMILPElectricSourceSink(TestCase):
         storage_name = solution.energy_system_components.get("electricity_storage")[0]
         charge_eff = parameters[f"{storage_name}.charge_efficiency"]
         discharge_eff = parameters[f"{storage_name}.discharge_efficiency"]
-        # is_charging = results[f"{storage_name}__is_charging"]
         eff_power_change_bat = results[f"{storage_name}.Effective_power_charging"]
-        # eff_power_change_discharge_bat = results[f"{storage_name}__effective_power_discharging"]
         power_bat_network = results[f"{storage_name}.ElectricityIn.Power"]
         power_discharging = results[f"{storage_name}.Power_discharging"]
         power_charging = results[f"{storage_name}.Power_charging"]
@@ -114,11 +112,3 @@ class TestMILPElectricSourceSink(TestCase):
             power_bat_network * (1 - is_charging) / discharge_eff,
             atol=tol,
         )
-
-        # effective power discharge variable should always be the bigger or equal to the negative
-        # of the charge variable and bigger then zero. The zero should only occur if battery is
-        # charging. When a goal would be set to minimise discharge it should match the charge power,
-        # however now this goal is not turned on.
-        # TODO: when the new goal is included create test, this will end up in the mc_simulator
-        # np.testing.assert_array_less(-eff_power_change_bat, eff_power_change_discharge_bat + tol)
-        # self.assertTrue(all(eff_power_change_discharge_bat >= 0.0))
