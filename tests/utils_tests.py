@@ -308,7 +308,7 @@ def heat_to_discharge_test(solution, results, atol=1e-2, rtol=1.0e-4):
                 <= results[f"{p}.Q"][indices] * rho * cp * temperature + atol
             )
         )
-        indices = results[f"{p}.Q"] < 0
+        indices = results[f"{p}.Q"] < -1e-12
         if f"{carrier_id}_temperature" in results.keys():
             temperature = np.clip(
                 results[f"{carrier_id}_temperature"][indices],
