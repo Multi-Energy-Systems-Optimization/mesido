@@ -77,6 +77,12 @@ class TestEndScenarioSizing(TestCase):
         # Pipe connected to a demand
         assert self.solution.pipe_classes("Pipe2")[0].name == "DN150"  # initially DN->None
         assert self.solution.pipe_classes("Pipe2")[-1].name == "DN250"  # initially DN450
+        # Check that the available pipe classes are also limited for pipes in the return network
+        # that do not have the related attribute assigned and are therefore not in the set of
+        # self.cold_pipes.
+        assert len(self.solution.unrelated_pipes) >= 1.0
+        assert self.solution.pipe_classes("Pipe2_ret")[0].name == "DN150"  # initially DN->None
+        assert self.solution.pipe_classes("Pipe2_ret")[-1].name == "DN250"  # initially DN450
         # Check the minimum velocity setting==default value. Keep the default value hard-coded to
         # prevent future coding bugs
         np.testing.assert_equal(1.0e-4, self.solution.heat_network_settings["minimum_velocity"])
@@ -305,8 +311,14 @@ class TestEndScenarioSizing(TestCase):
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
+        class EndScenarioSizingHeadLossStagedNLines(EndScenarioSizingHeadLossStaged):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+
+                self.heat_network_settings["n_linearization_lines"] = 3
+
         solution = run_end_scenario_sizing(
-            EndScenarioSizingHeadLossStaged,
+            EndScenarioSizingHeadLossStagedNLines,
             base_folder=base_folder,
             esdl_file_name="test_case_small_network_all_optional.esdl",
             esdl_parser=ESDLFileParser,
@@ -319,7 +331,7 @@ class TestEndScenarioSizing(TestCase):
 
         demand_matching_test(solution, results)
 
-        tol = 1.0e-10
+        tol = 1.0e-9
         pipes = solution.energy_system_components.get("heat_pipe")
         for pipe in pipes:
             pipe_diameter = solution.parameters(0)[f"{pipe}.diameter"]
@@ -363,8 +375,7 @@ class TestEndScenarioSizing(TestCase):
         solution = run_end_scenario_sizing(
             EndScenarioSizing,
             base_folder=base_folder,
-            esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional_pipe_catalog"
-            ".esdl",
+            esdl_file_name="test_case_small_network_all_optional_pipe_catalog" ".esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",

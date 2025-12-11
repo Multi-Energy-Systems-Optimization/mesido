@@ -62,6 +62,7 @@ class TestPipeDiameterSizingExample(TestCase):
 
         parameters = problem.parameters(0)
         diameters = {p: parameters[f"{p}.diameter"] for p in problem.hot_pipes}
+        assert len(problem.unrelated_pipes) == 0
         results = problem.extract_results()
 
         # Check that half the network is removed, i.e. 4 pipes. Note that it
