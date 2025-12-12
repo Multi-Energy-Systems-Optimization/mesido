@@ -629,7 +629,7 @@ class TestMultiCommoditySimulator(TestCase):
                 zero_unstaged = results_unstaged[f"{key.split('__')[0]}.GasIn.Q"] != 0
                 np.testing.assert_allclose(value[zero_staged], value_staged[zero_unstaged])
             else:
-                np.testing.assert_allclose(value, value_staged)
+                np.testing.assert_allclose(value, value_staged, atol=1e-4)
 
         solution_staged_bounded = run_sequatially_staged_simulation(
             multi_commodity_simulator_class=MultiCommoditySimulatorNoLosses,

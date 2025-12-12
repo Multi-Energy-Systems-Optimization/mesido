@@ -6,7 +6,7 @@ import numpy as np
 
 from rtctools.optimization.single_pass_goal_programming_mixin import Goal
 
-logger = logging.getLogger("WarmingUP-MPC")
+logger = logging.getLogger("mesido")
 logger.setLevel(logging.INFO)
 
 
