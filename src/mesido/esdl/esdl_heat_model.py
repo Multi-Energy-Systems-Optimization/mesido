@@ -32,8 +32,8 @@ from mesido.pycml.component_library.milp import (
     ElectricitySource,
     ElectricityStorage,
     Electrolyzer,
-    GasBoiler,
     GasDemand,
+    GasHeatSourceGas,
     GasNode,
     GasPipe,
     GasSource,
@@ -47,6 +47,7 @@ from mesido.pycml.component_library.milp import (
     HeatPump,
     HeatPumpElec,
     HeatSource,
+    HeatSourceGas,
     LowTemperatureATES,
     Node,
     Pump,
@@ -1299,6 +1300,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
         elif asset.asset_type == "HeatPump":
             modifiers["cop"] = asset.attributes["COP"]
             return AirWaterHeatPump, modifiers
+        elif asset.asset_type == "GasHeater":
+            efficiency = asset.attributes["efficiency"] if asset.attributes["efficiency"] else 1.0
+            modifiers["efficiency"] = efficiency
+            return HeatSourceGas, modifiers
         else:
             return HeatSource, modifiers
 
@@ -2380,7 +2385,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         return Compressor, modifiers
 
-    def convert_gas_boiler(self, asset: Asset) -> Tuple[GasBoiler, MODIFIERS]:
+    def convert_heat_source_gas(self, asset: Asset) -> Tuple[GasHeatSourceGas, MODIFIERS]:
         """
         This function converts the GasHeater object in esdl to a set of modifiers that can be
         used in a pycml object.
@@ -2424,8 +2429,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
         assert max_supply > 0.0
 
         if len(asset.in_ports) == 1:
-            heat_source_object, modifiers = self.convert_heat_source(asset)
-            return heat_source_object, modifiers
+            _, modifiers = self.convert_heat_source(asset)
+            return HeatSourceGas, modifiers
 
         id_mapping = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
             "id_number_mapping"
@@ -2459,7 +2464,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
         )
-        return GasBoiler, modifiers
+        return GasHeatSourceGas, modifiers
 
     def convert_elec_boiler(self, asset: Asset) -> Tuple[Union[ElecBoiler, HeatSource], MODIFIERS]:
         """
