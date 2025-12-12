@@ -37,7 +37,7 @@ class TestSetpointConstraints(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_import.xml",
-            **{"timed_setpoints": {"GeothermalSource_b702": (45, 1)}},
+            **{"timed_setpoints": {"GeothermalSource_b702": (21, 1)}},
         )
         results_3 = _heat_problem_3.extract_results()
 
@@ -48,7 +48,7 @@ class TestSetpointConstraints(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_import.xml",
-            **{"timed_setpoints": {"GeothermalSource_b702": (45, 0)}},
+            **{"timed_setpoints": {"GeothermalSource_b702": (21, 0)}},
         )
         results_4 = _heat_problem_4.extract_results()
 

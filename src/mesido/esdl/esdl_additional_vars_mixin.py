@@ -29,10 +29,53 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
         # ------------------------------------------------------------------------------------------
         # Limit available pipe classes
         # TODO: cater for varying temperature when limiting pipe classes below
-        # Here we do a check between the available pipe classes and the demand profiles. This is to
-        # ensure that we don't have unneeded large amount of available pipe classes for pipes
-        # connected to smaller demands.
+        # Here we do a check between the available pipe classes and the connected assets. For
+        # demands this refers to the demand profiles and for producers to their maximum capacity.
+        # This is to ensure that we don't have unneeded large amount of available pipe classes
+        # for pipes connected to smaller demands and producers.
         # TODO: add the same for electricity ones we have proper support for that in the ESDLMixin
+
+        def __limit_list_available_heat_pipe_classes_max_power(
+            max_power: float, demand: bool
+        ) -> None:
+            """
+            Limits the available heat pipe classes for optimization based on the maximum power
+            that can be connected.
+            """
+            new_pcs = []
+            found_pc_large_enough = False
+            for pc in self.pipe_classes(connected_asset):
+                if not found_pc_large_enough:
+                    new_pcs.append(pc)
+                if (
+                    new_pcs[-1].maximum_discharge
+                    * parameters[f"{asset}.cp"]
+                    * parameters[f"{asset}.rho"]
+                    * (parameters[f"{asset}.T_supply"] - parameters[f"{asset}.T_return"])
+                ) >= max_power:
+                    found_pc_large_enough = True
+            self.remove_dn0(new_pcs, is_there_always_mass_flow)
+            self._override_pipe_classes[connected_asset] = new_pcs
+
+            if not self.is_hot_pipe(self.hot_to_cold_pipe(connected_asset)):
+                if self.has_related_pipe(connected_asset):
+                    self._override_pipe_classes[self.hot_to_cold_pipe(connected_asset)] = new_pcs
+                else:
+                    # TODO: temporarily fix for pipes that don't have related attribute,
+                    # but are connected to demands, to still limit the classes. To be
+                    # fixed in Topology in separate PR.
+                    if demand:
+                        port_1, port_2 = "Out", "In"
+                    else:
+                        port_1, port_2 = "In", "Out"
+                    alias = [
+                        x
+                        for x in self.alias_relation.aliases(f"{asset}.Heat{port_1}.Heat")
+                        if not x.startswith(asset) and x.endswith(".Heat")
+                    ][0]
+                    connected_asset_2 = alias[: -len(f".Heat{port_2}.Heat")]
+                    self._override_pipe_classes[connected_asset_2] = new_pcs
+
         if len(self.temperature_carriers().items()) == 0:
             for asset, (
                 connected_asset,
@@ -86,38 +129,7 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
 
                     max_demand *= 1.3  # 30% added for expected worst case heat losses
 
-                    new_pcs = []
-                    found_pc_large_enough = False
-                    for pc in self.pipe_classes(connected_asset):
-                        if not found_pc_large_enough:
-                            new_pcs.append(pc)
-                        if (
-                            new_pcs[-1].maximum_discharge
-                            * parameters[f"{asset}.cp"]
-                            * parameters[f"{asset}.rho"]
-                            * (parameters[f"{asset}.T_supply"] - parameters[f"{asset}.T_return"])
-                        ) >= max_demand:
-                            found_pc_large_enough = True
-
-                    self.remove_dn0(new_pcs, is_there_always_mass_flow)
-                    self._override_pipe_classes[connected_asset] = new_pcs
-
-                    if not self.is_hot_pipe(self.hot_to_cold_pipe(connected_asset)):
-                        if self.has_related_pipe(connected_asset):
-                            self._override_pipe_classes[self.hot_to_cold_pipe(connected_asset)] = (
-                                new_pcs
-                            )
-                        else:
-                            # TODO: temporarily fix for pipes that don't have related attribute,
-                            # but are connected to demands, to still limit the classes. To be
-                            # fixed in Topology in separate PR.
-                            alias = [
-                                x
-                                for x in self.alias_relation.aliases(f"{asset}.HeatOut.Heat")
-                                if not x.startswith(asset) and x.endswith(".Heat")
-                            ][0]
-                            connected_asset_2 = alias[: -len(".HeatIn.Heat")]
-                            self._override_pipe_classes[connected_asset_2] = new_pcs
+                    __limit_list_available_heat_pipe_classes_max_power(max_demand, demand=True)
 
             # Here we do the same for sources as for the sources.
             for asset, (
@@ -152,35 +164,9 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
                         )
                     except KeyError:
                         max_prod = bounds[f"{asset}.Heat_source"][1]
-                    new_pcs = []
-                    found_pc_large_enough = False
-                    for pc in self.pipe_classes(connected_asset):
-                        if not found_pc_large_enough:
-                            new_pcs.append(pc)
-                        if (
-                            new_pcs[-1].maximum_discharge
-                            * parameters[f"{asset}.cp"]
-                            * parameters[f"{asset}.rho"]
-                            * (parameters[f"{asset}.T_supply"] - parameters[f"{asset}.T_return"])
-                        ) >= max_prod:
-                            found_pc_large_enough = True
-                    self._override_pipe_classes[connected_asset] = new_pcs
-                    if not self.is_hot_pipe(self.hot_to_cold_pipe(connected_asset)):
-                        if self.has_related_pipe(connected_asset):
-                            self._override_pipe_classes[self.hot_to_cold_pipe(connected_asset)] = (
-                                new_pcs
-                            )
-                        else:
-                            # TODO: temporarily fix for pipes that don't have related attribute,
-                            # but are connected to demands, to still limit the classes. To be
-                            # fixed in Topology in separate PR.
-                            alias = [
-                                x
-                                for x in self.alias_relation.aliases(f"{asset}.HeatIn.Heat")
-                                if not x.startswith(asset) and x.endswith(".Heat")
-                            ][0]
-                            connected_asset_2 = alias[: -len(".HeatOut.Heat")]
-                            self._override_pipe_classes[connected_asset_2] = new_pcs
+                    is_there_always_mass_flow = False
+                    __limit_list_available_heat_pipe_classes_max_power(max_prod, demand=False)
+
         else:
             logger.warning("Limiting pipe classes do not cater for varying temperature yet")
         # ------------------------------------------------------------------------------------------

@@ -84,14 +84,15 @@ class PipeDiameterSizingProblem(
         return options
 
     def pipe_classes(self, pipe):
-        # Do not delete pipeclass DN40, locally it runs with DN40, but in pipeline it seems
+        # Do not delete pipeclass DN40, DN50, DN65, DN600. Locally it runs with with these
+        # options included however in pipeline it seems
         # that scaling is a bit too much off resulting in infeasibility probably because of
-        # machine accuracy. If scaling can be improved DN40 can be included again.
+        # machine accuracy. If scaling can be improved these options can be included again.
         return [
             PipeClass("None", 0.0, 0.0, (0.0, 0.0), 0.0),
             # PipeClass("DN40", 0.0431, 1.5, (0.179091, 0.005049), 1.0),
-            PipeClass("DN50", 0.0545, 1.7, (0.201377, 0.006086), 2.0),
-            PipeClass("DN65", 0.0703, 1.9, (0.227114, 0.007300), 3.0),
+            # PipeClass("DN50", 0.0545, 1.7, (0.201377, 0.006086), 2.0),
+            # PipeClass("DN65", 0.0703, 1.9, (0.227114, 0.007300), 3.0),
             PipeClass("DN80", 0.0825, 2.2, (0.238244, 0.007611), 4.0),
             PipeClass("DN100", 0.1071, 2.4, (0.247804, 0.007386), 5.0),
             PipeClass("DN125", 0.1325, 2.6, (0.287779, 0.009431), 6.0),
@@ -103,7 +104,7 @@ class PipeDiameterSizingProblem(
             PipeClass("DN400", 0.3938, 3.0, (0.381603, 0.009349), 12.0),
             PipeClass("DN450", 0.4444, 3.0, (0.380070, 0.008506), 13.0),
             PipeClass("DN500", 0.4954, 3.0, (0.369282, 0.007349), 14.0),
-            PipeClass("DN600", 0.5954, 3.0, (0.431023, 0.009155), 15.0),
+            # PipeClass("DN600", 0.5954, 3.0, (0.431023, 0.009155), 15.0),
         ]
 
     def path_goals(self):
