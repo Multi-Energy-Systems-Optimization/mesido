@@ -102,7 +102,7 @@ class TestGasBoiler(TestCase):
         )
 
         # # Check the cost components of GasHeater
-        self.asset_Cost_calculation_tests(heat_problem, results)
+        self.asset_cost_calculation_tests(heat_problem, results)
 
     def test_heat_source_gas(self):
         """
@@ -136,7 +136,7 @@ class TestGasBoiler(TestCase):
         heat_to_discharge_test(solution, results)
 
         # # Check the cost components of GasHeater
-        self.asset_Cost_calculation_tests(solution, results)
+        self.asset_cost_calculation_tests(solution, results)
 
 
 if __name__ == "__main__":
