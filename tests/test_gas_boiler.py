@@ -13,7 +13,7 @@ from utils_tests import demand_matching_test, energy_conservation_test, heat_to_
 
 class TestGasBoiler(TestCase):
 
-    def asset_Cost_calculation_tests(self, solution, results):
+    def asset_cost_calculation_tests(self, solution, results):
         # Check the cost components of GasHeater
         for asset in [
             *solution.energy_system_components.get("heat_source", []),
