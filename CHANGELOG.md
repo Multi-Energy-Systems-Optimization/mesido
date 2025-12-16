@@ -5,11 +5,13 @@
 - Rollout workflow may optionally include phasing of heat buffers for handling peak day constraints and demands
 - Inclusion of maximum allowed yearly pipe placement length constraint for the rollout workflow
 - Adding constraint so that all heating demands are placed at the end of the simulation
-- Gas Boiler with 2 ports (no gas port) is supported for DTK and its cost attributes are supported in Mesido
+- HeatSourceGas (gas boiler with 2 ports)is supported for DTK and its cost attributes are supported in Mesido
+- Cost attributes of GasHeatSourceGas (gas boiler with 3 ports) are supported in Mesido
 
 ## Changed
 - Minimize TCO objective in the grow_workflow is now only based on capex and opex that can be influenced.
 - Removed the requirement of "_ret" for the return network pipes, for ESDLversion 21.10 and later. The relation between supply and return pipes is now based on the "related" attribute in the esdl.
+- Gas Boiler asset is renamed as HeatSourceGas
 
 ## Fixed
 - Bug: Write updated esdl for 2 port heat pump
