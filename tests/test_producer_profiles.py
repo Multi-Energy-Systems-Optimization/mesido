@@ -217,6 +217,6 @@ class TestProducerMaxProfile(TestCase):
 if __name__ == "__main__":
 
     a = TestProducerMaxProfile()
-    a.test_max_producer_scaled_profile()
+    # a.test_max_producer_scaled_profile()
     a.test_max_producer_esdl_unscaled_profile()
-    a.test_max_producer_esdl_scaled_profile()
+    # a.test_max_producer_esdl_scaled_profile()

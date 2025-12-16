@@ -379,10 +379,7 @@ class InfluxDBProfileReader(BaseProfileReader):
         """
         # Import is done under the function instead of the top of the file
         # to avoid circular import issue
-        from mesido.workflows.utils.error_types import (
-            HEAT_NETWORK_ERRORS,
-            potential_error_to_error,
-        )
+        from mesido.workflows.utils.error_types import NetworkErrors, potential_error_to_error
 
         if profile.id in self._df:
             return self._df[profile.id]
@@ -427,7 +424,7 @@ class InfluxDBProfileReader(BaseProfileReader):
                 f"Asset named {asset.name}: Database {profile.database}"
                 f" is not available in the host.",
             )
-            potential_error_to_error(HEAT_NETWORK_ERRORS)
+            potential_error_to_error(NetworkErrors.HEAT_NETWORK_ERRORS)
 
         time_series_data.load_influxdb(
             profile.measurement,
@@ -446,7 +443,7 @@ class InfluxDBProfileReader(BaseProfileReader):
                 f" in {profile.measurement} is not available in the database.",
             )
 
-            potential_error_to_error(HEAT_NETWORK_ERRORS)
+            potential_error_to_error(NetworkErrors.HEAT_NETWORK_ERRORS)
 
         for x in time_series_data.profile_data_list:
             if len(x) != 2:

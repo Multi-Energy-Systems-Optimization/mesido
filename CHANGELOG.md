@@ -5,14 +5,20 @@
 - Rollout workflow may optionally include phasing of heat buffers for handling peak day constraints and demands
 - Inclusion of maximum allowed yearly pipe placement length constraint for the rollout workflow
 - Adding constraint so that all heating demands are placed at the end of the simulation
+- Sizing of airco
+- Heating and cooling example with input costs
 
 
 ## Changed
 - Minimize TCO objective in the grow_workflow is now only based on capex and opex that can be influenced.
 - Removed the requirement of "_ret" for the return network pipes, for ESDLversion 21.10 and later. The relation between supply and return pipes is now based on the "related" attribute in the esdl.
+- Addtion of cooling assests (airco and low_temperature_ates) in the grow_workflow for heating and cooling networks
+- Inclusion of airco and low_temperature_ates in write_output
 
 ## Fixed
 - Bug: Write updated esdl for 2 port heat pump
+- Bug: 2 port heatpump write result profiles to database 
+- Bug: setting of self._pipe_heat_loss_nominals was not accounting for negative values when T_ground > carrier temperature
 
 
 # [0.1.15] - 2025-11-19
