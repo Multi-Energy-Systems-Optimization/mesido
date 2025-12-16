@@ -23,10 +23,10 @@ import pandas as pd
 
 class MockInfluxDBProfileReader(InfluxDBProfileReader):
     def __init__(
-            self,
-            energy_system: esdl.EnergySystem,
-            file_path: Optional[Path],
-            dbase_credentials: Optional[Dict[str, Tuple[str, str]]],
+        self,
+        energy_system: esdl.EnergySystem,
+        file_path: Optional[Path],
+        dbase_credentials: Optional[Dict[str, Tuple[str, str]]],
     ):
         super().__init__(energy_system, file_path, dbase_credentials=dbase_credentials)
         self._loaded_profiles = pd.read_csv(

@@ -58,16 +58,12 @@ class ScenarioOutput:
                 )
                 sys.exit(1)
 
-            database_connection_info = kwargs.get(
-            "database_connections", None
-            )
             if self.write_result_db_profiles:
+                database_connection_info = kwargs.get("database_connections", None)
                 try:
                     if len(database_connection_info["write"]) == 0:
-                            logger.error(
-                                "The connections settings for writing to a database is empty"
-                            )
-                            sys.exit(1)
+                        logger.error("The connections settings for writing to a database is empty")
+                        sys.exit(1)
                     elif len(database_connection_info["write"]) > 1:
                         logger.error(
                             "Multiple connections have been specified for writing to a database;"

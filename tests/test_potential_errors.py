@@ -22,10 +22,10 @@ from utils_test_scaling import create_log_list_scaling
 
 class MockInfluxDBProfileReader(InfluxDBProfileReader):
     def __init__(
-            self,
-            energy_system: esdl.EnergySystem,
-            file_path: Optional[Path],
-            dbase_credentials: Optional[Dict[str, Tuple[str, str]]],
+        self,
+        energy_system: esdl.EnergySystem,
+        file_path: Optional[Path],
+        dbase_credentials: Optional[Dict[str, Tuple[str, str]]],
     ):
         super().__init__(
             energy_system=energy_system,

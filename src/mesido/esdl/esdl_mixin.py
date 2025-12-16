@@ -111,9 +111,7 @@ class ESDLMixin(
         input_file_path = None
 
         # Setup credentials for database connections
-        database_connection_info = kwargs.get(
-            "database_connections", None  # type: ignore
-        )
+        database_connection_info = kwargs.get("database_connections", {})
         dbase_credentials = {}
         if "read" in database_connection_info:
             for dbconnection in database_connection_info["read"]:
@@ -126,7 +124,7 @@ class ESDLMixin(
                     dbconnection["influxdb_password"],
                 )
         if not dbase_credentials:
-            dbase_credentials = {"": ("", "")} # type: ignore
+            dbase_credentials = {"": ("", "")}  # type: ignore
 
         if input_file_name is not None:
             input_file_path = Path(input_folder) / input_file_name

@@ -23,6 +23,7 @@ from rtctools.data.storage import DataStore
 
 logger = logging.getLogger()
 
+
 class _ProfileParserException(Exception):
     pass
 
@@ -410,10 +411,10 @@ class InfluxDBProfileReader(BaseProfileReader):
         if profile.port == 443:
             ssl_setting = True
         influx_host = "{}:{}".format(profile_host, profile.port)
-      
+
         if influx_host in self._database_credentials:
             (username, password) = self._database_credentials[influx_host]
-            
+
         else:
             username = None
             password = None
@@ -606,9 +607,10 @@ class InfluxDBProfileReader(BaseProfileReader):
 
 class ProfileReaderFromFile(BaseProfileReader):
     def __init__(
-            self, energy_system: esdl.EnergySystem,
-            file_path: Path,
-            dbase_credentials: Optional[Dict[str, Tuple[str, str]]],
+        self,
+        energy_system: esdl.EnergySystem,
+        file_path: Path,
+        dbase_credentials: Optional[Dict[str, Tuple[str, str]]],
     ):
         super().__init__(
             energy_system=energy_system,

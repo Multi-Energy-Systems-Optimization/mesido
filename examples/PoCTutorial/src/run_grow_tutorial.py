@@ -13,9 +13,8 @@ if __name__ == "__main__":
 
     kwargs = {
         "write_result_db_profiles": True,
-        "database_connections":
-        {
-            "write":[
+        "database_connections": {
+            "write": [
                 {
                     "influxdb_host": "localhost",
                     "influxdb_port": 8086,

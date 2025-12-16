@@ -9,11 +9,11 @@ if __name__ == "__main__":
 
     start_time = time.time()
     base_folder = Path(__file__).resolve().parent.parent
-    
+
     # Please specify the database credentials locally to read profiles from the database used in
     # the esdl file
     kwargs = {
-        "database_connections":{
+        "database_connections": {
             "read": [
                 {
                     "influxdb_host": "required_user_input",
@@ -21,12 +21,12 @@ if __name__ == "__main__":
                     "influxdb_username": "required_user_input",
                     "influxdb_password": "required_user_input",
                     "influxdb_ssl": False,
-                    "influxdb_verify_ssl": False
+                    "influxdb_verify_ssl": False,
                 },
             ],
         },
     }
-    
+
     solution = run_end_scenario_sizing(
         EndScenarioSizingStaged,
         base_folder=base_folder,
