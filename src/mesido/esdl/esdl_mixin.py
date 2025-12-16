@@ -115,7 +115,7 @@ class ESDLMixin(
             "database_connections", None  # type: ignore
         )
         dbase_credentials = {}
-        if database_connection_info:
+        if "read" in database_connection_info:
             for dbconnection in database_connection_info["read"]:
                 database_host_port = "{}:{}".format(
                     dbconnection["influxdb_host"],
