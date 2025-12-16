@@ -6,7 +6,7 @@ import numpy as np
 
 from rtctools.optimization.single_pass_goal_programming_mixin import Goal
 
-logger = logging.getLogger("WarmingUP-MPC")
+logger = logging.getLogger("mesido")
 logger.setLevel(logging.INFO)
 
 
@@ -28,6 +28,7 @@ class MinimizeVariableOPEX(Goal):
         for asset in [
             *optimization_problem.energy_system_components.get("heat_source", []),
             *optimization_problem.energy_system_components.get("ates", []),
+            *optimization_problem.energy_system_components.get("heat_buffer", []),
         ]:
 
             extra_var = optimization_problem.extra_variable(asset_varopex_map.get(asset, 0.0))
@@ -158,7 +159,9 @@ class MinimizeRolloutFixedOperationalCosts(Goal):
 
         bounds = optimization_problem.bounds()
         parameters = optimization_problem.parameters(ensemble_member)
-        for source in optimization_problem.energy_system_components.get("heat_source", []):
+        for source in [*optimization_problem.energy_system_components.get("heat_source", []),
+                       *optimization_problem.energy_system_components.get("heat_buffer", []),
+                       *optimization_problem.energy_system_components.get("ates", []),]:
             obj += self.fixed_opex_of_asset(optimization_problem, source, bounds, parameters)
 
         for _ in optimization_problem.energy_system_components.get("ates", []):
