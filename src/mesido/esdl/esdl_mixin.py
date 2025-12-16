@@ -109,10 +109,31 @@ class ESDLMixin(
         input_file_name = kwargs.get("input_timeseries_file", None)
         input_folder = kwargs.get("input_folder")
         input_file_path = None
+
+        # Setup credentials for database connections
+        database_connection_info = kwargs.get(
+            "database_connections", None  # type: ignore
+        )
+        dbase_credentials = {}
+        if database_connection_info:
+            for dbconnection in database_connection_info["read"]:
+                database_host_port = "{}:{}".format(
+                    dbconnection["influxdb_host"],
+                    dbconnection["influxdb_port"],
+                )
+                dbase_credentials[database_host_port] = (
+                    dbconnection["influxdb_username"],
+                    dbconnection["influxdb_password"],
+                )
+        if not dbase_credentials:
+            dbase_credentials = {"": ("", "")} # type: ignore
+
         if input_file_name is not None:
             input_file_path = Path(input_folder) / input_file_name
         self.__profile_reader: BaseProfileReader = profile_reader_class(
-            energy_system=self.__energy_system_handler.energy_system, file_path=input_file_path
+            energy_system=self.__energy_system_handler.energy_system,
+            file_path=input_file_path,
+            dbase_credentials=dbase_credentials,
         )
 
         # This way we allow users to adjust the parsed ESDL assets

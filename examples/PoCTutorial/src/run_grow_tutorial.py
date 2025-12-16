@@ -13,12 +13,19 @@ if __name__ == "__main__":
 
     kwargs = {
         "write_result_db_profiles": True,
-        "influxdb_host": "localhost",
-        "influxdb_port": 8086,
-        "influxdb_username": None,
-        "influxdb_password": None,
-        "influxdb_ssl": False,
-        "influxdb_verify_ssl": False,
+        "database_connections":
+        {
+            "write":[
+                {
+                    "influxdb_host": "localhost",
+                    "influxdb_port": 8086,
+                    "influxdb_username": None,
+                    "influxdb_password": None,
+                    "influxdb_ssl": False,
+                    "influxdb_verify_ssl": False,
+                },
+            ],
+        },
     }
 
     start_time = time.time()
