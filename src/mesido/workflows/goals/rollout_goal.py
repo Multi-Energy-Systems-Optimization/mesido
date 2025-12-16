@@ -84,9 +84,10 @@ class MinimizeCAPEXAssetsCosts(Goal):
 
     order = 1
 
-    def __init__(self, priority=None):
+    def __init__(self, asset_types_supported=None, priority=None):
         self.priority = priority
         self.function_nominal = 1.0e6
+        self.asset_types_supported = asset_types_supported if not None else ["heat_source"]
 
     def function(self, optimization_problem, ensemble_member):
         obj = self.capex_assets(optimization_problem, ensemble_member)
@@ -97,41 +98,36 @@ class MinimizeCAPEXAssetsCosts(Goal):
         obj = 0.0
         parameters = optimization_problem.parameters(ensemble_member)
         bounds = optimization_problem.bounds()
-        for asset_name in [
-            *optimization_problem.energy_system_components.get("ates", []),
-            *optimization_problem.energy_system_components.get("heat_demand", []),
-            *optimization_problem.energy_system_components.get("heat_pipe", []),
-            *optimization_problem.energy_system_components.get("heat_source", []),
-            *optimization_problem.energy_system_components.get("heat_buffer", []),
-        ]:
-            asset = optimization_problem.get_asset_from_asset_name(asset_name=asset_name)
-            tech_lifetime = parameters[f"{asset_name}.technical_life"]
-            # FIXME: temporary as long as generic esdl_heat_model_modifiers are not added everywhere
-            if not tech_lifetime > 0.0:
-                tech_lifetime = STANDARD_ASSET_LIFETIME
+        for asset_type in self.asset_types_supported:
+            for asset_name in optimization_problem.energy_system_components.get(asset_type, []):
+                asset = optimization_problem.get_asset_from_asset_name(asset_name=asset_name)
+                tech_lifetime = parameters[f"{asset_name}.technical_life"]
+                # FIXME: temporary as long as generic esdl_heat_model_modifiers are not added everywhere
+                if not tech_lifetime > 0.0:
+                    tech_lifetime = STANDARD_ASSET_LIFETIME
 
-            if asset.asset_type == "Pipe":
-                is_placed = optimization_problem.get_asset_is__realized_symbols(asset_name)
-                investment_cost_coeff = bounds[f"{asset_name}__hn_cost"][1]
+                if asset.asset_type == "Pipe":
+                    is_placed = optimization_problem.get_asset_is__realized_symbols(asset_name)
+                    investment_cost_coeff = bounds[f"{asset_name}__hn_cost"][1]
 
-                length = parameters[f"{asset_name}.length"]
+                    length = parameters[f"{asset_name}.length"]
 
-                costs = investment_cost_coeff * length
-            else:
-                # Yearly depreciation for all assets based on total investment + installation
-                is_placed = optimization_problem.get_asset_fraction__placed_symbols(asset_name)
-                investment_cost_coeff = parameters[f"{asset_name}.investment_cost_coefficient"]
-                installation_cost = parameters[f"{asset_name}.installation_cost"]
-                size = bounds[optimization_problem._asset_max_size_map[asset_name]][1]
-                if size == 0:
-                    raise RuntimeError(f"Could not determine the max power of asset {asset_name}")
-                inv_costs = investment_cost_coeff * size
-                inst_costs = installation_cost
+                    costs = investment_cost_coeff * length
+                else:
+                    # Yearly depreciation for all assets based on total investment + installation
+                    is_placed = optimization_problem.get_asset_fraction__placed_symbols(asset_name)
+                    investment_cost_coeff = parameters[f"{asset_name}.investment_cost_coefficient"]
+                    installation_cost = parameters[f"{asset_name}.installation_cost"]
+                    size = bounds[optimization_problem._asset_max_size_map[asset_name]][1]
+                    if size == 0:
+                        raise RuntimeError(f"Could not determine the max power of asset {asset_name}")
+                    inv_costs = investment_cost_coeff * size
+                    inst_costs = installation_cost
 
-                costs = inv_costs + inst_costs
+                    costs = inv_costs + inst_costs
 
-            for i in range(optimization_problem._years):
-                obj += is_placed[i] * costs / tech_lifetime
+                for i in range(optimization_problem._years):
+                    obj += is_placed[i] * costs / tech_lifetime
 
         return obj * optimization_problem._year_step_size
 
@@ -140,9 +136,10 @@ class MinimizeRolloutFixedOperationalCosts(Goal):
 
     order = 1
 
-    def __init__(self, years=25, priority=1):
+    def __init__(self, years=25, asset_types_supported=None, priority=1):
         self.priority = priority
         self.year_steps = years
+        self.asset_types_supported = asset_types_supported if not None else ["heat_source"]
 
     def function(self, optimization_problem, ensemble_member: int) -> ca.MX:
         obj = 0.0
@@ -159,16 +156,9 @@ class MinimizeRolloutFixedOperationalCosts(Goal):
 
         bounds = optimization_problem.bounds()
         parameters = optimization_problem.parameters(ensemble_member)
-        for source in [*optimization_problem.energy_system_components.get("heat_source", []),
-                       *optimization_problem.energy_system_components.get("heat_buffer", []),
-                       *optimization_problem.energy_system_components.get("ates", []),]:
-            obj += self.fixed_opex_of_asset(optimization_problem, source, bounds, parameters)
-
-        for _ in optimization_problem.energy_system_components.get("ates", []):
-            # TODO: this must be changed if the optimization uses placement of individual doublets
-            #  of the assset.
-            # obj += self.fixed_opex_of_asset(optimization_problem, ates)
-            pass
+        for asset_type in self.asset_types_supported:
+            for source in optimization_problem.energy_system_components.get(asset_type, []):
+                obj += self.fixed_opex_of_asset(optimization_problem, source, bounds, parameters)
 
         return obj
 
