@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from mesido.esdl.esdl_mixin import DBAccesType
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.workflows import EndScenarioSizingStaged, run_end_scenario_sizing
 
@@ -15,7 +16,7 @@ if __name__ == "__main__":
     kwargs = {
         "database_connections": [
             {
-                "access_type": "read",  # read or write or read_write
+                "access_type": DBAccesType.READ,  # DBAccesType.WRITE or DBAccesType.READ_WRITE
                 "influxdb_host": "required_user_input",
                 "influxdb_port": 1234,
                 "influxdb_username": "required_user_input",

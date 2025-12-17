@@ -2,6 +2,7 @@ import base64
 import copy
 import dataclasses
 import logging
+import sys
 import xml.etree.ElementTree as ET  # noqa: N817
 from datetime import timedelta
 from pathlib import Path
@@ -128,44 +129,46 @@ class ESDLMixin(
         # Setup credentials for database connections
         database_connection_info = kwargs.get("database_connections", {})
         read_only_dbase_credentials: Dict[str, Tuple[str, str]] = {}  # for profile reader
-        access_types_specified = [DBAccesType.READ, DBAccesType.WRITE, DBAccesType.READ_WRITE]
         for dbconnection in database_connection_info:
-            for atc in access_types_specified:
-                if atc in dbconnection["access_type"]:
-
-                    if atc != DBAccesType.WRITE:
-                        database_host_port = "{}:{}".format(
-                            dbconnection["influxdb_host"],
-                            dbconnection["influxdb_port"],
-                        )
-                        read_only_dbase_credentials[database_host_port] = (
-                            dbconnection["influxdb_username"],
-                            dbconnection["influxdb_password"],
-                        )
-                    if atc != DBAccesType.READ_WRITE:
-                        self._database_credentials[atc].append(
-                            {
-                                "influxdb_host": dbconnection["influxdb_host"],
-                                "influxdb_port": dbconnection["influxdb_port"],
-                                "influxdb_username": dbconnection["influxdb_username"],
-                                "influxdb_password": dbconnection["influxdb_password"],
-                                "influxdb_ssl": dbconnection["influxdb_ssl"],
-                                "influxdb_verify_ssl": dbconnection["influxdb_verify_ssl"],
-                            }
-                        )
-                    elif atc == DBAccesType.READ_WRITE:
-                        both_read_and_write = [DBAccesType.READ, DBAccesType.WRITE]
-                        for rw in both_read_and_write:
-                            self._database_credentials[rw].append(
-                                {
-                                    "influxdb_host": dbconnection["influxdb_host"],
-                                    "influxdb_port": dbconnection["influxdb_port"],
-                                    "influxdb_username": dbconnection["influxdb_username"],
-                                    "influxdb_password": dbconnection["influxdb_password"],
-                                    "influxdb_ssl": dbconnection["influxdb_ssl"],
-                                    "influxdb_verify_ssl": dbconnection["influxdb_verify_ssl"],
-                                }
-                            )
+            if dbconnection["access_type"] != DBAccesType.WRITE:
+                database_host_port = "{}:{}".format(
+                    dbconnection["influxdb_host"],
+                    dbconnection["influxdb_port"],
+                )
+                read_only_dbase_credentials[database_host_port] = (
+                    dbconnection["influxdb_username"],
+                    dbconnection["influxdb_password"],
+                )
+            if dbconnection["access_type"] != DBAccesType.READ_WRITE:
+                self._database_credentials[dbconnection["access_type"]].append(
+                    {
+                        "influxdb_host": dbconnection["influxdb_host"],
+                        "influxdb_port": dbconnection["influxdb_port"],
+                        "influxdb_username": dbconnection["influxdb_username"],
+                        "influxdb_password": dbconnection["influxdb_password"],
+                        "influxdb_ssl": dbconnection["influxdb_ssl"],
+                        "influxdb_verify_ssl": dbconnection["influxdb_verify_ssl"],
+                    }
+                )
+            elif dbconnection["access_type"] == DBAccesType.READ_WRITE:
+                both_read_and_write = [DBAccesType.READ, DBAccesType.WRITE]
+                for rw in both_read_and_write:
+                    self._database_credentials[rw].append(
+                        {
+                            "influxdb_host": dbconnection["influxdb_host"],
+                            "influxdb_port": dbconnection["influxdb_port"],
+                            "influxdb_username": dbconnection["influxdb_username"],
+                            "influxdb_password": dbconnection["influxdb_password"],
+                            "influxdb_ssl": dbconnection["influxdb_ssl"],
+                            "influxdb_verify_ssl": dbconnection["influxdb_verify_ssl"],
+                        }
+                    )
+            else:
+                logger.error(
+                    f"Database access type {dbconnection['access_type']} is not recognized. "
+                    f"Please use DBAccesType.READ, DBAccesType.WRITE or DBAccesType.READ_WRITE."
+                )
+                sys.exit(1)
 
         if not read_only_dbase_credentials:
             read_only_dbase_credentials = {"": ("", "")}  # type: ignore
