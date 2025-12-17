@@ -18,6 +18,7 @@ from esdl.profiles.profilemanager import ProfileManager
 import mesido.esdl.esdl_parser
 from mesido.constants import GRAVITATIONAL_CONSTANT
 from mesido.esdl.edr_pipe_class import EDRPipeClass
+from mesido.esdl.esdl_mixin import DBAccesType
 from mesido.financial_mixin import calculate_annuity_factor
 from mesido.network_common import NetworkSettings
 from mesido.post_processing.post_processing_utils import pipe_pressure, pipe_velocity
@@ -59,24 +60,23 @@ class ScenarioOutput:
                 sys.exit(1)
 
             if self.write_result_db_profiles:
-                database_connection_info = kwargs.get("database_connections", None)
+                database_connection_write = self._database_credentials[DBAccesType.WRITE]
                 try:
-                    if len(database_connection_info["write"]) == 0:
+                    if len(database_connection_write) == 0:
                         logger.error("The connections settings for writing to a database is empty")
                         sys.exit(1)
-                    elif len(database_connection_info["write"]) > 1:
+                    elif len(database_connection_write) > 1:
                         logger.error(
                             "Multiple connections have been specified for writing to a database;"
                             " currently only one connection is supported"
                         )
                         sys.exit(1)
                     else:
-                        database_connection_input = database_connection_info["write"][0]
+                        database_connection_input = database_connection_write[0]
                 except TypeError:  # "write" does not exists in the dict
                     logger.error("No connections have been specified for writing to a database")
                     sys.exit(1)
                 try:
-                    # self.influxdb_host = kwargs["influxdb_host"]
                     self.influxdb_host = database_connection_input["influxdb_host"]
                     if len(self.influxdb_host) == 0:
                         logger.error(

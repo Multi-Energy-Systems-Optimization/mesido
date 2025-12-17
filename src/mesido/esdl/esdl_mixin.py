@@ -5,7 +5,7 @@ import logging
 import xml.etree.ElementTree as ET  # noqa: N817
 from datetime import timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import esdl.esdl_handler
 
@@ -33,6 +33,7 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
 )
 from rtctools.optimization.io_mixin import IOMixin
 
+from strenum import StrEnum
 
 logger = logging.getLogger("mesido")
 
@@ -40,6 +41,16 @@ logger = logging.getLogger("mesido")
 ns = {"fews": "http://www.wldelft.nl/fews", "pi": "http://www.wldelft.nl/fews/PI"}
 DEFAULT_START_TIMESTAMP = "2017-01-01T00:00:00+00:00"
 DEFAULT_END_TIMESTAMP = "2018-01-01T00:00:00+00:00"
+
+
+class DBAccesType(StrEnum):
+    """
+    Enumeration for database access types
+    """
+
+    READ = "read"
+    WRITE = "write"
+    READ_WRITE = "read_write"
 
 
 class _ESDLInputException(Exception):
@@ -104,6 +115,10 @@ class ESDLMixin(
         self._esdl_carriers: Dict[str, Dict[str, Any]] = esdl_parser.get_carrier_properties()
         self.__energy_system_handler: esdl.esdl_handler.EnergySystemHandler = esdl_parser.get_esh()
         self._esdl_templates: Dict[str, Asset] = esdl_parser.get_templates()
+        self._database_credentials: Optional[Dict[str, Tuple[str, str]]] = {
+            DBAccesType.READ: [],
+            DBAccesType.WRITE: [],
+        }
 
         profile_reader_class = kwargs.get("profile_reader", InfluxDBProfileReader)
         input_file_name = kwargs.get("input_timeseries_file", None)
@@ -112,26 +127,55 @@ class ESDLMixin(
 
         # Setup credentials for database connections
         database_connection_info = kwargs.get("database_connections", {})
-        dbase_credentials = {}
-        if "read" in database_connection_info:
-            for dbconnection in database_connection_info["read"]:
-                database_host_port = "{}:{}".format(
-                    dbconnection["influxdb_host"],
-                    dbconnection["influxdb_port"],
-                )
-                dbase_credentials[database_host_port] = (
-                    dbconnection["influxdb_username"],
-                    dbconnection["influxdb_password"],
-                )
-        if not dbase_credentials:
-            dbase_credentials = {"": ("", "")}  # type: ignore
+        read_only_dbase_credentials: Dict[str, Tuple[str, str]] = {}  # for profile reader
+        access_types_specified = [DBAccesType.READ, DBAccesType.WRITE, DBAccesType.READ_WRITE]
+        for dbconnection in database_connection_info:
+            for atc in access_types_specified:
+                if atc in dbconnection["access_type"]:
+
+                    if atc != DBAccesType.WRITE:
+                        database_host_port = "{}:{}".format(
+                            dbconnection["influxdb_host"],
+                            dbconnection["influxdb_port"],
+                        )
+                        read_only_dbase_credentials[database_host_port] = (
+                            dbconnection["influxdb_username"],
+                            dbconnection["influxdb_password"],
+                        )
+                    if atc != DBAccesType.READ_WRITE:
+                        self._database_credentials[atc].append(
+                            {
+                                "influxdb_host": dbconnection["influxdb_host"],
+                                "influxdb_port": dbconnection["influxdb_port"],
+                                "influxdb_username": dbconnection["influxdb_username"],
+                                "influxdb_password": dbconnection["influxdb_password"],
+                                "influxdb_ssl": dbconnection["influxdb_ssl"],
+                                "influxdb_verify_ssl": dbconnection["influxdb_verify_ssl"],
+                            }
+                        )
+                    elif atc == DBAccesType.READ_WRITE:
+                        both_read_and_write = [DBAccesType.READ, DBAccesType.WRITE]
+                        for rw in both_read_and_write:
+                            self._database_credentials[rw].append(
+                                {
+                                    "influxdb_host": dbconnection["influxdb_host"],
+                                    "influxdb_port": dbconnection["influxdb_port"],
+                                    "influxdb_username": dbconnection["influxdb_username"],
+                                    "influxdb_password": dbconnection["influxdb_password"],
+                                    "influxdb_ssl": dbconnection["influxdb_ssl"],
+                                    "influxdb_verify_ssl": dbconnection["influxdb_verify_ssl"],
+                                }
+                            )
+
+        if not read_only_dbase_credentials:
+            read_only_dbase_credentials = {"": ("", "")}  # type: ignore
 
         if input_file_name is not None:
             input_file_path = Path(input_folder) / input_file_name
         self.__profile_reader: BaseProfileReader = profile_reader_class(
             energy_system=self.__energy_system_handler.energy_system,
             file_path=input_file_path,
-            dbase_credentials=dbase_credentials,
+            dbase_credentials=read_only_dbase_credentials,
         )
 
         # This way we allow users to adjust the parsed ESDL assets

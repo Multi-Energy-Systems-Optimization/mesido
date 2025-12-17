@@ -13,18 +13,17 @@ if __name__ == "__main__":
     # Please specify the database credentials locally to read profiles from the database used in
     # the esdl file
     kwargs = {
-        "database_connections": {
-            "read": [
-                {
-                    "influxdb_host": "required_user_input",
-                    "influxdb_port": 1234,
-                    "influxdb_username": "required_user_input",
-                    "influxdb_password": "required_user_input",
-                    "influxdb_ssl": False,
-                    "influxdb_verify_ssl": False,
-                },
-            ],
-        },
+        "database_connections": [
+            {
+                "access_type": "read",  # read or write or read_write
+                "influxdb_host": "required_user_input",
+                "influxdb_port": 1234,
+                "influxdb_username": "required_user_input",
+                "influxdb_password": "required_user_input",
+                "influxdb_ssl": False,
+                "influxdb_verify_ssl": False,
+            },
+        ],
     }
 
     solution = run_end_scenario_sizing(
