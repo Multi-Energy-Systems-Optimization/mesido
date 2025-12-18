@@ -115,6 +115,7 @@ class TestRollOutOptimization(TestCase):
             *solution.energy_system_components.get("heat_demand", []),
             *solution.energy_system_components.get("ates", []),
             *solution.energy_system_components.get("heat_pipe", []),
+            *solution.energy_system_components.get("heat_buffer", []),
         ]
 
         for asset in assets_to_check:

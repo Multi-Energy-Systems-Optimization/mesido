@@ -12,27 +12,26 @@ logger.setLevel(logging.INFO)
 
 STANDARD_ASSET_LIFETIME = 30.0
 
+default_assets_support = ["heat_source"]
+
 
 class MinimizeVariableOPEX(Goal):
     order = 1
 
-    def __init__(self, year_step_size=10, priority=1):
+    def __init__(self, asset_types_supported=default_assets_support, year_step_size=10, priority=1):
         self.priority = priority
         self.year_step_size = year_step_size
         self.function_nominal = 1.0e6
+        self.asset_types_supported = asset_types_supported
 
     def function(self, optimization_problem, ensemble_member):
         obj = 0
         asset_varopex_map = optimization_problem._asset_variable_operational_cost_map
 
-        for asset in [
-            *optimization_problem.energy_system_components.get("heat_source", []),
-            *optimization_problem.energy_system_components.get("ates", []),
-            *optimization_problem.energy_system_components.get("heat_buffer", []),
-        ]:
-
-            extra_var = optimization_problem.extra_variable(asset_varopex_map.get(asset, 0.0))
-            obj += extra_var * self.year_step_size
+        for asset_type in self.asset_types_supported:
+            for asset in optimization_problem.energy_system_components.get(asset_type, []):
+                extra_var = optimization_problem.extra_variable(asset_varopex_map.get(asset, 0.0))
+                obj += extra_var * self.year_step_size
 
         return obj
 
@@ -84,10 +83,10 @@ class MinimizeCAPEXAssetsCosts(Goal):
 
     order = 1
 
-    def __init__(self, asset_types_supported=None, priority=None):
+    def __init__(self, asset_types_supported=default_assets_support, priority=None):
         self.priority = priority
         self.function_nominal = 1.0e6
-        self.asset_types_supported = asset_types_supported if not None else ["heat_source"]
+        self.asset_types_supported = asset_types_supported
 
     def function(self, optimization_problem, ensemble_member):
         obj = self.capex_assets(optimization_problem, ensemble_member)
@@ -100,13 +99,8 @@ class MinimizeCAPEXAssetsCosts(Goal):
         bounds = optimization_problem.bounds()
         for asset_type in self.asset_types_supported:
             for asset_name in optimization_problem.energy_system_components.get(asset_type, []):
-                asset = optimization_problem.get_asset_from_asset_name(asset_name=asset_name)
                 tech_lifetime = parameters[f"{asset_name}.technical_life"]
-                # FIXME: temporary as long as generic esdl_heat_model_modifiers are not added everywhere
-                if not tech_lifetime > 0.0:
-                    tech_lifetime = STANDARD_ASSET_LIFETIME
-
-                if asset.asset_type == "Pipe":
+                if asset_type == "heat_pipe":
                     is_placed = optimization_problem.get_asset_is__realized_symbols(asset_name)
                     investment_cost_coeff = bounds[f"{asset_name}__hn_cost"][1]
 
@@ -120,7 +114,9 @@ class MinimizeCAPEXAssetsCosts(Goal):
                     installation_cost = parameters[f"{asset_name}.installation_cost"]
                     size = bounds[optimization_problem._asset_max_size_map[asset_name]][1]
                     if size == 0:
-                        raise RuntimeError(f"Could not determine the max power of asset {asset_name}")
+                        raise RuntimeError(
+                            f"Could not determine the max power of asset {asset_name}"
+                        )
                     inv_costs = investment_cost_coeff * size
                     inst_costs = installation_cost
 
@@ -136,7 +132,7 @@ class MinimizeRolloutFixedOperationalCosts(Goal):
 
     order = 1
 
-    def __init__(self, years=25, asset_types_supported=None, priority=1):
+    def __init__(self, years=25, asset_types_supported=default_assets_support, priority=1):
         self.priority = priority
         self.year_steps = years
         self.asset_types_supported = asset_types_supported if not None else ["heat_source"]
@@ -157,8 +153,11 @@ class MinimizeRolloutFixedOperationalCosts(Goal):
         bounds = optimization_problem.bounds()
         parameters = optimization_problem.parameters(ensemble_member)
         for asset_type in self.asset_types_supported:
-            for source in optimization_problem.energy_system_components.get(asset_type, []):
-                obj += self.fixed_opex_of_asset(optimization_problem, source, bounds, parameters)
+            if asset_type != "heat_pipe":
+                for source in optimization_problem.energy_system_components.get(asset_type, []):
+                    obj += self.fixed_opex_of_asset(
+                        optimization_problem, source, bounds, parameters
+                    )
 
         return obj
 

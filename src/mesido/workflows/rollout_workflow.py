@@ -85,9 +85,6 @@ class RollOutProblem(
         self._years = 3
         self._horizon = 30
         self._year_step_size = int(self._horizon / self._years)
-        # TODO: timestep_size and _days can be removed eventually, particularly when averaging
-        # with peak day is used, however one needs to check where self._timesteps_per_year and
-        # self._timestep_size is currently affecting the code
         self._timestep_size = kwargs.get("_timestep_size", 30 * 24)
 
         self._timesteps_per_year = int(365 / (self._timestep_size / 24)) + 1
@@ -117,12 +114,6 @@ class RollOutProblem(
         self.heat_network_settings["minimum_velocity"] = 0.0  # important otherwise heatdemands
         # cannot be turned off for specific timesteps
 
-        # TODO: remove this once  these variables are created in HeatPhysicsMixin
-        # (is under development in another PR)
-        self._ates_is_charging_map = {}
-        self.__ates_is_charging_var = {}
-        self.__ates_is_charging_var_bounds = {}
-
         self._asset_fraction_placed_map = {}
         self.__asset_fraction_placed_var = {}
         self.__asset_fraction_placed_var_bounds = {}
@@ -145,8 +136,13 @@ class RollOutProblem(
         self._priority = 0
         self.__priority_timer = None
 
-        self._supported_assets_rollout = ["heat_demand", "heat_source", "heat_pipe",
-                                          "heat_buffer", "ates"]
+        self._supported_assets_rollout = [
+            "heat_demand",
+            "heat_source",
+            "heat_pipe",
+            "heat_buffer",
+            "ates",
+        ]
 
     def parameters(self, ensemble_member):
         parameters = super().parameters(ensemble_member)
@@ -267,6 +263,8 @@ class RollOutProblem(
         options["include_ates_yearly_change_option"] = True
         options["yearly_investments"] = True
         options["min_fraction_tank_volume"] = 0.0
+        options["storage_charging_variables"] = False
+
         return options
 
     def path_goals(self):
@@ -287,13 +285,25 @@ class RollOutProblem(
     def goals(self):
         goals = super().goals().copy()
 
-        goals.append(MinimizeCAPEXAssetsCosts(asset_types_supported=self._supported_assets_rollout,
-                                              priority=1))
+        goals.append(
+            MinimizeCAPEXAssetsCosts(
+                asset_types_supported=self._supported_assets_rollout, priority=1
+            )
+        )
 
-        goals.append(MinimizeVariableOPEX(year_step_size=self._year_step_size, priority=1))
+        goals.append(
+            MinimizeVariableOPEX(
+                asset_types_supported=self._supported_assets_rollout,
+                year_step_size=self._year_step_size,
+                priority=1,
+            )
+        )
 
-        goals.append(MinimizeRolloutFixedOperationalCosts(
-            asset_types_supported=self._supported_assets_rollout, priority=1))
+        goals.append(
+            MinimizeRolloutFixedOperationalCosts(
+                asset_types_supported=self._supported_assets_rollout, priority=1
+            )
+        )
 
         return goals
 
@@ -428,32 +438,14 @@ class RollOutProblem(
         for y in range(self._years):
             cumulative_capex = 0
 
-            # pipes
-            for p in [*self.energy_system_components.get("heat_pipe", []),
-                      *self.energy_system_components.get("heat_source", []),
-                *self.energy_system_components.get("heat_demand", []),
-                *self.energy_system_components.get("heat_buffer", []),
-                      ]:
-                # cumulative_investements_made does not yet cather for fraction_placed
-                cumulative_inv = self.extra_variable(
-                    f"{p}__cumulative_investments_made_in_eur_year_{y}"
-                )
-                cumulative_capex += cumulative_inv
-
-            # ates is added separately due to the potential for doublet calculations
-            for a in self.energy_system_components.get("ates", []):
-                # ates_N_doublets = self.parameters(0)[f"{a}.nr_of_doublets"]
-                ates_capex = self.extra_variable(
-                    f"{a}__cumulative_investments_made_in_eur_year_{y}"
-                )
-                # a_capex = self._ates_capex_dict[a]
-                # ates_doublet_sums_fraction = self.__ates_doublet_sums(a)[1]
-                # if y == 0:
-                #     ates_capex = a_capex / ates_N_doublets * ates_doublet_sums_fraction[y]
-                # else:
-                #     ates_capex = a_capex / ates_N_doublets * (ates_doublet_sums_fraction[y] -
-                #                                               ates_doublet_sums_fraction[y - 1])
-                cumulative_capex += ates_capex
+            for asset_type in self._supported_assets_rollout:
+                if asset_type != "heat_buffer":
+                    for asset in self.energy_system_components.get(asset_type, []):
+                        # cumulative_investements_made does not yet cather for fraction_placed
+                        cumulative_inv = self.extra_variable(
+                            f"{asset}__cumulative_investments_made_in_eur_year_{y}"
+                        )
+                        cumulative_capex += cumulative_inv
 
             year_nominal = bounds[f"yearly_capex_{y}"][1]
             yearly_capex_var = self.extra_variable(f"yearly_capex_{y}", ensemble_member)
@@ -675,7 +667,6 @@ class RollOutProblem(
     @property
     def path_variables(self):
         variables = super().path_variables.copy()
-        variables.extend(self.__ates_state_heat_var.values())
         return variables
 
     def variable_is_discrete(self, variable):
@@ -691,15 +682,12 @@ class RollOutProblem(
     def variable_nominal(self, variable):
         if variable in self._yearly_capex_var_nominals:
             return self._yearly_capex_var_nominals[variable]
-        elif variable in self.__ates_state_heat_var_nominals:
-            return self.__ates_state_heat_var_nominals[variable]
         else:
             return super().variable_nominal(variable)
 
     def bounds(self):
         bounds = super().bounds()
         bounds.update(self.__asset_doublet_is_placed_var_bounds)
-        bounds.update(self.__ates_state_heat_var_bounds)
         bounds.update(self._yearly_capex_var_bounds)
         bounds.update(self.__asset_fraction_placed_var_bounds)
         return bounds
