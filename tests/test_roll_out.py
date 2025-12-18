@@ -231,7 +231,7 @@ class TestRollOutOptimization(TestCase):
             np.testing.assert_(
             results[f"{asset}__asset_is_realized_{solution._years - 1}"] >= 1 - tol,
                 f"Not all assets are placed a the end of the problem {asset} is not placed ("
-                f"{results[f"{asset}__asset_is_realized_{solution._years - 1}"]}) with solver "
+                f"{results[f'{asset}__asset_is_realized_{solution._years - 1}']}) with solver "
                 f"statistics {solution.solver_stats}"
             )
 
