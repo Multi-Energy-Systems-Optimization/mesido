@@ -60,22 +60,19 @@ class ScenarioOutput:
                 sys.exit(1)
 
             if self.write_result_db_profiles:
-                database_connection_write = self._database_credentials[DBAccesType.WRITE]
-                try:
-                    if len(database_connection_write) == 0:
-                        logger.error("The connections settings for writing to a database is empty")
-                        sys.exit(1)
-                    elif len(database_connection_write) > 1:
-                        logger.error(
-                            "Multiple connections have been specified for writing to a database;"
-                            " currently only one connection is supported"
-                        )
-                        sys.exit(1)
-                    else:
-                        database_connection_input = database_connection_write[0]
-                except TypeError:  # "write" does not exists in the dict
-                    logger.error("No connections have been specified for writing to a database")
+                database_connection_write = self._database_credentials.get(DBAccesType.WRITE, [])
+
+                if len(database_connection_write) == 0:
+                    logger.error("The connections settings for writing to a database is empty")
                     sys.exit(1)
+                elif len(database_connection_write) > 1:
+                    logger.error(
+                        "Multiple connections have been specified for writing to a database;"
+                        " currently only one connection is supported"
+                    )
+                    sys.exit(1)
+                else:
+                    database_connection_input = database_connection_write[0]
                 try:
                     self.influxdb_host = database_connection_input["influxdb_host"]
                     if len(self.influxdb_host) == 0:
