@@ -437,15 +437,13 @@ class RollOutProblem(
         cumulative_capex_prev_year = 0
         for y in range(self._years):
             cumulative_capex = 0
-
             for asset_type in self._supported_assets_rollout:
-                if asset_type != "heat_buffer":
-                    for asset in self.energy_system_components.get(asset_type, []):
-                        # cumulative_investements_made does not yet cather for fraction_placed
-                        cumulative_inv = self.extra_variable(
-                            f"{asset}__cumulative_investments_made_in_eur_year_{y}"
-                        )
-                        cumulative_capex += cumulative_inv
+                for asset in self.energy_system_components.get(asset_type, []):
+                    # cumulative_investements_made does not yet cather for fraction_placed
+                    cumulative_inv = self.extra_variable(
+                        f"{asset}__cumulative_investments_made_in_eur_year_{y}"
+                    )
+                    cumulative_capex += cumulative_inv
 
             year_nominal = bounds[f"yearly_capex_{y}"][1]
             yearly_capex_var = self.extra_variable(f"yearly_capex_{y}", ensemble_member)

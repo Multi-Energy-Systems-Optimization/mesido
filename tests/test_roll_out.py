@@ -69,7 +69,7 @@ class TestRollOutOptimization(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
-            yearly_max_capex=7.0e6,
+            yearly_max_capex=6.0e6,
             yearly_max_pipe_length=1.0e3,  # m per year
             include_peak_day=True,
         )
@@ -229,10 +229,10 @@ class TestRollOutOptimization(TestCase):
             *solution.energy_system_components.get("ates", []),
         ]:
             np.testing.assert_(
-            results[f"{asset}__asset_is_realized_{solution._years - 1}"] >= 1 - tol,
+                results[f"{asset}__asset_is_realized_{solution._years - 1}"] >= 1 - tol,
                 f"Not all assets are placed a the end of the problem {asset} is not placed ("
                 f"{results[f'{asset}__asset_is_realized_{solution._years - 1}']}) with solver "
-                f"statistics {solution.solver_stats}"
+                f"statistics {solution.solver_stats}",
             )
 
         # Check fraction is placed, should be between 0 and 1 and increasing
