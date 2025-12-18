@@ -56,6 +56,11 @@ class TestRollOutOptimization(TestCase):
                     demand_timeseries.values[:] = demand_timeseries.values[:] * m[i - 1]
                     self.set_timeseries(f"HeatingDemand_{i}.target_heat_demand", demand_timeseries)
 
+            def solver_options(self):
+                options = super().solver_options()
+                options["highs"]["mip_rel_gap"] = 0.001
+                return options
+
         solution = run_esdl_mesido_optimization(
             RollOutTimeStep,
             base_folder=base_folder,
