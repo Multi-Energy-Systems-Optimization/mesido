@@ -4,7 +4,6 @@ from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.physics_mixin import PhysicsMixin
 from mesido.qth_not_maintained.qth_mixin import QTHMixin
 from mesido.techno_economic_mixin import TechnoEconomicMixin
-from mesido.workflows.goals.minimize_tco_goal import MinimizeTCO
 
 import numpy as np
 
@@ -286,7 +285,7 @@ class HeatProblemTvarret(
         return constraints
 
 
-class HeatProblemESDLProdProfile(
+class BeseProblemProdProfile(
     _GoalsAndOptions,
     TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
@@ -317,16 +316,15 @@ class HeatProblemESDLProdProfile(
 
             goals.append(TargetDemandGoal(state, target))
 
-        for s in self.energy_system_components["heat_source"]:
-            goals.append(MinimizeSourcesHeatGoal(s))
-
         return goals
 
 
-class HeatProblemESDLProdProfileTCO(HeatProblemESDLProdProfile):
-    def goals(self):
-        goals = super().goals().copy()
-        goals.append(MinimizeTCO(priority=20, number_of_years=1))
+class HeatProblemESDLProdProfile(BeseProblemProdProfile):
+    def path_goals(self):
+        goals = super().path_goals().copy()
+
+        for s in self.energy_system_components["heat_source"]:
+            goals.append(MinimizeSourcesHeatGoal(s))
 
         return goals
 
@@ -339,7 +337,7 @@ class HeatProblemProdProfile(HeatProblemESDLProdProfile):
             demand_timeseries = self.get_timeseries("HeatingDemand_a3b8.target_heat_demand")
             new_timeseries = np.ones(len(demand_timeseries.values)) * 1
             ind_hlf = int(len(demand_timeseries.values) / 2)
-            new_timeseries[ind_hlf : ind_hlf + 4] = np.ones(4) * 0.10
+            new_timeseries[ind_hlf : ind_hlf + 1] = np.ones(1) * 0.10
             self.set_timeseries(f"{s}.maximum_heat_source", new_timeseries)
 
 
