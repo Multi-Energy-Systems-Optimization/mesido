@@ -10,8 +10,8 @@ import numpy as np
 from utils_tests import demand_matching_test, electric_power_conservation_test, feasibility_test
 
 
-class TestMILPElectricSourceSink(TestCase):
-    def test_source_sink(self):
+class TestMILPElectricSourceSinkStorage(TestCase):
+    def test_source_sink_storage(self):
         """
         Tests for an electricity network that consist out of a source, a sink and storage,
         connected with electricity cables.
@@ -22,7 +22,8 @@ class TestMILPElectricSourceSink(TestCase):
         - Check that the battery is used to match demand
         - Check that charging and discharging properly connected to the network (direction)
         - Check that the is_charging variable is set correctly
-
+        - Checks that the use of is_charging variable gives the same results as without the use
+        of the binary is_charging variable.
 
         """
 
@@ -40,6 +41,7 @@ class TestMILPElectricSourceSink(TestCase):
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries.csv",
         )
+
         results = solution.extract_results()
         parameters = solution.parameters(0)
 
@@ -47,6 +49,23 @@ class TestMILPElectricSourceSink(TestCase):
 
         demand_matching_test(solution, results)
         electric_power_conservation_test(solution, results)
+
+        class ElectricityProblemDisc(ElectricityProblem):
+            def energy_system_options(self):
+                options = super().energy_system_options().copy()
+                options["electricity_storage_discrete_charge_variables"] = True
+                return options
+
+        solution_disc = run_esdl_mesido_optimization(
+            ElectricityProblemDisc,
+            base_folder=base_folder,
+            esdl_file_name="source_sink_storage.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries.csv",
+        )
+
+        results_disc = solution_disc.extract_results()
 
         storage_name = solution.energy_system_components.get("electricity_storage")[0]
         charge_eff = parameters[f"{storage_name}.charge_efficiency"]
@@ -61,15 +80,24 @@ class TestMILPElectricSourceSink(TestCase):
         np.testing.assert_allclose(power_cable_bat, power_bat_network, atol=tol)
         np.testing.assert_allclose(power_bat_network, power_charging - power_discharging, atol=tol)
 
-        count_discrete_path, count_discrete_var = 0.0, 0.0
-        for var in solution.path_variables:
-            if solution.variable_is_discrete(var.name()):
-                count_discrete_path += 1
-        for var in solution.extra_variables:
-            if solution.variable_is_discrete(var.name()):
-                count_discrete_var += 1
-        np.testing.assert_allclose(0.0, count_discrete_path, atol=tol)
-        np.testing.assert_array_less(count_discrete_var, 8.0)
+        power_discharging_disc = results_disc[f"{storage_name}.Power_discharging"]
+        power_charging_disc = results_disc[f"{storage_name}.Power_charging"]
+        np.testing.assert_allclose(power_discharging[1:], power_discharging_disc[1:], atol=tol)
+        np.testing.assert_allclose(power_charging[1:], power_charging_disc[1:], atol=tol)
+
+        for sol in [solution, solution_disc]:
+            count_discrete_path, count_discrete_var = 0.0, 0.0
+            for var in sol.path_variables:
+                if sol.variable_is_discrete(var.name()):
+                    count_discrete_path += 1
+            for var in sol.extra_variables:
+                if sol.variable_is_discrete(var.name()):
+                    count_discrete_var += 1
+            np.testing.assert_allclose(count_discrete_var, 7.0)
+            if sol == solution:
+                np.testing.assert_allclose(0.0, count_discrete_path, atol=tol)
+            else:
+                np.testing.assert_allclose(1.0, count_discrete_path, atol=tol)
 
         is_charging = np.asarray([float(i > 0) for i in power_charging])
         # if battery is charging (1), ElectricityIn.Power and effective_power charging should be

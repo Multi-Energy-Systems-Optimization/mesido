@@ -545,6 +545,7 @@ class ElectricityPhysicsMixin(
         the boolean for charging and using a charging efficiency during charging.
         """
         constraints = []
+        options = self.energy_system_options()
         parameters = self.parameters(ensemble_member)
 
         for asset in [
@@ -565,13 +566,18 @@ class ElectricityPhysicsMixin(
             power_charging = self.state(f"{asset}.Power_charging")
             power_charging_max = self.bounds()[f"{asset}.Power_charging"][1]
 
-            # For now below is commented out, incase boolean charging variable is needed again for
-            # other constraints, it can easily be added.
-            # is_charging is 1 if charging and powerin>0
-            # big_m = 2 * max(np.abs(self.bounds()[f"{asset}.ElectricityIn.Power"]))
-            # is_charging = self.state(f"{asset}__is_charging")
-            # constraints.append(((power_in + (1 - is_charging) * big_m) / power_nom, 0.0, np.inf))
-            # constraints.append(((power_in - is_charging * big_m) / power_nom, -np.inf, 0.0))
+            if options["electricity_storage_discrete_charge_variables"]:
+                is_charging = self.state(f"{asset}__is_charging")
+                constraints.append(
+                    (
+                        (power_discharging - (1 - is_charging) * power_discharging_max) / power_nom,
+                        -np.inf,
+                        0.0,
+                    )
+                )
+                constraints.append(
+                    ((power_charging - is_charging * power_charging_max) / power_nom, -np.inf, 0.0)
+                )
 
             # if the storage is discharging, current_in would be negative.
             constraints.append(
