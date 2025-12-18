@@ -2,7 +2,6 @@ import base64
 import copy
 import dataclasses
 import logging
-import xml.etree.ElementTree as ET  # noqa: N817
 from datetime import timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -184,6 +183,48 @@ class ESDLMixin(
                 )
             self.name_to_esdl_id_map[esdl_asset.name] = esdl_id
 
+    def __override_pipe_classes_dicts(
+        self,
+        asset: Asset,
+        pipe_classes: List[EDRPipeClass],
+        no_pipe_class: PipeClass,
+        override_classes: dict,
+    ) -> None:
+        """
+        Overrides the pipe class dictionaries based on the minimum pipe sizes that are required.
+        """
+
+        p = asset.name
+
+        if asset.attributes["state"].name == "OPTIONAL":
+            c = override_classes[p] = []
+            c.append(no_pipe_class)
+
+            min_size = self.__minimum_pipe_size_name
+            min_size_idx = [idx for idx, pipe in enumerate(pipe_classes) if pipe.name == min_size]
+            assert len(min_size_idx) == 1
+            min_size_idx = min_size_idx[0]
+
+            max_size = asset.attributes["diameter"].name
+
+            max_size_idx = [idx for idx, pipe in enumerate(pipe_classes) if pipe.name == max_size]
+            assert len(max_size_idx) == 1
+            max_size_idx = max_size_idx[0]
+
+            if max_size_idx < min_size_idx:
+                logger.warning(
+                    f"{p} has an upper DN size smaller than the used minimum size "
+                    f"of {self.__minimum_pipe_size_name}, choose at least "
+                    f"{self.__minimum_pipe_size_name}"
+                )
+            elif min_size_idx == max_size_idx:
+                c.append(pipe_classes[min_size_idx])
+            else:
+                c.extend(pipe_classes[min_size_idx : max_size_idx + 1])
+        elif asset.attributes["state"].name == "DISABLED":
+            c = override_classes[p] = []
+            c.append(no_pipe_class)
+
     def override_pipe_classes(self) -> None:
         """
         In this method we populate the _override_pipe_classes dict, which gives a list of possible
@@ -203,6 +244,9 @@ class ESDLMixin(
             EDRPipeClass.from_edr_class(name, edr_class_name, maximum_velocity)
             for name, edr_class_name in _AssetToComponentBase.STEEL_S1_PIPE_EDR_ASSETS.items()
         ]
+        
+        override_classes = self._override_pipe_classes
+        
         # Update the pipe costs if a measure model in the ESDL was used. This is updated only if
         # the pipe catalog is available as a measure
         if self._esdl_measures:
@@ -233,40 +277,9 @@ class ESDLMixin(
             if asset.asset_type == "Pipe" and isinstance(
                 asset.in_ports[0].carrier, esdl.HeatCommodity
             ):
-                p = asset.name
-
-                if asset.attributes["state"].name == "OPTIONAL":
-                    c = self._override_pipe_classes[p] = []
-                    c.append(no_pipe_class)
-
-                    min_size = self.__minimum_pipe_size_name
-                    min_size_idx = [
-                        idx for idx, pipe in enumerate(pipe_classes) if pipe.name == min_size
-                    ]
-                    assert len(min_size_idx) == 1
-                    min_size_idx = min_size_idx[0]
-
-                    max_size = asset.attributes["diameter"].name
-
-                    max_size_idx = [
-                        idx for idx, pipe in enumerate(pipe_classes) if pipe.name == max_size
-                    ]
-                    assert len(max_size_idx) == 1
-                    max_size_idx = max_size_idx[0]
-
-                    if max_size_idx < min_size_idx:
-                        logger.warning(
-                            f"{p} has an upper DN size smaller than the used minimum size "
-                            f"of {self.__minimum_pipe_size_name}, choose at least "
-                            f"{self.__minimum_pipe_size_name}"
-                        )
-                    elif min_size_idx == max_size_idx:
-                        c.append(pipe_classes[min_size_idx])
-                    else:
-                        c.extend(pipe_classes[min_size_idx : max_size_idx + 1])
-                elif asset.attributes["state"].name == "DISABLED":
-                    c = self._override_pipe_classes[p] = []
-                    c.append(no_pipe_class)
+                self.__override_pipe_classes_dicts(
+                    asset, pipe_classes, no_pipe_class, override_classes
+                )
 
     def override_gas_pipe_classes(self) -> None:
         """
@@ -291,44 +304,15 @@ class ESDLMixin(
         # We assert the pipe classes are monotonically increasing in size
         assert np.all(np.diff([pc.inner_diameter for pc in pipe_classes]) > 0)
 
+        override_classes = self._override_gas_pipe_classes
+
         for asset in self.esdl_assets.values():
             if asset.asset_type == "Pipe" and isinstance(
                 asset.in_ports[0].carrier, esdl.GasCommodity
             ):
-                p = asset.name
-
-                if asset.attributes["state"].name == "OPTIONAL":
-                    c = self._override_gas_pipe_classes[p] = []
-                    c.append(no_pipe_class)
-
-                    min_size = self.__minimum_pipe_size_name
-                    min_size_idx = [
-                        idx for idx, pipe in enumerate(pipe_classes) if pipe.name == min_size
-                    ]
-                    assert len(min_size_idx) == 1
-                    min_size_idx = min_size_idx[0]
-
-                    max_size = asset.attributes["diameter"].name
-
-                    max_size_idx = [
-                        idx for idx, pipe in enumerate(pipe_classes) if pipe.name == max_size
-                    ]
-                    assert len(max_size_idx) == 1
-                    max_size_idx = max_size_idx[0]
-
-                    if max_size_idx < min_size_idx:
-                        logger.warning(
-                            f"{p} has an upper DN size smaller than the used minimum size "
-                            f"of {self.__minimum_pipe_size_name}, choose at least "
-                            f"{self.__minimum_pipe_size_name}"
-                        )
-                    elif min_size_idx == max_size_idx:
-                        c.append(pipe_classes[min_size_idx])
-                    else:
-                        c.extend(pipe_classes[min_size_idx : max_size_idx + 1])
-                elif asset.attributes["state"].name == "DISABLED":
-                    c = self._override_gas_pipe_classes[p] = []
-                    c.append(no_pipe_class)
+                self.__override_pipe_classes_dicts(
+                    asset, pipe_classes, no_pipe_class, override_classes
+                )
 
     @property
     def esdl_assets(self) -> Dict[str, Asset]:
@@ -760,115 +744,3 @@ class ESDLMixin(
                 filtered_assets[asset_id] = asset
 
         return filtered_assets
-
-
-class _ESDLInputDataConfig:
-    """
-    This class is used to specify naming standard for input data, specifically for demand and
-    production profiles.
-    """
-
-    def __init__(self, id_map: Dict, energy_system_components: Dict) -> None:
-        # TODO: change naming source and demand to heat_source and heat_demand throughout code
-        self.__id_map = id_map
-        self._sources = set(energy_system_components.get("heat_source", []))
-        self._demands = set(energy_system_components.get("heat_demand", []))
-        self._electricity_sources = set(energy_system_components.get("electricity_source", []))
-        self._electricity_demands = set(energy_system_components.get("electricity_demand", []))
-        self._gas_sources = set(energy_system_components.get("gas_source", []))
-        self._gas_demands = set(energy_system_components.get("gas_demand", []))
-
-    def variable(self, pi_header: Any) -> str:
-        """
-        Old function not maintained anymore from WarmingUp times. The input xml file would specify
-        the id of the asset for which a time-series was given. This function would return the name
-        we use in our framework for that same variable.
-
-        Parameters
-        ----------
-        pi_header : the xml header element in which the id of the asset is specified
-
-        Returns
-        -------
-        string with the name of the timeseries name.
-        """
-        location_id = pi_header.find("pi:locationId", ns).text
-
-        try:
-            component_name = self.__id_map[location_id]
-        except KeyError:
-            parameter_id = pi_header.find("pi:parameterId", ns).text
-            qualifiers = pi_header.findall("pi:qualifierId", ns)
-            qualifier_ids = ":".join(q.text for q in qualifiers)
-            return f"{location_id}:{parameter_id}:{qualifier_ids}"
-
-        if component_name in self._demands:
-            suffix = ".target_heat_demand"
-        elif component_name in self._sources:
-            suffix = ".maximum_heat_source"
-        elif component_name in self._electricity_demands:
-            suffix = ".target_electricity_demand"
-        elif component_name in self._electricity_sources:
-            suffix = ".maximum_electricity_source"
-        elif component_name in self._gas_demands:
-            suffix = ".target_gas_demand"
-        elif component_name in self._gas_sources:
-            suffix = ".maximum_gas_source"
-        else:
-            logger.warning(
-                f"Could not identify '{component_name}' as either source or demand. "
-                f"Using neutral suffix '.target_heat' for its milp timeseries."
-            )
-            suffix = ".target_heat"
-
-        # Note that the qualifier id (if any specified) refers to the profile
-        # element of the respective ESDL asset->in_port. For now we just
-        # assume that only milp demand timeseries are set in the XML file.
-        return f"{component_name}{suffix}"
-
-    def pi_variable_ids(self, variable):
-        raise NotImplementedError
-
-    def parameter(self, parameter_id, location_id=None, model_id=None):
-        raise NotImplementedError
-
-    def pi_parameter_ids(self, parameter):
-        raise NotImplementedError
-
-
-class _ESDLOutputDataConfig:
-    def __init__(self, id_map):
-        self.__id_map = id_map
-
-    def variable(self, pi_header):
-        location_id = pi_header.find("pi:locationId", ns).text
-        parameter_id = pi_header.find("pi:parameterId", ns).text
-
-        component_name = self.__id_map[location_id]
-
-        return f"{component_name}.{parameter_id}"
-
-    def pi_variable_ids(self, variable):
-        raise NotImplementedError
-
-    def parameter(self, parameter_id, location_id=None, model_id=None):
-        raise NotImplementedError
-
-    def pi_parameter_ids(self, parameter):
-        raise NotImplementedError
-
-
-def _overwrite_parameters(parameters_file, assets):
-    paramroot = ET.parse(parameters_file).getroot()
-    groups = paramroot.findall("pi:group", ns)
-
-    for parameter in groups:
-        id_ = parameter.attrib["id"]
-        param_name = parameter[0].attrib["id"]
-        param_value = parameter[0][0].text
-
-        asset = assets[id_]
-        type_ = type(asset.attributes[param_name])
-        asset.attributes[param_name] = type_(param_value)
-
-    return assets

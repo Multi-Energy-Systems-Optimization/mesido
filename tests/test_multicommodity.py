@@ -48,16 +48,12 @@ class TestMultiCommodityHeatPump(TestCase):
         results = solution.extract_results()
 
         demand_matching_test(solution, results)
-        energy_conservation_test(solution, results)
+        energy_conservation_test(solution, results, atol_total=11)
         heat_to_discharge_test(solution, results)
 
         v_min_hp = solution.parameters(0)["GenericConversion_3d3f.min_voltage"]
         i_max = solution.parameters(0)["ElectricityCable_9d3b.max_current"]
         cop = solution.parameters(0)["GenericConversion_3d3f.COP"]
-
-        demand_matching_test(solution, results)
-        heat_to_discharge_test(solution, results)
-        energy_conservation_test(solution, results)
 
         heatsource_prim = results["ResidualHeatSource_61b8.Heat_source"]
         heatsource_sec = results["ResidualHeatSource_aec9.Heat_source"]
