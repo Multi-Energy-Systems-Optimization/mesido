@@ -32,8 +32,8 @@ from mesido.pycml.component_library.milp import (
     ElectricitySource,
     ElectricityStorage,
     Electrolyzer,
-    GasBoiler,
     GasDemand,
+    GasHeatSourceGas,
     GasNode,
     GasPipe,
     GasSource,
@@ -47,6 +47,7 @@ from mesido.pycml.component_library.milp import (
     HeatPump,
     HeatPumpElec,
     HeatSource,
+    HeatSourceGas,
     LowTemperatureATES,
     Node,
     Pump,
@@ -1258,8 +1259,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
         # get price per unit of energy,
         # assume cost of 1. if nothing is given (effectively milp loss minimization)
         # TODO: Use an attribute or use and KPI for CO2 coefficient of a source
-
         q_nominal = self._get_connected_q_nominal(asset)
+        if isinstance(q_nominal, dict):
+            q_nominal = q_nominal["Q_nominal"]
 
         modifiers = dict(
             Heat_source=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
@@ -1299,6 +1301,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
         elif asset.asset_type == "HeatPump":
             modifiers["cop"] = asset.attributes["COP"]
             return AirWaterHeatPump, modifiers
+        elif asset.asset_type == "GasHeater":
+            efficiency = asset.attributes["efficiency"] if asset.attributes["efficiency"] else 1.0
+            modifiers["efficiency"] = efficiency
+            return HeatSourceGas, modifiers
         else:
             return HeatSource, modifiers
 
@@ -2380,7 +2386,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         return Compressor, modifiers
 
-    def convert_gas_boiler(self, asset: Asset) -> Tuple[GasBoiler, MODIFIERS]:
+    def convert_heat_source_gas(self, asset: Asset) -> Tuple[GasHeatSourceGas, MODIFIERS]:
         """
         This function converts the GasHeater object in esdl to a set of modifiers that can be
         used in a pycml object.
@@ -2423,9 +2429,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
             logger.error(f"{asset.asset_type} '{asset.name}' has no max power specified. ")
         assert max_supply > 0.0
 
+        _, modifiers = self.convert_heat_source(asset)
         if len(asset.in_ports) == 1:
-            heat_source_object, modifiers = self.convert_heat_source(asset)
-            return heat_source_object, modifiers
+            return HeatSourceGas, modifiers
 
         id_mapping = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
             "id_number_mapping"
@@ -2440,26 +2446,14 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         q_nominals = self._get_connected_q_nominal(asset)
 
-        if not asset.attributes["efficiency"]:
-            raise _ESDLInputException(
-                f"{asset.name} has no efficiency specified, this is required for the model"
-            )
+        modifiers["Heat_source"] = dict(min=0.0, max=max_supply, nominal=max_supply / 2.0)
+        modifiers["id_mapping_carrier"] = id_mapping
+        modifiers["density"] = density
+        modifiers["energy_content"] = energy_content
+        modifiers["GasIn"] = dict(Q=dict(min=0.0, nominal=q_nominals["Q_nominal_gas"]))
+        modifiers["Q_nominal_gas"] = q_nominals["Q_nominal_gas"]
 
-        modifiers = dict(
-            efficiency=asset.attributes["efficiency"],
-            Heat_source=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
-            id_mapping_carrier=id_mapping,
-            density=density,
-            energy_content=energy_content,
-            GasIn=dict(Q=dict(min=0.0, nominal=q_nominals["Q_nominal_gas"])),
-            Q_nominal_gas=q_nominals["Q_nominal_gas"],
-            **self._generic_modifiers(asset),
-            **self._generic_heat_modifiers(0.0, max_supply, q_nominals["Q_nominal"]),
-            **self._supply_return_temperature_modifiers(asset),
-            **self._rho_cp_modifiers,
-            **self._get_cost_figure_modifiers(asset),
-        )
-        return GasBoiler, modifiers
+        return GasHeatSourceGas, modifiers
 
     def convert_elec_boiler(self, asset: Asset) -> Tuple[Union[ElecBoiler, HeatSource], MODIFIERS]:
         """

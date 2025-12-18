@@ -116,7 +116,7 @@ class TestGasElect(TestCase):
         np.testing.assert_array_less(np.array(pipe_diameters), np.array(pipe_diameters_high_demand))
 
         # Test: Check the burning efficiency of gas heaters
-        for asset_name in [*solution.energy_system_components.get("gas_boiler", [])]:
+        for asset_name in [*solution.energy_system_components.get("gas_heat_source_gas", [])]:
             np.testing.assert_allclose(
                 parameters[f"{asset_name}.energy_content"]
                 * results[f"{asset_name}.GasIn.mass_flow"]
@@ -128,7 +128,7 @@ class TestGasElect(TestCase):
         # Test: Check gas consumption vs production balance
         total_gas_demand_g = [0] * len(np.diff(solution.times()))
         total_gas_source_g = [0] * len(np.diff(solution.times()))
-        for asset_name in [*solution.energy_system_components.get("gas_boiler", [])]:
+        for asset_name in [*solution.energy_system_components.get("gas_heat_source_gas", [])]:
             total_gas_demand_g += results[f"{asset_name}.Gas_demand_mass_flow"][1:] * np.diff(
                 solution.times()
             )
@@ -199,7 +199,7 @@ class TestGasElect(TestCase):
                 ]:
                     factor = esdl_asset.attributes["COP"]
                 if asset in [
-                    *solution.energy_system_components.get("gas_boiler", []),
+                    *solution.energy_system_components.get("gas_heat_source_gas", []),
                 ]:
                     factor = esdl_asset.attributes["efficiency"]
                 for ii in range(1, len(solution.times())):
