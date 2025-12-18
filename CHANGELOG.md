@@ -8,8 +8,10 @@
 
 
 ## Changed
+- Clean up of old code and removing duplicates.
 - Minimize TCO objective in the grow_workflow is now only based on capex and opex that can be influenced.
 - Removed the requirement of "_ret" for the return network pipes, for ESDLversion 21.10 and later. The relation between supply and return pipes is now based on the "related" attribute in the esdl.
+- New data structute for specifying database connection inputs
 - Templates are replaced by measures. Now pipe costs are updated based on the asset measures if they are provided 
 
 ## Fixed
