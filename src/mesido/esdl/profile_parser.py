@@ -231,7 +231,9 @@ class InfluxDBProfileReader(BaseProfileReader):
             file_path=file_path,
         )
         self._df = pd.DataFrame()
-        self._database_credentials = database_credentials if database_credentials is not None else {"": ("", "")}
+        self._database_credentials = (
+            database_credentials if database_credentials is not None else {"": ("", "")}
+        )
 
     def _load_profiles_from_source(
         self,

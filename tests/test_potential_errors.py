@@ -2,7 +2,7 @@ import datetime
 import unittest
 import unittest.mock
 from pathlib import Path
-from typing import Dict, Optional, Tuple
+from typing import Optional
 
 import esdl
 
