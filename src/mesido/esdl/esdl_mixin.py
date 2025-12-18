@@ -170,16 +170,20 @@ class ESDLMixin(
                 )
                 sys.exit(1)
 
-        if not read_only_dbase_credentials:
-            read_only_dbase_credentials = {"": ("", "")}  # type: ignore
-
         if input_file_name is not None:
             input_file_path = Path(input_folder) / input_file_name
-        self.__profile_reader: BaseProfileReader = profile_reader_class(
-            energy_system=self.__energy_system_handler.energy_system,
-            file_path=input_file_path,
-            dbase_credentials=read_only_dbase_credentials,
-        )
+
+        if read_only_dbase_credentials:  # read from database
+            self.__profile_reader: BaseProfileReader = profile_reader_class(
+                energy_system=self.__energy_system_handler.energy_system,
+                file_path=input_file_path,
+                database_credentials=read_only_dbase_credentials,
+            )
+        else:  # read from a file, no database credentials needed
+            self.__profile_reader: BaseProfileReader = profile_reader_class(
+                energy_system=self.__energy_system_handler.energy_system,
+                file_path=input_file_path,
+            )
 
         # This way we allow users to adjust the parsed ESDL assets
         assets = self.esdl_assets

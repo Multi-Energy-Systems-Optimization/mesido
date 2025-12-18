@@ -26,9 +26,9 @@ class MockInfluxDBProfileReader(InfluxDBProfileReader):
         self,
         energy_system: esdl.EnergySystem,
         file_path: Optional[Path],
-        dbase_credentials: Optional[Dict[str, Tuple[str, str]]],
+        database_credentials: Optional[Dict[str, Tuple[str, str]]] = None,
     ):
-        super().__init__(energy_system, file_path, dbase_credentials=dbase_credentials)
+        super().__init__(energy_system, file_path, database_credentials=database_credentials)
         self._loaded_profiles = pd.read_csv(
             file_path,
             index_col="DateTime",

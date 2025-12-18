@@ -45,13 +45,11 @@ class BaseProfileReader:
         self,
         energy_system: esdl.EnergySystem,
         file_path: Optional[Path],
-        dbase_credentials: Optional[Dict[str, Tuple[str, str]]],
     ):
         self._profiles: Dict[int, Dict[str, np.ndarray]] = defaultdict(dict)
         self._energy_system: esdl.EnergySystem = energy_system
         self._file_path: Optional[Path] = file_path
         self._reference_datetimes: Optional[pd.DatetimeIndex] = None
-        self._database_credentials: Optional[Dict[str, Tuple[str, str]]] = dbase_credentials
 
     def read_profiles(
         self,
@@ -226,14 +224,14 @@ class InfluxDBProfileReader(BaseProfileReader):
         self,
         energy_system: esdl.EnergySystem,
         file_path: Optional[Path],
-        dbase_credentials: Optional[Dict[str, Tuple[str, str]]],
+        database_credentials: Optional[Dict[str, Tuple[str, str]]] = None,
     ):
         super().__init__(
             energy_system=energy_system,
             file_path=file_path,
-            dbase_credentials=dbase_credentials,
         )
         self._df = pd.DataFrame()
+        self._database_credentials = database_credentials if database_credentials is not None else {"": ("", "")}
 
     def _load_profiles_from_source(
         self,
@@ -605,12 +603,10 @@ class ProfileReaderFromFile(BaseProfileReader):
         self,
         energy_system: esdl.EnergySystem,
         file_path: Path,
-        dbase_credentials: Optional[Dict[str, Tuple[str, str]]],
     ):
         super().__init__(
             energy_system=energy_system,
             file_path=file_path,
-            dbase_credentials=dbase_credentials,
         )
 
     def _load_profiles_from_source(
