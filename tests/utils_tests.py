@@ -175,7 +175,7 @@ def heat_to_discharge_test(solution, results, atol=1e-2, rtol=1.0e-4):
         np.testing.assert_allclose(
             results[f"{d}.HeatOut.Heat"],
             results[f"{d}.Q"] * rho * cp * supply_t,
-            atol=5.0,
+            atol=atol,
             rtol=rtol,
         )
 
@@ -308,7 +308,7 @@ def heat_to_discharge_test(solution, results, atol=1e-2, rtol=1.0e-4):
                 <= results[f"{p}.Q"][indices] * rho * cp * temperature + atol
             )
         )
-        indices = results[f"{p}.Q"] < 0
+        indices = results[f"{p}.Q"] < -1e-12
         if f"{carrier_id}_temperature" in results.keys():
             temperature = np.clip(
                 results[f"{carrier_id}_temperature"][indices],
@@ -408,7 +408,7 @@ def electric_power_conservation_test(solution, results, atol=1e-2):
     np.testing.assert_allclose(energy_sum, 0.0, atol=atol)
 
 
-def energy_conservation_test(solution, results, atol=1e-3):
+def energy_conservation_test(solution, results, atol=1e-3, atol_total=1e-1):
     """Test to check if the energy is conserved at each timestep"""
     energy_sum = np.zeros(len(solution.times()))
 
@@ -471,8 +471,7 @@ def energy_conservation_test(solution, results, atol=1e-3):
                 )
             energy_sum -= results[f"{p}__hn_heat_loss"]
 
-    # TODO: fix hardcoded atol
-    np.testing.assert_allclose(energy_sum, 0.0, atol=1e-1)
+    np.testing.assert_allclose(energy_sum, 0.0, atol=atol_total)
 
 
 def gas_pipes_head_loss_test(solution, results, atol=1e-12):
