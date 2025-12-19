@@ -21,8 +21,15 @@ from utils_test_scaling import create_log_list_scaling
 
 
 class MockInfluxDBProfileReader(InfluxDBProfileReader):
-    def __init__(self, energy_system: esdl.EnergySystem, file_path: Optional[Path]):
-        super().__init__(energy_system, file_path)
+    def __init__(
+        self,
+        energy_system: esdl.EnergySystem,
+        file_path: Optional[Path],
+    ):
+        super().__init__(
+            energy_system=energy_system,
+            file_path=file_path,
+        )
         self._loaded_profiles = pd.read_csv(
             file_path,
             index_col="DateTime",
@@ -206,7 +213,7 @@ class TestPotentialErrors(unittest.TestCase):
         np.testing.assert_equal(
             cm.exception.message_per_asset_id["2ab92324-f86e-4976-9a6e-f7454b77ba3c"],
             "Asset named HeatingDemand_2ab9: Input profile "
-            "demand1_MW_wrong_name in Unittests profiledata is not available in the database.",
+            "demand1_MW_wrong_name in WarmingUp default profiles is not available in the database.",
         )
 
         # Check that the ResidualHeatSource multiplier's error is picked up
