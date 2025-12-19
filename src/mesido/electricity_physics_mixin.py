@@ -1,8 +1,7 @@
-import copy
 import logging
 from enum import IntEnum
 from math import isclose
-from typing import List, Tuple
+from typing import Tuple
 
 import casadi as ca
 
@@ -99,7 +98,7 @@ class ElectricityPhysicsMixin(
         options["electrolyzer_efficiency"] = (
             ElectrolyzerOption.LINEARIZED_THREE_LINES_WEAK_INEQUALITY
         )
-        options["electricity_storage_discharge_variables"] = False
+        options["electricity_storage_discrete_charge_variables"] = False
 
         return options
 
@@ -146,24 +145,12 @@ class ElectricityPhysicsMixin(
                     self.__electrolyzer_is_active_linear_segment_var[var_name] = ca.MX.sym(var_name)
                     self.__electrolyzer_is_active_linear_segment_bounds[var_name] = (0.0, 1.0)
 
-        for asset in [*self.energy_system_components.get("electricity_storage", [])]:
-            var_name = f"{asset}__is_charging"
-            self.__storage_charging_map[asset] = var_name
-            self.__storage_charging_var[var_name] = ca.MX.sym(var_name)
-            self.__storage_charging_bounds[var_name] = (0.0, 1.0)
-
-            if options["electricity_storage_discharge_variables"]:
-                bound_storage = -self.bounds()[f"{asset}.Effective_power_charging"][0]
-                if isinstance(bound_storage, Timeseries):
-                    bound_storage = copy.deepcopy(bound_storage)
-                    bound_storage.values[bound_storage.values < 0] = 0.0
-                var_name = f"{asset}__effective_power_discharging"
-                self.__electricity_storage_discharge_map[asset] = var_name
-                self.__electricity_storage_discharge_var[var_name] = ca.MX.sym(var_name)
-                self.__electricity_storage_discharge_bounds[var_name] = (0, bound_storage)
-                self.__electricity_storage_discharge_nominals[var_name] = self.variable_nominal(
-                    f"{asset}.Effective_power_charging"
-                )
+        if options["electricity_storage_discrete_charge_variables"]:
+            for asset in [*self.energy_system_components.get("electricity_storage", [])]:
+                var_name = f"{asset}__is_charging"
+                self.__storage_charging_map[asset] = var_name
+                self.__storage_charging_var[var_name] = ca.MX.sym(var_name)
+                self.__storage_charging_bounds[var_name] = (0.0, 1.0)
 
         for asset in [*self.energy_system_components.get("electricity_source", [])]:
             if isinstance(self.bounds()[f"{asset}.Electricity_source"][1], Timeseries):
@@ -558,6 +545,7 @@ class ElectricityPhysicsMixin(
         the boolean for charging and using a charging efficiency during charging.
         """
         constraints = []
+        options = self.energy_system_options()
         parameters = self.parameters(ensemble_member)
 
         for asset in [
@@ -572,98 +560,58 @@ class ElectricityPhysicsMixin(
 
             power_nom = self.variable_nominal(f"{asset}.ElectricityIn.Power")
             curr_nom = self.variable_nominal(f"{asset}.ElectricityIn.I")
-            power_in = self.state(f"{asset}.ElectricityIn.Power")
             current_in = self.state(f"{asset}.ElectricityIn.I")
+            power_discharging = self.state(f"{asset}.Power_discharging")
+            power_discharging_max = self.bounds()[f"{asset}.Power_discharging"][1]
+            power_charging = self.state(f"{asset}.Power_charging")
+            power_charging_max = self.bounds()[f"{asset}.Power_charging"][1]
 
-            # is_charging is 1 if charging and powerin>0
-            big_m = 2 * max(np.abs(self.bounds()[f"{asset}.ElectricityIn.Power"]))
-            is_charging = self.state(f"{asset}__is_charging")
-            constraints.append(((power_in + (1 - is_charging) * big_m) / power_nom, 0.0, np.inf))
-            constraints.append(((power_in - is_charging * big_m) / power_nom, -np.inf, 0.0))
-
-            constraints.append(
-                (
-                    (power_in - min_voltage * current_in + (1 - is_charging) * big_m)
-                    / (power_nom * curr_nom * min_voltage) ** 0.5,
-                    0,
-                    np.inf,
-                )
-            )
-            constraints.append(
-                (
-                    (power_in - min_voltage * current_in - (1 - is_charging) * big_m)
-                    / (power_nom * curr_nom * min_voltage) ** 0.5,
-                    -np.inf,
-                    0,
-                )
-            )
-
-            # power charging using discharge/charge efficiency, needs boolean
-            eff_power = self.state(f"{asset}.Effective_power_charging")
-            discharge_eff = parameters[f"{asset}.discharge_efficiency"]
-            charge_eff = parameters[f"{asset}.charge_efficiency"]
-            # charging
-            constraints.append(
-                (
-                    (eff_power - charge_eff * power_in + (1 - is_charging) * big_m) / power_nom,
-                    0,
-                    np.inf,
-                )
-            )
-            constraints.append(
-                (
-                    (eff_power - charge_eff * power_in - (1 - is_charging) * big_m) / power_nom,
-                    -np.inf,
-                    0,
-                )
-            )
-            # discharging
-            constraints.append(
-                (
-                    (eff_power * discharge_eff - power_in + is_charging * big_m) / power_nom,
-                    0,
-                    np.inf,
-                )
-            )
-            constraints.append(
-                (
-                    (eff_power * discharge_eff - power_in - is_charging * big_m) / power_nom,
-                    -np.inf,
-                    0,
-                )
-            )
-
-        return constraints
-
-    def __electricity_storage_discharge_var_path_constraints(
-        self, ensemble_member: int
-    ) -> List[Tuple[ca.MX, float, float]]:
-        """
-        The discharge variables are added such that two separate goals for charging and discharging
-        can be created. The discharging variable has a lower bound of 0 and should always be larger
-        or equal to the negative of the inflow variable. This allows for first a minimization of
-        the discharging and afterwards a maximisation of the charging without conflicting goals or
-        constraints.
-
-        :param ensemble_member:
-        :return: list of the additional constraints that are created
-        """
-
-        constraints = []
-        options = self.energy_system_options()
-
-        if options["electricity_storage_discharge_variables"]:
-            for storage in self.energy_system_components.get("electricity_storage", []):
-                storage_eff_power_charge_var = self.state(f"{storage}.Effective_power_charging")
-                discharge_var_name = self.__electricity_storage_discharge_map[storage]
-                storage_discharge_var = self.__electricity_storage_discharge_var[discharge_var_name]
-                nominal = self.variable_nominal(discharge_var_name)
-
-                # P_effective_charge represents both charging and discharing based on the sign.
-                # P_discharge >= -P_effective_charge
+            if options["electricity_storage_discrete_charge_variables"]:
+                is_charging = self.state(f"{asset}__is_charging")
                 constraints.append(
-                    ((storage_discharge_var + storage_eff_power_charge_var) / nominal, 0.0, np.inf)
+                    (
+                        (power_discharging - (1 - is_charging) * power_discharging_max) / power_nom,
+                        -np.inf,
+                        0.0,
+                    )
                 )
+                constraints.append(
+                    ((power_charging - is_charging * power_charging_max) / power_nom, -np.inf, 0.0)
+                )
+
+            # if the storage is discharging, current_in would be negative.
+            constraints.append(
+                (
+                    (power_charging - min_voltage * current_in)
+                    / (power_nom * curr_nom * min_voltage) ** 0.5,
+                    0.0,
+                    np.inf,
+                )
+            )
+            # to ensure power_charging is equal to min_voltage*current, only when charging
+            constraints.append(
+                (
+                    (power_charging - min_voltage * current_in - power_discharging)
+                    / (power_nom * curr_nom * min_voltage) ** 0.5,
+                    -np.inf,
+                    0.0,
+                )
+            )
+
+            # reduces problem size
+            # charging/max_charging + discharging/max_discharging <=1
+            constraints.append(
+                (
+                    (
+                        power_charging / power_charging_max
+                        + power_discharging / power_discharging_max
+                        - 1
+                    )
+                    / power_nom,
+                    -np.inf,
+                    0.0,
+                )
+            )
 
         return constraints
 
@@ -922,9 +870,6 @@ class ElectricityPhysicsMixin(
         constraints.extend(self.__voltage_loss_path_constraints(ensemble_member))
         constraints.extend(self.__electrolyzer_path_constaint(ensemble_member))
         constraints.extend(self.__electricity_storage_path_constraints(ensemble_member))
-        constraints.extend(
-            self.__electricity_storage_discharge_var_path_constraints(ensemble_member)
-        )
 
         return constraints
 
