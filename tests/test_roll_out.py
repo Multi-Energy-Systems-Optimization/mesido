@@ -213,17 +213,6 @@ class TestRollOutOptimization(TestCase):
         )
 
         # Check if all producers and ATES are placed at the end of the problem
-        # all_producers_placed = all(
-        #     results[f"{asset}__asset_is_realized_{solution._years - 1}"] >= 1 - tol
-        #     for asset in [
-        #         *solution.energy_system_components.get("heat_source", []),
-        #         *solution.energy_system_components.get("ates", []),
-        #     ]
-        # )
-        # np.testing.assert_(
-        #     all_producers_placed,
-        #     "Not all producers and ATES are placed at the end of the problem",
-        # )
         for asset in [
             *solution.energy_system_components.get("heat_source", []),
             *solution.energy_system_components.get("ates", []),
