@@ -106,7 +106,7 @@ class RollOutProblem(
 
         # Fraction of how much heat of the total maximum the geo source can produce it should
         # produce in every year that it is placed
-        self._min_geo_utilization = 0.7
+        self._min_geo_utilization = kwargs.get("min_geo_utilization", 0.7)
 
         self._save_json = True
 
@@ -192,7 +192,7 @@ class RollOutProblem(
             "Note: The rollout workflow is still under development and not fully tested yet."
         )
 
-        asset_types = ["low_temperature_ates", "geothermal_source", "heat_pump"]
+        asset_types = ["low_temperature_ates", "heat_pump"]
         for asset_type in asset_types:
             if len(self.energy_system_components.get(asset_type, [])) > 0:
                 logger.error(
@@ -502,9 +502,7 @@ class RollOutProblem(
         constraints = []
 
         bounds = self.bounds()
-        for asset, _asset_is_placed_var in self._asset_is_realized_map.items():
-            if asset not in self.energy_system_components.get("geothermal_source", []):
-                continue
+        for asset in self.energy_system_components.get("geothermal", []):
 
             logger.warning(
                 f"The function {self.__minimum_operational_constraints.__name__} is not tested yet."
@@ -520,7 +518,7 @@ class RollOutProblem(
                 dt = np.diff(self.io.times_sec / 3600)
                 for i in range(self._timesteps_per_year):
                     total_heat_year += (
-                        heat_produced[year * self._timesteps_per_year + i]
+                        heat_produced[year * self._timesteps_per_year + i + 1]
                         * dt[year * self._timesteps_per_year + i]
                     )
                 constraints.append(

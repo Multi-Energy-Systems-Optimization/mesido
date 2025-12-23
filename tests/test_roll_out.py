@@ -72,6 +72,7 @@ class TestRollOutOptimization(TestCase):
             yearly_max_capex=6.0e6,
             yearly_max_pipe_length=1.0e3,  # m per year
             include_peak_day=True,
+            min_geo_utilization=0.6,
         )
         results = solution.extract_results()
 
@@ -166,6 +167,25 @@ class TestRollOutOptimization(TestCase):
             solution._timesteps_per_year * solution._years + 1,
             "Number of timesteps in timeseries is not correct",
         )
+
+        for asset in solution.energy_system_components.get("geothermal", []):
+            dt = np.diff(solution.times()) / 3600
+            geo_power = solution.bounds()[f"{asset}.Heat_source"][1]
+            year_max_power_hour = geo_power * 365 * 24
+            fraction_util = solution._min_geo_utilization
+            for y in range(solution._years):
+                ind_start = y * solution._timesteps_per_year + 1
+                ind_end = (y + 1) * solution._timesteps_per_year + 1
+                if results[f"{asset}__asset_is_realized_{y}"] >= 0.99:
+                    heat_source = results[f"{asset}.Heat_source"]
+                    year_prod = sum(
+                        heat_source[ind_start:ind_end] * dt[ind_start - 1 : ind_end - 1]
+                    )
+                    np.testing.assert_(
+                        year_prod + atol > fraction_util * year_max_power_hour,
+                        f"{asset} is not meeting the minimum operational requirement of "
+                        f"{fraction_util*year_max_power_hour}, and produces only {year_prod}.",
+                    )
 
         # Yearly periodicity of ATES
         for ates in solution.energy_system_components.get("ates", []):
@@ -279,7 +299,7 @@ class TestRollOutOptimization(TestCase):
                 for i in range(solution._timesteps_per_year):
                     if not (
                         i > solution._RollOutProblem__problem_indx_max_peak - 1
-                        and i < (solution._RollOutProblem__problem_indx_max_peak + 23 + 1)
+                        and i < (solution._RollOutProblem__problem_indx_max_peak + 24 + 1)
                     ):
                         np.testing.assert_allclose(
                             results[f"{b}.Stored_heat"][i + year * solution._timesteps_per_year],
