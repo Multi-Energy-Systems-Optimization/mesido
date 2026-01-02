@@ -2446,12 +2446,15 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         q_nominals = self._get_connected_q_nominal(asset)
 
-        modifiers["Heat_source"] = dict(min=0.0, max=max_supply, nominal=max_supply / 2.0)
-        modifiers["id_mapping_carrier"] = id_mapping
-        modifiers["density"] = density
-        modifiers["energy_content"] = energy_content
-        modifiers["GasIn"] = dict(Q=dict(min=0.0, nominal=q_nominals["Q_nominal_gas"]))
-        modifiers["Q_nominal_gas"] = q_nominals["Q_nominal_gas"]
+        modifiers.update(
+            dict(
+                id_mapping_carrier=id_mapping,
+                density=density,
+                energy_content=energy_content,
+                GasIn=dict(Q=dict(min=0.0, nominal=q_nominals["Q_nominal_gas"])),
+                Q_nominal_gas=q_nominals["Q_nominal_gas"],
+            )
+        )
 
         return GasHeatSourceGas, modifiers
 
