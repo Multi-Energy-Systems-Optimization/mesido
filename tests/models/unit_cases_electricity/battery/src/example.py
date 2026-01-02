@@ -58,7 +58,6 @@ class _GoalsAndOptions:
     def energy_system_options(self):
         options = super().energy_system_options()
         options["include_electric_cable_power_loss"] = False
-        options["electricity_storage_discharge_variables"] = True
 
         return options
 
@@ -81,6 +80,8 @@ class ElectricityProblem(
         for bat in self.energy_system_components.get("electricity_storage", []):
             stored_elec = self.state_vector(f"{bat}.Stored_electricity")
             constraints.append((stored_elec[0], 0.0, 0.0))
+            power_in = self.__state_vector_scaled(f"{bat}.Power_discharging", ensemble_member)
+            constraints.append((power_in[0], 0.0, 0.0))
 
         return constraints
 
@@ -90,6 +91,16 @@ class ElectricityProblem(
         return options
 
     pass
+
+    def __state_vector_scaled(self, variable, ensemble_member):
+        """
+        This functions returns the casadi symbols scaled with their nominal for the entire time
+        horizon.
+        """
+        canonical, sign = self.alias_relation.canonical_signed(variable)
+        return (
+            self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
+        )
 
 
 if __name__ == "__main__":

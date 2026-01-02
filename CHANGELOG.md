@@ -13,6 +13,7 @@
 - Removed the requirement of "_ret" for the return network pipes, for ESDLversion 21.10 and later. The relation between supply and return pipes is now based on the "related" attribute in the esdl.
 - New data structute for specifying database connection inputs
 - Templates are replaced by measures. Now pipe costs are updated based on the asset measures if they are provided 
+- The charging and discharging variable for electricity storage is created without a binary variable using the convex hull description.
 
 ## Fixed
 - Bug: Write updated esdl for 2 port heat pump

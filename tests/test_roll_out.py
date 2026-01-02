@@ -56,6 +56,11 @@ class TestRollOutOptimization(TestCase):
                     demand_timeseries.values[:] = demand_timeseries.values[:] * m[i - 1]
                     self.set_timeseries(f"HeatingDemand_{i}.target_heat_demand", demand_timeseries)
 
+            def solver_options(self):
+                options = super().solver_options()
+                options["highs"]["mip_rel_gap"] = 0.001
+                return options
+
         solution = run_esdl_mesido_optimization(
             RollOutTimeStep,
             base_folder=base_folder,
@@ -64,7 +69,7 @@ class TestRollOutOptimization(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
-            yearly_max_capex=7.0e6,
+            yearly_max_capex=6.0e6,
             yearly_max_pipe_length=1.0e3,  # m per year
             include_peak_day=True,
         )
@@ -115,6 +120,7 @@ class TestRollOutOptimization(TestCase):
             *solution.energy_system_components.get("heat_demand", []),
             *solution.energy_system_components.get("ates", []),
             *solution.energy_system_components.get("heat_pipe", []),
+            *solution.energy_system_components.get("heat_buffer", []),
         ]
 
         for asset in assets_to_check:
@@ -207,17 +213,16 @@ class TestRollOutOptimization(TestCase):
         )
 
         # Check if all producers and ATES are placed at the end of the problem
-        all_producers_placed = all(
-            results[f"{asset}__asset_is_realized_{solution._years - 1}"] >= 1 - tol
-            for asset in [
-                *solution.energy_system_components.get("heat_source", []),
-                *solution.energy_system_components.get("ates", []),
-            ]
-        )
-        np.testing.assert_(
-            all_producers_placed,
-            "Not all producers and ATES are placed at the end of the problem",
-        )
+        for asset in [
+            *solution.energy_system_components.get("heat_source", []),
+            *solution.energy_system_components.get("ates", []),
+        ]:
+            np.testing.assert_(
+                results[f"{asset}__asset_is_realized_{solution._years - 1}"] >= 1 - tol,
+                f"Not all assets are placed a the end of the problem {asset} is not placed ("
+                f"{results[f'{asset}__asset_is_realized_{solution._years - 1}']}) with solver "
+                f"statistics {solution.solver_stats}",
+            )
 
         # Check fraction is placed, should be between 0 and 1 and increasing
         tol = 1e-6
