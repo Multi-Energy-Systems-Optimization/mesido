@@ -4,7 +4,7 @@ import os
 import unittest
 import unittest.mock
 from pathlib import Path
-from typing import Optional
+from typing import Dict, Optional, Tuple
 
 import esdl
 
@@ -22,8 +22,13 @@ import pandas as pd
 
 
 class MockInfluxDBProfileReader(InfluxDBProfileReader):
-    def __init__(self, energy_system: esdl.EnergySystem, file_path: Optional[Path]):
-        super().__init__(energy_system, file_path)
+    def __init__(
+        self,
+        energy_system: esdl.EnergySystem,
+        file_path: Optional[Path],
+        database_credentials: Optional[Dict[str, Tuple[str, str]]] = None,
+    ):
+        super().__init__(energy_system, file_path, database_credentials=database_credentials)
         self._loaded_profiles = pd.read_csv(
             file_path,
             index_col="DateTime",
@@ -145,6 +150,7 @@ class TestProfileLoading(unittest.TestCase):
         base_folder = Path(run_1a.__file__).resolve().parent.parent
         model_folder = base_folder / "model"
         input_folder = base_folder / "input"
+
         problem = EndScenarioSizingStaged(
             esdl_parser=ESDLFileParser,
             base_folder=base_folder,
@@ -314,9 +320,9 @@ if __name__ == "__main__":
     # unittest.main()
     a = TestProfileLoading()
     c = TestProfileUpdating()
-    # a.test_loading_from_influx()
-    # a.test_loading_from_csv()
-    # a.test_loading_from_xml()
-    # a.test_loading_from_csv_with_influx_profiles_given()
-    # c.test_profile_updating()
+    a.test_loading_from_influx()
+    a.test_loading_from_csv()
+    a.test_loading_from_xml()
+    a.test_loading_from_csv_with_influx_profiles_given()
+    c.test_profile_updating()
     a.test_loading_profile_from_esdl()

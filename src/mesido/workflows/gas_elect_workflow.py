@@ -25,7 +25,7 @@ from rtctools.optimization.single_pass_goal_programming_mixin import (
 )
 from rtctools.util import run_optimization_problem
 
-logger = logging.getLogger("WarmingUP-MPC")
+logger = logging.getLogger("mesido")
 logger.setLevel(logging.INFO)
 
 

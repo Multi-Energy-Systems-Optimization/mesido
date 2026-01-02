@@ -46,7 +46,7 @@ def _sort_numbered(list_):
 
 def main_decorator(func):
     def main(runinfo_path=None, log_level=None, run_remote=None):
-        logger = logging.getLogger("WarmingUP-MPC")
+        logger = logging.getLogger("mesido")
         logger.setLevel(logging.INFO)
 
         def handle_exception(exc_type, exc_value, exc_traceback):

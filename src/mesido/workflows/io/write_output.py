@@ -18,6 +18,7 @@ from esdl.profiles.profilemanager import ProfileManager
 import mesido.esdl.esdl_parser
 from mesido.constants import GRAVITATIONAL_CONSTANT
 from mesido.esdl.edr_pipe_class import EDRPipeClass
+from mesido.esdl.esdl_mixin import DBAccesType
 from mesido.financial_mixin import calculate_annuity_factor
 from mesido.network_common import NetworkSettings
 from mesido.post_processing.post_processing_utils import pipe_pressure, pipe_velocity
@@ -59,8 +60,21 @@ class ScenarioOutput:
                 sys.exit(1)
 
             if self.write_result_db_profiles:
+                database_connection_write = self._database_credentials.get(DBAccesType.WRITE, [])
+
+                if len(database_connection_write) == 0:
+                    logger.error("The connections settings for writing to a database is empty")
+                    sys.exit(1)
+                elif len(database_connection_write) > 1:
+                    logger.error(
+                        "Multiple connections have been specified for writing to a database;"
+                        " currently only one connection is supported"
+                    )
+                    sys.exit(1)
+                else:
+                    database_connection_input = database_connection_write[0]
                 try:
-                    self.influxdb_host = kwargs["influxdb_host"]
+                    self.influxdb_host = database_connection_input["influxdb_host"]
                     if len(self.influxdb_host) == 0:
                         logger.error(
                             "Current setting of influxdb_host is an empty string and it should"
@@ -71,7 +85,7 @@ class ScenarioOutput:
                     logger.error(f"{base_error_string} host")
                     sys.exit(1)
                 try:
-                    self.influxdb_port = kwargs["influxdb_port"]
+                    self.influxdb_port = database_connection_input["influxdb_port"]
                     if not isinstance(self.influxdb_port, int):
                         logger.error(
                             "Current setting of influxdb_port is: "
@@ -82,17 +96,17 @@ class ScenarioOutput:
                     logger.error(f"{base_error_string} port")
                     sys.exit(1)
                 try:
-                    self.influxdb_username = kwargs["influxdb_username"]
+                    self.influxdb_username = database_connection_input["influxdb_username"]
                 except KeyError:
                     logger.error(f"{base_error_string} username")
                     sys.exit(1)
                 try:
-                    self.influxdb_password = kwargs["influxdb_password"]
+                    self.influxdb_password = database_connection_input["influxdb_password"]
                 except KeyError:
                     logger.error(f"{base_error_string} password")
                     sys.exit(1)
                 try:
-                    self.influxdb_ssl = kwargs["influxdb_ssl"]
+                    self.influxdb_ssl = database_connection_input["influxdb_ssl"]
                     if self.influxdb_ssl not in [True, False]:
                         logger.error(
                             "Current setting of influxdb_ssl is: "
@@ -103,7 +117,7 @@ class ScenarioOutput:
                     logger.error(f"{base_error_string} ssl")
                     sys.exit(1)
                 try:
-                    self.influxdb_verify_ssl = kwargs["influxdb_verify_ssl"]
+                    self.influxdb_verify_ssl = database_connection_input["influxdb_verify_ssl"]
                     if self.influxdb_verify_ssl not in [True, False]:
                         logger.error(
                             "Current setting of influxdb_verify_ssl is: "
