@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" name="test_case_small_network_with_ates_with_buffer_all_optional_pipe_catalog" id="7ac09231-ce60-4c24-8338-9c0317695ba4_with_return_network" description="" esdlVersion="v2210" version="26">
+<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" name="test_case_small_network_all_optional_pipe_catalog" id="7ac09231-ce60-4c24-8338-9c0317695ba4_with_return_network" description="" esdlVersion="v2210" version="28">
   <energySystemInformation xsi:type="esdl:EnergySystemInformation" id="e64737d9-d772-4723-b092-a0b397ac00b3">
     <carriers xsi:type="esdl:Carriers" id="9dff13b9-77cd-4b99-8777-6b7680a155b6">
       <carrier xsi:type="esdl:HeatCommodity" id="7b32e287-d775-480c-b317-64ffdacf12c9" name="Heat" supplyTemperature="70.0"/>
@@ -207,7 +207,7 @@
       <asset xsi:type="esdl:Joint" name="Joint_1" id="f96d02d7-19d1-4a0b-8869-2d180f39b7e6">
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="52.042720861938854" lon="4.311695247888566"/>
         <port xsi:type="esdl:InPort" id="51852861-aeeb-461f-b8ec-08f000abc6dd" name="In" connectedTo="66590f96-a397-4d6f-9cfb-e7d34232cad6 f966bade-1fad-453f-8ec2-4062ec70bc7b" carrier="7b32e287-d775-480c-b317-64ffdacf12c9"/>
-        <port xsi:type="esdl:OutPort" id="c0eac4db-f5da-47f3-8202-8438d000bd32" name="Out" connectedTo="5f65520d-61ee-4f68-8002-271f48f1daee 578ec414-3f11-430e-a893-60ea77848ff5 2e672d8b-ee9b-4c8b-8357-58ea984ae6be c7ad4fce-efbb-4b30-9508-f71a4356ca2d" carrier="7b32e287-d775-480c-b317-64ffdacf12c9"/>
+        <port xsi:type="esdl:OutPort" id="c0eac4db-f5da-47f3-8202-8438d000bd32" name="Out" connectedTo="5f65520d-61ee-4f68-8002-271f48f1daee 578ec414-3f11-430e-a893-60ea77848ff5" carrier="7b32e287-d775-480c-b317-64ffdacf12c9"/>
       </asset>
       <asset xsi:type="esdl:Joint" name="Joint_2" id="d74db9ba-b86c-486a-8911-3ff368ae63a3">
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="52.04075678384997" lon="4.313372969627381"/>
@@ -219,27 +219,10 @@
         <port xsi:type="esdl:InPort" id="1cb923b5-2a69-46d9-874c-68d552ef5576" name="In" connectedTo="8f1bea52-e322-4d34-ad43-7d1e97243d62" carrier="7b32e287-d775-480c-b317-64ffdacf12c9"/>
         <port xsi:type="esdl:OutPort" id="a02e41ab-99f8-46d3-b2d1-be44aa5b7914" name="Out" connectedTo="7f162a30-7e41-4d7f-b011-ffcf4c1651f8" carrier="7b32e287-d775-480c-b317-64ffdacf12c9"/>
       </asset>
-      <asset xsi:type="esdl:ATES" aquiferNetToGross="1.0" name="ATES_033c" aquiferThickness="45.0" state="OPTIONAL" maxDischargeRate="11610000.0" wellCasingSize="13.0" aquiferAnisotropy="4.0" aquiferPorosity="0.3" aquiferMidTemperature="17.0" aquiferTopDepth="300.0" id="033c2598-5c1a-48b7-93b1-c746b81819ff" wellDistance="150.0" maxChargeRate="11610000.0" salinity="10000.0" aquiferPermeability="10000.0">
-        <geometry xsi:type="esdl:Point" CRS="WGS84" lat="52.04364884025295" lon="4.314751625061036"/>
-        <dataSource xsi:type="esdl:DataSource" description="This data was generated using the 'kosten_per_asset.xslx' file in the 'Kentallen' directory of WarmingUp project 1D" attribution="" name="WarmingUp factsheet: HT-ATES (high)"/>
-        <port xsi:type="esdl:InPort" id="33a9041b-dd75-42c0-94a3-584c5e374927" name="In" connectedTo="e15db059-ab19-4483-9911-7a37f0c08e42" carrier="7b32e287-d775-480c-b317-64ffdacf12c9"/>
-        <port xsi:type="esdl:OutPort" id="0117d26b-8ab1-44b5-afee-51702e431e52" name="Out" connectedTo="febc9c00-71c8-4b12-b005-28beaae24e7b" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret"/>
-        <costInformation xsi:type="esdl:CostInformation">
-          <variableOperationalCosts xsi:type="esdl:SingleValue" value="6.0" id="7a789b95-93bb-415b-abbd-4ecbb6ad60c9">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="c52334c9-bc5d-41f4-b93d-10e7b769f281" description="Cost in EUR/MWh" perUnit="WATTHOUR" perMultiplier="MEGA" unit="EURO" physicalQuantity="COST"/>
-          </variableOperationalCosts>
-          <investmentCosts xsi:type="esdl:SingleValue" value="233359.0">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="a3b5cdd9-364b-4262-bce5-4658c5f1bac9" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" unit="EURO"/>
-          </investmentCosts>
-          <installationCosts xsi:type="esdl:SingleValue" value="1000000.0" id="22528972-1920-42d8-9e0c-115f419c31d1">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="620a8529-43ec-4674-8ed3-10befaff0742" physicalQuantity="COST" description="Cost in EUR" unit="EURO"/>
-          </installationCosts>
-        </costInformation>
-      </asset>
       <asset xsi:type="esdl:Joint" name="Joint_1_ret" id="6d97700c-a3d7-4127-b64c-f08ee2e308f9">
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="52.04281086202885" lon="4.311074402665649"/>
         <port xsi:type="esdl:OutPort" id="2913e645-b027-429e-bf5d-22ace96a39fa" name="ret_port" connectedTo="dd50e603-c87c-4cdb-82bb-486ebee77255 42e9f86b-ea96-4992-bf3f-9cbae8a4a39c" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret"/>
-        <port xsi:type="esdl:InPort" id="7893125d-d82f-4fe8-aaea-5fb6afecc635" name="ret_port" connectedTo="0431b8a0-a8d1-4375-b348-37a475add47a 6b655eb1-2b66-455f-90a3-0dd6f2844fab 8271240c-cae3-4e81-8b36-d65302a4e6b4 2b341054-a732-404f-a361-d39c4cb4e271" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret"/>
+        <port xsi:type="esdl:InPort" id="7893125d-d82f-4fe8-aaea-5fb6afecc635" name="ret_port" connectedTo="0431b8a0-a8d1-4375-b348-37a475add47a 6b655eb1-2b66-455f-90a3-0dd6f2844fab" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret"/>
       </asset>
       <asset xsi:type="esdl:Joint" name="Joint_2_ret" id="e615c77a-bb75-411b-92c2-549efbdf8ec8">
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="52.04084678393997" lon="4.312746245529536"/>
@@ -395,119 +378,6 @@
           </investmentCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:HeatStorage" name="HeatStorage_74c1" id="74c13eed-9ca8-4247-bd72-a68e242d8e1b" maxDischargeRate="10000000.0" state="OPTIONAL" maxChargeRate="10000000.0" volume="500.0">
-        <geometry xsi:type="esdl:Point" lon="4.313871860504151" CRS="WGS84" lat="52.042658996032856"/>
-        <port xsi:type="esdl:InPort" id="8c09b9ff-5070-4fbc-97fe-db7a501932dc" name="In" connectedTo="636a1943-2289-4d57-a2dd-33aaa4f25b49" carrier="7b32e287-d775-480c-b317-64ffdacf12c9"/>
-        <port xsi:type="esdl:OutPort" id="cc725203-e648-490f-a12d-91fa85ee58f2" name="Out" connectedTo="a581c340-3cab-46b1-924f-c5ddc0120de6" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret"/>
-        <costInformation xsi:type="esdl:CostInformation" id="4e390bc0-04b9-4c38-af99-077d7836f877">
-          <investmentCosts xsi:type="esdl:SingleValue" value="690.0" id="40414844-ab63-452e-9558-057d61623ba9">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="a95abc37-2285-4d68-88ad-dba3e1e8aaf9" description="COST in EUR/m3" perUnit="CUBIC_METRE" physicalQuantity="COST" unit="EURO"/>
-          </investmentCosts>
-          <installationCosts xsi:type="esdl:SingleValue" value="1000000.0" id="22528972-1920-42d8-9e0c-115f419c31d1">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="620a8529-43ec-4674-8ed3-10befaff0742" physicalQuantity="COST" description="Cost in EUR" unit="EURO"/>
-          </installationCosts>
-        </costInformation>
-      </asset>
-      <asset xsi:type="esdl:Pipe" state="OPTIONAL" diameter="DN450" name="Pipe_9768" id="97684360-d920-45c2-a584-a092fdcf91f1" innerDiameter="0.4444" length="149.0" outerDiameter="0.63">
-        <geometry xsi:type="esdl:Line" CRS="WGS84">
-          <point xsi:type="esdl:Point" lon="4.311695247888566" lat="52.042720861938854"/>
-          <point xsi:type="esdl:Point" lon="4.313871860504151" lat="52.042658996032856"/>
-        </geometry>
-        <port xsi:type="esdl:InPort" id="2e672d8b-ee9b-4c8b-8357-58ea984ae6be" name="In" connectedTo="c0eac4db-f5da-47f3-8202-8438d000bd32" carrier="7b32e287-d775-480c-b317-64ffdacf12c9"/>
-        <port xsi:type="esdl:OutPort" id="636a1943-2289-4d57-a2dd-33aaa4f25b49" name="Out" connectedTo="8c09b9ff-5070-4fbc-97fe-db7a501932dc" carrier="7b32e287-d775-480c-b317-64ffdacf12c9"/>
-        <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
-          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0063">
-            <matter xsi:type="esdl:Material" thermalConductivity="52.15" name="steel" id="371c1d72-de35-4559-9b0e-47172e5d1d83"/>
-          </component>
-          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0805">
-            <matter xsi:type="esdl:Material" thermalConductivity="0.027" name="PUR" id="df30bd37-2fc4-4993-828f-1b7cf1e8202c"/>
-          </component>
-          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.006">
-            <matter xsi:type="esdl:Material" thermalConductivity="0.4" name="HDPE" id="f53de37b-a735-4b0d-b226-a6b722029a01"/>
-          </component>
-        </material>
-        <dataSource xsi:type="esdl:DataSource" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf" name="Logstor Product Catalogue Version 2020.03"/>
-        <costInformation xsi:type="esdl:CostInformation" id="6939255e-b8a1-4045-9739-74690c35fda4">
-          <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="a40165e8-88bd-49b9-81d9-298812ac0170" value="3417.9">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="d0aebc76-201b-4b2d-81fe-55269fcefe3b" description="Costs in EUR/m" perUnit="METRE" physicalQuantity="COST" unit="EURO"/>
-          </investmentCosts>
-        </costInformation>
-      </asset>
-      <asset xsi:type="esdl:Pipe" state="OPTIONAL" diameter="DN450" name="Pipe_9768_ret" id="3542e501-01ea-468b-9d4f-c1e7c67b43d9" innerDiameter="0.4444" length="192.1" outerDiameter="0.63">
-        <geometry xsi:type="esdl:Line" CRS="WGS84">
-          <point xsi:type="esdl:Point" lon="4.313871860504151" lat="52.042658996032856"/>
-          <point xsi:type="esdl:Point" lon="4.311074402665649" lat="52.04281086202885"/>
-        </geometry>
-        <port xsi:type="esdl:InPort" id="a581c340-3cab-46b1-924f-c5ddc0120de6" name="In" connectedTo="cc725203-e648-490f-a12d-91fa85ee58f2" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret"/>
-        <port xsi:type="esdl:OutPort" id="8271240c-cae3-4e81-8b36-d65302a4e6b4" name="Out" connectedTo="7893125d-d82f-4fe8-aaea-5fb6afecc635" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret"/>
-        <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
-          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0063">
-            <matter xsi:type="esdl:Material" thermalConductivity="52.15" name="steel" id="371c1d72-de35-4559-9b0e-47172e5d1d83"/>
-          </component>
-          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0805">
-            <matter xsi:type="esdl:Material" thermalConductivity="0.027" name="PUR" id="df30bd37-2fc4-4993-828f-1b7cf1e8202c"/>
-          </component>
-          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.006">
-            <matter xsi:type="esdl:Material" thermalConductivity="0.4" name="HDPE" id="f53de37b-a735-4b0d-b226-a6b722029a01"/>
-          </component>
-        </material>
-        <dataSource xsi:type="esdl:DataSource" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf" name="Logstor Product Catalogue Version 2020.03"/>
-        <costInformation xsi:type="esdl:CostInformation" id="68394efa-f98e-4fbe-9418-b5975d7c0fe7">
-          <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="a40165e8-88bd-49b9-81d9-298812ac0170" value="3417.9">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="d0aebc76-201b-4b2d-81fe-55269fcefe3b" description="Costs in EUR/m" perUnit="METRE" physicalQuantity="COST" unit="EURO"/>
-          </investmentCosts>
-        </costInformation>
-      </asset>
-      <asset xsi:type="esdl:Pipe" state="OPTIONAL" diameter="DN400" name="Pipe_352c" outerDiameter="0.63" id="352cf2f0-173e-420e-b8d7-5c226b6d8565" innerDiameter="0.3938" length="233.1">
-        <geometry xsi:type="esdl:Line" CRS="WGS84">
-          <point xsi:type="esdl:Point" lon="4.311695247888566" lat="52.042720861938854"/>
-          <point xsi:type="esdl:Point" lon="4.314751625061036" lat="52.04364884025295"/>
-        </geometry>
-        <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
-          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0063">
-            <matter xsi:type="esdl:Material" thermalConductivity="52.15" id="ae32d30b-4e0d-4470-a4f0-4ba7bd258070" name="steel"/>
-          </component>
-          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.1052">
-            <matter xsi:type="esdl:Material" thermalConductivity="0.027" id="5d591b58-2cf8-4d94-91eb-be773e1c25ee" name="PUR"/>
-          </component>
-          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0066">
-            <matter xsi:type="esdl:Material" thermalConductivity="0.4" id="8a0279cc-afbf-46fb-a590-33960ce30613" name="HDPE"/>
-          </component>
-        </material>
-        <port xsi:type="esdl:InPort" id="c7ad4fce-efbb-4b30-9508-f71a4356ca2d" name="In" connectedTo="c0eac4db-f5da-47f3-8202-8438d000bd32" carrier="7b32e287-d775-480c-b317-64ffdacf12c9"/>
-        <port xsi:type="esdl:OutPort" id="e15db059-ab19-4483-9911-7a37f0c08e42" name="Out" connectedTo="33a9041b-dd75-42c0-94a3-584c5e374927" carrier="7b32e287-d775-480c-b317-64ffdacf12c9"/>
-        <dataSource xsi:type="esdl:DataSource" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf" name="Logstor Product Catalogue Version 2020.03"/>
-        <costInformation xsi:type="esdl:CostInformation" id="ea319afa-4c85-49d6-80f6-313f6866cdc7">
-          <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="566d3f26-f85a-48b4-b06a-5fd62ac6fa61" value="2840.6">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="5b1085e4-5642-4c1d-aa7c-bfb7793d4e64" description="Costs in EUR/m" perUnit="METRE" physicalQuantity="COST" unit="EURO"/>
-          </investmentCosts>
-        </costInformation>
-      </asset>
-      <asset xsi:type="esdl:Pipe" state="OPTIONAL" diameter="DN400" name="Pipe_352c_ret" outerDiameter="0.63" id="eebe64ca-1b17-4bfa-9d0f-77129ee3716b" innerDiameter="0.3938" length="234.8">
-        <geometry xsi:type="esdl:Line" CRS="WGS84">
-          <point xsi:type="esdl:Point" lon="4.314306378364564" lat="52.043747823469246"/>
-          <point xsi:type="esdl:Point" lon="4.311178922653199" lat="52.04287676364216"/>
-        </geometry>
-        <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
-          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0063">
-            <matter xsi:type="esdl:Material" thermalConductivity="52.15" id="ae32d30b-4e0d-4470-a4f0-4ba7bd258070" name="steel"/>
-          </component>
-          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.1052">
-            <matter xsi:type="esdl:Material" thermalConductivity="0.027" id="5d591b58-2cf8-4d94-91eb-be773e1c25ee" name="PUR"/>
-          </component>
-          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0066">
-            <matter xsi:type="esdl:Material" thermalConductivity="0.4" id="8a0279cc-afbf-46fb-a590-33960ce30613" name="HDPE"/>
-          </component>
-        </material>
-        <port xsi:type="esdl:InPort" id="febc9c00-71c8-4b12-b005-28beaae24e7b" name="In" connectedTo="0117d26b-8ab1-44b5-afee-51702e431e52" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret"/>
-        <port xsi:type="esdl:OutPort" id="2b341054-a732-404f-a361-d39c4cb4e271" name="Out" connectedTo="7893125d-d82f-4fe8-aaea-5fb6afecc635" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret"/>
-        <dataSource xsi:type="esdl:DataSource" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf" name="Logstor Product Catalogue Version 2020.03"/>
-        <costInformation xsi:type="esdl:CostInformation" id="aa0df5f9-2ce9-4153-8761-a4a0288edfbf">
-          <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="566d3f26-f85a-48b4-b06a-5fd62ac6fa61" value="2840.6">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="5b1085e4-5642-4c1d-aa7c-bfb7793d4e64" description="Costs in EUR/m" perUnit="METRE" physicalQuantity="COST" unit="EURO"/>
-          </investmentCosts>
-        </costInformation>
-      </asset>
     </area>
   </instance>
   <measures xsi:type="esdl:Measures" id="a564dad8-2c39-483c-8ebe-e8fb4f0adf51" name="Pipe catalog" description="Pipe catalog">
@@ -515,7 +385,7 @@
       <asset xsi:type="esdl:Pipe" id="5ebdf710-8047-4ff1-b922-78192f667ed7" name="DN20 pipe" diameter="DN20">
         <costInformation xsi:type="esdl:CostInformation" id="b937dec4-0422-4cea-a709-331ddb8de1f7" name="Pipe costs">
           <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="a0b3509d-26ce-4984-8a2b-6d8a23169c5b" value="1000.0">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference" reference="d0aebc76-201b-4b2d-81fe-55269fcefe3b"/>
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference"/>
           </investmentCosts>
         </costInformation>
       </asset>
@@ -524,7 +394,7 @@
       <asset xsi:type="esdl:Pipe" id="38bc2665-ef35-4e62-99ad-7a65096c7274" name="DN32 pipe" diameter="DN32">
         <costInformation xsi:type="esdl:CostInformation" id="e7491e20-d6f3-481d-affe-74c3b0bb1b26" name="Pipe costs">
           <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="4083ee9f-e31a-448a-be4a-ddacb2acfd46" value="1000.0">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference" reference="d0aebc76-201b-4b2d-81fe-55269fcefe3b"/>
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference"/>
           </investmentCosts>
         </costInformation>
       </asset>
@@ -533,7 +403,7 @@
       <asset xsi:type="esdl:Pipe" id="5290f85f-6815-4501-a6d5-c979adf25e3b" name="DN40 pipe" diameter="DN40">
         <costInformation xsi:type="esdl:CostInformation" id="450c1a42-a9d0-406f-b39c-ae4fde8a28a2" name="Pipe costs">
           <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="9e2c1e41-e227-4c10-9cff-3a4860adb846" value="1000.0">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference" reference="d0aebc76-201b-4b2d-81fe-55269fcefe3b"/>
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference"/>
           </investmentCosts>
         </costInformation>
       </asset>
@@ -542,7 +412,7 @@
       <asset xsi:type="esdl:Pipe" id="c27fd92c-8542-4ec9-82a5-265e46ffc3c9" name="DN50 pipe" diameter="DN50">
         <costInformation xsi:type="esdl:CostInformation" id="6bf657ca-96b0-449b-a133-facb0bb7e82f" name="Pipe costs">
           <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="d2dcdfe6-c33b-480d-ba3c-65c422f76c31" value="1000.0">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference" reference="d0aebc76-201b-4b2d-81fe-55269fcefe3b"/>
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference"/>
           </investmentCosts>
         </costInformation>
       </asset>
@@ -551,7 +421,7 @@
       <asset xsi:type="esdl:Pipe" id="770b6d0c-ac92-4dc1-9b91-12bc51ecbf17" name="DN65 pipe" diameter="DN65">
         <costInformation xsi:type="esdl:CostInformation" id="8bb38b90-fc8f-45f8-b721-9ece13bb5484" name="Pipe costs">
           <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="4dd873c8-4271-4d7c-90ea-bb2ca0748d14" value="1000.0">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference" reference="d0aebc76-201b-4b2d-81fe-55269fcefe3b"/>
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference"/>
           </investmentCosts>
         </costInformation>
       </asset>
@@ -560,7 +430,7 @@
       <asset xsi:type="esdl:Pipe" id="f4345138-6a5d-40da-b18a-3793485f5661" name="DN80 pipe" diameter="DN80">
         <costInformation xsi:type="esdl:CostInformation" id="bdbc88d5-1600-47b7-8ad9-8434aed53afb" name="Pipe costs">
           <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="e4b726d2-d1d8-4016-b27f-90d18082b2d6" value="1000.0">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference" reference="d0aebc76-201b-4b2d-81fe-55269fcefe3b"/>
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference"/>
           </investmentCosts>
         </costInformation>
       </asset>
@@ -569,7 +439,7 @@
       <asset xsi:type="esdl:Pipe" id="8b2a4a66-7c9b-4cc3-a8d2-88eee43ee24a" name="DN100 pipe" diameter="DN100">
         <costInformation xsi:type="esdl:CostInformation" id="4e6c46df-c94e-41a0-9f87-6addb1c5fb6f" name="Pipe costs">
           <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="0471abae-9ff3-4947-850f-6a13fd052c43" value="1000.0">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference" reference="d0aebc76-201b-4b2d-81fe-55269fcefe3b"/>
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference"/>
           </investmentCosts>
         </costInformation>
       </asset>
@@ -578,7 +448,7 @@
       <asset xsi:type="esdl:Pipe" id="cb05bf3d-a3da-4690-bbd0-15ba0f54e4c1" name="DN125 pipe" diameter="DN125">
         <costInformation xsi:type="esdl:CostInformation" id="b4a8beee-be6f-4238-8858-5cc241dca6e4" name="Pipe costs">
           <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="094b92f9-c54c-4914-ab60-af45b709401a" value="1000.0">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference" reference="d0aebc76-201b-4b2d-81fe-55269fcefe3b"/>
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference"/>
           </investmentCosts>
         </costInformation>
       </asset>
@@ -587,7 +457,7 @@
       <asset xsi:type="esdl:Pipe" id="5debfd80-a97e-41ac-aff6-7ffd749a28b8" name="DN150 pipe" diameter="DN150">
         <costInformation xsi:type="esdl:CostInformation" id="ae12604c-0ae2-4369-a0e0-116ce91f5e64" name="Pipe costs">
           <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="7d71dfb9-b039-4e60-aebe-4f6c94e62058" value="1500.0">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference" reference="d0aebc76-201b-4b2d-81fe-55269fcefe3b"/>
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference"/>
           </investmentCosts>
         </costInformation>
       </asset>
@@ -596,7 +466,7 @@
       <asset xsi:type="esdl:Pipe" id="b62b15c0-c922-4c2f-a29e-1161bdabf6f5" name="DN200 pipe" diameter="DN200">
         <costInformation xsi:type="esdl:CostInformation" id="9de87662-4bab-49d9-993c-5e38c4cf5851" name="Pipe costs">
           <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="1f6dbe19-b522-46e6-a7e6-c0efc49ec9bf" value="2000.0">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference" reference="d0aebc76-201b-4b2d-81fe-55269fcefe3b"/>
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference"/>
           </investmentCosts>
         </costInformation>
       </asset>
@@ -605,7 +475,7 @@
       <asset xsi:type="esdl:Pipe" id="0899b73b-8eac-40b2-87da-9be5079704ff" name="DN250 pipe" diameter="DN250">
         <costInformation xsi:type="esdl:CostInformation" id="a1500a39-bf0b-4bc0-8b4b-b74efe891987" name="Pipe costs">
           <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="c75ef601-c027-49f7-aa1a-2535ead7f9d5" value="1000.0">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference" reference="d0aebc76-201b-4b2d-81fe-55269fcefe3b"/>
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference"/>
           </investmentCosts>
         </costInformation>
       </asset>
@@ -614,7 +484,7 @@
       <asset xsi:type="esdl:Pipe" id="0745acc4-c177-4181-a722-2e8f0fc32a71" name="DN300 pipe" diameter="DN300">
         <costInformation xsi:type="esdl:CostInformation" id="d34ee407-e512-4fe4-a9b8-abb44df3e2da" name="Pipe costs">
           <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="0b306195-3f98-4b14-9d83-6112af0b4e22" value="1000.0">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference" reference="d0aebc76-201b-4b2d-81fe-55269fcefe3b"/>
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference"/>
           </investmentCosts>
         </costInformation>
       </asset>
@@ -623,7 +493,7 @@
       <asset xsi:type="esdl:Pipe" id="c0b8ab88-c7c3-4188-ac2d-9ee3658cf582" name="DN350 pipe" diameter="DN350">
         <costInformation xsi:type="esdl:CostInformation" id="ba67d991-e732-41b8-ae21-ffe968d631f3" name="Pipe costs">
           <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="84263e3e-fb55-4164-8cd7-6a158a7305c0" value="1000.0">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference" reference="d0aebc76-201b-4b2d-81fe-55269fcefe3b"/>
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference"/>
           </investmentCosts>
         </costInformation>
       </asset>
@@ -632,7 +502,7 @@
       <asset xsi:type="esdl:Pipe" id="bc485f99-d368-40be-8e76-94b7c0f3642c" name="DN400 pipe" diameter="DN400">
         <costInformation xsi:type="esdl:CostInformation" id="4bb27801-31aa-43ea-953b-9a074306bd19" name="Pipe costs">
           <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="63009710-c67a-4ee6-a2a3-c2dfc95bed5a" value="2840.6">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference" reference="d0aebc76-201b-4b2d-81fe-55269fcefe3b"/>
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference"/>
           </investmentCosts>
         </costInformation>
       </asset>
@@ -641,7 +511,7 @@
       <asset xsi:type="esdl:Pipe" id="96e39665-1824-4e60-9c33-4089aeeebf24" name="DN450 pipe" diameter="DN450">
         <costInformation xsi:type="esdl:CostInformation" id="4c31e631-7eda-40ac-b1bf-7c4538187170" name="Pipe costs">
           <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="e3dfe611-3c1f-461f-a8ce-e73830f97ab8" value="6835.8">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference" reference="d0aebc76-201b-4b2d-81fe-55269fcefe3b"/>
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference"/>
           </investmentCosts>
         </costInformation>
       </asset>
@@ -650,7 +520,7 @@
       <asset xsi:type="esdl:Pipe" id="0d0ae1e2-fe51-4f2a-9a00-58cce4fcae72" name="DN500 pipe" diameter="DN500">
         <costInformation xsi:type="esdl:CostInformation" id="b29bc41d-d188-4d4c-b88c-e863066d50fe" name="Pipe costs">
           <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="73b986ff-b2ad-4906-9d97-ffdc6e784292" value="1000.0">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference" reference="d0aebc76-201b-4b2d-81fe-55269fcefe3b"/>
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference"/>
           </investmentCosts>
         </costInformation>
       </asset>
@@ -659,7 +529,7 @@
       <asset xsi:type="esdl:Pipe" id="31f0e5ac-d3f3-4986-887b-1785791a64b5" name="DN600 pipe" diameter="DN600">
         <costInformation xsi:type="esdl:CostInformation" id="325eea1d-4955-4755-9d9c-6158b72602c2" name="Pipe costs">
           <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="5a31d35d-c7ab-472c-a02c-9e7195497c99" value="1000.0">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference" reference="d0aebc76-201b-4b2d-81fe-55269fcefe3b"/>
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference"/>
           </investmentCosts>
         </costInformation>
       </asset>
@@ -668,7 +538,7 @@
       <asset xsi:type="esdl:Pipe" id="ee559a71-4bf2-4ba9-add8-d81b91b3878c" name="DN700 pipe" diameter="DN700">
         <costInformation xsi:type="esdl:CostInformation" id="bdc73021-3a82-4a3f-9169-156ca8cabc18" name="Pipe costs">
           <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="d84a8fbd-cd54-4f7f-9089-510c2d295f34" value="1000.0">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference" reference="d0aebc76-201b-4b2d-81fe-55269fcefe3b"/>
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference"/>
           </investmentCosts>
         </costInformation>
       </asset>
@@ -677,7 +547,7 @@
       <asset xsi:type="esdl:Pipe" id="39e2d0dd-2f5c-48b0-aa13-40f8eaa356a7" name="DN800 pipe" diameter="DN800">
         <costInformation xsi:type="esdl:CostInformation" id="112e1254-1f85-43ae-9828-36e2988145ba" name="Pipe costs">
           <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="fa8c1faf-bd67-4cc6-885b-efa93966f5d7" value="1000.0">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference" reference="d0aebc76-201b-4b2d-81fe-55269fcefe3b"/>
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference"/>
           </investmentCosts>
         </costInformation>
       </asset>
@@ -686,7 +556,7 @@
       <asset xsi:type="esdl:Pipe" id="1ea04211-4b6d-4b76-a17f-c31889161443" name="DN900 pipe" diameter="DN900">
         <costInformation xsi:type="esdl:CostInformation" id="87050d47-a96b-436f-bbcf-9f312d22c4f8" name="Pipe costs">
           <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="efa84b19-7a15-4379-8476-56dc2eaaeb6f" value="1000.0">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference" reference="d0aebc76-201b-4b2d-81fe-55269fcefe3b"/>
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference"/>
           </investmentCosts>
         </costInformation>
       </asset>
@@ -695,7 +565,7 @@
       <asset xsi:type="esdl:Pipe" id="b7f2776f-bea0-4828-8c87-6f9516665c94" name="DN1000 pipe" diameter="DN1000">
         <costInformation xsi:type="esdl:CostInformation" id="9be25611-26e8-44e6-bb31-cf0def7e3790" name="Pipe costs">
           <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="777c6b1b-2d1d-49a1-a4fb-902ad323b6b2" value="1000.0">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference" reference="d0aebc76-201b-4b2d-81fe-55269fcefe3b"/>
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference"/>
           </investmentCosts>
         </costInformation>
       </asset>
@@ -704,7 +574,7 @@
       <asset xsi:type="esdl:Pipe" id="481b3dd1-f399-4c7a-bf9b-b9d0dcccc818" name="DN1100 pipe" diameter="DN1100">
         <costInformation xsi:type="esdl:CostInformation" id="49f32fc9-0507-4e2a-94d6-a4ef1f7f7391" name="Pipe costs">
           <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="212b6b9b-a3e5-4fba-bba4-fbc4ecccca86" value="1000.0">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference" reference="d0aebc76-201b-4b2d-81fe-55269fcefe3b"/>
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference"/>
           </investmentCosts>
         </costInformation>
       </asset>
@@ -713,7 +583,7 @@
       <asset xsi:type="esdl:Pipe" id="632709a1-ca6f-4eec-8236-e7f37b0d9d64" name="DN1200 pipe" diameter="DN1200">
         <costInformation xsi:type="esdl:CostInformation" id="7dac353e-68de-4471-8ec8-b2b9ad903b1e" name="Pipe costs">
           <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="e82780a1-cbb6-473b-9a37-633a4c37d027" value="1000.0">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference" reference="d0aebc76-201b-4b2d-81fe-55269fcefe3b"/>
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference"/>
           </investmentCosts>
         </costInformation>
       </asset>
