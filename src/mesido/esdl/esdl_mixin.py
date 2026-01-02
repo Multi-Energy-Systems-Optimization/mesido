@@ -90,7 +90,7 @@ class ESDLMixin(
 
         We create a dict with all possible pipe classes for the optional pipes to later add them
         to the optimization problem. Additionally, we change the investment cost figures if an
-        asset pipe measure is provided. This is done in this Mixin as we here use the information
+        asset pipe template is provided. This is done in this Mixin as we here use the information
         of the EDR database which is linked to ESDL and the Mapeditor.
 
         Parameters
