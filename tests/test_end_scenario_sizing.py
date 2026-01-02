@@ -375,7 +375,7 @@ class TestEndScenarioSizing(TestCase):
         solution = run_end_scenario_sizing(
             EndScenarioSizing,
             base_folder=base_folder,
-            esdl_file_name="test_case_small_network_all_optional_pipe_catalog" ".esdl",
+            esdl_file_name="test_case_small_network_all_optional_pipe_catalog.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
@@ -430,7 +430,7 @@ class TestEndScenarioSizing(TestCase):
             True,
         )
 
-        # Test 3: If the costs that are used in the problem match the costs from the ESDL MEasures
+        # Test 3: If the costs that are used in the problem match the costs from the ESDL Measures
         # Optimized pipe class map of diameter
         optimized_pipe_classes_dia_map = {
             solution.get_optimized_pipe_class(pipe)
