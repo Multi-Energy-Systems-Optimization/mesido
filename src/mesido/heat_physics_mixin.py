@@ -1506,6 +1506,12 @@ class HeatPhysicsMixin(
 
             discharge = self.state(f"{s}.Q")
             heat_out = self.state(f"{s}.HeatOut.Heat")
+            #somehow the ensemblemember dependent path constraint is only allowed in the bounds of
+            # the problem, e.g. the upper or lower bound. For non path constraints, it is allowed
+            # in the equation.
+            heat_flow = self.state(f"{s}.Heat_flow")
+            max_heat = parameters[f"{s}.Max_heat"]
+            constraints.append((heat_flow/heat_nominal, -np.inf, max_heat/heat_nominal))
 
             constraint_nominal = (heat_nominal * cp * rho * dt * q_nominal) ** 0.5
 
@@ -3754,6 +3760,13 @@ class HeatPhysicsMixin(
         are indexed within the constraint formulation.
         """
         constraints = super().constraints(ensemble_member)
+
+        # parameters = self.parameters(ensemble_member)
+        # for s in self.energy_system_components.get("heat_source", []):
+        #     heat_nominal = parameters[f"{s}.Heat_nominal"]
+        #     heat_flow = self.__state_vector_scaled(f"{s}.Heat_flow", ensemble_member)
+        #     max_heat = parameters[f"{s}.Max_heat"]
+        #     constraints.append(((heat_flow-max_heat)/heat_nominal, -np.inf, 0.0))
 
         if self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
             # constraints.extend(self._hn_pipe_head_loss_constraints(ensemble_member))

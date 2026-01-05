@@ -193,6 +193,39 @@ class TestWarmingUpUnitCases(TestCase):
                 atol=1.0e-6,
             )
 
+    def test_2a_ensemble(self):
+        """
+        This is the most basic check where we have a simple network and check for the basic physics.
+        This simple network includes two source, pipes, nodes, and 3 demands.
+
+        Checks;
+        - Demand matching
+        - Energy conservation
+        - Heat to discharge
+
+        """
+        import models.unit_cases.case_2a_ensemble.src.run_2a as run_2a
+        from models.unit_cases.case_2a_ensemble.src.run_2a import HeatProblemEnsemble
+
+        base_folder = Path(run_2a.__file__).resolve().parent.parent
+
+        # Just a "problem is not infeasible"
+        heat_problem = run_esdl_mesido_optimization(
+            HeatProblemEnsemble,
+            base_folder=base_folder,
+            esdl_file_name="2a.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.csv",
+        )
+
+        results = {}
+        for ensemble_member in range(heat_problem.ensemble_size):
+            results[ensemble_member] = heat_problem.extract_results(ensemble_member=ensemble_member)
+
+        demand_matching_test(heat_problem, heat_problem.extract_results())
+        energy_conservation_test(heat_problem, heat_problem.extract_results())
+        heat_to_discharge_test(heat_problem, heat_problem.extract_results())
 
 if __name__ == "__main__":
 

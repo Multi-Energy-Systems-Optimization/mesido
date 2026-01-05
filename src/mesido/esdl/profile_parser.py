@@ -112,7 +112,8 @@ class BaseProfileReader:
                         "power"
                     ]
                     if profile is not None:
-                        values = profile
+                        correction = 1-ensemble_member * 0.1
+                        values = profile *correction
                     else:
                         if "heat_demand" not in component_type:
                             # We don't set a default profile for source targets
@@ -639,6 +640,8 @@ class ProfileReaderFromFile(BaseProfileReader):
         carrier_properties: Dict[str, Dict],
         ensemble_size: int,
     ) -> None:
+        #TODO: this data should be loaded for the different ensemble members if they each have
+        # their own profile.
         data = pd.read_csv(self._file_path)
 
         if len(data.filter(like="Unnamed").columns) > 0:

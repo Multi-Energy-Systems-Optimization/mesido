@@ -1280,6 +1280,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         modifiers = dict(
             Heat_source=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
+            Max_heat=max_supply,
             **self._generic_modifiers(asset),
             **self._generic_heat_modifiers(0.0, max_supply, q_nominal),
             **self._supply_return_temperature_modifiers(asset),
