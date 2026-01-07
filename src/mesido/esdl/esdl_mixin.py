@@ -27,6 +27,8 @@ from mesido.qth_not_maintained.qth_mixin import QTHMixin
 
 import numpy as np
 
+from pyecore.valuecontainer import EOrderedSet
+
 import rtctools.data.pi as pi
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
@@ -326,8 +328,8 @@ class ESDLMixin(
             )
             if len(pipe_measures.items()) > 0:
                 pipe_diameter_cost_map = {
-                    str(pipe.attributes["asset"][0].diameter): pipe.attributes["asset"][
-                        0
+                    str(pipe.attributes["asset"].diameter): pipe.attributes[
+                        "asset"
                     ].costInformation.investmentCosts.value
                     for pipe in pipe_measures.values()
                 }
@@ -809,7 +811,20 @@ class ESDLMixin(
     ) -> Dict[str, Asset]:
         filtered_assets = dict()
         for asset_id, asset in asset_measures.items():
-            asset_type = asset.attributes["asset"][0]
+
+            if isinstance(asset.attributes["asset"], EOrderedSet):
+                if len(asset.attributes["asset"]) > 1:
+                    logger.warning(
+                        f"Measure named {asset.name} should contain only Pipe asset;"
+                        "any non-Pipe assets have been removed from measure. Only 1st"
+                        "pipe asset is kept in the measure."
+                    )
+                for a in asset.attributes["asset"]:
+                    if not isinstance(a, getattr(esdl, filter_type)):
+                        asset.attributes["asset"].remove(a)
+                asset.attributes["asset"] = asset.attributes["asset"][0]
+
+            asset_type = asset.attributes["asset"]
             if isinstance(asset_type, getattr(esdl, filter_type)):
                 filtered_assets[asset_id] = asset
 

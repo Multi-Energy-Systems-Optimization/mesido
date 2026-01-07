@@ -97,12 +97,20 @@ class BaseESDLParser:
         except AttributeError:
             asset_measures = None
 
+        # Check if the ESDL has asset templates
+        try:
+            asset_templates = list(self._energy_system.templates.eAllContents())
+        except AttributeError:
+            asset_templates = None
+
         # loop through assets
         for el in self._energy_system.eAllContents():
             # If asset measures exist, collect that in a different dictionary, to be used later in
             # esdl_mixin to update that information
-            if asset_measures is not None and el in asset_measures:
-                if isinstance(el, esdl.Measure):
+            if (asset_measures is not None and el in asset_measures) or (
+                asset_templates is not None and el in asset_templates
+            ):
+                if isinstance(el, esdl.Measure) or isinstance(el, esdl.AssetTemplate):
                     asset_type = el.__class__.__name__
                     # Note that e.g. el.__dict__['length'] does not work to get the length of a
                     # pipe.
