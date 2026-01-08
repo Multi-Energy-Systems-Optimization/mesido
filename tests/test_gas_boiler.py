@@ -33,16 +33,14 @@ class TestGasBoiler(TestCase):
             np.testing.assert_allclose(installation_cost, results[f"{asset}__installation_cost"])
 
             # variable operational cost
-            timesteps_hr = np.diff(solution.times()) / 3600
+            timesteps_hr = np.diff(solution.times())
             variable_operational_cost = 0.0
             var_op_costs = costs_esdl_asset.variableOperationalCosts.value / 1.0e6
-            efficiency = esdl_asset.attributes["efficiency"]
             for ii in range(1, len(solution.times())):
                 variable_operational_cost += (
                     var_op_costs
-                    * results[f"{asset}.Heat_flow"][ii]
+                    * results[f"{asset}.Gas_demand_volumetric_flow_normal"][ii]
                     * timesteps_hr[ii - 1]
-                    / efficiency
                 )
             np.testing.assert_allclose(
                 variable_operational_cost, results[f"{asset}__variable_operational_cost"]

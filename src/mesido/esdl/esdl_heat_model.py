@@ -1,4 +1,7 @@
 import ast
+
+import CoolProp as cP
+
 import inspect
 import logging
 import math
@@ -15,6 +18,7 @@ from mesido.esdl.asset_to_component_base import (
 )
 from mesido.esdl.common import Asset
 from mesido.esdl.esdl_model_base import _ESDLModelBase
+from mesido.network_common import NetworkSettings
 from mesido.potential_errors import MesidoAssetIssueType, get_potential_errors
 from mesido.pycml.component_library.milp import (
     ATES,
@@ -2430,6 +2434,40 @@ class AssetToHeatComponent(_AssetToComponentBase):
         assert max_supply > 0.0
 
         _, modifiers = self.convert_heat_source(asset)
+        density = (
+            cP.CoolProp.PropsSI(
+                "D",
+                "T",
+                273.15 + 25,  # temperture in k
+                "P",
+                8 * 1.0e5,  # pressure pa
+                NetworkSettings.NETWORK_COMPOSITION_GAS,
+            )
+            * 1.0e3
+        )  # to convert from kg/m3 to g/m3
+
+        density_normal = (
+            cP.CoolProp.PropsSI(
+                "D",
+                "T",
+                273.15 + 0,  # temperture in k
+                "P",
+                1 * 1.0e5,  # pressure pa
+                NetworkSettings.NETWORK_COMPOSITION_GAS,
+            )
+            * 1.0e3
+        )  # to convert from kg/m3 to g/m3
+
+        energy_content = 31.68 * 10.0**6 / (density / 1000)
+        q_nominal_gas = 0.5  # Todo: check Q_nominal_gas later to find the best way of defining
+        modifiers.update(
+            dict(
+                density=density,
+                density_normal=density_normal,
+                energy_content=energy_content,
+                Q_nominal_gas=q_nominal_gas,
+            )
+        )
         if len(asset.in_ports) == 1:
             return HeatSourceGas, modifiers
 
