@@ -1181,7 +1181,7 @@ class ScenarioOutput:
                     port, port_prim, port_sec = 3 * [None]
                     if isinstance(asset, esdl.Transport) or isinstance(asset, esdl.Consumer):
                         port = [port for port in asset.port if isinstance(port, esdl.InPort)][0]
-                    elif isinstance(asset, esdl.Producer):
+                    elif isinstance(asset, esdl.Producer) or isinstance(asset, esdl.ElectricBoiler):
                         port = [port for port in asset.port if isinstance(port, esdl.OutPort)][0]
                     elif isinstance(asset, esdl.Conversion):
                         primary_inports = [
