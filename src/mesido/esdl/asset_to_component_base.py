@@ -201,7 +201,7 @@ class _AssetToComponentBase:
         "ATES": "ates",
         "Battery": "electricity_storage",
         "Bus": "electricity_node",
-        "ElectricBoiler": "elec_boiler",
+        "ElectricBoiler": "heat_source_elec",
         "ElectricityCable": "electricity_cable",
         "ElectricityDemand": "electricity_demand",
         "ElectricityProducer": "electricity_source",
@@ -309,6 +309,7 @@ class _AssetToComponentBase:
         "GasDemand": "gas_demand",
         "GasStorage": "gas_tank_storage",
         "Electrolyzer": "electrolyzer",
+        "ElectricBoiler": "heat_source",
     }
 
     COST_ATTRIBUTE_TO_STRING = {
@@ -1017,7 +1018,9 @@ class _AssetToComponentBase:
                     if q_nominal is not None:
                         self._set_q_nominal(asset, q_nominal)
                         return q_nominal
-        elif len(asset.in_ports) == 2 and len(asset.out_ports) == 1:  # for gas_boiler or e_boiler
+        elif (
+            len(asset.in_ports) == 2 and len(asset.out_ports) == 1
+        ):  # for gas_boiler or elec_heat_source_elec
             q_nominals = {}
             try:
                 for port in asset.in_ports:

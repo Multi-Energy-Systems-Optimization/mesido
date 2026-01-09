@@ -1035,6 +1035,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
             # ToDo: Currently the variable operational cost unit for gas boiler is euro/Wh_gas
             # but this can be changed to euro/Nm3
+            nominator_vector = heat_source
             denominator = 1.0
             if s in self.energy_system_components.get(
                 "air_water_heat_pump", []
@@ -1042,11 +1043,18 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 denominator = parameters[f"{s}.cop"]
             if s in self.energy_system_components.get("gas_boiler", []):
                 denominator = parameters[f"{s}.efficiency"]
+            if s in [
+                *self.energy_system_components.get("heat_source_elec", []),
+                *self.energy_system_components.get("elec_heat_source_elec", []),
+            ]:
+                nominator_vector = self.__state_vector_scaled(
+                    f"{s}.Power_consumed", ensemble_member
+                )  # [W]
             sum = 0.0
             for i in range(1, len(self.times())):
                 sum += (
                     variable_operational_cost_coefficient
-                    * heat_source[i]
+                    * nominator_vector[i]
                     * timesteps[i - 1]
                     / denominator
                 )

@@ -16,16 +16,52 @@ from utils_tests import (
 
 
 class TestElecBoiler(TestCase):
-    def test_elec_boiler_elec(self):
+
+    def asset_cost_calculation_tests(self, solution, results):
+        # Check the cost components of GasHeater
+        for asset in [
+            *solution.energy_system_components.get("heat_source", []),
+        ]:
+            esdl_asset = solution.esdl_assets[solution.esdl_asset_name_to_id_map[f"{asset}"]]
+            costs_esdl_asset = esdl_asset.attributes["costInformation"]
+
+            # investment cost
+            investment_cost_info = costs_esdl_asset.investmentCosts.value
+            investment_cost = investment_cost_info * results[f"{asset}__max_size"] / 1.0e6
+            np.testing.assert_allclose(
+                investment_cost, results[f"{asset}__investment_cost"], atol=1.0e-7
+            )
+
+            # installation cost
+            installation_cost = costs_esdl_asset.installationCosts.value
+            np.testing.assert_allclose(installation_cost, results[f"{asset}__installation_cost"])
+
+            # variable operational cost
+            timesteps_hr = np.diff(solution.times()) / 3600.0
+            variable_operational_cost = 0.0
+            var_op_costs = costs_esdl_asset.variableOperationalCosts.value
+            for ii in range(1, len(solution.times())):
+                variable_operational_cost += (
+                    var_op_costs
+                    * results[f"{asset}.Power_consumed"][ii]
+                    * timesteps_hr[ii - 1]
+                    / 1e6
+                )
+            np.testing.assert_allclose(
+                variable_operational_cost, results[f"{asset}__variable_operational_cost"]
+            )
+
+    def test_elec_heat_source_elec(self):
         """
-        This tests checks the elec boiler for the standard checks and the energy conservation over
-        the commodity change.
+        This tests checks the elec heat sourc elec for the standard checks and the energy
+        conservation over the commodity change.
 
         Checks:
         1. demand is matched
         2. energy conservation in the network
         3. heat to discharge
         4. energy conservation over the heat and electricity commodity
+        5. ElectricBoiler cost components
         """
         import models.source_pipe_sink.src.double_pipe_heat as example
         from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
@@ -55,6 +91,52 @@ class TestElecBoiler(TestCase):
             * results["ElectricBoiler_9aab.Power_consumed"],
             results["ElectricBoiler_9aab.Heat_source"] + 1.0e-6,
         )
+
+        # Check the cost components of ElectricBoiler
+        self.asset_cost_calculation_tests(heat_problem, results)
+
+    def test_heat_source_elec(self):
+        """
+        This tests checks the heat sourc elec for the standard checks and the energy conservation
+        over the commodity change.
+
+        Checks:
+        1. demand is matched
+        2. energy conservation in the network
+        3. heat to discharge
+        4. energy conservation over the heat and electricity commodity
+        5. ElectricBoiler cost components
+        """
+        import models.source_pipe_sink.src.double_pipe_heat as example
+        from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        heat_problem = run_esdl_mesido_optimization(
+            SourcePipeSink,
+            base_folder=base_folder,
+            esdl_file_name="sourcesink_witheboiler_no_elec.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.csv",
+        )
+        results = heat_problem.extract_results()
+        parameters = heat_problem.parameters(0)
+
+        demand_matching_test(heat_problem, results)
+        energy_conservation_test(heat_problem, results)
+        heat_to_discharge_test(heat_problem, results)
+        electric_power_conservation_test(heat_problem, results)
+
+        np.testing.assert_array_less(0.0, results["ElectricBoiler_9aab.Heat_source"])
+        np.testing.assert_array_less(
+            parameters["ElectricBoiler_9aab.efficiency"]
+            * results["ElectricBoiler_9aab.Power_consumed"],
+            results["ElectricBoiler_9aab.Heat_source"] + 1.0e-6,
+        )
+
+        # Check the cost components of ElectricBoiler
+        self.asset_cost_calculation_tests(heat_problem, results)
 
     def test_air_water_hp_elec(self):
         """
@@ -106,5 +188,6 @@ class TestElecBoiler(TestCase):
 
 if __name__ == "__main__":
     TestElecBoiler = TestElecBoiler()
-    TestElecBoiler.test_elec_boiler_elec()
+    TestElecBoiler.test_elec_heat_source_elec()
+    TestElecBoiler.test_heat_source_elec()
     TestElecBoiler.test_air_water_hp_elec()

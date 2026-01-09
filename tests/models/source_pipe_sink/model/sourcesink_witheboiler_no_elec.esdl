@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" version="7" id="5d539f68-f98e-466b-9ff5-b908a211e0ab_with_return_network_with_return_network" name="sourcesink_witheboiler" description="" esdlVersion="v2401">
+<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" version="7" id="5d539f68-f98e-466b-9ff5-b908a211e0ab_with_return_network_with_return_network" name="sourcesink_witheboiler_no_elec" description="" esdlVersion="v2401">
   <instance xsi:type="esdl:Instance" name="Untitled instance" id="90e7e098-038e-4462-89fe-a8852c501753">
     <area xsi:type="esdl:Area" id="4fd1adc2-5371-4ab7-806a-b40e49d127e9" name="Untitled area">
       <asset xsi:type="esdl:HeatingDemand" id="f6d5923d-ba9a-409d-80a0-26f73b2a574b" power="10000000.0" name="demand">
@@ -40,15 +40,10 @@
           <point xsi:type="esdl:Point" lat="52.086558294989445" CRS="WGS84" lon="4.386013537838319"/>
         </geometry>
       </asset>
-      <asset xsi:type="esdl:ElectricityProducer" id="4dde18cf-fd73-4483-91dc-d502f44c8a67" power="10000000.0" name="ElectricityProducer_4dde">
-        <port xsi:type="esdl:OutPort" id="53bc51c4-4ac8-497f-ae55-3ccfc3ae860d" name="Out" carrier="0e237e2a-00d1-4c6c-b966-9c9b8d9657f8" connectedTo="16d473f6-c140-4977-9398-4ac82de22c9c"/>
-        <geometry xsi:type="esdl:Point" lat="52.08653422049524" CRS="WGS84" lon="4.3792855739593515"/>
-      </asset>
       <asset xsi:type="esdl:ElectricBoiler" efficiency="0.9" id="9aabc314-27d2-483b-8541-0f50610c24e0" power="10000000.0" name="ElectricBoiler_9aab">
         <port xsi:type="esdl:InPort" id="0bd3861f-ee02-42ef-9d4c-2132f33cba03" name="In" connectedTo="0f11bb2d-fb28-4f9d-8992-8d5901f579d7" carrier="435a0034-fab0-4e7e-9a17-edf8de9a2b11_ret"/>
         <port xsi:type="esdl:OutPort" id="25676f69-ff77-47e0-8143-53b58ae4fb44" name="Out" connectedTo="3b5636b1-7b14-46bd-bb27-c0718350b418" carrier="435a0034-fab0-4e7e-9a17-edf8de9a2b11"/>
-        <port xsi:type="esdl:InPort" id="f37f31dc-502a-49cd-88b7-5f71671f2200" name="ElecPort" connectedTo="8303c87a-d294-4504-b8b9-17696494ebf3" carrier="0e237e2a-00d1-4c6c-b966-9c9b8d9657f8"/>
-        <geometry xsi:type="esdl:Point" lat="52.08646829489945" CRS="WGS84" lon="4.3854761123657235"/>
+        <geometry xsi:type="esdl:Point" lat="52.08646829489945" lon="4.3854761123657235"/>
         <costInformation xsi:type="esdl:CostInformation" id="e388f4f0-4845-4e50-ba33-7db3acfe68c9">
           <investmentCosts xsi:type="esdl:SingleValue" id="daf580c2-6972-4e23-bfb8-76833f65eb56" value="10.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR/MW" id="e3ce42cb-d013-4779-9913-676c03b8fb75" unit="EURO" perMultiplier="MEGA" perUnit="WATT"/>
@@ -61,21 +56,12 @@
           </variableOperationalCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:ElectricityCable" length="423.0" capacity="10000000.0" id="ce45d623-9749-42d2-b6e0-de0f09d1884b" name="ElectricityCable_ce45">
-        <port xsi:type="esdl:InPort" id="16d473f6-c140-4977-9398-4ac82de22c9c" name="In" connectedTo="53bc51c4-4ac8-497f-ae55-3ccfc3ae860d" carrier="0e237e2a-00d1-4c6c-b966-9c9b8d9657f8"/>
-        <port xsi:type="esdl:OutPort" id="8303c87a-d294-4504-b8b9-17696494ebf3" name="Out" connectedTo="f37f31dc-502a-49cd-88b7-5f71671f2200" carrier="0e237e2a-00d1-4c6c-b966-9c9b8d9657f8"/>
-        <geometry xsi:type="esdl:Line" CRS="WGS84">
-          <point xsi:type="esdl:Point" lat="52.08653422049524" lon="4.3792855739593515"/>
-          <point xsi:type="esdl:Point" lat="52.08646829489945" lon="4.3854761123657235"/>
-        </geometry>
-      </asset>
     </area>
   </instance>
   <energySystemInformation xsi:type="esdl:EnergySystemInformation" id="11f4eafa-7fbc-4d82-b346-e893326d2c30">
     <carriers xsi:type="esdl:Carriers" id="eafbd8f4-1fde-4bb5-8dce-fdb74a1a1097">
       <carrier xsi:type="esdl:HeatCommodity" supplyTemperature="70.0" name="heat" id="435a0034-fab0-4e7e-9a17-edf8de9a2b11"/>
       <carrier xsi:type="esdl:HeatCommodity" returnTemperature="40.0" name="heat_ret" id="435a0034-fab0-4e7e-9a17-edf8de9a2b11_ret"/>
-      <carrier xsi:type="esdl:ElectricityCommodity" voltage="10000.0" name="elec" id="0e237e2a-00d1-4c6c-b966-9c9b8d9657f8"/>
     </carriers>
   </energySystemInformation>
 </esdl:EnergySystem>

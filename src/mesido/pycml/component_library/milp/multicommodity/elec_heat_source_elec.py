@@ -1,4 +1,3 @@
-from mesido.pycml import Variable
 from mesido.pycml.component_library.milp.electricity.electricity_base import ElectricityPort
 from mesido.pycml.component_library.milp.heat.heat_source_elec import HeatSourceElec
 from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
@@ -32,18 +31,11 @@ class ElecHeatSourceElec(HeatSourceElec):
         self.id_mapping_carrier = -1
 
         self.min_voltage = nan
-        self.elec_power_nominal = nan
-        self.efficiency = nan
 
         # Assumption: heat in/out and added is nonnegative
         # Heat in the return (i.e. cold) line is zero
         self.add_variable(ElectricityPort, "ElectricityIn")
-        self.add_variable(Variable, "Power_consumed", min=0.0, nominal=self.elec_power_nominal)
 
         self.add_equation(
             ((self.ElectricityIn.Power - self.Power_consumed) / self.elec_power_nominal)
-        )
-
-        self.add_equation(
-            ((self.Power_consumed * self.efficiency - self.Heat_source) / self.Heat_nominal)
         )
