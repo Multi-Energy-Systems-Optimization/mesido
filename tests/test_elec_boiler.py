@@ -16,7 +16,7 @@ from utils_tests import (
 
 
 class TestElecBoiler(TestCase):
-    def test_elec_boiler(self):
+    def test_elec_boiler_elec(self):
         """
         This tests checks the elec boiler for the standard checks and the energy conservation over
         the commodity change.
@@ -106,5 +106,5 @@ class TestElecBoiler(TestCase):
 
 if __name__ == "__main__":
     TestElecBoiler = TestElecBoiler()
-    TestElecBoiler.test_elec_boiler()
+    TestElecBoiler.test_elec_boiler_elec()
     TestElecBoiler.test_air_water_hp_elec()

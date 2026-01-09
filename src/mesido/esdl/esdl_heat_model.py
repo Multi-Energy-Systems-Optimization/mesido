@@ -25,7 +25,7 @@ from mesido.pycml.component_library.milp import (
     ColdDemand,
     Compressor,
     ControlValve,
-    ElecBoiler,
+    ElecHeatSourceElec,
     ElectricityCable,
     ElectricityDemand,
     ElectricityNode,
@@ -2461,7 +2461,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         )
         return GasBoiler, modifiers
 
-    def convert_elec_boiler(self, asset: Asset) -> Tuple[Union[ElecBoiler, HeatSource], MODIFIERS]:
+    def convert_elec_boiler(self, asset: Asset) -> Tuple[Union[ElecHeatSourceElec, HeatSource], MODIFIERS]:
         """
         This function converts the ElectricBoiler object in esdl to a set of modifiers that can be
         used in a pycml object.
@@ -2538,7 +2538,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._get_cost_figure_modifiers(asset),
         )
 
-        return ElecBoiler, modifiers
+        return ElecHeatSourceElec, modifiers
 
     def convert_air_water_heat_pump_elec(
         self, asset: Asset

@@ -1,22 +1,17 @@
 from mesido.pycml import Variable
 from mesido.pycml.component_library.milp.electricity.electricity_base import ElectricityPort
-from mesido.pycml.component_library.milp.heat.heat_source import HeatSource
+from mesido.pycml.component_library.milp.heat.heat_source_elec import HeatSourceElec
 from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 from numpy import nan
 
 
 @add_variables_documentation_automatically
-class ElecBoiler(HeatSource):
+class ElecHeatSourceElec(HeatSourceElec):
     """
-    The e-boiler component is there to insert thermal power (Heat) into the network.
-
-    The heat to discharge constraints are set in the HeatMixin. We enforce that the outgoing
-    temperature of the source matches the absolute thermal power, Q * cp * rho * T_sup == Heat,
-    similar as with the demands. This allows us to guarantee that the flow can always carry, as
-    the heat losses further downstream in the network are over-estimated with T_ret where in
-    reality this temperature drops. It also implicitly assumes that the temperature drops in the
-    network are small and thus satisfy minimum temperature requirements.
+    The elec heat source elec component is used to model the source behaviour of e-boilers
+    with electricity input port. It functions as a heat source gas that supplies thermal energy
+    to the connected heat network. Besides, it models the electricity consumed by the asset.
 
     Variables created:
         {add_variable_names_for_documentation_here}
@@ -32,7 +27,7 @@ class ElecBoiler(HeatSource):
             **modifiers,
         )
 
-        self.component_subtype = "elec_boiler"
+        self.component_subtype = "elec_heat_source_elec"
 
         self.id_mapping_carrier = -1
 
