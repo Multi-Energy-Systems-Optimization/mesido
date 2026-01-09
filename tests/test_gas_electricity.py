@@ -193,17 +193,19 @@ class TestGasElect(TestCase):
             timesteps_hr = np.diff(solution.times()) / 3600
             variable_operational_cost = 0.0
             if asset in solution.energy_system_components["heat_source"]:
-                var_op_costs = costs_esdl_asset.variableOperationalCosts.value / 1.0e6
-                assert var_op_costs > 0
                 nominator_vector = results[f"{asset}.Heat_flow"]
                 factor = 1.0
                 if asset in [
                     *solution.energy_system_components.get("air_water_heat_pump_elec", []),
                 ]:
+                    var_op_costs = costs_esdl_asset.variableOperationalCosts.value / 1.0e6
+                    assert var_op_costs > 0
                     factor = esdl_asset.attributes["COP"]
                 if asset in [
                     *solution.energy_system_components.get("gas_heat_source_gas", []),
                 ]:
+                    var_op_costs = costs_esdl_asset.variableOperationalCosts.value
+                    assert var_op_costs > 0
                     nominator_vector = results[f"{asset}.Gas_demand_volumetric_flow_normal"] * 3600
                 for ii in range(1, len(solution.times())):
                     variable_operational_cost += (

@@ -60,7 +60,7 @@
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR" id="ff7db532-4ecd-4644-ab38-39a3f2094072" unit="EURO"/>
           </installationCosts>
           <variableOperationalCosts xsi:type="esdl:SingleValue" id="8631f61f-4d9b-4b59-bb55-7fc41f377a24" value="2.0">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR/MWh" id="95224cd9-b863-4c2e-bbb1-0de66f912524" unit="EURO" perMultiplier="MEGA" perUnit="WATTHOUR"/>
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR/m3" id="95224cd9-b863-4c2e-bbb1-0de66f912524" unit="EURO" perUnit="CUBIC_METRE"/>
           </variableOperationalCosts>
         </costInformation>
       </asset>

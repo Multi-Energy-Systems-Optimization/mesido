@@ -1,11 +1,10 @@
 import ast
-
-import CoolProp as cP
-
 import inspect
 import logging
 import math
 from typing import Any, Dict, Tuple, Type, Union
+
+import CoolProp as cP
 
 import esdl
 
@@ -2443,8 +2442,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 8 * 1.0e5,  # pressure pa
                 NetworkSettings.NETWORK_COMPOSITION_GAS,
             )
-            * 1.0e3
-        )  # to convert from kg/m3 to g/m3
+            * 1.0e3  # to convert from kg/m3 to g/m3
+        )
 
         density_normal = (
             cP.CoolProp.PropsSI(
@@ -2455,8 +2454,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 1 * 1.0e5,  # pressure pa
                 NetworkSettings.NETWORK_COMPOSITION_GAS,
             )
-            * 1.0e3
-        )  # to convert from kg/m3 to g/m3
+            * 1.0e3  # to convert from kg/m3 to g/m3
+        )
 
         energy_content = 31.68 * 10.0**6 / (density / 1000)
         q_nominal_gas = 0.5  # Todo: check Q_nominal_gas later to find the best way of defining
@@ -2484,10 +2483,33 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         q_nominals = self._get_connected_q_nominal(asset)
 
+        if NetworkSettings.NETWORK_TYPE_GAS in port.carrier.name:
+            network_composition = NetworkSettings.NETWORK_COMPOSITION_GAS
+        elif NetworkSettings.NETWORK_TYPE_HYDROGEN in port.carrier.name:
+            network_composition = str(NetworkSettings.NETWORK_TYPE_HYDROGEN).upper()
+        else:
+            logger.warning(
+                f"Neither gas/hydrogen was used in the carrier "
+                f"name of pipe {asset.name}"
+                "Normal density is calculated based on Gas"
+            )
+            network_composition = NetworkSettings.NETWORK_COMPOSITION_GAS
+        density_normal = (
+            cP.CoolProp.PropsSI(
+                "D",
+                "T",
+                273.15 + 0,  # temperture in k
+                "P",
+                1 * 1.0e5,  # pressure pa
+                network_composition,
+            )
+            * 1.0e3  # to convert from kg/m3 to g/m3
+        )
         modifiers.update(
             dict(
                 id_mapping_carrier=id_mapping,
                 density=density,
+                density_normal=density_normal,
                 energy_content=energy_content,
                 GasIn=dict(Q=dict(min=0.0, nominal=q_nominals["Q_nominal_gas"])),
                 Q_nominal_gas=q_nominals["Q_nominal_gas"],

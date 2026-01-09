@@ -1491,6 +1491,7 @@ class _AssetToComponentBase:
         ]
 
         gas_assets = {"GasDemand", "GasStorage", "GasProducer", "Electrolyzer"}
+        gas_boiler = {"GasHeater"}
 
         cost_attributes = asset.attributes["costInformation"]
         cost_infos = {field: getattr(cost_attributes, field) for field in cost_fields}
@@ -1517,7 +1518,11 @@ class _AssetToComponentBase:
                 )
                 self._log_and_add_potential_issue(message, asset.id, cost_error_type="incorrect")
                 continue
-            if per_unit != UnitEnum.WATTHOUR and asset.asset_type not in gas_assets:
+            if (
+                per_unit != UnitEnum.WATTHOUR
+                and asset.asset_type not in gas_assets
+                and asset.asset_type not in gas_boiler
+            ):
                 message = (
                     f"Expected the specified OPEX for asset {asset.name} of type {asset.asset_type}"
                     f" to be per Wh, but they are provided in {per_unit} instead."
@@ -1528,6 +1533,13 @@ class _AssetToComponentBase:
                 message = (
                     f"Expected the specified OPEX for asset {asset.name} of type {asset.asset_type}"
                     f" to be per EURO/g, but they are provided in {unit}/{per_unit} instead."
+                )
+                self._log_and_add_potential_issue(message, asset.id, cost_error_type="incorrect")
+                continue
+            if asset.asset_type in gas_boiler and per_unit != UnitEnum.CUBIC_METRE:
+                message = (
+                    f"Expected the specified OPEX for asset {asset.name} of type {asset.asset_type}"
+                    f" to be per EURO/m3, but they are provided in {unit}/{per_unit} instead."
                 )
                 self._log_and_add_potential_issue(message, asset.id, cost_error_type="incorrect")
                 continue
