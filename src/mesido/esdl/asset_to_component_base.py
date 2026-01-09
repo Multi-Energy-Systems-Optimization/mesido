@@ -294,13 +294,6 @@ class _AssetToComponentBase:
             "investmentCosts": "required",
             "fixedOperationalCosts": "required",
         },
-        "heat_source_gas": {
-            "investmentCosts": "required",
-            "installationCosts": "required",
-            "variableOperationalCosts": "required",
-            "fixedMaintenanceCosts": "optional",
-            "fixedOperationalCosts": "optional",
-        },
     }
 
     COST_VALIDATION_COMPONENT_TO_ASSET_TYPE = {
@@ -316,7 +309,7 @@ class _AssetToComponentBase:
         "GasDemand": "gas_demand",
         "GasStorage": "gas_tank_storage",
         "Electrolyzer": "electrolyzer",
-        "GasHeater": "heat_source_gas",
+        "GasHeater": "heat_source",
     }
 
     COST_ATTRIBUTE_TO_STRING = {
