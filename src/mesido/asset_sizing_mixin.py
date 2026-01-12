@@ -2127,14 +2127,70 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 f"{d}.Electricity_source", ensemble_member
             )
             constraint_nominal = self.variable_nominal(f"{d}.Electricity_source")
+            if f"{d}.maximum_electricity_source" in self.io.get_timeseries_names():
+                profile_non_scaled = self.get_timeseries(f"{d}.maximum_electricity_source").values
+                max_profile_non_scaled = max(profile_non_scaled)
+                profile_scaled = profile_non_scaled / max_profile_non_scaled
 
-            constraints.append(
-                (
-                    (np_ones * max_power - electricity_source) / constraint_nominal,
-                    0.0,
-                    np.inf,
+                # Cap the electricity produced via a profile. Two profile options below.
+                # Option 1: Profile specified in absolute values [W] via a ProfileConstraint
+                esdl_asset_attributes = self.esdl_assets[
+                    self.esdl_asset_name_to_id_map[d]
+                ].attributes["constraint"]
+                if (
+                    len(esdl_asset_attributes) > 0
+                    and hasattr(esdl_asset_attributes.items[0], "maximum")
+                    and esdl_asset_attributes.items[0].maximum.profileQuantityAndUnit.reference.unit
+                    == esdl.UnitEnum.WATT
+                ):
+                    pass
+                # Option 2: Normalised profile (0.0-1.0) shape that scales with maximum size of the
+                # producer
+                # Note: If the asset is not optional then the profile will be scaled to the
+                # installed capacity
+                elif (
+                    # profile is specified without units (xlm/csv)
+                    len(esdl_asset_attributes) == 0
+                    or (
+                        esdl_asset_attributes.items[
+                            0
+                        ].maximum.profileQuantityAndUnit.reference.physicalQuantity
+                        == esdl.PhysicalQuantityEnum.COEFFICIENT
+                        and (
+                            esdl_asset_attributes.items[
+                                0
+                            ].maximum.profileQuantityAndUnit.reference.unit
+                            == esdl.UnitEnum.PERCENT
+                            or esdl_asset_attributes.items[
+                                0
+                            ].maximum.profileQuantityAndUnit.reference.unit
+                            == esdl.UnitEnum.NONE
+                        )
+                    )  # profile from esdl
+                ):
+                    # TODO: currently this can only be used with a csv file since units must be set
+                    # for ProfileContraint. Future addition can be to use a different unit/quantity
+                    # etc. so that the profile is used in a normalised way and scale to max_size
+
+                    for i in range(0, len(self.times())):
+                        constraints.append(
+                            (
+                                (profile_scaled[i] * max_power - electricity_source[i])
+                                / constraint_nominal,
+                                0.0,
+                                np.inf,
+                            )
+                        )
+                else:
+                    RuntimeError(f"{d}: Unforeseen error in adding a profile constraint")
+            else:
+                constraints.append(
+                    (
+                        (np_ones * max_power - electricity_source) / constraint_nominal,
+                        0.0,
+                        np.inf,
+                    )
                 )
-            )
 
         for d in self.energy_system_components.get("electricity_storage", []):
             max_var_types.add("electricity_storage")

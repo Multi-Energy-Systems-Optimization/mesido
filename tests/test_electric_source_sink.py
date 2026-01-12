@@ -16,6 +16,48 @@ from utils_tests import electric_power_conservation_test
 
 
 class TestMILPElectricSourceSink(TestCase):
+
+    def test_source_sink_pv_csv_profile(self):
+        """
+        Tests for an electricity network that consist out of PV as a source, a cable and a sink.
+        PV upper profiles are read from input csv.
+
+        """
+
+        import models.unit_cases_electricity.source_sink_cable.src.example as example
+        from models.unit_cases_electricity.source_sink_cable.src.example import ElectricityProblem
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+        tol = 1e-10
+
+        solution = run_esdl_mesido_optimization(
+            ElectricityProblem,
+            base_folder=base_folder,
+            esdl_file_name="pv_with_csv_profile.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_with_pv.csv",
+        )
+        results = solution.extract_results()
+
+        # Test energy conservation
+        electric_power_conservation_test(solution, results)
+
+        # Test that voltage goes down
+        v_min = solution.parameters(0)["ElectricityCable_238f.min_voltage"]
+        v_in = results["ElectricityCable_238f.ElectricityIn.V"]
+        v_out = results["ElectricityCable_238f.ElectricityOut.V"]
+        np.testing.assert_array_less(v_out, v_in)
+        biggerthen = all(v_out >= (v_min - tol) * np.ones(len(v_out)))
+        self.assertTrue(biggerthen)
+
+        for source in solution.energy_system_components.get("electricity_source", []):
+            np.testing.assert_allclose(
+                results[f"{source}.Electricity_source"],
+                results[f"{source}.ElectricityOut.Power"],
+                atol=1.0e-6,
+            )
+
     def test_source_sink(self):
         """
         Tests for an electricity network that consist out of a source, a cable and a sink.
