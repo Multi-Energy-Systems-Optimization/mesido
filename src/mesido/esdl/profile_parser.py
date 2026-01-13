@@ -3,7 +3,7 @@ import logging
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, Optional, Set
+from typing import Dict, Optional, Set, Tuple
 
 import esdl
 from esdl.profiles.influxdbprofilemanager import ConnectionSettings
@@ -23,8 +23,6 @@ from rtctools.data.storage import DataStore
 
 logger = logging.getLogger()
 
-influx_cred_map = {"wu-profiles.esdl-beta.hesi.energy:443": ("warmingup", "warmingup")}
-
 
 class _ProfileParserException(Exception):
     pass
@@ -43,7 +41,11 @@ class BaseProfileReader:
 
     carrier_profile_var_name: str = ".price_profile"
 
-    def __init__(self, energy_system: esdl.EnergySystem, file_path: Optional[Path]):
+    def __init__(
+        self,
+        energy_system: esdl.EnergySystem,
+        file_path: Optional[Path],
+    ):
         self._profiles: Dict[int, Dict[str, np.ndarray]] = defaultdict(dict)
         self._energy_system: esdl.EnergySystem = energy_system
         self._file_path: Optional[Path] = file_path
@@ -218,9 +220,20 @@ class InfluxDBProfileReader(BaseProfileReader):
         esdl.esdl.GeothermalSource: ".maximum_heat_source",
     }
 
-    def __init__(self, energy_system: esdl.EnergySystem, file_path: Optional[Path]):
-        super().__init__(energy_system=energy_system, file_path=file_path)
+    def __init__(
+        self,
+        energy_system: esdl.EnergySystem,
+        file_path: Optional[Path],
+        database_credentials: Optional[Dict[str, Tuple[str, str]]] = None,
+    ):
+        super().__init__(
+            energy_system=energy_system,
+            file_path=file_path,
+        )
         self._df = pd.DataFrame()
+        self._database_credentials = (
+            database_credentials if database_credentials is not None else {"": ("", "")}
+        )
 
     def _load_profiles_from_source(
         self,
@@ -396,12 +409,7 @@ class InfluxDBProfileReader(BaseProfileReader):
             ssl_setting = True
         influx_host = "{}:{}".format(profile_host, profile.port)
 
-        # TODO: remove hard-coded database credentials, should probably be read from a settings file
-        if influx_host in influx_cred_map:
-            (username, password) = influx_cred_map[influx_host]
-        else:
-            username = None
-            password = None
+        (username, password) = self._database_credentials.get(influx_host, (None, None))
 
         conn_settings = ConnectionSettings(
             host=profile.host,
@@ -590,8 +598,15 @@ class InfluxDBProfileReader(BaseProfileReader):
 
 
 class ProfileReaderFromFile(BaseProfileReader):
-    def __init__(self, energy_system: esdl.EnergySystem, file_path: Path):
-        super().__init__(energy_system=energy_system, file_path=file_path)
+    def __init__(
+        self,
+        energy_system: esdl.EnergySystem,
+        file_path: Path,
+    ):
+        super().__init__(
+            energy_system=energy_system,
+            file_path=file_path,
+        )
 
     def _load_profiles_from_source(
         self,

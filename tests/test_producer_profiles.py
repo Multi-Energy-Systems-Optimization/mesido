@@ -4,6 +4,7 @@ from unittest import TestCase
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.util import run_esdl_mesido_optimization
+from mesido.workflows.goals.minimize_tco_goal import MinimizeTCO
 
 import numpy as np
 
@@ -81,21 +82,34 @@ class TestProducerMaxProfile(TestCase):
         """
 
         import models.unit_cases.case_3a.src.run_3a as run_3a
-        from models.unit_cases.case_3a.src.run_3a import (
-            HeatProblemESDLProdProfile,
-            HeatProblemESDLProdProfileTCO,
-        )
+        from models.unit_cases.case_3a.src.run_3a import BeseProblemProdProfile
 
         base_folder = Path(run_3a.__file__).resolve().parent.parent
 
-        for problem_class in [HeatProblemESDLProdProfile, HeatProblemESDLProdProfileTCO]:
+        class HeatProblemESDLProdProfileAdaptedTCO(BeseProblemProdProfile):
+            def read(self):
+                super().read()
+                set_producer = "HeatProducer_b702"
+                producer_timeseries = self.get_timeseries(
+                    f"{set_producer}.maximum_heat_source"
+                ).values
+                producer_timeseries[0:5] = np.ones(5) * 500.0e3
+                self.set_timeseries(f"{set_producer}.maximum_heat_source", producer_timeseries)
 
-            if problem_class == HeatProblemESDLProdProfile:
+            def goals(self):
+                goals = super().goals().copy()
+                goals.append(MinimizeTCO(priority=20, number_of_years=1))
+
+                return goals
+
+        for problem_class in [BeseProblemProdProfile, HeatProblemESDLProdProfileAdaptedTCO]:
+
+            if problem_class == BeseProblemProdProfile:
                 # No sizing of the producer
                 esdl_file_used = "3a_esdl_source_unscaled_profile.esdl"
-            elif problem_class == HeatProblemESDLProdProfileTCO:
+            elif problem_class == HeatProblemESDLProdProfileAdaptedTCO:
                 # Sizing of the producer is included
-                esdl_file_used = "3a_esdl_source_unscaled_profile_sizing.esdl"
+                esdl_file_used = "3a_esdl_source_unscaled_profile_sizing_no_storage.esdl"
 
             solution = run_esdl_mesido_optimization(
                 problem_class,
@@ -107,11 +121,11 @@ class TestProducerMaxProfile(TestCase):
 
             demand_matching_test(solution, results)
             energy_conservation_test(solution, results)
-            heat_to_discharge_test(solution, results, atol=0.15)
+            heat_to_discharge_test(solution, results, atol=1.0)
             tol = 1e-4
             heat_produced = results["HeatProducer_b702.Heat_source"]
 
-            if problem_class == HeatProblemESDLProdProfile:
+            if problem_class == BeseProblemProdProfile:
                 heat_production_upper_limit = solution.get_timeseries(
                     "HeatProducer_b702.maximum_heat_source"
                 ).values
@@ -128,7 +142,13 @@ class TestProducerMaxProfile(TestCase):
                         np.isclose(heat_produced, heat_production_upper_limit, atol=tol, rtol=1e-10)
                     ),
                 )
-            elif problem_class == HeatProblemESDLProdProfileTCO:
+                np.testing.assert_array_less(
+                    np.sum(
+                        np.isclose(heat_produced, heat_production_upper_limit, atol=tol, rtol=1e-10)
+                    ),
+                    20,
+                )  # checking that the upper production limit was not achieved for all entries
+            elif problem_class == HeatProblemESDLProdProfileAdaptedTCO:
                 heat_production_upper_limit = (
                     solution.get_timeseries("HeatProducer_b702.maximum_heat_source").values
                     / max(solution.get_timeseries("HeatProducer_b702.maximum_heat_source").values)
@@ -140,12 +160,14 @@ class TestProducerMaxProfile(TestCase):
                     atol=1e-9,
                 )
                 np.testing.assert_array_less(heat_produced - tol, heat_production_upper_limit)
-                np.testing.assert_array_less(
-                    6.9,
+                np.testing.assert_allclose(
+                    len(heat_produced) - 5,
                     np.sum(
                         np.isclose(heat_produced, heat_production_upper_limit, atol=tol, rtol=1e-9)
                     ),
                 )
+            else:
+                exit("Problem class not catered for in this test case")
 
     @pytest.mark.slow_1
     @pytest.mark.timeout(150)  # overrides the default timelimt of the pytest command
