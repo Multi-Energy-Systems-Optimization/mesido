@@ -51,7 +51,8 @@ class HeatBuffer(HeatTwoPort, BaseAsset):
         self.height = 5.0
         self.radius = 10.0
         self.volume = math.pi * self.radius**2 * self.height
-        self.heat_loss_coeff = 2 * self.heat_transfer_coeff / (self.radius * self.rho * self.cp)
+        # self.heat_loss_coeff = 2 * self.heat_transfer_coeff / (self.radius * self.rho * self.cp)
+        self.heat_loss_coeff = 0.5 / 100 / 3600 # ToDo: this hard coded number makes 0.5% heat lost per hour in the buffer
         # The hot/cold tank can have a lower bound on its volume.
         # Meaning that they might always be, for e.g., 5% full.
         self.min_fraction_tank_volume = 0.05
