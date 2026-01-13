@@ -386,11 +386,10 @@ class TestEndScenarioSizing(TestCase):
         parameters = solution.parameters(0)
 
         # Test 1: Check if the solution pipe classes used were of the pipe measures
-        pipe_measures = solution.filter_asset_measures(solution._esdl_measures, "Pipe")
+        filter_type = "Pipe"
+        pipe_measures = solution.filter_asset_measures(solution._esdl_measures, filter_type)
         pipe_diameter_cost_map = {
-            str(pipe.attributes["asset"].diameter): pipe.attributes[
-                "asset"
-            ].costInformation.investmentCosts.value
+            str(pipe.diameter): pipe.costInformation.investmentCosts.value
             for pipe in pipe_measures.values()
         }
         solution_pipe_classes = solution.get_unique_pipe_classes()
@@ -481,9 +480,7 @@ class TestEndScenarioSizing(TestCase):
         # Test 1: Check if the solution pipe classes used were of the pipe measures
         pipe_measures = solution.filter_asset_measures(solution._esdl_measures, "Pipe")
         pipe_diameter_cost_map = {
-            str(pipe.attributes["asset"].diameter): pipe.attributes[
-                "asset"
-            ].costInformation.investmentCosts.value
+            str(pipe.diameter): pipe.costInformation.investmentCosts.value
             for pipe in pipe_measures.values()
         }
         solution_pipe_classes = solution.get_unique_pipe_classes()

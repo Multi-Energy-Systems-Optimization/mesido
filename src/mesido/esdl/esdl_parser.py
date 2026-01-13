@@ -98,6 +98,8 @@ class BaseESDLParser:
             asset_measures = None
 
         # Check if the ESDL has asset templates
+        # Currently the use of templates are allowed on a temporary basis, and
+        # the templates are stored in the measures variable
         try:
             asset_templates = list(self._energy_system.templates.eAllContents())
         except AttributeError:

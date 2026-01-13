@@ -328,11 +328,10 @@ class ESDLMixin(
             )
             if len(pipe_measures.items()) > 0:
                 pipe_diameter_cost_map = {
-                    str(pipe.attributes["asset"].diameter): pipe.attributes[
-                        "asset"
-                    ].costInformation.investmentCosts.value
+                    str(pipe.diameter): pipe.costInformation.investmentCosts.value
                     for pipe in pipe_measures.values()
                 }
+
                 for i, pipe_class in enumerate(pipe_classes):
                     if pipe_class.name in pipe_diameter_cost_map.keys():
                         pipe_classes[i] = dataclasses.replace(
@@ -815,17 +814,15 @@ class ESDLMixin(
             if isinstance(asset.attributes["asset"], EOrderedSet):
                 if len(asset.attributes["asset"]) > 1:
                     logger.warning(
-                        f"Measure named {asset.name} should contain only Pipe asset;"
-                        "any non-Pipe assets have been removed from measure. Only 1st"
-                        "pipe asset is kept in the measure."
+                        f"Multiple asset types are catered for asset measure {asset.name}."
+                        f"Only the first asset type {filter_type} is currently used."
                     )
-                for a in asset.attributes["asset"]:
-                    if not isinstance(a, getattr(esdl, filter_type)):
-                        asset.attributes["asset"].remove(a)
-                asset.attributes["asset"] = asset.attributes["asset"][0]
-
-            asset_type = asset.attributes["asset"]
+                for asset_type in asset.attributes["asset"]:
+                    if isinstance(asset_type, getattr(esdl, filter_type)):
+                        break
+            else:
+                asset_type = asset.attributes["asset"]
             if isinstance(asset_type, getattr(esdl, filter_type)):
-                filtered_assets[asset_id] = asset
+                filtered_assets[asset_id] = asset_type
 
         return filtered_assets
