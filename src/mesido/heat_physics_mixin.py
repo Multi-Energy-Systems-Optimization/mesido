@@ -932,7 +932,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             lb[0] = heat_t0
             ub[0] = heat_t0
             b_t0 = (Timeseries(t, lb), Timeseries(t, ub))
-            self.__buffer_t0_bounds[stored_heat] = self.merge_bounds(bounds[stored_heat], b_t0)
+            # self.__buffer_t0_bounds[stored_heat] = self.merge_bounds(bounds[stored_heat], b_t0)
 
     def __heat_matching_demand_insulation_constraints(self, ensemble_member):
         """
@@ -3722,22 +3722,22 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         empty_timeseries = Timeseries(initial_time, [np.nan])
         buffers = self.energy_system_components.get("heat_buffer", [])
 
-        for b in buffers:
-            hist_heat_buffer = history.get(f"{b}.Heat_buffer", empty_timeseries).values
-            hist_stored_heat = history.get(f"{b}.Stored_heat", empty_timeseries).values
-
-            # One has to provide information of what Heat_buffer (i.e., the heat
-            # added/extracted from the buffer at that timestep) is at t0.
-            # Else the solution will always extract heat from the buffer at t0.
-            # This information can be passed in two ways:
-            # - non-trivial history of Heat_buffer at t0;
-            # - non-trivial history of Stored_heat.
-            # If not known, we assume that Heat_buffer is 0.0 at t0.
-
-            if (len(hist_heat_buffer) < 1 or np.isnan(hist_heat_buffer[0])) and (
-                len(hist_stored_heat) <= 1 or np.any(np.isnan(hist_stored_heat[-2:]))
-            ):
-                history[f"{b}.Heat_buffer"] = Timeseries(initial_time, [0.0])
+        # for b in buffers:
+        #     hist_heat_buffer = history.get(f"{b}.Heat_buffer", empty_timeseries).values
+        #     hist_stored_heat = history.get(f"{b}.Stored_heat", empty_timeseries).values
+        #
+        #     # One has to provide information of what Heat_buffer (i.e., the heat
+        #     # added/extracted from the buffer at that timestep) is at t0.
+        #     # Else the solution will always extract heat from the buffer at t0.
+        #     # This information can be passed in two ways:
+        #     # - non-trivial history of Heat_buffer at t0;
+        #     # - non-trivial history of Stored_heat.
+        #     # If not known, we assume that Heat_buffer is 0.0 at t0.
+        #
+        #     if (len(hist_heat_buffer) < 1 or np.isnan(hist_heat_buffer[0])) and (
+        #         len(hist_stored_heat) <= 1 or np.any(np.isnan(hist_stored_heat[-2:]))
+        #     ):
+        #         history[f"{b}.Heat_buffer"] = Timeseries(initial_time, [0.0])
 
         # TODO: add ATES when component is available, also add initial temperature state ates
         # for ates in self.energy_system_components.get("ates", []):
