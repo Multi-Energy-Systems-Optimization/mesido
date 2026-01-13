@@ -814,7 +814,7 @@ class ESDLMixin(
             if isinstance(asset.attributes["asset"], EOrderedSet):
                 if len(asset.attributes["asset"]) > 1:
                     logger.warning(
-                        f"Multiple asset types are catered for asset measure {asset.name}."
+                        f"Multiple assets types have been linked to asset measure {asset.name}."
                         f"Only the first asset type {filter_type} is currently used."
                     )
                 for asset_type in asset.attributes["asset"]:
