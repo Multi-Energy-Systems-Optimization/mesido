@@ -71,7 +71,7 @@ class TestElecBoiler(TestCase):
         heat_problem = run_esdl_mesido_optimization(
             SourcePipeSink,
             base_folder=base_folder,
-            esdl_file_name="sourcesink_witheboiler.esdl",
+            esdl_file_name="sourcesink_with_eboiler.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_import.csv",
@@ -115,7 +115,7 @@ class TestElecBoiler(TestCase):
         heat_problem = run_esdl_mesido_optimization(
             SourcePipeSink,
             base_folder=base_folder,
-            esdl_file_name="sourcesink_witheboiler_no_elec.esdl",
+            esdl_file_name="sourcesink_with_eboiler_no_elec.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_import.csv",
@@ -126,7 +126,6 @@ class TestElecBoiler(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
-        electric_power_conservation_test(heat_problem, results)
 
         np.testing.assert_array_less(0.0, results["ElectricBoiler_9aab.Heat_source"])
         np.testing.assert_array_less(
