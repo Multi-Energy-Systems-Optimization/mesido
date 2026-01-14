@@ -2788,6 +2788,12 @@ class HeatPhysicsMixin(
                                 constraint_nominal,
                             )
                         )
+                elif (hn_settings.get("heat_exchanger_prim_out_flex", False) and heat_exchanger in
+                      self.energy_system_components.get("heat_exchanger",[])):
+                    sec_sup_temperature = parameters[f"{heat_exchanger}.Secondary.T_supply"]
+                    constraints.append(((
+                            heat_out_prim-sec_sup_temperature*discharge_primary*cp_prim*rho_prim
+                    )/constraint_nominal, -np.inf, 0.0))
                 else:
                     sup_temp = parameters[f"{heat_exchanger}.Primary.T_supply"]
                     assert sup_temp >= return_temperature
@@ -2886,6 +2892,12 @@ class HeatPhysicsMixin(
                                 constraint_nominal,
                             )
                         )
+                elif (hn_settings.get("heat_exchanger_sec_out_flex", False) and heat_exchanger in
+                      self.energy_system_components.get("heat_exchanger",[])):
+                    prim_sup_temperature = parameters[f"{heat_exchanger}.Primary.T_supply"]
+                    constraints.append(((
+                            heat_out_sec-prim_sup_temperature*discharge_secondary*cp_sec*rho_sec
+                    )/constraint_nominal, -np.inf, 0.0))
                 else:
                     ret_temperature = parameters[f"{heat_exchanger}.Secondary.T_return"]
                     assert supply_temperature >= ret_temperature
