@@ -1,6 +1,7 @@
 from pathlib import Path
 from unittest import TestCase
 
+from mesido.esdl.esdl_mixin import DBAccesType
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.util import run_esdl_mesido_optimization
@@ -51,12 +52,17 @@ class TestHEX(TestCase):
         # Do not delete kwargs: this is used to manualy check writing out of profile data
         kwargs = {
             "write_result_db_profiles": False,
-            "influxdb_host": "localhost",
-            "influxdb_port": 8086,
-            "influxdb_username": None,
-            "influxdb_password": None,
-            "influxdb_ssl": False,
-            "influxdb_verify_ssl": False,
+            "database_connections": [
+                {
+                    "access_type": DBAccesType.WRITE,
+                    "influxdb_host": "localhost",
+                    "influxdb_port": 8086,
+                    "influxdb_username": None,
+                    "influxdb_password": None,
+                    "influxdb_ssl": False,
+                    "influxdb_verify_ssl": False,
+                },
+            ],
         }
         # -----------------------------------------------------------------------------------------
 
@@ -344,12 +350,17 @@ class TestHP(TestCase):
         # Do not delete kwargs: this is used to manualy check writing out of profile data
         kwargs = {
             "write_result_db_profiles": False,
-            "influxdb_host": "localhost",
-            "influxdb_port": 8086,
-            "influxdb_username": None,
-            "influxdb_password": None,
-            "influxdb_ssl": False,
-            "influxdb_verify_ssl": False,
+            "database_connections": [
+                {
+                    "access_type": DBAccesType.WRITE,
+                    "influxdb_host": "localhost",
+                    "influxdb_port": 8086,
+                    "influxdb_username": None,
+                    "influxdb_password": None,
+                    "influxdb_ssl": False,
+                    "influxdb_verify_ssl": False,
+                },
+            ],
         }
         # -----------------------------------------------------------------------------------------
 
