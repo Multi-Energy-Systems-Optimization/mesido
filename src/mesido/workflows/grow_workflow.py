@@ -328,29 +328,21 @@ class EndScenarioSizing(
         goals = super().path_goals().copy()
         bounds = self.bounds()
 
-        for demand in self.energy_system_components["heat_demand"]:
-            target = self.get_timeseries(f"{demand}.target_heat_demand")
-            if bounds[f"{demand}.HeatIn.Heat"][1] < max(target.values):
-                logger.warning(
-                    f"{demand} has a flow limit, {bounds[f'{demand}.HeatIn.Heat'][1]}, "
-                    f"lower than what is required for the maximum demand {max(target.values)}"
-                )
-            # TODO: update this caclulation to bounds[f"{demand}.HeatIn.Heat"][1]/ dT * Tsup & move
-            # to potential_errors variable
-            state = f"{demand}.Heat_demand"
+        demand_type = ["heat_demand", "cold_demand"]
 
-            goals.append(TargetHeatGoal(state, target))
+        for dtype in demand_type:
+            for demand in self.energy_system_components[dtype]:
+                target = self.get_timeseries(f"{demand}.target_{dtype}")
+                if bounds[f"{demand}.HeatIn.Heat"][1] < max(target.values):
+                    logger.warning(
+                        f"{demand} has a flow limit, {bounds[f'{demand}.HeatIn.Heat'][1]}, "
+                        f"lower than what is required for the maximum demand {max(target.values)}"
+                    )
+                # TODO: update this caclulation to bounds[f"{demand}.HeatIn.Heat"][1]/ dT * Tsup & move
+                # to potential_errors variable
+                state = f"{demand}.{dtype[0].upper() + dtype[1:]}"
 
-        for demand in self.energy_system_components.get("cold_demand", []):
-            target = self.get_timeseries(f"{demand}.target_cold_demand")
-            if bounds[f"{demand}.HeatIn.Heat"][1] < max(target.values):
-                logger.warning(
-                    f"{demand} has a flow limit, {bounds[f'{demand}.HeatIn.Heat'][1]}, "
-                    f"lower than what is required for the maximum demand {max(target.values)}"
-                )
-            state = f"{demand}.Cold_demand"
-
-            goals.append(TargetHeatGoal(state, target))
+                goals.append(TargetHeatGoal(state, target))
 
         return goals
 
