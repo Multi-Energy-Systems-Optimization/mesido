@@ -11,6 +11,7 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
+# from mesido.esdl.esdl_mixin import DBAccesType
 from mesido.util import run_esdl_mesido_optimization
 from mesido.workflows import EndScenarioSizingStaged, run_end_scenario_sizing
 from mesido.workflows.grow_workflow import SolverCPLEX
@@ -286,14 +287,17 @@ class HeatCoolingGrowWorkflow(TestCase):
         kwargs = {
             # "write_result_db_profiles": True,
             # # "write_result_db_profiles": False,
-            # "influxdb_host": "localhost",
-            # "influxdb_port": 8086,
-            # "influxdb_username": None,
-            # "influxdb_password": None,
-            # "influxdb_ssl": False,
-            # "influxdb_verify_ssl": False,
-            # "update_progress_function": {},
-            "network_type_errors": NetworkErrors.HEAT_AND_COOL_NETWORK_ERRORS,
+            # "database_connections": [
+            #     {
+            #         "access_type": DBAccesType.WRITE,  # or DBAccesType.WRITE or DBAccesType.READ_WRITE
+            #         "influxdb_host": "localhost",
+            #         "influxdb_port": 8086,
+            #         "influxdb_username": None,
+            #         "influxdb_password": None,
+            #         "influxdb_ssl": False,
+            #         "influxdb_verify_ssl": False,
+            #     },
+            # ]
         }
 
         solution = run_end_scenario_sizing(
@@ -309,6 +313,7 @@ class HeatCoolingGrowWorkflow(TestCase):
             profile_reader=ProfileReaderFromFile,
             # input_timeseries_file="timeseries_4.csv",
             input_timeseries_file="timeseries_4_elect_cost.csv",
+            error_type_check=NetworkErrors.HEAT_AND_COOL_NETWORK_ERRORS,
             **kwargs,
         )
 
@@ -442,7 +447,14 @@ class HeatCoolingGrowWorkflow(TestCase):
         total_capex += investment_cost + installation_cost
 
         assert (
-            abs(solution.objective_value - (total_capex + total_opex + elect_cost) / 1.0e6) < 1.0e-6
+            abs(
+                solution.objective_value
+                + (
+                    results[f"CoolingDemand_1__installation_cost"]
+                    + results[f"CoolingDemand_1__investment_cost"]
+                )
+                / 1.0e6 - (total_capex + total_opex + elect_cost) / 1.0e6
+            ) < 1.0e-6
         )
 
         temp = 1.0

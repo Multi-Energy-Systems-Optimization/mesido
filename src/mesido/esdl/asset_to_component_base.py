@@ -209,9 +209,9 @@ class _AssetToComponentBase:
         "Export": "export",
         "Compressor": "compressor",
         "GenericConsumer": "heat_demand",
-        "CoolingDemand": "cold_demand",
         "HeatExchange": "heat_exchanger",
         "HeatingDemand": "heat_demand",
+        "CoolingDemand": "cold_demand",
         "HeatPump": "heat_pump",
         "GasHeater": "gas_boiler",
         "GasProducer": "gas_source",
@@ -298,7 +298,9 @@ class _AssetToComponentBase:
 
     COST_VALIDATION_COMPONENT_TO_ASSET_TYPE = {
         "HeatPump": "heat_pump",
+        "Airco": "heat_pump",
         "HeatingDemand": "heat_demand",
+        "CoolingDemand": "heat_demand",
         "ResidualHeatSource": "heat_source",
         "GeothermalSource": "heat_source",
         "HeatProducer": "heat_source",

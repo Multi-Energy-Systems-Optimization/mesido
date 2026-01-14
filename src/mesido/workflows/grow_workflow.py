@@ -308,13 +308,12 @@ class EndScenarioSizing(
         return bounds
 
     def variable_nominal(self, variable):
-        try:
+        if variable in self.__heat_demand_nominal:
             return self.__heat_demand_nominal[variable]
-        except KeyError:
-            try:
-                return self.__cold_demand_nominal[variable]
-            except KeyError:
-                return super().variable_nominal(variable)
+        elif variable in self.__cold_demand_nominal:
+            return self.__cold_demand_nominal[variable]
+        else:
+            return super().variable_nominal(variable)
 
     def energy_system_options(self):
         # TODO: make empty placeholder in HeatProblem we don't know yet how to put the global
