@@ -13,7 +13,7 @@ from utils_tests import demand_matching_test, energy_conservation_test, heat_to_
 
 class TestGasBoiler(TestCase):
 
-    def asset_cost_calculation_tests(self, solution, results):
+    def asset_cost_calculation_tests(self, solution, results, parameters):
         # Check the cost components of GasHeater
         for asset in [
             *solution.energy_system_components.get("heat_source", []),
@@ -39,7 +39,8 @@ class TestGasBoiler(TestCase):
             for ii in range(1, len(solution.times())):
                 variable_operational_cost += (
                     var_op_costs
-                    * results[f"{asset}.Gas_demand_volumetric_flow_normal"][ii]
+                    * results[f"{asset}.Gas_demand_mass_flow"][ii]
+                    / parameters[f"{asset}.density_normal"]
                     * timesteps_hr[ii - 1]
                 )
             np.testing.assert_allclose(
@@ -100,7 +101,7 @@ class TestGasBoiler(TestCase):
         )
 
         # # Check the cost components of GasHeater
-        self.asset_cost_calculation_tests(heat_problem, results)
+        self.asset_cost_calculation_tests(heat_problem, results, parameters)
 
     def test_heat_source_gas(self):
         """
@@ -128,13 +129,14 @@ class TestGasBoiler(TestCase):
             input_timeseries_file="timeseries_import.csv",
         )
         results = solution.extract_results()
+        parameters = solution.parameters(0)
 
         demand_matching_test(solution, results)
         energy_conservation_test(solution, results)
         heat_to_discharge_test(solution, results)
 
         # # Check the cost components of GasHeater
-        self.asset_cost_calculation_tests(solution, results)
+        self.asset_cost_calculation_tests(solution, results, parameters)
 
 
 if __name__ == "__main__":

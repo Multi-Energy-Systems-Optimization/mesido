@@ -206,7 +206,11 @@ class TestGasElect(TestCase):
                 ]:
                     var_op_costs = costs_esdl_asset.variableOperationalCosts.value
                     assert var_op_costs > 0
-                    nominator_vector = results[f"{asset}.Gas_demand_volumetric_flow_normal"] * 3600
+                    nominator_vector = (
+                        results[f"{asset}.Gas_demand_mass_flow"]
+                        / parameters[f"{asset}.density_normal"]
+                        * 3600
+                    )
                 for ii in range(1, len(solution.times())):
                     variable_operational_cost += (
                         var_op_costs * nominator_vector[ii] * timesteps_hr[ii - 1] / factor

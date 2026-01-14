@@ -2433,11 +2433,11 @@ class AssetToHeatComponent(_AssetToComponentBase):
         assert max_supply > 0.0
 
         _, modifiers = self.convert_heat_source(asset)
-        density = (
+        density_gas_no_carrier = (
             cP.CoolProp.PropsSI(
                 "D",
                 "T",
-                273.15 + 25,  # temperture in k
+                273.15 + 20.0,  # temperture in k
                 "P",
                 8 * 1.0e5,  # pressure pa
                 NetworkSettings.NETWORK_COMPOSITION_GAS,
@@ -2449,19 +2449,19 @@ class AssetToHeatComponent(_AssetToComponentBase):
             cP.CoolProp.PropsSI(
                 "D",
                 "T",
-                273.15 + 0,  # temperture in k
+                273.15 + 0.0,  # temperture in k
                 "P",
-                1 * 1.0e5,  # pressure pa
+                1.01325 * 1.0e5,  # pressure pa
                 NetworkSettings.NETWORK_COMPOSITION_GAS,
             )
             * 1.0e3  # to convert from kg/m3 to g/m3
         )
 
-        energy_content = 31.68 * 10.0**6 / (density / 1000)
+        energy_content = 31.68 * 10.0**6 / (density_gas_no_carrier / 1000)
         q_nominal_gas = 0.5  # Todo: check Q_nominal_gas later to find the best way of defining
         modifiers.update(
             dict(
-                density=density,
+                density=density_gas_no_carrier,
                 density_normal=density_normal,
                 energy_content=energy_content,
                 Q_nominal_gas=q_nominal_gas,
@@ -2498,9 +2498,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
             cP.CoolProp.PropsSI(
                 "D",
                 "T",
-                273.15 + 0,  # temperture in k
+                273.15 + 0.0,  # temperture in k
                 "P",
-                1 * 1.0e5,  # pressure pa
+                1.01325 * 1.0e5,  # pressure pa
                 network_composition,
             )
             * 1.0e3  # to convert from kg/m3 to g/m3

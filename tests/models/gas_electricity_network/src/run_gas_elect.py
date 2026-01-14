@@ -119,7 +119,7 @@ if __name__ == "__main__":
     # np.testing.assert_array_less(np.array(pipe_diameters), np.array(pipe_diameters_high_demand))
     #
     # # Test: Check the burning efficiency of gas heaters
-    # for asset_name in [*solution.energy_system_components.get("heat_source_gas", [])]:
+    # for asset_name in [*solution.energy_system_components.get("gas_heat_source_gas", [])]:
     #     np.testing.assert_allclose(
     #         parameters[f"{asset_name}.energy_content"]
     #         * results[f"{asset_name}.GasIn.mass_flow"]

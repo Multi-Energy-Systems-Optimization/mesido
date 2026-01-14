@@ -27,7 +27,7 @@ class HeatSourceGas(HeatSource):
         self.component_subtype = "heat_source_gas"
         self.efficiency = nan
         self.density = nan  # Gas density [g/m3] at 8 bar
-        self.density_normal = nan  # gas density in normal condition
+        self.density_normal = nan  # gas density [g/m3] in normal condition
         self.energy_content = nan  # Gas energy content [J/kg]  at 8 bar
         self.Q_nominal_gas = nan
 
@@ -46,14 +46,5 @@ class HeatSourceGas(HeatSource):
                     - self.Heat_source
                 )
                 / self.Heat_nominal
-            )
-        )
-        self.add_equation(
-            (
-                (
-                    self.Gas_demand_mass_flow / self.density_normal
-                    - self.Gas_demand_volumetric_flow_normal
-                )
-                / (self.Q_nominal_gas)
             )
         )

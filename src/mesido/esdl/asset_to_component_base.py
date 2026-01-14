@@ -106,9 +106,7 @@ def get_energy_content(asset_name: str, carrier: esdl.Carrier) -> float:
         # Currently the lower heating value is used below (120.0 MJ/kg)
         energy_content_j_kg = 120.0 * 10.0**6 / density_kg_m3
     else:
-        raise logger.error(
-            f"Neither gas/hydrogen was used in the carrier " f"name of pipe {asset_name}."
-        )
+        raise logger.error(f"Neither gas/hydrogen was used in the carrier {asset_name}.")
     return energy_content_j_kg
 
 
@@ -251,7 +249,7 @@ class _AssetToComponentBase:
             "fixedMaintenanceCosts": "optional",
             "fixedOperationalCosts": "optional",
         },
-        "heat_source": {  # Includes GeothermalSource, ResidualHeatSource, HeatProducer
+        "heat_source": {  # Includes GeothermalSource, ResidualHeatSource, HeatProducer, GasHeater
             "investmentCosts": "required",
             "installationCosts": "required",
             "variableOperationalCosts": "required",
