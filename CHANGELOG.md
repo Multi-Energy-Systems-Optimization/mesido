@@ -16,6 +16,7 @@
 - Addtion of cooling assests (airco and low_temperature_ates) in the grow_workflow for heating and cooling networks
 - Inclusion of airco and low_temperature_ates in write_output
 - New data structute for specifying database connection inputs
+- Costs of available pipe classes are updated based on the asset measures and templates if they are provided.
 - The charging and discharging variable for electricity storage is created without a binary variable using the convex hull description.
 
 ## Fixed

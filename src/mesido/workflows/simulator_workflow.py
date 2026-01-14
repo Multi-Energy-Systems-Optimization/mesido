@@ -3,6 +3,7 @@ import logging
 
 import esdl
 
+from mesido.esdl.esdl_mixin import DBAccesType
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.head_loss_class import HeadLossOption
 from mesido.techno_economic_mixin import TechnoEconomicMixin
@@ -357,12 +358,17 @@ def main(runinfo_path, log_level):
 
     kwargs = {
         "write_result_db_profiles": False,
-        "influxdb_host": "localhost",
-        "influxdb_port": 8086,
-        "influxdb_username": None,
-        "influxdb_password": None,
-        "influxdb_ssl": False,
-        "influxdb_verify_ssl": False,
+        "database_connections": [
+            {
+                "access_type": DBAccesType.WRITE,
+                "influxdb_host": "localhost",
+                "influxdb_port": 8086,
+                "influxdb_username": None,
+                "influxdb_password": None,
+                "influxdb_ssl": False,
+                "influxdb_verify_ssl": False,
+            },
+        ],
     }
 
     _ = run_optimization_problem(
