@@ -317,6 +317,7 @@ class ScenarioOutput:
 
         results = self.extract_results()
         parameters = self.parameters(0)
+        diff_times = np.diff(self.times())
 
         # ------------------------------------------------------------------------------------------
         # KPIs
@@ -469,9 +470,7 @@ class ScenarioOutput:
                     or asset.asset_type == "GasHeater"
                 ):
                     heat_source_energy_wh[asset.name] = np.sum(
-                        results[f"{asset.name}.Heat_source"][1:]
-                        * (self.times()[1:] - self.times()[0:-1])
-                        / 3600
+                        results[f"{asset.name}.Heat_source"][1:] * diff_times / 3600
                     )
                 # TODO: ATES, HEAT pump show Secondary_heat and Primary_heat and tank storage
                 # elif ATES:
@@ -481,7 +480,7 @@ class ScenarioOutput:
                 # elif asset.asset_type == "HeatStorage":  # Heat discharged
                 #     heat_source_energy_wh[asset.name] = np.sum(
                 #         np.clip(results[f"{asset.name}.Heat_buffer"][1:], -np.inf, 0.0)
-                #         * (self.times()[1:] - self.times()[0:-1])
+                #         * diff_times
                 #         / 3600
                 #     )
         if not discounted_annualized_cost:
@@ -731,15 +730,11 @@ class ScenarioOutput:
                     if asset_name in self.energy_system_components.get("heat_source", []):
                         try:
                             total_energy_produced_locally_wh[subarea.name] += np.sum(
-                                results[f"{asset_name}.Heat_source"][1:]
-                                * (self.times()[1:] - self.times()[0:-1])
-                                / 3600.0
+                                results[f"{asset_name}.Heat_source"][1:] * diff_times / 3600.0
                             )
                         except KeyError:
                             total_energy_produced_locally_wh[subarea.name] = np.sum(
-                                results[f"{asset_name}.Heat_source"][1:]
-                                * (self.times()[1:] - self.times()[0:-1])
-                                / 3600.0
+                                results[f"{asset_name}.Heat_source"][1:] * diff_times / 3600.0
                             )
                     if asset_name in self.energy_system_components.get("heat_demand", []):
                         flow_variable = results[f"{asset_name}.Heat_demand"][1:]
@@ -755,21 +750,16 @@ class ScenarioOutput:
                             np.ones(len(self.times())) * results[f"{asset_name}__hn_heat_loss"]
                         )
                     else:
-                        flow_variable = ""
-                    if asset_name in [
-                            *self.energy_system_components.get("heat_demand", []),
-                            *self.energy_system_components.get("heat_buffer", []),
-                            *self.energy_system_components.get("ates", []),
-                            *self.energy_system_components.get("low_temperature_ates", []),
-                            *self.energy_system_components.get("heat_pipe", []),
-                    ]:
+                        flow_variable = np.array([])
+                    
+                    if flow_variable.any():
                         try:
                             total_energy_consumed_locally_wh[subarea.name] += np.sum(
-                                flow_variable * (self.times()[1:] - self.times()[0:-1]) / 3600.0
+                                flow_variable * diff_times / 3600.0
                             )
                         except KeyError:
                             total_energy_consumed_locally_wh[subarea.name] = np.sum(
-                                flow_variable * (self.times()[1:] - self.times()[0:-1]) / 3600.0
+                                flow_variable * diff_times / 3600.0
                             )
                     # end Calculate the total energy consumed/produced in an area
                 # end if placed loop

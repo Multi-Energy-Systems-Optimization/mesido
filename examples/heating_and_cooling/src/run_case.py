@@ -302,9 +302,9 @@ class HeatCoolingGrowWorkflow(TestCase):
 
         results = solution.extract_results()
 
-        # demand_matching_test(solution, results)
-        # energy_conservation_test(solution, results)
-        # heat_to_discharge_test(solution, results)
+        demand_matching_test(solution, results)
+        energy_conservation_test(solution, results)
+        heat_to_discharge_test(solution, results)
 
         total_opex = 0.0
         total_capex = 0.0

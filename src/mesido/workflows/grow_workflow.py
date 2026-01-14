@@ -330,9 +330,8 @@ class EndScenarioSizing(
         bounds = self.bounds()
 
         demand_type = ["heat_demand", "cold_demand"]
-
         for dtype in demand_type:
-            for demand in self.energy_system_components[dtype]:
+            for demand in self.energy_system_components.get(dtype, []):
                 target = self.get_timeseries(f"{demand}.target_{dtype}")
                 if bounds[f"{demand}.HeatIn.Heat"][1] < max(target.values):
                     logger.warning(

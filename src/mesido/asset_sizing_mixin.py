@@ -2026,21 +2026,6 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     )
                 )
 
-        for ac in self.energy_system_components.get("airco", []):
-            max_var_types.add("airco")
-            max_var = self._asset_max_size_map[ac]
-            max_heat = self.extra_variable(max_var, ensemble_member)
-            heat_airco = self.__state_vector_scaled(f"{ac}.Heat_airco", ensemble_member)
-            constraint_nominal = self.variable_nominal(f"{ac}.Heat_airco")
-
-            constraints.append(
-                (
-                    (np_ones * max_heat - heat_airco) / constraint_nominal,
-                    0.0,
-                    np.inf,
-                )
-            )
-
         for hx in [
             *self.energy_system_components.get("heat_exchanger", []),
             *self.energy_system_components.get("heat_pump", []),
@@ -2075,21 +2060,24 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 )
             )
 
-        for d in self.energy_system_components.get("cold_demand", []):
-            max_var_types.add("cold_demand")
-            max_var = self._asset_max_size_map[d]
-            max_cold = self.extra_variable(max_var, ensemble_member)
-            cold_demand = self.__state_vector_scaled(f"{d}.Cold_demand", ensemble_member)
-            constraint_nominal = max(
-                self.variable_nominal(f"{d}.Cold_demand"), self.variable_nominal(f"{d}.HeatIn.Heat")
-            )
-            constraints.append(
-                (
-                    (np_ones * max_cold - cold_demand) / constraint_nominal,
-                    0.0,
-                    np.inf,
+        cold_asset_type = ["airco", "cold_demand"]
+        for cat in cold_asset_type:
+            for cld in self.energy_system_components.get(cat, []):
+                max_var_types.add(cat)
+                max_var = self._asset_max_size_map[cld]
+                max_cold = self.extra_variable(max_var, ensemble_member)
+                cold_flow = self.__state_vector_scaled(f"{cld}.Heat_flow", ensemble_member)
+                constraint_nominal = max(
+                    self.variable_nominal(f"{cld}.Heat_flow"),
+                    self.variable_nominal(f"{cld}.HeatIn.Heat") if cat == "cold_demand" else 0.0
                 )
-            )
+                constraints.append(
+                    (
+                        (np_ones * max_cold - cold_flow) / constraint_nominal,
+                        0.0,
+                        np.inf,
+                    )
+                )
 
         for a in [
             *self.energy_system_components.get("ates", []),
