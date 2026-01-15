@@ -91,14 +91,14 @@ if __name__ == "__main__":
     #     power_cons = results[f"{asset_name}.Power_elec"]
     #     print(f"{asset_name} power consumed: {power_cons}")
 
-    # for asset_name in [*solution.energy_system_components.get("heat_source_gas", [])]:
+    # for asset_name in [*solution.energy_system_components.get("gas_heat_source_gas", [])]:
     #     power_cons = results[f"{asset_name}.Gas_demand_mass_flow"]
     #     print(f"{asset_name} gas consumed: {power_cons}")
 
     # # Check gas consumption vs production balance
     # total_gas_demand_g = [0] * len(np.diff(solution.times()))
     # total_gas_source_g = [0] * len(np.diff(solution.times()))
-    # for asset_name in [*solution.energy_system_components.get("heat_source_gas", [])]:
+    # for asset_name in [*solution.energy_system_components.get("gas_heat_source_gas", [])]:
     #     for ii in range(1, len(results[f"{asset_name}.Gas_demand_mass_flow"])):
     #         total_gas_demand_g[ii - 1] += (
     #             results[f"{asset_name}.Gas_demand_mass_flow"][ii]

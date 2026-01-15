@@ -131,7 +131,7 @@ if __name__ == "__main__":
     # # Test: Check gas consumption vs production balance
     # total_gas_demand_g = [0] * len(np.diff(solution.times()))
     # total_gas_source_g = [0] * len(np.diff(solution.times()))
-    # for asset_name in [*solution.energy_system_components.get("heat_source_gas", [])]:
+    # for asset_name in [*solution.energy_system_components.get("gas_heat_source_gas", [])]:
     #     for ii in range(1, len(results[f"{asset_name}.Gas_demand_mass_flow"])):
     #         total_gas_demand_g[ii - 1] += (
     #             results[f"{asset_name}.Gas_demand_mass_flow"][ii]
@@ -231,7 +231,7 @@ if __name__ == "__main__":
     #                 solution.esdl_asset_name_to_id_map[f"{asset}"]
     #             ].attributes["COP"]
     #         if asset in [
-    #             *solution.energy_system_components.get("heat_source_gas", []),
+    #             *solution.energy_system_components.get("gas_heat_source_gas", []),
     #         ]:
     #             factor = solution.esdl_assets[
     #                 solution.esdl_asset_name_to_id_map[f"{asset}"]

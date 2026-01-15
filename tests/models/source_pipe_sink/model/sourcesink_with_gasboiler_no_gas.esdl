@@ -1,10 +1,9 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" id="5d539f68-f98e-466b-9ff5-b908a211e0ab_with_return_network_with_return_network" description="" esdlVersion="v2401" name="sourcesink_withgasboiler" version="5">
+<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" id="5d539f68-f98e-466b-9ff5-b908a211e0ab_with_return_network_with_return_network" description="" esdlVersion="v2401" name="sourcesink_with_gasboiler_no_gas" version="9">
   <energySystemInformation xsi:type="esdl:EnergySystemInformation" id="11f4eafa-7fbc-4d82-b346-e893326d2c30">
     <carriers xsi:type="esdl:Carriers" id="eafbd8f4-1fde-4bb5-8dce-fdb74a1a1097">
       <carrier xsi:type="esdl:HeatCommodity" name="heat" supplyTemperature="70.0" id="435a0034-fab0-4e7e-9a17-edf8de9a2b11"/>
       <carrier xsi:type="esdl:HeatCommodity" name="heat_ret" returnTemperature="40.0" id="435a0034-fab0-4e7e-9a17-edf8de9a2b11_ret"/>
-      <carrier xsi:type="esdl:GasCommodity" name="gas" id="bd3b2995-710a-4c30-b335-3057041ff65b" pressure="8.0"/>
     </carriers>
   </energySystemInformation>
   <instance xsi:type="esdl:Instance" id="90e7e098-038e-4462-89fe-a8852c501753" name="Untitled instance">
@@ -50,48 +49,18 @@
       <asset xsi:type="esdl:GasHeater" name="GasHeater_f713" power="10000000.0" efficiency="0.9" id="f713b386-71a0-48b8-8910-01644dc46cf1">
         <port xsi:type="esdl:InPort" name="In" id="d1d72f1c-cd8f-4ba9-a96e-73d66eaad2c0" connectedTo="0f11bb2d-fb28-4f9d-8992-8d5901f579d7" carrier="435a0034-fab0-4e7e-9a17-edf8de9a2b11_ret"/>
         <port xsi:type="esdl:OutPort" name="Out" id="57c72fb7-1430-4141-81ef-794da3426a71" connectedTo="3b5636b1-7b14-46bd-bb27-c0718350b418" carrier="435a0034-fab0-4e7e-9a17-edf8de9a2b11"/>
-        <port xsi:type="esdl:InPort" name="GasPort" id="484fdfac-aa5d-407d-b040-ae372a821d5e" connectedTo="28918f0e-4dc1-4924-879d-c34264a44fff" carrier="bd3b2995-710a-4c30-b335-3057041ff65b"/>
         <geometry xsi:type="esdl:Point" lon="4.385733604431153" lat="52.086441924633874" CRS="WGS84"/>
-        <costInformation xsi:type="esdl:CostInformation" id="546c16cb-46c5-4892-a268-c404fa038217">
-          <investmentCosts xsi:type="esdl:SingleValue" id="70a36434-864a-4588-89fb-478c5c0be9c5" value="10.0">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR/MW" id="43f70d9d-562c-48b2-954f-e8384651caa9" unit="EURO" perMultiplier="MEGA" perUnit="WATT"/>
+        <costInformation xsi:type="esdl:CostInformation" id="0299b2f3-6ddb-4ef5-96b4-387e167b3e78">
+          <investmentCosts xsi:type="esdl:SingleValue" id="ee055d27-fd05-4256-b24a-b2d8f81cd018" value="10.0">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR/MW" id="a86b8b8f-a2e5-43bd-94e0-152ed8023682" unit="EURO" perMultiplier="MEGA" perUnit="WATT"/>
           </investmentCosts>
-          <installationCosts xsi:type="esdl:SingleValue" id="18fb9767-01bd-401a-9d00-3df4e985cbaf" value="100.0">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR" id="ff7db532-4ecd-4644-ab38-39a3f2094072" unit="EURO"/>
+          <installationCosts xsi:type="esdl:SingleValue" id="54dadd67-fa1e-4ed5-8276-137e9362f058" value="100.0">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR" id="cff41b2a-d44d-4c26-b123-cf8d2bb1c3eb" unit="EURO"/>
           </installationCosts>
-          <variableOperationalCosts xsi:type="esdl:SingleValue" id="8631f61f-4d9b-4b59-bb55-7fc41f377a24" value="2.0">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR/m3" id="95224cd9-b863-4c2e-bbb1-0de66f912524" unit="EURO" perUnit="CUBIC_METRE"/>
+          <variableOperationalCosts xsi:type="esdl:SingleValue" id="e54a48bb-f540-4e34-a92b-ba9e0ff55e99" value="2.0">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR/m3" id="ceea9346-8f6e-4256-8395-2e81a249cb43" unit="EURO" perUnit="CUBIC_METRE"/>
           </variableOperationalCosts>
         </costInformation>
-      </asset>
-      <asset xsi:type="esdl:GasProducer" name="GasProducer_82ec" id="82ecb457-b196-42c4-a049-afb695fed860" power="10000000.0">
-        <port xsi:type="esdl:OutPort" name="Out" id="96b5a55c-d4e7-4018-a965-5d88ee205add" connectedTo="b113c25f-a960-4471-a8c7-56f7d591e206" carrier="bd3b2995-710a-4c30-b335-3057041ff65b"/>
-        <geometry xsi:type="esdl:Point" lon="4.378888607025147" lat="52.08642873949524" CRS="WGS84"/>
-      </asset>
-      <asset xsi:type="esdl:Pipe" innerDiameter="0.263" name="Pipe_a7b5" length="467.7" outerDiameter="0.4" id="a7b5a335-c872-4066-91f5-3a810ecad571" diameter="DN250">
-        <costInformation xsi:type="esdl:CostInformation" id="99faff2e-e003-4e00-941c-cb611ae329e2">
-          <investmentCosts xsi:type="esdl:SingleValue" id="8dad1cd1-95ff-4c6e-b644-a1d38cfe4b1f" name="Combined investment and installation costs">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="METRE" physicalQuantity="COST" description="Costs in EUR/m" id="eca952d5-fbd9-4efd-a72c-2eb773445f25" unit="EURO"/>
-          </investmentCosts>
-        </costInformation>
-        <port xsi:type="esdl:InPort" name="In" id="b113c25f-a960-4471-a8c7-56f7d591e206" connectedTo="96b5a55c-d4e7-4018-a965-5d88ee205add" carrier="bd3b2995-710a-4c30-b335-3057041ff65b"/>
-        <port xsi:type="esdl:OutPort" name="Out" id="28918f0e-4dc1-4924-879d-c34264a44fff" connectedTo="484fdfac-aa5d-407d-b040-ae372a821d5e" carrier="bd3b2995-710a-4c30-b335-3057041ff65b"/>
-        <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
-          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.005">
-            <matter xsi:type="esdl:Material" name="steel" thermalConductivity="52.15" id="faac539b-4b7c-43f8-abcd-f08fa2652b7b"/>
-          </component>
-          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0587">
-            <matter xsi:type="esdl:Material" name="PUR" thermalConductivity="0.027" id="d23b4eeb-a419-4c16-bc7e-280a76116f04"/>
-          </component>
-          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0048">
-            <matter xsi:type="esdl:Material" name="HDPE" thermalConductivity="0.4" id="a2b91e8d-471d-4276-a8f6-4efb01054b4e"/>
-          </component>
-        </material>
-        <geometry xsi:type="esdl:Line" CRS="WGS84">
-          <point xsi:type="esdl:Point" lon="4.378888607025147" lat="52.08642873949524"/>
-          <point xsi:type="esdl:Point" lon="4.385733604431153" lat="52.086441924633874"/>
-        </geometry>
-        <dataSource xsi:type="esdl:DataSource" name="Logstor Product Catalogue Version 2020.03" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf"/>
       </asset>
     </area>
   </instance>
