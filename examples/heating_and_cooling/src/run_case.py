@@ -11,10 +11,8 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
-# from mesido.esdl.esdl_mixin import DBAccesType
 from mesido.util import run_esdl_mesido_optimization
 from mesido.workflows import EndScenarioSizingStaged, run_end_scenario_sizing
-from mesido.workflows.grow_workflow import SolverCPLEX
 from mesido.workflows.utils.adapt_profiles import (
     adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
 )
@@ -285,9 +283,7 @@ class HeatCoolingGrowWorkflow(TestCase):
                 return goals
 
         solution = run_end_scenario_sizing(
-            # EndScenarioSizingStaged,
             UpdatedProblem,
-            solver_class=SolverCPLEX,
             base_folder=base_folder,
             # esdl_file_name="Heating and cooling network with return network with costs.esdl",
             esdl_file_name=(
@@ -302,6 +298,7 @@ class HeatCoolingGrowWorkflow(TestCase):
 
         results = solution.extract_results()
 
+        # TODO: ThThis code still has to be moved to a test case in a seperate PR
         demand_matching_test(solution, results)
         energy_conservation_test(solution, results)
         heat_to_discharge_test(solution, results)
@@ -369,14 +366,6 @@ class HeatCoolingGrowWorkflow(TestCase):
                     / factor
                 )
 
-            # below not needed due to results[f"{asset}.Pump_power"] = 0.0
-            # if asset in solution.energy_system_components.get("low_temperature_ates", []):
-            #     pump_power = 0.0
-            #     for ii in range(1, len(solution.times())):
-            #         # pump power
-            #         pump_power += price_profile.values[ii] * results[f"{asset}.Pump_power"][ii] * timesteps_hr[ii - 1] / solution.parameters(0)[f"{asset}.pump_efficiency"]
-            #     variable_operational_cost += pump_power
-
             if asset in solution.energy_system_components.get("air_water_heat_pump_elec", []):
                 price_profile = solution.get_timeseries(
                     f"{list(solution.get_electricity_carriers().values())[0]['name']}.price_profile"
@@ -440,378 +429,355 @@ class HeatCoolingGrowWorkflow(TestCase):
             ) < 1.0e-6
         )
 
-        temp = 1.0
+        # --------------------------------------------------------------------------------------
+        create_plots = False
+        if create_plots:
 
-        import matplotlib.pyplot as plt
-        legend_used = [
-            "ATES",
-            "Heat demand",
-            "Heat pump",
-            "Cooling demand",
-            "Cold producer",
-        ]
-        # -----------------------------------------------------------------------------------------
-        # Peak day
-        times_steps = (
-            solution.get_timeseries(f"HeatingDemand_1.target_heat_demand").times[1:]
-            - solution.get_timeseries(f"HeatingDemand_1.target_heat_demand").times[0:-1]
-        )
-        index_start_peak_day = [None] * 2
-        index_end_peak_day = [None] * 2
-        index_start_peak_day[0] = np.where(times_steps == 3600.0)[0][0]
-        index_end_peak_day[1] = np.where(times_steps == 3600.0)[0][-1] + 2
-        index_start_peak_day[1] = index_end_peak_day[1] - 24
-        index_end_peak_day[0] = index_start_peak_day[0] + 24
+            import matplotlib.pyplot as plt
+            legend_used = [
+                "ATES",
+                "Heat demand",
+                "Heat pump",
+                "Cooling demand",
+                "Cold producer",
+            ]
+            # --------------------------------------------------------------------------------------
+            # Peak day
+            times_steps = (
+                solution.get_timeseries(f"HeatingDemand_1.target_heat_demand").times[1:]
+                - solution.get_timeseries(f"HeatingDemand_1.target_heat_demand").times[0:-1]
+            )
+            index_start_peak_day = [None] * 2
+            index_end_peak_day = [None] * 2
+            index_start_peak_day[0] = np.where(times_steps == 3600.0)[0][0]
+            index_end_peak_day[1] = np.where(times_steps == 3600.0)[0][-1] + 2
+            index_start_peak_day[1] = index_end_peak_day[1] - 24
+            index_end_peak_day[0] = index_start_peak_day[0] + 24
 
-        for ip in range(len(index_start_peak_day)):
-            times_peak_day = (
-                solution.get_timeseries(f"HeatingDemand_1.target_heat_demand").times[index_start_peak_day[ip]: index_end_peak_day[ip]]
-                - min(
+            for ip in range(len(index_start_peak_day)):
+                times_peak_day = (
                     solution.get_timeseries(f"HeatingDemand_1.target_heat_demand").times[index_start_peak_day[ip]: index_end_peak_day[ip]]
-                )
-            ) / 3600.0
+                    - min(
+                        solution.get_timeseries(f"HeatingDemand_1.target_heat_demand").times[index_start_peak_day[ip]: index_end_peak_day[ip]]
+                    )
+                ) / 3600.0
 
-            fig_1 = plt.figure()
+                fig_1 = plt.figure()
+                plt.plot(
+                    times_peak_day[1:],
+                    results["ATES_1.Heat_flow"][index_start_peak_day[ip] + 1: index_end_peak_day[ip]] / 1.0e6,
+                    # marker="x",
+                )
+                plt.plot(
+                    times_peak_day[1:],
+                    (
+                        results["HeatingDemand_1.Heat_flow"][index_start_peak_day[ip] + 1: index_end_peak_day[ip]]
+                        + results["HeatingDemand_2.Heat_flow"][index_start_peak_day[ip] + 1: index_end_peak_day[ip]]
+                    ) / 1.0e6,
+                    # marker="H",
+                    linestyle='dotted',
+                )
+                plt.plot(
+                    times_peak_day[1:],
+                    results["HeatPump_1.Heat_flow"][index_start_peak_day[ip] + 1: index_end_peak_day[ip]] / 1.0e6,
+                    # marker=">",
+                )
+
+                plt.plot(
+                    times_peak_day[1:],
+                    results["CoolingDemand_1.Heat_flow"][index_start_peak_day[ip] + 1: index_end_peak_day[ip]] / 1.0e6,
+                    # marker="*",
+                    linestyle='dotted',
+                )
+                plt.plot(
+                    times_peak_day[1:],
+                    results["Airco_1.Heat_flow"][index_start_peak_day[ip] + 1: index_end_peak_day[ip]] / 1.0e6,
+                    # marker="o",
+                )
+
+                plt.legend(legend_used, prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
+
+                plt.yticks(np.linspace(-6, 14, 11))
+                plt.xlabel("Time [hourly]", fontsize=12)
+                plt.ylabel("Power [MW]", fontsize=12)
+                plt.tight_layout()
+                plt.savefig(f"All_in_one_peak_day_ip{ip}")
+                plt.show()
+                plt.close()
+            # ----------------------------------------------------------------------------------
+            # Seasonal
+            times_seasonal = (
+                solution.get_timeseries(f"HeatingDemand_1.target_heat_demand").times[1:index_start_peak_day[0]] # index_end_peak_day
+            ) / 3600.0 / 24.0
+            times_seasonal = np.append(
+                times_seasonal, solution.get_timeseries(f"HeatingDemand_1.target_heat_demand").times[index_end_peak_day[0]:index_start_peak_day[1]] / 3600.0 / 24.0
+            )
+            times_seasonal = np.append(
+                times_seasonal, solution.get_timeseries(f"HeatingDemand_1.target_heat_demand").times[index_end_peak_day[1]:] / 3600.0 / 24.0
+            )
+
+            fig_2 = plt.figure()
+
+            temp_season = (results["ATES_1.Heat_flow"][1:index_start_peak_day[0]])
+            temp_season = np.append(
+                temp_season, results["ATES_1.Heat_flow"][index_end_peak_day[0]:index_start_peak_day[1]]
+            )
+            temp_season = np.append(temp_season, results["ATES_1.Heat_flow"][index_end_peak_day[1]:])
             plt.plot(
-                times_peak_day[1:],
-                results["ATES_1.Heat_flow"][index_start_peak_day[ip] + 1: index_end_peak_day[ip]] / 1.0e6,
+                times_seasonal,
+                temp_season / 1.0e6,
                 # marker="x",
             )
+
+            temp_season = (
+                results["HeatingDemand_1.Heat_flow"][1:index_start_peak_day[0]]
+                + results["HeatingDemand_2.Heat_flow"][1:index_start_peak_day[0]]
+            )
+            temp_season = np.append(
+                temp_season,
+                results["HeatingDemand_1.Heat_flow"][index_end_peak_day[0]:index_start_peak_day[1]]
+                + results["HeatingDemand_2.Heat_flow"][index_end_peak_day[0]:index_start_peak_day[1]]
+            )
+            temp_season = np.append(
+                temp_season,
+                results["HeatingDemand_1.Heat_flow"][index_end_peak_day[1]:]
+                + results["HeatingDemand_2.Heat_flow"][index_end_peak_day[1]:]
+            )
             plt.plot(
-                times_peak_day[1:],
-                (
-                    results["HeatingDemand_1.Heat_flow"][index_start_peak_day[ip] + 1: index_end_peak_day[ip]]
-                    + results["HeatingDemand_2.Heat_flow"][index_start_peak_day[ip] + 1: index_end_peak_day[ip]]
-                ) / 1.0e6,
+                times_seasonal,
+                temp_season / 1.0e6,
                 # marker="H",
                 linestyle='dotted',
             )
+
+            temp_season = (results["HeatPump_1.Heat_flow"][1:index_start_peak_day[0]])
+            temp_season = np.append(
+                temp_season,
+                results["HeatPump_1.Heat_flow"][index_end_peak_day[0]:index_start_peak_day[1]],
+            )
+            temp_season = np.append(
+                temp_season,
+                results["HeatPump_1.Heat_flow"][index_end_peak_day[1]:],
+            )
             plt.plot(
-                times_peak_day[1:],
-                results["HeatPump_1.Heat_flow"][index_start_peak_day[ip] + 1: index_end_peak_day[ip]] / 1.0e6,
+                times_seasonal,
+                temp_season / 1.0e6,
                 # marker=">",
             )
 
+            temp_season = (results["CoolingDemand_1.Heat_flow"][1:index_start_peak_day[0]])
+            temp_season = np.append(
+                temp_season,
+                results["CoolingDemand_1.Heat_flow"][index_end_peak_day[0]:index_start_peak_day[1]],
+            )
+            temp_season = np.append(
+                temp_season,
+                results["CoolingDemand_1.Heat_flow"][index_end_peak_day[1]:],
+            )
             plt.plot(
-                times_peak_day[1:],
-                results["CoolingDemand_1.Heat_flow"][index_start_peak_day[ip] + 1: index_end_peak_day[ip]] / 1.0e6,
+                times_seasonal,
+                temp_season / 1.0e6,
                 # marker="*",
                 linestyle='dotted',
             )
+
+            temp_season = (results["Airco_1.Heat_flow"][1:index_start_peak_day[0]])
+            temp_season = np.append(
+                temp_season,
+                results["Airco_1.Heat_flow"][index_end_peak_day[0]:index_start_peak_day[1]]
+            )
+            temp_season = np.append(
+                temp_season,
+                results["Airco_1.Heat_flow"][index_end_peak_day[1]:]
+            )
             plt.plot(
-                times_peak_day[1:],
-                results["Airco_1.Heat_flow"][index_start_peak_day[ip] + 1: index_end_peak_day[ip]] / 1.0e6,
+                times_seasonal,
+                temp_season / 1.0e6,
                 # marker="o",
             )
 
             plt.legend(legend_used, prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
 
-            plt.yticks(np.linspace(-6, 14, 11))
+            plt.xlabel("Time [daily]", fontsize=12)
+            plt.ylabel("Power [MW]", fontsize=12)
+            plt.tight_layout()
+            plt.savefig("All_in_one_seasonal")
+            plt.show()
+            plt.close()
+            
+            # --------------------------------------------------------------------------------------
+            # ATES goodies
+            # seasonal
+            fig_4 = plt.figure()
+
+            temp_season = (results["ATES_1.Stored_volume"][0:index_start_peak_day[0]])
+            temp_season = np.append(
+                temp_season,
+                results["ATES_1.Stored_volume"][index_end_peak_day[0]:index_start_peak_day[1]],
+            )
+            temp_season = np.append(
+                temp_season,
+                results["ATES_1.Stored_volume"][index_end_peak_day[1]:],
+            )
+            plt.plot(
+                np.append(0, times_seasonal),  # this was done so that one can see the start == end value
+                temp_season,
+                # marker="+",
+                color='red',
+            )
+
+            max_volume_warm_well = max(temp_season) - min(temp_season)
+            cold_well_volume = -temp_season
+            cold_well_volume = cold_well_volume + max_volume_warm_well
+            plt.plot(
+                np.append(0, times_seasonal), # this was done so that one can see the start == end value
+                cold_well_volume,
+                # marker="x",
+                color='cyan',
+            )
+
+            plt.legend(
+                ["Warm well", "Cold well"],
+                prop={'size': 10},
+                loc='center left',
+                bbox_to_anchor=(1, 0.5),
+            )
+            plt.xlabel("Time [daily]", fontsize=12)
+            plt.ylabel("ATES stored volume [m$^3$]", fontsize=12)
+            plt.tight_layout()
+            plt.savefig("ATES_volume_seasonal")
+            plt.show()
+            plt.close()
+
+            # peak day
+            for ip in range(len(index_start_peak_day)):
+                cold_well_volume = (
+                    -results["ATES_1.Stored_volume"][index_start_peak_day[ip]: index_end_peak_day[ip]]
+                )
+                cold_well_volume = cold_well_volume + max_volume_warm_well
+
+                fig_warm_cold_well_peak, ax1 = plt.subplots()
+
+                color = 'tab:red'
+                ax1.set_xlabel('Time [hourly]', fontsize=12)
+                ax1.set_ylabel('Warm well stored volume [m$^3$]', color=color, fontsize=12)
+                ax1.plot(
+                    times_peak_day,
+                    results["ATES_1.Stored_volume"][index_start_peak_day[ip]: index_end_peak_day[ip]],
+                    color=color,
+                )
+                ax1.tick_params(axis='y', labelcolor=color)
+
+                ax2 = ax1.twinx()  # instantiate a second Axes that shares the same x-axis
+
+                color = 'tab:cyan'
+                ax2.set_ylabel('Cold well stored volume [m$^3$]', color=color, fontsize=12)  # we already handled the x-label with ax1
+                ax2.plot(times_peak_day, cold_well_volume, color=color)
+                ax2.tick_params(axis='y', labelcolor=color)
+                fig_warm_cold_well_peak.tight_layout()  # otherwise the right y-label is slightly clipped
+                plt.savefig(f"ATES_volume_warm_cold_well_peak_day_ip{ip}")
+                plt.show()
+                plt.close()
+            # --------------------------------------------------------------------------------------
+            # Demands
+            # heat dmemand
+            # peak day
+
+            fig_tot_heat_demand_peak_day = plt.figure()
+            plt.plot(
+                times_peak_day[1:],
+                (
+                    results["HeatingDemand_1.Heat_flow"][index_start_peak_day[0] + 1: index_end_peak_day[0]]
+                    + results["HeatingDemand_2.Heat_flow"][index_start_peak_day[0] + 1: index_end_peak_day[0]]
+                ) / 1.0e6,
+                # marker="H",
+                color='red',
+                linestyle='dotted',
+            )
             plt.xlabel("Time [hourly]", fontsize=12)
             plt.ylabel("Power [MW]", fontsize=12)
             plt.tight_layout()
-            plt.savefig(f"All_in_one_peak_day_ip{ip}")
-            plt.show()
-            plt.close()
-            # temp = 1.0
-            # # -----------------------------------------------------------------------------------------
-        # Seasonal
-        times_seasonal = (
-            solution.get_timeseries(f"HeatingDemand_1.target_heat_demand").times[1:index_start_peak_day[0]] # index_end_peak_day
-        ) / 3600.0 / 24.0
-        times_seasonal = np.append(
-            times_seasonal, solution.get_timeseries(f"HeatingDemand_1.target_heat_demand").times[index_end_peak_day[0]:index_start_peak_day[1]] / 3600.0 / 24.0
-        )
-        times_seasonal = np.append(
-            times_seasonal, solution.get_timeseries(f"HeatingDemand_1.target_heat_demand").times[index_end_peak_day[1]:] / 3600.0 / 24.0
-        )
-
-        fig_2 = plt.figure()
-
-        temp_season = (results["ATES_1.Heat_flow"][1:index_start_peak_day[0]])
-        temp_season = np.append(
-            temp_season, results["ATES_1.Heat_flow"][index_end_peak_day[0]:index_start_peak_day[1]]
-        )
-        temp_season = np.append(temp_season, results["ATES_1.Heat_flow"][index_end_peak_day[1]:])
-        plt.plot(
-            times_seasonal,
-            temp_season / 1.0e6,
-            # marker="x",
-        )
-
-        temp_season = (
-            results["HeatingDemand_1.Heat_flow"][1:index_start_peak_day[0]]
-            + results["HeatingDemand_2.Heat_flow"][1:index_start_peak_day[0]]
-        )
-        temp_season = np.append(
-            temp_season,
-            results["HeatingDemand_1.Heat_flow"][index_end_peak_day[0]:index_start_peak_day[1]]
-            + results["HeatingDemand_2.Heat_flow"][index_end_peak_day[0]:index_start_peak_day[1]]
-        )
-        temp_season = np.append(
-            temp_season,
-            results["HeatingDemand_1.Heat_flow"][index_end_peak_day[1]:]
-            + results["HeatingDemand_2.Heat_flow"][index_end_peak_day[1]:]
-        )
-        plt.plot(
-            times_seasonal,
-            temp_season / 1.0e6,
-            # marker="H",
-            linestyle='dotted',
-        )
-
-        temp_season = (results["HeatPump_1.Heat_flow"][1:index_start_peak_day[0]])
-        temp_season = np.append(
-            temp_season,
-            results["HeatPump_1.Heat_flow"][index_end_peak_day[0]:index_start_peak_day[1]],
-        )
-        temp_season = np.append(
-            temp_season,
-            results["HeatPump_1.Heat_flow"][index_end_peak_day[1]:],
-        )
-        plt.plot(
-            times_seasonal,
-            temp_season / 1.0e6,
-            # marker=">",
-        )
-
-        temp_season = (results["CoolingDemand_1.Heat_flow"][1:index_start_peak_day[0]])
-        temp_season = np.append(
-            temp_season,
-            results["CoolingDemand_1.Heat_flow"][index_end_peak_day[0]:index_start_peak_day[1]],
-        )
-        temp_season = np.append(
-            temp_season,
-            results["CoolingDemand_1.Heat_flow"][index_end_peak_day[1]:],
-        )
-        plt.plot(
-            times_seasonal,
-            temp_season / 1.0e6,
-            # marker="*",
-            linestyle='dotted',
-        )
-
-        temp_season = (results["Airco_1.Heat_flow"][1:index_start_peak_day[0]])
-        temp_season = np.append(
-            temp_season,
-            results["Airco_1.Heat_flow"][index_end_peak_day[0]:index_start_peak_day[1]]
-        )
-        temp_season = np.append(
-            temp_season,
-            results["Airco_1.Heat_flow"][index_end_peak_day[1]:]
-        )
-        plt.plot(
-            times_seasonal,
-            temp_season / 1.0e6,
-            # marker="o",
-        )
-
-        plt.legend(legend_used, prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
-
-        plt.xlabel("Time [daily]", fontsize=12)
-        plt.ylabel("Power [MW]", fontsize=12)
-        plt.tight_layout()
-        plt.savefig("All_in_one_seasonal")
-        plt.show()
-        # plt.close()
-        # temp = 1.0
-        # ------------------------------------------------------------------------------------------
-        # ATES goodies
-        # seasonal
-        fig_4 = plt.figure()
-
-        temp_season = (results["ATES_1.Stored_volume"][0:index_start_peak_day[0]])
-        temp_season = np.append(
-            temp_season,
-            results["ATES_1.Stored_volume"][index_end_peak_day[0]:index_start_peak_day[1]],
-        )
-        temp_season = np.append(
-            temp_season,
-            results["ATES_1.Stored_volume"][index_end_peak_day[1]:],
-        )
-        plt.plot(
-            np.append(0, times_seasonal),  # this was done so that one can see the start == end value
-            temp_season,
-            # marker="+",
-            color='red',
-        )
-
-        max_volume_warm_well = max(temp_season) - min(temp_season)
-        cold_well_volume = -temp_season
-        cold_well_volume = cold_well_volume + max_volume_warm_well
-        plt.plot(
-            np.append(0, times_seasonal), # this was done so that one can see the start == end value
-            cold_well_volume,
-            # marker="x",
-            color='cyan',
-        )
-
-        plt.legend(
-            ["Warm well", "Cold well"],
-            prop={'size': 10},
-            loc='center left',
-            bbox_to_anchor=(1, 0.5),
-        )
-        plt.xlabel("Time [daily]", fontsize=12)
-        plt.ylabel("ATES stored volume [m$^3$]", fontsize=12)
-        plt.tight_layout()
-        plt.savefig("ATES_volume_seasonal")
-        plt.show()
-        plt.close()
-
-        # peak day
-        for ip in range(len(index_start_peak_day)):
-            cold_well_volume = (
-                -results["ATES_1.Stored_volume"][index_start_peak_day[ip]: index_end_peak_day[ip]]
-            )
-            cold_well_volume = cold_well_volume + max_volume_warm_well
-
-            fig_warm_cold_well_peak, ax1 = plt.subplots()
-
-            color = 'tab:red'
-            ax1.set_xlabel('Time [hourly]', fontsize=12)
-            ax1.set_ylabel('Warm well stored volume [m$^3$]', color=color, fontsize=12)
-            ax1.plot(
-                times_peak_day,
-                results["ATES_1.Stored_volume"][index_start_peak_day[ip]: index_end_peak_day[ip]],
-                color=color,
-            )
-            ax1.tick_params(axis='y', labelcolor=color)
-
-            ax2 = ax1.twinx()  # instantiate a second Axes that shares the same x-axis
-
-            color = 'tab:cyan'
-            ax2.set_ylabel('Cold well stored volume [m$^3$]', color=color, fontsize=12)  # we already handled the x-label with ax1
-            ax2.plot(times_peak_day, cold_well_volume, color=color)
-            ax2.tick_params(axis='y', labelcolor=color)
-            fig_warm_cold_well_peak.tight_layout()  # otherwise the right y-label is slightly clipped
-            plt.savefig(f"ATES_volume_warm_cold_well_peak_day_ip{ip}")
+            plt.savefig(f"Total_heat_demand_profile_peak_day_ip{0}")
             plt.show()
             plt.close()
 
-        # ------------------------------------------------------------------------------------------
-        # The plots below have not been updated yet
-        # ------------------------------------------------------------------------------------------
+            # Demands
+            # cold dmemand
+            # peak day
 
-        # Demands
-        # heat dmemand
-        # peak day
+            fig_tot_cold_demand_peak_day = plt.figure()
+            plt.plot(
+                times_peak_day[1:],
+                (
+                    results["CoolingDemand_1.Heat_flow"][index_start_peak_day[1] + 1: index_end_peak_day[1]]
+                ) / 1.0e6,
+                # marker="H",
+                color='cyan',
+                linestyle='dotted',
+            )
+            plt.xlabel("Time [hourly]", fontsize=12)
+            plt.ylabel("Power [MW]", fontsize=12)
+            plt.tight_layout()
+            plt.savefig(f"Total_cold_demand_profile_peak_day_ip{1}")
+            plt.show()
+            plt.close()
 
-        fig_tot_heat_demand_peak_day = plt.figure()
-        plt.plot(
-            times_peak_day[1:],
-            (
-                results["HeatingDemand_1.Heat_flow"][index_start_peak_day[0] + 1: index_end_peak_day[0]]
-                + results["HeatingDemand_2.Heat_flow"][index_start_peak_day[0] + 1: index_end_peak_day[0]]
-            ) / 1.0e6,
-            # marker="H",
-            color='red',
-            linestyle='dotted',
-        )
-        # plt.legend(["Total heat demand"], prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
-        plt.xlabel("Time [hourly]", fontsize=12)
-        plt.ylabel("Power [MW]", fontsize=12)
-        plt.tight_layout()
-        plt.savefig(f"Total_heat_demand_profile_peak_day_ip{0}")
-        plt.show()
-        plt.close()
+            # heating demand
+            # seasonal
+            fig_6 = plt.figure()
+            temp_season = (
+                results["HeatingDemand_1.Heat_flow"][1:index_start_peak_day[0]]
+                + results["HeatingDemand_2.Heat_flow"][1:index_start_peak_day[0]]
+            )
+            temp_season = np.append(
+                temp_season,
+                results["HeatingDemand_1.Heat_flow"][index_end_peak_day[0]:index_start_peak_day[1]]
+                + results["HeatingDemand_2.Heat_flow"][index_end_peak_day[0]:index_start_peak_day[1]]
+            )
+            temp_season = np.append(
+                temp_season,
+                results["HeatingDemand_1.Heat_flow"][index_end_peak_day[1]:]
+                + results["HeatingDemand_2.Heat_flow"][index_end_peak_day[1]:]
+            )
+            plt.plot(
+                times_seasonal,
+                temp_season / 1.0e6,
+                # marker="H",
+                color='red',
+                linestyle='dotted',
+            )
+            plt.xlabel("Time [daily]", fontsize=12)
+            plt.ylabel("Power [MW]", fontsize=12)
+            plt.tight_layout()
+            plt.savefig("Total_heat_demand_profile_seasonal")
+            plt.show()
+            plt.close()
 
-        # Demands
-        # cold dmemand
-        # peak day
-
-        fig_tot_cold_demand_peak_day = plt.figure()
-        plt.plot(
-            times_peak_day[1:],
-            (
-                results["CoolingDemand_1.Heat_flow"][index_start_peak_day[1] + 1: index_end_peak_day[1]]
-            ) / 1.0e6,
-            # marker="H",
-            color='cyan',
-            linestyle='dotted',
-        )
-        # plt.legend(["Total heat demand"], prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
-        plt.xlabel("Time [hourly]", fontsize=12)
-        plt.ylabel("Power [MW]", fontsize=12)
-        plt.tight_layout()
-        plt.savefig(f"Total_cold_demand_profile_peak_day_ip{1}")
-        plt.show()
-        plt.close()
-
-        # heating demand
-        # seaonal
-        fig_6 = plt.figure()
-        temp_season = (
-            results["HeatingDemand_1.Heat_flow"][1:index_start_peak_day[0]]
-            + results["HeatingDemand_2.Heat_flow"][1:index_start_peak_day[0]]
-        )
-        temp_season = np.append(
-            temp_season,
-            results["HeatingDemand_1.Heat_flow"][index_end_peak_day[0]:index_start_peak_day[1]]
-            + results["HeatingDemand_2.Heat_flow"][index_end_peak_day[0]:index_start_peak_day[1]]
-        )
-        temp_season = np.append(
-            temp_season,
-            results["HeatingDemand_1.Heat_flow"][index_end_peak_day[1]:]
-            + results["HeatingDemand_2.Heat_flow"][index_end_peak_day[1]:]
-        )
-        plt.plot(
-            times_seasonal,
-            temp_season / 1.0e6,
-            # marker="H",
-            color='red',
-            linestyle='dotted',
-        )
-
-        # plt.legend(["Total heat demand"], prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
-        plt.xlabel("Time [daily]", fontsize=12)
-        plt.ylabel("Power [MW]", fontsize=12)
-        plt.tight_layout()
-        plt.savefig("Total_heat_demand_profile_seasonal")
-        plt.show()
-        plt.close()
-
-        fig_tot_cool_demand = plt.figure()
-        temp_season = (results["CoolingDemand_1.Heat_flow"][1:index_start_peak_day[0]])
-        temp_season = np.append(
-            temp_season, results["CoolingDemand_1.Heat_flow"][index_end_peak_day[0]:index_start_peak_day[1]]
-        )
-        temp_season = np.append(
-            temp_season, results["CoolingDemand_1.Heat_flow"][index_end_peak_day[1]:]
-        )
-        plt.plot(
-            times_seasonal,
-            temp_season / 1.0e6,
-            # marker="*",
-            color='cyan',
-            linestyle='dotted',
-        )
-
-        # plt.legend(["Total heat demand"], prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
-        plt.xlabel("Time [daily]", fontsize=12)
-        plt.ylabel("Power [MW]", fontsize=12)
-        plt.tight_layout()
-        plt.savefig("Total_cool_demand_profile_seasonal")
-        plt.show()
-        plt.close()
-
-
-        # temp = 111
-        # # Check cyclic constraint
-        # # np.testing.assert_allclose(
-        # #     results["ATES_226d.Stored_heat"][0], results["ATES_226d.Stored_heat"][-1]
-        # # )
-        # # # Check heat loss and gain
-        # # tol_value = 1.0e-6
-        # # np.testing.assert_array_less(
-        # #     0.0, results["Pipe1.HeatIn.Heat"] - results["Pipe1.HeatOut.Heat"] + tol_value
-        # # )
-        # # np.testing.assert_array_less(
-        # #     results["Pipe1_ret.HeatIn.Heat"] - results["Pipe1_ret.HeatOut.Heat"] - tol_value, 0.0
-        # # )
+            fig_tot_cool_demand = plt.figure()
+            temp_season = (results["CoolingDemand_1.Heat_flow"][1:index_start_peak_day[0]])
+            temp_season = np.append(
+                temp_season, results["CoolingDemand_1.Heat_flow"][index_end_peak_day[0]:index_start_peak_day[1]]
+            )
+            temp_season = np.append(
+                temp_season, results["CoolingDemand_1.Heat_flow"][index_end_peak_day[1]:]
+            )
+            plt.plot(
+                times_seasonal,
+                temp_season / 1.0e6,
+                # marker="*",
+                color='cyan',
+                linestyle='dotted',
+            )
+            plt.xlabel("Time [daily]", fontsize=12)
+            plt.ylabel("Power [MW]", fontsize=12)
+            plt.tight_layout()
+            plt.savefig("Total_cool_demand_profile_seasonal")
+            plt.show()
+            plt.close()
 
 
 if __name__ == "__main__":
+
     # test_cold_demand = HeatColdDemand()
     # test_cold_demand.heating_cooling_case()
 
