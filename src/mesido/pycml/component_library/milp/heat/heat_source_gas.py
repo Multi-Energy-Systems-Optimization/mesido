@@ -34,9 +34,6 @@ class HeatSourceGas(HeatSource):
         self.add_variable(
             Variable, "Gas_demand_mass_flow", min=0.0, nominal=self.Q_nominal_gas * self.density
         )  # [g/s]
-        self.add_variable(
-            Variable, "Gas_demand_volumetric_flow_normal", min=0.0, nominal=self.Q_nominal_gas
-        )  # [m3/s]
 
         # Heat_source [J/s] = mass_flow [g/s] / 1000 [g/kg] * energy_content [J/kg] * efficiency [-]
         self.add_equation(

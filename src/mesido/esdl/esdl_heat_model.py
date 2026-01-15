@@ -2483,28 +2483,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         q_nominals = self._get_connected_q_nominal(asset)
 
-        if NetworkSettings.NETWORK_TYPE_GAS in port.carrier.name:
-            network_composition = NetworkSettings.NETWORK_COMPOSITION_GAS
-        elif NetworkSettings.NETWORK_TYPE_HYDROGEN in port.carrier.name:
-            network_composition = str(NetworkSettings.NETWORK_TYPE_HYDROGEN).upper()
-        else:
-            logger.warning(
-                f"Neither gas/hydrogen was used in the carrier "
-                f"name of pipe {asset.name}"
-                "Normal density is calculated based on Gas"
-            )
-            network_composition = NetworkSettings.NETWORK_COMPOSITION_GAS
-        density_normal = (
-            cP.CoolProp.PropsSI(
-                "D",
-                "T",
-                273.15 + 0.0,  # temperture in k
-                "P",
-                1.01325 * 1.0e5,  # pressure pa
-                network_composition,
-            )
-            * 1.0e3  # to convert from kg/m3 to g/m3
+        density_normal = get_density(
+            asset.name, port.carrier, temperature_degrees_celsius=0.0, pressure_pa=1.01325 * 1.0e5
         )
+
         modifiers.update(
             dict(
                 id_mapping_carrier=id_mapping,

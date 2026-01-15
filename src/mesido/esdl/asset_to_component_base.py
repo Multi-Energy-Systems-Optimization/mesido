@@ -158,10 +158,25 @@ def get_density(
             str(NetworkSettings.NETWORK_TYPE_HYDROGEN).upper(),
         )
     else:
-        logger.warning(
-            f"Neither gas/hydrogen/heat was used in the carrier " f"name of pipe {asset_name}"
-        )
-        density = 6.2  # natural gas at about 8 bar
+        if temperature_degrees_celsius == 0.0 and pressure_pa == 1.01325 * 1.0e5:
+            logger.warning(
+                f"Neither gas/hydrogen was used in the carrier "
+                f"name of pipe {asset_name}"
+                "Normal density is calculated based on Gas"
+            )
+            density = cP.CoolProp.PropsSI(
+                "D",
+                "T",
+                273.15 + temperature_degrees_celsius,
+                "P",
+                pressure_pa,
+                NetworkSettings.NETWORK_COMPOSITION_GAS,
+            )
+        else:
+            logger.warning(
+                f"Neither gas/hydrogen/heat was used in the carrier " f"name of pipe {asset_name}"
+            )
+            density = 6.2  # natural gas at about 8 bar
     return density * 1.0e3  # to convert from kg/m3 to g/m3
 
 
