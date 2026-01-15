@@ -10,6 +10,7 @@ class NetworkErrors(StrEnum):
     """
     Enumeration for network type errors.
     """
+
     HEAT_NETWORK_ERRORS = "heat_network"
     HEAT_AND_COOL_NETWORK_ERRORS = "heat_and_cool_network"
     CUSTOM_ERRORS = "custom_errors"  # an example of custom stuff that can be added in the future

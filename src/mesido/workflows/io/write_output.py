@@ -751,7 +751,7 @@ class ScenarioOutput:
                         )
                     else:
                         flow_variable = np.array([])
-                    
+
                     if flow_variable.any():
                         try:
                             total_energy_consumed_locally_wh[subarea.name] += np.sum(
@@ -1039,7 +1039,7 @@ class ScenarioOutput:
 
                 if asset.name in [
                     *self.energy_system_components.get("ates", []),
-                    *self.energy_system_components.get("low_temperature_ates", [])
+                    *self.energy_system_components.get("low_temperature_ates", []),
                 ]:
                     asset.maxChargeRate = results[f"{name}__max_size"][0]
                     asset.maxDischargeRate = results[f"{name}__max_size"][0]

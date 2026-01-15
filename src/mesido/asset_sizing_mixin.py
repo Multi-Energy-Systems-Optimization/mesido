@@ -2069,7 +2069,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 cold_flow = self.__state_vector_scaled(f"{cld}.Heat_flow", ensemble_member)
                 constraint_nominal = max(
                     self.variable_nominal(f"{cld}.Heat_flow"),
-                    self.variable_nominal(f"{cld}.HeatIn.Heat") if cat == "cold_demand" else 0.0
+                    self.variable_nominal(f"{cld}.HeatIn.Heat") if cat == "cold_demand" else 0.0,
                 )
                 constraints.append(
                     (

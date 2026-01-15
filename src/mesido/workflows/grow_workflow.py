@@ -16,7 +16,7 @@ from mesido.workflows.io.write_output import ScenarioOutput
 from mesido.workflows.utils.adapt_profiles import (
     adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
 )
-from mesido.workflows.utils.error_types import (NetworkErrors, potential_error_to_error)
+from mesido.workflows.utils.error_types import NetworkErrors, potential_error_to_error
 from mesido.workflows.utils.helpers import main_decorator, run_optimization_problem_solver
 
 import numpy as np
@@ -233,7 +233,7 @@ class EndScenarioSizing(
     """
 
     def __init__(
-            self, error_type_check: str = NetworkErrors.HEAT_NETWORK_ERRORS, *args, **kwargs
+        self, error_type_check: str = NetworkErrors.HEAT_NETWORK_ERRORS, *args, **kwargs
     ) -> None:
         reset_potential_errors()  # This needed to clear the Singleton which is persistent
 
@@ -338,7 +338,8 @@ class EndScenarioSizing(
                         f"{demand} has a flow limit, {bounds[f'{demand}.HeatIn.Heat'][1]}, "
                         f"lower than what is required for the maximum demand {max(target.values)}"
                     )
-                # TODO: update this caclulation to bounds[f"{demand}.HeatIn.Heat"][1]/ dT * Tsup & move
+                # TODO:
+                # update this caclulation to bounds[f"{demand}.HeatIn.Heat"][1]/ dT * Tsup & move
                 # to potential_errors variable
                 state = f"{demand}.{dtype[0].upper() + dtype[1:]}"
 
@@ -379,7 +380,7 @@ class EndScenarioSizing(
                 if i < self.__indx_max_peak or i > (self.__indx_max_peak + 23):
                     constraints.append((vars[i], 0.0, 0.0))
 
-         # TODO: confirm if volume or heat balance is required over year. This will
+        # TODO: confirm if volume or heat balance is required over year. This will
         # determine if cyclic contraint below is for stored_heat or stored_volume
         # Add stored_heat cyclic constraint, this will also ensure that the total heat
         # change in the wko is 0 over the timeline

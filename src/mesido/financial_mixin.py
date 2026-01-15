@@ -150,7 +150,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 nominal_fixed_operational = (
                     bounds[f"{asset_name}.Cold_demand"][1]
                     if not np.isinf(bounds[f"{asset_name}.Cold_demand"][1])
-                    else bounds[f"{asset_name}.HeatIn.Heat"][1]  # TODO: This In or Out to be confirmed?
+                    else bounds[f"{asset_name}.HeatIn.Heat"][1]
                 )
                 nominal_fixed_operational = (
                     nominal_fixed_operational
@@ -1064,9 +1064,10 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     * timesteps_hr[i - 1]
                     / denominator
                 )
-                sum += price_profile.values[i] * pump_power[i] * timesteps_hr[i - 1] / eff  # pump_power ?
+                sum += price_profile.values[i] * pump_power[i] * timesteps_hr[i - 1] / eff
 
-                # TODO: resolve issue for elect costs fir elec heat pump (ie. heat source), see code below
+                # TODO:
+                # resolve issue for elect costs for elec heat pump (ie. heat source), see code below
                 # if (
                 #     s not in self.energy_system_components.get("air_water_heat_pump", [])
                 #     and s not in self.energy_system_components.get("air_water_heat_pump_elec", [])
@@ -1157,9 +1158,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             sum = 0.0
             for i in range(1, len(self.times())):
                 sum += (
-                    variable_operational_cost_coefficient
-                    * gas_mass_flow[i]
-                    * timesteps_hr[i - 1]
+                    variable_operational_cost_coefficient * gas_mass_flow[i] * timesteps_hr[i - 1]
                 )
 
             constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
