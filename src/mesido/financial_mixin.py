@@ -1,4 +1,5 @@
 import logging
+import time
 from abc import abstractmethod
 
 import casadi as ca
@@ -959,16 +960,12 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             else:
                 price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
 
-            sum = 0.0
-            for i in range(1, len(self.times())):
-                sum += (
-                    variable_operational_cost_coefficient
-                    * (heat_charge[i] + heat_discharge[i])
-                    * timesteps[i - 1]
-                )
-                sum += price_profile.values[i] * pump_power[i] * timesteps[i - 1] / eff
+            sum_ = ca.sum1(variable_operational_cost_coefficient * (heat_charge[1:] +
+                                                                 heat_discharge[1:]) *
+                        timesteps)
+            sum_ += ca.sum1(price_profile.values[1:] * pump_power[1:] * timesteps / eff)
 
-            constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
+            constraints.append(((variable_operational_cost - sum_) / nominal, 0.0, 0.0))
 
         for asset in [
             *self.energy_system_components.get("pump", []),
@@ -997,11 +994,9 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
             timesteps = np.diff(self.times()) / 3600.0
 
-            sum = 0.0
-            for i in range(1, len(self.times())):
-                sum += price_profile.values[i] * pump_power[i] * timesteps[i - 1] / eff
+            sum_ = ca.sum1(price_profile.values[1:] * pump_power[1:] * timesteps / eff)
 
-            constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
+            constraints.append(((variable_operational_cost - sum_) / nominal, 0.0, 0.0))
 
         for s in self.energy_system_components.get("heat_source", []):
             heat_source = self.__state_vector_scaled(f"{s}.Heat_source", ensemble_member)
@@ -1042,17 +1037,14 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 denominator = parameters[f"{s}.cop"]
             if s in self.energy_system_components.get("gas_boiler", []):
                 denominator = parameters[f"{s}.efficiency"]
-            sum = 0.0
-            for i in range(1, len(self.times())):
-                sum += (
-                    variable_operational_cost_coefficient
-                    * heat_source[i]
-                    * timesteps[i - 1]
-                    / denominator
-                )
-                sum += price_profile.values[i] * pump_power[i] * timesteps[i - 1] / eff
 
-            constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
+            sum_ = (ca.sum1(variable_operational_cost_coefficient* heat_source[1:]* timesteps)/
+                    denominator)
+            # ca.sum2(variable_operational_cost_coefficient* heat_source[1:]* timesteps)/ denominator
+            # ca.dot(variable_operational_cost_coefficient*heat_source[1:], timesteps)/ denominator
+            sum_ += ca.sum1(price_profile.values[1:] * pump_power[1:] * timesteps / eff)
+
+            constraints.append(((variable_operational_cost - sum_) / nominal, 0.0, 0.0))
 
         for hp in [
             *self.energy_system_components.get("heat_pump", []),
@@ -1082,18 +1074,14 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             else:
                 price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
 
-            sum = 0.0
-            for i in range(1, len(self.times())):
-                sum += (
-                    variable_operational_cost_coefficient * elec_consumption[i] * timesteps[i - 1]
-                )
-                sum += price_profile.values[i] * pump_power[i] * timesteps[i - 1] / eff
-                if hp not in self.energy_system_components.get("heat_pump_elec", []):
-                    # assuming that if heatpump has electricity port, the cost for the electricity
-                    # are already made by the electricity producer and transport
-                    sum += price_profile.values[i] * elec_consumption[i] * timesteps[i - 1]
+            sum_ = ca.sum1(variable_operational_cost_coefficient * elec_consumption[1:] * timesteps)
+            sum_ += ca.sum1(price_profile.values[1:] * pump_power[1:] * timesteps / eff)
+            if hp not in self.energy_system_components.get("heat_pump_elec", []):
+                # assuming that if heatpump has electricity port, the cost for the electricity
+                # are already made by the electricity producer and transport
+                sum_ += ca.sum1(price_profile.values[1:] * elec_consumption[1:] * timesteps)
 
-            constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
+            constraints.append(((variable_operational_cost - sum_) / nominal, 0.0, 0.0))
 
         for demand in self.energy_system_components.get("gas_demand", []):
             gas_mass_flow = self.__state_vector_scaled(
@@ -1109,12 +1097,10 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 f"{demand}.variable_operational_cost_coefficient"
             ]
 
-            sum = 0.0
             timesteps = np.diff(self.times()) / 3600.0
-            for i in range(1, len(self.times())):
-                sum += variable_operational_cost_coefficient * gas_mass_flow[i] * timesteps[i - 1]
+            sum_ = ca.sum1(variable_operational_cost_coefficient * gas_mass_flow[1:] * timesteps)
 
-            constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
+            constraints.append(((variable_operational_cost - sum_) / nominal, 0.0, 0.0))
 
         for gs in self.energy_system_components.get("gas_source", []):
             gas_produced_g_s = self.__state_vector_scaled(
@@ -1129,12 +1115,9 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 f"{gs}.variable_operational_cost_coefficient"
             ]
             timesteps = np.diff(self.times())
-            sum = 0.0
-            for i in range(1, len(self.times())):
-                sum += (
-                    variable_operational_cost_coefficient * gas_produced_g_s[i] * timesteps[i - 1]
-                )  # [euro/g] * [g/s] * [s]
-            constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
+            sum_ = ca.sum1(variable_operational_cost_coefficient * gas_produced_g_s[1:] * timesteps)
+            # [euro/g] * [g/s] * [s]
+            constraints.append(((variable_operational_cost - sum_) / nominal, 0.0, 0.0))
 
         for es in self.energy_system_components.get("electricity_source", []):
             elec_produced_w = self.__state_vector_scaled(
@@ -1149,12 +1132,10 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 f"{es}.variable_operational_cost_coefficient"
             ]
             timesteps = np.diff(self.times()) / 3600.0  # convert dt from [s] to [hr]
-            sum = 0.0
-            for i in range(1, len(self.times())):
-                sum += (
-                    variable_operational_cost_coefficient * elec_produced_w[i] * timesteps[i - 1]
+            sum_ = ca.sum1(
+                    variable_operational_cost_coefficient * elec_produced_w[1:] * timesteps
                 )  # [euro/Wh] * [W] * [hr]
-            constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
+            constraints.append(((variable_operational_cost - sum_) / nominal, 0.0, 0.0))
 
         # for a in self.heat_network_components.get("ates", []):
         # TODO: needs to be replaced with the positive or abs value of this, see varOPEX,
@@ -1194,16 +1175,14 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 f"{electrolyzer}.variable_operational_cost_coefficient"
             ]
 
-            sum = 0.0
             timesteps = np.diff(self.times()) / 3600.0
-            for i in range(1, len(self.times())):
-                sum += (
+            sum_ = ca.sum1(
                     variable_operational_cost_coefficient
-                    * power_consumer[i]
-                    * timesteps[i - 1]  # gas_mass_flow unit is g/s
+                    * power_consumer[1:]
+                    * timesteps  # gas_mass_flow unit is g/s
                 )
 
-            constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
+            constraints.append(((variable_operational_cost - sum_) / nominal, 0.0, 0.0))
 
         # for a in self.heat_network_components.get("ates", []):
         # TODO: needs to be replaced with the positive or abs value of this, see varOPEX,
@@ -1607,12 +1586,10 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 variable_revenue = self.extra_variable(variable_revenue_var, ensemble_member)
                 nominal = self.variable_nominal(variable_revenue_var)
 
-                sum = 0.0
                 timesteps = np.diff(self.times()) * cost_multiplier
-                for i in range(1, len(self.times())):
-                    sum += price_profile[i] * energy_flow[i] * timesteps[i - 1]
+                sum_ = ca.sum1(price_profile[1:] * energy_flow[1:] * timesteps)
 
-                constraints.append(((variable_revenue - sum) / (nominal), 0.0, 0.0))
+                constraints.append(((variable_revenue - sum_) / (nominal), 0.0, 0.0))
 
         return constraints
 
