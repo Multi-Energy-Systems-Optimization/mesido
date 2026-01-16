@@ -368,9 +368,13 @@ class EndScenarioSizing(
             vars = self.state_vector(f"{b}.Heat_buffer")
             symbol_stored_heat = self.state_vector(f"{b}.Stored_heat")
             constraints.append((symbol_stored_heat[self.__indx_max_peak], 0.0, 0.0))
-            for i in range(len(self.times())):
-                if i < self.__indx_max_peak or i > (self.__indx_max_peak + 23):
-                    constraints.append((vars[i], 0.0, 0.0))
+
+            steps_after_peak = int(len(self.times())-(self.__indx_max_peak + 23))
+            ind_peak = int(self.__indx_max_peak)
+            constraints.append((vars[:ind_peak], np.zeros((ind_peak, 1)), np.zeros((ind_peak, 1))))
+            constraints.append((vars[int(self.__indx_max_peak + 23):], np.zeros((steps_after_peak,
+                                                                             1)), np.zeros((
+                steps_after_peak, 1))))
 
         return constraints
 
