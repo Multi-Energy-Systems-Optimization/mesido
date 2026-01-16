@@ -1570,7 +1570,11 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     carrier_name = attr["name"]
                     cost_multiplier = 1.0  # priceprofile gas is in EUR/g
             if carrier_name is not None:
-                price_profile = self.get_timeseries(f"{carrier_name}.price_profile").values
+                price_profile_timeseries = self.get_timeseries(f"{carrier_name}.price_profile")
+                # The slicing is required if the timeseries wasn't adapted in the read
+                mask = (price_profile_timeseries.times>=self.times()[0]) & (
+                        price_profile_timeseries.times<=self.times()[-1])
+                price_profile = price_profile_timeseries.values[mask]
 
                 if demand in self.energy_system_components.get("gas_demand", []):
                     energy_flow = self.__state_vector_scaled(
@@ -1588,6 +1592,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
                 timesteps = np.diff(self.times()) * cost_multiplier
                 sum_ = ca.sum1(price_profile[1:] * energy_flow[1:] * timesteps)
+                from rtctools.optimization.timeseries import Timeseries
 
                 constraints.append(((variable_revenue - sum_) / (nominal), 0.0, 0.0))
 
