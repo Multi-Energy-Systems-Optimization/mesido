@@ -1958,8 +1958,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
                     constraints.append(
                         (
-                            (profile_scaled * max_heat_var - heat_source)
-                            / constraint_nominal,
+                            (profile_scaled * max_heat_var - heat_source) / constraint_nominal,
                             0.0,
                             np.inf,
                         )

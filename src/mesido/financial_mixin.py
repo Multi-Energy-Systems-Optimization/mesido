@@ -1,5 +1,4 @@
 import logging
-import time
 from abc import abstractmethod
 
 import casadi as ca
@@ -960,9 +959,11 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             else:
                 price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
 
-            sum_ = ca.sum1(variable_operational_cost_coefficient * (heat_charge[1:] +
-                                                                 heat_discharge[1:]) *
-                        timesteps)
+            sum_ = ca.sum1(
+                variable_operational_cost_coefficient
+                * (heat_charge[1:] + heat_discharge[1:])
+                * timesteps
+            )
             sum_ += ca.sum1(price_profile.values[1:] * pump_power[1:] * timesteps / eff)
 
             constraints.append(((variable_operational_cost - sum_) / nominal, 0.0, 0.0))
@@ -1038,9 +1039,11 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             if s in self.energy_system_components.get("gas_boiler", []):
                 denominator = parameters[f"{s}.efficiency"]
 
-            sum_ = (ca.sum1(variable_operational_cost_coefficient* heat_source[1:]* timesteps)/
-                    denominator)
-            # ca.sum2(variable_operational_cost_coefficient* heat_source[1:]* timesteps)/ denominator
+            sum_ = (
+                ca.sum1(variable_operational_cost_coefficient * heat_source[1:] * timesteps)
+                / denominator
+            )
+            # ca.sum2(variable_operational_cost_coefficient* heat_source[1:]* timesteps)/denominator
             # ca.dot(variable_operational_cost_coefficient*heat_source[1:], timesteps)/ denominator
             sum_ += ca.sum1(price_profile.values[1:] * pump_power[1:] * timesteps / eff)
 
@@ -1133,8 +1136,8 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             ]
             timesteps = np.diff(self.times()) / 3600.0  # convert dt from [s] to [hr]
             sum_ = ca.sum1(
-                    variable_operational_cost_coefficient * elec_produced_w[1:] * timesteps
-                )  # [euro/Wh] * [W] * [hr]
+                variable_operational_cost_coefficient * elec_produced_w[1:] * timesteps
+            )  # [euro/Wh] * [W] * [hr]
             constraints.append(((variable_operational_cost - sum_) / nominal, 0.0, 0.0))
 
         # for a in self.heat_network_components.get("ates", []):
@@ -1177,10 +1180,10 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
             timesteps = np.diff(self.times()) / 3600.0
             sum_ = ca.sum1(
-                    variable_operational_cost_coefficient
-                    * power_consumer[1:]
-                    * timesteps  # gas_mass_flow unit is g/s
-                )
+                variable_operational_cost_coefficient
+                * power_consumer[1:]
+                * timesteps  # gas_mass_flow unit is g/s
+            )
 
             constraints.append(((variable_operational_cost - sum_) / nominal, 0.0, 0.0))
 
@@ -1572,8 +1575,9 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             if carrier_name is not None:
                 price_profile_timeseries = self.get_timeseries(f"{carrier_name}.price_profile")
                 # The slicing is required if the timeseries wasn't adapted in the read
-                mask = (price_profile_timeseries.times>=self.times()[0]) & (
-                        price_profile_timeseries.times<=self.times()[-1])
+                mask = (price_profile_timeseries.times >= self.times()[0]) & (
+                    price_profile_timeseries.times <= self.times()[-1]
+                )
                 price_profile = price_profile_timeseries.values[mask]
 
                 if demand in self.energy_system_components.get("gas_demand", []):
@@ -1592,7 +1596,6 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
                 timesteps = np.diff(self.times()) * cost_multiplier
                 sum_ = ca.sum1(price_profile[1:] * energy_flow[1:] * timesteps)
-                from rtctools.optimization.timeseries import Timeseries
 
                 constraints.append(((variable_revenue - sum_) / (nominal), 0.0, 0.0))
 
