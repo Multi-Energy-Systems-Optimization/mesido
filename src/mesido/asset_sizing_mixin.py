@@ -2127,7 +2127,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 f"{d}.Electricity_source", ensemble_member
             )
             constraint_nominal = self.variable_nominal(f"{d}.Electricity_source")
-            if f"{d}.maximum_electricity_source" in self.io.get_timeseries_names():
+            if (d in self.energy_system_components.get("solar_pv", [])) and (
+                f"{d}.maximum_electricity_source" in self.io.get_timeseries_names()
+            ):
                 profile_non_scaled = self.get_timeseries(f"{d}.maximum_electricity_source").values
                 max_profile_non_scaled = max(profile_non_scaled)
                 profile_scaled = profile_non_scaled / max_profile_non_scaled
