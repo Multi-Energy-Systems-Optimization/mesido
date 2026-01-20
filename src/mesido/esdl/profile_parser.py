@@ -218,6 +218,7 @@ class InfluxDBProfileReader(BaseProfileReader):
         esdl.esdl.GasProducer: ".maximum_gas_source",
         esdl.esdl.ResidualHeatSource: ".maximum_heat_source",
         esdl.esdl.GeothermalSource: ".maximum_heat_source",
+        esdl.esdl.PVInstallation: ".maximum_electricity_source",
     }
 
     def __init__(
@@ -328,7 +329,7 @@ class InfluxDBProfileReader(BaseProfileReader):
                 var_base_name = asset.name
                 if variable_suffix in [
                     self.asset_type_to_variable_name_conversion[esdl.esdl.GasProducer],
-                    self.asset_type_to_variable_name_conversion[esdl.esdl.ElectricityProducer],
+                    # self.asset_type_to_variable_name_conversion[esdl.esdl.ElectricityProducer],
                 ]:
                     logger.error(
                         f"Profiles for {var_base_name} from esdl has not been tested yet but only"

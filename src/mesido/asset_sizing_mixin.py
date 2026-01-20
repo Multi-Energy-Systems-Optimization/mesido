@@ -2145,7 +2145,35 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     and esdl_asset_attributes.items[0].maximum.profileQuantityAndUnit.reference.unit
                     == esdl.UnitEnum.WATT
                 ):
-                    pass
+                    parameters = self.parameters(ensemble_member)
+
+                    if parameters[f"{s}.state"] == AssetStateEnum.ENABLED:  # Enabled asset
+                        constraints.append(
+                            (
+                                (max_power - max_profile_non_scaled) / constraint_nominal,
+                                0.0,
+                                np.inf,
+                            )
+                        )
+                        max_power_var = max_profile_non_scaled
+
+                    elif parameters[f"{s}.state"] == AssetStateEnum.OPTIONAL:  # Optional asset
+                        max_power_var = max_power
+
+                    else:
+                        state_val = parameters[f"{s}.state"]
+                        logger.error(f"Unexpected state: {state_val}")
+                        sys.exit(1)
+
+                    for i in range(0, len(self.times())):
+                        constraints.append(
+                            (
+                                (profile_scaled[i] * max_power_var - electricity_source[i])
+                                / constraint_nominal,
+                                0.0,
+                                np.inf,
+                            )
+                        )
                 # Option 2: Normalised profile (0.0-1.0) shape that scales with maximum size of the
                 # producer
                 # Note: If the asset is not optional then the profile will be scaled to the

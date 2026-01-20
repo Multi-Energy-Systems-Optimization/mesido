@@ -4,6 +4,7 @@ from unittest import TestCase
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.util import run_esdl_mesido_optimization
+from mesido.workflows import EndScenarioSizing
 
 import numpy as np
 
@@ -16,6 +17,38 @@ from utils_tests import electric_power_conservation_test
 
 
 class TestMILPElectricSourceSink(TestCase):
+
+    def test_source_sink_pv_db_profile(self):
+        """
+        Tests for an electricity network that consist out of 2 PV , 2 Heat pump elec
+        and 1 heat demand. One of the PV has upper limit profile constraint read from
+         database and connected to cheap heat pump. Whereas other PV has no upper
+         profile but connected to expensive heatpump. Hence, it is verified that upper
+         limit profile constraint for PV works as expected.
+
+        """
+
+        import models.unit_cases_electricity.source_sink_cable.src.example as example
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        solution = run_esdl_mesido_optimization(
+            EndScenarioSizing,
+            base_folder=base_folder,
+            esdl_file_name="pv_heatpump_with_db_profile.esdl",
+            esdl_parser=ESDLFileParser,
+        )
+        results = solution.extract_results()
+
+        # Test energy conservation
+        electric_power_conservation_test(solution, results)
+
+        # Test upper limit profile constraint for pv
+        np.testing.assert_allclose(
+            solution.get_timeseries("PV_with_upper_profile.maximum_electricity_source").values[1:],
+            results["PV_with_upper_profile.Electricity_source"][1:],
+            atol=1.0e-6,
+        )
 
     def test_source_sink_pv_csv_profile(self):
         """
