@@ -1066,21 +1066,6 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 )
                 sum += price_profile.values[i] * pump_power[i] * timesteps_hr[i - 1] / eff
 
-                # TODO:
-                # resolve issue for elect costs for elec heat pump (ie. heat source), see code below
-                # if (
-                #     s not in self.energy_system_components.get("air_water_heat_pump", [])
-                #     and s not in self.energy_system_components.get("air_water_heat_pump_elec", [])
-                # ):
-                #     sum += price_profile.values[i] * pump_power[i] * timesteps_hr[i - 1] / eff
-                # else:
-                #     sum += (
-                #         price_profile.values[i]
-                #         * heat_source[i]
-                #         * timesteps_hr[i - 1]
-                #         / denominator
-                #     )
-
             constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
 
         for hp in [
