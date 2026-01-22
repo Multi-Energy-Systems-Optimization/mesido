@@ -4,7 +4,7 @@
     <carriers xsi:type="esdl:Carriers" id="eafbd8f4-1fde-4bb5-8dce-fdb74a1a1097">
       <carrier xsi:type="esdl:HeatCommodity" name="heat" supplyTemperature="70.0" id="435a0034-fab0-4e7e-9a17-edf8de9a2b11"/>
       <carrier xsi:type="esdl:HeatCommodity" name="heat_ret" returnTemperature="40.0" id="435a0034-fab0-4e7e-9a17-edf8de9a2b11_ret"/>
-      <carrier xsi:type="esdl:GasCommodity" name="gas" id="bd3b2995-710a-4c30-b335-3057041ff65b" pressure="8.0"/>
+      <carrier xsi:type="esdl:GasCommodity" name="Gas" id="bd3b2995-710a-4c30-b335-3057041ff65b" pressure="8.0"/>
     </carriers>
   </energySystemInformation>
   <instance xsi:type="esdl:Instance" id="90e7e098-038e-4462-89fe-a8852c501753" name="Untitled instance">

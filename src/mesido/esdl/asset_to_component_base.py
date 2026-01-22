@@ -106,7 +106,9 @@ def get_energy_content(asset_name: str, carrier: esdl.Carrier) -> float:
         # Currently the lower heating value is used below (120.0 MJ/kg)
         energy_content_j_kg = 120.0 * 10.0**6 / density_kg_m3
     else:
-        raise logger.error(f"Neither gas/hydrogen was used in the carrier {asset_name}.")
+        raise logger.error(
+            f"Neither gas/hydrogen was used in the carrier at asset named {asset_name}."
+        )
     return energy_content_j_kg
 
 
@@ -121,6 +123,20 @@ def get_density(
     # used in the head_loss_class for the calculation of the friction factor
     # (linked to _kinematic_viscosity). Thus, when updating the default value of
     # temperature_degrees_celsius ensure it is also updated in the head_loss_class.
+    if carrier == None:
+        logger.warning(
+            f"Neither gas/hydrogen/heat was used in the carrier at asset named {asset_name}."
+        )
+        density = cP.CoolProp.PropsSI(
+            "D",
+            "T",
+            273.15 + temperature_degrees_celsius,
+            "P",
+            pressure_pa,
+            NetworkSettings.NETWORK_COMPOSITION_GAS,
+        )
+        return density * 1.0e3  # to convert from kg/m3 to g/m3
+
     if pressure_pa is None:
         if isinstance(carrier, esdl.HeatCommodity):
             pressure_pa = 16.0e5  # 16bar is expected to be the upper limit in networks
@@ -139,7 +155,7 @@ def get_density(
             "INCOMP::Water",
         )
         return density  # kg/m3
-    elif NetworkSettings.NETWORK_TYPE_GAS in carrier.name:
+    elif NetworkSettings.NETWORK_TYPE_GAS in carrier.name:  # Discuss with Kobus: carrier.name.capitalize: This is the ideal way of using. However, this made me identify a bug. because test_gas_network_pipe_split_head_loss in test_head_loss.py. a gas carrier named as "gas". Because of carrier.name.capitalize, now this carrier is catched in this elif statement and it brokes the test.
         density = cP.CoolProp.PropsSI(
             "D",
             "T",
@@ -158,25 +174,11 @@ def get_density(
             str(NetworkSettings.NETWORK_TYPE_HYDROGEN).upper(),
         )
     else:
-        if temperature_degrees_celsius == 0.0 and pressure_pa == 1.01325 * 1.0e5:
-            logger.warning(
-                f"Neither gas/hydrogen was used in the carrier "
-                f"name of pipe {asset_name}"
-                "Normal density is calculated based on Gas"
-            )
-            density = cP.CoolProp.PropsSI(
-                "D",
-                "T",
-                273.15 + temperature_degrees_celsius,
-                "P",
-                pressure_pa,
-                NetworkSettings.NETWORK_COMPOSITION_GAS,
-            )
-        else:
-            logger.warning(
-                f"Neither gas/hydrogen/heat was used in the carrier " f"name of pipe {asset_name}"
-            )
-            density = 6.2  # natural gas at about 8 bar
+        logger.warning(
+            f"Neither gas/hydrogen/heat was used in the carrier at asset named {asset_name}."
+        )
+        density = 6.2  # natural gas at about 8 bar
+
     return density * 1.0e3  # to convert from kg/m3 to g/m3
 
 
