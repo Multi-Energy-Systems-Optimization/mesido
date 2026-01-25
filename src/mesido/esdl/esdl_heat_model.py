@@ -2471,7 +2471,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
     def convert_heat_source_elec(
         self, asset: Asset
-    ) -> Tuple[Union[ElecHeatSourceElec, HeatSource], MODIFIERS]:
+    ) -> Tuple[Union[Type[HeatSourceElec], Type[ElecHeatSourceElec]], MODIFIERS]:
         """
         This function converts the ElectricBoiler object in esdl to a set of modifiers that can be
         used in a pycml object.

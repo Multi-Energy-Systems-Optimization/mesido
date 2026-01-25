@@ -18,7 +18,7 @@ from utils_tests import (
 class TestElecBoiler(TestCase):
 
     def asset_cost_calculation_tests(self, solution, results):
-        # Check the cost components of GasHeater
+        # Check the cost components
         for asset in [
             *solution.energy_system_components.get("heat_source", []),
         ]:
@@ -86,10 +86,10 @@ class TestElecBoiler(TestCase):
 
         np.testing.assert_array_less(0.0, results["ElectricBoiler_9aab.Heat_source"])
         np.testing.assert_array_less(0.0, results["ElectricityProducer_4dde.ElectricityOut.Power"])
-        np.testing.assert_array_less(
+        np.testing.assert_allclose(
             parameters["ElectricBoiler_9aab.efficiency"]
             * results["ElectricBoiler_9aab.Power_consumed"],
-            results["ElectricBoiler_9aab.Heat_source"] + 1.0e-6,
+            results["ElectricBoiler_9aab.Heat_source"],
         )
 
         # Check the cost components of ElectricBoiler
@@ -128,10 +128,10 @@ class TestElecBoiler(TestCase):
         heat_to_discharge_test(heat_problem, results)
 
         np.testing.assert_array_less(0.0, results["ElectricBoiler_9aab.Heat_source"])
-        np.testing.assert_array_less(
+        np.testing.assert_allclose(
             parameters["ElectricBoiler_9aab.efficiency"]
             * results["ElectricBoiler_9aab.Power_consumed"],
-            results["ElectricBoiler_9aab.Heat_source"] + 1.0e-6,
+            results["ElectricBoiler_9aab.Heat_source"],
         )
 
         # Check the cost components of ElectricBoiler

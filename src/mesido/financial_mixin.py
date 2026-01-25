@@ -1035,7 +1035,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
             # ToDo: Currently the variable operational cost unit for gas boiler is euro/Wh_gas
             # but this can be changed to euro/Nm3
-            nominator_vector = ca.MX.zeros(len(self.times()), 1)
+            nominator_vector = None
             denominator = 1.0
             if s in self.energy_system_components.get(
                 "air_water_heat_pump", []
