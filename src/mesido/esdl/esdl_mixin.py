@@ -27,6 +27,8 @@ from mesido.qth_not_maintained.qth_mixin import QTHMixin
 
 import numpy as np
 
+from pyecore.valuecontainer import EOrderedSet
+
 import rtctools.data.pi as pi
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
@@ -114,7 +116,7 @@ class ESDLMixin(
         self._esdl_assets: Dict[str, Asset] = esdl_parser.get_assets()
         self._esdl_carriers: Dict[str, Dict[str, Any]] = esdl_parser.get_carrier_properties()
         self.__energy_system_handler: esdl.esdl_handler.EnergySystemHandler = esdl_parser.get_esh()
-        self._esdl_templates: Dict[str, Asset] = esdl_parser.get_templates()
+        self._esdl_measures: Dict[str, Asset] = esdl_parser.get_measures()
         self._database_credentials: Optional[Dict[str, Tuple[str, str]]] = {
             DBAccesType.READ: [],
             DBAccesType.WRITE: [],
@@ -317,20 +319,19 @@ class ESDLMixin(
 
         override_classes = self._override_pipe_classes
 
-        # Update the pipe costs if a template model in the ESDL was used. This is updated only if
-        # the pipe catalog is available as a template
-        if self._esdl_templates:
+        # Update the pipe costs if a measure model in the ESDL was used. This is updated only if
+        # the pipe catalog is available as a measure
+        if self._esdl_measures:
             filter_type = "Pipe"
-            pipe_templates = self.filter_asset_templates(
-                asset_templates=self._esdl_templates, filter_type=filter_type
+            pipe_measures = self.filter_asset_measures(
+                asset_measures=self._esdl_measures, filter_type=filter_type
             )
-            if len(pipe_templates.items()) > 0:
+            if len(pipe_measures.items()) > 0:
                 pipe_diameter_cost_map = {
-                    str(pipe.attributes["asset"].diameter): pipe.attributes[
-                        "asset"
-                    ].costInformation.investmentCosts.value
-                    for pipe in pipe_templates.values()
+                    str(pipe.diameter): pipe.costInformation.investmentCosts.value
+                    for pipe in pipe_measures.values()
                 }
+
                 for i, pipe_class in enumerate(pipe_classes):
                     if pipe_class.name in pipe_diameter_cost_map.keys():
                         pipe_classes[i] = dataclasses.replace(
@@ -804,13 +805,24 @@ class ESDLMixin(
         self.__timeseries_export.write()
 
     @classmethod
-    def filter_asset_templates(
-        cls, asset_templates: Dict[str, Asset], filter_type: str
+    def filter_asset_measures(
+        cls, asset_measures: Dict[str, Asset], filter_type: str
     ) -> Dict[str, Asset]:
         filtered_assets = dict()
-        for asset_id, asset in asset_templates.items():
-            asset_type = asset.attributes["asset"]
+        for asset_id, asset in asset_measures.items():
+
+            if isinstance(asset.attributes["asset"], EOrderedSet):
+                if len(asset.attributes["asset"]) > 1:
+                    logger.warning(
+                        f"Multiple assets types have been linked to asset measure {asset.name}."
+                        f"Only the first asset type {filter_type} is currently used."
+                    )
+                for asset_type in asset.attributes["asset"]:
+                    if isinstance(asset_type, getattr(esdl, filter_type)):
+                        break
+            else:
+                asset_type = asset.attributes["asset"]
             if isinstance(asset_type, getattr(esdl, filter_type)):
-                filtered_assets[asset_id] = asset
+                filtered_assets[asset_id] = asset_type
 
         return filtered_assets
