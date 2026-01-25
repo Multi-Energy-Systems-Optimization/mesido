@@ -2471,15 +2471,17 @@ class AssetToHeatComponent(_AssetToComponentBase):
         for port in asset.in_ports:
             if isinstance(port.carrier, esdl.GasCommodity):
                 density = get_density(asset.name, port.carrier)
+                density_normal = get_density(
+                    asset.name,
+                    port.carrier,
+                    temperature_degrees_celsius=0.0,
+                    pressure_pa=1.01325 * 1.0e5,
+                )
                 energy_content = get_energy_content(asset.name, port.carrier)
 
         # TODO: CO2 coefficient
 
         q_nominals = self._get_connected_q_nominal(asset)
-
-        density_normal = get_density(
-            asset.name, port.carrier, temperature_degrees_celsius=0.0, pressure_pa=1.01325 * 1.0e5
-        )
 
         modifiers.update(
             dict(
