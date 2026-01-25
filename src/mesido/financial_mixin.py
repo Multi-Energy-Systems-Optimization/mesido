@@ -1033,8 +1033,6 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             else:
                 price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
 
-            # ToDo: Currently the variable operational cost unit for gas boiler is euro/Wh_gas
-            # but this can be changed to euro/Nm3
             nominator_vector = None
             denominator = 1.0
             if s in self.energy_system_components.get(
@@ -1051,7 +1049,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     self.__state_vector_scaled(f"{s}.Gas_demand_mass_flow", ensemble_member)
                     / density_normal
                     * 3600.0
-                )  # [m3/h]
+                )  # [Nm3/h]
             else:
                 nominator_vector = heat_source
             sum = 0.0

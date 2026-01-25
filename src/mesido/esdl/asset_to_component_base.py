@@ -93,13 +93,25 @@ def get_internal_energy(asset_name: str, carrier: esdl.Carrier) -> float:
 
 def get_energy_content(asset_name: str, carrier: esdl.Carrier) -> float:
     # Return the heating value
+    # If carrier is None, then we return heating value of Groningen gas
     energy_content_j_kg = 0.0  # [J/kg]
     density_kg_m3 = (
         get_density(asset_name, carrier, temperature_degrees_celsius=20.0, pressure_pa=1.0e5)
         / 1000.0
     )
-    if str(NetworkSettings.NETWORK_TYPE_GAS).upper() in str(carrier.name).upper():
-        # Groningen gas: 31,68 MJ/m3 LCV
+
+    # The input attribute `carrier` is `None` for assets whose commodity of interest
+    # (e.g., heat_source_gas) does not have an associated carrier.
+    # In such cases, we fall back to returning the gas energy content at the specified
+    # pressure and temperature.
+    cond_gas = False
+    try:
+        cond_gas = str(NetworkSettings.NETWORK_TYPE_GAS).upper() in str(carrier.name).upper()
+    except AttributeError:
+        cond_gas = carrier is None
+
+    if cond_gas:
+        # Groningen gas: 31,68 MJ/Nm3 LCV
         energy_content_j_kg = 31.68 * 10.0**6 / density_kg_m3  # LCV / lower heating value
     elif str(NetworkSettings.NETWORK_TYPE_HYDROGEN).upper() in str(carrier.name).upper():
         # This value can be lower / higher heating value depending on the case
@@ -123,7 +135,12 @@ def get_density(
     # used in the head_loss_class for the calculation of the friction factor
     # (linked to _kinematic_viscosity). Thus, when updating the default value of
     # temperature_degrees_celsius ensure it is also updated in the head_loss_class.
-    if carrier == None:
+
+    # The input attribute `carrier` is `None` for assets whose commodity of interest
+    # (e.g., heat_source_gas) does not have an associated carrier.
+    # In such cases, we fall back to returning the gas density at the specified
+    # pressure and temperature.
+    if carrier is None:
         logger.warning(
             f"Neither gas/hydrogen/heat was used in the carrier at asset named {asset_name}."
         )
@@ -155,7 +172,17 @@ def get_density(
             "INCOMP::Water",
         )
         return density  # kg/m3
-    elif NetworkSettings.NETWORK_TYPE_GAS in carrier.name:  # Discuss with Kobus: carrier.name.capitalize: This is the ideal way of using. However, this made me identify a bug. because test_gas_network_pipe_split_head_loss in test_head_loss.py. a gas carrier named as "gas". Because of carrier.name.capitalize, now this carrier is catched in this elif statement and it brokes the test.
+    elif NetworkSettings.NETWORK_TYPE_GAS in carrier.name:
+        # TODO: A bug has been identified here. Ideally, this elif condition should use a
+        #  case‑insensitive comparison to detect the commodity name:
+        #  str(NetworkSettings.NETWORK_TYPE_GAS).upper() in str(carrier.name).upper().
+        #  However, updating the condition causes the unit test
+        #  `test_gas_network_pipe_split_head_loss` in `test_head_loss.py` to fail.
+        #  The reason is that in the test ESDL, the commodity name is defined as "gas",
+        #  whereas NetworkSettings.NETWORK_TYPE_GAS returns "Gas". With a case‑insensitive
+        #  comparison, this elif condition no longer matches, causing the code to use the
+        #  default density from the else branch (6.2). That value makes the test pass.
+        #  This indicates a potential underlying bug in the head‑loss calculation logic.
         density = cP.CoolProp.PropsSI(
             "D",
             "T",

@@ -4,8 +4,6 @@ import logging
 import math
 from typing import Any, Dict, Tuple, Type, Union
 
-import CoolProp as cP
-
 import esdl
 
 from mesido.esdl.asset_to_component_base import (
@@ -17,7 +15,6 @@ from mesido.esdl.asset_to_component_base import (
 )
 from mesido.esdl.common import Asset
 from mesido.esdl.esdl_model_base import _ESDLModelBase
-from mesido.network_common import NetworkSettings
 from mesido.potential_errors import MesidoAssetIssueType, get_potential_errors
 from mesido.pycml.component_library.milp import (
     ATES,
@@ -672,9 +669,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 f"Gas are allowed"
             )
 
-    def convert_gas_pipe(
-        self, asset: Asset
-    ) -> Tuple[Union[Type[HeatPipe], Type[GasPipe]], MODIFIERS]:
+    def convert_gas_pipe(self, asset: Asset) -> Tuple[Type[GasPipe], MODIFIERS]:
         """
         This function converts the pipe object in esdl to a set of modifiers that can be used in
         a pycml object. Most important:
@@ -1100,9 +1095,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
         )
         return HeatExchanger, modifiers
 
-    def convert_heat_pump(
-        self, asset: Asset
-    ) -> Tuple[Union[Type[HeatPump], Type[HeatSource], Type[AirWaterHeatPumpElec]], MODIFIERS]:
+    def convert_heat_pump(self, asset: Asset) -> Tuple[
+        Union[
+            Type[AirWaterHeatPump], Type[AirWaterHeatPumpElec], Type[HeatPump], Type[HeatPumpElec]
+        ],
+        MODIFIERS,
+    ]:
         """
         This function converts the HeatPump object in esdl to a set of modifiers that can be used in
         a pycml object. Most important:
@@ -2389,7 +2387,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         return Compressor, modifiers
 
-    def convert_heat_source_gas(self, asset: Asset) -> Tuple[GasHeatSourceGas, MODIFIERS]:
+    def convert_heat_source_gas(
+        self, asset: Asset
+    ) -> Tuple[Union[Type[HeatSourceGas], Type[GasHeatSourceGas]], MODIFIERS]:
         """
         This function converts the GasHeater object in esdl to a set of modifiers that can be
         used in a pycml object.
@@ -2438,18 +2438,27 @@ class AssetToHeatComponent(_AssetToComponentBase):
             asset.name, None, temperature_degrees_celsius=20.0, pressure_pa=8.0 * 1.01325 * 1.0e5
         )
 
-        density_normal = get_density(
+        density_normal_no_carrier = get_density(
             asset.name, None, temperature_degrees_celsius=0.0, pressure_pa=1.01325 * 1.0e5
         )
-        energy_content = 31.68 * 10.0 ** 6 / (density_gas_no_carrier / 1000.0)
 
-        q_nominal_gas = 0.5  # Todo: check Q_nominal_gas later to find the best way of defining
+        energy_content_no_carrier = get_energy_content(asset.name, None)
+
+        # Todo: usually _get_connected_q_nominal() function in asset_to_component_base.py is
+        #  used to define q_nominal_gas variable. _get_connected_q_nominal() function requires
+        #  a carrier with GasCommodity as an input. However, hear_source_gas asset has no
+        #  carrier with gas commodity. Hence, q_nominal_gas_no_carrier is defined from the
+        #  maximum gas power that GasHeater asset can consume. Later we can consider to move
+        #  q_nominal_gas definition into _get_connected_q_nominal() function.
+        q_nominal_gas_no_carrier = (max_supply / modifiers["efficiency"]) / (
+            density_gas_no_carrier * energy_content_no_carrier / 1000.0
+        )
         modifiers.update(
             dict(
                 density=density_gas_no_carrier,
-                density_normal=density_normal,
-                energy_content=energy_content,
-                Q_nominal_gas=q_nominal_gas,
+                density_normal=density_normal_no_carrier,
+                energy_content=energy_content_no_carrier,
+                Q_nominal_gas=q_nominal_gas_no_carrier,
             )
         )
         if len(asset.in_ports) == 1:
