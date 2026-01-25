@@ -31,8 +31,8 @@ class TestGasElect(TestCase):
         - Investment cost of GasBoiler assets in EUR/MW  refers to euro-per-watt-thermal
         - Variable operational cost of HeatPump assets in EUR/MWh  refers
         to euro-per-watt-electricity-per-hour
-        - Variable operational cost of GasBoiler assets in EUR/MWh  refers
-        to euro-per-watt-gas-per-hour
+        - Variable operational cost of GasBoiler assets in EUR/Nm3  refers
+        to euro-per-watt-gas-per-normal-volume
 
 
         Checks:
