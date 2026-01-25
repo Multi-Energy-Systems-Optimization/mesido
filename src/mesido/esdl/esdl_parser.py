@@ -23,7 +23,7 @@ class BaseESDLParser:
         self._energy_system: Optional[esdl.EnergySystem] = None
         self._esdl_string: Optional[str] = None
         self._esdl_path: Optional[Path] = None
-        self._templates: Dict[str, Asset] = dict()
+        self._measures: Dict[str, Asset] = dict()
 
     def _load_esdl_model(self) -> None:
         """
@@ -91,7 +91,15 @@ class BaseESDLParser:
         # Component ids are unique, but we require component names to be unique as well.
         component_names = set()
 
+        # Check if the ESDL has asset measures
+        try:
+            asset_measures = list(self._energy_system.measures.eAllContents())
+        except AttributeError:
+            asset_measures = None
+
         # Check if the ESDL has asset templates
+        # Currently the use of templates are allowed on a temporary basis, and
+        # the templates are stored in the measures variable
         try:
             asset_templates = list(self._energy_system.templates.eAllContents())
         except AttributeError:
@@ -99,16 +107,18 @@ class BaseESDLParser:
 
         # loop through assets
         for el in self._energy_system.eAllContents():
-            # If asset templates exist, collect that in a different dictionary, to be used later in
+            # If asset measures exist, collect that in a different dictionary, to be used later in
             # esdl_mixin to update that information
-            if asset_templates is not None and el in asset_templates:
-                if isinstance(el, esdl.AssetTemplate):
+            if (asset_measures is not None and el in asset_measures) or (
+                asset_templates is not None and el in asset_templates
+            ):
+                if isinstance(el, esdl.Measure) or isinstance(el, esdl.AssetTemplate):
                     asset_type = el.__class__.__name__
                     # Note that e.g. el.__dict__['length'] does not work to get the length of a
                     # pipe.
                     # We therefore built this dict ourselves using 'dir' and 'getattr'
                     attributes = {k: getattr(el, k) for k in dir(el)}
-                    self._templates[el.id] = Asset(
+                    self._measures[el.id] = Asset(
                         asset_type=asset_type,
                         id=el.id,
                         name=el.name,
@@ -184,8 +194,8 @@ class BaseESDLParser:
     def get_esh(self) -> esdl.esdl_handler.EnergySystemHandler:
         return self._energy_system_handler
 
-    def get_templates(self) -> Dict[str, Asset]:
-        return self._templates
+    def get_measures(self) -> Dict[str, Asset]:
+        return self._measures
 
 
 class ESDLStringParser(BaseESDLParser):

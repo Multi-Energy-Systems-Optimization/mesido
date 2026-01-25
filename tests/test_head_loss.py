@@ -3,6 +3,7 @@ from unittest import TestCase
 
 import mesido._darcy_weisbach as darcy_weisbach
 from mesido.constants import GRAVITATIONAL_CONSTANT
+from mesido.esdl.esdl_mixin import DBAccesType
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
@@ -81,12 +82,17 @@ class TestHeadLoss(TestCase):
             # Do not delete kwargs: this is used to manualy check writing out of profile data
             kwargs = {
                 "write_result_db_profiles": False,
-                "influxdb_host": "localhost",
-                "influxdb_port": 8086,
-                "influxdb_username": None,
-                "influxdb_password": None,
-                "influxdb_ssl": False,
-                "influxdb_verify_ssl": False,
+                "database_connections": [
+                    {
+                        "access_type": DBAccesType.WRITE,
+                        "influxdb_host": "localhost",
+                        "influxdb_port": 8086,
+                        "influxdb_username": None,
+                        "influxdb_password": None,
+                        "influxdb_ssl": False,
+                        "influxdb_verify_ssl": False,
+                    },
+                ],
             }
 
             solution = run_esdl_mesido_optimization(
