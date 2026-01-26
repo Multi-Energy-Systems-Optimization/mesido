@@ -100,7 +100,7 @@ class TestEndScenarioSizing(TestCase):
             )
             np.testing.assert_array_less(heat_flow_charging[heat_flow_discharging > 1e3], 1e3)
 
-        # Chech variable operational cost of ates
+        # Check variable operational cost of ates
         timesteps_hr = np.diff(self.solution.times()) / 3600.0
         variable_operational_cost = 0.0
         for a in self.solution.energy_system_components.get("ates", []):
