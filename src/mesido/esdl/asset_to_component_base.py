@@ -17,7 +17,6 @@ from mesido.network_common import NetworkSettings
 from mesido.potential_errors import MesidoAssetIssueType, get_potential_errors
 from mesido.pycml import Model as _Model
 
-
 logger = logging.getLogger("mesido")
 
 # Define locally to avoid circular import with workflows.utils.error_types

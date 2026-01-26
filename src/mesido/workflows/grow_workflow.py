@@ -34,7 +34,6 @@ from rtctools.optimization.single_pass_goal_programming_mixin import (
     SinglePassGoalProgrammingMixin,
 )
 
-
 DB_HOST = "172.17.0.2"
 DB_PORT = 8086
 DB_NAME = "Warmtenetten"
