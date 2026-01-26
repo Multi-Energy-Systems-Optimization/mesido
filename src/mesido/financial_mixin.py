@@ -1032,8 +1032,6 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             else:
                 price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
 
-            # ToDo: Currently the variable operational cost unit for gas boiler is euro/Wh_gas
-            # but this can be changed to euro/Nm3
             nominator_vector = None
             denominator = 1.0
             if s in self.energy_system_components.get(
@@ -1041,9 +1039,16 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             ) or s in self.energy_system_components.get("air_water_heat_pump_elec", []):
                 nominator_vector = heat_source
                 denominator = parameters[f"{s}.cop"]
-            elif s in self.energy_system_components.get("gas_boiler", []):
-                nominator_vector = heat_source
-                denominator = parameters[f"{s}.efficiency"]
+            elif s in [
+                *self.energy_system_components.get("heat_source_gas", []),
+                *self.energy_system_components.get("gas_heat_source_gas", []),
+            ]:
+                density_normal = parameters[f"{s}.density_normal"]
+                nominator_vector = (
+                    self.__state_vector_scaled(f"{s}.Gas_demand_mass_flow", ensemble_member)
+                    / density_normal
+                    * 3600.0
+                )  # [Nm3/h]
             elif s in [
                 *self.energy_system_components.get("heat_source_elec", []),
                 *self.energy_system_components.get("elec_heat_source_elec", []),
@@ -1077,7 +1082,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             variable_operational_cost_coefficient = parameters[
                 f"{hp}.variable_operational_cost_coefficient"
             ]
-            timesteps = np.diff(self.times()) / 3600
+            timesteps = np.diff(self.times()) / 3600.0
             pump_power = self.__state_vector_scaled(f"{hp}.Pump_power", ensemble_member)
             eff = parameters[f"{hp}.pump_efficiency"]
 

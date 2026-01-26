@@ -5,6 +5,8 @@
 - Rollout workflow may optionally include phasing of heat buffers for handling peak day constraints and demands
 - Inclusion of maximum allowed yearly pipe placement length constraint for the rollout workflow
 - Adding constraint so that all heating demands are placed at the end of the simulation
+- HeatSourceGas (gas boiler with 2 ports)is supported for DTK and its cost attributes are supported in Mesido
+- Cost attributes of GasHeatSourceGas (gas boiler with 3 ports) are supported in Mesido
 - HeatSourceElec (e-boiler with 2 ports) is supported for DTK and its cost attributes are supported in Mesido
 - Cost attributes of ElecHeatSourceElec (e-boiler with 3 ports) are supported in Mesido
 
@@ -15,6 +17,7 @@
 - New data structute for specifying database connection inputs
 - Costs of available pipe classes are updated based on the asset measures and templates if they are provided.
 - The charging and discharging variable for electricity storage is created without a binary variable using the convex hull description.
+- Gas Boiler asset is renamed as HeatSourceGas
 
 ## Fixed
 - Bug: Write updated esdl for 2 port heat pump
