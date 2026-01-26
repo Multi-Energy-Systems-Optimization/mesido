@@ -20,7 +20,6 @@ import pandas as pd
 import rtctools.data.pi
 from rtctools.data.storage import DataStore
 
-
 logger = logging.getLogger()
 
 
@@ -412,7 +411,7 @@ class InfluxDBProfileReader(BaseProfileReader):
             ssl_setting = True
         influx_host = "{}:{}".format(profile_host, profile.port)
 
-        (username, password) = self._database_credentials.get(influx_host, (None, None))
+        username, password = self._database_credentials.get(influx_host, (None, None))
 
         conn_settings = ConnectionSettings(
             host=profile.host,

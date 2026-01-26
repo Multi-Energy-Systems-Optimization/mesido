@@ -14,7 +14,6 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
 
-
 logger = logging.getLogger("mesido")
 
 
