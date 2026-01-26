@@ -29,8 +29,8 @@ from .heat.heat_pipe import HeatPipe
 from .heat.heat_port import HeatPort
 from .heat.heat_pump import HeatPump
 from .heat.heat_source import HeatSource
-from .heat.heat_source_gas import HeatSourceGas
 from .heat.heat_source_elec import HeatSourceElec
+from .heat.heat_source_gas import HeatSourceGas
 from .heat.heat_two_port import HeatTwoPort
 from .heat.low_temperature_ates import LowTemperatureATES
 from .heat.node import Node

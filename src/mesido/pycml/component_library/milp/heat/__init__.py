@@ -13,8 +13,8 @@ from .heat_pipe import HeatPipe
 from .heat_port import HeatPort
 from .heat_pump import HeatPump
 from .heat_source import HeatSource
-from .heat_source_gas import HeatSourceGas
 from .heat_source_elec import HeatSourceElec
+from .heat_source_gas import HeatSourceGas
 from .heat_two_port import HeatTwoPort
 from .low_temperature_ates import LowTemperatureATES
 from .node import Node
