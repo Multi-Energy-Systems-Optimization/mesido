@@ -17,7 +17,6 @@ from rtctools.optimization.optimization_problem import BT, OptimizationProblem
 from ..constants import GRAVITATIONAL_CONSTANT
 from ..pipe_class import PipeClass
 
-
 logger = logging.getLogger("mesido")
 
 
