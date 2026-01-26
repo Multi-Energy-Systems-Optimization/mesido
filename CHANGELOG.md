@@ -5,7 +5,8 @@
 - Rollout workflow may optionally include phasing of heat buffers for handling peak day constraints and demands
 - Inclusion of maximum allowed yearly pipe placement length constraint for the rollout workflow
 - Adding constraint so that all heating demands are placed at the end of the simulation
-
+- HeatSourceElec (e-boiler with 2 ports) is supported for DTK and its cost attributes are supported in Mesido
+- Cost attributes of ElecHeatSourceElec (e-boiler with 3 ports) are supported in Mesido
 
 ## Changed
 - Clean up of old code and removing duplicates.
