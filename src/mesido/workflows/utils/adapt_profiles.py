@@ -19,6 +19,7 @@ def set_data_with_averages(
     variable_name: str,
     ensemble_member: int,
     new_date_times: np.array,
+    new_date_timestamps: list,
     problem: object,
 ):
     try:
@@ -33,28 +34,23 @@ def set_data_with_averages(
         )
         return
 
-    new_data = []
-    data_timestamps = data.times
-    new_date_timestamps = [
-        (new_dt - problem.io.datetimes[0]).total_seconds() for new_dt in new_date_times
-    ]
+    data_timestamps = list(data.times)
 
-    values_for_mean = [0.0]
-    for dt, val in zip(data_timestamps, data.values):
-        if dt in new_date_timestamps:
-            new_data.append(np.mean(values_for_mean))
-            values_for_mean = [val]
-        else:
-            values_for_mean.append(val)
+    new_data = [data_timestamps[0]]
+    i_start = data_timestamps.index(new_date_timestamps[0])
+    for t in range(0, len(new_date_timestamps) - 1):
+        try:
+            i_end = data_timestamps.index(new_date_timestamps[t + 1])
+        except ValueError:
+            i_end = len(data_timestamps)
+        new_data.append(np.mean(data.values[i_start:i_end]))
+        i_start = i_end
 
     # At this point new_data[0] = 0.0. This value is not utilized. The heat demand value
     # new_data[1] at new_date_times[1] is active from new_date_times[0] up to new_date_times[1]. To
     # ensure a no 0.0 heat demand values end up in the optimization, new_data[0] is forced to have
     # an artificial value below
     new_data[0] = new_data[1]
-
-    # last datetime is not in input data, so we need to take the mean of the last bit
-    new_data.append(np.mean(values_for_mean))
 
     datastore.set_timeseries(
         variable=variable_name,
@@ -344,11 +340,15 @@ def select_profiles_for_update(
     """
 
     timeseries_names = problem.io.get_timeseries_names()
+    new_date_timestamps = [
+        (new_dt - problem.io.datetimes[0]).total_seconds() for new_dt in new_date_times
+    ]
     for var_name in timeseries_names:
         set_data_with_averages(
             datastore=new_datastore,
             variable_name=var_name,
             ensemble_member=ensemble_member,
             new_date_times=new_date_times,
+            new_date_timestamps=new_date_timestamps,
             problem=problem,
         )
