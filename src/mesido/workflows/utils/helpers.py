@@ -11,7 +11,6 @@ from mesido import __version__
 
 from rtctools.util import run_optimization_problem
 
-
 MULTI_ENUM_NAME_TO_FACTOR = {
     esdl.MultiplierEnum.ATTO: 1e-18,
     esdl.MultiplierEnum.FEMTO: 1e-15,

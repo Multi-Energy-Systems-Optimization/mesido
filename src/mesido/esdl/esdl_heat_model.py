@@ -57,7 +57,6 @@ from mesido.pycml.component_library.milp import (
 
 from scipy.optimize import fsolve
 
-
 logger = logging.getLogger("mesido")
 
 
@@ -115,7 +114,7 @@ def docs_esdl_modifiers(class__):
                     indent = ""
                 else:
                     format_modifiers_dict = [f"* {mod}" for mod in modifiers_dict[node.name]]
-                    (indent, _) = line_with_hook.split("{automatically_add_modifiers_here}")
+                    indent, _ = line_with_hook.split("{automatically_add_modifiers_here}")
                     func.__doc__ = func.__doc__.replace(
                         "{automatically_add_modifiers_here}",
                         f"\n{indent}".join(format_modifiers_dict),
@@ -723,7 +722,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         id_mapping = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
             "id_number_mapping"
         ]
-        (diameter, wall_roughness) = self._gas_pipe_get_diameter_and_roughness(asset)
+        diameter, wall_roughness = self._gas_pipe_get_diameter_and_roughness(asset)
         q_nominal = math.pi * diameter**2 / 4.0 * self.v_max_gas / 2.0
         self._set_q_nominal(asset, q_nominal)
         q_max = math.pi * diameter**2 / 4.0 * self.v_max_gas

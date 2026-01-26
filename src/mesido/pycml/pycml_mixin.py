@@ -16,7 +16,6 @@ from rtctools.optimization.optimization_problem import OptimizationProblem
 
 from . import ConstantInput, ControlInput, Model, SymbolicParameter, Variable
 
-
 logger = logging.getLogger("mesido")
 
 
@@ -137,7 +136,7 @@ def add_variables_documentation_automatically(class_: Type):
     if line_with_hook is None:
         indent = ""
     else:
-        (indent, _) = line_with_hook.split("{add_variable_names_for_documentation_here}")
+        indent, _ = line_with_hook.split("{add_variable_names_for_documentation_here}")
 
         # Insert the dynamic names into the documentation
         class_.__doc__ = class_.__doc__.replace(
