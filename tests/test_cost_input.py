@@ -16,7 +16,6 @@ from models.cost_information_errors import test_check_cost_information
 
 import numpy as np
 
-
 logger = logging.getLogger("mesido")
 logger.setLevel(logging.INFO)
 
