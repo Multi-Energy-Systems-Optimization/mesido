@@ -242,7 +242,7 @@ class _AssetToComponentBase:
         "ATES": "ates",
         "Battery": "electricity_storage",
         "Bus": "electricity_node",
-        "ElectricBoiler": "elec_boiler",
+        "ElectricBoiler": "heat_source_elec",
         "ElectricityCable": "electricity_cable",
         "ElectricityDemand": "electricity_demand",
         "ElectricityProducer": "electricity_source",
@@ -292,7 +292,7 @@ class _AssetToComponentBase:
             "fixedMaintenanceCosts": "optional",
             "fixedOperationalCosts": "optional",
         },
-        "heat_source": {  # Includes GeothermalSource, ResidualHeatSource, HeatProducer, GasHeater
+        "heat_source": {  # Includes GeothermalSource, ResidualHeatSource, HeatProducer, GasHeater, ElectricBoiler
             "investmentCosts": "required",
             "installationCosts": "required",
             "variableOperationalCosts": "required",
@@ -351,6 +351,7 @@ class _AssetToComponentBase:
         "GasStorage": "gas_tank_storage",
         "Electrolyzer": "electrolyzer",
         "GasHeater": "heat_source",
+        "ElectricBoiler": "heat_source",
     }
 
     COST_ATTRIBUTE_TO_STRING = {
@@ -1061,7 +1062,7 @@ class _AssetToComponentBase:
                         return q_nominal
         elif (
             len(asset.in_ports) == 2 and len(asset.out_ports) == 1
-        ):  # for heat_source_gas or e_boiler
+        ):  # for gas_heat_source_gas or elec_heat_source_elec
             q_nominals = {}
             try:
                 for port in asset.in_ports:

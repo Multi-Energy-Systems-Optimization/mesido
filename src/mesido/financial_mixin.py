@@ -1049,6 +1049,13 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     / density_normal
                     * 3600.0
                 )  # [Nm3/h]
+            elif s in [
+                *self.energy_system_components.get("heat_source_elec", []),
+                *self.energy_system_components.get("elec_heat_source_elec", []),
+            ]:
+                nominator_vector = self.__state_vector_scaled(
+                    f"{s}.Power_consumed", ensemble_member
+                )  # [W]
             else:
                 nominator_vector = heat_source
             sum = 0.0
