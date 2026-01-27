@@ -22,7 +22,6 @@ from utils_test_scaling import create_log_list_scaling
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
-
 logger = logging.getLogger("mesido")
 logger.setLevel(logging.INFO)
 

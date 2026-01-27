@@ -10,7 +10,6 @@ import numpy as np
 
 from utils_tests import electric_power_conservation_test
 
-
 # TODO: still have to make test where elecitricity direction is switched:
 # e.g. 2 nodes, with at each node a producer and consumer, first one node medium demand, second
 # small demand and then increase the demand of the second node such that direction changes
