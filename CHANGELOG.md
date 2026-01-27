@@ -8,6 +8,8 @@
 - Sizing of airco
 - Heating and cooling example with input costs
 
+- HeatSourceElec (e-boiler with 2 ports) is supported for DTK and its cost attributes are supported in Mesido
+- Cost attributes of ElecHeatSourceElec (e-boiler with 3 ports) are supported in Mesido
 
 ## Changed
 - Clean up of old code and removing duplicates.
