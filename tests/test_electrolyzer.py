@@ -6,7 +6,7 @@ from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.network_common import NetworkSettings
 from mesido.util import run_esdl_mesido_optimization
-from mesido.workflows.utils.error_types import NO_POTENTIAL_ERRORS_CHECK
+from mesido.workflows.utils.error_types import NetworkErrors
 
 import numpy as np
 
@@ -48,7 +48,7 @@ class TestElectrolyzer(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_electrolyzer_general.csv",
-            error_type_check=NO_POTENTIAL_ERRORS_CHECK,
+            error_type_check=NetworkErrors.NO_POTENTIAL_ERRORS_CHECK,
         )
 
         results = solution.extract_results()
@@ -272,7 +272,7 @@ class TestElectrolyzer(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_minimum_electrolyzer_power.csv",
-            error_type_check=NO_POTENTIAL_ERRORS_CHECK,
+            error_type_check=NetworkErrors.NO_POTENTIAL_ERRORS_CHECK,
         )
 
         results = solution.extract_results()
@@ -346,7 +346,7 @@ class TestElectrolyzer(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_electrolyzer_general.csv",
-            error_type_check=NO_POTENTIAL_ERRORS_CHECK,
+            error_type_check=NetworkErrors.NO_POTENTIAL_ERRORS_CHECK,
         )
 
         results = solution.extract_results()
@@ -398,7 +398,7 @@ class TestElectrolyzer(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_equality_constraints.csv",
-            error_type_check=NO_POTENTIAL_ERRORS_CHECK,
+            error_type_check=NetworkErrors.NO_POTENTIAL_ERRORS_CHECK,
         )
 
         results = solution.extract_results()
@@ -478,7 +478,7 @@ class TestElectrolyzer(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_minimum_electrolyzer_power.csv",
-            error_type_check=NO_POTENTIAL_ERRORS_CHECK,
+            error_type_check=NetworkErrors.NO_POTENTIAL_ERRORS_CHECK,
         )
 
         results = solution.extract_results()
