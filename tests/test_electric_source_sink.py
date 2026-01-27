@@ -43,6 +43,7 @@ class TestMILPElectricSourceSink(TestCase):
         electric_power_conservation_test(solution, results)
 
         # Test upper limit profile constraint for pv
+        # We expect that electricity production via cheap PV is same as the define upper limit
         np.testing.assert_allclose(
             solution.get_timeseries("PV_with_upper_profile.maximum_electricity_source").values[1:],
             results["PV_with_upper_profile.Electricity_source"][1:],
@@ -60,7 +61,6 @@ class TestMILPElectricSourceSink(TestCase):
         from models.unit_cases_electricity.source_sink_cable.src.example import ElectricityProblem
 
         base_folder = Path(example.__file__).resolve().parent.parent
-        tol = 1e-10
 
         solution = run_esdl_mesido_optimization(
             ElectricityProblem,
@@ -75,13 +75,11 @@ class TestMILPElectricSourceSink(TestCase):
         # Test energy conservation
         electric_power_conservation_test(solution, results)
 
-        # Test that voltage goes down
-        v_min = solution.parameters(0)["ElectricityCable_238f.min_voltage"]
-        v_in = results["ElectricityCable_238f.ElectricityIn.V"]
-        v_out = results["ElectricityCable_238f.ElectricityOut.V"]
-        np.testing.assert_array_less(v_out, v_in)
-        biggerthen = all(v_out >= (v_min - tol) * np.ones(len(v_out)))
-        self.assertTrue(biggerthen)
+        # Test that PV delivers less that the capacity
+        np.testing.assert_array_less(
+            results["PV.Electricity_source"][1:],
+            solution.get_timeseries("PV.maximum_electricity_source").values[1:],
+        )
 
         for source in solution.energy_system_components.get("electricity_source", []):
             np.testing.assert_allclose(
