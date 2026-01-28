@@ -17,6 +17,7 @@
 
 ## Fixed
 - Bug: Write updated esdl for 2 port heat pump
+- Bug: Variable Operational Cost for Ates is set as required in ASSET_COST_REQUIREMENTS dictionary
 
 
 # [0.1.15] - 2025-11-19
