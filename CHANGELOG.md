@@ -7,7 +7,6 @@
 - Adding constraint so that all heating demands are placed at the end of the simulation
 - Sizing of airco
 - Heating and cooling example with input costs
-
 - HeatSourceElec (e-boiler with 2 ports) is supported for DTK and its cost attributes are supported in Mesido
 - Cost attributes of ElecHeatSourceElec (e-boiler with 3 ports) are supported in Mesido
 
@@ -25,6 +24,7 @@
 - Bug: Write updated esdl for 2 port heat pump
 - Bug: 2 port heatpump write result profiles to database 
 - Bug: setting of self._pipe_heat_loss_nominals was not accounting for negative values when T_ground > carrier temperature
+- Bug: Variable Operational Cost for Ates is set as required in ASSET_COST_REQUIREMENTS dictionary
 
 
 # [0.1.15] - 2025-11-19
