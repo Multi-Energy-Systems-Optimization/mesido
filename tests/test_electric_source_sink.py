@@ -15,6 +15,52 @@ from utils_tests import electric_power_conservation_test
 
 
 class TestMILPElectricSourceSink(TestCase):
+
+    def test_source_sink_pv_csv_profile(self):
+        """
+        Tests for an electricity network that consist out of 2 PV as electricity sources,
+        a cable and a sink. One of the PV has profile profiles that is read from input csv.
+        Other PV has no profile constraint. Objective function of the optimization is
+        modified so that we minimize the PV production of the PV without profile constraint.
+        Hence, we check if PV with profile constraint produces same as constraint.
+
+        Checks:
+        - Check energy conservation
+        - Check PV profile constraint
+        - Check PV sizing
+        """
+
+        import models.unit_cases_electricity.source_sink_cable.src.example as example
+        from models.unit_cases_electricity.source_sink_cable.src.example import ElectricityProblem
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        solution = run_esdl_mesido_optimization(
+            ElectricityProblem,
+            base_folder=base_folder,
+            esdl_file_name="pv_with_and_without_csv_profile.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_with_pv.csv",
+        )
+        results = solution.extract_results()
+
+        # Test energy conservation
+        electric_power_conservation_test(solution, results)
+
+        # Test that PV with profile constraint produces same as maximum_electricity_source
+        # defined in input csv.
+        np.testing.assert_allclose(
+            results["PV.Electricity_source"][1:],
+            solution.get_timeseries("PV.maximum_electricity_source").values[1:],
+        )
+
+        # Test PV capacity sized as expected
+        np.testing.assert_allclose(
+            results["PV__max_size"],
+            max(solution.get_timeseries("PV.maximum_electricity_source").values[1:]),
+        )
+
     def test_source_sink(self):
         """
         Tests for an electricity network that consist out of a source, a cable and a sink.
