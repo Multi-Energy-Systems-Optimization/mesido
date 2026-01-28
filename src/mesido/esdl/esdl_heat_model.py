@@ -443,8 +443,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
         )
-
-        return HeatBuffer, modifiers
+        if len(asset.in_ports) == 2 and len(asset.out_ports) == 1:
+            return HeatBufferElec, modifiers
+        else:
+            return HeatBuffer, modifiers
 
     def convert_heat_demand(self, asset: Asset) -> Tuple[Type[HeatDemand], MODIFIERS]:
         """
