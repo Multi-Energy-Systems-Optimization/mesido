@@ -337,7 +337,7 @@ class HeatProblemProdProfile(HeatProblemESDLProdProfile):
             demand_timeseries = self.get_timeseries("HeatingDemand_a3b8.target_heat_demand")
             new_timeseries = np.ones(len(demand_timeseries.values)) * 1
             ind_hlf = int(len(demand_timeseries.values) / 2)
-            new_timeseries[ind_hlf : ind_hlf + 4] = np.ones(4) * 0.10
+            new_timeseries[ind_hlf : ind_hlf + 1] = np.ones(1) * 0.10
             self.set_timeseries(f"{s}.maximum_heat_source", new_timeseries)
 
 

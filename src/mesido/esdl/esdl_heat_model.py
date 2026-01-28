@@ -25,7 +25,7 @@ from mesido.pycml.component_library.milp import (
     ColdDemand,
     Compressor,
     ControlValve,
-    ElecBoiler,
+    ElecHeatSourceElec,
     ElectricityCable,
     ElectricityDemand,
     ElectricityNode,
@@ -47,6 +47,7 @@ from mesido.pycml.component_library.milp import (
     HeatPump,
     HeatPumpElec,
     HeatSource,
+    HeatSourceElec,
     LowTemperatureATES,
     Node,
     Pump,
@@ -56,7 +57,6 @@ from mesido.pycml.component_library.milp import (
 )
 
 from scipy.optimize import fsolve
-
 
 logger = logging.getLogger("mesido")
 
@@ -115,7 +115,7 @@ def docs_esdl_modifiers(class__):
                     indent = ""
                 else:
                     format_modifiers_dict = [f"* {mod}" for mod in modifiers_dict[node.name]]
-                    (indent, _) = line_with_hook.split("{automatically_add_modifiers_here}")
+                    indent, _ = line_with_hook.split("{automatically_add_modifiers_here}")
                     func.__doc__ = func.__doc__.replace(
                         "{automatically_add_modifiers_here}",
                         f"\n{indent}".join(format_modifiers_dict),
@@ -533,6 +533,13 @@ class AssetToHeatComponent(_AssetToComponentBase):
         """
         assert asset.asset_type in {"Airco"}
 
+        get_potential_errors().add_potential_issue(
+            MesidoAssetIssueType.COLD_ASSET_TYPE_NOT_SUPPORTED,
+            asset.id,
+            f"Asset named {asset.name}: This is a cooling asset and it should be replaced with a"
+            " supported asset",
+        )
+
         max_ = asset.attributes["power"] if asset.attributes["power"] else math.inf
 
         q_nominal = self._get_connected_q_nominal(asset)
@@ -564,6 +571,13 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 {automatically_add_modifiers_here}
         """
         assert asset.asset_type in {"CoolingDemand"}
+
+        get_potential_errors().add_potential_issue(
+            MesidoAssetIssueType.COLD_ASSET_TYPE_NOT_SUPPORTED,
+            asset.id,
+            f"Asset named {asset.name}: This is a cooling asset and it should be replaced with a"
+            " supported asset",
+        )
 
         max_demand = asset.attributes["power"] if asset.attributes["power"] else math.inf
 
@@ -725,7 +739,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         id_mapping = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
             "id_number_mapping"
         ]
-        (diameter, wall_roughness) = self._gas_pipe_get_diameter_and_roughness(asset)
+        diameter, wall_roughness = self._gas_pipe_get_diameter_and_roughness(asset)
         q_nominal = math.pi * diameter**2 / 4.0 * self.v_max_gas / 2.0
         self._set_q_nominal(asset, q_nominal)
         q_max = math.pi * diameter**2 / 4.0 * self.v_max_gas
@@ -1249,6 +1263,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             "GeothermalSource",
             "ResidualHeatSource",
             "HeatPump",
+            "ElectricBoiler",
         }
 
         max_supply = asset.attributes["power"]
@@ -1262,6 +1277,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
         # TODO: Use an attribute or use and KPI for CO2 coefficient of a source
 
         q_nominal = self._get_connected_q_nominal(asset)
+        if isinstance(q_nominal, dict):
+            q_nominal = q_nominal["Q_nominal"]
 
         modifiers = dict(
             Heat_source=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
@@ -1301,6 +1318,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
         elif asset.asset_type == "HeatPump":
             modifiers["cop"] = asset.attributes["COP"]
             return AirWaterHeatPump, modifiers
+        elif asset.asset_type == "ElectricBoiler":
+            efficiency = asset.attributes["efficiency"] if asset.attributes["efficiency"] else 1.0
+            modifiers["efficiency"] = efficiency
+            return HeatSourceElec, modifiers
         else:
             return HeatSource, modifiers
 
@@ -1401,10 +1422,20 @@ class AssetToHeatComponent(_AssetToComponentBase):
         )
 
         # if no maxStorageTemperature is specified we assume a "regular" HT ATES model
+        low_temp_ates_max_storage_temp_deg = 30.0
         if (
             asset.attributes["maxStorageTemperature"]
-            and asset.attributes["maxStorageTemperature"] <= 30.0
+            and asset.attributes["maxStorageTemperature"] <= low_temp_ates_max_storage_temp_deg
         ):
+            max_store_temp = asset.attributes["maxStorageTemperature"]
+            get_potential_errors().add_potential_issue(
+                MesidoAssetIssueType.COLD_ASSET_TYPE_NOT_SUPPORTED,
+                asset.id,
+                f"Asset named {asset.name}: For this ATES the maxStorageTemperature has been set to"
+                f" {max_store_temp} degrees Celcius, please increase the value such that"
+                f" maxStorageTemperature > {low_temp_ates_max_storage_temp_deg} degrees Celcius",
+            )
+
             modifiers.update(
                 dict(
                     Heat_low_temperature_ates=dict(
@@ -1418,6 +1449,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 "ATES in use: WKO (koude-warmteopslag, cold and heat storage) since the"
                 " maximum temperature has been specified to be <= 30 degrees Celcius"
             )
+
             return LowTemperatureATES, modifiers
         else:
             modifiers.update(
@@ -2463,7 +2495,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
         )
         return GasBoiler, modifiers
 
-    def convert_elec_boiler(self, asset: Asset) -> Tuple[Union[ElecBoiler, HeatSource], MODIFIERS]:
+    def convert_heat_source_elec(
+        self, asset: Asset
+    ) -> Tuple[Union[Type[HeatSourceElec], Type[ElecHeatSourceElec]], MODIFIERS]:
         """
         This function converts the ElectricBoiler object in esdl to a set of modifiers that can be
         used in a pycml object.
@@ -2505,9 +2539,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
             logger.error(f"{asset.asset_type} '{asset.name}' has no max power specified. ")
         assert max_supply > 0.0
 
+        _, modifiers = self.convert_heat_source(asset)
+        modifiers["elec_power_nominal"] = max_supply
         if len(asset.in_ports) == 1:
-            heat_source_object, modifiers = self.convert_heat_source(asset)
-            return heat_source_object, modifiers
+            return HeatSourceElec, modifiers
 
         id_mapping = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
             "id_number_mapping"
@@ -2520,27 +2555,21 @@ class AssetToHeatComponent(_AssetToComponentBase):
             if isinstance(port.carrier, esdl.ElectricityCommodity):
                 min_voltage = port.carrier.voltage
         i_max, i_nom = self._get_connected_i_nominal_and_max(asset)
-        eff = asset.attributes["efficiency"] if asset.attributes["efficiency"] else 1.0
 
-        modifiers = dict(
-            Heat_source=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
-            id_mapping_carrier=id_mapping,
-            ElectricityIn=dict(
-                Power=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
-                I=dict(min=0.0, max=i_max, nominal=i_nom),
-                V=dict(min=min_voltage, nominal=min_voltage),
-            ),
-            min_voltage=min_voltage,
-            elec_power_nominal=max_supply,
-            efficiency=eff,
-            **self._generic_modifiers(asset),
-            **self._generic_heat_modifiers(0.0, max_supply, q_nominal["Q_nominal"]),
-            **self._supply_return_temperature_modifiers(asset),
-            **self._rho_cp_modifiers,
-            **self._get_cost_figure_modifiers(asset),
+        modifiers.update(
+            dict(
+                id_mapping_carrier=id_mapping,
+                ElectricityIn=dict(
+                    Power=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
+                    I=dict(min=0.0, max=i_max, nominal=i_nom),
+                    V=dict(min=min_voltage, nominal=min_voltage),
+                ),
+                min_voltage=min_voltage,
+                **self._generic_heat_modifiers(0.0, max_supply, q_nominal["Q_nominal"]),
+            )
         )
 
-        return ElecBoiler, modifiers
+        return ElecHeatSourceElec, modifiers
 
     def convert_air_water_heat_pump_elec(
         self, asset: Asset
@@ -2580,6 +2609,13 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 {automatically_add_modifiers_here}
         """
         assert asset.asset_type in {"HeatPump"}
+
+        get_potential_errors().add_potential_issue(
+            MesidoAssetIssueType.ELECT_ASSET_TYPE_NOT_SUPPORTED,
+            asset.id,
+            f"Asset named {asset.name}: This is an asset that includes electricity and it should be"
+            " replaced with a supported asset",
+        )
 
         max_supply = asset.attributes["power"]
 

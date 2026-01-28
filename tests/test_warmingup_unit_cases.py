@@ -192,3 +192,11 @@ class TestWarmingUpUnitCases(TestCase):
                 results[f"{buffer}.HeatOut.H"][inds] - results[f"{buffer}.HeatIn.H"][inds],
                 atol=1.0e-6,
             )
+
+
+if __name__ == "__main__":
+
+    a = TestWarmingUpUnitCases()
+    a.test_1a()
+    a.test_2a()
+    a.test_3a()

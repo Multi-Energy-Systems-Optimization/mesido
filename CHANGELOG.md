@@ -5,14 +5,26 @@
 - Rollout workflow may optionally include phasing of heat buffers for handling peak day constraints and demands
 - Inclusion of maximum allowed yearly pipe placement length constraint for the rollout workflow
 - Adding constraint so that all heating demands are placed at the end of the simulation
+- Sizing of airco
+- Heating and cooling example with input costs
 
+- HeatSourceElec (e-boiler with 2 ports) is supported for DTK and its cost attributes are supported in Mesido
+- Cost attributes of ElecHeatSourceElec (e-boiler with 3 ports) are supported in Mesido
 
 ## Changed
+- Clean up of old code and removing duplicates.
 - Minimize TCO objective in the grow_workflow is now only based on capex and opex that can be influenced.
 - Removed the requirement of "_ret" for the return network pipes, for ESDLversion 21.10 and later. The relation between supply and return pipes is now based on the "related" attribute in the esdl.
+- Addtion of cooling assests (airco and low_temperature_ates) in the grow_workflow for heating and cooling networks
+- Inclusion of airco and low_temperature_ates in write_output
+- New data structute for specifying database connection inputs
+- Costs of available pipe classes are updated based on the asset measures and templates if they are provided.
+- The charging and discharging variable for electricity storage is created without a binary variable using the convex hull description.
 
 ## Fixed
 - Bug: Write updated esdl for 2 port heat pump
+- Bug: 2 port heatpump write result profiles to database 
+- Bug: setting of self._pipe_heat_loss_nominals was not accounting for negative values when T_ground > carrier temperature
 
 
 # [0.1.15] - 2025-11-19

@@ -11,7 +11,6 @@ from mesido import __version__
 
 from rtctools.util import run_optimization_problem
 
-
 MULTI_ENUM_NAME_TO_FACTOR = {
     esdl.MultiplierEnum.ATTO: 1e-18,
     esdl.MultiplierEnum.FEMTO: 1e-15,
@@ -46,7 +45,7 @@ def _sort_numbered(list_):
 
 def main_decorator(func):
     def main(runinfo_path=None, log_level=None, run_remote=None):
-        logger = logging.getLogger("WarmingUP-MPC")
+        logger = logging.getLogger("mesido")
         logger.setLevel(logging.INFO)
 
         def handle_exception(exc_type, exc_value, exc_traceback):

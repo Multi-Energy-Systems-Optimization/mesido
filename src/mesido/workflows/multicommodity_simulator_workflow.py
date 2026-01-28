@@ -5,6 +5,7 @@ from pathlib import Path
 
 import esdl
 
+from mesido.esdl.esdl_mixin import DBAccesType
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
@@ -36,7 +37,7 @@ DB_NAME = "Warmtenetten"
 DB_USER = "admin"
 DB_PASSWORD = "admin"
 
-logger = logging.getLogger("WarmingUP-MPC")
+logger = logging.getLogger("mesido")
 logger.setLevel(logging.INFO)
 
 locale.setlocale(locale.LC_ALL, "")
@@ -301,8 +302,8 @@ class MultiCommoditySimulator(
             "gas_source": "Gas_source_mass_flow",
             "gas_tank_storage": {"charge": "Gas_tank_flow", "discharge": "__Q_discharge"},
             "electricity_storage": {
-                "charge": "Effective_power_charging",
-                "discharge": "__effective_power_discharging",
+                "charge": "Power_charging",
+                "discharge": ".Power_discharging",
             },
             "electrolyzer": "Power_consumed",
         }
@@ -521,7 +522,6 @@ class MultiCommoditySimulator(
         options["estimated_velocity"] = 7.5
 
         options["gas_storage_discharge_variables"] = True
-        options["electricity_storage_discharge_variables"] = True
 
         return options
 
@@ -831,12 +831,17 @@ def main(runinfo_path, log_level):
 
     kwargs = {
         "write_result_db_profiles": False,
-        "influxdb_host": "localhost",
-        "influxdb_port": 8086,
-        "influxdb_username": None,
-        "influxdb_password": None,
-        "influxdb_ssl": False,
-        "influxdb_verify_ssl": False,
+        "database_connections": [
+            {
+                "access_type": DBAccesType.WRITE,
+                "influxdb_host": "localhost",
+                "influxdb_port": 8086,
+                "influxdb_username": None,
+                "influxdb_password": None,
+                "influxdb_ssl": False,
+                "influxdb_verify_ssl": False,
+            },
+        ],
     }
 
     _ = run_optimization_problem(

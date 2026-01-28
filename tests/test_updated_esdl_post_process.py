@@ -359,11 +359,13 @@ class TestUpdatedESDL(TestCase):
         model_folder = base_folder / "model"
         input_folder = base_folder / "input"
 
+        esdl_name = "PoC Tutorial Discount5.esdl"
+
         # Run the case in order to have access to results and solutions
         solution = run_end_scenario_sizing(
             EndScenarioSizingDiscountedStaged,
             base_folder=base_folder,
-            esdl_file_name="PoC Tutorial Discount5.esdl",
+            esdl_file_name=esdl_name,
             esdl_parser=ESDLFileParser,
         )
 
@@ -371,7 +373,7 @@ class TestUpdatedESDL(TestCase):
         parameters = solution.parameters(0)
 
         problem = EndScenarioSizingDiscountedStaged(
-            esdl_file_name="PoC Tutorial Discount5.esdl",
+            esdl_file_name=esdl_name,
             esdl_parser=ESDLFileParser,
             base_folder=base_folder,
             model_folder=model_folder,
@@ -380,7 +382,7 @@ class TestUpdatedESDL(TestCase):
         problem.pre()
 
         # Load in optimized esdl in the form of the actual optimized esdl file created by MESIDO
-        esdl_path = os.path.join(base_folder, "model", "PoC Tutorial Discount5_GrowOptimized.esdl")
+        esdl_path = os.path.join(base_folder, "model", f"{esdl_name[:-5]}_GrowOptimized.esdl")
         energy_system = problem._ESDLMixin__energy_system_handler.load_file(esdl_path)
 
         # Util test

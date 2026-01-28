@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from mesido.esdl.esdl_mixin import DBAccesType
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.workflows import EndScenarioSizingStaged, run_end_scenario_sizing
 
@@ -13,12 +14,17 @@ if __name__ == "__main__":
 
     kwargs = {
         "write_result_db_profiles": True,
-        "influxdb_host": "localhost",
-        "influxdb_port": 8086,
-        "influxdb_username": None,
-        "influxdb_password": None,
-        "influxdb_ssl": False,
-        "influxdb_verify_ssl": False,
+        "database_connections": [
+            {
+                "access_type": DBAccesType.WRITE,  # DBAccesType.READ or DBAccesType.READ_WRITE
+                "influxdb_host": "localhost",
+                "influxdb_port": 8086,
+                "influxdb_username": None,
+                "influxdb_password": None,
+                "influxdb_ssl": False,
+                "influxdb_verify_ssl": False,
+            },
+        ],
     }
 
     start_time = time.time()

@@ -1,4 +1,3 @@
-from mesido.pycml import Variable
 from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 from ._non_storage_component import _NonStorageComponent
@@ -24,9 +23,6 @@ class ControlValve(_NonStorageComponent):
 
         self.component_type = "control_valve"
 
-        self.add_variable(Variable, "dH")
-
-        self.add_equation(self.dH - (self.HeatOut.H - self.HeatIn.H))
         self.add_equation(
             (self.HeatOut.Hydraulic_power - self.HeatIn.Hydraulic_power)
             / (self.Q_nominal * self.nominal_pressure)
