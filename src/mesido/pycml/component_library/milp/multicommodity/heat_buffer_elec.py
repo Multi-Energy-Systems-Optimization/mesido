@@ -3,6 +3,7 @@ from mesido.pycml.component_library.milp.electricity.electricity_base import Ele
 from mesido.pycml.component_library.milp.heat.heat_buffer import HeatBuffer
 from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
+from numpy import nan
 
 @add_variables_documentation_automatically
 class HeatBufferElec(HeatBuffer):
@@ -30,6 +31,8 @@ class HeatBufferElec(HeatBuffer):
         )
 
         self.component_subtype = "heat_buffer_elec"
+        self.elec_power_nominal = nan
+        self.charging_efficiency = nan
 
         # Assumption: heat in/out is nonnegative
         self.add_variable(ElectricityPort, "ElectricityIn")

@@ -41,6 +41,7 @@ from mesido.pycml.component_library.milp import (
     GasTankStorage,
     GeothermalSource,
     HeatBuffer,
+    HeatBufferElec,
     HeatDemand,
     HeatExchanger,
     HeatPipe,
@@ -322,7 +323,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         return modifiers
 
-    def convert_heat_buffer(self, asset: Asset) -> Tuple[Type[HeatBuffer], MODIFIERS]:
+    def convert_heat_buffer(self, asset: Asset) -> Tuple[Union[Type[HeatBufferElec], Type[HeatBuffer]], MODIFIERS]:
         """
         This function converts the buffer object in esdl to a set of modifiers that can be used in
         a pycml object. Most important:
@@ -438,12 +439,47 @@ class AssetToHeatComponent(_AssetToComponentBase):
             Heat_buffer=dict(min=-hfr_discharge_max, max=hfr_charge_max),
             init_Heat=min_heat,
             **self._generic_modifiers(asset),
-            **self._generic_heat_modifiers(-hfr_discharge_max, hfr_charge_max, q_nominal),
+            **self._generic_heat_modifiers(-hfr_discharge_max, hfr_charge_max, q_nominal["Q_nominal"]),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
         )
         if len(asset.in_ports) == 2 and len(asset.out_ports) == 1:
+            id_mapping = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
+                "id_number_mapping"
+            ]
+
+            # TODO: CO2 coefficient
+
+            for port in asset.in_ports:
+                if isinstance(port.carrier, esdl.ElectricityCommodity):
+                    min_voltage = port.carrier.voltage
+            i_max, i_nom = self._get_connected_i_nominal_and_max(asset)
+
+            max_supply = hfr_charge_max  # ToDo: Check if max_supply (and also elec_power_nominal) can be defined via hfr_charge_max.
+            charging_efficiency = 1.0
+            if asset.attributes["chargeEfficiency"]:
+                charging_efficiency = asset.attributes["chargeEfficiency"]
+            else:
+                logger.error(
+                    f"'chargeEfficiency' attribute is not defined in esdl for {asset.name}."
+                    f" 1.0 is taken as default."
+                )
+                charging_efficiency = 1.0
+
+            modifiers.update(
+                dict(
+                    id_mapping_carrier=id_mapping,
+                    elec_power_nominal=max_supply,
+                    ElectricityIn=dict(
+                        Power=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
+                        I=dict(min=0.0, max=i_max, nominal=i_nom),
+                        V=dict(min=min_voltage, nominal=min_voltage),
+                    ),
+                    min_voltage=min_voltage,
+                    charging_efficiency=charging_efficiency,
+                )
+            )
             return HeatBufferElec, modifiers
         else:
             return HeatBuffer, modifiers
