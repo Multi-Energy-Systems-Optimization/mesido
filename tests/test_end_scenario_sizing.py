@@ -13,7 +13,7 @@ from mesido.workflows import (
     run_end_scenario_sizing,
 )
 from mesido.workflows.grow_workflow import EndScenarioSizingHeadLossStaged
-from mesido.workflows.utils.error_types import NO_POTENTIAL_ERRORS_CHECK
+from mesido.workflows.utils.error_types import NetworkErrors
 
 import numpy as np
 
@@ -187,7 +187,6 @@ class TestEndScenarioSizing(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
-            # error_type_check=NO_POTENTIAL_ERRORS_CHECK,  # Pass the error type here,
         )
 
         solution_staged = run_end_scenario_sizing(
@@ -299,7 +298,7 @@ class TestEndScenarioSizing(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
-            error_type_check=NO_POTENTIAL_ERRORS_CHECK,  # Pass the error type here
+            error_type_check=NetworkErrors.NO_POTENTIAL_ERRORS_CHECK,  # Pass the error type here
         )
 
         results = solution.extract_results()
@@ -342,7 +341,7 @@ class TestEndScenarioSizing(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
-            error_type_check=NO_POTENTIAL_ERRORS_CHECK,  # Pass the error type here
+            error_type_check=NetworkErrors.NO_POTENTIAL_ERRORS_CHECK,  # Pass the error type here
         )
 
         results = solution.extract_results()
@@ -397,7 +396,7 @@ class TestEndScenarioSizing(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
-            error_type_check=NO_POTENTIAL_ERRORS_CHECK,
+            error_type_check=NetworkErrors.NO_POTENTIAL_ERRORS_CHECK,
         )
 
         results = solution.extract_results()
@@ -433,7 +432,7 @@ class TestEndScenarioSizing(TestCase):
             esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
-            error_type_check=NO_POTENTIAL_ERRORS_CHECK,
+            error_type_check=NetworkErrors.NO_POTENTIAL_ERRORS_CHECK,
         )
         original_problem.pre()
         original_problem_pipe_classes = original_problem.get_unique_pipe_classes()
@@ -489,7 +488,7 @@ class TestEndScenarioSizing(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
-            error_type_check=NO_POTENTIAL_ERRORS_CHECK,
+            error_type_check=NetworkErrors.NO_POTENTIAL_ERRORS_CHECK,
         )
 
         results = solution.extract_results()
@@ -524,7 +523,7 @@ class TestEndScenarioSizing(TestCase):
             esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
-            error_type_check=NO_POTENTIAL_ERRORS_CHECK,
+            error_type_check=NetworkErrors.NO_POTENTIAL_ERRORS_CHECK,
         )
         original_problem.pre()
         original_problem_pipe_classes = original_problem.get_unique_pipe_classes()
