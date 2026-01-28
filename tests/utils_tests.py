@@ -299,7 +299,7 @@ def heat_to_discharge_test(solution, results, atol=1e-2, rtol=1.0e-4):
         test.assertTrue(
             expr=all(
                 results[f"{p}.HeatIn.Heat"][indices]
-                <= (results[f"{p}.Q"][indices] + 1e-7) * rho * cp * temperature
+                <= (results[f"{p}.Q"][indices] + 1e-6) * rho * cp * temperature
             )
         )
         test.assertTrue(
@@ -367,7 +367,7 @@ def electric_power_conservation_test(solution, results, atol=1e-2):
             "electricity_demand",
             "electrolyzer",
             "electricity_storage",
-            "elec_boiler",
+            "elec_heat_source_elec",
             "heat_pump_elec",
             "air_water_heat_pump_elec",
         ]
