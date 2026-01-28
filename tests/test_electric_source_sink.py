@@ -4,7 +4,6 @@ from unittest import TestCase
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.util import run_esdl_mesido_optimization
-from mesido.workflows import EndScenarioSizing
 
 import numpy as np
 
@@ -17,44 +16,18 @@ from utils_tests import electric_power_conservation_test
 
 class TestMILPElectricSourceSink(TestCase):
 
-    def test_source_sink_pv_db_profile(self):
-        """
-        Tests for an electricity network that consist out of 2 PV , 2 Heat pump elec
-        and 1 heat demand. One of the PV has upper limit profile constraint read from
-         database and connected to cheap heat pump. Whereas other PV has no upper
-         profile but connected to expensive heatpump. Hence, it is verified that upper
-         limit profile constraint for PV works as expected.
-
-        """
-
-        import models.unit_cases_electricity.source_sink_cable.src.example as example
-
-        base_folder = Path(example.__file__).resolve().parent.parent
-
-        solution = run_esdl_mesido_optimization(
-            EndScenarioSizing,
-            base_folder=base_folder,
-            esdl_file_name="pv_heatpump_with_db_profile.esdl",
-            esdl_parser=ESDLFileParser,
-        )
-        results = solution.extract_results()
-
-        # Test energy conservation
-        electric_power_conservation_test(solution, results)
-
-        # Test upper limit profile constraint for pv
-        # We expect that electricity production via cheap PV is same as the define upper limit
-        np.testing.assert_allclose(
-            solution.get_timeseries("PV_with_upper_profile.maximum_electricity_source").values[1:],
-            results["PV_with_upper_profile.Electricity_source"][1:],
-            atol=1.0e-6,
-        )
-
     def test_source_sink_pv_csv_profile(self):
         """
-        Tests for an electricity network that consist out of PV as a source, a cable and a sink.
-        PV upper profiles are read from input csv.
+        Tests for an electricity network that consist out of 2 PV as electricity sources,
+        a cable and a sink. One of the PV has profile profiles that is read from input csv.
+        Other PV has no profile constraint. Objective function of the optimization is
+        modified so that we minimize the PV production of the PV without profile constraint.
+        Hence, we check if PV with profile constraint produces same as constraint.
 
+        Checks:
+        - Check energy conservation
+        - Check PV profile constraint
+        - Check PV sizing
         """
 
         import models.unit_cases_electricity.source_sink_cable.src.example as example
@@ -65,7 +38,7 @@ class TestMILPElectricSourceSink(TestCase):
         solution = run_esdl_mesido_optimization(
             ElectricityProblem,
             base_folder=base_folder,
-            esdl_file_name="pv_with_csv_profile.esdl",
+            esdl_file_name="pv_with_and_without_csv_profile.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_with_pv.csv",
@@ -75,18 +48,18 @@ class TestMILPElectricSourceSink(TestCase):
         # Test energy conservation
         electric_power_conservation_test(solution, results)
 
-        # Test that PV delivers less that the capacity
-        np.testing.assert_array_less(
+        # Test that PV with profile constraint produces same as maximum_electricity_source
+        # defined in input csv.
+        np.testing.assert_allclose(
             results["PV.Electricity_source"][1:],
             solution.get_timeseries("PV.maximum_electricity_source").values[1:],
         )
 
-        for source in solution.energy_system_components.get("electricity_source", []):
-            np.testing.assert_allclose(
-                results[f"{source}.Electricity_source"],
-                results[f"{source}.ElectricityOut.Power"],
-                atol=1.0e-6,
-            )
+        # Test PV capacity sized as expected
+        np.testing.assert_allclose(
+            results._AliasDict__d['PV__max_size'],
+            max(solution.get_timeseries("PV.maximum_electricity_source").values[1:]),
+        )
 
     def test_source_sink(self):
         """
