@@ -57,7 +57,7 @@ class TestMILPElectricSourceSink(TestCase):
 
         # Test PV capacity sized as expected
         np.testing.assert_allclose(
-            results._AliasDict__d['PV__max_size'],
+            results["PV__max_size"],
             max(solution.get_timeseries("PV.maximum_electricity_source").values[1:]),
         )
 
