@@ -46,11 +46,16 @@ class MinimizeElecProduction(Goal):
         self.function_nominal = 1e6
 
     def function(self, optimization_problem, ensemble_member):
-        sum = 0
+        # sum_ = 0
+        # for source in optimization_problem.energy_system_components.get("electricity_source", []):
+        #     if "ElectricityProducer_edde" in source:
+        #         sum_ += optimization_problem.state(f"{source}.Electricity_source")
+
+        sum_ = 0
         for source in optimization_problem.energy_system_components.get("electricity_source", []):
-            if "PV_without_profile" in source:
-                sum = optimization_problem.state(f"{source}.Electricity_source")
-        return sum
+            if "ElectricityProducer_edde" in source:
+                sum_ += optimization_problem.state(f"{source}.Electricity_source")
+        return sum_
 
 
 class _GoalsAndOptions:
@@ -69,7 +74,8 @@ class _GoalsAndOptions:
             state = f"{demand}.Electricity_demand"
 
             goals.append(TargetDemandGoal(state, target))
-            goals.append(MinimizeElecProduction())
+
+        goals.append(MinimizeElecProduction())
 
         return goals
 

@@ -1864,7 +1864,6 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         source,  # i.e. heat_source, energy source
         max_power,  # i.e. max_heat, max_power
         constraint_nominal,
-        constraints,
         ensemble_member,
     ):
         """
@@ -1884,14 +1883,12 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         variable_suffix : str
             Timeseries suffix indicating the maximum production profile
             (e.g., "maximum_heat_source", "maximum_electricity_source").
-        source : array-like
+        source : casadi.MX
             Time‑series vector of produced heat/electricity to be constrained.
-        max_power : float
+        max_power : casadi.MX
             Installed or decision‑variable capacity of the asset.
         constraint_nominal : float
             Normalization constant for constraints.
-        constraints : list
-            List to which constraint are appended.
         ensemble_member : int
             Ensemble index used to retrieve asset parameters.
 
@@ -1901,7 +1898,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             The function modifies `constraints` in place by appending
             profile‑based capacity constraints for each timestep.
         """
-
+        constraints = []
         profile_non_scaled = self.get_timeseries(f"{asset}.{variable_suffix}").values
         max_profile_non_scaled = max(profile_non_scaled)
         profile_scaled = profile_non_scaled / max_profile_non_scaled
@@ -1982,6 +1979,8 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         else:
             RuntimeError(f"{asset}: Unforeseen error in adding a profile constraint")
 
+        return constraints
+
     def __max_size_constraints(self, ensemble_member):
         """
         This function makes sure that the __max_size variable is at least as large as needed. For
@@ -2046,14 +2045,15 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             constraint_nominal = self.variable_nominal(f"{s}.Heat_source")
 
             if f"{s}.maximum_heat_source" in self.io.get_timeseries_names():
-                self.__apply_profile_cap_constraints(
-                    s,
-                    "maximum_heat_source",
-                    heat_source,
-                    max_heat,
-                    constraint_nominal,
-                    constraints,
-                    ensemble_member,
+                constraints.extend(
+                    self.__apply_profile_cap_constraints(
+                        s,
+                        "maximum_heat_source",
+                        heat_source,
+                        max_heat,
+                        constraint_nominal,
+                        ensemble_member,
+                    )
                 )
             else:
                 constraints.append(
@@ -2200,14 +2200,15 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             if (d in self.energy_system_components.get("solar_pv", [])) and (
                 f"{d}.maximum_electricity_source" in self.io.get_timeseries_names()
             ):
-                self.__apply_profile_cap_constraints(
-                    d,
-                    "maximum_electricity_source",
-                    electricity_source,
-                    max_power,
-                    constraint_nominal,
-                    constraints,
-                    ensemble_member,
+                constraints.extend(
+                    self.__apply_profile_cap_constraints(
+                        d,
+                        "maximum_electricity_source",
+                        electricity_source,
+                        max_power,
+                        constraint_nominal,
+                        ensemble_member,
+                    )
                 )
             else:
                 constraints.append(

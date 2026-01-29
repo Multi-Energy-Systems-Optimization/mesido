@@ -7,7 +7,7 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
-from utils_tests import electric_power_conservation_test
+from utils_tests import demand_matching_test, electric_power_conservation_test
 
 # TODO: still have to make test where elecitricity direction is switched:
 # e.g. 2 nodes, with at each node a producer and consumer, first one node medium demand, second
@@ -18,13 +18,14 @@ class TestMILPElectricSourceSink(TestCase):
 
     def test_source_sink_pv_csv_profile(self):
         """
-        Tests for an electricity network that consist out of 2 PV as electricity sources,
-        a cable and a sink. One of the PV has profile profiles that is read from input csv.
-        Other PV has no profile constraint. Objective function of the optimization is
-        modified so that we minimize the PV production of the PV without profile constraint.
+        Tests for an electricity network that consist out of 1 PV  and 1 Electricity Producer
+        as electricity sources, a cable and a sink. PV has profile that is read from input csv.
+        Electricity Producer has no profile constraint. Objective function of the optimization
+        is modified so that we minimize the electricity production of Electricity Producer.
         Hence, we check if PV with profile constraint produces same as constraint.
 
         Checks:
+        - Check demand matching
         - Check energy conservation
         - Check PV profile constraint
         - Check PV sizing
@@ -38,12 +39,15 @@ class TestMILPElectricSourceSink(TestCase):
         solution = run_esdl_mesido_optimization(
             ElectricityProblem,
             base_folder=base_folder,
-            esdl_file_name="pv_with_and_without_csv_profile.esdl",
+            esdl_file_name="pv_with_csv_profile.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_with_pv.csv",
         )
         results = solution.extract_results()
+
+        # Test demand matching
+        demand_matching_test(solution, results)
 
         # Test energy conservation
         electric_power_conservation_test(solution, results)
