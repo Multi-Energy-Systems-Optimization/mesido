@@ -10,6 +10,34 @@ import numpy as np
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
+class TestElectricBuffer(TestCase):
+
+    def test_e_buffer(self):
+        """
+        This test is not complete yet. Testing of Electric Buffer functionality must be placed
+        """
+        import models.test_case_small_network_with_ates_buffer_geo.src.run_ates as run_ates
+        from models.test_case_small_network_with_ates_buffer_geo.src.run_ates import (
+            HeatProblem,
+        )
+
+        base_folder = Path(run_ates.__file__).resolve().parent.parent
+
+        # This is an optimization done over a few days
+        solution = run_esdl_mesido_optimization(
+            HeatProblem,
+            base_folder=base_folder,
+            esdl_file_name="test_case_small_network_with_ates_ebuffer_geo.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="Warmte_test.csv",
+        )
+
+        results = solution.extract_results()
+
+        np.testing.assert_array_less(0, sum(results["HeatStorage_74c1.Heat_flow"]))
+
+
 class TestMaxSizeAggregationCount(TestCase):
     def test_max_size_and_aggr_count(self):
         """

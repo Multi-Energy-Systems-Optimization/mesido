@@ -239,8 +239,8 @@ class _ESDLModelBase(_Model):
                         port_map[p.id] = getattr(component, out_suf)
                     else:
                         raise Exception(
-                            f"{asset.name} has does not have 1 electricity in_port 1 electric in port "
-                            f"and 1 Heat out_ports "
+                            f"{asset.name} has does not have 1 electricity in_port 1 electric "
+                            f"in port and 1 Heat out_ports "
                         )
             elif asset.asset_type == "Electrolyzer":
                 if len(asset.out_ports) == 1 and len(asset.in_ports) == 1:

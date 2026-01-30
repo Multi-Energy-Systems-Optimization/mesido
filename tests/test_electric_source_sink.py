@@ -16,30 +16,6 @@ from utils_tests import electric_power_conservation_test
 
 class TestMILPElectricSourceSink(TestCase):
 
-    def test_heat_buffer_elec_sink(self):
-        """
-        Tests for an electricity network that consist out of a heat buffer elec, a cable and a sink.
-
-
-        """
-
-        import models.unit_cases_electricity.source_sink_cable.src.example as example
-        from models.unit_cases_electricity.source_sink_cable.src.example import ElectricityProblem
-
-        base_folder = Path(example.__file__).resolve().parent.parent
-        tol = 1e-10
-
-        solution = run_esdl_mesido_optimization(
-            ElectricityProblem,
-            base_folder=base_folder,
-            esdl_file_name="heat_buffer_elec.esdl",
-            esdl_parser=ESDLFileParser,
-            profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries_heat_buffer_elec.csv",
-        )
-        results = solution.extract_results()
-        parameters = solution.parameters(0)
-
     def test_source_sink(self):
         """
         Tests for an electricity network that consist out of a source, a cable and a sink.
