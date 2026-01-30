@@ -39,7 +39,6 @@ class TestEndScenarioSizing(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
-            error_type_check=NetworkErrors.NO_POTENTIAL_ERRORS_CHECK,  # Pass the error type here
         )
         cls.results = cls.solution.extract_results()
 
@@ -99,6 +98,27 @@ class TestEndScenarioSizing(TestCase):
                 heat_ates, heat_flow_charging - heat_flow_discharging, atol=1.0
             )
             np.testing.assert_array_less(heat_flow_charging[heat_flow_discharging > 1e3], 1e3)
+
+        # Check variable operational cost of ates
+        timesteps_hr = np.diff(self.solution.times()) / 3600.0
+        variable_operational_cost = 0.0
+        for a in self.solution.energy_system_components.get("ates", []):
+            esdl_asset = self.solution.esdl_assets[self.solution.esdl_asset_name_to_id_map[f"{a}"]]
+            costs_esdl_asset = esdl_asset.attributes["costInformation"]
+            var_op_costs = costs_esdl_asset.variableOperationalCosts.value / 1.0e6  # EUR/Wh_th
+            self.assertNotEqual(0.0, var_op_costs)
+            for ii in range(1, len(self.solution.times())):
+                variable_operational_cost += (
+                    var_op_costs
+                    * (
+                        self.results[f"{a}.Heat_flow_charging"][ii]
+                        + self.results[f"{a}.Heat_flow_discharging"][ii]
+                    )
+                    * timesteps_hr[ii - 1]
+                )
+        np.testing.assert_allclose(
+            variable_operational_cost, self.results[f"{a}__variable_operational_cost"]
+        )
 
         # Check whether buffer tank is only active in peak day
         peak_day_indx = self.solution.parameters(0)["peak_day_index"]
@@ -168,7 +188,6 @@ class TestEndScenarioSizing(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
-            error_type_check=NetworkErrors.NO_POTENTIAL_ERRORS_CHECK,  # Pass the error type here,
         )
 
         solution_staged = run_end_scenario_sizing(
@@ -178,7 +197,6 @@ class TestEndScenarioSizing(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
-            error_type_check=NetworkErrors.NO_POTENTIAL_ERRORS_CHECK,  # Pass the error type here,
         )
 
         results = solution_staged.extract_results()

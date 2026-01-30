@@ -273,8 +273,9 @@ class _AssetToComponentBase:
         "ates": {  # HT-ATES (high)
             "investmentCosts": "required",
             "installationCosts": "required",
+            "variableOperationalCosts": "required",
             "fixedMaintenanceCosts": "optional",
-            "fixedOperationalCosts": "required",
+            "fixedOperationalCosts": "optional",
         },
         "pipe": {
             "investmentCosts": "optional",
@@ -283,7 +284,7 @@ class _AssetToComponentBase:
             "investmentCosts": "required",
             "installationCosts": "required",
             "fixedMaintenanceCosts": "optional",
-            "fixedOperationalCosts": "required",
+            "fixedOperationalCosts": "optional",
         },
         "gas_demand": {
             "variableOperationalCosts": "required",
