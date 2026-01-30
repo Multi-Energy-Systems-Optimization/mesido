@@ -38,6 +38,7 @@ from .multicommodity.airwater_heat_pump_elec import AirWaterHeatPumpElec
 from .multicommodity.elec_heat_source_elec import ElecHeatSourceElec
 from .multicommodity.electrolyzer import Electrolyzer
 from .multicommodity.gas_boiler import GasBoiler
+from .multicommodity.heat_buffer_elec import HeatBufferElec
 
 __all__ = [
     "Airco",
@@ -45,6 +46,7 @@ __all__ = [
     "AirWaterHeatPumpElec",
     "ATES",
     "HeatBuffer",
+    "HeatBufferElec",
     "CheckValve",
     "ColdDemand",
     "Compressor",

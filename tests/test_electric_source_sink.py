@@ -15,6 +15,7 @@ from utils_tests import electric_power_conservation_test
 
 
 class TestMILPElectricSourceSink(TestCase):
+
     def test_source_sink(self):
         """
         Tests for an electricity network that consist out of a source, a cable and a sink.
