@@ -20,9 +20,9 @@ class TestMILPElectricSourceSink(TestCase):
         """
         Tests for an electricity network that consist out of 1 PV  and 1 Electricity Producer
         as electricity sources, a cable and a sink. PV has profile that is read from input csv.
-        Electricity Producer has no profile constraint. Objective function of the optimization
-        is modified so that we minimize the electricity production of Electricity Producer.
-        Hence, we check if PV with profile constraint produces same as constraint.
+        Electricity Producer has no profile constraint.
+        We check if resulting production profile of PV is smaller than the with profile
+        constraint of PV which is scaled by max size of the PV
 
         Checks:
         - Check demand matching
