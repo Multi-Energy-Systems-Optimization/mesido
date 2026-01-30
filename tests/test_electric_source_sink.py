@@ -46,27 +46,22 @@ class TestMILPElectricSourceSink(TestCase):
         )
         results = solution.extract_results()
 
+        tol = 1.0e-6
+
         # Test demand matching
         demand_matching_test(solution, results)
 
         # Test energy conservation
         electric_power_conservation_test(solution, results)
 
-        # Test that PV with profile constraint produces same as maximum_electricity_source
-        # defined in input csv.
+        # Test that scaled  PV constraint profile via PV size is upper bound of PV production
         profile_non_scaled = solution.get_timeseries("PV.maximum_electricity_source").values
         max_profile_non_scaled = max(profile_non_scaled)
         profile_scaled = profile_non_scaled / max_profile_non_scaled
 
-        np.testing.assert_allclose(
+        np.testing.assert_array_less(
             results["PV.Electricity_source"],
-            profile_scaled * results["PV__max_size"],
-        )
-
-        # Test PV capacity sized as expected
-        np.testing.assert_allclose(
-            results["PV__max_size"],
-            max(solution.get_timeseries("PV.maximum_electricity_source").values),
+            profile_scaled * results["PV__max_size"] + tol,
         )
 
     def test_source_sink(self):

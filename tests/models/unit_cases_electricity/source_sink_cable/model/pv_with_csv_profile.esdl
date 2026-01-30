@@ -28,7 +28,7 @@
         <port xsi:type="esdl:InPort" id="32a1cf48-726b-4402-bfaa-db5b41ecc753" name="In" connectedTo="2bef42b7-f9d2-4b5a-8475-20021f54203e e9dae0de-5077-4683-bd4b-5ef2645b0bde" carrier="a04bdbac-5198-477b-9989-d99c3c001eaf"/>
         <port xsi:type="esdl:OutPort" id="b8c8850e-4025-456b-891a-7941de0a844e" name="Out" connectedTo="86f5473a-c2de-488f-9193-7aa8fe14edad" carrier="a04bdbac-5198-477b-9989-d99c3c001eaf"/>
       </asset>
-      <asset xsi:type="esdl:ElectricityProducer" id="edde78ae-a28b-4e16-8719-592a0a677ff9" name="ElectricityProducer_edde" power="2000.0">
+      <asset xsi:type="esdl:ElectricityProducer" id="edde78ae-a28b-4e16-8719-592a0a677ff9" name="ElectricityProducer_edde" power="2000.0" state="OPTIONAL">
         <geometry xsi:type="esdl:Point" lat="51.96488771057452" lon="4.416262469967275"/>
         <port xsi:type="esdl:OutPort" id="e9dae0de-5077-4683-bd4b-5ef2645b0bde" name="Out" connectedTo="32a1cf48-726b-4402-bfaa-db5b41ecc753" carrier="a04bdbac-5198-477b-9989-d99c3c001eaf"/>
       </asset>
