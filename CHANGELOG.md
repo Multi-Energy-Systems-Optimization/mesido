@@ -7,7 +7,6 @@
 - Adding constraint so that all heating demands are placed at the end of the simulation
 - Sizing of airco
 - Heating and cooling example with input costs
-
 - HeatSourceElec (e-boiler with 2 ports) is supported for DTK and its cost attributes are supported in Mesido
 - Cost attributes of ElecHeatSourceElec (e-boiler with 3 ports) are supported in Mesido
 
