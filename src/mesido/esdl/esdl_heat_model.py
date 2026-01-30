@@ -2478,7 +2478,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         #  used to define q_nominal_gas variable. _get_connected_q_nominal() function requires
         #  a carrier with GasCommodity as an input. However, hear_source_gas asset has no
         #  carrier with gas commodity. Hence, q_nominal_gas_no_carrier is defined from the
-        #  maximum gas power that GasHeater asset can consume. Later we can consider to move
+        #  maximum power that GasHeater asset can produce. Later we can consider to move
         #  q_nominal_gas definition into _get_connected_q_nominal() function.
         q_nominal_gas_no_carrier = (max_supply / modifiers["efficiency"]) / (
             density_gas_no_carrier * energy_content_no_carrier / 1000.0
