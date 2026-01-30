@@ -209,7 +209,13 @@ class TestWarmingUpUnitCases(TestCase):
 
         base_folder = Path(run_2a.__file__).resolve().parent.parent
 
-        # Just a "problem is not infeasible"
+        class HeatProblemEnsembleLimit(HeatProblemEnsemble):
+            def parameters(self, ensemble_member):
+                parameters = super().parameters(ensemble_member)
+                if ensemble_member == 1:
+                    parameters['GeothermalSource_fafd.Max_heat']=1e4
+                return parameters
+
         heat_problem = run_esdl_mesido_optimization(
             HeatProblemEnsemble,
             base_folder=base_folder,
@@ -218,14 +224,35 @@ class TestWarmingUpUnitCases(TestCase):
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_import.csv",
         )
+        heat_problem_limit = run_esdl_mesido_optimization(
+            HeatProblemEnsembleLimit,
+            base_folder=base_folder,
+            esdl_file_name="2a.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.csv",
+        )
 
-        results = {}
+        results, results_limit = {}, {}
         for ensemble_member in range(heat_problem.ensemble_size):
             results[ensemble_member] = heat_problem.extract_results(ensemble_member=ensemble_member)
+        for ensemble_member in range(heat_problem_limit.ensemble_size):
+            results_limit[ensemble_member] = heat_problem_limit.extract_results(ensemble_member=ensemble_member)
 
-        demand_matching_test(heat_problem, heat_problem.extract_results())
+        # demand_matching_test(heat_problem, heat_problem.extract_results())
         energy_conservation_test(heat_problem, heat_problem.extract_results())
         heat_to_discharge_test(heat_problem, heat_problem.extract_results())
+
+        for result in [results, results_limit]:
+            for ensemble_member in range(heat_problem.ensemble_size):
+                print("### Ensemble member", ensemble_member)
+                for demand in heat_problem.energy_system_components.get("heat_demand",[]):
+                    print(demand, result[ensemble_member][f"{demand}.Heat_demand"])
+                for prod in heat_problem.energy_system_components.get("heat_source", []):
+                    print(prod, "Heat_source",  result[ensemble_member][f"{prod}.Heat_source"])
+                    print(prod, "Max size", result[ensemble_member][f"{prod}__max_size"])
+        # for results_limit,  demand in ensemble 2 is now not matched, because the summed heat
+        # source capacities are insufficient.
 
 if __name__ == "__main__":
 

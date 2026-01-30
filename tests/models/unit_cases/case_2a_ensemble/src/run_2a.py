@@ -67,7 +67,7 @@ class MinimizeSourcesSizeGoal(Goal):
 
     def __init__(self, source):
         self.target_max = 0.0
-        self.function_range = (0.0, 2e6)
+        self.function_range = (0.0, 10e6)
         self.source = source
         self.function_nominal = 1e5
 
@@ -151,17 +151,6 @@ class HeatProblemEnsemble(AssetSizingMixin,
             goals.append(MinimizeSourcesSizeGoal(s))
         return goals
 
-    def bounds(self):
-        bounds = super().bounds()
-        print('a')
-        return bounds
-
-    def parameters(self, ensemble_member):
-        parameters = super().parameters(ensemble_member)
-        if ensemble_member == 1:
-            parameters['GeothermalSource_fafd.Max_heat']=1e5
-        return parameters
-
     def __fixed_max_size(self):
         constraints=[]
         for heat_source in self.energy_system_components["heat_source"]:
@@ -172,11 +161,27 @@ class HeatProblemEnsemble(AssetSizingMixin,
                 max_size_prev = max_size
         return constraints
 
+    def __update_target_demand_constraint(self, ensemble_member):
+        constraints = []
+        for demand in self.energy_system_components["heat_demand"]:
+            var = self.state_vector(f"{demand}.Heat_demand")
+            nom = self.variable_nominal(f"{demand}.Heat_demand")
+            target = np.asarray(self.get_timeseries(f"{demand}.target_heat_demand",
+                                              ensemble_member).values)
+
+            constraints.append((var*nom/nom, 0.0, target/nom))
+        return constraints
+
     def constraints(self, ensemble_member):
         constraints = super().constraints(ensemble_member).copy()
         constraints.extend(self.__fixed_max_size())
+        constraints.extend(self.__update_target_demand_constraint(ensemble_member))
         return constraints
 
+    def path_constraints(self, ensemble_member):
+        constraints = super().path_constraints(ensemble_member).copy()
+
+        return constraints
 
 
 class QTHProblem(

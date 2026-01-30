@@ -252,7 +252,7 @@
         <port xsi:type="esdl:OutPort" name="Out" connectedTo="e1dbf59a-8ac9-4bc1-bbf9-0c367cbda5bf" id="a74f0919-95d5-4eca-826a-b757452cba60" carrier="76160f2d-374c-4df5-9bee-20ff805124f8"/>
         <port xsi:type="esdl:InPort" name="In" id="32e53487-903e-425c-a40c-22db341df148" carrier="76160f2d-374c-4df5-9bee-20ff805124f8_ret" connectedTo="dcebb219-1aae-4f7e-9440-b81e6954e279"/>
       </asset>
-      <asset xsi:type="esdl:ResidualHeatSource" power="10000000.0" name="GeothermalSource_27cb" id="06f4c7dd-2293-48a3-aa04-76e4d2ab2a6e" minTemperature="65.0" maxTemperature="85.0" state="OPTIONAL">
+      <asset xsi:type="esdl:ResidualHeatSource" power="1000000.0" name="GeothermalSource_27cb" id="06f4c7dd-2293-48a3-aa04-76e4d2ab2a6e" minTemperature="65.0" maxTemperature="85.0" state="OPTIONAL">
         <geometry xsi:type="esdl:Point" lat="51.986925133624595" lon="4.389113187789918"/>
         <port xsi:type="esdl:OutPort" name="Out" connectedTo="22a22cb4-c95a-4a38-a1a4-148b0e1b14fd" id="45cc9a58-c769-471a-88e5-1f5b47a7b3c1" carrier="76160f2d-374c-4df5-9bee-20ff805124f8"/>
         <port xsi:type="esdl:InPort" name="In" id="10fc289a-2780-4310-a1d6-2414180bdcdb" carrier="76160f2d-374c-4df5-9bee-20ff805124f8_ret" connectedTo="bc9ed99c-ab3a-4fc1-b0fb-9eef40810468"/>
