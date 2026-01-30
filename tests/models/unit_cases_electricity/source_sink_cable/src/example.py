@@ -42,20 +42,33 @@ class MinimizeElecProduction(Goal):
 
     order = 1
 
-    def __init__(self):
-        self.function_nominal = 1e6
-
     def function(self, optimization_problem, ensemble_member):
-        # sum_ = 0
-        # for source in optimization_problem.energy_system_components.get("electricity_source", []):
-        #     if "ElectricityProducer_edde" in source:
-        #         sum_ += optimization_problem.state(f"{source}.Electricity_source")
-
         sum_ = 0
         for source in optimization_problem.energy_system_components.get("electricity_source", []):
             if "ElectricityProducer_edde" in source:
                 sum_ += optimization_problem.state(f"{source}.Electricity_source")
         return sum_
+
+
+class _GoalsAndOptionsPV:
+    def path_goals(self):
+        """
+        Add goal to meet the specified power demands in the electricity network.
+
+        Returns
+        -------
+        Extended goals list.
+        """
+        goals = super().path_goals().copy()
+
+        for demand in self.energy_system_components["electricity_demand"]:
+            target = self.get_timeseries(f"{demand}.target_electricity_demand")
+            state = f"{demand}.Electricity_demand"
+            goals.append(TargetDemandGoal(state, target))
+
+        goals.append(MinimizeElecProduction())
+
+        return goals
 
 
 class _GoalsAndOptions:
@@ -75,8 +88,6 @@ class _GoalsAndOptions:
 
             goals.append(TargetDemandGoal(state, target))
 
-        goals.append(MinimizeElecProduction())
-
         return goals
 
     def energy_system_options(self):
@@ -84,6 +95,30 @@ class _GoalsAndOptions:
         options["include_electric_cable_power_loss"] = True
 
         return options
+
+
+class ElectricityProblemPV(
+    _GoalsAndOptionsPV,
+    TechnoEconomicMixin,
+    LinearizedOrderGoalProgrammingMixin,
+    GoalProgrammingMixin,
+    ESDLMixin,
+    CollocatedIntegratedOptimizationProblem,
+):
+    """
+    Problem to check the behaviour of a simple source, cable, demand network.
+    """
+
+    def goal_programming_options(self):
+        """
+        Here we set the goal programming configuration. We use soft constraints for consecutive
+        goals.
+        """
+        options = super().goal_programming_options()
+        options["linearize_goal_order"] = True
+        return options
+
+    # pass
 
 
 class ElectricityProblem(

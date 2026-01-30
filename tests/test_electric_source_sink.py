@@ -32,12 +32,12 @@ class TestMILPElectricSourceSink(TestCase):
         """
 
         import models.unit_cases_electricity.source_sink_cable.src.example as example
-        from models.unit_cases_electricity.source_sink_cable.src.example import ElectricityProblem
+        from models.unit_cases_electricity.source_sink_cable.src.example import ElectricityProblemPV
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
         solution = run_esdl_mesido_optimization(
-            ElectricityProblem,
+            ElectricityProblemPV,
             base_folder=base_folder,
             esdl_file_name="pv_with_csv_profile.esdl",
             esdl_parser=ESDLFileParser,
