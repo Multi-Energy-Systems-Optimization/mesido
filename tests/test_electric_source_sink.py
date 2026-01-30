@@ -21,14 +21,13 @@ class TestMILPElectricSourceSink(TestCase):
         Tests for an electricity network that consist out of 1 PV  and 1 Electricity Producer
         as electricity sources, a cable and a sink. PV has profile that is read from input csv.
         Electricity Producer has no profile constraint.
-        We check if resulting production profile of PV is smaller than the with profile
-        constraint of PV which is scaled by max size of the PV
+        We check that scaled PV constraint profile is upper bound of PV production
+        and profile constraint scaling functionality in asset sizing works.
 
         Checks:
         - Check demand matching
         - Check energy conservation
-        - Check PV profile constraint
-        - Check PV sizing
+        - Check profile constraint scaling functionality works
         """
 
         import models.unit_cases_electricity.source_sink_cable.src.example as example
@@ -46,22 +45,21 @@ class TestMILPElectricSourceSink(TestCase):
         )
         results = solution.extract_results()
 
-        tol = 1.0e-6
-
         # Test demand matching
         demand_matching_test(solution, results)
 
         # Test energy conservation
         electric_power_conservation_test(solution, results)
 
-        # Test that scaled  PV constraint profile via PV size is upper bound of PV production
+        # Test that scaled PV constraint profile is upper bound of
+        # PV production and profile constraint scaling functionality
+        # in asset sizing works
         profile_non_scaled = solution.get_timeseries("PV.maximum_electricity_source").values
         max_profile_non_scaled = max(profile_non_scaled)
         profile_scaled = profile_non_scaled / max_profile_non_scaled
 
-        np.testing.assert_array_less(
-            results["PV.Electricity_source"],
-            profile_scaled * results["PV__max_size"] + tol,
+        np.testing.assert_allclose(
+            results["PV.Electricity_source"], profile_scaled * results["PV__max_size"]
         )
 
     def test_source_sink(self):

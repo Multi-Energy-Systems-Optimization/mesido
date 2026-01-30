@@ -47,6 +47,8 @@ class MinimizeElecProduction(Goal):
         for source in optimization_problem.energy_system_components.get("electricity_source", []):
             if "ElectricityProducer_edde" in source:
                 sum_ += optimization_problem.state(f"{source}.Electricity_source")
+            if "PV" in source:
+                sum_ -= optimization_problem.state(f"{source}.Electricity_source")
         return sum_
 
 
@@ -63,7 +65,7 @@ class MinimizeElecProductionSize(Goal):
         self.function_nominal = np.median(total_demand.values)
 
     def function(self, optimization_problem, ensemble_member):
-        return optimization_problem.state(f"{self.source}__max_size") * 2
+        return optimization_problem.state(f"{self.source}__max_size") * 2.0
 
 
 class _GoalsAndOptionsPV:
