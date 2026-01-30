@@ -695,8 +695,9 @@ class ESDLMixin(
         super().read()
         # TODO: update for ensembles, eg ensemble_size is now still 1, if io gets updated,
         # then the size also updates automatically
+        ensemble_size=1
+        self.__ensemble=None
         if self.csv_ensemble_mode:
-            ensemble_size=2
             self.__ensemble = np.genfromtxt(
                 os.path.join(self._input_folder, "ensemble.csv"),
                 delimiter=",",
@@ -705,62 +706,7 @@ class ESDLMixin(
                 names=True,
                 encoding=None,
             )
-            #
-            # for ensemble_member_index, ensemble_member_name in enumerate(self.__ensemble["name"]):
-            #     _timeseries = csv.load(
-            #         os.path.join(
-            #             self._input_folder,
-            #             ensemble_member_name,
-            #             "timeseries_import.csv",
-            #         ),
-            #         delimiter=",",
-            #         with_time=True,
-            #     )
-            #     self.__timeseries_times = _timeseries[_timeseries.dtype.names[0]]
-            #
-            #     self.io.reference_datetime = self.__timeseries_times[0]
-            #
-            #     for key in _timeseries.dtype.names[1:]:
-            #         self.io.set_timeseries(
-            #             key,
-            #             self.__timeseries_times,
-            #             np.asarray(_timeseries[key], dtype=np.float64),
-            #             ensemble_member_index,
-            #         )
-            # for ensemble_member_index, ensemble_member_name in enumerate(self.__ensemble["name"]):
-            #     try:
-            #         _parameters = csv.load(
-            #             os.path.join(
-            #                 self._input_folder,
-            #                 ensemble_member_name,
-            #                 self.csv_parameters_basename + ".csv",
-            #             ),
-            #             delimiter=self.csv_delimiter,
-            #         )
-            #         for key in _parameters.dtype.names:
-            #             self.io.set_parameter(key, float(_parameters[key]), ensemble_member_index)
-            #     except IOError:
-            #         pass
-            # logger.debug("CSVMixin: Read parameters.")
-            #
-            # for ensemble_member_name in self.__ensemble["name"]:
-            #     try:
-            #         _initial_state = csv.load(
-            #             os.path.join(
-            #                 self._input_folder,
-            #                 ensemble_member_name,
-            #                 self.csv_initial_state_basename + ".csv",
-            #             ),
-            #             delimiter=self.csv_delimiter,
-            #         )
-            #         check_initial_state_array(_initial_state)
-            #         _initial_state = {
-            #             key: float(_initial_state[key]) for key in _initial_state.dtype.names
-            #         }
-            #     except IOError:
-            #         _initial_state = {}
-            #     self.__initial_state.append(AliasDict(self.alias_relation, _initial_state))
-            # logger.debug("CSVMixin: Read initial state.")
+            ensemble_size = len(self.__ensemble)
 
         energy_system_components = self.energy_system_components
         esdl_carriers = self.esdl_carriers
@@ -773,6 +719,7 @@ class ESDLMixin(
             esdl_assets=self.esdl_assets,
             carrier_properties=esdl_carriers,
             ensemble_size=ensemble_size,
+            ensemble=self.__ensemble,
         )
         for ensemble_member_index in range(ensemble_size):
             self.io.set_parameter("GeothermalSource_fafd.Max_heat", 10e5, ensemble_member_index)
