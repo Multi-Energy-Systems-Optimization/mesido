@@ -106,6 +106,7 @@ class TestEndScenarioSizing(TestCase):
             esdl_asset = self.solution.esdl_assets[self.solution.esdl_asset_name_to_id_map[f"{a}"]]
             costs_esdl_asset = esdl_asset.attributes["costInformation"]
             var_op_costs = costs_esdl_asset.variableOperationalCosts.value / 1.0e6  # EUR/Wh_th
+            self.assertNotEqual(0.0, var_op_costs)
             for ii in range(1, len(self.solution.times())):
                 variable_operational_cost += (
                     var_op_costs

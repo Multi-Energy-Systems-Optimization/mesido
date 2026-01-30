@@ -284,7 +284,7 @@ class _AssetToComponentBase:
             "investmentCosts": "required",
             "installationCosts": "required",
             "fixedMaintenanceCosts": "optional",
-            "fixedOperationalCosts": "required",
+            "fixedOperationalCosts": "optional",
         },
         "gas_demand": {
             "variableOperationalCosts": "required",
