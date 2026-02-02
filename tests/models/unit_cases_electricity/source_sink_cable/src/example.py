@@ -45,10 +45,8 @@ class MinimizeElecProduction(Goal):
     def function(self, optimization_problem, ensemble_member):
         sum_ = 0
         for source in optimization_problem.energy_system_components.get("electricity_source", []):
-            if "ElectricityProducer_edde" in source:
+            if source not in optimization_problem.energy_system_components.get("solar_pv", []):
                 sum_ += optimization_problem.state(f"{source}.Electricity_source")
-            if "PV" in source:
-                sum_ -= optimization_problem.state(f"{source}.Electricity_source")
         return sum_
 
 
