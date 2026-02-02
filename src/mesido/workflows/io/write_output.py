@@ -317,6 +317,7 @@ class ScenarioOutput:
 
         results = self.extract_results()
         parameters = self.parameters(0)
+        diff_times = np.diff(self.times())
 
         # ------------------------------------------------------------------------------------------
         # KPIs
@@ -469,9 +470,7 @@ class ScenarioOutput:
                     or asset.asset_type == "GasHeater"
                 ):
                     heat_source_energy_wh[asset.name] = np.sum(
-                        results[f"{asset.name}.Heat_source"][1:]
-                        * (self.times()[1:] - self.times()[0:-1])
-                        / 3600
+                        results[f"{asset.name}.Heat_source"][1:] * diff_times / 3600
                     )
                 # TODO: ATES, HEAT pump show Secondary_heat and Primary_heat and tank storage
                 # elif ATES:
@@ -481,7 +480,7 @@ class ScenarioOutput:
                 # elif asset.asset_type == "HeatStorage":  # Heat discharged
                 #     heat_source_energy_wh[asset.name] = np.sum(
                 #         np.clip(results[f"{asset.name}.Heat_buffer"][1:], -np.inf, 0.0)
-                #         * (self.times()[1:] - self.times()[0:-1])
+                #         * diff_times
                 #         / 3600
                 #     )
         if not discounted_annualized_cost:
@@ -731,41 +730,36 @@ class ScenarioOutput:
                     if asset_name in self.energy_system_components.get("heat_source", []):
                         try:
                             total_energy_produced_locally_wh[subarea.name] += np.sum(
-                                results[f"{asset_name}.Heat_source"][1:]
-                                * (self.times()[1:] - self.times()[0:-1])
-                                / 3600.0
+                                results[f"{asset_name}.Heat_source"][1:] * diff_times / 3600.0
                             )
                         except KeyError:
                             total_energy_produced_locally_wh[subarea.name] = np.sum(
-                                results[f"{asset_name}.Heat_source"][1:]
-                                * (self.times()[1:] - self.times()[0:-1])
-                                / 3600.0
+                                results[f"{asset_name}.Heat_source"][1:] * diff_times / 3600.0
                             )
                     if asset_name in self.energy_system_components.get("heat_demand", []):
                         flow_variable = results[f"{asset_name}.Heat_demand"][1:]
                     elif asset_name in self.energy_system_components.get("heat_buffer", []):
                         flow_variable = results[f"{asset_name}.Heat_buffer"][1:]
-                    elif asset_name in self.energy_system_components.get("ates", []):
+                    elif asset_name in [
+                        *self.energy_system_components.get("ates", []),
+                        *self.energy_system_components.get("low_temperature_ates", []),
+                    ]:
                         flow_variable = results[f"{asset_name}.Heat_ates"][1:]
                     elif asset_name in self.energy_system_components.get("heat_pipe", []):
                         flow_variable = (
                             np.ones(len(self.times())) * results[f"{asset_name}__hn_heat_loss"]
                         )
                     else:
-                        flow_variable = ""
-                    if (
-                        asset_name in self.energy_system_components.get("heat_demand", [])
-                        or asset_name in self.energy_system_components.get("heat_buffer", [])
-                        or asset_name in self.energy_system_components.get("ates", [])
-                        or asset_name in self.energy_system_components.get("heat_pipe", [])
-                    ):
+                        flow_variable = np.array([])
+
+                    if flow_variable.any():
                         try:
                             total_energy_consumed_locally_wh[subarea.name] += np.sum(
-                                flow_variable * (self.times()[1:] - self.times()[0:-1]) / 3600.0
+                                flow_variable * diff_times / 3600.0
                             )
                         except KeyError:
                             total_energy_consumed_locally_wh[subarea.name] = np.sum(
-                                flow_variable * (self.times()[1:] - self.times()[0:-1]) / 3600.0
+                                flow_variable * diff_times / 3600.0
                             )
                     # end Calculate the total energy consumed/produced in an area
                 # end if placed loop
@@ -1033,15 +1027,20 @@ class ScenarioOutput:
             if name in [
                 *self.energy_system_components.get("heat_source", []),
                 *self.energy_system_components.get("ates", []),
+                *self.energy_system_components.get("low_temperature_ates", []),
                 *self.energy_system_components.get("heat_buffer", []),
                 *self.energy_system_components.get("heat_pump", []),
+                *self.energy_system_components.get("airco", []),
             ]:
                 asset = self._name_to_asset(energy_system, name)
                 asset_placement_var = self._asset_aggregation_count_var_map[name]
                 placed = np.round(results[asset_placement_var][0]) >= 1.0
                 max_size = results[self._asset_max_size_map[name]][0]
 
-                if asset.name in self.energy_system_components.get("ates", []):
+                if asset.name in [
+                    *self.energy_system_components.get("ates", []),
+                    *self.energy_system_components.get("low_temperature_ates", []),
+                ]:
                     asset.maxChargeRate = results[f"{name}__max_size"][0]
                     asset.maxDischargeRate = results[f"{name}__max_size"][0]
                 elif asset.name in self.energy_system_components.get("heat_buffer", []):
@@ -1051,7 +1050,10 @@ class ScenarioOutput:
                         * parameters[f"{name}.rho"]
                         * parameters[f"{name}.dT"]
                     )
-                elif asset.name in self.energy_system_components.get("heat_pump", []):
+                elif asset.name in [
+                    *self.energy_system_components.get("heat_pump", []),
+                    *self.energy_system_components.get("airco", []),
+                ]:
                     # Note: The heat capacity and not the electrical capacity
                     # TODO: in the future we need to cater for varying COP as well
                     asset.power = results[f"{name}__max_size"][0]
@@ -1158,8 +1160,10 @@ class ScenarioOutput:
                 *self.energy_system_components.get("heat_pipe", []),
                 *self.energy_system_components.get("heat_buffer", []),
                 *self.energy_system_components.get("ates", []),
+                *self.energy_system_components.get("low_temperature_ates", []),
                 *self.energy_system_components.get("heat_exchanger", []),
                 *self.energy_system_components.get("heat_pump", []),
+                *self.energy_system_components.get("airco", []),
             ]:
                 try:
                     # If the asset has been placed
@@ -1181,7 +1185,12 @@ class ScenarioOutput:
                     port, port_prim, port_sec = 3 * [None]
                     if isinstance(asset, esdl.Transport) or isinstance(asset, esdl.Consumer):
                         port = [port for port in asset.port if isinstance(port, esdl.InPort)][0]
-                    elif isinstance(asset, esdl.Producer):
+                    elif (
+                        isinstance(asset, esdl.Producer)
+                        or isinstance(asset, esdl.Airco)
+                        or isinstance(asset, esdl.ElectricBoiler)
+                        or isinstance(asset, esdl.GasHeater)
+                    ):
                         port = [port for port in asset.port if isinstance(port, esdl.OutPort)][0]
                     elif isinstance(asset, esdl.Conversion):
                         primary_inports = [
@@ -1201,8 +1210,8 @@ class ScenarioOutput:
                             port_sec = secondary_outports[0]
                         else:
                             logger.error(
-                                f"Write to influxdb does not cater for asset: {asset_name}, with"
-                                f" {len(primary_inports)} primary inport(s) and"
+                                f"Write to influxdb does not cater for asset: {asset_name}, "
+                                f"with {len(primary_inports)} primary inport(s) and"
                                 f" {len(secondary_outports)} secondary outport(s)."
                             )
                             traceback.print_exc()
@@ -1246,8 +1255,10 @@ class ScenarioOutput:
                             *self.energy_system_components.get("heat_source", []),
                             *self.energy_system_components.get("heat_buffer", []),
                             *self.energy_system_components.get("ates", []),
+                            *self.energy_system_components.get("low_temperature_ates", []),
                             *self.energy_system_components.get("heat_exchanger", []),
                             *self.energy_system_components.get("heat_pump", []),
+                            *self.energy_system_components.get("airco", []),
                         ]:
                             variables_one_hydraulic_system.append("Pump_power")
                             variables_two_hydraulic_system.append("Pump_power")

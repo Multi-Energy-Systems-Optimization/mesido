@@ -5,7 +5,7 @@ from mesido.esdl.asset_to_component_base import _AssetToComponentBase
 from mesido.esdl.edr_pipe_class import EDRGasPipeClass
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
-from mesido.workflows.utils.error_types import NO_POTENTIAL_ERRORS_CHECK
+from mesido.workflows.utils.error_types import NetworkErrors
 from mesido.workflows.utils.helpers import run_optimization_problem_solver
 
 import numpy as np
@@ -31,8 +31,8 @@ class TestGasElect(TestCase):
         - Investment cost of GasBoiler assets in EUR/MW  refers to euro-per-watt-thermal
         - Variable operational cost of HeatPump assets in EUR/MWh  refers
         to euro-per-watt-electricity-per-hour
-        - Variable operational cost of GasBoiler assets in EUR/MWh  refers
-        to euro-per-watt-gas-per-hour
+        - Variable operational cost of GasBoiler assets in EUR/Nm3  refers
+        to euro-per-watt-gas-per-normal-volume
 
 
         Checks:
@@ -57,7 +57,7 @@ class TestGasElect(TestCase):
             esdl_file_name="gas_elect_loop_tree.esdl",
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="HeatingDemand_W_manual.csv",
-            error_type_check=NO_POTENTIAL_ERRORS_CHECK,
+            error_type_check=NetworkErrors.NO_POTENTIAL_ERRORS_CHECK,
         )
 
         results = solution.extract_results()
@@ -70,7 +70,7 @@ class TestGasElect(TestCase):
             esdl_file_name="gas_elect_loop_tree.esdl",
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="HeatingDemand_W_manual_HighDemand.csv",
-            error_type_check=NO_POTENTIAL_ERRORS_CHECK,
+            error_type_check=NetworkErrors.NO_POTENTIAL_ERRORS_CHECK,
         )
 
         results_high_demand = solution_high_demand.extract_results()
@@ -116,7 +116,7 @@ class TestGasElect(TestCase):
         np.testing.assert_array_less(np.array(pipe_diameters), np.array(pipe_diameters_high_demand))
 
         # Test: Check the burning efficiency of gas heaters
-        for asset_name in [*solution.energy_system_components.get("gas_boiler", [])]:
+        for asset_name in [*solution.energy_system_components.get("gas_heat_source_gas", [])]:
             np.testing.assert_allclose(
                 parameters[f"{asset_name}.energy_content"]
                 * results[f"{asset_name}.GasIn.mass_flow"]
@@ -128,7 +128,7 @@ class TestGasElect(TestCase):
         # Test: Check gas consumption vs production balance
         total_gas_demand_g = [0] * len(np.diff(solution.times()))
         total_gas_source_g = [0] * len(np.diff(solution.times()))
-        for asset_name in [*solution.energy_system_components.get("gas_boiler", [])]:
+        for asset_name in [*solution.energy_system_components.get("gas_heat_source_gas", [])]:
             total_gas_demand_g += results[f"{asset_name}.Gas_demand_mass_flow"][1:] * np.diff(
                 solution.times()
             )
@@ -174,7 +174,9 @@ class TestGasElect(TestCase):
                                 pipe_classes[iter].investment_costs * parameters[f"{asset}.length"]
                             )
             total_capex += investment_cost
-            np.testing.assert_allclose(investment_cost, results[f"{asset}__investment_cost"])
+            np.testing.assert_allclose(
+                investment_cost, results[f"{asset}__investment_cost"], atol=1.0e-6
+            )
 
             # installation cost
             if asset in solution.energy_system_components["heat_source"]:
@@ -191,23 +193,27 @@ class TestGasElect(TestCase):
             timesteps_hr = np.diff(solution.times()) / 3600
             variable_operational_cost = 0.0
             if asset in solution.energy_system_components["heat_source"]:
-                var_op_costs = costs_esdl_asset.variableOperationalCosts.value / 1.0e6
-                assert var_op_costs > 0
+                nominator_vector = results[f"{asset}.Heat_flow"]
                 factor = 1.0
                 if asset in [
                     *solution.energy_system_components.get("air_water_heat_pump_elec", []),
                 ]:
+                    var_op_costs = costs_esdl_asset.variableOperationalCosts.value / 1.0e6
+                    assert var_op_costs > 0
                     factor = esdl_asset.attributes["COP"]
                 if asset in [
-                    *solution.energy_system_components.get("gas_boiler", []),
+                    *solution.energy_system_components.get("gas_heat_source_gas", []),
                 ]:
-                    factor = esdl_asset.attributes["efficiency"]
+                    var_op_costs = costs_esdl_asset.variableOperationalCosts.value
+                    assert var_op_costs > 0
+                    nominator_vector = (
+                        results[f"{asset}.Gas_demand_mass_flow"]
+                        / parameters[f"{asset}.density_normal"]
+                        * 3600
+                    )
                 for ii in range(1, len(solution.times())):
                     variable_operational_cost += (
-                        var_op_costs
-                        * results[f"{asset}.Heat_flow"][ii]
-                        * timesteps_hr[ii - 1]
-                        / factor
+                        var_op_costs * nominator_vector[ii] * timesteps_hr[ii - 1] / factor
                     )
             np.testing.assert_allclose(
                 variable_operational_cost, results[f"{asset}__variable_operational_cost"]

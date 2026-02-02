@@ -663,8 +663,8 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     min(heat_losses),
                     max(heat_losses),
                 )
-                self._pipe_heat_loss_nominals[heat_loss_var_name] = np.median(
-                    [x for x in heat_losses if x > 0]
+                self._pipe_heat_loss_nominals[heat_loss_var_name] = abs(
+                    np.median([x for x in heat_losses if abs(x) > 0])
                 )
 
                 for ensemble_member in range(self.ensemble_size):
@@ -833,7 +833,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             ub = bounds[f"{asset_name}.Heat_airco"][1]
             # Note that we only enforce the upper bound in state enabled if it was explicitly
             # specified for the demand
-            lb = 0.0 if np.isinf(bounds[f"{asset_name}.Heat_airco"][1]) else ub
+            lb = 0.0 if parameters[f"{asset_name}.state"] != 1 else ub
             _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
 
         for asset_name in self.energy_system_components.get("cold_demand", []):
@@ -2055,6 +2055,25 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     np.inf,
                 )
             )
+
+        cold_asset_type = ["airco", "cold_demand"]
+        for cat in cold_asset_type:
+            for cld in self.energy_system_components.get(cat, []):
+                max_var_types.add(cat)
+                max_var = self._asset_max_size_map[cld]
+                max_cold = self.extra_variable(max_var, ensemble_member)
+                cold_flow = self.__state_vector_scaled(f"{cld}.Heat_flow", ensemble_member)
+                constraint_nominal = max(
+                    self.variable_nominal(f"{cld}.Heat_flow"),
+                    self.variable_nominal(f"{cld}.HeatIn.Heat") if cat == "cold_demand" else 0.0,
+                )
+                constraints.append(
+                    (
+                        (np_ones * max_cold - cold_flow) / constraint_nominal,
+                        0.0,
+                        np.inf,
+                    )
+                )
 
         for a in [
             *self.energy_system_components.get("ates", []),

@@ -15,7 +15,6 @@ import numpy as np
 from rtctools.optimization.goal_programming_mixin_base import Goal
 from rtctools.optimization.optimization_problem import BT
 
-
 logger = logging.getLogger("mesido")
 
 

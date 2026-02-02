@@ -4,7 +4,6 @@ from mesido.esdl.esdl_mixin import DBAccesType
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.workflows import EndScenarioSizingStaged, run_end_scenario_sizing
 
-
 if __name__ == "__main__":
     import time
 

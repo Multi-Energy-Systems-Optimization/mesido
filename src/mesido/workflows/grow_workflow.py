@@ -16,7 +16,7 @@ from mesido.workflows.io.write_output import ScenarioOutput
 from mesido.workflows.utils.adapt_profiles import (
     adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
 )
-from mesido.workflows.utils.error_types import HEAT_NETWORK_ERRORS, potential_error_to_error
+from mesido.workflows.utils.error_types import NetworkErrors, potential_error_to_error
 from mesido.workflows.utils.helpers import main_decorator, run_optimization_problem_solver
 
 import numpy as np
@@ -33,7 +33,6 @@ from rtctools.optimization.single_pass_goal_programming_mixin import (
     CachingQPSol,
     SinglePassGoalProgrammingMixin,
 )
-
 
 DB_HOST = "172.17.0.2"
 DB_PORT = 8086
@@ -232,7 +231,9 @@ class EndScenarioSizing(
     2. minimize TCO = Capex + Opex*lifetime
     """
 
-    def __init__(self, error_type_check: str = HEAT_NETWORK_ERRORS, *args, **kwargs) -> None:
+    def __init__(
+        self, error_type_check: str = NetworkErrors.HEAT_NETWORK_ERRORS, *args, **kwargs
+    ) -> None:
         reset_potential_errors()  # This needed to clear the Singleton which is persistent
 
         # Set error type check before calling super().__init__ so it's available during init
@@ -296,7 +297,7 @@ class EndScenarioSizing(
         (
             self.__indx_max_peak,
             self.__heat_demand_nominal,
-            _,
+            self.__cold_demand_nominal,
         ) = adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(self, self.__day_steps)
 
         logger.info("HeatProblem read")
@@ -307,9 +308,11 @@ class EndScenarioSizing(
         return bounds
 
     def variable_nominal(self, variable):
-        try:
+        if variable in self.__heat_demand_nominal:
             return self.__heat_demand_nominal[variable]
-        except KeyError:
+        elif variable in self.__cold_demand_nominal:
+            return self.__cold_demand_nominal[variable]
+        else:
             return super().variable_nominal(variable)
 
     def energy_system_options(self):
@@ -325,18 +328,22 @@ class EndScenarioSizing(
         goals = super().path_goals().copy()
         bounds = self.bounds()
 
-        for demand in self.energy_system_components["heat_demand"]:
-            target = self.get_timeseries(f"{demand}.target_heat_demand")
-            if bounds[f"{demand}.HeatIn.Heat"][1] < max(target.values):
-                logger.warning(
-                    f"{demand} has a flow limit, {bounds[f'{demand}.HeatIn.Heat'][1]}, "
-                    f"lower that wat is required for the maximum demand {max(target.values)}"
-                )
-            # TODO: update this caclulation to bounds[f"{demand}.HeatIn.Heat"][1]/ dT * Tsup & move
-            # to potential_errors variable
-            state = f"{demand}.Heat_demand"
+        demand_type = ["heat_demand", "cold_demand"]
+        for dtype in demand_type:
+            for demand in self.energy_system_components.get(dtype, []):
+                target = self.get_timeseries(f"{demand}.target_{dtype}")
+                if bounds[f"{demand}.HeatIn.Heat"][1] < max(target.values):
+                    logger.warning(
+                        f"{demand} has a flow limit, {bounds[f'{demand}.HeatIn.Heat'][1]}, "
+                        f"lower than what is required for the maximum demand {max(target.values)}"
+                    )
+                # TODO:
+                # update this caclulation to bounds[f"{demand}.HeatIn.Heat"][1]/ dT * Tsup & move
+                # to potential_errors variable
+                state = f"{demand}.{dtype[0].upper() + dtype[1:]}"
 
-            goals.append(TargetHeatGoal(state, target))
+                goals.append(TargetHeatGoal(state, target))
+
         return goals
 
     def goals(self):
@@ -378,6 +385,34 @@ class EndScenarioSizing(
                     0.0,
                 )
             )
+
+        # TODO: confirm if volume or heat balance is required over year. This will
+        # determine if cyclic contraint below is for stored_heat or stored_volume
+        # Add stored_heat cyclic constraint, this will also ensure that the total heat
+        # change in the wko is 0 over the timeline
+        # Note:
+        #   - WKO in cooling mode: Hot well is being charged with heat and the cold well is
+        # being discharged
+        #   - WKO in heating mode: Cold well is being charged and the hot well is being
+        #     discharged.
+        # for a in self.energy_system_components.get("low_temperature_ates", []):
+        #     stored_heat = self.state_vector(f"{a}.Stored_heat")
+        #     constraints.append(((stored_heat[-1] - stored_heat[0]), 0.0, 0.0))
+        # This code below might be needed
+        # Add stored_heat cyclic constraint, this will also ensure that the volume
+        # into the lower temp & out of the higher temp is the same as the volume
+        # out of the lower temp & into the higher temp over the timeline.
+        # Note:
+        #   - Volume increase: Hot well is being charged and the cold well is being
+        #     discharged. -> WKO in cooling mode
+        #   - Volume decrease: Cold well is being charged and the hot well is being
+        #     discharged. -> WKO in heating mode
+
+        for ates_id in self.energy_system_components.get("low_temperature_ates", []):
+            stored_volume = self.state_vector(f"{ates_id}.Stored_volume")
+            volume_usage = 0.0
+            volume_usage = stored_volume[0] - stored_volume[-1]
+            constraints.append((volume_usage, 0.0, 0.0))
 
         return constraints
 
@@ -622,7 +657,6 @@ class SettingsStaged:
 
     def bounds(self):
         bounds = super().bounds()
-
         if self._stage == 2:
             bounds.update(self.__boolean_bounds)
 
