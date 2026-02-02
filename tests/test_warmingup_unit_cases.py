@@ -229,8 +229,8 @@ class TestWarmingUpUnitCases(TestCase):
         for e_m in range(heat_problem.ensemble_size):
             results[e_m] = heat_problem.extract_results(ensemble_member=e_m)
 
-        # for e_m in range(heat_problem.ensemble_size):
-        #     demand_matching_test(heat_problem, results[e_m], ensemble_member=e_m)
+        for e_m in range(heat_problem.ensemble_size):
+            demand_matching_test(heat_problem, results[e_m], ensemble_member=e_m)
         energy_conservation_test(heat_problem, heat_problem.extract_results())
         heat_to_discharge_test(heat_problem, heat_problem.extract_results())
 
