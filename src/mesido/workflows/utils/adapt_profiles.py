@@ -9,7 +9,6 @@ import numpy as np
 
 from rtctools.data.storage import DataStore
 
-
 logger = logging.getLogger("mesido")
 logger.setLevel(logging.INFO)
 
