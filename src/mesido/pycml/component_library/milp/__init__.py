@@ -30,6 +30,7 @@ from .heat.heat_port import HeatPort
 from .heat.heat_pump import HeatPump
 from .heat.heat_source import HeatSource
 from .heat.heat_source_elec import HeatSourceElec
+from .heat.heat_source_gas import HeatSourceGas
 from .heat.heat_two_port import HeatTwoPort
 from .heat.low_temperature_ates import LowTemperatureATES
 from .heat.node import Node
@@ -37,7 +38,7 @@ from .heat.pump import Pump
 from .multicommodity.airwater_heat_pump_elec import AirWaterHeatPumpElec
 from .multicommodity.elec_heat_source_elec import ElecHeatSourceElec
 from .multicommodity.electrolyzer import Electrolyzer
-from .multicommodity.gas_boiler import GasBoiler
+from .multicommodity.gas_heat_source_gas import GasHeatSourceGas
 
 __all__ = [
     "Airco",
@@ -58,7 +59,8 @@ __all__ = [
     "ElectricitySource",
     "ElectricityStorage",
     "Electrolyzer",
-    "GasBoiler",
+    "HeatSourceGas",
+    "GasHeatSourceGas",
     "GasDemand",
     "GasNode",
     "GasPipe",
