@@ -21,7 +21,7 @@ def feasibility_test(solution):
         )
 
 
-def demand_matching_test(solution, results, atol=1.0e-3, rtol=1.0e-6):
+def demand_matching_test(solution, results, ensemble_member=0, atol=1.0e-3, rtol=1.0e-6):
     """ "Test function to check whether the milp demand of each consumer is matched"""
     for d in solution.energy_system_components.get("heat_demand", []):
         if len(solution.times()) > 0:
