@@ -373,7 +373,7 @@ class EndScenarioSizing(
             constraints.append((vars[:ind_peak], 0.0, 0.0))
             constraints.append(
                 (
-                    vars[ind_peak + 23 :],
+                    vars[ind_peak + 24 :],
                     0.0,
                     0.0,
                 )

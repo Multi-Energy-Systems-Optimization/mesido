@@ -1043,8 +1043,6 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 ca.sum1(variable_operational_cost_coefficient * heat_source[1:] * timesteps)
                 / denominator
             )
-            # ca.sum2(variable_operational_cost_coefficient* heat_source[1:]* timesteps)/denominator
-            # ca.dot(variable_operational_cost_coefficient*heat_source[1:], timesteps)/ denominator
             sum_ += ca.sum1(price_profile.values[1:] * pump_power[1:] * timesteps / eff)
 
             constraints.append(((variable_operational_cost - sum_) / nominal, 0.0, 0.0))
