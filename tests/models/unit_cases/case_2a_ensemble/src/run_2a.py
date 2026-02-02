@@ -25,24 +25,30 @@ from rtctools.util import run_optimization_problem
 class TargetDemandGoal(Goal):
     priority = 1
 
-    order = 2
+    order = 1
 
-    def __init__(self, state, target):
+    def __init__(self, state, target, index):
         self.state = state
+        self.index = index
 
         self.targets = target
-        self.target_min = target[0]
-        self.target_max = target[0]
-        self.function_range = (0.0, 2.0 * max(target[0].values))
-        self.function_nominal = np.median(target[0].values)
+        # self.target_min = target[0].values[index]
+        # self.target_max = target[0].values[index]
+        # self.function_range = (0.0, 2.0 * max(target[0].values))
+        self.function_nominal = np.median(target[0].values[index])
 
     def function(self, optimization_problem, ensemble_member):
         """Note that for path goals, the ensemble member index is not passed to the call
         to :func:`OptimizationProblem.state`.  This call returns a time-independent symbol
         that is also independent of the active ensemble member.  Path goals are
         applied to all times and all ensemble members simultaneously."""
+        nom = optimization_problem.variable_nominal(self.state)
+        vector_state = nom * optimization_problem.state_vector(self.state, ensemble_member)[
+            self.index]
+        # self.target_min = self.targets[ensemble_member].values[self.index]
+        # self.target_max = self.targets[ensemble_member].values[self.index]
 
-        return optimization_problem.state(self.state)
+        return self.targets[ensemble_member].values[self.index] - vector_state
 
 class TargetDemandPathGoal(Goal):
     priority = 1
@@ -58,10 +64,10 @@ class TargetDemandPathGoal(Goal):
         self.function_nominal = np.median(target.values)
 
     def function(self, optimization_problem, ensemble_member):
-        """Note that for path goals, the ensemble member index is not passed to the call
-        to :func:`OptimizationProblem.state`.  This call returns a time-independent symbol
-        that is also independent of the active ensemble member.  Path goals are
-        applied to all times and all ensemble members simultaneously."""
+        """Path goals are applied to all timeseries and ensemble members simultaneously,
+        therefore the goals ensemble independent and only one target for all the ensembles can be
+        applied."""
+
 
         return optimization_problem.state(self.state)
 
@@ -109,17 +115,31 @@ class MinimizeSourcesQTHGoal(Goal):
 
 
 class _GoalsAndOptions:
-    def path_goals(self):
-        goals = super().path_goals().copy()
+    # def path_goals(self):
+    #     goals = super().path_goals().copy()
+    #
+    #     for demand in self.energy_system_components["heat_demand"]:
+    #         target = [self.get_timeseries(f"{demand}.target_heat_demand",
+    #                                      ensemble_member=ensemble_member) for ensemble_member in
+    #                   range(self.ensemble_size)]
+    #         state = f"{demand}.Heat_demand"
+    #         target = self.get_timeseries(f"{demand}.target_heat_demand", ensemble_member=0)
+    #
+    #         goals.append(TargetDemandPathGoal(state, target))
+    #
+    #     return goals
 
-        for demand in self.energy_system_components["heat_demand"]:
-            target = [self.get_timeseries(f"{demand}.target_heat_demand",
-                                         ensemble_member=ensemble_member) for ensemble_member in
-                      range(self.ensemble_size)]
-            state = f"{demand}.Heat_demand"
-            target = self.get_timeseries(f"{demand}.target_heat_demand", ensemble_member=0)
+    def goals(self):
+        goals = super().goals().copy()
 
-            goals.append(TargetDemandPathGoal(state, target))
+        for i in range(len(self.times())):
+            for demand in self.energy_system_components["heat_demand"]:
+                target = [self.get_timeseries(f"{demand}.target_heat_demand",
+                                             ensemble_member=ensemble_member) for ensemble_member in
+                          range(self.ensemble_size)]
+                state = f"{demand}.Heat_demand"
+
+                goals.append(TargetDemandGoal(state, target, i))
 
         return goals
 
@@ -170,6 +190,7 @@ class HeatProblemEnsemble(AssetSizingMixin,
         goals = super().goals().copy()
         for s in self.energy_system_components["heat_source"]:
             goals.append(MinimizeSourcesSizeGoal(s))
+
         return goals
 
     def __fixed_max_size(self):
@@ -183,6 +204,11 @@ class HeatProblemEnsemble(AssetSizingMixin,
         return constraints
 
     def __update_target_demand_constraint(self, ensemble_member):
+        """
+        This constraint method adds upper limits to the demand heat production based on the
+        target of a specific ensemble. This requires the first ensemble to always have the
+        timeseries with the largest values.
+        """
         constraints = []
         for demand in self.energy_system_components["heat_demand"]:
             var = self.state_vector(f"{demand}.Heat_demand", ensemble_member=ensemble_member)
