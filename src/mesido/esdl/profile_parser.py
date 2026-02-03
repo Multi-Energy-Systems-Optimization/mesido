@@ -459,16 +459,17 @@ class InfluxDBProfileReader(BaseProfileReader):
                     "profile for each asset"
                 )
 
+        x_0, x_1 = map(list, zip(*time_series_data.profile_data_list))
         if not time_series_data.profile_data_list[0][0].tzinfo:
             index = pd.DatetimeIndex(
-                data=[x[0] for x in time_series_data.profile_data_list],
+                data=x_0,
                 tz=datetime.timezone.utc,
             )
             logger.warning("No timezone specified for the input profile: default UTC has been used")
         else:
-            index = pd.DatetimeIndex(data=[x[0] for x in time_series_data.profile_data_list])
+            index = pd.DatetimeIndex(data=x_0)
 
-        data = [x[1] for x in time_series_data.profile_data_list]
+        data = x_1
         series = pd.Series(data=data, index=index)
         self._df[profile.id] = series
 
