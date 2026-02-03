@@ -46,6 +46,7 @@ class MesidoAssetIssueType(Enum):
     ASSET_PROFILE_MULTIPLIER = "asset_profile.multiplier"
     COLD_ASSET_TYPE_NOT_SUPPORTED = "cold_asset.type"
     ELECT_ASSET_TYPE_NOT_SUPPORTED = "elect_asset.type"
+    ASSET_UPPER_LIMIT = "asset.upper_limit_size"
 
 
 class PotentialErrors:
