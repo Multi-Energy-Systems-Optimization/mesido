@@ -37,6 +37,70 @@ class TargetDemandGoal(Goal):
         return optimization_problem.state(self.state)
 
 
+class MinimizeElecProduction(Goal):
+    priority = 3
+
+    order = 1
+
+    def function(self, optimization_problem, ensemble_member):
+        sum_ = 0
+        for source in optimization_problem.energy_system_components.get("electricity_source", []):
+            if source not in optimization_problem.energy_system_components.get("solar_pv", []):
+                sum_ += optimization_problem.state(f"{source}.Electricity_source")
+        return sum_
+
+
+class MinimizeElecProductionSize(Goal):
+    priority = 2
+
+    order = 2
+
+    def __init__(self, source, total_demand):
+        self.source = source
+        self.target_min = total_demand
+        self.target_max = total_demand
+        self.function_range = (0.0, 2.0 * max(total_demand.values))
+        self.function_nominal = np.median(total_demand.values)
+
+    def function(self, optimization_problem, ensemble_member):
+        return optimization_problem.state(f"{self.source}__max_size") * 2.0
+
+
+class _GoalsAndOptionsPV:
+    def path_goals(self):
+        """
+        Add goal to meet the specified power demands in the electricity network.
+
+        Returns
+        -------
+        Extended goals list.
+        """
+        goals = super().path_goals().copy()
+
+        total_demand = None
+        for demand in self.energy_system_components["electricity_demand"]:
+            target = self.get_timeseries(f"{demand}.target_electricity_demand")
+            state = f"{demand}.Electricity_demand"
+            goals.append(TargetDemandGoal(state, target))
+            if total_demand is None:
+                total_demand = target.copy() if hasattr(target, "copy") else target
+            else:
+                total_demand += target
+
+        for source in self.energy_system_components["electricity_source"]:
+            goals.append(MinimizeElecProductionSize(source, total_demand))
+
+        goals.append(MinimizeElecProduction())
+
+        return goals
+
+    def energy_system_options(self):
+        options = super().energy_system_options()
+        options["include_electric_cable_power_loss"] = False
+
+        return options
+
+
 class _GoalsAndOptions:
     def path_goals(self):
         """
@@ -61,6 +125,21 @@ class _GoalsAndOptions:
         options["include_electric_cable_power_loss"] = True
 
         return options
+
+
+class ElectricityProblemPV(
+    _GoalsAndOptionsPV,
+    TechnoEconomicMixin,
+    LinearizedOrderGoalProgrammingMixin,
+    GoalProgrammingMixin,
+    ESDLMixin,
+    CollocatedIntegratedOptimizationProblem,
+):
+    """
+    Problem to check the behaviour of a simple source, cable, demand network.
+    """
+
+    pass
 
 
 class ElectricityProblem(
