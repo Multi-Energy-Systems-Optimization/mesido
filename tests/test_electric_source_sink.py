@@ -27,7 +27,7 @@ class TestMILPElectricSourceSink(TestCase):
         Checks:
         - Check demand matching
         - Check energy conservation
-        - Check profile constraint scaling functionality works
+        - Check profile constraint scaling functionality works.
         """
 
         import models.unit_cases_electricity.source_sink_cable.src.example as example
