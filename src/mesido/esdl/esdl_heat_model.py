@@ -40,6 +40,7 @@ from mesido.pycml.component_library.milp import (
     GasSubstation,
     GasTankStorage,
     GeothermalSource,
+    GeothermalSourceElec,
     HeatBuffer,
     HeatDemand,
     HeatExchanger,
@@ -1313,7 +1314,11 @@ class AssetToHeatComponent(_AssetToComponentBase):
                     f"'{asset.name}' will not be actuated in a constant manner"
                 )
 
-            return GeothermalSource, modifiers
+            if len(asset.in_ports) == 2:
+                modifiers["cop"] = asset.attributes["COP"]
+                return GeothermalSourceElec, modifiers
+            else:
+                return GeothermalSource, modifiers
         elif asset.asset_type == "HeatPump":
             modifiers["cop"] = asset.attributes["COP"]
             return AirWaterHeatPump, modifiers
