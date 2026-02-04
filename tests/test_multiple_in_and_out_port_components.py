@@ -5,6 +5,7 @@ from mesido.esdl.esdl_mixin import DBAccesType
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.util import run_esdl_mesido_optimization
+from mesido.workflows import EndScenarioSizingStaged, run_end_scenario_sizing
 
 import numpy as np
 
@@ -12,6 +13,27 @@ from utils_tests import demand_matching_test, energy_conservation_test, heat_to_
 
 
 class TestHEX(TestCase):
+    def test_heat_exchanger_sizing(self):
+        """
+        Check heat exchanger can be sized
+        """
+        import models.heat_exchange.src.run_heat_exchanger as run_heat_exchanger
+
+        base_folder = Path(run_heat_exchanger.__file__).resolve().parent.parent
+
+        solution = run_end_scenario_sizing(
+            EndScenarioSizingStaged,
+            base_folder=base_folder,
+            esdl_file_name="hex.esdl",
+            esdl_parser=ESDLFileParser,
+        )
+        results = solution.extract_results()
+
+        # Check heat exchanger is sized
+        np.testing.assert_allclose(
+            max(results["HeatExchange_39ed.Secondary_heat"]), results["HeatExchange_39ed__max_size"]
+        )
+
     def test_heat_exchanger(self):
         """
         Check the modelling of the heat exchanger component which allows two hydraulically
