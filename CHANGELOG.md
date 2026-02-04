@@ -28,6 +28,7 @@
 - Bug: Write updated esdl for 2 port heat pump
 - Bug: 2 port heatpump write result profiles to database 
 - Bug: setting of self._pipe_heat_loss_nominals was not accounting for negative values when T_ground > carrier temperature
+- Additional slicing of priceprofile is required
 
 
 # [0.1.15] - 2025-11-19
