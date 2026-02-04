@@ -1315,8 +1315,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 )
 
             if len(asset.in_ports) == 2:
-                modifiers["cop"] = asset.attributes["COP"]
+                _, modifiers = self.convert_geothermal_source_elec(asset)
                 return GeothermalSourceElec, modifiers
+
             else:
                 return GeothermalSource, modifiers
         elif asset.asset_type == "HeatPump":
@@ -2691,6 +2692,61 @@ class AssetToHeatComponent(_AssetToComponentBase):
         )
 
         return AirWaterHeatPumpElec, modifiers
+
+    def convert_geothermal_source_elec(
+        self, asset: Asset
+    ) -> Tuple[AirWaterHeatPumpElec, MODIFIERS]:
+        """
+        TODO: document
+
+        """
+        assert asset.asset_type in {"GeothermalSource"}
+
+        get_potential_errors().add_potential_issue(
+            MesidoAssetIssueType.ELECT_ASSET_TYPE_NOT_SUPPORTED,
+            asset.id,
+            f"Asset named {asset.name}: This is an asset that includes electricity and it should be"
+            " replaced with a supported asset",
+        )
+
+        max_supply = asset.attributes["power"]
+
+        if not max_supply:
+            logger.error(f"{asset.asset_type} '{asset.name}' has no max power specified. ")
+        assert max_supply > 0.0
+
+        id_mapping = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
+            "id_number_mapping"
+        ]
+
+        # TODO: CO2 coefficient
+
+        q_nominal = self._get_connected_q_nominal(asset)
+        for port in asset.in_ports:
+            if isinstance(port.carrier, esdl.ElectricityCommodity):
+                min_voltage = port.carrier.voltage
+        i_max, i_nom = self._get_connected_i_nominal_and_max(asset)
+        cop = asset.attributes["COP"] if asset.attributes["COP"] else 1.0
+
+        modifiers = dict(
+            Heat_source=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
+            id_mapping_carrier=id_mapping,
+            ElectricityIn=dict(
+                Power=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
+                I=dict(min=0.0, max=i_max, nominal=i_nom),
+                V=dict(min=min_voltage, nominal=min_voltage),
+            ),
+            min_voltage=min_voltage,
+            elec_power_nominal=max_supply,
+            cop=cop,
+            **self._generic_modifiers(asset),
+            **self._generic_heat_modifiers(0.0, max_supply, q_nominal["Q_nominal"]),
+            **self._supply_return_temperature_modifiers(asset),
+            **self._rho_cp_modifiers,
+            **self._get_cost_figure_modifiers(asset),
+        )
+
+        return GeothermalSourceElec, modifiers
 
 
 class ESDLHeatModel(_ESDLModelBase):
