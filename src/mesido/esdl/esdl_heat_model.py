@@ -343,7 +343,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 if len(asset.attributes["constraint"]) > 1:
                     logger.warning(
                         f"More than 1 range constraint has been specified to "
-                        f"asset name {asset.name}, currenlty only the 1st constraint is being used"
+                        f"asset named {asset.name}, currenlty only the 1st constraint is being used"
                     )
                 elif len(asset.attributes["constraint"]) == 0:
                     logger.exit(  # still to decide error vs warning
@@ -357,6 +357,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
                     )  # this does not work yet
                     # max_supply = 1.0
                 else:
+                    logger.warning(
+                        f"***************************For asset named {asset.name}, the range constraint value is used for the "
+                        f"asset's upper limit for attribute {max_size_attribute}." 
+                    )
                     return asset.attributes["constraint"][0].range.maxValue
 
             elif asset.attributes["state"] == esdl.AssetStateEnum.ENABLED:
@@ -1441,9 +1445,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
         assert asset.asset_type in {
             "ATES",
         }
-
-        hfr_charge_max = self._get_asset_max_size_input(asset, "maxChargeRate")
-        hfr_discharge_max = self._get_asset_max_size_input(asset, "maxDischargeRate")
 
         hfr_charge_max = asset.attributes.get("maxChargeRate", math.inf)
         hfr_discharge_max = asset.attributes.get("maxDischargeRate", math.inf)
