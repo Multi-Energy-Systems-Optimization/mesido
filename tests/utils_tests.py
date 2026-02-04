@@ -370,6 +370,7 @@ def electric_power_conservation_test(solution, results, atol=1e-2):
             "elec_heat_source_elec",
             "heat_pump_elec",
             "air_water_heat_pump_elec",
+            "geothermal_source_elec",
         ]
     )
     producers = solution.energy_system_components_get(["electricity_source"])
