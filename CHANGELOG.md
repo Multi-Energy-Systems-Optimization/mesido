@@ -1,4 +1,4 @@
-# [Unreleased-main] - 2025-12-08
+# [Unreleased-main] - 2026-02-04
 
 ## Added
 - ATES variable cost calculation utilizing a split ates charging and discharging variable.
@@ -27,6 +27,7 @@
 - Bug: Write updated esdl for 2 port heat pump
 - Bug: 2 port heatpump write result profiles to database 
 - Bug: setting of self._pipe_heat_loss_nominals was not accounting for negative values when T_ground > carrier temperature
+- Bug: heat exchanger state and capacity are updated in optimized esdl file
 
 
 # [0.1.15] - 2025-11-19
