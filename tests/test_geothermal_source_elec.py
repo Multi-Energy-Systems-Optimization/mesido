@@ -144,26 +144,26 @@ class TestGeothermalSourceElec(TestCase):
         Checks:
         1. TODO
         """
-        # import models.source_pipe_sink.src.double_pipe_heat as example
-        # from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
+        import models.source_pipe_sink.src.double_pipe_heat as example
+        from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
 
-        # base_folder = Path(example.__file__).resolve().parent.parent
+        base_folder = Path(example.__file__).resolve().parent.parent
 
-        # heat_problem = run_esdl_mesido_optimization(
-        #     SourcePipeSink,
-        #     base_folder=base_folder,
-        #     esdl_file_name="sourcesink_withHP.esdl",
-        #     esdl_parser=ESDLFileParser,
-        #     profile_reader=ProfileReaderFromFile,
-        #     input_timeseries_file="timeseries_import.csv",
-        # )
-        # results = heat_problem.extract_results()
-        # parameters = heat_problem.parameters(0)
+        heat_problem = run_esdl_mesido_optimization(
+            SourcePipeSink,
+            base_folder=base_folder,
+            esdl_file_name="sourcesink_with_geo_elec.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.csv",
+        )
+        results = heat_problem.extract_results()
+        parameters = heat_problem.parameters(0)
 
-        # demand_matching_test(heat_problem, results)
-        # energy_conservation_test(heat_problem, results)
-        # heat_to_discharge_test(heat_problem, results)
-        # electric_power_conservation_test(heat_problem, results)
+        demand_matching_test(heat_problem, results)
+        energy_conservation_test(heat_problem, results)
+        heat_to_discharge_test(heat_problem, results)
+        electric_power_conservation_test(heat_problem, results)
 
         # np.testing.assert_array_less(0.0, results["HeatPump_d8fd.Heat_source"])
         # np.testing.assert_array_less(0.0, results["ElectricityProducer_4dde.ElectricityOut.Power"])
@@ -179,7 +179,6 @@ class TestGeothermalSourceElec(TestCase):
         #     / parameters["HeatPump_d8fd.cop"],
         #     results["HeatPump_d8fd__variable_operational_cost"],
         # )
-        pass
 
 if __name__ == "__main__":
     

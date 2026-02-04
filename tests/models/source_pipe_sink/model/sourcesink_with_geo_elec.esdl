@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" version="8" id="5d539f68-f98e-466b-9ff5-b908a211e0ab_with_return_network_with_return_network" name="sourcesink_withHP_voc" description="" esdlVersion="v2401">
+<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" version="9" id="5d539f68-f98e-466b-9ff5-b908a211e0ab_with_return_network_with_return_network" name="sourcesink_withHP_voc" description="" esdlVersion="v2401">
   <instance xsi:type="esdl:Instance" name="Untitled instance" id="90e7e098-038e-4462-89fe-a8852c501753">
     <area xsi:type="esdl:Area" id="4fd1adc2-5371-4ab7-806a-b40e49d127e9" name="Untitled area">
       <asset xsi:type="esdl:HeatingDemand" id="f6d5923d-ba9a-409d-80a0-26f73b2a574b" power="10000000.0" name="demand">
@@ -52,7 +52,7 @@
           <point xsi:type="esdl:Point" lat="52.08646829489945" lon="4.3854761123657235"/>
         </geometry>
       </asset>
-      <asset xsi:type="esdl:GeothermalSource" id="a77bc442-c981-4d26-a308-b65be7224f6f" name="GeothermalSource_a77b">
+      <asset xsi:type="esdl:GeothermalSource" id="a77bc442-c981-4d26-a308-b65be7224f6f" name="GeothermalSource_a77b" power="10000000.0" COP="4.0">
         <geometry xsi:type="esdl:Point" lat="52.08656166975579" lon="4.38586851522473" CRS="WGS84"/>
         <port xsi:type="esdl:OutPort" id="e6b47a7a-1f59-4f62-8fa4-6d69cc4ce40d" name="Out" connectedTo="3b5636b1-7b14-46bd-bb27-c0718350b418" carrier="435a0034-fab0-4e7e-9a17-edf8de9a2b11"/>
         <port xsi:type="esdl:InPort" id="142d22a2-bc50-4ba3-8723-2eb16fe385b0" name="In" connectedTo="0f11bb2d-fb28-4f9d-8992-8d5901f579d7" carrier="435a0034-fab0-4e7e-9a17-edf8de9a2b11_ret"/>
