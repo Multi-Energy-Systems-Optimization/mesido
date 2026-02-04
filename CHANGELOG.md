@@ -1,4 +1,4 @@
-# [Unreleased-main] - 2025-12-08
+# [Unreleased-main] - 2026-02-04
 
 ## Added
 - ATES variable cost calculation utilizing a split ates charging and discharging variable.
@@ -22,6 +22,7 @@
 - Costs of available pipe classes are updated based on the asset measures and templates if they are provided.
 - The charging and discharging variable for electricity storage is created without a binary variable using the convex hull description.
 - Gas Boiler asset is renamed as HeatSourceGas
+- Improvement: Loops over timesteps are vectorized.
 
 ## Fixed
 - Bug: Write updated esdl for 2 port heat pump
