@@ -15,7 +15,10 @@ from utils_tests import demand_matching_test, energy_conservation_test, heat_to_
 class TestHEX(TestCase):
     def test_heat_exchanger_sizing(self):
         """
-        Check heat exchanger can be sized
+        Check heat exchanger can be sized in EndScenarioSizingStaged problem.
+
+        Checks:
+        - max_size variable of the asset is calculated
         """
         import models.heat_exchange.src.run_heat_exchanger as run_heat_exchanger
 
