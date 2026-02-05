@@ -1313,8 +1313,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
                     f"{asset.asset_type} '{asset.name}' has no desired flow rate specified. "
                     f"'{asset.name}' will not be actuated in a constant manner"
                 )
-
-            if len(asset.in_ports) == 2:
+            # TODO: A better check might be needed here. Perhaps check for an elec asset.
+            if len(asset.in_ports) == 2: # Geothermal source with an electricity in port.
                 _, modifiers = self.convert_geothermal_source_elec(asset)
                 return GeothermalSourceElec, modifiers
 
