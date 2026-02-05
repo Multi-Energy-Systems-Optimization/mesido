@@ -258,6 +258,28 @@ class _ESDLModelBase(_Model):
                     raise Exception(
                         f"{asset.name} must have one inport for electricity and one outport for gas"
                     )
+            
+            elif (
+                    asset.asset_type == "GeothermalSource"
+                    and len(asset.out_ports) == 1
+                    and len(asset.in_ports) == 2
+                ):
+                    for p in [*asset.in_ports, *asset.out_ports]:
+
+                        if isinstance(p, InPort) and isinstance(
+                            p.carrier, esdl.ElectricityCommodity
+                        ):
+                            port_map[p.id] = getattr(component, elec_in_suf)
+                        elif isinstance(p, InPort) and isinstance(p.carrier, esdl.HeatCommodity):
+                            port_map[p.id] = getattr(component, in_suf)
+                        elif isinstance(p, OutPort):  # OutPort
+                            port_map[p.id] = getattr(component, out_suf)
+                        else:
+                            raise Exception(
+                                f"{asset.name} has does not have (1 electricity in_port) 1 heat "
+                                f"in port and 1 Heat out_ports "
+                            )
+            
             elif (
                 asset.in_ports is None
                 and isinstance(asset.out_ports[0].carrier, esdl.ElectricityCommodity)
