@@ -1,4 +1,16 @@
-# [Unreleased-main] - 2026-02-04
+# [Unreleased-main] - 2026-02-05
+
+## Added
+- xxx
+
+## Changed
+- xxx
+
+## Fixed
+- xxx
+
+
+# [0.1.16] - 2026-02-05
 
 ## Added
 - ATES variable cost calculation utilizing a split ates charging and discharging variable.
