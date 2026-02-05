@@ -359,7 +359,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 else:
                     logger.warning(
                         f"***************************For asset named {asset.name}, the range constraint value is used for the "
-                        f"asset's upper limit for attribute {max_size_attribute}." 
+                        f"asset's upper limit for the attribute {max_size_attribute}." 
                     )
                     return asset.attributes["constraint"][0].range.maxValue
 
@@ -1085,16 +1085,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 f"transfer heat from primary to secondary.",
             )
         
-        #TODO: implement .. for generic GenericConversion->power as well
-        asset_power = self._get_asset_max_size_input(asset, "power")
-        asset_capacity = self._get_asset_max_size_input(asset, "capacity")
+        asset_power = None
+        asset_capacity = None
         if asset.asset_type == "GenericConversion":
+            asset_power = self._get_asset_max_size_input(asset, "power")
             max_power = asset_power if asset_power else math.inf
         else:
             # DTK requires capacity as the maximum power reference and not based on
             # heatTransferCoefficient. Power could also be based on heatTransferCoefficient if we
             # use an option to select it.
-
+            asset_capacity = self._get_asset_max_size_input(asset, "capacity")
             max_power = asset_capacity if asset_capacity else math.inf
 
             if max_power == math.inf:
@@ -1239,11 +1239,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
         else:
             cop = asset.attributes["COP"]
 
-        if not asset.attributes["power"]:
+        power_secondary = self._get_asset_max_size_input(asset, "power")
+        if not power_secondary:
             raise _ESDLInputException(f"{asset.name} has no power specified")
         else:
-            power_secondary = self._get_asset_max_size_input(asset, "power")
-            # power_secondary = asset.attributes["power"]
             power_electrical = power_secondary / cop
 
         params_t = self._supply_return_temperature_modifiers(asset)
@@ -2526,7 +2525,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
         """
         assert asset.asset_type in {"GasHeater"}
 
-        max_supply = asset.attributes["power"]
+        max_supply = None
+        is_one_in_port = True if len(asset.in_ports) == 1 else False
+        if is_one_in_port:
+             max_supply = self._get_asset_max_size_input(asset, "power")
+        else:  # TODO: range constraint to be added instead of using this value for OPTIONAL asset
+            max_supply = asset.attributes["power"]
 
         if not max_supply:
             logger.error(f"{asset.asset_type} '{asset.name}' has no max power specified. ")
@@ -2561,7 +2565,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 Q_nominal_gas=q_nominal_gas_no_carrier,
             )
         )
-        if len(asset.in_ports) == 1:
+        if is_one_in_port:
             return HeatSourceGas, modifiers
 
         id_mapping = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
@@ -2634,7 +2638,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
         """
         assert asset.asset_type in {"ElectricBoiler"}
 
-        max_supply = asset.attributes["power"]
+        max_supply = None
+        is_one_in_port = True if len(asset.in_ports) == 1 else False
+        if is_one_in_port:
+            max_supply = self._get_asset_max_size_input(asset, "power")
+        else:  # TODO: range constraint to be added instead of using this value for OPTIONAL asset
+            max_supply = asset.attributes["power"]
 
         if not max_supply:
             logger.error(f"{asset.asset_type} '{asset.name}' has no max power specified. ")
@@ -2642,7 +2651,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         _, modifiers = self.convert_heat_source(asset)
         modifiers["elec_power_nominal"] = max_supply
-        if len(asset.in_ports) == 1:
+        if is_one_in_port:
             return HeatSourceElec, modifiers
 
         id_mapping = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
