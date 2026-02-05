@@ -56,6 +56,7 @@ from mesido.pycml.component_library.milp import (
     Transformer,
     WindPark,
 )
+from mesido.workflows.utils.error_types import potential_error_to_error
 
 from scipy.optimize import fsolve
 
@@ -346,7 +347,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                         f"asset named {asset.name}, currenlty only the 1st constraint is being used"
                     )
                 elif len(asset.attributes["constraint"]) == 0:
-                    logger.exit(  # still to decide error vs warning
+                    logger.warning(  # still to decide error vs warning
                         "Expected a range contraint (upper size limit) for asset named "
                         f"{asset.name}, but none has been specified."
                     )
@@ -354,21 +355,48 @@ class AssetToHeatComponent(_AssetToComponentBase):
                         MesidoAssetIssueType.ASSET_UPPER_LIMIT,
                         asset.id,
                         f"Asset named {asset.name}: The upper limit of the asset size has to be specified via a maximum value in a range constraint."
-                    )  # this does not work yet
-                    # max_supply = 1.0
+                    )
+                    # Raise the potential error here if applicable, with feedback to user
+                    # Else a normal error exit might occer which will not give feedback to the user 
+                    potential_error_to_error(self._error_type_check)
                 else:
                     logger.warning(
-                        f"***************************For asset named {asset.name}, the range constraint value is used for the "
+                        f"For asset named {asset.name}, the range constraint value is used for the "
                         f"asset's upper limit for the attribute {max_size_attribute}." 
                     )
-                    return asset.attributes["constraint"][0].range.maxValue
+                    max_value_range = asset.attributes["constraint"][0].range.maxValue
+                    if not max_value_range > 0.0:
+                        get_potential_errors().add_potential_issue(
+                            MesidoAssetIssueType.ASSET_UPPER_LIMIT,
+                            asset.id,
+                            f"Asset named {asset.name}: The maximum value in the range "
+                            f"constraint for attribute {max_size_attribute} must be > 0."
+                        )
+                        # Raise the potential error here if applicable, with feedback to user
+                        # Else a normal error exit might occer which will not give feedback to the user 
+                        potential_error_to_error(self._error_type_check)
+
+                    return max_value_range
 
             elif asset.attributes["state"] == esdl.AssetStateEnum.ENABLED:
                 if len(asset.attributes["constraint"]) > 0:
                     logger.warning(f"The constraint that has been assigned to "
-                                f"asset name {asset.name} is not being used because the asset"
+                                f"asset name {asset.name} is not being used because the asset "
                                 "state has been specified as ENABLED.")
-                return asset.attributes[max_size_attribute]
+
+                max_value_attribute = asset.attributes[max_size_attribute]
+                if not max_value_attribute > 0.0:
+                        get_potential_errors().add_potential_issue(
+                            MesidoAssetIssueType.ASSET_UPPER_LIMIT,
+                            asset.id,
+                            f"Asset named {asset.name}: The attribute {max_size_attribute} "
+                            "must be > 0."
+                        )
+                        # Raise the potential error here if applicable, with feedback to user
+                        # Else a normal error exit might occer which will not give feedback to the user 
+                        potential_error_to_error(self._error_type_check)
+
+                return max_value_attribute
 
             else:
                 exit("still to check this")
@@ -1330,12 +1358,18 @@ class AssetToHeatComponent(_AssetToComponentBase):
         if asset.asset_type == "GeothermalSource":
             max_supply = asset.attributes["power"]
             aggregation_count = self._get_asset_max_size_input(asset, "aggregationCount")
+
+            if not aggregation_count:
+                logger.error(
+                    f"{asset.asset_type} '{asset.name}' has no aggregation count specified."
+                )
+            assert int(aggregation_count) == aggregation_count and aggregation_count > 0
+
         else:
             max_supply = self._get_asset_max_size_input(asset, "power")
-            aggregation_count = asset.attributes["aggregationCount"]
 
         if not max_supply:
-            logger.error(f"{asset.asset_type} '{asset.name}' has no max power specified. ")
+            logger.error(f"{asset.asset_type} '{asset.name}' has no max power specified.")
         assert max_supply > 0.0
 
         # get price per unit of energy,
@@ -1463,6 +1497,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
         q_max_ates = hfr_discharge_max / (cp * rho * dt)
 
         aggregation_count = self._get_asset_max_size_input(asset, "aggregationCount")
+        if not aggregation_count:
+            logger.error(f"{asset.asset_type} '{asset.name}' has no aggregation count specified.")
+        assert int(aggregation_count) == aggregation_count and aggregation_count > 0
 
         q_nominal = min(
             self._get_connected_q_nominal(asset), q_max_ates * aggregation_count
@@ -1527,8 +1564,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
             modifiers.update(
                 dict(
                     Heat_ates=dict(
-                        min=-hfr_charge_max * asset.attributes["aggregationCount"],
-                        max=hfr_discharge_max * asset.attributes["aggregationCount"],
+                        min=-hfr_charge_max * aggregation_count,
+                        max=hfr_discharge_max * aggregation_count,
                         nominal=hfr_discharge_max / 2.0,
                     ),
                     T_amb=asset.attributes["aquiferMidTemperature"],
