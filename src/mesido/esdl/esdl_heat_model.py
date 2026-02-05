@@ -56,6 +56,7 @@ from mesido.pycml.component_library.milp import (
     Transformer,
     WindPark,
 )
+from mesido.workflows.utils.error_types import potential_error_to_error
 
 from scipy.optimize import fsolve
 
@@ -157,6 +158,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
             self.primary_port_name_convention = kwargs["primary_port_name_convention"]
         if "secondary_port_name_convention" in kwargs.keys():
             self.secondary_port_name_convention = kwargs["secondary_port_name_convention"]
+        if "energy_system_esdl_version" in kwargs.keys():
+            self.energy_system_esdl_version = kwargs["energy_system_esdl_version"]
 
     @property
     def _rho_cp_modifiers(self) -> Dict:
@@ -323,6 +326,83 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         return modifiers
 
+    def _get_asset_max_size_input(self, asset: Asset, max_size_attribute: str) -> float:
+        """
+        This function ...... still to be completed
+
+        Args:
+            asset: mesido common asset with all attributes
+
+        Returns: value that should be used as the max size value for an asset
+        """
+
+        if (
+            self.energy_system_esdl_version is not None
+            and self.energy_system_esdl_version > "v2507"# "v2401" # "v2507"  # Currently latest esdlVersion="v2507"
+        ): # 2401
+            if asset.attributes["state"] == esdl.AssetStateEnum.OPTIONAL:
+                if len(asset.attributes["constraint"]) > 1:
+                    logger.warning(
+                        f"More than 1 range constraint has been specified to "
+                        f"asset named {asset.name}, currenlty only the 1st constraint is being used"
+                    )
+                elif len(asset.attributes["constraint"]) == 0:
+                    logger.warning(  # still to decide error vs warning
+                        "Expected a range contraint (upper size limit) for asset named "
+                        f"{asset.name}, but none has been specified."
+                    )
+                    get_potential_errors().add_potential_issue(
+                        MesidoAssetIssueType.ASSET_UPPER_LIMIT,
+                        asset.id,
+                        f"Asset named {asset.name}: The upper limit of the asset size has to be specified via a maximum value in a range constraint."
+                    )
+                    # Raise the potential error here if applicable, with feedback to user
+                    # Else a normal error exit might occer which will not give feedback to the user 
+                    potential_error_to_error(self._error_type_check)
+                else:
+                    logger.warning(
+                        f"For asset named {asset.name}, the range constraint value is used for the "
+                        f"asset's upper limit for the attribute {max_size_attribute}." 
+                    )
+                    max_value_range = asset.attributes["constraint"][0].range.maxValue
+                    if not max_value_range > 0.0:
+                        get_potential_errors().add_potential_issue(
+                            MesidoAssetIssueType.ASSET_UPPER_LIMIT,
+                            asset.id,
+                            f"Asset named {asset.name}: The maximum value in the range "
+                            f"constraint for attribute {max_size_attribute} must be > 0."
+                        )
+                        # Raise the potential error here if applicable, with feedback to user
+                        # Else a normal error exit might occer which will not give feedback to the user 
+                        potential_error_to_error(self._error_type_check)
+
+                    return max_value_range
+
+            elif asset.attributes["state"] == esdl.AssetStateEnum.ENABLED:
+                if len(asset.attributes["constraint"]) > 0:
+                    logger.warning(f"The constraint that has been assigned to "
+                                f"asset name {asset.name} is not being used because the asset "
+                                "state has been specified as ENABLED.")
+
+                max_value_attribute = asset.attributes[max_size_attribute]
+                if not max_value_attribute > 0.0:
+                        get_potential_errors().add_potential_issue(
+                            MesidoAssetIssueType.ASSET_UPPER_LIMIT,
+                            asset.id,
+                            f"Asset named {asset.name}: The attribute {max_size_attribute} "
+                            "must be > 0."
+                        )
+                        # Raise the potential error here if applicable, with feedback to user
+                        # Else a normal error exit might occer which will not give feedback to the user 
+                        potential_error_to_error(self._error_type_check)
+
+                return max_value_attribute
+
+            else:
+                exit("still to check this")
+        else:  # Catering backwards compatibility
+            return asset.attributes.get(max_size_attribute, math.inf)
+
     def convert_heat_buffer(self, asset: Asset) -> Tuple[Type[HeatBuffer], MODIFIERS]:
         """
         This function converts the buffer object in esdl to a set of modifiers that can be used in
@@ -385,35 +465,38 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 f"Volume with value of {asset.attributes['volume']} m3 will be used."
             )
 
-        capacity = 0.0
-        if asset.attributes["volume"]:
-            capacity = (
-                asset.attributes["volume"]
+        asset_capacity_joule = 0.0
+        asset_volume_m3 = self._get_asset_max_size_input(asset, "volume")
+        # if asset.attributes["volume"]:
+        if asset_volume_m3:
+            asset_capacity_joule = (
+                asset_volume_m3
                 * self.rho
                 * self.cp
                 * (supply_temperature - return_temperature)
             )
         elif asset.attributes["capacity"]:
-            capacity = asset.attributes["capacity"]
+            # capacity = asset.attributes["capacity"]
+            asset_capacity_joule = self._get_asset_max_size_input(asset, "capacity")
         else:
             logger.error(
                 f"{asset.asset_type} '{asset.name}' has both not capacity and volume specified. "
                 f"Please specify one of the two"
             )
 
-        assert capacity > 0.0
+        assert asset_capacity_joule > 0.0
         min_fraction_tank_volume = self.min_fraction_tank_volume
         if self.get_state(asset) == 0 or self.get_state(asset) == 2:
             min_fraction_tank_volume = 0.0
         # We assume that the height equals the radius of the buffer.
         r = (
-            capacity
+            asset_capacity_joule
             * (1 + min_fraction_tank_volume)
             / (self.rho * self.cp * (supply_temperature - return_temperature) * math.pi)
         ) ** (1.0 / 3.0)
 
-        min_heat = capacity * min_fraction_tank_volume
-        max_heat = capacity * (1 + min_fraction_tank_volume)
+        min_heat = asset_capacity_joule * min_fraction_tank_volume
+        max_heat = asset_capacity_joule * (1 + min_fraction_tank_volume)
         assert max_heat > 0.0
         # default is set to 10MW
 
@@ -766,7 +849,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
     def convert_heat_pipe(
         self, asset: Asset
-    ) -> Tuple[Union[Type[HeatPipe], Type[GasPipe]], MODIFIERS]:
+    ) -> Tuple[Type[HeatPipe], MODIFIERS]:
         """
         This function converts the pipe object in esdl to a set of modifiers that can be used in
         a pycml object. Most important:
@@ -1029,14 +1112,19 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 f"({params_t['Secondary']['T_return']}°C), as the heat exchanger can only "
                 f"transfer heat from primary to secondary.",
             )
-
+        
+        asset_power = None
+        asset_capacity = None
         if asset.asset_type == "GenericConversion":
-            max_power = asset.attributes["power"] if asset.attributes["power"] else math.inf
+            asset_power = self._get_asset_max_size_input(asset, "power")
+            max_power = asset_power if asset_power else math.inf
         else:
             # DTK requires capacity as the maximum power reference and not based on
             # heatTransferCoefficient. Power could also be based on heatTransferCoefficient if we
             # use an option to select it.
-            max_power = asset.attributes["capacity"] if asset.attributes["capacity"] else math.inf
+            asset_capacity = self._get_asset_max_size_input(asset, "capacity")
+            max_power = asset_capacity if asset_capacity else math.inf
+
             if max_power == math.inf:
                 get_potential_errors().add_potential_issue(
                     MesidoAssetIssueType.HEAT_EXCHANGER_POWER,
@@ -1179,10 +1267,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
         else:
             cop = asset.attributes["COP"]
 
-        if not asset.attributes["power"]:
+        power_secondary = self._get_asset_max_size_input(asset, "power")
+        if not power_secondary:
             raise _ESDLInputException(f"{asset.name} has no power specified")
         else:
-            power_secondary = asset.attributes["power"]
             power_electrical = power_secondary / cop
 
         params_t = self._supply_return_temperature_modifiers(asset)
@@ -1266,10 +1354,22 @@ class AssetToHeatComponent(_AssetToComponentBase):
             "ElectricBoiler",
         }
 
-        max_supply = asset.attributes["power"]
+        aggregation_count = 0
+        if asset.asset_type == "GeothermalSource":
+            max_supply = asset.attributes["power"]
+            aggregation_count = self._get_asset_max_size_input(asset, "aggregationCount")
+
+            if not aggregation_count:
+                logger.error(
+                    f"{asset.asset_type} '{asset.name}' has no aggregation count specified."
+                )
+            assert int(aggregation_count) == aggregation_count and aggregation_count > 0
+
+        else:
+            max_supply = self._get_asset_max_size_input(asset, "power")
 
         if not max_supply:
-            logger.error(f"{asset.asset_type} '{asset.name}' has no max power specified. ")
+            logger.error(f"{asset.asset_type} '{asset.name}' has no max power specified.")
         assert max_supply > 0.0
 
         # get price per unit of energy,
@@ -1289,15 +1389,15 @@ class AssetToHeatComponent(_AssetToComponentBase):
         )
 
         if asset.asset_type == "GeothermalSource":
-            modifiers["nr_of_doublets"] = asset.attributes["aggregationCount"]
+            modifiers["nr_of_doublets"] = aggregation_count
             modifiers["Heat_source"] = dict(
                 min=0.0,
-                max=max_supply * asset.attributes["aggregationCount"],
+                max=max_supply * aggregation_count,
                 nominal=max_supply / 2.0,
             )
             modifiers["Heat_flow"] = dict(
                 min=0.0,
-                max=max_supply * asset.attributes["aggregationCount"],
+                max=max_supply * aggregation_count,
                 nominal=max_supply / 2.0,
             )
             try:
@@ -1381,6 +1481,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         hfr_charge_max = asset.attributes.get("maxChargeRate", math.inf)
         hfr_discharge_max = asset.attributes.get("maxDischargeRate", math.inf)
+
         single_doublet_power = hfr_discharge_max
 
         # We assume the efficiency is realized over a period of 100 days
@@ -1395,28 +1496,33 @@ class AssetToHeatComponent(_AssetToComponentBase):
         cp = self.cp
         q_max_ates = hfr_discharge_max / (cp * rho * dt)
 
+        aggregation_count = self._get_asset_max_size_input(asset, "aggregationCount")
+        if not aggregation_count:
+            logger.error(f"{asset.asset_type} '{asset.name}' has no aggregation count specified.")
+        assert int(aggregation_count) == aggregation_count and aggregation_count > 0
+
         q_nominal = min(
-            self._get_connected_q_nominal(asset), q_max_ates * asset.attributes["aggregationCount"]
+            self._get_connected_q_nominal(asset), q_max_ates * aggregation_count
         )
 
         modifiers = dict(
             Q=dict(
-                min=-q_max_ates * asset.attributes["aggregationCount"],
-                max=q_max_ates * asset.attributes["aggregationCount"],
+                min=-q_max_ates * aggregation_count,
+                max=q_max_ates * aggregation_count,
                 nominal=q_nominal,
             ),
             single_doublet_power=single_doublet_power,
             heat_loss_coeff=(1.0 - efficiency ** (1.0 / 100.0)) / (3600.0 * 24.0),
-            nr_of_doublets=asset.attributes["aggregationCount"],
+            nr_of_doublets=aggregation_count,
             Stored_heat=dict(
                 min=0.0,
-                max=hfr_charge_max * asset.attributes["aggregationCount"] * 180.0 * 24 * 3600.0,
-                nominal=hfr_charge_max * asset.attributes["aggregationCount"] * 30.0 * 24 * 3600.0,
+                max=hfr_charge_max * aggregation_count * 180.0 * 24 * 3600.0,
+                nominal=hfr_charge_max * aggregation_count * 30.0 * 24 * 3600.0,
             ),
             **self._generic_modifiers(asset),
             **self._generic_heat_modifiers(
-                -hfr_discharge_max * asset.attributes["aggregationCount"],
-                hfr_charge_max * asset.attributes["aggregationCount"],
+                -hfr_discharge_max * aggregation_count,
+                hfr_charge_max * aggregation_count,
                 q_nominal,
             ),
             **self._supply_return_temperature_modifiers(asset),
@@ -1458,8 +1564,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
             modifiers.update(
                 dict(
                     Heat_ates=dict(
-                        min=-hfr_charge_max * asset.attributes["aggregationCount"],
-                        max=hfr_discharge_max * asset.attributes["aggregationCount"],
+                        min=-hfr_charge_max * aggregation_count,
+                        max=hfr_discharge_max * aggregation_count,
                         nominal=hfr_discharge_max / 2.0,
                     ),
                     T_amb=asset.attributes["aquiferMidTemperature"],
@@ -2456,7 +2562,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
         """
         assert asset.asset_type in {"GasHeater"}
 
-        max_supply = asset.attributes["power"]
+        max_supply = None
+        is_one_in_port = True if len(asset.in_ports) == 1 else False
+        if is_one_in_port:
+             max_supply = self._get_asset_max_size_input(asset, "power")
+        else:  # TODO: range constraint to be added instead of using this value for OPTIONAL asset
+            max_supply = asset.attributes["power"]
 
         if not max_supply:
             logger.error(f"{asset.asset_type} '{asset.name}' has no max power specified. ")
@@ -2491,7 +2602,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 Q_nominal_gas=q_nominal_gas_no_carrier,
             )
         )
-        if len(asset.in_ports) == 1:
+        if is_one_in_port:
             return HeatSourceGas, modifiers
 
         id_mapping = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
@@ -2564,7 +2675,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
         """
         assert asset.asset_type in {"ElectricBoiler"}
 
-        max_supply = asset.attributes["power"]
+        max_supply = None
+        is_one_in_port = True if len(asset.in_ports) == 1 else False
+        if is_one_in_port:
+            max_supply = self._get_asset_max_size_input(asset, "power")
+        else:  # TODO: range constraint to be added instead of using this value for OPTIONAL asset
+            max_supply = asset.attributes["power"]
 
         if not max_supply:
             logger.error(f"{asset.asset_type} '{asset.name}' has no max power specified. ")
@@ -2572,7 +2688,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         _, modifiers = self.convert_heat_source(asset)
         modifiers["elec_power_nominal"] = max_supply
-        if len(asset.in_ports) == 1:
+        if is_one_in_port:
             return HeatSourceElec, modifiers
 
         id_mapping = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
@@ -2700,6 +2816,7 @@ class ESDLHeatModel(_ESDLModelBase):
         assets: Dict[str, Asset],
         name_to_id_map: Dict[str, str],
         converter_class=AssetToHeatComponent,
+        esdl_version=str,
         **kwargs,
     ):
         super().__init__(None)
@@ -2710,6 +2827,7 @@ class ESDLHeatModel(_ESDLModelBase):
                 **{
                     "primary_port_name_convention": self.primary_port_name_convention,
                     "secondary_port_name_convention": self.secondary_port_name_convention,
+                    "energy_system_esdl_version": esdl_version,
                 },
             }
         )
