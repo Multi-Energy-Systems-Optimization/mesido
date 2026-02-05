@@ -1031,6 +1031,7 @@ class ScenarioOutput:
                 *self.energy_system_components.get("heat_buffer", []),
                 *self.energy_system_components.get("heat_pump", []),
                 *self.energy_system_components.get("airco", []),
+                *self.energy_system_components.get("heat_exchanger", []),
             ]:
                 asset = self._name_to_asset(energy_system, name)
                 asset_placement_var = self._asset_aggregation_count_var_map[name]
@@ -1050,6 +1051,8 @@ class ScenarioOutput:
                         * parameters[f"{name}.rho"]
                         * parameters[f"{name}.dT"]
                     )
+                elif asset.name in self.energy_system_components.get("heat_exchanger", []):
+                    asset.capacity = max_size
                 elif asset.name in [
                     *self.energy_system_components.get("heat_pump", []),
                     *self.energy_system_components.get("airco", []),
