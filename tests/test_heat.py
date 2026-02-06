@@ -12,6 +12,54 @@ from utils_tests import demand_matching_test, energy_conservation_test, heat_to_
 
 
 class TestHeat(TestCase):
+
+    def test_elec_heat_buffer_elec(self):
+        """
+        This tests checks the functionality of heat_buffer_elec: buffer that
+        can be charged not only by heat network conventionally, but also
+        with the electricity energy.
+
+
+        Checks:
+        1. demand is matched
+        2. buffer can be (dis)charged by heat network
+        3. buffer can be charged by electric components
+        4. energy conservation og the asset
+        """
+        import models.source_pipe_sink.src.double_pipe_heat as example
+        from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        heat_problem = run_esdl_mesido_optimization(
+            SourcePipeSink,
+            base_folder=base_folder,
+            esdl_file_name="sourcesink_with_eboiler_ebuffer.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.csv",
+        )
+        results = heat_problem.extract_results()
+
+        # util test
+        demand_matching_test(heat_problem, results)
+
+        # Check that buffer can be (dis)charged by heat network
+        np.testing.assert_array_less(0, sum(results["HeatStorage.Heat_flow_charging"]))
+        np.testing.assert_array_less(0, sum(results["HeatStorage.Heat_flow_discharging"]))
+
+        # Check that buffer can be charged by electricity component of the buffer
+        np.testing.assert_array_less(0, sum(results["HeatStorage.Heat_elec_charging"]))
+
+        # Check heat flows into buffer coems from heat network and
+        # the electricity component of the buffer
+        np.testing.assert_allclose(
+            results["HeatStorage.Heat_buffer"],
+            results["HeatStorage.Heat_flow"] + results["HeatStorage.Heat_elec_charging"],
+        )
+
+        print("a")
+
     def test_heat_loss(self):
         """
         This is a test to check whether the network (pipes) are dissipating milp as we expect.

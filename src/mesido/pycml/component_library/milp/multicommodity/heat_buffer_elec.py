@@ -15,7 +15,6 @@ class HeatBufferElec(HeatBufferModel):
     electricity to heat is incorporated. Since this way of charging heat does not require water
     flow through the inlet/outlet pipes, a separate variable is created to define the additional
     heat charged.
-    It is also assumed that this type of buffer cannot be charged conventionally.
 
     Variables created:
         {add_variable_names_for_documentation_here}
@@ -50,11 +49,10 @@ class HeatBufferElec(HeatBufferModel):
             )
         )
 
-        # Should replace equation self.Heat_flow - self.Heat_buffer as here the heat changing in
-        # the buffer is not only because of the water connection with the network but also
-        # because of the electricity connection.
+        # Buffer is charged by heat flow from heat network and electricity component of the asset
         self.add_equation(
             (self.Heat_flow + self.Heat_elec_charging - self.Heat_buffer) / self.Heat_nominal
         )
 
-        self.Heat_flow.min = 0.0
+        # Note: If this type of buffer should be charged only by electricity component,
+        # we should set minimum Heat_flow to 0  (self.Heat_flow.min = 0.0)
