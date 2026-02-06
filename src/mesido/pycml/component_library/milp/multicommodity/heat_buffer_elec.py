@@ -1,13 +1,13 @@
 from mesido.pycml import Variable
 from mesido.pycml.component_library.milp.electricity.electricity_base import ElectricityPort
-from mesido.pycml.component_library.milp.heat.heat_buffer import HeatBuffer
+from mesido.pycml.component_library.milp.heat.heat_buffer import HeatBufferModel
 from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 from numpy import nan
 
 
 @add_variables_documentation_automatically
-class HeatBufferElec(HeatBuffer):
+class HeatBufferElec(HeatBufferModel):
     """
     The heat buffer component models heat storage in a tank. This component also incorporates the
     ability to use electricity for charging this component. Like all heat storage components,
