@@ -233,6 +233,7 @@ class InfluxDBProfileReader(BaseProfileReader):
         self._database_credentials = (
             database_credentials if database_credentials is not None else {"": ("", "")}
         )
+        self._influx_connection_settings = list()
 
     def _load_profiles_from_source(
         self,
@@ -411,7 +412,8 @@ class InfluxDBProfileReader(BaseProfileReader):
         username, password = self._database_credentials.get(influx_host, (None, None))
 
         conn_settings = ConnectionSettings(
-            host=profile.host,
+            # host=profile.host,
+            host=profile_host,
             port=profile.port,
             username=username,
             password=password,
@@ -420,25 +422,39 @@ class InfluxDBProfileReader(BaseProfileReader):
             verify_ssl=ssl_setting,
         )
 
-        try:
-            time_series_data = InfluxDBProfileManager(conn_settings)
-        except Exception:
-            container = profile.eContainer()
-            asset = container.energyasset
-            get_potential_errors().add_potential_issue(
-                MesidoAssetIssueType.ASSET_PROFILE_AVAILABILITY,
-                asset.id,
-                f"Asset named {asset.name}: Database {profile.database}"
-                f" is not available in the host.",
-            )
-            potential_error_to_error(NetworkErrors.HEAT_NETWORK_ERRORS)
 
-        time_series_data.load_influxdb(
-            profile.measurement,
-            [profile.field],
-            profile.startDate,
-            profile.endDate,
-        )
+        # Check if an object of the InfluxDBProfileManager is already present in a list. If so,
+        # re-use that object that was already created and been stored in the list.
+        time_series_data = list(filter(lambda x:x.database_settings==conn_settings, self._influx_connection_settings))
+        if not time_series_data:
+            try:
+                time_series_data = InfluxDBProfileManager(conn_settings)
+                time_series_data.load_influxdb(
+                    profile.measurement,
+                    [profile.field],
+                    profile.startDate,
+                    profile.endDate,
+                )
+                # Storing the InfluxDBProfileManager object in the list
+                self._influx_connection_settings.append(time_series_data)
+            except Exception:
+                container = profile.eContainer()
+                asset = container.energyasset
+                get_potential_errors().add_potential_issue(
+                    MesidoAssetIssueType.ASSET_PROFILE_AVAILABILITY,
+                    asset.id,
+                    f"Asset named {asset.name}: Database {profile.database}"
+                    f" is not available in the host.",
+                )
+                potential_error_to_error(NetworkErrors.HEAT_NETWORK_ERRORS)
+        else:
+            time_series_data = time_series_data[0]
+            time_series_data.load_influxdb(
+                profile.measurement,
+                [profile.field],
+                profile.startDate,
+                profile.endDate,
+            )
 
         if not time_series_data.profile_data_list:  # if time_series_data.profile_data_list == []:
             container = profile.eContainer()
