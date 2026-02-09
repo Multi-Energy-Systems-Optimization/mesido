@@ -32,7 +32,7 @@ class HeatBuffer(_StorageComponent):
 
         self.component_type = "heat_buffer"
 
-        self.heat_transfer_coeff = 1.0
+        self.heat_transfer_coeff = nan
         self.height = 5.0
         self.radius = 10.0
         self.volume = math.pi * self.radius**2 * self.height
