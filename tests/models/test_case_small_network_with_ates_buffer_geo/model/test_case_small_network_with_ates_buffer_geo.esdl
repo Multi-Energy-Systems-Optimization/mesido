@@ -401,7 +401,7 @@
           </investmentCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:HeatStorage" name="HeatStorage_74c1" id="74c13eed-9ca8-4247-bd72-a68e242d8e1b" maxDischargeRate="10000000.0" maxChargeRate="10000000.0" volume="500.0">
+      <asset xsi:type="esdl:HeatStorage" name="HeatStorage_74c1" id="74c13eed-9ca8-4247-bd72-a68e242d8e1b" maxDischargeRate="10000000.0" maxChargeRate="10000000.0" volume="500.0" dischargeEfficiency="0.85">
         <geometry xsi:type="esdl:Point" lon="4.313871860504151" CRS="WGS84" lat="52.042658996032856"/>
         <port xsi:type="esdl:InPort" id="8c09b9ff-5070-4fbc-97fe-db7a501932dc" name="In" connectedTo="636a1943-2289-4d57-a2dd-33aaa4f25b49" carrier="7b32e287-d775-480c-b317-64ffdacf12c9"/>
         <port xsi:type="esdl:OutPort" id="cc725203-e648-490f-a12d-91fa85ee58f2" name="Out" connectedTo="a581c340-3cab-46b1-924f-c5ddc0120de6" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret"/>

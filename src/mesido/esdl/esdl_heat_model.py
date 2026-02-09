@@ -428,12 +428,23 @@ class AssetToHeatComponent(_AssetToComponentBase):
             else 10.0e6
         )
 
+        # Todo: Currently esdl does not have "heatTransferCoefficient" attribute for
+        #  heat_buffer asset. Temporarily we are using "dischargeEfficiency" attribute
+        #  of HeatStorage asset attribute in ESDL to define heat_transfer_coeff.
+        #  Once, "heatTransferCoefficient" attribute is added into esdl,
+        #  we can update this part.
+        heat_transfer_coeff = (
+            asset.attributes.get("heatTransferCoefficient")
+            or asset.attributes.get("dischargeEfficiency")
+            or 1.0
+        )
+
         q_nominal = self._get_connected_q_nominal(asset)
 
         modifiers = dict(
             height=r,
             radius=r,
-            heat_transfer_coeff=1.0,
+            heat_transfer_coeff=heat_transfer_coeff,
             min_fraction_tank_volume=min_fraction_tank_volume,
             Stored_heat=dict(min=min_heat, max=max_heat),
             Heat_buffer=dict(min=-hfr_discharge_max, max=hfr_charge_max),
