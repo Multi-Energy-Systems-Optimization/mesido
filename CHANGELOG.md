@@ -1,7 +1,7 @@
-# [Unreleased-main] - 2026-02-05
+# [Unreleased-main] - 2026-02-09
 
 ## Added
-- xxx
+- heat_transfer_coeff variable of HeatStorage is read from dischargeEfficiency attribute in esdl
 
 ## Changed
 - xxx
