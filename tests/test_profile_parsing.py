@@ -317,14 +317,12 @@ class TestProfileLoading(unittest.TestCase):
 
     def test_loading_profiles_ensemble_members(self):
         """
-        This is the most basic check where we have a simple network and check for the basic physics.
-        This simple network includes two source, pipes, nodes, and 3 demands.
-
-        Checks;
-        - Demand matching
-        - Energy conservation
-        - Heat to discharge
-
+        This test constructs multiple ensemble members based on an "ensemble_member" CSV file
+        that describes the probability of the ensemble member and the name and number.
+        The profiles related to each ensemble member are read from the respective CSV files and
+        saved in for each member.
+        The test checks if the profiles read match the profiles from the CVS files and if the
+        ensemble_member_size is set accordingly.
         """
         import models.unit_cases.case_2a_ensemble.src.run_2a as run_2a
         from models.unit_cases.case_2a_ensemble.src.run_2a import HeatProblemEnsemble

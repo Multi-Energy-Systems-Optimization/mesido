@@ -3,7 +3,6 @@ from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.physics_mixin import PhysicsMixin
-from mesido.qth_not_maintained.qth_mixin import QTHMixin
 
 import numpy as np
 
@@ -12,11 +11,9 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
 )
 from rtctools.optimization.control_tree_mixin import ControlTreeMixin
 from rtctools.optimization.goal_programming_mixin import Goal, GoalProgrammingMixin
-from rtctools.optimization.homotopy_mixin import HomotopyMixin
 from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
 )
-from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
 from rtctools.util import run_optimization_problem
 
 
@@ -71,21 +68,6 @@ class TargetDemandPathGoal(Goal):
         return optimization_problem.state(self.state)
 
 
-class MinimizeSourcesHeatGoal(Goal):
-    priority = 2
-
-    order = 2
-
-    def __init__(self, source):
-        self.target_max = 0.0
-        self.function_range = (0.0, 10e6)
-        self.source = source
-        self.function_nominal = 1e5
-
-    def function(self, optimization_problem, ensemble_member):
-        return optimization_problem.state(f"{self.source}.Heat_source")
-
-
 class MinimizeSourcesSizeGoal(Goal):
     priority = 2
 
@@ -99,19 +81,6 @@ class MinimizeSourcesSizeGoal(Goal):
 
     def function(self, optimization_problem, ensemble_member):
         return optimization_problem.extra_variable(f"{self.source}__max_size", ensemble_member)
-
-
-class MinimizeSourcesQTHGoal(Goal):
-    priority = 2
-
-    order = 2
-
-    def __init__(self, source):
-        self.source = source
-        self.function_nominal = 1e5
-
-    def function(self, optimization_problem, ensemble_member):
-        return optimization_problem.state(f"{self.source}.Heat_source")
 
 
 class _GoalsAndOptions:
@@ -155,13 +124,6 @@ class HeatProblem(
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
-    # def path_goals(self):
-    #     goals = super().path_goals().copy()
-    #
-    #     for s in self.energy_system_components["heat_source"]:
-    #         goals.append(MinimizeSourcesHeatGoal(s))
-    #
-    #     return goals
 
     def energy_system_options(self):
         options = super().energy_system_options()
@@ -179,18 +141,9 @@ class HeatProblem(
 class HeatProblemEnsemble(
     AssetSizingMixin,
     HeatProblem,
-    # CSVMixin,
     ControlTreeMixin,
 ):
     csv_ensemble_mode = True
-
-    def pre(self):
-        super().pre()
-
-        # Empty dict for intermediate ensemble results
-        self.intermediate_results = {
-            ensemble_member: [] for ensemble_member in range(self.ensemble_size)
-        }
 
     def goals(self):
         goals = super().goals().copy()
@@ -236,23 +189,6 @@ class HeatProblemEnsemble(
         constraints = super().path_constraints(ensemble_member).copy()
 
         return constraints
-
-
-class QTHProblem(
-    _GoalsAndOptions,
-    QTHMixin,
-    HomotopyMixin,
-    SinglePassGoalProgrammingMixin,
-    ESDLMixin,
-    CollocatedIntegratedOptimizationProblem,
-):
-    def path_goals(self):
-        goals = super().path_goals().copy()
-
-        for s in self.energy_system_components["heat_source"]:
-            goals.append(MinimizeSourcesQTHGoal(s))
-
-        return goals
 
 
 if __name__ == "__main__":
