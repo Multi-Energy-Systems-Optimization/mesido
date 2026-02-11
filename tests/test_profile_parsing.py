@@ -347,6 +347,10 @@ class TestProfileLoading(unittest.TestCase):
 
         # check that the ensemble size is set at 2, which is based on the ensemble.csv
         np.testing.assert_equal(problem.ensemble_size, 2)
+        prob_0 = problem.ensemble_member_probability(0)
+        prob_1 = problem.ensemble_member_probability(1)
+        np.testing.assert_allclose(prob_0, 0.7)
+        np.testing.assert_allclose(prob_1, 0.3)
 
         # check that the timeseries are loaded for all ensemble sizes and that the timeseries are
         # equal to a heating demand of 350000 except for HeatingDemand_6f99 at the second
