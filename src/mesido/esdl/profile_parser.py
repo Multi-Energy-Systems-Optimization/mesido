@@ -3,7 +3,7 @@ import logging
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, Optional, Set, Tuple
+from typing import Dict, Optional, Set, Tuple, List
 
 import esdl
 from esdl.profiles.influxdbprofilemanager import ConnectionSettings
@@ -18,6 +18,7 @@ import numpy as np
 import pandas as pd
 
 import rtctools.data.pi
+from pandas import DateOffset
 from rtctools.data.storage import DataStore
 
 
@@ -600,6 +601,292 @@ class InfluxDBProfileReader(BaseProfileReader):
             return profile.profileQuantityAndUnit
 
 
+class ESDLTimeSeriesProfileReader(BaseProfileReader):
+    asset_type_to_variable_name_conversion = {
+        esdl.esdl.HeatingDemand: ".target_heat_demand",
+        esdl.esdl.GenericConsumer: ".target_heat_demand",
+        esdl.esdl.HeatProducer: ".maximum_heat_source",
+        esdl.esdl.ElectricityDemand: ".target_electricity_demand",
+        esdl.esdl.ElectricityProducer: ".maximum_electricity_source",
+        esdl.esdl.GasDemand: ".target_gas_demand",
+        esdl.esdl.GasProducer: ".maximum_gas_source",
+        esdl.esdl.ResidualHeatSource: ".maximum_heat_source",
+        esdl.esdl.GeothermalSource: ".maximum_heat_source",
+    }
+
+    def __init__(
+        self,
+        energy_system: esdl.EnergySystem,
+        file_path: Optional[Path],
+    ):
+        super().__init__(
+            energy_system=energy_system,
+            file_path=file_path,
+        )
+
+    def _load_profiles_from_source(
+        self,
+        energy_system_components: Dict[str, Set[str]],
+        esdl_asset_id_to_name_map: Dict[str, str],
+        carrier_properties: Dict[str, Dict],
+        ensemble_size: int,
+    ) -> None:
+        profiles: Dict[str, np.ndarray] = dict()
+        logger.info("Reading profiles from InfluxDB")
+        self._reference_datetimes = None
+        self._df = pd.DataFrame()
+
+        # Get list of unique profiles and associated series based on specific profile attributes
+        unique_profiles = []
+        unique_profiles_attributes = []  # a list containning lists of attributes
+        unique_series = []
+        esdl_timeseries_profiles: List[esdl.TimeSeriesProfile] = [
+            x for x in self._energy_system.eAllContents() if isinstance(x, esdl.TimeSeriesProfile)
+        ]
+        for profile in esdl_timeseries_profiles:
+            if profile.profileType == esdl.ProfileTypeEnum.OUTPUT:
+                continue
+
+            if [
+                profile.id,
+                profile.startDateTime,
+                profile.timestep,
+            ] not in unique_profiles_attributes:
+                unique_profiles_attributes.append(
+                    [
+                        profile.id,
+                        profile.startDateTime,
+                        profile.timestep,
+                    ]
+                )
+
+                unique_profiles.append(profile)
+                # TODO: check startDate, and timestep == 3600 seconds (1 hour) and len(values)>1
+                date_range = pd.date_range(profile.startDateTime, periods=len(profile.values),
+                                           freq=DateOffset(seconds=profile.timestep))
+                index = pd.DatetimeIndex(data=date_range)
+                series = pd.Series(data=profile.values, index=index)
+                self._df[profile.id] = series
+                unique_series.append(series)
+
+                self._check_profile_time_series(
+                    profile_time_series=unique_series[-1], profile=unique_profiles[-1]
+                )
+                if self._reference_datetimes is None:
+                    # TODO: since the previous function ensures it's a date time index, I'm not sure
+                    #  how to get rid of this type checking warning
+                    self._reference_datetimes = unique_series[-1].index
+                else:
+                    if not all(unique_series[-1].index == self._reference_datetimes):
+                        raise RuntimeError(
+                            f"Obtained a profile for asset {profile.name} with a "
+                            f"timeseries index that doesn't match the timeseries of "
+                            f"other assets. Please ensure that the profile that is "
+                            f"specified to be loaded for each asset covers exactly the "
+                            f"same timeseries. "
+                        )
+        # Loop through all the required profiles in the energy system and assign the profile data:
+        # - series: use the unique series data, without reading from the database again
+        # - other profile info: get it from the specific profile
+        for profile in esdl_timeseries_profiles:
+            if profile.profileType == esdl.ProfileTypeEnum.OUTPUT:
+                continue
+            index_of_unique_profile = unique_profiles_attributes.index(
+                [
+                    profile.id,
+                    profile.startDateTime,
+                    profile.timestep,
+                ]
+            )
+            series = unique_series[index_of_unique_profile]
+            self._check_profile_time_series(profile_time_series=series, profile=profile)
+            container = profile.eContainer()
+            asset = container.eContainer()
+            converted_dataframe = self._convert_profile_to_correct_unit(
+                profile_time_series=series, profile=profile, asset=asset
+            )
+
+            if isinstance(container, esdl.ProfileConstraint):
+                variable_suffix = self.asset_type_to_variable_name_conversion[type(asset)]
+                var_base_name = asset.name
+                if variable_suffix in [
+                    self.asset_type_to_variable_name_conversion[esdl.esdl.GasProducer],
+                    self.asset_type_to_variable_name_conversion[esdl.esdl.ElectricityProducer],
+                ]:
+                    logger.error(
+                        f"Profiles for {var_base_name} from esdl has not been tested yet but only"
+                        " for heat sources"
+                    )
+                    sys.exit(1)
+
+            elif isinstance(container, esdl.Commodity):
+                variable_suffix = self.carrier_profile_var_name
+                var_base_name = container.name
+            elif isinstance(container, esdl.Port):
+                asset = container.energyasset
+                var_base_name = asset.name
+                if var_base_name in [
+                    self.asset_type_to_variable_name_conversion[esdl.esdl.GasProducer],
+                    self.asset_type_to_variable_name_conversion[esdl.esdl.ElectricityProducer],
+                ]:
+                    logger.error(f"Profiles for {var_base_name} from esdl has not been tested yet")
+                    sys.exit(1)
+                try:
+                    variable_suffix = self.asset_type_to_variable_name_conversion[type(asset)]
+                    # For multicommidity work profiles need to be assigned to GenericConsumer, but
+                    # not for heat network (this asset_potential_errors is used in grow_workflow)
+                    if type(asset) is esdl.GenericConsumer:
+                        get_potential_errors().add_potential_issue(
+                            MesidoAssetIssueType.HEAT_DEMAND_TYPE,
+                            asset.id,
+                            f"Asset named {asset.name}: This asset is currently a GenericConsumer"
+                            " please change it to a HeatingDemand",
+                        )
+                except KeyError:
+                    get_potential_errors().add_potential_issue(
+                        MesidoAssetIssueType.ASSET_PROFILE_CAPABILITY,
+                        asset.id,
+                        f"Asset named {asset.name}: The assigment of profile field {profile.field}"
+                        f" is not possible for this asset type {type(asset)}",
+                    )
+            else:
+                raise RuntimeError(
+                    f"Got a profile for a {container}. Currently only profiles "
+                    f"for assets and commodities are supported"
+                )
+            if isinstance(profile, esdl.ExternalProfile):
+                profiles[var_base_name + variable_suffix] = converted_dataframe * profile.multiplier
+            else:
+                profiles[var_base_name + variable_suffix] = converted_dataframe
+
+        for idx in range(ensemble_size):
+            self._profiles[idx] = profiles.copy()
+
+
+    @staticmethod
+    def _check_profile_time_series(
+        profile_time_series: pd.Series, profile: esdl.TimeSeriesProfile
+    ) -> None:
+        """
+        Function that checks if the loaded profile matches what was expected
+
+        Parameters
+        ----------
+        profile_time_series : the pandas Series of the profile obtained for the profile.
+        profile : the InfluxDBProfile used to obtain the time series
+
+        Returns
+        -------
+        None
+        """
+        if profile_time_series.index[0] != profile.startDateTime:
+            raise RuntimeError(
+                f"The user input profile start datetime: {profile.startDateTime} does not match the"
+                f" start date in the database: {profile_time_series.index[0]} for profile: "
+                f"{profile.name}"
+            )
+        # if profile_time_series.index[-1] != profile.startDateTime + len(...) * timestep...:
+        #     raise RuntimeError(
+        #         f"The user input profile end datetime: {profile.endDate} does not match the end"
+        #         f" datetime in the database: {profile_time_series.index[-1]} for profile: "
+        #         f"{profile.name}"
+        #     )
+
+        # Error check: ensure that the profile data has a time resolution of 3600s (1hour) as
+        # expected
+        for d1, d2 in zip(profile_time_series.index, profile_time_series.index[1:]):
+            if d2 - d1 != pd.Timedelta(hours=1):
+                raise RuntimeError(
+                    f"The timestep for variable {profile.name} between {d1} and {d2} isn't "
+                    f"exactly 1 hour"
+                )
+        # Check if any NaN values exist
+        if profile_time_series.isnull().any().any():
+            raise Exception(
+                f"Nan value was encountered in the profile data for profile {profile.name}"
+            )
+
+    def _convert_profile_to_correct_unit(
+        self, profile_time_series: pd.Series, profile: esdl.TimeSeriesProfile, asset: esdl.Asset
+    ) -> pd.Series:
+        """
+        Conversion function to change the values in the provided series to the correct unit
+
+        Parameters
+        ----------
+        profile_time_series: the time series obtained for the provided profile.
+        profile: the profile which was used to obtain the series.
+
+        Returns
+        -------
+        A pandas Series with the same index as the provided profile_time_series and with all values
+        converted to either Watt or Joules, depending on the quantity used in the profile.
+        """
+        profile_quantity_and_unit = self._get_profile_quantity_and_unit(profile=profile)
+        if (
+            profile_quantity_and_unit.physicalQuantity == esdl.PhysicalQuantityEnum.POWER
+            or profile_quantity_and_unit.physicalQuantity == esdl.PhysicalQuantityEnum.COEFFICIENT
+        ):
+            if profile_quantity_and_unit.unit == esdl.UnitEnum.WATT:
+                target_unit = POWER_IN_W
+            elif (
+                profile_quantity_and_unit.unit == esdl.UnitEnum.PERCENT
+                or profile_quantity_and_unit.unit == esdl.UnitEnum.NONE
+            ):  # values 0-100% or ratio 0-1
+                factor = 1.0  # needed when the coef is a ratio 0-1
+                # if not profile.multiplier == 1.0:
+                #     get_potential_errors().add_potential_issue(
+                #         MesidoAssetIssueType.ASSET_PROFILE_MULTIPLIER,
+                #         asset.id,
+                #         f", {asset.name} has unit's multiplier specified incorrectly. "
+                #         f"Multiplier should be 1.0, when the unit is specified in "
+                #         f"{profile_quantity_and_unit.description}",
+                #     )
+                if profile_quantity_and_unit.unit == esdl.UnitEnum.PERCENT:
+                    factor /= 100.0  # needed when the coef is a percentage 0-100%
+                return profile_time_series * factor * asset.power
+            else:
+                raise RuntimeError(
+                    f"Power profiles currently only support units"
+                    f"specified in Watts or Percentage,"
+                    f"{profile} doesn't follow this convention."
+                )
+        elif profile_quantity_and_unit.physicalQuantity == esdl.PhysicalQuantityEnum.ENERGY:
+            target_unit = ENERGY_IN_J
+        elif profile_quantity_and_unit.physicalQuantity == esdl.PhysicalQuantityEnum.COST:
+            if not (
+                profile_quantity_and_unit.unit == esdl.UnitEnum.EURO
+                and profile_quantity_and_unit.perUnit == esdl.UnitEnum.WATTHOUR
+            ):
+                raise RuntimeError(
+                    f"For price profiles currently only profiles "
+                    f"specified in euros per watt-hour are accepted,"
+                    f"{profile} doesn't follow this convention."
+                )
+            return profile_time_series
+        else:
+            raise RuntimeError(
+                f"The user input profile currently only supports loading profiles containing "
+                f"either power, energy values or euros per Wh, not "
+                f"{profile_quantity_and_unit.physicalQuantity}."
+            )
+        # The vectorized method below is used instead of profile_time_series.apply(), due to a
+        # computational cost reduction (order of 2000 times faster for a profile with 8760
+        # timesteps)
+        return profile_time_series * convert_to_unit(
+            value=1.0, source_unit=profile_quantity_and_unit, target_unit=target_unit
+        )
+
+    @staticmethod
+    def _get_profile_quantity_and_unit(profile: esdl.InfluxDBProfile):
+        try:
+            return profile.profileQuantityAndUnit.reference
+        except AttributeError:
+            return profile.profileQuantityAndUnit
+
+
+
+
 class ProfileReaderFromFile(BaseProfileReader):
     def __init__(
         self,
@@ -618,15 +905,7 @@ class ProfileReaderFromFile(BaseProfileReader):
         carrier_properties: Dict[str, Dict],
         ensemble_size: int,
     ) -> None:
-        if self._file_path.suffix == ".xml":
-            logger.warning(
-                "XML type loading currently does not support loading " "price profiles for carriers"
-            )
-            self._load_xml(
-                energy_system_components=energy_system_components,
-                esdl_asset_id_to_name_map=esdl_asset_id_to_name_map,
-            )
-        elif self._file_path.suffix == ".csv":
+        if self._file_path.suffix == ".csv":
             self._load_csv(
                 energy_system_components=energy_system_components,
                 carrier_properties=carrier_properties,
