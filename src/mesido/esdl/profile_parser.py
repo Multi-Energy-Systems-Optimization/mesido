@@ -315,7 +315,6 @@ class InfluxDBProfileReader(BaseProfileReader):
                 ]
             )
             series = unique_series[index_of_unique_profile]
-            self._check_profile_time_series(profile_time_series=series, profile=profile)
             container = profile.eContainer()
             asset = container.eContainer()
             converted_dataframe = self._convert_profile_to_correct_unit(
@@ -506,12 +505,14 @@ class InfluxDBProfileReader(BaseProfileReader):
 
         # Error check: ensure that the profile data has a time resolution of 3600s (1hour) as
         # expected
-        for d1, d2 in zip(profile_time_series.index, profile_time_series.index[1:]):
-            if d2 - d1 != pd.Timedelta(hours=1):
-                raise RuntimeError(
-                    f"The timestep for variable {profile.field} between {d1} and {d2} isn't "
-                    f"exactly 1 hour"
-                )
+        idx = profile_time_series.index
+        dt = idx.to_series().diff()[1:]
+        problem_timesteps = idx[:-1][dt != pd.Timedelta(hours=1)]
+        if not problem_timesteps.empty:
+            raise RuntimeError(
+                f"The timestep for variable {profile.field} at timestamp {problem_timesteps} isn't "
+                f"exactly 1 hour"
+            )
         # Check if any NaN values exist
         if profile_time_series.isnull().any().any():
             raise Exception(
