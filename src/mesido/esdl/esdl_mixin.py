@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import esdl.esdl_handler
-from rtctools.data import csv
 
 from mesido.component_type_mixin import (
     ModelicaComponentTypeMixin,
@@ -695,8 +694,8 @@ class ESDLMixin(
         super().read()
         # TODO: update for ensembles, eg ensemble_size is now still 1, if io gets updated,
         # then the size also updates automatically
-        ensemble_size=1
-        self.__ensemble=None
+        ensemble_size = 1
+        self.__ensemble = None
         if self.csv_ensemble_mode:
             self.__ensemble = np.genfromtxt(
                 os.path.join(self._input_folder, "ensemble.csv"),
@@ -724,8 +723,7 @@ class ESDLMixin(
         for ensemble_member_index in range(ensemble_size):
             self.io.set_parameter("GeothermalSource_fafd.Max_heat", 10e5, ensemble_member_index)
             if ensemble_member_index == 1:
-                self.io.set_parameter('GeothermalSource_fafd.Max_heat', 2e5,
-                                      ensemble_member_index)
+                self.io.set_parameter("GeothermalSource_fafd.Max_heat", 2e5, ensemble_member_index)
 
     def write(self) -> None:
         """

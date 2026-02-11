@@ -1506,12 +1506,12 @@ class HeatPhysicsMixin(
 
             discharge = self.state(f"{s}.Q")
             heat_out = self.state(f"{s}.HeatOut.Heat")
-            #somehow the ensemblemember dependent path constraint is only allowed in the bounds of
+            # somehow the ensemblemember dependent path constraint is only allowed in the bounds of
             # the problem, e.g. the upper or lower bound. For non path constraints, it is allowed
             # in the equation.
             heat_flow = self.state(f"{s}.Heat_flow")
             max_heat = parameters[f"{s}.Max_heat"]
-            constraints.append((heat_flow/heat_nominal, -np.inf, max_heat/heat_nominal))
+            constraints.append((heat_flow / heat_nominal, -np.inf, max_heat / heat_nominal))
 
             constraint_nominal = (heat_nominal * cp * rho * dt * q_nominal) ** 0.5
 

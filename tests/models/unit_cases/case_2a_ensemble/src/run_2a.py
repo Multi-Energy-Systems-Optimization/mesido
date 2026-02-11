@@ -1,6 +1,3 @@
-from rtctools.optimization.control_tree_mixin import ControlTreeMixin
-from rtctools.optimization.csv_mixin import CSVMixin
-
 from mesido.asset_sizing_mixin import AssetSizingMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
@@ -13,6 +10,7 @@ import numpy as np
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
+from rtctools.optimization.control_tree_mixin import ControlTreeMixin
 from rtctools.optimization.goal_programming_mixin import Goal, GoalProgrammingMixin
 from rtctools.optimization.homotopy_mixin import HomotopyMixin
 from rtctools.optimization.linearized_order_goal_programming_mixin import (
@@ -43,12 +41,14 @@ class TargetDemandGoal(Goal):
         that is also independent of the active ensemble member.  Path goals are
         applied to all times and all ensemble members simultaneously."""
         nom = optimization_problem.variable_nominal(self.state)
-        vector_state = nom * optimization_problem.state_vector(self.state, ensemble_member)[
-            self.index]
+        vector_state = (
+            nom * optimization_problem.state_vector(self.state, ensemble_member)[self.index]
+        )
         # self.target_min = self.targets[ensemble_member].values[self.index]
         # self.target_max = self.targets[ensemble_member].values[self.index]
 
         return self.targets[ensemble_member].values[self.index] - vector_state
+
 
 class TargetDemandPathGoal(Goal):
     priority = 1
@@ -68,7 +68,6 @@ class TargetDemandPathGoal(Goal):
         therefore the goals ensemble independent and only one target for all the ensembles can be
         applied."""
 
-
         return optimization_problem.state(self.state)
 
 
@@ -85,6 +84,7 @@ class MinimizeSourcesHeatGoal(Goal):
 
     def function(self, optimization_problem, ensemble_member):
         return optimization_problem.state(f"{self.source}.Heat_source")
+
 
 class MinimizeSourcesSizeGoal(Goal):
     priority = 2
@@ -134,9 +134,12 @@ class _GoalsAndOptions:
 
         for i in range(len(self.times())):
             for demand in self.energy_system_components["heat_demand"]:
-                target = [self.get_timeseries(f"{demand}.target_heat_demand",
-                                             ensemble_member=ensemble_member) for ensemble_member in
-                          range(self.ensemble_size)]
+                target = [
+                    self.get_timeseries(
+                        f"{demand}.target_heat_demand", ensemble_member=ensemble_member
+                    )
+                    for ensemble_member in range(self.ensemble_size)
+                ]
                 state = f"{demand}.Heat_demand"
 
                 goals.append(TargetDemandGoal(state, target, i))
@@ -173,18 +176,21 @@ class HeatProblem(
         return options
 
 
-class HeatProblemEnsemble(AssetSizingMixin,
-                            HeatProblem,
-                          # CSVMixin,
-                          ControlTreeMixin):
+class HeatProblemEnsemble(
+    AssetSizingMixin,
+    HeatProblem,
+    # CSVMixin,
+    ControlTreeMixin,
+):
     csv_ensemble_mode = True
 
     def pre(self):
         super().pre()
 
         # Empty dict for intermediate ensemble results
-        self.intermediate_results = {ensemble_member: [] for ensemble_member in range(
-            self.ensemble_size)}
+        self.intermediate_results = {
+            ensemble_member: [] for ensemble_member in range(self.ensemble_size)
+        }
 
     def goals(self):
         goals = super().goals().copy()
@@ -194,11 +200,11 @@ class HeatProblemEnsemble(AssetSizingMixin,
         return goals
 
     def __fixed_max_size(self):
-        constraints=[]
+        constraints = []
         for heat_source in self.energy_system_components["heat_source"]:
             max_size_prev = self.extra_variable(f"{heat_source}__max_size", ensemble_member=0)
-            for e_m in range(self.ensemble_size-1):
-                max_size = self.extra_variable(f"{heat_source}__max_size", ensemble_member=e_m+1)
+            for e_m in range(self.ensemble_size - 1):
+                max_size = self.extra_variable(f"{heat_source}__max_size", ensemble_member=e_m + 1)
                 constraints.append((max_size - max_size_prev, 0.0, 0.0))
                 max_size_prev = max_size
         return constraints
@@ -213,10 +219,11 @@ class HeatProblemEnsemble(AssetSizingMixin,
         for demand in self.energy_system_components["heat_demand"]:
             var = self.state_vector(f"{demand}.Heat_demand", ensemble_member=ensemble_member)
             nom = self.variable_nominal(f"{demand}.Heat_demand")
-            target = np.asarray(self.get_timeseries(f"{demand}.target_heat_demand",
-                                              ensemble_member).values)
+            target = np.asarray(
+                self.get_timeseries(f"{demand}.target_heat_demand", ensemble_member).values
+            )
 
-            constraints.append((var*nom/nom, 0.0, target/nom))
+            constraints.append((var * nom / nom, 0.0, target / nom))
         return constraints
 
     def constraints(self, ensemble_member):

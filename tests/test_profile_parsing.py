@@ -345,7 +345,7 @@ class TestProfileLoading(unittest.TestCase):
 
         problem.pre()
 
-        #check that the ensemble size is set at 2, which is based on the ensemble.csv
+        # check that the ensemble size is set at 2, which is based on the ensemble.csv
         np.testing.assert_equal(problem.ensemble_size, 2)
 
         # check that the timeseries are loaded for all ensemble sizes and that the timeseries are
@@ -355,10 +355,10 @@ class TestProfileLoading(unittest.TestCase):
         for t_name in timeseries_names:
             for e_m in range(problem.ensemble_size):
                 t_series = problem.get_timeseries(t_name, e_m)
-                if e_m == 1 and t_name == 'HeatingDemand_6f99.target_heat_demand':
-                    np.testing.assert_allclose(t_series.values, [300000]*3)
+                if e_m == 1 and t_name == "HeatingDemand_6f99.target_heat_demand":
+                    np.testing.assert_allclose(t_series.values, [300000] * 3)
                 else:
-                    np.testing.assert_allclose(t_series.values, [350000]*3)
+                    np.testing.assert_allclose(t_series.values, [350000] * 3)
 
 
 if __name__ == "__main__":

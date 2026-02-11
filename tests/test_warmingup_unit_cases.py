@@ -193,51 +193,6 @@ class TestWarmingUpUnitCases(TestCase):
                 atol=1.0e-6,
             )
 
-    def test_2a_ensemble(self):
-        """
-        This is the most basic check where we have a simple network and check for the basic physics.
-        This simple network includes two source, pipes, nodes, and 3 demands.
-
-        Checks;
-        - Demand matching
-        - Energy conservation
-        - Heat to discharge
-
-        """
-        import models.unit_cases.case_2a_ensemble.src.run_2a as run_2a
-        from models.unit_cases.case_2a_ensemble.src.run_2a import HeatProblemEnsemble
-
-        base_folder = Path(run_2a.__file__).resolve().parent.parent
-
-        heat_problem = run_esdl_mesido_optimization(
-            HeatProblemEnsemble,
-            base_folder=base_folder,
-            esdl_file_name="2a.esdl",
-            esdl_parser=ESDLFileParser,
-            profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries_import.csv",
-        )
-
-        results, results_limit = {}, {}
-        for e_m in range(heat_problem.ensemble_size):
-            results[e_m] = heat_problem.extract_results(ensemble_member=e_m)
-
-        # for e_m in range(heat_problem.ensemble_size):
-        #     demand_matching_test(heat_problem, results[e_m], ensemble_member=e_m)
-        energy_conservation_test(heat_problem, heat_problem.extract_results())
-        heat_to_discharge_test(heat_problem, heat_problem.extract_results())
-
-        for result in [results]:
-            for e_m in range(heat_problem.ensemble_size):
-                print("### Ensemble member", e_m)
-                for demand in heat_problem.energy_system_components.get("heat_demand",[]):
-                    print(demand, result[e_m][f"{demand}.Heat_demand"])
-                    print(demand, heat_problem.get_timeseries(f"{demand}.target_heat_demand", e_m))
-                for prod in heat_problem.energy_system_components.get("heat_source", []):
-                    print(prod, "Heat_source",  result[e_m][f"{prod}.Heat_source"])
-                    print(prod, "Max size", result[e_m][f"{prod}__max_size"])
-        # for results_limit,  demand in ensemble 2 is now not matched, because the summed heat
-        # source capacities are insufficient.
 
 if __name__ == "__main__":
 

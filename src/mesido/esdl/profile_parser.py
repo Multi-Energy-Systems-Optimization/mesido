@@ -650,7 +650,7 @@ class ProfileReaderFromFile(BaseProfileReader):
             input_folder = self._file_path.parent
             file_name = self._file_path.name
             for i, ensemble_name, _ in ensemble:
-                data_dict[i] = pd.read_csv(Path(input_folder /ensemble_name/ file_name))
+                data_dict[i] = pd.read_csv(Path(input_folder / ensemble_name / file_name))
         else:
             data_dict[0] = pd.read_csv(self._file_path)
 
@@ -670,9 +670,9 @@ class ProfileReaderFromFile(BaseProfileReader):
             except ValueError:
                 try:
                     timeseries_import_times = [
-                        datetime.datetime.strptime(entry.replace("Z", ""), "%Y-%m-%dT%H:%M:%S").replace(
-                            tzinfo=datetime.timezone.utc
-                        )
+                        datetime.datetime.strptime(
+                            entry.replace("Z", ""), "%Y-%m-%dT%H:%M:%S"
+                        ).replace(tzinfo=datetime.timezone.utc)
                         for entry in data["DateTime"].to_numpy()
                     ]
                 except ValueError:
@@ -684,7 +684,9 @@ class ProfileReaderFromFile(BaseProfileReader):
                             for entry in data["DateTime"].to_numpy()
                         ]
                     except ValueError:
-                        raise _ProfileParserException("Date time string is not in a supported format")
+                        raise _ProfileParserException(
+                            "Date time string is not in a supported format"
+                        )
 
             logger.warning("Timezone specification not supported yet: default UTC has been used")
 
@@ -714,14 +716,13 @@ class ProfileReaderFromFile(BaseProfileReader):
                     if np.isnan(values).any():
                         raise Exception(
                             f"Carrier name: {carrier_name}, NaN exists in the profile source file"
-                            f" {self._file_path}. Details: {data_em[data_em[carrier_name].isnull()]}"
+                            f" {self._file_path}. Details: "
+                            f"{data_em[data_em[carrier_name].isnull()]}"
                         )
                 except KeyError:
                     pass
                 else:
-                    self._profiles[e_m][
-                        carrier_name + self.carrier_profile_var_name
-                    ] = values
+                    self._profiles[e_m][carrier_name + self.carrier_profile_var_name] = values
 
     def _load_xml(self, energy_system_components, esdl_asset_id_to_name_map):
         timeseries_import_basename = self._file_path.stem

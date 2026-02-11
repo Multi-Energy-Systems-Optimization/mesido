@@ -29,14 +29,17 @@ def demand_matching_test(solution, results, ensemble_member=0, atol=1.0e-3, rtol
         else:
             len_times = len(solution.get_timeseries(f"{d}.target_heat_demand").values)
         target = solution.get_timeseries(f"{d}.target_heat_demand", ensemble_member).values[
-            0:len_times]
+            0:len_times
+        ]
         np.testing.assert_allclose(target, results[f"{d}.Heat_demand"], atol=atol, rtol=rtol)
     for d in solution.energy_system_components.get("cold_demand", []):
         if len(solution.times()) > 0:
             len_times = len(solution.times())
         else:
             len_times = len(solution.get_timeseries(f"{d}.target_cold_demand").values)
-        target = solution.get_timeseries(f"{d}.target_cold_demand", ensemble_member).values[0:len_times]
+        target = solution.get_timeseries(f"{d}.target_cold_demand", ensemble_member).values[
+            0:len_times
+        ]
         np.testing.assert_allclose(target, results[f"{d}.Cold_demand"], atol=atol, rtol=rtol)
     for d in solution.energy_system_components.get("gas_demand", []):
         timeseries_name = f"{d}.target_gas_demand"
