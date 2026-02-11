@@ -510,7 +510,7 @@ class InfluxDBProfileReader(BaseProfileReader):
         problem_timesteps = idx[:-1][dt != pd.Timedelta(hours=1)]
         if not problem_timesteps.empty:
             raise RuntimeError(
-                f"The timestep for variable {profile.field} at timestamp {problem_timesteps} isn't " 
+                f"The timestep for variable {profile.field} at timestamp {problem_timesteps} isn't "
                 f"exactly 1 hour"
             )
         # Check if any NaN values exist
