@@ -55,50 +55,14 @@ class MinimizeElecProductionSize(Goal):
 
     order = 2
 
-    def __init__(self, source, total_demand):
+    def __init__(self, source, nominal):
         self.source = source
-        self.target_min = total_demand
-        self.target_max = total_demand
-        self.function_range = (0.0, 2.0 * max(total_demand.values))
-        self.function_nominal = np.median(total_demand.values)
+        self.target_min = 1e-6
+        self.function_range = (0.0, 2.0 * nominal)
+        self.function_nominal = nominal
 
     def function(self, optimization_problem, ensemble_member):
-        return optimization_problem.state(f"{self.source}__max_size") * 2.0
-
-
-class _GoalsAndOptionsPV:
-    def path_goals(self):
-        """
-        Add goal to meet the specified power demands in the electricity network.
-
-        Returns
-        -------
-        Extended goals list.
-        """
-        goals = super().path_goals().copy()
-
-        total_demand = None
-        for demand in self.energy_system_components["electricity_demand"]:
-            target = self.get_timeseries(f"{demand}.target_electricity_demand")
-            state = f"{demand}.Electricity_demand"
-            goals.append(TargetDemandGoal(state, target))
-            if total_demand is None:
-                total_demand = target.copy() if hasattr(target, "copy") else target
-            else:
-                total_demand += target
-
-        for source in self.energy_system_components["electricity_source"]:
-            goals.append(MinimizeElecProductionSize(source, total_demand))
-
-        goals.append(MinimizeElecProduction())
-
-        return goals
-
-    def energy_system_options(self):
-        options = super().energy_system_options()
-        options["include_electric_cable_power_loss"] = False
-
-        return options
+        return optimization_problem.extra_variable(f"{self.source}__max_size", ensemble_member)
 
 
 class _GoalsAndOptions:
@@ -128,7 +92,7 @@ class _GoalsAndOptions:
 
 
 class ElectricityProblemPV(
-    _GoalsAndOptionsPV,
+    _GoalsAndOptions,
     TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
     GoalProgrammingMixin,
@@ -139,7 +103,40 @@ class ElectricityProblemPV(
     Problem to check the behaviour of a simple source, cable, demand network.
     """
 
-    pass
+    def path_goals(self):
+        """
+        Add goal to meet the specified power demands in the electricity network.
+
+        Returns
+        -------
+        Extended goals list.
+        """
+        goals = super().path_goals().copy()
+        goals.append(MinimizeElecProduction())
+        return goals
+
+    def goals(self):
+        """
+        Add goal to minimize max_size of electricity producers while ensuring
+        that they are equal to each other.
+
+        Returns
+        -------
+        Extended goals list.
+        """
+        goals = super().goals().copy()
+        nominal = (
+            max(self.get_timeseries("ElectricityDemand_2af6.target_electricity_demand").values)
+            / 2.0
+        )
+        for source in self.energy_system_components["electricity_source"]:
+            goals.append(MinimizeElecProductionSize(source=source, nominal=nominal))
+        return goals
+
+    def energy_system_options(self):
+        options = super().energy_system_options()
+        options["include_electric_cable_power_loss"] = False
+        return options
 
 
 class ElectricityProblem(

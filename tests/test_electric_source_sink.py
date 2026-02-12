@@ -35,6 +35,8 @@ class TestMILPElectricSourceSink(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
+        tol = 1e-6
+
         solution = run_esdl_mesido_optimization(
             ElectricityProblemPV,
             base_folder=base_folder,
@@ -58,8 +60,13 @@ class TestMILPElectricSourceSink(TestCase):
         max_profile_non_scaled = max(profile_non_scaled)
         profile_scaled = profile_non_scaled / max_profile_non_scaled
 
+        np.testing.assert_array_less(
+            results["PV.Electricity_source"], profile_scaled * results["PV__max_size"] + tol
+        )
         np.testing.assert_allclose(
-            results["PV.Electricity_source"], profile_scaled * results["PV__max_size"]
+            solution.get_timeseries("ElectricityDemand_2af6.target_electricity_demand").values,
+            results["ElectricityProducer_edde.Electricity_source"]
+            + results["PV.Electricity_source"],
         )
 
     def test_source_sink(self):

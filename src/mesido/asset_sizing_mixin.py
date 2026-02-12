@@ -1857,7 +1857,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         return constraints
 
-    def __apply_profile_cap_constraints(
+    def __producer_constraints(
         self,
         asset,
         variable_suffix,  # i.e. maximum_electricity_source, maximum_heat_source
@@ -1899,86 +1899,96 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             profile‑based capacity constraints for each timestep.
         """
         constraints = []
-        profile_non_scaled = self.get_timeseries(f"{asset}.{variable_suffix}").values
-        max_profile_non_scaled = max(profile_non_scaled)
-        profile_scaled = profile_non_scaled / max_profile_non_scaled
+        if f"{asset}.{variable_suffix}" in self.io.get_timeseries_names():
+            profile_non_scaled = self.get_timeseries(f"{asset}.{variable_suffix}").values
+            max_profile_non_scaled = max(profile_non_scaled)
+            profile_scaled = profile_non_scaled / max_profile_non_scaled
 
-        # Cap the electricity produced via a profile. Two profile options below.
-        # Option 1: Profile specified in absolute values [W] via a ProfileConstraint
-        esdl_asset_attributes = self.esdl_assets[self.esdl_asset_name_to_id_map[asset]].attributes[
-            "constraint"
-        ]
-        if (
-            len(esdl_asset_attributes) > 0
-            and hasattr(esdl_asset_attributes.items[0], "maximum")
-            and esdl_asset_attributes.items[0].maximum.profileQuantityAndUnit.reference.unit
-            == esdl.UnitEnum.WATT
-        ):
-            parameters = self.parameters(ensemble_member)
+            # Cap the electricity produced via a profile. Two profile options below.
+            # Option 1: Profile specified in absolute values [W] via a ProfileConstraint
+            esdl_asset_attributes = self.esdl_assets[
+                self.esdl_asset_name_to_id_map[asset]
+            ].attributes["constraint"]
+            if (
+                len(esdl_asset_attributes) > 0
+                and hasattr(esdl_asset_attributes.items[0], "maximum")
+                and esdl_asset_attributes.items[0].maximum.profileQuantityAndUnit.reference.unit
+                == esdl.UnitEnum.WATT
+            ):
+                parameters = self.parameters(ensemble_member)
 
-            if parameters[f"{asset}.state"] == AssetStateEnum.ENABLED:  # Enabled asset
-                constraints.append(
-                    (
-                        (max_power - max_profile_non_scaled) / constraint_nominal,
-                        0.0,
-                        np.inf,
+                if parameters[f"{asset}.state"] == AssetStateEnum.ENABLED:  # Enabled asset
+                    constraints.append(
+                        (
+                            (max_power - max_profile_non_scaled) / constraint_nominal,
+                            0.0,
+                            np.inf,
+                        )
                     )
-                )
-                max_power_var = (
-                    max_profile_non_scaled  # maximum heat power or maximum electric power
-                )
+                    max_power_var = (
+                        max_profile_non_scaled  # maximum heat power or maximum electric power
+                    )
 
-            elif parameters[f"{asset}.state"] == AssetStateEnum.OPTIONAL:  # Optional asset
-                max_power_var = max_power
+                elif parameters[f"{asset}.state"] == AssetStateEnum.OPTIONAL:  # Optional asset
+                    max_power_var = max_power
 
+                else:
+                    state_val = parameters[f"{asset}.state"]
+                    logger.error(f"Unexpected state: {state_val}")
+                    sys.exit(1)
+
+                for i in range(0, len(self.times())):
+                    constraints.append(
+                        (
+                            (profile_scaled[i] * max_power_var - source[i]) / constraint_nominal,
+                            0.0,
+                            np.inf,
+                        )
+                    )
+            # Option 2: Normalised profile (0.0-1.0) shape that scales with maximum size of the
+            # producer
+            # Note: If the asset is not optional then the profile will be scaled to the
+            # installed capacity
+            elif (
+                # profile is specified without units (xlm/csv)
+                len(esdl_asset_attributes) == 0
+                or (
+                    esdl_asset_attributes.items[
+                        0
+                    ].maximum.profileQuantityAndUnit.reference.physicalQuantity
+                    == esdl.PhysicalQuantityEnum.COEFFICIENT
+                    and (
+                        esdl_asset_attributes.items[0].maximum.profileQuantityAndUnit.reference.unit
+                        == esdl.UnitEnum.PERCENT
+                        or esdl_asset_attributes.items[
+                            0
+                        ].maximum.profileQuantityAndUnit.reference.unit
+                        == esdl.UnitEnum.NONE
+                    )
+                )  # profile from esdl
+            ):
+                # TODO: currently this can only be used with a csv file since units must be set
+                # for ProfileContraint. Future addition can be to use a different unit/quantity
+                # etc. so that the profile is used in a normalised way and scale to max_size
+
+                for i in range(0, len(self.times())):
+                    constraints.append(
+                        (
+                            (profile_scaled[i] * max_power - source[i]) / constraint_nominal,
+                            0.0,
+                            np.inf,
+                        )
+                    )
             else:
-                state_val = parameters[f"{asset}.state"]
-                logger.error(f"Unexpected state: {state_val}")
-                sys.exit(1)
-
-            for i in range(0, len(self.times())):
-                constraints.append(
-                    (
-                        (profile_scaled[i] * max_power_var - source[i]) / constraint_nominal,
-                        0.0,
-                        np.inf,
-                    )
-                )
-        # Option 2: Normalised profile (0.0-1.0) shape that scales with maximum size of the
-        # producer
-        # Note: If the asset is not optional then the profile will be scaled to the
-        # installed capacity
-        elif (
-            # profile is specified without units (xlm/csv)
-            len(esdl_asset_attributes) == 0
-            or (
-                esdl_asset_attributes.items[
-                    0
-                ].maximum.profileQuantityAndUnit.reference.physicalQuantity
-                == esdl.PhysicalQuantityEnum.COEFFICIENT
-                and (
-                    esdl_asset_attributes.items[0].maximum.profileQuantityAndUnit.reference.unit
-                    == esdl.UnitEnum.PERCENT
-                    or esdl_asset_attributes.items[0].maximum.profileQuantityAndUnit.reference.unit
-                    == esdl.UnitEnum.NONE
-                )
-            )  # profile from esdl
-        ):
-            # TODO: currently this can only be used with a csv file since units must be set
-            # for ProfileContraint. Future addition can be to use a different unit/quantity
-            # etc. so that the profile is used in a normalised way and scale to max_size
-
-            for i in range(0, len(self.times())):
-                constraints.append(
-                    (
-                        (profile_scaled[i] * max_power - source[i]) / constraint_nominal,
-                        0.0,
-                        np.inf,
-                    )
-                )
+                RuntimeError(f"{asset}: Unforeseen error in adding a profile constraint")
         else:
-            RuntimeError(f"{asset}: Unforeseen error in adding a profile constraint")
-
+            constraints.append(
+                (
+                    (np.ones(len(self.times())) * max_power - source) / constraint_nominal,
+                    0.0,
+                    np.inf,
+                )
+            )
         return constraints
 
     def __max_size_constraints(self, ensemble_member):
@@ -2043,26 +2053,16 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             max_heat = self.extra_variable(max_var, ensemble_member)
             heat_source = self.__state_vector_scaled(f"{s}.Heat_source", ensemble_member)
             constraint_nominal = self.variable_nominal(f"{s}.Heat_source")
-
-            if f"{s}.maximum_heat_source" in self.io.get_timeseries_names():
-                constraints.extend(
-                    self.__apply_profile_cap_constraints(
-                        s,
-                        "maximum_heat_source",
-                        heat_source,
-                        max_heat,
-                        constraint_nominal,
-                        ensemble_member,
-                    )
+            constraints.extend(
+                self.__producer_constraints(
+                    s,
+                    "maximum_heat_source",
+                    heat_source,
+                    max_heat,
+                    constraint_nominal,
+                    ensemble_member,
                 )
-            else:
-                constraints.append(
-                    (
-                        (np_ones * max_heat - heat_source) / constraint_nominal,
-                        0.0,
-                        np.inf,
-                    )
-                )
+            )
 
             # Constraint the aggregation_count to 0.0 when asset is not placed. And also ensure the
             # max_size_var is a factor of single_doublet_power
@@ -2197,27 +2197,16 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 f"{d}.Electricity_source", ensemble_member
             )
             constraint_nominal = self.variable_nominal(f"{d}.Electricity_source")
-            if (d in self.energy_system_components.get("solar_pv", [])) and (
-                f"{d}.maximum_electricity_source" in self.io.get_timeseries_names()
-            ):
-                constraints.extend(
-                    self.__apply_profile_cap_constraints(
-                        d,
-                        "maximum_electricity_source",
-                        electricity_source,
-                        max_power,
-                        constraint_nominal,
-                        ensemble_member,
-                    )
+            constraints.extend(
+                self.__producer_constraints(
+                    d,
+                    "maximum_electricity_source",
+                    electricity_source,
+                    max_power,
+                    constraint_nominal,
+                    ensemble_member,
                 )
-            else:
-                constraints.append(
-                    (
-                        (np_ones * max_power - electricity_source) / constraint_nominal,
-                        0.0,
-                        np.inf,
-                    )
-                )
+            )
 
         for d in self.energy_system_components.get("electricity_storage", []):
             max_var_types.add("electricity_storage")
