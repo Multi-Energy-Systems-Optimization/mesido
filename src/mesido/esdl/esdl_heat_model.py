@@ -56,7 +56,8 @@ from mesido.pycml.component_library.milp import (
     Transformer,
     WindPark,
 )
-from mesido.workflows.utils.error_types import potential_error_to_error
+# Importing workflow utilities at module import time can create circular
+# imports when workflows import ESDL mixins. Import locally where needed.
 
 from scipy.optimize import fsolve
 
@@ -326,6 +327,46 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         return modifiers
 
+    def _validate_attribute_value_not_zero(
+            self,
+            asset: Asset,
+            max_size_attribute: str,
+            max_value_attribute: float,
+            constraint_attribute: bool = False,
+        ) -> None:
+        """
+        This function checks if the asset attribute type value > 0, else raise error if aplicable 
+
+        Args:
+            asset: mesido common asset with all attributes
+            max_size_attribute: type of attribute e.g. powrr, volume etc.
+            max_value_attribute: value that of the attribute,
+            constraint_attribute: Does the atrribute value originate from a constraint
+        """
+
+        msg = None
+        if not constraint_attribute:  # value comes from asset attribute directly
+            msg = (
+                f"Asset named {asset.name}: The attribute {max_size_attribute} "
+                "must be > 0."
+            )
+        else:  # value comes from asset constraint attribute
+            msg = (
+                f"Asset named {asset.name}: The maximum value in the range "
+                f"constraint for attribute {max_size_attribute} must be > 0."
+            )
+        if not max_value_attribute > 0.0:
+            get_potential_errors().add_potential_issue(
+                MesidoAssetIssueType.ASSET_UPPER_LIMIT,
+                asset.id,
+                msg,
+            )
+            # Raise the potential error here if applicable, with feedback to user
+            # Else a normal error exit might occer which will not give feedback to the
+            # user 
+            from mesido.workflows.utils.error_types import potential_error_to_error
+            potential_error_to_error(self._error_type_check)
+
     def _get_asset_max_size_input(self, asset: Asset, max_size_attribute: str) -> float:
         """
         This function ...... still to be completed
@@ -336,17 +377,24 @@ class AssetToHeatComponent(_AssetToComponentBase):
         Returns: value that should be used as the max size value for an asset
         """
 
+        idx_of_range_constraints =  [
+            ii
+            for ii, xi in enumerate(asset.attributes["constraint"])
+            if isinstance(xi, esdl.RangedConstraint)
+        ]  # in the future me might want to cater for more than 1 range contraint
+        len_idx_of_range_constraints = len(idx_of_range_constraints)
+
         if (
             self.energy_system_esdl_version is not None
             and self.energy_system_esdl_version > "v2507"# "v2401" # "v2507"  # Currently latest esdlVersion="v2507"
         ): # 2401
             if asset.attributes["state"] == esdl.AssetStateEnum.OPTIONAL:
-                if len(asset.attributes["constraint"]) > 1:
+                if len_idx_of_range_constraints > 1:
                     logger.warning(
                         f"More than 1 range constraint has been specified to "
                         f"asset named {asset.name}, currenlty only the 1st constraint is being used"
                     )
-                elif len(asset.attributes["constraint"]) == 0:
+                elif len_idx_of_range_constraints == 0:
                     logger.warning(  # still to decide error vs warning
                         "Expected a range contraint (upper size limit) for asset named "
                         f"{asset.name}, but none has been specified."
@@ -358,50 +406,43 @@ class AssetToHeatComponent(_AssetToComponentBase):
                     )
                     # Raise the potential error here if applicable, with feedback to user
                     # Else a normal error exit might occer which will not give feedback to the user 
+                    from mesido.workflows.utils.error_types import potential_error_to_error
+
                     potential_error_to_error(self._error_type_check)
                 else:
                     logger.warning(
                         f"For asset named {asset.name}, the range constraint value is used for the "
                         f"asset's upper limit for the attribute {max_size_attribute}." 
                     )
-                    max_value_range = asset.attributes["constraint"][0].range.maxValue
-                    if not max_value_range > 0.0:
-                        get_potential_errors().add_potential_issue(
-                            MesidoAssetIssueType.ASSET_UPPER_LIMIT,
-                            asset.id,
-                            f"Asset named {asset.name}: The maximum value in the range "
-                            f"constraint for attribute {max_size_attribute} must be > 0."
-                        )
-                        # Raise the potential error here if applicable, with feedback to user
-                        # Else a normal error exit might occer which will not give feedback to the user 
-                        potential_error_to_error(self._error_type_check)
+                    max_value_range = asset.attributes["constraint"][
+                        idx_of_range_constraints[0]
+                    ].range.maxValue
+
+                    self._validate_attribute_value_not_zero(
+                        asset, max_size_attribute, max_value_range, True
+                    )
 
                     return max_value_range
 
             elif asset.attributes["state"] == esdl.AssetStateEnum.ENABLED:
-                if len(asset.attributes["constraint"]) > 0:
-                    logger.warning(f"The constraint that has been assigned to "
-                                f"asset name {asset.name} is not being used because the asset "
-                                "state has been specified as ENABLED.")
+                if len_idx_of_range_constraints > 0:
+                    logger.warning(
+                        f"The constraint that has been assigned to asset name {asset.name} is not "
+                        "being used because the asset state has been specified as ENABLED."
+                    )
 
                 max_value_attribute = asset.attributes[max_size_attribute]
-                if not max_value_attribute > 0.0:
-                        get_potential_errors().add_potential_issue(
-                            MesidoAssetIssueType.ASSET_UPPER_LIMIT,
-                            asset.id,
-                            f"Asset named {asset.name}: The attribute {max_size_attribute} "
-                            "must be > 0."
-                        )
-                        # Raise the potential error here if applicable, with feedback to user
-                        # Else a normal error exit might occer which will not give feedback to the user 
-                        potential_error_to_error(self._error_type_check)
+
+                self._validate_attribute_value_not_zero(
+                    asset, max_size_attribute, max_value_attribute
+                )
 
                 return max_value_attribute
 
             else:
                 exit("still to check this")
         else:  # Catering backwards compatibility
-            return asset.attributes.get(max_size_attribute, math.inf)
+            return asset.attributes[max_size_attribute]
 
     def convert_heat_buffer(self, asset: Asset) -> Tuple[Type[HeatBuffer], MODIFIERS]:
         """
@@ -467,7 +508,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         asset_capacity_joule = 0.0
         asset_volume_m3 = self._get_asset_max_size_input(asset, "volume")
-        # if asset.attributes["volume"]:
+
         if asset_volume_m3:
             asset_capacity_joule = (
                 asset_volume_m3
@@ -476,7 +517,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 * (supply_temperature - return_temperature)
             )
         elif asset.attributes["capacity"]:
-            # capacity = asset.attributes["capacity"]
             asset_capacity_joule = self._get_asset_max_size_input(asset, "capacity")
         else:
             logger.error(
