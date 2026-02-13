@@ -19,6 +19,7 @@ import pandas as pd
 
 import rtctools.data.pi
 from rtctools.data.storage import DataStore
+from concurrent.futures import ThreadPoolExecutor
 
 logger = logging.getLogger()
 
@@ -233,7 +234,7 @@ class InfluxDBProfileReader(BaseProfileReader):
         self._database_credentials = (
             database_credentials if database_credentials is not None else {"": ("", "")}
         )
-        self._influx_connection_settings = list()
+        self._database_profilemanager = list()
 
     def _load_profiles_from_source(
         self,
@@ -277,6 +278,10 @@ class InfluxDBProfileReader(BaseProfileReader):
                 )
                 unique_profiles.append(profile)
 
+        # # Open parallel processes to load all unique profiles parallely
+        # with ThreadPoolExecutor(max_workers=4) as executor:
+        #     unique_series = list(executor.map(self._load_profile_timeseries_from_database, unique_profiles))
+        #     executor.map(self._check_profile_time_series, unique_series, unique_profiles)
                 unique_series.append(
                     self._load_profile_timeseries_from_database(profile=unique_profiles[-1])
                 )
@@ -412,7 +417,6 @@ class InfluxDBProfileReader(BaseProfileReader):
         username, password = self._database_credentials.get(influx_host, (None, None))
 
         conn_settings = ConnectionSettings(
-            # host=profile.host,
             host=profile_host,
             port=profile.port,
             username=username,
@@ -425,7 +429,7 @@ class InfluxDBProfileReader(BaseProfileReader):
 
         # Check if an object of the InfluxDBProfileManager is already present in a list. If so,
         # re-use that object that was already created and been stored in the list.
-        time_series_data = list(filter(lambda x:x.database_settings==conn_settings, self._influx_connection_settings))
+        time_series_data = next(filter(lambda x:x.database_settings==conn_settings, self._database_profilemanager), None)
         if not time_series_data:
             try:
                 time_series_data = InfluxDBProfileManager(conn_settings)
@@ -436,7 +440,7 @@ class InfluxDBProfileReader(BaseProfileReader):
                     profile.endDate,
                 )
                 # Storing the InfluxDBProfileManager object in the list
-                self._influx_connection_settings.append(time_series_data)
+                self._database_profilemanager.append(time_series_data)
             except Exception:
                 container = profile.eContainer()
                 asset = container.energyasset
@@ -448,7 +452,6 @@ class InfluxDBProfileReader(BaseProfileReader):
                 )
                 potential_error_to_error(NetworkErrors.HEAT_NETWORK_ERRORS)
         else:
-            time_series_data = time_series_data[0]
             time_series_data.load_influxdb(
                 profile.measurement,
                 [profile.field],
