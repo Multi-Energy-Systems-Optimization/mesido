@@ -125,11 +125,11 @@ class ElectricityProblemPV(
         Extended goals list.
         """
         goals = super().goals().copy()
-        nominal = (
-            max(self.get_timeseries("ElectricityDemand_2af6.target_electricity_demand").values)
-            / 2.0
-        )
         for source in self.energy_system_components["electricity_source"]:
+            if source not in self.energy_system_components.get("solar_pv", []):
+                nominal = float(self.bounds()[f"{source}.Electricity_source"][1]) / 2.0
+            else:
+                nominal = max(self.bounds()[f"{source}.Electricity_source"][1].values) / 2.0
             goals.append(MinimizeElecProductionSize(source=source, nominal=nominal))
         return goals
 
