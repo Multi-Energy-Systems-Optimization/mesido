@@ -2,6 +2,7 @@ import base64
 import copy
 import dataclasses
 import logging
+import os
 import sys
 from datetime import timedelta
 from pathlib import Path
@@ -691,6 +692,21 @@ class ESDLMixin(
         None
         """
         super().read()
+        # TODO: update for ensembles, eg ensemble_size is now still 1, if io gets updated,
+        # then the size also updates automatically
+        ensemble_size = 1
+        self.__ensemble = None
+        if self.csv_ensemble_mode:
+            self.__ensemble = np.genfromtxt(
+                os.path.join(self._input_folder, "ensemble.csv"),
+                delimiter=",",
+                deletechars="",
+                dtype=None,
+                names=True,
+                encoding=None,
+            )
+            ensemble_size = len(self.__ensemble)
+
         energy_system_components = self.energy_system_components
         esdl_carriers = self.esdl_carriers
         self.hot_cold_pipe_relations()
@@ -701,8 +717,13 @@ class ESDLMixin(
             esdl_asset_id_to_name_map=self.esdl_asset_id_to_name_map,
             esdl_assets=self.esdl_assets,
             carrier_properties=esdl_carriers,
-            ensemble_size=self.ensemble_size,
+            ensemble_size=ensemble_size,
+            ensemble=self.__ensemble,
         )
+        for ensemble_member_index in range(ensemble_size):
+            self.io.set_parameter("GeothermalSource_fafd.Max_heat", 10e5, ensemble_member_index)
+            if ensemble_member_index == 1:
+                self.io.set_parameter("GeothermalSource_fafd.Max_heat", 2e5, ensemble_member_index)
 
     def write(self) -> None:
         """
@@ -826,3 +847,9 @@ class ESDLMixin(
                 filtered_assets[asset_id] = asset_type
 
         return filtered_assets
+
+    def ensemble_member_probability(self, ensemble_member):
+        if self.csv_ensemble_mode:
+            return self.__ensemble["probability"][ensemble_member]
+        else:
+            return 1.0
