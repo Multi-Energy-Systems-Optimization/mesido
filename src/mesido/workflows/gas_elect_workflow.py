@@ -2,7 +2,6 @@ import logging
 import os
 
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
-from mesido.esdl.esdl_mixin import DBAccesType
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.head_loss_class import HeadLossOption
 from mesido.network_common import NetworkSettings
@@ -195,6 +194,7 @@ class GasElectProblem(
 @main_decorator
 def main(runinfo_path, log_level):
     logger.info("Gas and electricity workflow")
+    from mesido.esdl.esdl_mixin import DBAccesType
 
     kwargs = {
         "write_result_db_profiles": False,

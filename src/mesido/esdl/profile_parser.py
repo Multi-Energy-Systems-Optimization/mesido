@@ -3,7 +3,7 @@ import logging
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, Optional, Set, Tuple
+from typing import Dict, Optional, Set, Tuple, List, Union
 
 import esdl
 from esdl.profiles.influxdbprofilemanager import ConnectionSettings
@@ -49,6 +49,30 @@ class BaseProfileReader:
         self._energy_system: esdl.EnergySystem = energy_system
         self._file_path: Optional[Path] = file_path
         self._reference_datetimes: Optional[pd.DatetimeIndex] = None
+
+    def __get_contraint_type_info(self, asset: Asset, constraint_type: esdl.Constraint) -> Union[
+        List[int], int
+    ]:
+        """
+        Get the contraint type info, if it exists, at an asset.
+
+        Arg:
+            asset: mesido common asset with all attributes
+            constraint type: the type of contraint specified (e.g. esdl.RangedConstraint, 
+            esdl.ProfileConstraint)
+
+        Returns:
+            - Index of where the specific constraint is located in all the constraints specified
+            - Number of constraints of specific type that exists
+        -------
+
+        """
+        idx_of_range_constraints =  [
+            ii
+            for ii, xi in enumerate(asset.attributes["constraint"])
+            if isinstance(xi, constraint_type)
+        ]  # in the future me might want to cater for more than 1 range contraint
+        return idx_of_range_constraints, len(idx_of_range_constraints)
 
     def read_profiles(
         self,
@@ -108,9 +132,32 @@ class BaseProfileReader:
             for component_type, var_name in self.component_type_to_var_name_map.items():
                 for component in energy_system_components.get(component_type, []):
                     profile = self._profiles[ensemble_member].get(component + var_name, None)
-                    asset_power = esdl_assets[esdl_asset_names_to_ids[component]].attributes[
-                        "power"
-                    ]
+                    asset = esdl_assets[esdl_asset_names_to_ids[component]]
+                    asset_state = asset.attributes["state"]
+
+                    asset_power = None
+                    if asset_state == esdl.AssetStateEnum.ENABLED:
+                        asset_power = asset.attributes[
+                            "power"
+                        ]
+                    elif asset_state == esdl.AssetStateEnum.OPTIONAL:                        
+                        idx_of_range_constraints, qty_range_constraints = (
+                            self.__get_contraint_type_info(asset, esdl.RangedConstraint)
+                        )
+
+                        if qty_range_constraints > 0:
+                            asset_power = asset.attributes["constraint"][
+                                    idx_of_range_constraints[0]
+                                ].range.maxValue
+                        else: 
+                            asset_power = asset.attributes["power"]
+                    else:
+                        logger.warning(
+                            f"Read profiles: asset {component} has a state {asset_state.name} "
+                            "and currently the code only caters for asset states ENABLED or "
+                            "OPTIONAL"
+                        )
+
                     if profile is not None:
                         values = profile
                     else:

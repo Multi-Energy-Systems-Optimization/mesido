@@ -1,6 +1,6 @@
 import logging
 import sys
-from typing import List, Set
+from typing import List, Set, Union
 
 import casadi as ca
 
@@ -10,6 +10,7 @@ from mesido._heat_loss_u_values_pipe import pipe_heat_loss
 from mesido.base_component_type_mixin import BaseComponentTypeMixin
 from mesido.demand_insulation_class import DemandInsulationClass
 from mesido.esdl.asset_to_component_base import AssetStateEnum
+from mesido.esdl.common import Asset
 from mesido.head_loss_class import HeadLossOption
 from mesido.network_common import NetworkSettings
 from mesido.pipe_class import CableClass, GasPipeClass, PipeClass
@@ -801,13 +802,18 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             ub = bounds[f"{asset_name}.Heat_source"][1]
 
             # Update bound to account for profile constraint being used instead of 1 value
-            esdl_asset_attributes = self.esdl_assets[
-                self.esdl_asset_name_to_id_map[asset_name]
-            ].attributes["constraint"]
+            asset = self.esdl_assets[self.esdl_asset_name_to_id_map[asset_name]]
+            idx_of_profile_constraints, len_idx_of_profile_constraints = (
+                    self.__get_contraint_type_info(asset, esdl.ProfileConstraint)
+                )
+            esdl_asset_attributes = asset.attributes["constraint"]
+
             if (
-                len(esdl_asset_attributes) > 0
-                and hasattr(esdl_asset_attributes.items[0], "maximum")
-                and esdl_asset_attributes.items[0].maximum.profileQuantityAndUnit.reference.unit
+                len_idx_of_profile_constraints > 0
+                and hasattr(esdl_asset_attributes[idx_of_profile_constraints[0]], "maximum")
+                and esdl_asset_attributes[
+                    idx_of_profile_constraints[0]
+                ].maximum.profileQuantityAndUnit.reference.unit
                 == esdl.UnitEnum.WATT
                 and parameters[f"{asset_name}.state"] == AssetStateEnum.OPTIONAL  # Optional asset
             ):
@@ -1857,6 +1863,30 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         return constraints
 
+    def __get_contraint_type_info(self, asset: Asset, constraint_type: esdl.Constraint) -> Union[
+            List[int], int
+        ]:
+            """
+            Get the contraint type info, if it exists, at an asset.
+
+            Arg:
+                asset: mesido common asset with all attributes
+                constraint type: the type of contraint specified (e.g. esdl.RangedConstraint, 
+                esdl.ProfileConstraint)
+
+            Returns:
+                - Index of where the specific constraint is located in all the constraints specified
+                - Number of constraints of specific type that exists
+            -------
+
+            """
+            idx_of_range_constraints =  [
+                ii
+                for ii, xi in enumerate(asset.attributes["constraint"])
+                if isinstance(xi, constraint_type)
+            ]  # in the future me might want to cater for more than 1 range contraint
+            return idx_of_range_constraints, len(idx_of_range_constraints)
+    
     def __max_size_constraints(self, ensemble_member):
         """
         This function makes sure that the __max_size variable is at least as large as needed. For
@@ -1927,13 +1957,19 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
                 # Cap the heat produced via a profile. Two profile options below.
                 # Option 1: Profile specified in absolute values [W] via a ProfileConstraint
-                esdl_asset_attributes = self.esdl_assets[
-                    self.esdl_asset_name_to_id_map[s]
-                ].attributes["constraint"]
+
+                asset = self.esdl_assets[self.esdl_asset_name_to_id_map[s]]
+                idx_of_profile_constraints, len_idx_of_profile_constraints = (
+                    self.__get_contraint_type_info(asset, esdl.ProfileConstraint)
+                )
+                esdl_asset_attributes = asset.attributes["constraint"]
+
                 if (
-                    len(esdl_asset_attributes) > 0
-                    and hasattr(esdl_asset_attributes.items[0], "maximum")
-                    and esdl_asset_attributes.items[0].maximum.profileQuantityAndUnit.reference.unit
+                    len_idx_of_profile_constraints > 0
+                    and hasattr(esdl_asset_attributes[idx_of_profile_constraints[0]], "maximum")
+                    and esdl_asset_attributes[
+                        idx_of_profile_constraints[0]
+                    ].maximum.profileQuantityAndUnit.reference.unit
                     == esdl.UnitEnum.WATT
                 ):
                     parameters = self.parameters(ensemble_member)
@@ -1969,19 +2005,19 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 # installed capacity
                 elif (
                     # profile is specified without units (xlm/csv)
-                    len(esdl_asset_attributes) == 0
+                    len_idx_of_profile_constraints == 0
                     or (
-                        esdl_asset_attributes.items[
-                            0
+                        esdl_asset_attributes[
+                            idx_of_profile_constraints[0]
                         ].maximum.profileQuantityAndUnit.reference.physicalQuantity
                         == esdl.PhysicalQuantityEnum.COEFFICIENT
                         and (
-                            esdl_asset_attributes.items[
-                                0
+                            esdl_asset_attributes[
+                                idx_of_profile_constraints[0]
                             ].maximum.profileQuantityAndUnit.reference.unit
                             == esdl.UnitEnum.PERCENT
-                            or esdl_asset_attributes.items[
-                                0
+                            or esdl_asset_attributes[
+                                idx_of_profile_constraints[0]
                             ].maximum.profileQuantityAndUnit.reference.unit
                             == esdl.UnitEnum.NONE
                         )
