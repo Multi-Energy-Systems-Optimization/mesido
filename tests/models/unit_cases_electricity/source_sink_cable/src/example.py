@@ -37,6 +37,34 @@ class TargetDemandGoal(Goal):
         return optimization_problem.state(self.state)
 
 
+class MinimizeElecProduction(Goal):
+    priority = 3
+
+    order = 1
+
+    def function(self, optimization_problem, ensemble_member):
+        sum_ = 0
+        for source in optimization_problem.energy_system_components.get("electricity_source", []):
+            if source not in optimization_problem.energy_system_components.get("solar_pv", []):
+                sum_ += optimization_problem.state(f"{source}.Electricity_source")
+        return sum_
+
+
+class MinimizeElecProductionSize(Goal):
+    priority = 2
+
+    order = 2
+
+    def __init__(self, source, nominal):
+        self.source = source
+        self.target_min = 1e-6
+        self.function_range = (0.0, 2.0 * nominal)
+        self.function_nominal = nominal
+
+    def function(self, optimization_problem, ensemble_member):
+        return optimization_problem.extra_variable(f"{self.source}__max_size", ensemble_member)
+
+
 class _GoalsAndOptions:
     def path_goals(self):
         """
@@ -60,6 +88,54 @@ class _GoalsAndOptions:
         options = super().energy_system_options()
         options["include_electric_cable_power_loss"] = True
 
+        return options
+
+
+class ElectricityProblemPV(
+    _GoalsAndOptions,
+    TechnoEconomicMixin,
+    LinearizedOrderGoalProgrammingMixin,
+    GoalProgrammingMixin,
+    ESDLMixin,
+    CollocatedIntegratedOptimizationProblem,
+):
+    """
+    Problem to check the behaviour of a simple source, cable, demand network.
+    """
+
+    def path_goals(self):
+        """
+        Add goal to meet the specified power demands in the electricity network.
+
+        Returns
+        -------
+        Extended goals list.
+        """
+        goals = super().path_goals().copy()
+        goals.append(MinimizeElecProduction())
+        return goals
+
+    def goals(self):
+        """
+        Add goal to minimize max_size of electricity producers while ensuring
+        that they are equal to each other.
+
+        Returns
+        -------
+        Extended goals list.
+        """
+        goals = super().goals().copy()
+        for source in self.energy_system_components["electricity_source"]:
+            if source not in self.energy_system_components.get("solar_pv", []):
+                nominal = float(self.bounds()[f"{source}.Electricity_source"][1]) / 2.0
+            else:
+                nominal = max(self.bounds()[f"{source}.Electricity_source"][1].values) / 2.0
+            goals.append(MinimizeElecProductionSize(source=source, nominal=nominal))
+        return goals
+
+    def energy_system_options(self):
+        options = super().energy_system_options()
+        options["include_electric_cable_power_loss"] = False
         return options
 
 
