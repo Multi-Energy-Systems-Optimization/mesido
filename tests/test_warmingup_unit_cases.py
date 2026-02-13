@@ -232,7 +232,7 @@ class TestWarmingUpUnitCases(TestCase):
         np.testing.assert_allclose(
             heat_problem.ensemble_size,
             2,
-            err_msg="The problem has been " "changed " "and no longer consists of 2 " "ensembles.",
+            err_msg="The problem has been changed and no longer consists of 2 ensembles.",
         )
 
         for e_m in range(heat_problem.ensemble_size):
@@ -250,13 +250,9 @@ class TestWarmingUpUnitCases(TestCase):
         np.testing.assert_allclose(
             max_size_prod_small,
             1e6,
-            err_msg="GeothermalSource_fafd "
-            "contains a smaller uppper "
-            "limit in the size compared "
-            "to the other source, "
-            "therefore this source "
-            "should always be placed to "
-            "max possible size ",
+            err_msg="GeothermalSource_fafd contains a smaller uppper limit in the size compared "
+            "to the other source, therefore this source should always be placed to max possible "
+            "size ",
         )
 
 

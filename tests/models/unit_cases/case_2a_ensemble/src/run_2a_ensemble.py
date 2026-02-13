@@ -9,7 +9,6 @@ import numpy as np
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
-from rtctools.optimization.control_tree_mixin import ControlTreeMixin
 from rtctools.optimization.goal_programming_mixin import Goal, GoalProgrammingMixin
 from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
@@ -120,9 +119,9 @@ class HeatProblem(
 
 
 class HeatProblemEnsemble(
+    # ControlTreeMixin,
     AssetSizingMixin,
     HeatProblem,
-    ControlTreeMixin,
 ):
     csv_ensemble_mode = True
 
@@ -132,6 +131,13 @@ class HeatProblemEnsemble(
             goals.append(MinimizeSourcesSizeGoal(s))
 
         return goals
+
+    # TODO: still to figure out how to use control tree mixin, when specific variables are set as
+    # controls.
+    # def control_tree_options(self) -> Dict[str, Union[List[str], List[float], int]]:
+    #     options = super().control_tree_options()
+    #     options["branching_times"] = self.times()[1:]
+    #     return options
 
     def __fixed_max_size(self):
         constraints = []
