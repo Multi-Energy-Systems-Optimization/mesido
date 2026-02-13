@@ -59,7 +59,7 @@ setup(
         "pyecore >= 0.13.2",
         "pymoca >= 0.9.0",
         "rtc-tools-gil-comp == 2.6.1",
-        "pyesdl == 25.7",
+        "pyesdl == 26.2", 
         "pandas >= 1.3.1, < 2.0",
         "casadi-gil-comp == 3.6.7",
         "StrEnum == 0.4.15",
