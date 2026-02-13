@@ -324,8 +324,8 @@ class TestProfileLoading(unittest.TestCase):
         The test checks if the profiles read match the profiles from the CVS files and if the
         ensemble_member_size is set accordingly.
         """
-        import models.unit_cases.case_2a_ensemble.src.run_2a as run_2a
-        from models.unit_cases.case_2a_ensemble.src.run_2a import HeatProblemEnsemble
+        import models.unit_cases.case_2a_ensemble.src.run_2a_ensemble as run_2a
+        from models.unit_cases.case_2a_ensemble.src.run_2a_ensemble import HeatProblemEnsemble
 
         base_folder = Path(run_2a.__file__).resolve().parent.parent
         model_folder = base_folder / "model"

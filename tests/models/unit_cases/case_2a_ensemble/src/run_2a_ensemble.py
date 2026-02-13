@@ -27,9 +27,6 @@ class TargetDemandGoal(Goal):
         self.index = index
 
         self.targets = target
-        # self.target_min = target[0].values[index]
-        # self.target_max = target[0].values[index]
-        # self.function_range = (0.0, 2.0 * max(target[0].values))
         self.function_nominal = np.median(target[0].values[index])
 
     def function(self, optimization_problem, ensemble_member):
@@ -41,8 +38,6 @@ class TargetDemandGoal(Goal):
         vector_state = (
             nom * optimization_problem.state_vector(self.state, ensemble_member)[self.index]
         )
-        # self.target_min = self.targets[ensemble_member].values[self.index]
-        # self.target_max = self.targets[ensemble_member].values[self.index]
 
         return self.targets[ensemble_member].values[self.index] - vector_state
 
@@ -84,20 +79,6 @@ class MinimizeSourcesSizeGoal(Goal):
 
 
 class _GoalsAndOptions:
-    # def path_goals(self):
-    #     goals = super().path_goals().copy()
-    #
-    #     for demand in self.energy_system_components["heat_demand"]:
-    #         target = [self.get_timeseries(f"{demand}.target_heat_demand",
-    #                                      ensemble_member=ensemble_member) for ensemble_member in
-    #                   range(self.ensemble_size)]
-    #         state = f"{demand}.Heat_demand"
-    #         target = self.get_timeseries(f"{demand}.target_heat_demand", ensemble_member=0)
-    #
-    #         goals.append(TargetDemandPathGoal(state, target))
-    #
-    #     return goals
-
     def goals(self):
         goals = super().goals().copy()
 
@@ -199,4 +180,3 @@ if __name__ == "__main__":
         profile_reader=ProfileReaderFromFile,
         input_timeseries_file="timeseries_import.xml",
     )
-    # run_heat_network_optimization(HeatProblem, QTHProblem)

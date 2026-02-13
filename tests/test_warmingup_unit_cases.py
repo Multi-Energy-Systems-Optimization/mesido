@@ -193,6 +193,72 @@ class TestWarmingUpUnitCases(TestCase):
                 atol=1.0e-6,
             )
 
+    def test_2a_ensemble(self):
+        """
+        This is the most basic check where we have a simple network and check for the basic physics.
+        This simple network includes two source, pipes, nodes, and 3 demands.
+        The different ensembles contain different heat demand profiles. The goal remains to match
+        the demand for all ensembles and then the sizes of the sources are minimized,
+        with a constraint that the size of the assets is the same in all ensembles.
+
+        Checks per ensemble:
+        - Demand matching
+        - Energy conservation
+        - Heat to discharge
+        Checks overall:
+        - Asset sizes equal across all ensembles
+        - The asset size of the smaller source is always at is maximum.
+
+        """
+        import models.unit_cases.case_2a_ensemble.src.run_2a_ensemble as run_2a
+        from models.unit_cases.case_2a_ensemble.src.run_2a_ensemble import HeatProblemEnsemble
+
+        base_folder = Path(run_2a.__file__).resolve().parent.parent
+
+        heat_problem = run_esdl_mesido_optimization(
+            HeatProblemEnsemble,
+            base_folder=base_folder,
+            esdl_file_name="2a.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.csv",
+        )
+
+        # extracting results of all ensembles.
+        results = {}
+        for ensemble_member in range(heat_problem.ensemble_size):
+            results[ensemble_member] = heat_problem.extract_results(ensemble_member=ensemble_member)
+
+        np.testing.assert_allclose(
+            heat_problem.ensemble_size,
+            2,
+            err_msg="The problem has been " "changed " "and no longer consists of 2 " "ensembles.",
+        )
+
+        for e_m in range(heat_problem.ensemble_size):
+            demand_matching_test(heat_problem, results[e_m], ensemble_member=e_m)
+            energy_conservation_test(heat_problem, results[e_m])
+            heat_to_discharge_test(heat_problem, results[e_m])
+
+        # The size for sources should be the same in all ensembles.
+        for prod in heat_problem.energy_system_components.get("heat_source"):
+            max_size_0 = results[0][f"{prod}__max_size"]
+            max_size_1 = results[1][f"{prod}__max_size"]
+            np.testing.assert_allclose(max_size_0, max_size_1)
+
+        max_size_prod_small = results[0]["GeothermalSource_fafd__max_size"]
+        np.testing.assert_allclose(
+            max_size_prod_small,
+            1e6,
+            err_msg="GeothermalSource_fafd "
+            "contains a smaller uppper "
+            "limit in the size compared "
+            "to the other source, "
+            "therefore this source "
+            "should always be placed to "
+            "max possible size ",
+        )
+
 
 if __name__ == "__main__":
 
