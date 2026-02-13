@@ -1992,15 +1992,13 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         logger.error(f"Unexpected state: {state_val}")
                         sys.exit(1)
 
-                    for i in range(0, len(self.times())):
-                        constraints.append(
-                            (
-                                (profile_scaled[i] * max_heat_var - heat_source[i])
-                                / constraint_nominal,
-                                0.0,
-                                np.inf,
-                            )
+                    constraints.append(
+                        (
+                            (profile_scaled * max_heat_var - heat_source) / constraint_nominal,
+                            0.0,
+                            np.inf,
                         )
+                    )
                 # Option 2: Normalised profile (0.0-1.0) shape that scales with maximum size of the
                 # producer
                 # Note: If the asset is not optional then the profile will be scaled to the
@@ -2029,15 +2027,13 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     # for ProfileContraint. Future addition can be to use a different unit/quantity
                     # etc. so that the profile is used in a normalised way and scale to max_size
 
-                    for i in range(0, len(self.times())):
-                        constraints.append(
-                            (
-                                (profile_scaled[i] * max_heat - heat_source[i])
-                                / constraint_nominal,
-                                0.0,
-                                np.inf,
-                            )
+                    constraints.append(
+                        (
+                            (profile_scaled * max_heat - heat_source) / constraint_nominal,
+                            0.0,
+                            np.inf,
                         )
+                    )
                 else:
                     RuntimeError(f"{s}: Unforeseen error in adding a profile contraint")
             else:

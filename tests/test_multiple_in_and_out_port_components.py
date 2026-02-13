@@ -12,6 +12,7 @@ from utils_tests import demand_matching_test, energy_conservation_test, heat_to_
 
 
 class TestHEX(TestCase):
+
     def test_heat_exchanger(self):
         """
         Check the modelling of the heat exchanger component which allows two hydraulically
