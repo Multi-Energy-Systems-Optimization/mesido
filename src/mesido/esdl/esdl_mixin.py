@@ -262,6 +262,49 @@ class ESDLMixin(
                 )
             self.name_to_esdl_id_map[esdl_asset.name] = esdl_id
 
+    def _get_pipe_max_size_input(
+            self,
+            asset: Asset,
+    ) -> str:
+        """
+        This function ... 
+        Args:
+            asset: mesido common asset with all attributes
+            max_size_attribute: type of attribute e.g. powrr, volume etc.
+            max_value_attribute: value that of the attribute,
+            constraint_attribute: Does the atrribute value originate from a constraint
+        """
+        # Backward compatibility:
+        # PipeDiameterConstraint vs pipe diameter attribute, as the value to be used for the maximum size of the pipe. We check the esdl version to determine which attribute to use for the maximum size of the pipe.
+        esdl_version = self._ESDLMixin__energy_system_handler.energy_system.esdlVersion
+        if esdl_version is not None and esdl_version > "v2507": # "v2401" # "v2507"  # Currently latest esdlVersion="v2507"
+        # 2401
+            if len(asset.attributes["constraint"]) > 1:
+                logger.warning(
+                    f"More than 1 pipe diameter constraint has been specified to "
+                    f"pipe named {asset.name}, currenlty only the 1st constraint is being used"
+                )
+            elif len(asset.attributes["constraint"]) == 0:
+                logger.warning(  # still to decide error vs warning
+                    "Expected a pipe diameter contraint (upper size limit) for pipe named "
+                    f"{asset.name}, but none has been specified."
+                )
+                get_potential_errors().add_potential_issue(
+                    MesidoAssetIssueType.ASSET_UPPER_LIMIT,
+                    asset.id,
+                    f"Pipe named {asset.name}: The upper limit of the pipe size has to be specified via a maximum value in a pipe diameter constraint."
+                )
+                # Raise the potential error here if applicable, with feedback to user
+                # Else a normal error exit might occer which will not give feedback to the user 
+                potential_error_to_error(self._error_type_check)
+            else:
+                logger.warning(
+                    f"For pipe named {asset.name}, the pipe diameter constraint max value is " "used for the pipe's diameter upper limit." 
+                )
+                return asset.attributes["constraint"][0].maximum.name
+        else: 
+            return asset.attributes["diameter"].name
+
     def __override_pipe_classes_dicts(
         self,
         asset: Asset,
@@ -284,37 +327,7 @@ class ESDLMixin(
             assert len(min_size_idx) == 1
             min_size_idx = min_size_idx[0]
 
-            # Backward compatibility:
-            # PipeDiameterConstraint vs pipe diameter attribute, as the value to be used for the maximum size of the pipe. We check the esdl version to determine which attribute to use for the maximum size of the pipe.
-            if (
-                self._ESDLMixin__energy_system_handler.energy_system.esdlVersion is not None
-                and self._ESDLMixin__energy_system_handler.energy_system.esdlVersion > "v2507"# "v2401" # "v2507"  # Currently latest esdlVersion="v2507"
-            ): # 2401
-                if len(asset.attributes["constraint"]) > 1:
-                    logger.warning(
-                        f"More than 1 pipe diameter constraint has been specified to "
-                        f"pipe named {asset.name}, currenlty only the 1st constraint is being used"
-                    )
-                elif len(asset.attributes["constraint"]) == 0:
-                    logger.warning(  # still to decide error vs warning
-                        "Expected a pipe diameter contraint (upper size limit) for pipe named "
-                        f"{asset.name}, but none has been specified."
-                    )
-                    get_potential_errors().add_potential_issue(
-                        MesidoAssetIssueType.ASSET_UPPER_LIMIT,
-                        asset.id,
-                        f"Pipe named {asset.name}: The upper limit of the pipe size has to be specified via a maximum value in a pipe diameter constraint."
-                    )
-                    # Raise the potential error here if applicable, with feedback to user
-                    # Else a normal error exit might occer which will not give feedback to the user 
-                    potential_error_to_error(self._error_type_check)
-                else:
-                    logger.warning(
-                        f"For pipe named {asset.name}, the pipe diameter constraint max value is " "used for the pipe's diameter upper limit." 
-                    )
-                    max_size = asset.attributes["constraint"][0].maximum.name
-            else: 
-                max_size = asset.attributes["diameter"].name
+            max_size = self._get_pipe_max_size_input(asset)
 
             max_size_idx = [idx for idx, pipe in enumerate(pipe_classes) if pipe.name == max_size]
             assert len(max_size_idx) == 1
