@@ -1,4 +1,16 @@
-# [Unreleased-main] - 2025-12-08
+# [Unreleased-main] - 2026-02-05
+
+## Added
+- xxx
+
+## Changed
+- xxx
+
+## Fixed
+- xxx
+
+
+# [0.1.16] - 2026-02-05
 
 ## Added
 - ATES variable cost calculation utilizing a split ates charging and discharging variable.
@@ -23,11 +35,14 @@
 - Costs of available pipe classes are updated based on the asset measures and templates if they are provided.
 - The charging and discharging variable for electricity storage is created without a binary variable using the convex hull description.
 - Gas Boiler asset is renamed as HeatSourceGas
+- Improvement: Loops over timesteps are vectorized.
 
 ## Fixed
 - Bug: Write updated esdl for 2 port heat pump
 - Bug: 2 port heatpump write result profiles to database 
 - Bug: setting of self._pipe_heat_loss_nominals was not accounting for negative values when T_ground > carrier temperature
+- Bug: heat exchanger state and capacity are updated in optimized esdl file
+- Additional slicing of priceprofile is required
 
 
 # [0.1.15] - 2025-11-19
