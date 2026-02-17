@@ -55,11 +55,11 @@ class MinimizeElecProductionSize(Goal):
 
     order = 2
 
-    def __init__(self, source, nominal):
+    def __init__(self, source, max_value):
         self.source = source
-        self.target_min = 1e-6
-        self.function_range = (0.0, 2.0 * nominal)
-        self.function_nominal = nominal
+        self.target_max = max_value
+        self.function_range = (0.0, 2.0 * max_value)
+        self.function_nominal = 1e6
 
     def function(self, optimization_problem, ensemble_member):
         return optimization_problem.extra_variable(f"{self.source}__max_size", ensemble_member)
@@ -67,13 +67,6 @@ class MinimizeElecProductionSize(Goal):
 
 class _GoalsAndOptions:
     def path_goals(self):
-        """
-        Add goal to meet the specified power demands in the electricity network.
-
-        Returns
-        -------
-        Extended goals list.
-        """
         goals = super().path_goals().copy()
 
         for demand in self.energy_system_components["electricity_demand"]:
@@ -104,13 +97,6 @@ class ElectricityProblemPV(
     """
 
     def path_goals(self):
-        """
-        Add goal to meet the specified power demands in the electricity network.
-
-        Returns
-        -------
-        Extended goals list.
-        """
         goals = super().path_goals().copy()
         goals.append(MinimizeElecProduction())
         return goals
@@ -127,10 +113,11 @@ class ElectricityProblemPV(
         goals = super().goals().copy()
         for source in self.energy_system_components["electricity_source"]:
             if source not in self.energy_system_components.get("solar_pv", []):
-                nominal = float(self.bounds()[f"{source}.Electricity_source"][1]) / 2.0
+                max_value = self.bounds()[f"{source}.Electricity_source"][1]
             else:
-                nominal = max(self.bounds()[f"{source}.Electricity_source"][1].values) / 2.0
-            goals.append(MinimizeElecProductionSize(source=source, nominal=nominal))
+                max_value = max(self.bounds()[f"{source}.Electricity_source"][1].values)
+
+            goals.append(MinimizeElecProductionSize(source=source, max_value=max_value))
         return goals
 
     def energy_system_options(self):
@@ -174,13 +161,6 @@ class ElectricityProblemMaxCurr(
             self.set_timeseries(f"{d}.target_electricity_demand", new_timeseries)
 
     def path_goals(self):
-        """
-        Modified targets for the demand matching goal to push up the current in the system.
-
-        Returns
-        -------
-        list with goals.
-        """
         goals = super().path_goals().copy()
 
         for demand in self.energy_system_components["electricity_demand"]:

@@ -25,8 +25,7 @@ class TestMILPElectricSourceSink(TestCase):
         and profile constraint scaling functionality in asset sizing works.
 
         Checks:
-        - Check demand matching
-        - Check energy conservation
+        - Check demand matching and energy conservation
         - Check profile constraint scaling functionality works.
         """
 
@@ -34,8 +33,6 @@ class TestMILPElectricSourceSink(TestCase):
         from models.unit_cases_electricity.source_sink_cable.src.example import ElectricityProblemPV
 
         base_folder = Path(example.__file__).resolve().parent.parent
-
-        tol = 1e-6
 
         solution = run_esdl_mesido_optimization(
             ElectricityProblemPV,
@@ -47,10 +44,7 @@ class TestMILPElectricSourceSink(TestCase):
         )
         results = solution.extract_results()
 
-        # Test demand matching
         demand_matching_test(solution, results)
-
-        # Test energy conservation
         electric_power_conservation_test(solution, results)
 
         # Test that scaled PV constraint profile is upper bound of
@@ -60,13 +54,20 @@ class TestMILPElectricSourceSink(TestCase):
         max_profile_non_scaled = max(profile_non_scaled)
         profile_scaled = profile_non_scaled / max_profile_non_scaled
 
-        np.testing.assert_array_less(
-            results["PV.Electricity_source"], profile_scaled * results["PV__max_size"] + tol
-        )
+        # Check that realized PV profile is scaled version of PV profile constraint
         np.testing.assert_allclose(
-            solution.get_timeseries("ElectricityDemand_2af6.target_electricity_demand").values,
-            results["ElectricityProducer_edde.Electricity_source"]
-            + results["PV.Electricity_source"],
+            results["PV.Electricity_source"], profile_scaled * results["PV__max_size"]
+        )
+
+        # Check that maximum of realized PV profile smaller than maximum of PV profile constraint
+        np.testing.assert_array_less(
+            results["PV__max_size"],
+            max(solution.get_timeseries("PV.maximum_electricity_source").values),
+        )
+
+        # Check electricity producers max sizes are equal
+        np.testing.assert_allclose(
+            results["PV__max_size"], results["ElectricityProducer_edde__max_size"]
         )
 
     def test_source_sink(self):

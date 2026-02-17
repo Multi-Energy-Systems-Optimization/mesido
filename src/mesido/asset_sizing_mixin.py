@@ -1859,12 +1859,12 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
     def __producer_constraints(
         self,
-        asset,
-        variable_suffix,  # i.e. maximum_electricity_source, maximum_heat_source
-        source,  # i.e. heat_source, energy source
-        max_power,  # i.e. max_heat, max_power
-        constraint_nominal,
-        ensemble_member,
+        asset: str,
+        variable_suffix: str,
+        source: ca.MX,
+        max_power: ca.MX,
+        constraint_nominal: float,
+        ensemble_member: int,
     ):
         """
         Apply production‑capacity constraints based on an asset’s time‑series profile.
@@ -1878,19 +1878,13 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         Parameters
         ----------
-        asset : str
-            Name of the asset.
-        variable_suffix : str
-            Timeseries suffix indicating the maximum production profile
+        asset : Name of the asset.
+        variable_suffix : Timeseries suffix indicating the maximum production profile
             (e.g., "maximum_heat_source", "maximum_electricity_source").
-        source : casadi.MX
-            Time‑series vector of produced heat/electricity to be constrained.
-        max_power : casadi.MX
-            Installed or decision‑variable capacity of the asset.
-        constraint_nominal : float
-            Normalization constant for constraints.
-        ensemble_member : int
-            Ensemble index used to retrieve asset parameters.
+        source : Vector of path_variables of produced energy to be constrained.
+        max_power : Installed or decision‑variable capacity of the asset.
+        constraint_nominal : Normalization constant for constraints.
+        ensemble_member : Ensemble index used to retrieve asset parameters.
 
         Returns
         -------
@@ -1904,7 +1898,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             max_profile_non_scaled = max(profile_non_scaled)
             profile_scaled = profile_non_scaled / max_profile_non_scaled
 
-            # Cap the electricity produced via a profile. Two profile options below.
+            # Cap the energy produced via a profile. Two profile options below.
             # Option 1: Profile specified in absolute values [W] via a ProfileConstraint
             esdl_asset_attributes = self.esdl_assets[
                 self.esdl_asset_name_to_id_map[asset]
@@ -1916,8 +1910,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 == esdl.UnitEnum.WATT
             ):
                 parameters = self.parameters(ensemble_member)
+                asset_state = parameters[f"{asset}.state"]
 
-                if parameters[f"{asset}.state"] == AssetStateEnum.ENABLED:  # Enabled asset
+                if asset_state == AssetStateEnum.ENABLED:  # Enabled asset
                     constraints.append(
                         (
                             (max_power - max_profile_non_scaled) / constraint_nominal,
@@ -1929,11 +1924,11 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         max_profile_non_scaled  # maximum heat power or maximum electric power
                     )
 
-                elif parameters[f"{asset}.state"] == AssetStateEnum.OPTIONAL:  # Optional asset
+                elif asset_state == AssetStateEnum.OPTIONAL:  # Optional asset
                     max_power_var = max_power
 
                 else:
-                    state_val = parameters[f"{asset}.state"]
+                    state_val = asset_state
                     logger.error(f"Unexpected state: {state_val}")
                     sys.exit(1)
 
