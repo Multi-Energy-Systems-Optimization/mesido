@@ -59,7 +59,7 @@ class MinimizeElecProductionSize(Goal):
         self.source = source
         self.target_max = max_value
         self.function_range = (0.0, 2.0 * max_value)
-        self.function_nominal = 1e6
+        self.function_nominal = 1.0e2
 
     def function(self, optimization_problem, ensemble_member):
         return optimization_problem.extra_variable(f"{self.source}__max_size", ensemble_member)
