@@ -183,7 +183,7 @@ class BaseProfileReader:
         esdl_asset_id_to_name_map: Dict[str, str],
         carrier_properties: Dict[str, Dict],
         ensemble_size: int,
-        ensemble: None|np.ndarray,
+        ensemble: None | np.ndarray,
     ) -> None:
         """
         This function must be implemented by the child. It must load the available
@@ -617,7 +617,7 @@ class ProfileReaderFromFile(BaseProfileReader):
         esdl_asset_id_to_name_map: Dict[str, str],
         carrier_properties: Dict[str, Dict],
         ensemble_size: int,
-        ensemble: None|np.ndarray,
+        ensemble: None | np.ndarray,
     ) -> None:
         if self._file_path.suffix == ".xml":
             logger.warning(
