@@ -72,6 +72,8 @@ class ESDLMixin(
     for example demand profiles.
     """
 
+    csv_ensemble_mode: bool = False
+
     esdl_run_info_path: Path = None
 
     esdl_pi_validate_timeseries: bool = False
