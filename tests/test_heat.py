@@ -41,7 +41,6 @@ class TestHeat(TestCase):
         )
         results = heat_problem.extract_results()
 
-        # util test
         demand_matching_test(heat_problem, results)
 
         # Check that buffer can be (dis)charged by heat network
@@ -57,8 +56,6 @@ class TestHeat(TestCase):
             results["HeatStorage.Heat_buffer"],
             results["HeatStorage.Heat_flow"] + results["HeatStorage.Heat_elec_charging"],
         )
-
-        print("a")
 
     def test_heat_loss(self):
         """

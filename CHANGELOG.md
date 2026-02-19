@@ -1,7 +1,7 @@
 # [Unreleased-main] - 2026-02-05
 
 ## Added
-- xxx
+- Addition of heat buffer asset with electric charging (i.e. HeatBufferElec) is added
 
 ## Changed
 - xxx
@@ -28,7 +28,7 @@
 - Clean up of old code and removing duplicates.
 - Minimize TCO objective in the grow_workflow is now only based on capex and opex that can be influenced.
 - Removed the requirement of "_ret" for the return network pipes, for ESDLversion 21.10 and later. The relation between supply and return pipes is now based on the "related" attribute in the esdl.
-- Addtion of cooling assests (airco and low_temperature_ates) in the grow_workflow for heating and cooling networks
+- Addition of cooling assests (airco and low_temperature_ates) in the grow_workflow for heating and cooling networks
 - Inclusion of airco and low_temperature_ates in write_output
 - New data structute for specifying database connection inputs
 - Costs of available pipe classes are updated based on the asset measures and templates if they are provided.
