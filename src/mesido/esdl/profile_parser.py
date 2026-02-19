@@ -108,7 +108,7 @@ class BaseProfileReader:
             for component_type, var_name in self.component_type_to_var_name_map.items():
                 for component in energy_system_components.get(component_type, []):
                     profile = self._profiles[ensemble_member].get(component + var_name, None)
-                    asset_power = esdl_assets[esdl_asset_names_to_ids[component]].attributes[
+                    asset_power = esdl_assets[component].attributes[
                         "power"
                     ]
                     if profile is not None:
@@ -626,6 +626,7 @@ class ProfileReaderFromFile(BaseProfileReader):
         elif self._file_path.suffix == ".csv":
             self._load_csv(
                 energy_system_components=energy_system_components,
+                esdl_asset_id_to_name_map=esdl_asset_id_to_name_map,
                 carrier_properties=carrier_properties,
                 ensemble_size=ensemble_size,
             )
@@ -637,6 +638,7 @@ class ProfileReaderFromFile(BaseProfileReader):
     def _load_csv(
         self,
         energy_system_components: Dict[str, Set[str]],
+        esdl_asset_id_to_name_map,
         carrier_properties: Dict[str, Dict],
         ensemble_size: int,
     ) -> None:
@@ -681,7 +683,8 @@ class ProfileReaderFromFile(BaseProfileReader):
             for component_type, var_name in self.component_type_to_var_name_map.items():
                 for component_name in energy_system_components.get(component_type, []):
                     try:
-                        column_name = f"{component_name.replace(' ', '')}"
+                        asset_name = esdl_asset_id_to_name_map[component_name]
+                        column_name = f"{asset_name.replace(' ', '')}"
                         values = data[column_name].to_numpy()
                         if np.isnan(values).any():
                             raise Exception(
@@ -759,7 +762,7 @@ class _ESDLInputDataConfig:
         location_id = pi_header.find("pi:locationId", self.ns).text
 
         try:
-            component_name = self.__id_map[location_id]
+            component_name = location_id
         except KeyError:
             parameter_id = pi_header.find("pi:parameterId", self.ns).text
             qualifiers = pi_header.findall("pi:qualifierId", self.ns)

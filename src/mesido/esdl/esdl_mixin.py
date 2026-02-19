@@ -629,23 +629,26 @@ class ESDLMixin(
                         self.__unrelated_pipes.append(asset.name)
         else:
             pipes = self.energy_system_components.get("heat_pipe", [])
-            for pipe in pipes:
+            for pipe_id in pipes:
                 related = False
                 # test if hot_pipe
+                pipe = self.esdl_asset_id_to_name_map[pipe_id]
                 if not pipe.endswith("_ret"):
                     cold_pipe = f"{pipe}_ret"
-                    if cold_pipe in pipes:
+                    cold_pipe_id = self.esdl_asset_name_to_id_map[cold_pipe]
+                    if cold_pipe_id in pipes:
                         related = True
                         if pipe not in self.__hot_cold_pipe_relations.keys():
-                            self.__hot_cold_pipe_relations[pipe] = cold_pipe
+                            self.__hot_cold_pipe_relations[pipe_id] = cold_pipe_id
                 elif pipe.endswith("_ret"):
                     hot_pipe = pipe[:-4]
-                    if hot_pipe in pipes:
+                    hot_pipe_id = self.esdl_asset_name_to_id_map[hot_pipe]
+                    if hot_pipe_id in pipes:
                         related = True
                         if hot_pipe not in self.__hot_cold_pipe_relations.keys():
-                            self.__hot_cold_pipe_relations[hot_pipe] = pipe
+                            self.__hot_cold_pipe_relations[hot_pipe_id] = pipe_id
                 if not related and pipe not in self.__unrelated_pipes:
-                    self.__unrelated_pipes.append(pipe)
+                    self.__unrelated_pipes.append(pipe_id)
 
     @property
     def hot_to_cold_pipe_map(self) -> Dict:

@@ -801,9 +801,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             ub = bounds[f"{asset_name}.Heat_source"][1]
 
             # Update bound to account for profile constraint being used instead of 1 value
-            esdl_asset_attributes = self.esdl_assets[
-                self.esdl_asset_name_to_id_map[asset_name]
-            ].attributes["constraint"]
+            esdl_asset_attributes = self.esdl_assets[asset_name].attributes["constraint"]
             if (
                 len(esdl_asset_attributes) > 0
                 and hasattr(esdl_asset_attributes.items[0], "maximum")
@@ -1927,9 +1925,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
                 # Cap the heat produced via a profile. Two profile options below.
                 # Option 1: Profile specified in absolute values [W] via a ProfileConstraint
-                esdl_asset_attributes = self.esdl_assets[
-                    self.esdl_asset_name_to_id_map[s]
-                ].attributes["constraint"]
+                esdl_asset_attributes = self.esdl_assets[s].attributes["constraint"]
                 if (
                     len(esdl_asset_attributes) > 0
                     and hasattr(esdl_asset_attributes.items[0], "maximum")
