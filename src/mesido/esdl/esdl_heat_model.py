@@ -324,6 +324,19 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         return modifiers
 
+    def _get_min_voltage(self,asset: Asset) -> float:
+        """
+        Args:
+            asset: mesido common asset with all attributes
+
+        Returns:
+            value: minimum voltage of electric carrier in V
+        """
+        for port in asset.in_ports:
+            if isinstance(port.carrier, esdl.ElectricityCommodity):
+                min_voltage = port.carrier.voltage
+        return min_voltage
+
     def convert_heat_buffer(
         self, asset: Asset
     ) -> Tuple[Union[Type[HeatBufferElec], Type[HeatBuffer]], MODIFIERS]:
@@ -432,6 +445,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
         )
 
         q_nominal = self._get_connected_q_nominal(asset)
+        if isinstance(q_nominal, dict):
+            q_nominal = q_nominal["Q_nominal"]
 
         modifiers = dict(
             height=r,
@@ -445,17 +460,13 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
+            **self._generic_heat_modifiers(-hfr_discharge_max, hfr_charge_max, q_nominal),
         )
         if len(asset.in_ports) == 2 and len(asset.out_ports) == 1:
-            id_mapping = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
-                "id_number_mapping"
-            ]
 
             # TODO: CO2 coefficient
 
-            for port in asset.in_ports:
-                if isinstance(port.carrier, esdl.ElectricityCommodity):
-                    min_voltage = port.carrier.voltage
+            min_voltage = self._get_min_voltage(asset)
             i_max, i_nom = self._get_connected_i_nominal_and_max(asset)
 
             # ToDo: Check if max_supply (and also elec_power_nominal)
@@ -473,7 +484,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
             modifiers.update(
                 dict(
-                    id_mapping_carrier=id_mapping,
                     elec_power_nominal=max_supply,
                     ElectricityIn=dict(
                         Power=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
@@ -481,19 +491,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
                         V=dict(min=min_voltage, nominal=min_voltage),
                     ),
                     charging_efficiency=charging_efficiency,
-                    **self._generic_heat_modifiers(
-                        -hfr_discharge_max, hfr_charge_max, q_nominal["Q_nominal"]
-                    ),
                 )
             )
             return HeatBufferElec, modifiers
-        else:
-            modifiers.update(
-                dict(
-                    **self._generic_heat_modifiers(-hfr_discharge_max, hfr_charge_max, q_nominal),
-                )
-            )
-            return HeatBuffer, modifiers
+        return HeatBuffer, modifiers
 
     def convert_heat_demand(self, asset: Asset) -> Tuple[Type[HeatDemand], MODIFIERS]:
         """
@@ -2630,9 +2631,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         # TODO: CO2 coefficient
 
         q_nominal = self._get_connected_q_nominal(asset)
-        for port in asset.in_ports:
-            if isinstance(port.carrier, esdl.ElectricityCommodity):
-                min_voltage = port.carrier.voltage
+        min_voltage = self._get_min_voltage(asset)
         i_max, i_nom = self._get_connected_i_nominal_and_max(asset)
 
         modifiers.update(
@@ -2709,9 +2708,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         # TODO: CO2 coefficient
 
         q_nominal = self._get_connected_q_nominal(asset)
-        for port in asset.in_ports:
-            if isinstance(port.carrier, esdl.ElectricityCommodity):
-                min_voltage = port.carrier.voltage
+        min_voltage = self._get_min_voltage(asset)
         i_max, i_nom = self._get_connected_i_nominal_and_max(asset)
         cop = asset.attributes["COP"] if asset.attributes["COP"] else 1.0
 

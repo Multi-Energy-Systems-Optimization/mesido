@@ -8,12 +8,10 @@ from numpy import nan
 
 
 @add_variables_documentation_automatically
-class HeatBufferModel(_StorageComponent):
+class _HeatBufferComponent(_StorageComponent):
     """
     This class consist of all the required variables and equations for HeatBuffer class,
     except the constraint makes Heat_flow  equal to Heat_buffer.
-    Because for some of the heat assets, we need to inherit only the variables and constraints
-    in HeatBufferModel class to HeatBufferElec class.
     Variables created:
         {add_variable_names_for_documentation_here}
 
@@ -92,7 +90,7 @@ class HeatBufferModel(_StorageComponent):
 
 
 @add_variables_documentation_automatically
-class HeatBuffer(HeatBufferModel):
+class HeatBuffer(_HeatBufferComponent):
     """
     The buffer component is to model milp storage in a tank. This means that we model a tank of hot
     water being filled and radiating milp away (heat loss) over the hot surfaces. We assume that the
