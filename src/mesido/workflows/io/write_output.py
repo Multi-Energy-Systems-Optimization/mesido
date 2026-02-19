@@ -681,7 +681,7 @@ class ScenarioOutput:
             energy_breakdown = {}
             for asset in subarea.asset:
                 asset_id = asset.id
-                asset_type = asset.asset_type
+                asset_type = self.esdl_assets[asset_id].asset_type
 
                 asset_placement_var = self._asset_aggregation_count_var_map[asset_id]
                 placed = np.round(results[asset_placement_var][0]) >= 1.0

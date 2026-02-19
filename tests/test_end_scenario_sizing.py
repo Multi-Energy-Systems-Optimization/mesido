@@ -45,21 +45,24 @@ class TestEndScenarioSizing(TestCase):
             esdl_parser=ESDLFileParser,
         )
         results = solution.extract_results()
+        name_to_id_map = solution.esdl_asset_name_to_id_map
 
         # Check heat exchanger is sized
         np.testing.assert_allclose(
-            max(results["HeatExchange_39ed.Secondary_heat"]), results["HeatExchange_39ed__max_size"]
+            max(results[f"{name_to_id_map['HeatExchange_39ed']}.Secondary_heat"]), results[
+                f"{name_to_id_map['HeatExchange_39ed']}__max_size"]
         )
 
         # Check heat exchanger state attribute is changed from OPTIONAL
         # to ENABLED after the optimization
         energy_system = solution._ESDLMixin__energy_system_handler.energy_system
-        asset = solution._name_to_asset(energy_system, "HeatExchange_39ed")
+        asset = solution._id_to_asset(energy_system, name_to_id_map['HeatExchange_39ed'])
         np.testing.assert_equal(esdl.AssetStateEnum.ENABLED, asset.state)
 
         # Check heat exchanger capacity attribute is updated
         # with max_size variable after the optimization
-        np.testing.assert_allclose(results["HeatExchange_39ed__max_size"], asset.capacity)
+        np.testing.assert_allclose(results[f"{name_to_id_map['HeatExchange_39ed']}__max_size"],
+                                   asset.capacity)
 
     @classmethod
     def setUpClass(cls) -> None:
