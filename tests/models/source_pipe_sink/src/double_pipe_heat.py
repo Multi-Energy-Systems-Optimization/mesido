@@ -17,8 +17,6 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
 from rtctools.util import run_optimization_problem
 
-import numpy as np
-
 
 class TargetDemandGoal(Goal):
     priority = 1

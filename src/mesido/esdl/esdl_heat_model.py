@@ -324,7 +324,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         return modifiers
 
-    def _get_min_voltage(self,asset: Asset) -> float:
+    def _get_min_voltage(self, asset: Asset) -> float:
         """
         Args:
             asset: mesido common asset with all attributes
