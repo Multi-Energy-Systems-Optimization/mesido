@@ -171,9 +171,9 @@ class TestWarmingUpUnitCases(TestCase):
                 results[f"{buffer}.Heat_buffer"],
             )
             # buffer should have positive heat loss
-            assert parameters[f"{buffer}.heat_loss_coeff"] > 0.0
+            assert parameters[f"{buffer}.heat_loss_efficiency"] > 0.0
             np.testing.assert_allclose(
-                results[f"{buffer}.Stored_heat"] * parameters[f"{buffer}.heat_loss_coeff"],
+                results[f"{buffer}.Stored_heat"] * parameters[f"{buffer}.heat_loss_efficiency"],
                 results[f"{buffer}.Heat_loss"],
             )
             np.testing.assert_allclose(

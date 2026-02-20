@@ -428,15 +428,13 @@ class AssetToHeatComponent(_AssetToComponentBase):
             else 10.0e6
         )
 
-        # Todo: Currently esdl does not have "heatTransferCoefficient" attribute for
-        #  heat_buffer asset. Temporarily we are using "dischargeEfficiency" attribute
-        #  of HeatStorage asset attribute in ESDL to define heat_transfer_coeff.
-        #  Once, "heatTransferCoefficient" attribute is added into esdl,
-        #  we can update this part.
-        heat_transfer_coeff = (
-            asset.attributes.get("heatTransferCoefficient")
-            or asset.attributes.get("dischargeEfficiency")
-            or 1.0
+        # The asset attribute "dischargeEfficiency" represents the percentage of stored heat
+        # that is lost per day. If this attribute is not provided, a default heat loss rate
+        # of 1% per day is used. The value is converted to a per‑second loss factor.
+        heat_loss_efficiency = (
+            asset.attributes.get("dischargeEfficiency") / (24.0 * 3600.0)
+            if asset.attributes.get("dischargeEfficiency")
+            else 0.01 / (24.0 * 3600.0)
         )
 
         q_nominal = self._get_connected_q_nominal(asset)
@@ -444,7 +442,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         modifiers = dict(
             height=r,
             radius=r,
-            heat_transfer_coeff=heat_transfer_coeff,
+            heat_loss_efficiency=heat_loss_efficiency,
             min_fraction_tank_volume=min_fraction_tank_volume,
             Stored_heat=dict(min=min_heat, max=max_heat),
             Heat_buffer=dict(min=-hfr_discharge_max, max=hfr_charge_max),

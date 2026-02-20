@@ -30,7 +30,8 @@ class TestMaxSizeAggregationCount(TestCase):
         assets should not be placed by the optmizer because of heat losses.
 
         Checks:
-        - Check that heat_transfer_coeff can be read from esdl
+        - Check that heat_loss_efficiency of buffer is read from esdl and used to calculate
+            the heat loss of buffer
         - Check that source 1 is utilized and also placed
         - Check that source 2 is utilized and placed
         - Check that the geothermal source is not placed
@@ -61,18 +62,17 @@ class TestMaxSizeAggregationCount(TestCase):
         results = solution.extract_results()
         parameters = solution.parameters(0)
 
-        # Test that heat_transfer_coeff can be read from esdl
+        # Test that heat_loss_efficiency can be read from esdl
+        # and incorporated into heat loss calculation of buffer
         esdl_asset = solution.esdl_assets[solution.esdl_asset_name_to_id_map["HeatStorage_74c1"]]
-        try:
-            heat_transfer_coeff = esdl_asset.attributes["heatTransferCoefficient"]
-        except KeyError:
-            # Currently, "heatTransferCoefficient" attribute is not available in esdl.
-            # We are temporariliy using "dischargeEfficiency" attribute in esdl
-            # to define heat_transfer_coeff
-            heat_transfer_coeff = esdl_asset.attributes["dischargeEfficiency"]
-
         np.testing.assert_allclose(
-            parameters["HeatStorage_74c1.heat_transfer_coeff"], heat_transfer_coeff
+            parameters["HeatStorage_74c1.heat_loss_efficiency"],
+            esdl_asset.attributes["dischargeEfficiency"] / (24.0 * 3600.0),
+        )
+        np.testing.assert_allclose(
+            results["HeatStorage_74c1.Heat_loss"],
+            results["HeatStorage_74c1.Stored_heat"]
+            * parameters["HeatStorage_74c1.heat_loss_efficiency"],
         )
 
         # Producer 1 and geothermal source should not produce due to higher cost
