@@ -10,8 +10,14 @@ from numpy import nan
 @add_variables_documentation_automatically
 class _HeatBufferComponent(_StorageComponent):
     """
-    This class consist of all the required variables and equations for HeatBuffer class,
-    except the constraint makes Heat_flow  equal to Heat_buffer.
+    The buffer component is to model milp storage in a tank. This means that we model a tank of hot
+    water being filled and radiating milp away (heat loss) over the hot surfaces. We assume that the
+    hot surfaces are those in contact with hot water.
+
+    Like all storage assets we enforce that they must be connected as a demand. The heat to
+    discharge constraints are set in the HeatPhysicsMixin, where we use a big_m formulation to
+    enforce the correct constraints depending on whether the buffer is charging or discharging.
+
     Variables created:
         {add_variable_names_for_documentation_here}
 
@@ -92,13 +98,8 @@ class _HeatBufferComponent(_StorageComponent):
 @add_variables_documentation_automatically
 class HeatBuffer(_HeatBufferComponent):
     """
-    The buffer component is to model milp storage in a tank. This means that we model a tank of hot
-    water being filled and radiating milp away (heat loss) over the hot surfaces. We assume that the
-    hot surfaces are those in contact with hot water.
-
-    Like all storage assets we enforce that they must be connected as a demand. The heat to
-    discharge constraints are set in the HeatPhysicsMixin, where we use a big_m formulation to
-    enforce the correct constraints depending on whether the buffer is charging or discharging.
+    HeatBuffer component represents the operational behavior of conventional heat buffer.
+    It sets heat_flow equal to heat_buffer.
 
     Variables created:
         {add_variable_names_for_documentation_here}

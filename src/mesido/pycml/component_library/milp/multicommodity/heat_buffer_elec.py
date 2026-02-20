@@ -9,12 +9,8 @@ from numpy import nan
 @add_variables_documentation_automatically
 class HeatBufferElec(_HeatBufferComponent):
     """
-    The heat buffer component models heat storage in a tank. This component also incorporates the
-    ability to use electricity for charging this component. Like all heat storage components,
-    it loses heat to the surroundings, however here also an efficiency for the conversion of
-    electricity to heat is incorporated. Since this way of charging heat does not require water
-    flow through the inlet/outlet pipes, a separate variable is created to define the additional
-    heat charged.
+    The HeatBufferElec component represents a heat buffer that can be charged exclusively
+    using electricity. This asset cannot be charged by water flow through the inlet/outlet pipes
 
     Variables created:
         {add_variable_names_for_documentation_here}
@@ -48,10 +44,10 @@ class HeatBufferElec(_HeatBufferComponent):
             )
         )
 
-        # Buffer is charged by heat flow from heat network and electricity component of the asset
+        # Heat flow balance of the buffer
         self.add_equation(
             (self.Heat_flow + self.Heat_elec_charging - self.Heat_buffer) / self.Heat_nominal
         )
 
-        # Note: If this type of buffer should be charged only by electricity component,
-        # we should set minimum Heat_flow to 0  (self.Heat_flow.min = 0.0)
+        # Buffer can only discharge into heat network. It cannot be charged by heat network
+        self.Heat_flow.max = 0.0
