@@ -65,14 +65,14 @@ class HeatPipe(_NonStorageComponent):
         self.Hydraulic_power_nominal = (
             self.rho * ff * max(self.length, 1.0) * pi * self.area / self.diameter / 2.0 * velo**3
         )
-        self.add_variable(
-            Variable, "Hydraulic_power", min=0.0, nominal=self.Hydraulic_power_nominal
-        )  # [W]
-
-        self.add_equation(
-            (self.Hydraulic_power - (self.HeatIn.Hydraulic_power - self.HeatOut.Hydraulic_power))
-            / (self.nominal_pressure * self.Q_nominal * self.Hydraulic_power_nominal) ** 0.5
-        )
+        # self.add_variable(
+        #     Variable, "Hydraulic_power", min=0.0, nominal=self.Hydraulic_power_nominal
+        # )  # [W]
+        #
+        # self.add_equation(
+        #     (self.Hydraulic_power - (self.HeatIn.Hydraulic_power - self.HeatOut.Hydraulic_power))
+        #     / (self.nominal_pressure * self.Q_nominal * self.Hydraulic_power_nominal) ** 0.5
+        # )
 
         self.add_equation(((self.Heat_flow - self.HeatIn.Heat) / self.Heat_nominal))
 

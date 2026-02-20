@@ -25,13 +25,13 @@ class _NonStorageComponentSourceType(_NonStorageComponent):
         super().__init__(name, **modifiers)
 
         # dH is positive as it is assumed that the head is added by a pump at sources.
-        self.dH.min = 0.0
+        # self.dH.min = 0.0
 
         self.add_variable(
             Variable, "Pump_power", min=0.0, nominal=self.Q_nominal * self.nominal_pressure
         )
-
-        self.add_equation(
-            (self.Pump_power - (self.HeatOut.Hydraulic_power - self.HeatIn.Hydraulic_power))
-            / (self.Q_nominal * self.nominal_pressure)
-        )
+        #
+        # self.add_equation(
+        #     (self.Pump_power - (self.HeatOut.Hydraulic_power - self.HeatIn.Hydraulic_power))
+        #     / (self.Q_nominal * self.nominal_pressure)
+        # )

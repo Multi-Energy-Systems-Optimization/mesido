@@ -43,5 +43,5 @@ class HeatTwoPort(HeatComponent):
         self.add_equation(self.HeatIn.Q - self.Q)
         self.add_equation(self.HeatIn.Q - self.HeatOut.Q)
 
-        self.add_variable(Variable, "dH")
-        self.add_equation(self.dH - (self.HeatOut.H - self.HeatIn.H))
+        # self.add_variable(Variable, "dH")
+        # self.add_equation(self.dH - (self.HeatOut.H - self.HeatIn.H))

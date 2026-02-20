@@ -34,12 +34,12 @@ class Node(HeatComponent, BaseAsset):
         assert self.n >= 2
 
         self.add_variable(HeatPort, "HeatConn", self.n)
-        self.add_variable(Variable, "H")
+        # self.add_variable(Variable, "H")
 
         # Because the orientation of the connected pipes are important to
         # setup the heat conservation, these constraints are added in the
         # mixin.
 
-        for i in range(1, self.n + 1):
-            self.add_equation(self.HeatConn[i].H - self.H)
-            # Q and Heat to be set in the mixin
+        # for i in range(1, self.n + 1):
+        #     self.add_equation(self.HeatConn[i].H - self.H)
+        #     # Q and Heat to be set in the mixin

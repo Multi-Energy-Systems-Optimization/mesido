@@ -21,4 +21,4 @@ class _NonStorageComponentSinkType(_NonStorageComponent):
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
 
-        self.dH.max = 0.0
+        # self.dH.max = 0.0

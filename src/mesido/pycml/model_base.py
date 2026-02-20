@@ -350,8 +350,8 @@ class Model:
         return self.name
 
     def flatten(self):
-        if self._modifiers:
-            raise Exception("Cannot flatten a model with remaining modifiers")
+        # if self._modifiers:
+        #     raise Exception("Cannot flatten a model with remaining modifiers")
 
         m = FlattenedModel()
 

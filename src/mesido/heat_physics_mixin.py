@@ -3706,7 +3706,7 @@ class HeatPhysicsMixin(
 
         constraints.extend(self.__flow_direction_path_constraints(ensemble_member))
         constraints.extend(self.__node_heat_mixing_path_constraints(ensemble_member))
-        constraints.extend(self.__node_hydraulic_power_mixing_path_constraints(ensemble_member))
+        # constraints.extend(self.__node_hydraulic_power_mixing_path_constraints(ensemble_member))
         constraints.extend(self.__heat_loss_path_constraints(ensemble_member))
         constraints.extend(self.__node_discharge_mixing_path_constraints(ensemble_member))
         constraints.extend(self.__demand_heat_to_discharge_path_constraints(ensemble_member))
