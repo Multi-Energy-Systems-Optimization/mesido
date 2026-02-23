@@ -59,26 +59,16 @@ setup(
         "pyecore >= 0.13.2",
         "pymoca >= 0.9.0",
         "rtc-tools-gil-comp == 2.6.1",
+        # setuptools version limitations currently:
+        # < 81.0.0 needed for pandapipes (still to be removed)
+        # < 82.0.0 needed for pkg_resources (used in rtctools)
+        "setuptools <= 80.9.0",
         "pyesdl == 25.7",
         "pandas >= 1.3.1, < 2.0",
         "casadi-gil-comp == 3.6.7",
         "StrEnum == 0.4.15",
         "CoolProp==6.6.0",
-    ],
-    # tests_require=["pytest", "pytest-runner", "numpy"],  # stil
-    
-    # extras_require={
-    #     "test": [
-    #         "pytest",
-    #         "numpy",
-    #         # consider removing pytest-runner (deprecated/obsolete for most setups)
-    #     ],
-    #     "all": [
-    #         "pytest",
-    #         "numpy",
-    #         # add any other optional stacks you meant by "all"
-    #     ],
-    # },
+    ],    
 
     include_package_data=True,
     python_requires=">=3.10,<3.12",
