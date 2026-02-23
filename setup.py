@@ -67,18 +67,18 @@ setup(
     ],
     # tests_require=["pytest", "pytest-runner", "numpy"],  # stil
     
-    extras_require={
-        "test": [
-            "pytest",
-            "numpy",
-            # consider removing pytest-runner (deprecated/obsolete for most setups)
-        ],
-        "all": [
-            "pytest",
-            "numpy",
-            # add any other optional stacks you meant by "all"
-        ],
-    },
+    # extras_require={
+    #     "test": [
+    #         "pytest",
+    #         "numpy",
+    #         # consider removing pytest-runner (deprecated/obsolete for most setups)
+    #     ],
+    #     "all": [
+    #         "pytest",
+    #         "numpy",
+    #         # add any other optional stacks you meant by "all"
+    #     ],
+    # },
 
     include_package_data=True,
     python_requires=">=3.10,<3.12",
