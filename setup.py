@@ -64,8 +64,20 @@ setup(
         "casadi-gil-comp == 3.6.7",
         "StrEnum == 0.4.15",
         "CoolProp==6.6.0",
-    ],
-    tests_require=["pytest", "pytest-runner", "numpy"],
+    ],    
+    extras_require={
+        "test": [
+            "pytest",
+            "numpy",
+            # consider removing pytest-runner (deprecated/obsolete for most setups)
+        ],
+        "all": [
+            "pytest",
+            "numpy",
+            # add any other optional stacks you meant by "all"
+        ],
+    },
+
     include_package_data=True,
     python_requires=">=3.10,<3.12",
     cmdclass=versioneer.get_cmdclass(),
