@@ -68,8 +68,7 @@ setup(
         "casadi-gil-comp == 3.6.7",
         "StrEnum == 0.4.15",
         "CoolProp==6.6.0",
-    ],    
-
+    ],
     include_package_data=True,
     python_requires=">=3.10,<3.12",
     cmdclass=versioneer.get_cmdclass(),
