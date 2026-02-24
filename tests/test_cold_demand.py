@@ -128,6 +128,7 @@ class TestColdDemand(TestCase):
         )
         results = heat_problem.extract_results()
         parameters = heat_problem.parameters(0)
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
 
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
@@ -136,9 +137,9 @@ class TestColdDemand(TestCase):
         # Check how variable operation cost is calculated
         np.testing.assert_allclose(
             parameters["HeatPump_b97e.variable_operational_cost_coefficient"]
-            * sum(results["HeatPump_b97e.Heat_source"][1:])
+            * sum(results[f"{name_to_id_map['HeatPump_b97e']}.Heat_source"][1:])
             / parameters["HeatPump_b97e.cop"],
-            results["HeatPump_b97e__variable_operational_cost"],
+            results[f"{name_to_id_map['HeatPump_b97e']}__variable_operational_cost"],
         )
 
     def test_wko(self):
@@ -219,6 +220,7 @@ class TestColdDemand(TestCase):
             input_timeseries_file="timeseries_2.csv",
         )
         results = heat_problem.extract_results()
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
 
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
@@ -226,15 +228,15 @@ class TestColdDemand(TestCase):
 
         # Check cyclic constraint
         np.testing.assert_allclose(
-            results["ATES_226d.Stored_heat"][0], results["ATES_226d.Stored_heat"][-1]
+            results[f"{name_to_id_map['ATES_226d']}.Stored_heat"][0], results[f"{name_to_id_map['ATES_226d']}.Stored_heat"][-1]
         )
         # Check heat loss and gain
         tol_value = 1.0e-6
         np.testing.assert_array_less(
-            0.0, results["Pipe1.HeatIn.Heat"] - results["Pipe1.HeatOut.Heat"] + tol_value
+            0.0, results[f"{name_to_id_map['Pipe1']}.HeatIn.Heat"] - results[f"{name_to_id_map['Pipe1']}.HeatOut.Heat"] + tol_value
         )
         np.testing.assert_array_less(
-            results["Pipe1_ret.HeatIn.Heat"] - results["Pipe1_ret.HeatOut.Heat"] - tol_value, 0.0
+            results[f"{name_to_id_map['Pipe1_ret']}.HeatIn.Heat"] - results[f"{name_to_id_map['Pipe1_ret']}.HeatOut.Heat"] - tol_value, 0.0
         )
 
         # ------------------------------------------------------------------------------------------
@@ -254,6 +256,7 @@ class TestColdDemand(TestCase):
             input_timeseries_file="timeseries_2.csv",
         )
         results = heat_problem.extract_results()
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
 
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
@@ -261,15 +264,15 @@ class TestColdDemand(TestCase):
 
         # Check cyclic constraint
         np.testing.assert_allclose(
-            results["ATES_226d.Stored_heat"][0], results["ATES_226d.Stored_heat"][-1]
+            results[f"{name_to_id_map['ATES_226d']}.Stored_heat"][0], results[f"{name_to_id_map['ATES_226d']}.Stored_heat"][-1]
         )
         # Check heat loss and gain
         tol_value = 1.0e-6
         np.testing.assert_allclose(
-            0.0, results["Pipe1.HeatIn.Heat"] - results["Pipe1.HeatOut.Heat"], atol=1e-6
+            0.0, results[f"{name_to_id_map['Pipe1']}.HeatIn.Heat"] - results[f"{name_to_id_map['Pipe1']}.HeatOut.Heat"], atol=1e-6
         )
         np.testing.assert_allclose(
-            0.0, results["Pipe1_ret.HeatIn.Heat"] - results["Pipe1_ret.HeatOut.Heat"], atol=1e-6
+            0.0, results[f"{name_to_id_map['Pipe1_ret']}.HeatIn.Heat"] - results[f"{name_to_id_map['Pipe1_ret']}.HeatOut.Heat"], atol=1e-6
         )
         # ------------------------------------------------------------------------------------------
 
