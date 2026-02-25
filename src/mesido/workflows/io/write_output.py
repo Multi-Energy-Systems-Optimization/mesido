@@ -466,8 +466,8 @@ class ScenarioOutput:
                     or asset.asset_type == "GenericProducer"
                     or asset.asset_type == "ResidualHeatSource"
                     or asset.asset_type == "GeothermalSource"
-                    or asset.asset_type == "ResidualHeatSource"
                     or asset.asset_type == "GasHeater"
+                    or asset.asset_type == "ElectricBoiler"
                 ):
                     heat_source_energy_wh[asset.name] = np.sum(
                         results[f"{asset.name}.Heat_source"][1:] * diff_times / 3600
