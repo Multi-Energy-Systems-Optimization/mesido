@@ -1,7 +1,7 @@
 # [Unreleased-main] - 2026-02-25
 
 ## Added
-- xxx
+- Parsing of ensemble profiles when using input profiles from csv.
 
 ## Changed
 - Speed-up timeseries check in from InfluxDB
