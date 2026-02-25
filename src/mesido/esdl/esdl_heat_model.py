@@ -395,7 +395,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                         f"asset named {asset.name}, currenlty only the 1st constraint is being used"
                     )
                 elif len_idx_of_range_constraints == 0:
-                    logger.warning(  # still to decide error vs warning
+                    logger.warning(
                         "Expected a range contraint (upper size limit) for asset named "
                         f"{asset.name}, but none has been specified."
                     )
