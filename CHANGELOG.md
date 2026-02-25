@@ -1,4 +1,4 @@
-# [Unreleased-main] - 2026-02-05
+# [Unreleased-main] - 2026-02-24
 
 ## Added
 - xxx
@@ -7,7 +7,7 @@
 - xxx
 
 ## Fixed
-- xxx
+- DBAccesType naming convention 
 
 
 # [0.1.16] - 2026-02-05
