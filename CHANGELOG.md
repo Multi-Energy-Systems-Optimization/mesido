@@ -4,7 +4,7 @@
 - xxx
 
 ## Changed
-- xxx
+- Speed-up timeseries check in from InfluxDB
 
 ## Fixed
 - DBAccesType naming convention 
