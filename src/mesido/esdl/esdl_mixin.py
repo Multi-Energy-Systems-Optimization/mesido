@@ -46,7 +46,7 @@ DEFAULT_START_TIMESTAMP = "2017-01-01T00:00:00+00:00"
 DEFAULT_END_TIMESTAMP = "2018-01-01T00:00:00+00:00"
 
 
-class DBAccesType(StrEnum):
+class DBAccessType(StrEnum):
     """
     Enumeration for database access types
     """
@@ -121,8 +121,8 @@ class ESDLMixin(
         self.__energy_system_handler: esdl.esdl_handler.EnergySystemHandler = esdl_parser.get_esh()
         self._esdl_measures: Dict[str, Asset] = esdl_parser.get_measures()
         self._database_credentials: Optional[Dict[str, Tuple[str, str]]] = {
-            DBAccesType.READ: [],
-            DBAccesType.WRITE: [],
+            DBAccessType.READ: [],
+            DBAccessType.WRITE: [],
         }
 
         profile_reader_class = kwargs.get("profile_reader", InfluxDBProfileReader)
@@ -134,7 +134,7 @@ class ESDLMixin(
         database_connection_info = kwargs.get("database_connections", {})
         read_only_dbase_credentials: Dict[str, Tuple[str, str]] = {}  # for profile reader
         for dbconnection in database_connection_info:
-            if dbconnection["access_type"] != DBAccesType.WRITE:
+            if dbconnection["access_type"] != DBAccessType.WRITE:
                 database_host_port = "{}:{}".format(
                     dbconnection["influxdb_host"],
                     dbconnection["influxdb_port"],
@@ -143,7 +143,7 @@ class ESDLMixin(
                     dbconnection["influxdb_username"],
                     dbconnection["influxdb_password"],
                 )
-            if dbconnection["access_type"] != DBAccesType.READ_WRITE:
+            if dbconnection["access_type"] != DBAccessType.READ_WRITE:
                 self._database_credentials[dbconnection["access_type"]].append(
                     {
                         "influxdb_host": dbconnection["influxdb_host"],
@@ -154,8 +154,8 @@ class ESDLMixin(
                         "influxdb_verify_ssl": dbconnection["influxdb_verify_ssl"],
                     }
                 )
-            elif dbconnection["access_type"] == DBAccesType.READ_WRITE:
-                both_read_and_write = [DBAccesType.READ, DBAccesType.WRITE]
+            elif dbconnection["access_type"] == DBAccessType.READ_WRITE:
+                both_read_and_write = [DBAccessType.READ, DBAccessType.WRITE]
                 for rw in both_read_and_write:
                     self._database_credentials[rw].append(
                         {
@@ -170,7 +170,7 @@ class ESDLMixin(
             else:
                 logger.error(
                     f"Database access type {dbconnection['access_type']} is not recognized. "
-                    f"Please use DBAccesType.READ, DBAccesType.WRITE or DBAccesType.READ_WRITE."
+                    f"Please use DBAccessType.READ, DBAccessType.WRITE or DBAccessType.READ_WRITE."
                 )
                 sys.exit(1)
 
