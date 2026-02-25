@@ -3,7 +3,7 @@ from unittest import TestCase
 
 import mesido._darcy_weisbach as darcy_weisbach
 from mesido.constants import GRAVITATIONAL_CONSTANT
-from mesido.esdl.esdl_mixin import DBAccesType
+from mesido.esdl.esdl_mixin import DBAccessType
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
@@ -84,7 +84,7 @@ class TestHeadLoss(TestCase):
                 "write_result_db_profiles": False,
                 "database_connections": [
                     {
-                        "access_type": DBAccesType.WRITE,
+                        "access_type": DBAccessType.WRITE,
                         "influxdb_host": "localhost",
                         "influxdb_port": 8086,
                         "influxdb_username": None,
