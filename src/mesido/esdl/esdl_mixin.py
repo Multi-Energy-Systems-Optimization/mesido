@@ -77,6 +77,8 @@ class ESDLMixin(
 
     __max_supply_temperature: Optional[float] = None
 
+    __esdl_ranged_constraint_usage = False
+
     # TODO: remove this once ESDL allows specifying a minimum pipe size for an optional pipe.
     __minimum_pipe_size_name: str = "DN150"
 

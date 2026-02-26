@@ -1,8 +1,8 @@
 import ast
 import inspect
 import logging
-import sys
 import math
+import sys
 from typing import Any, Dict, Tuple, Type, Union
 
 import esdl
@@ -15,8 +15,8 @@ from mesido.esdl.asset_to_component_base import (
     get_energy_content,
 )
 from mesido.esdl.common import Asset
+from mesido.esdl.esdl_additional_vars_mixin import get_asset_contraints
 from mesido.esdl.esdl_model_base import _ESDLModelBase
-from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.potential_errors import MesidoAssetIssueType, get_potential_errors
 from mesido.pycml.component_library.milp import (
     ATES,
@@ -58,6 +58,7 @@ from mesido.pycml.component_library.milp import (
     Transformer,
     WindPark,
 )
+
 # Importing workflow utilities at module import time can create circular
 # imports when workflows import ESDL mixins. Import locally where needed.
 
@@ -330,14 +331,14 @@ class AssetToHeatComponent(_AssetToComponentBase):
         return modifiers
 
     def _validate_attribute_value_not_zero(
-            self,
-            asset: Asset,
-            max_size_attribute: str,
-            max_value_attribute: float,
-            constraint_attribute: bool = False,
-        ) -> None:
+        self,
+        asset: Asset,
+        max_size_attribute: str,
+        max_value_attribute: float,
+        constraint_attribute: bool = False,
+    ) -> None:
         """
-        This function checks if the asset attribute type value > 0, else raise error if aplicable 
+        This function checks if the asset attribute type value > 0, else raise error if aplicable
 
         Args:
             asset: mesido common asset with all attributes
@@ -348,10 +349,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         msg = None
         if not constraint_attribute:  # value comes from asset attribute directly
-            msg = (
-                f"Asset named {asset.name}: The attribute {max_size_attribute} "
-                "must be > 0."
-            )
+            msg = f"Asset named {asset.name}: The attribute {max_size_attribute} must be > 0."
         else:  # value comes from asset constraint attribute
             msg = (
                 f"Asset named {asset.name}: The maximum value in the range "
@@ -365,8 +363,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
             )
             # Raise the potential error here if applicable, with feedback to user
             # Else a normal error exit might occer which will not give feedback to the
-            # user 
+            # user
             from mesido.workflows.utils.error_types import potential_error_to_error
+
             potential_error_to_error(self._error_type_check)
 
     def _get_asset_max_size_input(self, asset: Asset, max_size_attribute: str) -> float:
@@ -379,14 +378,15 @@ class AssetToHeatComponent(_AssetToComponentBase):
         Returns: value that should be used as the max size value for an asset
         """
 
-        asset_range_constraints, qty_asset_range_constraints = (
-            ESDLAdditionalVarsMixin.get_asset_contraints(self, asset, esdl.RangedConstraint)
+        asset_range_constraints, qty_asset_range_constraints = get_asset_contraints(
+            self, asset, esdl.RangedConstraint
         )
 
         if (
             self.energy_system_esdl_version is not None
-            and self.energy_system_esdl_version > "v2507"# "v2401" # "v2507"  # Currently latest esdlVersion="v2507"
-        ): # 2401
+            and self.energy_system_esdl_version >= "v2602"
+            # "v2602" contains the items needed for the ranged constraint implementation in MESIDO
+        ):
             if asset.attributes["state"] == esdl.AssetStateEnum.OPTIONAL:
                 if qty_asset_range_constraints > 1:
                     logger.error(
@@ -402,17 +402,18 @@ class AssetToHeatComponent(_AssetToComponentBase):
                     get_potential_errors().add_potential_issue(
                         MesidoAssetIssueType.ASSET_UPPER_LIMIT,
                         asset.id,
-                        f"Asset named {asset.name}: The upper limit of the asset size has to be specified via a maximum value in a range constraint."
+                        f"Asset named {asset.name}: The upper limit of the asset size has to be "
+                        "specified via a maximum value in a range constraint.",
                     )
                     # Raise the potential error here if applicable, with feedback to user
-                    # Else a normal error exit might occer which will not give feedback to the user 
+                    # Else a normal error exit might occer which will not give feedback to the user
                     from mesido.workflows.utils.error_types import potential_error_to_error
 
                     potential_error_to_error(self._error_type_check)
                 else:
                     logger.warning(
                         f"For asset named {asset.name}, the range constraint value is used for the "
-                        f"asset's upper limit for the attribute {max_size_attribute}." 
+                        f"asset's upper limit for the attribute {max_size_attribute}."
                     )
                     max_value_range = asset_range_constraints[0].range.maxValue
 
@@ -439,7 +440,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
             else:
                 exit("still to check this")
-        else:  # Catering backwards compatibility
+        else:  # Catering for backwards compatibility
             return asset.attributes[max_size_attribute]
 
     def convert_heat_buffer(self, asset: Asset) -> Tuple[Type[HeatBuffer], MODIFIERS]:
@@ -509,10 +510,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         if asset_volume_m3:
             asset_capacity_joule = (
-                asset_volume_m3
-                * self.rho
-                * self.cp
-                * (supply_temperature - return_temperature)
+                asset_volume_m3 * self.rho * self.cp * (supply_temperature - return_temperature)
             )
         elif asset.attributes["capacity"]:
             asset_capacity_joule = self._get_asset_max_size_input(asset, "capacity")
@@ -885,9 +883,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         return GasPipe, modifiers
 
-    def convert_heat_pipe(
-        self, asset: Asset
-    ) -> Tuple[Type[HeatPipe], MODIFIERS]:
+    def convert_heat_pipe(self, asset: Asset) -> Tuple[Type[HeatPipe], MODIFIERS]:
         """
         This function converts the pipe object in esdl to a set of modifiers that can be used in
         a pycml object. Most important:
@@ -1150,7 +1146,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 f"({params_t['Secondary']['T_return']}°C), as the heat exchanger can only "
                 f"transfer heat from primary to secondary.",
             )
-        
+
         asset_power = None
         asset_capacity = None
         if asset.asset_type == "GenericConversion":
@@ -1539,9 +1535,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             logger.error(f"{asset.asset_type} '{asset.name}' has no aggregation count specified.")
         assert int(aggregation_count) == aggregation_count and aggregation_count > 0
 
-        q_nominal = min(
-            self._get_connected_q_nominal(asset), q_max_ates * aggregation_count
-        )
+        q_nominal = min(self._get_connected_q_nominal(asset), q_max_ates * aggregation_count)
 
         modifiers = dict(
             Q=dict(
@@ -2603,7 +2597,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         max_supply = None
         is_one_in_port = True if len(asset.in_ports) == 1 else False
         if is_one_in_port:
-             max_supply = self._get_asset_max_size_input(asset, "power")
+            max_supply = self._get_asset_max_size_input(asset, "power")
         else:  # TODO: range constraint to be added instead of using this value for OPTIONAL asset
             max_supply = asset.attributes["power"]
 

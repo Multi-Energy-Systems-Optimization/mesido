@@ -3,7 +3,7 @@ import logging
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, Optional, Set, Tuple, List, Union
+from typing import Dict, Optional, Set, Tuple
 
 import esdl
 from esdl.profiles.influxdbprofilemanager import ConnectionSettings
@@ -11,7 +11,7 @@ from esdl.profiles.influxdbprofilemanager import InfluxDBProfileManager
 from esdl.units.conversion import ENERGY_IN_J, POWER_IN_W, convert_to_unit
 
 from mesido.esdl.common import Asset
-from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
+from mesido.esdl.esdl_additional_vars_mixin import get_asset_contraints
 from mesido.potential_errors import MesidoAssetIssueType, get_potential_errors
 
 import numpy as np
@@ -114,22 +114,18 @@ class BaseProfileReader:
 
                     asset_power = None
                     if asset_state == esdl.AssetStateEnum.ENABLED:
-                        asset_power = asset.attributes[
-                            "power"
-                        ]
-                    elif asset_state == esdl.AssetStateEnum.OPTIONAL:  
-                        range_constraints, qty_range_constraints = (
-                            ESDLAdditionalVarsMixin.get_asset_contraints(
-                                self, asset, esdl.RangedConstraint
-                            )
+                        asset_power = asset.attributes["power"]
+                    elif asset_state == esdl.AssetStateEnum.OPTIONAL:
+                        range_constraints, qty_range_constraints = get_asset_contraints(
+                            self, asset, esdl.RangedConstraint
                         )
                         if qty_range_constraints == 1:
                             asset_power = range_constraints[0].range.maxValue
-                        elif qty_range_constraints == 0: 
+                        elif qty_range_constraints == 0:
                             asset_power = asset.attributes["power"]
                         else:
                             logger.error(
-                                f"Asset named {asset.name}: The code currently does not cater for " 
+                                f"Asset named {asset.name}: The code currently does not cater for "
                                 " more than 1 RangedConstraint"
                             )
                             sys.exit(1)

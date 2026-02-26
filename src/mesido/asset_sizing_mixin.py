@@ -10,7 +10,7 @@ from mesido._heat_loss_u_values_pipe import pipe_heat_loss
 from mesido.base_component_type_mixin import BaseComponentTypeMixin
 from mesido.demand_insulation_class import DemandInsulationClass
 from mesido.esdl.asset_to_component_base import AssetStateEnum
-from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
+from mesido.esdl.esdl_additional_vars_mixin import get_asset_contraints
 from mesido.head_loss_class import HeadLossOption
 from mesido.network_common import NetworkSettings
 from mesido.pipe_class import CableClass, GasPipeClass, PipeClass
@@ -803,9 +803,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             # Update bound to account for profile constraint being used instead of 1 value
             asset = self.esdl_assets[self.esdl_asset_name_to_id_map[asset_name]]
-            asset_profile_constraints, qty_asset_profile_constraints = (
-                    ESDLAdditionalVarsMixin.get_asset_contraints(self, asset, esdl.ProfileConstraint)
-                )
+            asset_profile_constraints, qty_asset_profile_constraints = get_asset_contraints(
+                self, asset, esdl.ProfileConstraint
+            )
             if (
                 qty_asset_profile_constraints > 0
                 and hasattr(asset_profile_constraints[0], "maximum")
@@ -1858,7 +1858,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             constraints.append(((-max_current_var - current_sym) / nominal, -np.inf, 0.0))
 
         return constraints
-    
+
     def __max_size_constraints(self, ensemble_member):
         """
         This function makes sure that the __max_size variable is at least as large as needed. For
@@ -1931,10 +1931,8 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 # Option 1: Profile specified in absolute values [W] via a ProfileConstraint
 
                 asset = self.esdl_assets[self.esdl_asset_name_to_id_map[s]]
-                asset_profile_constraints, qty_asset_profile_constraints = (
-                    ESDLAdditionalVarsMixin.get_asset_contraints(
-                        self, asset, esdl.ProfileConstraint
-                    )
+                asset_profile_constraints, qty_asset_profile_constraints = get_asset_contraints(
+                    self, asset, esdl.ProfileConstraint
                 )
                 if (
                     qty_asset_profile_constraints > 0
@@ -1977,13 +1975,19 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     # profile is specified without units (xlm/csv)
                     qty_asset_profile_constraints == 0
                     or (
-                        asset_profile_constraints[0].maximum.profileQuantityAndUnit.reference.physicalQuantity
+                        asset_profile_constraints[
+                            0
+                        ].maximum.profileQuantityAndUnit.reference.physicalQuantity
                         == esdl.PhysicalQuantityEnum.COEFFICIENT
                         and (
-                           asset_profile_constraints[0].maximum.profileQuantityAndUnit.reference.unit
-                           == esdl.UnitEnum.PERCENT
-                           or asset_profile_constraints[0].maximum.profileQuantityAndUnit.reference.unit
-                           == esdl.UnitEnum.NONE
+                            asset_profile_constraints[
+                                0
+                            ].maximum.profileQuantityAndUnit.reference.unit
+                            == esdl.UnitEnum.PERCENT
+                            or asset_profile_constraints[
+                                0
+                            ].maximum.profileQuantityAndUnit.reference.unit
+                            == esdl.UnitEnum.NONE
                         )
                     )  # profile from esdl
                 ):

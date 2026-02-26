@@ -828,7 +828,6 @@ def run_sequatially_staged_simulation(
 @main_decorator
 def main(runinfo_path, log_level):
     logger.info("Run Network Simulator")
-    from mesido.esdl.esdl_mixin import DBAccesType
 
     kwargs = {
         "write_result_db_profiles": False,

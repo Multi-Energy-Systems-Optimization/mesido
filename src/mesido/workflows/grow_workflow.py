@@ -866,7 +866,6 @@ def run_end_scenario_sizing(
 @main_decorator
 def main(runinfo_path, log_level):
     logger.info("Run Scenario Sizing")
-    from mesido.esdl.esdl_mixin import DBAccesType
 
     kwargs = {
         "write_result_db_profiles": False,
