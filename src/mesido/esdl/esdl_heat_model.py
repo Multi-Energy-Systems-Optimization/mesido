@@ -164,6 +164,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
             self.secondary_port_name_convention = kwargs["secondary_port_name_convention"]
         if "energy_system_esdl_version" in kwargs.keys():
             self.energy_system_esdl_version = kwargs["energy_system_esdl_version"]
+        if "use_esdl_ranged_constraint" in kwargs.keys():
+            self.use_esdl_ranged_constraint = kwargs["use_esdl_ranged_constraint"]
 
     @property
     def _rho_cp_modifiers(self) -> Dict:
@@ -385,6 +387,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         if (
             self.energy_system_esdl_version is not None
             and self.energy_system_esdl_version >= "v2602"
+            and self.use_esdl_ranged_constraint
             # "v2602" contains the items needed for the ranged constraint implementation in MESIDO
         ):
             if asset.attributes["state"] == esdl.AssetStateEnum.OPTIONAL:
@@ -2849,6 +2852,7 @@ class ESDLHeatModel(_ESDLModelBase):
         name_to_id_map: Dict[str, str],
         converter_class=AssetToHeatComponent,
         esdl_version=str,
+        esdl_ranged_constraint_usage=bool,
         **kwargs,
     ):
         super().__init__(None)
@@ -2860,6 +2864,7 @@ class ESDLHeatModel(_ESDLModelBase):
                     "primary_port_name_convention": self.primary_port_name_convention,
                     "secondary_port_name_convention": self.secondary_port_name_convention,
                     "energy_system_esdl_version": esdl_version,
+                    "esdl_ranged_constraint_usage": esdl_ranged_constraint_usage,
                 },
             }
         )

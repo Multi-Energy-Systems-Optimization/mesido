@@ -5,7 +5,6 @@ from pathlib import Path
 
 import esdl
 
-from mesido.esdl.esdl_mixin import DBAccessType
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
@@ -828,6 +827,7 @@ def run_sequatially_staged_simulation(
 @main_decorator
 def main(runinfo_path, log_level):
     logger.info("Run Network Simulator")
+    from mesido.esdl.esdl_mixin import DBAccessType
 
     kwargs = {
         "write_result_db_profiles": False,

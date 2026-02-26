@@ -77,7 +77,7 @@ class ESDLMixin(
 
     __max_supply_temperature: Optional[float] = None
 
-    __esdl_ranged_constraint_usage = False
+    __esdl_ranged_constraint_usage: bool = False
 
     # TODO: remove this once ESDL allows specifying a minimum pipe size for an optional pipe.
     __minimum_pipe_size_name: str = "DN150"
@@ -102,6 +102,8 @@ class ESDLMixin(
         args : none
         kwargs : esdl_string or esdl_file_name must be provided
         """
+
+        self.__use_esdl_ranged_constraint: bool = kwargs.get("use_esdl_ranged_constraint", False)
 
         self.esdl_parser_class: type = kwargs.get("esdl_parser", ESDLStringParser)
         esdl_string = kwargs.get("esdl_string", None)
@@ -181,11 +183,13 @@ class ESDLMixin(
                 energy_system=self.__energy_system_handler.energy_system,
                 file_path=input_file_path,
                 database_credentials=read_only_dbase_credentials,
+                use_esdl_ranged_contraint=self._ESDLMixin__use_esdl_ranged_constraint,
             )
         else:  # read from a file, no database credentials needed
             self.__profile_reader: BaseProfileReader = profile_reader_class(
                 energy_system=self.__energy_system_handler.energy_system,
                 file_path=input_file_path,
+                use_esdl_ranged_contraint=self._ESDLMixin__use_esdl_ranged_constraint,
             )
 
         # This way we allow users to adjust the parsed ESDL assets
@@ -200,6 +204,7 @@ class ESDLMixin(
                 assets=assets,
                 name_to_id_map=name_to_id_map,
                 esdl_version=self._ESDLMixin__energy_system_handler.energy_system.esdlVersion,
+                use_esdl_ranged_constraint=self._ESDLMixin__use_esdl_ranged_constraint,
                 **self.esdl_heat_model_options(),
             )
         else:
