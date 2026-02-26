@@ -1,3 +1,4 @@
+from mesido.pycml import Variable
 from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 from numpy import nan
@@ -31,4 +32,10 @@ class GeothermalSource(HeatSource):
 
         self.target_flow_rate = nan
         self.single_doublet_power = nan
+        self.cop = nan
+        self.elec_power_nominal = nan
         self.nr_of_doublets = 1.0
+
+        self.add_variable(Variable, "Power_elec", min=0.0, nominal=self.elec_power_nominal)
+
+        self.add_equation(((self.Power_elec * self.cop - self.Heat_source) / self.Heat_nominal)) 

@@ -68,6 +68,7 @@ class TestGeothermalSourceElec(TestCase):
             results["GeothermalSource_a77b__variable_operational_cost"],
         )
 
+        # TODO: move test to a better location, improve the equations checks, check both the geothermal asset and the one with the elec port.
 
 if __name__ == "__main__":  
     TestElecBoiler = TestGeothermalSourceElec()
