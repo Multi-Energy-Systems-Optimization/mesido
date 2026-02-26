@@ -1,6 +1,7 @@
 import ast
 import inspect
 import logging
+import sys
 import math
 from typing import Any, Dict, Tuple, Type, Union
 
@@ -15,6 +16,7 @@ from mesido.esdl.asset_to_component_base import (
 )
 from mesido.esdl.common import Asset
 from mesido.esdl.esdl_model_base import _ESDLModelBase
+from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.potential_errors import MesidoAssetIssueType, get_potential_errors
 from mesido.pycml.component_library.milp import (
     ATES,
@@ -369,7 +371,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
     def _get_asset_max_size_input(self, asset: Asset, max_size_attribute: str) -> float:
         """
-        This function ...... still to be completed
+        This function gets the max size value that is used as an upper limit for an asset's size
 
         Args:
             asset: mesido common asset with all attributes
@@ -377,24 +379,22 @@ class AssetToHeatComponent(_AssetToComponentBase):
         Returns: value that should be used as the max size value for an asset
         """
 
-        idx_of_range_constraints =  [
-            ii
-            for ii, xi in enumerate(asset.attributes["constraint"])
-            if isinstance(xi, esdl.RangedConstraint)
-        ]  # in the future me might want to cater for more than 1 range contraint
-        len_idx_of_range_constraints = len(idx_of_range_constraints)
+        asset_range_constraints, qty_asset_range_constraints = (
+            ESDLAdditionalVarsMixin.get_asset_contraints(self, asset, esdl.RangedConstraint)
+        )
 
         if (
             self.energy_system_esdl_version is not None
             and self.energy_system_esdl_version > "v2507"# "v2401" # "v2507"  # Currently latest esdlVersion="v2507"
         ): # 2401
             if asset.attributes["state"] == esdl.AssetStateEnum.OPTIONAL:
-                if len_idx_of_range_constraints > 1:
-                    logger.warning(
-                        f"More than 1 range constraint has been specified to "
-                        f"asset named {asset.name}, currenlty only the 1st constraint is being used"
+                if qty_asset_range_constraints > 1:
+                    logger.error(
+                        f"Asset named {asset.name}: The code currently does not cater for more than"
+                        " 1 RangedConstraint"
                     )
-                elif len_idx_of_range_constraints == 0:
+                    sys.exit(1)
+                elif qty_asset_range_constraints == 0:
                     logger.warning(
                         "Expected a range contraint (upper size limit) for asset named "
                         f"{asset.name}, but none has been specified."
@@ -414,9 +414,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                         f"For asset named {asset.name}, the range constraint value is used for the "
                         f"asset's upper limit for the attribute {max_size_attribute}." 
                     )
-                    max_value_range = asset.attributes["constraint"][
-                        idx_of_range_constraints[0]
-                    ].range.maxValue
+                    max_value_range = asset_range_constraints[0].range.maxValue
 
                     self._validate_attribute_value_not_zero(
                         asset, max_size_attribute, max_value_range, True
@@ -425,7 +423,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                     return max_value_range
 
             elif asset.attributes["state"] == esdl.AssetStateEnum.ENABLED:
-                if len_idx_of_range_constraints > 0:
+                if qty_asset_range_constraints > 0:
                     logger.warning(
                         f"The constraint that has been assigned to asset name {asset.name} is not "
                         "being used because the asset state has been specified as ENABLED."
