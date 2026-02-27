@@ -427,7 +427,9 @@ def energy_conservation_test(solution, results, atol=1e-3, atol_total=1e-1):
 
     for d in solution.energy_system_components.get("heat_buffer", []):
         energy_sum -= results[f"{d}.Heat_buffer"]
-
+        asset_buffer = solution.esdl_assets[solution.esdl_asset_name_to_id_map[d]]
+        if len(asset_buffer.in_ports) == 2 and len(asset_buffer.out_ports) == 1:
+            energy_sum += results[f"{d}.Heat_elec_charging"]
     for d in solution.energy_system_components.get("heat_source", []):
         energy_sum += results[f"{d}.Heat_source"]
 
