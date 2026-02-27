@@ -58,6 +58,7 @@ class BaseProfileReader:
         esdl_assets: Dict[str, Asset],
         carrier_properties: Dict[str, Dict],
         ensemble_size: int,
+        ensemble,
     ) -> None:
         """
         This function takes a datastore and a dictionary of milp network components and loads a
@@ -91,6 +92,7 @@ class BaseProfileReader:
             esdl_asset_id_to_name_map=esdl_asset_id_to_name_map,
             carrier_properties=carrier_properties,
             ensemble_size=ensemble_size,
+            ensemble=ensemble,
         )
 
         try:
@@ -181,6 +183,7 @@ class BaseProfileReader:
         esdl_asset_id_to_name_map: Dict[str, str],
         carrier_properties: Dict[str, Dict],
         ensemble_size: int,
+        ensemble: None | np.ndarray,
     ) -> None:
         """
         This function must be implemented by the child. It must load the available
@@ -241,6 +244,7 @@ class InfluxDBProfileReader(BaseProfileReader):
         esdl_asset_id_to_name_map: Dict[str, str],
         carrier_properties: Dict[str, Dict],
         ensemble_size: int,
+        ensemble: None | np.ndarray,
     ) -> None:
         profiles: Dict[str, np.ndarray] = dict()
         logger.info("Reading profiles from InfluxDB")
@@ -316,7 +320,6 @@ class InfluxDBProfileReader(BaseProfileReader):
                 ]
             )
             series = unique_series[index_of_unique_profile]
-            self._check_profile_time_series(profile_time_series=series, profile=profile)
             container = profile.eContainer()
             asset = container.eContainer()
             converted_dataframe = self._convert_profile_to_correct_unit(
@@ -505,12 +508,15 @@ class InfluxDBProfileReader(BaseProfileReader):
 
         # Error check: ensure that the profile data has a time resolution of 3600s (1hour) as
         # expected
-        for d1, d2 in zip(profile_time_series.index, profile_time_series.index[1:]):
-            if d2 - d1 != pd.Timedelta(hours=1):
-                raise RuntimeError(
-                    f"The timestep for variable {profile.field} between {d1} and {d2} isn't "
-                    f"exactly 1 hour"
-                )
+        idx = profile_time_series.index
+        dt = idx.to_series().diff()[1:]
+        problem_timesteps = idx[:-1][dt != pd.Timedelta(hours=1)]
+        if not problem_timesteps.empty:
+            raise RuntimeError(
+                f"The timestep for variable {profile.field} at timestamp(s) {problem_timesteps} "
+                f"isn't "
+                f"exactly 1 hour"
+            )
         # Check if any NaN values exist
         if profile_time_series.isnull().any().any():
             raise Exception(
@@ -613,6 +619,7 @@ class ProfileReaderFromFile(BaseProfileReader):
         esdl_asset_id_to_name_map: Dict[str, str],
         carrier_properties: Dict[str, Dict],
         ensemble_size: int,
+        ensemble: None | np.ndarray,
     ) -> None:
         if self._file_path.suffix == ".xml":
             logger.warning(
@@ -627,6 +634,7 @@ class ProfileReaderFromFile(BaseProfileReader):
                 energy_system_components=energy_system_components,
                 carrier_properties=carrier_properties,
                 ensemble_size=ensemble_size,
+                ensemble=ensemble,
             )
         else:
             raise _ProfileParserException(
@@ -638,25 +646,27 @@ class ProfileReaderFromFile(BaseProfileReader):
         energy_system_components: Dict[str, Set[str]],
         carrier_properties: Dict[str, Dict],
         ensemble_size: int,
+        ensemble,
     ) -> None:
-        data = pd.read_csv(self._file_path)
 
-        if len(data.filter(like="Unnamed").columns) > 0:
-            raise Exception(
-                f"An unnamed column has been found in profile source file: {self._file_path}"
-            )
+        data_dict = {}
+        if ensemble_size > 1:
+            input_folder = self._file_path.parent
+            file_name = self._file_path.name
+            for i, ensemble_name, _ in ensemble:
+                data_dict[i] = pd.read_csv(Path(input_folder / ensemble_name / file_name))
+        else:
+            data_dict[0] = pd.read_csv(self._file_path)
 
-        try:
-            timeseries_import_times = [
-                datetime.datetime.strptime(entry.replace("Z", ""), "%Y-%m-%d %H:%M:%S").replace(
-                    tzinfo=datetime.timezone.utc
+        for data in data_dict.values():
+            if len(data.filter(like="Unnamed").columns) > 0:
+                raise Exception(
+                    f"An unnamed column has been found in profile source file: {self._file_path}"
                 )
-                for entry in data["DateTime"].to_numpy()
-            ]
-        except ValueError:
+
             try:
                 timeseries_import_times = [
-                    datetime.datetime.strptime(entry.replace("Z", ""), "%Y-%m-%dT%H:%M:%S").replace(
+                    datetime.datetime.strptime(entry.replace("Z", ""), "%Y-%m-%d %H:%M:%S").replace(
                         tzinfo=datetime.timezone.utc
                     )
                     for entry in data["DateTime"].to_numpy()
@@ -665,48 +675,58 @@ class ProfileReaderFromFile(BaseProfileReader):
                 try:
                     timeseries_import_times = [
                         datetime.datetime.strptime(
-                            entry.replace("Z", ""), "%d-%m-%Y %H:%M"
+                            entry.replace("Z", ""), "%Y-%m-%dT%H:%M:%S"
                         ).replace(tzinfo=datetime.timezone.utc)
                         for entry in data["DateTime"].to_numpy()
                     ]
                 except ValueError:
-                    raise _ProfileParserException("Date time string is not in a supported format")
+                    try:
+                        timeseries_import_times = [
+                            datetime.datetime.strptime(
+                                entry.replace("Z", ""), "%d-%m-%Y %H:%M"
+                            ).replace(tzinfo=datetime.timezone.utc)
+                            for entry in data["DateTime"].to_numpy()
+                        ]
+                    except ValueError:
+                        raise _ProfileParserException(
+                            "Date time string is not in a supported format"
+                        )
 
-        logger.warning("Timezone specification not supported yet: default UTC has been used")
+            logger.warning("Timezone specification not supported yet: default UTC has been used")
 
-        self._reference_datetimes = timeseries_import_times
+            self._reference_datetimes = timeseries_import_times
 
-        for ensemble_member in range(ensemble_size):
+        for e_m in range(ensemble_size):
+            data_em = data_dict[e_m]
             for component_type, var_name in self.component_type_to_var_name_map.items():
                 for component_name in energy_system_components.get(component_type, []):
                     try:
                         column_name = f"{component_name.replace(' ', '')}"
-                        values = data[column_name].to_numpy()
+                        values = data_em[column_name].to_numpy()
                         if np.isnan(values).any():
                             raise Exception(
                                 f"Column name: {column_name}, NaN exists in the profile source"
                                 f" file {self._file_path}."
-                                f" Detials: {data[data[column_name].isnull()]}"
+                                f" Detials: {data_em[data_em[column_name].isnull()]}"
                             )
                     except KeyError:
                         pass
                     else:
-                        self._profiles[ensemble_member][component_name + var_name] = values
+                        self._profiles[e_m][component_name + var_name] = values
             for properties in carrier_properties.values():
                 carrier_name = properties.get("name")
                 try:
-                    values = data[carrier_name].to_numpy()
+                    values = data_em[carrier_name].to_numpy()
                     if np.isnan(values).any():
                         raise Exception(
                             f"Carrier name: {carrier_name}, NaN exists in the profile source file"
-                            f" {self._file_path}. Details: {data[data[carrier_name].isnull()]}"
+                            f" {self._file_path}. Details: "
+                            f"{data_em[data_em[carrier_name].isnull()]}"
                         )
                 except KeyError:
                     pass
                 else:
-                    self._profiles[ensemble_member][
-                        carrier_name + self.carrier_profile_var_name
-                    ] = values
+                    self._profiles[e_m][carrier_name + self.carrier_profile_var_name] = values
 
     def _load_xml(self, energy_system_components, esdl_asset_id_to_name_map):
         timeseries_import_basename = self._file_path.stem

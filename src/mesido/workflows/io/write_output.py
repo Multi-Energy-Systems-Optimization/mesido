@@ -18,7 +18,7 @@ from esdl.profiles.profilemanager import ProfileManager
 import mesido.esdl.esdl_parser
 from mesido.constants import GRAVITATIONAL_CONSTANT
 from mesido.esdl.edr_pipe_class import EDRPipeClass
-from mesido.esdl.esdl_mixin import DBAccesType
+from mesido.esdl.esdl_mixin import DBAccessType
 from mesido.financial_mixin import calculate_annuity_factor
 from mesido.network_common import NetworkSettings
 from mesido.post_processing.post_processing_utils import pipe_pressure, pipe_velocity
@@ -60,7 +60,7 @@ class ScenarioOutput:
                 sys.exit(1)
 
             if self.write_result_db_profiles:
-                database_connection_write = self._database_credentials.get(DBAccesType.WRITE, [])
+                database_connection_write = self._database_credentials.get(DBAccessType.WRITE, [])
 
                 if len(database_connection_write) == 0:
                     logger.error("The connections settings for writing to a database is empty")
@@ -466,8 +466,8 @@ class ScenarioOutput:
                     or asset.asset_type == "GenericProducer"
                     or asset.asset_type == "ResidualHeatSource"
                     or asset.asset_type == "GeothermalSource"
-                    or asset.asset_type == "ResidualHeatSource"
                     or asset.asset_type == "GasHeater"
+                    or asset.asset_type == "ElectricBoiler"
                 ):
                     heat_source_energy_wh[asset.name] = np.sum(
                         results[f"{asset.name}.Heat_source"][1:] * diff_times / 3600
