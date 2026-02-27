@@ -18,7 +18,7 @@ from esdl.profiles.profilemanager import ProfileManager
 import mesido.esdl.esdl_parser
 from mesido.constants import GRAVITATIONAL_CONSTANT
 from mesido.esdl.edr_pipe_class import EDRPipeClass
-from mesido.esdl.esdl_mixin import DBAccesType
+from mesido.esdl.esdl_mixin import DBAccessType
 from mesido.financial_mixin import calculate_annuity_factor
 from mesido.network_common import NetworkSettings
 from mesido.post_processing.post_processing_utils import pipe_pressure, pipe_velocity
@@ -60,7 +60,7 @@ class ScenarioOutput:
                 sys.exit(1)
 
             if self.write_result_db_profiles:
-                database_connection_write = self._database_credentials.get(DBAccesType.WRITE, [])
+                database_connection_write = self._database_credentials.get(DBAccessType.WRITE, [])
 
                 if len(database_connection_write) == 0:
                     logger.error("The connections settings for writing to a database is empty")
@@ -466,8 +466,8 @@ class ScenarioOutput:
                     or asset.asset_type == "GenericProducer"
                     or asset.asset_type == "ResidualHeatSource"
                     or asset.asset_type == "GeothermalSource"
-                    or asset.asset_type == "ResidualHeatSource"
                     or asset.asset_type == "GasHeater"
+                    or asset.asset_type == "ElectricBoiler"
                 ):
                     heat_source_energy_wh[asset.name] = np.sum(
                         results[f"{asset.name}.Heat_source"][1:] * diff_times / 3600
@@ -1031,6 +1031,7 @@ class ScenarioOutput:
                 *self.energy_system_components.get("heat_buffer", []),
                 *self.energy_system_components.get("heat_pump", []),
                 *self.energy_system_components.get("airco", []),
+                *self.energy_system_components.get("heat_exchanger", []),
             ]:
                 asset = self._name_to_asset(energy_system, name)
                 asset_placement_var = self._asset_aggregation_count_var_map[name]
@@ -1050,6 +1051,8 @@ class ScenarioOutput:
                         * parameters[f"{name}.rho"]
                         * parameters[f"{name}.dT"]
                     )
+                elif asset.name in self.energy_system_components.get("heat_exchanger", []):
+                    asset.capacity = max_size
                 elif asset.name in [
                     *self.energy_system_components.get("heat_pump", []),
                     *self.energy_system_components.get("airco", []),

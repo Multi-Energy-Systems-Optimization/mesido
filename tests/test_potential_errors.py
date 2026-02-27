@@ -25,10 +25,12 @@ class MockInfluxDBProfileReader(InfluxDBProfileReader):
         self,
         energy_system: esdl.EnergySystem,
         file_path: Optional[Path],
+        use_esdl_ranged_contraint: bool,
     ):
         super().__init__(
             energy_system=energy_system,
             file_path=file_path,
+            use_esdl_ranged_contraint=use_esdl_ranged_contraint,
         )
         self._loaded_profiles = pd.read_csv(
             file_path,
@@ -72,7 +74,6 @@ class TestPotentialErrors(unittest.TestCase):
                 model_folder=model_folder,
                 input_folder=input_folder,
                 esdl_file_name="1a_with_influx_profiles_error_check_1.esdl",
-                profile_reader=MockInfluxDBProfileReader,
                 input_timeseries_file="influx_mock.csv",
             )
             problem.pre()

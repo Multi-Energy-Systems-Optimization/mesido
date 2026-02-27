@@ -353,13 +353,13 @@ class NetworkSimulatorHIGHSWeeklyTimeStep(NetworkSimulatorHIGHS):
 @main_decorator
 def main(runinfo_path, log_level):
     logger.info("Run Network Simulator")
-    from mesido.esdl.esdl_mixin import DBAccesType
+    from mesido.esdl.esdl_mixin import DBAccessType
 
     kwargs = {
         "write_result_db_profiles": False,
         "database_connections": [
             {
-                "access_type": DBAccesType.WRITE,
+                "access_type": DBAccessType.WRITE,
                 "influxdb_host": "localhost",
                 "influxdb_port": 8086,
                 "influxdb_username": None,

@@ -3,7 +3,7 @@ import logging
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, Optional, Set, Tuple, List, Union
+from typing import Dict, Optional, Set, Tuple
 
 import esdl
 from esdl.profiles.influxdbprofilemanager import ConnectionSettings
@@ -11,6 +11,7 @@ from esdl.profiles.influxdbprofilemanager import InfluxDBProfileManager
 from esdl.units.conversion import ENERGY_IN_J, POWER_IN_W, convert_to_unit
 
 from mesido.esdl.common import Asset
+from mesido.esdl.esdl_additional_vars_mixin import get_asset_contraints
 from mesido.potential_errors import MesidoAssetIssueType, get_potential_errors
 
 import numpy as np
@@ -44,35 +45,16 @@ class BaseProfileReader:
         self,
         energy_system: esdl.EnergySystem,
         file_path: Optional[Path],
+        use_esdl_ranged_contraint: bool,
     ):
         self._profiles: Dict[int, Dict[str, np.ndarray]] = defaultdict(dict)
         self._energy_system: esdl.EnergySystem = energy_system
         self._file_path: Optional[Path] = file_path
         self._reference_datetimes: Optional[pd.DatetimeIndex] = None
 
-    def __get_contraint_type_info(self, asset: Asset, constraint_type: esdl.Constraint) -> Union[
-        List[int], int
-    ]:
-        """
-        Get the contraint type info, if it exists, at an asset.
-
-        Arg:
-            asset: mesido common asset with all attributes
-            constraint type: the type of contraint specified (e.g. esdl.RangedConstraint, 
-            esdl.ProfileConstraint)
-
-        Returns:
-            - Index of where the specific constraint is located in all the constraints specified
-            - Number of constraints of specific type that exists
-        -------
-
-        """
-        idx_of_range_constraints =  [
-            ii
-            for ii, xi in enumerate(asset.attributes["constraint"])
-            if isinstance(xi, constraint_type)
-        ]  # in the future me might want to cater for more than 1 range contraint
-        return idx_of_range_constraints, len(idx_of_range_constraints)
+        self._use_esdl_ranged_constraint = (
+            use_esdl_ranged_contraint if use_esdl_ranged_contraint is not None else False
+        )
 
     def read_profiles(
         self,
@@ -137,19 +119,28 @@ class BaseProfileReader:
 
                     asset_power = None
                     if asset_state == esdl.AssetStateEnum.ENABLED:
-                        asset_power = asset.attributes[
-                            "power"
-                        ]
-                    elif asset_state == esdl.AssetStateEnum.OPTIONAL:                        
-                        idx_of_range_constraints, qty_range_constraints = (
-                            self.__get_contraint_type_info(asset, esdl.RangedConstraint)
-                        )
-
-                        if qty_range_constraints > 0:
-                            asset_power = asset.attributes["constraint"][
-                                    idx_of_range_constraints[0]
-                                ].range.maxValue
-                        else: 
+                        asset_power = asset.attributes["power"]
+                    elif asset_state == esdl.AssetStateEnum.OPTIONAL:
+                        if (
+                            self._energy_system.esdlVersion is not None
+                            and self._energy_system.esdlVersion >= "v2602"
+                            and self._use_esdl_ranged_constraint
+                            # "v2602" contains the items needed for the ranged constraint
+                            # implementation in MESIDO
+                        ):
+                            range_constraints, qty_range_constraints = get_asset_contraints(
+                                self, asset, esdl.RangedConstraint
+                            )
+                            if qty_range_constraints == 1:
+                                asset_power = range_constraints[0].range.maxValue
+                            else:
+                                logger.error(
+                                    f"Asset named {asset.name}: The code currently only "
+                                    f"caters for 1 RangedConstraint but {qty_range_constraints} has"
+                                    " been specified"
+                                )
+                                sys.exit(1)
+                        else:
                             asset_power = asset.attributes["power"]
                     else:
                         logger.warning(
@@ -270,11 +261,13 @@ class InfluxDBProfileReader(BaseProfileReader):
         self,
         energy_system: esdl.EnergySystem,
         file_path: Optional[Path],
+        use_esdl_ranged_contraint: bool = False,
         database_credentials: Optional[Dict[str, Tuple[str, str]]] = None,
     ):
         super().__init__(
             energy_system=energy_system,
             file_path=file_path,
+            use_esdl_ranged_contraint=use_esdl_ranged_contraint,
         )
         self._df = pd.DataFrame()
         self._database_credentials = (
@@ -506,16 +499,17 @@ class InfluxDBProfileReader(BaseProfileReader):
                     "profile for each asset"
                 )
 
+        x_0, x_1 = map(list, zip(*time_series_data.profile_data_list))
         if not time_series_data.profile_data_list[0][0].tzinfo:
             index = pd.DatetimeIndex(
-                data=[x[0] for x in time_series_data.profile_data_list],
+                data=x_0,
                 tz=datetime.timezone.utc,
             )
             logger.warning("No timezone specified for the input profile: default UTC has been used")
         else:
-            index = pd.DatetimeIndex(data=[x[0] for x in time_series_data.profile_data_list])
+            index = pd.DatetimeIndex(data=x_0)
 
-        data = [x[1] for x in time_series_data.profile_data_list]
+        data = x_1
         series = pd.Series(data=data, index=index)
         self._df[profile.id] = series
 
@@ -648,10 +642,12 @@ class ProfileReaderFromFile(BaseProfileReader):
         self,
         energy_system: esdl.EnergySystem,
         file_path: Path,
+        use_esdl_ranged_contraint: bool = False,
     ):
         super().__init__(
             energy_system=energy_system,
             file_path=file_path,
+            use_esdl_ranged_contraint=use_esdl_ranged_contraint,
         )
 
     def _load_profiles_from_source(

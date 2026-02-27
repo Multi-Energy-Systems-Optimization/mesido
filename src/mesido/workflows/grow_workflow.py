@@ -374,9 +374,16 @@ class EndScenarioSizing(
             vars = self.state_vector(f"{b}.Heat_buffer")
             symbol_stored_heat = self.state_vector(f"{b}.Stored_heat")
             constraints.append((symbol_stored_heat[self.__indx_max_peak], 0.0, 0.0))
-            for i in range(len(self.times())):
-                if i < self.__indx_max_peak or i > (self.__indx_max_peak + 23):
-                    constraints.append((vars[i], 0.0, 0.0))
+
+            ind_peak = int(self.__indx_max_peak)
+            constraints.append((vars[:ind_peak], 0.0, 0.0))
+            constraints.append(
+                (
+                    vars[ind_peak + 24 :],
+                    0.0,
+                    0.0,
+                )
+            )
 
         # TODO: confirm if volume or heat balance is required over year. This will
         # determine if cyclic contraint below is for stored_heat or stored_volume
@@ -858,13 +865,13 @@ def run_end_scenario_sizing(
 @main_decorator
 def main(runinfo_path, log_level):
     logger.info("Run Scenario Sizing")
-    from mesido.esdl.esdl_mixin import DBAccesType
+    from mesido.esdl.esdl_mixin import DBAccessType
 
     kwargs = {
         "write_result_db_profiles": False,
         "database_connections": [
             {
-                "access_type": DBAccesType.WRITE,
+                "access_type": DBAccessType.WRITE,
                 "influxdb_host": "localhost",
                 "influxdb_port": 8086,
                 "influxdb_username": None,
