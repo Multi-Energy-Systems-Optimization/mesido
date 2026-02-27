@@ -74,7 +74,6 @@ class TestPotentialErrors(unittest.TestCase):
                 model_folder=model_folder,
                 input_folder=input_folder,
                 esdl_file_name="1a_with_influx_profiles_error_check_1.esdl",
-                profile_reader=MockInfluxDBProfileReader,
                 input_timeseries_file="influx_mock.csv",
             )
             problem.pre()
