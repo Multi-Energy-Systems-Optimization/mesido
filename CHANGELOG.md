@@ -1,13 +1,28 @@
-# [Unreleased-main] - 2026-02-09
+# [Unreleased-main] - 2026-02-25
 
 ## Added
+- Parsing of ensemble profiles when using input profiles from csv. 
 - heat_transfer_coeff variable of HeatStorage is read from dischargeEfficiency attribute in esdl
+
+
+## Changed
+- Speed-up timeseries check in from InfluxDB
+
+## Fixed
+- xxx 
+
+
+# [0.1.17] - 2026-02-25
+
+## Added
+- xxx
 
 ## Changed
 - xxx
 
 ## Fixed
-- xxx
+- DBAccesType naming convention
+- eboiler KPI
 
 
 # [0.1.16] - 2026-02-05

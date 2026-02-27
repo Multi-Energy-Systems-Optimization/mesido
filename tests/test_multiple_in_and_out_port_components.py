@@ -1,7 +1,7 @@
 from pathlib import Path
 from unittest import TestCase
 
-from mesido.esdl.esdl_mixin import DBAccesType
+from mesido.esdl.esdl_mixin import DBAccessType
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.util import run_esdl_mesido_optimization
@@ -55,7 +55,7 @@ class TestHEX(TestCase):
             "write_result_db_profiles": False,
             "database_connections": [
                 {
-                    "access_type": DBAccesType.WRITE,
+                    "access_type": DBAccessType.WRITE,
                     "influxdb_host": "localhost",
                     "influxdb_port": 8086,
                     "influxdb_username": None,
@@ -353,7 +353,7 @@ class TestHP(TestCase):
             "write_result_db_profiles": False,
             "database_connections": [
                 {
-                    "access_type": DBAccesType.WRITE,
+                    "access_type": DBAccessType.WRITE,
                     "influxdb_host": "localhost",
                     "influxdb_port": 8086,
                     "influxdb_username": None,
