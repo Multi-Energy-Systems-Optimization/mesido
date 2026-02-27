@@ -1,4 +1,16 @@
-# [Unreleased-main] - 2026-02-05
+# [Unreleased-main] - 2026-02-25
+
+## Added
+- Parsing of ensemble profiles when using input profiles from csv.
+
+## Changed
+- Speed-up timeseries check in from InfluxDB
+
+## Fixed
+- xxx 
+
+
+# [0.1.17] - 2026-02-25
 
 ## Added
 - Addition of heat buffer asset with electric charging (i.e. HeatBufferElec) is added
@@ -7,7 +19,8 @@
 - xxx
 
 ## Fixed
-- xxx
+- DBAccesType naming convention
+- eboiler KPI
 
 
 # [0.1.16] - 2026-02-05
