@@ -177,50 +177,6 @@ class HeatCoolingGrowWorkflow(TestCase):
 
         base_folder = Path(__file__).resolve().parent.parent
 
-        class MinElectcost(Goal):
-
-            priority = 2
-
-            order = 1
-
-            def __init__(self, asset_name: str):
-                self.function_nominal = 1.0e6
-                self.asset_name = asset_name
-
-            def function(
-                self,
-                optimization_problem: CollocatedIntegratedOptimizationProblem,
-                ensemble_member: int,
-            ):
-
-                parameters = optimization_problem.parameters(ensemble_member)
-                canonical, sign = optimization_problem.alias_relation.canonical_signed(
-                    f"{self.asset_name}.Heat_source"
-                )
-                heat_source = (
-                    optimization_problem.state_vector(canonical, ensemble_member)
-                    * optimization_problem.variable_nominal(canonical)
-                    * sign
-                )
-
-                assert len(optimization_problem.get_electricity_carriers().keys()) <= 1
-
-                price_profile = optimization_problem.get_timeseries(
-                    f"{list(optimization_problem.get_electricity_carriers().values())[0]['name']}"
-                    ".price_profile"
-                )
-                timesteps_hr = np.diff(optimization_problem.times()) / 3600
-
-                sum = 0.0
-                for i in range(1, len(optimization_problem.times())):
-                    sum += (
-                        price_profile.values[i]
-                        * heat_source[i]
-                        * timesteps_hr[i - 1]
-                        / parameters[f"{self.asset_name}.cop"]
-                    )
-
-                return sum
 
         class UpdatedProblem(EndScenarioSizingStaged, CollocatedIntegratedOptimizationProblem):
 
@@ -228,20 +184,18 @@ class HeatCoolingGrowWorkflow(TestCase):
             # read(), ESDLAdditionalVarsMixin before the code below. This means the
             # incorrect demand values are then used.
 
-            # TODO --> use new profile in esdl, but issue with cold profile. So for now
+            # TODO: use new profile in esdl, but issue with cold profile. So for now
             # reading in profiles from file. Also currently we cannot use a combination of
             # esdl and csv profile inputs, potentially needed?
 
-            # TODO -->> locally do not have access to proifle uploaded in mapediotr
+            # TODO: locally do not have access to profile uploaded in mapeditor
 
-            def goals(self):
+            # TODO: Clarify how the variable operating cost should be defined when a price_profile is provided.
+            # Currently, the financial mixin is implemented such that the price_profile contributes to the
+            # variable OPEX calculation in addition to the var-opex-coefficient and pump_power
+            # whenever a price_profile is given.
 
-                goals = super().goals().copy()
-
-                for ac in self.energy_system_components.get("air_water_heat_pump_elec", []):
-                    goals.append(MinElectcost(ac))
-
-                return goals
+            pass
 
         solution = run_end_scenario_sizing(
             UpdatedProblem,
@@ -358,7 +312,7 @@ class HeatCoolingGrowWorkflow(TestCase):
                         / solution.parameters(0)[f"{asset}.pump_efficiency"]
                     )
 
-                variable_operational_cost += pump_power
+                variable_operational_cost += pump_power + elect_cost
 
             total_opex += (
                 variable_operational_cost * solution.parameters(0)[f"{asset}.technical_life"]
@@ -400,7 +354,7 @@ class HeatCoolingGrowWorkflow(TestCase):
                     + results["CoolingDemand_1__investment_cost"]
                 )
                 / 1.0e6
-                - (total_capex + total_opex + elect_cost) / 1.0e6
+                - (total_capex + total_opex) / 1.0e6
             )
             < 1.0e-6
         )

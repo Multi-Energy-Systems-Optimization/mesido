@@ -212,6 +212,7 @@ class BaseProfileReader:
 class InfluxDBProfileReader(BaseProfileReader):
     asset_type_to_variable_name_conversion = {
         esdl.esdl.HeatingDemand: ".target_heat_demand",
+        esdl.esdl.CoolingDemand: ".target_cold_demand",
         esdl.esdl.GenericConsumer: ".target_heat_demand",
         esdl.esdl.HeatProducer: ".maximum_heat_source",
         esdl.esdl.ElectricityDemand: ".target_electricity_demand",
