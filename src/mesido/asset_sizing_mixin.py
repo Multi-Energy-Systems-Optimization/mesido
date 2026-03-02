@@ -10,6 +10,7 @@ from mesido._heat_loss_u_values_pipe import pipe_heat_loss
 from mesido.base_component_type_mixin import BaseComponentTypeMixin
 from mesido.demand_insulation_class import DemandInsulationClass
 from mesido.esdl.asset_to_component_base import AssetStateEnum
+from mesido.esdl.esdl_additional_vars_mixin import get_asset_contraints
 from mesido.head_loss_class import HeadLossOption
 from mesido.network_common import NetworkSettings
 from mesido.pipe_class import CableClass, GasPipeClass, PipeClass
@@ -801,13 +802,14 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             ub = bounds[f"{asset_name}.Heat_source"][1]
 
             # Update bound to account for profile constraint being used instead of 1 value
-            esdl_asset_attributes = self.esdl_assets[
-                self.esdl_asset_name_to_id_map[asset_name]
-            ].attributes["constraint"]
+            asset = self.esdl_assets[self.esdl_asset_name_to_id_map[asset_name]]
+            asset_profile_constraints, qty_asset_profile_constraints = get_asset_contraints(
+                self, asset, esdl.ProfileConstraint
+            )
             if (
-                len(esdl_asset_attributes) > 0
-                and hasattr(esdl_asset_attributes.items[0], "maximum")
-                and esdl_asset_attributes.items[0].maximum.profileQuantityAndUnit.reference.unit
+                qty_asset_profile_constraints > 0
+                and hasattr(asset_profile_constraints[0], "maximum")
+                and asset_profile_constraints[0].maximum.profileQuantityAndUnit.reference.unit
                 == esdl.UnitEnum.WATT
                 and parameters[f"{asset_name}.state"] == AssetStateEnum.OPTIONAL  # Optional asset
             ):
@@ -1927,13 +1929,15 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
                 # Cap the heat produced via a profile. Two profile options below.
                 # Option 1: Profile specified in absolute values [W] via a ProfileConstraint
-                esdl_asset_attributes = self.esdl_assets[
-                    self.esdl_asset_name_to_id_map[s]
-                ].attributes["constraint"]
+
+                asset = self.esdl_assets[self.esdl_asset_name_to_id_map[s]]
+                asset_profile_constraints, qty_asset_profile_constraints = get_asset_contraints(
+                    self, asset, esdl.ProfileConstraint
+                )
                 if (
-                    len(esdl_asset_attributes) > 0
-                    and hasattr(esdl_asset_attributes.items[0], "maximum")
-                    and esdl_asset_attributes.items[0].maximum.profileQuantityAndUnit.reference.unit
+                    qty_asset_profile_constraints > 0
+                    and hasattr(asset_profile_constraints[0], "maximum")
+                    and asset_profile_constraints[0].maximum.profileQuantityAndUnit.reference.unit
                     == esdl.UnitEnum.WATT
                 ):
                     parameters = self.parameters(ensemble_member)
@@ -1969,18 +1973,18 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 # installed capacity
                 elif (
                     # profile is specified without units (xlm/csv)
-                    len(esdl_asset_attributes) == 0
+                    qty_asset_profile_constraints == 0
                     or (
-                        esdl_asset_attributes.items[
+                        asset_profile_constraints[
                             0
                         ].maximum.profileQuantityAndUnit.reference.physicalQuantity
                         == esdl.PhysicalQuantityEnum.COEFFICIENT
                         and (
-                            esdl_asset_attributes.items[
+                            asset_profile_constraints[
                                 0
                             ].maximum.profileQuantityAndUnit.reference.unit
                             == esdl.UnitEnum.PERCENT
-                            or esdl_asset_attributes.items[
+                            or asset_profile_constraints[
                                 0
                             ].maximum.profileQuantityAndUnit.reference.unit
                             == esdl.UnitEnum.NONE
