@@ -423,9 +423,9 @@ class TestGeothermalSourceElec(TestCase):
 
 if __name__ == "__main__":
 
-    test_cold_demand = TestMultiCommodityHeatPump()
-    test_cold_demand.test_air_to_water_heat_pump_elec_min_elec()
+    #test_cold_demand = TestMultiCommodityHeatPump()
+    #test_cold_demand.test_air_to_water_heat_pump_elec_min_elec()
     # test_cold_demand.test_heat_pump_elec_min_elec()
     test_geothermal = TestGeothermalSourceElec()
     test_geothermal.test_geothermal_source_elec()
-    test_geothermal.test_geothermal_source()
+    #test_geothermal.test_geothermal_source()

@@ -1316,9 +1316,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
             max_supply=asset.attributes["power"]
             modifiers["elec_power_nominal"] = max_supply
             modifiers["cop"] = asset.attributes["COP"] if asset.attributes["COP"] else 1.0
-
-            # TODO: A better check might be needed here. Perhaps check for an elec asset.
-            if len(asset.in_ports) == 2: # Geothermal source with an electricity in port.
+            # Check to see if there is an electricity carrier at the in ports.
+            in_port_carriers = [port.carrier for port in asset.in_ports]
+            if any([isinstance(carrier, esdl.esdl.ElectricityCommodity) for carrier in in_port_carriers]):
                 for port in asset.in_ports:
                     if isinstance(port.carrier, esdl.ElectricityCommodity):
                         min_voltage = port.carrier.voltage
