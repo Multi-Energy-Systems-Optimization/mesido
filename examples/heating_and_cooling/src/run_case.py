@@ -15,7 +15,6 @@ import numpy as np
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
-from rtctools.optimization.goal_programming_mixin_base import Goal
 
 logger = logging.getLogger("mesido")
 logger.setLevel(logging.INFO)
@@ -23,7 +22,7 @@ logger.setLevel(logging.INFO)
 
 class HeatColdDemand(TestCase):
 
-    def heating_cooling_case(self):
+    def test_heating_cooling_case(self):
         """
         In this case we have a network with an air-water hp, a WKO (warm and cold well) and both
         hot and cold demand. The heat and cold demand was balanced such that the seasonal storage
@@ -177,7 +176,6 @@ class HeatCoolingGrowWorkflow(TestCase):
 
         base_folder = Path(__file__).resolve().parent.parent
 
-
         class UpdatedProblem(EndScenarioSizingStaged, CollocatedIntegratedOptimizationProblem):
 
             # TODO: Issue sizing pipes connected to demands, available pipe classes are updated in
@@ -190,10 +188,11 @@ class HeatCoolingGrowWorkflow(TestCase):
 
             # TODO: locally do not have access to profile uploaded in mapeditor
 
-            # TODO: Clarify how the variable operating cost should be defined when a price_profile is provided.
-            # Currently, the financial mixin is implemented such that the price_profile contributes to the
-            # variable OPEX calculation in addition to the var-opex-coefficient and pump_power
-            # whenever a price_profile is given.
+            # TODO: Clarify how the variable operating cost should be defined when a price_profile
+            #  is provided.
+            # Currently, the financial mixin is implemented such that the price_profile
+            # contributes to the variable OPEX calculation in addition to the var-opex-coefficient
+            # and pump_power whenever a price_profile is given.
 
             pass
 

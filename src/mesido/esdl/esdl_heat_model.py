@@ -571,13 +571,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
         """
         assert asset.asset_type in {"CoolingDemand"}
 
-        get_potential_errors().add_potential_issue(
-            MesidoAssetIssueType.COLD_ASSET_TYPE_NOT_SUPPORTED,
-            asset.id,
-            f"Asset named {asset.name}: This is a cooling asset and it should be replaced with a"
-            " supported asset",
-        )
-
         max_demand = asset.attributes["power"] if asset.attributes["power"] else math.inf
 
         q_nominal = self._get_connected_q_nominal(asset)
@@ -1428,7 +1421,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         low_temp_ates_max_storage_temp_deg = 30.0
         if (
             asset.attributes["maxStorageTemperature"]
-            and asset.attributes["maxStorageTemperature"] <= low_temp_ates_max_storage_temp_deg
+            and asset.attributes["maxStorageTemperature"] < low_temp_ates_max_storage_temp_deg
         ):
             max_store_temp = asset.attributes["maxStorageTemperature"]
             get_potential_errors().add_potential_issue(

@@ -8,6 +8,7 @@ from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.exceptions import MesidoAssetIssueError
 from mesido.potential_errors import MesidoAssetIssueType, PotentialErrors
 from mesido.util import run_esdl_mesido_optimization
+from mesido.workflows import EndScenarioSizingStaged, run_end_scenario_sizing
 from mesido.workflows.utils.adapt_profiles import (
     adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
 )
@@ -484,6 +485,26 @@ class TestColdDemand(TestCase):
         np.testing.assert_array_equal(
             heat_demand_raw_list[48:75], heat_demand_timeseries.values[26:50]
         )
+
+        demand_matching_test(heat_problem, results)
+        energy_conservation_test(heat_problem, results)
+        heat_to_discharge_test(heat_problem, results)
+
+    def test_heating_cooling_case(self):
+        """ """
+        import models.wko.src.example as example
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        heat_problem = run_end_scenario_sizing(
+            EndScenarioSizingStaged,
+            base_folder=base_folder,
+            esdl_file_name="LT_wko_heating_and_cooling_v2.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="heating_90_kW_cooling_32_kW.csv",
+        )
+        results = heat_problem.extract_results()
 
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
