@@ -315,6 +315,53 @@ class TestProfileLoading(unittest.TestCase):
                 atol=1e-2,
             )
 
+    def test_loading_profiles_ensemble_members(self):
+        """
+        This test constructs multiple ensemble members based on an "ensemble_member" CSV file
+        that describes the probability of the ensemble member and the name and number.
+        The profiles related to each ensemble member are read from the respective CSV files and
+        saved in for each member.
+        The test checks if the profiles read match the profiles from the CVS files and if the
+        ensemble_member_size is set accordingly.
+        """
+        import models.unit_cases.case_2a_ensemble.src.run_2a as run_2a
+        from models.unit_cases.case_2a_ensemble.src.run_2a import HeatProblemEnsemble
+
+        base_folder = Path(run_2a.__file__).resolve().parent.parent
+        model_folder = base_folder / "model"
+        input_folder = base_folder / "input"
+
+        problem = HeatProblemEnsemble(
+            base_folder=base_folder,
+            model_folder=model_folder,
+            input_folder=input_folder,
+            esdl_file_name="2a.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.csv",
+        )
+
+        problem.pre()
+
+        # check that the ensemble size is set at 2, which is based on the ensemble.csv
+        np.testing.assert_equal(problem.ensemble_size, 2)
+        prob_0 = problem.ensemble_member_probability(0)
+        prob_1 = problem.ensemble_member_probability(1)
+        np.testing.assert_allclose(prob_0, 0.7)
+        np.testing.assert_allclose(prob_1, 0.3)
+
+        # check that the timeseries are loaded for all ensemble sizes and that the timeseries are
+        # equal to a heating demand of 350000 except for HeatingDemand_6f99 at the second
+        # ensemble, where it is equal to 300000.
+        timeseries_names = problem.io.get_timeseries_names()
+        for t_name in timeseries_names:
+            for e_m in range(problem.ensemble_size):
+                t_series = problem.get_timeseries(t_name, e_m)
+                if e_m == 1 and t_name == "HeatingDemand_6f99.target_heat_demand":
+                    np.testing.assert_allclose(t_series.values, [300000] * 3)
+                else:
+                    np.testing.assert_allclose(t_series.values, [350000] * 3)
+
 
 if __name__ == "__main__":
     # unittest.main()

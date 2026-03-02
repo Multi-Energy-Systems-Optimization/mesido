@@ -24,6 +24,43 @@ from utils_tests import demand_matching_test
 
 class TestEndScenarioSizing(TestCase):
 
+    def test_heat_exchanger_sizing(self):
+        """
+        Check heat exchanger can be sized in EndScenarioSizingStaged problem.
+        After optimization asset state and capacity attributes are changed.
+
+        Checks:
+        - max_size variable of the asset is calculated
+        - heat exchanger state attribute is changed
+        - heat exchanger capacity attribute is updated
+        """
+        import models.heat_exchange.src.run_heat_exchanger as run_heat_exchanger
+
+        base_folder = Path(run_heat_exchanger.__file__).resolve().parent.parent
+
+        solution = run_end_scenario_sizing(
+            EndScenarioSizingStaged,
+            base_folder=base_folder,
+            esdl_file_name="heat_exchanger_with_costs.esdl",
+            esdl_parser=ESDLFileParser,
+        )
+        results = solution.extract_results()
+
+        # Check heat exchanger is sized
+        np.testing.assert_allclose(
+            max(results["HeatExchange_39ed.Secondary_heat"]), results["HeatExchange_39ed__max_size"]
+        )
+
+        # Check heat exchanger state attribute is changed from OPTIONAL
+        # to ENABLED after the optimization
+        energy_system = solution._ESDLMixin__energy_system_handler.energy_system
+        asset = solution._name_to_asset(energy_system, "HeatExchange_39ed")
+        np.testing.assert_equal(esdl.AssetStateEnum.ENABLED, asset.state)
+
+        # Check heat exchanger capacity attribute is updated
+        # with max_size variable after the optimization
+        np.testing.assert_allclose(results["HeatExchange_39ed__max_size"], asset.capacity)
+
     @classmethod
     def setUpClass(cls) -> None:
         import models.test_case_small_network_ates_buffer_optional_assets.src.run_ates as run_ates
