@@ -34,5 +34,3 @@ class GeothermalSourceElec(GeothermalSource):
         self.add_variable(ElectricityPort, "ElectricityIn")
 
         self.add_equation(((self.ElectricityIn.Power - self.Power_elec) / self.elec_power_nominal))
-
-        

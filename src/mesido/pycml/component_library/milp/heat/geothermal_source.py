@@ -10,10 +10,10 @@ from .heat_source import HeatSource
 class GeothermalSource(HeatSource):
     """
     The geothermal source component is used to model geothermal doublets. It is equivilent to a
-    normal source with the only difference being the modelling of doublets and power consumption. 
-    The main reason for this component instead of using just a regular source is that to have the 
-    integer behaviour of increasing the amount of doublets. In the HeatMixin an integer is created 
-    _aggregation_count to model the amount of doublets and the maximum power will scale with this 
+    normal source with the only difference being the modelling of doublets and power consumption.
+    The main reason for this component instead of using just a regular source is that to have the
+    integer behaviour of increasing the amount of doublets. In the HeatMixin an integer is created
+    _aggregation_count to model the amount of doublets and the maximum power will scale with this
     integer instead of continuous. This will also ensure that the cost will scale with this integer.
     The power consumption is computed through a COP calculation, directly linked to the heat source
     production. COP is set to a default value of 0 in order to ensure power and its associated costs
@@ -41,4 +41,4 @@ class GeothermalSource(HeatSource):
 
         self.add_variable(Variable, "Power_elec", min=0.0, nominal=self.elec_power_nominal)
 
-        self.add_equation(((self.Power_elec * self.cop - self.Heat_source) / self.Heat_nominal)) 
+        self.add_equation(((self.Power_elec * self.cop - self.Heat_source) / self.Heat_nominal))

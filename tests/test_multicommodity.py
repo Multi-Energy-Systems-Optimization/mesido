@@ -323,6 +323,7 @@ class TestMultiCommodityHeatPump(TestCase):
         )
         np.testing.assert_allclose(var_opex_hp_calc, var_opex_hp)
 
+
 class TestGeothermalSourceElec(TestCase):
 
     def test_geothermal_source(self):
@@ -409,8 +410,10 @@ class TestGeothermalSourceElec(TestCase):
 
         # Test electricity port
         np.testing.assert_array_less(0.0, results["GeothermalSource_a77b.ElectricityIn.Power"])
-        np.testing.assert_allclose(results["GeothermalSource_a77b.ElectricityIn.Power"],
-                                   results["GeothermalSource_a77b.Power_elec"])
+        np.testing.assert_allclose(
+            results["GeothermalSource_a77b.ElectricityIn.Power"],
+            results["GeothermalSource_a77b.Power_elec"],
+        )
 
         # Variable operational cost check.
         np.testing.assert_allclose(
@@ -423,9 +426,9 @@ class TestGeothermalSourceElec(TestCase):
 
 if __name__ == "__main__":
 
-    #test_cold_demand = TestMultiCommodityHeatPump()
-    #test_cold_demand.test_air_to_water_heat_pump_elec_min_elec()
+    # test_cold_demand = TestMultiCommodityHeatPump()
+    # test_cold_demand.test_air_to_water_heat_pump_elec_min_elec()
     # test_cold_demand.test_heat_pump_elec_min_elec()
     test_geothermal = TestGeothermalSourceElec()
     test_geothermal.test_geothermal_source_elec()
-    #test_geothermal.test_geothermal_source()
+    # test_geothermal.test_geothermal_source()

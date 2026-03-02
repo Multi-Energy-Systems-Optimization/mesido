@@ -1313,12 +1313,17 @@ class AssetToHeatComponent(_AssetToComponentBase):
                     f"{asset.asset_type} '{asset.name}' has no desired flow rate specified. "
                     f"'{asset.name}' will not be actuated in a constant manner"
                 )
-            max_supply=asset.attributes["power"]
+            max_supply = asset.attributes["power"]
             modifiers["elec_power_nominal"] = max_supply
             modifiers["cop"] = asset.attributes["COP"] if asset.attributes["COP"] else 10.0
             # Check to see if there is an electricity carrier at the in ports.
             in_port_carriers = [port.carrier for port in asset.in_ports]
-            if any([isinstance(carrier, esdl.esdl.ElectricityCommodity) for carrier in in_port_carriers]):
+            if any(
+                [
+                    isinstance(carrier, esdl.esdl.ElectricityCommodity)
+                    for carrier in in_port_carriers
+                ]
+            ):
                 for port in asset.in_ports:
                     if isinstance(port.carrier, esdl.ElectricityCommodity):
                         min_voltage = port.carrier.voltage
@@ -1329,7 +1334,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                         Power=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
                         I=dict(min=0.0, max=i_max, nominal=i_nom),
                         V=dict(min=min_voltage, nominal=min_voltage),
-                    )
+                    ),
                 )
                 return GeothermalSourceElec, modifiers
             else:
