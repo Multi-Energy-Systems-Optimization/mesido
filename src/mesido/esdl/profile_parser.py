@@ -45,16 +45,14 @@ class BaseProfileReader:
         self,
         energy_system: esdl.EnergySystem,
         file_path: Optional[Path],
-        use_esdl_ranged_contraint: bool,
+        use_esdl_ranged_contraint: bool = False,
     ):
         self._profiles: Dict[int, Dict[str, np.ndarray]] = defaultdict(dict)
         self._energy_system: esdl.EnergySystem = energy_system
         self._file_path: Optional[Path] = file_path
         self._reference_datetimes: Optional[pd.DatetimeIndex] = None
 
-        self._use_esdl_ranged_constraint = (
-            use_esdl_ranged_contraint if use_esdl_ranged_contraint is not None else False
-        )
+        self._use_esdl_ranged_constraint = use_esdl_ranged_contraint
 
     def read_profiles(
         self,
@@ -136,8 +134,8 @@ class BaseProfileReader:
                             else:
                                 logger.error(
                                     f"Asset named {asset.name}: The code currently only "
-                                    f"caters for 1 RangedConstraint but {qty_range_constraints} has"
-                                    " been specified"
+                                    f"caters for 1 RangedConstraint but {qty_range_constraints} "
+                                    "have been specified"
                                 )
                                 sys.exit(1)
                         else:

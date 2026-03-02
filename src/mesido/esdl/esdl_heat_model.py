@@ -162,10 +162,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
             self.primary_port_name_convention = kwargs["primary_port_name_convention"]
         if "secondary_port_name_convention" in kwargs.keys():
             self.secondary_port_name_convention = kwargs["secondary_port_name_convention"]
-        if "energy_system_esdl_version" in kwargs.keys():
-            self.energy_system_esdl_version = kwargs["energy_system_esdl_version"]
-        if "use_esdl_ranged_constraint" in kwargs.keys():
-            self.use_esdl_ranged_constraint = kwargs["use_esdl_ranged_constraint"]
+        self.energy_system_esdl_version = kwargs.get("energy_system_esdl_version", None)
+        self.use_esdl_ranged_constraint = kwargs.get("use_esdl_ranged_constraint", False)
 
     @property
     def _rho_cp_modifiers(self) -> Dict:
@@ -376,6 +374,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         Args:
             asset: mesido common asset with all attributes
+            max_size_attribute: type of attribute (power or volume etc.) used as max size
 
         Returns: value that should be used as the max size value for an asset
         """
@@ -442,7 +441,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 return max_value_attribute
 
             else:
-                exit("still to check this")
+                exit(f"{asset.name}: asset state DISABLED is not supported yet")
         else:  # Catering for backwards compatibility
             return asset.attributes[max_size_attribute]
 
