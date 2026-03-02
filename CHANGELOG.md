@@ -1,4 +1,4 @@
-# [Unreleased-main] - 2026-02-24
+# [Unreleased-main] - 2026-02-25
 
 ## Added
 - xxx
@@ -7,7 +7,20 @@
 - xxx
 
 ## Fixed
-- DBAccesType naming convention 
+- xxx 
+
+
+# [0.1.17] - 2026-02-25
+
+## Added
+- xxx
+
+## Changed
+- xxx
+
+## Fixed
+- DBAccesType naming convention
+- eboiler KPI
 
 
 # [0.1.16] - 2026-02-05
