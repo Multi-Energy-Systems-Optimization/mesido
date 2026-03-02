@@ -87,6 +87,9 @@ class TestRangedConstraints(TestCase):
             for key, asset_names in asset_tested.items():
 
                 for asset_name in asset_names:
+                    esdl_asset = problem._esdl_assets[
+                        problem.esdl_asset_name_to_id_map[f"{asset_name}"]
+                    ]
                     range_contraint_max = None
                     asset_input_max = None
 
@@ -97,14 +100,8 @@ class TestRangedConstraints(TestCase):
                         else:
                             power_or_capacity = "power"
 
-                        range_contraint_max = (
-                            problem._esdl_assets[problem.esdl_asset_name_to_id_map[f"{asset_name}"]]
-                            .attributes["constraint"][0]
-                            .range.maxValue
-                        )
-                        asset_input_max = problem._esdl_assets[
-                            problem.esdl_asset_name_to_id_map[f"{asset_name}"]
-                        ].attributes[power_or_capacity]
+                        range_contraint_max = esdl_asset.attributes["constraint"][0].range.maxValue
+                        asset_input_max = esdl_asset.attributes[power_or_capacity]
 
                         if all_optional:
                             # Check that the RangedContraint value is used for max size, and that
@@ -119,11 +116,7 @@ class TestRangedConstraints(TestCase):
                             )
                             # Check the range contraint name
                             np.testing.assert_equal(
-                                problem._esdl_assets[
-                                    problem.esdl_asset_name_to_id_map[f"{asset_name}"]
-                                ]
-                                .attributes["constraint"][0]
-                                .attributeReference,
+                                esdl_asset.attributes["constraint"][0].attributeReference,
                                 power_or_capacity,
                             )
                         else:
@@ -151,14 +144,8 @@ class TestRangedConstraints(TestCase):
 
                     if "aggregation_assets" == key:
 
-                        range_contraint_max = (
-                            problem._esdl_assets[problem.esdl_asset_name_to_id_map[f"{asset_name}"]]
-                            .attributes["constraint"][0]
-                            .range.maxValue
-                        )
-                        asset_input_max = problem._esdl_assets[
-                            problem.esdl_asset_name_to_id_map[f"{asset_name}"]
-                        ].attributes["aggregationCount"]
+                        range_contraint_max = esdl_asset.attributes["constraint"][0].range.maxValue
+                        asset_input_max = esdl_asset.attributes["aggregationCount"]
 
                         if all_optional:
                             # Check that the RangedContraint value is used for aggregation count,
@@ -184,21 +171,13 @@ class TestRangedConstraints(TestCase):
                             )
                         # Check the range contraint name
                         np.testing.assert_equal(
-                            problem._esdl_assets[problem.esdl_asset_name_to_id_map[f"{asset_name}"]]
-                            .attributes["constraint"][0]
-                            .attributeReference,
+                            esdl_asset.attributes["constraint"][0].attributeReference,
                             "aggregationCount",
                         )
 
                     if "volume_assets" == key:
-                        range_contraint_max = (
-                            problem._esdl_assets[problem.esdl_asset_name_to_id_map[f"{asset_name}"]]
-                            .attributes["constraint"][0]
-                            .range.maxValue
-                        )
-                        asset_input_max = problem._esdl_assets[
-                            problem.esdl_asset_name_to_id_map[f"{asset_name}"]
-                        ].attributes["volume"]
+                        range_contraint_max = esdl_asset.attributes["constraint"][0].range.maxValue
+                        asset_input_max = esdl_asset.attributes["volume"]
 
                         if all_optional:
                             # Check that the RangedContraint value is used for volume and the max
@@ -224,11 +203,7 @@ class TestRangedConstraints(TestCase):
                             )
                             # Check the range contraint name
                             np.testing.assert_equal(
-                                problem._esdl_assets[
-                                    problem.esdl_asset_name_to_id_map[f"{asset_name}"]
-                                ]
-                                .attributes["constraint"][0]
-                                .attributeReference,
+                                esdl_asset.attributes["constraint"][0].attributeReference,
                                 "volume",
                             )
                         else:

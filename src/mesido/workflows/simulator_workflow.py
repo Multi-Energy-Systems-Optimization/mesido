@@ -3,6 +3,7 @@ import logging
 
 import esdl
 
+from mesido.esdl.esdl_mixin import DBAccessType
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.head_loss_class import HeadLossOption
 from mesido.techno_economic_mixin import TechnoEconomicMixin
@@ -353,7 +354,6 @@ class NetworkSimulatorHIGHSWeeklyTimeStep(NetworkSimulatorHIGHS):
 @main_decorator
 def main(runinfo_path, log_level):
     logger.info("Run Network Simulator")
-    from mesido.esdl.esdl_mixin import DBAccessType
 
     kwargs = {
         "write_result_db_profiles": False,

@@ -6,7 +6,7 @@ import time
 from typing import Dict
 
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
-from mesido.esdl.esdl_mixin import ESDLMixin
+from mesido.esdl.esdl_mixin import DBAccessType, ESDLMixin
 from mesido.head_loss_class import HeadLossOption
 from mesido.potential_errors import reset_potential_errors
 from mesido.techno_economic_mixin import TechnoEconomicMixin
@@ -865,7 +865,6 @@ def run_end_scenario_sizing(
 @main_decorator
 def main(runinfo_path, log_level):
     logger.info("Run Scenario Sizing")
-    from mesido.esdl.esdl_mixin import DBAccessType
 
     kwargs = {
         "write_result_db_profiles": False,
