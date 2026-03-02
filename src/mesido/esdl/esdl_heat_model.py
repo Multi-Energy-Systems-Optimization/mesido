@@ -1320,8 +1320,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
             in_port_carriers = [port.carrier for port in asset.in_ports]
             elec_port = False
             for carrier in in_port_carriers:
-                if isinstance(carrier, esdl.esdl.ElectricityCommodity)
-                elec_port = True
+                if isinstance(carrier, esdl.esdl.ElectricityCommodity):
+                    elec_port = True
             if elec_port:
                 for port in asset.in_ports:
                     if isinstance(port.carrier, esdl.ElectricityCommodity):
