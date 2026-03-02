@@ -305,8 +305,7 @@ class ESDLMixin(
                 exit(1)
             elif (
                 qty_pipe_constraint == 0
-                or pipe_constraint[0].maximum
-                == esdl.PipeDiameterEnum.VALUE_SPECIFIED
+                or pipe_constraint[0].maximum == esdl.PipeDiameterEnum.VALUE_SPECIFIED
             ):
                 logger.warning(
                     "Expected a pipe diameter contraint (upper size limit) for pipe named "
