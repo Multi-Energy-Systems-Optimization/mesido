@@ -8,10 +8,10 @@ from numpy import nan
 @add_variables_documentation_automatically
 class GeothermalSourceElec(GeothermalSource):
     """
-    The geothermal source electric asset is almost identical to the geothermal source one. The only
-    difference is that this one includes an electricity in port. The electricity power calculation that
-    it inherits from the geothermal source asset needs to be satisfied by an electricity carrier supplied
-    through this new in port.
+    The geothermal source electric asset is almost identical to the geothermal source one. The 
+    only difference is that this one includes an electricity in port. The electricity power 
+    calculation that it inherits from the geothermal source asset needs to be satisfied by an 
+    electricity carrier supplied through this new in port.
 
     Variables created:
         {add_variable_names_for_documentation_here}

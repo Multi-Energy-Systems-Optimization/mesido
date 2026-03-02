@@ -202,10 +202,10 @@ class _ESDLModelBase(_Model):
                 else:
                     if asset.asset_type == "HeatPump":
                         raise Exception(
-                            f"{asset.name} has incorrect number of in/out ports. HeatPumps are allows "
-                            f"to have 1 in and 1 out port for air-water HP, 2 in ports and 2 out ports "
-                            f"when modelling a water-water HP, or 3 in ports and 2 out ports when the "
-                            f"electricity connection of the water-water HP is modelled."
+                            f"{asset.name} has incorrect number of in/out ports. HeatPumps allow "
+                            f"to have 1 in and 1 out port for air-water HP, 2 in ports and 2 out "
+                            f"ports when modelling a water-water HP, or 3 in ports and 2 out ports "
+                            f"when the electricity connection of the water-water HP is modelled."
                         )
 
             elif (

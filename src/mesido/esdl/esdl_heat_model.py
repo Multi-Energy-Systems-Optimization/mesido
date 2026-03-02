@@ -1318,12 +1318,11 @@ class AssetToHeatComponent(_AssetToComponentBase):
             modifiers["cop"] = asset.attributes["COP"] if asset.attributes["COP"] else 10.0
             # Check to see if there is an electricity carrier at the in ports.
             in_port_carriers = [port.carrier for port in asset.in_ports]
-            if any(
-                [
-                    isinstance(carrier, esdl.esdl.ElectricityCommodity)
-                    for carrier in in_port_carriers
-                ]
-            ):
+            elec_port = False
+            for carrier in in_port_carriers:
+                if isinstance(carrier, esdl.esdl.ElectricityCommodity)
+                elec_port = True
+            if elec_port:
                 for port in asset.in_ports:
                     if isinstance(port.carrier, esdl.ElectricityCommodity):
                         min_voltage = port.carrier.voltage
