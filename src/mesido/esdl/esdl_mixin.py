@@ -293,17 +293,21 @@ class ESDLMixin(
         esdl_version = self._ESDLMixin__energy_system_handler.energy_system.esdlVersion
         # "v2602" contains the items needed for the ranged constraint implementation in MESIDO
         if esdl_version is not None and esdl_version >= "v2602":
-            pipe_constraints, qty_pipe_constraints = get_asset_contraints(
+            pipe_constraint, qty_pipe_constraint = get_asset_contraints(
                 self, asset, esdl.PipeDiameterConstraint
             )
 
-            if qty_pipe_constraints > 1:
+            if qty_pipe_constraint > 1:
                 logger.exit(
                     f"More than 1 pipe diameter constraint has been specified to "
                     f"pipe named {asset.name}, currenlty only the 1st constraint is being used"
                 )
                 exit(1)
-            elif qty_pipe_constraints == 0:
+            elif (
+                qty_pipe_constraint == 0
+                or asset.attributes["constraint"][0].maximum
+                == esdl.PipeDiameterEnum.VALUE_SPECIFIED
+            ):
                 logger.warning(
                     "Expected a pipe diameter contraint (upper size limit) for pipe named "
                     f"{asset.name}, but none has been specified. Therefore, the pipe diameter "
@@ -329,7 +333,7 @@ class ESDLMixin(
                     "used for the pipe's diameter upper limit, instead of the pipe diameter "
                     "specified (if any) in the asset attribute."
                 )
-                return asset.attributes["constraint"][0].maximum.name
+                return pipe_constraint.maximum.name
         else:
             return asset.attributes["diameter"].name
 
