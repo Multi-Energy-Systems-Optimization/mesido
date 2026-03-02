@@ -1315,7 +1315,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 )
             max_supply=asset.attributes["power"]
             modifiers["elec_power_nominal"] = max_supply
-            modifiers["cop"] = asset.attributes["COP"] if asset.attributes["COP"] else 1.0
+            modifiers["cop"] = asset.attributes["COP"] if asset.attributes["COP"] else 10.0
             # Check to see if there is an electricity carrier at the in ports.
             in_port_carriers = [port.carrier for port in asset.in_ports]
             if any([isinstance(carrier, esdl.esdl.ElectricityCommodity) for carrier in in_port_carriers]):
