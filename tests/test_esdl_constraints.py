@@ -22,7 +22,21 @@ class TestRangedConstraints(TestCase):
         In the esdl files the asset input value (power, volume or aggregation) count has been
         specified to be smaller than the values specified in the RangedCosntraints
 
+        Notes re the esdl files:
+        - testing_network_1_all_enabled: All the assets are enabled.
+        - testing_network_1_all_optional_excluding_pipes:
+            - All assets OPTIONAL and pipes are ENABLED
+            - Pipe 1 and 2 have PipeDiameterConstraint values
+            - All pipes (including pipe 1 & 2) have a Diameter specified that is smaller than
+            PipeDiameterConstraint value
+        - testing_network_1_all_optional:
+            - All the assets, including the pipes are OPTIONAL
+            - Pipe 1 & 2 have a PipeDiameterConstraint values.
+            - All the pipes (including pipe 1 & 2) have a Diameter attribute value specified. The
+            PipeDiameterConstraint value is larger than the pipe Diameter specified.
+
         Checks:
+        * Assets (excluding the pipes)
         - Power and capacity:
             - OPTIONAL assets: Check that the RangedContraint value is used for max size, and that
             this values is larger than the asset attribute input value
@@ -42,6 +56,16 @@ class TestRangedConstraints(TestCase):
             RangedContraint value
         - All OPTIONAL assets: Check the range contraint name
 
+        * Pipes:
+        - Pipe DN size:
+            - OPTIONAL with PipeDiameterConstraint value and Diameter specified: Check that the
+            available pipe classes go up to PipeDiameterConstraint value and that this value is
+            larger than the Diameter specified
+            - OPTIONAL with only a Diameter specified: Check that the available pipe classes go up
+            to the Diameter specified
+            - ENABLED pipes: Check that the pipe has a diameter as specified in the attribute
+            Diameter value
+
         """
         import models.esdl_constraints.src.run_1 as run_1
         from models.esdl_constraints.src.run_1 import NetworkProblem
@@ -52,7 +76,11 @@ class TestRangedConstraints(TestCase):
         kwargs = {"use_esdl_ranged_constraint": True}
 
         # the esdl version must be >= "v2602"
-        esdl_files = {"testing_network_1_all_optional.esdl", "testing_network_1_all_enabled.esdl"}
+        esdl_files = {
+            "testing_network_1_all_enabled.esdl",
+            "testing_network_1_all_optional_excluding_pipes.esdl",
+            "testing_network_1_all_optional.esdl",
+        }
 
         for esdl_file in esdl_files:
             problem = NetworkProblem(
@@ -68,6 +96,9 @@ class TestRangedConstraints(TestCase):
             all_optional = False
             if "all_optional" in esdl_file:
                 all_optional = True
+
+            # -------------------------------------------------------------------------------------
+            # Check the assets exlcuding the pipes
 
             asset_tested = {
                 # assets where power or capcicity is used for upper limit of size
@@ -228,6 +259,34 @@ class TestRangedConstraints(TestCase):
                                 problem.parameters(0)[f"{asset_name}.volume"],
                                 asset_input_max,
                             )
+
+            # -------------------------------------------------------------------------------------
+            # Check the pipes with and without PipeDiameterConstraint
+            pipes_with_ranged_constraint = [""]
+
+            if esdl_file == "testing_network_1_all_optional.esdl":
+                pipes_with_ranged_constraint = ["Pipe1", "Pipe1_ret", "Pipe2", "Pipe2_ret"]
+
+                for pipe_name in problem.energy_system_components.get("heat_pipe", []):
+                    esdl_asset = problem._esdl_assets[
+                        problem.esdl_asset_name_to_id_map[f"{pipe_name}"]
+                    ]
+
+                    pipe_classes = list(problem._heat_pipe_topo_pipe_class_map[f"{pipe_name}"])
+                    pipe_input_size = esdl_asset.attributes["diameter"].name
+
+                    if pipe_name in pipes_with_ranged_constraint:
+                        range_contraint_max = esdl_asset.attributes["constraint"][0].maximum.name
+                        np.testing.assert_equal(pipe_classes[-1].name, range_contraint_max)
+                        np.testing.assert_array_less(
+                            int(pipe_input_size.replace("DN", "")),
+                            int(range_contraint_max.replace("DN", "")),
+                        )
+                    else:
+                        np.testing.assert_equal(pipe_classes[-1].name, pipe_input_size)
+            elif esdl_file == "testing_network_1_all_optional_excluding_pipes.esdl":
+                for pipe_name in problem.energy_system_components.get("heat_pipe", []):
+                    (problem.parameters(0)[f"{pipe_name}.diameter"], 0.695)  # DN700
 
 
 if __name__ == "__main__":
