@@ -305,7 +305,7 @@ class ESDLMixin(
                 exit(1)
             elif (
                 qty_pipe_constraint == 0
-                or asset.attributes["constraint"][0].maximum
+                or pipe_constraint[0].maximum
                 == esdl.PipeDiameterEnum.VALUE_SPECIFIED
             ):
                 logger.warning(
@@ -333,7 +333,7 @@ class ESDLMixin(
                     "used for the pipe's diameter upper limit, instead of the pipe diameter "
                     "specified (if any) in the asset attribute."
                 )
-                return pipe_constraint.maximum.name
+                return pipe_constraint[0].maximum.name
         else:
             return asset.attributes["diameter"].name
 
