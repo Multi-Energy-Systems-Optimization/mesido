@@ -53,13 +53,13 @@ class MinimizeElecProduction(Goal):
 class MinimizeElecProductionSize(Goal):
     priority = 2
 
-    order = 2
+    order = 1
 
-    def __init__(self, source, max_value):
+    def __init__(self, source):
         self.source = source
-        self.target_max = max_value
-        self.function_range = (0.0, 2.0 * max_value)
-        self.function_nominal = 1.0e2
+        self.target_max = 0.0
+        self.function_range = (0.0, 2.0 * 1e6)
+        self.function_nominal = 1e3
 
     def function(self, optimization_problem, ensemble_member):
         return optimization_problem.extra_variable(f"{self.source}__max_size", ensemble_member)
@@ -112,13 +112,17 @@ class ElectricityProblemPV(
         """
         goals = super().goals().copy()
         for source in self.energy_system_components["electricity_source"]:
-            if source not in self.energy_system_components.get("solar_pv", []):
-                max_value = self.bounds()[f"{source}.Electricity_source"][1]
-            else:
-                max_value = max(self.bounds()[f"{source}.Electricity_source"][1].values)
+            goals.append(MinimizeElecProductionSize(source=source))
 
-            goals.append(MinimizeElecProductionSize(source=source, max_value=max_value))
         return goals
+
+    def constraints(self, ensemble_member):
+        constraints = super().constraints(ensemble_member)
+        elec_prod_size = self.extra_variable("ElectricityProducer_edde__max_size", ensemble_member)
+        pv_size = self.extra_variable("PV__max_size", ensemble_member)
+        nom = self.variable_nominal("PV__max_size")
+        constraints.append(((elec_prod_size - pv_size) / nom, 0.0, 0.0))
+        return constraints
 
     def energy_system_options(self):
         options = super().energy_system_options()
