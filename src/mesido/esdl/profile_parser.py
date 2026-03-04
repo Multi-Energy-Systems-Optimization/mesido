@@ -665,8 +665,9 @@ class ESDLTimeSeriesProfileReader(BaseProfileReader):
                 date_range = pd.date_range(profile.startDateTime, periods=len(profile.values),
                                            freq=DateOffset(seconds=profile.timestep))
                 index = pd.DatetimeIndex(data=date_range)
-                series = pd.Series(data=profile.values, index=index)
-                self._df[profile.id] = series
+                series = pd.Series(data=profile.values, index=index, name=profile.id)
+                #self._df[profile.id] = series
+                pd.concat([self._df, series], axis=1)
                 unique_series.append(series)
 
                 self._check_profile_time_series(
