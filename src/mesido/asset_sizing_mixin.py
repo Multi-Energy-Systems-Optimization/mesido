@@ -1889,7 +1889,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         """
         constraints = []
         if f"{asset}.{variable_suffix}" in self.io.get_timeseries_names():
-            profile_non_scaled = self.get_timeseries(f"{asset}.{variable_suffix}").values
+            profile_non_scaled = self.get_timeseries(f"{asset}.{variable_suffix}").values[
+                : len(self.times())
+            ]
             max_profile_non_scaled = max(profile_non_scaled)
             profile_scaled = profile_non_scaled / max_profile_non_scaled
 
