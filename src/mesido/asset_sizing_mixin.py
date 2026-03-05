@@ -1865,16 +1865,13 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         max_power: ca.MX,
         constraint_nominal: float,
         ensemble_member: int,
-    ):
+    ) -> list:
         """
         Apply production‑capacity constraints based on an asset’s time‑series profile.
 
         This method caps heat or electricity output using either:
         - an absolute profile in Watts (fixed maximum or optional scaling), or
         - a normalized (0–1) profile that scales with installed capacity.
-
-        It appends the resulting constraint tuples to `constraints` for each timestep,
-        using the asset’s state, profile definition, and maximum allowed power.
 
         Parameters
         ----------
@@ -1888,9 +1885,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         Returns
         -------
-        None
-            The function modifies `constraints` in place by appending
-            profile‑based capacity constraints for each timestep.
+        constraints : The function returns a list of profile‑based capacity constraints.
         """
         constraints = []
         if f"{asset}.{variable_suffix}" in self.io.get_timeseries_names():
@@ -1932,14 +1927,13 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     logger.error(f"Unexpected state: {state_val}")
                     sys.exit(1)
 
-                for i in range(0, len(self.times())):
-                    constraints.append(
-                        (
-                            (profile_scaled[i] * max_power_var - source[i]) / constraint_nominal,
-                            0.0,
-                            np.inf,
-                        )
+                constraints.append(
+                    (
+                        (profile_scaled * max_power_var - source) / constraint_nominal,
+                        0.0,
+                        np.inf,
                     )
+                )
             # Option 2: Normalised profile (0.0-1.0) shape that scales with maximum size of the
             # producer
             # Note: If the asset is not optional then the profile will be scaled to the
@@ -1965,15 +1959,13 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 # TODO: currently this can only be used with a csv file since units must be set
                 # for ProfileContraint. Future addition can be to use a different unit/quantity
                 # etc. so that the profile is used in a normalised way and scale to max_size
-
-                for i in range(0, len(self.times())):
-                    constraints.append(
-                        (
-                            (profile_scaled[i] * max_power - source[i]) / constraint_nominal,
-                            0.0,
-                            np.inf,
-                        )
+                constraints.append(
+                    (
+                        (profile_scaled * max_power - source) / constraint_nominal,
+                        0.0,
+                        np.inf,
                     )
+                )
             else:
                 RuntimeError(f"{asset}: Unforeseen error in adding a profile constraint")
         else:
