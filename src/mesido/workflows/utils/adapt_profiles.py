@@ -9,8 +9,7 @@ import numpy as np
 
 from rtctools.data.storage import DataStore
 
-
-logger = logging.getLogger("WarmingUP-MPC")
+logger = logging.getLogger("mesido")
 logger.setLevel(logging.INFO)
 
 
@@ -19,6 +18,7 @@ def set_data_with_averages(
     variable_name: str,
     ensemble_member: int,
     new_date_times: np.array,
+    new_date_timestamps: list,
     problem: object,
 ):
     try:
@@ -33,28 +33,23 @@ def set_data_with_averages(
         )
         return
 
-    new_data = []
-    data_timestamps = data.times
-    new_date_timestamps = [
-        (new_dt - problem.io.datetimes[0]).total_seconds() for new_dt in new_date_times
-    ]
+    data_timestamps = list(data.times)
 
-    values_for_mean = [0.0]
-    for dt, val in zip(data_timestamps, data.values):
-        if dt in new_date_timestamps:
-            new_data.append(np.mean(values_for_mean))
-            values_for_mean = [val]
-        else:
-            values_for_mean.append(val)
+    new_data = [data_timestamps[0]]
+    i_start = data_timestamps.index(new_date_timestamps[0])
+    for t in range(0, len(new_date_timestamps) - 1):
+        try:
+            i_end = data_timestamps.index(new_date_timestamps[t + 1])
+        except ValueError:
+            i_end = len(data_timestamps)
+        new_data.append(np.mean(data.values[i_start:i_end]))
+        i_start = i_end
 
     # At this point new_data[0] = 0.0. This value is not utilized. The heat demand value
     # new_data[1] at new_date_times[1] is active from new_date_times[0] up to new_date_times[1]. To
     # ensure a no 0.0 heat demand values end up in the optimization, new_data[0] is forced to have
     # an artificial value below
     new_data[0] = new_data[1]
-
-    # last datetime is not in input data, so we need to take the mean of the last bit
-    new_data.append(np.mean(values_for_mean))
 
     datastore.set_timeseries(
         variable=variable_name,
@@ -67,7 +62,7 @@ def set_data_with_averages(
 
 def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, problem_day_steps: int):
     """
-    Adapt yearly porifle with hourly time steps to a common profile (daily averaged profile except
+    Adapt yearly profile with hourly time steps to a common profile (daily averaged profile except
     for the day with the peak demand).
 
     Return the following:
@@ -183,7 +178,7 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, prob
 
 def adapt_hourly_profile_averages_timestep_size(problem, problem_step_size_hours: int):
     """
-    Adapt yearly porifle with hourly time steps to a common profile with average over a given
+    Adapt yearly profile with hourly time steps to a common profile with average over a given
     stepsize in hours.
 
     Return the following:
@@ -285,6 +280,47 @@ def adapt_profile_to_copy_for_number_of_years(problem, number_of_years: int):
     logger.info("Profile data has been adapted to a common format")
 
 
+def adapt_profile_for_initial_hour_timestep_size(problem):
+    """
+    A small, (1 hour) timestep is inserted as first time step. This is used in the
+    rollout workflow to allow a yearly change in the storage of the ATES system.
+    The first time step is used to accommodate the (yearly) initial storage level of the ATES.
+
+    """
+
+    new_datastore = DataStore(problem)
+    new_datastore.reference_datetime = problem.io.datetimes[0]
+
+    org_timeseries = problem.io.datetimes
+
+    for ensemble_member in range(problem.ensemble_size):
+        parameters = problem.parameters(ensemble_member)
+
+        timestep_one_hour = org_timeseries[0] + datetime.timedelta(hours=1)
+        new_date_times = list()
+        new_date_times = org_timeseries.copy()
+        new_date_times.insert(1, timestep_one_hour)
+
+        parameters["times"] = [x.timestamp() for x in new_date_times]
+
+        for var_name in problem.io.get_timeseries_names():
+            old_data = problem.io.get_timeseries(var_name)[1]
+            new_data = np.insert(old_data, 1, old_data[0])  # insert the first
+            # value at the second position, so that the first value is repeated
+            # at the second position.
+            new_datastore.set_timeseries(
+                variable=var_name,
+                datetimes=new_date_times,
+                values=np.asarray(new_data),
+                ensemble_member=ensemble_member,
+                check_duplicates=True,
+            )
+
+    problem.io = new_datastore
+
+    logger.info("Profile data has been adapted to a common format")
+
+
 def select_profiles_for_update(
     problem, new_datastore: DataStore, new_date_times: np.array, ensemble_member: int
 ):
@@ -303,11 +339,15 @@ def select_profiles_for_update(
     """
 
     timeseries_names = problem.io.get_timeseries_names()
+    new_date_timestamps = [
+        (new_dt - problem.io.datetimes[0]).total_seconds() for new_dt in new_date_times
+    ]
     for var_name in timeseries_names:
         set_data_with_averages(
             datastore=new_datastore,
             variable_name=var_name,
             ensemble_member=ensemble_member,
             new_date_times=new_date_times,
+            new_date_timestamps=new_date_timestamps,
             problem=problem,
         )

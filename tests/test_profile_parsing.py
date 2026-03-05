@@ -1,9 +1,10 @@
 import datetime
 import operator
+import os
 import unittest
 import unittest.mock
 from pathlib import Path
-from typing import Optional
+from typing import Dict, Optional, Tuple
 
 import esdl
 
@@ -21,8 +22,13 @@ import pandas as pd
 
 
 class MockInfluxDBProfileReader(InfluxDBProfileReader):
-    def __init__(self, energy_system: esdl.EnergySystem, file_path: Optional[Path]):
-        super().__init__(energy_system, file_path)
+    def __init__(
+        self,
+        energy_system: esdl.EnergySystem,
+        file_path: Optional[Path],
+        database_credentials: Optional[Dict[str, Tuple[str, str]]] = None,
+    ):
+        super().__init__(energy_system, file_path, database_credentials=database_credentials)
         self._loaded_profiles = pd.read_csv(
             file_path,
             index_col="DateTime",
@@ -144,6 +150,7 @@ class TestProfileLoading(unittest.TestCase):
         base_folder = Path(run_1a.__file__).resolve().parent.parent
         model_folder = base_folder / "model"
         input_folder = base_folder / "input"
+
         problem = EndScenarioSizingStaged(
             esdl_parser=ESDLFileParser,
             base_folder=base_folder,
@@ -277,13 +284,92 @@ class TestProfileLoading(unittest.TestCase):
             expected_array, problem.get_timeseries("Hydrogen.price_profile").values
         )
 
+    def test_loading_profile_from_esdl(self):
+        """
+        This test loads a problem using an ESDL file which has influxDB profiles
+        specified, and checks if the profile_parser correctly loads those profiles
+        and checks for their correctness against a manually loaded csv file with the same profiles.
+        """
+        import models.unit_cases.case_3a.src.run_3a as run_3a
+        from models.unit_cases.case_3a.src.run_3a import HeatProblemESDLProdProfile
+
+        base_folder = Path(run_3a.__file__).resolve().parent.parent
+        model_folder = base_folder / "model"
+        input_folder = base_folder / "input"
+        problem = HeatProblemESDLProdProfile(
+            base_folder=base_folder,
+            model_folder=model_folder,
+            esdl_file_name="3a_esdl_multiple_heat_sources_unscaled_profile.esdl",
+            esdl_parser=ESDLFileParser,
+        )
+        problem.pre()
+
+        expected_values_file = pd.read_csv(
+            os.path.join(input_folder, "SpaceHeat&HotWater_PowerProfile_2000_2010.csv")
+        )
+        expected_values = expected_values_file["Ruimte&Tap_W"]
+        for asset in problem.energy_system_components.get("heat_source"):
+            np.testing.assert_allclose(
+                problem.get_timeseries(f"{asset}.maximum_heat_source").values,
+                expected_values * 1e6,
+                atol=1e-2,
+            )
+
+    def test_loading_profiles_ensemble_members(self):
+        """
+        This test constructs multiple ensemble members based on an "ensemble_member" CSV file
+        that describes the probability of the ensemble member and the name and number.
+        The profiles related to each ensemble member are read from the respective CSV files and
+        saved in for each member.
+        The test checks if the profiles read match the profiles from the CVS files and if the
+        ensemble_member_size is set accordingly.
+        """
+        import models.unit_cases.case_2a_ensemble.src.run_2a as run_2a
+        from models.unit_cases.case_2a_ensemble.src.run_2a import HeatProblemEnsemble
+
+        base_folder = Path(run_2a.__file__).resolve().parent.parent
+        model_folder = base_folder / "model"
+        input_folder = base_folder / "input"
+
+        problem = HeatProblemEnsemble(
+            base_folder=base_folder,
+            model_folder=model_folder,
+            input_folder=input_folder,
+            esdl_file_name="2a.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.csv",
+        )
+
+        problem.pre()
+
+        # check that the ensemble size is set at 2, which is based on the ensemble.csv
+        np.testing.assert_equal(problem.ensemble_size, 2)
+        prob_0 = problem.ensemble_member_probability(0)
+        prob_1 = problem.ensemble_member_probability(1)
+        np.testing.assert_allclose(prob_0, 0.7)
+        np.testing.assert_allclose(prob_1, 0.3)
+
+        # check that the timeseries are loaded for all ensemble sizes and that the timeseries are
+        # equal to a heating demand of 350000 except for HeatingDemand_6f99 at the second
+        # ensemble, where it is equal to 300000.
+        timeseries_names = problem.io.get_timeseries_names()
+        for t_name in timeseries_names:
+            for e_m in range(problem.ensemble_size):
+                t_series = problem.get_timeseries(t_name, e_m)
+                if e_m == 1 and t_name == "HeatingDemand_6f99.target_heat_demand":
+                    np.testing.assert_allclose(t_series.values, [300000] * 3)
+                else:
+                    np.testing.assert_allclose(t_series.values, [350000] * 3)
+
 
 if __name__ == "__main__":
     # unittest.main()
     a = TestProfileLoading()
     c = TestProfileUpdating()
-    # a.test_loading_from_influx()
-    # a.test_loading_from_csv()
-    # a.test_loading_from_xml()
-    # a.test_loading_from_csv_with_influx_profiles_given()
+    a.test_loading_from_influx()
+    a.test_loading_from_csv()
+    a.test_loading_from_xml()
+    a.test_loading_from_csv_with_influx_profiles_given()
     c.test_profile_updating()
+    a.test_loading_profile_from_esdl()

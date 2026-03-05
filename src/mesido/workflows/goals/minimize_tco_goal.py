@@ -2,6 +2,7 @@ from typing import Any, Dict, Optional, Set
 
 from casadi import MX
 
+from mesido.esdl.asset_to_component_base import AssetStateEnum
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 
 from rtctools.optimization.goal_programming_mixin_base import Goal
@@ -39,57 +40,70 @@ class MinimizeTCO(Goal):
             "operational": {
                 "heat_source",
                 "ates",
+                "low_temperature_ates",
                 "heat_pump",
                 "pump",
                 "heat_exchanger",
                 "heat_buffer",
                 "gas_source",  # TODO still to add other costs for this asset_type
                 "electricity_source",  # TODO still to add other costs for this asset_type
+                "airco",
             },
             "fixed_operational": {
                 "heat_source",
                 "ates",
+                "low_temperature_ates",
                 "heat_buffer",
                 "heat_pump",
                 "heat_exchanger",
                 "pump",
+                "airco",
                 "heat_demand",
             },
             "investment": {
                 "heat_source",
                 "ates",
+                "low_temperature_ates",
                 "heat_buffer",
                 "heat_demand",
+                "cold_demand",
                 "heat_exchanger",
                 "heat_pump",
                 "heat_pipe",
                 "gas_pipe",
                 "electricity_cable",
                 "pump",
+                "airco",
             },
             "installation": {
                 "heat_source",
                 "ates",
+                "low_temperature_ates",
                 "heat_buffer",
                 "heat_demand",
+                "cold_demand",
                 "heat_exchanger",
                 "heat_pump",
                 "heat_pipe",
                 "gas_pipe",
                 "electricity_cable",
                 "pump",
+                "airco",
             },
             "annualized": {
                 "heat_source",
                 "ates",
+                "low_temperature_ates",
                 "heat_buffer",
                 "heat_demand",
+                "cold_demand",
                 "heat_exchanger",
                 "heat_pump",
                 "heat_pipe",
                 "gas_pipe",
                 "electricity_cable",
                 "pump",
+                "airco",
             },
         }
 
@@ -152,16 +166,25 @@ class MinimizeTCO(Goal):
 
                 asset_state = optimization_problem.parameters(ensemble_member)[f"{asset}.state"]
 
-                if not ((asset_type == "heat_demand") and (asset_state == 1.0)):
-                    if options["discounted_annualized_cost"]:
-                        # We only want the operational cost for a single year when we use
-                        # annualized CAPEX.
-                        obj += extra_var
-                    elif "operational" in cost_type:
-                        obj += extra_var * self.number_of_years
-                    else:
-                        # These are the CAPEX cost under non-annualized condition
-                        obj += extra_var
+                if "operational" in cost_type:
+                    if not (
+                        asset_type == "heat_demand" and (asset_state == AssetStateEnum.ENABLED)
+                    ):
+                        if options["discounted_annualized_cost"]:
+                            # We only want the operational cost for a single year when we use
+                            # annualized CAPEX.
+                            obj += extra_var
+                        else:
+                            obj += extra_var * self.number_of_years
+                else:
+                    if asset_state == AssetStateEnum.OPTIONAL:
+                        # The capex of enabled assets should not be a part of the objective
+                        # function as it cannot be influenced.
+                        if options["discounted_annualized_cost"]:
+                            # Annualized CAPEX is used.
+                            obj += extra_var
+                        else:
+                            obj += extra_var * factor
         return obj
 
     def function(self, optimization_problem: TechnoEconomicMixin, ensemble_member) -> MX:

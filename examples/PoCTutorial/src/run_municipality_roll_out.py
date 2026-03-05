@@ -1,0 +1,164 @@
+from pathlib import Path
+
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.workflows import run_end_scenario_sizing
+from mesido.workflows.io.rollout_post import RollOutPost
+from mesido.workflows.rollout_workflow import (
+    RollOutProblem,
+    SolverCPLEX,
+)  # not yet added to init of workflows
+
+# as this is still work in progress, and shouldn't be used yet.
+# from mesido.esdl.profile_parser import ProfileReaderFromFile
+
+
+if __name__ == "__main__":
+    import time
+
+    start_time = time.time()
+    base_folder = Path(__file__).resolve().parent.parent.parent
+    base_folder = base_folder / "municipality"
+
+    class RollOutTimeStep(RollOutProblem):
+        pass
+        # def read(self):
+        #     super().read()
+        #     m = [3, 5, 5]
+        #     for i in range(1, 4):
+        #         demand_timeseries = self.get_timeseries(f"HeatingDemand_{i}.target_heat_demand")
+        #         demand_timeseries.values[:] = demand_timeseries.values[:] * m[i - 1]
+        #         self.set_timeseries(f"HeatingDemand_{i}.target_heat_demand", demand_timeseries)
+
+    solution = run_end_scenario_sizing(
+        RollOutTimeStep,
+        solver_class=SolverCPLEX,
+        base_folder=base_folder,
+        # esdl_file_name="PoC_tutorial_incl_ATES copy.esdl",
+        esdl_file_name="GROW_withATES_Prod_install_withoutbuffer_costs_GrowOptimized.esdl",
+        # esdl_file_name="test_case_small_network_with_ates_with_buffer.esdl", # gives an error
+        esdl_parser=ESDLFileParser,
+        # profile_reader=ProfileReaderFromFile,
+        # input_timeseries_file="Warmte_test.csv",
+        yearly_max_capex=3.0e6,
+    )
+    results = solution.extract_results()
+
+    kwargs = {
+        "output_folder": base_folder / "output",
+        "esdl_file_name": base_folder
+        / "model"
+        / "GROW_withATES_Prod_install_withoutbuffer_costs_GrowOptimized.esdl",
+        "figure_folder": base_folder / "output" / "figures",
+    }
+
+    rolloutpost = RollOutPost(**kwargs)
+    rolloutpost.all_plots()
+
+    # DO NOT DELETE, for manual checking of results.
+    # import matplotlib.pyplot as plt
+    #
+    # solution.times()
+    # for ates in solution.energy_system_components.get("ates", []):
+    #     print(results[f"{ates}.Stored_heat"])
+    #
+    # figure, ax = plt.subplots()
+    # times = solution.times()
+    # for ates in solution.energy_system_components.get("ates", []):
+    #     # stored_heat = [results.get(f"{ates}.Stored_heat", 0) for t in range(times)]
+    #     plt.plot(times / 3600 / 24, results[f"{ates}.Stored_heat"] / 1e9, label=str(ates))
+    #
+    # plt.xlabel("Time [days]")
+    # plt.ylabel("Stored Heat [GJ]")
+    # plt.title("Heat Storage vs Time")
+    # plt.legend()
+    # plt.xticks(range(0, int(times[-1] / 3600 / 24) + 1, 20), minor=True)
+    # coarse_ticks = [0, 365, 730, 1095]
+    # plt.xticks(coarse_ticks, [str(t) for t in coarse_ticks])
+    # plt.grid()
+    # plt.tight_layout()
+    # plt.show()
+    # savefig = base_folder / "heat_storage_vs_time.png"
+    # plt.savefig(savefig)
+    # plt.close()
+    #
+    # figure, ax = plt.subplots()
+    # times = solution.times()
+    # for heatsource in solution.energy_system_components.get("heat_source", []):
+    #     # stored_heat = [results.get(f"{ates}.Stored_heat", 0) for t in range(times)]
+    #     plt.plot(
+    #         times / 3600 / 24, results[f"{heatsource}.Heat_source"] / 1e6, label=str(heatsource)
+    #     )
+    # for d in solution.energy_system_components.get("heat_demand", []):
+    #     target = solution.get_timeseries(f"{d}.target_heat_demand").values[
+    #         0 : solution._timesteps_per_year * solution._years + 1
+    #     ]
+    #     delivered = results[f"{d}.Heat_demand"]
+    #     print(f"{d}.Heat_demand", target, delivered)
+    #
+    # plt.xlabel("Time [days]")
+    # plt.ylabel("Heat produced [MW]")
+    # plt.title("Heat [produced] vs Time")
+    # plt.legend()
+    # plt.xticks(range(0, int(times[-1] / 3600 / 24) + 1, 20), minor=True)
+    # coarse_ticks = [0, 365, 730, 1095]
+    # plt.xticks(coarse_ticks, [str(t) for t in coarse_ticks])
+    # plt.grid()
+    # plt.tight_layout()
+    # plt.show()
+    # savefig = base_folder / "heat_produced_vs_time.png"
+    # plt.savefig(savefig)
+    # plt.close()
+    #
+    # figure, ax = plt.subplots()
+    # for ates in solution.energy_system_components.get("ates", []):
+    #     # stored_heat = [results.get(f"{ates}.Stored_heat", 0) for t in range(times)]
+    #     plt.plot(
+    #         times / 3600 / 24, results[f"{ates}.Heat_ates"] / 1e6, label=str(ates) + " Heat_ates"
+    #     )
+    #     plt.plot(
+    #         times / 3600 / 24, results[f"{ates}.Heat_loss"] / 1e6, label=str(ates) + " Heat_loss"
+    #     )
+    #     plt.plot(
+    #         times / 3600 / 24,
+    #         results[f"{ates}.Storage_yearly_change"] / 1e6,
+    #         label=str(ates) + " Storage_yearly_change",
+    #     )
+    #
+    # plt.xlabel("Time [days]")
+    # plt.ylabel("Heat [MW]")
+    # plt.title("Heat  vs Time")
+    # plt.legend()
+    # plt.xticks(range(0, int(times[-1] / 3600 / 24) + 1, 20), minor=True)
+    # coarse_ticks = [0, 365, 730, 1095]
+    # plt.xticks(coarse_ticks, [str(t) for t in coarse_ticks])
+    # plt.grid()
+    # plt.tight_layout()
+    # plt.show()
+    # savefig = base_folder / "heat_ates_vs_time.png"
+    # plt.savefig(savefig)
+    # plt.close()
+    #
+    # for source in [
+    #     *solution.energy_system_components.get("heat_source", []),
+    #     *solution.energy_system_components.get("heat_demand", []),
+    #     *solution.hot_pipes,
+    # ]:
+    #     try:
+    #         placed_over_time = [
+    #             results[f"{source}__asset_is_realized_{year}"] for year in range(solution._years)
+    #         ]
+    #         print(f"{source} is placed over time: {placed_over_time}")
+    #     except KeyError:
+    #         pass
+    #     cumulative_investments = [
+    #         results[f"{source}__cumulative_investments_made_in_eur_year_{year}"]
+    #         for year in range(solution._years)
+    #     ]
+    #     print(f"{source} has a cumulative investment over time of: {cumulative_investments}")
+    #
+    # print(
+    #     f"Yearly capex spent: "
+    #     f"{[results[f'yearly_capex_{year}'] for year in range(solution._years)]}"
+    # )
+    #
+    # print("Done")

@@ -22,8 +22,7 @@ from utils_test_scaling import create_log_list_scaling
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
-
-logger = logging.getLogger("WarmingUP-MPC")
+logger = logging.getLogger("mesido")
 logger.setLevel(logging.INFO)
 
 
@@ -42,12 +41,13 @@ class TestColdDemand(TestCase):
         import models.wko.src.example as example
         from models.wko.src.example import HeatProblem
 
-        logger, logs_list = create_log_list_scaling("WarmingUP-MPC")
+        logger, logs_list = create_log_list_scaling("mesido")
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
-        with self.assertRaises(MesidoAssetIssueError) as cm, unittest.mock.patch(
-            "mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()
+        with (
+            self.assertRaises(MesidoAssetIssueError) as cm,
+            unittest.mock.patch("mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()),
         ):
             _ = run_esdl_mesido_optimization(
                 HeatProblem,

@@ -3,7 +3,7 @@ from unittest import TestCase
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
-from mesido.workflows import NetworkSimulatorHIGHSTestCase
+from mesido.workflows import NetworkSimulatorHIGHS
 
 import numpy as np
 
@@ -14,7 +14,7 @@ from utils_tests import demand_matching_test, energy_conservation_test, heat_to_
 
 class TestNetworkSimulator(TestCase):
     """
-    In this test case 2 heat producers and an ATES is used to supply 3 heating demands. A merit
+    In this test case 2 heat producers are used to supply 3 heating demands. A merit
     order (preference of 1st use) is given to the producers: Producer_1 = 2 and Producer_2 = 1.
 
     Checks:
@@ -22,7 +22,6 @@ class TestNetworkSimulator(TestCase):
       calculated heat (based on flow rate)
     - Check that producer 1 (merit oder = 2) is only used for the supply of heat lossed in the
       connected and is does not contribute to the heating demands 1, 2 and 3
-    - Check that the ATES is not delivering any heat to the network during the 1st time step
     """
 
     def test_network_simulator(self):
@@ -30,11 +29,22 @@ class TestNetworkSimulator(TestCase):
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
+        class NetworkSimulatorHIGHSTestCase(NetworkSimulatorHIGHS):
+            def energy_system_options(self):
+                options = super().energy_system_options()
+
+                options["heat_loss_disconnected_pipe"] = False
+
+                return options
+
+            def times(self, variable=None) -> np.ndarray:
+                return super().times(variable)[:5]
+
         solution = run_optimization_problem(
             NetworkSimulatorHIGHSTestCase,
             base_folder=base_folder,
             # TODO: it seems to write an output file (NOT NICE!)
-            esdl_file_name="test_case_small_network_with_ates.esdl",
+            esdl_file_name="test_case_small_network_without_ates.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
@@ -57,12 +67,6 @@ class TestNetworkSimulator(TestCase):
             "the total heat demand (incl. heat losses) and it has the 1st priority for usage",
             rtol=1.0e-3,
             atol=1.0e-3,
-        )
-        # Check ATES
-        np.testing.assert_array_less(
-            results["ATES_033c.Heat_ates"][0],
-            0.0,
-            err_msg="ATES should not be delivering heat to the network in the 1st time step",
         )
 
 

@@ -2,6 +2,7 @@ import logging
 import os
 
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
+from mesido.esdl.esdl_mixin import DBAccessType
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.head_loss_class import HeadLossOption
 from mesido.network_common import NetworkSettings
@@ -25,7 +26,7 @@ from rtctools.optimization.single_pass_goal_programming_mixin import (
 )
 from rtctools.util import run_optimization_problem
 
-logger = logging.getLogger("WarmingUP-MPC")
+logger = logging.getLogger("mesido")
 logger.setLevel(logging.INFO)
 
 
@@ -85,6 +86,10 @@ class GasElectProblem(
     CollocatedIntegratedOptimizationProblem,
 ):
     def __init__(self, *args, **kwargs):
+        # Extract error_type_check parameter before calling super().__init__
+        # This allows cost validation bypass when NO_POTENTIAL_ERRORS_CHECK is used
+        self._error_type_check = kwargs.get("error_type_check", None)
+
         super().__init__(*args, **kwargs)
 
         self._number_of_years = 1
@@ -193,12 +198,17 @@ def main(runinfo_path, log_level):
 
     kwargs = {
         "write_result_db_profiles": False,
-        "influxdb_host": "localhost",
-        "influxdb_port": 8086,
-        "influxdb_username": None,
-        "influxdb_password": None,
-        "influxdb_ssl": False,
-        "influxdb_verify_ssl": False,
+        "database_connections": [
+            {
+                "access_type": DBAccessType.WRITE,
+                "influxdb_host": "localhost",
+                "influxdb_port": 8086,
+                "influxdb_username": None,
+                "influxdb_password": None,
+                "influxdb_ssl": False,
+                "influxdb_verify_ssl": False,
+            },
+        ],
     }
 
     _ = run_optimization_problem(

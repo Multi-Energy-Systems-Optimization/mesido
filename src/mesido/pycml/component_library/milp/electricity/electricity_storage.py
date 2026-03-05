@@ -50,6 +50,42 @@ class ElectricityStorage(ElectricityComponent, BaseAsset):
             nominal=self.ElectricityIn.Power.nominal,
             max=self.ElectricityIn.Power.max,
         )
+        self.add_variable(
+            Variable,
+            "Power_charging",
+            min=0.0,
+            max=self.ElectricityIn.Power.max,
+            nominal=self.ElectricityIn.Power.nominal,
+        )
+        self.add_variable(
+            Variable,
+            "Power_discharging",
+            min=0.0,
+            max=self.ElectricityIn.Power.max,
+            nominal=self.ElectricityIn.Power.nominal,
+        )
+
+        # Convex hull formulation is applied for the power charging and discharging. As long as
+        # the efficiencies during charging and discharging are less than 1 and no negative prices
+        # are applied, no binary variables are needed to describe whether the battery is in
+        # charging or discharging mode.
+        self.add_equation(
+            (
+                (self.ElectricityIn.Power - (self.Power_charging - self.Power_discharging))
+                / self.ElectricityIn.Power.nominal
+            )
+        )
+
+        self.add_equation(
+            (
+                (
+                    self.Effective_power_charging
+                    - self.charge_efficiency * self.Power_charging
+                    + 1 / self.discharge_efficiency * self.Power_discharging
+                )
+                / self.ElectricityIn.Power.nominal
+            )
+        )
 
         self.add_equation(
             (
@@ -57,3 +93,7 @@ class ElectricityStorage(ElectricityComponent, BaseAsset):
                 / self.ElectricityIn.Power.nominal
             )
         )
+
+        # For current situation not required, but the battery could be split up in multiple
+        # segments that each individually have their power charging and discharging and when
+        # summed up are equal to current variables.

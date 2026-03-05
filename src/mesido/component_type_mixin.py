@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Set
+from typing import Dict, List, Set, Tuple
 
 from mesido.base_component_type_mixin import BaseComponentTypeMixin
 from mesido.heat_network_common import NodeConnectionDirection
@@ -25,6 +25,10 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
         super().__init__(**kwargs)
         self.__hn_component_types = None
         self.__commodity_types = None
+
+        self.__hot_cold_pipe_relations = dict()
+        self.__unrelated_pipes = list()
+        self.hot_cold_pipe_relations()
 
     def pre(self):
         """
@@ -81,6 +85,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
 
             # Look for aliases only in the hot pipes. All cold pipes are zero by convention anyway.
             hot_pipes = self.hot_pipes.copy()
+            hot_pipes.extend(self.unrelated_pipes.copy())
 
             pipes_map = {f"{pipe}.HeatIn.Heat": pipe for pipe in hot_pipes}
             pipes_map.update({f"{pipe}.HeatOut.Heat": pipe for pipe in hot_pipes})
@@ -104,6 +109,24 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                             alias_relation.add(f"{p}.Q", f"{sign_prefix}{other_pipe}.Q")
 
         node_to_node_logical_link_map = {}
+
+        def __get_aliases_asset(asset: str, asset_conn: str) -> List[str]:
+            """
+            Extracts a list of aliases for a specific variable.
+
+            Args:
+                asset: asset name
+                asset_conn: asset variable string including port excluding property
+
+            Returns:
+                List of aliases for a port property connection
+            """
+            aliases = [
+                x
+                for x in self.alias_relation.aliases(f"{asset_conn}.{prop}")
+                if not x.startswith(asset) and x.endswith(f".{prop}")
+            ]
+            return aliases
 
         for n in [*nodes, *busses, *gas_nodes]:
             n_connections = [ens_params[f"{n}.n"] for ens_params in parameters]
@@ -161,11 +184,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                     in_suffix_h = ".GasIn.H"
                     out_suffix_h = ".GasOut.H"
                     node_suffix = ".GasConn[1].Q"
-                aliases = [
-                    x
-                    for x in self.alias_relation.aliases(f"{cur_port}.{prop}")
-                    if not x.startswith(n) and x.endswith(f".{prop}")
-                ]
+                aliases = __get_aliases_asset(n, cur_port)
 
                 if len(aliases) == 0:
                     raise Exception(f"Found no connection to {cur_port}")
@@ -251,6 +270,52 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                 raise Exception(f"Pipes in series {ps} do not all have the same orientation")
             pipe_series.append([name for name, _ in ps])
 
+        def __get_asset_orientation(in_suffix: str, out_suffix: str) -> Tuple[str, str]:
+            """
+            Extracts the orientation for the connecting pipes to the asset.
+            Args:
+                in_suffix: string consisting of inport and property variable name
+                out_suffix: string consisting of outport and property variable name
+
+            Returns:
+            """
+            if aliases[0].endswith(out_suffix):
+                asset_w_orientation = (
+                    aliases[0][: -len(out_suffix)],
+                    NodeConnectionDirection.IN,
+                )
+            else:
+                asset_w_orientation = (
+                    aliases[0][: -len(in_suffix)],
+                    NodeConnectionDirection.OUT,
+                )
+            return asset_w_orientation
+
+        def __get_asset_orientation_heat_storages() -> Tuple[str, str]:
+            """
+            Extracts the orientation of heat storage assets.
+            """
+            in_suffix = ".QTHIn.T" if heat_network_model_type == "QTH" else ".HeatIn.Heat"
+            out_suffix = ".QTHOut.T" if heat_network_model_type == "QTH" else ".HeatOut.Heat"
+            return __get_asset_orientation(in_suffix, out_suffix)
+
+        def __get_asset_orientation_source_sink() -> Tuple[str, str]:
+            """
+            Extracts the orientation of source and sink (demand) assets.
+            """
+            in_suffix = f".{network_type}In.{prop}"
+            out_suffix = f".{network_type}Out.{prop}"
+            return __get_asset_orientation(in_suffix, out_suffix)
+
+        def __get_aliases_asset_non_node(asset: str, asset_conn: str) -> List[str]:
+            """
+            The aliases of non node assets
+            """
+            aliases = __get_aliases_asset(asset, asset_conn)
+            if len(aliases) > 1:
+                raise Exception(f"More than one connection to {asset_conn}")
+            return aliases
+
         buffer_connections = {}
 
         for b in buffers:
@@ -261,38 +326,20 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                 prop = (
                     "T" if heat_network_model_type == "QTH" else NetworkSettings.NETWORK_TYPE_HEAT
                 )
-                aliases = [
-                    x
-                    for x in self.alias_relation.aliases(f"{b_conn}.{prop}")
-                    if not x.startswith(b) and x.endswith(f".{prop}")
-                ]
-
-                if len(aliases) > 1:
-                    raise Exception(f"More than one connection to {b_conn}")
-                elif len(aliases) == 0:
+                aliases = __get_aliases_asset_non_node(b, b_conn)
+                if len(aliases) == 0:
                     raise Exception(f"Found no connection to {b_conn}")
-
-                in_suffix = ".QTHIn.T" if heat_network_model_type == "QTH" else ".HeatIn.Heat"
-                out_suffix = ".QTHOut.T" if heat_network_model_type == "QTH" else ".HeatOut.Heat"
-                alias = aliases[0]
-                if alias.endswith(out_suffix):
-                    asset_w_orientation = (
-                        alias[: -len(out_suffix)],
-                        NodeConnectionDirection.IN,
-                    )
-                else:
-                    assert alias.endswith(in_suffix)
-                    asset_w_orientation = (
-                        alias[: -len(in_suffix)],
-                        NodeConnectionDirection.OUT,
-                    )
+                asset_w_orientation = __get_asset_orientation_heat_storages()
 
                 assert asset_w_orientation[0] in pipes_set
 
-                if k == "In":
-                    assert self.is_hot_pipe(asset_w_orientation[0])
-                else:
-                    assert self.is_cold_pipe(asset_w_orientation[0])
+                # TODO: this check can no longer be based on is_hot_pipe or is_cold_pipe,
+                # because the pipes might be drawn separately and then do not have the "related"
+                # attribute in esdl.
+                # if k == "In":
+                #     assert self.is_hot_pipe(asset_w_orientation[0])
+                # else:
+                #     assert self.is_cold_pipe(asset_w_orientation[0])
 
                 buffer_connections[b].append(asset_w_orientation)
 
@@ -308,38 +355,21 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                 prop = (
                     "T" if heat_network_model_type == "QTH" else NetworkSettings.NETWORK_TYPE_HEAT
                 )
-                aliases = [
-                    x
-                    for x in self.alias_relation.aliases(f"{a_conn}.{prop}")
-                    if not x.startswith(a) and x.endswith(f".{prop}")
-                ]
-
-                if len(aliases) > 1:
-                    raise Exception(f"More than one connection to {a_conn}")
-                elif len(aliases) == 0:
+                aliases = __get_aliases_asset_non_node(a, a_conn)
+                if len(aliases) == 0:
                     raise Exception(f"Found no connection to {a_conn}")
 
-                in_suffix = ".QTHIn.T" if heat_network_model_type == "QTH" else ".HeatIn.Heat"
-                out_suffix = ".QTHOut.T" if heat_network_model_type == "QTH" else ".HeatOut.Heat"
-
-                if aliases[0].endswith(out_suffix):
-                    asset_w_orientation = (
-                        aliases[0][: -len(out_suffix)],
-                        NodeConnectionDirection.IN,
-                    )
-                else:
-                    assert aliases[0].endswith(in_suffix)
-                    asset_w_orientation = (
-                        aliases[0][: -len(in_suffix)],
-                        NodeConnectionDirection.OUT,
-                    )
+                asset_w_orientation = __get_asset_orientation_heat_storages()
 
                 assert asset_w_orientation[0] in pipes_set
 
-                if k == "Out":
-                    assert self.is_cold_pipe(asset_w_orientation[0])
-                else:
-                    assert self.is_hot_pipe(asset_w_orientation[0])
+                # TODO: this check can no longer be based on is_hot_pipe or is_cold_pipe,
+                # because the pipes might be drawn separately and then do not have the "related"
+                # attribute in esdl.
+                # if k == "Out":
+                #     assert self.is_cold_pipe(asset_w_orientation[0])
+                # else:
+                #     assert self.is_hot_pipe(asset_w_orientation[0])
 
                 ates_connections[a].append(asset_w_orientation)
 
@@ -360,31 +390,13 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
             else:
                 logger.error(f"{a} cannot be modelled with heat, gas or electricity")
             a_conn = f"{a}.{network_type}In"
-            aliases = [
-                x
-                for x in self.alias_relation.aliases(f"{a_conn}.{prop}")
-                if not x.startswith(a) and x.endswith(f".{prop}")
-            ]
 
-            if len(aliases) > 1:
-                raise Exception(f"More than one connection to {a_conn}")
-            elif len(aliases) == 0:
+            aliases = __get_aliases_asset_non_node(a, a_conn)
+            if len(aliases) == 0:
                 # the connection was a logical link to a node
                 continue
 
-            in_suffix = f".{network_type}In.{prop}"
-            out_suffix = f".{network_type}Out.{prop}"
-
-            if aliases[0].endswith(out_suffix):
-                asset_w_orientation = (
-                    aliases[0][: -len(out_suffix)],
-                    NodeConnectionDirection.IN,
-                )
-            else:
-                asset_w_orientation = (
-                    aliases[0][: -len(in_suffix)],
-                    NodeConnectionDirection.OUT,
-                )
+            asset_w_orientation = __get_asset_orientation_source_sink()
 
             if asset_w_orientation[0] in [
                 *components.get("heat_pipe", []),
@@ -408,31 +420,13 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
             else:
                 logger.error(f"{a} cannot be modelled with heat, gas or electricity")
             a_conn = f"{a}.{network_type}Out"
-            aliases = [
-                x
-                for x in self.alias_relation.aliases(f"{a_conn}.{prop}")
-                if not x.startswith(a) and x.endswith(f".{prop}")
-            ]
 
-            if len(aliases) > 1:
-                raise Exception(f"More than one connection to {a_conn}")
-            elif len(aliases) == 0:
+            aliases = __get_aliases_asset_non_node(a, a_conn)
+            if len(aliases) == 0:
                 # the connection was a logical link to a node
                 continue
 
-            in_suffix = f".{network_type}In.{prop}"
-            out_suffix = f".{network_type}Out.{prop}"
-
-            if aliases[0].endswith(out_suffix):
-                asset_w_orientation = (
-                    aliases[0][: -len(out_suffix)],
-                    NodeConnectionDirection.IN,
-                )
-            else:
-                asset_w_orientation = (
-                    aliases[0][: -len(in_suffix)],
-                    NodeConnectionDirection.OUT,
-                )
+            asset_w_orientation = __get_asset_orientation_source_sink()
 
             if asset_w_orientation[0] in [
                 *components.get("heat_pipe", []),
@@ -505,3 +499,45 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
         with directions on the ports that are needed in the constraints.
         """
         return self.__topology
+
+    @property
+    def hot_to_cold_pipe_map(self) -> Dict:
+        """
+        This function return a dictionary of hot pipe names mapped to cold pipe names.
+        """
+        return self.__hot_cold_pipe_relations
+
+    @property
+    def cold_to_hot_pipe_map(self) -> Dict:
+        """
+        This function return a dictionary of cold pipe names mapped to hot pipe names.
+        """
+        return dict(
+            zip(self.__hot_cold_pipe_relations.values(), self.__hot_cold_pipe_relations.keys())
+        )
+
+    def hot_cold_pipe_relations(self):
+        pipes = self.energy_system_components.get("heat_pipe", [])
+        for pipe in pipes:
+            related = False
+            # test if hot_pipe
+            if self.is_hot_pipe(pipe):
+                cold_pipe = self.hot_to_cold_pipe(pipe)
+                if cold_pipe in pipes:
+                    related = True
+                    if pipe not in self.__hot_cold_pipe_relations.keys():
+                        self.__hot_cold_pipe_relations[pipe] = cold_pipe
+            elif self.is_cold_pipe(pipe):
+                hot_pipe = self.cold_to_hot_pipe(pipe)
+                if hot_pipe in pipes:
+                    related = True
+                    if hot_pipe not in self.__hot_cold_pipe_relations.keys():
+                        self.__hot_cold_pipe_relations[hot_pipe] = pipe
+            if not related and pipe not in self.__unrelated_pipes:
+                self.__unrelated_pipes.append(pipe)
+
+    @property
+    def unrelated_pipes(self) -> List[str]:
+        """This function return a list of pipe names of all the pipes that don't have a related
+        cold/hot pipe."""
+        return self.__unrelated_pipes

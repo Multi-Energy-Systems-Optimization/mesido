@@ -21,8 +21,15 @@ from utils_test_scaling import create_log_list_scaling
 
 
 class MockInfluxDBProfileReader(InfluxDBProfileReader):
-    def __init__(self, energy_system: esdl.EnergySystem, file_path: Optional[Path]):
-        super().__init__(energy_system, file_path)
+    def __init__(
+        self,
+        energy_system: esdl.EnergySystem,
+        file_path: Optional[Path],
+    ):
+        super().__init__(
+            energy_system=energy_system,
+            file_path=file_path,
+        )
         self._loaded_profiles = pd.read_csv(
             file_path,
             index_col="DateTime",
@@ -53,10 +60,11 @@ class TestPotentialErrors(unittest.TestCase):
         model_folder = base_folder / "model"
         input_folder = base_folder / "input"
 
-        logger, logs_list = create_log_list_scaling("WarmingUP-MPC")
+        logger, logs_list = create_log_list_scaling("mesido")
 
-        with self.assertRaises(MesidoAssetIssueError) as cm, unittest.mock.patch(
-            "mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()
+        with (
+            self.assertRaises(MesidoAssetIssueError) as cm,
+            unittest.mock.patch("mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()),
         ):
             problem = EndScenarioSizingStaged(
                 esdl_parser=ESDLFileParser,
@@ -93,8 +101,9 @@ class TestPotentialErrors(unittest.TestCase):
         np.testing.assert_equal(len(cm.exception.message_per_asset_id), 3.0)
 
         # Check heating demand type error
-        with self.assertRaises(MesidoAssetIssueError) as cm, unittest.mock.patch(
-            "mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()
+        with (
+            self.assertRaises(MesidoAssetIssueError) as cm,
+            unittest.mock.patch("mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()),
         ):
             problem = EndScenarioSizingStaged(
                 esdl_parser=ESDLFileParser,
@@ -120,8 +129,9 @@ class TestPotentialErrors(unittest.TestCase):
         np.testing.assert_equal(len(cm.exception.message_per_asset_id), 1.0)
 
         # Check asset profile capability
-        with self.assertRaises(MesidoAssetIssueError) as cm, unittest.mock.patch(
-            "mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()
+        with (
+            self.assertRaises(MesidoAssetIssueError) as cm,
+            unittest.mock.patch("mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()),
         ):
             problem = EndScenarioSizingStaged(
                 esdl_parser=ESDLFileParser,
@@ -150,8 +160,9 @@ class TestPotentialErrors(unittest.TestCase):
         np.testing.assert_equal(len(cm.exception.message_per_asset_id), 1.0)
 
         # Check that the heating demand is set to optional
-        with self.assertRaises(MesidoAssetIssueError) as cm, unittest.mock.patch(
-            "mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()
+        with (
+            self.assertRaises(MesidoAssetIssueError) as cm,
+            unittest.mock.patch("mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()),
         ):
             problem = EndScenarioSizingStaged(
                 esdl_parser=ESDLFileParser,
@@ -180,6 +191,50 @@ class TestPotentialErrors(unittest.TestCase):
             "no sizing optimization on HeatingDemands",
         )
         np.testing.assert_equal(len(cm.exception.message_per_asset_id), 2.0)
+
+        # Check the a new type of potential error which raises when the profile name indicated
+        # in esdl is not available in the database
+        with (
+            self.assertRaises(MesidoAssetIssueError) as cm,
+            unittest.mock.patch("mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()),
+        ):
+            problem = EndScenarioSizingStaged(
+                esdl_parser=ESDLFileParser,
+                base_folder=base_folder,
+                model_folder=model_folder,
+                input_folder=input_folder,
+                esdl_file_name="1a_with_influx_profiles_wrong_name.esdl",
+            )
+            problem.pre()
+        # Check that the asset profile had an error
+        np.testing.assert_equal(
+            cm.exception.error_type, MesidoAssetIssueType.ASSET_PROFILE_AVAILABILITY
+        )
+        np.testing.assert_equal(
+            cm.exception.message_per_asset_id["2ab92324-f86e-4976-9a6e-f7454b77ba3c"],
+            "Asset named HeatingDemand_2ab9: Input profile "
+            "demand1_MW_wrong_name in WarmingUp default profiles is not available in the database.",
+        )
+
+        # Check that the ResidualHeatSource multiplier's error is picked up
+        with (
+            self.assertRaises(MesidoAssetIssueError) as cm,
+            unittest.mock.patch("mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()),
+        ):
+            problem = EndScenarioSizingStaged(
+                esdl_parser=ESDLFileParser,
+                base_folder=base_folder,
+                model_folder=model_folder,
+                input_folder=input_folder,
+                esdl_file_name="1a_with_influx_profiles_error_check_5.esdl",
+                profile_reader=InfluxDBProfileReader,
+            )
+            problem.pre()
+        np.testing.assert_equal(
+            cm.exception.message_per_asset_id["8172d5d3-61a4-4d0b-a26f-5e61c2a22c64"],
+            ", GenericProducer_8172 has unit's multiplier specified incorrectly. "
+            "Multiplier should be 1.0, when the unit is specified in Coefficient in %",
+        )
 
 
 if __name__ == "__main__":

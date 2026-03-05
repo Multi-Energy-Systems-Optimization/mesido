@@ -2,8 +2,9 @@ import json
 import logging
 import math
 import os
+from enum import IntEnum
 from pathlib import Path
-from typing import Any, Dict, Tuple, Type, Union
+from typing import Any, Dict, Optional, Tuple, Type, Union
 
 import CoolProp as cP
 
@@ -16,12 +17,14 @@ from mesido.network_common import NetworkSettings
 from mesido.potential_errors import MesidoAssetIssueType, get_potential_errors
 from mesido.pycml import Model as _Model
 
-
 logger = logging.getLogger("mesido")
 
-MODIFIERS = Dict[str, Union[str, int, float]]
+# Define locally to avoid circular import with workflows.utils.error_types
+NO_POTENTIAL_ERRORS_CHECK = "no_potential_errors"
 
-HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS = 4200 * 988
+MODIFIERS = Dict[str, Union[str, int, float, dict]]
+
+HEAT_STORAGE_M3_WATER_PER_DEGREE_CELSIUS = 4200 * 988
 WATTHOUR_TO_JOULE = 3600
 
 MULTI_ENUM_NAME_TO_FACTOR = {
@@ -46,7 +49,7 @@ MULTI_ENUM_NAME_TO_FACTOR = {
 }
 
 
-def get_internal_energy(asset_name, carrier):
+def get_internal_energy(asset_name: str, carrier: esdl.Carrier) -> float:
     # The default of 20°C is also used in the head_loss_class. Thus, when updating ensure it
     # is also updated in the head_loss_class.
     temperature = 20.0
@@ -57,7 +60,7 @@ def get_internal_energy(asset_name, carrier):
             "T",
             273.15 + temperature,
             "P",
-            1.0 * 1.0e5,  # TODO: defualt 1 bar pressure should be set for the carrier
+            1.0 * 1.0e5,  # TODO: default 1 bar pressure should be set for the carrier
             "WATER",
         )
     elif NetworkSettings.NETWORK_TYPE_GAS in carrier.name:
@@ -87,15 +90,27 @@ def get_internal_energy(asset_name, carrier):
     return internal_energy  # [J/kg]
 
 
-def get_energy_content(asset_name, carrier) -> float:
+def get_energy_content(asset_name: str, carrier: esdl.Carrier) -> float:
     # Return the heating value
+    # If carrier is None, then we return heating value of Groningen gas
     energy_content_j_kg = 0.0  # [J/kg]
     density_kg_m3 = (
         get_density(asset_name, carrier, temperature_degrees_celsius=20.0, pressure_pa=1.0e5)
         / 1000.0
     )
-    if str(NetworkSettings.NETWORK_TYPE_GAS).upper() in str(carrier.name).upper():
-        # Groningen gas: 31,68 MJ/m3 LCV
+
+    # The input attribute `carrier` is `None` for assets whose commodity of interest
+    # (e.g., heat_source_gas) does not have an associated carrier.
+    # In such cases, we fall back to returning the gas energy content at the specified
+    # pressure and temperature.
+    cond_gas = False
+    try:
+        cond_gas = str(NetworkSettings.NETWORK_TYPE_GAS).upper() in str(carrier.name).upper()
+    except AttributeError:
+        cond_gas = carrier is None
+
+    if cond_gas:
+        # Groningen gas: 31,68 MJ/Nm3 LCV
         energy_content_j_kg = 31.68 * 10.0**6 / density_kg_m3  # LCV / lower heating value
     elif str(NetworkSettings.NETWORK_TYPE_HYDROGEN).upper() in str(carrier.name).upper():
         # This value can be lower / higher heating value depending on the case
@@ -103,17 +118,41 @@ def get_energy_content(asset_name, carrier) -> float:
         energy_content_j_kg = 120.0 * 10.0**6 / density_kg_m3
     else:
         raise logger.error(
-            f"Neither gas/hydrogen was used in the carrier " f"name of pipe {asset_name}."
+            f"Neither gas/hydrogen was used in the carrier at asset named {asset_name}."
         )
     return energy_content_j_kg
 
 
-def get_density(asset_name, carrier, temperature_degrees_celsius=20.0, pressure_pa=None):
+def get_density(
+    asset_name: str,
+    carrier: esdl.Carrier,
+    temperature_degrees_celsius: float = 20.0,
+    pressure_pa=None,
+) -> float:
     # TODO: gas carrier temperature still needs to be resolved.
     # The default for temperature_degrees_celsius=20.0, this should be the same as the value (20°C)
     # used in the head_loss_class for the calculation of the friction factor
     # (linked to _kinematic_viscosity). Thus, when updating the default value of
     # temperature_degrees_celsius ensure it is also updated in the head_loss_class.
+
+    # The input attribute `carrier` is `None` for assets whose commodity of interest
+    # (e.g., heat_source_gas) does not have an associated carrier.
+    # In such cases, we fall back to returning the gas density at the specified
+    # pressure and temperature.
+    if carrier is None:
+        logger.warning(
+            f"Neither gas/hydrogen/heat was used in the carrier at asset named {asset_name}."
+        )
+        density = cP.CoolProp.PropsSI(
+            "D",
+            "T",
+            273.15 + temperature_degrees_celsius,
+            "P",
+            pressure_pa,
+            NetworkSettings.NETWORK_COMPOSITION_GAS,
+        )
+        return density * 1.0e3  # to convert from kg/m3 to g/m3
+
     if pressure_pa is None:
         if isinstance(carrier, esdl.HeatCommodity):
             pressure_pa = 16.0e5  # 16bar is expected to be the upper limit in networks
@@ -133,6 +172,16 @@ def get_density(asset_name, carrier, temperature_degrees_celsius=20.0, pressure_
         )
         return density  # kg/m3
     elif NetworkSettings.NETWORK_TYPE_GAS in carrier.name:
+        # TODO: A bug has been identified here. Ideally, this elif condition should use a
+        #  case‑insensitive comparison to detect the commodity name:
+        #  str(NetworkSettings.NETWORK_TYPE_GAS).upper() in str(carrier.name).upper().
+        #  However, updating the condition causes the unit test
+        #  `test_gas_network_pipe_split_head_loss` in `test_head_loss.py` to fail.
+        #  The reason is that in the test ESDL, the commodity name is defined as "gas",
+        #  whereas NetworkSettings.NETWORK_TYPE_GAS returns "Gas". With a case‑insensitive
+        #  comparison, this elif condition no longer matches, causing the code to use the
+        #  default density from the else branch (6.2). That value makes the test pass.
+        #  This indicates a potential underlying bug in the head‑loss calculation logic.
         density = cP.CoolProp.PropsSI(
             "D",
             "T",
@@ -152,9 +201,10 @@ def get_density(asset_name, carrier, temperature_degrees_celsius=20.0, pressure_
         )
     else:
         logger.warning(
-            f"Neither gas/hydrogen/heat was used in the carrier " f"name of pipe {asset_name}"
+            f"Neither gas/hydrogen/heat was used in the carrier at asset named {asset_name}."
         )
         density = 6.2  # natural gas at about 8 bar
+
     return density * 1.0e3  # to convert from kg/m3 to g/m3
 
 
@@ -187,47 +237,135 @@ class _AssetToComponentBase:
         "DN1200": "Steel-S1-DN-1200",
     }
     # A map of the esdl assets to the asset types in pycml
+    # NOTE: the dictionary below is populated in an alphabetical order
     component_map = {
         "Airco": "airco",
         "ATES": "ates",
         "Battery": "electricity_storage",
         "Bus": "electricity_node",
-        "ElectricBoiler": "elec_boiler",
+        "CheckValve": "check_valve",
+        "Compressor": "compressor",
+        "CoolingDemand": "cold_demand",
+        "ElectricBoiler": "heat_source_elec",
         "ElectricityCable": "electricity_cable",
         "ElectricityDemand": "electricity_demand",
         "ElectricityProducer": "electricity_source",
         "Electrolyzer": "electrolyzer",
         "Export": "export",
-        "Compressor": "compressor",
-        "GenericConsumer": "heat_demand",
-        "CoolingDemand": "cold_demand",
-        "HeatExchange": "heat_exchanger",
-        "HeatingDemand": "heat_demand",
-        "HeatPump": "heat_pump",
-        "GasHeater": "gas_boiler",
-        "GasProducer": "gas_source",
-        "GasDemand": "gas_demand",
         "GasConversion": "gas_substation",
+        "GasDemand": "gas_demand",
+        "GasHeater": "heat_source_gas",
+        "GasProducer": "gas_source",
         "GasStorage": "gas_tank_storage",
+        "GenericConversion": "generic_conversion",
+        "GenericConsumer": "heat_demand",
         "GenericProducer": "heat_source",
         "GeothermalSource": "heat_source",
-        "Losses": "heat_demand",
+        "HeatExchange": "heat_exchanger",
+        "HeatingDemand": "heat_demand",
         "HeatProducer": "heat_source",
+        "HeatPump": "heat_pump",
+        "HeatStorage": "heat_buffer",
         "Import": "import",
-        "ResidualHeatSource": "heat_source",
-        "GenericConversion": "generic_conversion",
         "Joint": "node",
+        "Losses": "heat_demand",
         "Pipe": "pipe",
         "Pump": "pump",
         "PressureReducingValve": "gas_substation",
         "PVInstallation": "electricity_source",
-        "HeatStorage": "heat_buffer",
+        "ResidualHeatSource": "heat_source",
         "Sensor": "skip",
+        "Transformer": "transformer",
         "Valve": "control_valve",
         "WindPark": "electricity_source",
         "WindTurbine": "electricity_source",
-        "Transformer": "transformer",
-        "CheckValve": "check_valve",
+    }
+
+    # Dictionary mapping asset types to cost attribute requirements
+    # Values: "required", "optional"
+    # Cost attributes not included in the dictionary as treated as "not supported"
+    # when checking for potential errors in ASSET_COST_INFORMATION
+    ASSET_COST_REQUIREMENTS = {
+        "heat_pump": {
+            "investmentCosts": "required",
+            "installationCosts": "required",
+            "variableOperationalCosts": "required",
+            "fixedMaintenanceCosts": "optional",
+            "fixedOperationalCosts": "optional",
+        },
+        "heat_source": {  # Includes GeothermalSource, ResidualHeatSource, HeatProducer,
+            # GasHeater, ElectricBoiler
+            "investmentCosts": "required",
+            "installationCosts": "required",
+            "variableOperationalCosts": "required",
+            "fixedMaintenanceCosts": "optional",
+            "fixedOperationalCosts": "optional",
+        },
+        "heat_demand": {
+            "investmentCosts": "optional",
+            "installationCosts": "optional",
+            "fixedMaintenanceCosts": "optional",
+        },
+        "heat_buffer": {  # Surface Tank Storage
+            "investmentCosts": "required",
+            "installationCosts": "required",
+            "fixedMaintenanceCosts": "optional",
+            "fixedOperationalCosts": "optional",
+        },
+        "ates": {  # HT-ATES (high)
+            "investmentCosts": "required",
+            "installationCosts": "required",
+            "variableOperationalCosts": "required",
+            "fixedMaintenanceCosts": "optional",
+            "fixedOperationalCosts": "optional",
+        },
+        "pipe": {
+            "investmentCosts": "optional",
+        },
+        "heat_exchanger": {
+            "investmentCosts": "required",
+            "installationCosts": "required",
+            "fixedMaintenanceCosts": "optional",
+            "fixedOperationalCosts": "optional",
+        },
+        "gas_demand": {
+            "variableOperationalCosts": "required",
+        },
+        "gas_tank_storage": {
+            "fixedOperationalCosts": "required",
+        },
+        "electrolyzer": {
+            "investmentCosts": "required",
+            "fixedOperationalCosts": "required",
+        },
+    }
+
+    # NOTE: the dictionary below is populated in an alphabetical order
+    COST_VALIDATION_COMPONENT_TO_ASSET_TYPE = {
+        "Airco": "heat_pump",
+        "ATES": "ates",
+        "CoolingDemand": "heat_demand",
+        "Electrolyzer": "electrolyzer",
+        "ElectricBoiler": "heat_source",
+        "GasDemand": "gas_demand",
+        "GasHeater": "heat_source",
+        "GasStorage": "gas_tank_storage",
+        "GeothermalSource": "heat_source",
+        "HeatExchange": "heat_exchanger",
+        "HeatingDemand": "heat_demand",
+        "HeatPump": "heat_pump",
+        "HeatProducer": "heat_source",
+        "HeatStorage": "heat_buffer",
+        "Pipe": "pipe",
+        "ResidualHeatSource": "heat_source",
+    }
+
+    COST_ATTRIBUTE_TO_STRING = {
+        "investmentCosts": "investment costs",
+        "installationCosts": "installation costs",
+        "variableOperationalCosts": "variable operational costs",
+        "fixedMaintenanceCosts": "fixed maintenance costs",
+        "fixedOperationalCosts": "fixed operational costs",
     }
 
     primary_port_name_convention = "primary"
@@ -235,15 +373,25 @@ class _AssetToComponentBase:
 
     __power_keys = ["power", "maxDischargeRate", "maxChargeRate", "capacity"]
 
-    def __init__(self, **kwargs):
+    _error_type_check: Optional[str]
+
+    def __init__(self, **kwargs) -> None:
         """
         In this init we initialize some dicts and we load the edr pipes.
+
+        Args:
+            **kwargs: Additional keyword arguments, including 'error_type_check'
+                     for controlling cost validation behavior.
         """
         self._port_to_q_nominal = {}
         self._port_to_q_max = {}
         self._port_to_i_nominal = {}
         self._port_to_i_max = {}
         self._port_to_esdl_component_type = {}
+
+        # Store error type check setting for cost validation
+        self._error_type_check = kwargs.get("error_type_check", None)
+
         self._edr_pipes = json.load(
             open(os.path.join(Path(__file__).parent, "_edr_pipes.json"), "r")
         )
@@ -263,7 +411,7 @@ class _AssetToComponentBase:
         dispatch_method_name = f"convert_{self.component_map[asset.asset_type]}"
         return getattr(self, dispatch_method_name)(asset)
 
-    def port_asset_type_connections(self, asset):
+    def port_asset_type_connections(self, asset: Asset):
         """
         Here we populate a map between ports and asset types that we need before we can convert
         the individual assets. This is because for the parsing of some assets we need to know if
@@ -272,7 +420,7 @@ class _AssetToComponentBase:
 
         Parameters
         ----------
-        asset : Asset pipe object with it's properties from ESDL
+        asset : Asset pipe object with its properties from ESDL
 
         Returns
         -------
@@ -296,7 +444,7 @@ class _AssetToComponentBase:
         warnings when either of these two variables are specified in combination with the pipe DN)
         Parameters
         ----------
-        asset : Asset pipe object with it's properties from ESDL
+        asset : Asset pipe object with its properties from ESDL
 
         Returns
         -------
@@ -430,7 +578,7 @@ class _AssetToComponentBase:
 
         Parameters
         ----------
-        asset : Asset cable object with it's properties from ESDL
+        asset : Asset cable object with its properties from ESDL
 
         Returns
         -------
@@ -460,7 +608,7 @@ class _AssetToComponentBase:
 
         Parameters
         ----------
-        asset : The asset object of an pipe
+        asset : The asset object of a pipe
 
         Returns
         -------
@@ -539,7 +687,7 @@ class _AssetToComponentBase:
 
         Parameters
         ----------
-        asset :
+        asset : the asset
         q_max : float of the max flow through that pipe
 
         Returns
@@ -565,7 +713,8 @@ class _AssetToComponentBase:
         Parameters
         ----------
         asset :
-        q_max : float of the electricity current nominal
+        i_nom : float of the electricity current nominal
+        i_max : float of the electricity current max
 
         Returns
         -------
@@ -592,7 +741,7 @@ class _AssetToComponentBase:
                     energy_reference_j_kg = get_energy_content(asset.name, port.carrier)
                 else:
                     # heat_value / rho * minimum_dT => [J/m3K] / [kg/m3] * 1.0 [K] => [J/kg]
-                    energy_reference_j_kg = HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS / 988.0
+                    energy_reference_j_kg = HEAT_STORAGE_M3_WATER_PER_DEGREE_CELSIUS / 988.0
 
                 connected_port = port.connectedTo[0]
                 q_max = (
@@ -623,7 +772,7 @@ class _AssetToComponentBase:
                     energy_reference_j_kg = get_energy_content(asset.name, port.carrier)
                 else:
                     # heat_value / rho * minimum_dT => [J/m3K] / [kg/m3] * 1.0 [K] => [J/kg]
-                    energy_reference_j_kg = HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS / 988.0
+                    energy_reference_j_kg = HEAT_STORAGE_M3_WATER_PER_DEGREE_CELSIUS / 988.0
 
                 connected_port = port.connectedTo[0]
                 q_max = (
@@ -842,7 +991,7 @@ class _AssetToComponentBase:
                         energy_reference_j_kg = get_energy_content(asset.name, port.carrier)
                     else:
                         # heat_value / rho * minimum_dT => [J/m3K] / [kg/m3] * 1.0 [K] => [J/kg]
-                        energy_reference_j_kg = HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS / 988.0
+                        energy_reference_j_kg = HEAT_STORAGE_M3_WATER_PER_DEGREE_CELSIUS / 988.0
 
                     connected_port = port.connectedTo[0]
                     q_nominal = (
@@ -871,7 +1020,7 @@ class _AssetToComponentBase:
                         energy_reference_j_kg = get_energy_content(asset.name, port.carrier)
                     else:
                         # heat_value / rho * minimum_dT => [J/m3K] / [kg/m3] * 1.0 [K] => [J/kg]
-                        energy_reference_j_kg = HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS / 988.0
+                        energy_reference_j_kg = HEAT_STORAGE_M3_WATER_PER_DEGREE_CELSIUS / 988.0
 
                     connected_port = port.connectedTo[0]
                     q_nominal = (
@@ -900,7 +1049,7 @@ class _AssetToComponentBase:
                         energy_reference_j_kg = get_energy_content(asset.name, port.carrier)
                     else:
                         # heat_value / rho * minimum_dT => [J/m3K] / [kg/m3] * 1.0 [K] => [J/kg]
-                        energy_reference_j_kg = HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS / 988.0
+                        energy_reference_j_kg = HEAT_STORAGE_M3_WATER_PER_DEGREE_CELSIUS / 988.0
 
                     connected_port = port.connectedTo[0]
                     q_nominal = (
@@ -917,7 +1066,9 @@ class _AssetToComponentBase:
                     if q_nominal is not None:
                         self._set_q_nominal(asset, q_nominal)
                         return q_nominal
-        elif len(asset.in_ports) == 2 and len(asset.out_ports) == 1:  # for gas_boiler or e_boiler
+        elif (
+            len(asset.in_ports) == 2 and len(asset.out_ports) == 1
+        ):  # for gas_heat_source_gas or elec_heat_source_elec
             q_nominals = {}
             try:
                 for port in asset.in_ports:
@@ -934,7 +1085,7 @@ class _AssetToComponentBase:
                             energy_reference_j_kg = get_energy_content(asset.name, port.carrier)
                         elif isinstance(port.carrier, esdl.HeatCommodity):
                             # heat_value / rho * minimum_dT => [J/m3K] / [kg/m3] * 1.0 [K] => [J/kg]
-                            energy_reference_j_kg = HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS / 988.0
+                            energy_reference_j_kg = HEAT_STORAGE_M3_WATER_PER_DEGREE_CELSIUS / 988.0
 
                         if isinstance(connected_port.energyasset, esdl.Joint):
                             q_nominal = (
@@ -1004,7 +1155,7 @@ class _AssetToComponentBase:
                             / (
                                 # note rho -> gas/hydrogen g/m3, heat kg/m3
                                 get_density(asset.name, p.carrier)
-                                * (HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS / 988.0)
+                                * (HEAT_STORAGE_M3_WATER_PER_DEGREE_CELSIUS / 988.0)
                             )
                         )
                     if q_nominal is not None:
@@ -1241,16 +1392,128 @@ class _AssetToComponentBase:
         """
 
         if asset.attributes["state"].name == "DISABLED":
-            value = 0.0
+            value = AssetStateEnum.DISABLED
         elif asset.attributes["state"].name == "OPTIONAL":
-            value = 2.0
+            value = AssetStateEnum.OPTIONAL
         else:
-            value = 1.0
+            value = AssetStateEnum.ENABLED
         return value
+
+    def _log_and_add_potential_issue(
+        self, message: str, asset_id, cost_error_type: str = None, report_issue: bool = True
+    ) -> None:
+        """
+        Helper function to log warnings and potential issues.
+
+        Always logs warnings. When report_issue is True, also adds the issue to the potential
+        errors dictionary. Whether the issue is converted to an exception depends on the error
+        type and the error_type_check configuration (e.g., HEAT_NETWORK_ERRORS), as defined in
+        workflows/utils/error_types.py::potential_error_to_error().
+        """
+        logger.warning(message)
+        if report_issue:
+            error_type_mapping = {
+                "incorrect": MesidoAssetIssueType.ASSET_COST_ATTRIBUTE_INCORRECT,
+                "missing": MesidoAssetIssueType.ASSET_COST_ATTRIBUTE_MISSING,
+            }
+            error_type = error_type_mapping.get(cost_error_type)
+            get_potential_errors().add_potential_issue(error_type, asset_id, message)
+
+    def _check_cost_attribute_requirement(self, component_type: str, cost_attribute: str) -> str:
+        """
+        Check if a cost attribute is required, optional for a component type.
+        If the cost attribute is neither of those, consider it as "not supported".
+        Similarly, If an asset type is not defined in ASSET_COST_REQUIREMENTS
+        it is considered as not supported asset type.
+
+        Args:
+            component_type: The component type (e.g., "heat_pump", "pipe")
+            cost_attribute: The cost attribute to check (e.g., "investmentCosts")
+
+        Returns:
+            str: "required", "optional", "not supported",
+            or "unknown or not supported asset type"
+        """
+        asset_type = self.COST_VALIDATION_COMPONENT_TO_ASSET_TYPE.get(component_type)
+        if not asset_type or asset_type not in self.ASSET_COST_REQUIREMENTS:
+            return "unknown or not supported asset type"
+
+        return self.ASSET_COST_REQUIREMENTS[asset_type].get(cost_attribute, "not supported")
+
+    def _validate_cost_attribute(self, asset: Asset, cost_attribute: str, cost_info) -> bool:
+        """
+        Validate a cost attribute for an asset.
+
+        Behavior:
+        - With NO_POTENTIAL_ERRORS_CHECK: Returns cost_info is not None (bypasses validation,
+          logs warnings for unknown asset types)
+        - Without NO_POTENTIAL_ERRORS_CHECK:
+          - Assets in ASSET_COST_REQUIREMENTS: Enforces required/optional rules
+          - Assets NOT in ASSET_COST_REQUIREMENTS: Blocked (returns False, logs warning)
+
+        Args:
+            asset: The asset object
+            cost_attribute: The name of the cost attribute (e.g., "investmentCosts")
+            cost_info: The cost information object from ESDL (None if not present)
+
+        Returns:
+            bool: True if the cost attribute should be processed, False to skip it.
+        """
+        cost_check_message = self._check_cost_attribute_requirement(
+            asset.asset_type, cost_attribute
+        )
+        cost_attribute_name = self.COST_ATTRIBUTE_TO_STRING.get(cost_attribute, cost_attribute)
+
+        # NO_POTENTIAL_ERRORS_CHECK mode: Bypass validation, process any cost_info that exists.
+        # Returns False for None cost_info to skip processing (contributes 0.0 naturally).
+        # Logs warning (without reporting issue) for unknown asset types with cost data.
+        if self._error_type_check == NO_POTENTIAL_ERRORS_CHECK:
+            if (
+                cost_check_message == "unknown or not supported asset type"
+                and cost_info is not None
+            ):
+                message = (
+                    f"The {cost_attribute_name} for asset {asset.name} "
+                    f"of type {asset.asset_type} is {cost_check_message}."
+                )
+                self._log_and_add_potential_issue(message, asset.id, report_issue=False)
+            return cost_info is not None
+
+        # Validation mode: Block unknown asset types
+        if cost_check_message == "unknown or not supported asset type":
+            message = (
+                f"The {cost_attribute_name} for asset {asset.name} "
+                f"of type {asset.asset_type} is {cost_check_message}."
+            )
+            self._log_and_add_potential_issue(message, asset.id, report_issue=False)
+            return False
+
+        # Validation mode: Enforce required/optional rules for known assets
+        if cost_info is None:
+            if cost_check_message == "required":
+                message = (
+                    f"No {cost_attribute_name} information specified for {asset.name} "
+                    f"of type {asset.asset_type}."
+                )
+                self._log_and_add_potential_issue(message, asset.id, cost_error_type="missing")
+            return False
+
+        if cost_check_message == "not supported":
+            message = (
+                f"The {cost_attribute_name} for asset {asset.name} "
+                f"of type {asset.asset_type} is {cost_check_message}."
+            )
+            self._log_and_add_potential_issue(message, asset.id, report_issue=False)
+            return False
+
+        return True
 
     def get_variable_opex_costs(self, asset: Asset) -> float:
         """
         Returns the variable opex costs coefficient of an asset in Euros per Wh.
+        If a variable operational cost is required for the asset but not provided,
+        or if the cost information is inconsistent, a potential MesidoAssetIssueType
+        is added to the gathered_potential_issues dictionary.
 
         Parameters
         ----------
@@ -1259,57 +1522,74 @@ class _AssetToComponentBase:
         Returns
         -------
         float for the variable operational cost coefficient.
+
         """
 
-        cost_infos = dict()
-        cost_infos["variableOperationalAndMaintenanceCosts"] = asset.attributes[
-            "costInformation"
-        ].variableOperationalAndMaintenanceCosts
-        cost_infos["variableOperationalCosts"] = asset.attributes[
-            "costInformation"
-        ].variableOperationalCosts
-        cost_infos["variableMaintenanceCosts"] = asset.attributes[
-            "costInformation"
-        ].variableMaintenanceCosts
+        cost_fields = [
+            "variableOperationalAndMaintenanceCosts",
+            "variableOperationalCosts",
+            "variableMaintenanceCosts",
+        ]
+
+        gas_assets = {"GasDemand", "GasStorage", "GasProducer", "Electrolyzer"}
+        gas_boiler = {"GasHeater"}
+
+        cost_attributes = asset.attributes["costInformation"]
+        cost_infos = {field: getattr(cost_attributes, field) for field in cost_fields}
 
         if all(cost_info is None for cost_info in cost_infos.values()):
-            logger.warning(f"No variable OPEX cost information specified for asset {asset.name}")
-
+            message = f"No variable OPEX cost information specified for asset {asset.name}"
+            self._log_and_add_potential_issue(message, asset.id, report_issue=False)
         value = 0.0
-        for cost_info in cost_infos.values():
-            if cost_info is None:
+
+        for cost_attribute, cost_info in cost_infos.items():
+            if not self._validate_cost_attribute(asset, cost_attribute, cost_info):
                 continue
             cost_value, unit, per_unit, per_time = self.get_cost_value_and_unit(cost_info)
             if unit != UnitEnum.EURO:
-                logger.warning(f"Expected cost information {cost_info} to provide a cost in euros.")
+                message = f"Expected cost information {cost_info} to provide a cost in euros."
+                self._log_and_add_potential_issue(message, asset.id, cost_error_type="incorrect")
                 continue
             if per_time != TimeUnitEnum.NONE:
-                logger.warning(
-                    f"Specified OPEX for asset {asset.name} include a "
-                    f"component per time, which we cannot handle."
+                message = (
+                    f"Specified variable OPEX for asset {asset.name} of type {asset.asset_type} "
+                    f"includes a component per time '{per_time}', but variable OPEX should be "
+                    f"specified as EUR/Wh (energy-based), with perTimeUnit set to 'NONE' instead "
+                    f"of '{per_time}'."
                 )
-                continue
-            if per_unit != UnitEnum.WATTHOUR and asset.asset_type not in [
-                "GasDemand",
-                "GasProducer",
-                "GasStorage",
-                "Electrolyzer",
-            ]:
-                logger.warning(
-                    f"Expected the specified OPEX for asset "
-                    f"{asset.name} to be per Wh, but they are provided "
-                    f"in {per_unit} instead."
-                )
+                self._log_and_add_potential_issue(message, asset.id, cost_error_type="incorrect")
                 continue
             if (
-                asset.asset_type in ["GasDemand", "GasProducer", "GasStorage", "Electrolyzer"]
-                and per_unit != UnitEnum.GRAM
+                per_unit != UnitEnum.WATTHOUR
+                and asset.asset_type not in gas_assets
+                and asset.asset_type not in gas_boiler
             ):
-                logger.warning(
-                    f"Expected the specified OPEX for asset "
-                    f"{asset.name} to be per g/s, but they are provided "
-                    f"in {per_unit}/{per_time} instead."
+                message = (
+                    f"Expected the specified OPEX for asset {asset.name} of type {asset.asset_type}"
+                    f" to be per Wh, but they are provided in {per_unit} instead."
                 )
+                self._log_and_add_potential_issue(message, asset.id, cost_error_type="incorrect")
+                continue
+            if asset.asset_type in gas_assets and per_unit != UnitEnum.GRAM:
+                message = (
+                    f"Expected the specified OPEX for asset {asset.name} of type {asset.asset_type}"
+                    f" to be per EURO/g, but they are provided in {unit}/{per_unit} instead."
+                )
+                self._log_and_add_potential_issue(message, asset.id, cost_error_type="incorrect")
+                continue
+            if asset.asset_type in gas_boiler and per_unit != UnitEnum.CUBIC_METRE:
+                message = (
+                    f"Expected the specified OPEX for asset {asset.name} of type {asset.asset_type}"
+                    f" to be per EURO/m3, but they are provided in {unit}/{per_unit} instead."
+                )
+                self._log_and_add_potential_issue(message, asset.id, cost_error_type="incorrect")
+                continue
+            if cost_value < 0.0:
+                message = (
+                    f"Specified OPEX for asset {asset.name} of type {asset.asset_type} "
+                    f"is {cost_value}, but should be non-negative."
+                )
+                self._log_and_add_potential_issue(message, asset.id, cost_error_type="incorrect")
                 continue
 
             value += cost_value
@@ -1319,6 +1599,9 @@ class _AssetToComponentBase:
     def get_fixed_opex_costs(self, asset: Asset) -> float:
         """
         Returns the fixed opex cost coefficient of an asset in Euros per W.
+        If a fixed opex cost is required for the asset but not provided,
+        or if the cost information is inconsistent, a potential MesidoAssetIssueType
+        is added to the gathered_potential_issues dictionary.
 
         Parameters
         ----------
@@ -1328,29 +1611,38 @@ class _AssetToComponentBase:
         -------
         fixed operational cost coefficient.
         """
-        cost_infos = dict()
-        cost_infos["fixedOperationalAndMaintenanceCosts"] = asset.attributes[
-            "costInformation"
-        ].fixedOperationalAndMaintenanceCosts
-        cost_infos["fixedOperationalCosts"] = asset.attributes[
-            "costInformation"
-        ].fixedOperationalCosts
-        cost_infos["fixedMaintenanceCosts"] = asset.attributes[
-            "costInformation"
-        ].fixedMaintenanceCosts
+        cost_fields = [
+            "fixedOperationalAndMaintenanceCosts",
+            "fixedOperationalCosts",
+            "fixedMaintenanceCosts",
+        ]
+
+        cost_attributes = asset.attributes["costInformation"]
+        cost_infos = {field: getattr(cost_attributes, field) for field in cost_fields}
 
         if all(cost_info is None for cost_info in cost_infos.values()):
-            logger.warning(f"No fixed OPEX cost information specified for asset {asset.name}")
-            value = 0.0
-        else:
-            value = 0.0
-            for cost_info in cost_infos.values():
-                if cost_info is None:
-                    continue
-                cost_value, unit, per_unit, per_time = self.get_cost_value_and_unit(cost_info)
+            message = f"No fixed OPEX cost information specified for asset {asset.name}"
+            self._log_and_add_potential_issue(message, asset.id, report_issue=False)
+
+        value = 0.0
+        for cost_attribute, cost_info in cost_infos.items():
+            if not self._validate_cost_attribute(asset, cost_attribute, cost_info):
+                continue
+            cost_value, unit, per_unit, per_time = self.get_cost_value_and_unit(cost_info)
+            if cost_value is not None and cost_value > 0.0:
                 if unit != UnitEnum.EURO:
-                    RuntimeWarning(
-                        f"Expected cost information {cost_info} to " f"provide a cost in euros."
+                    message = f"Expected cost information {cost_info} to be provided in euros."
+                    self._log_and_add_potential_issue(
+                        message, asset.id, cost_error_type="incorrect"
+                    )
+                    continue
+                if per_time != TimeUnitEnum.NONE and per_time != TimeUnitEnum.YEAR:
+                    message = (
+                        f"Specified fixed OPEX for asset {asset.name} of type {asset.asset_type} "
+                        f"includes a component per time '{per_time}', but should be None or YEAR."
+                    )
+                    self._log_and_add_potential_issue(
+                        message, asset.id, cost_error_type="incorrect"
                     )
                     continue
                 if per_unit == UnitEnum.CUBIC_METRE and asset.asset_type != "GasStorage":
@@ -1362,7 +1654,7 @@ class _AssetToComponentBase:
                         asset.out_ports[0].carrier.id
                     ]["temperature"]
                     delta_temp = supply_temp - return_temp
-                    m3_to_joule_factor = delta_temp * HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS
+                    m3_to_joule_factor = delta_temp * HEAT_STORAGE_M3_WATER_PER_DEGREE_CELSIUS
                     cost_value = cost_value / m3_to_joule_factor
                 elif per_unit == UnitEnum.NONE:
                     if asset.asset_type == "HeatStorage":
@@ -1377,7 +1669,7 @@ class _AssetToComponentBase:
                             ]["temperature"]
                             delta_temp = supply_temp - return_temp
                             m3_to_joule_factor = (
-                                delta_temp * HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS
+                                delta_temp * HEAT_STORAGE_M3_WATER_PER_DEGREE_CELSIUS
                             )
                             size = asset.attributes["volume"] * m3_to_joule_factor
                             if size == 0.0:
@@ -1403,23 +1695,52 @@ class _AssetToComponentBase:
                             return 0.0
                     cost_value = cost_value / size
                 elif per_unit != UnitEnum.WATT and asset.asset_type != "GasStorage":
-                    RuntimeWarning(
-                        f"Expected the specified OPEX for asset "
-                        f"{asset.name} to be per W or m3, but they are provided "
-                        f"in {per_unit} instead."
+                    message = (
+                        f"Expected the specified OPEX for asset {asset.name} to be per W or m3,"
+                        f" but they are provided in {per_unit} instead."
+                    )
+                    self._log_and_add_potential_issue(
+                        message, asset.id, cost_error_type="incorrect"
                     )
                     continue
                 # still to decide if the cost is per kg or per m3
                 elif per_unit != UnitEnum.GRAM and asset.asset_type == "GasStorage":
-                    RuntimeWarning(
-                        f"Expected the specified OPEX for asset "
-                        f"{asset.name} to be per GRAM, but they are provided "
-                        f"in {per_unit} instead."
+                    message = (
+                        f"Expected the specified OPEX for asset {asset.name} to be per GRAM, "
+                        f"but they are provided in {per_unit} instead."
+                    )
+                    self._log_and_add_potential_issue(
+                        message, asset.id, cost_error_type="incorrect"
                     )
                     continue
 
                 value += cost_value
         return value
+
+    @staticmethod
+    def get_units_multipliers(qua: esdl.QuantityAndUnitType) -> Tuple[float, Any, Any, Any]:
+        """
+        This function returns the units and the related multipliers.
+
+        Parameters
+        ----------
+        qua : QuantityAndUnitType provides the information on the units and multipliers
+
+        Returns
+        -------
+        The value with the unit decomposed.
+        """
+        value = 1
+        unit = qua.unit
+        per_time_uni = qua.perTimeUnit
+        per_unit = qua.perUnit
+        multiplier = qua.multiplier
+        per_multiplier = qua.perMultiplier
+
+        value *= MULTI_ENUM_NAME_TO_FACTOR[multiplier]
+        value /= MULTI_ENUM_NAME_TO_FACTOR[per_multiplier]
+
+        return value, unit, per_unit, per_time_uni
 
     @staticmethod
     def get_cost_value_and_unit(cost_info: esdl.SingleValue) -> Tuple[float, Any, Any, Any]:
@@ -1450,8 +1771,13 @@ class _AssetToComponentBase:
 
     def get_installation_costs(self, asset: Asset) -> float:
         """
-        This function return the installation cost coefficient in EUR for a single aggregation
+        Return the installation cost coefficient in EUR for a single aggregation
         count.
+
+        If an installation cost is required for the asset but not provided,
+        or if the cost information is inconsistent, a potential MesidoAssetIssueType
+        is added to the gathered_potential_issues dictionary.
+
 
         Parameters
         ----------
@@ -1459,36 +1785,67 @@ class _AssetToComponentBase:
 
         Returns
         -------
-        A float with the installation cost coefficient.
+        A float with the installation cost coefficient in EUR.
+
         """
 
+        cost_attribute = "installationCosts"
+
         cost_info = asset.attributes["costInformation"].installationCosts
-        if cost_info is None:
-            logger.warning(f"No installation cost info provided for asset " f"{asset.name}.")
+        combined_cost_string = "Combined investment and installation costs"
+        if asset.attributes["costInformation"].investmentCosts is not None:
+            cost_type_note = asset.attributes["costInformation"].investmentCosts.name
+            if cost_type_note is not None and cost_type_note.strip():
+                if cost_type_note == combined_cost_string:
+                    logger.warning(f"{combined_cost_string} for asset {asset.name}")
+                    return 0.0
+        if not self._validate_cost_attribute(asset, cost_attribute, cost_info):
             return 0.0
+
         cost_value, unit, per_unit, per_time = self.get_cost_value_and_unit(cost_info)
-        if unit != UnitEnum.EURO:
-            logger.warning(f"Expect cost information {cost_info} to " f"provide a cost in euros")
-            return 0.0
-        if not per_time == TimeUnitEnum.NONE:
-            logger.warning(
-                f"Specified installation costs of asset {asset.name}"
-                f" include a component per time, which we "
-                f"cannot handle."
-            )
-            return 0.0
-        if not per_unit == UnitEnum.NONE:
-            logger.warning(
-                f"Specified installation costs of asset {asset.name}"
-                f" include a component per unit {per_unit}, which we "
-                f"cannot handle."
-            )
-            return 0.0
+
+        # Validation checks
+        validations = [
+            (
+                unit != UnitEnum.EURO,
+                f"Expected cost information for {cost_info} in euros.",
+            ),
+            (
+                per_time != TimeUnitEnum.NONE,
+                (
+                    f"Specified installation costs of asset {asset.name} include a "
+                    f"component per time, but should be None."
+                ),
+            ),
+            (
+                per_unit != UnitEnum.NONE,
+                (
+                    f"Specified installation costs of asset {asset.name} include a "
+                    f"component per unit {per_unit}, but should be None."
+                ),
+            ),
+            (
+                cost_value < 0.0,
+                (
+                    f"Specified installation cost of asset {asset.name} should be "
+                    f"non-negative, but has value {cost_value}."
+                ),
+            ),
+        ]
+
+        for condition, message in validations:
+            if condition:
+                self._log_and_add_potential_issue(message, asset.id, cost_error_type="incorrect")
+
         return cost_value
 
     def get_investment_costs(self, asset: Asset, per_unit: UnitEnum = UnitEnum.WATT) -> float:
         """
         Returns the investment cost coefficient of an asset in Euros per size unit (mostly W).
+
+        If an investment cost is required for the asset but not provided,
+        or if the cost information is inconsistent, a potential MesidoAssetIssueType
+        is added to the gathered_potential_issues dictionary.
 
         Parameters
         ----------
@@ -1501,9 +1858,10 @@ class _AssetToComponentBase:
         float for the investment cost coefficient.
         """
 
+        cost_attribute = "investmentCosts"
         cost_info = asset.attributes["costInformation"].investmentCosts
-        if cost_info is None:
-            RuntimeWarning(f"No investment costs provided for asset " f"{asset.name}.")
+
+        if not self._validate_cost_attribute(asset, cost_attribute, cost_info):
             return 0.0
         (
             cost_value,
@@ -1512,42 +1870,47 @@ class _AssetToComponentBase:
             per_time_provided,
         ) = self.get_cost_value_and_unit(cost_info)
         if unit_provided != UnitEnum.EURO:
-            logger.warning(f"Expect cost information {cost_info} to " f"provide a cost in euros")
+            message = f"Expected cost information {cost_info} to be provided in euros."
+            self._log_and_add_potential_issue(message, asset.id, cost_error_type="incorrect")
             return 0.0
         if not per_time_provided == TimeUnitEnum.NONE:
-            logger.warning(
+            message = (
                 f"Specified investment costs for asset {asset.name}"
                 f" include a component per time, which we "
                 f"cannot handle."
             )
+            self._log_and_add_potential_issue(message, asset.id, cost_error_type="incorrect")
             return 0.0
         if per_unit == UnitEnum.WATT:
             if not per_unit_provided == UnitEnum.WATT:
-                logger.warning(
+                message = (
                     f"Expected the specified investment costs "
                     f"of asset {asset.name} to be per W, but they "
                     f"are provided in {per_unit_provided} "
                     f"instead."
                 )
+                self._log_and_add_potential_issue(message, asset.id, cost_error_type="incorrect")
             return cost_value
         elif per_unit == UnitEnum.WATTHOUR:
             if not per_unit_provided == UnitEnum.WATTHOUR:
-                logger.warning(
+                message = (
                     f"Expected the specified investment costs "
                     f"of asset {asset.name} to be per Wh, but they "
                     f"are provided in {per_unit_provided} "
                     f"instead."
                 )
+                self._log_and_add_potential_issue(message, asset.id, cost_error_type="incorrect")
                 return 0.0
             return cost_value
         elif per_unit == UnitEnum.METRE:
             if not per_unit_provided == UnitEnum.METRE:
-                logger.warning(
+                message = (
                     f"Expected the specified investment costs "
                     f"of asset {asset.name} to be per meter, but they "
                     f"are provided in {per_unit_provided} "
                     f"instead."
                 )
+                self._log_and_add_potential_issue(message, asset.id, cost_error_type="incorrect")
                 return 0.0
             return cost_value
         elif per_unit == UnitEnum.JOULE:
@@ -1562,18 +1925,28 @@ class _AssetToComponentBase:
                     "temperature"
                 ]
                 delta_temp = supply_temp - return_temp
-                m3_to_joule_factor = delta_temp * HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS
+                m3_to_joule_factor = delta_temp * HEAT_STORAGE_M3_WATER_PER_DEGREE_CELSIUS
                 return cost_value / m3_to_joule_factor
             else:
-                logger.warning(
+                message = (
                     f"Expected the specified investment costs "
                     f"of asset {asset.name} to be per Wh or m3, but "
                     f"they are provided in {per_unit_provided} "
                     f"instead."
                 )
+                self._log_and_add_potential_issue(message, asset.id, cost_error_type="incorrect")
                 return 0.0
         else:
-            logger.warning(
-                f"Cannot provide investment costs for asset " f"{asset.name} per {per_unit}"
-            )
+            message = f"Cannot provide investment costs for asset {asset.name} per {per_unit}"
+            self._log_and_add_potential_issue(message, asset.id, cost_error_type="incorrect")
             return 0.0
+
+
+class AssetStateEnum(IntEnum):
+    """
+    An Enum class to set the Asset states (DISABLED, ENABLED, OPTIONAL) to IntEnums.
+    """
+
+    DISABLED = 0
+    ENABLED = 1
+    OPTIONAL = 2
