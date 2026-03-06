@@ -27,10 +27,10 @@ class TestMaxSizeAggregationCount(TestCase):
         source will be placed due to the minimization of the cost (which cost is this?, I assume
         operational cost) and installation cost. The placement behaviour is further tested in a
         second case by adding an optional ates and buffer. However, these 2 additional optional
-        assets should not be placed by the optImizer because of heat losses.
+        assets should not be placed by the optimizer because of heat losses.
 
         Checks:
-        - Check the heat loss of buffer calculation
+        - Check the buffer heat loss calculation
         - Check that source 1 is utilized and also placed
         - Check that source 2 is utilized and placed
         - Check that the geothermal source is not placed
