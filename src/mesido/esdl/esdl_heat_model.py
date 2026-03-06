@@ -1421,7 +1421,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         low_temp_ates_max_storage_temp_deg = 30.0
         if (
             asset.attributes["maxStorageTemperature"]
-            and asset.attributes["maxStorageTemperature"] < low_temp_ates_max_storage_temp_deg
+            and asset.attributes["maxStorageTemperature"] <= low_temp_ates_max_storage_temp_deg
         ):
             max_store_temp = asset.attributes["maxStorageTemperature"]
             get_potential_errors().add_potential_issue(
