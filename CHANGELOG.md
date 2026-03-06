@@ -3,7 +3,7 @@
 ## Added
 - Parsing of ensemble profiles when using input profiles from csv.
 - Maximum profile constraint for PV asset is considered in PV sizing
-- heat_transfer_coeff variable of HeatStorage is read from dischargeEfficiency attribute in esdl
+- heat_loss_efficiency of HeatStorage is read from dischargeEfficiency attribute in esdl
 
 
 ## Changed
