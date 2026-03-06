@@ -1075,6 +1075,17 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             )
             sum_ += ca.sum1(price_profile.values[1:] * pump_power[1:] * timesteps_hr / eff)
 
+            if (len(self.get_electricity_carriers().keys()) > 0) and s in [
+                *self.energy_system_components.get("heat_source_elec", []),
+                *self.energy_system_components.get("elec_heat_source_elec", []),
+                *self.energy_system_components.get("air_water_heat_pump_elec", []),
+                *self.energy_system_components.get("water_water_heat_pump_elec", []),
+            ]:
+                sum_ += (
+                    ca.sum1(price_profile.values[1:] * nominator_vector[1:] * timesteps_hr)
+                    / denominator
+                )
+
             constraints.append(((variable_operational_cost - sum_) / nominal, 0.0, 0.0))
 
         for hp in [

@@ -15,7 +15,6 @@ import numpy as np
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
-from rtctools.optimization.goal_programming_mixin_base import Goal
 
 logger = logging.getLogger("mesido")
 logger.setLevel(logging.INFO)
@@ -23,7 +22,7 @@ logger.setLevel(logging.INFO)
 
 class HeatColdDemand(TestCase):
 
-    def heating_cooling_case(self):
+    def test_heating_cooling_case(self):
         """
         In this case we have a network with an air-water hp, a WKO (warm and cold well) and both
         hot and cold demand. The heat and cold demand was balanced such that the seasonal storage
@@ -155,7 +154,7 @@ class HeatColdDemand(TestCase):
 
 class HeatCoolingGrowWorkflow(TestCase):
 
-    def heating_cooling_case(self):
+    def test_heating_cooling_case(self):
         """
         In this case we have a network with an air-water hp, a WKO (warm and cold well) and both
         hot and cold demand. The heat and cold demand was balanced such that the seasonal storage
@@ -177,126 +176,35 @@ class HeatCoolingGrowWorkflow(TestCase):
 
         base_folder = Path(__file__).resolve().parent.parent
 
-        class MinElectcost(Goal):
-
-            priority = 2
-
-            order = 1
-
-            def __init__(self, asset_name: str):
-                self.function_nominal = 1.0e6
-                self.asset_name = asset_name
-
-            def function(
-                self,
-                optimization_problem: CollocatedIntegratedOptimizationProblem,
-                ensemble_member: int,
-            ):
-
-                parameters = optimization_problem.parameters(ensemble_member)
-                canonical, sign = optimization_problem.alias_relation.canonical_signed(
-                    f"{self.asset_name}.Heat_source"
-                )
-                heat_source = (
-                    optimization_problem.state_vector(canonical, ensemble_member)
-                    * optimization_problem.variable_nominal(canonical)
-                    * sign
-                )
-
-                assert len(optimization_problem.get_electricity_carriers().keys()) <= 1
-
-                price_profile = optimization_problem.get_timeseries(
-                    f"{list(optimization_problem.get_electricity_carriers().values())[0]['name']}"
-                    ".price_profile"
-                )
-                timesteps_hr = np.diff(optimization_problem.times()) / 3600
-
-                sum = 0.0
-                for i in range(1, len(optimization_problem.times())):
-                    sum += (
-                        price_profile.values[i]
-                        * heat_source[i]
-                        * timesteps_hr[i - 1]
-                        / parameters[f"{self.asset_name}.cop"]
-                    )
-
-                return sum
-
         class UpdatedProblem(EndScenarioSizingStaged, CollocatedIntegratedOptimizationProblem):
 
             # TODO: Issue sizing pipes connected to demands, available pipe classes are updated in
             # read(), ESDLAdditionalVarsMixin before the code below. This means the
             # incorrect demand values are then used.
-            def read(self):
-                super().read()
 
-                # Set the peak of the heating demand since the specified profile is normalized to 1
-                # TODO --> use new profile in esdl, but issue with cold profile. So for now
-                # reading in profiles from file. Also currently we cannot use a combination of
-                # esdl and csv profile inputs, potentially needed?
-                for d in self.energy_system_components["heat_demand"]:
-                    target = self.get_timeseries(f"{d}.target_heat_demand")
-                    for ii in range(len(target.values)):
-                        target.values[ii] = target.values[ii] * 7.0e6
+            # TODO: use new profile in esdl, but issue with cold profile. So for now
+            # reading in profiles from file. Also currently we cannot use a combination of
+            # esdl and csv profile inputs, potentially needed?
 
-                    self.io.set_timeseries(
-                        f"{d}.target_heat_demand",
-                        self.io._DataStore__timeseries_datetimes,
-                        target.values,
-                        0,
-                    )
-                # Cold demand specified profile is not normalized
-                # Cold demand value is reduced to get the correct balance between the heat and cold
-                # demand such that the seasonal storage is utilized
+            # TODO: locally do not have access to profile uploaded in mapeditor
 
-                for d in self.energy_system_components["cold_demand"]:
-                    # TODO -->> locally do not have access to proifle uploaded in mapediotr
-                    target = self.get_timeseries(f"{d}.target_cold_demand")
-                    for ii in range(len(target.values)):
-                        # target.values[ii] = target.values[ii] * 0.25
-                        target.values[ii] = target.values[ii] * 0.65
-                        if (
-                            target.times[ii] < 4.5 * 30.0 * 24.0 * 60.0 * 60  # 4
-                            or target.times[ii] > 7.5 * 30.0 * 24.0 * 60.0 * 60  # 7
-                        ):
-                            target.values[ii] *= 0.01
+            # TODO: Clarify how the variable operating cost should be defined when a price_profile
+            #  is provided.
+            # Currently, the financial mixin is implemented such that the price_profile
+            # contributes to the variable OPEX calculation in addition to the var-opex-coefficient
+            # and pump_power whenever a price_profile is given.
 
-                    max_cold_val = max(target.values)
-                    ind_max_cold_val = np.where(target.values == max_cold_val)[0][0]
-                    factor_sin_wave = []
-                    for ii in range(1, 24):
-                        factor_sin_wave.append(np.sin(2.0 * np.pi * float(ii) / 24.0))
-                        target.values[ind_max_cold_val + (ii - 12)] += (
-                            -1.0e6 * factor_sin_wave[ii - 1]
-                        )
-
-                    self.io.set_timeseries(
-                        f"{d}.target_cold_demand",
-                        self.io._DataStore__timeseries_datetimes,
-                        target.values,
-                        0,
-                    )
-
-            def goals(self):
-
-                goals = super().goals().copy()
-
-                for ac in self.energy_system_components.get("air_water_heat_pump_elec", []):
-                    goals.append(MinElectcost(ac))
-
-                return goals
+            pass
 
         solution = run_end_scenario_sizing(
             UpdatedProblem,
             base_folder=base_folder,
-            # esdl_file_name="Heating and cooling network with return network with costs.esdl",
             esdl_file_name=(
                 "Heating and cooling and elec network with return network with costs.esdl"
             ),
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
-            # input_timeseries_file="timeseries_4.csv",
-            input_timeseries_file="timeseries_4_elect_cost.csv",
+            input_timeseries_file="timeseries_4_elect_cost_modified.csv",
             error_type_check=NetworkErrors.HEAT_AND_COOL_NETWORK_ERRORS,
         )
 
@@ -403,7 +311,7 @@ class HeatCoolingGrowWorkflow(TestCase):
                         / solution.parameters(0)[f"{asset}.pump_efficiency"]
                     )
 
-                variable_operational_cost += pump_power
+                variable_operational_cost += pump_power + elect_cost
 
             total_opex += (
                 variable_operational_cost * solution.parameters(0)[f"{asset}.technical_life"]
@@ -445,18 +353,18 @@ class HeatCoolingGrowWorkflow(TestCase):
                     + results["CoolingDemand_1__investment_cost"]
                 )
                 / 1.0e6
-                - (total_capex + total_opex + elect_cost) / 1.0e6
+                - (total_capex + total_opex) / 1.0e6
             )
             < 1.0e-6
         )
 
-        # --------------------------------------------------------------------------------------
-        # Do not delete the code below. It is used for creating plots (also used for conference
-        # presentations)
-
+        # # --------------------------------------------------------------------------------------
+        # # Do not delete the code below. It is used for creating plots (also used for conference
+        # # presentations)
+        #
         # create_plots = False
         # if create_plots:
-
+        #
         #     import matplotlib.pyplot as plt
         #     legend_used = [
         #         "ATES",
@@ -477,7 +385,7 @@ class HeatCoolingGrowWorkflow(TestCase):
         #     index_end_peak_day[1] = np.where(times_steps == 3600.0)[0][-1] + 2
         #     index_start_peak_day[1] = index_end_peak_day[1] - 24
         #     index_end_peak_day[0] = index_start_peak_day[0] + 24
-
+        #
         #     for ip in range(len(index_start_peak_day)):
         #         times_peak_day = (
         #             solution.get_timeseries(f"HeatingDemand_1.target_heat_demand")
@@ -487,7 +395,7 @@ class HeatCoolingGrowWorkflow(TestCase):
         #                 .times[index_start_peak_day[ip]: index_end_peak_day[ip]]
         #             )
         #         ) / 3600.0
-
+        #
         #         fig_1 = plt.figure()
         #         plt.plot(
         #             times_peak_day[1:],
@@ -516,7 +424,7 @@ class HeatCoolingGrowWorkflow(TestCase):
         #             ] / 1.0e6,
         #             # marker=">",
         #         )
-
+        #
         #         plt.plot(
         #             times_peak_day[1:],
         #             results["CoolingDemand_1.Heat_flow"][
@@ -532,11 +440,11 @@ class HeatCoolingGrowWorkflow(TestCase):
         #             ] / 1.0e6,
         #             # marker="o",
         #         )
-
+        #
         #         plt.legend(
         #             legend_used, prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5)
         #         )
-
+        #
         #         plt.yticks(np.linspace(-6, 14, 11))
         #         plt.xlabel("Time [hourly]", fontsize=12)
         #         plt.ylabel("Power [MW]", fontsize=12)
@@ -560,9 +468,9 @@ class HeatCoolingGrowWorkflow(TestCase):
         #         solution.get_timeseries(f"HeatingDemand_1.target_heat_demand")
         #         .times[index_end_peak_day[1] : ] / 3600.0 / 24.0
         #     )
-
+        #
         #     fig_2 = plt.figure()
-
+        #
         #     temp_season = (results["ATES_1.Heat_flow"][1 : index_start_peak_day[0]])
         #     temp_season = np.append(
         #         temp_season, results["ATES_1.Heat_flow"][
@@ -577,7 +485,7 @@ class HeatCoolingGrowWorkflow(TestCase):
         #         temp_season / 1.0e6,
         #         # marker="x",
         #     )
-
+        #
         #     temp_season = (
         #         results["HeatingDemand_1.Heat_flow"][1 : index_start_peak_day[0]]
         #         + results["HeatingDemand_2.Heat_flow"][1 : index_start_peak_day[0]]
@@ -602,7 +510,7 @@ class HeatCoolingGrowWorkflow(TestCase):
         #         # marker="H",
         #         linestyle="dotted",
         #     )
-
+        #
         #     temp_season = (results["HeatPump_1.Heat_flow"][1 : index_start_peak_day[0]])
         #     temp_season = np.append(
         #         temp_season,
@@ -617,7 +525,7 @@ class HeatCoolingGrowWorkflow(TestCase):
         #         temp_season / 1.0e6,
         #         # marker=">",
         #     )
-
+        #
         #     temp_season = (results["CoolingDemand_1.Heat_flow"][1 : index_start_peak_day[0]])
         #     temp_season = np.append(
         #         temp_season,
@@ -635,7 +543,7 @@ class HeatCoolingGrowWorkflow(TestCase):
         #         # marker="*",
         #         linestyle="dotted",
         #     )
-
+        #
         #     temp_season = (results["Airco_1.Heat_flow"][1 : index_start_peak_day[0]])
         #     temp_season = np.append(
         #         temp_season,
@@ -650,21 +558,21 @@ class HeatCoolingGrowWorkflow(TestCase):
         #         temp_season / 1.0e6,
         #         # marker="o",
         #     )
-
+        #
         #     plt.legend(legend_used, prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
-
+        #
         #     plt.xlabel("Time [daily]", fontsize=12)
         #     plt.ylabel("Power [MW]", fontsize=12)
         #     plt.tight_layout()
         #     plt.savefig("All_in_one_seasonal")
         #     plt.show()
         #     plt.close()
-
+        #
         #     # ------------------------------------------------------------------------------------
         #     # ATES goodies
         #     # seasonal
         #     fig_4 = plt.figure()
-
+        #
         #     temp_season = (results["ATES_1.Stored_volume"][0 : index_start_peak_day[0]])
         #     temp_season = np.append(
         #         temp_season,
@@ -681,7 +589,7 @@ class HeatCoolingGrowWorkflow(TestCase):
         #         # marker="+",
         #         color="red",
         #     )
-
+        #
         #     max_volume_warm_well = max(temp_season) - min(temp_season)
         #     cold_well_volume = -temp_season
         #     cold_well_volume = cold_well_volume + max_volume_warm_well
@@ -692,7 +600,7 @@ class HeatCoolingGrowWorkflow(TestCase):
         #         # marker="x",
         #         color="cyan",
         #     )
-
+        #
         #     plt.legend(
         #         ["Warm well", "Cold well"],
         #         prop={'size': 10},
@@ -705,7 +613,7 @@ class HeatCoolingGrowWorkflow(TestCase):
         #     plt.savefig("ATES_volume_seasonal")
         #     plt.show()
         #     plt.close()
-
+        #
         #     # peak day
         #     for ip in range(len(index_start_peak_day)):
         #         cold_well_volume = (
@@ -714,9 +622,9 @@ class HeatCoolingGrowWorkflow(TestCase):
         #             ]
         #         )
         #         cold_well_volume = cold_well_volume + max_volume_warm_well
-
+        #
         #         fig_warm_cold_well_peak, ax1 = plt.subplots()
-
+        #
         #         color = 'tab:red'
         #         ax1.set_xlabel('Time [hourly]', fontsize=12)
         #         ax1.set_ylabel('Warm well stored volume [m$^3$]', color=color, fontsize=12)
@@ -728,9 +636,9 @@ class HeatCoolingGrowWorkflow(TestCase):
         #             color=color,
         #         )
         #         ax1.tick_params(axis='y', labelcolor=color)
-
+        #
         #         ax2 = ax1.twinx()  # instantiate a second Axes that shares the same x-axis
-
+        #
         #         color = 'tab:cyan'
         #         # we already handled the x-label with ax1
         #         ax2.set_ylabel('Cold well stored volume [m$^3$]', color=color, fontsize=12)
@@ -745,7 +653,7 @@ class HeatCoolingGrowWorkflow(TestCase):
         #     # Demands
         #     # heat dmemand
         #     # peak day
-
+        #
         #     fig_tot_heat_demand_peak_day = plt.figure()
         #     plt.plot(
         #         times_peak_day[1:],
@@ -768,11 +676,11 @@ class HeatCoolingGrowWorkflow(TestCase):
         #     plt.savefig(f"Total_heat_demand_profile_peak_day_ip{0}")
         #     plt.show()
         #     plt.close()
-
+        #
         #     # Demands
         #     # cold dmemand
         #     # peak day
-
+        #
         #     fig_tot_cold_demand_peak_day = plt.figure()
         #     plt.plot(
         #         times_peak_day[1:],
@@ -792,7 +700,7 @@ class HeatCoolingGrowWorkflow(TestCase):
         #     plt.savefig(f"Total_cold_demand_profile_peak_day_ip{1}")
         #     plt.show()
         #     plt.close()
-
+        #
         #     # heating demand
         #     # seasonal
         #     fig_6 = plt.figure()
@@ -827,7 +735,7 @@ class HeatCoolingGrowWorkflow(TestCase):
         #     plt.savefig("Total_heat_demand_profile_seasonal")
         #     plt.show()
         #     plt.close()
-
+        #
         #     fig_tot_cool_demand = plt.figure()
         #     temp_season = results["CoolingDemand_1.Heat_flow"][1 : index_start_peak_day[0]]
         #     temp_season = np.append(
@@ -860,4 +768,4 @@ if __name__ == "__main__":
     # test_cold_demand.heating_cooling_case()
 
     t2 = HeatCoolingGrowWorkflow()
-    t2.heating_cooling_case()
+    t2.test_heating_cooling_case()
