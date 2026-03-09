@@ -468,9 +468,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
             min_voltage = self._get_min_voltage(asset)
             i_max, i_nom = self._get_connected_i_nominal_and_max(asset)
-
-            # ToDo: Check if max_supply (and also elec_power_nominal)
-            #  can be defined via hfr_charge_max.
             max_supply = hfr_charge_max
             charging_efficiency = 1.0
             if asset.attributes["chargeEfficiency"]:

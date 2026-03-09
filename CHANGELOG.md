@@ -3,6 +3,7 @@
 ## Added
 - Parsing of ensemble profiles when using input profiles from csv.
 - Maximum profile constraint for PV asset is considered in PV sizing
+- Addition of heat buffer asset with electric charging (i.e. HeatBufferElec).
 
 ## Changed
 - Speed-up timeseries check in from InfluxDB
@@ -14,7 +15,7 @@
 # [0.1.17] - 2026-02-25
 
 ## Added
-- Addition of heat buffer asset with electric charging (i.e. HeatBufferElec) is added
+- xx
 
 ## Changed
 - xxx
