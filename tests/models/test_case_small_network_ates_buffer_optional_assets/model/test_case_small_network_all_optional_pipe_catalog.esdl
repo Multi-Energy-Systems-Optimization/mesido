@@ -381,6 +381,24 @@
     </area>
   </instance>
   <measures xsi:type="esdl:Measures" id="a564dad8-2c39-483c-8ebe-e8fb4f0adf51" name="Pipe catalog" description="Pipe catalog">
+      <measure xsi:type="esdl:Measure" id="ea8983eb-6885-4a45-adbc-caabcad3f9cd" name="Pipe DN20" description="Pipe DN20">
+      <asset xsi:type="esdl:Pipe" id="5ebdf710-8047-4ff1-b922-78192f667ed7" name="DN20 pipe" diameter="DN20">
+        <costInformation xsi:type="esdl:CostInformation" id="b937dec4-0422-4cea-a709-331ddb8de1f7">
+          <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="a0b3509d-26ce-4984-8a2b-6d8a23169c5b" value="1000.0">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" unit="EURO" perUnit="METRE" description="Cost in EUR/m" id="e038e9ad-72c5-42a6-aab8-edd194979417"/>
+          </investmentCosts>
+        </costInformation>
+      </asset>
+    </measure>
+    <measure xsi:type="esdl:Measure" id="4c623284-d972-4e02-9dc7-be79a8f08463" name="Pipe DN32" description="Pipe DN32">
+      <asset xsi:type="esdl:Pipe" id="38bc2665-ef35-4e62-99ad-7a65096c7274" name="DN32 pipe" diameter="DN32">
+        <costInformation xsi:type="esdl:CostInformation" id="e7491e20-d6f3-481d-affe-74c3b0bb1b26">
+          <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="4083ee9f-e31a-448a-be4a-ddacb2acfd46" value="1000.0">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" unit="EURO" perUnit="METRE" description="Cost in EUR/m" id="c05be78b-5549-440d-aa11-d0d9eac1e708"/>
+          </investmentCosts>
+        </costInformation>
+      </asset>
+    </measure>
     <measure xsi:type="esdl:Measure" id="125a1284-f700-46f7-b579-579db0ce54aa" name="Pipe DN40" description="Pipe DN40">
       <asset xsi:type="esdl:Pipe" id="5290f85f-6815-4501-a6d5-c979adf25e3b" name="DN40 pipe" diameter="DN40">
         <costInformation xsi:type="esdl:CostInformation" id="450c1a42-a9d0-406f-b39c-ae4fde8a28a2">
