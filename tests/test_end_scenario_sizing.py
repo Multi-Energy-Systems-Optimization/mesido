@@ -410,9 +410,10 @@ class TestEndScenarioSizing(TestCase):
                         abs(results[f"{pipe}.dH"][ii]) + tol,
                     )
 
-    def test_end_scenario_sizing_pipe_catalog_lower_pipe_DN(self):
+    def test_end_scenario_sizing_pipe_catalog_lower_pipe_dn(self):
         """
-        Check that the temporary implementation of allowing the reduction of the lower pipe limit via measures
+        Check that the temporary implementation of allowing the reduction of the lower pipe limit
+        via measures
         """
 
         import models.test_case_small_network_ates_buffer_optional_assets.src.run_ates as run_ates
@@ -435,7 +436,6 @@ class TestEndScenarioSizing(TestCase):
                         target.values,
                         0,
                     )
-        
 
         solution = run_end_scenario_sizing(
             ReducedDemandProblem,
@@ -454,11 +454,10 @@ class TestEndScenarioSizing(TestCase):
         pipes_to_check = ["Pipe2", "Pipe2_ret", "Pipe4", "Pipe4_ret"]  # user input minimum DN
         for pipe in solution.energy_system_components.get("heat_pipe"):
             available_pipe_classes = solution.pipe_classes(pipe)
-            
+
             if pipe in pipes_to_check:
                 np.testing.assert_equal(available_pipe_classes[0].name == "DN40", True)
-                np.testing.assert_equal(parameters[f"{pipe}.diameter"], 0.0431) 
-
+                np.testing.assert_equal(parameters[f"{pipe}.diameter"], 0.0431)
                 np.testing.assert_equal(results[f"{pipe}__hn_diameter"], 0.0431)
             elif pipe not in ["Pipe1", "Pipe1_ret"]:  # this Pipe1 is not placed
                 if available_pipe_classes[0].name == "None":
@@ -715,7 +714,7 @@ if __name__ == "__main__":
     a.test_end_scenario_sizing_staged()
     a.test_end_scenario_sizing_discounted()
     a.test_end_scenario_sizing_head_loss()
-    a.test_end_scenario_sizing_pipe_catalog_lower_pipe_DN()
+    a.test_end_scenario_sizing_pipe_catalog_lower_pipe_dn()
     a.test_end_scenario_sizing_pipe_catalog()
     a.test_end_scenario_sizing_pipe_catalog_with_templates()
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
