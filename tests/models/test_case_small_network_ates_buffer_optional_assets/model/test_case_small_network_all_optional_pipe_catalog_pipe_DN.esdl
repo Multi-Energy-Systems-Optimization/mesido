@@ -63,7 +63,7 @@
           </investmentCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:Pipe" state="OPTIONAL" diameter="DN450" name="Pipe2" length="195.4" id="Pipe2" innerDiameter="0.4444" outerDiameter="0.63" related="Pipe2_ret">
+      <asset xsi:type="esdl:Pipe" state="OPTIONAL" diameter="DN350" name="Pipe2" length="195.4" id="Pipe2" innerDiameter="0.4444" outerDiameter="0.63" related="Pipe2_ret">
         <geometry xsi:type="esdl:Line" CRS="WGS84">
           <point xsi:type="esdl:Point" lat="52.04271178827801" lon="4.311629533767701"/>
           <point xsi:type="esdl:Point" lat="52.04202218466326" lon="4.309000968933106"/>
@@ -113,7 +113,7 @@
           </investmentCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:Pipe" state="OPTIONAL" diameter="DN450" name="Pipe4" length="189.7" id="Pipe4" innerDiameter="0.4444" outerDiameter="0.63" related="Pipe4_ret">
+      <asset xsi:type="esdl:Pipe" state="OPTIONAL" diameter="DN350" name="Pipe4" length="189.7" id="Pipe4" innerDiameter="0.4444" outerDiameter="0.63" related="Pipe4_ret">
         <geometry xsi:type="esdl:Line" CRS="WGS84">
           <point xsi:type="esdl:Point" lat="52.04076173333622" lon="4.313324689865113"/>
           <point xsi:type="esdl:Point" lat="52.04007209963487" lon="4.310787320137025"/>
@@ -247,7 +247,7 @@
           </investmentCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:Pipe" state="OPTIONAL" diameter="DN450" name="Pipe2_ret" length="195.4" id="Pipe2_ret" innerDiameter="0.4444" outerDiameter="0.63" related="Pipe2">
+      <asset xsi:type="esdl:Pipe" state="OPTIONAL" diameter="DN350" name="Pipe2_ret" length="195.4" id="Pipe2_ret" innerDiameter="0.4444" outerDiameter="0.63" related="Pipe2">
         <geometry xsi:type="esdl:Line">
           <point xsi:type="esdl:Point" CRS="WGS84" lat="52.04211218475326" lon="4.308378045386691"/>
           <point xsi:type="esdl:Point" CRS="WGS84" lat="52.04280178836801" lon="4.311008661644606"/>
@@ -273,7 +273,7 @@
           </investmentCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:Pipe" state="OPTIONAL" diameter="DN450" name="Pipe4_ret" length="189.7" id="Pipe4_ret" innerDiameter="0.4444" outerDiameter="0.63" related="Pipe4">
+      <asset xsi:type="esdl:Pipe" state="OPTIONAL" diameter="DN350" name="Pipe4_ret" length="189.7" id="Pipe4_ret" innerDiameter="0.4444" outerDiameter="0.63" related="Pipe4">
         <geometry xsi:type="esdl:Line">
           <point xsi:type="esdl:Point" CRS="WGS84" lat="52.04016209972487" lon="4.310158519812684"/>
           <point xsi:type="esdl:Point" CRS="WGS84" lat="52.040851733426216" lon="4.312697980725036"/>
