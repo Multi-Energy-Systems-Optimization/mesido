@@ -415,20 +415,21 @@ class Buffer(TestCase):
         heat network.
 
         Checks:
-        1. demand and energy_conservation are matched
+        1. utils tests
         2. buffer can be charged by electricity
         3. buffer can be discharged to network
         4. the heat flow balance of buffer
         5. buffer charging_efficiency is considered
         6. buffer stored heat calculation is linked to Heat_loss and Heat_buffer
         """
+
         import models.simple_buffer.src.simple_buffer as example
-        from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
+        from models.unit_cases.case_3a.src.run_3a import HeatProblem
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
         heat_problem = run_esdl_mesido_optimization(
-            SourcePipeSink,
+            HeatProblem,
             base_folder=base_folder,
             esdl_file_name="sourcesink_with_heater_ebuffer.esdl",
             esdl_parser=ESDLFileParser,
@@ -439,24 +440,30 @@ class Buffer(TestCase):
         parameters = heat_problem.parameters(0)
 
         demand_matching_test(heat_problem, results)
+        heat_to_discharge_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
 
         # Check that buffer is charged by electricity
-        np.testing.assert_array_less(0.0, sum(results["HeatStorage.Heat_elec_charging"]))
+        epsilon = (
+            1e-6  # small tolerance to prevent false passes caused by numerical precision errors
+        )
+        np.testing.assert_array_less(epsilon, sum(results["HeatStorage.Heat_elec_charging"]))
 
         # Check that buffer discharged heat to the network and is not charged by it.
-        np.testing.assert_array_less(results["HeatStorage.Heat_flow"], 0.0)
+        np.testing.assert_array_less(results["HeatStorage.Heat_flow"], -epsilon)
 
         # Check the heat flow balance of buffer
         np.testing.assert_allclose(
             results["HeatStorage.Heat_buffer"],
             results["HeatStorage.Heat_flow"] + results["HeatStorage.Heat_elec_charging"],
+            atol=1e-8,
         )
 
         # Check that charging_efficiency is considered at heat buffer electricity consumption
         np.testing.assert_allclose(
             results["HeatStorage.Heat_elec_charging"],
             results["HeatStorage.Power_elec"] * parameters["HeatStorage.charging_efficiency"],
+            atol=1e-8,
         )
 
         # Check that derivative of stored heat is coming from heat loss and heat_buffer

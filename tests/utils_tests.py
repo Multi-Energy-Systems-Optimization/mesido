@@ -204,11 +204,20 @@ def heat_to_discharge_test(solution, results, atol=1e-2, rtol=1.0e-4):
                 atol=atol,
             )
         except KeyError:
-            np.testing.assert_allclose(
-                results[f"{d}.Heat_buffer"],
-                results[f"{d}.HeatIn.Heat"] - results[f"{d}.HeatOut.Heat"],
-                atol=atol,
-            )
+            if d in solution.energy_system_components.get("heat_buffer_elec", []):
+                np.testing.assert_allclose(
+                    results[f"{d}.Heat_buffer"],
+                    results[f"{d}.HeatIn.Heat"]
+                    - results[f"{d}.HeatOut.Heat"]
+                    + results[f"{d}.Heat_elec_charging"],
+                    atol=atol,
+                )
+            else:
+                np.testing.assert_allclose(
+                    results[f"{d}.Heat_buffer"],
+                    results[f"{d}.HeatIn.Heat"] - results[f"{d}.HeatOut.Heat"],
+                    atol=atol,
+                )
         supply_temp, return_temp, dt = _get_component_temperatures(solution, results, d)
         indices = results[f"{d}.HeatIn.Q"] >= 0
         if isinstance(supply_temp, float):
@@ -427,9 +436,9 @@ def energy_conservation_test(solution, results, atol=1e-3, atol_total=1e-1):
 
     for d in solution.energy_system_components.get("heat_buffer", []):
         energy_sum -= results[f"{d}.Heat_buffer"]
-        asset_buffer = solution.esdl_assets[solution.esdl_asset_name_to_id_map[d]]
-        if len(asset_buffer.in_ports) == 2 and len(asset_buffer.out_ports) == 1:
+        if d in solution.energy_system_components.get("heat_buffer_elec", []):
             energy_sum += results[f"{d}.Heat_elec_charging"]
+
     for d in solution.energy_system_components.get("heat_source", []):
         energy_sum += results[f"{d}.Heat_source"]
 

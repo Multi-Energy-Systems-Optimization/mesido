@@ -332,9 +332,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
         Returns:
             value: minimum voltage of electric carrier in V
         """
+        min_voltage = None
         for port in asset.in_ports:
             if isinstance(port.carrier, esdl.ElectricityCommodity):
                 min_voltage = port.carrier.voltage
+        if min_voltage is None:
+            raise RuntimeError(f"{asset.name} has no in-port with electricity commodity")
         return min_voltage
 
     def convert_heat_buffer(
@@ -457,10 +460,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
             Heat_buffer=dict(min=-hfr_discharge_max, max=hfr_charge_max),
             init_Heat=min_heat,
             **self._generic_modifiers(asset),
+            **self._generic_heat_modifiers(-hfr_discharge_max, hfr_charge_max, q_nominal),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
-            **self._generic_heat_modifiers(-hfr_discharge_max, hfr_charge_max, q_nominal),
         )
         if len(asset.in_ports) == 2 and len(asset.out_ports) == 1:
 
@@ -468,7 +471,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
             min_voltage = self._get_min_voltage(asset)
             i_max, i_nom = self._get_connected_i_nominal_and_max(asset)
-            max_supply = hfr_charge_max
+            max_elec_power = hfr_charge_max
             charging_efficiency = 1.0
             if asset.attributes["chargeEfficiency"]:
                 charging_efficiency = asset.attributes["chargeEfficiency"]
@@ -481,9 +484,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
             modifiers.update(
                 dict(
-                    elec_power_nominal=max_supply,
+                    elec_power_nominal=max_elec_power / 2.0,
                     ElectricityIn=dict(
-                        Power=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
+                        Power=dict(min=0.0, max=max_elec_power, nominal=max_elec_power / 2.0),
                         I=dict(min=0.0, max=i_max, nominal=i_nom),
                         V=dict(min=min_voltage, nominal=min_voltage),
                     ),

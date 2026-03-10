@@ -35,6 +35,9 @@ class HeatBufferElec(_HeatBufferComponent):
         self.add_variable(Variable, "Power_elec", min=0.0, nominal=self.elec_power_nominal)
         self.add_variable(Variable, "Heat_elec_charging", min=0.0, nominal=self.elec_power_nominal)
         #
+        # Buffer can only discharge into heat network. It cannot be charged by heat network
+        self.Heat_flow.max = 0.0
+        #
         self.add_equation(((self.ElectricityIn.Power - self.Power_elec) / self.elec_power_nominal))
         #
         self.add_equation(
@@ -48,6 +51,3 @@ class HeatBufferElec(_HeatBufferComponent):
         self.add_equation(
             (self.Heat_flow + self.Heat_elec_charging - self.Heat_buffer) / self.Heat_nominal
         )
-
-        # Buffer can only discharge into heat network. It cannot be charged by heat network
-        self.Heat_flow.max = 0.0
