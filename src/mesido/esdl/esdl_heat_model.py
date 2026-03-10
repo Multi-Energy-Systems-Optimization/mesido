@@ -364,6 +364,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             # Raise the potential error here if applicable, with feedback to user
             # Else a normal error exit might occer which will not give feedback to the
             # user
+            # Import occurs here to prevent circular reference
             from mesido.workflows.utils.error_types import potential_error_to_error
 
             potential_error_to_error(self._error_type_check)
@@ -409,6 +410,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                     )
                     # Raise the potential error here if applicable, with feedback to user
                     # Else a normal error exit might occer which will not give feedback to the user
+                    # Import occurs here to prevent circular reference
                     from mesido.workflows.utils.error_types import potential_error_to_error
 
                     potential_error_to_error(self._error_type_check)
@@ -2600,7 +2602,11 @@ class AssetToHeatComponent(_AssetToComponentBase):
         is_one_in_port = True if len(asset.in_ports) == 1 else False
         if is_one_in_port:
             max_supply = self._get_asset_max_size_input(asset, "power")
-        else:  # TODO: range constraint to be added instead of using this value for OPTIONAL asset
+        else:
+            # TODO: range constraint to be added instead of using this value for OPTIONAL asset
+            # The implementation of range constraints has not been tested for assets with more
+            # than one port, this should still be done. We need to be sure to check the proper
+            # quantity is used.
             max_supply = asset.attributes["power"]
 
         if not max_supply:
