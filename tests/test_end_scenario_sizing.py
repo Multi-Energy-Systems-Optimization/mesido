@@ -427,7 +427,7 @@ class TestEndScenarioSizing(TestCase):
                 # Reduce the heating demand to allwo usage of smaller pipes
                 for d in self.energy_system_components["heat_demand"]:
                     target = self.get_timeseries(f"{d}.target_heat_demand")
-                    target.values = target.values / 1.0e2
+                    target.values[:] = target.values[:] / 1.0e2
 
                     self.io.set_timeseries(
                         f"{d}.target_heat_demand",

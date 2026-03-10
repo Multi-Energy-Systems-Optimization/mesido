@@ -381,7 +381,7 @@
     </area>
   </instance>
   <measures xsi:type="esdl:Measures" id="a564dad8-2c39-483c-8ebe-e8fb4f0adf51" name="Pipe catalog" description="Pipe catalog">
-      <measure xsi:type="esdl:Measure" id="ea8983eb-6885-4a45-adbc-caabcad3f9cd" name="Pipe DN20" description="Pipe DN20">
+    <measure xsi:type="esdl:Measure" id="ea8983eb-6885-4a45-adbc-caabcad3f9cd" name="Pipe DN20" description="Pipe DN20">
       <asset xsi:type="esdl:Pipe" id="5ebdf710-8047-4ff1-b922-78192f667ed7" name="DN20 pipe" diameter="DN20">
         <costInformation xsi:type="esdl:CostInformation" id="b937dec4-0422-4cea-a709-331ddb8de1f7">
           <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" id="a0b3509d-26ce-4984-8a2b-6d8a23169c5b" value="1000.0">
