@@ -141,7 +141,8 @@ def get_density(
     # pressure and temperature.
     if carrier is None:
         logger.warning(
-            f"Neither gas/hydrogen/heat was used in the carrier at asset named {asset_name}."
+            f"Neither gas/hydrogen/heat was specified at asset named {asset_name}. "
+            "Gas properties will be used."
         )
         density = cP.CoolProp.PropsSI(
             "D",
@@ -201,7 +202,8 @@ def get_density(
         )
     else:
         logger.warning(
-            f"Neither gas/hydrogen/heat was used in the carrier at asset named {asset_name}."
+            f"Neither gas/hydrogen/heat was specified in the carrier at asset named {asset_name}. "
+            "Gas properties will be used."
         )
         density = 6.2  # natural gas at about 8 bar
 

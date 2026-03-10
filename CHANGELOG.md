@@ -1,8 +1,9 @@
-# [Unreleased-main] - 2026-02-25
+# [Unreleased-main] - 2026-03-10
 
 ## Added
 - Parsing of ensemble profiles when using input profiles from csv.
 - Maximum profile constraint for PV asset is considered in PV sizing
+- Cater for input via esdl constraints to specify the upper limit for OPTIONAL assets in DTK
 - Addition of heat buffer asset with electric charging (i.e. HeatBufferElec).
 
 ## Changed
@@ -15,7 +16,7 @@
 # [0.1.17] - 2026-02-25
 
 ## Added
-- xx
+- xxx
 
 ## Changed
 - xxx
@@ -45,7 +46,7 @@
 - Removed the requirement of "_ret" for the return network pipes, for ESDLversion 21.10 and later. The relation between supply and return pipes is now based on the "related" attribute in the esdl.
 - Addition of cooling assests (airco and low_temperature_ates) in the grow_workflow for heating and cooling networks
 - Inclusion of airco and low_temperature_ates in write_output
-- New data structute for specifying database connection inputs
+- New data structure for specifying database connection inputs
 - Costs of available pipe classes are updated based on the asset measures and templates if they are provided.
 - The charging and discharging variable for electricity storage is created without a binary variable using the convex hull description.
 - Gas Boiler asset is renamed as HeatSourceGas
