@@ -2,6 +2,7 @@ import base64
 import copy
 import dataclasses
 import logging
+import os
 import sys
 from datetime import timedelta
 from pathlib import Path
@@ -70,6 +71,8 @@ class ESDLMixin(
     system in that file. Furthermore, it contains functionality to extract profiles specified like
     for example demand profiles.
     """
+
+    csv_ensemble_mode: bool = False
 
     esdl_run_info_path: Path = None
 
@@ -703,6 +706,19 @@ class ESDLMixin(
         None
         """
         super().read()
+        ensemble_size = 1
+        self.__ensemble = None
+        if self.csv_ensemble_mode:
+            self.__ensemble = np.genfromtxt(
+                os.path.join(self._input_folder, "ensemble.csv"),
+                delimiter=",",
+                deletechars="",
+                dtype=None,
+                names=True,
+                encoding=None,
+            )
+            ensemble_size = len(self.__ensemble)
+
         energy_system_components = self.energy_system_components
         esdl_carriers = self.esdl_carriers
         self.hot_cold_pipe_relations()
@@ -713,7 +729,8 @@ class ESDLMixin(
             esdl_asset_id_to_name_map=self.esdl_asset_id_to_name_map,
             esdl_assets=self.esdl_assets,
             carrier_properties=esdl_carriers,
-            ensemble_size=self.ensemble_size,
+            ensemble_size=ensemble_size,
+            ensemble=self.__ensemble,
         )
 
     def write(self) -> None:
@@ -838,3 +855,9 @@ class ESDLMixin(
                 filtered_assets[asset_id] = asset_type
 
         return filtered_assets
+
+    def ensemble_member_probability(self, ensemble_member):
+        if self.csv_ensemble_mode:
+            return self.__ensemble["probability"][ensemble_member]
+        else:
+            return 1.0

@@ -1,10 +1,11 @@
 # [Unreleased-main] - 2026-02-25
 
 ## Added
-- xxx
+- Parsing of ensemble profiles when using input profiles from csv.
+- Maximum profile constraint for PV asset is considered in PV sizing
 
 ## Changed
-- xxx
+- Speed-up timeseries check in from InfluxDB
 
 ## Fixed
 - xxx 
