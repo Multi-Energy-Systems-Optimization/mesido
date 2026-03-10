@@ -364,6 +364,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             # Raise the potential error here if applicable, with feedback to user
             # Else a normal error exit might occer which will not give feedback to the
             # user
+            # Import occurs here to prevent circular reference
             from mesido.workflows.utils.error_types import potential_error_to_error
 
             potential_error_to_error(self._error_type_check)
@@ -409,6 +410,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                     )
                     # Raise the potential error here if applicable, with feedback to user
                     # Else a normal error exit might occer which will not give feedback to the user
+                    # Import occurs here to prevent circular reference
                     from mesido.workflows.utils.error_types import potential_error_to_error
 
                     potential_error_to_error(self._error_type_check)
