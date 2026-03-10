@@ -22,7 +22,7 @@ class TestRangedConstraints(TestCase):
         In the esdl files the asset input value (power, volume or aggregation) count has been
         specified to be smaller than the values specified in the RangedCosntraints
 
-        Notes re the esdl files:
+        Notes regarding the esdl files:
         - testing_network_1_all_enabled: All the assets are enabled.
         - testing_network_1_all_optional_excluding_pipes:
             - All assets OPTIONAL and pipes are ENABLED
@@ -36,7 +36,7 @@ class TestRangedConstraints(TestCase):
             PipeDiameterConstraint value is larger than the pipe Diameter specified.
 
         Checks:
-        * Assets (excluding the pipes)
+        * Heat assets (excluding the pipes)
         - Power and capacity:
             - OPTIONAL assets: Check that the RangedContraint value is used for max size, and that
             this values is larger than the asset attribute input value
