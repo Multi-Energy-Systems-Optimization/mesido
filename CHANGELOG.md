@@ -1,10 +1,12 @@
-# [Unreleased-main] - 2026-02-25
+# [Unreleased-main] - 2026-03-10
 
 ## Added
-- xxx
+- Parsing of ensemble profiles when using input profiles from csv.
+- Maximum profile constraint for PV asset is considered in PV sizing
+- Cater for input via esdl constraints to specify the upper limit for OPTIONAL assets in DTK
 
 ## Changed
-- xxx
+- Speed-up timeseries check in from InfluxDB
 
 ## Fixed
 - xxx 

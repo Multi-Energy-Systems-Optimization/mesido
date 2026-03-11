@@ -11,6 +11,7 @@ from esdl.profiles.influxdbprofilemanager import InfluxDBProfileManager
 from esdl.units.conversion import ENERGY_IN_J, POWER_IN_W, convert_to_unit
 
 from mesido.esdl.common import Asset
+from mesido.esdl.esdl_additional_vars_mixin import get_asset_contraints
 from mesido.potential_errors import MesidoAssetIssueType, get_potential_errors
 
 import numpy as np
@@ -44,11 +45,14 @@ class BaseProfileReader:
         self,
         energy_system: esdl.EnergySystem,
         file_path: Optional[Path],
+        use_esdl_ranged_contraint: bool = False,
     ):
         self._profiles: Dict[int, Dict[str, np.ndarray]] = defaultdict(dict)
         self._energy_system: esdl.EnergySystem = energy_system
         self._file_path: Optional[Path] = file_path
         self._reference_datetimes: Optional[pd.DatetimeIndex] = None
+
+        self._use_esdl_ranged_constraint = use_esdl_ranged_contraint
 
     def read_profiles(
         self,
@@ -58,6 +62,7 @@ class BaseProfileReader:
         esdl_assets: Dict[str, Asset],
         carrier_properties: Dict[str, Dict],
         ensemble_size: int,
+        ensemble,
     ) -> None:
         """
         This function takes a datastore and a dictionary of milp network components and loads a
@@ -91,6 +96,7 @@ class BaseProfileReader:
             esdl_asset_id_to_name_map=esdl_asset_id_to_name_map,
             carrier_properties=carrier_properties,
             ensemble_size=ensemble_size,
+            ensemble=ensemble,
         )
 
         try:
@@ -108,9 +114,41 @@ class BaseProfileReader:
             for component_type, var_name in self.component_type_to_var_name_map.items():
                 for component in energy_system_components.get(component_type, []):
                     profile = self._profiles[ensemble_member].get(component + var_name, None)
-                    asset_power = esdl_assets[esdl_asset_names_to_ids[component]].attributes[
-                        "power"
-                    ]
+                    asset = esdl_assets[esdl_asset_names_to_ids[component]]
+                    asset_state = asset.attributes["state"]
+
+                    asset_power = None
+                    if asset_state == esdl.AssetStateEnum.ENABLED:
+                        asset_power = asset.attributes["power"]
+                    elif asset_state == esdl.AssetStateEnum.OPTIONAL:
+                        if (
+                            self._energy_system.esdlVersion is not None
+                            and self._energy_system.esdlVersion >= "v2602"
+                            and self._use_esdl_ranged_constraint
+                            # "v2602" contains the items needed for the ranged constraint
+                            # implementation in MESIDO
+                        ):
+                            range_constraints, qty_range_constraints = get_asset_contraints(
+                                self, asset, esdl.RangedConstraint
+                            )
+                            if qty_range_constraints == 1:
+                                asset_power = range_constraints[0].range.maxValue
+                            else:
+                                logger.error(
+                                    f"Asset named {asset.name}: The code currently only "
+                                    f"caters for 1 RangedConstraint but {qty_range_constraints} "
+                                    "have been specified"
+                                )
+                                sys.exit(1)
+                        else:
+                            asset_power = asset.attributes["power"]
+                    else:
+                        logger.warning(
+                            f"Read profiles: asset {component} has a state {asset_state.name} "
+                            "and currently the code only caters for asset states ENABLED or "
+                            "OPTIONAL"
+                        )
+
                     if profile is not None:
                         values = profile
                     else:
@@ -181,6 +219,7 @@ class BaseProfileReader:
         esdl_asset_id_to_name_map: Dict[str, str],
         carrier_properties: Dict[str, Dict],
         ensemble_size: int,
+        ensemble: None | np.ndarray,
     ) -> None:
         """
         This function must be implemented by the child. It must load the available
@@ -217,17 +256,20 @@ class InfluxDBProfileReader(BaseProfileReader):
         esdl.esdl.GasProducer: ".maximum_gas_source",
         esdl.esdl.ResidualHeatSource: ".maximum_heat_source",
         esdl.esdl.GeothermalSource: ".maximum_heat_source",
+        esdl.esdl.PVInstallation: ".maximum_electricity_source",
     }
 
     def __init__(
         self,
         energy_system: esdl.EnergySystem,
         file_path: Optional[Path],
+        use_esdl_ranged_contraint: bool = False,
         database_credentials: Optional[Dict[str, Tuple[str, str]]] = None,
     ):
         super().__init__(
             energy_system=energy_system,
             file_path=file_path,
+            use_esdl_ranged_contraint=use_esdl_ranged_contraint,
         )
         self._df = pd.DataFrame()
         self._database_credentials = (
@@ -240,6 +282,7 @@ class InfluxDBProfileReader(BaseProfileReader):
         esdl_asset_id_to_name_map: Dict[str, str],
         carrier_properties: Dict[str, Dict],
         ensemble_size: int,
+        ensemble: None | np.ndarray,
     ) -> None:
         profiles: Dict[str, np.ndarray] = dict()
         logger.info("Reading profiles from InfluxDB")
@@ -315,7 +358,6 @@ class InfluxDBProfileReader(BaseProfileReader):
                 ]
             )
             series = unique_series[index_of_unique_profile]
-            self._check_profile_time_series(profile_time_series=series, profile=profile)
             container = profile.eContainer()
             asset = container.eContainer()
             converted_dataframe = self._convert_profile_to_correct_unit(
@@ -327,7 +369,6 @@ class InfluxDBProfileReader(BaseProfileReader):
                 var_base_name = asset.name
                 if variable_suffix in [
                     self.asset_type_to_variable_name_conversion[esdl.esdl.GasProducer],
-                    self.asset_type_to_variable_name_conversion[esdl.esdl.ElectricityProducer],
                 ]:
                     logger.error(
                         f"Profiles for {var_base_name} from esdl has not been tested yet but only"
@@ -343,7 +384,6 @@ class InfluxDBProfileReader(BaseProfileReader):
                 var_base_name = asset.name
                 if var_base_name in [
                     self.asset_type_to_variable_name_conversion[esdl.esdl.GasProducer],
-                    self.asset_type_to_variable_name_conversion[esdl.esdl.ElectricityProducer],
                 ]:
                     logger.error(f"Profiles for {var_base_name} from esdl has not been tested yet")
                     sys.exit(1)
@@ -506,12 +546,15 @@ class InfluxDBProfileReader(BaseProfileReader):
 
         # Error check: ensure that the profile data has a time resolution of 3600s (1hour) as
         # expected
-        for d1, d2 in zip(profile_time_series.index, profile_time_series.index[1:]):
-            if d2 - d1 != pd.Timedelta(hours=1):
-                raise RuntimeError(
-                    f"The timestep for variable {profile.field} between {d1} and {d2} isn't "
-                    f"exactly 1 hour"
-                )
+        idx = profile_time_series.index
+        dt = idx.to_series().diff()[1:]
+        problem_timesteps = idx[:-1][dt != pd.Timedelta(hours=1)]
+        if not problem_timesteps.empty:
+            raise RuntimeError(
+                f"The timestep for variable {profile.field} at timestamp(s) {problem_timesteps} "
+                f"isn't "
+                f"exactly 1 hour"
+            )
         # Check if any NaN values exist
         if profile_time_series.isnull().any().any():
             raise Exception(
@@ -602,10 +645,12 @@ class ProfileReaderFromFile(BaseProfileReader):
         self,
         energy_system: esdl.EnergySystem,
         file_path: Path,
+        use_esdl_ranged_contraint: bool = False,
     ):
         super().__init__(
             energy_system=energy_system,
             file_path=file_path,
+            use_esdl_ranged_contraint=use_esdl_ranged_contraint,
         )
 
     def _load_profiles_from_source(
@@ -614,6 +659,7 @@ class ProfileReaderFromFile(BaseProfileReader):
         esdl_asset_id_to_name_map: Dict[str, str],
         carrier_properties: Dict[str, Dict],
         ensemble_size: int,
+        ensemble: None | np.ndarray,
     ) -> None:
         if self._file_path.suffix == ".xml":
             logger.warning(
@@ -628,6 +674,7 @@ class ProfileReaderFromFile(BaseProfileReader):
                 energy_system_components=energy_system_components,
                 carrier_properties=carrier_properties,
                 ensemble_size=ensemble_size,
+                ensemble=ensemble,
             )
         else:
             raise _ProfileParserException(
@@ -639,25 +686,27 @@ class ProfileReaderFromFile(BaseProfileReader):
         energy_system_components: Dict[str, Set[str]],
         carrier_properties: Dict[str, Dict],
         ensemble_size: int,
+        ensemble,
     ) -> None:
-        data = pd.read_csv(self._file_path)
 
-        if len(data.filter(like="Unnamed").columns) > 0:
-            raise Exception(
-                f"An unnamed column has been found in profile source file: {self._file_path}"
-            )
+        data_dict = {}
+        if ensemble_size > 1:
+            input_folder = self._file_path.parent
+            file_name = self._file_path.name
+            for i, ensemble_name, _ in ensemble:
+                data_dict[i] = pd.read_csv(Path(input_folder / ensemble_name / file_name))
+        else:
+            data_dict[0] = pd.read_csv(self._file_path)
 
-        try:
-            timeseries_import_times = [
-                datetime.datetime.strptime(entry.replace("Z", ""), "%Y-%m-%d %H:%M:%S").replace(
-                    tzinfo=datetime.timezone.utc
+        for data in data_dict.values():
+            if len(data.filter(like="Unnamed").columns) > 0:
+                raise Exception(
+                    f"An unnamed column has been found in profile source file: {self._file_path}"
                 )
-                for entry in data["DateTime"].to_numpy()
-            ]
-        except ValueError:
+
             try:
                 timeseries_import_times = [
-                    datetime.datetime.strptime(entry.replace("Z", ""), "%Y-%m-%dT%H:%M:%S").replace(
+                    datetime.datetime.strptime(entry.replace("Z", ""), "%Y-%m-%d %H:%M:%S").replace(
                         tzinfo=datetime.timezone.utc
                     )
                     for entry in data["DateTime"].to_numpy()
@@ -666,48 +715,58 @@ class ProfileReaderFromFile(BaseProfileReader):
                 try:
                     timeseries_import_times = [
                         datetime.datetime.strptime(
-                            entry.replace("Z", ""), "%d-%m-%Y %H:%M"
+                            entry.replace("Z", ""), "%Y-%m-%dT%H:%M:%S"
                         ).replace(tzinfo=datetime.timezone.utc)
                         for entry in data["DateTime"].to_numpy()
                     ]
                 except ValueError:
-                    raise _ProfileParserException("Date time string is not in a supported format")
+                    try:
+                        timeseries_import_times = [
+                            datetime.datetime.strptime(
+                                entry.replace("Z", ""), "%d-%m-%Y %H:%M"
+                            ).replace(tzinfo=datetime.timezone.utc)
+                            for entry in data["DateTime"].to_numpy()
+                        ]
+                    except ValueError:
+                        raise _ProfileParserException(
+                            "Date time string is not in a supported format"
+                        )
 
-        logger.warning("Timezone specification not supported yet: default UTC has been used")
+            logger.warning("Timezone specification not supported yet: default UTC has been used")
 
-        self._reference_datetimes = timeseries_import_times
+            self._reference_datetimes = timeseries_import_times
 
-        for ensemble_member in range(ensemble_size):
+        for e_m in range(ensemble_size):
+            data_em = data_dict[e_m]
             for component_type, var_name in self.component_type_to_var_name_map.items():
                 for component_name in energy_system_components.get(component_type, []):
                     try:
                         column_name = f"{component_name.replace(' ', '')}"
-                        values = data[column_name].to_numpy()
+                        values = data_em[column_name].to_numpy()
                         if np.isnan(values).any():
                             raise Exception(
                                 f"Column name: {column_name}, NaN exists in the profile source"
                                 f" file {self._file_path}."
-                                f" Detials: {data[data[column_name].isnull()]}"
+                                f" Detials: {data_em[data_em[column_name].isnull()]}"
                             )
                     except KeyError:
                         pass
                     else:
-                        self._profiles[ensemble_member][component_name + var_name] = values
+                        self._profiles[e_m][component_name + var_name] = values
             for properties in carrier_properties.values():
                 carrier_name = properties.get("name")
                 try:
-                    values = data[carrier_name].to_numpy()
+                    values = data_em[carrier_name].to_numpy()
                     if np.isnan(values).any():
                         raise Exception(
                             f"Carrier name: {carrier_name}, NaN exists in the profile source file"
-                            f" {self._file_path}. Details: {data[data[carrier_name].isnull()]}"
+                            f" {self._file_path}. Details: "
+                            f"{data_em[data_em[carrier_name].isnull()]}"
                         )
                 except KeyError:
                     pass
                 else:
-                    self._profiles[ensemble_member][
-                        carrier_name + self.carrier_profile_var_name
-                    ] = values
+                    self._profiles[e_m][carrier_name + self.carrier_profile_var_name] = values
 
     def _load_xml(self, energy_system_components, esdl_asset_id_to_name_map):
         timeseries_import_basename = self._file_path.stem
