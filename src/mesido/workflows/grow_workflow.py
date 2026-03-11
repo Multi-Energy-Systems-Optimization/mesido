@@ -1,3 +1,4 @@
+import gc
 import locale
 import logging
 import os
@@ -845,6 +846,9 @@ def run_end_scenario_sizing(
                         pass
 
         priorities_output = solution._priorities_output
+
+        del solution
+        gc.collect()
 
     solution = run_optimization_problem_solver(
         end_scenario_problem_class,
