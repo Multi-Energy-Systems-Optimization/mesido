@@ -366,9 +366,11 @@ class ESDLMixin(
             c = override_classes[p] = []
             c.append(no_pipe_class)
 
-            max_size = self._get_pipe_max_size_input(asset)
+            max_size_name = self._get_pipe_max_size_input(asset)
 
-            max_size_idx = [idx for idx, pipe in enumerate(pipe_classes) if pipe.name == max_size]
+            max_size_idx = [
+                idx for idx, pipe in enumerate(pipe_classes) if pipe.name == max_size_name
+            ]
             assert len(max_size_idx) == 1
             max_size_idx = max_size_idx[0]
 
