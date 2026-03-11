@@ -4,6 +4,7 @@
 - Parsing of ensemble profiles when using input profiles from csv.
 - Maximum profile constraint for PV asset is considered in PV sizing
 - Cater for input via esdl constraints to specify the upper limit for OPTIONAL assets in DTK
+- Initial implementation of adaptable pipe DN lower limit per pipe
 - Addition of heat buffer asset with electric charging (i.e. HeatBufferElec).
 
 ## Changed
