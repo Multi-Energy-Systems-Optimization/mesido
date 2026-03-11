@@ -85,6 +85,7 @@ class ESDLMixin(
 
     # TODO: remove this once ESDL allows specifying a minimum pipe size for an optional pipe.
     __minimum_pipe_size_name: str = "DN150"
+    __use_user_defined_minimum_pipe_size: bool = False
 
     def __init__(self, *args, **kwargs) -> None:
         """
@@ -271,6 +272,15 @@ class ESDLMixin(
                 )
             self.name_to_esdl_id_map[esdl_asset.name] = esdl_id
 
+    def find_index_of_pipe_or_next_up(self, pipes, target_dn):
+        """
+        Find the index of the first pipe in the ordered pipes that meets the specified size
+        """
+        for ii, p in enumerate(pipes):
+            if float(p.name.replace("DN", "")) >= target_dn:
+                return ii
+        return None
+
     def _get_pipe_max_size_input(
         self,
         asset: Asset,
@@ -356,16 +366,28 @@ class ESDLMixin(
             c = override_classes[p] = []
             c.append(no_pipe_class)
 
-            min_size = self.__minimum_pipe_size_name
-            min_size_idx = [idx for idx, pipe in enumerate(pipe_classes) if pipe.name == min_size]
-            assert len(min_size_idx) == 1
-            min_size_idx = min_size_idx[0]
+            max_size_name = self._get_pipe_max_size_input(asset)
 
-            max_size = self._get_pipe_max_size_input(asset)
-
-            max_size_idx = [idx for idx, pipe in enumerate(pipe_classes) if pipe.name == max_size]
+            max_size_idx = [
+                idx for idx, pipe in enumerate(pipe_classes) if pipe.name == max_size_name
+            ]
             assert len(max_size_idx) == 1
             max_size_idx = max_size_idx[0]
+
+            # Update the minimum pipe DN size if user specified limit is allowed
+            # TODO: in the future the lower limit will make use of PipeDiameterConstriant
+            if self._ESDLMixin__use_user_defined_minimum_pipe_size:
+                user_defined_lower_limit_dn_mm = 40.0
+                pipe_dn_max_vs_min_ratio = 10.0  # Relates to area ratio of 100.0
+                max_size_dn_mm = float(pipe_classes[max_size_idx].name.replace("DN", ""))
+                min_dn_by_factor_mm = max_size_dn_mm / pipe_dn_max_vs_min_ratio
+                min_dn_mm = max(min_dn_by_factor_mm, user_defined_lower_limit_dn_mm)
+                min_size_idx = self.find_index_of_pipe_or_next_up(pipe_classes, min_dn_mm)
+            else:  # use default minimum pipe DN size
+                min_size_idx = self.find_index_of_pipe_or_next_up(
+                    pipe_classes, float(self.__minimum_pipe_size_name.replace("DN", ""))
+                )
+            assert min_size_idx
 
             if max_size_idx < min_size_idx:
                 logger.warning(
@@ -422,6 +444,11 @@ class ESDLMixin(
                             pipe_classes[i],
                             investment_costs=pipe_diameter_cost_map[pipe_class.name],
                         )
+                        if (
+                            not self._ESDLMixin__use_user_defined_minimum_pipe_size
+                            and float(pipe_classes[i].name.replace("DN", "")) != 20.0
+                        ):
+                            self._ESDLMixin__use_user_defined_minimum_pipe_size = True
                     else:
                         del pipe_classes[i]
 
