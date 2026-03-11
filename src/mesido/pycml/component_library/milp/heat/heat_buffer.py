@@ -35,7 +35,12 @@ class HeatBuffer(_StorageComponent):
         self.height = 5.0
         self.radius = 10.0
         self.volume = math.pi * self.radius**2 * self.height
-        self.heat_loss_efficiency = nan
+        self.heat_loss_coefficient = nan
+        # self.heat_transfer_coeff = 1.0
+        # self.heat_loss_coefficient = (
+        #     2 * self.heat_transfer_coeff / (self.radius * self.rho * self.cp)
+        # )
+
         # The hot/cold tank can have a lower bound on its volume.
         # Meaning that they might always be, for e.g., 5% full.
         self.min_fraction_tank_volume = 0.05
@@ -78,7 +83,7 @@ class HeatBuffer(_StorageComponent):
         self._heat_loss_error_to_state_factor = 10.0
         self._nominal_heat_loss = (
             self._nominal_stored_heat
-            * self.heat_loss_efficiency
+            * self.heat_loss_coefficient
             * self._heat_loss_error_to_state_factor
         )
 
@@ -92,7 +97,7 @@ class HeatBuffer(_StorageComponent):
             / self._heat_loss_eq_nominal_buf
         )
         self.add_equation(
-            (self.Heat_loss - self.Stored_heat * self.heat_loss_efficiency)
+            (self.Heat_loss - self.Stored_heat * self.heat_loss_coefficient)
             / self._nominal_heat_loss
         )
 
