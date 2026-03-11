@@ -8,7 +8,7 @@
 
 ## Changed
 - Speed-up timeseries check in from InfluxDB
-- Delete solution in 
+- Delete solution after stage 1 in a staged workflow 
 
 ## Fixed
 - xxx 
