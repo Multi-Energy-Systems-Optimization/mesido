@@ -8,6 +8,7 @@
 
 ## Changed
 - Speed-up timeseries check in from InfluxDB
+- Delete solution in 
 
 ## Fixed
 - xxx 
