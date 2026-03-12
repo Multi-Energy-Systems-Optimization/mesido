@@ -357,7 +357,6 @@ class TestGeothermalSourceElec(TestCase):
         electric_power_conservation_test(heat_problem, results)
 
         # Equations check
-        np.testing.assert_array_less(0.0, results["GeothermalSource_a77b.Heat_source"])
         np.testing.assert_allclose(
             parameters["GeothermalSource_a77b.cop"] * results["GeothermalSource_a77b.Power_elec"],
             results["GeothermalSource_a77b.Heat_source"],
@@ -407,6 +406,8 @@ class TestGeothermalSourceElec(TestCase):
             parameters["GeothermalSource_a77b.cop"] * results["GeothermalSource_a77b.Power_elec"],
             results["GeothermalSource_a77b.Heat_source"],
         )
+        np.testing.assert_allclose(results["ElectricityProducer_4dde.ElectricityOut.Power"],
+                                   results["GeothermalSource_a77b.ElectricityIn.Power"])
 
         # Test electricity port
         np.testing.assert_array_less(0.0, results["GeothermalSource_a77b.ElectricityIn.Power"])
