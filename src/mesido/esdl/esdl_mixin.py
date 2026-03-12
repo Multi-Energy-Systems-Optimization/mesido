@@ -1,10 +1,12 @@
 import base64
 import copy
+import dataclasses
 import logging
-import xml.etree.ElementTree as ET  # noqa: N817
+import os
+import sys
 from datetime import timedelta
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import esdl.esdl_handler
 
@@ -14,6 +16,7 @@ from mesido.component_type_mixin import (
 from mesido.esdl.asset_to_component_base import _AssetToComponentBase
 from mesido.esdl.common import Asset
 from mesido.esdl.edr_pipe_class import EDRGasPipeClass, EDRPipeClass
+from mesido.esdl.esdl_additional_vars_mixin import get_asset_contraints
 from mesido.esdl.esdl_heat_model import ESDLHeatModel
 from mesido.esdl.esdl_model_base import _ESDLModelBase
 from mesido.esdl.esdl_parser import ESDLStringParser
@@ -26,12 +29,15 @@ from mesido.qth_not_maintained.qth_mixin import QTHMixin
 
 import numpy as np
 
+from pyecore.valuecontainer import EOrderedSet
+
 import rtctools.data.pi as pi
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
 from rtctools.optimization.io_mixin import IOMixin
 
+from strenum import StrEnum
 
 logger = logging.getLogger("mesido")
 
@@ -39,6 +45,16 @@ logger = logging.getLogger("mesido")
 ns = {"fews": "http://www.wldelft.nl/fews", "pi": "http://www.wldelft.nl/fews/PI"}
 DEFAULT_START_TIMESTAMP = "2017-01-01T00:00:00+00:00"
 DEFAULT_END_TIMESTAMP = "2018-01-01T00:00:00+00:00"
+
+
+class DBAccessType(StrEnum):
+    """
+    Enumeration for database access types
+    """
+
+    READ = "read"
+    WRITE = "write"
+    READ_WRITE = "read_write"
 
 
 class _ESDLInputException(Exception):
@@ -57,14 +73,19 @@ class ESDLMixin(
     for example demand profiles.
     """
 
+    csv_ensemble_mode: bool = False
+
     esdl_run_info_path: Path = None
 
     esdl_pi_validate_timeseries: bool = False
 
     __max_supply_temperature: Optional[float] = None
 
+    __esdl_ranged_constraint_usage: bool = False
+
     # TODO: remove this once ESDL allows specifying a minimum pipe size for an optional pipe.
     __minimum_pipe_size_name: str = "DN150"
+    __use_user_defined_minimum_pipe_size: bool = False
 
     def __init__(self, *args, **kwargs) -> None:
         """
@@ -77,14 +98,17 @@ class ESDLMixin(
         We set file locations for the input files and for the diagnostic file.
 
         We create a dict with all possible pipe classes for the optional pipes to later add them
-        to the optimization problem. This is done in this Mixin as we here use the information of
-        the EDR database which is linked to ESDL and the Mapeditor.
+        to the optimization problem. Additionally, we change the investment cost figures if an
+        asset pipe template is provided. This is done in this Mixin as we here use the information
+        of the EDR database which is linked to ESDL and the Mapeditor.
 
         Parameters
         ----------
         args : none
         kwargs : esdl_string or esdl_file_name must be provided
         """
+
+        self.__use_esdl_ranged_constraint: bool = kwargs.get("use_esdl_ranged_constraint", False)
 
         self.esdl_parser_class: type = kwargs.get("esdl_parser", ESDLStringParser)
         esdl_string = kwargs.get("esdl_string", None)
@@ -101,16 +125,77 @@ class ESDLMixin(
         self._esdl_assets: Dict[str, Asset] = esdl_parser.get_assets()
         self._esdl_carriers: Dict[str, Dict[str, Any]] = esdl_parser.get_carrier_properties()
         self.__energy_system_handler: esdl.esdl_handler.EnergySystemHandler = esdl_parser.get_esh()
+        self._esdl_measures: Dict[str, Asset] = esdl_parser.get_measures()
+        self._database_credentials: Optional[Dict[str, Tuple[str, str]]] = {
+            DBAccessType.READ: [],
+            DBAccessType.WRITE: [],
+        }
 
         profile_reader_class = kwargs.get("profile_reader", InfluxDBProfileReader)
         input_file_name = kwargs.get("input_timeseries_file", None)
         input_folder = kwargs.get("input_folder")
         input_file_path = None
+
+        # Setup credentials for database connections
+        database_connection_info = kwargs.get("database_connections", {})
+        read_only_dbase_credentials: Dict[str, Tuple[str, str]] = {}  # for profile reader
+        for dbconnection in database_connection_info:
+            if dbconnection["access_type"] != DBAccessType.WRITE:
+                database_host_port = "{}:{}".format(
+                    dbconnection["influxdb_host"],
+                    dbconnection["influxdb_port"],
+                )
+                read_only_dbase_credentials[database_host_port] = (
+                    dbconnection["influxdb_username"],
+                    dbconnection["influxdb_password"],
+                )
+            if dbconnection["access_type"] != DBAccessType.READ_WRITE:
+                self._database_credentials[dbconnection["access_type"]].append(
+                    {
+                        "influxdb_host": dbconnection["influxdb_host"],
+                        "influxdb_port": dbconnection["influxdb_port"],
+                        "influxdb_username": dbconnection["influxdb_username"],
+                        "influxdb_password": dbconnection["influxdb_password"],
+                        "influxdb_ssl": dbconnection["influxdb_ssl"],
+                        "influxdb_verify_ssl": dbconnection["influxdb_verify_ssl"],
+                    }
+                )
+            elif dbconnection["access_type"] == DBAccessType.READ_WRITE:
+                both_read_and_write = [DBAccessType.READ, DBAccessType.WRITE]
+                for rw in both_read_and_write:
+                    self._database_credentials[rw].append(
+                        {
+                            "influxdb_host": dbconnection["influxdb_host"],
+                            "influxdb_port": dbconnection["influxdb_port"],
+                            "influxdb_username": dbconnection["influxdb_username"],
+                            "influxdb_password": dbconnection["influxdb_password"],
+                            "influxdb_ssl": dbconnection["influxdb_ssl"],
+                            "influxdb_verify_ssl": dbconnection["influxdb_verify_ssl"],
+                        }
+                    )
+            else:
+                logger.error(
+                    f"Database access type {dbconnection['access_type']} is not recognized. "
+                    f"Please use DBAccessType.READ, DBAccessType.WRITE or DBAccessType.READ_WRITE."
+                )
+                sys.exit(1)
+
         if input_file_name is not None:
             input_file_path = Path(input_folder) / input_file_name
-        self.__profile_reader: BaseProfileReader = profile_reader_class(
-            energy_system=self.__energy_system_handler.energy_system, file_path=input_file_path
-        )
+
+        if read_only_dbase_credentials:  # read from database
+            self.__profile_reader: BaseProfileReader = profile_reader_class(
+                energy_system=self.__energy_system_handler.energy_system,
+                file_path=input_file_path,
+                database_credentials=read_only_dbase_credentials,
+                use_esdl_ranged_contraint=self._ESDLMixin__use_esdl_ranged_constraint,
+            )
+        else:  # read from a file, no database credentials needed
+            self.__profile_reader: BaseProfileReader = profile_reader_class(
+                energy_system=self.__energy_system_handler.energy_system,
+                file_path=input_file_path,
+                use_esdl_ranged_contraint=self._ESDLMixin__use_esdl_ranged_constraint,
+            )
 
         # This way we allow users to adjust the parsed ESDL assets
         assets = self.esdl_assets
@@ -122,6 +207,8 @@ class ESDLMixin(
             self.__model = ESDLHeatModel(
                 assets,
                 name_to_id_map,
+                esdl_version=self._ESDLMixin__energy_system_handler.energy_system.esdlVersion,
+                use_esdl_ranged_constraint=self._ESDLMixin__use_esdl_ranged_constraint,
                 **dict(
                     energy_system_options=self.energy_system_options(),
                     **self.esdl_heat_model_options(),
@@ -156,6 +243,9 @@ class ESDLMixin(
 
         self.name_to_esdl_id_map = dict()
 
+        self.__hot_cold_pipe_relations = dict()
+        self.__unrelated_pipes = list()
+
         super().__init__(*args, **kwargs)
 
     @property
@@ -184,6 +274,137 @@ class ESDLMixin(
                 )
             self.name_to_esdl_id_map[esdl_asset.name] = esdl_id
 
+    def find_index_of_pipe_or_next_up(self, pipes, target_dn):
+        """
+        Find the index of the first pipe in the ordered pipes that meets the specified size
+        """
+        for ii, p in enumerate(pipes):
+            if float(p.name.replace("DN", "")) >= target_dn:
+                return ii
+        return None
+
+    def _get_pipe_max_size_input(
+        self,
+        asset: Asset,
+    ) -> str:
+        """
+        This function gets the upper limit for the pipe DN. Either from the asset attribute input
+        DN size or from the PipeDiameterConstraint, depending on what is applicable.
+        Args:
+            asset: mesido common asset with all attributes
+            max_size_attribute: type of attribute e.g. powrr, volume etc.
+            max_value_attribute: value that of the attribute,
+            constraint_attribute: Does the atrribute value originate from a constraint
+        """
+        # Backward compatibility:
+        # PipeDiameterConstraint vs pipe diameter attribute, as the value to be used for the
+        # maximum size of the pipe. We check the esdl version to determine which attribute to use
+        # for the maximum size of the pipe.
+        # While the front end is being updated to accomodate easy use of PipeDiameterConstraint:
+        # - If the esdl version caters for PipeDiameterConstraint:
+        #   - check if a constraint exists, then use it.
+        #   - if the contraint does not exist then use the diameter specific in the asset attribute
+        # - If PipeDiameterConstraint does not
+        esdl_version = self._ESDLMixin__energy_system_handler.energy_system.esdlVersion
+        # "v2602" contains the items needed for the ranged constraint implementation in MESIDO
+        if esdl_version is not None and esdl_version >= "v2602":
+            pipe_constraint, qty_pipe_constraint = get_asset_contraints(
+                self, asset, esdl.PipeDiameterConstraint
+            )
+
+            if qty_pipe_constraint > 1:
+                logger.exit(
+                    f"More than 1 pipe diameter constraint has been specified to "
+                    f"pipe named {asset.name}, currenlty only the 1st constraint is being used"
+                )
+                exit(1)
+            elif (
+                qty_pipe_constraint == 0
+                or pipe_constraint[0].maximum == esdl.PipeDiameterEnum.VALUE_SPECIFIED
+            ):
+                logger.warning(
+                    "Expected a pipe diameter contraint (upper size limit) for pipe named "
+                    f"{asset.name}, but none has been specified. Therefore, the pipe diameter "
+                    "specified in the asset attribute is being used."
+                )
+                # Do not delete the code below. This will be enforced late, once the front end has
+                # been updated for this
+
+                # get_potential_errors().add_potential_issue(
+                #     MesidoAssetIssueType.ASSET_UPPER_LIMIT,
+                #     asset.id,
+                #     f"Pipe named {asset.name}: The upper limit of the pipe size has to be
+                # specified via a maximum value in a pipe diameter constraint."
+                # )
+                # Raise the potential error here if applicable, with feedback to user
+                # Else a normal error exit might occer which will not give feedback to the user
+                # potential_error_to_error(self._error_type_check)
+
+                return asset.attributes["diameter"].name
+            else:
+                logger.warning(
+                    f"For pipe named {asset.name}, the pipe diameter constraint max value is "
+                    "used for the pipe's diameter upper limit, instead of the pipe diameter "
+                    "specified (if any) in the asset attribute."
+                )
+                return pipe_constraint[0].maximum.name
+        else:
+            return asset.attributes["diameter"].name
+
+    def __override_pipe_classes_dicts(
+        self,
+        asset: Asset,
+        pipe_classes: List[EDRPipeClass],
+        no_pipe_class: PipeClass,
+        override_classes: dict,
+    ) -> None:
+        """
+        Overrides the pipe class dictionaries based on the minimum pipe sizes that are required.
+        """
+
+        p = asset.name
+
+        if asset.attributes["state"].name == "OPTIONAL":
+            c = override_classes[p] = []
+            c.append(no_pipe_class)
+
+            max_size_name = self._get_pipe_max_size_input(asset)
+
+            max_size_idx = [
+                idx for idx, pipe in enumerate(pipe_classes) if pipe.name == max_size_name
+            ]
+            assert len(max_size_idx) == 1
+            max_size_idx = max_size_idx[0]
+
+            # Update the minimum pipe DN size if user specified limit is allowed
+            # TODO: in the future the lower limit will make use of PipeDiameterConstriant
+            if self._ESDLMixin__use_user_defined_minimum_pipe_size:
+                user_defined_lower_limit_dn_mm = 40.0
+                pipe_dn_max_vs_min_ratio = 10.0  # Relates to area ratio of 100.0
+                max_size_dn_mm = float(pipe_classes[max_size_idx].name.replace("DN", ""))
+                min_dn_by_factor_mm = max_size_dn_mm / pipe_dn_max_vs_min_ratio
+                min_dn_mm = max(min_dn_by_factor_mm, user_defined_lower_limit_dn_mm)
+                min_size_idx = self.find_index_of_pipe_or_next_up(pipe_classes, min_dn_mm)
+            else:  # use default minimum pipe DN size
+                min_size_idx = self.find_index_of_pipe_or_next_up(
+                    pipe_classes, float(self.__minimum_pipe_size_name.replace("DN", ""))
+                )
+            assert min_size_idx
+
+            if max_size_idx < min_size_idx:
+                logger.warning(
+                    f"{p} has an upper DN size smaller than the used minimum size "
+                    f"of {self.__minimum_pipe_size_name}, choose at least "
+                    f"{self.__minimum_pipe_size_name}"
+                )
+            elif min_size_idx == max_size_idx:
+                c.append(pipe_classes[min_size_idx])
+            else:
+                c.extend(pipe_classes[min_size_idx : max_size_idx + 1])
+        elif asset.attributes["state"].name == "DISABLED":
+            c = override_classes[p] = []
+            c.append(no_pipe_class)
+
     def override_pipe_classes(self) -> None:
         """
         In this method we populate the _override_pipe_classes dict, which gives a list of possible
@@ -204,6 +425,35 @@ class ESDLMixin(
             for name, edr_class_name in _AssetToComponentBase.STEEL_S1_PIPE_EDR_ASSETS.items()
         ]
 
+        override_classes = self._override_pipe_classes
+
+        # Update the pipe costs if a measure model in the ESDL was used. This is updated only if
+        # the pipe catalog is available as a measure
+        if self._esdl_measures:
+            filter_type = "Pipe"
+            pipe_measures = self.filter_asset_measures(
+                asset_measures=self._esdl_measures, filter_type=filter_type
+            )
+            if len(pipe_measures.items()) > 0:
+                pipe_diameter_cost_map = {
+                    str(pipe.diameter): pipe.costInformation.investmentCosts.value
+                    for pipe in pipe_measures.values()
+                }
+
+                for i, pipe_class in enumerate(pipe_classes):
+                    if pipe_class.name in pipe_diameter_cost_map.keys():
+                        pipe_classes[i] = dataclasses.replace(
+                            pipe_classes[i],
+                            investment_costs=pipe_diameter_cost_map[pipe_class.name],
+                        )
+                        if (
+                            not self._ESDLMixin__use_user_defined_minimum_pipe_size
+                            and float(pipe_classes[i].name.replace("DN", "")) != 20.0
+                        ):
+                            self._ESDLMixin__use_user_defined_minimum_pipe_size = True
+                    else:
+                        del pipe_classes[i]
+
         # We assert the pipe classes are monotonically increasing in size
         assert np.all(np.diff([pc.inner_diameter for pc in pipe_classes]) > 0)
 
@@ -211,40 +461,9 @@ class ESDLMixin(
             if asset.asset_type == "Pipe" and isinstance(
                 asset.in_ports[0].carrier, esdl.HeatCommodity
             ):
-                p = asset.name
-
-                if asset.attributes["state"].name == "OPTIONAL":
-                    c = self._override_pipe_classes[p] = []
-                    c.append(no_pipe_class)
-
-                    min_size = self.__minimum_pipe_size_name
-                    min_size_idx = [
-                        idx for idx, pipe in enumerate(pipe_classes) if pipe.name == min_size
-                    ]
-                    assert len(min_size_idx) == 1
-                    min_size_idx = min_size_idx[0]
-
-                    max_size = asset.attributes["diameter"].name
-
-                    max_size_idx = [
-                        idx for idx, pipe in enumerate(pipe_classes) if pipe.name == max_size
-                    ]
-                    assert len(max_size_idx) == 1
-                    max_size_idx = max_size_idx[0]
-
-                    if max_size_idx < min_size_idx:
-                        logger.warning(
-                            f"{p} has an upper DN size smaller than the used minimum size "
-                            f"of {self.__minimum_pipe_size_name}, choose at least "
-                            f"{self.__minimum_pipe_size_name}"
-                        )
-                    elif min_size_idx == max_size_idx:
-                        c.append(pipe_classes[min_size_idx])
-                    else:
-                        c.extend(pipe_classes[min_size_idx : max_size_idx + 1])
-                elif asset.attributes["state"].name == "DISABLED":
-                    c = self._override_pipe_classes[p] = []
-                    c.append(no_pipe_class)
+                self.__override_pipe_classes_dicts(
+                    asset, pipe_classes, no_pipe_class, override_classes
+                )
 
     def override_gas_pipe_classes(self) -> None:
         """
@@ -269,44 +488,15 @@ class ESDLMixin(
         # We assert the pipe classes are monotonically increasing in size
         assert np.all(np.diff([pc.inner_diameter for pc in pipe_classes]) > 0)
 
+        override_classes = self._override_gas_pipe_classes
+
         for asset in self.esdl_assets.values():
             if asset.asset_type == "Pipe" and isinstance(
                 asset.in_ports[0].carrier, esdl.GasCommodity
             ):
-                p = asset.name
-
-                if asset.attributes["state"].name == "OPTIONAL":
-                    c = self._override_gas_pipe_classes[p] = []
-                    c.append(no_pipe_class)
-
-                    min_size = self.__minimum_pipe_size_name
-                    min_size_idx = [
-                        idx for idx, pipe in enumerate(pipe_classes) if pipe.name == min_size
-                    ]
-                    assert len(min_size_idx) == 1
-                    min_size_idx = min_size_idx[0]
-
-                    max_size = asset.attributes["diameter"].name
-
-                    max_size_idx = [
-                        idx for idx, pipe in enumerate(pipe_classes) if pipe.name == max_size
-                    ]
-                    assert len(max_size_idx) == 1
-                    max_size_idx = max_size_idx[0]
-
-                    if max_size_idx < min_size_idx:
-                        logger.warning(
-                            f"{p} has an upper DN size smaller than the used minimum size "
-                            f"of {self.__minimum_pipe_size_name}, choose at least "
-                            f"{self.__minimum_pipe_size_name}"
-                        )
-                    elif min_size_idx == max_size_idx:
-                        c.append(pipe_classes[min_size_idx])
-                    else:
-                        c.extend(pipe_classes[min_size_idx : max_size_idx + 1])
-                elif asset.attributes["state"].name == "DISABLED":
-                    c = self._override_gas_pipe_classes[p] = []
-                    c.append(no_pipe_class)
+                self.__override_pipe_classes_dicts(
+                    asset, pipe_classes, no_pipe_class, override_classes
+                )
 
     @property
     def esdl_assets(self) -> Dict[str, Asset]:
@@ -432,13 +622,24 @@ class ESDLMixin(
 
         Returns
         -------
-        dict with estimated and maximum velocity
+        dict with estimated and maximum velocity, and error type check setting for asset converters
         """
         energy_system_options = self.energy_system_options()
         v_nominal = energy_system_options["estimated_velocity"]
         v_max = self.heat_network_settings["maximum_velocity"]
         v_max_gas = self.gas_network_settings["maximum_velocity"]
-        return dict(v_nominal=v_nominal, v_max=v_max, v_max_gas=v_max_gas)
+        min_fraction_tank_volume = energy_system_options.get("min_fraction_tank_volume", 0.05)
+
+        # Pass error type check setting to asset converter
+        error_type_check = getattr(self, "_error_type_check", None)
+
+        return dict(
+            v_nominal=v_nominal,
+            v_max=v_max,
+            v_max_gas=v_max_gas,
+            error_type_check=error_type_check,
+            min_fraction_tank_volume=min_fraction_tank_volume,
+        )
 
     def esdl_qth_model_options(self) -> Dict:
         """
@@ -469,7 +670,7 @@ class ESDLMixin(
         -------
         Returns true if the pipe is in the supply network thus not ends with "_ret"
         """
-        return True if pipe not in self.cold_pipes else False
+        return pipe in self.hot_to_cold_pipe_map.keys()
 
     def is_cold_pipe(self, pipe: str) -> bool:
         """
@@ -484,7 +685,7 @@ class ESDLMixin(
         -------
         Returns true if the pipe is in the return network thus ends with "_ret"
         """
-        return pipe.endswith("_ret")
+        return pipe in self.hot_to_cold_pipe_map.values()
 
     def hot_to_cold_pipe(self, pipe: str) -> str:
         """
@@ -500,7 +701,7 @@ class ESDLMixin(
         -------
         string with the associated return pipe name.
         """
-        return f"{pipe}_ret"
+        return self.hot_to_cold_pipe_map.get(pipe, None)
 
     def cold_to_hot_pipe(self, pipe: str) -> str:
         """
@@ -516,7 +717,70 @@ class ESDLMixin(
         -------
         string with the associated hot pipe name.
         """
-        return pipe[:-4]
+        return self.cold_to_hot_pipe_map.get(pipe, None)
+
+    def hot_cold_pipe_relations(self):
+        # Backward compatability: ESDL version before v2110 don't have the related attribute
+        esdl_version = self.__energy_system_handler.energy_system.esdlVersion
+        if esdl_version is not None and esdl_version >= "v2110":
+            for asset in self._esdl_assets.values():
+                if asset.asset_type == "Pipe":
+                    related = False
+                    related_asset = asset.attributes.get("related", False)
+                    if related_asset:
+                        assert (
+                            len(related_asset) == 1
+                        ), "Pipes can only have related supply/return pipe"
+                        related = True
+                        if asset.attributes["port"][0].carrier.supplyTemperature:  # hot_pipe
+                            if asset.name not in self.__hot_cold_pipe_relations.keys():
+                                self.__hot_cold_pipe_relations[asset.name] = related_asset[0].name
+                        elif asset.attributes["port"][0].carrier.returnTemperature:  # cold_pipe
+                            if related_asset[0].name not in self.__hot_cold_pipe_relations.keys():
+                                self.__hot_cold_pipe_relations[related_asset[0].name] = asset.name
+                    if not related and asset.name not in self.__unrelated_pipes:
+                        self.__unrelated_pipes.append(asset.name)
+        else:
+            pipes = self.energy_system_components.get("heat_pipe", [])
+            for pipe in pipes:
+                related = False
+                # test if hot_pipe
+                if not pipe.endswith("_ret"):
+                    cold_pipe = f"{pipe}_ret"
+                    if cold_pipe in pipes:
+                        related = True
+                        if pipe not in self.__hot_cold_pipe_relations.keys():
+                            self.__hot_cold_pipe_relations[pipe] = cold_pipe
+                elif pipe.endswith("_ret"):
+                    hot_pipe = pipe[:-4]
+                    if hot_pipe in pipes:
+                        related = True
+                        if hot_pipe not in self.__hot_cold_pipe_relations.keys():
+                            self.__hot_cold_pipe_relations[hot_pipe] = pipe
+                if not related and pipe not in self.__unrelated_pipes:
+                    self.__unrelated_pipes.append(pipe)
+
+    @property
+    def hot_to_cold_pipe_map(self) -> Dict:
+        """
+        This function return a dictionary of hot pipe names mapped to cold pipe names.
+        """
+        return self.__hot_cold_pipe_relations
+
+    @property
+    def cold_to_hot_pipe_map(self) -> Dict:
+        """
+        This function return a dictionary of cold pipe names mapped to hot pipe names.
+        """
+        return dict(
+            zip(self.__hot_cold_pipe_relations.values(), self.__hot_cold_pipe_relations.keys())
+        )
+
+    @property
+    def unrelated_pipes(self) -> List[str]:
+        """This function return a list of pipe names of all the pipes that don't have a related
+        cold/hot pipe."""
+        return self.__unrelated_pipes
 
     def pycml_model(self) -> _ESDLModelBase:
         """
@@ -540,8 +804,22 @@ class ESDLMixin(
         None
         """
         super().read()
+        ensemble_size = 1
+        self.__ensemble = None
+        if self.csv_ensemble_mode:
+            self.__ensemble = np.genfromtxt(
+                os.path.join(self._input_folder, "ensemble.csv"),
+                delimiter=",",
+                deletechars="",
+                dtype=None,
+                names=True,
+                encoding=None,
+            )
+            ensemble_size = len(self.__ensemble)
+
         energy_system_components = self.energy_system_components
         esdl_carriers = self.esdl_carriers
+        self.hot_cold_pipe_relations()
         io = self.io
         self.__profile_reader.read_profiles(
             energy_system_components=energy_system_components,
@@ -549,7 +827,8 @@ class ESDLMixin(
             esdl_asset_id_to_name_map=self.esdl_asset_id_to_name_map,
             esdl_assets=self.esdl_assets,
             carrier_properties=esdl_carriers,
-            ensemble_size=self.ensemble_size,
+            ensemble_size=ensemble_size,
+            ensemble=self.__ensemble,
         )
 
     def write(self) -> None:
@@ -652,114 +931,31 @@ class ESDLMixin(
         # Write output file to disk
         self.__timeseries_export.write()
 
+    @classmethod
+    def filter_asset_measures(
+        cls, asset_measures: Dict[str, Asset], filter_type: str
+    ) -> Dict[str, Asset]:
+        filtered_assets = dict()
+        for asset_id, asset in asset_measures.items():
 
-class _ESDLInputDataConfig:
-    """
-    This class is used to specify naming standard for input data, specifically for demand and
-    production profiles.
-    """
+            if isinstance(asset.attributes["asset"], EOrderedSet):
+                if len(asset.attributes["asset"]) > 1:
+                    logger.warning(
+                        f"Multiple assets types have been linked to asset measure {asset.name}."
+                        f"Only the first asset type {filter_type} is currently used."
+                    )
+                for asset_type in asset.attributes["asset"]:
+                    if isinstance(asset_type, getattr(esdl, filter_type)):
+                        break
+            else:
+                asset_type = asset.attributes["asset"]
+            if isinstance(asset_type, getattr(esdl, filter_type)):
+                filtered_assets[asset_id] = asset_type
 
-    def __init__(self, id_map: Dict, energy_system_components: Dict) -> None:
-        # TODO: change naming source and demand to heat_source and heat_demand throughout code
-        self.__id_map = id_map
-        self._sources = set(energy_system_components.get("heat_source", []))
-        self._demands = set(energy_system_components.get("heat_demand", []))
-        self._electricity_sources = set(energy_system_components.get("electricity_source", []))
-        self._electricity_demands = set(energy_system_components.get("electricity_demand", []))
-        self._gas_sources = set(energy_system_components.get("gas_source", []))
-        self._gas_demands = set(energy_system_components.get("gas_demand", []))
+        return filtered_assets
 
-    def variable(self, pi_header: Any) -> str:
-        """
-        Old function not maintained anymore from WarmingUp times. The input xml file would specify
-        the id of the asset for which a time-series was given. This function would return the name
-        we use in our framework for that same variable.
-
-        Parameters
-        ----------
-        pi_header : the xml header element in which the id of the asset is specified
-
-        Returns
-        -------
-        string with the name of the timeseries name.
-        """
-        location_id = pi_header.find("pi:locationId", ns).text
-
-        try:
-            component_name = self.__id_map[location_id]
-        except KeyError:
-            parameter_id = pi_header.find("pi:parameterId", ns).text
-            qualifiers = pi_header.findall("pi:qualifierId", ns)
-            qualifier_ids = ":".join(q.text for q in qualifiers)
-            return f"{location_id}:{parameter_id}:{qualifier_ids}"
-
-        if component_name in self._demands:
-            suffix = ".target_heat_demand"
-        elif component_name in self._sources:
-            suffix = ".maximum_heat_source"
-        elif component_name in self._electricity_demands:
-            suffix = ".target_electricity_demand"
-        elif component_name in self._electricity_sources:
-            suffix = ".maximum_electricity_source"
-        elif component_name in self._gas_demands:
-            suffix = ".target_gas_demand"
-        elif component_name in self._gas_sources:
-            suffix = ".maximum_gas_source"
+    def ensemble_member_probability(self, ensemble_member):
+        if self.csv_ensemble_mode:
+            return self.__ensemble["probability"][ensemble_member]
         else:
-            logger.warning(
-                f"Could not identify '{component_name}' as either source or demand. "
-                f"Using neutral suffix '.target_heat' for its milp timeseries."
-            )
-            suffix = ".target_heat"
-
-        # Note that the qualifier id (if any specified) refers to the profile
-        # element of the respective ESDL asset->in_port. For now we just
-        # assume that only milp demand timeseries are set in the XML file.
-        return f"{component_name}{suffix}"
-
-    def pi_variable_ids(self, variable):
-        raise NotImplementedError
-
-    def parameter(self, parameter_id, location_id=None, model_id=None):
-        raise NotImplementedError
-
-    def pi_parameter_ids(self, parameter):
-        raise NotImplementedError
-
-
-class _ESDLOutputDataConfig:
-    def __init__(self, id_map):
-        self.__id_map = id_map
-
-    def variable(self, pi_header):
-        location_id = pi_header.find("pi:locationId", ns).text
-        parameter_id = pi_header.find("pi:parameterId", ns).text
-
-        component_name = self.__id_map[location_id]
-
-        return f"{component_name}.{parameter_id}"
-
-    def pi_variable_ids(self, variable):
-        raise NotImplementedError
-
-    def parameter(self, parameter_id, location_id=None, model_id=None):
-        raise NotImplementedError
-
-    def pi_parameter_ids(self, parameter):
-        raise NotImplementedError
-
-
-def _overwrite_parameters(parameters_file, assets):
-    paramroot = ET.parse(parameters_file).getroot()
-    groups = paramroot.findall("pi:group", ns)
-
-    for parameter in groups:
-        id_ = parameter.attrib["id"]
-        param_name = parameter[0].attrib["id"]
-        param_value = parameter[0][0].text
-
-        asset = assets[id_]
-        type_ = type(asset.attributes[param_name])
-        asset.attributes[param_name] = type_(param_value)
-
-    return assets
+            return 1.0

@@ -23,7 +23,7 @@ If you are going to develop and change the source code, you probably want to do 
 
 	# 1b. Use git clone and pip to make an editable/developer installation
 	git clone https://github.com/Multi-Energy-Systems-Optimization/mesido
-	pip install -e mesido
+	python -m pip install -e .
 
 MESIDO depends on `RTC-Tools <https://gitlab.com/deltares/rtc-tools.git>`_, which is automatically installed as one of its dependencies.
 

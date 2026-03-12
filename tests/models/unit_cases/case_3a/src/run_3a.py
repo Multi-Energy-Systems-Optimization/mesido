@@ -285,7 +285,7 @@ class HeatProblemTvarret(
         return constraints
 
 
-class HeatProblemProdProfile(
+class BeseProblemProdProfile(
     _GoalsAndOptions,
     TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
@@ -293,15 +293,13 @@ class HeatProblemProdProfile(
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
-    def read(self):
-        super().read()
 
-        for s in self.energy_system_components["heat_source"]:
-            demand_timeseries = self.get_timeseries("HeatingDemand_a3b8.target_heat_demand")
-            new_timeseries = np.ones(len(demand_timeseries.values)) * 1
-            ind_hlf = int(len(demand_timeseries.values) / 2)
-            new_timeseries[ind_hlf : ind_hlf + 4] = np.ones(4) * 0.10
-            self.set_timeseries(f"{s}.maximum_heat_source", new_timeseries)
+    def solver_options(self):
+        options = super().solver_options()
+        options["solver"] = "highs"
+        options_highs = options["highs"] = {}
+        options_highs["mip_rel_gap"] = 1e-6
+        return options
 
     def energy_system_options(self):
         options = super().energy_system_options()
@@ -318,10 +316,29 @@ class HeatProblemProdProfile(
 
             goals.append(TargetDemandGoal(state, target))
 
+        return goals
+
+
+class HeatProblemESDLProdProfile(BeseProblemProdProfile):
+    def path_goals(self):
+        goals = super().path_goals().copy()
+
         for s in self.energy_system_components["heat_source"]:
             goals.append(MinimizeSourcesHeatGoal(s))
 
         return goals
+
+
+class HeatProblemProdProfile(HeatProblemESDLProdProfile):
+    def read(self):
+        super().read()
+
+        for s in self.energy_system_components["heat_source"]:
+            demand_timeseries = self.get_timeseries("HeatingDemand_a3b8.target_heat_demand")
+            new_timeseries = np.ones(len(demand_timeseries.values)) * 1
+            ind_hlf = int(len(demand_timeseries.values) / 2)
+            new_timeseries[ind_hlf : ind_hlf + 1] = np.ones(1) * 0.10
+            self.set_timeseries(f"{s}.maximum_heat_source", new_timeseries)
 
 
 class QTHProblem(

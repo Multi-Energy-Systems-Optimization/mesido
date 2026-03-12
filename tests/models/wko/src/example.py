@@ -7,10 +7,7 @@ from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
 from mesido.techno_economic_mixin import TechnoEconomicMixin
-from mesido.workflows.utils.error_types import (
-    HEAT_AND_COOL_NETWORK_ERRORS,
-    potential_error_to_error,
-)
+from mesido.workflows.utils.error_types import NetworkErrors, potential_error_to_error
 
 import numpy as np
 
@@ -25,7 +22,7 @@ from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassG
 from rtctools.optimization.timeseries import Timeseries
 from rtctools.util import run_optimization_problem
 
-logger = logging.getLogger("WarmingUP-MPC")
+logger = logging.getLogger("mesido")
 logger.setLevel(logging.INFO)
 
 
@@ -173,7 +170,7 @@ class HeatProblem(
         """
         super().read()
 
-        potential_error_to_error(HEAT_AND_COOL_NETWORK_ERRORS)
+        potential_error_to_error(NetworkErrors.HEAT_AND_COOL_NETWORK_ERRORS)
 
     def path_goals(self):
         """
@@ -200,6 +197,8 @@ class HeatProblem(
         """
         options = super().solver_options()
         options["solver"] = "highs"
+        highs_options = options["highs"] = {}
+        highs_options["presolve"] = "off"
         return options
 
     def constraints(self, ensemble_member):
@@ -242,5 +241,3 @@ if __name__ == "__main__":
     # for p in elect.energy_system_components.get("heat_pipe", []):
     #     print(p, results[f"{p}__hn_heat_loss"])
     #     print(p, elect.bounds()[f"{p}__hn_heat_loss"])
-
-    a = 1

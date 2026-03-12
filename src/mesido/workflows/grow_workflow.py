@@ -1,3 +1,4 @@
+import gc
 import locale
 import logging
 import os
@@ -6,15 +7,16 @@ import time
 from typing import Dict
 
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
-from mesido.esdl.esdl_mixin import ESDLMixin
+from mesido.esdl.esdl_mixin import DBAccessType, ESDLMixin
 from mesido.head_loss_class import HeadLossOption
+from mesido.potential_errors import reset_potential_errors
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.goals.minimize_tco_goal import MinimizeTCO
 from mesido.workflows.io.write_output import ScenarioOutput
 from mesido.workflows.utils.adapt_profiles import (
     adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
 )
-from mesido.workflows.utils.error_types import HEAT_NETWORK_ERRORS, potential_error_to_error
+from mesido.workflows.utils.error_types import NetworkErrors, potential_error_to_error
 from mesido.workflows.utils.helpers import main_decorator, run_optimization_problem_solver
 
 import numpy as np
@@ -32,14 +34,13 @@ from rtctools.optimization.single_pass_goal_programming_mixin import (
     SinglePassGoalProgrammingMixin,
 )
 
-
 DB_HOST = "172.17.0.2"
 DB_PORT = 8086
 DB_NAME = "Warmtenetten"
 DB_USER = "admin"
 DB_PASSWORD = "admin"
 
-logger = logging.getLogger("WarmingUP-MPC")
+logger = logging.getLogger("mesido")
 logger.setLevel(logging.INFO)
 
 locale.setlocale(locale.LC_ALL, "")
@@ -79,11 +80,92 @@ def _mip_gap_settings(mip_gap_name: str, problem) -> Dict[str, float]:
         if problem._stage == 1:
             options[mip_gap_name] = 0.005
         else:
-            options[mip_gap_name] = 0.02
+            options[mip_gap_name] = 0.01
     else:
         options[mip_gap_name] = 0.02
 
     return options
+
+
+def estimate_and_update_progress_status(self, priority):
+    """Estimate the progress of the optimization workflow. Currently the tasks completed in this
+    workflow is used to estimate the progress (ratio between 0 and 1). The task completed ratio is
+    the number of tasks completed divided by the total number of tasks. The total number of tasks
+    is estimated based on the stage number and the priority of the task. The progress is then
+    passed to the workflow progress status function (OMOTES back end)."""
+    # TODO: the estimates below needs to be improved in the future instead of using task numbers
+
+    if self._workflow_progress_status is None:
+        logger.error("The workflow progress status function is not set. Cannot estimate progress.")
+        exit(1)
+
+    if self._total_stages == 1:
+        denominator = 2.0
+        if priority == 1:  # match heat demand
+            numerator = 1.0
+        elif priority == 2:  # minimize TCO
+            numerator = 2.0
+        else:
+            sys.exit(
+                f"The function does not cater for stage number:{self._stage} & priority:{priority}"
+            )
+    elif self._total_stages == 2:
+        denominator = 4.0 + 2.0 * self.heat_network_settings["minimize_head_losses"]
+        if priority == 1 and self._stage == 1:  # match heat demand
+            numerator = 1.0
+        elif priority == 2 and self._stage == 1:  # minimize TCO
+            numerator = 2.0
+        elif priority == 1 and self._stage == 2:  # match heat demand
+            numerator = 3.0
+        elif priority == 2 and self._stage == 2:  # minimize TCO
+            numerator = 4.0
+        elif priority == (2**31 - 2) and self._stage == 2:  # head loss optimization
+            numerator = 5.0
+        elif priority == (2**31 - 1) and self._stage == 2:  # hydraulic power optimization
+            numerator = 6.0
+        else:
+            sys.exit(
+                f"The function does not cater for stage number:{self._stage} & priority:{priority}"
+            )
+    else:
+        sys.exit(
+            f"The stage number: {self._stage} is higher then the total stages"
+            f" expected: {self._total_stages}. Assuming the stage numbering starts at 1."
+        )
+
+    # This kwarg only exists when the code is used in OMOTES backend
+    task_quantity_perc_completed = numerator / denominator
+    self._workflow_progress_status(
+        task_quantity_perc_completed,
+        f"Optimization task {numerator} out of {denominator} has completed",
+    )  # In the future this ratio might differ from the step being completed
+
+
+solver_messages = {
+    "Time_limit": {
+        "highs": "Time limit reached",
+        "cplex": "time limit exceeded",
+        "gurobi": "TIME_LIMIT",
+    }
+}
+
+
+def check_solver_succes_grow_problem(solution):
+    solver_success, _ = solution.solver_success(solution.solver_stats, False)
+    if not solver_success:
+        if (
+            solution.solver_stats["return_status"]
+            == solver_messages["Time_limit"][solution.solver_options["solver"]]
+            and solution.objective_value > 1e-6
+        ):
+            logger.error(
+                f"Optimization maximum allowed time limit reached for stage_"
+                f"{solution._stage}, goal_1"
+            )
+            exit(1)
+        else:
+            logger.error("Unsuccessful: unexpected error for stage_1, goal_1")
+            exit(1)
 
 
 class SolverHIGHS:
@@ -122,6 +204,7 @@ class SolverCPLEX:
         options["solver"] = "cplex"
         cplex_options = options["cplex"] = {}
         cplex_options.update(_mip_gap_settings("CPX_PARAM_EPGAP", self))
+        cplex_options["CPXPARAM_Threads"] = 10
 
         options["highs"] = None
 
@@ -148,7 +231,14 @@ class EndScenarioSizing(
     2. minimize TCO = Capex + Opex*lifetime
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(
+        self, error_type_check: str = NetworkErrors.HEAT_NETWORK_ERRORS, *args, **kwargs
+    ) -> None:
+        reset_potential_errors()  # This needed to clear the Singleton which is persistent
+
+        # Set error type check before calling super().__init__ so it's available during init
+        self._error_type_check = error_type_check
+
         super().__init__(*args, **kwargs)
 
         # default setting to cater for ~ 10kW heat, DN800 pipe at dT = 40 degrees Celcuis
@@ -181,6 +271,8 @@ class EndScenarioSizing(
 
         self._save_json = False
 
+        self._workflow_progress_status = kwargs.get("update_progress_function", None)
+
     def parameters(self, ensemble_member):
         parameters = super().parameters(ensemble_member)
         parameters["peak_day_index"] = self.__indx_max_peak
@@ -200,12 +292,12 @@ class EndScenarioSizing(
         """
         super().read()
 
-        potential_error_to_error(HEAT_NETWORK_ERRORS)
+        potential_error_to_error(self._error_type_check)
 
         (
             self.__indx_max_peak,
             self.__heat_demand_nominal,
-            _,
+            self.__cold_demand_nominal,
         ) = adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(self, self.__day_steps)
 
         logger.info("HeatProblem read")
@@ -216,9 +308,11 @@ class EndScenarioSizing(
         return bounds
 
     def variable_nominal(self, variable):
-        try:
+        if variable in self.__heat_demand_nominal:
             return self.__heat_demand_nominal[variable]
-        except KeyError:
+        elif variable in self.__cold_demand_nominal:
+            return self.__cold_demand_nominal[variable]
+        else:
             return super().variable_nominal(variable)
 
     def energy_system_options(self):
@@ -227,24 +321,29 @@ class EndScenarioSizing(
         options = super().energy_system_options()
         options["maximum_temperature_der"] = np.inf
         options["heat_loss_disconnected_pipe"] = True
+
         return options
 
     def path_goals(self):
         goals = super().path_goals().copy()
         bounds = self.bounds()
 
-        for demand in self.energy_system_components["heat_demand"]:
-            target = self.get_timeseries(f"{demand}.target_heat_demand")
-            if bounds[f"{demand}.HeatIn.Heat"][1] < max(target.values):
-                logger.warning(
-                    f"{demand} has a flow limit, {bounds[f'{demand}.HeatIn.Heat'][1]}, "
-                    f"lower that wat is required for the maximum demand {max(target.values)}"
-                )
-            # TODO: update this caclulation to bounds[f"{demand}.HeatIn.Heat"][1]/ dT * Tsup & move
-            # to potential_errors variable
-            state = f"{demand}.Heat_demand"
+        demand_type = ["heat_demand", "cold_demand"]
+        for dtype in demand_type:
+            for demand in self.energy_system_components.get(dtype, []):
+                target = self.get_timeseries(f"{demand}.target_{dtype}")
+                if bounds[f"{demand}.HeatIn.Heat"][1] < max(target.values):
+                    logger.warning(
+                        f"{demand} has a flow limit, {bounds[f'{demand}.HeatIn.Heat'][1]}, "
+                        f"lower than what is required for the maximum demand {max(target.values)}"
+                    )
+                # TODO:
+                # update this caclulation to bounds[f"{demand}.HeatIn.Heat"][1]/ dT * Tsup & move
+                # to potential_errors variable
+                state = f"{demand}.{dtype[0].upper() + dtype[1:]}"
 
-            goals.append(TargetHeatGoal(state, target))
+                goals.append(TargetHeatGoal(state, target))
+
         return goals
 
     def goals(self):
@@ -276,9 +375,44 @@ class EndScenarioSizing(
             vars = self.state_vector(f"{b}.Heat_buffer")
             symbol_stored_heat = self.state_vector(f"{b}.Stored_heat")
             constraints.append((symbol_stored_heat[self.__indx_max_peak], 0.0, 0.0))
-            for i in range(len(self.times())):
-                if i < self.__indx_max_peak or i > (self.__indx_max_peak + 23):
-                    constraints.append((vars[i], 0.0, 0.0))
+
+            ind_peak = int(self.__indx_max_peak)
+            constraints.append((vars[:ind_peak], 0.0, 0.0))
+            constraints.append(
+                (
+                    vars[ind_peak + 24 :],
+                    0.0,
+                    0.0,
+                )
+            )
+
+        # TODO: confirm if volume or heat balance is required over year. This will
+        # determine if cyclic contraint below is for stored_heat or stored_volume
+        # Add stored_heat cyclic constraint, this will also ensure that the total heat
+        # change in the wko is 0 over the timeline
+        # Note:
+        #   - WKO in cooling mode: Hot well is being charged with heat and the cold well is
+        # being discharged
+        #   - WKO in heating mode: Cold well is being charged and the hot well is being
+        #     discharged.
+        # for a in self.energy_system_components.get("low_temperature_ates", []):
+        #     stored_heat = self.state_vector(f"{a}.Stored_heat")
+        #     constraints.append(((stored_heat[-1] - stored_heat[0]), 0.0, 0.0))
+        # This code below might be needed
+        # Add stored_heat cyclic constraint, this will also ensure that the volume
+        # into the lower temp & out of the higher temp is the same as the volume
+        # out of the lower temp & into the higher temp over the timeline.
+        # Note:
+        #   - Volume increase: Hot well is being charged and the cold well is being
+        #     discharged. -> WKO in cooling mode
+        #   - Volume decrease: Cold well is being charged and the hot well is being
+        #     discharged. -> WKO in heating mode
+
+        for ates_id in self.energy_system_components.get("low_temperature_ates", []):
+            stored_volume = self.state_vector(f"{ates_id}.Stored_volume")
+            volume_usage = 0.0
+            volume_usage = stored_volume[0] - stored_volume[-1]
+            constraints.append((volume_usage, 0.0, 0.0))
 
         return constraints
 
@@ -315,6 +449,8 @@ class EndScenarioSizing(
                 return success, log_level
 
             return True, logging.INFO
+        elif solver_stats["return_status"] == "integer optimal with unscaled infeasibilities":
+            return True, logging.INFO
         else:
             return success, log_level
 
@@ -346,6 +482,9 @@ class EndScenarioSizing(
         )
         if priority == 1 and self.objective_value > 1e-6:
             raise RuntimeError("The heating demand is not matched")
+
+        if self._workflow_progress_status is not None:
+            estimate_and_update_progress_status(self, priority)
 
     def post(self):
         # In case the solver fails, we do not get in priority_completed(). We
@@ -424,14 +563,14 @@ class EndScenarioSizingHIGHS(EndScenarioSizing):
 
 class EndScenarioSizingDiscounted(EndScenarioSizing):
     """
-    The discounted annualized is utilised as the objective function.
-    The change of the objective function is done by changing the option 'discounted_annulized_cost'
+    The Discounted Annualized Cost is used as the objective function.
+    Changing the objective function is done by setting the 'discounted_annualized_cost' option
     to True
 
     Goal priorities are:
     1. Match heat demand with target
-    2. minimize TCO = Anualized capex (function of technical lifetime of individual assets) +
-    Opex*timehorizon
+    2. Minimize annualized TCO = discounted annualized CAPEX (function of technical lifetime
+    of each asset) + annual OPEX.
     """
 
     def energy_system_options(self):
@@ -499,19 +638,25 @@ class SettingsStaged:
             self.heat_network_settings["minimize_head_losses"] = False
 
         if self._stage == 2 and priorities_output:
+            self.heat_network_settings["minimum_velocity"] = 0.0
             self._priorities_output = priorities_output
 
     def energy_system_options(self):
         options = super().energy_system_options()
         if self._stage == 1:
             options["neglect_pipe_heat_losses"] = True
-            self.heat_network_settings["minimum_velocity"] = 0.0
+        elif self._stage == 2:
+            # If at least 1 heat_source has a producer profile assigned, set the
+            # heat_loss_disconnected_pipe option to False
+            for asset in self.energy_system_components.get("heat_source", []):
+                if f"{asset}.maximum_heat_source" in self.io.get_timeseries_names():
+                    options["heat_loss_disconnected_pipe"] = False
+                    break
 
         return options
 
     def bounds(self):
         bounds = super().bounds()
-
         if self._stage == 2:
             bounds.update(self.__boolean_bounds)
 
@@ -570,6 +715,7 @@ def run_end_scenario_sizing_no_heat_losses(
         total_stages=1,
         **kwargs,
     )
+    check_solver_succes_grow_problem(solution)
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
 
@@ -617,51 +763,43 @@ def run_end_scenario_sizing(
             **kwargs,
         )
         # Error checking
-        solver_success, _ = solution.solver_success(solution.solver_stats, False)
-        if not solver_success:
-            if (
-                solution.solver_stats["return_status"] == "Time limit reached"
-                and solution.objective_value > 1e-6
-                and solution._stage == 1
-            ):
-                logger.error("Optimization maximum allowed time limit reached for stage_1, goal_1")
-                exit(1)
-            else:
-                logger.error("Unsuccessful: unexpected error for stage_1, goal_1")
-                exit(1)
+        check_solver_succes_grow_problem(solution)
 
         results = solution.extract_results()
         parameters = solution.parameters(0)
         bounds = solution.bounds()
 
-        # We give bounds for stage 2 by allowing one DN sizes larger than what was found in the
-        # stage 1 optimization. But if the pipe is not to be used class DN none should be used and
-        # all the following pipe clasess should have bounds (0, 0)
+        # We give bounds for stage 2 by allowing two DN sizes larger than what was found in the
+        # stage 1 optimization.
         # Assumptions:
         # - The fist pipe class in the list of pipe_classes is pipe DN none
         pc_map = solution.get_pipe_class_map()  # if disconnectable and not connected to source
         for pipe_classes in pc_map.values():
             v_prev = 0.0
+            v_prev_2 = 0.0
             first_pipe_class = True
-            use_pipe_dn_none = False
             for var_name in pipe_classes.values():
                 v = round(abs(results[var_name][0]))
                 if first_pipe_class and v == 1.0:
-                    boolean_bounds[var_name] = (v, v)
-                    use_pipe_dn_none = True
+                    boolean_bounds[var_name] = (0.0, v)
                 elif v == 1.0:
                     boolean_bounds[var_name] = (0.0, v)
-                elif not use_pipe_dn_none and v_prev == 1.0:  # This allows one DN larger
+                elif v_prev == 1.0 or v_prev_2 == 1.0:  # This allows two DNs larger
                     boolean_bounds[var_name] = (0.0, 1.0)
                 else:
                     boolean_bounds[var_name] = (v, v)
+                v_prev_2 = v_prev
                 v_prev = v
+
                 first_pipe_class = False
 
+        producer_input_timeseries = False
         for asset in [
             *solution.energy_system_components.get("heat_source", []),
             *solution.energy_system_components.get("heat_buffer", []),
         ]:
+            if f"{asset}.maximum_heat_source" in solution.io.get_timeseries_names():
+                producer_input_timeseries = True
             var_name = f"{asset}_aggregation_count"
             round_lb = round(results[var_name][0])
             ub = solution.bounds()[var_name][1]
@@ -677,7 +815,7 @@ def run_end_scenario_sizing(
         from rtctools.optimization.timeseries import Timeseries
 
         for p in solution.energy_system_components.get("heat_pipe", []):
-            if p in solution.hot_pipes and parameters[f"{p}.area"] > 0.0:
+            if p not in solution.cold_pipes and parameters[f"{p}.area"] > 0.0:
                 lb = []
                 ub = []
                 bounds_pipe = bounds[f"{p}.__flow_direct_var"]
@@ -695,14 +833,22 @@ def run_end_scenario_sizing(
                         else bounds_pipe[1]
                     )
 
-                boolean_bounds[f"{p}.__flow_direct_var"] = (Timeseries(t, lb), Timeseries(t, ub))
-                try:
-                    r = results[f"{p}__is_disconnected"]
-                    boolean_bounds[f"{p}__is_disconnected"] = (Timeseries(t, r), Timeseries(t, r))
-                except KeyError:
-                    pass
+                boolean_bounds[f"{p}__flow_direct_var"] = (Timeseries(t, lb), Timeseries(t, ub))
+                if not producer_input_timeseries:
+                    try:
+                        r = results[f"{p}.__is_disconnected"]
+                        r_low = np.zeros(len(r))
+                        boolean_bounds[f"{p}.__is_disconnected"] = (
+                            Timeseries(t, r_low),
+                            Timeseries(t, r),
+                        )
+                    except KeyError:
+                        pass
 
         priorities_output = solution._priorities_output
+
+        del solution
+        gc.collect()
 
     solution = run_optimization_problem_solver(
         end_scenario_problem_class,
@@ -713,6 +859,7 @@ def run_end_scenario_sizing(
         priorities_output=priorities_output,
         **kwargs,
     )
+    check_solver_succes_grow_problem(solution)
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
 
@@ -725,12 +872,17 @@ def main(runinfo_path, log_level):
 
     kwargs = {
         "write_result_db_profiles": False,
-        "influxdb_host": "localhost",
-        "influxdb_port": 8086,
-        "influxdb_username": None,
-        "influxdb_password": None,
-        "influxdb_ssl": False,
-        "influxdb_verify_ssl": False,
+        "database_connections": [
+            {
+                "access_type": DBAccessType.WRITE,
+                "influxdb_host": "localhost",
+                "influxdb_port": 8086,
+                "influxdb_username": None,
+                "influxdb_password": None,
+                "influxdb_ssl": False,
+                "influxdb_verify_ssl": False,
+            },
+        ],
     }
     # Temp comment for now
     # omotes-poc-test.hesi.energy

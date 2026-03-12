@@ -232,7 +232,10 @@ class ElectricityProblem(
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        for s in self.energy_system_components["heat_pump_elec"]:
+        for s in [
+            *self.energy_system_components.get("heat_pump_elec", []),
+            *self.energy_system_components.get("air_water_heat_pump_elec", []),
+        ]:
             goals.append(MinimizeElectricityGoal(s))
 
         return goals

@@ -1,7 +1,6 @@
 import datetime
 import json
 import logging
-import math
 import numbers
 import os
 import sys
@@ -19,6 +18,8 @@ from esdl.profiles.profilemanager import ProfileManager
 import mesido.esdl.esdl_parser
 from mesido.constants import GRAVITATIONAL_CONSTANT
 from mesido.esdl.edr_pipe_class import EDRPipeClass
+from mesido.esdl.esdl_mixin import DBAccessType
+from mesido.financial_mixin import calculate_annuity_factor
 from mesido.network_common import NetworkSettings
 from mesido.post_processing.post_processing_utils import pipe_pressure, pipe_velocity
 from mesido.workflows.utils.helpers import _sort_numbered
@@ -59,8 +60,21 @@ class ScenarioOutput:
                 sys.exit(1)
 
             if self.write_result_db_profiles:
+                database_connection_write = self._database_credentials.get(DBAccessType.WRITE, [])
+
+                if len(database_connection_write) == 0:
+                    logger.error("The connections settings for writing to a database is empty")
+                    sys.exit(1)
+                elif len(database_connection_write) > 1:
+                    logger.error(
+                        "Multiple connections have been specified for writing to a database;"
+                        " currently only one connection is supported"
+                    )
+                    sys.exit(1)
+                else:
+                    database_connection_input = database_connection_write[0]
                 try:
-                    self.influxdb_host = kwargs["influxdb_host"]
+                    self.influxdb_host = database_connection_input["influxdb_host"]
                     if len(self.influxdb_host) == 0:
                         logger.error(
                             "Current setting of influxdb_host is an empty string and it should"
@@ -71,7 +85,7 @@ class ScenarioOutput:
                     logger.error(f"{base_error_string} host")
                     sys.exit(1)
                 try:
-                    self.influxdb_port = kwargs["influxdb_port"]
+                    self.influxdb_port = database_connection_input["influxdb_port"]
                     if not isinstance(self.influxdb_port, int):
                         logger.error(
                             "Current setting of influxdb_port is: "
@@ -82,17 +96,17 @@ class ScenarioOutput:
                     logger.error(f"{base_error_string} port")
                     sys.exit(1)
                 try:
-                    self.influxdb_username = kwargs["influxdb_username"]
+                    self.influxdb_username = database_connection_input["influxdb_username"]
                 except KeyError:
                     logger.error(f"{base_error_string} username")
                     sys.exit(1)
                 try:
-                    self.influxdb_password = kwargs["influxdb_password"]
+                    self.influxdb_password = database_connection_input["influxdb_password"]
                 except KeyError:
                     logger.error(f"{base_error_string} password")
                     sys.exit(1)
                 try:
-                    self.influxdb_ssl = kwargs["influxdb_ssl"]
+                    self.influxdb_ssl = database_connection_input["influxdb_ssl"]
                     if self.influxdb_ssl not in [True, False]:
                         logger.error(
                             "Current setting of influxdb_ssl is: "
@@ -103,7 +117,7 @@ class ScenarioOutput:
                     logger.error(f"{base_error_string} ssl")
                     sys.exit(1)
                 try:
-                    self.influxdb_verify_ssl = kwargs["influxdb_verify_ssl"]
+                    self.influxdb_verify_ssl = database_connection_input["influxdb_verify_ssl"]
                     if self.influxdb_verify_ssl not in [True, False]:
                         logger.error(
                             "Current setting of influxdb_verify_ssl is: "
@@ -303,6 +317,7 @@ class ScenarioOutput:
 
         results = self.extract_results()
         parameters = self.parameters(0)
+        diff_times = np.diff(self.times())
 
         # ------------------------------------------------------------------------------------------
         # KPIs
@@ -324,11 +339,17 @@ class ScenarioOutput:
         tot_timehorizon_install_cost_euro = 0.0
         tot_timehorizon_invest_cost_euro = 0.0
 
+        discounted_annualized_cost = self.energy_system_options()["discounted_annualized_cost"]
+
         # Specify the correct time horizon:
-        # Optimization=number of year: since it is taken into account in TCO minimization
+        # TCO Optimized=number of year: since it is taken into account in TCO minimization
+        # EAC Optimized=1: since it is taken into account in EAC minimization
         # Simulator=1: since 30 years of optimization is not applicable for the network simulator
         if not optimizer_sim:  # optimization mode
-            optim_time_horizon = parameters["number_of_years"]
+            if not discounted_annualized_cost:  # TCO optimized
+                optim_time_horizon = parameters["number_of_years"]
+            else:  # EAC optimized
+                optim_time_horizon = 1.0
         elif optimizer_sim:  # network simulator mode
             optim_time_horizon = 1.0
         else:
@@ -338,14 +359,21 @@ class ScenarioOutput:
             asset_placement_var = self._asset_aggregation_count_var_map[asset.name]
             placed = np.round(results[asset_placement_var][0]) >= 1.0
 
-            if np.isnan(parameters[f"{asset.name}.technical_life"]) or np.isclose(
-                parameters[f"{asset.name}.technical_life"], 0.0
-            ):
-                capex_factor = 1.0
+            cost_type_prefix = ""
+            if not discounted_annualized_cost:
+                if np.isnan(parameters[f"{asset.name}.technical_life"]) or np.isclose(
+                    parameters[f"{asset.name}.technical_life"], 0.0
+                ):
+                    capex_factor = 1.0
+                else:
+                    capex_factor = optim_time_horizon / parameters[f"{asset.name}.technical_life"]
+                    if capex_factor < 1.0:
+                        capex_factor = 1.0
             else:
-                capex_factor = math.ceil(
-                    optim_time_horizon / parameters[f"{asset.name}.technical_life"]
-                )
+                cost_type_prefix = "EAC - "
+                asset_life_years = parameters[f"{asset.name}.technical_life"]
+                discount_rate = parameters[f"{asset.name}.discount_rate"] / 100.0
+                capex_factor = calculate_annuity_factor(discount_rate, asset_life_years)
 
             if placed:
                 try:
@@ -438,13 +466,11 @@ class ScenarioOutput:
                     or asset.asset_type == "GenericProducer"
                     or asset.asset_type == "ResidualHeatSource"
                     or asset.asset_type == "GeothermalSource"
-                    or asset.asset_type == "ResidualHeatSource"
                     or asset.asset_type == "GasHeater"
+                    or asset.asset_type == "ElectricBoiler"
                 ):
                     heat_source_energy_wh[asset.name] = np.sum(
-                        results[f"{asset.name}.Heat_source"][1:]
-                        * (self.times()[1:] - self.times()[0:-1])
-                        / 3600
+                        results[f"{asset.name}.Heat_source"][1:] * diff_times / 3600
                     )
                 # TODO: ATES, HEAT pump show Secondary_heat and Primary_heat and tank storage
                 # elif ATES:
@@ -454,38 +480,40 @@ class ScenarioOutput:
                 # elif asset.asset_type == "HeatStorage":  # Heat discharged
                 #     heat_source_energy_wh[asset.name] = np.sum(
                 #         np.clip(results[f"{asset.name}.Heat_buffer"][1:], -np.inf, 0.0)
-                #         * (self.times()[1:] - self.times()[0:-1])
+                #         * diff_times
                 #         / 3600
                 #     )
-
-        kpis_top_level.kpi.append(
-            esdl.DistributionKPI(
-                name="High level cost breakdown [EUR] (yearly averaged)",
-                distribution=esdl.StringLabelDistribution(
-                    stringItem=[
-                        esdl.StringItem(
-                            label="CAPEX",
-                            value=(
-                                tot_timehorizon_install_cost_euro + tot_timehorizon_invest_cost_euro
-                            )
-                            / optim_time_horizon,
-                        ),
-                        esdl.StringItem(
-                            label="OPEX",
-                            value=tot_variable_opex_cost_euro + tot_fixed_opex_cost_euro,
-                        ),
-                    ]
-                ),
-                quantityAndUnit=esdl.esdl.QuantityAndUnitType(
-                    physicalQuantity=esdl.PhysicalQuantityEnum.COST, unit=esdl.UnitEnum.EURO
-                ),
+        if not discounted_annualized_cost:
+            kpis_top_level.kpi.append(
+                esdl.DistributionKPI(
+                    name="High level cost breakdown [EUR] (yearly averaged)",
+                    distribution=esdl.StringLabelDistribution(
+                        stringItem=[
+                            esdl.StringItem(
+                                label="CAPEX",
+                                value=(
+                                    tot_timehorizon_install_cost_euro
+                                    + tot_timehorizon_invest_cost_euro
+                                )
+                                / optim_time_horizon,
+                            ),
+                            esdl.StringItem(
+                                label="OPEX",
+                                value=tot_variable_opex_cost_euro + tot_fixed_opex_cost_euro,
+                            ),
+                        ]
+                    ),
+                    quantityAndUnit=esdl.esdl.QuantityAndUnitType(
+                        physicalQuantity=esdl.PhysicalQuantityEnum.COST, unit=esdl.UnitEnum.EURO
+                    ),
+                )
             )
-        )
 
         if not optimizer_sim:
             kpis_top_level.kpi.append(
                 esdl.DistributionKPI(
-                    name=f"High level cost breakdown [EUR] ({optim_time_horizon} year period)",
+                    name=f"{cost_type_prefix}High level cost breakdown [EUR]"
+                    f" ({optim_time_horizon} year period)",
                     distribution=esdl.StringLabelDistribution(
                         stringItem=[
                             esdl.StringItem(
@@ -508,32 +536,37 @@ class ScenarioOutput:
                 )
             )
 
-        kpis_top_level.kpi.append(
-            esdl.DistributionKPI(
-                name="Overall cost breakdown [EUR] (yearly averaged)",
-                distribution=esdl.StringLabelDistribution(
-                    stringItem=[
-                        esdl.StringItem(
-                            label="Installation",
-                            value=(tot_timehorizon_install_cost_euro / optim_time_horizon),
-                        ),
-                        esdl.StringItem(
-                            label="Investment",
-                            value=(tot_timehorizon_invest_cost_euro / optim_time_horizon),
-                        ),
-                        esdl.StringItem(label="Variable OPEX", value=tot_variable_opex_cost_euro),
-                        esdl.StringItem(label="Fixed OPEX", value=tot_fixed_opex_cost_euro),
-                    ]
-                ),
-                quantityAndUnit=esdl.esdl.QuantityAndUnitType(
-                    physicalQuantity=esdl.PhysicalQuantityEnum.COST, unit=esdl.UnitEnum.EURO
-                ),
+        if not discounted_annualized_cost:
+            kpis_top_level.kpi.append(
+                esdl.DistributionKPI(
+                    name="Overall cost breakdown [EUR] (yearly averaged)",
+                    distribution=esdl.StringLabelDistribution(
+                        stringItem=[
+                            esdl.StringItem(
+                                label="Installation",
+                                value=(tot_timehorizon_install_cost_euro / optim_time_horizon),
+                            ),
+                            esdl.StringItem(
+                                label="Investment",
+                                value=(tot_timehorizon_invest_cost_euro / optim_time_horizon),
+                            ),
+                            esdl.StringItem(
+                                label="Variable OPEX", value=tot_variable_opex_cost_euro
+                            ),
+                            esdl.StringItem(label="Fixed OPEX", value=tot_fixed_opex_cost_euro),
+                        ]
+                    ),
+                    quantityAndUnit=esdl.esdl.QuantityAndUnitType(
+                        physicalQuantity=esdl.PhysicalQuantityEnum.COST, unit=esdl.UnitEnum.EURO
+                    ),
+                )
             )
-        )
+
         if not optimizer_sim:
             kpis_top_level.kpi.append(
                 esdl.DistributionKPI(
-                    name=f"Overall cost breakdown [EUR] ({optim_time_horizon} year period)",
+                    name=f"{cost_type_prefix}Overall cost breakdown [EUR] "
+                    f"({optim_time_horizon} year period)",
                     distribution=esdl.StringLabelDistribution(
                         stringItem=[
                             esdl.StringItem(
@@ -560,7 +593,8 @@ class ScenarioOutput:
 
             kpis_top_level.kpi.append(
                 esdl.DistributionKPI(
-                    name=f"CAPEX breakdown [EUR] ({optim_time_horizon} year period)",
+                    name=f"{cost_type_prefix}CAPEX breakdown [EUR] "
+                    f"({optim_time_horizon} year period)",
                     distribution=esdl.StringLabelDistribution(
                         stringItem=[
                             esdl.StringItem(label=key, value=value)
@@ -573,24 +607,27 @@ class ScenarioOutput:
                 )
             )
 
-        kpis_top_level.kpi.append(
-            esdl.DistributionKPI(
-                name="OPEX breakdown [EUR] (yearly averaged)",
-                distribution=esdl.StringLabelDistribution(
-                    stringItem=[
-                        esdl.StringItem(label=key, value=value)
-                        for key, value in asset_opex_breakdown.items()
-                    ]
-                ),
-                quantityAndUnit=esdl.esdl.QuantityAndUnitType(
-                    physicalQuantity=esdl.PhysicalQuantityEnum.COST, unit=esdl.UnitEnum.EURO
-                ),
+        if not discounted_annualized_cost:
+            kpis_top_level.kpi.append(
+                esdl.DistributionKPI(
+                    name="OPEX breakdown [EUR] (yearly averaged)",
+                    distribution=esdl.StringLabelDistribution(
+                        stringItem=[
+                            esdl.StringItem(label=key, value=value)
+                            for key, value in asset_opex_breakdown.items()
+                        ]
+                    ),
+                    quantityAndUnit=esdl.esdl.QuantityAndUnitType(
+                        physicalQuantity=esdl.PhysicalQuantityEnum.COST, unit=esdl.UnitEnum.EURO
+                    ),
+                )
             )
-        )
+
         if not optimizer_sim:
             kpis_top_level.kpi.append(
                 esdl.DistributionKPI(
-                    name=f"OPEX breakdown [EUR] ({optim_time_horizon} year period)",
+                    name=f"{cost_type_prefix}OPEX breakdown [EUR] "
+                    f"({optim_time_horizon} year period)",
                     distribution=esdl.StringLabelDistribution(
                         stringItem=[
                             esdl.StringItem(label=key, value=value)
@@ -683,47 +720,46 @@ class ScenarioOutput:
                         self._asset_fixed_operational_cost_map[asset_name]
                     ][0]
 
+                    if discounted_annualized_cost:
+                        area_investment_cost *= capex_factor
+                        area_installation_cost *= capex_factor
+
                     # Calculate the total energy [Wh] consumed/produced in an are.
                     # Note: milp losses of buffers, ATES' and pipes are included in the area energy
                     # consumption
                     if asset_name in self.energy_system_components.get("heat_source", []):
                         try:
                             total_energy_produced_locally_wh[subarea.name] += np.sum(
-                                results[f"{asset_name}.Heat_source"][1:]
-                                * (self.times()[1:] - self.times()[0:-1])
-                                / 3600.0
+                                results[f"{asset_name}.Heat_source"][1:] * diff_times / 3600.0
                             )
                         except KeyError:
                             total_energy_produced_locally_wh[subarea.name] = np.sum(
-                                results[f"{asset_name}.Heat_source"][1:]
-                                * (self.times()[1:] - self.times()[0:-1])
-                                / 3600.0
+                                results[f"{asset_name}.Heat_source"][1:] * diff_times / 3600.0
                             )
                     if asset_name in self.energy_system_components.get("heat_demand", []):
                         flow_variable = results[f"{asset_name}.Heat_demand"][1:]
                     elif asset_name in self.energy_system_components.get("heat_buffer", []):
                         flow_variable = results[f"{asset_name}.Heat_buffer"][1:]
-                    elif asset_name in self.energy_system_components.get("ates", []):
+                    elif asset_name in [
+                        *self.energy_system_components.get("ates", []),
+                        *self.energy_system_components.get("low_temperature_ates", []),
+                    ]:
                         flow_variable = results[f"{asset_name}.Heat_ates"][1:]
                     elif asset_name in self.energy_system_components.get("heat_pipe", []):
                         flow_variable = (
                             np.ones(len(self.times())) * results[f"{asset_name}__hn_heat_loss"]
                         )
                     else:
-                        flow_variable = ""
-                    if (
-                        asset_name in self.energy_system_components.get("heat_demand", [])
-                        or asset_name in self.energy_system_components.get("heat_buffer", [])
-                        or asset_name in self.energy_system_components.get("ates", [])
-                        or asset_name in self.energy_system_components.get("heat_pipe", [])
-                    ):
+                        flow_variable = np.array([])
+
+                    if flow_variable.any():
                         try:
                             total_energy_consumed_locally_wh[subarea.name] += np.sum(
-                                flow_variable * (self.times()[1:] - self.times()[0:-1]) / 3600.0
+                                flow_variable * diff_times / 3600.0
                             )
                         except KeyError:
                             total_energy_consumed_locally_wh[subarea.name] = np.sum(
-                                flow_variable * (self.times()[1:] - self.times()[0:-1]) / 3600.0
+                                flow_variable * diff_times / 3600.0
                             )
                     # end Calculate the total energy consumed/produced in an area
                 # end if placed loop
@@ -859,7 +895,7 @@ class ScenarioOutput:
 
             # Create plots in the dashboard
             # Top level KPIs: Cost breakdown in a polygon area (for all assest grouped together)
-            kpi_name = f"{subarea.name}: Asset cost breakdown [EUR]"
+            kpi_name = f"{cost_type_prefix}{subarea.name}: Asset cost breakdown [EUR]"
             if (area_installation_cost > 0.0 or area_investment_cost > 0.0) and (
                 area_variable_opex_cost > 0.0 or area_fixed_opex_cost > 0.0
             ):
@@ -916,11 +952,48 @@ class ScenarioOutput:
 
         # end KPIs
 
+    def _name_to_asset(self, energy_system, name):
+        return next(
+            (x for x in energy_system.eAllContents() if hasattr(x, "name") and x.name == name)
+        )
+
+    def _remove_result_profiles(
+        self,
+        energy_system,
+    ):
+
+        for asset_name in [
+            *self.energy_system_components.get("heat_source", []),
+            *self.energy_system_components.get("heat_demand", []),
+            *self.energy_system_components.get("heat_pipe", []),
+            *self.energy_system_components.get("heat_buffer", []),
+            *self.energy_system_components.get("ates", []),
+            *self.energy_system_components.get("heat_exchanger", []),
+            *self.energy_system_components.get("heat_pump", []),
+        ]:
+            asset = self._name_to_asset(energy_system, asset_name)
+            for iport in range(len(asset.port)):
+                if isinstance(asset.port[iport], esdl.OutPort) or isinstance(
+                    asset.port[iport], esdl.InPort
+                ):
+                    profiles_to_remove = []
+                    for iprofile in range(len(asset.port[iport].profile)):
+                        if (
+                            asset.port[iport].profile[iprofile].profileType
+                            == esdl.ProfileTypeEnum.OUTPUT
+                        ):
+                            # Get OUTPUT the type objects to the list to be removed
+                            profiles_to_remove.append(asset.port[iport].profile[iprofile])
+                    # Remove the objects from the EOrderedSet
+                    for object_to_remove in profiles_to_remove:
+                        asset.port[iport].profile.remove(object_to_remove)
+
     def _write_updated_esdl(
         self,
         energy_system,
         optimizer_sim: bool = False,
         add_kpis: bool = True,
+        remove_output_profiles: bool = True,
     ):
         from esdl.esdl_handler import EnergySystemHandler
 
@@ -940,10 +1013,8 @@ class ScenarioOutput:
         else:  # network optimization
             energy_system.name = energy_system.name + "_GrowOptimized"
 
-        def _name_to_asset(name):
-            return next(
-                (x for x in energy_system.eAllContents() if hasattr(x, "name") and x.name == name)
-            )
+        if remove_output_profiles:
+            self._remove_result_profiles(energy_system)
 
         if add_kpis:
             self._add_kpis_to_energy_system(energy_system, optimizer_sim)
@@ -956,15 +1027,21 @@ class ScenarioOutput:
             if name in [
                 *self.energy_system_components.get("heat_source", []),
                 *self.energy_system_components.get("ates", []),
+                *self.energy_system_components.get("low_temperature_ates", []),
                 *self.energy_system_components.get("heat_buffer", []),
                 *self.energy_system_components.get("heat_pump", []),
+                *self.energy_system_components.get("airco", []),
+                *self.energy_system_components.get("heat_exchanger", []),
             ]:
-                asset = _name_to_asset(name)
+                asset = self._name_to_asset(energy_system, name)
                 asset_placement_var = self._asset_aggregation_count_var_map[name]
                 placed = np.round(results[asset_placement_var][0]) >= 1.0
                 max_size = results[self._asset_max_size_map[name]][0]
 
-                if asset.name in self.energy_system_components.get("ates", []):
+                if asset.name in [
+                    *self.energy_system_components.get("ates", []),
+                    *self.energy_system_components.get("low_temperature_ates", []),
+                ]:
                     asset.maxChargeRate = results[f"{name}__max_size"][0]
                     asset.maxDischargeRate = results[f"{name}__max_size"][0]
                 elif asset.name in self.energy_system_components.get("heat_buffer", []):
@@ -974,10 +1051,15 @@ class ScenarioOutput:
                         * parameters[f"{name}.rho"]
                         * parameters[f"{name}.dT"]
                     )
-                elif asset.name in self.energy_system_components.get("heat_pump", []):
-                    # Note: Electrical capacity and not the heat capacity
+                elif asset.name in self.energy_system_components.get("heat_exchanger", []):
+                    asset.capacity = max_size
+                elif asset.name in [
+                    *self.energy_system_components.get("heat_pump", []),
+                    *self.energy_system_components.get("airco", []),
+                ]:
+                    # Note: The heat capacity and not the electrical capacity
                     # TODO: in the future we need to cater for varying COP as well
-                    asset.power = results[f"{name}__max_size"][0] / parameters[f"{name}.COP"]
+                    asset.power = results[f"{name}__max_size"][0]
                 else:
                     asset.power = max_size
                 if not placed:
@@ -1018,7 +1100,7 @@ class ScenarioOutput:
                     assert isinstance(pipe_class, EDRPipeClass)
                     asset_edr = esh_edr.load_from_string(pipe_class.xml_string)
 
-                asset = _name_to_asset(pipe)
+                asset = self._name_to_asset(energy_system, pipe)
                 asset.state = esdl.AssetStateEnum.ENABLED
 
                 try:
@@ -1034,7 +1116,7 @@ class ScenarioOutput:
                     for prop in edr_pipe_properties_to_copy:
                         setattr(asset, prop, getattr(asset_edr, prop))
             else:
-                asset = _name_to_asset(pipe)
+                asset = self._name_to_asset(energy_system, pipe)
                 asset.delete(recursive=True)
 
         # ------------------------------------------------------------------------------------------
@@ -1081,12 +1163,14 @@ class ScenarioOutput:
                 *self.energy_system_components.get("heat_pipe", []),
                 *self.energy_system_components.get("heat_buffer", []),
                 *self.energy_system_components.get("ates", []),
+                *self.energy_system_components.get("low_temperature_ates", []),
                 *self.energy_system_components.get("heat_exchanger", []),
                 *self.energy_system_components.get("heat_pump", []),
+                *self.energy_system_components.get("airco", []),
             ]:
                 try:
                     # If the asset has been placed
-                    asset = _name_to_asset(asset_name)
+                    asset = self._name_to_asset(energy_system, asset_name)
                     asset_class = asset.__class__.__name__
                     asset_id = asset.id
                     capability = [c for c in capabilities if c in asset.__class__.__mro__][
@@ -1104,19 +1188,37 @@ class ScenarioOutput:
                     port, port_prim, port_sec = 3 * [None]
                     if isinstance(asset, esdl.Transport) or isinstance(asset, esdl.Consumer):
                         port = [port for port in asset.port if isinstance(port, esdl.InPort)][0]
-                    elif isinstance(asset, esdl.Producer):
+                    elif (
+                        isinstance(asset, esdl.Producer)
+                        or isinstance(asset, esdl.Airco)
+                        or isinstance(asset, esdl.ElectricBoiler)
+                        or isinstance(asset, esdl.GasHeater)
+                    ):
                         port = [port for port in asset.port if isinstance(port, esdl.OutPort)][0]
                     elif isinstance(asset, esdl.Conversion):
-                        port_prim = [
+                        primary_inports = [
                             port
                             for port in asset.port
                             if isinstance(port, esdl.InPort) and "Prim" in port.name
-                        ][0]
-                        port_sec = [
+                        ]
+                        secondary_outports = [
                             port
                             for port in asset.port
                             if isinstance(port, esdl.OutPort) and "Sec" in port.name
-                        ][0]
+                        ]
+                        if len(primary_inports) == 1 and len(secondary_outports) == 1:
+                            port_prim = primary_inports[0]
+                            port_sec = secondary_outports[0]
+                        elif len(primary_inports) == 0 and len(secondary_outports) == 1:
+                            port_sec = secondary_outports[0]
+                        else:
+                            logger.error(
+                                f"Write to influxdb does not cater for asset: {asset_name}, "
+                                f"with {len(primary_inports)} primary inport(s) and"
+                                f" {len(secondary_outports)} secondary outport(s)."
+                            )
+                            traceback.print_exc()
+                            sys.exit(1)
                     else:
                         NotImplementedError(
                             f"influxdb not included for assets of type {type(asset)}"
@@ -1156,8 +1258,10 @@ class ScenarioOutput:
                             *self.energy_system_components.get("heat_source", []),
                             *self.energy_system_components.get("heat_buffer", []),
                             *self.energy_system_components.get("ates", []),
+                            *self.energy_system_components.get("low_temperature_ates", []),
                             *self.energy_system_components.get("heat_exchanger", []),
                             *self.energy_system_components.get("heat_pump", []),
+                            *self.energy_system_components.get("airco", []),
                         ]:
                             variables_one_hydraulic_system.append("Pump_power")
                             variables_two_hydraulic_system.append("Pump_power")
@@ -1187,6 +1291,10 @@ class ScenarioOutput:
                     elif port_prim and port_sec:
                         carrier_id_dict = {
                             "primary_carrier_id": port_prim.carrier.id,
+                            "secondary_carrier_id": port_sec.carrier.id,
+                        }
+                    elif not port_prim and port_sec:
+                        carrier_id_dict = {
                             "secondary_carrier_id": port_sec.carrier.id,
                         }
                     else:
@@ -1302,6 +1410,7 @@ class ScenarioOutput:
                                         endDate=end_date_time,
                                         id=str(uuid.uuid4()),
                                         filters='"assetId"=' + f"'{str(asset_id)}'",
+                                        profileType=esdl.ProfileTypeEnum.OUTPUT,
                                     )
                                     # Assign quantity and units variable
                                     if variable in ["Heat_flow", "Pump_power"]:
@@ -1352,7 +1461,8 @@ class ScenarioOutput:
                                             f"{asset_name}. + {variable}"
                                         )
 
-                                    asset.port[index_outport].profile.append(profile_attributes)
+                                # Write result OUTPUT profiles on the optimized esdl
+                                asset.port[index_outport].profile.append(profile_attributes)
 
                                 # Add variable values in new column
                                 conversion_factor = 0.0

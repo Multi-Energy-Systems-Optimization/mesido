@@ -7,12 +7,16 @@ from mesido.workflows import run_end_scenario_sizing
 
 import numpy as np
 
+import pytest
+
 from utils_test_scaling import create_problem_with_debug_info  # , problem_scaling_check
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
 class TestUpdatedESDL(TestCase):
+
+    @pytest.mark.pre_process
     def test_updated_esdl(self):
         """
         Check that the updated ESDL resulting from optmizing a network, is correct by using the

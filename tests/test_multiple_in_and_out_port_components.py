@@ -1,6 +1,7 @@
 from pathlib import Path
 from unittest import TestCase
 
+from mesido.esdl.esdl_mixin import DBAccessType
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.util import run_esdl_mesido_optimization
@@ -11,6 +12,7 @@ from utils_tests import demand_matching_test, energy_conservation_test, heat_to_
 
 
 class TestHEX(TestCase):
+
     def test_heat_exchanger(self):
         """
         Check the modelling of the heat exchanger component which allows two hydraulically
@@ -51,12 +53,17 @@ class TestHEX(TestCase):
         # Do not delete kwargs: this is used to manualy check writing out of profile data
         kwargs = {
             "write_result_db_profiles": False,
-            "influxdb_host": "localhost",
-            "influxdb_port": 8086,
-            "influxdb_username": None,
-            "influxdb_password": None,
-            "influxdb_ssl": False,
-            "influxdb_verify_ssl": False,
+            "database_connections": [
+                {
+                    "access_type": DBAccessType.WRITE,
+                    "influxdb_host": "localhost",
+                    "influxdb_port": 8086,
+                    "influxdb_username": None,
+                    "influxdb_password": None,
+                    "influxdb_ssl": False,
+                    "influxdb_verify_ssl": False,
+                },
+            ],
         }
         # -----------------------------------------------------------------------------------------
 
@@ -313,6 +320,8 @@ class TestHP(TestCase):
         - Standard checks for demand matching, heat to discharge and energy conservation
         - Check that the heat pump is producing according to its COP
         - Check that Secondary source use in minimized
+        - Check that the upper bound value for heat producing capacity is the same as specified in
+        the esdl
 
 
         """
@@ -342,12 +351,17 @@ class TestHP(TestCase):
         # Do not delete kwargs: this is used to manualy check writing out of profile data
         kwargs = {
             "write_result_db_profiles": False,
-            "influxdb_host": "localhost",
-            "influxdb_port": 8086,
-            "influxdb_username": None,
-            "influxdb_password": None,
-            "influxdb_ssl": False,
-            "influxdb_verify_ssl": False,
+            "database_connections": [
+                {
+                    "access_type": DBAccessType.WRITE,
+                    "influxdb_host": "localhost",
+                    "influxdb_port": 8086,
+                    "influxdb_username": None,
+                    "influxdb_password": None,
+                    "influxdb_ssl": False,
+                    "influxdb_verify_ssl": False,
+                },
+            ],
         }
         # -----------------------------------------------------------------------------------------
 
@@ -383,6 +397,14 @@ class TestHP(TestCase):
         # We check the energy converted betweeen the commodities
         np.testing.assert_allclose(power_elec * parameters["GenericConversion_3d3f.COP"], sec_heat)
         np.testing.assert_allclose(power_elec + prim_heat, sec_heat)
+
+        # Check that the heat pump upper bound
+        for key in solution.esdl_assets.keys():
+            if solution.esdl_assets[key].asset_type == "HeatPump":
+                np.testing.assert_equal(
+                    solution.bounds()["GenericConversion_3d3f.Heat_flow"][1],
+                    solution.esdl_assets[key].attributes["power"],
+                )
 
 
 if __name__ == "__main__":

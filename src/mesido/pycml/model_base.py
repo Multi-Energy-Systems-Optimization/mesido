@@ -6,7 +6,6 @@ import numpy as np
 
 from pymoca.backends.casadi.model import Variable as _Variable
 
-
 MATHEMATICAL_OPERATORS = [
     "__add__",
     "__radd__",

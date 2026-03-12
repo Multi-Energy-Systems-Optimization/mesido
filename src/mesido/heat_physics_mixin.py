@@ -6,6 +6,7 @@ import casadi as ca
 
 from mesido._heat_loss_u_values_pipe import pipe_heat_loss
 from mesido.base_component_type_mixin import BaseComponentTypeMixin
+from mesido.base_problem_mixin import BaseProblemMixin
 from mesido.demand_insulation_class import DemandInsulationClass
 from mesido.head_loss_class import HeadLossClass, HeadLossOption
 from mesido.network_common import NetworkSettings
@@ -20,7 +21,9 @@ from rtctools.optimization.timeseries import Timeseries
 logger = logging.getLogger("mesido")
 
 
-class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
+class HeatPhysicsMixin(
+    BaseProblemMixin, BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem
+):
     """
     This class is used to model the physics of a heat district network with its assets. We model
     the different components with a variety of linearization strategies.
@@ -108,6 +111,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             "pipe_minimum_pressure": -np.inf,
             "pipe_maximum_pressure": np.inf,
             "heat_exchanger_bypass": False,
+            "storage_charging_variables": False,
         }
         self._hn_head_loss_class = HeadLossClass(self.heat_network_settings)
         self.__pipe_head_bounds = {}
@@ -171,6 +175,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         self.__ates_max_stored_heat_var = {}
         self.__ates_max_stored_heat_bounds = {}
         self.__ates_max_stored_heat_nominals = {}
+
+        self.__ates_is_charging_var = {}
+        self.__ates_is_charging_bounds = {}
 
         # Integer variable whether discrete temperature option has been selected
         self.__carrier_selected_var = {}
@@ -380,6 +387,13 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             self.__ates_max_stored_heat_bounds[ates_max_stored_heat_var_name] = (0, max_heat)
             self.__ates_max_stored_heat_nominals[ates_max_stored_heat_var_name] = max_heat / 2
 
+            if self.heat_network_settings["storage_charging_variables"]:
+                ates_is_charging_var_name = f"{ates}__is_charging"
+                self.__ates_is_charging_var[ates_is_charging_var_name] = ca.MX.sym(
+                    ates_is_charging_var_name
+                )
+                self.__ates_is_charging_bounds[ates_is_charging_var_name] = (0.0, 1.0)
+
         for _carrier, temperatures in self.temperature_carriers().items():
             carrier_id_number_mapping = str(temperatures["id_number_mapping"])
             temp_var_name = carrier_id_number_mapping + "_temperature"
@@ -575,6 +589,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         The ``include_demand_insulation_options`` options is used, when insulations options per
         demand is specificied, to include heat demand and supply matching via constraints for all
         possible insulation options.
+
+        TODO: Add description of storage yearly change option for an ates.
         """
 
         options = self._hn_head_loss_class.head_loss_network_options()
@@ -586,6 +602,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         options["heat_loss_disconnected_pipe"] = True
         options["include_demand_insulation_options"] = False
         options["include_ates_temperature_options"] = False
+        options["include_ates_yearly_change_option"] = False
 
         return options
 
@@ -635,6 +652,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         variables.extend(self.__pipe_heat_loss_path_var.values())
         variables.extend(self.__ates_temperature_ordering_var.values())
         variables.extend(self.__ates_temperature_disc_ordering_var.values())
+        variables.extend(self.__ates_is_charging_var.values())
         variables.extend(self.__carrier_temperature_disc_ordering_var.values())
         return variables
 
@@ -649,6 +667,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             or variable in self.__ates_temperature_selected_var
             or variable in self.__ates_temperature_ordering_var
             or variable in self.__ates_temperature_disc_ordering_var
+            or variable in self.__ates_is_charging_var
             or variable in self.__carrier_temperature_disc_ordering_var
         ):
             return True
@@ -692,6 +711,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         bounds.update(self.__ates_temperature_disc_ordering_var_bounds)
         bounds.update(self.__carrier_temperature_disc_ordering_var_bounds)
         bounds.update(self.__ates_max_stored_heat_bounds)
+        bounds.update(self.__ates_is_charging_bounds)
 
         for k, v in self.__pipe_head_bounds.items():
             bounds[k] = self.merge_bounds(bounds[k], v)
@@ -1754,13 +1774,15 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         for ates_asset, (
             (hot_pipe, _hot_pipe_orientation),
             (_cold_pipe, _cold_pipe_orientation),
-        ) in {**self.energy_system_topology.ates}.items():
+        ) in self.energy_system_topology.ates.items():
 
             if ates_asset in self.energy_system_components.get("low_temperature_ates", []):
                 continue
-
-            flow_dir_var = self._heat_pipe_to_flow_direct_map[hot_pipe]
-            is_buffer_charging = self.state(flow_dir_var) * _hot_pipe_orientation
+            if self.heat_network_settings["storage_charging_variables"]:
+                is_buffer_charging = self.variable(f"{ates_asset}__is_charging")
+            else:
+                flow_dir_var = self._heat_pipe_to_flow_direct_map[hot_pipe]
+                is_buffer_charging = self.state(flow_dir_var)
 
             sup_carrier = parameters[f"{ates_asset}.T_supply_id"]
             supply_temperatures = self.temperature_regimes(sup_carrier)
@@ -2025,7 +2047,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         for ates, (
             (hot_pipe, _hot_pipe_orientation),
             (_cold_pipe, _cold_pipe_orientation),
-        ) in {**self.energy_system_topology.ates}.items():
+        ) in self.energy_system_topology.ates.items():
 
             if ates in self.energy_system_components.get("low_temperature_ates", []):
                 continue
@@ -2042,8 +2064,12 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             if options["include_ates_temperature_options"] and len(supply_temperatures) != 0:
                 soil_temperature = parameters[f"{ates}.T_amb"]
 
-                flow_dir_var = self._heat_pipe_to_flow_direct_map[hot_pipe]
-                is_buffer_charging = self.state(flow_dir_var) * _hot_pipe_orientation
+                if self.heat_network_settings["storage_charging_variables"]:
+                    is_buffer_charging = self.variable(f"{ates}__is_charging")
+                else:
+                    flow_dir_var = self._heat_pipe_to_flow_direct_map[hot_pipe]
+                    is_buffer_charging = self.state(flow_dir_var)
+
                 heat_stored_max = bounds[f"{ates}.Stored_heat"][1]
                 heat_ates_max = bounds[f"{ates}.Heat_ates"][1]
                 heat_ates = self.state(f"{ates}.Heat_ates")
@@ -2262,6 +2288,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         """
         constraints = []
         parameters = self.parameters(ensemble_member)
+        bounds = self.bounds()
 
         for b, (
             (hot_pipe, _hot_pipe_orientation),
@@ -2282,6 +2309,11 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             # are extracting heat from it.
             heat_out = self.state(f"{b}.HeatOut.Heat")
             heat_in = self.state(f"{b}.HeatIn.Heat")
+            # heat_flow = self.state(f"{b}.Heat_flow")
+
+            big_m = 2.0 * np.max(
+                np.abs((*self.bounds()[f"{b}.HeatIn.Heat"], *self.bounds()[f"{b}.HeatOut.Heat"]))
+            )
 
             # We want an _equality_ constraint between discharge and heat if the buffer is
             # consuming (i.e. behaving like a "demand"). We want an _inequality_
@@ -2291,15 +2323,42 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             # are guaranteed to have the same sign.
             flow_dir_var = self._heat_pipe_to_flow_direct_map[hot_pipe]
             is_buffer_charging = self.state(flow_dir_var)
+            if b in self.energy_system_components.get("ates", []):
+                if self.heat_network_settings["storage_charging_variables"]:
+                    is_buffer_charging = self.variable(f"{b}__is_charging")
 
-            big_m = 2.0 * np.max(
-                np.abs((*self.bounds()[f"{b}.HeatIn.Heat"], *self.bounds()[f"{b}.HeatOut.Heat"]))
-            )
+                # TODO: check if below is necessary.
+                # flow_big_m = q_nominal * 10
+                # constraints.append(
+                #     ((discharge - flow_big_m * is_buffer_charging) / q_nominal, -np.inf, 0.0)
+                # )
+                # constraints.append(
+                #     ((discharge + flow_big_m * (1 - is_buffer_charging)) / q_nominal, 0.0, np.inf)
+                # )
+                # constraints.append(
+                #     ((heat_flow - big_m * is_buffer_charging) / heat_nominal, -np.inf, 0.0)
+                # )
+                # constraints.append(
+                #     ((heat_flow + big_m * (1 - is_buffer_charging)) / heat_nominal, 0.0, np.inf)
+                # )
 
             sup_carrier = parameters[f"{b}.T_supply_id"]
             ret_carrier = parameters[f"{b}.T_return_id"]
             supply_temperatures = self.temperature_regimes(sup_carrier)
             return_temperatures = self.temperature_regimes(ret_carrier)
+
+            # reducing problem size without is_charging variables
+            heat_charging = self.state(f"{b}.Heat_flow_charging")
+            heat_discharging = self.state(f"{b}.Heat_flow_discharging")
+            heat_charging_max = bounds[f"{b}.Heat_flow_charging"][1]
+            heat_discharging_max = bounds[f"{b}.Heat_flow_discharging"][1]
+            constraints.append(
+                (
+                    heat_charging / heat_charging_max + heat_discharging / heat_discharging_max,
+                    -np.inf,
+                    1.0,
+                )
+            )
 
             if len(supply_temperatures) == 0:
                 constraint_nominal = (heat_nominal * cp * rho * dt * q_nominal) ** 0.5
@@ -3250,7 +3309,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         return constraints
 
-    def __ates_max_stored_heat_constriants(self, ensemble_member):
+    def __ates_max_stored_heat_constraints(self, ensemble_member):
         constraints = []
 
         for ates in [
@@ -3264,6 +3323,20 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             constraints.append(
                 ((stored_heat - np.ones(len(self.times())) * max_var) / nominal, -np.inf, 0.0)
             )
+
+        return constraints
+
+    def __ates_storage_yearly_change_path_constraints(self, ensemble_member):
+        constraints = []
+
+        # TODO: Femke check if this code below can be deleted
+        # if not self.energy_system_options()["include_ates_yearly_change_option"]:
+        #     for ates in [
+        #         *self.energy_system_components.get("ates", []),
+        #     ]:
+        #         ates_state = self.state(f"{ates}.Storage_yearly_change")
+        #         nominal = self.variable_nominal(f"{ates}.Heat_ates")
+        #         constraints.append(((ates_state) / nominal, 0.0, 0.0))
 
         return constraints
 
@@ -3450,6 +3523,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             flow_dir_var = self._heat_pipe_to_flow_direct_map[hot_pipe]
             is_buffer_charging = self.state(flow_dir_var) * hot_pipe_orientation
+            if b in self.energy_system_components.get("ates", []):
+                if self.heat_network_settings["storage_charging_variables"]:
+                    is_buffer_charging = self.variable(f"{b}__is_charging")
 
             big_m = (
                 2.0
@@ -3506,6 +3582,64 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         return constraints
 
+    def __sink_hydraulic_power_path_constraints(self, ensemble_member):
+        """
+        This function adds hydraulic power and pump power contraints for a storage assets. If the
+        head loss option is not enabled then the hydraulic power and pump power are for forced to
+        0.0 but if the head loss option is enabled then:
+            - The delta hydraulic power is constrained to be equal to f(minimum pressure drop,
+            volumetric flow rate) when the storage is being charged.
+            - The pump power is constrained to be equal the delta hydraulic power when the storage
+            is not being charged.
+        """
+        constraints = []
+
+        parameters = self.parameters(ensemble_member)
+
+        for asset in {
+            *self.energy_system_components.get("heat_demand", []),
+            *self.energy_system_components.get("cold_demand", []),
+            *self.energy_system_components.get("heat_exchanger", []),
+            *self.energy_system_components.get("heat_pump", []),
+        }:
+
+            min_dp = parameters[f"{asset}.minimum_pressure_drop"]
+
+            if asset in {
+                *self.energy_system_components.get("heat_exchanger", []),
+                *self.energy_system_components.get("heat_pump", []),
+            }:
+                asset += ".Primary"
+            discharge = self.state(f"{asset}.HeatIn.Q")
+            hp_in = self.state(f"{asset}.HeatIn.Hydraulic_power")
+            hp_out = self.state(f"{asset}.HeatOut.Hydraulic_power")
+
+            big_m = (
+                2.0
+                * self.bounds()[f"{asset}.HeatIn.Q"][1]
+                * self.__maximum_total_head_loss
+                * 10.2
+                * 1.0e3
+            )
+            if self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
+                constraints.append(
+                    (
+                        ((hp_in - hp_out) - min_dp * discharge) / big_m,
+                        0.0,
+                        np.inf,
+                    )
+                )
+            else:
+                constraints.append(
+                    (
+                        (hp_out - hp_in) / self.variable_nominal(f"{asset}.HeatIn.Hydraulic_power"),
+                        0.0,
+                        0.0,
+                    )
+                )
+
+        return constraints
+
     def path_constraints(self, ensemble_member):
         """
         Here we add all the path constraints to the optimization problem. Please note that the
@@ -3523,11 +3657,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 self._hn_head_loss_class._demand_head_loss_path_constraints(self, ensemble_member)
             )
 
-        constraints.extend(
-            self._hn_head_loss_class._pipe_hydraulic_power_path_constraints(
-                self, self.__maximum_total_head_loss, ensemble_member
-            )
-        )
         constraints.extend(self.__flow_direction_path_constraints(ensemble_member))
         constraints.extend(self.__node_heat_mixing_path_constraints(ensemble_member))
         constraints.extend(self.__node_hydraulic_power_mixing_path_constraints(ensemble_member))
@@ -3549,7 +3678,24 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints.extend(self.__ates_heat_losses_path_constraints(ensemble_member))
         constraints.extend(self.__ates_temperature_ordering_path_constraints(ensemble_member))
         constraints.extend(self.__heat_pump_cop_path_constraints(ensemble_member))
-        constraints.extend(self.__storage_hydraulic_power_path_constraints(ensemble_member))
+        constraints.extend(self.__ates_storage_yearly_change_path_constraints(ensemble_member))
+
+        if self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
+            constraints.extend(
+                self._hn_head_loss_class._pipe_hydraulic_power_path_constraints(
+                    self, self.__maximum_total_head_loss, ensemble_member
+                )
+            )
+            constraints.extend(self.__sink_hydraulic_power_path_constraints(ensemble_member))
+            constraints.extend(self.__storage_hydraulic_power_path_constraints(ensemble_member))
+        else:
+            for asset_list in self.energy_system_components.values():
+                for asset in asset_list:
+                    try:
+                        var = self.state(f"{asset}.Pump_power")
+                        constraints.append((var, 0.0, 1.0e-4))
+                    except KeyError:
+                        pass
 
         return constraints
 
@@ -3576,7 +3722,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         if self.energy_system_options()["include_demand_insulation_options"]:
             constraints.extend(self.__heat_matching_demand_insulation_constraints(ensemble_member))
 
-        constraints.extend(self.__ates_max_stored_heat_constriants(ensemble_member))
+        constraints.extend(self.__ates_max_stored_heat_constraints(ensemble_member))
+
         return constraints
 
     def history(self, ensemble_member):
@@ -3611,33 +3758,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         # for ates in self.energy_system_components.get("ates", []):
 
         return history
-
-    def goal_programming_options(self):
-        """
-        Here we set the goal programming configuration. We use soft constraints for consecutive
-        goals.
-        """
-        options = super().goal_programming_options()
-        options["keep_soft_constraints"] = True
-        return options
-
-    def solver_options(self):
-        """
-        Here we define the solver options. By default we use the open-source solver highs and casadi
-        solver qpsol.
-        """
-        options = super().solver_options()
-        options["casadi_solver"] = "qpsol"
-        options["solver"] = "highs"
-        return options
-
-    def compiler_options(self):
-        """
-        In this function we set the compiler configuration.
-        """
-        options = super().compiler_options()
-        options["resolve_parameter_values"] = True
-        return options
 
     def priority_completed(self, priority):
         """
