@@ -43,6 +43,7 @@ from mesido.pycml.component_library.milp import (
     GasTankStorage,
     GeothermalSource,
     HeatBuffer,
+    HeatBufferElec,
     HeatDemand,
     HeatExchanger,
     HeatPipe,
@@ -447,7 +448,25 @@ class AssetToHeatComponent(_AssetToComponentBase):
         else:  # Catering for backwards compatibility
             return asset.attributes[max_size_attribute]
 
-    def convert_heat_buffer(self, asset: Asset) -> Tuple[Type[HeatBuffer], MODIFIERS]:
+    def _get_min_voltage(self, asset: Asset) -> float:
+        """
+        Args:
+            asset: mesido common asset with all attributes
+
+        Returns:
+            value: minimum voltage of electric carrier in V
+        """
+        min_voltage = None
+        for port in asset.in_ports:
+            if isinstance(port.carrier, esdl.ElectricityCommodity):
+                min_voltage = port.carrier.voltage
+        if min_voltage is None:
+            raise RuntimeError(f"{asset.name} has no in-port with electricity commodity")
+        return min_voltage
+
+    def convert_heat_buffer(
+        self, asset: Asset
+    ) -> Tuple[Union[Type[HeatBufferElec], Type[HeatBuffer]], MODIFIERS]:
         """
         This function converts the buffer object in esdl to a set of modifiers that can be used in
         a pycml object. Most important:
@@ -552,6 +571,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
         )
 
         q_nominal = self._get_connected_q_nominal(asset)
+        if isinstance(q_nominal, dict):
+            q_nominal = q_nominal["Q_nominal"]
 
         modifiers = dict(
             height=r,
@@ -567,7 +588,35 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
         )
+        if len(asset.in_ports) == 2 and len(asset.out_ports) == 1:
 
+            # TODO: CO2 coefficient
+
+            min_voltage = self._get_min_voltage(asset)
+            i_max, i_nom = self._get_connected_i_nominal_and_max(asset)
+            max_elec_power = hfr_charge_max
+            charging_efficiency = 1.0
+            if asset.attributes["chargeEfficiency"]:
+                charging_efficiency = asset.attributes["chargeEfficiency"]
+            else:
+                logger.error(
+                    f"'chargeEfficiency' attribute is not defined in esdl for {asset.name}."
+                    f" 1.0 is taken as default."
+                )
+                charging_efficiency = 1.0
+
+            modifiers.update(
+                dict(
+                    elec_power_nominal=max_elec_power / 2.0,
+                    ElectricityIn=dict(
+                        Power=dict(min=0.0, max=max_elec_power, nominal=max_elec_power / 2.0),
+                        I=dict(min=0.0, max=i_max, nominal=i_nom),
+                        V=dict(min=min_voltage, nominal=min_voltage),
+                    ),
+                    charging_efficiency=charging_efficiency,
+                )
+            )
+            return HeatBufferElec, modifiers
         return HeatBuffer, modifiers
 
     def convert_heat_demand(self, asset: Asset) -> Tuple[Type[HeatDemand], MODIFIERS]:
@@ -2738,9 +2787,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         # TODO: CO2 coefficient
 
         q_nominal = self._get_connected_q_nominal(asset)
-        for port in asset.in_ports:
-            if isinstance(port.carrier, esdl.ElectricityCommodity):
-                min_voltage = port.carrier.voltage
+        min_voltage = self._get_min_voltage(asset)
         i_max, i_nom = self._get_connected_i_nominal_and_max(asset)
 
         modifiers.update(
@@ -2817,9 +2864,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         # TODO: CO2 coefficient
 
         q_nominal = self._get_connected_q_nominal(asset)
-        for port in asset.in_ports:
-            if isinstance(port.carrier, esdl.ElectricityCommodity):
-                min_voltage = port.carrier.voltage
+        min_voltage = self._get_min_voltage(asset)
         i_max, i_nom = self._get_connected_i_nominal_and_max(asset)
         cop = asset.attributes["COP"] if asset.attributes["COP"] else 1.0
 

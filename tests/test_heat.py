@@ -12,6 +12,7 @@ from utils_tests import demand_matching_test, energy_conservation_test, heat_to_
 
 
 class TestHeat(TestCase):
+
     def test_heat_loss(self):
         """
         This is a test to check whether the network (pipes) are dissipating milp as we expect.
