@@ -1314,7 +1314,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                     f"'{asset.name}' will not be actuated in a constant manner"
                 )
             modifiers["elec_power_nominal"] = max_supply
-            modifiers["cop"] = asset.attributes["COP"] if asset.attributes["COP"] else 10.0
+            modifiers["cop"] = asset.attributes["COP"] if asset.attributes["COP"] else 0.0
             if len(asset.in_ports) == 2:
                 for port in asset.in_ports:
                     if isinstance(port.carrier, esdl.ElectricityCommodity):
