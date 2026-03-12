@@ -401,13 +401,12 @@ class TestGeothermalSourceElec(TestCase):
 
         # Equations check
         np.testing.assert_array_less(0.0, results["GeothermalSource_a77b.Heat_source"])
-        np.testing.assert_array_less(0.0, results["ElectricityProducer_4dde.ElectricityOut.Power"])
+        np.testing.assert_allclose(results["ElectricityProducer_4dde.ElectricityOut.Power"],
+                                   results["GeothermalSource_a77b.ElectricityIn.Power"])
         np.testing.assert_allclose(
             parameters["GeothermalSource_a77b.cop"] * results["GeothermalSource_a77b.Power_elec"],
             results["GeothermalSource_a77b.Heat_source"],
         )
-        np.testing.assert_allclose(results["ElectricityProducer_4dde.ElectricityOut.Power"],
-                                   results["GeothermalSource_a77b.ElectricityIn.Power"])
 
         # Test electricity port
         np.testing.assert_array_less(0.0, results["GeothermalSource_a77b.ElectricityIn.Power"])
