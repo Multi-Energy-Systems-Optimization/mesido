@@ -180,7 +180,7 @@ class _ESDLModelBase(_Model):
                                 f"milp(4) and electricity (1) ports"
                             )
                 elif (
-                    (asset.asset_type == "HeatPump" or asset.asset_type == "GeothermalSource")
+                    (asset.asset_type == "HeatPump")
                     and len(asset.out_ports) == 1
                     and len(asset.in_ports) in [1, 2]
                 ):
@@ -200,13 +200,12 @@ class _ESDLModelBase(_Model):
                                 f"in port and 1 Heat out_ports "
                             )
                 else:
-                    if asset.asset_type == "HeatPump":
-                        raise Exception(
-                            f"{asset.name} has incorrect number of in/out ports. HeatPumps allow "
-                            f"to have 1 in and 1 out port for air-water HP, 2 in ports and 2 out "
-                            f"ports when modelling a water-water HP, or 3 in ports and 2 out ports "
-                            f"when the electricity connection of the water-water HP is modelled."
-                        )
+                    raise Exception(
+                        f"{asset.name} has incorrect number of in/out ports. HeatPumps allow "
+                        f"to have 1 in and 1 out port for air-water HP, 2 in ports and 2 out "
+                        f"ports when modelling a water-water HP, or 3 in ports and 2 out ports "
+                        f"when the electricity connection of the water-water HP is modelled."
+                    )
 
             elif (
                 asset.asset_type == "GasHeater"

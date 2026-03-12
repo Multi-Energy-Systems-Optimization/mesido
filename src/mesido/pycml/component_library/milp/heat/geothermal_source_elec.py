@@ -28,7 +28,6 @@ class GeothermalSourceElec(GeothermalSource):
         )
 
         self.component_subtype = "geothermal_source_elec"
-        self.id_mapping_carrier = -1
         self.min_voltage = nan
 
         self.add_variable(ElectricityPort, "ElectricityIn")
