@@ -401,8 +401,10 @@ class TestGeothermalSourceElec(TestCase):
 
         # Equations check
         np.testing.assert_array_less(0.0, results["GeothermalSource_a77b.Heat_source"])
-        np.testing.assert_allclose(results["ElectricityProducer_4dde.ElectricityOut.Power"],
-                                   results["GeothermalSource_a77b.ElectricityIn.Power"])
+        np.testing.assert_allclose(
+            results["ElectricityProducer_4dde.ElectricityOut.Power"],
+            results["GeothermalSource_a77b.ElectricityIn.Power"],
+        )
         np.testing.assert_allclose(
             parameters["GeothermalSource_a77b.cop"] * results["GeothermalSource_a77b.Power_elec"],
             results["GeothermalSource_a77b.Heat_source"],
@@ -422,7 +424,7 @@ class TestGeothermalSourceElec(TestCase):
             / parameters["GeothermalSource_a77b.cop"],
             results["GeothermalSource_a77b__variable_operational_cost"],
         )
-    
+
     def test_geothermal_source_elec_no_cop(self):
         """
         This tests checks the electric geothermal producer asset when no cop is provided.
@@ -453,10 +455,11 @@ class TestGeothermalSourceElec(TestCase):
 
         # Equations check
         np.testing.assert_array_less(0.0, results["GeothermalSource_a77b.Heat_source"])
-        np.testing.assert_allclose(results["ElectricityProducer_4dde.ElectricityOut.Power"],
-                                   results["GeothermalSource_a77b.ElectricityIn.Power"])
-        np.testing.assert_allclose(results["ElectricityProducer_4dde.ElectricityOut.Power"],
-                                   0.0)
+        np.testing.assert_allclose(
+            results["ElectricityProducer_4dde.ElectricityOut.Power"],
+            results["GeothermalSource_a77b.ElectricityIn.Power"],
+        )
+        np.testing.assert_allclose(results["ElectricityProducer_4dde.ElectricityOut.Power"], 0.0)
 
         # Test electricity port
         np.testing.assert_allclose(
@@ -465,8 +468,4 @@ class TestGeothermalSourceElec(TestCase):
         )
 
         # Variable operational cost check.
-        np.testing.assert_allclose(
-            0.0,
-            results["GeothermalSource_a77b__variable_operational_cost"]
-        )
-
+        np.testing.assert_allclose(0.0, results["GeothermalSource_a77b__variable_operational_cost"])

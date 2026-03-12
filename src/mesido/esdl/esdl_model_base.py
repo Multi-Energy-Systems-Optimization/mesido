@@ -227,7 +227,8 @@ class _ESDLModelBase(_Model):
                             f"Heat out_ports "
                         )
             elif (
-                asset.asset_type == "ElectricBoiler" or asset.asset_type == "GeothermalSource"
+                asset.asset_type == "ElectricBoiler"
+                or asset.asset_type == "GeothermalSource"
                 and len(asset.out_ports) == 1
                 and len(asset.in_ports) == 2
             ):
