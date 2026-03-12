@@ -136,7 +136,6 @@ class ElectricityPhysicsMixin(
                 var_name = f"{asset}.__is_charging"
                 self.__storage_charging_map[asset] = var_name
 
-
         for asset in [*self.energy_system_components.get("electricity_source", [])]:
             if isinstance(self.bounds()[f"{asset}.Electricity_source"][1], Timeseries):
                 var_name = f"{asset}__set_point"
@@ -537,7 +536,7 @@ class ElectricityPhysicsMixin(
             power_charging_max = self.bounds()[f"{asset}.Power_charging"][1]
 
             if options["electricity_storage_discrete_charge_variables"]:
-                is_charging = self.state(f"{asset}__is_charging")
+                is_charging = self.state(f"{asset}.__is_charging")
                 constraints.append(
                     (
                         (power_discharging - (1 - is_charging) * power_discharging_max) / power_nom,

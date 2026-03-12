@@ -973,7 +973,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
         modifiers = dict(
             length=length,
             diameter=diameter,
-            disconnectable=self._is_disconnectable_pipe(asset),
+            disconnectable=self._is_disconnectable_pipe(asset) if not
+            self.energy_system_options.get("all_pipes_disconnectable", False) else True,
             insulation_thickness=insulation_thicknesses,
             conductivity_insulation=conductivies_insulation,
             **self._generic_modifiers(asset),
@@ -1917,7 +1918,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             min_voltage=v_min,
             max_capacity=max_capacity,
             Stored_electricity=dict(min=0.0, max=max_capacity),
-            discharge_var=self.energy_system_options.get(
+            discrete_charge_var=self.energy_system_options.get(
                 "electricity_storage_discrete_charge_variables", False
             ),
             ElectricityIn=dict(

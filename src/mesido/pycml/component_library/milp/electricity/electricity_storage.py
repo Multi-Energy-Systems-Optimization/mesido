@@ -32,7 +32,7 @@ class ElectricityStorage(ElectricityComponent, BaseAsset):
         self.min_voltage = nan
         self.charge_efficiency = 1.0
         self.discharge_efficiency = 1.0
-        self.discharge_var = False
+        self.discrete_charge_var = False
 
         self.add_variable(ElectricityPort, "ElectricityIn")
 
@@ -52,7 +52,7 @@ class ElectricityStorage(ElectricityComponent, BaseAsset):
             max=self.ElectricityIn.Power.max,
         )
 
-        if self.electricity_storage_discrete_charge_variables:
+        if self.discrete_charge_var:
             self.add_variable(DiscreteVariable, "__is_charging", min=0.0, max=1.0)
 
         self.add_variable(
@@ -91,7 +91,6 @@ class ElectricityStorage(ElectricityComponent, BaseAsset):
                 / self.ElectricityIn.Power.nominal
             )
         )
-
 
         self.add_equation(
             (

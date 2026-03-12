@@ -388,7 +388,7 @@ class HeatPhysicsMixin(
             self.__ates_max_stored_heat_nominals[ates_max_stored_heat_var_name] = max_heat / 2
 
             if self.heat_network_settings["storage_charging_variables"]:
-                ates_is_charging_var_name = f"{ates}__is_charging"
+                ates_is_charging_var_name = f"{ates}.__is_charging"
                 self.__ates_is_charging_var[ates_is_charging_var_name] = ca.MX.sym(
                     ates_is_charging_var_name
                 )
@@ -1779,7 +1779,7 @@ class HeatPhysicsMixin(
             if ates_asset in self.energy_system_components.get("low_temperature_ates", []):
                 continue
             if self.heat_network_settings["storage_charging_variables"]:
-                is_buffer_charging = self.variable(f"{ates_asset}__is_charging")
+                is_buffer_charging = self.variable(f"{ates_asset}.__is_charging")
             else:
                 flow_dir_var = self._heat_pipe_to_flow_direct_map[hot_pipe]
                 is_buffer_charging = self.state(flow_dir_var)
@@ -2065,7 +2065,7 @@ class HeatPhysicsMixin(
                 soil_temperature = parameters[f"{ates}.T_amb"]
 
                 if self.heat_network_settings["storage_charging_variables"]:
-                    is_buffer_charging = self.variable(f"{ates}__is_charging")
+                    is_buffer_charging = self.variable(f"{ates}.__is_charging")
                 else:
                     flow_dir_var = self._heat_pipe_to_flow_direct_map[hot_pipe]
                     is_buffer_charging = self.state(flow_dir_var)
@@ -2325,7 +2325,7 @@ class HeatPhysicsMixin(
             is_buffer_charging = self.state(flow_dir_var)
             if b in self.energy_system_components.get("ates", []):
                 if self.heat_network_settings["storage_charging_variables"]:
-                    is_buffer_charging = self.variable(f"{b}__is_charging")
+                    is_buffer_charging = self.variable(f"{b}.__is_charging")
 
                 # TODO: check if below is necessary.
                 # flow_big_m = q_nominal * 10
@@ -3525,7 +3525,7 @@ class HeatPhysicsMixin(
             is_buffer_charging = self.state(flow_dir_var) * hot_pipe_orientation
             if b in self.energy_system_components.get("ates", []):
                 if self.heat_network_settings["storage_charging_variables"]:
-                    is_buffer_charging = self.variable(f"{b}__is_charging")
+                    is_buffer_charging = self.variable(f"{b}.__is_charging")
 
             big_m = (
                 2.0
