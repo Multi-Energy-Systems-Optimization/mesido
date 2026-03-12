@@ -552,8 +552,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         )
 
         # The asset attribute "dischargeEfficiency" represents the fraction of stored heat
-        # that is lost per day. If this attribute is not provided in esdl, a default heat loss rate
-        # of 1% per day is used. The value is converted to a per‑second loss factor.
+        # that is lost per day.
         heat_loss_coefficient = (
             asset.attributes.get("dischargeEfficiency") / (24.0 * 3600.0)
             if asset.attributes.get("dischargeEfficiency")
