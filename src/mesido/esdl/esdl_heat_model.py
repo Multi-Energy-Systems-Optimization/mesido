@@ -563,6 +563,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
             Stored_heat=dict(min=min_heat, max=max_heat),
             Heat_buffer=dict(min=-hfr_discharge_max, max=hfr_charge_max),
             init_Heat=min_heat,
+            discrete_charge_var=self.energy_system_options.get(
+                "heat_storage_charging_variables", False
+            ),
             **self._generic_modifiers(asset),
             **self._generic_heat_modifiers(-hfr_discharge_max, hfr_charge_max, q_nominal),
             **self._supply_return_temperature_modifiers(asset),
@@ -1557,6 +1560,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 min=0.0,
                 max=hfr_charge_max * aggregation_count * 180.0 * 24 * 3600.0,
                 nominal=hfr_charge_max * aggregation_count * 30.0 * 24 * 3600.0,
+            ),
+            discrete_charge_var=self.energy_system_options.get(
+                "heat_storage_charging_variables", False
             ),
             **self._generic_modifiers(asset),
             **self._generic_heat_modifiers(
