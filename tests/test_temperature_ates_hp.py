@@ -61,7 +61,7 @@ class TestAtesTemperature(TestCase):
         energy_conservation_test(solution, results)
         heat_to_discharge_test(solution, results)
 
-        ates_charging = results["Pipe1.__flow_direct_var"]  # =1 if charging
+        ates_charging = results["ATES_cb47.__is_charging"] # =1 if charging
         ates_temperature = results["ATES_cb47.Temperature_ates"]
         ates_temperature_disc = results["ATES_cb47__temperature_ates_disc"]
         carrier_temperature = results["41770304791669983859190_temperature"]
@@ -133,6 +133,8 @@ class TestAtesTemperature(TestCase):
         np.testing.assert_array_less(np.ones(len(hex_disabled)) - tol, hex_disabled + hp_disabled)
         np.testing.assert_array_less(charging - tol, hp_disabled)
         np.testing.assert_array_less(charging[1:] - tol, 1 - hex_disabled[1:])
+
+        np.testing.assert_allclose(True, False, err_msg="Right now the ATES is not actively used")
 
         # np.alltrue(
         #     [
