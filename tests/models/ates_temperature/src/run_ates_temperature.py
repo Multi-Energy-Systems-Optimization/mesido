@@ -154,7 +154,7 @@ class HeatProblem(
         self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
         options["neglect_pipe_heat_losses"] = True
         options["include_ates_temperature_options"] = True
-        self.heat_network_settings["storage_charging_variables"] = True
+        options["heat_storage_charging_variables"] = True
         return options
 
     def temperature_carriers(self):
@@ -182,7 +182,7 @@ class HeatProblem(
             *self.energy_system_components.get("heat_pump"),
             *self.energy_system_components.get("heat_exchanger"),
         ]:
-            disabled_var = self.state(f"{asset}__disabled")
+            disabled_var = self.state(f"{asset}.__disabled")
             sum_disabled_vars += disabled_var
 
         constraints.append((sum_disabled_vars, 1.0, 2.0))

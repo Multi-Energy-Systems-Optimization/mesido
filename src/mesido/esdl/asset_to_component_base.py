@@ -352,6 +352,7 @@ class _AssetToComponentBase:
         "GasDemand": "gas_demand",
         "GasHeater": "heat_source",
         "GasStorage": "gas_tank_storage",
+        "GenericProducer": "heat_source",
         "GeothermalSource": "heat_source",
         "HeatExchange": "heat_exchanger",
         "HeatingDemand": "heat_demand",

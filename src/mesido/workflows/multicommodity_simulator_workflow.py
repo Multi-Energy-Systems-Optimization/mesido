@@ -5,7 +5,6 @@ from pathlib import Path
 
 import esdl
 
-from mesido.esdl.esdl_mixin import DBAccessType
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
@@ -300,7 +299,7 @@ class MultiCommoditySimulator(
             "electricity_source": "Electricity_source",
             "gas_demand": "Gas_demand_mass_flow",
             "gas_source": "Gas_source_mass_flow",
-            "gas_tank_storage": {"charge": "Gas_tank_flow", "discharge": "__Q_discharge"},
+            "gas_tank_storage": {"charge": "Gas_tank_flow", "discharge": ".__Q_discharge"},
             "electricity_storage": {
                 "charge": "Power_charging",
                 "discharge": ".Power_discharging",
@@ -522,6 +521,7 @@ class MultiCommoditySimulator(
         options["estimated_velocity"] = 7.5
 
         options["gas_storage_discharge_variables"] = True
+        options["electricity_storage_discharge_variables"] = True
 
         return options
 
@@ -831,17 +831,12 @@ def main(runinfo_path, log_level):
 
     kwargs = {
         "write_result_db_profiles": False,
-        "database_connections": [
-            {
-                "access_type": DBAccessType.WRITE,
-                "influxdb_host": "localhost",
-                "influxdb_port": 8086,
-                "influxdb_username": None,
-                "influxdb_password": None,
-                "influxdb_ssl": False,
-                "influxdb_verify_ssl": False,
-            },
-        ],
+        "influxdb_host": "localhost",
+        "influxdb_port": 8086,
+        "influxdb_username": None,
+        "influxdb_password": None,
+        "influxdb_ssl": False,
+        "influxdb_verify_ssl": False,
     }
 
     _ = run_optimization_problem(

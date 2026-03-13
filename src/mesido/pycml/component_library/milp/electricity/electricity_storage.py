@@ -1,4 +1,4 @@
-from mesido.pycml import Variable
+from mesido.pycml import DiscreteVariable, Variable
 from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 from numpy import nan
@@ -32,6 +32,7 @@ class ElectricityStorage(ElectricityComponent, BaseAsset):
         self.min_voltage = nan
         self.charge_efficiency = 1.0
         self.discharge_efficiency = 1.0
+        self.discrete_charge_var = False
 
         self.add_variable(ElectricityPort, "ElectricityIn")
 
@@ -50,6 +51,10 @@ class ElectricityStorage(ElectricityComponent, BaseAsset):
             nominal=self.ElectricityIn.Power.nominal,
             max=self.ElectricityIn.Power.max,
         )
+
+        if self.discrete_charge_var:
+            self.add_variable(DiscreteVariable, "__is_charging", min=0.0, max=1.0)
+
         self.add_variable(
             Variable,
             "Power_charging",
