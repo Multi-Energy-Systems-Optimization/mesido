@@ -976,8 +976,11 @@ class AssetToHeatComponent(_AssetToComponentBase):
         modifiers = dict(
             length=length,
             diameter=diameter,
-            disconnectable=self._is_disconnectable_pipe(asset) if not
-            self.energy_system_options.get("all_pipes_disconnectable", False) else True,
+            disconnectable=(
+                self._is_disconnectable_pipe(asset)
+                if not self.energy_system_options.get("all_pipes_disconnectable", False)
+                else True
+            ),
             insulation_thickness=insulation_thicknesses,
             conductivity_insulation=conductivies_insulation,
             **self._generic_modifiers(asset),

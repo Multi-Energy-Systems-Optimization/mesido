@@ -264,7 +264,7 @@ class RollOutProblem(
         options["yearly_investments"] = True
         options["min_fraction_tank_volume"] = 0.0
         options["heat_storage_charging_variables"] = False
-        options["all_pipes_disconnectable"] = True #by default pipes are not disconnectable if
+        options["all_pipes_disconnectable"] = True  # by default pipes are not disconnectable if
         # they connect to producers or consumers.
 
         return options
