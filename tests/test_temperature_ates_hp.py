@@ -97,6 +97,9 @@ class TestAtesTemperature(TestCase):
 
         np.testing.assert_allclose(objective_calc / 1e4, objective)
 
+        np.testing.assert_array_less(1,sum(heat_ates<-1e6),err_msg="The ATES is not actively "
+                                                                   "used during this test")
+
         np.testing.assert_array_less(ates_temperature_disc - tol, ates_temperature)
         np.testing.assert_array_less(
             ates_temperature_disc - tol,
@@ -133,8 +136,6 @@ class TestAtesTemperature(TestCase):
         np.testing.assert_array_less(np.ones(len(hex_disabled)) - tol, hex_disabled + hp_disabled)
         np.testing.assert_array_less(charging - tol, hp_disabled)
         np.testing.assert_array_less(charging[1:] - tol, 1 - hex_disabled[1:])
-
-        np.testing.assert_allclose(True, False, err_msg="Right now the ATES is not actively used")
 
         # np.alltrue(
         #     [
