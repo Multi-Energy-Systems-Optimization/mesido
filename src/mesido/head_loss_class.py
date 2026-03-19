@@ -203,8 +203,7 @@ class _MinimizeHydraulicPower(Goal):
             ):
                 sum_ += optimization_problem.state(f"{pipe}.Hydraulic_power")
         for pipe in optimization_problem.energy_system_components.get("gas_pipe", []):
-            if ( not parameters[f"{pipe}.length"] == 0.0
-            ):
+            if not parameters[f"{pipe}.length"] == 0.0:
                 sum_ += optimization_problem.state(f"{pipe}.Hydraulic_power")
 
         return sum_
@@ -411,8 +410,9 @@ class HeadLossClass:
                 # We need to creat linear line segments for the - and + volumetric flow rate
                 # possibilites. Line number 1, 2, N for the - & + side is created
                 discharge_type = ["neg_discharge", "pos_discharge"]
-                for ii_line in range(network_settings["n_linearization_lines"] * len(
-                        discharge_type)):
+                for ii_line in range(
+                    network_settings["n_linearization_lines"] * len(discharge_type)
+                ):
                     if ii_line < network_settings["n_linearization_lines"]:
                         dtype = discharge_type[0]
                         line_number = ii_line + 1
@@ -839,10 +839,7 @@ class HeadLossClass:
                                     )
                                     - is_disconnected_vec[ii_start:ii_end] * big_m_lin
                                     - big_m_lin
-                                    * (1 - is_line_segment_active[ii_line_used][
-                                    0:n_timesteps])
-                                    # * (2 - is_line_segment_active[ii_line_used][
-                                    # 0:n_timesteps]-flow_dir)
+                                    * (1 - is_line_segment_active[ii_line_used][0:n_timesteps])
                                 )
                                 / constraint_nominal[ii_start:ii_end],
                                 -np.inf,
