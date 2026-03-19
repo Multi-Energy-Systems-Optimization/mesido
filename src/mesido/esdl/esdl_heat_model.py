@@ -42,6 +42,7 @@ from mesido.pycml.component_library.milp import (
     GasSubstation,
     GasTankStorage,
     GeothermalSource,
+    GeothermalSourceElec,
     HeatBuffer,
     HeatBufferElec,
     HeatDemand,
@@ -1499,8 +1500,24 @@ class AssetToHeatComponent(_AssetToComponentBase):
                     f"{asset.asset_type} '{asset.name}' has no desired flow rate specified. "
                     f"'{asset.name}' will not be actuated in a constant manner"
                 )
-
-            return GeothermalSource, modifiers
+            modifiers["elec_power_nominal"] = max_supply
+            modifiers["cop"] = asset.attributes["COP"] if asset.attributes["COP"] else 0.0
+            if len(asset.in_ports) == 2:
+                for port in asset.in_ports:
+                    if isinstance(port.carrier, esdl.ElectricityCommodity):
+                        min_voltage = port.carrier.voltage
+                i_max, i_nom = self._get_connected_i_nominal_and_max(asset)
+                modifiers.update(
+                    min_voltage=min_voltage,
+                    ElectricityIn=dict(
+                        Power=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
+                        I=dict(min=0.0, max=i_max, nominal=i_nom),
+                        V=dict(min=min_voltage, nominal=min_voltage),
+                    ),
+                )
+                return GeothermalSourceElec, modifiers
+            else:
+                return GeothermalSource, modifiers
         elif asset.asset_type == "HeatPump":
             modifiers["cop"] = asset.attributes["COP"]
             return AirWaterHeatPump, modifiers
