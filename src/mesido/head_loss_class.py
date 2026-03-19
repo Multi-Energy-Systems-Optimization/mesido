@@ -202,6 +202,10 @@ class _MinimizeHydraulicPower(Goal):
                 and not parameters[f"{pipe}.length"] == 0.0
             ):
                 sum_ += optimization_problem.state(f"{pipe}.Hydraulic_power")
+        for pipe in optimization_problem.energy_system_components.get("gas_pipe", []):
+            if ( not parameters[f"{pipe}.length"] == 0.0
+            ):
+                sum_ += optimization_problem.state(f"{pipe}.Hydraulic_power")
 
         return sum_
 
