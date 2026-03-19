@@ -407,7 +407,8 @@ class HeadLossClass:
                 # We need to creat linear line segments for the - and + volumetric flow rate
                 # possibilites. Line number 1, 2, N for the - & + side is created
                 discharge_type = ["neg_discharge", "pos_discharge"]
-                for ii_line in range(network_settings["n_linearization_lines"] * 2):
+                for ii_line in range(network_settings["n_linearization_lines"] * len(
+                        discharge_type)):
                     if ii_line < network_settings["n_linearization_lines"]:
                         dtype = discharge_type[0]
                         line_number = ii_line + 1
@@ -823,23 +824,24 @@ class HeadLossClass:
                     for ii_line_used in range(len(pipe_linear_line_segment)):
                         ii_start = ii_line_used * n_timesteps
                         ii_end = ii_start + n_timesteps
-                        constraints.append(
-                            (
-                                (
-                                    head_loss_vec[ii_start:ii_end]
-                                    - (
-                                        a_vec[ii_start:ii_end] * discharge_vec[ii_start:ii_end]
-                                        + b_vec[ii_start:ii_end]
-                                    )
-                                    + is_disconnected_vec[ii_start:ii_end] * big_m_lin
-                                    + big_m_lin
-                                    * (1 - is_line_segment_active[ii_line_used][0:n_timesteps])
-                                )
-                                / constraint_nominal[ii_start:ii_end],
-                                0.0,
-                                np.inf,
-                            ),
-                        )
+                        # constraints.append(
+                        #     (
+                        #         (
+                        #             head_loss_vec[ii_start:ii_end]
+                        #             - (
+                        #                 a_vec[ii_start:ii_end] * discharge_vec[ii_start:ii_end]
+                        #                 + b_vec[ii_start:ii_end]
+                        #             )
+                        #             + is_disconnected_vec[ii_start:ii_end] * big_m_lin
+                        #             + big_m_lin
+                        #             * (2 - is_line_segment_active[ii_line_used][
+                        #             0:n_timesteps]-flow_dir)
+                        #         )
+                        #         / constraint_nominal[ii_start:ii_end],
+                        #         0.0,
+                        #         np.inf,
+                        #     ),
+                        # )
                         constraints.append(
                             (
                                 (
@@ -850,7 +852,10 @@ class HeadLossClass:
                                     )
                                     - is_disconnected_vec[ii_start:ii_end] * big_m_lin
                                     - big_m_lin
-                                    * (1 - is_line_segment_active[ii_line_used][0:n_timesteps])
+                                    * (1 - is_line_segment_active[ii_line_used][
+                                    0:n_timesteps])
+                                    # * (2 - is_line_segment_active[ii_line_used][
+                                    # 0:n_timesteps]-flow_dir)
                                 )
                                 / constraint_nominal[ii_start:ii_end],
                                 -np.inf,

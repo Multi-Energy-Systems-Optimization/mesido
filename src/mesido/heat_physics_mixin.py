@@ -290,7 +290,7 @@ class HeatPhysicsMixin(
                 and initialized_vars[10] != {}
             ):
                 self._pipe_linear_line_segment_map[pipe_name] = {}
-                for ii_line in range(self.heat_network_settings["n_linearization_lines"] * 2):
+                for ii_line in range(self.heat_network_settings["n_linearization_lines"]*2):
                     pipe_linear_line_segment_var_name = initialized_vars[8][ii_line]
                     self._pipe_linear_line_segment_map[pipe_name][
                         ii_line
