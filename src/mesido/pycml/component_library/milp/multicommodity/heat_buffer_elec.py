@@ -30,7 +30,6 @@ class HeatBufferElec(_HeatBufferComponent):
         self.elec_power_nominal = nan
         self.charging_efficiency = nan
 
-        # # Assumption: heat in/out is nonnegative
         self.add_variable(ElectricityPort, "ElectricityIn")
         self.add_variable(Variable, "Power_elec", min=0.0, nominal=self.elec_power_nominal)
         self.add_variable(Variable, "Heat_elec_charging", min=0.0, nominal=self.elec_power_nominal)

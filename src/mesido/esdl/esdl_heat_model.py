@@ -462,7 +462,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             if isinstance(port.carrier, esdl.ElectricityCommodity):
                 min_voltage = port.carrier.voltage
         if min_voltage is None:
-            raise RuntimeError(f"{asset.name} has no in-port with electricity commodity")
+            raise RuntimeError(f"{asset.name} has no inport with electricity commodity")
         return min_voltage
 
     def convert_heat_buffer(
@@ -591,15 +591,11 @@ class AssetToHeatComponent(_AssetToComponentBase):
         )
         if len(asset.in_ports) == 2 and len(asset.out_ports) == 1:
 
-            # TODO: CO2 coefficient
-
             min_voltage = self._get_min_voltage(asset)
             i_max, i_nom = self._get_connected_i_nominal_and_max(asset)
             max_elec_power = hfr_charge_max
-            charging_efficiency = 1.0
-            if asset.attributes["chargeEfficiency"]:
-                charging_efficiency = asset.attributes["chargeEfficiency"]
-            else:
+            charging_efficiency = asset.attributes.get("chargeEfficiency", 1.0)
+            if charging_efficiency <= 0.0:
                 logger.error(
                     f"'chargeEfficiency' attribute is not defined in esdl for {asset.name}."
                     f" 1.0 is taken as default."

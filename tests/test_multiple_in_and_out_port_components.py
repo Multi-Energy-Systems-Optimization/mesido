@@ -428,6 +428,8 @@ class Buffer(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
+        epsilon = 1e-8
+
         heat_problem = run_esdl_mesido_optimization(
             HeatProblem,
             base_folder=base_folder,
@@ -444,33 +446,30 @@ class Buffer(TestCase):
         energy_conservation_test(heat_problem, results)
 
         # Check that buffer is charged by electricity
-        epsilon = (
-            1e-6  # small tolerance to prevent false passes caused by numerical precision errors
-        )
-        np.testing.assert_array_less(epsilon, sum(results["HeatStorage.Heat_elec_charging"]))
+        np.testing.assert_array_less(1000.0, sum(results["HeatStorage.Heat_elec_charging"]))
 
         # Check that buffer discharged heat to the network and is not charged by it.
-        np.testing.assert_array_less(results["HeatStorage.Heat_flow"], -epsilon)
+        np.testing.assert_array_less(results["HeatStorage.Heat_flow"], -1000.0)
 
         # Check the heat flow balance of buffer
         np.testing.assert_allclose(
             results["HeatStorage.Heat_buffer"],
             results["HeatStorage.Heat_flow"] + results["HeatStorage.Heat_elec_charging"],
-            atol=1e-8,
+            atol=epsilon,
         )
 
         # Check that charging_efficiency is considered at heat buffer electricity consumption
         np.testing.assert_allclose(
             results["HeatStorage.Heat_elec_charging"],
             results["HeatStorage.Power_elec"] * parameters["HeatStorage.charging_efficiency"],
-            atol=1e-8,
+            atol=epsilon,
         )
 
         # Check that derivative of stored heat is coming from heat loss and heat_buffer
         np.testing.assert_allclose(
             results["HeatStorage.Heat_loss"][1:] - results["HeatStorage.Heat_buffer"][1:],
             -np.diff(results["HeatStorage.Stored_heat"]) / 3600.0,
-            atol=1e-8,
+            atol=epsilon,
         )
 
 
