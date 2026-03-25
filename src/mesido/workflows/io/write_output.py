@@ -1412,6 +1412,7 @@ class ScenarioOutput:
                                         filters='"assetId"=' + f"'{str(asset_id)}'",
                                         profileType=esdl.ProfileTypeEnum.OUTPUT,
                                     )
+
                                     # Assign quantity and units variable
                                     if variable in ["Heat_flow", "Pump_power"]:
                                         profile_attributes.profileQuantityAndUnit = (
@@ -1460,6 +1461,15 @@ class ScenarioOutput:
                                             f"No profile units will be written to the ESDL for: "
                                             f"{asset_name}. + {variable}"
                                         )
+
+                                    # Write the source of profiles (Optimizer)
+                                    profile_attributes.dataSource = esdl.esdl.DataSource(
+                                        id=str(uuid.uuid4()),
+                                        name="Optimizer",
+                                        description="This was created in the optimizer",
+                                        type=esdl.DataSourceTypeEnum.MODEL,
+                                    )
+                                    print("a")
 
                                 # Write result OUTPUT profiles on the optimized esdl
                                 asset.port[index_outport].profile.append(profile_attributes)

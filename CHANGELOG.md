@@ -1,10 +1,10 @@
 # [Unreleased-main] - 2026-03-12
 
 ## Added
-- xxx
+- DataSource is assigned to output profiles
 
 ## Changed
-- xxx
+- Updated pyESDL to v26.3
 
 ## Fixed
 - xxx 
