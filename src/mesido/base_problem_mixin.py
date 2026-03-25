@@ -1,4 +1,16 @@
+import numpy as np
+
+
 class BaseProblemMixin:
+
+
+    @staticmethod
+    def _symmetric_big_m_constraints(expr, slack, nominal):
+        """Return paired bigM constraints that enforce expr == 0 when slack is inactive."""
+        return [
+            ((expr + slack) / nominal, 0.0, np.inf),
+            ((expr - slack) / nominal, -np.inf, 0.0),
+        ]
 
     def goal_programming_options(self):
         """
