@@ -42,6 +42,8 @@ class ScenarioOutput:
         self.model_folder = kwargs.get("model_folder")
         self.output_folder = kwargs.get("output_folder")
         self.esdl_file_name = kwargs.get("esdl_file_name", "ESDL_file.esdl")
+        # setting for writing embedded timeseries profiles
+        self.write_result_ts_profiles = kwargs.get("write_result_ts_profiles", False)
         # Settings for influxdb when writing out result profile data to it
         # Default settings
         self.write_result_db_profiles = False
@@ -1126,23 +1128,24 @@ class ScenarioOutput:
         #   - Assets with more than 1 carrier are looped over the time steps as many times as there
         #   are different carriers connected, to ensure the correct data is written to each carrier.
         #   - Database name: input esdl id
-        #   - Measurment: carrier id
+        #   - Measurement: carrier id
         #   - Fields: profile value for the specific variable
         #   - Tags used as filters: simulationRun, assetClass, assetName, assetId, capability
 
-        if self.write_result_db_profiles:
-            logger.info("Writing asset result profile data to influxDB")
+        if self.write_result_db_profiles or self.write_result_ts_profiles:
+            logger.info(f"Writing asset result profile data to {'InfluxDB' if self.write_result_db_profiles else 'TimeSeriesProfiles'}")
             results = self.extract_results()
 
-            influxdb_conn_settings = ConnectionSettings(
-                host=self.influxdb_host,
-                port=self.influxdb_port,
-                username=self.influxdb_username,
-                password=self.influxdb_password,
-                database=output_energy_system_id,
-                ssl=self.influxdb_ssl,
-                verify_ssl=self.influxdb_verify_ssl,
-            )
+            if self.write_result_db_profiles:
+                influxdb_conn_settings = ConnectionSettings(
+                    host=self.influxdb_host,
+                    port=self.influxdb_port,
+                    username=self.influxdb_username,
+                    password=self.influxdb_password,
+                    database=output_energy_system_id,
+                    ssl=self.influxdb_ssl,
+                    verify_ssl=self.influxdb_verify_ssl,
+                )
 
             capabilities = [
                 esdl.Transport,
@@ -1305,9 +1308,9 @@ class ScenarioOutput:
                         for v in var_pops:
                             variables_two_hydraulic_system.remove(v)
 
-                        profiles = ProfileManager()
-                        profiles.profile_type = "DATETIME_LIST"
-                        profiles.profile_header = ["datetime"]  # + general_headers
+                        profile_manager = ProfileManager()
+                        profile_manager.profile_type = "DATETIME_LIST"
+                        profile_manager.profile_header = ["datetime"]  # + general_headers
 
                         # Get index of outport which will be used to assign the profile data to
                         index_outport = -1
@@ -1329,6 +1332,7 @@ class ScenarioOutput:
                             )
                             sys.exit(1)
 
+                        profile_map = {}
                         for ii in range(len(self.times())):
                             if not self.io.datetimes[ii].tzinfo:
                                 data_row = [
@@ -1366,7 +1370,7 @@ class ScenarioOutput:
                             for variable in variables_names:
                                 if ii == 0:
                                     # Set header for each column
-                                    profiles.profile_header.append(variable)
+                                    profile_manager.profile_header.append(variable)
                                     # Set profile database attributes for the esdl asset
                                     if not self.io.datetimes[0].tzinfo:
                                         start_date_time = self.io.datetimes[0].replace(
@@ -1386,21 +1390,32 @@ class ScenarioOutput:
                                     else:
                                         end_date_time = self.io.datetimes[-1]
 
-                                    profile_attributes = esdl.InfluxDBProfile(
-                                        database=output_energy_system_id,
-                                        measurement=carrier_id,
-                                        field=profiles.profile_header[-1],
-                                        port=self.influxdb_port,
-                                        host=self.influxdb_host,
-                                        startDate=start_date_time,
-                                        endDate=end_date_time,
-                                        id=str(uuid.uuid4()),
-                                        filters='"assetId"=' + f"'{str(asset_id)}'",
-                                        profileType=esdl.ProfileTypeEnum.OUTPUT,
-                                    )
+
+                                    if self.write_result_db_profiles:
+                                        esdl_profile = esdl.InfluxDBProfile(
+                                            database=output_energy_system_id,
+                                            measurement=carrier_id,
+                                            field=profile_manager.profile_header[-1],
+                                            port=self.influxdb_port,
+                                            host=self.influxdb_host,
+                                            startDate=start_date_time,
+                                            endDate=end_date_time,
+                                            id=str(uuid.uuid4()),
+                                            filters='"assetId"=' + f"'{str(asset_id)}'",
+                                            profileType=esdl.ProfileTypeEnum.OUTPUT,
+                                        )
+                                    else:
+                                        esdl_profile = esdl.TimeSeriesProfile(
+                                            name=profile_manager.profile_header[-1],
+                                            startDateTime=start_date_time,
+                                            timestep=3600,  # TODO calculate this value
+                                            id=str(uuid.uuid4()),
+                                            profileType=esdl.ProfileTypeEnum.OUTPUT,
+                                        )
+                                    profile_map[variable] = esdl_profile
                                     # Assign quantity and units variable
                                     if variable in ["Heat_flow", "Pump_power"]:
-                                        profile_attributes.profileQuantityAndUnit = (
+                                        esdl_profile.profileQuantityAndUnit = (
                                             esdl.esdl.QuantityAndUnitType(
                                                 physicalQuantity=esdl.PhysicalQuantityEnum.POWER,
                                                 unit=esdl.UnitEnum.WATT,
@@ -1412,7 +1427,7 @@ class ScenarioOutput:
                                         f"Primary.{commodity}In.H",
                                         f"Secondary.{commodity}In.H",
                                     ]:
-                                        profile_attributes.profileQuantityAndUnit = (
+                                        esdl_profile.profileQuantityAndUnit = (
                                             esdl.esdl.QuantityAndUnitType(
                                                 physicalQuantity=esdl.PhysicalQuantityEnum.PRESSURE,
                                                 unit=esdl.UnitEnum.PASCAL,
@@ -1424,7 +1439,7 @@ class ScenarioOutput:
                                         f"Primary.{commodity}In.Q",
                                         f"Secondary.{commodity}In.Q",
                                     ]:
-                                        profile_attributes.profileQuantityAndUnit = (
+                                        esdl_profile.profileQuantityAndUnit = (
                                             esdl.esdl.QuantityAndUnitType(
                                                 physicalQuantity=esdl.PhysicalQuantityEnum.FLOW,
                                                 unit=esdl.UnitEnum.CUBIC_METRE,
@@ -1433,7 +1448,7 @@ class ScenarioOutput:
                                             )
                                         )
                                     elif variable in ["PostProc.Velocity"]:
-                                        profile_attributes.profileQuantityAndUnit = (
+                                        esdl_profile.profileQuantityAndUnit = (
                                             esdl.esdl.QuantityAndUnitType(
                                                 physicalQuantity=esdl.PhysicalQuantityEnum.SPEED,
                                                 unit=esdl.UnitEnum.METRE,
@@ -1448,7 +1463,7 @@ class ScenarioOutput:
                                         )
 
                                 # Write result OUTPUT profiles on the optimized esdl
-                                asset.port[index_outport].profile.append(profile_attributes)
+                                asset.port[index_outport].profile.append(esdl_profile)
 
                                 # Add variable values in new column
                                 conversion_factor = 0.0
@@ -1460,38 +1475,45 @@ class ScenarioOutput:
                                     conversion_factor = GRAVITATIONAL_CONSTANT * 988.0
                                 else:
                                     conversion_factor = 1.0
+                                value = None
                                 if variable not in ["PostProc.Velocity", "PostProc.Pressure"]:
-                                    data_row.append(
-                                        results[f"{asset_name}." + variable][ii] * conversion_factor
-                                    )
+
+                                    value = results[f"{asset_name}." + variable][ii] * conversion_factor
+                                    data_row.append(value)
                                 # The variable evaluation below seems unnecessary, but it would be
                                 # used we expand the list of post process type variables
                                 elif variable in ["PostProc.Velocity", "PostProc.Pressure"]:
-                                    data_row.append(post_processed[variable][ii])
+                                    value = post_processed[variable][ii]
+                                    data_row.append(value)
 
-                            profiles.profile_data_list.append(data_row)
-                        # end time steps
-                        profiles.num_profile_items = len(profiles.profile_data_list)
-                        profiles.start_datetime = profiles.profile_data_list[0][0]
-                        profiles.end_datetime = profiles.profile_data_list[-1][0]
+                                if self.write_result_ts_profiles:
+                                    profile_map[variable].values.append(value)
 
-                        influxdb_profile_manager = InfluxDBProfileManager(
-                            influxdb_conn_settings, profiles
-                        )
+                            profile_manager.profile_data_list.append(data_row)
 
-                        optim_simulation_tag = {
-                            "simulationRun": simulation_id,
-                            "simulation_type": type(self).__name__,
-                            "assetId": asset_id,
-                            "assetName": asset_name,
-                            "assetClass": asset_class,
-                            "capability": capability,
-                        }
-                        _ = influxdb_profile_manager.save_influxdb(
-                            measurement=carrier_id,
-                            field_names=influxdb_profile_manager.profile_header[1:],
-                            tags=optim_simulation_tag,
-                        )
+                        if self.write_result_db_profiles:
+                            # end time steps
+                            profile_manager.num_profile_items = len(profile_manager.profile_data_list)
+                            profile_manager.start_datetime = profile_manager.profile_data_list[0][0]
+                            profile_manager.end_datetime = profile_manager.profile_data_list[-1][0]
+
+                            influxdb_profile_manager = InfluxDBProfileManager(
+                                influxdb_conn_settings, profile_manager
+                            )
+
+                            optim_simulation_tag = {
+                                "simulationRun": simulation_id,
+                                "simulation_type": type(self).__name__,
+                                "assetId": asset_id,
+                                "assetName": asset_name,
+                                "assetClass": asset_class,
+                                "capability": capability,
+                            }
+                            _ = influxdb_profile_manager.save_influxdb(
+                                measurement=carrier_id,
+                                field_names=influxdb_profile_manager.profile_header[1:],
+                                tags=optim_simulation_tag,
+                            )
 
                     # -- Test tags -- # do not delete - to be used in test case
                     # prof_loaded_from_influxdb = InfluxDBProfileManager(influxdb_conn_settings)
