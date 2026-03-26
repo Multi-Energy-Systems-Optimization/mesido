@@ -7,7 +7,7 @@
         <port xsi:type="esdl:OutPort" id="eb68d4fe-b361-4e64-9f54-a1e05e5712ee" name="Out" carrier="435a0034-fab0-4e7e-9a17-edf8de9a2b11_ret" connectedTo="0f4bf90b-218d-4d45-a83e-97a8a6a187af"/>
         <geometry xsi:type="esdl:Point" lat="52.086586960901776" CRS="WGS84" lon="4.398479461669923"/>
       </asset>
-      <asset xsi:type="esdl:HeatStorage" id="81ef7326-1362-4dcb-a8df-dded30a7a428" name="HeatStorage" maxChargeRate="1000000.0" maxDischargeRate="1000000.0" volume="1000.0" chargeEfficiency="0.9">
+      <asset xsi:type="esdl:HeatStorage" id="81ef7326-1362-4dcb-a8df-dded30a7a428" name="HeatStorage" maxChargeRate="500000.0" maxDischargeRate="400000.0" volume="1000.0" chargeEfficiency="0.9">
         <geometry xsi:type="esdl:Point" lat="52.08748353827592" lon="4.392256736755372"/>
         <port xsi:type="esdl:InPort" id="850f5c11-d307-4450-af57-c8e833638bec" name="In" connectedTo="adcc65af-b034-4dcc-b6e4-3ee5bd4c1116" carrier="435a0034-fab0-4e7e-9a17-edf8de9a2b11"/>
         <port xsi:type="esdl:OutPort" id="7841e5b7-a039-4170-8431-b1875c557e0f" name="Out" connectedTo="ae782fc6-ff48-4a22-b6c5-0c2b3bff80d3" carrier="435a0034-fab0-4e7e-9a17-edf8de9a2b11_ret"/>

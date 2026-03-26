@@ -421,17 +421,18 @@ class Buffer(TestCase):
         4. the heat flow balance of buffer
         5. buffer charging_efficiency is considered
         6. buffer stored heat calculation is linked to Heat_loss and Heat_buffer
+        7. maxChargeRate and maxDischargeRate are parsed
         """
 
-        import models.simple_buffer.src.simple_buffer as example
-        from models.unit_cases.case_3a.src.run_3a import HeatProblem
+        import models.heat_electricity_components.src.run_case as example
+        from models.heat_electricity_components.src.run_case import HeatBufferProblem
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
         epsilon = 1e-8
 
         heat_problem = run_esdl_mesido_optimization(
-            HeatProblem,
+            HeatBufferProblem,
             base_folder=base_folder,
             esdl_file_name="sourcesink_with_heater_ebuffer.esdl",
             esdl_parser=ESDLFileParser,
@@ -470,6 +471,17 @@ class Buffer(TestCase):
             results["HeatStorage.Heat_loss"][1:] - results["HeatStorage.Heat_buffer"][1:],
             -np.diff(results["HeatStorage.Stored_heat"]) / 3600.0,
             atol=epsilon,
+        )
+
+        # Check maxChargeRate and maxDischargeRate are parsed from esdl correct
+        esdl_asset = heat_problem.esdl_assets[heat_problem.esdl_asset_name_to_id_map["HeatStorage"]]
+        np.testing.assert_allclose(
+            esdl_asset.attributes["maxChargeRate"],
+            heat_problem.bounds()["HeatStorage.Heat_flow_charging"][1],
+        )
+        np.testing.assert_allclose(
+            esdl_asset.attributes["maxDischargeRate"],
+            heat_problem.bounds()["HeatStorage.Heat_flow_discharging"][1],
         )
 
 
