@@ -1,11 +1,11 @@
-# [Unreleased-main] - 2026-03-12
+# [Unreleased-main] - 2026-03-26
 
 ## Added
 - Electricity consumption calculation of geothermal assets, using the defined COP. 
 - Geothermal electricity asset that can be connected to the electricity grid.
 
 ## Changed
-- xxx
+- Reduced the number of constraints required for headloss calculation with LINEARIZED_N_LINES_EQUALITY setting. 
 
 ## Fixed
 - xxx 

@@ -828,7 +828,8 @@ class HeadLossClass:
                     for ii_line_used in range(len(pipe_linear_line_segment)):
                         ii_start = ii_line_used * n_timesteps
                         ii_end = ii_start + n_timesteps
-                        # lower bound constraint is already added above as for the inequality.
+                        # lower bound constraint (weak inequality constraint, value >= 0.0) is
+                        # already added in the LINEARIZED_N_LINES_WEAK_INEQUALITY section.
                         constraints.append(
                             (
                                 (
