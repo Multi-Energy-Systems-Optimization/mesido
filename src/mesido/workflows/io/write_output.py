@@ -1469,7 +1469,6 @@ class ScenarioOutput:
                                         description="This was created in the optimizer",
                                         type=esdl.DataSourceTypeEnum.MODEL,
                                     )
-                                    print("a")
 
                                 # Write result OUTPUT profiles on the optimized esdl
                                 asset.port[index_outport].profile.append(profile_attributes)
