@@ -7,7 +7,7 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
-from utils_tests import electric_power_conservation_test
+from utils_tests import demand_matching_test, electric_power_conservation_test
 
 # TODO: still have to make test where elecitricity direction is switched:
 # e.g. 2 nodes, with at each node a producer and consumer, first one node medium demand, second
@@ -15,6 +15,63 @@ from utils_tests import electric_power_conservation_test
 
 
 class TestMILPElectricSourceSink(TestCase):
+
+    def test_source_sink_pv_csv_profile(self):
+        """
+        Tests for an electricity network that consist out of 1 PV  and 1 Electricity Producer
+        as electricity sources, a cable and a sink. PV has profile that is read from input csv.
+        Electricity Producer has no profile constraint.
+        We check that scaled PV constraint profile is upper bound of PV production
+        and profile constraint scaling functionality in asset sizing works.
+
+        Checks:
+        - Check demand matching and energy conservation
+        - Check profile constraint scaling functionality works.
+        """
+
+        import models.unit_cases_electricity.source_sink_cable.src.example as example
+        from models.unit_cases_electricity.source_sink_cable.src.example import ElectricityProblemPV
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        solution = run_esdl_mesido_optimization(
+            ElectricityProblemPV,
+            base_folder=base_folder,
+            esdl_file_name="pv_with_csv_profile.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_with_pv.csv",
+        )
+        results = solution.extract_results()
+
+        tol = 1e-6
+
+        demand_matching_test(solution, results)
+        electric_power_conservation_test(solution, results)
+
+        # Test that scaled PV constraint profile is upper bound of
+        # PV production and profile constraint scaling functionality
+        # in asset sizing works
+        profile_non_scaled = solution.get_timeseries("PV.maximum_electricity_source").values
+        max_profile_non_scaled = max(profile_non_scaled)
+        profile_scaled = profile_non_scaled / max_profile_non_scaled
+
+        # Check that realized PV profile is scaled version of PV profile constraint
+        np.testing.assert_array_less(
+            results["PV.Electricity_source"], profile_scaled * results["PV__max_size"] + tol
+        )
+
+        # Check that maximum of realized PV profile smaller than maximum of PV profile constraint
+        np.testing.assert_array_less(
+            results["PV__max_size"],
+            max(solution.get_timeseries("PV.maximum_electricity_source").values) + tol,
+        )
+
+        # Check electricity producers max sizes are equal
+        np.testing.assert_allclose(
+            results["PV__max_size"], results["ElectricityProducer_edde__max_size"]
+        )
+
     def test_source_sink(self):
         """
         Tests for an electricity network that consist out of a source, a cable and a sink.
