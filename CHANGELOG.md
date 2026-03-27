@@ -3,6 +3,7 @@
 ## Added
 - Electricity consumption calculation of geothermal assets, using the defined COP. 
 - Geothermal electricity asset that can be connected to the electricity grid.
+- Addition of heat buffer asset with electric charging (i.e. HeatBufferElec).
 
 ## Changed
 - Reduced the number of constraints required for headloss calculation with LINEARIZED_N_LINES_EQUALITY setting.
@@ -19,7 +20,6 @@
 - Maximum profile constraint for PV asset is considered in PV sizing
 - Cater for input via esdl constraints to specify the upper limit for OPTIONAL assets in DTK
 - Initial implementation of adaptable pipe DN lower limit per pipe
-- Addition of heat buffer asset with electric charging (i.e. HeatBufferElec).
 
 ## Changed
 - Speed-up timeseries check in from InfluxDB

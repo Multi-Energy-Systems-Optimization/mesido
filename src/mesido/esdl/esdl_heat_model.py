@@ -1499,9 +1499,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             modifiers["elec_power_nominal"] = max_supply
             modifiers["cop"] = asset.attributes["COP"] if asset.attributes["COP"] else 0.0
             if len(asset.in_ports) == 2:
-                for port in asset.in_ports:
-                    if isinstance(port.carrier, esdl.ElectricityCommodity):
-                        min_voltage = port.carrier.voltage
+                min_voltage = self._get_min_voltage(asset)
                 i_max, i_nom = self._get_connected_i_nominal_and_max(asset)
                 modifiers.update(
                     min_voltage=min_voltage,

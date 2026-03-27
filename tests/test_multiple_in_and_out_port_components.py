@@ -421,7 +421,7 @@ class Buffer(TestCase):
         4. the heat flow balance of buffer
         5. buffer charging_efficiency is considered
         6. buffer stored heat calculation is linked to Heat_loss and Heat_buffer
-        7. maxChargeRate and maxDischargeRate are parsed
+        7. upper bounds of Heat_elec_charging and Heat_flow_discharging
         """
 
         import models.heat_electricity_components.src.run_case as example
@@ -473,11 +473,12 @@ class Buffer(TestCase):
             atol=epsilon,
         )
 
-        # Check maxChargeRate and maxDischargeRate are parsed from esdl correct
+        # Check maxChargeRate and maxDischargeRate are parsed and define the upper bounds
+        # of Heat_elec_charging and Heat_flow_discharging, respectively
         esdl_asset = heat_problem.esdl_assets[heat_problem.esdl_asset_name_to_id_map["HeatStorage"]]
         np.testing.assert_allclose(
             esdl_asset.attributes["maxChargeRate"],
-            heat_problem.bounds()["HeatStorage.Heat_flow_charging"][1],
+            heat_problem.bounds()["HeatStorage.Heat_elec_charging"][1],
         )
         np.testing.assert_allclose(
             esdl_asset.attributes["maxDischargeRate"],

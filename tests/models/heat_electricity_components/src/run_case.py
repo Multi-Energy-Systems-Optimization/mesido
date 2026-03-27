@@ -16,7 +16,7 @@ from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassG
 from rtctools.util import run_optimization_problem
 
 
-class TargetDemandGoal2(Goal):
+class TargetDemandGoal(Goal):
     priority = 1
 
     order = 2
@@ -56,7 +56,7 @@ class _GoalsAndOptions:
             target = self.get_timeseries(f"{demand}.target_heat_demand")
             state = f"{demand}.Heat_demand"
 
-            goals.append(TargetDemandGoal2(state, target))
+            goals.append(TargetDemandGoal(state, target))
 
         for s in self.energy_system_components["heat_source"]:
             goals.append(MinimizeSourcesHeatGoal(s))
