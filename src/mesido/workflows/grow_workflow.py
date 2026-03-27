@@ -419,12 +419,6 @@ class EndScenarioSizing(
     def history(self, ensemble_member):
         return AliasDict(self.alias_relation)
 
-    def __state_vector_scaled(self, variable, ensemble_member):
-        canonical, sign = self.alias_relation.canonical_signed(variable)
-        return (
-            self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
-        )
-
     def solver_options(self):
         options = super().solver_options()
         if options["solver"] == "highs":
