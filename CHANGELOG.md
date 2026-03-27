@@ -1,9 +1,12 @@
-# [Unreleased-main] - 2026-03-12
+# [Unreleased-main] - 2026-03-26
 
 ## Added
+- Electricity consumption calculation of geothermal assets, using the defined COP. 
+- Geothermal electricity asset that can be connected to the electricity grid.
 - DataSource is assigned to output profiles
 
 ## Changed
+- Reduced the number of constraints required for headloss calculation with LINEARIZED_N_LINES_EQUALITY setting. 
 - Updated pyESDL to v26.3
 
 ## Fixed
