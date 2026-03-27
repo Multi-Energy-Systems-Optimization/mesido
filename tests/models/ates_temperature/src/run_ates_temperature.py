@@ -203,22 +203,12 @@ class HeatProblem(
             # stored_volume only to be used if temperature loss ates is also dependent on
             # stored_volume instead of stored_heat
             constraints.append((heat_ates[0], 0.0, 0.0))
-            ates_temperature_disc = self.__state_vector_scaled(
+            ates_temperature_disc = self._BaseProblemMixin__state_vector_scaled(
                 f"{a}__temperature_ates_disc", ensemble_member
             )
             constraints.append(((ates_temperature_disc[-1] - ates_temperature_disc[0]), 0.0, 0.0))
 
         return constraints
-
-    def __state_vector_scaled(self, variable, ensemble_member):
-        """
-        This functions returns the casadi symbols scaled with their nominal for the entire time
-        horizon.
-        """
-        canonical, sign = self.alias_relation.canonical_signed(variable)
-        return (
-            self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
-        )
 
     def read(self):
         """
