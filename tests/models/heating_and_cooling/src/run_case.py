@@ -10,20 +10,14 @@ from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.workflows import EndScenarioSizingStaged, run_end_scenario_sizing
 from mesido.workflows.utils.error_types import NetworkErrors
 
-logger = logging.getLogger("mesido")
-logger.setLevel(logging.INFO)
 
+root_folder = os.path.join(Path(__file__).resolve().parent.parent.parent.parent)
+sys.path.insert(1, root_folder)
 
 if __name__ == "__main__":
 
-    root_folder = os.path.join(Path(__file__).resolve().parent.parent.parent.parent, "tests")
-    sys.path.insert(1, root_folder)
-
-    base_folder = Path(__file__).resolve().parent.parent
-
     solution = run_end_scenario_sizing(
         EndScenarioSizingStaged,
-        base_folder=base_folder,
         esdl_file_name=("Heating and cooling and elec network with return network with costs.esdl"),
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,
