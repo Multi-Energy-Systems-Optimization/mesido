@@ -1,6 +1,7 @@
 import datetime
 import logging
 import sys
+import threading
 from collections import defaultdict
 from pathlib import Path
 from typing import Dict, Optional, Set, Tuple
@@ -266,6 +267,7 @@ class InfluxDBProfileReader(BaseProfileReader):
         file_path: Optional[Path],
         use_esdl_ranged_contraint: bool = False,
         database_credentials: Optional[Dict[str, Tuple[str, str]]] = None,
+        workers_db_profile_reading: int = 1,
     ):
         super().__init__(
             energy_system=energy_system,
@@ -277,6 +279,9 @@ class InfluxDBProfileReader(BaseProfileReader):
             database_credentials if database_credentials is not None else {"": ("", "")}
         )
         self._database_profilemanager = list()
+        self._lock = threading.Lock()
+        self.workers_db_profile_reading = workers_db_profile_reading
+
 
     def _load_profiles_from_source(
         self,
@@ -322,28 +327,23 @@ class InfluxDBProfileReader(BaseProfileReader):
                 unique_profiles.append(profile)
 
         # # Open parallel processes to load all unique profiles parallely
-        # with ThreadPoolExecutor(max_workers=4) as executor:
-        #     unique_series = list(executor.map(self._load_profile_timeseries_from_database, unique_profiles))
-        #     executor.map(self._check_profile_time_series, unique_series, unique_profiles)
-                unique_series.append(
-                    self._load_profile_timeseries_from_database(profile=unique_profiles[-1])
-                )
-                self._check_profile_time_series(
-                    profile_time_series=unique_series[-1], profile=unique_profiles[-1]
-                )
-                if self._reference_datetimes is None:
-                    # TODO: since the previous function ensures it's a date time index, I'm not sure
-                    #  how to get rid of this type checking warning
-                    self._reference_datetimes = unique_series[-1].index
-                else:
-                    if not all(unique_series[-1].index == self._reference_datetimes):
-                        raise RuntimeError(
-                            f"Obtained a profile for asset {profile.field} with a "
-                            f"timeseries index that doesn't match the timeseries of "
-                            f"other assets. Please ensure that the profile that is "
-                            f"specified to be loaded for each asset covers exactly the "
-                            f"same timeseries. "
-                        )
+        with ThreadPoolExecutor(max_workers=self.workers_db_profile_reading) as executor:
+            unique_series = list(executor.map(self._load_profile_timeseries_from_database, unique_profiles))
+            executor.map(self._check_profile_time_series, unique_series, unique_profiles)
+
+            if self._reference_datetimes is None:
+                # TODO: since the previous function ensures it's a date time index, I'm not sure
+                #  how to get rid of this type checking warning
+                self._reference_datetimes = unique_series[-1].index
+            else:
+                if not all(unique_series[-1].index == self._reference_datetimes):
+                    raise RuntimeError(
+                        f"Obtained a profile for asset {profile.field} with a "
+                        f"timeseries index that doesn't match the timeseries of "
+                        f"other assets. Please ensure that the profile that is "
+                        f"specified to be loaded for each asset covers exactly the "
+                        f"same timeseries. "
+                    )
         # Loop trough all the requried profiles in the energy system and assign the profile data:
         # - series: use the unique series data, without reading from the database again
         # - other profile info: get it from the specific profile
@@ -437,7 +437,7 @@ class InfluxDBProfileReader(BaseProfileReader):
         """
         # Import is done under the function instead of the top of the file
         # to avoid circular import issue
-        from mesido.workflows.utils.error_types import NetworkErrors, potential_error_to_error
+        # from mesido.workflows.utils.error_types import NetworkErrors, potential_error_to_error
 
         if profile.id in self._df:
             return self._df[profile.id]
@@ -471,26 +471,30 @@ class InfluxDBProfileReader(BaseProfileReader):
         # re-use that object that was already created and been stored in the list.
         time_series_data = next(filter(lambda x:x.database_settings==conn_settings, self._database_profilemanager), None)
         if not time_series_data:
-            try:
-                time_series_data = InfluxDBProfileManager(conn_settings)
-                time_series_data.load_influxdb(
-                    profile.measurement,
-                    [profile.field],
-                    profile.startDate,
-                    profile.endDate,
-                )
-                # Storing the InfluxDBProfileManager object in the list
-                self._database_profilemanager.append(time_series_data)
-            except Exception:
-                container = profile.eContainer()
-                asset = container.energyasset
-                get_potential_errors().add_potential_issue(
-                    MesidoAssetIssueType.ASSET_PROFILE_AVAILABILITY,
-                    asset.id,
-                    f"Asset named {asset.name}: Database {profile.database}"
-                    f" is not available in the host.",
-                )
-                potential_error_to_error(NetworkErrors.HEAT_NETWORK_ERRORS)
+            with self._lock:
+                time_series_data = next(filter(lambda x: x.database_settings == conn_settings,
+                                               self._database_profilemanager), None)
+                if not time_series_data:
+                    try:
+                        time_series_data = InfluxDBProfileManager(conn_settings)
+                        time_series_data.load_influxdb(
+                            profile.measurement,
+                            [profile.field],
+                            profile.startDate,
+                            profile.endDate,
+                        )
+                        # Storing the InfluxDBProfileManager object in the list
+                        self._database_profilemanager.append(time_series_data)
+                    except Exception:
+                        container = profile.eContainer()
+                        asset = container.energyasset
+                        get_potential_errors().add_potential_issue(
+                            MesidoAssetIssueType.ASSET_PROFILE_AVAILABILITY,
+                            asset.id,
+                            f"Asset named {asset.name}: Database {profile.database}"
+                            f" is not available in the host.",
+                        )
+                        potential_error_to_error(NetworkErrors.HEAT_NETWORK_ERRORS)
         else:
             time_series_data.load_influxdb(
                 profile.measurement,
