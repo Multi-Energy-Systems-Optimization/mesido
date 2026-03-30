@@ -1,7 +1,6 @@
 import os
 import sys
 
-import logging
 from pathlib import Path
 
 from mesido.esdl.esdl_parser import ESDLFileParser
@@ -9,7 +8,6 @@ from mesido.esdl.profile_parser import ProfileReaderFromFile
 
 from mesido.workflows import EndScenarioSizingStaged, run_end_scenario_sizing
 from mesido.workflows.utils.error_types import NetworkErrors
-
 
 root_folder = os.path.join(Path(__file__).resolve().parent.parent.parent.parent)
 sys.path.insert(1, root_folder)
