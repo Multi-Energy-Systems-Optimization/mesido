@@ -2,6 +2,7 @@ import base64
 import copy
 import dataclasses
 import logging
+import os
 import sys
 from datetime import timedelta
 from pathlib import Path
@@ -15,6 +16,7 @@ from mesido.component_type_mixin import (
 from mesido.esdl.asset_to_component_base import _AssetToComponentBase
 from mesido.esdl.common import Asset
 from mesido.esdl.edr_pipe_class import EDRGasPipeClass, EDRPipeClass
+from mesido.esdl.esdl_additional_vars_mixin import get_asset_contraints
 from mesido.esdl.esdl_heat_model import ESDLHeatModel
 from mesido.esdl.esdl_model_base import _ESDLModelBase
 from mesido.esdl.esdl_parser import ESDLStringParser
@@ -45,7 +47,7 @@ DEFAULT_START_TIMESTAMP = "2017-01-01T00:00:00+00:00"
 DEFAULT_END_TIMESTAMP = "2018-01-01T00:00:00+00:00"
 
 
-class DBAccesType(StrEnum):
+class DBAccessType(StrEnum):
     """
     Enumeration for database access types
     """
@@ -71,14 +73,19 @@ class ESDLMixin(
     for example demand profiles.
     """
 
+    csv_ensemble_mode: bool = False
+
     esdl_run_info_path: Path = None
 
     esdl_pi_validate_timeseries: bool = False
 
     __max_supply_temperature: Optional[float] = None
 
+    __esdl_ranged_constraint_usage: bool = False
+
     # TODO: remove this once ESDL allows specifying a minimum pipe size for an optional pipe.
     __minimum_pipe_size_name: str = "DN150"
+    __use_user_defined_minimum_pipe_size: bool = False
 
     def __init__(self, *args, **kwargs) -> None:
         """
@@ -101,6 +108,8 @@ class ESDLMixin(
         kwargs : esdl_string or esdl_file_name must be provided
         """
 
+        self.__use_esdl_ranged_constraint: bool = kwargs.get("use_esdl_ranged_constraint", False)
+
         self.esdl_parser_class: type = kwargs.get("esdl_parser", ESDLStringParser)
         esdl_string = kwargs.get("esdl_string", None)
         model_folder = kwargs.get("model_folder")
@@ -118,8 +127,8 @@ class ESDLMixin(
         self.__energy_system_handler: esdl.esdl_handler.EnergySystemHandler = esdl_parser.get_esh()
         self._esdl_measures: Dict[str, Asset] = esdl_parser.get_measures()
         self._database_credentials: Optional[Dict[str, Tuple[str, str]]] = {
-            DBAccesType.READ: [],
-            DBAccesType.WRITE: [],
+            DBAccessType.READ: [],
+            DBAccessType.WRITE: [],
         }
 
         profile_reader_class = kwargs.get("profile_reader", InfluxDBProfileReader)
@@ -131,7 +140,7 @@ class ESDLMixin(
         database_connection_info = kwargs.get("database_connections", {})
         read_only_dbase_credentials: Dict[str, Tuple[str, str]] = {}  # for profile reader
         for dbconnection in database_connection_info:
-            if dbconnection["access_type"] != DBAccesType.WRITE:
+            if dbconnection["access_type"] != DBAccessType.WRITE:
                 database_host_port = "{}:{}".format(
                     dbconnection["influxdb_host"],
                     dbconnection["influxdb_port"],
@@ -140,7 +149,7 @@ class ESDLMixin(
                     dbconnection["influxdb_username"],
                     dbconnection["influxdb_password"],
                 )
-            if dbconnection["access_type"] != DBAccesType.READ_WRITE:
+            if dbconnection["access_type"] != DBAccessType.READ_WRITE:
                 self._database_credentials[dbconnection["access_type"]].append(
                     {
                         "influxdb_host": dbconnection["influxdb_host"],
@@ -151,8 +160,8 @@ class ESDLMixin(
                         "influxdb_verify_ssl": dbconnection["influxdb_verify_ssl"],
                     }
                 )
-            elif dbconnection["access_type"] == DBAccesType.READ_WRITE:
-                both_read_and_write = [DBAccesType.READ, DBAccesType.WRITE]
+            elif dbconnection["access_type"] == DBAccessType.READ_WRITE:
+                both_read_and_write = [DBAccessType.READ, DBAccessType.WRITE]
                 for rw in both_read_and_write:
                     self._database_credentials[rw].append(
                         {
@@ -167,7 +176,7 @@ class ESDLMixin(
             else:
                 logger.error(
                     f"Database access type {dbconnection['access_type']} is not recognized. "
-                    f"Please use DBAccesType.READ, DBAccesType.WRITE or DBAccesType.READ_WRITE."
+                    f"Please use DBAccessType.READ, DBAccessType.WRITE or DBAccessType.READ_WRITE."
                 )
                 sys.exit(1)
 
@@ -179,11 +188,13 @@ class ESDLMixin(
                 energy_system=self.__energy_system_handler.energy_system,
                 file_path=input_file_path,
                 database_credentials=read_only_dbase_credentials,
+                use_esdl_ranged_contraint=self._ESDLMixin__use_esdl_ranged_constraint,
             )
         else:  # read from a file, no database credentials needed
             self.__profile_reader: BaseProfileReader = profile_reader_class(
                 energy_system=self.__energy_system_handler.energy_system,
                 file_path=input_file_path,
+                use_esdl_ranged_contraint=self._ESDLMixin__use_esdl_ranged_constraint,
             )
 
         # This way we allow users to adjust the parsed ESDL assets
@@ -194,7 +205,13 @@ class ESDLMixin(
         name_to_id_map = {a.name: a.id for a in assets.values()}
 
         if isinstance(self, PhysicsMixin):
-            self.__model = ESDLHeatModel(assets, name_to_id_map, **self.esdl_heat_model_options())
+            self.__model = ESDLHeatModel(
+                assets=assets,
+                name_to_id_map=name_to_id_map,
+                esdl_version=self._ESDLMixin__energy_system_handler.energy_system.esdlVersion,
+                use_esdl_ranged_constraint=self._ESDLMixin__use_esdl_ranged_constraint,
+                **self.esdl_heat_model_options(),
+            )
         else:
             assert isinstance(self, QTHMixin)
 
@@ -255,6 +272,83 @@ class ESDLMixin(
                 )
             self.name_to_esdl_id_map[esdl_asset.name] = esdl_id
 
+    def find_index_of_pipe_or_next_up(self, pipes, target_dn):
+        """
+        Find the index of the first pipe in the ordered pipes that meets the specified size
+        """
+        for ii, p in enumerate(pipes):
+            if float(p.name.replace("DN", "")) >= target_dn:
+                return ii
+        return None
+
+    def _get_pipe_max_size_input(
+        self,
+        asset: Asset,
+    ) -> str:
+        """
+        This function gets the upper limit for the pipe DN. Either from the asset attribute input
+        DN size or from the PipeDiameterConstraint, depending on what is applicable.
+        Args:
+            asset: mesido common asset with all attributes
+            max_size_attribute: type of attribute e.g. powrr, volume etc.
+            max_value_attribute: value that of the attribute,
+            constraint_attribute: Does the atrribute value originate from a constraint
+        """
+        # Backward compatibility:
+        # PipeDiameterConstraint vs pipe diameter attribute, as the value to be used for the
+        # maximum size of the pipe. We check the esdl version to determine which attribute to use
+        # for the maximum size of the pipe.
+        # While the front end is being updated to accomodate easy use of PipeDiameterConstraint:
+        # - If the esdl version caters for PipeDiameterConstraint:
+        #   - check if a constraint exists, then use it.
+        #   - if the contraint does not exist then use the diameter specific in the asset attribute
+        # - If PipeDiameterConstraint does not
+        esdl_version = self._ESDLMixin__energy_system_handler.energy_system.esdlVersion
+        # "v2602" contains the items needed for the ranged constraint implementation in MESIDO
+        if esdl_version is not None and esdl_version >= "v2602":
+            pipe_constraint, qty_pipe_constraint = get_asset_contraints(
+                self, asset, esdl.PipeDiameterConstraint
+            )
+
+            if qty_pipe_constraint > 1:
+                logger.exit(
+                    f"More than 1 pipe diameter constraint has been specified to "
+                    f"pipe named {asset.name}, currenlty only the 1st constraint is being used"
+                )
+                exit(1)
+            elif (
+                qty_pipe_constraint == 0
+                or pipe_constraint[0].maximum == esdl.PipeDiameterEnum.VALUE_SPECIFIED
+            ):
+                logger.warning(
+                    "Expected a pipe diameter contraint (upper size limit) for pipe named "
+                    f"{asset.name}, but none has been specified. Therefore, the pipe diameter "
+                    "specified in the asset attribute is being used."
+                )
+                # Do not delete the code below. This will be enforced late, once the front end has
+                # been updated for this
+
+                # get_potential_errors().add_potential_issue(
+                #     MesidoAssetIssueType.ASSET_UPPER_LIMIT,
+                #     asset.id,
+                #     f"Pipe named {asset.name}: The upper limit of the pipe size has to be
+                # specified via a maximum value in a pipe diameter constraint."
+                # )
+                # Raise the potential error here if applicable, with feedback to user
+                # Else a normal error exit might occer which will not give feedback to the user
+                # potential_error_to_error(self._error_type_check)
+
+                return asset.attributes["diameter"].name
+            else:
+                logger.warning(
+                    f"For pipe named {asset.name}, the pipe diameter constraint max value is "
+                    "used for the pipe's diameter upper limit, instead of the pipe diameter "
+                    "specified (if any) in the asset attribute."
+                )
+                return pipe_constraint[0].maximum.name
+        else:
+            return asset.attributes["diameter"].name
+
     def __override_pipe_classes_dicts(
         self,
         asset: Asset,
@@ -272,16 +366,28 @@ class ESDLMixin(
             c = override_classes[p] = []
             c.append(no_pipe_class)
 
-            min_size = self.__minimum_pipe_size_name
-            min_size_idx = [idx for idx, pipe in enumerate(pipe_classes) if pipe.name == min_size]
-            assert len(min_size_idx) == 1
-            min_size_idx = min_size_idx[0]
+            max_size_name = self._get_pipe_max_size_input(asset)
 
-            max_size = asset.attributes["diameter"].name
-
-            max_size_idx = [idx for idx, pipe in enumerate(pipe_classes) if pipe.name == max_size]
+            max_size_idx = [
+                idx for idx, pipe in enumerate(pipe_classes) if pipe.name == max_size_name
+            ]
             assert len(max_size_idx) == 1
             max_size_idx = max_size_idx[0]
+
+            # Update the minimum pipe DN size if user specified limit is allowed
+            # TODO: in the future the lower limit will make use of PipeDiameterConstriant
+            if self._ESDLMixin__use_user_defined_minimum_pipe_size:
+                user_defined_lower_limit_dn_mm = 40.0
+                pipe_dn_max_vs_min_ratio = 10.0  # Relates to area ratio of 100.0
+                max_size_dn_mm = float(pipe_classes[max_size_idx].name.replace("DN", ""))
+                min_dn_by_factor_mm = max_size_dn_mm / pipe_dn_max_vs_min_ratio
+                min_dn_mm = max(min_dn_by_factor_mm, user_defined_lower_limit_dn_mm)
+                min_size_idx = self.find_index_of_pipe_or_next_up(pipe_classes, min_dn_mm)
+            else:  # use default minimum pipe DN size
+                min_size_idx = self.find_index_of_pipe_or_next_up(
+                    pipe_classes, float(self.__minimum_pipe_size_name.replace("DN", ""))
+                )
+            assert min_size_idx
 
             if max_size_idx < min_size_idx:
                 logger.warning(
@@ -338,6 +444,11 @@ class ESDLMixin(
                             pipe_classes[i],
                             investment_costs=pipe_diameter_cost_map[pipe_class.name],
                         )
+                        if (
+                            not self._ESDLMixin__use_user_defined_minimum_pipe_size
+                            and float(pipe_classes[i].name.replace("DN", "")) != 20.0
+                        ):
+                            self._ESDLMixin__use_user_defined_minimum_pipe_size = True
                     else:
                         del pipe_classes[i]
 
@@ -691,6 +802,19 @@ class ESDLMixin(
         None
         """
         super().read()
+        ensemble_size = 1
+        self.__ensemble = None
+        if self.csv_ensemble_mode:
+            self.__ensemble = np.genfromtxt(
+                os.path.join(self._input_folder, "ensemble.csv"),
+                delimiter=",",
+                deletechars="",
+                dtype=None,
+                names=True,
+                encoding=None,
+            )
+            ensemble_size = len(self.__ensemble)
+
         energy_system_components = self.energy_system_components
         esdl_carriers = self.esdl_carriers
         self.hot_cold_pipe_relations()
@@ -701,7 +825,8 @@ class ESDLMixin(
             esdl_asset_id_to_name_map=self.esdl_asset_id_to_name_map,
             esdl_assets=self.esdl_assets,
             carrier_properties=esdl_carriers,
-            ensemble_size=self.ensemble_size,
+            ensemble_size=ensemble_size,
+            ensemble=self.__ensemble,
         )
 
     def write(self) -> None:
@@ -826,3 +951,9 @@ class ESDLMixin(
                 filtered_assets[asset_id] = asset_type
 
         return filtered_assets
+
+    def ensemble_member_probability(self, ensemble_member):
+        if self.csv_ensemble_mode:
+            return self.__ensemble["probability"][ensemble_member]
+        else:
+            return 1.0

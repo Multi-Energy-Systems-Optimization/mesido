@@ -3,7 +3,7 @@ import logging
 
 import esdl
 
-from mesido.esdl.esdl_mixin import DBAccesType
+from mesido.esdl.esdl_mixin import DBAccessType
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.head_loss_class import HeadLossOption
 from mesido.techno_economic_mixin import TechnoEconomicMixin
@@ -241,8 +241,12 @@ class NetworkSimulator(
         constraints = super().constraints(ensemble_member)
 
         for ates in self.energy_system_components.get("ates", []):
-            stored_heat_joules = self.__state_vector_scaled(f"{ates}.Stored_heat", ensemble_member)
-            heat_ates_watts = self.__state_vector_scaled(f"{ates}.Heat_ates", ensemble_member)
+            stored_heat_joules = self._BaseProblemMixin__state_vector_scaled(
+                f"{ates}.Stored_heat", ensemble_member
+            )
+            heat_ates_watts = self._BaseProblemMixin__state_vector_scaled(
+                f"{ates}.Heat_ates", ensemble_member
+            )
             constraints.append(
                 (
                     (stored_heat_joules[-1] - stored_heat_joules[0])
@@ -301,12 +305,6 @@ class NetworkSimulator(
 
         return options
 
-    def __state_vector_scaled(self, variable, ensemble_member):
-        canonical, sign = self.alias_relation.canonical_signed(variable)
-        return (
-            self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
-        )
-
 
 # -------------------------------------------------------------------------------------------------
 class NetworkSimulatorHIGHS(NetworkSimulator):
@@ -359,7 +357,7 @@ def main(runinfo_path, log_level):
         "write_result_db_profiles": False,
         "database_connections": [
             {
-                "access_type": DBAccesType.WRITE,
+                "access_type": DBAccessType.WRITE,
                 "influxdb_host": "localhost",
                 "influxdb_port": 8086,
                 "influxdb_username": None,

@@ -1,3 +1,4 @@
+import gc
 import locale
 import logging
 import os
@@ -6,8 +7,7 @@ import time
 from typing import Dict
 
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
-from mesido.esdl.esdl_mixin import DBAccesType
-from mesido.esdl.esdl_mixin import ESDLMixin
+from mesido.esdl.esdl_mixin import DBAccessType, ESDLMixin
 from mesido.head_loss_class import HeadLossOption
 from mesido.potential_errors import reset_potential_errors
 from mesido.techno_economic_mixin import TechnoEconomicMixin
@@ -418,12 +418,6 @@ class EndScenarioSizing(
 
     def history(self, ensemble_member):
         return AliasDict(self.alias_relation)
-
-    def __state_vector_scaled(self, variable, ensemble_member):
-        canonical, sign = self.alias_relation.canonical_signed(variable)
-        return (
-            self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
-        )
 
     def solver_options(self):
         options = super().solver_options()
@@ -847,6 +841,9 @@ def run_end_scenario_sizing(
 
         priorities_output = solution._priorities_output
 
+        del solution
+        gc.collect()
+
     solution = run_optimization_problem_solver(
         end_scenario_problem_class,
         solver_class=solver_class,
@@ -871,7 +868,7 @@ def main(runinfo_path, log_level):
         "write_result_db_profiles": False,
         "database_connections": [
             {
-                "access_type": DBAccesType.WRITE,
+                "access_type": DBAccessType.WRITE,
                 "influxdb_host": "localhost",
                 "influxdb_port": 8086,
                 "influxdb_username": None,
