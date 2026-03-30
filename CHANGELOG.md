@@ -1,11 +1,28 @@
-# [Unreleased-main] - 2026-02-25
+# [Unreleased-main] - 2026-03-26
+
+## Added
+- Electricity consumption calculation of geothermal assets, using the defined COP. 
+- Geothermal electricity asset that can be connected to the electricity grid.
+
+## Changed
+- Reduced the number of constraints required for headloss calculation with LINEARIZED_N_LINES_EQUALITY setting.
+- The method __state_vector_scaled has been moved to BaseProblemMixin, allowing the same method to be used across different problem classes as _BaseProblemMixin__state_vector_scaled.
+
+## Fixed
+- xxx 
+
+
+# [0.1.18] - 2026-03-12
 
 ## Added
 - Parsing of ensemble profiles when using input profiles from csv.
 - Maximum profile constraint for PV asset is considered in PV sizing
+- Cater for input via esdl constraints to specify the upper limit for OPTIONAL assets in DTK
+- Initial implementation of adaptable pipe DN lower limit per pipe
 
 ## Changed
 - Speed-up timeseries check in from InfluxDB
+- Delete solution after stage 1 in a staged workflow 
 
 ## Fixed
 - xxx 
