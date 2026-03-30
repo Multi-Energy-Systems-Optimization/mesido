@@ -282,7 +282,6 @@ class InfluxDBProfileReader(BaseProfileReader):
         self._lock = threading.Lock()
         self.workers_db_profile_reading = workers_db_profile_reading
 
-
     def _load_profiles_from_source(
         self,
         energy_system_components: Dict[str, Set[str]],
@@ -328,7 +327,9 @@ class InfluxDBProfileReader(BaseProfileReader):
 
         # # Open parallel processes to load all unique profiles parallely
         with ThreadPoolExecutor(max_workers=self.workers_db_profile_reading) as executor:
-            unique_series = list(executor.map(self._load_profile_timeseries_from_database, unique_profiles))
+            unique_series = list(
+                executor.map(self._load_profile_timeseries_from_database, unique_profiles)
+            )
             executor.map(self._check_profile_time_series, unique_series, unique_profiles)
 
             if self._reference_datetimes is None:
@@ -466,14 +467,21 @@ class InfluxDBProfileReader(BaseProfileReader):
             verify_ssl=ssl_setting,
         )
 
-
         # Check if an object of the InfluxDBProfileManager is already present in a list. If so,
         # re-use that object that was already created and been stored in the list.
-        time_series_data = next(filter(lambda x:x.database_settings==conn_settings, self._database_profilemanager), None)
+        time_series_data = next(
+            filter(lambda x: x.database_settings == conn_settings, self._database_profilemanager),
+            None,
+        )
         if not time_series_data:
             with self._lock:
-                time_series_data = next(filter(lambda x: x.database_settings == conn_settings,
-                                               self._database_profilemanager), None)
+                time_series_data = next(
+                    filter(
+                        lambda x: x.database_settings == conn_settings,
+                        self._database_profilemanager,
+                    ),
+                    None,
+                )
                 if not time_series_data:
                     try:
                         time_series_data = InfluxDBProfileManager(conn_settings)
