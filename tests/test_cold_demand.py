@@ -111,20 +111,22 @@ class TestColdDemand(TestCase):
         1. demand is matched
         2. energy conservation in the network
         3. heat to discharge
+        4. varopex cost calculations
+        5. airco sizing
 
         """
         import models.wko.src.example as example
-        from models.wko.src.example import HeatProblem
+        from models.wko.src.example import HeatColdProblem
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
         heat_problem = run_esdl_mesido_optimization(
-            HeatProblem,
+            HeatColdProblem,
             base_folder=base_folder,
             esdl_file_name="airco.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries.csv",
+            input_timeseries_file="timeseries_high_cold_demand.csv",
         )
         results = heat_problem.extract_results()
         parameters = heat_problem.parameters(0)
@@ -139,6 +141,17 @@ class TestColdDemand(TestCase):
             * sum(results["HeatPump_b97e.Heat_source"][1:])
             / parameters["HeatPump_b97e.cop"],
             results["HeatPump_b97e__variable_operational_cost"],
+        )
+        np.testing.assert_allclose(
+            parameters["Airco_23d6.variable_operational_cost_coefficient"]
+            * sum(results["Airco_23d6.Heat_airco"][1:]),
+            results["Airco_23d6__variable_operational_cost"],
+        )
+
+        # Check airco sizing
+        np.testing.assert_allclose(
+            max(results["Airco_23d6.Heat_airco"]),
+            results["Airco_23d6__max_size"],
         )
 
     def test_wko(self):

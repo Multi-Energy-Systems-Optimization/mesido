@@ -108,9 +108,29 @@ class MinimizeSourcesHeatGoal(Goal):
 
         Returns
         -------
-        The Heat_source state of the optimization problem.
+        The Heat_source o Heat_airco state of the optimization problem.
         """
-        return optimization_problem.state(f"{self.source}.Heat_source")
+        obj = 0.0
+        if self.source in optimization_problem.energy_system_components.get("airco", []):
+            obj = optimization_problem.state(f"{self.source}.Heat_airco")
+        else:
+            obj = optimization_problem.state(f"{self.source}.Heat_source")
+        return obj
+
+
+class MinimizeProductionSize(Goal):
+    priority = 2
+
+    order = 1
+
+    def __init__(self, source):
+        self.source = source
+        self.target_max = 0.0
+        self.function_range = (0.0, 2.0 * 1e6)
+        self.function_nominal = 1e6
+
+    def function(self, optimization_problem, ensemble_member):
+        return optimization_problem.extra_variable(f"{self.source}__max_size", ensemble_member)
 
 
 class _GoalsAndOptions:
@@ -223,6 +243,40 @@ class HeatProblem(
         options["heat_loss_disconnected_pipe"] = False
 
         return options
+
+
+class HeatColdProblem(HeatProblem):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def path_goals(self):
+        """
+        Add goal to minimize Heat_airco
+
+        Returns
+        -------
+        Extended goals list.
+        """
+        goals = super().path_goals().copy()
+
+        for s in self.energy_system_components["airco"]:
+            goals.append(MinimizeSourcesHeatGoal(s))
+
+        return goals
+
+    def goals(self):
+        """
+        Add goal to minimize max_size of airco
+
+        Returns
+        -------
+        Extended goals list.
+        """
+        goals = super().goals().copy()
+        for source in self.energy_system_components["airco"]:
+            goals.append(MinimizeProductionSize(source=source))
+
+        return goals
 
 
 if __name__ == "__main__":
