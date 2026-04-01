@@ -106,9 +106,9 @@ class BaseProfileReader:
 
         for ensemble_member in range(ensemble_size):
             for component_type, var_name in self.component_type_to_var_name_map.items():
-                for component in energy_system_components.get(component_type, []):
-                    profile = self._profiles[ensemble_member].get(component + var_name, None)
-                    asset_power = esdl_assets[component].attributes[
+                for component_id in energy_system_components.get(component_type, []):
+                    profile = self._profiles[ensemble_member].get(component_id + var_name, None)
+                    asset_power = esdl_assets[component_id].attributes[
                         "power"
                     ]
                     if profile is not None:
@@ -118,13 +118,13 @@ class BaseProfileReader:
                             # We don't set a default profile for source targets
                             continue
                         logger.warning(
-                            f"No profile provided for {component=} and "
+                            f"No profile provided for {component_id=} and "
                             f"{ensemble_member=}, using the assets power value instead"
                         )
                         values = np.array([asset_power] * len(self._reference_datetimes))
 
                     io.set_timeseries(
-                        variable=component + var_name,
+                        variable=component_id + var_name,
                         datetimes=self._reference_datetimes,
                         values=values,
                         ensemble_member=ensemble_member,
@@ -133,15 +133,15 @@ class BaseProfileReader:
                     if component_type in ["heat_demand", "cold_demand"]:
                         max_profile_value = max(values)
                         if asset_power < max_profile_value and asset_power != 0.0:
-                            asset_id = esdl_asset_names_to_ids[component]
+                            asset_name = esdl_asset_id_to_name_map[component_id]
                             get_potential_errors().add_potential_issue(
                                 (
                                     MesidoAssetIssueType.HEAT_DEMAND_POWER
                                     if component_type == "heat_demand"
                                     else MesidoAssetIssueType.COLD_DEMAND_POWER
                                 ),
-                                asset_id,
-                                f"Asset named {component}: The installed capacity of"
+                                component_id,
+                                f"Asset named {asset_name}: The installed capacity of"
                                 f" {round(asset_power / 1.0e6, 3)}MW should be larger than the"
                                 " maximum of the heat demand profile "
                                 f"{round(max_profile_value / 1.0e6, 3)}MW",
@@ -149,11 +149,11 @@ class BaseProfileReader:
                     elif component_type in ["heat_source"]:
                         max_profile_value = max(values)
                         if asset_power < max_profile_value:
-                            asset_id = esdl_asset_names_to_ids[component]
+                            asset_name = esdl_asset_id_to_name_map[component_id]
                             get_potential_errors().add_potential_issue(
                                 MesidoAssetIssueType.HEAT_PRODUCER_POWER,
-                                asset_id,
-                                f"Asset named {component}: The installed capacity of"
+                                component_id,
+                                f"Asset named {asset_name}: The installed capacity of"
                                 f" {round(asset_power / 1.0e6, 3)}MW should be equal or larger than"
                                 " the maximum of the heat producer maximum profile constraint"
                                 f" {round(max_profile_value / 1.0e6, 3)}MW",
