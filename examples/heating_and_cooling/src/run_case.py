@@ -178,15 +178,6 @@ class HeatCoolingGrowWorkflow(TestCase):
 
         class UpdatedProblem(EndScenarioSizingStaged, CollocatedIntegratedOptimizationProblem):
 
-            # TODO: Issue sizing pipes connected to demands, available pipe classes are updated in
-            # read(), ESDLAdditionalVarsMixin before the code below. This means the
-            # incorrect demand values are then used.
-
-            # TODO: use new profile in esdl, but issue with cold profile. So for now
-            # reading in profiles from file. Also currently we cannot use a combination of
-            # esdl and csv profile inputs, potentially needed?
-
-            # TODO: locally do not have access to profile uploaded in mapeditor
 
             # TODO: Clarify how the variable operating cost should be defined when a price_profile
             #  is provided.
