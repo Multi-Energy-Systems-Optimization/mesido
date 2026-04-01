@@ -643,12 +643,6 @@ class MultiCommoditySimulator(
                 f"The heating demand is not matched, objective value is {self.objective_value}"
             )
 
-    def __state_vector_scaled(self, variable, ensemble_member):
-        canonical, sign = self.alias_relation.canonical_signed(variable)
-        return (
-            self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
-        )
-
     # TODO: post will be created later
     # def post(self):
     #     super().post()

@@ -901,6 +901,8 @@ class _AssetToComponentBase:
             or asset.asset_type == "Electrolyzer"
             or asset.asset_type == "ElectricBoiler"
             or asset.asset_type == "HeatPump"
+            or asset.asset_type == "GeothermalSource"
+            or asset.asset_type == "HeatStorage"
         ):
             for port in asset.in_ports:
                 if isinstance(port.carrier, esdl.ElectricityCommodity):

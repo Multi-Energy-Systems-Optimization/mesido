@@ -241,8 +241,12 @@ class NetworkSimulator(
         constraints = super().constraints(ensemble_member)
 
         for ates in self.energy_system_components.get("ates", []):
-            stored_heat_joules = self.__state_vector_scaled(f"{ates}.Stored_heat", ensemble_member)
-            heat_ates_watts = self.__state_vector_scaled(f"{ates}.Heat_ates", ensemble_member)
+            stored_heat_joules = self._BaseProblemMixin__state_vector_scaled(
+                f"{ates}.Stored_heat", ensemble_member
+            )
+            heat_ates_watts = self._BaseProblemMixin__state_vector_scaled(
+                f"{ates}.Heat_ates", ensemble_member
+            )
             constraints.append(
                 (
                     (stored_heat_joules[-1] - stored_heat_joules[0])
@@ -300,12 +304,6 @@ class NetworkSimulator(
         options["casadi_solver"] = self._qpsol
 
         return options
-
-    def __state_vector_scaled(self, variable, ensemble_member):
-        canonical, sign = self.alias_relation.canonical_signed(variable)
-        return (
-            self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
-        )
 
 
 # -------------------------------------------------------------------------------------------------

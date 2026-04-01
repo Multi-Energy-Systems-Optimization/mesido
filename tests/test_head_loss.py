@@ -794,19 +794,23 @@ class TestHeadLoss(TestCase):
                 np.testing.assert_allclose(
                     results[f"{pipe}__pipe_linear_line_segment_num_1_pos_discharge"][0:2],
                     1.0,
+                    atol=1e-12,
                 )
                 np.testing.assert_allclose(
                     results[f"{pipe}__pipe_linear_line_segment_num_1_pos_discharge"][2:4],
                     0.0,
+                    atol=1e-12,
                 )
                 # Gas demand for the last 2 timesteps fall on the 2nd linear line segment
                 np.testing.assert_allclose(
                     results[f"{pipe}__pipe_linear_line_segment_num_2_pos_discharge"][0:2],
                     0.0,
+                    atol=1e-12,
                 )
                 np.testing.assert_allclose(
                     results[f"{pipe}__pipe_linear_line_segment_num_2_pos_discharge"][2:4],
                     1.0,
+                    atol=1e-12,
                 )
 
     def test_gas_substation(self):

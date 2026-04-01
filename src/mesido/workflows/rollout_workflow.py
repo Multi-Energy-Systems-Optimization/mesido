@@ -691,10 +691,7 @@ class RollOutProblem(
         return bounds
 
     def __state_vector_scaled(self, variable, ensemble_member):
-        canonical, sign = self.alias_relation.canonical_signed(variable)
-        return (
-            self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
-        )
+        return self._BaseProblemMixin__state_vector_scaled(variable, ensemble_member)
 
     def solver_success(self, solver_stats, log_solver_failure_as_error):
         success, log_level = super().solver_success(solver_stats, log_solver_failure_as_error)

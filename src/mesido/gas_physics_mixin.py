@@ -504,16 +504,6 @@ class GasPhysicsMixin(
 
         return constraints
 
-    def __state_vector_scaled(self, variable, ensemble_member):
-        """
-        This functions returns the casadi symbols scaled with their nominal for the entire time
-        horizon.
-        """
-        canonical, sign = self.alias_relation.canonical_signed(variable)
-        return (
-            self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
-        )
-
     def __flow_direction_path_constraints(self, ensemble_member):
         """
         This function adds constraints to set the direction in pipes and determine whether a pipe
