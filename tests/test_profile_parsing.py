@@ -272,13 +272,15 @@ class TestProfileLoading(unittest.TestCase):
             input_timeseries_file="timeseries.csv",
         )
         problem.pre()
+        name_to_id_map = problem.esdl_asset_name_to_id_map
 
         np.testing.assert_equal(problem.io.reference_datetime.tzinfo, datetime.timezone.utc)
 
         expected_array = np.array([1.0e8] * 3)
+        wind_park_id = name_to_id_map["WindPark_7f14"]
         np.testing.assert_equal(
             expected_array,
-            problem.get_timeseries("WindPark_7f14.maximum_electricity_source").values,
+            problem.get_timeseries(f"{wind_park_id}.maximum_electricity_source").values,
         )
 
         expected_array = np.array([1.0] * 3)
@@ -308,14 +310,16 @@ class TestProfileLoading(unittest.TestCase):
             esdl_parser=ESDLFileParser,
         )
         problem.pre()
+        name_to_id_map = problem.esdl_asset_name_to_id_map
 
         expected_values_file = pd.read_csv(
             os.path.join(input_folder, "SpaceHeat&HotWater_PowerProfile_2000_2010.csv")
         )
         expected_values = expected_values_file["Ruimte&Tap_W"]
         for asset in problem.energy_system_components.get("heat_source"):
+            asset_id = name_to_id_map[asset]
             np.testing.assert_allclose(
-                problem.get_timeseries(f"{asset}.maximum_heat_source").values,
+                problem.get_timeseries(f"{asset_id}.maximum_heat_source").values,
                 expected_values * 1e6,
                 atol=1e-2,
             )

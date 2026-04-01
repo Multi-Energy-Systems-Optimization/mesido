@@ -40,6 +40,8 @@ class TestSetpointConstraints(TestCase):
             **{"timed_setpoints": {"GeothermalSource_b702": (21, 1)}},
         )
         results_3 = _heat_problem_3.extract_results()
+        name_to_id_map_3 = _heat_problem_3.esdl_asset_name_to_id_map
+        geo_source_3_id = name_to_id_map_3["GeothermalSource_b702"]
 
         _heat_problem_4 = run_esdl_mesido_optimization(
             HeatProblemSetPointConstraints,
@@ -51,6 +53,8 @@ class TestSetpointConstraints(TestCase):
             **{"timed_setpoints": {"GeothermalSource_b702": (21, 0)}},
         )
         results_4 = _heat_problem_4.extract_results()
+        name_to_id_map_4 = _heat_problem_4.esdl_asset_name_to_id_map
+        geo_source_4_id = name_to_id_map_4["GeothermalSource_b702"]
 
         # Here we check whehter the ESDLAdditionalVarsMixin is working as intended when
         # a constraint for the setpoints is specified
@@ -67,29 +71,30 @@ class TestSetpointConstraints(TestCase):
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_import.xml",
         )
-        results_4 = _heat_problem_4.extract_results()
+        name_to_id_map_esdl = sol_esdl_setpoints.esdl_asset_name_to_id_map
+        geo_source_esdl_id = name_to_id_map_esdl["GeothermalSource_b702"]
 
         esdl_results = sol_esdl_setpoints.extract_results()
         np.testing.assert_array_less(
             abs(
-                esdl_results["GeothermalSource_b702.Heat_source"][2:]
-                - esdl_results["GeothermalSource_b702.Heat_source"][1:-1]
+                esdl_results[f"{geo_source_esdl_id}.Heat_source"][2:]
+                - esdl_results[f"{geo_source_esdl_id}.Heat_source"][1:-1]
             ),
             1.0e-6,
         )
 
         # Check that solution has one setpoint change
         a = abs(
-            results_3["GeothermalSource_b702.Heat_source"][2:]
-            - results_3["GeothermalSource_b702.Heat_source"][1:-1]
+            results_3[f"{geo_source_3_id}.Heat_source"][2:]
+            - results_3[f"{geo_source_3_id}.Heat_source"][1:-1]
         )
         np.testing.assert_array_less((a >= 1.0).sum(), 2)  # the 1.0 value is a manual threshold
 
         # Check that solution has no setpoint change
         np.testing.assert_array_less(
             abs(
-                results_4["GeothermalSource_b702.Heat_source"][2:]
-                - results_4["GeothermalSource_b702.Heat_source"][1:-1]
+                results_4[f"{geo_source_4_id}.Heat_source"][2:]
+                - results_4[f"{geo_source_4_id}.Heat_source"][1:-1]
             ),
             1.0e-3,
         )
@@ -124,8 +129,11 @@ class TestSetpointConstraints(TestCase):
             **{"timed_setpoints": {"HeatProducer_1": (24 * 365, 2)}},
         )
         results = solution.extract_results()
+        name_to_id_map = solution.esdl_asset_name_to_id_map
+        heat_producer_id = name_to_id_map["HeatProducer_1"]
         check = abs(
-            results["HeatProducer_1.Heat_source"][2:] - results["HeatProducer_1.Heat_source"][1:-1]
+            results[f"{heat_producer_id}.Heat_source"][2:]
+            - results[f"{heat_producer_id}.Heat_source"][1:-1]
         )
         # check if there are less than 3 switches, a solution might be found with less
         # than 2 switches
@@ -160,8 +168,11 @@ class TestSetpointConstraints(TestCase):
             **{"timed_setpoints": {"HeatProducer_1": (24 * 365, 0)}},  # not change at all - works
         )
         results = solution.extract_results()
+        name_to_id_map = solution.esdl_asset_name_to_id_map
+        heat_producer_id = name_to_id_map["HeatProducer_1"]
         check = abs(
-            results["HeatProducer_1.Heat_source"][2:] - results["HeatProducer_1.Heat_source"][1:-1]
+            results[f"{heat_producer_id}.Heat_source"][2:]
+            - results[f"{heat_producer_id}.Heat_source"][1:-1]
         )
         np.testing.assert_array_less(check, 1.0e-5)
 
@@ -198,22 +209,24 @@ class TestSetpointConstraints(TestCase):
                 **{"timed_setpoints": {"HeatProducer_1": (ihrs, 1)}},
             )
             results = solution.extract_results()
+            name_to_id_map = solution.esdl_asset_name_to_id_map
+            prod_id = name_to_id_map["HeatProducer_1"]
+            dem_id = name_to_id_map["HeatingDemand_1"]
 
             np.testing.assert_equal(
                 max(solution.times()[1:] - solution.times()[0:-1]), 20.0 * 24.0 * 3600.0
             )
 
             diff = (
-                results["HeatProducer_1.Heat_source"][2:]
-                - results["HeatProducer_1.Heat_source"][1:-1]
+                results[f"{prod_id}.Heat_source"][2:]
+                - results[f"{prod_id}.Heat_source"][1:-1]
             )
             ires = [idx + 2 for idx, val in enumerate(diff) if abs(val) > 1e-5]
             for ii in range(1, len(ires)):
+                demand_times = solution.get_timeseries(f"{dem_id}.target_heat_demand", 0).times
                 check = (
-                    solution.get_timeseries("HeatingDemand_1.target_heat_demand", 0).times[ires[ii]]
-                    - solution.get_timeseries("HeatingDemand_1.target_heat_demand", 0).times[
-                        ires[ii - 1]
-                    ]
+                    demand_times[ires[ii]]
+                    - demand_times[ires[ii - 1]]
                 )
                 # The following checks should be true because the setpoint changes occur at
                 # the during ihrs time intervals

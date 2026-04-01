@@ -231,10 +231,15 @@ class TestMinMaxPressureOptions(TestCase):
         min_, max_ = _get_min_max_pressure(case_min_max_pressure)
         self.assertGreater(min_, self.min_pressure * 0.99)
         self.assertLess(max_, self.max_pressure * 1.01)
-        target = case_default.get_timeseries("demand.target_heat_demand").values
+        default_name_to_id_map = case_default.esdl_asset_name_to_id_map
+        default_demand_id = default_name_to_id_map["demand"]
+        target = case_default.get_timeseries(f"{default_demand_id}.target_heat_demand").values
         self.assertLess(
-            np.sum((case_default.extract_results()["demand.Heat_demand"] - target) ** 2),
-            np.sum((case_min_max_pressure.extract_results()["demand.Heat_demand"] - target) ** 2),
+            np.sum((case_default.extract_results()[f"{default_demand_id}.Heat_demand"] - target) ** 2),
+            np.sum(
+                (case_min_max_pressure.extract_results()[f"{default_demand_id}.Heat_demand"] - target)
+                ** 2
+            ),
         )
 
 
@@ -307,7 +312,9 @@ class TestDisconnectablePipe(TestCase):
             input_timeseries_file="timeseries_import.csv",
         )
         results_connected = case_connected.extract_results()
-        q_connected = results_connected["Pipe1.Q"]
+        connected_name_to_id_map = case_connected.esdl_asset_name_to_id_map
+        pipe1_connected_id = connected_name_to_id_map["Pipe1"]
+        q_connected = results_connected[f"{pipe1_connected_id}.Q"]
 
         case_disconnected = run_esdl_mesido_optimization(
             self.ModelDisconnected,
@@ -318,7 +325,9 @@ class TestDisconnectablePipe(TestCase):
             input_timeseries_file="timeseries_import.csv",
         )
         results_disconnected = case_disconnected.extract_results()
-        q_disconnected = results_disconnected["Pipe1.Q"]
+        disconnected_name_to_id_map = case_disconnected.esdl_asset_name_to_id_map
+        pipe1_disconnected_id = disconnected_name_to_id_map["Pipe1"]
+        q_disconnected = results_disconnected[f"{pipe1_disconnected_id}.Q"]
 
         # Sanity check, as we rely on the minimum velocity being strictly
         # larger than zero for the discharge constraint to disconnect the
@@ -327,8 +336,10 @@ class TestDisconnectablePipe(TestCase):
 
         self.assertLess(q_disconnected[1], q_connected[1])
         self.assertAlmostEqual(q_disconnected[1], 0.0, 5)
-        np.testing.assert_allclose(results_connected["Pipe1__is_disconnected"], 0.0)
-        np.testing.assert_allclose(results_disconnected["Pipe1__is_disconnected"][1], 1.0)
+        np.testing.assert_allclose(results_connected[f"{pipe1_connected_id}__is_disconnected"], 0.0)
+        np.testing.assert_allclose(
+            results_disconnected[f"{pipe1_disconnected_id}__is_disconnected"][1], 1.0
+        )
 
         np.testing.assert_allclose(q_connected[2:], q_disconnected[2:])
 
@@ -360,7 +371,8 @@ class TestDisconnectablePipe(TestCase):
             input_timeseries_file="timeseries_import.csv",
         )
         results_linear = case_linear.extract_results()
-        q_linear = results_linear["Pipe1.Q"]
+        linear_name_to_id_map = case_linear.esdl_asset_name_to_id_map
+        q_linear = results_linear[f"{linear_name_to_id_map['Pipe1']}.Q"]
 
         case_dw = run_esdl_mesido_optimization(
             self.ModelDisconnectedDarcyWeisbach,
@@ -371,12 +383,14 @@ class TestDisconnectablePipe(TestCase):
             input_timeseries_file="timeseries_import.csv",
         )
         results_dw = case_dw.extract_results()
-        q_dw = results_dw["Pipe1.Q"]
+        dw_name_to_id_map = case_dw.esdl_asset_name_to_id_map
+        pipe1_dw_id = dw_name_to_id_map["Pipe1"]
+        q_dw = results_dw[f"{pipe1_dw_id}.Q"]
 
         # Without any constraints on the maximum or minimum head/pressure
         # (loss) in the system, we expect equal results.
         np.testing.assert_allclose(q_linear, q_dw)
-        np.testing.assert_allclose(results_dw["Pipe1__is_disconnected"][1], 1.0)
+        np.testing.assert_allclose(results_dw[f"{pipe1_dw_id}__is_disconnected"][1], 1.0)
 
 
 if __name__ == "__main__":
