@@ -36,8 +36,10 @@ class TestHeat(TestCase):
         )
         results = case.extract_results()
 
-        source = results["source.Heat_source"]
-        demand = results["demand.Heat_demand"]
+        name_to_id_map = case.esdl_asset_name_to_id_map
+
+        source = results[f"{name_to_id_map['source']}.Heat_source"]
+        demand = results[f"{name_to_id_map['demand']}.Heat_demand"]
 
         # With non-zero milp losses in pipes, the demand should always be
         # strictly lower than what is produced.
@@ -49,7 +51,7 @@ class TestHeat(TestCase):
 
         # Check emission information is passed to parameters
         parameters = case.parameters(0)
-        np.testing.assert_allclose(parameters["source.emission_coeff"], 20 * 1e-6 * 3600)
+        np.testing.assert_allclose(parameters[f"{name_to_id_map['source']}.emission_coeff"], 20 * 1e-6 * 3600)
 
     def test_zero_heat_loss(self):
         """
