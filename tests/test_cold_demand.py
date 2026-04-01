@@ -130,16 +130,18 @@ class TestColdDemand(TestCase):
         parameters = heat_problem.parameters(0)
         name_to_id_map = heat_problem.esdl_asset_name_to_id_map
 
+        hp_id = name_to_id_map["HeatPump_b97e"]
+
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
 
         # Check how variable operation cost is calculated
         np.testing.assert_allclose(
-            parameters["HeatPump_b97e.variable_operational_cost_coefficient"]
-            * sum(results[f"{name_to_id_map['HeatPump_b97e']}.Heat_source"][1:])
-            / parameters["HeatPump_b97e.cop"],
-            results[f"{name_to_id_map['HeatPump_b97e']}__variable_operational_cost"],
+            parameters[f"{hp_id}.variable_operational_cost_coefficient"]
+            * sum(results[f"{hp_id}.Heat_source"][1:])
+            / parameters[f"{hp_id}.cop"],
+            results[f"{hp_id}__variable_operational_cost"],
         )
 
     def test_wko(self):
@@ -222,21 +224,25 @@ class TestColdDemand(TestCase):
         results = heat_problem.extract_results()
         name_to_id_map = heat_problem.esdl_asset_name_to_id_map
 
+        ates_id = name_to_id_map["ATES_226d"]
+        pipe1_id = name_to_id_map["Pipe1"]
+        pipe1_ret_id = name_to_id_map["Pipe1_ret"]
+
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
 
         # Check cyclic constraint
         np.testing.assert_allclose(
-            results[f"{name_to_id_map['ATES_226d']}.Stored_heat"][0], results[f"{name_to_id_map['ATES_226d']}.Stored_heat"][-1]
+            results[f"{ates_id}.Stored_heat"][0], results[f"{ates_id}.Stored_heat"][-1]
         )
         # Check heat loss and gain
         tol_value = 1.0e-6
         np.testing.assert_array_less(
-            0.0, results[f"{name_to_id_map['Pipe1']}.HeatIn.Heat"] - results[f"{name_to_id_map['Pipe1']}.HeatOut.Heat"] + tol_value
+            0.0, results[f"{pipe1_id}.HeatIn.Heat"] - results[f"{pipe1_id}.HeatOut.Heat"] + tol_value
         )
         np.testing.assert_array_less(
-            results[f"{name_to_id_map['Pipe1_ret']}.HeatIn.Heat"] - results[f"{name_to_id_map['Pipe1_ret']}.HeatOut.Heat"] - tol_value, 0.0
+            results[f"{pipe1_ret_id}.HeatIn.Heat"] - results[f"{pipe1_ret_id}.HeatOut.Heat"] - tol_value, 0.0
         )
 
         # ------------------------------------------------------------------------------------------
@@ -258,21 +264,25 @@ class TestColdDemand(TestCase):
         results = heat_problem.extract_results()
         name_to_id_map = heat_problem.esdl_asset_name_to_id_map
 
+        ates_id = name_to_id_map["ATES_226d"]
+        pipe1_id = name_to_id_map["Pipe1"]
+        pipe1_ret_id = name_to_id_map["Pipe1_ret"]
+
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
 
         # Check cyclic constraint
         np.testing.assert_allclose(
-            results[f"{name_to_id_map['ATES_226d']}.Stored_heat"][0], results[f"{name_to_id_map['ATES_226d']}.Stored_heat"][-1]
+            results[f"{ates_id}.Stored_heat"][0], results[f"{ates_id}.Stored_heat"][-1]
         )
         # Check heat loss and gain
         tol_value = 1.0e-6
         np.testing.assert_allclose(
-            0.0, results[f"{name_to_id_map['Pipe1']}.HeatIn.Heat"] - results[f"{name_to_id_map['Pipe1']}.HeatOut.Heat"], atol=1e-6
+            0.0, results[f"{pipe1_id}.HeatIn.Heat"] - results[f"{pipe1_id}.HeatOut.Heat"], atol=1e-6
         )
         np.testing.assert_allclose(
-            0.0, results[f"{name_to_id_map['Pipe1_ret']}.HeatIn.Heat"] - results[f"{name_to_id_map['Pipe1_ret']}.HeatOut.Heat"], atol=1e-6
+            0.0, results[f"{pipe1_ret_id}.HeatIn.Heat"] - results[f"{pipe1_ret_id}.HeatOut.Heat"], atol=1e-6
         )
         # ------------------------------------------------------------------------------------------
 

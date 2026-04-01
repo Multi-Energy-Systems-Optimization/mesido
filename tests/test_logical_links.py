@@ -35,12 +35,18 @@ class TestLogicalLinks(TestCase):
             input_timeseries_file="timeseries.csv",
         )
         results = problem.extract_results()
+        name_to_id_map = problem.esdl_asset_name_to_id_map
+
+        demand_281a_id = name_to_id_map["ElectricityDemand_281a"]
+        demand_e527_id = name_to_id_map["ElectricityDemand_e527"]
+        prod_17a1_id = name_to_id_map["ElectricityProducer_17a1"]
+        prod_a215_id = name_to_id_map["ElectricityProducer_a215"]
 
         np.testing.assert_allclose(
-            results["ElectricityDemand_281a.Electricity_demand"]
-            + results["ElectricityDemand_e527.Electricity_demand"],
-            results["ElectricityProducer_17a1.Electricity_source"]
-            + results["ElectricityProducer_a215.Electricity_source"],
+            results[f"{demand_281a_id}.Electricity_demand"]
+            + results[f"{demand_e527_id}.Electricity_demand"],
+            results[f"{prod_17a1_id}.Electricity_source"]
+            + results[f"{prod_a215_id}.Electricity_source"],
         )
 
     def test_logical_links_gas(self):
@@ -67,12 +73,18 @@ class TestLogicalLinks(TestCase):
             input_timeseries_file="timeseries.csv",
         )
         results = problem.extract_results()
+        name_to_id_map = problem.esdl_asset_name_to_id_map
+
+        demand_47d0_id = name_to_id_map["GasDemand_47d0"]
+        demand_7978_id = name_to_id_map["GasDemand_7978"]
+        prod_a977_id = name_to_id_map["GasProducer_a977"]
+        prod_3573_id = name_to_id_map["GasProducer_3573"]
 
         np.testing.assert_allclose(
-            results["GasDemand_47d0.Gas_demand_mass_flow"]
-            + results["GasDemand_7978.Gas_demand_mass_flow"],
-            results["GasProducer_a977.Gas_source_mass_flow"]
-            + results["GasProducer_3573.Gas_source_mass_flow"],
+            results[f"{demand_47d0_id}.Gas_demand_mass_flow"]
+            + results[f"{demand_7978_id}.Gas_demand_mass_flow"],
+            results[f"{prod_a977_id}.Gas_source_mass_flow"]
+            + results[f"{prod_3573_id}.Gas_source_mass_flow"],
         )
 
     def test_logical_links_nodes(self):
@@ -97,12 +109,16 @@ class TestLogicalLinks(TestCase):
             input_timeseries_file="timeseries.csv",
         )
         results = problem.extract_results()
+        name_to_id_map = problem.esdl_asset_name_to_id_map
+
+        producer_id = name_to_id_map["GasProducer_0876"]
+        demand_id = name_to_id_map["GasDemand_a2d8"]
 
         demand_matching_test(problem, results)
 
         # We check that no artificial gas in created
         np.testing.assert_allclose(
-            results["GasProducer_0876.GasOut.Q"], results["GasDemand_a2d8.GasIn.Q"]
+            results[f"{producer_id}.GasOut.Q"], results[f"{demand_id}.GasIn.Q"]
         )
 
         # We test conservaiton of flow at the nodes
@@ -180,17 +196,22 @@ class TestLogicalLinks(TestCase):
             input_timeseries_file="timeseries_short.csv",
         )
         results = problem.extract_results()
+        name_to_id_map = problem.esdl_asset_name_to_id_map
+
+        cable_id = name_to_id_map["ElectricityCable_e388"]
+        bus_id = name_to_id_map["Bus_24cf"]
+        wind_park_id = name_to_id_map["WindPark_9074"]
 
         assert all(
-            results["ElectricityCable_e388.ElectricityIn.V"]
-            == results["Bus_24cf.ElectricityConn[3].V"]
+            results[f"{cable_id}.ElectricityIn.V"]
+            == results[f"{bus_id}.ElectricityConn[3].V"]
         )
 
         assert (
             np.sum(
                 np.abs(
-                    results["WindPark_9074.ElectricityOut.V"]
-                    - results["Bus_24cf.ElectricityConn[3].V"]
+                    results[f"{wind_park_id}.ElectricityOut.V"]
+                    - results[f"{bus_id}.ElectricityConn[3].V"]
                 )
             )
             != 0.0
