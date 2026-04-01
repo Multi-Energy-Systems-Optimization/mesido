@@ -79,13 +79,16 @@ class TestHEX(TestCase):
 
         results = solution.extract_results()
         parameters = solution.parameters(0)
+        name_to_id_map = solution.esdl_asset_name_to_id_map
 
-        prim_heat = results["HeatExchange_39ed.Primary_heat"]
-        sec_heat = results["HeatExchange_39ed.Secondary_heat"]
-        disabled = results["HeatExchange_39ed__disabled"]
+        hex_id = name_to_id_map["HeatExchange_39ed"]
+
+        prim_heat = results[f"{hex_id}.Primary_heat"]
+        sec_heat = results[f"{hex_id}.Secondary_heat"]
+        disabled = results[f"{hex_id}__disabled"]
 
         # We check the energy converted betweeen the commodities
-        eff = parameters["HeatExchange_39ed.efficiency"]
+        eff = parameters[f"{hex_id}.efficiency"]
 
         demand_matching_test(solution, results)
         heat_to_discharge_test(solution, results)
@@ -103,12 +106,12 @@ class TestHEX(TestCase):
         np.testing.assert_array_less(-prim_heat[:-1], 0.0)
 
         np.testing.assert_array_less(
-            parameters["HeatExchange_39ed.Secondary.T_supply"],
-            parameters["HeatExchange_39ed.Primary.T_supply"],
+            parameters[f"{hex_id}.Secondary.T_supply"],
+            parameters[f"{hex_id}.Primary.T_supply"],
         )
         np.testing.assert_array_less(
-            parameters["HeatExchange_39ed.Secondary.T_return"],
-            parameters["HeatExchange_39ed.Primary.T_return"],
+            parameters[f"{hex_id}.Secondary.T_return"],
+            parameters[f"{hex_id}.Primary.T_return"],
         )
 
     def test_heat_exchanger_bypass(self):
@@ -163,21 +166,22 @@ class TestHEX(TestCase):
         )
 
         results = solution.extract_results()
+        name_to_id_map = solution.esdl_asset_name_to_id_map
+
+        hex_active_id = name_to_id_map["HeatExchange_e410_copy"]
+        hex_bypass_id = name_to_id_map["HeatExchange_e410"]
 
         demand_matching_test(solution, results)
         energy_conservation_test(solution, results)
 
-        hex_active = "HeatExchange_e410_copy"
-        hex_bypass = "HeatExchange_e410"
+        np.testing.assert_allclose(results[f"{hex_active_id}__disabled"][:-1], 0)
+        np.testing.assert_allclose(results[f"{hex_bypass_id}__disabled"][:-1], 1)
 
-        np.testing.assert_allclose(results[f"{hex_active}__disabled"][:-1], 0)
-        np.testing.assert_allclose(results[f"{hex_bypass}__disabled"][:-1], 1)
+        np.testing.assert_array_less(0.001, results[f"{hex_active_id}.Primary.Q"][:-1])
+        np.testing.assert_array_less(0.001, results[f"{hex_bypass_id}.Primary.Q"][:-1])
 
-        np.testing.assert_array_less(0.001, results[f"{hex_active}.Primary.Q"][:-1])
-        np.testing.assert_array_less(0.001, results[f"{hex_bypass}.Primary.Q"][:-1])
-
-        np.testing.assert_allclose(results[f"{hex_bypass}.Heat_flow"][:-1], 0, atol=1e-9)
-        np.testing.assert_array_less(1e5, results[f"{hex_active}.Heat_flow"][:-1])
+        np.testing.assert_allclose(results[f"{hex_bypass_id}.Heat_flow"][:-1], 0, atol=1e-9)
+        np.testing.assert_array_less(1e5, results[f"{hex_active_id}.Heat_flow"][:-1])
 
     def test_heat_exchanger_bypass_varying_temperature(self):
         """
@@ -281,6 +285,10 @@ class TestHEX(TestCase):
         )
 
         results = solution.extract_results()
+        name_to_id_map = solution.esdl_asset_name_to_id_map
+
+        hex_active_id = name_to_id_map["HeatExchange_e410_copy"]
+        hex_bypass_id = name_to_id_map["HeatExchange_e410"]
 
         demand_matching_test(solution, results)
         energy_conservation_test(solution, results)
@@ -289,17 +297,14 @@ class TestHEX(TestCase):
         temp_hex = results["8725433194681736500139_temperature"]
 
         # check heat exchanger 1 is bypassed
-        hex_active = "HeatExchange_e410_copy"
-        hex_bypass = "HeatExchange_e410"
+        np.testing.assert_allclose(results[f"{hex_active_id}__disabled"][:-1], 0)
+        np.testing.assert_allclose(results[f"{hex_bypass_id}__disabled"][:-1], 1)
 
-        np.testing.assert_allclose(results[f"{hex_active}__disabled"][:-1], 0)
-        np.testing.assert_allclose(results[f"{hex_bypass}__disabled"][:-1], 1)
+        np.testing.assert_array_less(0.001, results[f"{hex_active_id}.Primary.Q"][:-1])
+        np.testing.assert_array_less(0.001, results[f"{hex_bypass_id}.Primary.Q"][:-1])
 
-        np.testing.assert_array_less(0.001, results[f"{hex_active}.Primary.Q"][:-1])
-        np.testing.assert_array_less(0.001, results[f"{hex_bypass}.Primary.Q"][:-1])
-
-        np.testing.assert_allclose(results[f"{hex_bypass}.Heat_flow"][:-1], 0, atol=1e-6)
-        np.testing.assert_array_less(1e5, results[f"{hex_active}.Heat_flow"][:-1])
+        np.testing.assert_allclose(results[f"{hex_bypass_id}.Heat_flow"][:-1], 0, atol=1e-6)
+        np.testing.assert_array_less(1e5, results[f"{hex_active_id}.Heat_flow"][:-1])
 
         # check lowest temperatures are picked (due to minimum heatloss).
         # check temperatures on bypass side are the same.
@@ -377,15 +382,20 @@ class TestHP(TestCase):
 
         results = solution.extract_results()
         parameters = solution.parameters(0)
+        name_to_id_map = solution.esdl_asset_name_to_id_map
 
-        prim_heat = results["GenericConversion_3d3f.Primary_heat"]
-        sec_heat = results["GenericConversion_3d3f.Secondary_heat"]
-        power_elec = results["GenericConversion_3d3f.Power_elec"]
+        hp_id = name_to_id_map["GenericConversion_3d3f"]
+        res_heat_id = name_to_id_map["ResidualHeatSource_aec9"]
+        pipe3_id = name_to_id_map["Pipe3"]
+
+        prim_heat = results[f"{hp_id}.Primary_heat"]
+        sec_heat = results[f"{hp_id}.Secondary_heat"]
+        power_elec = results[f"{hp_id}.Power_elec"]
 
         # Check that only the minimum velocity is flowing through the secondary source.
-        cross_sectional_area = parameters["Pipe3.area"]
+        cross_sectional_area = parameters[f"{pipe3_id}.area"]
         np.testing.assert_allclose(
-            results["ResidualHeatSource_aec9.Q"] / cross_sectional_area,
+            results[f"{res_heat_id}.Q"] / cross_sectional_area,
             1.0e-3,
             atol=2.5e-5,
         )
@@ -395,14 +405,14 @@ class TestHP(TestCase):
         energy_conservation_test(solution, results)
 
         # We check the energy converted betweeen the commodities
-        np.testing.assert_allclose(power_elec * parameters["GenericConversion_3d3f.COP"], sec_heat)
+        np.testing.assert_allclose(power_elec * parameters[f"{hp_id}.COP"], sec_heat)
         np.testing.assert_allclose(power_elec + prim_heat, sec_heat)
 
         # Check that the heat pump upper bound
         for key in solution.esdl_assets.keys():
             if solution.esdl_assets[key].asset_type == "HeatPump":
                 np.testing.assert_equal(
-                    solution.bounds()["GenericConversion_3d3f.Heat_flow"][1],
+                    solution.bounds()[f"{hp_id}.Heat_flow"][1],
                     solution.esdl_assets[key].attributes["power"],
                 )
 

@@ -324,12 +324,13 @@ class TestColdDemand(TestCase):
             input_timeseries_file="timeseries_peak_overlap.csv",
         )
         results = heat_problem.extract_results()
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
 
         cold_demand_timeseries = heat_problem.get_timeseries(
-            "CoolingDemand_15e8.target_cold_demand"
+            f"{name_to_id_map['CoolingDemand_15e8']}.target_cold_demand"
         )
         heat_demand_timeseries = heat_problem.get_timeseries(
-            "HeatingDemand_9b90.target_heat_demand"
+            f"{name_to_id_map['HeatingDemand_9b90']}.target_heat_demand"
         )
         max_cold_idx = np.argmax(cold_demand_timeseries.values)
         max_heat_idx = np.argmax(heat_demand_timeseries.values)
@@ -396,12 +397,13 @@ class TestColdDemand(TestCase):
             input_timeseries_file="timeseries_peak_back_to_back.csv",
         )
         results = heat_problem.extract_results()
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
 
         cold_demand_timeseries = heat_problem.get_timeseries(
-            "CoolingDemand_15e8.target_cold_demand"
+            f"{name_to_id_map['CoolingDemand_15e8']}.target_cold_demand"
         )
         heat_demand_timeseries = heat_problem.get_timeseries(
-            "HeatingDemand_9b90.target_heat_demand"
+            f"{name_to_id_map['HeatingDemand_9b90']}.target_heat_demand"
         )
         max_cold_idx = np.argmax(cold_demand_timeseries.values)
         max_heat_idx = np.argmax(heat_demand_timeseries.values)
@@ -468,12 +470,13 @@ class TestColdDemand(TestCase):
             input_timeseries_file="timeseries_cold_peak_before.csv",
         )
         results = heat_problem.extract_results()
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
 
         cold_demand_timeseries = heat_problem.get_timeseries(
-            "CoolingDemand_15e8.target_cold_demand"
+            f"{name_to_id_map['CoolingDemand_15e8']}.target_cold_demand"
         )
         heat_demand_timeseries = heat_problem.get_timeseries(
-            "HeatingDemand_9b90.target_heat_demand"
+            f"{name_to_id_map['HeatingDemand_9b90']}.target_heat_demand"
         )
         max_cold_idx = np.argmax(cold_demand_timeseries.values)
         max_heat_idx = np.argmax(heat_demand_timeseries.values)
