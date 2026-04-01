@@ -303,8 +303,6 @@ class HeatPhysicsMixin(
                 heat_out_lb <= 0.0 and heat_out_ub <= 0.0
             ):
                 self.__heat_flow_direct_bounds[flow_dir_var] = (0.0, 0.0)
-            # else:
-            #     self.__heat_flow_direct_bounds[flow_dir_var] = (0.0, 1.0)
 
             if parameters[f"{pipe_name}.disconnectable"]:
                 disconnected_var = f"{pipe_name}.__is_disconnected"

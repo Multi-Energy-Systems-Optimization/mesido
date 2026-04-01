@@ -5,7 +5,7 @@ from pathlib import Path
 
 import esdl
 
-from mesido.esdl.esdl_mixin import ESDLMixin
+from mesido.esdl.esdl_mixin import DBAccessType, ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
@@ -825,12 +825,17 @@ def main(runinfo_path, log_level):
 
     kwargs = {
         "write_result_db_profiles": False,
-        "influxdb_host": "localhost",
-        "influxdb_port": 8086,
-        "influxdb_username": None,
-        "influxdb_password": None,
-        "influxdb_ssl": False,
-        "influxdb_verify_ssl": False,
+        "database_connections": [
+            {
+                "access_type": DBAccessType.WRITE,
+                "influxdb_host": "localhost",
+                "influxdb_port": 8086,
+                "influxdb_username": None,
+                "influxdb_password": None,
+                "influxdb_ssl": False,
+                "influxdb_verify_ssl": False,
+            },
+        ],
     }
 
     _ = run_optimization_problem(

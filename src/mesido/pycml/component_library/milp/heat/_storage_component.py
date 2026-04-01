@@ -26,7 +26,7 @@ class _StorageComponent(HeatTwoPort, BaseAsset):
 
         self.minimum_pressure_drop = 1.0e5  # 1 bar of pressure drop
         self.pump_efficiency = 0.5
-        self.discrete_charge_var = False
+        self.include_discrete_charge_var = False
 
         self.Heat_nominal = self.cp * self.rho * self.dT * self.Q_nominal
 
@@ -43,7 +43,7 @@ class _StorageComponent(HeatTwoPort, BaseAsset):
             (self.Heat_flow - (self.HeatIn.Heat - self.HeatOut.Heat)) / self.Heat_nominal
         )
 
-        if self.discrete_charge_var:
+        if self.include_discrete_charge_var:
             self.add_variable(DiscreteVariable, "__is_charging", min=0.0, max=1.0)
 
         self.add_variable(
