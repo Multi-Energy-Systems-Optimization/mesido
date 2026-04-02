@@ -5,8 +5,7 @@ from pathlib import Path
 
 import esdl
 
-from mesido.esdl.esdl_mixin import DBAccesType
-from mesido.esdl.esdl_mixin import ESDLMixin
+from mesido.esdl.esdl_mixin import DBAccessType, ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
@@ -300,7 +299,7 @@ class MultiCommoditySimulator(
             "electricity_source": "Electricity_source",
             "gas_demand": "Gas_demand_mass_flow",
             "gas_source": "Gas_source_mass_flow",
-            "gas_tank_storage": {"charge": "Gas_tank_flow", "discharge": "__Q_discharge"},
+            "gas_tank_storage": {"charge": "Gas_tank_flow", "discharge": ".__Q_discharge"},
             "electricity_storage": {
                 "charge": "Power_charging",
                 "discharge": ".Power_discharging",
@@ -522,6 +521,7 @@ class MultiCommoditySimulator(
         options["estimated_velocity"] = 7.5
 
         options["gas_storage_discharge_variables"] = True
+        options["electricity_storage_discharge_variables"] = True
 
         return options
 
@@ -642,12 +642,6 @@ class MultiCommoditySimulator(
             raise RuntimeError(
                 f"The heating demand is not matched, objective value is {self.objective_value}"
             )
-
-    def __state_vector_scaled(self, variable, ensemble_member):
-        canonical, sign = self.alias_relation.canonical_signed(variable)
-        return (
-            self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
-        )
 
     # TODO: post will be created later
     # def post(self):
@@ -833,7 +827,7 @@ def main(runinfo_path, log_level):
         "write_result_db_profiles": False,
         "database_connections": [
             {
-                "access_type": DBAccesType.WRITE,
+                "access_type": DBAccessType.WRITE,
                 "influxdb_host": "localhost",
                 "influxdb_port": 8086,
                 "influxdb_username": None,

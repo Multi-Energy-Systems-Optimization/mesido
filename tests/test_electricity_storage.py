@@ -72,7 +72,9 @@ class TestMILPElectricSourceSinkStorage(TestCase):
         storage_name = solution.energy_system_components.get("electricity_storage")[0]
         charge_eff = parameters[f"{storage_name}.charge_efficiency"]
         discharge_eff = parameters[f"{storage_name}.discharge_efficiency"]
+
         eff_power_change_bat = results[f"{storage_name}.Effective_power_charging"]
+
         power_bat_network = results[f"{storage_name}.ElectricityIn.Power"]
         power_discharging = results[f"{storage_name}.Power_discharging"]
         power_charging = results[f"{storage_name}.Power_charging"]
@@ -89,18 +91,21 @@ class TestMILPElectricSourceSinkStorage(TestCase):
         np.testing.assert_allclose(power_charging[1:], power_charging_disc[1:], atol=tol)
 
         for sol in [solution, solution_disc]:
-            count_discrete_path, count_discrete_var = 0.0, 0.0
+            count_discrete_path, count_discrete_var, count_discrete_state = 0.0, 0.0, 0.0
             for var in sol.path_variables:
                 if sol.variable_is_discrete(var.name()):
                     count_discrete_path += 1
             for var in sol.extra_variables:
                 if sol.variable_is_discrete(var.name()):
                     count_discrete_var += 1
+            for var in sol.algebraic_states:
+                if sol.variable_is_discrete(var):
+                    count_discrete_state += 1
             np.testing.assert_allclose(count_discrete_var, 7.0)
             if sol == solution:
-                np.testing.assert_allclose(0.0, count_discrete_path, atol=tol)
+                np.testing.assert_allclose(0.0, count_discrete_state, atol=tol)
             else:
-                np.testing.assert_allclose(1.0, count_discrete_path, atol=tol)
+                np.testing.assert_allclose(1.0, count_discrete_state, atol=tol)
 
         is_charging = np.asarray([float(i > 0) for i in power_charging])
         # if battery is charging (1), ElectricityIn.Power and effective_power charging should be

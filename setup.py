@@ -59,13 +59,16 @@ setup(
         "pyecore >= 0.13.2",
         "pymoca >= 0.9.0",
         "rtc-tools-gil-comp == 2.6.1",
-        "pyesdl == 25.7",
+        # setuptools version limitations currently:
+        # < 81.0.0 needed for pandapipes (still to be removed)
+        # < 82.0.0 needed for pkg_resources (used in rtctools)
+        "setuptools <= 80.9.0",
+        "pyesdl == 26.2",
         "pandas >= 1.3.1, < 2.0",
         "casadi-gil-comp == 3.6.7",
         "StrEnum == 0.4.15",
         "CoolProp==6.6.0",
     ],
-    tests_require=["pytest", "pytest-runner", "numpy"],
     include_package_data=True,
     python_requires=">=3.10,<3.12",
     cmdclass=versioneer.get_cmdclass(),

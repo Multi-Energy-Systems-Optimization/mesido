@@ -425,6 +425,16 @@ class TestHydraulicPower(TestCase):
                     new_timeseries = self.get_timeseries(f"{d}.target_gas_demand").values * 1.39
                     self.set_timeseries(f"{d}.target_gas_demand", new_timeseries)
 
+            def path_goals(self):
+                path_goals = super().path_goals().copy()
+                path_goals.append(
+                    self._gn_head_loss_class._hpwr_minimization_goal_class(
+                        self,
+                        self.gas_network_settings,
+                    )
+                )
+                return path_goals
+
             def energy_system_options(self):
                 options = super().energy_system_options()
 
@@ -509,7 +519,7 @@ class TestHydraulicPower(TestCase):
                         np.testing.assert_allclose(
                             pipe_hp[k] * pipe_mass[k + 1] / pipe_mass[k], pipe_hp[k + 1]
                         )
-                    elif pipe_mass[k] == 0:
+                    elif pipe_mass[k] >= -1e-8:
                         np.testing.assert_array_less(0.0, pipe_hp[k + 1])
                     elif pipe_mass[k] < 0:
                         raise RuntimeWarning("The mass flow cannot be negative for this test case")

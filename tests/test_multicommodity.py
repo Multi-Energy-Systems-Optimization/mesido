@@ -215,16 +215,17 @@ class TestMultiCommodityHeatPump(TestCase):
         elec_prod_id = name_to_id_map["ElectricityProducer_ac2e"]
 
         tol = 1e-6
+
         heatsource_prim = results[f"{heatsource_prim_id}.Heat_source"]
         # heatsource_sec = results[f"{name_to_id_map['ResidualHeatSource_aec9']}.Heat_source"]
         heatpump_power = results[f"{gc_id}.Power_elec"]
         heatpump_heat_prim = results[f"{gc_id}.Primary_heat"]
         heatpump_heat_sec = results[f"{gc_id}.Secondary_heat"]
-        heatpump_disabled = results[f"{gc_id}__disabled"]
+        heatpump_disabled = results[f"{gc_id}.__disabled"]
         # heatdemand_sec = results[f"{name_to_id_map['HeatingDemand_18aa']}.Heat_demand"]
         heatdemand_prim = results[f"{heatdemand_prim_id}.Heat_demand"]
         elec_prod_power = results[f"{elec_prod_id}.ElectricityOut.Power"]
-        # pipe_sec_out_hp_disconnected = results["Pipe_408e__is_disconnected"]
+        # pipe_sec_out_hp_disconnected = results["Pipe_408e.__is_disconnected"]
 
         # check that heatpump is not used:
         np.testing.assert_allclose(heatpump_power, np.zeros(len(heatpump_power)), atol=tol)
@@ -329,10 +330,10 @@ class TestMultiCommodityHeatPump(TestCase):
 
         heatpump_power = results[f"{gc_id}.Power_elec"]
         heatpump_heat_sec = results[f"{gc_id}.Secondary_heat"]
-        heatpump_disabled = results[f"{gc_id}__disabled"]
+        heatpump_disabled = results[f"{gc_id}.__disabled"]
         heatdemand_sec = results[f"{heatdemand_sec_id}.Heat_demand"]
         var_opex_hp = results[f"{gc_id}__variable_operational_cost"]
-        # pipe_sec_out_hp_disconnected = results["Pipe_408e__is_disconnected"]
+        # pipe_sec_out_hp_disconnected = results["Pipe_408e.__is_disconnected"]
 
         # check that heatpump is not used when electricity price is high:
         price_profile = solution.get_timeseries("Electr.price_profile").values
@@ -354,8 +355,145 @@ class TestMultiCommodityHeatPump(TestCase):
         np.testing.assert_allclose(var_opex_hp_calc, var_opex_hp)
 
 
-if __name__ == "__main__":
+class TestGeothermalSourceElec(TestCase):
 
-    test_cold_demand = TestMultiCommodityHeatPump()
-    test_cold_demand.test_air_to_water_heat_pump_elec_min_elec()
-    # test_cold_demand.test_heat_pump_elec_min_elec()
+    def test_geothermal_source(self):
+        """
+        This tests the electric behavior of the regular geothermal source asset.
+
+        It first does the standard checks, and then the equations that are added to the geothermal
+        asset, including the electricity power consumption.
+
+        """
+        import models.source_pipe_sink.src.double_pipe_heat as example
+        from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        heat_problem = run_esdl_mesido_optimization(
+            SourcePipeSink,
+            base_folder=base_folder,
+            esdl_file_name="sourcesink_with_geo.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.csv",
+        )
+        results = heat_problem.extract_results()
+        parameters = heat_problem.parameters(0)
+
+        # Standard checks.
+        demand_matching_test(heat_problem, results)
+        energy_conservation_test(heat_problem, results)
+        heat_to_discharge_test(heat_problem, results)
+        electric_power_conservation_test(heat_problem, results)
+
+        # Equations check
+        np.testing.assert_allclose(
+            parameters["GeothermalSource_a77b.cop"] * results["GeothermalSource_a77b.Power_elec"],
+            results["GeothermalSource_a77b.Heat_source"],
+        )
+
+        # Variable operational cost check.
+        np.testing.assert_allclose(
+            parameters["GeothermalSource_a77b.variable_operational_cost_coefficient"]
+            * sum(results["GeothermalSource_a77b.Heat_source"][1:])
+            / parameters["GeothermalSource_a77b.cop"],
+            results["GeothermalSource_a77b__variable_operational_cost"],
+        )
+
+    def test_geothermal_source_elec(self):
+        """
+        This tests checks the electric geothermal producer asset with an electricity port.
+
+        It does all the same checks as with the regular geothermal asset, plus tests on the
+        electricity in port.
+        """
+        import models.source_pipe_sink.src.double_pipe_heat as example
+        from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        heat_problem = run_esdl_mesido_optimization(
+            SourcePipeSink,
+            base_folder=base_folder,
+            esdl_file_name="sourcesink_with_geo_elec.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.csv",
+        )
+        results = heat_problem.extract_results()
+        parameters = heat_problem.parameters(0)
+
+        # Standard checks.
+        demand_matching_test(heat_problem, results)
+        energy_conservation_test(heat_problem, results)
+        heat_to_discharge_test(heat_problem, results)
+        electric_power_conservation_test(heat_problem, results)
+
+        # Equations check
+        np.testing.assert_allclose(
+            results["ElectricityProducer_4dde.ElectricityOut.Power"],
+            results["GeothermalSource_a77b.ElectricityIn.Power"],
+        )
+        np.testing.assert_allclose(
+            parameters["GeothermalSource_a77b.cop"] * results["GeothermalSource_a77b.Power_elec"],
+            results["GeothermalSource_a77b.Heat_source"],
+        )
+
+        # Test electricity port
+        np.testing.assert_allclose(
+            results["GeothermalSource_a77b.ElectricityIn.Power"],
+            results["GeothermalSource_a77b.Power_elec"],
+        )
+
+        # Variable operational cost check.
+        np.testing.assert_allclose(
+            parameters["GeothermalSource_a77b.variable_operational_cost_coefficient"]
+            * sum(results["GeothermalSource_a77b.Heat_source"][1:])
+            / parameters["GeothermalSource_a77b.cop"],
+            results["GeothermalSource_a77b__variable_operational_cost"],
+        )
+
+    def test_geothermal_source_elec_no_cop(self):
+        """
+        This tests checks the electric geothermal producer asset when no cop is provided.
+
+        It is the same test case as with the regular one, but in this case, the cop is not
+        provided and it assigned a value of 0.0, resulting in no power related costs.
+        """
+        import models.source_pipe_sink.src.double_pipe_heat as example
+        from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        heat_problem = run_esdl_mesido_optimization(
+            SourcePipeSink,
+            base_folder=base_folder,
+            esdl_file_name="sourcesink_with_geo_elec_no_cop.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.csv",
+        )
+        results = heat_problem.extract_results()
+
+        # Standard checks.
+        demand_matching_test(heat_problem, results)
+        energy_conservation_test(heat_problem, results)
+        heat_to_discharge_test(heat_problem, results)
+        electric_power_conservation_test(heat_problem, results)
+
+        # Equations check
+        np.testing.assert_allclose(
+            results["ElectricityProducer_4dde.ElectricityOut.Power"],
+            results["GeothermalSource_a77b.ElectricityIn.Power"],
+        )
+        np.testing.assert_allclose(results["ElectricityProducer_4dde.ElectricityOut.Power"], 0.0)
+
+        # Test electricity port
+        np.testing.assert_allclose(
+            results["GeothermalSource_a77b.ElectricityIn.Power"],
+            results["GeothermalSource_a77b.Power_elec"],
+        )
+
+        # Variable operational cost check.
+        np.testing.assert_allclose(0.0, results["GeothermalSource_a77b__variable_operational_cost"])

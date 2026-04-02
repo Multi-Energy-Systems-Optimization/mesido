@@ -1,3 +1,4 @@
+import gc
 import locale
 import logging
 import os
@@ -6,8 +7,7 @@ import time
 from typing import Dict
 
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
-from mesido.esdl.esdl_mixin import DBAccesType
-from mesido.esdl.esdl_mixin import ESDLMixin
+from mesido.esdl.esdl_mixin import DBAccessType, ESDLMixin
 from mesido.head_loss_class import HeadLossOption
 from mesido.potential_errors import reset_potential_errors
 from mesido.techno_economic_mixin import TechnoEconomicMixin
@@ -419,12 +419,6 @@ class EndScenarioSizing(
     def history(self, ensemble_member):
         return AliasDict(self.alias_relation)
 
-    def __state_vector_scaled(self, variable, ensemble_member):
-        canonical, sign = self.alias_relation.canonical_signed(variable)
-        return (
-            self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
-        )
-
     def solver_options(self):
         options = super().solver_options()
         if options["solver"] == "highs":
@@ -818,9 +812,9 @@ def run_end_scenario_sizing(
             if p not in solution.cold_pipes and parameters[f"{p}.area"] > 0.0:
                 lb = []
                 ub = []
-                bounds_pipe = bounds[f"{p}__flow_direct_var"]
+                bounds_pipe = bounds[f"{p}.__flow_direct_var"]
                 for i in range(len(t)):
-                    r = results[f"{p}__flow_direct_var"][i]
+                    r = results[f"{p}.__flow_direct_var"][i]
                     # bound to roughly represent 4km of milp losses in pipes
                     lb.append(
                         r
@@ -836,9 +830,9 @@ def run_end_scenario_sizing(
                 boolean_bounds[f"{p}__flow_direct_var"] = (Timeseries(t, lb), Timeseries(t, ub))
                 if not producer_input_timeseries:
                     try:
-                        r = results[f"{p}__is_disconnected"]
+                        r = results[f"{p}.__is_disconnected"]
                         r_low = np.zeros(len(r))
-                        boolean_bounds[f"{p}__is_disconnected"] = (
+                        boolean_bounds[f"{p}.__is_disconnected"] = (
                             Timeseries(t, r_low),
                             Timeseries(t, r),
                         )
@@ -846,6 +840,9 @@ def run_end_scenario_sizing(
                         pass
 
         priorities_output = solution._priorities_output
+
+        del solution
+        gc.collect()
 
     solution = run_optimization_problem_solver(
         end_scenario_problem_class,
@@ -871,7 +868,7 @@ def main(runinfo_path, log_level):
         "write_result_db_profiles": False,
         "database_connections": [
             {
-                "access_type": DBAccesType.WRITE,
+                "access_type": DBAccessType.WRITE,
                 "influxdb_host": "localhost",
                 "influxdb_port": 8086,
                 "influxdb_username": None,

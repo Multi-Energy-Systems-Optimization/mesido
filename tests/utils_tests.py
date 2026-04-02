@@ -21,21 +21,25 @@ def feasibility_test(solution):
         )
 
 
-def demand_matching_test(solution, results, atol=1.0e-3, rtol=1.0e-6):
+def demand_matching_test(solution, results, ensemble_member=0, atol=1.0e-3, rtol=1.0e-6):
     """ "Test function to check whether the milp demand of each consumer is matched"""
     for d in solution.energy_system_components.get("heat_demand", []):
         if len(solution.times()) > 0:
             len_times = len(solution.times())
         else:
             len_times = len(solution.get_timeseries(f"{d}.target_heat_demand").values)
-        target = solution.get_timeseries(f"{d}.target_heat_demand").values[0:len_times]
+        target = solution.get_timeseries(f"{d}.target_heat_demand", ensemble_member).values[
+            0:len_times
+        ]
         np.testing.assert_allclose(target, results[f"{d}.Heat_demand"], atol=atol, rtol=rtol)
     for d in solution.energy_system_components.get("cold_demand", []):
         if len(solution.times()) > 0:
             len_times = len(solution.times())
         else:
             len_times = len(solution.get_timeseries(f"{d}.target_cold_demand").values)
-        target = solution.get_timeseries(f"{d}.target_cold_demand").values[0:len_times]
+        target = solution.get_timeseries(f"{d}.target_cold_demand", ensemble_member).values[
+            0:len_times
+        ]
         np.testing.assert_allclose(target, results[f"{d}.Cold_demand"], atol=atol, rtol=rtol)
     for d in solution.energy_system_components.get("gas_demand", []):
         timeseries_name = f"{d}.target_gas_demand"
@@ -44,7 +48,7 @@ def demand_matching_test(solution, results, atol=1.0e-3, rtol=1.0e-6):
                 len_times = len(solution.times())
             else:
                 len_times = len(solution.get_timeseries(timeseries_name).values)
-            target = solution.get_timeseries(timeseries_name).values[0:len_times]
+            target = solution.get_timeseries(timeseries_name, ensemble_member).values[0:len_times]
             np.testing.assert_allclose(
                 target, results[f"{d}.Gas_demand_mass_flow"], atol=atol, rtol=rtol
             )
@@ -55,7 +59,7 @@ def demand_matching_test(solution, results, atol=1.0e-3, rtol=1.0e-6):
                 len_times = len(solution.times())
             else:
                 len_times = len(solution.get_timeseries(timeseries_name).values)
-            target = solution.get_timeseries(timeseries_name).values[0:len_times]
+            target = solution.get_timeseries(timeseries_name, ensemble_member).values[0:len_times]
             np.testing.assert_allclose(
                 target, results[f"{d}.Electricity_demand"], atol=atol, rtol=rtol
             )
@@ -171,7 +175,6 @@ def heat_to_discharge_test(solution, results, atol=1e-2, rtol=1.0e-4):
         # return_t = solution.parameters(0)[f"{d}.T_return"]
         supply_t, return_t, dt = _get_component_temperatures(solution, results, d)
 
-        # TODO: fix hardcoded atol
         np.testing.assert_allclose(
             results[f"{d}.HeatOut.Heat"],
             results[f"{d}.Q"] * rho * cp * supply_t,
@@ -200,11 +203,20 @@ def heat_to_discharge_test(solution, results, atol=1e-2, rtol=1.0e-4):
                 atol=atol,
             )
         except KeyError:
-            np.testing.assert_allclose(
-                results[f"{d}.Heat_buffer"],
-                results[f"{d}.HeatIn.Heat"] - results[f"{d}.HeatOut.Heat"],
-                atol=atol,
-            )
+            if d in solution.energy_system_components.get("heat_buffer_elec", []):
+                np.testing.assert_allclose(
+                    results[f"{d}.Heat_buffer"],
+                    results[f"{d}.HeatIn.Heat"]
+                    - results[f"{d}.HeatOut.Heat"]
+                    + results[f"{d}.Heat_elec_charging"],
+                    atol=atol,
+                )
+            else:
+                np.testing.assert_allclose(
+                    results[f"{d}.Heat_buffer"],
+                    results[f"{d}.HeatIn.Heat"] - results[f"{d}.HeatOut.Heat"],
+                    atol=atol,
+                )
         supply_temp, return_temp, dt = _get_component_temperatures(solution, results, d)
         indices = results[f"{d}.HeatIn.Q"] >= 0
         if isinstance(supply_temp, float):
@@ -370,6 +382,7 @@ def electric_power_conservation_test(solution, results, atol=1e-2):
             "elec_heat_source_elec",
             "heat_pump_elec",
             "air_water_heat_pump_elec",
+            "geothermal_source_elec",
         ]
     )
     producers = solution.energy_system_components_get(["electricity_source"])
@@ -423,6 +436,8 @@ def energy_conservation_test(solution, results, atol=1e-3, atol_total=1e-1):
 
     for d in solution.energy_system_components.get("heat_buffer", []):
         energy_sum -= results[f"{d}.Heat_buffer"]
+        if d in solution.energy_system_components.get("heat_buffer_elec", []):
+            energy_sum += results[f"{d}.Heat_elec_charging"]
 
     for d in solution.energy_system_components.get("heat_source", []):
         energy_sum += results[f"{d}.Heat_source"]
@@ -441,13 +456,13 @@ def energy_conservation_test(solution, results, atol=1e-3, atol_total=1e-1):
 
     for p in solution.energy_system_components.get("heat_pipe", []):
         if (
-            f"{p}__is_disconnected" in results.keys()
-            or f"{solution.cold_to_hot_pipe(p)}__is_disconnected" in results.keys()
+            f"{p}.__is_disconnected" in results.keys()
+            or f"{solution.cold_to_hot_pipe(p)}.__is_disconnected" in results.keys()
         ):
             if p in solution.cold_pipes:
-                p_discon = results[f"{solution.cold_to_hot_pipe(p)}__is_disconnected"].copy()
+                p_discon = results[f"{solution.cold_to_hot_pipe(p)}.__is_disconnected"].copy()
             else:
-                p_discon = results[f"{p}__is_disconnected"].copy()
+                p_discon = results[f"{p}.__is_disconnected"].copy()
 
             p_discon[p_discon < 0.5] = 0  # fix for discrete value sometimes being 0.003 or so.
             np.testing.assert_allclose(

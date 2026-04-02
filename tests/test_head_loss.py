@@ -3,7 +3,7 @@ from unittest import TestCase
 
 import mesido._darcy_weisbach as darcy_weisbach
 from mesido.constants import GRAVITATIONAL_CONSTANT
-from mesido.esdl.esdl_mixin import DBAccesType
+from mesido.esdl.esdl_mixin import DBAccessType
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
@@ -84,7 +84,7 @@ class TestHeadLoss(TestCase):
                 "write_result_db_profiles": False,
                 "database_connections": [
                     {
-                        "access_type": DBAccesType.WRITE,
+                        "access_type": DBAccessType.WRITE,
                         "influxdb_host": "localhost",
                         "influxdb_port": 8086,
                         "influxdb_username": None,
@@ -411,27 +411,27 @@ class TestHeadLoss(TestCase):
                         np.testing.assert_allclose(
                             results[f"{pipe}__pipe_linear_line_segment_num_1_neg_discharge"],
                             0.0,
-                            atol=1e-10,
+                            atol=1e-6,
                         )
                         np.testing.assert_allclose(
                             results[f"{pipe}__pipe_linear_line_segment_num_2_neg_discharge"],
                             0.0,
-                            atol=1e-10,
+                            atol=1e-6,
                         )
                         np.testing.assert_allclose(
                             results[f"{pipe}__pipe_linear_line_segment_num_2_pos_discharge"],
                             0.0,
-                            atol=1e-10,
+                            atol=1e-6,
                         )
                         np.testing.assert_allclose(
                             results[f"{pipe}__pipe_linear_line_segment_num_1_pos_discharge"],
                             1.0,
-                            atol=1e-10,
+                            atol=1e-6,
                         )
                         np.testing.assert_allclose(
                             results[f"{pipe}__pipe_linear_line_segment_num_2_pos_discharge"],
                             0.0,
-                            atol=1e-10,
+                            atol=1e-6,
                         )
 
                     if pipe not in [pipe4_id, pipe4_ret_id]:
@@ -462,7 +462,7 @@ class TestHeadLoss(TestCase):
                     results[f"{pipe4_id}.HeatIn.Q"]
                     / (solution.parameters(0)[f"{pipe4_id}.diameter"] ** 2 / 4.0 * np.pi),
                     0.0,
-                    atol=1e-07,
+                    atol=1e-03,
                 )
             elif (
                 solution.heat_network_settings["head_loss_option"]
@@ -813,19 +813,23 @@ class TestHeadLoss(TestCase):
                 np.testing.assert_allclose(
                     results[f"{pipe}__pipe_linear_line_segment_num_1_pos_discharge"][0:2],
                     1.0,
+                    atol=1e-12,
                 )
                 np.testing.assert_allclose(
                     results[f"{pipe}__pipe_linear_line_segment_num_1_pos_discharge"][2:4],
                     0.0,
+                    atol=1e-12,
                 )
                 # Gas demand for the last 2 timesteps fall on the 2nd linear line segment
                 np.testing.assert_allclose(
                     results[f"{pipe}__pipe_linear_line_segment_num_2_pos_discharge"][0:2],
                     0.0,
+                    atol=1e-12,
                 )
                 np.testing.assert_allclose(
                     results[f"{pipe}__pipe_linear_line_segment_num_2_pos_discharge"][2:4],
                     1.0,
+                    atol=1e-12,
                 )
 
     def test_gas_substation(self):

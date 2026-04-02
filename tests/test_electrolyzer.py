@@ -299,7 +299,7 @@ class TestElectrolyzer(TestCase):
         )
         # Check that the electrolyzer is switched off
         np.testing.assert_allclose(
-            results[f"{electrolyzer_id}__asset_is_switched_on"][-1],
+            results[f"{electrolyzer_id}.__asset_is_switched_on"][-1],
             0,
         )
         # Check that the input power is greater than 0
@@ -314,7 +314,7 @@ class TestElectrolyzer(TestCase):
         )
         # Check that the electrolyzer is switched off
         np.testing.assert_allclose(
-            results[f"{electrolyzer_id}__asset_is_switched_on"][:-1],
+            results[f"{electrolyzer_id}.__asset_is_switched_on"][:-1],
             np.ones(2),
         )
         # Check electrolyzer input power
@@ -422,10 +422,10 @@ class TestElectrolyzer(TestCase):
         for timestep in range(len(results[f"{electrolyzer_id}__line_0_active"])):
             np.testing.assert_allclose(
                 (
-                    results[f"{electrolyzer_id}__line_0_active"][timestep]
-                    + results[f"{electrolyzer_id}__line_1_active"][timestep]
-                    + results[f"{electrolyzer_id}__line_2_active"][timestep]
-                    + (1 - results[f"{electrolyzer_id}__asset_is_switched_on"][timestep])
+                    results[f"{electrolyzer_id}.__line_0_active"][timestep]
+                    + results[f"{electrolyzer_id}.__line_1_active"][timestep]
+                    + results[f"{electrolyzer_id}.__line_2_active"][timestep]
+                    + (1 - results[f"{electrolyzer_id}.__asset_is_switched_on"][timestep])
                 ),
                 1.0,
             )
@@ -435,8 +435,8 @@ class TestElectrolyzer(TestCase):
         for idx in range(3):
             np.testing.assert_allclose(
                 (
-                    results[f"{electrolyzer_id}__line_{idx}_active"][idx]
-                    + (1 - results[f"{electrolyzer_id}__asset_is_switched_on"][idx])
+                    results[f"{electrolyzer_id}.__line_{idx}_active"][idx]
+                    + (1 - results[f"{electrolyzer_id}.__asset_is_switched_on"][idx])
                 ),
                 1.0,
             )
@@ -506,10 +506,10 @@ class TestElectrolyzer(TestCase):
         # such that no line should be active
         np.testing.assert_allclose(
             (
-                results[f"{electrolyzer_id}__line_0_active"][-1]
-                + results[f"{electrolyzer_id}__line_1_active"][-1]
-                + results[f"{electrolyzer_id}__line_2_active"][-1]
-                + (1 - results[f"{electrolyzer_id}__asset_is_switched_on"][-1])
+                results[f"{electrolyzer_id}.__line_0_active"][-1]
+                + results[f"{electrolyzer_id}.__line_1_active"][-1]
+                + results[f"{electrolyzer_id}.__line_2_active"][-1]
+                + (1 - results[f"{electrolyzer_id}.__asset_is_switched_on"][-1])
             ),
             1.0,
         )

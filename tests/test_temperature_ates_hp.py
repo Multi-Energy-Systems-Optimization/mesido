@@ -68,9 +68,10 @@ class TestAtesTemperature(TestCase):
         energy_conservation_test(solution, results)
         heat_to_discharge_test(solution, results)
 
-        ates_charging = results[f"{ates_id}__is_charging"]  # =1 if charging
+        ates_charging = results[f"{ates_id}.__is_charging"]  # =1 if charging
         ates_temperature = results[f"{ates_id}.Temperature_ates"]
-        ates_temperature_disc = results[f"{ates_id}__temperature_ates_disc"]
+        ates_temperature_disc = results[f"{ates_id}.__temperature_ates_disc"]
+
         carrier_temperature = results["41770304791669983859190_temperature"]
         temperature_regimes = solution.temperature_regimes(41770304791669983859190)
 
@@ -81,8 +82,8 @@ class TestAtesTemperature(TestCase):
         heat_ates = results[f"{ates_id}.Heat_ates"]
         heat_loss_ates = results[f"{ates_id}.Heat_loss"]
         ates_stored_heat = results[f"{ates_id}.Stored_heat"]
-        hex_disabled = results[f"{hex_id}__disabled"]
-        hp_disabled = results[f"{hp_id}__disabled"]
+        hex_disabled = results[f"{hex_id}.__disabled"]
+        hp_disabled = results[f"{hp_id}.__disabled"]
 
         # geo_source = results[f"{geo_src_id}.Heat_source"]
         objective = solution.objective_value
@@ -103,6 +104,10 @@ class TestAtesTemperature(TestCase):
         )
 
         np.testing.assert_allclose(objective_calc / 1e4, objective)
+
+        np.testing.assert_array_less(
+            1, sum(heat_ates < -1e6), err_msg="The ATES is not actively " "used during this test"
+        )
 
         np.testing.assert_array_less(ates_temperature_disc - tol, ates_temperature)
         np.testing.assert_array_less(
