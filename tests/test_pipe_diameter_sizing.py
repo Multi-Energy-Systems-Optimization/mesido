@@ -61,6 +61,7 @@ class TestPipeDiameterSizingExample(TestCase):
         self.assertTrue((feasibility == "Optimal"))
 
         parameters = problem.parameters(0)
+        name_to_id_map = problem.esdl_asset_name_to_id_map
         diameters = {p: parameters[f"{p}.diameter"] for p in problem.hot_pipes}
         assert len(problem.unrelated_pipes) == 0
         results = problem.extract_results()
@@ -74,8 +75,18 @@ class TestPipeDiameterSizingExample(TestCase):
             "More/less than 4 pipes have been removed",
         )
         # Check that the correct/specific 4 pipes on the left or 4 on the right have been removed
-        pipes_removed = ["Pipe_8592", "Pipe_2927", "Pipe_9a6f", "Pipe_a718"]
-        pipes_remained = ["Pipe_96bc", "Pipe_51e4", "Pipe_6b39", "Pipe_f9b0"]
+        pipes_removed = [
+            name_to_id_map["Pipe_8592"],
+            name_to_id_map["Pipe_2927"],
+            name_to_id_map["Pipe_9a6f"],
+            name_to_id_map["Pipe_a718"],
+        ]
+        pipes_remained = [
+            name_to_id_map["Pipe_96bc"],
+            name_to_id_map["Pipe_51e4"],
+            name_to_id_map["Pipe_6b39"],
+            name_to_id_map["Pipe_f9b0"],
+        ]
         self.assertTrue(
             all(
                 (elem in [k for k, d in diameters.items() if (d == 0.0)] for elem in pipes_remained)
@@ -125,9 +136,9 @@ class TestPipeDiameterSizingExample(TestCase):
 
         # Ensure that the removed pipes do not have predicted hydraulic power values
         hydraulic_power_sum = 0.0
-        for pipe in diameters.keys():
-            if pipe in pipes_removed:
-                hydraulic_power_sum += sum(abs(results[f"{pipe}.Hydraulic_power"]))
+        for pipe_id in diameters.keys():
+            if pipe_id in pipes_removed:
+                hydraulic_power_sum += sum(abs(results[f"{pipe_id}.Hydraulic_power"]))
         self.assertEqual(hydraulic_power_sum, 0.0, "Hydraulic power exists for a removed pipe")
 
         # Hydraulic power = delta pressure * Q = f(Q^3), where delta pressure = f(Q^2)
@@ -136,15 +147,15 @@ class TestPipeDiameterSizingExample(TestCase):
         # function (delta pressure).
         hydraulic_power_sum = 0.0
         hydraulic_power_post_process = 0.0
-        for pipe in diameters.keys():
-            if pipe in pipes_remained:
-                hydraulic_power_sum += sum(abs(results[f"{pipe}.Hydraulic_power"]))
+        for pipe_id in diameters.keys():
+            if pipe_id in pipes_remained:
+                hydraulic_power_sum += sum(abs(results[f"{pipe_id}.Hydraulic_power"]))
                 hydraulic_power_post_process += sum(
                     abs(
-                        results[f"{pipe}.dH"]
-                        * parameters[f"{pipe}.rho"]
+                        results[f"{pipe_id}.dH"]
+                        * parameters[f"{pipe_id}.rho"]
                         * 9.81
-                        * results[f"{pipe}.HeatOut.Q"]
+                        * results[f"{pipe_id}.HeatOut.Q"]
                     )
                 )
 

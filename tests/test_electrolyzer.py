@@ -145,8 +145,7 @@ class TestElectrolyzer(TestCase):
         np.testing.assert_allclose(results[f"{gas_storage_id}.Stored_gas_mass"][0], 0.0)
         np.testing.assert_allclose(results[f"{gas_storage_id}.Gas_tank_flow"][0], 0.0)
 
-        for cable in solution.energy_system_components.get("electricity_cable", []):
-            cable_id = name_to_id_map[cable]
+        for cable_id in solution.energy_system_components.get("electricity_cable", []):
             ub = solution.esdl_assets[cable_id].attributes["capacity"]
             np.testing.assert_array_less(results[f"{cable_id}.ElectricityOut.Power"], ub + tol)
             lb = solution.esdl_assets[cable_id].in_ports[0].carrier.voltage

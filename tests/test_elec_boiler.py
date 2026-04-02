@@ -19,10 +19,11 @@ class TestElecBoiler(TestCase):
 
     def asset_cost_calculation_tests(self, solution, results):
         # Check the cost components
+        name_to_id_map = solution.esdl_asset_name_to_id_map
         for asset in [
             *solution.energy_system_components.get("heat_source", []),
         ]:
-            esdl_asset = solution.esdl_assets[solution.esdl_asset_name_to_id_map[f"{asset}"]]
+            esdl_asset = solution.esdl_assets[asset]
             costs_esdl_asset = esdl_asset.attributes["costInformation"]
 
             # investment cost
@@ -86,10 +87,10 @@ class TestElecBoiler(TestCase):
         electric_power_conservation_test(heat_problem, results)
 
         e_boiler_id = name_to_id_map["ElectricBoiler_9aab"]
+        elec_producer_id = name_to_id_map["ElectricityProducer_4dde"]
 
         np.testing.assert_array_less(0.0, results[f"{e_boiler_id}.Heat_source"])
-        np.testing.assert_array_less(0.0, results[f""
-                                                  f"{name_to_id_map['ElectricityProducer_4dde']}.ElectricityOut.Power"])
+        np.testing.assert_array_less(0.0, results[f"{elec_producer_id}.ElectricityOut.Power"])
         np.testing.assert_allclose(
             parameters[f"{e_boiler_id}.efficiency"]
             * results[f"{e_boiler_id}.Power_consumed"],
@@ -178,8 +179,9 @@ class TestElecBoiler(TestCase):
         electric_power_conservation_test(heat_problem, results)
 
         hp_id = name_to_id_map["HeatPump_d8fd"]
+        elec_producer_id = name_to_id_map["ElectricityProducer_4dde"]
         np.testing.assert_array_less(0.0, results[f"{hp_id}.Heat_source"])
-        np.testing.assert_array_less(0.0, results[f"{name_to_id_map['ElectricityProducer_4dde']}.ElectricityOut.Power"])
+        np.testing.assert_array_less(0.0, results[f"{elec_producer_id}.ElectricityOut.Power"])
         np.testing.assert_array_less(
             parameters[f"{hp_id}.cop"] * results[f"{hp_id}.Power_elec"],
             results[f"{hp_id}.Heat_source"] + 1.0e-6,

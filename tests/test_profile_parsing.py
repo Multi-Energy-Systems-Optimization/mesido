@@ -316,8 +316,7 @@ class TestProfileLoading(unittest.TestCase):
             os.path.join(input_folder, "SpaceHeat&HotWater_PowerProfile_2000_2010.csv")
         )
         expected_values = expected_values_file["Ruimte&Tap_W"]
-        for asset in problem.energy_system_components.get("heat_source"):
-            asset_id = name_to_id_map[asset]
+        for asset_id in problem.energy_system_components.get("heat_source"):
             np.testing.assert_allclose(
                 problem.get_timeseries(f"{asset_id}.maximum_heat_source").values,
                 expected_values * 1e6,
