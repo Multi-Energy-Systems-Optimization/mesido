@@ -106,10 +106,6 @@ class BaseProfileReader:
                 "No profiles were provided so no timeframe for the profiles could be deduced"
             )
 
-        esdl_asset_names_to_ids = dict(
-            zip(esdl_asset_id_to_name_map.values(), esdl_asset_id_to_name_map.keys())
-        )
-
         for ensemble_member in range(ensemble_size):
             for component_type, var_name in self.component_type_to_var_name_map.items():
                 for component_id in energy_system_components.get(component_type, []):
@@ -144,7 +140,7 @@ class BaseProfileReader:
                             asset_power = asset.attributes["power"]
                     else:
                         logger.warning(
-                            f"Read profiles: asset {component} has a state {asset_state.name} "
+                            f"Read profiles: asset {asset.name} has a state {asset_state.name} "
                             "and currently the code only caters for asset states ENABLED or "
                             "OPTIONAL"
                         )

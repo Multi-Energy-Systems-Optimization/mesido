@@ -405,9 +405,9 @@ class ScenarioOutput:
                         tot_variable_opex_cost_euro += results[
                             f"{asset_id}__variable_operational_cost"
                         ][0]
-                        tot_fixed_opex_cost_euro += results[
-                            f"{asset_id}__fixed_operational_cost"
-                        ][0]
+                        tot_fixed_opex_cost_euro += results[f"{asset_id}__fixed_operational_cost"][
+                            0
+                        ]
                         tot_timehorizon_variable_opex_cost_euro += (
                             results[f"{asset_id}__variable_operational_cost"][0]
                             * optim_time_horizon
@@ -711,9 +711,9 @@ class ScenarioOutput:
 
                     # Create KPIs by using applicable costs for the specific asset
                     area_investment_cost += results[self._asset_investment_cost_map[asset_id]][0]
-                    area_installation_cost += results[
-                        self._asset_installation_cost_map[asset_id]
-                    ][0]
+                    area_installation_cost += results[self._asset_installation_cost_map[asset_id]][
+                        0
+                    ]
                     area_variable_opex_cost += results[
                         self._asset_variable_operational_cost_map[asset_id]
                     ][0]
@@ -954,9 +954,7 @@ class ScenarioOutput:
         # end KPIs
 
     def _id_to_asset(self, energy_system, id):
-        return next(
-            (x for x in energy_system.eAllContents() if hasattr(x, "id") and x.id == id)
-        )
+        return next((x for x in energy_system.eAllContents() if hasattr(x, "id") and x.id == id))
 
     def _remove_result_profiles(
         self,
@@ -1356,18 +1354,14 @@ class ScenarioOutput:
                             try:
                                 # For all components dealing with one hydraulic system
                                 if isinstance(
-                                    results[f"{asset_id}." + variables_one_hydraulic_system[0]][
-                                        ii
-                                    ],
+                                    results[f"{asset_id}." + variables_one_hydraulic_system[0]][ii],
                                     numbers.Number,
                                 ):
                                     variables_names = variables_one_hydraulic_system
                             except KeyError:
                                 # For all components dealing with two hydraulic system
                                 if isinstance(
-                                    results[f"{asset_id}." + variables_two_hydraulic_system[0]][
-                                        ii
-                                    ],
+                                    results[f"{asset_id}." + variables_two_hydraulic_system[0]][ii],
                                     numbers.Number,
                                 ):
                                     variables_names = variables_two_hydraulic_system

@@ -159,7 +159,8 @@ class TestWarmingUpUnitCases(TestCase):
 
         # We only check the flow directions for the time-steps that there is flow in the pipe.
         inds = np.round(1 - results[f"{name_to_id_map['Pipe_e53a']}.__is_disconnected"]).astype(
-            bool)
+            bool
+        )
         np.testing.assert_allclose(
             np.round(results[f"{name_to_id_map['Pipe_e53a']}.__flow_direct_var"][inds]) * 2.0 - 1.0,
             np.sign(results[f"{name_to_id_map['Pipe_e53a']}.Q"][inds]),

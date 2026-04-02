@@ -153,8 +153,7 @@ class TestElectrolyzer(TestCase):
             np.testing.assert_array_less(lb - tol, results[f"{cable_id}.ElectricityOut.V"])
             np.testing.assert_array_less(
                 results[f"{cable_id}.ElectricityOut.Power"],
-                results[f"{cable_id}.ElectricityOut.V"]
-                * results[f"{cable_id}.ElectricityOut.I"]
+                results[f"{cable_id}.ElectricityOut.V"] * results[f"{cable_id}.ElectricityOut.I"]
                 + tol,
             )
 
@@ -493,7 +492,6 @@ class TestElectrolyzer(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_minimum_electrolyzer_power.csv",
-
             error_type_check=NetworkErrors.NO_POTENTIAL_ERRORS_CHECK,
         )
 

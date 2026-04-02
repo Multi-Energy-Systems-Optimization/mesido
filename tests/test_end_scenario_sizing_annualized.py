@@ -108,12 +108,8 @@ class TestEndScenarioSizingAnnualized(TestCase):
             )
             esdl_asset = solution_annualized_cost.esdl_assets[producer_id]
             # These are the same parameters used by the model from the ESDL file:
-            years_asset_life = esdl_asset.attributes[
-                "technicalLifetime"
-            ]
-            discount_rate = (
-                esdl_asset.attributes["costInformation"].discountRate.value
-            ) / 100
+            years_asset_life = esdl_asset.attributes["technicalLifetime"]
+            discount_rate = (esdl_asset.attributes["costInformation"].discountRate.value) / 100
             # TODO: Handle if NoneType
             discount_factor = calculate_annuity_factor(discount_rate, years_asset_life)
             annualized_capex = results[f"{producer_id}__annualized_capex"]

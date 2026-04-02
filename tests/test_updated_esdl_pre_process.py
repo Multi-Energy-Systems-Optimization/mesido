@@ -114,10 +114,8 @@ class TestUpdatedESDL(TestCase):
             max(problem.get_timeseries(f"{demand_b0ff_id}.target_heat_demand").values) / 5.5,
         )
         np.testing.assert_allclose(
-            np.average(problem.get_timeseries(f"{demand_08fd_id}.target_heat_demand").values)
-            / 0.5,
-            np.average(problem.get_timeseries(f"{demand_b0ff_id}.target_heat_demand").values)
-            / 5.5,
+            np.average(problem.get_timeseries(f"{demand_08fd_id}.target_heat_demand").values) / 0.5,
+            np.average(problem.get_timeseries(f"{demand_b0ff_id}.target_heat_demand").values) / 5.5,
         )
 
         # Test limiting the pipe classes for a pipe connected to a heat demand/producer
@@ -130,8 +128,9 @@ class TestUpdatedESDL(TestCase):
         # Pipe connected to a producer
         # initially DN900
         np.testing.assert_equal(
-            [*problem._heat_pipe_topo_pipe_class_map[name_to_id_map["Pipe1"]].keys()][-1].name ==
-             "DN400", True
+            [*problem._heat_pipe_topo_pipe_class_map[name_to_id_map["Pipe1"]].keys()][-1].name
+            == "DN400",
+            True,
         )
 
 

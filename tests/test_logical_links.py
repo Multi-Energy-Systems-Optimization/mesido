@@ -203,8 +203,7 @@ class TestLogicalLinks(TestCase):
         wind_park_id = name_to_id_map["WindPark_9074"]
 
         assert all(
-            results[f"{cable_id}.ElectricityIn.V"]
-            == results[f"{bus_id}.ElectricityConn[3].V"]
+            results[f"{cable_id}.ElectricityIn.V"] == results[f"{bus_id}.ElectricityConn[3].V"]
         )
 
         assert (

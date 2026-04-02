@@ -132,9 +132,7 @@ class PhysicsMixin(
         bounds.update(self._change_setpoint_bounds)
         return bounds
 
-    def __setpoint_constraint(
-        self, ensemble_member, component_id, windowsize_hr, setpointchanges
-    ):
+    def __setpoint_constraint(self, ensemble_member, component_id, windowsize_hr, setpointchanges):
         r"""Constraints that can switch only every n time steps of setpoint.
         A component can only switch setpoint every <windowsize_hr> hours.
         Apply the constraint every timestep from after the first time step onwards [from i=1].

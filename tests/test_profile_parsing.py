@@ -212,7 +212,9 @@ class TestProfileLoading(unittest.TestCase):
         expected_array = np.array([1.0e8] * 3)
         np.testing.assert_equal(
             expected_array,
-            problem.get_timeseries(f"{name_to_id_map['WindPark_7f14']}.maximum_electricity_source").values,
+            problem.get_timeseries(
+                f"{name_to_id_map['WindPark_7f14']}.maximum_electricity_source"
+            ).values,
         )
 
         expected_array = np.array([1.0] * 3)
@@ -251,7 +253,8 @@ class TestProfileLoading(unittest.TestCase):
 
         expected_array = np.array([1.5e5] * 16 + [1.0e5] * 13 + [0.5e5] * 16)
         np.testing.assert_equal(
-            expected_array, problem.get_timeseries(f"{name_to_id_map['demand']}.target_heat_demand").values
+            expected_array,
+            problem.get_timeseries(f"{name_to_id_map['demand']}.target_heat_demand").values,
         )
 
     def test_loading_from_csv_with_influx_profiles_given(self):
@@ -316,7 +319,6 @@ class TestProfileLoading(unittest.TestCase):
             esdl_parser=ESDLFileParser,
         )
         problem.pre()
-        name_to_id_map = problem.esdl_asset_name_to_id_map
 
         expected_values_file = pd.read_csv(
             os.path.join(input_folder, "SpaceHeat&HotWater_PowerProfile_2000_2010.csv")

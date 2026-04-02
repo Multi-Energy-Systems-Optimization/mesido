@@ -84,13 +84,9 @@ class TestAssetIsRealized(TestCase):
 
         # Here we test that the asset is not used until it is actually realized
         inds_not_1 = np.where(np.round(results[f"{prod_1_id}__asset_is_realized"]) == 0)
-        np.testing.assert_allclose(
-            results[f"{prod_1_id}.Heat_source"][inds_not_1], 0.0, atol=1e-6
-        )
+        np.testing.assert_allclose(results[f"{prod_1_id}.Heat_source"][inds_not_1], 0.0, atol=1e-6)
         inds_not_2 = np.where(np.round(results[f"{prod_2_id}__asset_is_realized"]) == 0)
-        np.testing.assert_allclose(
-            results[f"{prod_1_id}.Heat_source"][inds_not_2], 0.0, atol=1e-6
-        )
+        np.testing.assert_allclose(results[f"{prod_1_id}.Heat_source"][inds_not_2], 0.0, atol=1e-6)
 
         # Here we test that the asset is actually used once it is realized
         np.testing.assert_allclose(results[f"{prod_1_id}.Heat_source"][inds_1] > 0.0, True)

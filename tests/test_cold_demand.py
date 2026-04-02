@@ -239,10 +239,14 @@ class TestColdDemand(TestCase):
         # Check heat loss and gain
         tol_value = 1.0e-6
         np.testing.assert_array_less(
-            0.0, results[f"{pipe1_id}.HeatIn.Heat"] - results[f"{pipe1_id}.HeatOut.Heat"] + tol_value
+            0.0,
+            results[f"{pipe1_id}.HeatIn.Heat"] - results[f"{pipe1_id}.HeatOut.Heat"] + tol_value,
         )
         np.testing.assert_array_less(
-            results[f"{pipe1_ret_id}.HeatIn.Heat"] - results[f"{pipe1_ret_id}.HeatOut.Heat"] - tol_value, 0.0
+            results[f"{pipe1_ret_id}.HeatIn.Heat"]
+            - results[f"{pipe1_ret_id}.HeatOut.Heat"]
+            - tol_value,
+            0.0,
         )
 
         # ------------------------------------------------------------------------------------------
@@ -282,7 +286,9 @@ class TestColdDemand(TestCase):
             0.0, results[f"{pipe1_id}.HeatIn.Heat"] - results[f"{pipe1_id}.HeatOut.Heat"], atol=1e-6
         )
         np.testing.assert_allclose(
-            0.0, results[f"{pipe1_ret_id}.HeatIn.Heat"] - results[f"{pipe1_ret_id}.HeatOut.Heat"], atol=1e-6
+            0.0,
+            results[f"{pipe1_ret_id}.HeatIn.Heat"] - results[f"{pipe1_ret_id}.HeatOut.Heat"],
+            atol=1e-6,
         )
         # ------------------------------------------------------------------------------------------
 

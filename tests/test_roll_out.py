@@ -52,11 +52,11 @@ class TestRollOutOptimization(TestCase):
                 # m = [3, 5, 5]
                 m = [1.5, 1.5, 1.5]
                 i = 0
-                for d in self.energy_system_components.get("heat_demand",[]):
+                for d in self.energy_system_components.get("heat_demand", []):
                     demand_timeseries = self.get_timeseries(f"{d}.target_heat_demand")
                     demand_timeseries.values[:] = demand_timeseries.values[:] * m[i]
                     self.set_timeseries(f"{d}.target_heat_demand", demand_timeseries)
-                    i+=1
+                    i += 1
 
             def solver_options(self):
                 options = super().solver_options()

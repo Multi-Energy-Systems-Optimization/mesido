@@ -199,8 +199,7 @@ class TestMILPElectricSourceSink(TestCase):
         electric_power_conservation_test(solution, results)
 
         max_power_transport = (
-            parameters[f"{cable_id}.min_voltage"]
-            * parameters[f"{cable_id}.max_current"]
+            parameters[f"{cable_id}.min_voltage"] * parameters[f"{cable_id}.max_current"]
         )  # This max is based on max current and voltage requirement at consumer
         v_min = parameters[f"{cable_id}.min_voltage"]  # set as minimum voltage for cables
 
@@ -212,9 +211,7 @@ class TestMILPElectricSourceSink(TestCase):
             power_consumed - tolerance <= np.ones(len(power_consumed)) * max_power_transport
         )
         self.assertTrue(smallerthen)
-        demand_target = solution.get_timeseries(
-            f"{demand_id}.target_electricity_demand"
-        ).values
+        demand_target = solution.get_timeseries(f"{demand_id}.target_electricity_demand").values
         np.testing.assert_allclose(
             power_consumed,
             np.minimum(demand_target, np.ones(len(power_consumed)) * max_power_transport),
@@ -296,10 +293,7 @@ class TestMILPElectricSourceSink(TestCase):
         electric_power_conservation_test(solution, results)
 
         # Check that the cables have two different voltage levels
-        assert (
-            parameters[f"{demand_id}.min_voltage"]
-            != parameters[f"{transformer_id}.min_voltage"]
-        )
+        assert parameters[f"{demand_id}.min_voltage"] != parameters[f"{transformer_id}.min_voltage"]
 
         np.testing.assert_allclose(
             parameters[f"{transformer_id}.min_voltage"],

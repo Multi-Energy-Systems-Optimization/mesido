@@ -171,7 +171,8 @@ class TestGasElect(TestCase):
                     for iter in range(len(pipe_classes)):
                         if pipe_classes[iter].inner_diameter == parameters[f"{asset_id}.diameter"]:
                             investment_cost = (
-                                pipe_classes[iter].investment_costs * parameters[f"{asset_id}.length"]
+                                pipe_classes[iter].investment_costs
+                                * parameters[f"{asset_id}.length"]
                             )
             total_capex += investment_cost
             np.testing.assert_allclose(

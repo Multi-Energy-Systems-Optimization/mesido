@@ -67,7 +67,6 @@ class TestMILPElectricSourceSinkStorage(TestCase):
         )
 
         results_disc = solution_disc.extract_results()
-        name_to_id_map_disc = solution_disc.esdl_asset_name_to_id_map
 
         storage_name = solution.energy_system_components.get("electricity_storage")[0]
         charge_eff = parameters[f"{storage_name}.charge_efficiency"]

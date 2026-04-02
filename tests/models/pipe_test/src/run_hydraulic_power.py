@@ -230,7 +230,9 @@ class HeatProblem(
         data_milp.update({"Pipe1_return_dT": parameters["Pipe1_ret.dT"]})
 
         # Heat source, demand and loss [W]
-        data_milp.update({"Heat_source": results[f"{name_id_map['ResidualHeatSource_1']}.Heat_source"]})
+        data_milp.update(
+            {"Heat_source": results[f"{name_id_map['ResidualHeatSource_1']}.Heat_source"]}
+        )
         data_milp.update({"Heat_demand": results[f"{name_id_map['HeatingDemand_1']}.Heat_demand"]})
         data_milp.update(
             {

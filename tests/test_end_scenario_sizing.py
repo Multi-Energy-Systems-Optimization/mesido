@@ -241,7 +241,6 @@ class TestEndScenarioSizing(TestCase):
         )
 
         results = solution_staged.extract_results()
-        name_to_id_map = solution_staged.esdl_asset_name_to_id_map
 
         # Check whehter the heat demand is matched
         demand_matching_test(solution_staged, results)

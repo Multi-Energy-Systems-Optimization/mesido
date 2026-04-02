@@ -130,10 +130,12 @@ class TestHeadLoss(TestCase):
                 idx = []
                 linearized_idx = []
                 idx.append(
-                    (results[f"{pipe1_id}.Q"][itime] / solution.parameters(0)[f"{pipe1_id}.area"]) >= v_points
+                    (results[f"{pipe1_id}.Q"][itime] / solution.parameters(0)[f"{pipe1_id}.area"])
+                    >= v_points
                 )
                 idx.append(
-                    (results[f"{pipe1_id}.Q"][itime] / solution.parameters(0)[f"{pipe1_id}.area"]) < v_points
+                    (results[f"{pipe1_id}.Q"][itime] / solution.parameters(0)[f"{pipe1_id}.area"])
+                    < v_points
                 )
                 linearized_idx.append(np.where(idx[0])[0][-1])
                 linearized_idx.append(np.where(idx[1])[0][0])
@@ -215,7 +217,10 @@ class TestHeadLoss(TestCase):
 
             pump_power = results[f"{source_id}.Pump_power"]
             pump_power_post_process = (
-                results[f"{source_id}.dH"] / GRAVITATIONAL_CONSTANT * 1.0e5 * results[f"{source_id}.Q"]
+                results[f"{source_id}.dH"]
+                / GRAVITATIONAL_CONSTANT
+                * 1.0e5
+                * results[f"{source_id}.Q"]
             )
 
             # The pump power should be overestimated compared to the actual head loss due to the
@@ -224,10 +229,12 @@ class TestHeadLoss(TestCase):
             np.testing.assert_array_less(pump_power_post_process, pump_power)
 
             sum_hp = (
-                results[f"{demand_id}.HeatOut.Hydraulic_power"] - results[f"{demand_id}.HeatIn.Hydraulic_power"]
+                results[f"{demand_id}.HeatOut.Hydraulic_power"]
+                - results[f"{demand_id}.HeatIn.Hydraulic_power"]
             )
             sum_hp += (
-                results[f"{pipe1_id}.HeatOut.Hydraulic_power"] - results[f"{pipe1_id}.HeatIn.Hydraulic_power"]
+                results[f"{pipe1_id}.HeatOut.Hydraulic_power"]
+                - results[f"{pipe1_id}.HeatIn.Hydraulic_power"]
             )
             sum_hp += (
                 results[f"{pipe1_ret_id}.HeatOut.Hydraulic_power"]
@@ -721,7 +728,9 @@ class TestHeadLoss(TestCase):
                 results[f"{pipe1_id}.GasOut.H"] - results[f"{pipe1_id}.GasIn.H"],
                 results[f"{pipe1_id}.dH"],
             )
-            np.testing.assert_allclose(-results[f"{pipe1_id}.dH"], results[f"{pipe1_id}.__head_loss"])
+            np.testing.assert_allclose(
+                -results[f"{pipe1_id}.dH"], results[f"{pipe1_id}.__head_loss"]
+            )
 
             pipes = [pipe1_id]
             v_max = solution.gas_network_settings["maximum_velocity"]

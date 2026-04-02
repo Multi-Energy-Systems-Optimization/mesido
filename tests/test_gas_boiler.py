@@ -15,7 +15,6 @@ class TestGasBoiler(TestCase):
 
     def asset_cost_calculation_tests(self, solution, results, parameters):
         # Check the cost components of GasHeater
-        name_to_id_map = solution.esdl_asset_name_to_id_map
         for asset_id in [
             *solution.energy_system_components.get("heat_source", []),
         ]:

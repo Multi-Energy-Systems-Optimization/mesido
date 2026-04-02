@@ -51,9 +51,18 @@ class TestGasNetwork(TestCase):
             target = solution.get_timeseries(f"{demand}.target_gas_demand").values
             np.testing.assert_allclose(target, results[f"{demand}.Gas_demand_mass_flow"])
 
-        removed_pipes = [name_to_id_map["Pipe_a718"], name_to_id_map["Pipe_9a6f"], name_to_id_map["Pipe_2927"], name_to_id_map["Pipe_8592"]]
-        remained_pipes = [name_to_id_map["Pipe_51e4"], name_to_id_map["Pipe_6b39"],
-                          name_to_id_map["Pipe_f9b0"], name_to_id_map["Pipe_96bc"]]
+        removed_pipes = [
+            name_to_id_map["Pipe_a718"],
+            name_to_id_map["Pipe_9a6f"],
+            name_to_id_map["Pipe_2927"],
+            name_to_id_map["Pipe_8592"],
+        ]
+        remained_pipes = [
+            name_to_id_map["Pipe_51e4"],
+            name_to_id_map["Pipe_6b39"],
+            name_to_id_map["Pipe_f9b0"],
+            name_to_id_map["Pipe_96bc"],
+        ]
         for pipe in removed_pipes:
             np.testing.assert_allclose(results[f"{pipe}__gn_diameter"], 0.0, atol=1.0e-6)
             np.testing.assert_allclose(results[f"{pipe}__investment_cost"], 0.0, atol=1.0e-6)

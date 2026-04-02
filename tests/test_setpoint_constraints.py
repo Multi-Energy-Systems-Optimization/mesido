@@ -224,17 +224,11 @@ class TestSetpointConstraints(TestCase):
                 max(solution.times()[1:] - solution.times()[0:-1]), 20.0 * 24.0 * 3600.0
             )
 
-            diff = (
-                results[f"{prod_id}.Heat_source"][2:]
-                - results[f"{prod_id}.Heat_source"][1:-1]
-            )
+            diff = results[f"{prod_id}.Heat_source"][2:] - results[f"{prod_id}.Heat_source"][1:-1]
             ires = [idx + 2 for idx, val in enumerate(diff) if abs(val) > 1e-5]
             for ii in range(1, len(ires)):
                 demand_times = solution.get_timeseries(f"{dem_id}.target_heat_demand", 0).times
-                check = (
-                    demand_times[ires[ii]]
-                    - demand_times[ires[ii - 1]]
-                )
+                check = demand_times[ires[ii]] - demand_times[ires[ii - 1]]
                 # The following checks should be true because the setpoint changes occur at
                 # the during ihrs time intervals
                 if ihrs == 20 * 24 - 1:

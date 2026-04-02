@@ -113,8 +113,7 @@ class TestInsulation(TestCase):
             - results[f"{storage_bce7_id}.Heat_buffer"]
         ) / 1.0e6
         tot_dmnd = (
-            results[f"{demand_f15e_id}.Heat_demand"]
-            + results[f"{demand_e6b3_id}.Heat_demand"]
+            results[f"{demand_f15e_id}.Heat_demand"] + results[f"{demand_e6b3_id}.Heat_demand"]
         ) / 1.0e6
         np.testing.assert_array_less(
             (tot_dmnd - tot_src), 0.0, err_msg="The heat source is not sufficient"

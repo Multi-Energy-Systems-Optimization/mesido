@@ -52,7 +52,9 @@ class TestHeat(TestCase):
 
         # Check emission information is passed to parameters
         parameters = case.parameters(0)
-        np.testing.assert_allclose(parameters[f"{name_to_id_map['source']}.emission_coeff"], 20 * 1e-6 * 3600)
+        np.testing.assert_allclose(
+            parameters[f"{name_to_id_map['source']}.emission_coeff"], 20 * 1e-6 * 3600
+        )
 
     def test_zero_heat_loss(self):
         """
@@ -236,9 +238,14 @@ class TestMinMaxPressureOptions(TestCase):
         default_demand_id = default_name_to_id_map["demand"]
         target = case_default.get_timeseries(f"{default_demand_id}.target_heat_demand").values
         self.assertLess(
-            np.sum((case_default.extract_results()[f"{default_demand_id}.Heat_demand"] - target) ** 2),
             np.sum(
-                (case_min_max_pressure.extract_results()[f"{default_demand_id}.Heat_demand"] - target)
+                (case_default.extract_results()[f"{default_demand_id}.Heat_demand"] - target) ** 2
+            ),
+            np.sum(
+                (
+                    case_min_max_pressure.extract_results()[f"{default_demand_id}.Heat_demand"]
+                    - target
+                )
                 ** 2
             ),
         )
@@ -337,8 +344,9 @@ class TestDisconnectablePipe(TestCase):
 
         self.assertLess(q_disconnected[1], q_connected[1])
         self.assertAlmostEqual(q_disconnected[1], 0.0, 5)
-        np.testing.assert_allclose(results_connected[f"{pipe1_connected_id}.__is_disconnected"],
-                                   0.0)
+        np.testing.assert_allclose(
+            results_connected[f"{pipe1_connected_id}.__is_disconnected"], 0.0
+        )
         np.testing.assert_allclose(
             results_disconnected[f"{pipe1_disconnected_id}.__is_disconnected"][1], 1.0
         )

@@ -45,8 +45,6 @@ def checks_all_mc_simulations(solution, results):
     demand_matching_test(solution, results)
     energy_conservation_test(solution, results)
 
-    name_to_id_map = solution.esdl_asset_name_to_id_map
-
     for prod in solution.energy_system_components.get("electricity_source", []):
         prod_profile_name = f"{prod}.maximum_electricity_source"
         energy_prod = results[f"{prod}.Electricity_source"]

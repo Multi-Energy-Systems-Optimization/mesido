@@ -328,8 +328,7 @@ class _ESDLModelBase(_Model):
                 type_node_assets: list of node assets of a specific commodity.
             """
             if connected_to.id in list(port_map.keys()) and (
-                assets[port_map[connected_to.id].name.split(".")[0]].asset_type
-                == "Pipe"
+                assets[port_map[connected_to.id].name.split(".")[0]].asset_type == "Pipe"
                 or assets[port_map[connected_to.id].name.split(".")[0]].asset_type
                 == "ElectricityCable"
             ):
@@ -437,13 +436,8 @@ class _ESDLModelBase(_Model):
                     if (
                         asset.asset_type == "Pipe"
                         or asset.asset_type == "ElectricityCable"
-                        or assets[
-                            port_map[connected_to.id].name.split(".")[0]
-                        ].asset_type
-                        == "Pipe"
-                        or assets[
-                            port_map[connected_to.id].name.split(".")[0]
-                        ].asset_type
+                        or assets[port_map[connected_to.id].name.split(".")[0]].asset_type == "Pipe"
+                        or assets[port_map[connected_to.id].name.split(".")[0]].asset_type
                         == "ElectricityCable"
                     ):
                         self.connect(port_map[port.id], port_map[connected_to.id])
