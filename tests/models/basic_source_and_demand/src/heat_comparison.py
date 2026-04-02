@@ -29,7 +29,6 @@ class TargetDemandGoal(Goal):
         self.function_nominal = 1e5
 
     def function(self, optimization_problem, ensemble_member):
-        demand_id = optimization_problem.esdl_asset_name_to_id_map["demand"]
         return optimization_problem.state("demand.Heat_demand")
 
 

@@ -181,6 +181,8 @@ class HeatProblem(
         parameters = self.parameters(0)
         data_milp = {}  # Data storage
 
+        name_id_map = self.esdl_asset_name_to_id_map
+
         # Pressure drop [Pa]
         data_milp = {"Pipe1_supply_dPress": results["Pipe1.dH"] * parameters["Pipe1.rho"] * 9.81}
         data_milp.update(
@@ -194,16 +196,16 @@ class HeatProblem(
         # Mass flow [kg/s]
         data_milp.update(
             {
-                "Pipe1_supply_mass_flow": results["HeatingDemand_1.Heat_demand"]
-                / parameters["HeatingDemand_1.cp"]
-                / parameters["HeatingDemand_1.dT"]
+                "Pipe1_supply_mass_flow": results[f"{name_id_map['HeatingDemand_1']}.Heat_demand"]
+                / parameters[f"{name_id_map['HeatingDemand_1']}.cp"]
+                / parameters[f"{name_id_map['HeatingDemand_1']}.dT"]
             }
         )
         data_milp.update(
             {
-                "Pipe1_return_mass_flow": results["HeatingDemand_1.Heat_demand"]
-                / parameters["HeatingDemand_1.cp"]
-                / parameters["HeatingDemand_1.dT"]
+                "Pipe1_return_mass_flow": results[f"{name_id_map['HeatingDemand_1']}.Heat_demand"]
+                / parameters[f"{name_id_map['HeatingDemand_1']}.cp"]
+                / parameters[f"{name_id_map['HeatingDemand_1']}.dT"]
             }
         )
 
@@ -228,12 +230,12 @@ class HeatProblem(
         data_milp.update({"Pipe1_return_dT": parameters["Pipe1_ret.dT"]})
 
         # Heat source, demand and loss [W]
-        data_milp.update({"Heat_source": results["ResidualHeatSource_1.Heat_source"]})
-        data_milp.update({"Heat_demand": results["HeatingDemand_1.Heat_demand"]})
+        data_milp.update({"Heat_source": results[f"{name_id_map['ResidualHeatSource_1']}.Heat_source"]})
+        data_milp.update({"Heat_demand": results[f"{name_id_map['HeatingDemand_1']}.Heat_demand"]})
         data_milp.update(
             {
-                "Heat_loss": results["ResidualHeatSource_1.Heat_source"]
-                - results["HeatingDemand_1.Heat_demand"]
+                "Heat_loss": results[f"{name_id_map['ResidualHeatSource_1']}.Heat_source"]
+                - results[f"{name_id_map['HeatingDemand_1']}.Heat_demand"]
             }
         )
 
