@@ -25,7 +25,7 @@ class HeatCoolingGrowWorkflow(TestCase):
         """
         In this case we have a network with an air-water hp, a WKO (warm and cold well) and both
         hot and cold demand. The heat and cold demand was balanced such that the seasonal storage
-        gets utilized as intended while minizing the TCO.
+        gets utilized as intended while minimizing the TCO.
         """
 
         import models.heating_and_cooling.src.run_case as example
@@ -68,14 +68,14 @@ class HeatCoolingGrowWorkflow(TestCase):
                     / 1.0e6
                 )
                 total_capex += investment_cost
-                assert abs(investment_cost - results[f"{asset}__investment_cost"]) < 1.0e-8
+                np.testing.assert_equal(investment_cost, results[f"{asset}__investment_cost"])
             installation_cost = (
                 solution.esdl_assets[solution.esdl_asset_name_to_id_map[f"{asset}"]]
                 .attributes["costInformation"]
                 .installationCosts.value
             )
             total_capex += installation_cost
-            assert installation_cost == results[f"{asset}__installation_cost"]
+            np.testing.assert_equal(installation_cost, results[f"{asset}__installation_cost"])
 
             # fixed costs per year
             fixed_operational_cost = (
@@ -91,8 +91,8 @@ class HeatCoolingGrowWorkflow(TestCase):
                 / 1.0e6
             )
             total_opex += fixed_operational_cost * solution.parameters(0)[f"{asset}.technical_life"]
-            assert (
-                abs(fixed_operational_cost - results[f"{asset}__fixed_operational_cost"]) < 1.0e-8
+            np.testing.assert_equal(
+                fixed_operational_cost, results[f"{asset}__fixed_operational_cost"]
             )
 
             # variable operational cost
@@ -104,7 +104,7 @@ class HeatCoolingGrowWorkflow(TestCase):
                     .variableOperationalCosts.value
                     / 1.0e6
                 )
-                assert var_op_costs > 0
+                np.testing.assert_array_less(0.0, var_op_costs)
             else:
                 var_op_costs = 0.0
             factor = 1.0
@@ -115,7 +115,7 @@ class HeatCoolingGrowWorkflow(TestCase):
                 factor = solution.esdl_assets[
                     solution.esdl_asset_name_to_id_map[f"{asset}"]
                 ].attributes["COP"]
-            assert factor >= 1.0
+            np.testing.assert_(factor >= 1.0, "factor must be >= 1.0")
             variable_operational_cost = 0.0
             for ii in range(1, len(solution.times())):
                 variable_operational_cost += (
@@ -151,9 +151,8 @@ class HeatCoolingGrowWorkflow(TestCase):
             total_opex += (
                 variable_operational_cost * solution.parameters(0)[f"{asset}.technical_life"]
             )
-            assert (
-                abs(variable_operational_cost - results[f"{asset}__variable_operational_cost"])
-                < 1.0e-8
+            np.testing.assert_allclose(
+                variable_operational_cost, results[f"{asset}__variable_operational_cost"]
             )
 
         for asset in solution.energy_system_components["heat_pipe"]:
@@ -169,7 +168,7 @@ class HeatCoolingGrowWorkflow(TestCase):
                 .investmentCosts.value
                 / 1.0e6
             )
-        assert abs(investment_cost - results[f"{asset}__investment_cost"]) < 1.0e-8
+        np.testing.assert_allclose(investment_cost, results[f"{asset}__investment_cost"])
         installation_cost = 0.0
         for asset in solution.energy_system_components.get("cold_demand", []):
             installation_cost += (
@@ -177,18 +176,15 @@ class HeatCoolingGrowWorkflow(TestCase):
                 .attributes["costInformation"]
                 .installationCosts.value
             )
-        assert abs(installation_cost - results[f"{asset}__installation_cost"]) < 1.0e-8
+        np.testing.assert_allclose(installation_cost, results[f"{asset}__installation_cost"])
         total_capex += investment_cost + installation_cost
 
-        assert (
-            abs(
-                solution.objective_value
-                + (
-                    results["CoolingDemand_1__installation_cost"]
-                    + results["CoolingDemand_1__investment_cost"]
-                )
-                / 1.0e6
-                - (total_capex + total_opex) / 1.0e6
+        np.testing.assert_allclose(
+            solution.objective_value
+            + (
+                results["CoolingDemand_1__installation_cost"]
+                + results["CoolingDemand_1__investment_cost"]
             )
-            < 1.0e-6
+            / 1.0e6,
+            (total_capex + total_opex) / 1.0e6,
         )

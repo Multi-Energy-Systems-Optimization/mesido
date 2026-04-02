@@ -178,7 +178,6 @@ class HeatCoolingGrowWorkflow(TestCase):
 
         class UpdatedProblem(EndScenarioSizingStaged, CollocatedIntegratedOptimizationProblem):
 
-
             # TODO: Clarify how the variable operating cost should be defined when a price_profile
             #  is provided.
             # Currently, the financial mixin is implemented such that the price_profile
