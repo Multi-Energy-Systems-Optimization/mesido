@@ -418,7 +418,7 @@ class TestElectrolyzer(TestCase):
         electrolyzer_id = name_to_id_map["Electrolyzer_fc66"]
 
         # Check that there is only one activated line per timestep
-        for timestep in range(len(results[f"{electrolyzer_id}__line_0_active"])):
+        for timestep in range(len(results[f"{electrolyzer_id}.__line_0_active"])):
             np.testing.assert_allclose(
                 (
                     results[f"{electrolyzer_id}.__line_0_active"][timestep]

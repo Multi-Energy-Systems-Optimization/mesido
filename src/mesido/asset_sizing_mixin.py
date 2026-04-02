@@ -2046,7 +2046,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             constraints.extend(
                 self.__producer_constraints(
-                    self.esdl_assets[self.esdl_asset_name_to_id_map[s]],
+                    self.esdl_assets[s],
                     "maximum_heat_source",
                     heat_source,
                     max_heat,
@@ -2190,7 +2190,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             constraint_nominal = self.variable_nominal(f"{d}.Electricity_source")
             constraints.extend(
                 self.__producer_constraints(
-                    self.esdl_assets[self.esdl_asset_name_to_id_map[d]],
+                    self.esdl_assets[d],
                     "maximum_electricity_source",
                     electricity_source,
                     max_power,
