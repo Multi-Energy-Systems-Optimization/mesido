@@ -29,7 +29,7 @@ class TestSetpointConstraints(TestCase):
         from models.unit_cases.case_3a.src.run_3a import HeatProblemSetPointConstraints
 
         base_folder = Path(run_3a.__file__).resolve().parent.parent
-
+        name_id_map = {"GeothermalSource_b702": "b702bda3-632c-43ff-9867-72cda41f442f"}
         _heat_problem_3 = run_esdl_mesido_optimization(
             HeatProblemSetPointConstraints,
             base_folder=base_folder,
@@ -37,7 +37,7 @@ class TestSetpointConstraints(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_import.xml",
-            **{"timed_setpoints": {"GeothermalSource_b702": (21, 1)}},
+            **{"timed_setpoints": {name_id_map["GeothermalSource_b702"]: (21, 1)}},
         )
         results_3 = _heat_problem_3.extract_results()
         name_to_id_map_3 = _heat_problem_3.esdl_asset_name_to_id_map
@@ -50,7 +50,7 @@ class TestSetpointConstraints(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_import.xml",
-            **{"timed_setpoints": {"GeothermalSource_b702": (21, 0)}},
+            **{"timed_setpoints": {name_id_map["GeothermalSource_b702"]: (21, 0)}},
         )
         results_4 = _heat_problem_4.extract_results()
         name_to_id_map_4 = _heat_problem_4.esdl_asset_name_to_id_map
@@ -119,6 +119,8 @@ class TestSetpointConstraints(TestCase):
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
+        name_id_map = {"HeatProducer_1": "324b0371-b738-4f55-a978-3306ee81638c"}
+
         solution = run_esdl_mesido_optimization(
             HeatProblemSetPoints,
             base_folder=base_folder,
@@ -126,7 +128,7 @@ class TestSetpointConstraints(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
-            **{"timed_setpoints": {"HeatProducer_1": (24 * 365, 2)}},
+            **{"timed_setpoints": {name_id_map["HeatProducer_1"]: (24 * 365, 2)}},
         )
         results = solution.extract_results()
         name_to_id_map = solution.esdl_asset_name_to_id_map
@@ -158,6 +160,8 @@ class TestSetpointConstraints(TestCase):
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
+        name_id_map = {"HeatProducer_1": "324b0371-b738-4f55-a978-3306ee81638c"}
+
         solution = run_esdl_mesido_optimization(
             HeatProblemSetPoints,
             base_folder=base_folder,
@@ -165,7 +169,8 @@ class TestSetpointConstraints(TestCase):
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
-            **{"timed_setpoints": {"HeatProducer_1": (24 * 365, 0)}},  # not change at all - works
+            **{"timed_setpoints": {name_id_map["HeatProducer_1"]: (24 * 365, 0)}},  # not change
+            # at all - works
         )
         results = solution.extract_results()
         name_to_id_map = solution.esdl_asset_name_to_id_map
@@ -198,6 +203,8 @@ class TestSetpointConstraints(TestCase):
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
+        name_id_map = {"HeatProducer_1": "324b0371-b738-4f55-a978-3306ee81638c"}
+
         for ihrs in range(20 * 24 - 1, 20 * 24 + 2):
             solution = run_esdl_mesido_optimization(
                 HeatProblemSetPoints,
@@ -206,7 +213,7 @@ class TestSetpointConstraints(TestCase):
                 esdl_parser=ESDLFileParser,
                 profile_reader=ProfileReaderFromFile,
                 input_timeseries_file="Warmte_test.csv",
-                **{"timed_setpoints": {"HeatProducer_1": (ihrs, 1)}},
+                **{"timed_setpoints": {name_id_map["HeatProducer_1"]: (ihrs, 1)}},
             )
             results = solution.extract_results()
             name_to_id_map = solution.esdl_asset_name_to_id_map

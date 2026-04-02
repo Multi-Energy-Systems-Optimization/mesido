@@ -133,7 +133,7 @@ class PhysicsMixin(
         return bounds
 
     def __setpoint_constraint(
-        self, ensemble_member, component_name, windowsize_hr, setpointchanges
+        self, ensemble_member, component_id, windowsize_hr, setpointchanges
     ):
         r"""Constraints that can switch only every n time steps of setpoint.
         A component can only switch setpoint every <windowsize_hr> hours.
@@ -153,7 +153,7 @@ class PhysicsMixin(
         """
         assert windowsize_hr > 0
         assert windowsize_hr % 1 == 0
-        assert component_name in sum(self.energy_system_components.values(), [])
+        assert component_id in sum(self.energy_system_components.values(), [])
 
         # Find the component type
         comp_type = next(
@@ -162,7 +162,7 @@ class PhysicsMixin(
                     comptype
                     for comptype, compnames in self.energy_system_components.items()
                     for compname in compnames
-                    if compname == component_name
+                    if compname == component_id
                 ]
             )
         )
@@ -175,8 +175,8 @@ class PhysicsMixin(
 
         for var_name in control_vars:
             # Retrieve the relevant variable names
-            variable_name = f"{component_name}{var_name}"
-            var_name_setpoint = self._component_to_change_setpoint_map[component_name]
+            variable_name = f"{component_id}{var_name}"
+            var_name_setpoint = self._component_to_change_setpoint_map[component_id]
 
             # Get the timewise symbolic variables of Heat_source
             sym_var = self.__state_vector_scaled(variable_name, ensemble_member)
@@ -284,9 +284,9 @@ class PhysicsMixin(
         """
         constraints = super().constraints(ensemble_member)
 
-        for component_name, params in self._timed_setpoints.items():
+        for component_id, params in self._timed_setpoints.items():
             constraints.extend(
-                self.__setpoint_constraint(ensemble_member, component_name, params[0], params[1])
+                self.__setpoint_constraint(ensemble_member, component_id, params[0], params[1])
             )
 
         return constraints

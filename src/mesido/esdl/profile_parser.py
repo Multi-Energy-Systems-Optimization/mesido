@@ -324,7 +324,7 @@ class InfluxDBProfileReader(BaseProfileReader):
 
             if isinstance(container, esdl.ProfileConstraint):
                 variable_suffix = self.asset_type_to_variable_name_conversion[type(asset)]
-                var_base_name = asset.name
+                var_base_name = asset.id
                 if variable_suffix in [
                     self.asset_type_to_variable_name_conversion[esdl.esdl.GasProducer],
                     self.asset_type_to_variable_name_conversion[esdl.esdl.ElectricityProducer],
@@ -340,7 +340,7 @@ class InfluxDBProfileReader(BaseProfileReader):
                 var_base_name = container.name
             elif isinstance(container, esdl.Port):
                 asset = container.energyasset
-                var_base_name = asset.name
+                var_base_name = asset.id
                 if var_base_name in [
                     self.asset_type_to_variable_name_conversion[esdl.esdl.GasProducer],
                     self.asset_type_to_variable_name_conversion[esdl.esdl.ElectricityProducer],
