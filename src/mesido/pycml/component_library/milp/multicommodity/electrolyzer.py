@@ -1,4 +1,5 @@
-from mesido.pycml import Variable
+from mesido.electricity_physics_mixin import ElectrolyzerOption
+from mesido.pycml import DiscreteVariable, Variable
 from mesido.pycml.component_library.milp._internal import BaseAsset
 from mesido.pycml.component_library.milp._internal.electricity_component import (
     ElectricityComponent,
@@ -42,6 +43,11 @@ class Electrolyzer(ElectricityComponent, BaseAsset):
         self.b_eff_coefficient = nan
         self.c_eff_coefficient = nan
 
+        self.include_asset_is_switched_on = False
+        self.electrolyzer_efficiency_option = (
+            ElectrolyzerOption.LINEARIZED_THREE_LINES_WEAK_INEQUALITY
+        )
+
         self.minimum_load = nan
 
         self.density = 2.5  # H2 density [kg/m3] at 30bar
@@ -67,3 +73,12 @@ class Electrolyzer(ElectricityComponent, BaseAsset):
         self.add_equation(
             (self.GasOut.mass_flow - self.Gas_mass_flow_out) / self.nominal_gass_mass_out
         )
+
+        if self.include_asset_is_switched_on:
+            self.add_variable(DiscreteVariable, "__asset_is_switched_on", min=0.0, max=1.0)
+        if (
+            self.electrolyzer_efficiency_option
+            == ElectrolyzerOption.LINEARIZED_THREE_LINES_EQUALITY
+        ):
+            for n in range(3):
+                self.add_variable(DiscreteVariable, f"__line_{n}_active", min=0.0, max=1.0)

@@ -8,7 +8,7 @@ from numpy import nan
 
 
 @add_variables_documentation_automatically
-class HeatBuffer(_StorageComponent):
+class _HeatBufferComponent(_StorageComponent):
     """
     The buffer component is to model milp storage in a tank. This means that we model a tank of hot
     water being filled and radiating milp away (heat loss) over the hot surfaces. We assume that the
@@ -93,5 +93,24 @@ class HeatBuffer(_StorageComponent):
         self.add_equation(
             (self.Heat_loss - self.Stored_heat * self.heat_loss_coeff) / self._nominal_heat_loss
         )
+
+
+@add_variables_documentation_automatically
+class HeatBuffer(_HeatBufferComponent):
+    """
+    HeatBuffer component represents the operational behavior of conventional heat buffer.
+    It sets heat_flow equal to heat_buffer.
+
+    Variables created:
+        {add_variable_names_for_documentation_here}
+
+    Parameters:
+        name : The name of the asset. \n
+        modifiers : Dictionary with asset information.
+
+    """
+
+    def __init__(self, name, **modifiers):
+        super().__init__(name, **modifiers)
 
         self.add_equation((self.Heat_flow - self.Heat_buffer) / self.Heat_nominal)
