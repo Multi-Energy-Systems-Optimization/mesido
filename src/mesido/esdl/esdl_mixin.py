@@ -266,7 +266,7 @@ class ESDLMixin(
         Overrides the pipe class dictionaries based on the minimum pipe sizes that are required.
         """
 
-        p = asset.name
+        p = asset.id
 
         if asset.attributes["state"].name == "OPTIONAL":
             c = override_classes[p] = []
@@ -620,13 +620,13 @@ class ESDLMixin(
                         ), "Pipes can only have related supply/return pipe"
                         related = True
                         if asset.attributes["port"][0].carrier.supplyTemperature:  # hot_pipe
-                            if asset.name not in self.__hot_cold_pipe_relations.keys():
-                                self.__hot_cold_pipe_relations[asset.name] = related_asset[0].name
+                            if asset.id not in self.__hot_cold_pipe_relations.keys():
+                                self.__hot_cold_pipe_relations[asset.id] = related_asset[0].id
                         elif asset.attributes["port"][0].carrier.returnTemperature:  # cold_pipe
-                            if related_asset[0].name not in self.__hot_cold_pipe_relations.keys():
-                                self.__hot_cold_pipe_relations[related_asset[0].name] = asset.name
-                    if not related and asset.name not in self.__unrelated_pipes:
-                        self.__unrelated_pipes.append(asset.name)
+                            if related_asset[0].id not in self.__hot_cold_pipe_relations.keys():
+                                self.__hot_cold_pipe_relations[related_asset[0].id] = asset.id
+                    if not related and asset.id not in self.__unrelated_pipes:
+                        self.__unrelated_pipes.append(asset.id)
         else:
             pipes = self.energy_system_components.get("heat_pipe", [])
             for pipe_id in pipes:
