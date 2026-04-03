@@ -2,6 +2,8 @@ from unittest import TestCase
 
 from mesido._darcy_weisbach import friction_factor, head_loss
 from mesido.constants import GRAVITATIONAL_CONSTANT
+from mesido.esdl.asset_to_component_base import _AssetToComponentBase
+from mesido.esdl.edr_pipe_class import EDRGasPipeClass
 from mesido.head_loss_class import HeadLossOption
 
 import numpy as np
@@ -596,3 +598,166 @@ def gas_pipes_head_loss_test(solution, results, atol=1e-12):
                 np.testing.assert_allclose(
                     results[f"{pipe}.dH"][itime], -dh_manual_linear, atol=atol
                 )
+
+
+def total_cost_test(solution, results, atol=1e-8):
+    parameters = solution.parameters(0)
+    transport_assets = [
+        *solution.energy_system_components.get("heat_pipe", []),
+        *solution.energy_system_components.get("gas_pipe", []),
+        *solution.energy_system_components.get("electricity_cable", []),
+    ]
+
+    demand_assets = [
+        *solution.energy_system_components.get("heat_demand", []),
+        *solution.energy_system_components.get("cold_demand", []),
+    ]
+
+    assets = [
+        # *solution.energy_system_components.get("heat_source", []),
+        # *solution.energy_system_components.get("airco", []),
+        # *solution.energy_system_components.get("air_water_heat_pump", []),
+        # *solution.energy_system_components.get("air_water_heat_pump_elec", []),
+        # *solution.energy_system_components.get("low_temperature_ates", []),
+        *solution.energy_system_components.get("heat_source", []),
+        *solution.energy_system_components.get("ates", []),
+        *solution.energy_system_components.get("low_temperature_ates", []),
+        *solution.energy_system_components.get("heat_pump", []),
+        *solution.energy_system_components.get("pump", []),
+        *solution.energy_system_components.get("heat_exchanger", []),
+        *solution.energy_system_components.get("heat_buffer", []),
+        *solution.energy_system_components.get("gas_source", []),
+        *solution.energy_system_components.get("electricity_source", []),
+        *solution.energy_system_components.get("airco", []),
+        *demand_assets,
+        *transport_assets,
+    ]
+
+    pipe_classes = [
+        EDRGasPipeClass.from_edr_class(
+            name, edr_class_name, solution.gas_network_settings["maximum_velocity"]
+        )
+        for name, edr_class_name in _AssetToComponentBase.STEEL_S1_PIPE_EDR_ASSETS.items()
+    ]
+
+    total_opex = 0.0
+    total_capex = 0.0
+    for asset in assets:
+        esdl_asset = solution.esdl_assets[solution.esdl_asset_name_to_id_map[f"{asset}"]]
+        costs_esdl_asset = esdl_asset.attributes["costInformation"]
+        if costs_esdl_asset is None:
+            continue
+
+        # Investment Cost
+        investment_cost = 0.0
+        if asset not in solution.energy_system_components.get("gas_pipe", []):
+            investment_cost_info = (
+                costs_esdl_asset.investmentCosts.value
+                if costs_esdl_asset.investmentCosts is not None
+                else 0.0
+            )
+        if asset in solution.energy_system_components["gas_pipe"]:
+            if parameters[f"{asset}.diameter"] > 0:
+                for iter in range(len(pipe_classes)):
+                    if pipe_classes[iter].inner_diameter == parameters[f"{asset}.diameter"]:
+                        investment_cost = (
+                            pipe_classes[iter].investment_costs * parameters[f"{asset}.length"]
+                        )
+        elif asset in solution.energy_system_components["electricity_cable"]:
+            investment_cost = investment_cost_info * parameters[f"{asset}.length"]
+        else:
+            investment_cost = investment_cost_info * results[f"{asset}__max_size"] / 1.0e6
+        total_capex += investment_cost
+        np.testing.assert_allclose(
+            investment_cost, results[f"{asset}__investment_cost"], atol=1.0e-6
+        )
+
+        # Installation Cost
+        installation_cost = 0.0
+        if asset not in transport_assets:
+            if results[f"{asset}__max_size"] < 1e-8:
+                installation_cost = 0
+            else:
+                installation_cost = (
+                    costs_esdl_asset.installationCosts.value
+                    if costs_esdl_asset.installationCosts is not None
+                    else 0.0
+                )
+            total_capex += installation_cost
+            np.testing.assert_allclose(installation_cost, results[f"{asset}__installation_cost"])
+
+        # Fixed Operational Cost
+        if asset not in transport_assets:
+            fixed_operational_cost_info = (
+                (
+                    (
+                        costs_esdl_asset.fixedMaintenanceCosts.value
+                        if costs_esdl_asset.fixedMaintenanceCosts is not None
+                        else 0.0
+                    )
+                    + (
+                        costs_esdl_asset.fixedOperationalCosts.value
+                        if costs_esdl_asset.fixedOperationalCosts is not None
+                        else 0.0
+                    )
+                )
+                * results[f"{asset}__max_size"]
+                / 1.0e6
+            )
+            total_opex += (
+                fixed_operational_cost_info * solution.parameters(0)[f"{asset}.technical_life"]
+            )
+            np.testing.assert_allclose(
+                fixed_operational_cost_info, results[f"{asset}__fixed_operational_cost"]
+            )
+
+        # Variable Operational Cost
+        timesteps_hr = np.diff(solution.times()) / 3600.0
+        variable_operational_cost = 0.0
+        if asset not in transport_assets:
+            if asset in [
+                *solution.energy_system_components.get("heat_source", []),
+            ]:
+                var_op_costs = 0.0
+                heat_source = results[f"{asset}.Heat_source"]
+                nominator_vector = None
+                denominator = 1.0
+                if asset in [
+                    *solution.energy_system_components.get("air_water_heat_pump", []),
+                    *solution.energy_system_components.get("air_water_heat_pump_elec", []),
+                ]:
+                    var_op_costs = costs_esdl_asset.variableOperationalCosts.value / 1.0e6
+                    nominator_vector = heat_source
+                    denominator = esdl_asset.attributes["COP"]
+
+                elif asset in [
+                    *solution.energy_system_components.get("heat_source_gas", []),
+                    *solution.energy_system_components.get("gas_heat_source_gas", []),
+                ]:
+                    var_op_costs = costs_esdl_asset.variableOperationalCosts.value
+                    density_normal = parameters[f"{asset}.density_normal"]
+                    nominator_vector = (
+                        results[f"{asset}.Gas_demand_mass_flow"] / density_normal * 3600.0
+                    )  # [Nm3/h]
+                elif asset in [
+                    *solution.energy_system_components.get("heat_source_elec", []),
+                    *solution.energy_system_components.get("elec_heat_source_elec", []),
+                ]:
+                    var_op_costs = costs_esdl_asset.variableOperationalCosts.value / 1.0e6
+                    nominator_vector = results[f"{asset}.Power_consumed"]  # [W]
+                else:
+                    var_op_costs = costs_esdl_asset.variableOperationalCosts.value / 1.0e6
+                    nominator_vector = heat_source
+
+                for ii in range(1, len(solution.times())):
+                    variable_operational_cost += (
+                        var_op_costs * nominator_vector[ii] * timesteps_hr[ii - 1] / denominator
+                    )
+        np.testing.assert_allclose(
+            variable_operational_cost, results[f"{asset}__variable_operational_cost"]
+        )
+        total_opex += variable_operational_cost
+
+    np.testing.assert_allclose(
+        solution.objective_value, (total_capex[0] + total_opex) / 1.0e6, atol=atol
+    )

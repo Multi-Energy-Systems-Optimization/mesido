@@ -16,6 +16,7 @@ from utils_tests import (
     energy_conservation_test,
     gas_pipes_head_loss_test,
     heat_to_discharge_test,
+    total_cost_test,
 )
 
 
@@ -81,12 +82,14 @@ class TestGasElect(TestCase):
         heat_to_discharge_test(solution, results)
         electric_power_conservation_test(solution, results)
         gas_pipes_head_loss_test(solution, results)
+        total_cost_test(solution, results)
 
         demand_matching_test(solution_high_demand, results_high_demand)
         energy_conservation_test(solution_high_demand, results_high_demand)
         heat_to_discharge_test(solution_high_demand, results_high_demand)
         electric_power_conservation_test(solution_high_demand, results_high_demand)
         gas_pipes_head_loss_test(solution_high_demand, results_high_demand)
+        total_cost_test(solution_high_demand, results_high_demand)
 
         # Test: Check if gas pipe diameter value in resulting parameters are
         # updated with optimized values in results
