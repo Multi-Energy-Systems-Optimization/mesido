@@ -12,6 +12,7 @@ from utils_tests import demand_matching_test, energy_conservation_test, heat_to_
 
 
 class TestHeat(TestCase):
+
     def test_heat_loss(self):
         """
         This is a test to check whether the network (pipes) are dissipating milp as we expect.
@@ -325,8 +326,8 @@ class TestDisconnectablePipe(TestCase):
 
         self.assertLess(q_disconnected[1], q_connected[1])
         self.assertAlmostEqual(q_disconnected[1], 0.0, 5)
-        np.testing.assert_allclose(results_connected["Pipe1__is_disconnected"], 0.0)
-        np.testing.assert_allclose(results_disconnected["Pipe1__is_disconnected"][1], 1.0)
+        np.testing.assert_allclose(results_connected["Pipe1.__is_disconnected"], 0.0)
+        np.testing.assert_allclose(results_disconnected["Pipe1.__is_disconnected"][1], 1.0)
 
         np.testing.assert_allclose(q_connected[2:], q_disconnected[2:])
 
@@ -374,7 +375,7 @@ class TestDisconnectablePipe(TestCase):
         # Without any constraints on the maximum or minimum head/pressure
         # (loss) in the system, we expect equal results.
         np.testing.assert_allclose(q_linear, q_dw)
-        np.testing.assert_allclose(results_dw["Pipe1__is_disconnected"][1], 1.0)
+        np.testing.assert_allclose(results_dw["Pipe1.__is_disconnected"][1], 1.0)
 
 
 if __name__ == "__main__":

@@ -203,14 +203,16 @@ class ESDLMixin(
         # Although we work with the names, the FEWS import data uses the component IDs
         self.__timeseries_id_map = {a.id: a.name for a in assets.values()}
         name_to_id_map = {a.name: a.id for a in assets.values()}
-
         if isinstance(self, PhysicsMixin):
             self.__model = ESDLHeatModel(
-                assets=assets,
-                name_to_id_map=name_to_id_map,
+                assets,
+                name_to_id_map,
                 esdl_version=self._ESDLMixin__energy_system_handler.energy_system.esdlVersion,
                 use_esdl_ranged_constraint=self._ESDLMixin__use_esdl_ranged_constraint,
-                **self.esdl_heat_model_options(),
+                **dict(
+                    energy_system_options=self.energy_system_options(),
+                    **self.esdl_heat_model_options(),
+                ),
             )
         else:
             assert isinstance(self, QTHMixin)

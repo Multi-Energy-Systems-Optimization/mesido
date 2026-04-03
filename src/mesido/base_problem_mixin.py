@@ -38,3 +38,13 @@ class BaseProblemMixin:
         options = super().compiler_options()
         options["resolve_parameter_values"] = True
         return options
+
+    def __state_vector_scaled(self, variable: str, ensemble_member: int):
+        """
+        This functions returns the casadi symbols scaled with their nominal for the entire time
+        horizon.
+        """
+        canonical, sign = self.alias_relation.canonical_signed(variable)
+        return (
+            self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
+        )

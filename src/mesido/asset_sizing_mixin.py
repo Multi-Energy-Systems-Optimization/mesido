@@ -1301,14 +1301,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         return min(max_sum_dh_pipes, max_dh_network_options)
 
     def __state_vector_scaled(self, variable, ensemble_member):
-        """
-        This functions returns the casadi symbols scaled with their nominal for the entire time
-        horizon.
-        """
-        canonical, sign = self.alias_relation.canonical_signed(variable)
-        return (
-            self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
-        )
+        return self._BaseProblemMixin__state_vector_scaled(variable, ensemble_member)
 
     def __pipe_topology_constraints(self, ensemble_member):
         """
