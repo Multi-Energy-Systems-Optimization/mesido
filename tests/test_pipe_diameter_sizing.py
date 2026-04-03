@@ -129,10 +129,6 @@ class TestPipeDiameterSizingExample(TestCase):
                     2.0e-4,
                     parameters[f"{pipe}.temperature"],
                 )
-                print(
-                    f"{pipe} has result with with {results[f'{pipe}__hn_diameter']} but inner "
-                    f"diameter {pc.inner_diameter}"
-                )
                 c_v = parameters[f"{pipe}.length"] * ff / (2 * 9.81) / pc.inner_diameter
                 dh_max = c_v * pc.maximum_velocity**2
                 dh_manual = dh_max * results[f"{pipe}.Q"][1:] / pc.area / pc.maximum_velocity
