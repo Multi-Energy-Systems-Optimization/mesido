@@ -359,6 +359,8 @@ class TestProfileLoading(unittest.TestCase):
 
         problem.pre()
 
+        name_to_id = problem.esdl_asset_name_to_id_map
+
         # check that the ensemble size is set at 2, which is based on the ensemble.csv
         np.testing.assert_equal(problem.ensemble_size, 2)
         prob_0 = problem.ensemble_member_probability(0)
@@ -373,7 +375,7 @@ class TestProfileLoading(unittest.TestCase):
         for t_name in timeseries_names:
             for e_m in range(problem.ensemble_size):
                 t_series = problem.get_timeseries(t_name, e_m)
-                if e_m == 1 and t_name == "HeatingDemand_6f99.target_heat_demand":
+                if e_m == 1 and t_name == f"{name_to_id['HeatingDemand_6f99']}.target_heat_demand":
                     np.testing.assert_allclose(t_series.values, [300000] * 3)
                 else:
                     np.testing.assert_allclose(t_series.values, [350000] * 3)

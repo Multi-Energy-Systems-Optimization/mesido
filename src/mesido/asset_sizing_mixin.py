@@ -1885,8 +1885,8 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints : The function returns a list of profile‑based capacity constraints.
         """
         constraints = []
-        if f"{asset.name}.{variable_suffix}" in self.io.get_timeseries_names():
-            timeseries = self.get_timeseries(f"{asset.name}.{variable_suffix}")
+        if f"{asset.id}.{variable_suffix}" in self.io.get_timeseries_names():
+            timeseries = self.get_timeseries(f"{asset.id}.{variable_suffix}")
             if len(self.times()) < len(timeseries.times):
                 idx_start = np.where(timeseries.times == self.times()[0])[0][0]
                 idx_end = np.where(timeseries.times == self.times()[-1])[0][0]
@@ -1908,7 +1908,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 == esdl.UnitEnum.WATT
             ):
                 parameters = self.parameters(ensemble_member)
-                asset_state = parameters[f"{asset.name}.state"]
+                asset_state = parameters[f"{asset.id}.state"]
 
                 if asset_state == AssetStateEnum.ENABLED:  # Enabled asset
                     constraints.append(

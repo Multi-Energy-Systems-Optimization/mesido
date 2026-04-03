@@ -46,31 +46,35 @@ class TestMILPElectricSourceSink(TestCase):
 
         tol = 1e-6
 
+        name_to_id_map = solution.esdl_asset_name_to_id_map
+
+        pv_id = name_to_id_map["PV"]
+        e_prod_id = name_to_id_map["ElectricityProducer_edde"]
+
         demand_matching_test(solution, results)
         electric_power_conservation_test(solution, results)
 
         # Test that scaled PV constraint profile is upper bound of
         # PV production and profile constraint scaling functionality
         # in asset sizing works
-        profile_non_scaled = solution.get_timeseries("PV.maximum_electricity_source").values
+        profile_non_scaled = solution.get_timeseries(f"{pv_id}.maximum_electricity_source").values
         max_profile_non_scaled = max(profile_non_scaled)
         profile_scaled = profile_non_scaled / max_profile_non_scaled
 
         # Check that realized PV profile is scaled version of PV profile constraint
         np.testing.assert_array_less(
-            results["PV.Electricity_source"], profile_scaled * results["PV__max_size"] + tol
+            results[f"{pv_id}.Electricity_source"],
+            profile_scaled * results[f"{pv_id}__max_size"] + tol,
         )
 
         # Check that maximum of realized PV profile smaller than maximum of PV profile constraint
         np.testing.assert_array_less(
-            results["PV__max_size"],
-            max(solution.get_timeseries("PV.maximum_electricity_source").values) + tol,
+            results[f"{pv_id}__max_size"],
+            max(solution.get_timeseries(f"{pv_id}.maximum_electricity_source").values) + tol,
         )
 
         # Check electricity producers max sizes are equal
-        np.testing.assert_allclose(
-            results["PV__max_size"], results["ElectricityProducer_edde__max_size"]
-        )
+        np.testing.assert_allclose(results[f"{pv_id}__max_size"], results[f"{e_prod_id}__max_size"])
 
     def test_source_sink(self):
         """

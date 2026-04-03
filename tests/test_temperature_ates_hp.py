@@ -70,7 +70,7 @@ class TestAtesTemperature(TestCase):
 
         ates_charging = results[f"{ates_id}.__is_charging"]  # =1 if charging
         ates_temperature = results[f"{ates_id}.Temperature_ates"]
-        ates_temperature_disc = results[f"{ates_id}.__temperature_ates_disc"]
+        ates_temperature_disc = results[f"{ates_id}__temperature_ates_disc"]
 
         carrier_temperature = results["41770304791669983859190_temperature"]
         temperature_regimes = solution.temperature_regimes(41770304791669983859190)

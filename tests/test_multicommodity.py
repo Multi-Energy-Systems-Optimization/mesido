@@ -392,8 +392,7 @@ class TestGeothermalSourceElec(TestCase):
 
         # Equations check
         np.testing.assert_allclose(
-            parameters[f"{geothermal_id}.cop"]
-            * results[f"{geothermal_id}.Power_elec"],
+            parameters[f"{geothermal_id}.cop"] * results[f"{geothermal_id}.Power_elec"],
             results[f"{geothermal_id}.Heat_source"],
         )
 
@@ -444,8 +443,7 @@ class TestGeothermalSourceElec(TestCase):
             results[f"{geothermal_id}.ElectricityIn.Power"],
         )
         np.testing.assert_allclose(
-            parameters[f"{geothermal_id}.cop"]
-            * results[f"{geothermal_id}.Power_elec"],
+            parameters[f"{geothermal_id}.cop"] * results[f"{geothermal_id}.Power_elec"],
             results[f"{geothermal_id}.Heat_source"],
         )
 

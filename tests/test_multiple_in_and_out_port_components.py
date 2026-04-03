@@ -450,49 +450,52 @@ class Buffer(TestCase):
             input_timeseries_file="timeseries_import_ebuffer.csv",
         )
         results = heat_problem.extract_results()
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
         parameters = heat_problem.parameters(0)
+
+        storage_id = name_to_id_map["HeatStorage"]
 
         demand_matching_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
 
         # Check that buffer is charged by electricity
-        np.testing.assert_array_less(1000.0, sum(results["HeatStorage.Heat_elec_charging"]))
+        np.testing.assert_array_less(1000.0, sum(results[f"{storage_id}.Heat_elec_charging"]))
 
         # Check that buffer discharged heat to the network and is not charged by it.
-        np.testing.assert_array_less(results["HeatStorage.Heat_flow"], -1000.0)
+        np.testing.assert_array_less(results[f"{storage_id}.Heat_flow"], -1000.0)
 
         # Check the heat flow balance of buffer
         np.testing.assert_allclose(
-            results["HeatStorage.Heat_buffer"],
-            results["HeatStorage.Heat_flow"] + results["HeatStorage.Heat_elec_charging"],
+            results[f"{storage_id}.Heat_buffer"],
+            results[f"{storage_id}.Heat_flow"] + results[f"{storage_id}.Heat_elec_charging"],
             atol=epsilon,
         )
 
         # Check that charging_efficiency is considered at heat buffer electricity consumption
         np.testing.assert_allclose(
-            results["HeatStorage.Heat_elec_charging"],
-            results["HeatStorage.Power_elec"] * parameters["HeatStorage.charging_efficiency"],
+            results[f"{storage_id}.Heat_elec_charging"],
+            results[f"{storage_id}.Power_elec"] * parameters[f"{storage_id}.charging_efficiency"],
             atol=epsilon,
         )
 
         # Check that derivative of stored heat is coming from heat loss and heat_buffer
         np.testing.assert_allclose(
-            results["HeatStorage.Heat_loss"][1:] - results["HeatStorage.Heat_buffer"][1:],
-            -np.diff(results["HeatStorage.Stored_heat"]) / 3600.0,
+            results[f"{storage_id}.Heat_loss"][1:] - results[f"{storage_id}.Heat_buffer"][1:],
+            -np.diff(results[f"{storage_id}.Stored_heat"]) / 3600.0,
             atol=epsilon,
         )
 
         # Check maxChargeRate and maxDischargeRate are parsed and define the upper bounds
         # of Heat_elec_charging and Heat_flow_discharging, respectively
-        esdl_asset = heat_problem.esdl_assets[heat_problem.esdl_asset_name_to_id_map["HeatStorage"]]
+        esdl_asset = heat_problem.esdl_assets[storage_id]
         np.testing.assert_allclose(
             esdl_asset.attributes["maxChargeRate"],
-            heat_problem.bounds()["HeatStorage.Heat_elec_charging"][1],
+            heat_problem.bounds()[f"{storage_id}.Heat_elec_charging"][1],
         )
         np.testing.assert_allclose(
             esdl_asset.attributes["maxDischargeRate"],
-            heat_problem.bounds()["HeatStorage.Heat_flow_discharging"][1],
+            heat_problem.bounds()[f"{storage_id}.Heat_flow_discharging"][1],
         )
 
 
