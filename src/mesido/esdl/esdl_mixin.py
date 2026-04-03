@@ -268,9 +268,9 @@ class ESDLMixin(
         super().pre()
         for esdl_id, esdl_asset in self.esdl_assets.items():
             if esdl_asset.name in self.name_to_esdl_id_map:
-                raise RuntimeWarning(
+                logger.warning(
                     f"Found multiple ESDL assets with name {esdl_asset.name} in the "
-                    f"input ESDL. This is not supported in the optimization."
+                    f"input ESDL, therefore name_to_esdl_id_map cannot be used."
                 )
             self.name_to_esdl_id_map[esdl_asset.name] = esdl_id
 
