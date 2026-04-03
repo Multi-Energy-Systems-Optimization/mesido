@@ -34,15 +34,6 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
     PhysicsMixin).
     """
 
-    @staticmethod
-    def _big_m_ineq_constraints(expr, slack, big_m, nominal):
-        """Return paired bigM constraints that enforce expr =< 0 when a binary slack is active
-        and expr >= 0 when a binary slack is inactive."""
-        return [
-            ((expr + slack * big_m) / nominal, 0.0, np.inf),
-            ((expr - (1.0 - slack) * big_m) / nominal, -np.inf, 0.0),
-        ]
-
     def __init__(self, *args, **kwargs):
         """
         In this __init__ we prepare the dicts for the variables added by the HeatMixin class

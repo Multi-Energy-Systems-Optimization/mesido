@@ -1272,19 +1272,8 @@ class HeatPhysicsMixin(
             )
             # Note we only need one on the heat as the desired behaviour is propegated by the
             # constraints heat_in - heat_out - heat_loss == 0.
-            constraints.append(
-                (
-                    (heat_in - big_m * flow_dir) / big_m,
-                    -np.inf,
-                    0.0,
-                )
-            )
-            constraints.append(
-                (
-                    (heat_in + big_m * (1 - flow_dir)) / big_m,
-                    0.0,
-                    np.inf,
-                )
+            constraints.extend(
+                self._big_m_ineq_constraints(heat_in, 1-flow_dir, big_m, big_m)
             )
 
             # If a pipe is disconnected, the discharge should be zero
@@ -1577,19 +1566,9 @@ class HeatPhysicsMixin(
                     carrier = parameters[f"{p}.carrier_id"]
                     temperatures = self.temperature_regimes(carrier)
                     if len(temperatures) == 0:
-                        constraints.append(
-                            (
-                                (heat - pipe_q * (cp * rho * temp) - big_m * (1 - flow_dir))
-                                / big_m,
-                                -np.inf,
-                                0.0,
-                            )
-                        )
-                        constraints.append(
-                            (
-                                (heat - pipe_q * (cp * rho * temp) + big_m * flow_dir) / big_m,
-                                0.0,
-                                np.inf,
+                        constraints.extend(
+                            self._big_m_ineq_constraints(
+                                heat - pipe_q * (cp * rho * temp), flow_dir, big_m, big_m
                             )
                         )
                     elif len(temperatures) > 0:
@@ -1987,20 +1966,11 @@ class HeatPhysicsMixin(
                     # selected, to ensure temperature does not further drop and requires
                     # ates_dt_charging to cover the difference
                     if ates_temperature == min(supply_temperatures):
-                        constraints.append(
-                            (
-                                (ates_dt_loss + big_m * (1 - ates_temperature_is_selected))
-                                / ates_temperature_loss_nominal,
-                                0.0,
-                                np.inf,
-                            )
-                        )
-                        constraints.append(
-                            (
-                                (ates_dt_loss - big_m * (1 - ates_temperature_is_selected))
-                                / ates_temperature_loss_nominal,
-                                -np.inf,
-                                0.0,
+                        constraints.extend(
+                            self._symmetric_big_m_constraints(
+                                ates_dt_loss,
+                                big_m * (1 - ates_temperature_is_selected),
+                                ates_temperature_loss_nominal,
                             )
                         )
                     else:
@@ -2261,18 +2231,11 @@ class HeatPhysicsMixin(
                     heat_nominal * cp * rho * max(supply_temperatures) * q_nominal
                 ) ** 0.5
                 temperature_var = self.state(f"{sup_carrier}_temperature")
-                constraints.append(
-                    (
-                        (heat_in - max_discharge * cp * rho * temperature_var) / constraint_nominal,
-                        -np.inf,
-                        0.0,
-                    )
-                )
-                constraints.append(
-                    (
-                        (heat_in + max_discharge * cp * rho * temperature_var) / constraint_nominal,
-                        0.0,
-                        np.inf,
+                constraints.extend(
+                    self._symmetric_big_m_constraints(
+                        heat_in,
+                        max_discharge * cp * rho * temperature_var,
+                        constraint_nominal,
                     )
                 )
                 for supply_temperature in supply_temperatures:
@@ -3030,12 +2993,14 @@ class HeatPhysicsMixin(
             # - 1 means positive discharge, and negative dH
             # - 0 means negative discharge, and positive dH
             # It's a control valve, so the dH is of arbitrary magnitude.
-            constraints.append((q + (1 - flow_dir) * maximum_discharge, 0.0, np.inf))
-            constraints.append((q - flow_dir * maximum_discharge, -np.inf, 0.0))
+            constraints.extend(
+                self._big_m_ineq_constraints(q, 1-flow_dir, maximum_discharge, 1.0)
+            )
 
             if self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
-                constraints.append((-dh + (1 - flow_dir) * maximum_head_loss, 0.0, np.inf))
-                constraints.append((-dh - flow_dir * maximum_head_loss, -np.inf, 0.0))
+                constraints.extend(
+                    self._big_m_ineq_constraints(-dh, 1-flow_dir, maximum_head_loss, 1.0)
+                )
 
         return constraints
 
