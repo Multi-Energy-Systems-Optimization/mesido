@@ -80,7 +80,7 @@ class MinimizeSourcesHeatGoal(Goal):
     over the full horizon and not per time-step.
     """
 
-    priority = 3
+    priority = 2
 
     order = 1
 
@@ -119,7 +119,7 @@ class MinimizeSourcesHeatGoal(Goal):
 
 
 class MinimizeProductionSize(Goal):
-    priority = 2
+    priority = 3
 
     order = 1
 
