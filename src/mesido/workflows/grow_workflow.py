@@ -78,7 +78,7 @@ def _mip_gap_settings(mip_gap_name: str, problem) -> Dict[str, float]:
     options = {}
     if hasattr(problem, "_stage"):
         if problem._stage == 1:
-            options[mip_gap_name] = 0.005
+            options[mip_gap_name] = 0.005 #1e-5 # 0.005
         else:
             options[mip_gap_name] = 0.01
     else:
@@ -269,7 +269,7 @@ class EndScenarioSizing(
         self.__heat_demand_bounds = dict()
         self.__heat_demand_nominal = dict()
 
-        self._save_json = False
+        self._save_json = True
 
         self._workflow_progress_status = kwargs.get("update_progress_function", None)
 
@@ -474,7 +474,7 @@ class EndScenarioSizing(
                 self.solver_stats,
             )
         )
-        if priority == 1 and self.objective_value > 1e-6:
+        if priority == 1 and self.objective_value > 1e-6 and not self.csv_ensemble_mode:
             raise RuntimeError("The heating demand is not matched")
 
         if self._workflow_progress_status is not None:

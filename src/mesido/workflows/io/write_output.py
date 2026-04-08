@@ -1088,7 +1088,7 @@ class ScenarioOutput:
             if not optimizer_sim:
                 pipe_class = self.get_optimized_pipe_class(pipe)
 
-            if parameters[f"{pipe}.diameter"] != 0.0 or any(np.abs(results[f"{pipe}.Q"]) > 1.0e-9):
+            if parameters[f"{pipe}.diameter"] != 0.0 or any(np.abs(results[f"{pipe}.Q"]) > 1.0e-6):
                 # if not isinstance(pipe_class, EDRPipeClass):
                 #     assert pipe_class.name == f"{pipe}_orig"
                 #     continue
