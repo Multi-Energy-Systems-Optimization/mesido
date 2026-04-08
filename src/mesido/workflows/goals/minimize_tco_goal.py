@@ -227,5 +227,7 @@ class MinimizeTCO(Goal):
                 options,
                 ensemble_member,
             )
+        prob = optimization_problem.ensemble_member_probability(ensemble_member)
+        obj *= prob
 
         return obj
