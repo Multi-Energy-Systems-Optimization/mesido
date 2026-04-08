@@ -1638,6 +1638,7 @@ class ScenarioOutput:
         bounds: Union[AliasDict, Dict],
         aliases: OrderedDict,
         solver_stats: Dict,
+        ensemble_member: int,
     ):
         """
         The results, parameters, bounds are saved as json files which can be used for further
@@ -1651,7 +1652,9 @@ class ScenarioOutput:
         :return:
         """
 
-        workdir = self.output_folder
+        workdir = os.path.join(self.output_folder, f"{ensemble_member}")
+        if not os.path.exists(workdir):
+            os.mkdir(workdir)
 
         parameters_dict = dict()
         parameter_path = os.path.join(workdir, "parameters.json")
