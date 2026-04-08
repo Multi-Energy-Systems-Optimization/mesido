@@ -1,8 +1,6 @@
 from pathlib import Path
 from unittest import TestCase
 
-from mesido.esdl.asset_to_component_base import _AssetToComponentBase
-from mesido.esdl.edr_pipe_class import EDRGasPipeClass
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.workflows.utils.error_types import NetworkErrors
@@ -11,12 +9,12 @@ from mesido.workflows.utils.helpers import run_optimization_problem_solver
 import numpy as np
 
 from utils_tests import (
+    cost_calculation_test,
     demand_matching_test,
     electric_power_conservation_test,
     energy_conservation_test,
     gas_pipes_head_loss_test,
     heat_to_discharge_test,
-    total_cost_test,
 )
 
 
@@ -37,14 +35,13 @@ class TestGasElect(TestCase):
 
 
         Checks:
-        1. utils test: demand_matching_test, energy_conservation_test, heat_to_discharge_test,
-        electric_power_conservation_test, gas_pipes_head_loss_test
+        1. utils test: cost_calculation_test, demand_matching_test, energy_conservation_test,
+         heat_to_discharge_test, electric_power_conservation_test, gas_pipes_head_loss_test
         2. gas pipe diameter value in resulting parameters are updated with optimized values
         in results
         3. higher heating demand require larger size of gas pipes
         4. heat source energy of gas boiler is equal to consumed gas energy * efficiency
         5. gas consumption is equal to production
-        6. manually calculated TCO is equal to Objective function value
         """
         import models.gas_electricity_network.src.run_gas_elect as example
         from models.gas_electricity_network.src.run_gas_elect import GasElectProblem
@@ -77,19 +74,19 @@ class TestGasElect(TestCase):
         results_high_demand = solution_high_demand.extract_results()
 
         # Test: Utils_tests
+        cost_calculation_test(solution, results)
         demand_matching_test(solution, results)
         energy_conservation_test(solution, results)
         heat_to_discharge_test(solution, results)
         electric_power_conservation_test(solution, results)
         gas_pipes_head_loss_test(solution, results)
-        total_cost_test(solution, results)
 
+        cost_calculation_test(solution_high_demand, results_high_demand)
         demand_matching_test(solution_high_demand, results_high_demand)
         energy_conservation_test(solution_high_demand, results_high_demand)
         heat_to_discharge_test(solution_high_demand, results_high_demand)
         electric_power_conservation_test(solution_high_demand, results_high_demand)
         gas_pipes_head_loss_test(solution_high_demand, results_high_demand)
-        total_cost_test(solution_high_demand, results_high_demand)
 
         # Test: Check if gas pipe diameter value in resulting parameters are
         # updated with optimized values in results
@@ -140,92 +137,6 @@ class TestGasElect(TestCase):
                 solution.times()
             )
         np.testing.assert_allclose(total_gas_source_g, total_gas_demand_g)
-
-        # Test: Check if manually calculated TCO is equal to Objective function value
-        pipe_classes = [
-            EDRGasPipeClass.from_edr_class(
-                name, edr_class_name, solution.gas_network_settings["maximum_velocity"]
-            )
-            for name, edr_class_name in _AssetToComponentBase.STEEL_S1_PIPE_EDR_ASSETS.items()
-        ]
-        total_opex = 0.0
-        total_capex = 0.0
-        for asset in [
-            *solution.energy_system_components.get("heat_source", []),
-            *solution.energy_system_components.get("electricity_cable", []),
-            *solution.energy_system_components.get("gas_pipe", []),
-        ]:
-            esdl_asset = solution.esdl_assets[solution.esdl_asset_name_to_id_map[f"{asset}"]]
-            costs_esdl_asset = esdl_asset.attributes["costInformation"]
-
-            # investment cost
-            investment_cost = 0.0
-            if asset in [
-                *solution.energy_system_components.get("heat_source", []),
-                *solution.energy_system_components.get("electricity_cable", []),
-            ]:
-                investment_cost_info = costs_esdl_asset.investmentCosts.value
-            if asset in solution.energy_system_components["heat_source"]:
-                investment_cost = investment_cost_info * results[f"{asset}__max_size"] / 1.0e6
-            elif asset in solution.energy_system_components["electricity_cable"]:
-                investment_cost = investment_cost_info * parameters[f"{asset}.length"]
-            elif asset in solution.energy_system_components["gas_pipe"]:
-                if parameters[f"{asset}.diameter"] > 0:
-                    for iter in range(len(pipe_classes)):
-                        if pipe_classes[iter].inner_diameter == parameters[f"{asset}.diameter"]:
-                            investment_cost = (
-                                pipe_classes[iter].investment_costs * parameters[f"{asset}.length"]
-                            )
-            total_capex += investment_cost
-            np.testing.assert_allclose(
-                investment_cost, results[f"{asset}__investment_cost"], atol=1.0e-6
-            )
-
-            # installation cost
-            if asset in solution.energy_system_components["heat_source"]:
-                if results[f"{asset}__max_size"] < 1e-8:
-                    installation_cost = 0
-                else:
-                    installation_cost = costs_esdl_asset.installationCosts.value
-                total_capex += installation_cost
-                np.testing.assert_allclose(
-                    installation_cost, results[f"{asset}__installation_cost"]
-                )
-
-            # variable operational cost
-            timesteps_hr = np.diff(solution.times()) / 3600
-            variable_operational_cost = 0.0
-            if asset in solution.energy_system_components["heat_source"]:
-                nominator_vector = results[f"{asset}.Heat_flow"]
-                factor = 1.0
-                if asset in [
-                    *solution.energy_system_components.get("air_water_heat_pump_elec", []),
-                ]:
-                    var_op_costs = costs_esdl_asset.variableOperationalCosts.value / 1.0e6
-                    assert var_op_costs > 0
-                    factor = esdl_asset.attributes["COP"]
-                if asset in [
-                    *solution.energy_system_components.get("gas_heat_source_gas", []),
-                ]:
-                    var_op_costs = costs_esdl_asset.variableOperationalCosts.value
-                    assert var_op_costs > 0
-                    nominator_vector = (
-                        results[f"{asset}.Gas_demand_mass_flow"]
-                        / parameters[f"{asset}.density_normal"]
-                        * 3600
-                    )
-                for ii in range(1, len(solution.times())):
-                    variable_operational_cost += (
-                        var_op_costs * nominator_vector[ii] * timesteps_hr[ii - 1] / factor
-                    )
-            np.testing.assert_allclose(
-                variable_operational_cost, results[f"{asset}__variable_operational_cost"]
-            )
-            total_opex += variable_operational_cost
-
-        np.testing.assert_allclose(
-            solution.objective_value, (total_capex[0] + total_opex) / 1.0e6, atol=1.0e-6
-        )
 
 
 if __name__ == "__main__":

@@ -20,7 +20,12 @@ import pandas as pd
 
 from utils_test_scaling import create_log_list_scaling
 
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
+from utils_tests import (
+    cost_calculation_test,
+    demand_matching_test,
+    energy_conservation_test,
+    heat_to_discharge_test,
+)
 
 logger = logging.getLogger("mesido")
 logger.setLevel(logging.INFO)
@@ -108,9 +113,10 @@ class TestColdDemand(TestCase):
         demand. In this case the demands are matched and the low temperature ates is utilized.
 
         Checks:
-        1. demand is matched
-        2. energy conservation in the network
-        3. heat to discharge
+        1. cost calculation is checked
+        2. demand is matched
+        3. energy conservation in the network
+        4. heat to discharge
 
         """
         import models.wko.src.example as example
@@ -129,6 +135,7 @@ class TestColdDemand(TestCase):
         results = heat_problem.extract_results()
         parameters = heat_problem.parameters(0)
 
+        cost_calculation_test(heat_problem, results)
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)

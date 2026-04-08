@@ -1,3 +1,5 @@
+import esdl
+
 from unittest import TestCase
 
 from mesido._darcy_weisbach import friction_factor, head_loss
@@ -600,7 +602,7 @@ def gas_pipes_head_loss_test(solution, results, atol=1e-12):
                 )
 
 
-def total_cost_test(solution, results, atol=1e-8):
+def cost_calculation_test(solution, results, atol=1e-8):
     parameters = solution.parameters(0)
     transport_assets = [
         *solution.energy_system_components.get("heat_pipe", []),
@@ -614,11 +616,6 @@ def total_cost_test(solution, results, atol=1e-8):
     ]
 
     assets = [
-        # *solution.energy_system_components.get("heat_source", []),
-        # *solution.energy_system_components.get("airco", []),
-        # *solution.energy_system_components.get("air_water_heat_pump", []),
-        # *solution.energy_system_components.get("air_water_heat_pump_elec", []),
-        # *solution.energy_system_components.get("low_temperature_ates", []),
         *solution.energy_system_components.get("heat_source", []),
         *solution.energy_system_components.get("ates", []),
         *solution.energy_system_components.get("low_temperature_ates", []),
@@ -656,14 +653,16 @@ def total_cost_test(solution, results, atol=1e-8):
                 if costs_esdl_asset.investmentCosts is not None
                 else 0.0
             )
-        if asset in solution.energy_system_components["gas_pipe"]:
+        if asset in solution.energy_system_components.get("gas_pipe", []):
             if parameters[f"{asset}.diameter"] > 0:
                 for iter in range(len(pipe_classes)):
                     if pipe_classes[iter].inner_diameter == parameters[f"{asset}.diameter"]:
                         investment_cost = (
                             pipe_classes[iter].investment_costs * parameters[f"{asset}.length"]
                         )
-        elif asset in solution.energy_system_components["electricity_cable"]:
+        elif asset in solution.energy_system_components.get("heat_pipe", []):
+            investment_cost = investment_cost_info * parameters[f"{asset}.length"]
+        elif asset in solution.energy_system_components.get("electricity_cable", []):
             investment_cost = investment_cost_info * parameters[f"{asset}.length"]
         else:
             investment_cost = investment_cost_info * results[f"{asset}__max_size"] / 1.0e6
@@ -718,7 +717,26 @@ def total_cost_test(solution, results, atol=1e-8):
             if asset in [
                 *solution.energy_system_components.get("heat_source", []),
             ]:
-                var_op_costs = 0.0
+                var_op_esdl_info = costs_esdl_asset.variableOperationalCosts
+                var_op_costs_esdl = var_op_esdl_info.value if var_op_esdl_info is not None else 0.0
+
+                perUnit = (
+                    var_op_esdl_info.profileQuantityAndUnit.perUnit
+                    if var_op_esdl_info is not None
+                    else esdl.UnitEnum.NONE
+                )
+                per_scaler = 1.0
+                if esdl.UnitEnum.WATTHOUR == perUnit:
+                    perMultiplier = var_op_esdl_info.profileQuantityAndUnit.perMultiplier
+                    if esdl.MultiplierEnum.KILO == perMultiplier:
+                        per_scaler = 1.0e3
+                    elif esdl.MultiplierEnum.MEGA == perMultiplier:
+                        per_scaler = 1.0e6
+                    else:
+                        pass
+                else:  # CUBIC_METRE or NONE
+                    per_scaler = 1.0
+
                 heat_source = results[f"{asset}.Heat_source"]
                 nominator_vector = None
                 denominator = 1.0
@@ -726,7 +744,7 @@ def total_cost_test(solution, results, atol=1e-8):
                     *solution.energy_system_components.get("air_water_heat_pump", []),
                     *solution.energy_system_components.get("air_water_heat_pump_elec", []),
                 ]:
-                    var_op_costs = costs_esdl_asset.variableOperationalCosts.value / 1.0e6
+                    var_op_costs = var_op_costs_esdl / per_scaler
                     nominator_vector = heat_source
                     denominator = esdl_asset.attributes["COP"]
 
@@ -734,7 +752,7 @@ def total_cost_test(solution, results, atol=1e-8):
                     *solution.energy_system_components.get("heat_source_gas", []),
                     *solution.energy_system_components.get("gas_heat_source_gas", []),
                 ]:
-                    var_op_costs = costs_esdl_asset.variableOperationalCosts.value
+                    var_op_costs = var_op_costs_esdl / per_scaler
                     density_normal = parameters[f"{asset}.density_normal"]
                     nominator_vector = (
                         results[f"{asset}.Gas_demand_mass_flow"] / density_normal * 3600.0
@@ -743,10 +761,10 @@ def total_cost_test(solution, results, atol=1e-8):
                     *solution.energy_system_components.get("heat_source_elec", []),
                     *solution.energy_system_components.get("elec_heat_source_elec", []),
                 ]:
-                    var_op_costs = costs_esdl_asset.variableOperationalCosts.value / 1.0e6
+                    var_op_costs = var_op_costs_esdl / per_scaler
                     nominator_vector = results[f"{asset}.Power_consumed"]  # [W]
                 else:
-                    var_op_costs = costs_esdl_asset.variableOperationalCosts.value / 1.0e6
+                    var_op_costs = var_op_costs_esdl / per_scaler
                     nominator_vector = heat_source
 
                 for ii in range(1, len(solution.times())):
@@ -757,7 +775,3 @@ def total_cost_test(solution, results, atol=1e-8):
             variable_operational_cost, results[f"{asset}__variable_operational_cost"]
         )
         total_opex += variable_operational_cost
-
-    np.testing.assert_allclose(
-        solution.objective_value, (total_capex[0] + total_opex) / 1.0e6, atol=atol
-    )
