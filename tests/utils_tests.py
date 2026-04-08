@@ -664,6 +664,11 @@ def cost_calculation_test(solution, results, atol=1e-8):
             investment_cost = investment_cost_info * parameters[f"{asset}.length"]
         elif asset in solution.energy_system_components.get("electricity_cable", []):
             investment_cost = investment_cost_info * parameters[f"{asset}.length"]
+        elif asset in solution.energy_system_components.get("heat_buffer", []):
+            heat_buffer_volume = results[f"{asset}__max_size"] / (
+                parameters[f"{asset}.cp"] * parameters[f"{asset}.rho"] * parameters[f"{asset}.dT"]
+            )
+            investment_cost = investment_cost_info * heat_buffer_volume
         else:
             investment_cost = investment_cost_info * results[f"{asset}__max_size"] / 1.0e6
         total_capex += investment_cost
@@ -711,34 +716,48 @@ def cost_calculation_test(solution, results, atol=1e-8):
             )
 
         # Variable Operational Cost
+        # TODO: add var-opex calculation for geothermal, airco
+        # TODO: add pumppower cost calculation
+        # TODO: modify for given electricity price profile
+        var_op_esdl_info = costs_esdl_asset.variableOperationalCosts
+        var_op_costs_esdl = var_op_esdl_info.value if var_op_esdl_info is not None else 0.0
+
+        perUnit = (
+            var_op_esdl_info.profileQuantityAndUnit.perUnit
+            if var_op_esdl_info is not None
+            else esdl.UnitEnum.NONE
+        )
+        per_scaler = 1.0
+        if esdl.UnitEnum.WATTHOUR == perUnit:
+            perMultiplier = var_op_esdl_info.profileQuantityAndUnit.perMultiplier
+            if esdl.MultiplierEnum.KILO == perMultiplier:
+                per_scaler = 1.0e3
+            elif esdl.MultiplierEnum.MEGA == perMultiplier:
+                per_scaler = 1.0e6
+            else:
+                pass
+        else:  # CUBIC_METRE or NONE
+            per_scaler = 1.0
         timesteps_hr = np.diff(solution.times()) / 3600.0
         variable_operational_cost = 0.0
         if asset not in transport_assets:
             if asset in [
+                *solution.energy_system_components.get("ates", []),
+                *solution.energy_system_components.get("low_temperature_ates", []),
+            ]:
+                var_op_costs = var_op_costs_esdl / per_scaler
+                nominator_vector = (
+                    results[f"{asset}.Heat_flow_charging"]
+                    + results[f"{asset}.Heat_flow_discharging"]
+                )
+                for ii in range(1, len(solution.times())):
+                    variable_operational_cost += (
+                        var_op_costs * nominator_vector[ii] * timesteps_hr[ii - 1]
+                    )
+            elif asset in [
                 *solution.energy_system_components.get("heat_source", []),
             ]:
-                var_op_esdl_info = costs_esdl_asset.variableOperationalCosts
-                var_op_costs_esdl = var_op_esdl_info.value if var_op_esdl_info is not None else 0.0
-
-                perUnit = (
-                    var_op_esdl_info.profileQuantityAndUnit.perUnit
-                    if var_op_esdl_info is not None
-                    else esdl.UnitEnum.NONE
-                )
-                per_scaler = 1.0
-                if esdl.UnitEnum.WATTHOUR == perUnit:
-                    perMultiplier = var_op_esdl_info.profileQuantityAndUnit.perMultiplier
-                    if esdl.MultiplierEnum.KILO == perMultiplier:
-                        per_scaler = 1.0e3
-                    elif esdl.MultiplierEnum.MEGA == perMultiplier:
-                        per_scaler = 1.0e6
-                    else:
-                        pass
-                else:  # CUBIC_METRE or NONE
-                    per_scaler = 1.0
-
                 heat_source = results[f"{asset}.Heat_source"]
-                nominator_vector = None
                 denominator = 1.0
                 if asset in [
                     *solution.energy_system_components.get("air_water_heat_pump", []),

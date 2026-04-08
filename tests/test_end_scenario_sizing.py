@@ -19,7 +19,7 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
-from utils_tests import demand_matching_test
+from utils_tests import cost_calculation_test, demand_matching_test
 
 
 class TestEndScenarioSizing(TestCase):
@@ -107,6 +107,7 @@ class TestEndScenarioSizing(TestCase):
         # Check that computation time is within expected bounds
 
         # Check whehter the heat demand is matched
+        cost_calculation_test(self.solution, self.results)
         demand_matching_test(self.solution, self.results)
 
         # Check that indeed the available pipe classes were adapted based on expected flow
@@ -135,27 +136,6 @@ class TestEndScenarioSizing(TestCase):
                 heat_ates, heat_flow_charging - heat_flow_discharging, atol=1.0
             )
             np.testing.assert_array_less(heat_flow_charging[heat_flow_discharging > 1e3], 1e3)
-
-        # Check variable operational cost of ates
-        timesteps_hr = np.diff(self.solution.times()) / 3600.0
-        variable_operational_cost = 0.0
-        for a in self.solution.energy_system_components.get("ates", []):
-            esdl_asset = self.solution.esdl_assets[self.solution.esdl_asset_name_to_id_map[f"{a}"]]
-            costs_esdl_asset = esdl_asset.attributes["costInformation"]
-            var_op_costs = costs_esdl_asset.variableOperationalCosts.value / 1.0e6  # EUR/Wh_th
-            self.assertNotEqual(0.0, var_op_costs)
-            for ii in range(1, len(self.solution.times())):
-                variable_operational_cost += (
-                    var_op_costs
-                    * (
-                        self.results[f"{a}.Heat_flow_charging"][ii]
-                        + self.results[f"{a}.Heat_flow_discharging"][ii]
-                    )
-                    * timesteps_hr[ii - 1]
-                )
-        np.testing.assert_allclose(
-            variable_operational_cost, self.results[f"{a}__variable_operational_cost"]
-        )
 
         # Check whether buffer tank is only active in peak day
         peak_day_indx = self.solution.parameters(0)["peak_day_index"]
