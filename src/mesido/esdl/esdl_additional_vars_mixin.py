@@ -178,7 +178,7 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
             *self.energy_system_components.get("heat_buffer", []),
             *self.energy_system_components.get("heat_pump", []),
         ]:
-            esdl_asset = self.esdl_assets[self.esdl_asset_name_to_id_map[asset]]
+            esdl_asset = self.esdl_assets[asset]
             for constraint in esdl_asset.attributes.get("constraint", []):
                 if constraint.name == "setpointconstraint":
                     time_unit = constraint.range.profileQuantityAndUnit.perTimeUnit
@@ -194,7 +194,7 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
                         time_hours = 365 * 24
                     else:
                         logger.error(
-                            f"{asset} has a setpoint constaint specified with unknown"
+                            f"{esdl_asset.name} has a setpoint constraint specified with unknown"
                             f"per time unit"
                         )
 
@@ -253,7 +253,7 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
                 *self.energy_system_components.get("heat_exchanger", []),
                 *self.energy_system_components.get("heat_demand", []),
             ]:
-                esdl_asset = self.esdl_assets[self.esdl_asset_name_to_id_map[asset]]
+                esdl_asset = self.esdl_assets[asset]
                 parameters = self.parameters(0)
                 for i in range(len(esdl_asset.attributes["constraint"].items)):
                     constraint = esdl_asset.attributes["constraint"].items[i]

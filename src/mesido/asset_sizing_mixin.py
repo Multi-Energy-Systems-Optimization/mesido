@@ -803,7 +803,8 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             ub = bounds[f"{asset_name}.Heat_source"][1]
 
             # Update bound to account for profile constraint being used instead of 1 value
-            asset = self.esdl_assets[self.esdl_asset_name_to_id_map[asset_name]]
+
+            asset = self.esdl_assets[asset_name]
             asset_profile_constraints, qty_asset_profile_constraints = get_asset_contraints(
                 self, asset, esdl.ProfileConstraint
             )
@@ -1884,8 +1885,8 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints : The function returns a list of profile‑based capacity constraints.
         """
         constraints = []
-        if f"{asset.name}.{variable_suffix}" in self.io.get_timeseries_names():
-            timeseries = self.get_timeseries(f"{asset.name}.{variable_suffix}")
+        if f"{asset.id}.{variable_suffix}" in self.io.get_timeseries_names():
+            timeseries = self.get_timeseries(f"{asset.id}.{variable_suffix}")
             if len(self.times()) < len(timeseries.times):
                 idx_start = np.where(timeseries.times == self.times()[0])[0][0]
                 idx_end = np.where(timeseries.times == self.times()[-1])[0][0]
@@ -1907,7 +1908,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 == esdl.UnitEnum.WATT
             ):
                 parameters = self.parameters(ensemble_member)
-                asset_state = parameters[f"{asset.name}.state"]
+                asset_state = parameters[f"{asset.id}.state"]
 
                 if asset_state == AssetStateEnum.ENABLED:  # Enabled asset
                     constraints.append(
@@ -2042,9 +2043,10 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             max_heat = self.extra_variable(max_var, ensemble_member)
             heat_source = self.__state_vector_scaled(f"{s}.Heat_source", ensemble_member)
             constraint_nominal = self.variable_nominal(f"{s}.Heat_source")
+
             constraints.extend(
                 self.__producer_constraints(
-                    self.esdl_assets[self.esdl_asset_name_to_id_map[s]],
+                    self.esdl_assets[s],
                     "maximum_heat_source",
                     heat_source,
                     max_heat,
@@ -2188,7 +2190,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             constraint_nominal = self.variable_nominal(f"{d}.Electricity_source")
             constraints.extend(
                 self.__producer_constraints(
-                    self.esdl_assets[self.esdl_asset_name_to_id_map[d]],
+                    self.esdl_assets[d],
                     "maximum_electricity_source",
                     electricity_source,
                     max_power,

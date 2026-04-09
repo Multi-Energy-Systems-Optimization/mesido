@@ -9,6 +9,7 @@
 - Reduced the number of constraints required for headloss calculation with LINEARIZED_N_LINES_EQUALITY setting.
 - The method __state_vector_scaled has been moved to BaseProblemMixin, allowing the same method to be used across different problem classes as _BaseProblemMixin__state_vector_scaled.
 - The creation of discrete variables for individual assets has been moved to the pycml classes.
+- The code base uses asset id's instead of asset names expect for csv inputs where the asset names are still accepted.
 
 ## Fixed
 - xxx 
