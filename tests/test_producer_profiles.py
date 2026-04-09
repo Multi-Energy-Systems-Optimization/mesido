@@ -50,16 +50,18 @@ class TestProducerMaxProfile(TestCase):
             input_timeseries_file="timeseries_import.xml",
         )
         results = solution.extract_results()
+        name_to_id_map = solution.esdl_asset_name_to_id_map
+        producer_id = name_to_id_map["GeothermalSource_b702"]
 
         demand_matching_test(solution, results)
         energy_conservation_test(solution, results)
         heat_to_discharge_test(solution, results)
         tol = 1e-8
-        heat_producer = results["GeothermalSource_b702.Heat_source"]
-        size_producer = results["GeothermalSource_b702__max_size"]
+        heat_producer = results[f"{producer_id}.Heat_source"]
+        size_producer = results[f"{producer_id}__max_size"]
 
         heat_producer_profile_scaled = solution.get_timeseries(
-            "GeothermalSource_b702.maximum_heat_source"
+            f"{producer_id}.maximum_heat_source"
         ).values
         heat_producer_profile_full = heat_producer_profile_scaled * size_producer
 
@@ -89,7 +91,7 @@ class TestProducerMaxProfile(TestCase):
         class HeatProblemESDLProdProfileAdaptedTCO(BeseProblemProdProfile):
             def read(self):
                 super().read()
-                set_producer = "HeatProducer_b702"
+                set_producer = self.esdl_asset_name_to_id_map["HeatProducer_b702"]
                 producer_timeseries = self.get_timeseries(
                     f"{set_producer}.maximum_heat_source"
                 ).values
@@ -118,22 +120,22 @@ class TestProducerMaxProfile(TestCase):
                 esdl_parser=ESDLFileParser,
             )
             results = solution.extract_results()
+            name_to_id_map = solution.esdl_asset_name_to_id_map
+            producer_id = name_to_id_map["HeatProducer_b702"]
 
             demand_matching_test(solution, results)
             energy_conservation_test(solution, results)
             heat_to_discharge_test(solution, results, atol=1.0)
             tol = 1e-4
-            heat_produced = results["HeatProducer_b702.Heat_source"]
+            heat_produced = results[f"{producer_id}.Heat_source"]
 
             if problem_class == BeseProblemProdProfile:
                 heat_production_upper_limit = solution.get_timeseries(
-                    "HeatProducer_b702.maximum_heat_source"
+                    f"{producer_id}.maximum_heat_source"
                 ).values
                 np.testing.assert_equal(
-                    solution.esdl_assets[
-                        solution.esdl_asset_name_to_id_map["HeatProducer_b702"]
-                    ].attributes["power"],
-                    results["HeatProducer_b702__max_size"],
+                    solution.esdl_assets[producer_id].attributes["power"],
+                    results[f"{producer_id}__max_size"],
                 )
                 np.testing.assert_array_less(heat_produced - tol, heat_production_upper_limit)
                 np.testing.assert_array_less(
@@ -150,13 +152,13 @@ class TestProducerMaxProfile(TestCase):
                 )  # checking that the upper production limit was not achieved for all entries
             elif problem_class == HeatProblemESDLProdProfileAdaptedTCO:
                 heat_production_upper_limit = (
-                    solution.get_timeseries("HeatProducer_b702.maximum_heat_source").values
-                    / max(solution.get_timeseries("HeatProducer_b702.maximum_heat_source").values)
-                    * results["HeatProducer_b702__max_size"]
+                    solution.get_timeseries(f"{producer_id}.maximum_heat_source").values
+                    / max(solution.get_timeseries(f"{producer_id}.maximum_heat_source").values)
+                    * results[f"{producer_id}__max_size"]
                 )
                 np.testing.assert_allclose(
                     max(heat_production_upper_limit),
-                    results["HeatProducer_b702__max_size"],
+                    results[f"{producer_id}__max_size"],
                     atol=1e-9,
                 )
                 np.testing.assert_array_less(heat_produced - tol, heat_production_upper_limit)
@@ -195,16 +197,18 @@ class TestProducerMaxProfile(TestCase):
             esdl_parser=ESDLFileParser,
         )
         results = solution.extract_results()
+        name_to_id_map = solution.esdl_asset_name_to_id_map
+        producer_id = name_to_id_map["HeatProducer_b702"]
 
         demand_matching_test(solution, results)
         energy_conservation_test(solution, results)
         heat_to_discharge_test(solution, results)
         tol = 1e-8
-        heat_produced = results["HeatProducer_b702.Heat_source"]
+        heat_produced = results[f"{producer_id}.Heat_source"]
         heat_production_upper_limit = (
-            solution.get_timeseries("HeatProducer_b702.maximum_heat_source").values
-            / max(solution.get_timeseries("HeatProducer_b702.maximum_heat_source").values)
-            * results["HeatProducer_b702__max_size"]
+            solution.get_timeseries(f"{producer_id}.maximum_heat_source").values
+            / max(solution.get_timeseries(f"{producer_id}.maximum_heat_source").values)
+            * results[f"{producer_id}__max_size"]
         )
 
         # check that heat produced is smaller than the profile

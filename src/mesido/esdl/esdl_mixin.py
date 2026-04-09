@@ -268,9 +268,9 @@ class ESDLMixin(
         super().pre()
         for esdl_id, esdl_asset in self.esdl_assets.items():
             if esdl_asset.name in self.name_to_esdl_id_map:
-                raise RuntimeWarning(
+                logger.warning(
                     f"Found multiple ESDL assets with name {esdl_asset.name} in the "
-                    f"input ESDL. This is not supported in the optimization."
+                    f"input ESDL, therefore name_to_esdl_id_map cannot be used."
                 )
             self.name_to_esdl_id_map[esdl_asset.name] = esdl_id
 
@@ -362,7 +362,7 @@ class ESDLMixin(
         Overrides the pipe class dictionaries based on the minimum pipe sizes that are required.
         """
 
-        p = asset.name
+        p = asset.id
 
         if asset.attributes["state"].name == "OPTIONAL":
             c = override_classes[p] = []
@@ -733,32 +733,35 @@ class ESDLMixin(
                         ), "Pipes can only have related supply/return pipe"
                         related = True
                         if asset.attributes["port"][0].carrier.supplyTemperature:  # hot_pipe
-                            if asset.name not in self.__hot_cold_pipe_relations.keys():
-                                self.__hot_cold_pipe_relations[asset.name] = related_asset[0].name
+                            if asset.id not in self.__hot_cold_pipe_relations.keys():
+                                self.__hot_cold_pipe_relations[asset.id] = related_asset[0].id
                         elif asset.attributes["port"][0].carrier.returnTemperature:  # cold_pipe
-                            if related_asset[0].name not in self.__hot_cold_pipe_relations.keys():
-                                self.__hot_cold_pipe_relations[related_asset[0].name] = asset.name
-                    if not related and asset.name not in self.__unrelated_pipes:
-                        self.__unrelated_pipes.append(asset.name)
+                            if related_asset[0].id not in self.__hot_cold_pipe_relations.keys():
+                                self.__hot_cold_pipe_relations[related_asset[0].id] = asset.id
+                    if not related and asset.id not in self.__unrelated_pipes:
+                        self.__unrelated_pipes.append(asset.id)
         else:
             pipes = self.energy_system_components.get("heat_pipe", [])
-            for pipe in pipes:
+            for pipe_id in pipes:
                 related = False
                 # test if hot_pipe
+                pipe = self.esdl_asset_id_to_name_map[pipe_id]
                 if not pipe.endswith("_ret"):
                     cold_pipe = f"{pipe}_ret"
-                    if cold_pipe in pipes:
+                    cold_pipe_id = self.esdl_asset_name_to_id_map[cold_pipe]
+                    if cold_pipe_id in pipes:
                         related = True
                         if pipe not in self.__hot_cold_pipe_relations.keys():
-                            self.__hot_cold_pipe_relations[pipe] = cold_pipe
+                            self.__hot_cold_pipe_relations[pipe_id] = cold_pipe_id
                 elif pipe.endswith("_ret"):
                     hot_pipe = pipe[:-4]
-                    if hot_pipe in pipes:
+                    hot_pipe_id = self.esdl_asset_name_to_id_map[hot_pipe]
+                    if hot_pipe_id in pipes:
                         related = True
                         if hot_pipe not in self.__hot_cold_pipe_relations.keys():
-                            self.__hot_cold_pipe_relations[hot_pipe] = pipe
+                            self.__hot_cold_pipe_relations[hot_pipe_id] = pipe_id
                 if not related and pipe not in self.__unrelated_pipes:
-                    self.__unrelated_pipes.append(pipe)
+                    self.__unrelated_pipes.append(pipe_id)
 
     @property
     def hot_to_cold_pipe_map(self) -> Dict:

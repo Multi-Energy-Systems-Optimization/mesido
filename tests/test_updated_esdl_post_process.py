@@ -371,6 +371,7 @@ class TestUpdatedESDL(TestCase):
 
         results = solution.extract_results()
         parameters = solution.parameters(0)
+        name_to_id_map = solution.esdl_asset_name_to_id_map
 
         problem = EndScenarioSizingDiscountedStaged(
             esdl_file_name=esdl_name,
@@ -416,7 +417,7 @@ class TestUpdatedESDL(TestCase):
         )
 
         # Check if EAC calculation is matching with KPI values
-        asset = "ResidualHeatSource_72d7"
+        asset_id = name_to_id_map["ResidualHeatSource_72d7"]
         for ii in range(len(energy_system.instance[0].area.KPIs.kpi)):
             kpi_name = energy_system.instance[0].area.KPIs.kpi[ii].name
 
@@ -435,10 +436,10 @@ class TestUpdatedESDL(TestCase):
                     if string_items_asset.label == "ResidualHeatSource":
                         value = string_items_asset.value
 
-                        investment_cost = results[f"{asset}__investment_cost"]
-                        installation_cost = results[f"{asset}__installation_cost"]
-                        asset_life_years = parameters[f"{asset}.technical_life"]
-                        discount_rate = parameters[f"{asset}.discount_rate"] / 100.0
+                        investment_cost = results[f"{asset_id}__investment_cost"]
+                        installation_cost = results[f"{asset_id}__installation_cost"]
+                        asset_life_years = parameters[f"{asset_id}.technical_life"]
+                        discount_rate = parameters[f"{asset_id}.discount_rate"] / 100.0
                         annuity_factor = calculate_annuity_factor(discount_rate, asset_life_years)
                         capex_eac = (investment_cost + installation_cost) * annuity_factor
 
@@ -453,8 +454,8 @@ class TestUpdatedESDL(TestCase):
                     if string_items_asset.label == "ResidualHeatSource":
                         value = string_items_asset.value
 
-                        var_opex_cost = results[f"{asset}__variable_operational_cost"]
-                        fix_opex_cost = results[f"{asset}__fixed_operational_cost"]
+                        var_opex_cost = results[f"{asset_id}__variable_operational_cost"]
+                        fix_opex_cost = results[f"{asset_id}__fixed_operational_cost"]
 
                         opex_eac = var_opex_cost + fix_opex_cost
 
