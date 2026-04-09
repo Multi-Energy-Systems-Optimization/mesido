@@ -22,5 +22,21 @@ def post_processing_ensemble(heat_problem):
         for prod in heat_problem.energy_system_components.get("heat_source", []):
             print(prod, "Heat_source", results[ensemble_member][f"{prod}.Heat_source"])
             print(prod, "Max size", results[ensemble_member][f"{prod}__max_size"])
-    #TODO: check TCO costs for these ensembles.
+
+    set_self_hot_pipes = set(heat_problem.hot_pipes)
+    for h_p in heat_problem.energy_system_components.get("heat_pipe", []):
+        if h_p in heat_problem._heat_pipe_topo_pipe_class_map.keys():
+            pipe_classes = heat_problem._heat_pipe_topo_pipe_class_map[h_p]
+            for pc in pipe_classes:
+                neighbour = heat_problem.has_related_pipe(h_p)
+                if neighbour and h_p not in set_self_hot_pipes:
+                    var_name = f"{heat_problem.cold_to_hot_pipe(h_p)}__hn_pipe_class_{pc.name}"
+                else:
+                    var_name = f"{h_p}__hn_pipe_class_{pc.name}"
+                values = []
+                for e_m in range(heat_problem.ensemble_size):
+                    values.append(results[e_m][var_name])
+                print(h_p, var_name, values)
+
+    # TODO: check TCO costs for these ensembles.
     return results
