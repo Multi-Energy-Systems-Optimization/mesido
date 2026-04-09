@@ -1,6 +1,6 @@
-import esdl
-
 from unittest import TestCase
+
+import esdl
 
 from mesido._darcy_weisbach import friction_factor, head_loss
 from mesido.constants import GRAVITATIONAL_CONSTANT
@@ -604,19 +604,19 @@ def gas_pipes_head_loss_test(solution, results, atol=1e-12):
 
 def _get_esdl_scaled_cost(cost_esdl_info, uni_enum):
     costs_esdl = cost_esdl_info.value if cost_esdl_info is not None else 0.0
-    perUnit = (
+    per_unit = (
         cost_esdl_info.profileQuantityAndUnit.perUnit
         if cost_esdl_info is not None
         else esdl.UnitEnum.NONE
     )
-    if uni_enum == perUnit:
-        perMultiplier = cost_esdl_info.profileQuantityAndUnit.perMultiplier
-        if esdl.MultiplierEnum.KILO == perMultiplier:
+    if uni_enum == per_unit:
+        per_multiplier = cost_esdl_info.profileQuantityAndUnit.perMultiplier
+        if esdl.MultiplierEnum.KILO == per_multiplier:
             per_scaler = 1.0e3
-        elif esdl.MultiplierEnum.MEGA == perMultiplier:
+        elif esdl.MultiplierEnum.MEGA == per_multiplier:
             per_scaler = 1.0e6
         else:
-            raise RuntimeWarning(f"{perMultiplier} is not supported as unit per multiplier.")
+            raise RuntimeWarning(f"{per_multiplier} is not supported as unit per multiplier.")
     else:  # CUBIC_METRE or METRE or NONE
         per_scaler = 1.0
     cost_scaled = costs_esdl / per_scaler
