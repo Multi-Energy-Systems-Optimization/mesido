@@ -20,8 +20,8 @@ def post_processing_ensemble(heat_problem):
         for demand in heat_problem.energy_system_components.get("heat_demand", []):
             result_demand = results[e_m][f"{demand}.Heat_demand"]
             target_demand = heat_problem.get_timeseries(f"{demand}.target_heat_demand", e_m)
-            print(demand, result_demand)
-            print("target: ", target_demand)
+            # print(demand, result_demand)
+            # print("target: ", target_demand)
             np.testing.assert_allclose(target_demand.values, result_demand)
             inv_costs_dem[e_m] += results[e_m][heat_problem._asset_investment_cost_map[demand]][0]
             inv_costs_dem[e_m] += results[e_m][heat_problem._asset_installation_cost_map[demand]][
@@ -34,11 +34,15 @@ def post_processing_ensemble(heat_problem):
                 heat_problem._asset_variable_operational_cost_map[demand]
             ][0]
 
-        for prod in heat_problem.energy_system_components.get("heat_source", []):
-            print(prod, "Heat_source", results[e_m][f"{prod}.Heat_source"])
+    for prod in heat_problem.energy_system_components.get("heat_source", []):
+        for e_m in range(heat_problem.ensemble_size):
+            # print(prod, "Heat_source", results[e_m][f"{prod}.Heat_source"])
             print(prod, "Max size", results[e_m][f"{prod}__max_size"])
-            inv_costs_source[e_m] += results[e_m][heat_problem._asset_investment_cost_map[prod]][0]
-            inv_costs_source[e_m] += results[e_m][heat_problem._asset_installation_cost_map[prod]][0]
+            inv_cost = results[e_m][heat_problem._asset_investment_cost_map[prod]][0]
+            inst_cost = results[e_m][heat_problem._asset_installation_cost_map[prod]][0]
+            print(prod, "inv_cost", inv_cost, "inst_cost", inst_cost)
+            inv_costs_source[e_m] += inv_cost
+            inv_costs_source[e_m] += inst_cost
             opex_source[e_m] += results[e_m][heat_problem._asset_fixed_operational_cost_map[prod]][0]
             opex_source[e_m] += results[e_m][heat_problem._asset_variable_operational_cost_map[prod]][
                 0
