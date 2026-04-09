@@ -76,8 +76,8 @@ def _mip_gap_settings(mip_gap_name: str, problem) -> Dict[str, float]:
     """Creating the same MIP gap settings for all solvers."""
 
     options = {}
-    if hasattr(problem, "priority"):
-        if problem.priority == 1:
+    if hasattr(problem, "_EndScenarioSizing__priority"):
+        if problem._EndScenarioSizing__priority == 1:
             options[mip_gap_name] = 1e-5
         else:
             if hasattr(problem, "_stage"):
