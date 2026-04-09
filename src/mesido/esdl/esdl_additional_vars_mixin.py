@@ -194,7 +194,7 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
                         time_hours = 365 * 24
                     else:
                         logger.error(
-                            f"{asset} has a setpoint constaint specified with unknown"
+                            f"{esdl_asset.name} has a setpoint constraint specified with unknown"
                             f"per time unit"
                         )
 

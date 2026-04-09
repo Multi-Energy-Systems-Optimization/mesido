@@ -158,9 +158,9 @@ class PhysicsMixin(
             iter(
                 [
                     comptype
-                    for comptype, compnames in self.energy_system_components.items()
-                    for compname in compnames
-                    if compname == component_id
+                    for comptype, comp_ids in self.energy_system_components.items()
+                    for comp_id in comp_ids
+                    if comp_id == component_id
                 ]
             )
         )

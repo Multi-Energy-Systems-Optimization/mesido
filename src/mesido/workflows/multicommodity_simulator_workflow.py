@@ -588,7 +588,7 @@ class MultiCommoditySimulator(
                 if attributes["merit_order"][-1] <= 0.0:
                     raise Exception(
                         "The specified producer usage merit order must be a "
-                        f"positve integer value, producer name:{a.id}, current "
+                        f"positive integer value, producer name:{a.name}, current "
                         f"specified merit value: {last_merit_order}"
                     )
 

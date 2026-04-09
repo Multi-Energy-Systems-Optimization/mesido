@@ -152,7 +152,7 @@ class BaseProfileReader:
                             # We don't set a default profile for source targets
                             continue
                         logger.warning(
-                            f"No profile provided for {component_id=} and "
+                            f"No profile provided for {asset.name} and "
                             f"{ensemble_member=}, using the assets power value instead"
                         )
                         values = np.array([asset_power] * len(self._reference_datetimes))
@@ -367,7 +367,7 @@ class InfluxDBProfileReader(BaseProfileReader):
                     self.asset_type_to_variable_name_conversion[esdl.esdl.GasProducer],
                 ]:
                     logger.error(
-                        f"Profiles for {var_base_name} from esdl has not been tested yet but only"
+                        f"Profiles for {asset.name} from esdl has not been tested yet but only"
                         " for heat sources"
                     )
                     sys.exit(1)
@@ -381,7 +381,7 @@ class InfluxDBProfileReader(BaseProfileReader):
                 if var_base_name in [
                     self.asset_type_to_variable_name_conversion[esdl.esdl.GasProducer],
                 ]:
-                    logger.error(f"Profiles for {var_base_name} from esdl has not been tested yet")
+                    logger.error(f"Profiles for {asset.name} from esdl has not been tested yet")
                     sys.exit(1)
                 try:
                     variable_suffix = self.asset_type_to_variable_name_conversion[type(asset)]
