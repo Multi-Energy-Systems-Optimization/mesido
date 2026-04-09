@@ -35,7 +35,8 @@ def post_processing_ensemble(heat_problem):
                     var_name = f"{h_p}__hn_pipe_class_{pc.name}"
                 values = []
                 for e_m in range(heat_problem.ensemble_size):
-                    values.append(results[e_m][var_name])
+                    values.append(results[e_m][var_name][0])
+                np.testing.assert_allclose(values[0], values)
                 print(h_p, var_name, values)
 
     # TODO: check TCO costs for these ensembles.
