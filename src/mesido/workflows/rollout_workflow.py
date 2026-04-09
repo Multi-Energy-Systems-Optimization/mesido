@@ -394,7 +394,7 @@ class RollOutProblem(
                     end_index += 1
                 else:
                     demand_states = demand_states[:-1]
-                asset_is_realized = self.extra_variable(f"{d}__asset_is_realized_{year}")
+                asset_is_realized = self.extra_variable(f"{d}__asset_is_realized_{year}", ensemble_member)
                 # demand matching
                 constraints.append(
                     (
@@ -443,7 +443,7 @@ class RollOutProblem(
                 for asset in self.energy_system_components.get(asset_type, []):
                     # cumulative_investements_made does not yet cather for fraction_placed
                     cumulative_inv = self.extra_variable(
-                        f"{asset}__cumulative_investments_made_in_eur_year_{y}"
+                        f"{asset}__cumulative_investments_made_in_eur_year_{y}", ensemble_member
                     )
                     cumulative_capex += cumulative_inv
 
@@ -477,7 +477,7 @@ class RollOutProblem(
         for y in range(self._years):
             cumulative_pipe_length = 0
             for p in self.energy_system_components.get("heat_pipe", []):
-                pipe_placement = self.extra_variable(self._asset_is_realized_map[p][y])
+                pipe_placement = self.extra_variable(self._asset_is_realized_map[p][y], ensemble_member)
                 pipe_length = parameters[f"{p}.length"]
                 cumulative_pipe_length += pipe_placement * pipe_length
             used_length_year = cumulative_pipe_length - total_length
@@ -632,14 +632,14 @@ class RollOutProblem(
 
         return constraints
 
-    def get_asset_is__realized_symbols(self, asset_name):
+    def get_asset_is__realized_symbols(self, asset_name, ensemble_member):
         symbols = [f"{asset_name}__asset_is_realized_{year}" for year in range(self._years)]
 
-        return self.extra_variable_vector(symbols, 0)
+        return self.extra_variable_vector(symbols, ensemble_member)
 
-    def get_asset_fraction__placed_symbols(self, asset_name):
+    def get_asset_fraction__placed_symbols(self, asset_name, ensemble_member):
         symbols = [f"{asset_name}__fraction_placed_{year}" for year in range(self._years)]
-        return self.extra_variable_vector(symbols, 0)
+        return self.extra_variable_vector(symbols, ensemble_member)
 
     def extra_variable_vector(self, symbols, ensemble_member):
         states = []
