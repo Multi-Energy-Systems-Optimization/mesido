@@ -14,24 +14,35 @@ class EndScenarioSizingStagedEnsemble(
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self._heat_pipes_fixed_size = True
+        self._asset_types_fixed_size = kwargs.get("_asset_types_fixed_size", ["heat_source",
+                                                                            "ates", "heat_buffer"])
+        self._asset_subtypes_not_included_fixed_size = kwargs.get(
+            "_asset_subtypes_not_included_fixed_size", ["geothermal"])
+
     def goals(self):
         goals = super().goals().copy()
 
         return goals
 
-    def __fixed_max_size_producer(self):
+    def __fixed_max_size_assets(self):
         constraints = []
-        for heat_source in [*self.energy_system_components.get("heat_source", []),
-                            *self.energy_system_components.get("ates", []),
-                            *self.energy_system_components.get("heat_buffer", [])]:
-                max_size_prev = self.extra_variable(f"{heat_source}__max_size", ensemble_member=0)
-                aggregation_prev = self.get_aggregation_count_var(heat_source, 0)
-                for e_m in range(self.ensemble_size - 1):
-                    max_size = self.extra_variable(f"{heat_source}__max_size", ensemble_member=e_m + 1)
-                    constraints.append((max_size - max_size_prev, 0.0, 0.0))
-                    max_size_prev = max_size
-                    aggregation = self.get_aggregation_count_var(heat_source, e_m+1)
-                    constraints.append((aggregation - aggregation_prev, 0.0, 0.0))
+        sub_asset_not_included = [
+            asset
+            for asset_type in self._asset_subtypes_not_included_fixed_size
+            for asset in self.energy_system_components.get(asset_type, [])
+        ]
+        for asset_type in self._asset_types_fixed_size:
+            for asset in self.energy_system_components.get(asset_type, []):
+                if asset not in sub_asset_not_included:
+                    max_size_prev = self.extra_variable(f"{asset}__max_size", ensemble_member=0)
+                    aggregation_prev = self.get_aggregation_count_var(asset, 0)
+                    for e_m in range(self.ensemble_size - 1):
+                        max_size = self.extra_variable(f"{asset}__max_size", ensemble_member=e_m + 1)
+                        constraints.append((max_size - max_size_prev, 0.0, 0.0))
+                        max_size_prev = max_size
+                        aggregation = self.get_aggregation_count_var(asset, e_m+1)
+                        constraints.append((aggregation - aggregation_prev, 0.0, 0.0))
         return constraints
 
     def __fixed_max_size_pipes(self):
@@ -72,8 +83,9 @@ class EndScenarioSizingStagedEnsemble(
 
     def constraints(self, ensemble_member):
         constraints = super().constraints(ensemble_member).copy()
-        constraints.extend(self.__fixed_max_size_producer())
-        constraints.extend(self.__fixed_max_size_pipes())
+        constraints.extend(self.__fixed_max_size_assets())
+        if self._heat_pipes_fixed_size:
+            constraints.extend(self.__fixed_max_size_pipes())
         constraints.extend(self.__update_target_demand_constraint(ensemble_member))
 
         return constraints
