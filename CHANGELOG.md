@@ -1,4 +1,16 @@
-# [Unreleased-main] - 2026-03-12
+# [Unreleased-main] - 2026-04-13
+
+## Added
+- xxx
+
+## Changed
+- xxx
+
+## Fixed
+- xxx
+
+
+# [0.1.18.1] - 2026-04-13
 
 ## Added
 - Electricity consumption calculation of geothermal assets, using the defined COP. 
@@ -8,7 +20,7 @@
 - xxx
 
 ## Fixed
-- xxx 
+- ProfileConstraints: Use already available function to get profile quantity and unit
 
 
 # [0.1.18] - 2026-03-12
