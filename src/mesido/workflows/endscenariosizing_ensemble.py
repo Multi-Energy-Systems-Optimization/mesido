@@ -11,6 +11,9 @@ class EndScenarioSizingStagedEnsemble(
 
     csv_ensemble_mode = True
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     def goals(self):
         goals = super().goals().copy()
 
@@ -18,15 +21,17 @@ class EndScenarioSizingStagedEnsemble(
 
     def __fixed_max_size_producer(self):
         constraints = []
-        for heat_source in self.energy_system_components["heat_source"]:
-            max_size_prev = self.extra_variable(f"{heat_source}__max_size", ensemble_member=0)
-            aggregation_prev = self.get_aggregation_count_var(heat_source, 0)
-            for e_m in range(self.ensemble_size - 1):
-                max_size = self.extra_variable(f"{heat_source}__max_size", ensemble_member=e_m + 1)
-                constraints.append((max_size - max_size_prev, 0.0, 0.0))
-                max_size_prev = max_size
-                aggregation = self.get_aggregation_count_var(heat_source, e_m+1)
-                constraints.append((aggregation - aggregation_prev, 0.0, 0.0))
+        for heat_source in [*self.energy_system_components.get("heat_source", []),
+                            *self.energy_system_components.get("ates", []),
+                            *self.energy_system_components.get("heat_buffer", [])]:
+                max_size_prev = self.extra_variable(f"{heat_source}__max_size", ensemble_member=0)
+                aggregation_prev = self.get_aggregation_count_var(heat_source, 0)
+                for e_m in range(self.ensemble_size - 1):
+                    max_size = self.extra_variable(f"{heat_source}__max_size", ensemble_member=e_m + 1)
+                    constraints.append((max_size - max_size_prev, 0.0, 0.0))
+                    max_size_prev = max_size
+                    aggregation = self.get_aggregation_count_var(heat_source, e_m+1)
+                    constraints.append((aggregation - aggregation_prev, 0.0, 0.0))
         return constraints
 
     def __fixed_max_size_pipes(self):
