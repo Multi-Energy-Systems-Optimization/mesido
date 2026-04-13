@@ -8,6 +8,7 @@ class EndScenarioSizingStagedEnsemble(
 ):
     # currently the goals are as in endscenariosizing, however, state goals are ensemble_member
     # independent.
+    #TODO: for robustness the demand matching goals should be reviewed.
 
     csv_ensemble_mode = True
 

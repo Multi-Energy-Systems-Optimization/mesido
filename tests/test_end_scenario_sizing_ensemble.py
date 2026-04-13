@@ -37,8 +37,9 @@ class TestEndScenarioSizingEnsemble(TestCase):
             {"_asset_types_fixed_size": ["heat_source"]},
             {"_asset_types_fixed_size": ["geothermal"]},
         ]
+        #TODO: add a run with heatlosses included Staged.
         for config in run_asset_map:
-            heat_problem = run_end_scenario_sizing(
+            heat_problem = run_end_scenario_sizing_no_heat_losses(
                 EndScenarioSizingStagedEnsemble,
                 solver_class=SolverCPLEX,
                 base_folder=base_folder,
