@@ -24,12 +24,8 @@ def post_processing_ensemble(heat_problem):
             # print("target: ", target_demand)
             np.testing.assert_allclose(target_demand.values, result_demand)
             inv_costs_dem[e_m] += results[e_m][heat_problem._asset_investment_cost_map[demand]][0]
-            inv_costs_dem[e_m] += results[e_m][heat_problem._asset_installation_cost_map[demand]][
-                0
-            ]
-            opex_dem[e_m] += results[e_m][heat_problem._asset_fixed_operational_cost_map[demand]][
-                0
-            ]
+            inv_costs_dem[e_m] += results[e_m][heat_problem._asset_installation_cost_map[demand]][0]
+            opex_dem[e_m] += results[e_m][heat_problem._asset_fixed_operational_cost_map[demand]][0]
             opex_dem[e_m] += results[e_m][
                 heat_problem._asset_variable_operational_cost_map[demand]
             ][0]
@@ -43,10 +39,12 @@ def post_processing_ensemble(heat_problem):
             print(prod, "inv_cost", inv_cost, "inst_cost", inst_cost)
             inv_costs_source[e_m] += inv_cost
             inv_costs_source[e_m] += inst_cost
-            opex_source[e_m] += results[e_m][heat_problem._asset_fixed_operational_cost_map[prod]][0]
-            opex_source[e_m] += results[e_m][heat_problem._asset_variable_operational_cost_map[prod]][
+            opex_source[e_m] += results[e_m][heat_problem._asset_fixed_operational_cost_map[prod]][
                 0
             ]
+            opex_source[e_m] += results[e_m][
+                heat_problem._asset_variable_operational_cost_map[prod]
+            ][0]
 
     set_self_hot_pipes = set(heat_problem.hot_pipes)
     inv_costs_pipes = [0.0] * heat_problem.ensemble_size
@@ -69,7 +67,9 @@ def post_processing_ensemble(heat_problem):
             inv_costs_pipes[e_m] += results[e_m][heat_problem._asset_investment_cost_map[h_p]][0]
             inv_costs_pipes[e_m] += results[e_m][heat_problem._asset_installation_cost_map[h_p]][0]
             opex_pipes[e_m] += results[e_m][heat_problem._asset_fixed_operational_cost_map[h_p]][0]
-            opex_pipes[e_m] += results[e_m][heat_problem._asset_variable_operational_cost_map[h_p]][0]
+            opex_pipes[e_m] += results[e_m][heat_problem._asset_variable_operational_cost_map[h_p]][
+                0
+            ]
     print("sources investment", inv_costs_source)
     print("sources opex", opex_source)
     print("demands investment", inv_costs_dem)

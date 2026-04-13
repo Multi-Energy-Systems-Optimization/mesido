@@ -1,12 +1,12 @@
-import numpy as np
-
 from mesido.workflows import EndScenarioSizingStaged
+
+import numpy as np
 
 
 class EndScenarioSizingStagedEnsemble(
     EndScenarioSizingStaged,
 ):
-    ## currently the goals are as in endscenariosizing, however, goals are ensemble_member
+    # currently the goals are as in endscenariosizing, however, state goals are ensemble_member
     # independent.
 
     csv_ensemble_mode = True
@@ -15,10 +15,12 @@ class EndScenarioSizingStagedEnsemble(
         super().__init__(*args, **kwargs)
 
         self._heat_pipes_fixed_size = True
-        self._asset_types_fixed_size = kwargs.get("_asset_types_fixed_size", ["heat_source",
-                                                                            "ates", "heat_buffer"])
+        self._asset_types_fixed_size = kwargs.get(
+            "_asset_types_fixed_size", ["heat_source", "ates", "heat_buffer"]
+        )
         self._asset_subtypes_not_included_fixed_size = kwargs.get(
-            "_asset_subtypes_not_included_fixed_size", ["geothermal"])
+            "_asset_subtypes_not_included_fixed_size", ["geothermal"]
+        )
 
     def goals(self):
         goals = super().goals().copy()
@@ -38,10 +40,12 @@ class EndScenarioSizingStagedEnsemble(
                     max_size_prev = self.extra_variable(f"{asset}__max_size", ensemble_member=0)
                     aggregation_prev = self.get_aggregation_count_var(asset, 0)
                     for e_m in range(self.ensemble_size - 1):
-                        max_size = self.extra_variable(f"{asset}__max_size", ensemble_member=e_m + 1)
+                        max_size = self.extra_variable(
+                            f"{asset}__max_size", ensemble_member=e_m + 1
+                        )
                         constraints.append((max_size - max_size_prev, 0.0, 0.0))
                         max_size_prev = max_size
-                        aggregation = self.get_aggregation_count_var(asset, e_m+1)
+                        aggregation = self.get_aggregation_count_var(asset, e_m + 1)
                         constraints.append((aggregation - aggregation_prev, 0.0, 0.0))
         return constraints
 

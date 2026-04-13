@@ -394,7 +394,9 @@ class RollOutProblem(
                     end_index += 1
                 else:
                     demand_states = demand_states[:-1]
-                asset_is_realized = self.extra_variable(f"{d}__asset_is_realized_{year}", ensemble_member)
+                asset_is_realized = self.extra_variable(
+                    f"{d}__asset_is_realized_{year}", ensemble_member
+                )
                 # demand matching
                 constraints.append(
                     (
@@ -477,7 +479,9 @@ class RollOutProblem(
         for y in range(self._years):
             cumulative_pipe_length = 0
             for p in self.energy_system_components.get("heat_pipe", []):
-                pipe_placement = self.extra_variable(self._asset_is_realized_map[p][y], ensemble_member)
+                pipe_placement = self.extra_variable(
+                    self._asset_is_realized_map[p][y], ensemble_member
+                )
                 pipe_length = parameters[f"{p}.length"]
                 cumulative_pipe_length += pipe_placement * pipe_length
             used_length_year = cumulative_pipe_length - total_length
