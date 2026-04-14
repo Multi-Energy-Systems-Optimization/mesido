@@ -661,7 +661,7 @@ def cost_calculation_test(solution, results, atol=1e-8):
     total_opex = 0.0
     total_capex = 0.0
     for asset in assets:
-        esdl_asset = solution.esdl_assets[solution.esdl_asset_name_to_id_map[f"{asset}"]]
+        esdl_asset = solution.esdl_assets[asset]
         costs_esdl_asset = esdl_asset.attributes["costInformation"]
         if costs_esdl_asset is None:
             continue
