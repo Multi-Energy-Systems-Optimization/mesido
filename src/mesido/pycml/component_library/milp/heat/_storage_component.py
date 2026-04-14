@@ -1,4 +1,4 @@
-from mesido.pycml import Variable
+from mesido.pycml import DiscreteVariable, Variable
 from mesido.pycml.component_library.milp._internal.heat_component import BaseAsset
 from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
@@ -26,6 +26,7 @@ class _StorageComponent(HeatTwoPort, BaseAsset):
 
         self.minimum_pressure_drop = 1.0e5  # 1 bar of pressure drop
         self.pump_efficiency = 0.5
+        self.include_discrete_charge_var = False
 
         self.Heat_nominal = self.cp * self.rho * self.dT * self.Q_nominal
 
@@ -41,6 +42,9 @@ class _StorageComponent(HeatTwoPort, BaseAsset):
         self.add_equation(
             (self.Heat_flow - (self.HeatIn.Heat - self.HeatOut.Heat)) / self.Heat_nominal
         )
+
+        if self.include_discrete_charge_var:
+            self.add_variable(DiscreteVariable, "__is_charging", min=0.0, max=1.0)
 
         self.add_variable(
             Variable,

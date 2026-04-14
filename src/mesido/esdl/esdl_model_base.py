@@ -66,7 +66,7 @@ class _ESDLModelBase(_Model):
 
         for asset in list(assets_sorted.values()):
             pycml_type, modifiers = converter.convert(asset)
-            self.add_variable(pycml_type, asset.name, **modifiers)
+            self.add_variable(pycml_type, asset.id, **modifiers)
 
         in_suf = "HeatIn"
         out_suf = "HeatOut"
@@ -136,7 +136,7 @@ class _ESDLModelBase(_Model):
                     port_map[p.id] = getattr(component.Secondary, out_suf)
 
         for asset in non_node_assets:
-            component = getattr(self, asset.name)
+            component = getattr(self, asset.id)
             # We assume that every component has 2 ports. Essentially meaning that we are dealing
             # with a single commodity for a component. Exceptions, assets that deal with multiple
             # have to be specifically specified what port configuration is expected in the model.
@@ -226,8 +226,11 @@ class _ESDLModelBase(_Model):
                             f"Heat out_ports "
                         )
             elif (
-                asset.asset_type == "ElectricBoiler"
-                or asset.asset_type == "GeothermalSource"
+                (
+                    asset.asset_type == "ElectricBoiler"
+                    or asset.asset_type == "HeatStorage"
+                    or asset.asset_type == "GeothermalSource"
+                )
                 and len(asset.out_ports) == 1
                 and len(asset.in_ports) == 2
             ):
@@ -241,8 +244,8 @@ class _ESDLModelBase(_Model):
                         port_map[p.id] = getattr(component, out_suf)
                     else:
                         raise Exception(
-                            f"{asset.name} has does not have 1 electricity in_port 1 gas in port "
-                            f"and 1 Heat out_ports "
+                            f"{asset.name} has does not have 1 electricity in_port 1 electric "
+                            f"in port and 1 Heat out_ports "
                         )
             elif asset.asset_type == "Electrolyzer":
                 if len(asset.out_ports) == 1 and len(asset.in_ports) == 1:
@@ -325,9 +328,8 @@ class _ESDLModelBase(_Model):
                 type_node_assets: list of node assets of a specific commodity.
             """
             if connected_to.id in list(port_map.keys()) and (
-                assets[name_to_id_map[port_map[connected_to.id].name.split(".")[0]]].asset_type
-                == "Pipe"
-                or assets[name_to_id_map[port_map[connected_to.id].name.split(".")[0]]].asset_type
+                assets[port_map[connected_to.id].name.split(".")[0]].asset_type == "Pipe"
+                or assets[port_map[connected_to.id].name.split(".")[0]].asset_type
                 == "ElectricityCable"
             ):
                 self.connect(getattr(component, node_suffixes)[i], port_map[connected_to.id])
@@ -350,7 +352,7 @@ class _ESDLModelBase(_Model):
                                 count += 1
                 self.connect_logical_links(
                     getattr(component, node_suffixes)[i],
-                    getattr(getattr(self, connected_node_asset.name), node_suffixes)[idx],
+                    getattr(getattr(self, connected_node_asset.id), node_suffixes)[idx],
                 )
             else:
                 # If the Connected asset is not of type pipe, there might be
@@ -361,7 +363,7 @@ class _ESDLModelBase(_Model):
             connections.add(conn)
 
         for asset in [*node_assets, *bus_assets, *gas_node_assets]:
-            component = getattr(self, asset.name)
+            component = getattr(self, asset.id)
 
             i = 1
             if len(asset.in_ports) != 1 or len(asset.out_ports) != 1:
@@ -434,13 +436,8 @@ class _ESDLModelBase(_Model):
                     if (
                         asset.asset_type == "Pipe"
                         or asset.asset_type == "ElectricityCable"
-                        or assets[
-                            name_to_id_map[port_map[connected_to.id].name.split(".")[0]]
-                        ].asset_type
-                        == "Pipe"
-                        or assets[
-                            name_to_id_map[port_map[connected_to.id].name.split(".")[0]]
-                        ].asset_type
+                        or assets[port_map[connected_to.id].name.split(".")[0]].asset_type == "Pipe"
+                        or assets[port_map[connected_to.id].name.split(".")[0]].asset_type
                         == "ElectricityCable"
                     ):
                         self.connect(port_map[port.id], port_map[connected_to.id])
