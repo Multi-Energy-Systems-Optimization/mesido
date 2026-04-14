@@ -45,6 +45,7 @@ class TestElecBoiler(TestCase):
         )
         results = heat_problem.extract_results()
         parameters = heat_problem.parameters(0)
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
 
         cost_calculation_test(heat_problem, results)
         demand_matching_test(heat_problem, results)
@@ -52,12 +53,14 @@ class TestElecBoiler(TestCase):
         heat_to_discharge_test(heat_problem, results)
         electric_power_conservation_test(heat_problem, results)
 
-        np.testing.assert_array_less(0.0, results["ElectricBoiler_9aab.Heat_source"])
-        np.testing.assert_array_less(0.0, results["ElectricityProducer_4dde.ElectricityOut.Power"])
+        e_boiler_id = name_to_id_map["ElectricBoiler_9aab"]
+        elec_producer_id = name_to_id_map["ElectricityProducer_4dde"]
+
+        np.testing.assert_array_less(0.0, results[f"{e_boiler_id}.Heat_source"])
+        np.testing.assert_array_less(0.0, results[f"{elec_producer_id}.ElectricityOut.Power"])
         np.testing.assert_allclose(
-            parameters["ElectricBoiler_9aab.efficiency"]
-            * results["ElectricBoiler_9aab.Power_consumed"],
-            results["ElectricBoiler_9aab.Heat_source"],
+            parameters[f"{e_boiler_id}.efficiency"] * results[f"{e_boiler_id}.Power_consumed"],
+            results[f"{e_boiler_id}.Heat_source"],
         )
 
     def test_heat_source_elec(self):
@@ -87,17 +90,19 @@ class TestElecBoiler(TestCase):
         )
         results = heat_problem.extract_results()
         parameters = heat_problem.parameters(0)
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
 
         cost_calculation_test(heat_problem, results)
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
 
-        np.testing.assert_array_less(0.0, results["ElectricBoiler_9aab.Heat_source"])
+        e_boiler_id = name_to_id_map["ElectricBoiler_9aab"]
+
+        np.testing.assert_array_less(0.0, results[f"{e_boiler_id}.Heat_source"])
         np.testing.assert_allclose(
-            parameters["ElectricBoiler_9aab.efficiency"]
-            * results["ElectricBoiler_9aab.Power_consumed"],
-            results["ElectricBoiler_9aab.Heat_source"],
+            parameters[f"{e_boiler_id}.efficiency"] * results[f"{e_boiler_id}.Power_consumed"],
+            results[f"{e_boiler_id}.Heat_source"],
         )
 
     def test_air_water_hp_elec(self):
@@ -127,6 +132,7 @@ class TestElecBoiler(TestCase):
         )
         results = heat_problem.extract_results()
         parameters = heat_problem.parameters(0)
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
 
         cost_calculation_test(heat_problem, results)
         demand_matching_test(heat_problem, results)
@@ -134,11 +140,21 @@ class TestElecBoiler(TestCase):
         heat_to_discharge_test(heat_problem, results)
         electric_power_conservation_test(heat_problem, results)
 
-        np.testing.assert_array_less(0.0, results["HeatPump_d8fd.Heat_source"])
-        np.testing.assert_array_less(0.0, results["ElectricityProducer_4dde.ElectricityOut.Power"])
+        hp_id = name_to_id_map["HeatPump_d8fd"]
+        elec_producer_id = name_to_id_map["ElectricityProducer_4dde"]
+        np.testing.assert_array_less(0.0, results[f"{hp_id}.Heat_source"])
+        np.testing.assert_array_less(0.0, results[f"{elec_producer_id}.ElectricityOut.Power"])
         np.testing.assert_array_less(
-            parameters["HeatPump_d8fd.cop"] * results["HeatPump_d8fd.Power_elec"],
-            results["HeatPump_d8fd.Heat_source"] + 1.0e-6,
+            parameters[f"{hp_id}.cop"] * results[f"{hp_id}.Power_elec"],
+            results[f"{hp_id}.Heat_source"] + 1.0e-6,
+        )
+
+        # Check how variable operation cost is calculated
+        np.testing.assert_allclose(
+            parameters[f"{hp_id}.variable_operational_cost_coefficient"]
+            * sum(results[f"{hp_id}.Heat_source"][1:])
+            / parameters[f"{hp_id}.cop"],
+            results[f"{hp_id}__variable_operational_cost"],
         )
 
 

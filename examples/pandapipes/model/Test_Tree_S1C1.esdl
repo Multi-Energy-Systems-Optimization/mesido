@@ -14,7 +14,7 @@
         <port xsi:type="esdl:InPort" id="622d7e19-e360-46af-bfbf-eb35ec14548b" carrier="435a0034-fab0-4e7e-9a17-edf8de9a2b11_ret" name="In" connectedTo="0f11bb2d-fb28-4f9d-8992-8d5901f579d7"/>
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="52.08646829489945" lon="4.386527538299561"/>
       </asset>
-      <asset xsi:type="esdl:HeatingDemand" name="demand_1" id="f6d5923d-ba9a-409d-80a0-26f73b2a574b" power="60000000.0">
+      <asset xsi:type="esdl:HeatingDemand" name="demand_1" id="demand_1" power="60000000.0">
         <port xsi:type="esdl:InPort" id="b8849fb5-fe97-48d9-91a8-9abcbf365738" carrier="435a0034-fab0-4e7e-9a17-edf8de9a2b11" name="In" connectedTo="76679c8a-43ec-4f6d-81c4-9b43e21696cc"/>
         <port xsi:type="esdl:OutPort" id="eb68d4fe-b361-4e64-9f54-a1e05e5712ee" connectedTo="0f4bf90b-218d-4d45-a83e-97a8a6a187af" carrier="435a0034-fab0-4e7e-9a17-edf8de9a2b11_ret" name="Out"/>
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="52.086586960901776" lon="4.398479461669923"/>

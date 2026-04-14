@@ -48,6 +48,11 @@ class TestGasBoiler(TestCase):
         results = heat_problem.extract_results()
         parameters = heat_problem.parameters(0)
         bounds = heat_problem.bounds()
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
+
+        gas_heater_id = name_to_id_map["GasHeater_f713"]
+        gas_producer_id = name_to_id_map["GasProducer_82ec"]
+        pipe_id = name_to_id_map["Pipe_a7b5"]
 
         cost_calculation_test(heat_problem, results)
         demand_matching_test(heat_problem, results)
@@ -55,14 +60,14 @@ class TestGasBoiler(TestCase):
         heat_to_discharge_test(heat_problem, results)
 
         # check energy conservation over the commodity
-        np.testing.assert_array_less(0.0, results["GasHeater_f713.Heat_source"])
-        np.testing.assert_array_less(0.0, results["GasProducer_82ec.Gas_source_mass_flow"])
+        np.testing.assert_array_less(0.0, results[f"{gas_heater_id}.Heat_source"])
+        np.testing.assert_array_less(0.0, results[f"{gas_producer_id}.Gas_source_mass_flow"])
         np.testing.assert_array_less(
-            parameters["GasHeater_f713.energy_content"]
-            * results["GasHeater_f713.GasIn.mass_flow"]
-            * parameters["GasHeater_f713.efficiency"]
+            parameters[f"{gas_heater_id}.energy_content"]
+            * results[f"{gas_heater_id}.GasIn.mass_flow"]
+            * parameters[f"{gas_heater_id}.efficiency"]
             / 1000.0,  # [J/kg] * [g/s] / 1000.0 = [J/s]
-            results["GasHeater_f713.Heat_source"] + 1.0e-6,
+            results[f"{gas_heater_id}.Heat_source"] + 1.0e-6,
         )
 
         # check if the maximum gas velocity set in problem is used to determine bounds on pipes
@@ -70,8 +75,8 @@ class TestGasBoiler(TestCase):
             "maximum_velocity"
         ]  # m/s maximum velocity set in problem.
         np.testing.assert_allclose(
-            bounds["Pipe_a7b5.GasIn.Q"][1],
-            parameters["Pipe_a7b5.diameter"] ** 2 / 4 * math.pi * v_max_gas,
+            bounds[f"{pipe_id}.GasIn.Q"][1],
+            parameters[f"{pipe_id}.diameter"] ** 2 / 4 * math.pi * v_max_gas,
         )
 
     def test_heat_source_gas(self):
@@ -102,6 +107,9 @@ class TestGasBoiler(TestCase):
         )
         results = solution.extract_results()
         parameters = solution.parameters(0)
+        name_to_id_map = solution.esdl_asset_name_to_id_map
+
+        gas_heater_id = name_to_id_map["GasHeater_f713"]
 
         cost_calculation_test(solution, results)
         demand_matching_test(solution, results)
@@ -109,14 +117,14 @@ class TestGasBoiler(TestCase):
         heat_to_discharge_test(solution, results)
 
         # check energy conservation over the commodity
-        np.testing.assert_array_less(0.0, results["GasHeater_f713.Heat_source"])
-        np.testing.assert_array_less(0.0, results["GasHeater_f713.Gas_demand_mass_flow"])
+        np.testing.assert_array_less(0.0, results[f"{gas_heater_id}.Heat_source"])
+        np.testing.assert_array_less(0.0, results[f"{gas_heater_id}.Gas_demand_mass_flow"])
         np.testing.assert_array_less(
-            parameters["GasHeater_f713.energy_content"]
-            * results["GasHeater_f713.Gas_demand_mass_flow"]
-            * parameters["GasHeater_f713.efficiency"]
+            parameters[f"{gas_heater_id}.energy_content"]
+            * results[f"{gas_heater_id}.Gas_demand_mass_flow"]
+            * parameters[f"{gas_heater_id}.efficiency"]
             / 1000.0,  # [J/kg] * [g/s] / 1000.0 = [J/s]
-            results["GasHeater_f713.Heat_source"] + 1.0e-6,
+            results[f"{gas_heater_id}.Heat_source"] + 1.0e-6,
         )
 
 

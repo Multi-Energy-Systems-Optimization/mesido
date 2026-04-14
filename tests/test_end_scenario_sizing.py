@@ -45,21 +45,24 @@ class TestEndScenarioSizing(TestCase):
             esdl_parser=ESDLFileParser,
         )
         results = solution.extract_results()
+        name_to_id_map = solution.esdl_asset_name_to_id_map
+
+        hex_id = name_to_id_map["HeatExchange_39ed"]
 
         # Check heat exchanger is sized
         np.testing.assert_allclose(
-            max(results["HeatExchange_39ed.Secondary_heat"]), results["HeatExchange_39ed__max_size"]
+            max(results[f"{hex_id}.Secondary_heat"]), results[f"{hex_id}__max_size"]
         )
 
         # Check heat exchanger state attribute is changed from OPTIONAL
         # to ENABLED after the optimization
         energy_system = solution._ESDLMixin__energy_system_handler.energy_system
-        asset = solution._name_to_asset(energy_system, "HeatExchange_39ed")
+        asset = solution._id_to_asset(energy_system, hex_id)
         np.testing.assert_equal(esdl.AssetStateEnum.ENABLED, asset.state)
 
         # Check heat exchanger capacity attribute is updated
         # with max_size variable after the optimization
-        np.testing.assert_allclose(results["HeatExchange_39ed__max_size"], asset.capacity)
+        np.testing.assert_allclose(results[f"{hex_id}__max_size"], asset.capacity)
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -78,6 +81,7 @@ class TestEndScenarioSizing(TestCase):
             input_timeseries_file="Warmte_test.csv",
         )
         cls.results = cls.solution.extract_results()
+        cls.name_to_id_map = cls.solution.esdl_asset_name_to_id_map
 
     def test_end_scenario_sizing(self):
         """
@@ -126,12 +130,12 @@ class TestEndScenarioSizing(TestCase):
 
         # Check whether cyclic ates constraint is working and split between the charging and
         # discharging heat_flow variables
-        for a in self.solution.energy_system_components.get("ates", []):
-            stored_heat = self.results[f"{a}.Stored_heat"]
+        for a_id in self.solution.energy_system_components.get("ates", []):
+            stored_heat = self.results[f"{a_id}.Stored_heat"]
             np.testing.assert_allclose(stored_heat[0], stored_heat[-1], atol=1.0)
-            heat_ates = self.results[f"{a}.Heat_ates"]
-            heat_flow_charging = self.results[f"{a}.Heat_flow_charging"]
-            heat_flow_discharging = self.results[f"{a}.Heat_flow_discharging"]
+            heat_ates = self.results[f"{a_id}.Heat_ates"]
+            heat_flow_charging = self.results[f"{a_id}.Heat_flow_charging"]
+            heat_flow_discharging = self.results[f"{a_id}.Heat_flow_discharging"]
             np.testing.assert_allclose(
                 heat_ates, heat_flow_charging - heat_flow_discharging, atol=1.0
             )
@@ -139,13 +143,13 @@ class TestEndScenarioSizing(TestCase):
 
         # Check whether buffer tank is only active in peak day
         peak_day_indx = self.solution.parameters(0)["peak_day_index"]
-        for b in self.solution.energy_system_components.get("heat_buffer", []):
-            heat_buffer = self.results[f"{b}.Heat_buffer"]
+        for b_id in self.solution.energy_system_components.get("heat_buffer", []):
+            heat_buffer = self.results[f"{b_id}.Heat_buffer"]
             for i in range(len(self.solution.times())):
                 if i < peak_day_indx or i > (peak_day_indx + 23):
                     np.testing.assert_allclose(heat_buffer[i], 0.0, atol=1.0e-6)
-            heat_flow_charging = self.results[f"{b}.Heat_flow_charging"]
-            heat_flow_discharging = self.results[f"{b}.Heat_flow_discharging"]
+            heat_flow_charging = self.results[f"{b_id}.Heat_flow_charging"]
+            heat_flow_discharging = self.results[f"{b_id}.Heat_flow_discharging"]
             np.testing.assert_allclose(
                 heat_buffer, heat_flow_charging - heat_flow_discharging, atol=1.0
             )
@@ -526,7 +530,7 @@ class TestEndScenarioSizing(TestCase):
             solution.get_optimized_pipe_class(pipe)
             .inner_diameter: solution.get_optimized_pipe_class(pipe)
             .name
-            for pipe in solution.hot_pipes
+            for pipe in [*solution.hot_pipes, *solution.unrelated_pipes]
         }
         # Assert that the same specific investment costs have been use between the measure and the
         # solution parameters
@@ -665,9 +669,8 @@ class TestEndScenarioSizing(TestCase):
             *solution.energy_system_components.get("heat_pump", []),
             *solution.energy_system_components.get("heat_pipe", []),
         ]:
-            asset_id = solution.esdl_asset_name_to_id_map[asset]
-            asset_state = solution.esdl_assets[asset_id].attributes["state"]
-            asset_type = solution.esdl_assets[asset_id].asset_type
+            asset_state = solution.esdl_assets[asset].attributes["state"]
+            asset_type = solution.esdl_assets[asset].asset_type
             if not (
                 (asset_type == "HeatingDemand") and (asset_state == esdl.AssetStateEnum.ENABLED)
             ):
