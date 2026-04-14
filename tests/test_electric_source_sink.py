@@ -46,31 +46,35 @@ class TestMILPElectricSourceSink(TestCase):
 
         tol = 1e-6
 
+        name_to_id_map = solution.esdl_asset_name_to_id_map
+
+        pv_id = name_to_id_map["PV"]
+        e_prod_id = name_to_id_map["ElectricityProducer_edde"]
+
         demand_matching_test(solution, results)
         electric_power_conservation_test(solution, results)
 
         # Test that scaled PV constraint profile is upper bound of
         # PV production and profile constraint scaling functionality
         # in asset sizing works
-        profile_non_scaled = solution.get_timeseries("PV.maximum_electricity_source").values
+        profile_non_scaled = solution.get_timeseries(f"{pv_id}.maximum_electricity_source").values
         max_profile_non_scaled = max(profile_non_scaled)
         profile_scaled = profile_non_scaled / max_profile_non_scaled
 
         # Check that realized PV profile is scaled version of PV profile constraint
         np.testing.assert_array_less(
-            results["PV.Electricity_source"], profile_scaled * results["PV__max_size"] + tol
+            results[f"{pv_id}.Electricity_source"],
+            profile_scaled * results[f"{pv_id}__max_size"] + tol,
         )
 
         # Check that maximum of realized PV profile smaller than maximum of PV profile constraint
         np.testing.assert_array_less(
-            results["PV__max_size"],
-            max(solution.get_timeseries("PV.maximum_electricity_source").values) + tol,
+            results[f"{pv_id}__max_size"],
+            max(solution.get_timeseries(f"{pv_id}.maximum_electricity_source").values) + tol,
         )
 
         # Check electricity producers max sizes are equal
-        np.testing.assert_allclose(
-            results["PV__max_size"], results["ElectricityProducer_edde__max_size"]
-        )
+        np.testing.assert_allclose(results[f"{pv_id}__max_size"], results[f"{e_prod_id}__max_size"])
 
     def test_source_sink(self):
         """
@@ -103,52 +107,56 @@ class TestMILPElectricSourceSink(TestCase):
         )
         results = solution.extract_results()
         parameters = solution.parameters(0)
+        name_to_id_map = solution.esdl_asset_name_to_id_map
+
+        demand_id = name_to_id_map["ElectricityDemand_2af6"]
+        cable_id = name_to_id_map["ElectricityCable_238f"]
 
         # Test energy conservation
         electric_power_conservation_test(solution, results)
 
-        max_ = solution.bounds()["ElectricityDemand_2af6__max_size"][0]
-        v_min = solution.parameters(0)["ElectricityCable_238f.min_voltage"]
+        max_ = solution.bounds()[f"{demand_id}__max_size"][0]
+        v_min = solution.parameters(0)[f"{cable_id}.min_voltage"]
 
         # Test if capping is ok
-        power_consumed = results["ElectricityDemand_2af6.ElectricityIn.Power"]
+        power_consumed = results[f"{demand_id}.ElectricityIn.Power"]
         smallerthen = all(power_consumed <= np.ones(len(power_consumed)) * max_)
         self.assertTrue(smallerthen)
         biggerthen = all(power_consumed >= np.zeros(len(power_consumed)))
         self.assertTrue(biggerthen)
 
-        power_loss = results["ElectricityCable_238f.Power_loss"]
+        power_loss = results[f"{cable_id}.Power_loss"]
         biggerthen = all(power_loss >= np.zeros(len(power_loss)))
         self.assertTrue(biggerthen)
 
         # Test that voltage goes down
-        v_in = results["ElectricityCable_238f.ElectricityIn.V"]
-        v_out = results["ElectricityCable_238f.ElectricityOut.V"]
+        v_in = results[f"{cable_id}.ElectricityIn.V"]
+        v_out = results[f"{cable_id}.ElectricityOut.V"]
         np.testing.assert_array_less(v_out, v_in)
         biggerthen = all(v_out >= (v_min - tol) * np.ones(len(v_out)))
         self.assertTrue(biggerthen)
 
-        for source in solution.energy_system_components.get("electricity_source", []):
+        for source_id in solution.energy_system_components.get("electricity_source", []):
             np.testing.assert_allclose(
-                results[f"{source}.Electricity_source"],
-                results[f"{source}.ElectricityOut.Power"],
+                results[f"{source_id}.Electricity_source"],
+                results[f"{source_id}.ElectricityOut.Power"],
                 atol=1.0e-6,
             )
 
-        for demand in solution.energy_system_components.get("electricity_demand", []):
+        for demand_id in solution.energy_system_components.get("electricity_demand", []):
             np.testing.assert_allclose(
-                results[f"{demand}.Electricity_demand"],
-                results[f"{demand}.ElectricityIn.Power"],
+                results[f"{demand_id}.Electricity_demand"],
+                results[f"{demand_id}.ElectricityIn.Power"],
                 atol=1.0e-6,
             )
             np.testing.assert_allclose(
-                results[f"{demand}.ElectricityIn.V"],
-                parameters[f"{demand}.min_voltage"],
+                results[f"{demand_id}.ElectricityIn.V"],
+                parameters[f"{demand_id}.min_voltage"],
                 atol=1.0e-3,
             )
             np.testing.assert_allclose(
-                results[f"{demand}.ElectricityIn.V"] * results[f"{demand}.ElectricityIn.I"],
-                results[f"{demand}.ElectricityIn.Power"],
+                results[f"{demand_id}.ElectricityIn.V"] * results[f"{demand_id}.ElectricityIn.I"],
+                results[f"{demand_id}.ElectricityIn.Power"],
                 atol=1.0e-3,
             )
 
@@ -185,27 +193,29 @@ class TestMILPElectricSourceSink(TestCase):
         )
         results = solution.extract_results()
         parameters = solution.parameters(0)
+        name_to_id_map = solution.esdl_asset_name_to_id_map
+
+        demand_id = name_to_id_map["ElectricityDemand_2af6"]
+        cable_id = name_to_id_map["ElectricityCable_238f"]
+        producer_id = name_to_id_map["ElectricityProducer_b95d"]
 
         # Test energy conservation
         electric_power_conservation_test(solution, results)
 
         max_power_transport = (
-            parameters["ElectricityCable_238f.min_voltage"]
-            * parameters["ElectricityCable_238f.max_current"]
+            parameters[f"{cable_id}.min_voltage"] * parameters[f"{cable_id}.max_current"]
         )  # This max is based on max current and voltage requirement at consumer
-        v_min = parameters["ElectricityCable_238f.min_voltage"]  # set as minimum voltage for cables
+        v_min = parameters[f"{cable_id}.min_voltage"]  # set as minimum voltage for cables
 
         tolerance = 1e-10  # due to computational comparison
 
         # Test if capping is ok (capping based on max power as result of v_min*Imax)
-        power_consumed = results["ElectricityDemand_2af6.ElectricityIn.Power"]
+        power_consumed = results[f"{demand_id}.ElectricityIn.Power"]
         smallerthen = all(
             power_consumed - tolerance <= np.ones(len(power_consumed)) * max_power_transport
         )
         self.assertTrue(smallerthen)
-        demand_target = solution.get_timeseries(
-            "ElectricityDemand_2af6.target_electricity_demand"
-        ).values
+        demand_target = solution.get_timeseries(f"{demand_id}.target_electricity_demand").values
         np.testing.assert_allclose(
             power_consumed,
             np.minimum(demand_target, np.ones(len(power_consumed)) * max_power_transport),
@@ -213,38 +223,38 @@ class TestMILPElectricSourceSink(TestCase):
         biggerthen = all(power_consumed >= np.zeros(len(power_consumed)))
         self.assertTrue(biggerthen)
 
-        power_loss = results["ElectricityCable_238f.Power_loss"]
+        power_loss = results[f"{cable_id}.Power_loss"]
         biggerthen = all(power_loss >= np.zeros(len(power_loss)))
         self.assertTrue(biggerthen)
 
         # Test that voltage goes down
-        v_in = results["ElectricityCable_238f.ElectricityIn.V"]
-        v_out = results["ElectricityCable_238f.ElectricityOut.V"]
+        v_in = results[f"{cable_id}.ElectricityIn.V"]
+        v_out = results[f"{cable_id}.ElectricityOut.V"]
         np.testing.assert_array_less(v_out, v_in)
         biggerthen = all(v_out >= v_min * np.ones(len(v_out)) - tolerance)
         self.assertTrue(biggerthen)
 
         # Test that max current is not exceeded and is constant along path (since no nodes included)
-        current_demand = results["ElectricityDemand_2af6.ElectricityIn.I"]
-        current_producer = results["ElectricityProducer_b95d.ElectricityOut.I"]
-        current_cable = results["ElectricityCable_238f.ElectricityOut.I"]
+        current_demand = results[f"{demand_id}.ElectricityIn.I"]
+        current_producer = results[f"{producer_id}.ElectricityOut.I"]
+        current_cable = results[f"{cable_id}.ElectricityOut.I"]
         np.testing.assert_allclose(current_demand, current_cable)
         np.testing.assert_allclose(current_cable, current_producer)
         biggerthen = all(
-            parameters["ElectricityCable_238f.max_current"] * np.ones(len(current_demand))
+            parameters[f"{cable_id}.max_current"] * np.ones(len(current_demand))
             >= current_demand - tolerance
         )
         self.assertTrue(biggerthen)
 
-        for demand in solution.energy_system_components.get("electricity_demand", []):
+        for demand_id in solution.energy_system_components.get("electricity_demand", []):
             np.testing.assert_allclose(
-                results[f"{demand}.ElectricityIn.V"],
-                parameters[f"{demand}.min_voltage"],
+                results[f"{demand_id}.ElectricityIn.V"],
+                parameters[f"{demand_id}.min_voltage"],
                 atol=1.0e-3,
             )
             np.testing.assert_allclose(
-                results[f"{demand}.ElectricityIn.V"] * results[f"{demand}.ElectricityIn.I"],
-                results[f"{demand}.ElectricityIn.Power"],
+                results[f"{demand_id}.ElectricityIn.V"] * results[f"{demand_id}.ElectricityIn.I"],
+                results[f"{demand_id}.ElectricityIn.Power"],
                 atol=1.0e-3,
             )
 
@@ -276,24 +286,27 @@ class TestMILPElectricSourceSink(TestCase):
         )
         results = solution.extract_results()
         parameters = solution.parameters(0)
+        name_to_id_map = solution.esdl_asset_name_to_id_map
+
+        demand_id = name_to_id_map["ElectricityDemand_2af6"]
+        transformer_id = name_to_id_map["Transformer_0185"]
+        cable_1fe5_id = name_to_id_map["ElectricityCable_1fe5"]
+        cable_22c9_id = name_to_id_map["ElectricityCable_22c9"]
 
         # Check power conservation including power conservation in transformer
         electric_power_conservation_test(solution, results)
 
         # Check that the cables have two different voltage levels
-        assert (
-            parameters["ElectricityDemand_2af6.min_voltage"]
-            != parameters["Transformer_0185.min_voltage"]
-        )
+        assert parameters[f"{demand_id}.min_voltage"] != parameters[f"{transformer_id}.min_voltage"]
 
         np.testing.assert_allclose(
-            parameters["Transformer_0185.min_voltage"],
-            results["ElectricityCable_1fe5.ElectricityOut.V"],
+            parameters[f"{transformer_id}.min_voltage"],
+            results[f"{cable_1fe5_id}.ElectricityOut.V"],
             atol=-1.0e-3,
         )
         np.testing.assert_allclose(
-            parameters["ElectricityDemand_2af6.min_voltage"],
-            results["ElectricityCable_22c9.ElectricityOut.V"],
+            parameters[f"{demand_id}.min_voltage"],
+            results[f"{cable_22c9_id}.ElectricityOut.V"],
             atol=1.0e-3,
         )
 

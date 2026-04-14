@@ -130,6 +130,9 @@ class TestColdDemand(TestCase):
         )
         results = heat_problem.extract_results()
         parameters = heat_problem.parameters(0)
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
+
+        hp_id = name_to_id_map["HeatPump_b97e"]
 
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
@@ -137,10 +140,10 @@ class TestColdDemand(TestCase):
 
         # Check how variable operation cost is calculated
         np.testing.assert_allclose(
-            parameters["HeatPump_b97e.variable_operational_cost_coefficient"]
-            * sum(results["HeatPump_b97e.Heat_source"][1:])
-            / parameters["HeatPump_b97e.cop"],
-            results["HeatPump_b97e__variable_operational_cost"],
+            parameters[f"{hp_id}.variable_operational_cost_coefficient"]
+            * sum(results[f"{hp_id}.Heat_source"][1:])
+            / parameters[f"{hp_id}.cop"],
+            results[f"{hp_id}__variable_operational_cost"],
         )
         np.testing.assert_allclose(
             parameters["Airco_23d6.variable_operational_cost_coefficient"]
@@ -232,6 +235,11 @@ class TestColdDemand(TestCase):
             input_timeseries_file="timeseries_2.csv",
         )
         results = heat_problem.extract_results()
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
+
+        ates_id = name_to_id_map["ATES_226d"]
+        pipe1_id = name_to_id_map["Pipe1"]
+        pipe1_ret_id = name_to_id_map["Pipe1_ret"]
 
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
@@ -239,15 +247,19 @@ class TestColdDemand(TestCase):
 
         # Check cyclic constraint
         np.testing.assert_allclose(
-            results["ATES_226d.Stored_heat"][0], results["ATES_226d.Stored_heat"][-1]
+            results[f"{ates_id}.Stored_heat"][0], results[f"{ates_id}.Stored_heat"][-1]
         )
         # Check heat loss and gain
         tol_value = 1.0e-6
         np.testing.assert_array_less(
-            0.0, results["Pipe1.HeatIn.Heat"] - results["Pipe1.HeatOut.Heat"] + tol_value
+            0.0,
+            results[f"{pipe1_id}.HeatIn.Heat"] - results[f"{pipe1_id}.HeatOut.Heat"] + tol_value,
         )
         np.testing.assert_array_less(
-            results["Pipe1_ret.HeatIn.Heat"] - results["Pipe1_ret.HeatOut.Heat"] - tol_value, 0.0
+            results[f"{pipe1_ret_id}.HeatIn.Heat"]
+            - results[f"{pipe1_ret_id}.HeatOut.Heat"]
+            - tol_value,
+            0.0,
         )
 
         # ------------------------------------------------------------------------------------------
@@ -267,6 +279,11 @@ class TestColdDemand(TestCase):
             input_timeseries_file="timeseries_2.csv",
         )
         results = heat_problem.extract_results()
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
+
+        ates_id = name_to_id_map["ATES_226d"]
+        pipe1_id = name_to_id_map["Pipe1"]
+        pipe1_ret_id = name_to_id_map["Pipe1_ret"]
 
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
@@ -274,15 +291,17 @@ class TestColdDemand(TestCase):
 
         # Check cyclic constraint
         np.testing.assert_allclose(
-            results["ATES_226d.Stored_heat"][0], results["ATES_226d.Stored_heat"][-1]
+            results[f"{ates_id}.Stored_heat"][0], results[f"{ates_id}.Stored_heat"][-1]
         )
         # Check heat loss and gain
         tol_value = 1.0e-6
         np.testing.assert_allclose(
-            0.0, results["Pipe1.HeatIn.Heat"] - results["Pipe1.HeatOut.Heat"], atol=1e-6
+            0.0, results[f"{pipe1_id}.HeatIn.Heat"] - results[f"{pipe1_id}.HeatOut.Heat"], atol=1e-6
         )
         np.testing.assert_allclose(
-            0.0, results["Pipe1_ret.HeatIn.Heat"] - results["Pipe1_ret.HeatOut.Heat"], atol=1e-6
+            0.0,
+            results[f"{pipe1_ret_id}.HeatIn.Heat"] - results[f"{pipe1_ret_id}.HeatOut.Heat"],
+            atol=1e-6,
         )
         # ------------------------------------------------------------------------------------------
 
@@ -324,12 +343,13 @@ class TestColdDemand(TestCase):
             input_timeseries_file="timeseries_peak_overlap.csv",
         )
         results = heat_problem.extract_results()
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
 
         cold_demand_timeseries = heat_problem.get_timeseries(
-            "CoolingDemand_15e8.target_cold_demand"
+            f"{name_to_id_map['CoolingDemand_15e8']}.target_cold_demand"
         )
         heat_demand_timeseries = heat_problem.get_timeseries(
-            "HeatingDemand_9b90.target_heat_demand"
+            f"{name_to_id_map['HeatingDemand_9b90']}.target_heat_demand"
         )
         max_cold_idx = np.argmax(cold_demand_timeseries.values)
         max_heat_idx = np.argmax(heat_demand_timeseries.values)
@@ -396,12 +416,13 @@ class TestColdDemand(TestCase):
             input_timeseries_file="timeseries_peak_back_to_back.csv",
         )
         results = heat_problem.extract_results()
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
 
         cold_demand_timeseries = heat_problem.get_timeseries(
-            "CoolingDemand_15e8.target_cold_demand"
+            f"{name_to_id_map['CoolingDemand_15e8']}.target_cold_demand"
         )
         heat_demand_timeseries = heat_problem.get_timeseries(
-            "HeatingDemand_9b90.target_heat_demand"
+            f"{name_to_id_map['HeatingDemand_9b90']}.target_heat_demand"
         )
         max_cold_idx = np.argmax(cold_demand_timeseries.values)
         max_heat_idx = np.argmax(heat_demand_timeseries.values)
@@ -468,12 +489,13 @@ class TestColdDemand(TestCase):
             input_timeseries_file="timeseries_cold_peak_before.csv",
         )
         results = heat_problem.extract_results()
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
 
         cold_demand_timeseries = heat_problem.get_timeseries(
-            "CoolingDemand_15e8.target_cold_demand"
+            f"{name_to_id_map['CoolingDemand_15e8']}.target_cold_demand"
         )
         heat_demand_timeseries = heat_problem.get_timeseries(
-            "HeatingDemand_9b90.target_heat_demand"
+            f"{name_to_id_map['HeatingDemand_9b90']}.target_heat_demand"
         )
         max_cold_idx = np.argmax(cold_demand_timeseries.values)
         max_heat_idx = np.argmax(heat_demand_timeseries.values)
