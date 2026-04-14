@@ -133,6 +133,7 @@ class TestColdDemand(TestCase):
         name_to_id_map = heat_problem.esdl_asset_name_to_id_map
 
         hp_id = name_to_id_map["HeatPump_b97e"]
+        ac_id = name_to_id_map["Airco_23d6"]
 
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
@@ -145,16 +146,17 @@ class TestColdDemand(TestCase):
             / parameters[f"{hp_id}.cop"],
             results[f"{hp_id}__variable_operational_cost"],
         )
+
         np.testing.assert_allclose(
-            parameters["Airco_23d6.variable_operational_cost_coefficient"]
-            * sum(results["Airco_23d6.Heat_airco"][1:]),
-            results["Airco_23d6__variable_operational_cost"],
+            parameters[f"{ac_id}.variable_operational_cost_coefficient"]
+            * sum(results[f"{ac_id}.Heat_airco"][1:]),
+            results[f"{ac_id}__variable_operational_cost"],
         )
 
         # Check airco sizing
         np.testing.assert_allclose(
-            max(results["Airco_23d6.Heat_airco"]),
-            results["Airco_23d6__max_size"],
+            max(results[f"{ac_id}.Heat_airco"]),
+            results[f"{ac_id}__max_size"],
         )
 
     def test_wko(self):
