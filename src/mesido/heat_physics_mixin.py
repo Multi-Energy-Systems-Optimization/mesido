@@ -1272,9 +1272,7 @@ class HeatPhysicsMixin(
             )
             # Note we only need one on the heat as the desired behaviour is propegated by the
             # constraints heat_in - heat_out - heat_loss == 0.
-            constraints.extend(
-                self._big_m_ineq_constraints(heat_in, 1-flow_dir, big_m, big_m)
-            )
+            constraints.extend(self._big_m_ineq_constraints(heat_in, 1 - flow_dir, big_m, big_m))
 
             # If a pipe is disconnected, the discharge should be zero
             if is_disconnected_var is not None:
@@ -2441,20 +2439,13 @@ class HeatPhysicsMixin(
 
                 """
                 constraints = []
-                constraints.append(
-                    (
-                        (heat_out - expr + (2.0 - sum_temp_selec) * big_m) / constraint_nominal,
-                        0.0,
-                        np.inf,
+
+                constraints.extend(
+                    self._symmetric_big_m_constraints(
+                        heat_out - expr, (2.0 - sum_temp_selec) * big_m, constraint_nominal
                     )
                 )
-                constraints.append(
-                    (
-                        (heat_out - expr - (2.0 - sum_temp_selec) * big_m) / constraint_nominal,
-                        -np.inf,
-                        0.0,
-                    )
-                )
+
                 return constraints
 
             def __constraints_temperature_heat_to_discharge_bypass_primary(
@@ -2994,12 +2985,12 @@ class HeatPhysicsMixin(
             # - 0 means negative discharge, and positive dH
             # It's a control valve, so the dH is of arbitrary magnitude.
             constraints.extend(
-                self._big_m_ineq_constraints(q, 1-flow_dir, maximum_discharge, 1.0)
+                self._big_m_ineq_constraints(q, 1 - flow_dir, maximum_discharge, 1.0)
             )
 
             if self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
                 constraints.extend(
-                    self._big_m_ineq_constraints(-dh, 1-flow_dir, maximum_head_loss, 1.0)
+                    self._big_m_ineq_constraints(-dh, 1 - flow_dir, maximum_head_loss, 1.0)
                 )
 
         return constraints
@@ -3220,22 +3211,12 @@ class HeatPhysicsMixin(
                                     + sec_sup_not_selected
                                 )
 
-                                constraints.append(
-                                    (
-                                        (sec_heat - cop_carnot * elec + not_selected * big_m)
-                                        / nominal,
-                                        0.0,
-                                        np.inf,
+                                constraints.extend(
+                                    self._symmetric_big_m_constraints(
+                                        sec_heat - cop_carnot * elec, not_selected * big_m, nominal
                                     )
                                 )
-                                constraints.append(
-                                    (
-                                        (sec_heat - cop_carnot * elec - not_selected * big_m)
-                                        / nominal,
-                                        -np.inf,
-                                        0.0,
-                                    )
-                                )
+
         return constraints
 
     def __ates_temperature_ordering_path_constraints(self, ensemble_member):

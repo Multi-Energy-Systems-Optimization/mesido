@@ -20,7 +20,6 @@ class BaseProblemMixin:
             ((expr - (1.0 - slack) * big_m) / nominal, -np.inf, 0.0),
         ]
 
-
     def goal_programming_options(self):
         """
         Here we set the goal programming configuration. We use soft constraints for consecutive
