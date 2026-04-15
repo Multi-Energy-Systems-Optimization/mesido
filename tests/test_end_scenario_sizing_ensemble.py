@@ -14,7 +14,7 @@ from utils_tests import demand_matching_test, energy_conservation_test, heat_to_
 
 
 class TestEndScenarioSizingEnsemble(TestCase):
-    def test_end_scenario_sizing_staged(self):
+    def test_end_scenario_sizing_ensemble(self):
         """
         Check if the EndScenarioSizingStagedEnsemble workflow is behaving as expected. This is an
         optimization done over a full year with timesteps of 5 days and hour timesteps for the peak
@@ -28,8 +28,6 @@ class TestEndScenarioSizingEnsemble(TestCase):
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
-        # This is an optimization done over a full year with timesteps of 5 days and hour timesteps
-        # for the peak day
 
         run_asset_map = [
             {"_asset_types_fixed_size": ["heat_source", "ates", "heat_buffer"]},
@@ -37,7 +35,9 @@ class TestEndScenarioSizingEnsemble(TestCase):
             {"_asset_types_fixed_size": ["heat_source"]},
             {"_asset_types_fixed_size": ["geothermal"]},
         ]
-        #TODO: add a run with heatlosses included Staged.
+        objective_runs = []
+        #TODO: add a run with heatlosses included Staged. Don't do it for all due to the effect
+        # on the computational time.
         for config in run_asset_map:
             heat_problem = run_end_scenario_sizing_no_heat_losses(
                 EndScenarioSizingStagedEnsemble,
@@ -193,3 +193,9 @@ class TestEndScenarioSizingEnsemble(TestCase):
             obj_calc = sum(probabilities * total_costs)
 
             np.testing.assert_allclose(obj_calc / 1e6, heat_problem.objective_value)
+            objective_runs.append(heat_problem.objective_value)
+
+        # checking that the objective value of each next optimization is smaller than the
+        # previous one as less assets are fixed in size between the ensembles
+        for i in range(len(objective_runs)-1):
+            np.testing.assert_array_less(objective_runs[i+1], objective_runs[i])

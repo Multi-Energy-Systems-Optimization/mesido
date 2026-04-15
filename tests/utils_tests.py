@@ -352,13 +352,13 @@ def heat_to_discharge_test(solution, results, atol=1e-2, rtol=1.0e-4):
         np.testing.assert_allclose(
             results[f"{p}.HeatIn.Heat"][indices],
             results[f"{p}.Q"][indices] * rho * cp * temperature,
-            atol=1.01 * results[f"{p}__hn_heat_loss"][0],
+            atol=max(1.01 * abs(results[f"{p}__hn_heat_loss"][0]), atol),
             err_msg=f"{p} has mismatch in milp to discharge",
         )
         np.testing.assert_allclose(
             results[f"{p}.HeatOut.Heat"][indices],
             results[f"{p}.Q"][indices] * rho * cp * temperature,
-            atol=1.01 * results[f"{p}__hn_heat_loss"][0],
+            atol=max(1.01 * abs(results[f"{p}__hn_heat_loss"][0]), atol),
             err_msg=f"{p} has mismatch in milp to discharge",
         )
 

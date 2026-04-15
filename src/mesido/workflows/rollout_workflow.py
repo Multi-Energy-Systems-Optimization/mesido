@@ -347,7 +347,7 @@ class RollOutProblem(
         constraints = []
 
         for asset, _asset_is_placed_var in self._asset_is_realized_map.items():
-            asset_is_placed_vector = self.get_asset_is__realized_symbols(asset)
+            asset_is_placed_vector = self.get_asset_is__realized_symbols(asset, ensemble_member)
 
             constraints.append(
                 (
@@ -358,7 +358,7 @@ class RollOutProblem(
             )
 
         for asset, _asset_fraction_placed_var in self._asset_fraction_placed_map.items():
-            asset_fraction_placed_vector = self.get_asset_fraction__placed_symbols(asset)
+            asset_fraction_placed_vector = self.get_asset_fraction__placed_symbols(asset, ensemble_member)
             constraints.append(
                 (
                     (asset_fraction_placed_vector[1:] - asset_fraction_placed_vector[:-1]),
@@ -371,8 +371,8 @@ class RollOutProblem(
             asset,
             _asset_fraction_placed_name,
         ) in self._asset_fraction_placed_map.items():
-            asset_fraction_placed = self.get_asset_fraction__placed_symbols(asset)
-            asset_is_placed_name = self.get_asset_is__realized_symbols(asset)
+            asset_fraction_placed = self.get_asset_fraction__placed_symbols(asset, ensemble_member)
+            asset_is_placed_name = self.get_asset_is__realized_symbols(asset, ensemble_member)
             constraints.append((asset_is_placed_name - asset_fraction_placed, -np.inf, 0.0))
 
         return constraints
@@ -417,7 +417,7 @@ class RollOutProblem(
         constraints = []
 
         for d in self.energy_system_components.get("heat_demand", []):
-            asset_realized_vector = self.get_asset_is__realized_symbols(d)
+            asset_realized_vector = self.get_asset_is__realized_symbols(d, ensemble_member)
 
             # ensure asset is placed at end of optimization
             constraints.append((asset_realized_vector[-1], 1.0, 1.0))
@@ -514,7 +514,7 @@ class RollOutProblem(
                 f"The function {self.__minimum_operational_constraints.__name__} is not tested yet."
             )
 
-            geo_is_placed = self.get_asset_is__realized_symbols(asset)
+            geo_is_placed = self.get_asset_is__realized_symbols(asset, ensemble_member)
             heat_produced = self.__state_vector_scaled(f"{asset}.Heat_source", ensemble_member)
             max_heat = bounds[f"{asset}.Heat_source"][1]
             max_heat_year = max_heat * 8760  # 8760 hours in a year
