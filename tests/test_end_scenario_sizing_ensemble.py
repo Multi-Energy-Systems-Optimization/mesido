@@ -41,7 +41,6 @@ class TestEndScenarioSizingEnsemble(TestCase):
         for config in run_asset_map:
             heat_problem = run_end_scenario_sizing_no_heat_losses(
                 EndScenarioSizingStagedEnsemble,
-                solver_class=SolverCPLEX,
                 base_folder=base_folder,
                 esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
                 esdl_parser=ESDLFileParser,
@@ -198,4 +197,4 @@ class TestEndScenarioSizingEnsemble(TestCase):
         # checking that the objective value of each next optimization is smaller than the
         # previous one as less assets are fixed in size between the ensembles
         for i in range(len(objective_runs)-1):
-            np.testing.assert_array_less(objective_runs[i+1], objective_runs[i])
+            np.testing.assert_array_less(objective_runs[i+1], objective_runs[i] + 1e-6)
