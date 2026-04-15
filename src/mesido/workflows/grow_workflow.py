@@ -419,12 +419,6 @@ class EndScenarioSizing(
     def history(self, ensemble_member):
         return AliasDict(self.alias_relation)
 
-    def __state_vector_scaled(self, variable, ensemble_member):
-        canonical, sign = self.alias_relation.canonical_signed(variable)
-        return (
-            self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
-        )
-
     def solver_options(self):
         options = super().solver_options()
         if options["solver"] == "highs":
@@ -818,9 +812,9 @@ def run_end_scenario_sizing(
             if p not in solution.cold_pipes and parameters[f"{p}.area"] > 0.0:
                 lb = []
                 ub = []
-                bounds_pipe = bounds[f"{p}__flow_direct_var"]
+                bounds_pipe = bounds[f"{p}.__flow_direct_var"]
                 for i in range(len(t)):
-                    r = results[f"{p}__flow_direct_var"][i]
+                    r = results[f"{p}.__flow_direct_var"][i]
                     # bound to roughly represent 4km of milp losses in pipes
                     lb.append(
                         r
@@ -836,9 +830,9 @@ def run_end_scenario_sizing(
                 boolean_bounds[f"{p}__flow_direct_var"] = (Timeseries(t, lb), Timeseries(t, ub))
                 if not producer_input_timeseries:
                     try:
-                        r = results[f"{p}__is_disconnected"]
+                        r = results[f"{p}.__is_disconnected"]
                         r_low = np.zeros(len(r))
-                        boolean_bounds[f"{p}__is_disconnected"] = (
+                        boolean_bounds[f"{p}.__is_disconnected"] = (
                             Timeseries(t, r_low),
                             Timeseries(t, r),
                         )
