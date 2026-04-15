@@ -8,7 +8,6 @@ import esdl
 
 from mesido._heat_loss_u_values_pipe import pipe_heat_loss
 from mesido.base_component_type_mixin import BaseComponentTypeMixin
-from mesido.base_problem_mixin import BaseProblemMixin
 from mesido.demand_insulation_class import DemandInsulationClass
 from mesido.esdl.asset_to_component_base import AssetStateEnum
 from mesido.esdl.common import Asset
