@@ -325,8 +325,8 @@ class MultiCommoditySimulator(
             asset.asset_type
             for asset in self.esdl_assets.values()
             if asset.asset_type not in assets_without_control
-            if asset.name not in assets_list
-            if asset.name not in available_timeseries
+            if asset.id not in assets_list
+            if asset.id not in available_timeseries
         ]
         assert (
             len(unused_asset) == 0
@@ -355,7 +355,7 @@ class MultiCommoditySimulator(
         asset_merit = asset_info["asset_merit"]
         asset_variable_map = asset_info["asset_variable_map"]
         for asset in assets_list:
-            index_s = asset_merit["asset_name"].index(f"{asset}")
+            index_s = asset_merit["asset_id"].index(f"{asset}")
             marginal_priority = (
                 index_start_of_priority + max_value_merit - asset_merit["merit_order"][index_s]
             )
@@ -378,7 +378,7 @@ class MultiCommoditySimulator(
                 )
             elif asset in assets_to_include.get("conversion", []):
                 variable_name = f"{asset}.{asset_variable_map[asset]}"
-                index_s = asset_merit["asset_name"].index(f"{asset}_prod")
+                index_s = asset_merit["asset_id"].index(f"{asset}_prod")
                 marginal_priority_source = (
                     index_start_of_priority + max_value_merit - asset_merit["merit_order"][index_s]
                 )
@@ -434,7 +434,7 @@ class MultiCommoditySimulator(
                 # discharging acts as producer
                 # Marginal costs for discharging should be larger than marginal cost for charging
                 # TODO: add check on the marginal costs for charging/discharging
-                index_s = asset_merit["asset_name"].index(f"{asset}_discharge")
+                index_s = asset_merit["asset_id"].index(f"{asset}_discharge")
                 marginal_priority = (
                     index_start_of_priority + max_value_merit - asset_merit["merit_order"][index_s]
                 )
@@ -548,14 +548,14 @@ class MultiCommoditySimulator(
 
     def __merit_controls(self, assets_list):
         attributes = {
-            "asset_name": [],
+            "asset_id": [],
             "merit_order": [],
         }
 
         assets = self.esdl_assets
         for a in assets.values():
-            if a.name in assets_list:
-                attributes["asset_name"].append(a.name)
+            if a.id in assets_list:
+                attributes["asset_id"].append(a.id)
                 try:
                     attributes["merit_order"].append(
                         a.attributes["costInformation"].marginalCosts.value
@@ -566,7 +566,7 @@ class MultiCommoditySimulator(
                         # maximisation gas, therefore a merit_order with a very small adjusted
                         # value is used (e.g. 1e-6) to ensure these goals are right after each
                         # other and no other goals are in between.
-                        attributes["asset_name"].append(f"{a.name}_prod")
+                        attributes["asset_id"].append(f"{a.id}_prod")
                         attributes["merit_order"].append(
                             a.attributes["costInformation"].marginalCosts.value - 1e-6
                         )
@@ -579,7 +579,7 @@ class MultiCommoditySimulator(
                         attributes["merit_order"].append(
                             a.attributes["controlStrategy"].marginalDischargeCosts.value
                         )
-                        attributes["asset_name"].append(f"{a.name}_discharge")
+                        attributes["asset_id"].append(f"{a.id}_discharge")
                     except AttributeError:
                         raise Exception(f"Asset: {a.name} does not have a merit order specified")
 
@@ -588,7 +588,7 @@ class MultiCommoditySimulator(
                 if attributes["merit_order"][-1] <= 0.0:
                     raise Exception(
                         "The specified producer usage merit order must be a "
-                        f"positve integer value, producer name:{a.name}, current "
+                        f"positive integer value, producer name:{a.name}, current "
                         f"specified merit value: {last_merit_order}"
                     )
 

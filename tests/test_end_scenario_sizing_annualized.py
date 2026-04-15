@@ -96,27 +96,23 @@ class TestEndScenarioSizingAnnualized(TestCase):
         )
 
         results = solution_annualized_cost.extract_results()
+        name_to_id_map = solution_annualized_cost.esdl_asset_name_to_id_map
         heat_producers = [1, 2]
         # Number of decimal positions for test accuracy
         decimal = 4
         for i in heat_producers:
+            producer_id = name_to_id_map[f"HeatProducer_{i}"]
             investment_and_installation_cost = (
-                results[f"HeatProducer_{i}__investment_cost"]
-                + results[f"HeatProducer_{i}__installation_cost"]
+                results[f"{producer_id}__investment_cost"]
+                + results[f"{producer_id}__installation_cost"]
             )
+            esdl_asset = solution_annualized_cost.esdl_assets[producer_id]
             # These are the same parameters used by the model from the ESDL file:
-            asset_id = solution_annualized_cost.esdl_asset_name_to_id_map[f"HeatProducer_{i}"]
-            years_asset_life = solution_annualized_cost.esdl_assets[asset_id].attributes[
-                "technicalLifetime"
-            ]
-            discount_rate = (
-                solution_annualized_cost.esdl_assets[asset_id]
-                .attributes["costInformation"]
-                .discountRate.value
-            ) / 100
+            years_asset_life = esdl_asset.attributes["technicalLifetime"]
+            discount_rate = (esdl_asset.attributes["costInformation"].discountRate.value) / 100
             # TODO: Handle if NoneType
             discount_factor = calculate_annuity_factor(discount_rate, years_asset_life)
-            annualized_capex = results[f"HeatProducer_{i}__annualized_capex"]
+            annualized_capex = results[f"{producer_id}__annualized_capex"]
             # # Assertion 3: annualized capex matches the discounted investment
             # # and installation cost
             np.testing.assert_almost_equal(

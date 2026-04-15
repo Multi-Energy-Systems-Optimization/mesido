@@ -131,19 +131,18 @@ class BaseESDLParser:
                 if isinstance(el, esdl.Asset):
                     if hasattr(el, "name") and el.name:
                         el_name = el.name
+                        el_id = el.id
                     else:
-                        el_name = el.id
+                        el_name = el_id = el.id
 
-                    if "." in el_name:
+                    if "." in el_id:
                         # Dots indicate hierarchy, so would be very confusing
-                        raise ValueError(f"Dots in component names not supported: '{el_name}'")
+                        raise ValueError(f"Dots in component id not supported: '{el_id}'")
 
-                    if el_name in component_names:
-                        raise Exception(
-                            f"Asset names have to be unique: '{el_name}' already exists"
-                        )
+                    if el_id in component_names:
+                        raise Exception(f"Asset ids have to be unique: '{el_id}' already exists")
                     else:
-                        component_names.add(el_name)
+                        component_names.add(el_id)
 
                     # For some reason `esdl_element.assetType` is `None`, so use the class name
                     asset_type = el.__class__.__name__

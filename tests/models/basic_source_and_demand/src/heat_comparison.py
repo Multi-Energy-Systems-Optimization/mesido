@@ -86,7 +86,8 @@ class HeatESDL(
 ):
     def bounds(self):
         bounds = super().bounds()
-        bounds["source.Heat_source"] = (75000.0, 125000.0)
+        source_id = self.esdl_asset_name_to_id_map["source"]
+        bounds[f"{source_id}.Heat_source"] = (75000.0, 125000.0)
         return bounds
 
 

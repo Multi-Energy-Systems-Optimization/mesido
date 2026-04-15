@@ -52,6 +52,8 @@ class TestNetworkSimulator(TestCase):
 
         results = solution.extract_results()
 
+        name_id_map = solution.esdl_asset_name_to_id_map
+
         # General checks
         demand_matching_test(solution, results)
         energy_conservation_test(solution, results)
@@ -60,7 +62,7 @@ class TestNetworkSimulator(TestCase):
         # Check that producer 1 (merit oder = 2) is not used
         # and is does not contribute to the heating demands 1, 2 and 3
         np.testing.assert_allclose(
-            results["HeatProducer_1.Heat_source"],
+            results[f"{name_id_map['HeatProducer_1']}.Heat_source"],
             0.0,
             err_msg="Heat producer 1 should be completely disabled "
             ", due to producer 2 being sufficient for "

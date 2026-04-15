@@ -13,6 +13,7 @@ from mesido.demand_insulation_class import DemandInsulationClass
 from mesido.esdl.asset_to_component_base import AssetStateEnum
 from mesido.esdl.common import Asset
 from mesido.esdl.esdl_additional_vars_mixin import get_asset_contraints
+from mesido.esdl.profile_parser import InfluxDBProfileReader
 from mesido.head_loss_class import HeadLossOption
 from mesido.network_common import NetworkSettings
 from mesido.pipe_class import CableClass, GasPipeClass, PipeClass
@@ -804,14 +805,17 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             ub = bounds[f"{asset_name}.Heat_source"][1]
 
             # Update bound to account for profile constraint being used instead of 1 value
-            asset = self.esdl_assets[self.esdl_asset_name_to_id_map[asset_name]]
+
+            asset = self.esdl_assets[asset_name]
             asset_profile_constraints, qty_asset_profile_constraints = get_asset_contraints(
                 self, asset, esdl.ProfileConstraint
             )
             if (
                 qty_asset_profile_constraints > 0
                 and hasattr(asset_profile_constraints[0], "maximum")
-                and asset_profile_constraints[0].maximum.profileQuantityAndUnit.reference.unit
+                and InfluxDBProfileReader._get_profile_quantity_and_unit(
+                    asset_profile_constraints[0].maximum
+                ).unit
                 == esdl.UnitEnum.WATT
                 and parameters[f"{asset_name}.state"] == AssetStateEnum.OPTIONAL  # Optional asset
             ):
@@ -1802,8 +1806,8 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints : The function returns a list of profile‑based capacity constraints.
         """
         constraints = []
-        if f"{asset.name}.{variable_suffix}" in self.io.get_timeseries_names():
-            timeseries = self.get_timeseries(f"{asset.name}.{variable_suffix}")
+        if f"{asset.id}.{variable_suffix}" in self.io.get_timeseries_names():
+            timeseries = self.get_timeseries(f"{asset.id}.{variable_suffix}")
             if len(self.times()) < len(timeseries.times):
                 idx_start = np.where(timeseries.times == self.times()[0])[0][0]
                 idx_end = np.where(timeseries.times == self.times()[-1])[0][0]
@@ -1821,11 +1825,13 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             if (
                 qty_asset_profile_constraints > 0
                 and hasattr(asset_profile_constraints[0], "maximum")
-                and asset_profile_constraints[0].maximum.profileQuantityAndUnit.reference.unit
+                and InfluxDBProfileReader._get_profile_quantity_and_unit(
+                    asset_profile_constraints[0].maximum
+                ).unit
                 == esdl.UnitEnum.WATT
             ):
                 parameters = self.parameters(ensemble_member)
-                asset_state = parameters[f"{asset.name}.state"]
+                asset_state = parameters[f"{asset.id}.state"]
 
                 if asset_state == AssetStateEnum.ENABLED:  # Enabled asset
                     constraints.append(
@@ -1862,16 +1868,18 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 # profile is specified without units (xlm/csv)
                 qty_asset_profile_constraints == 0
                 or (
-                    asset_profile_constraints[
-                        0
-                    ].maximum.profileQuantityAndUnit.reference.physicalQuantity
+                    InfluxDBProfileReader._get_profile_quantity_and_unit(
+                        asset_profile_constraints[0].maximum
+                    ).physicalQuantity
                     == esdl.PhysicalQuantityEnum.COEFFICIENT
                     and (
-                        asset_profile_constraints[0].maximum.profileQuantityAndUnit.reference.unit
+                        InfluxDBProfileReader._get_profile_quantity_and_unit(
+                            asset_profile_constraints[0].maximum
+                        ).unit
                         == esdl.UnitEnum.PERCENT
-                        or asset_profile_constraints[
-                            0
-                        ].maximum.profileQuantityAndUnit.reference.unit
+                        or InfluxDBProfileReader._get_profile_quantity_and_unit(
+                            asset_profile_constraints[0].maximum
+                        ).unit
                         == esdl.UnitEnum.NONE
                     )
                 )  # profile from esdl
@@ -1960,9 +1968,10 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             max_heat = self.extra_variable(max_var, ensemble_member)
             heat_source = self.__state_vector_scaled(f"{s}.Heat_source", ensemble_member)
             constraint_nominal = self.variable_nominal(f"{s}.Heat_source")
+
             constraints.extend(
                 self.__producer_constraints(
-                    self.esdl_assets[self.esdl_asset_name_to_id_map[s]],
+                    self.esdl_assets[s],
                     "maximum_heat_source",
                     heat_source,
                     max_heat,
@@ -2106,7 +2115,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             constraint_nominal = self.variable_nominal(f"{d}.Electricity_source")
             constraints.extend(
                 self.__producer_constraints(
-                    self.esdl_assets[self.esdl_asset_name_to_id_map[d]],
+                    self.esdl_assets[d],
                     "maximum_electricity_source",
                     electricity_source,
                     max_power,

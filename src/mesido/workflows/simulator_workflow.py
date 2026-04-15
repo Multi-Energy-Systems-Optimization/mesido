@@ -205,7 +205,7 @@ class NetworkSimulator(
             # order)
             index_start_of_priority = 3
             for src in self.energy_system_components[prod_asset]:
-                index_s = producer_merit["producer_name"].index(f"{src}")
+                index_s = producer_merit["producer_id"].index(f"{src}")
                 producer_priority = (
                     index_start_of_priority
                     + number_of_source_producers
@@ -263,7 +263,7 @@ class NetworkSimulator(
 
     def producer_merit_controls(self):
         attributes = {
-            "producer_name": [],
+            "producer_id": [],
             "merit_order": [],
         }
         assets = self.esdl_assets
@@ -275,7 +275,7 @@ class NetworkSimulator(
                 or a.asset_type == "GasHeater"
                 or a.asset_type == "GeothermalSource"
             ):
-                attributes["producer_name"].append(a.name)
+                attributes["producer_id"].append(a.id)
                 try:
                     attributes["merit_order"].append(
                         a.attributes["costInformation"].marginalCosts.value
