@@ -39,7 +39,7 @@ class TestColdDemand(TestCase):
 
         """
         import models.wko.src.example as example
-        from models.wko.src.example import HeatProblem
+        from models.wko.src.example import HeatColdProblem
 
         logger, logs_list = create_log_list_scaling("mesido")
 
@@ -50,7 +50,7 @@ class TestColdDemand(TestCase):
             unittest.mock.patch("mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()),
         ):
             _ = run_esdl_mesido_optimization(
-                HeatProblem,
+                HeatColdProblem,
                 base_folder=base_folder,
                 esdl_file_name="LT_wko_error_check.esdl",
                 esdl_parser=ESDLFileParser,
@@ -83,12 +83,12 @@ class TestColdDemand(TestCase):
 
         """
         import models.wko.src.example as example
-        from models.wko.src.example import HeatProblem
+        from models.wko.src.example import HeatColdProblem
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
         heat_problem = run_esdl_mesido_optimization(
-            HeatProblem,
+            HeatColdProblem,
             base_folder=base_folder,
             esdl_file_name="LT_wko.esdl",
             esdl_parser=ESDLFileParser,
@@ -112,17 +112,17 @@ class TestColdDemand(TestCase):
         1. demand is matched
         2. energy conservation in the network
         3. heat to discharge
-        4. varopex cost calculations
+        4. variable operational and investment cost calculations
         5. airco sizing
 
         """
         import models.wko.src.example as example
-        from models.wko.src.example import HeatProblemSizing
+        from models.wko.src.example import HeatColdProblemSizing
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
         heat_problem = run_esdl_mesido_optimization(
-            HeatProblemSizing,
+            HeatColdProblemSizing,
             base_folder=base_folder,
             esdl_file_name="airco.esdl",
             esdl_parser=ESDLFileParser,
@@ -140,7 +140,7 @@ class TestColdDemand(TestCase):
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
 
-        # Check how variable operation cost is calculated
+        # Check variable operation cost calculation
         np.testing.assert_allclose(
             parameters[f"{hp_id}.variable_operational_cost_coefficient"]
             * sum(results[f"{hp_id}.Heat_source"][1:])
@@ -152,6 +152,12 @@ class TestColdDemand(TestCase):
             parameters[f"{ac_id}.variable_operational_cost_coefficient"]
             * sum(results[f"{ac_id}.Heat_airco"][1:]),
             results[f"{ac_id}__variable_operational_cost"],
+        )
+
+        # Check investment cost calculation
+        np.testing.assert_allclose(
+            parameters[f"{ac_id}.investment_cost_coefficient"] * results[f"{ac_id}__max_size"],
+            results[f"{ac_id}__investment_cost"],
         )
 
         # Check airco sizing
@@ -184,13 +190,13 @@ class TestColdDemand(TestCase):
             - pipe heat losses excluded: excpect no heat losses or gains
         """
         import models.wko.src.example as example
-        from models.wko.src.example import HeatProblem
+        from models.wko.src.example import HeatColdProblem
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
         # ------------------------------------------------------------------------------------------
         # Pipe heat losses inlcuded
-        class HeatingCoolingProblem(HeatProblem):
+        class HeatingCoolingProblem(HeatColdProblem):
 
             def energy_system_options(self):
                 options = super().energy_system_options()
@@ -316,11 +322,11 @@ class TestColdDemand(TestCase):
         both peaks are on the same day.
         """
         import models.wko.src.example as example
-        from models.wko.src.example import HeatProblem
+        from models.wko.src.example import HeatColdProblem
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
-        class DiscretizationProblem(HeatProblem):
+        class DiscretizationProblem(HeatColdProblem):
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
                 self.day_steps = 1
@@ -389,11 +395,11 @@ class TestColdDemand(TestCase):
         both peaks are on consecutive days.
         """
         import models.wko.src.example as example
-        from models.wko.src.example import HeatProblem
+        from models.wko.src.example import HeatColdProblem
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
-        class DiscretizationProblem(HeatProblem):
+        class DiscretizationProblem(HeatColdProblem):
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
                 self.day_steps = 1
@@ -462,11 +468,11 @@ class TestColdDemand(TestCase):
         the cold peak happens before the heat one.
         """
         import models.wko.src.example as example
-        from models.wko.src.example import HeatProblem
+        from models.wko.src.example import HeatColdProblem
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
-        class DiscretizationProblem(HeatProblem):
+        class DiscretizationProblem(HeatColdProblem):
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
                 self.day_steps = 1
