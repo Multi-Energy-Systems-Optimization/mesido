@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" id="03386224-685c-4f3b-bcc0-3c9dc63110de_with_return_network_with_return_network" description="" esdlVersion="v2401" name="airco" version="6">
+<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" id="03386224-685c-4f3b-bcc0-3c9dc63110de_with_return_network_with_return_network" description="" esdlVersion="v2401" name="airco_voc" version="5">
   <energySystemInformation xsi:type="esdl:EnergySystemInformation" id="ad1a8ca8-b21b-4ad3-aa3e-756cf321bd4d">
     <carriers xsi:type="esdl:Carriers" id="553fa302-8878-4fa9-b0ca-6ee6123bf2c9">
       <carrier xsi:type="esdl:HeatCommodity" name="LT" supplyTemperature="25.0" id="13db0822-98da-4ca8-9d48-868653ae06af"/>
@@ -36,8 +36,8 @@
         <port xsi:type="esdl:OutPort" name="SecOut" id="ad87a98f-e6a7-4688-9989-ea8a17a85afc" connectedTo="5f8fe6d0-24eb-4427-b47e-1bf4972e7c56" carrier="13db0822-98da-4ca8-9d48-868653ae06af"/>
         <geometry xsi:type="esdl:Point" lon="4.413928985595704" lat="52.07816089056798"/>
         <costInformation xsi:type="esdl:CostInformation" id="c2ebb047-47af-4851-86f0-3314e67dd267">
-          <variableOperationalCosts xsi:type="esdl:SingleValue" id="1ed97438-5a8b-4ea0-8d21-97044baae03a" value="0.9">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR/MWh" id="ac4f6d05-cab6-4fc3-b603-112727032419" unit="EURO" perMultiplier="MEGA" perUnit="WATTHOUR"/>
+          <variableOperationalCosts xsi:type="esdl:SingleValue" id="1ed97438-5a8b-4ea0-8d21-97044baae03a" value="900.0">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR/kWh" id="ac4f6d05-cab6-4fc3-b603-112727032419" unit="EURO" perMultiplier="KILO" perUnit="WATTHOUR"/>
           </variableOperationalCosts>
         </costInformation>
       </asset>
@@ -271,7 +271,7 @@
           <point xsi:type="esdl:Point" lon="4.418658434678616" lat="52.079938869403605" CRS="WGS84"/>
         </geometry>
       </asset>
-      <asset xsi:type="esdl:Airco" name="Airco_23d6" power="1000000.0" id="23d6ef31-45e6-46e0-b669-edc306e2ca9c" state="OPTIONAL">
+      <asset xsi:type="esdl:Airco" name="Airco_23d6" power="1000000.0" id="23d6ef31-45e6-46e0-b669-edc306e2ca9c"  state="OPTIONAL">
         <port xsi:type="esdl:InPort" name="In" id="733e8687-330f-46db-8879-9020b7b80a67" connectedTo="751dd976-7e12-4363-aea2-f2e068e306ac" carrier="13db0822-98da-4ca8-9d48-868653ae06af"/>
         <port xsi:type="esdl:OutPort" name="Out" id="30531768-8713-4d8c-9c5c-29a89e239eb9" connectedTo="a564025e-1ec7-4091-8e1f-6711a8ab8eb1" carrier="13db0822-98da-4ca8-9d48-868653ae06af_ret"/>
         <geometry xsi:type="esdl:Point" lon="4.419829845428468" lat="52.07849717267527" CRS="WGS84"/>
