@@ -358,7 +358,9 @@ class RollOutProblem(
             )
 
         for asset, _asset_fraction_placed_var in self._asset_fraction_placed_map.items():
-            asset_fraction_placed_vector = self.get_asset_fraction__placed_symbols(asset, ensemble_member)
+            asset_fraction_placed_vector = self.get_asset_fraction__placed_symbols(
+                asset, ensemble_member
+            )
             constraints.append(
                 (
                     (asset_fraction_placed_vector[1:] - asset_fraction_placed_vector[:-1]),

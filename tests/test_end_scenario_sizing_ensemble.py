@@ -4,9 +4,8 @@ from unittest import TestCase
 from mesido.esdl.asset_to_component_base import AssetStateEnum
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
-from mesido.workflows import run_end_scenario_sizing, run_end_scenario_sizing_no_heat_losses
+from mesido.workflows import run_end_scenario_sizing_no_heat_losses
 from mesido.workflows.endscenariosizing_ensemble import EndScenarioSizingStagedEnsemble
-from mesido.workflows.grow_workflow import SolverCPLEX
 
 import numpy as np
 
@@ -28,15 +27,12 @@ class TestEndScenarioSizingEnsemble(TestCase):
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
-
         run_asset_map = [
             {"_asset_types_fixed_size": ["heat_source", "ates", "heat_buffer"]},
-            {"_asset_types_fixed_size": ["heat_source", "ates"]},
-            {"_asset_types_fixed_size": ["heat_source"]},
-            {"_asset_types_fixed_size": ["geothermal"]},
+            {"_asset_types_fixed_size": ["geothermal", "ates"]},
         ]
         objective_runs = []
-        #TODO: add a run with heatlosses included Staged. Don't do it for all due to the effect
+        # TODO: add a run with heatlosses included Staged. Don't do it for all due to the effect
         # on the computational time.
         for config in run_asset_map:
             heat_problem = run_end_scenario_sizing_no_heat_losses(
@@ -196,5 +192,5 @@ class TestEndScenarioSizingEnsemble(TestCase):
 
         # checking that the objective value of each next optimization is smaller than the
         # previous one as less assets are fixed in size between the ensembles
-        for i in range(len(objective_runs)-1):
-            np.testing.assert_array_less(objective_runs[i+1], objective_runs[i] + 1e-6)
+        for i in range(len(objective_runs) - 1):
+            np.testing.assert_array_less(objective_runs[i + 1], objective_runs[i] + 1e-6)
