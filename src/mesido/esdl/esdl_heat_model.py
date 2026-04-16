@@ -44,6 +44,7 @@ from mesido.pycml.component_library.milp import (
     GeothermalSource,
     GeothermalSourceElec,
     HeatBuffer,
+    HeatBufferElec,
     HeatDemand,
     HeatExchanger,
     HeatPipe,
@@ -149,6 +150,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         cp=4200.0,
         min_fraction_tank_volume=0.05,
         v_max_gas=15.0,
+        energy_system_options=None,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
@@ -159,6 +161,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         self.cp = cp
         self.v_max_gas = v_max_gas
         self.min_fraction_tank_volume = min_fraction_tank_volume
+        self.energy_system_options = dict() if not energy_system_options else energy_system_options
         if "primary_port_name_convention" in kwargs.keys():
             self.primary_port_name_convention = kwargs["primary_port_name_convention"]
         if "secondary_port_name_convention" in kwargs.keys():
@@ -448,7 +451,25 @@ class AssetToHeatComponent(_AssetToComponentBase):
         else:  # Catering for backwards compatibility
             return asset.attributes[max_size_attribute]
 
-    def convert_heat_buffer(self, asset: Asset) -> Tuple[Type[HeatBuffer], MODIFIERS]:
+    def _get_min_voltage(self, asset: Asset) -> float:
+        """
+        Args:
+            asset: mesido common asset with all attributes
+
+        Returns:
+            value: minimum voltage of electric carrier in V
+        """
+        min_voltage = None
+        for port in asset.in_ports:
+            if isinstance(port.carrier, esdl.ElectricityCommodity):
+                min_voltage = port.carrier.voltage
+        if min_voltage is None:
+            raise RuntimeError(f"{asset.name} has no inport with electricity commodity")
+        return min_voltage
+
+    def convert_heat_buffer(
+        self, asset: Asset
+    ) -> Tuple[Union[Type[HeatBufferElec], Type[HeatBuffer]], MODIFIERS]:
         """
         This function converts the buffer object in esdl to a set of modifiers that can be used in
         a pycml object. Most important:
@@ -553,6 +574,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
         )
 
         q_nominal = self._get_connected_q_nominal(asset)
+        if isinstance(q_nominal, dict):
+            q_nominal = q_nominal["Q_nominal"]
 
         modifiers = dict(
             height=r,
@@ -562,13 +585,40 @@ class AssetToHeatComponent(_AssetToComponentBase):
             Stored_heat=dict(min=min_heat, max=max_heat),
             Heat_buffer=dict(min=-hfr_discharge_max, max=hfr_charge_max),
             init_Heat=min_heat,
+            include_discrete_charge_var=self.energy_system_options.get(
+                "heat_storage_charging_variables", False
+            ),
             **self._generic_modifiers(asset),
             **self._generic_heat_modifiers(-hfr_discharge_max, hfr_charge_max, q_nominal),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
         )
+        if len(asset.in_ports) == 2 and len(asset.out_ports) == 1:
 
+            min_voltage = self._get_min_voltage(asset)
+            i_max, i_nom = self._get_connected_i_nominal_and_max(asset)
+            max_elec_power = hfr_charge_max
+            charging_efficiency = asset.attributes.get("chargeEfficiency", 1.0)
+            if charging_efficiency <= 0.0:
+                logger.error(
+                    f"'chargeEfficiency' attribute is not defined in esdl for {asset.name}."
+                    f" 1.0 is taken as default."
+                )
+                charging_efficiency = 1.0
+
+            modifiers.update(
+                dict(
+                    elec_power_nominal=max_elec_power / 2.0,
+                    ElectricityIn=dict(
+                        Power=dict(min=0.0, max=max_elec_power, nominal=max_elec_power / 2.0),
+                        I=dict(min=0.0, max=i_max, nominal=i_nom),
+                        V=dict(min=min_voltage, nominal=min_voltage),
+                    ),
+                    charging_efficiency=charging_efficiency,
+                )
+            )
+            return HeatBufferElec, modifiers
         return HeatBuffer, modifiers
 
     def convert_heat_demand(self, asset: Asset) -> Tuple[Type[HeatDemand], MODIFIERS]:
@@ -972,7 +1022,11 @@ class AssetToHeatComponent(_AssetToComponentBase):
         modifiers = dict(
             length=length,
             diameter=diameter,
-            disconnectable=self._is_disconnectable_pipe(asset),
+            disconnectable=(
+                self._is_disconnectable_pipe(asset)
+                if not self.energy_system_options.get("all_pipes_disconnectable", False)
+                else True
+            ),
             insulation_thickness=insulation_thicknesses,
             conductivity_insulation=conductivies_insulation,
             **self._generic_modifiers(asset),
@@ -1454,9 +1508,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             modifiers["elec_power_nominal"] = max_supply
             modifiers["cop"] = asset.attributes["COP"] if asset.attributes["COP"] else 0.0
             if len(asset.in_ports) == 2:
-                for port in asset.in_ports:
-                    if isinstance(port.carrier, esdl.ElectricityCommodity):
-                        min_voltage = port.carrier.voltage
+                min_voltage = self._get_min_voltage(asset)
                 i_max, i_nom = self._get_connected_i_nominal_and_max(asset)
                 modifiers.update(
                     min_voltage=min_voltage,
@@ -1571,6 +1623,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 min=0.0,
                 max=hfr_charge_max * aggregation_count * 180.0 * 24 * 3600.0,
                 nominal=hfr_charge_max * aggregation_count * 30.0 * 24 * 3600.0,
+            ),
+            include_discrete_charge_var=self.energy_system_options.get(
+                "heat_storage_charging_variables", False
             ),
             **self._generic_modifiers(asset),
             **self._generic_heat_modifiers(
@@ -1932,6 +1987,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
             min_voltage=v_min,
             max_capacity=max_capacity,
             Stored_electricity=dict(min=0.0, max=max_capacity),
+            include_discrete_charge_var=self.energy_system_options.get(
+                "electricity_storage_discrete_charge_variables", False
+            ),
             ElectricityIn=dict(
                 V=dict(min=v_min, nominal=v_min),
                 I=dict(min=-i_max, max=i_max, nominal=i_nom),
@@ -2364,6 +2422,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
             Q_nominal=q_nominal,
             density=density,
             efficiency=eff_max,
+            include_asset_is_switched_on=self.energy_system_options["include_asset_is_switched_on"],
+            electrolyzer_efficiency_option=self.energy_system_options["electrolyzer_efficiency"],
             GasOut=dict(
                 Q=dict(
                     min=0.0,
@@ -2429,6 +2489,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             Q_nominal=q_nominal,
             density=density,
             volume=asset.attributes["workingVolume"],
+            discharge_var=self.energy_system_options.get("gas_storage_discharge_variables", False),
             # Gas_tank_flow=dict(min=-hydrogen_specific_energy*asset.attributes["maxDischargeRate"],
             # max=hydrogen_specific_energy*asset.attributes["maxChargeRate"]),
             # TODO: Fix -> Gas network is currenlty non-limiting, mass flow is decoupled from the
@@ -2755,9 +2816,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         # TODO: CO2 coefficient
 
         q_nominal = self._get_connected_q_nominal(asset)
-        for port in asset.in_ports:
-            if isinstance(port.carrier, esdl.ElectricityCommodity):
-                min_voltage = port.carrier.voltage
+        min_voltage = self._get_min_voltage(asset)
         i_max, i_nom = self._get_connected_i_nominal_and_max(asset)
 
         modifiers.update(
@@ -2834,9 +2893,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         # TODO: CO2 coefficient
 
         q_nominal = self._get_connected_q_nominal(asset)
-        for port in asset.in_ports:
-            if isinstance(port.carrier, esdl.ElectricityCommodity):
-                min_voltage = port.carrier.voltage
+        min_voltage = self._get_min_voltage(asset)
         i_max, i_nom = self._get_connected_i_nominal_and_max(asset)
         cop = asset.attributes["COP"] if asset.attributes["COP"] else 1.0
 

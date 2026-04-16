@@ -356,102 +356,103 @@ class ScenarioOutput:
             logger.error("Variable optimizer_sim has not been set")
 
         for _key, asset in self.esdl_assets.items():
-            asset_placement_var = self._asset_aggregation_count_var_map[asset.name]
+            asset_id = asset.id
+            asset_placement_var = self._asset_aggregation_count_var_map[asset_id]
             placed = np.round(results[asset_placement_var][0]) >= 1.0
 
             cost_type_prefix = ""
             if not discounted_annualized_cost:
-                if np.isnan(parameters[f"{asset.name}.technical_life"]) or np.isclose(
-                    parameters[f"{asset.name}.technical_life"], 0.0
+                if np.isnan(parameters[f"{asset_id}.technical_life"]) or np.isclose(
+                    parameters[f"{asset_id}.technical_life"], 0.0
                 ):
                     capex_factor = 1.0
                 else:
-                    capex_factor = optim_time_horizon / parameters[f"{asset.name}.technical_life"]
+                    capex_factor = optim_time_horizon / parameters[f"{asset.id}.technical_life"]
                     if capex_factor < 1.0:
                         capex_factor = 1.0
             else:
                 cost_type_prefix = "EAC - "
-                asset_life_years = parameters[f"{asset.name}.technical_life"]
-                discount_rate = parameters[f"{asset.name}.discount_rate"] / 100.0
+                asset_life_years = parameters[f"{asset_id}.technical_life"]
+                discount_rate = parameters[f"{asset_id}.discount_rate"] / 100.0
                 capex_factor = calculate_annuity_factor(discount_rate, asset_life_years)
 
             if placed:
                 try:
                     asset_timehorizon_capex_breakdown[asset.asset_type] += (
-                        results[f"{asset.name}__installation_cost"][0]
-                        + results[f"{asset.name}__investment_cost"][0]
+                        results[f"{asset_id}__installation_cost"][0]
+                        + results[f"{asset_id}__investment_cost"][0]
                     ) * capex_factor
                     tot_timehorizon_install_cost_euro += (
-                        results[f"{asset.name}__installation_cost"][0]
+                        results[f"{asset_id}__installation_cost"][0]
                     ) * capex_factor
                     tot_timehorizon_invest_cost_euro += (
-                        results[f"{asset.name}__investment_cost"][0]
+                        results[f"{asset_id}__investment_cost"][0]
                     ) * capex_factor
 
                     if (
-                        results[f"{asset.name}__variable_operational_cost"][0] > 0.0
-                        or results[f"{asset.name}__fixed_operational_cost"][0] > 0.0
+                        results[f"{asset_id}__variable_operational_cost"][0] > 0.0
+                        or results[f"{asset_id}__fixed_operational_cost"][0] > 0.0
                     ):
                         asset_opex_breakdown[asset.asset_type] += (
-                            results[f"{asset.name}__variable_operational_cost"][0]
-                            + results[f"{asset.name}__fixed_operational_cost"][0]
+                            results[f"{asset_id}__variable_operational_cost"][0]
+                            + results[f"{asset_id}__fixed_operational_cost"][0]
                         )
                         asset_timehorizon_opex_breakdown[asset.asset_type] += (
-                            results[f"{asset.name}__variable_operational_cost"][0]
-                            + results[f"{asset.name}__fixed_operational_cost"][0]
+                            results[f"{asset_id}__variable_operational_cost"][0]
+                            + results[f"{asset_id}__fixed_operational_cost"][0]
                         ) * optim_time_horizon
 
                         tot_variable_opex_cost_euro += results[
-                            f"{asset.name}__variable_operational_cost"
+                            f"{asset_id}__variable_operational_cost"
                         ][0]
-                        tot_fixed_opex_cost_euro += results[
-                            f"{asset.name}__fixed_operational_cost"
-                        ][0]
+                        tot_fixed_opex_cost_euro += results[f"{asset_id}__fixed_operational_cost"][
+                            0
+                        ]
                         tot_timehorizon_variable_opex_cost_euro += (
-                            results[f"{asset.name}__variable_operational_cost"][0]
+                            results[f"{asset_id}__variable_operational_cost"][0]
                             * optim_time_horizon
                         )
                         tot_timehorizon_fixed_opex_cost_euro += (
-                            results[f"{asset.name}__fixed_operational_cost"][0] * optim_time_horizon
+                            results[f"{asset_id}__fixed_operational_cost"][0] * optim_time_horizon
                         )
 
                 except KeyError:
                     try:
                         asset_timehorizon_capex_breakdown[asset.asset_type] = (
-                            results[f"{asset.name}__installation_cost"][0]
-                            + results[f"{asset.name}__investment_cost"][0]
+                            results[f"{asset_id}__installation_cost"][0]
+                            + results[f"{asset_id}__investment_cost"][0]
                         ) * capex_factor
                         tot_timehorizon_install_cost_euro += (
-                            results[f"{asset.name}__installation_cost"][0]
+                            results[f"{asset_id}__installation_cost"][0]
                         ) * capex_factor
                         tot_timehorizon_invest_cost_euro += (
-                            results[f"{asset.name}__investment_cost"][0]
+                            results[f"{asset_id}__investment_cost"][0]
                         ) * capex_factor
 
                         if (
-                            results[f"{asset.name}__variable_operational_cost"][0] > 0.0
-                            or results[f"{asset.name}__fixed_operational_cost"][0] > 0.0
+                            results[f"{asset_id}__variable_operational_cost"][0] > 0.0
+                            or results[f"{asset_id}__fixed_operational_cost"][0] > 0.0
                         ):
                             asset_opex_breakdown[asset.asset_type] = (
-                                results[f"{asset.name}__variable_operational_cost"][0]
-                                + results[f"{asset.name}__fixed_operational_cost"][0]
+                                results[f"{asset_id}__variable_operational_cost"][0]
+                                + results[f"{asset_id}__fixed_operational_cost"][0]
                             )
                             asset_timehorizon_opex_breakdown[asset.asset_type] = (
                                 asset_opex_breakdown[asset.asset_type] * optim_time_horizon
                             )
 
                             tot_variable_opex_cost_euro += results[
-                                f"{asset.name}__variable_operational_cost"
+                                f"{asset_id}__variable_operational_cost"
                             ][0]
                             tot_fixed_opex_cost_euro += results[
-                                f"{asset.name}__fixed_operational_cost"
+                                f"{asset_id}__fixed_operational_cost"
                             ][0]
                             tot_timehorizon_variable_opex_cost_euro += (
-                                results[f"{asset.name}__variable_operational_cost"][0]
+                                results[f"{asset_id}__variable_operational_cost"][0]
                                 * optim_time_horizon
                             )
                             tot_timehorizon_fixed_opex_cost_euro += (
-                                results[f"{asset.name}__fixed_operational_cost"][0]
+                                results[f"{asset_id}__fixed_operational_cost"][0]
                                 * optim_time_horizon
                             )
 
@@ -469,8 +470,8 @@ class ScenarioOutput:
                     or asset.asset_type == "GasHeater"
                     or asset.asset_type == "ElectricBoiler"
                 ):
-                    heat_source_energy_wh[asset.name] = np.sum(
-                        results[f"{asset.name}.Heat_source"][1:] * diff_times / 3600
+                    heat_source_energy_wh[asset_id] = np.sum(
+                        results[f"{asset_id}.Heat_source"][1:] * diff_times / 3600
                     )
                 # TODO: ATES, HEAT pump show Secondary_heat and Primary_heat and tank storage
                 # elif ATES:
@@ -478,8 +479,8 @@ class ScenarioOutput:
                 #  summed_discharge = np.abs(np.sum(np.clip(heat_ates, -np.inf, 0.0)))
                 # elif Heat pump
                 # elif asset.asset_type == "HeatStorage":  # Heat discharged
-                #     heat_source_energy_wh[asset.name] = np.sum(
-                #         np.clip(results[f"{asset.name}.Heat_buffer"][1:], -np.inf, 0.0)
+                #     heat_source_energy_wh[asset_id] = np.sum(
+                #         np.clip(results[f"{asset_id}.Heat_buffer"][1:], -np.inf, 0.0)
                 #         * diff_times
                 #         / 3600
                 #     )
@@ -679,45 +680,45 @@ class ScenarioOutput:
             # part of the subarea.
             energy_breakdown = {}
             for asset in subarea.asset:
-                asset_name = asset.name
-                asset_type = self.get_asset_from_asset_name(asset_name).asset_type
+                asset_id = asset.id
+                asset_type = self.esdl_assets[asset_id].asset_type
 
-                asset_placement_var = self._asset_aggregation_count_var_map[asset.name]
+                asset_placement_var = self._asset_aggregation_count_var_map[asset_id]
                 placed = np.round(results[asset_placement_var][0]) >= 1.0
 
                 if placed:
                     if asset_type == "Joint":
                         continue
                     try:
-                        energy_breakdown[asset_type] += np.sum(results[f"{asset_name}.Heat_source"])
+                        energy_breakdown[asset_type] += np.sum(results[f"{asset_id}.Heat_source"])
                     except KeyError:
                         try:
                             energy_breakdown[asset_type] = np.sum(
-                                results[f"{asset_name}.Heat_source"]
+                                results[f"{asset_id}.Heat_source"]
                             )
                         except KeyError:
                             try:
                                 energy_breakdown[asset_type] += np.sum(
-                                    results[f"{asset_name}.Secondary_heat"]
+                                    results[f"{asset_id}.Secondary_heat"]
                                 )
                             except KeyError:
                                 try:
                                     energy_breakdown[asset_type] = np.sum(
-                                        results[f"{asset_name}.Secondary_heat"]
+                                        results[f"{asset_id}.Secondary_heat"]
                                     )
                                 except KeyError:
                                     pass
 
                     # Create KPIs by using applicable costs for the specific asset
-                    area_investment_cost += results[self._asset_investment_cost_map[asset_name]][0]
-                    area_installation_cost += results[
-                        self._asset_installation_cost_map[asset_name]
-                    ][0]
+                    area_investment_cost += results[self._asset_investment_cost_map[asset_id]][0]
+                    area_installation_cost += results[self._asset_installation_cost_map[asset_id]][
+                        0
+                    ]
                     area_variable_opex_cost += results[
-                        self._asset_variable_operational_cost_map[asset_name]
+                        self._asset_variable_operational_cost_map[asset_id]
                     ][0]
                     area_fixed_opex_cost += results[
-                        self._asset_fixed_operational_cost_map[asset_name]
+                        self._asset_fixed_operational_cost_map[asset_id]
                     ][0]
 
                     if discounted_annualized_cost:
@@ -727,27 +728,27 @@ class ScenarioOutput:
                     # Calculate the total energy [Wh] consumed/produced in an are.
                     # Note: milp losses of buffers, ATES' and pipes are included in the area energy
                     # consumption
-                    if asset_name in self.energy_system_components.get("heat_source", []):
+                    if asset_id in self.energy_system_components.get("heat_source", []):
                         try:
                             total_energy_produced_locally_wh[subarea.name] += np.sum(
-                                results[f"{asset_name}.Heat_source"][1:] * diff_times / 3600.0
+                                results[f"{asset_id}.Heat_source"][1:] * diff_times / 3600.0
                             )
                         except KeyError:
                             total_energy_produced_locally_wh[subarea.name] = np.sum(
-                                results[f"{asset_name}.Heat_source"][1:] * diff_times / 3600.0
+                                results[f"{asset_id}.Heat_source"][1:] * diff_times / 3600.0
                             )
-                    if asset_name in self.energy_system_components.get("heat_demand", []):
-                        flow_variable = results[f"{asset_name}.Heat_demand"][1:]
-                    elif asset_name in self.energy_system_components.get("heat_buffer", []):
-                        flow_variable = results[f"{asset_name}.Heat_buffer"][1:]
-                    elif asset_name in [
+                    if asset_id in self.energy_system_components.get("heat_demand", []):
+                        flow_variable = results[f"{asset_id}.Heat_demand"][1:]
+                    elif asset_id in self.energy_system_components.get("heat_buffer", []):
+                        flow_variable = results[f"{asset_id}.Heat_buffer"][1:]
+                    elif asset_id in [
                         *self.energy_system_components.get("ates", []),
                         *self.energy_system_components.get("low_temperature_ates", []),
                     ]:
-                        flow_variable = results[f"{asset_name}.Heat_ates"][1:]
-                    elif asset_name in self.energy_system_components.get("heat_pipe", []):
+                        flow_variable = results[f"{asset_id}.Heat_ates"][1:]
+                    elif asset_id in self.energy_system_components.get("heat_pipe", []):
                         flow_variable = (
-                            np.ones(len(self.times())) * results[f"{asset_name}__hn_heat_loss"]
+                            np.ones(len(self.times())) * results[f"{asset_id}__hn_heat_loss"]
                         )
                     else:
                         flow_variable = np.array([])
@@ -952,10 +953,8 @@ class ScenarioOutput:
 
         # end KPIs
 
-    def _name_to_asset(self, energy_system, name):
-        return next(
-            (x for x in energy_system.eAllContents() if hasattr(x, "name") and x.name == name)
-        )
+    def _id_to_asset(self, energy_system, id):
+        return next((x for x in energy_system.eAllContents() if hasattr(x, "id") and x.id == id))
 
     def _remove_result_profiles(
         self,
@@ -971,7 +970,7 @@ class ScenarioOutput:
             *self.energy_system_components.get("heat_exchanger", []),
             *self.energy_system_components.get("heat_pump", []),
         ]:
-            asset = self._name_to_asset(energy_system, asset_name)
+            asset = self._id_to_asset(energy_system, asset_name)
             for iport in range(len(asset.port)):
                 if isinstance(asset.port[iport], esdl.OutPort) or isinstance(
                     asset.port[iport], esdl.InPort
@@ -1023,8 +1022,9 @@ class ScenarioOutput:
         # Placement
         heat_pipes = set(self.energy_system_components.get("heat_pipe", []))
         for _, attributes in self.esdl_assets.items():
-            name = attributes.name
-            if name in [
+            asset_id = attributes.id
+            asset_name = attributes.name
+            if asset_id in [
                 *self.energy_system_components.get("heat_source", []),
                 *self.energy_system_components.get("ates", []),
                 *self.energy_system_components.get("low_temperature_ates", []),
@@ -1033,41 +1033,41 @@ class ScenarioOutput:
                 *self.energy_system_components.get("airco", []),
                 *self.energy_system_components.get("heat_exchanger", []),
             ]:
-                asset = self._name_to_asset(energy_system, name)
-                asset_placement_var = self._asset_aggregation_count_var_map[name]
+                asset = self._id_to_asset(energy_system, asset_id)
+                asset_placement_var = self._asset_aggregation_count_var_map[asset_id]
                 placed = np.round(results[asset_placement_var][0]) >= 1.0
-                max_size = results[self._asset_max_size_map[name]][0]
+                max_size = results[self._asset_max_size_map[asset_id]][0]
 
-                if asset.name in [
+                if asset_id in [
                     *self.energy_system_components.get("ates", []),
                     *self.energy_system_components.get("low_temperature_ates", []),
                 ]:
-                    asset.maxChargeRate = results[f"{name}__max_size"][0]
-                    asset.maxDischargeRate = results[f"{name}__max_size"][0]
-                elif asset.name in self.energy_system_components.get("heat_buffer", []):
+                    asset.maxChargeRate = results[f"{asset_id}__max_size"][0]
+                    asset.maxDischargeRate = results[f"{asset_id}__max_size"][0]
+                elif asset_id in self.energy_system_components.get("heat_buffer", []):
                     asset.capacity = max_size
                     asset.volume = max_size / (
-                        parameters[f"{name}.cp"]
-                        * parameters[f"{name}.rho"]
-                        * parameters[f"{name}.dT"]
+                        parameters[f"{asset_id}.cp"]
+                        * parameters[f"{asset_id}.rho"]
+                        * parameters[f"{asset_id}.dT"]
                     )
-                elif asset.name in self.energy_system_components.get("heat_exchanger", []):
+                elif asset_id in self.energy_system_components.get("heat_exchanger", []):
                     asset.capacity = max_size
-                elif asset.name in [
+                elif asset_id in [
                     *self.energy_system_components.get("heat_pump", []),
                     *self.energy_system_components.get("airco", []),
                 ]:
                     # Note: The heat capacity and not the electrical capacity
                     # TODO: in the future we need to cater for varying COP as well
-                    asset.power = results[f"{name}__max_size"][0]
+                    asset.power = results[f"{asset_id}__max_size"][0]
                 else:
                     asset.power = max_size
                 if not placed:
                     asset.delete(recursive=True)
                 else:
                     asset.state = esdl.AssetStateEnum.ENABLED
-            elif name not in heat_pipes:  # because heat pipes are updated below
-                logger.warning(f"ESDL update: asset {name} has not been updated")
+            elif asset_id not in heat_pipes:  # because heat pipes are updated below
+                logger.warning(f"ESDL update: asset {asset_id} has not been updated")
 
         # Pipes:
         edr_pipe_properties_to_copy = ["innerDiameter", "outerDiameter", "diameter", "material"]
@@ -1100,7 +1100,7 @@ class ScenarioOutput:
                     assert isinstance(pipe_class, EDRPipeClass)
                     asset_edr = esh_edr.load_from_string(pipe_class.xml_string)
 
-                asset = self._name_to_asset(energy_system, pipe)
+                asset = self._id_to_asset(energy_system, pipe)
                 asset.state = esdl.AssetStateEnum.ENABLED
 
                 try:
@@ -1116,7 +1116,7 @@ class ScenarioOutput:
                     for prop in edr_pipe_properties_to_copy:
                         setattr(asset, prop, getattr(asset_edr, prop))
             else:
-                asset = self._name_to_asset(energy_system, pipe)
+                asset = self._id_to_asset(energy_system, pipe)
                 asset.delete(recursive=True)
 
         # ------------------------------------------------------------------------------------------
@@ -1157,7 +1157,7 @@ class ScenarioOutput:
                 esdl.Storage,
             ]
 
-            for asset_name in [
+            for asset_id in [
                 *self.energy_system_components.get("heat_source", []),
                 *self.energy_system_components.get("heat_demand", []),
                 *self.energy_system_components.get("heat_pipe", []),
@@ -1170,9 +1170,9 @@ class ScenarioOutput:
             ]:
                 try:
                     # If the asset has been placed
-                    asset = self._name_to_asset(energy_system, asset_name)
+                    asset = self._id_to_asset(energy_system, asset_id)
                     asset_class = asset.__class__.__name__
-                    asset_id = asset.id
+                    asset_name = asset.name
                     capability = [c for c in capabilities if c in asset.__class__.__mro__][
                         0
                     ].__name__
@@ -1230,7 +1230,7 @@ class ScenarioOutput:
                     # These variables exist for all the assets. Variables that only exist for
                     # specific
                     # assets are only added later, like Pump_power
-                    commodity = self.energy_system_components_commodity.get(asset_name)
+                    commodity = self.energy_system_components_commodity.get(asset_id)
 
                     variables_one_hydraulic_system = [f"{commodity}In.Q"]
                     variables_two_hydraulic_system = [
@@ -1254,7 +1254,7 @@ class ScenarioOutput:
                         variables_one_hydraulic_system.append(f"{commodity}In.H")
                         variables_two_hydraulic_system.append(f"Primary.{commodity}In.H")
                         variables_two_hydraulic_system.append(f"Secondary.{commodity}In.H")
-                        if asset_name in [
+                        if asset_id in [
                             *self.energy_system_components.get("heat_source", []),
                             *self.energy_system_components.get("heat_buffer", []),
                             *self.energy_system_components.get("ates", []),
@@ -1265,10 +1265,10 @@ class ScenarioOutput:
                         ]:
                             variables_one_hydraulic_system.append("Pump_power")
                             variables_two_hydraulic_system.append("Pump_power")
-                        elif asset_name in [*self.energy_system_components.get("pump", [])]:
+                        elif asset_id in [*self.energy_system_components.get("pump", [])]:
                             variables_one_hydraulic_system = ["Pump_power"]
                             variables_two_hydraulic_system = ["Pump_power"]
-                    if asset_name in [
+                    if asset_id in [
                         *self.energy_system_components.get("heat_pipe", []),
                         *self.energy_system_components.get("gas_pipe", []),
                     ]:
@@ -1276,13 +1276,13 @@ class ScenarioOutput:
                         variables_two_hydraulic_system.append("PostProc.Velocity")
                         # Velocity at the pipe outlet [m/s]
                         post_processed["PostProc.Velocity"] = pipe_velocity(
-                            asset_name, commodity, results, parameters
+                            asset_id, commodity, results, parameters
                         )
                         variables_one_hydraulic_system.append("PostProc.Pressure")
                         # TODO: seems unnecessary, pipes always only have 1 hydraulic system
                         variables_two_hydraulic_system.append("PostProc.Pressure")
                         post_processed["PostProc.Pressure"] = pipe_pressure(
-                            asset_name, commodity, results, parameters
+                            asset_id, commodity, results, parameters
                         )  # Pa
 
                     # Depending on the port set, different carriers are assigned
@@ -1354,24 +1354,21 @@ class ScenarioOutput:
                             try:
                                 # For all components dealing with one hydraulic system
                                 if isinstance(
-                                    results[f"{asset_name}." + variables_one_hydraulic_system[0]][
-                                        ii
-                                    ],
+                                    results[f"{asset_id}." + variables_one_hydraulic_system[0]][ii],
                                     numbers.Number,
                                 ):
                                     variables_names = variables_one_hydraulic_system
                             except KeyError:
                                 # For all components dealing with two hydraulic system
                                 if isinstance(
-                                    results[f"{asset_name}." + variables_two_hydraulic_system[0]][
-                                        ii
-                                    ],
+                                    results[f"{asset_id}." + variables_two_hydraulic_system[0]][ii],
                                     numbers.Number,
                                 ):
                                     variables_names = variables_two_hydraulic_system
                             except Exception:
                                 logger.error(
-                                    f"During the influxDB profile writing for asset: {asset_name},"
+                                    f"During the influxDB profile writing for asset: "
+                                    f"{asset_name},"
                                     f" the following error occured:"
                                 )
                                 traceback.print_exc()
@@ -1458,7 +1455,7 @@ class ScenarioOutput:
                                     else:
                                         logger.warning(
                                             f"No profile units will be written to the ESDL for: "
-                                            f"{asset_name}. + {variable}"
+                                            f"{asset_id}. + {variable}"
                                         )
 
                                     # Write the source of profiles (Optimizer)
@@ -1484,7 +1481,7 @@ class ScenarioOutput:
                                     conversion_factor = 1.0
                                 if variable not in ["PostProc.Velocity", "PostProc.Pressure"]:
                                     data_row.append(
-                                        results[f"{asset_name}." + variable][ii] * conversion_factor
+                                        results[f"{asset_id}." + variable][ii] * conversion_factor
                                     )
                                 # The variable evaluation below seems unnecessary, but it would be
                                 # used we expand the list of post process type variables
@@ -1505,7 +1502,7 @@ class ScenarioOutput:
                             "simulationRun": simulation_id,
                             "simulation_type": type(self).__name__,
                             "assetId": asset_id,
-                            "assetName": asset_name,
+                            "assetName": asset.name,
                             "assetClass": asset_class,
                             "capability": capability,
                         }
