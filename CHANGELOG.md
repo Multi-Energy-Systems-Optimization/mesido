@@ -1,6 +1,9 @@
 # [Unreleased-main] - 2026-04-16
 
 ## Added
+- Electricity consumption calculation of geothermal assets, using the defined COP. 
+- Geothermal electricity asset that can be connected to the electricity grid.
+- Addition of heat buffer asset with electric charging (i.e. HeatBufferElec).
 - DataSource is assigned to output profiles
 
 ## Changed
@@ -12,9 +15,6 @@
 
 ## Fixed
 - ProfileConstraints: Use already available function to get profile quantity and unit
-- Electricity consumption calculation of geothermal assets, using the defined COP. 
-- Geothermal electricity asset that can be connected to the electricity grid.
-- Addition of heat buffer asset with electric charging (i.e. HeatBufferElec).
 
 
 # [0.1.18.1] - 2026-04-13
