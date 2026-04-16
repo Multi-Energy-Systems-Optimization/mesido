@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" id="03386224-685c-4f3b-bcc0-3c9dc63110de_with_return_network_with_return_network" description="" esdlVersion="v2401" name="airco_voc" version="5">
+<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" id="03386224-685c-4f3b-bcc0-3c9dc63110de_with_return_network_with_return_network" description="" esdlVersion="v2401" name="airco" version="8">
   <energySystemInformation xsi:type="esdl:EnergySystemInformation" id="ad1a8ca8-b21b-4ad3-aa3e-756cf321bd4d">
     <carriers xsi:type="esdl:Carriers" id="553fa302-8878-4fa9-b0ca-6ee6123bf2c9">
       <carrier xsi:type="esdl:HeatCommodity" name="LT" supplyTemperature="25.0" id="13db0822-98da-4ca8-9d48-868653ae06af"/>
@@ -271,7 +271,7 @@
           <point xsi:type="esdl:Point" lon="4.418658434678616" lat="52.079938869403605" CRS="WGS84"/>
         </geometry>
       </asset>
-      <asset xsi:type="esdl:Airco" name="Airco_23d6" power="1000000.0" id="23d6ef31-45e6-46e0-b669-edc306e2ca9c"  state="OPTIONAL">
+      <asset xsi:type="esdl:Airco" name="Airco_23d6" power="1000000.0" id="23d6ef31-45e6-46e0-b669-edc306e2ca9c" state="OPTIONAL">
         <port xsi:type="esdl:InPort" name="In" id="733e8687-330f-46db-8879-9020b7b80a67" connectedTo="751dd976-7e12-4363-aea2-f2e068e306ac" carrier="13db0822-98da-4ca8-9d48-868653ae06af"/>
         <port xsi:type="esdl:OutPort" name="Out" id="30531768-8713-4d8c-9c5c-29a89e239eb9" connectedTo="a564025e-1ec7-4091-8e1f-6711a8ab8eb1" carrier="13db0822-98da-4ca8-9d48-868653ae06af_ret"/>
         <geometry xsi:type="esdl:Point" lon="4.419829845428468" lat="52.07849717267527" CRS="WGS84"/>
@@ -279,6 +279,9 @@
           <variableOperationalCosts xsi:type="esdl:SingleValue" id="a44957ec-6a01-4145-90f9-c1aac617b2ad" value="0.01">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR/MWh" id="ffdb790d-f225-48b9-b4e7-f588612b418f" unit="EURO" perMultiplier="MEGA" perUnit="WATTHOUR"/>
           </variableOperationalCosts>
+          <investmentCosts xsi:type="esdl:SingleValue" id="1ff41860-e95a-441f-83e9-b3b52b07bc11" value="100.0">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR/MW" id="7c08a501-8656-435a-aafb-24136ab4ef4c" unit="EURO" perMultiplier="MEGA" perUnit="WATT"/>
+          </investmentCosts>
         </costInformation>
       </asset>
       <asset xsi:type="esdl:Pipe" innerDiameter="0.3127" name="Pipe_1e91" length="129.8" outerDiameter="0.45" id="1e91bc33-c10f-42e3-b49a-058fad456ec3" diameter="DN300">

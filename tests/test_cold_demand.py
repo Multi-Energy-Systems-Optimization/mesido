@@ -106,6 +106,7 @@ class TestColdDemand(TestCase):
         This test is to check the basic physics for a network which includes an airco. In this
         case we have a network with an air-water hp, a low temperature ates and both hot and cold
         demand. In this case the demands are matched and the low temperature ates is utilized.
+        Only airco is optional. Airco sizing is done by minimization of airco  investment cost
 
         Checks:
         1. demand is matched
@@ -116,12 +117,12 @@ class TestColdDemand(TestCase):
 
         """
         import models.wko.src.example as example
-        from models.wko.src.example import HeatColdProblem
+        from models.wko.src.example import HeatProblemSizing
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
         heat_problem = run_esdl_mesido_optimization(
-            HeatColdProblem,
+            HeatProblemSizing,
             base_folder=base_folder,
             esdl_file_name="airco.esdl",
             esdl_parser=ESDLFileParser,

@@ -108,17 +108,12 @@ class MinimizeSourcesHeatGoal(Goal):
 
         Returns
         -------
-        The Heat_source o Heat_airco state of the optimization problem.
+        The Heat_source state of the optimization problem.
         """
-        obj = 0.0
-        if self.source in optimization_problem.energy_system_components.get("airco", []):
-            obj = optimization_problem.state(f"{self.source}.Heat_airco")
-        else:
-            obj = optimization_problem.state(f"{self.source}.Heat_source")
-        return obj
+        return optimization_problem.state(f"{self.source}.Heat_source")
 
 
-class MinimizeProductionSize(Goal):
+class MinimizeInvestmentCost(Goal):
     priority = 3
 
     order = 1
@@ -130,7 +125,11 @@ class MinimizeProductionSize(Goal):
         self.function_nominal = 1e6
 
     def function(self, optimization_problem, ensemble_member):
-        return optimization_problem.extra_variable(f"{self.source}__max_size", ensemble_member)
+        parameters = optimization_problem.parameters(ensemble_member)
+        var_opex_coef = parameters[f"{self.source}.investment_cost_coefficient"]
+        max_size = optimization_problem.extra_variable(f"{self.source}__max_size", ensemble_member)
+        obj = var_opex_coef * max_size
+        return obj
 
 
 class _GoalsAndOptions:
@@ -245,24 +244,10 @@ class HeatProblem(
         return options
 
 
-class HeatColdProblem(HeatProblem):
+class HeatProblemSizing(HeatProblem):
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-    def path_goals(self):
-        """
-        Add goal to minimize Heat_airco
-
-        Returns
-        -------
-        Extended goals list.
-        """
-        goals = super().path_goals().copy()
-
-        for s in self.energy_system_components["airco"]:
-            goals.append(MinimizeSourcesHeatGoal(s))
-
-        return goals
 
     def goals(self):
         """
@@ -273,8 +258,9 @@ class HeatColdProblem(HeatProblem):
         Extended goals list.
         """
         goals = super().goals().copy()
+
         for source in self.energy_system_components["airco"]:
-            goals.append(MinimizeProductionSize(source=source))
+            goals.append(MinimizeInvestmentCost(source=source))
 
         return goals
 
