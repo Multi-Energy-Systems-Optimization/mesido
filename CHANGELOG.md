@@ -1,4 +1,4 @@
-# [Unreleased-main] - 2026-04-16
+# [Unreleased-main] - 2026-04-17
 
 ## Added
 - Electricity consumption calculation of geothermal assets, using the defined COP. 
@@ -12,6 +12,7 @@
 - The creation of discrete variables for individual assets has been moved to the pycml classes.
 - The code base uses asset id's instead of asset names expect for csv inputs where the asset names are still accepted.
 - Updated pyESDL to v26.3
+- Updated the GROW workflow to provide feedback on which heat demands are not matched in priority 1.
 - Removed old test files that are no longer used.
 
 ## Fixed
