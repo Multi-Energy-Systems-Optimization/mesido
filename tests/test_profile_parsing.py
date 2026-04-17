@@ -21,7 +21,7 @@ import numpy as np
 import pandas as pd
 
 
-class MockInfluxDBProfileReader(ESDLTimeVaryingProfileReader):
+class MockESDLTimeVaryingProfileReader(ESDLTimeVaryingProfileReader):
     def __init__(
         self,
         energy_system: esdl.EnergySystem,
@@ -163,7 +163,7 @@ class TestProfileLoading(unittest.TestCase):
             model_folder=model_folder,
             input_folder=input_folder,
             esdl_file_name="1a_with_influx_profiles.esdl",
-            profile_reader=MockInfluxDBProfileReader,
+            profile_reader=MockESDLTimeVaryingProfileReader,
             input_timeseries_file="influx_mock.csv",
         )
         problem.pre()

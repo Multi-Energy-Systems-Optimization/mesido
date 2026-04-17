@@ -429,7 +429,7 @@ class ESDLTimeVaryingProfileReader(BaseProfileReader):
         from mesido.workflows.utils.error_types import NetworkErrors, potential_error_to_error
         
         try:
-            _, profile_raw_data = get_time_varying_profile_header_and_raw_data(profile, True)   
+            profile_raw_data, _ = get_time_varying_profile_header_and_raw_data(profile, True)   
         except Exception:
             container = profile.eContainer()
             asset = container.energyasset
@@ -439,7 +439,7 @@ class ESDLTimeVaryingProfileReader(BaseProfileReader):
                 f"Asset named {asset.name}: Database {profile.database}"
                 f" is not available in the host.",
             )
-            potential_error_to_error(NetworkErrors.HEAT_NETWORK_ERRORS)                              
+            potential_error_to_error(NetworkErrors.HEAT_NETWORK_ERRORS)               
 
         if not profile_raw_data:  # if time_series_data.profile_data_list == []:
             container = profile.eContainer()
