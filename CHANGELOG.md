@@ -13,6 +13,7 @@
 - The code base uses asset id's instead of asset names expect for csv inputs where the asset names are still accepted.
 - Updated pyESDL to v26.3
 - Updated the GROW workflow to provide feedback on which heat demands are not matched in priority 1.
+- Removed old test files that are no longer used.
 
 ## Fixed
 - ProfileConstraints: Use already available function to get profile quantity and unit
