@@ -276,8 +276,8 @@
         <port xsi:type="esdl:OutPort" name="Out" id="30531768-8713-4d8c-9c5c-29a89e239eb9" connectedTo="a564025e-1ec7-4091-8e1f-6711a8ab8eb1" carrier="13db0822-98da-4ca8-9d48-868653ae06af_ret"/>
         <geometry xsi:type="esdl:Point" lon="4.419829845428468" lat="52.07849717267527" CRS="WGS84"/>
         <costInformation xsi:type="esdl:CostInformation" id="245e6b56-c37e-4c55-9f7e-52d4603d4277">
-          <variableOperationalCosts xsi:type="esdl:SingleValue" id="a44957ec-6a01-4145-90f9-c1aac617b2ad" value="0.01">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR/MWh" id="ffdb790d-f225-48b9-b4e7-f588612b418f" unit="EURO" perMultiplier="MEGA" perUnit="WATTHOUR"/>
+          <variableOperationalCosts xsi:type="esdl:SingleValue" id="a44957ec-6a01-4145-90f9-c1aac617b2ad" value="100.0">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR/kWh" id="ffdb790d-f225-48b9-b4e7-f588612b418f" unit="EURO" perMultiplier="KILO" perUnit="WATTHOUR"/>
           </variableOperationalCosts>
           <investmentCosts xsi:type="esdl:SingleValue" id="1ff41860-e95a-441f-83e9-b3b52b07bc11" value="100.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR/MW" id="7c08a501-8656-435a-aafb-24136ab4ef4c" unit="EURO" perMultiplier="MEGA" perUnit="WATT"/>
