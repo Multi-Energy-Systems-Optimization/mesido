@@ -475,6 +475,8 @@ class EndScenarioSizing(
             )
         )
         if priority == 1 and self.objective_value > 1e-6:
+            results = self.extract_results()
+            self.__heat_demand_match_check(results)
             raise RuntimeError("The heating demand is not matched")
 
         if self._workflow_progress_status is not None:
@@ -529,20 +531,28 @@ class EndScenarioSizing(
             logger.error("Unkown error occured when evaluating self._stage for _write_updated_esdl")
             sys.exit(1)
 
-        for d in self.energy_system_components.get("heat_demand", []):
-            realized_demand = results[f"{d}.Heat_demand"]
-            target = self.get_timeseries(f"{d}.target_heat_demand").values
-            timesteps = np.diff(self.get_timeseries(f"{d}.target_heat_demand").times)
-            parameters[f"{d}.target_heat_demand"] = target.tolist()
-            delta_energy = np.sum((realized_demand - target)[1:] * timesteps / 1.0e9)
-            if delta_energy >= 1.0:
-                logger.warning(f"For demand {d} the target is not matched by {delta_energy} GJ")
+        self.__heat_demand_match_check(results)
 
         if os.path.exists(self.output_folder) and self._save_json:
             bounds = self.bounds()
             aliases = self.alias_relation._canonical_variables_map
             solver_stats = self.solver_stats
             self._write_json_output(results, parameters, bounds, aliases, solver_stats)
+
+    def __heat_demand_match_check(self, results):
+        parameters = self.parameters(0)
+        id_to_name_map = self.esdl_asset_id_to_name_map
+        for d in self.energy_system_components.get("heat_demand", []):
+            realized_demand = results[f"{d}.Heat_demand"]
+            target = self.get_timeseries(f"{d}.target_heat_demand").values
+            parameters[f"{d}.target_heat_demand"] = target.tolist()
+            timesteps = np.diff(self.get_timeseries(f"{d}.target_heat_demand").times)
+            delta_energy = np.sum((target - realized_demand)[1:] * timesteps / 1.0e9)
+            if delta_energy >= 1.0:
+                logger.warning(
+                    f"For demand {id_to_name_map[d]} the target is not matched by"
+                    f" {delta_energy} GJ"
+                )
 
 
 class EndScenarioSizingHIGHS(EndScenarioSizing):
