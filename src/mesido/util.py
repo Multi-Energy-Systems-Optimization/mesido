@@ -1,5 +1,5 @@
 from mesido.esdl.esdl_parser import BaseESDLParser
-from mesido.esdl.profile_parser import BaseProfileReader, InfluxDBProfileReader
+from mesido.esdl.profile_parser import BaseProfileReader, ESDLTimeVaryingProfileReader
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
@@ -13,7 +13,7 @@ def run_esdl_mesido_optimization(
     esdl_file_name: str = "",
     base_folder: str = "",
     esdl_string: str = "",
-    profile_reader: BaseProfileReader = InfluxDBProfileReader,
+    profile_reader: BaseProfileReader = ESDLTimeVaryingProfileReader,
     input_timeseries_file: str = "",
     *args,
     **kwargs,
