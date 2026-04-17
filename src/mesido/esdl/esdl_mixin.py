@@ -130,8 +130,8 @@ class ESDLMixin(
             DBAccessType.READ: [],
             DBAccessType.WRITE: [],
         }
-        workers_db_profile_reading = kwargs.get(
-            "workers_db_profile_reading", min(4, os.cpu_count())
+        self.workers_db_profile_reading = kwargs.get(
+            "_workers_db_profile_reading", min(4, os.cpu_count())
         )
 
         profile_reader_class = kwargs.get("profile_reader", InfluxDBProfileReader)
@@ -192,14 +192,13 @@ class ESDLMixin(
                 file_path=input_file_path,
                 database_credentials=read_only_dbase_credentials,
                 use_esdl_ranged_contraint=self._ESDLMixin__use_esdl_ranged_constraint,
-                workers_db_profile_reading=workers_db_profile_reading,
+                workers_db_profile_reading=self.workers_db_profile_reading,
             )
         else:  # read from a file, no database credentials needed
             self.__profile_reader: BaseProfileReader = profile_reader_class(
                 energy_system=self.__energy_system_handler.energy_system,
                 file_path=input_file_path,
                 use_esdl_ranged_contraint=self._ESDLMixin__use_esdl_ranged_constraint,
-                workers_db_profile_reading=workers_db_profile_reading,
             )
 
         # This way we allow users to adjust the parsed ESDL assets

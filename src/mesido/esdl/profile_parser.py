@@ -3,6 +3,7 @@ import logging
 import sys
 import threading
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Dict, Optional, Set, Tuple
 
@@ -21,7 +22,6 @@ import pandas as pd
 
 import rtctools.data.pi
 from rtctools.data.storage import DataStore
-from concurrent.futures import ThreadPoolExecutor
 
 logger = logging.getLogger()
 
@@ -265,9 +265,9 @@ class InfluxDBProfileReader(BaseProfileReader):
         self,
         energy_system: esdl.EnergySystem,
         file_path: Optional[Path],
+        workers_db_profile_reading: Optional[int] = None,
         use_esdl_ranged_contraint: bool = False,
         database_credentials: Optional[Dict[str, Tuple[str, str]]] = None,
-        workers_db_profile_reading: int = 1,
     ):
         super().__init__(
             energy_system=energy_system,
@@ -280,7 +280,7 @@ class InfluxDBProfileReader(BaseProfileReader):
         )
         self._database_profilemanager = list()
         self._lock = threading.Lock()
-        self.workers_db_profile_reading = workers_db_profile_reading
+        self._workers_db_profile_reading = workers_db_profile_reading
 
     def _load_profiles_from_source(
         self,
@@ -326,7 +326,7 @@ class InfluxDBProfileReader(BaseProfileReader):
                 unique_profiles.append(profile)
 
         # # Open parallel processes to load all unique profiles parallely
-        with ThreadPoolExecutor(max_workers=self.workers_db_profile_reading) as executor:
+        with ThreadPoolExecutor(max_workers=self._workers_db_profile_reading) as executor:
             unique_series = list(
                 executor.map(self._load_profile_timeseries_from_database, unique_profiles)
             )
@@ -438,7 +438,7 @@ class InfluxDBProfileReader(BaseProfileReader):
         """
         # Import is done under the function instead of the top of the file
         # to avoid circular import issue
-        # from mesido.workflows.utils.error_types import NetworkErrors, potential_error_to_error
+        from mesido.workflows.utils.error_types import NetworkErrors, potential_error_to_error
 
         if profile.id in self._df:
             return self._df[profile.id]
@@ -469,11 +469,18 @@ class InfluxDBProfileReader(BaseProfileReader):
 
         # Check if an object of the InfluxDBProfileManager is already present in a list. If so,
         # re-use that object that was already created and been stored in the list.
+        # First check if a connection is found. If yes, query the profile directly.
         time_series_data = next(
             filter(lambda x: x.database_settings == conn_settings, self._database_profilemanager),
             None,
         )
+        # If connection not found, create it.
         if not time_series_data:
+            # Acquire a lock to ensure that only one thread creates a connection for the same
+            # database settings, and other threads wait until the connection is created and stored
+            # in the list. This is to avoid multiple connections being created for the same
+            # database settings when multiple profiles share the same database settings and are
+            # loaded in parallel.
             with self._lock:
                 time_series_data = next(
                     filter(
