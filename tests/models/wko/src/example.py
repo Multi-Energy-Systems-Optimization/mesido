@@ -152,11 +152,7 @@ class MinimizeInvestmentCost(Goal):
         Investment cost objective value.
         """
 
-        parameters = optimization_problem.parameters(ensemble_member)
-        var_opex_coef = parameters[f"{self.source}.investment_cost_coefficient"]
-        max_size = optimization_problem.extra_variable(f"{self.source}__max_size", ensemble_member)
-        obj = var_opex_coef * max_size
-        return obj
+        return optimization_problem.extra_variable(f"{self.source}__investment_cost")
 
 
 class _GoalsAndOptions:

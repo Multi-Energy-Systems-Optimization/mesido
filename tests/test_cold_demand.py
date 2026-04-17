@@ -141,6 +141,7 @@ class TestColdDemand(TestCase):
         heat_to_discharge_test(heat_problem, results)
 
         # Check variable operation cost calculation
+        np.testing.assert_array_less(1e3, results[f"{hp_id}__variable_operational_cost"])
         np.testing.assert_allclose(
             parameters[f"{hp_id}.variable_operational_cost_coefficient"]
             * sum(results[f"{hp_id}.Heat_source"][1:])
@@ -148,6 +149,7 @@ class TestColdDemand(TestCase):
             results[f"{hp_id}__variable_operational_cost"],
         )
 
+        np.testing.assert_array_less(1e3, results[f"{ac_id}__variable_operational_cost"])
         np.testing.assert_allclose(
             parameters[f"{ac_id}.variable_operational_cost_coefficient"]
             * sum(results[f"{ac_id}.Heat_airco"][1:]),
@@ -155,6 +157,7 @@ class TestColdDemand(TestCase):
         )
 
         # Check investment cost calculation
+        np.testing.assert_array_less(10.0, results[f"{ac_id}__investment_cost"])
         np.testing.assert_allclose(
             parameters[f"{ac_id}.investment_cost_coefficient"] * results[f"{ac_id}__max_size"],
             results[f"{ac_id}__investment_cost"],
