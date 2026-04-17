@@ -91,6 +91,7 @@ class TestEndScenarioSizing(TestCase):
 
         Checks:
         - demand matching
+        - cost components
         - that the available pipe classes were adapted
         - minimum velocity setting
         - Cyclic behaviour for ATES
@@ -110,9 +111,27 @@ class TestEndScenarioSizing(TestCase):
         # Check the cost breakdown, check whether all the enabled assets are in the cost breakdown
         # Check that computation time is within expected bounds
 
+        name_to_id_map = self.solution.esdl_asset_name_to_id_map
+        hp_1_id = name_to_id_map["HeatProducer_1"]
+        hp_2_id = name_to_id_map["HeatProducer_2"]
+        a_id = name_to_id_map["ATES_033c"]
+        ht_id = name_to_id_map["HeatStorage_74c1"]
+
         # Check whehter the heat demand is matched
-        cost_calculation_test(self.solution, self.results)
         demand_matching_test(self.solution, self.results)
+
+        # Check the cost calculations
+        np.testing.assert_array_less(1e3, self.results[f"{hp_1_id}__investment_cost"])
+        np.testing.assert_array_less(1e3, self.results[f"{hp_1_id}__installation_cost"])
+        np.testing.assert_array_less(1e3, self.results[f"{hp_2_id}__investment_cost"])
+        np.testing.assert_array_less(1e3, self.results[f"{hp_2_id}__installation_cost"])
+        np.testing.assert_array_less(1e3, self.results[f"{hp_2_id}__variable_operational_cost"])
+        np.testing.assert_array_less(1e3, self.results[f"{a_id}__investment_cost"])
+        np.testing.assert_array_less(1e3, self.results[f"{a_id}__installation_cost"])
+        np.testing.assert_array_less(1e3, self.results[f"{a_id}__variable_operational_cost"])
+        np.testing.assert_array_less(1e3, self.results[f"{ht_id}__investment_cost"])
+        np.testing.assert_array_less(1e3, self.results[f"{ht_id}__installation_cost"])
+        cost_calculation_test(self.solution, self.results)
 
         # Check that indeed the available pipe classes were adapted based on expected flow
         # Pipe connected to a demand

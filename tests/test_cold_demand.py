@@ -113,10 +113,11 @@ class TestColdDemand(TestCase):
         demand. In this case the demands are matched and the low temperature ates is utilized.
 
         Checks:
-        1. cost calculation is checked
-        2. demand is matched
-        3. energy conservation in the network
-        4. heat to discharge
+        1. demand is matched
+        2. energy conservation in the network
+        3. heat to discharge
+        4. cost calculation is checked
+        5. check heatpump variable operational cost is nonzero
 
         """
         import models.wko.src.example as example
@@ -133,11 +134,17 @@ class TestColdDemand(TestCase):
             input_timeseries_file="timeseries.csv",
         )
         results = heat_problem.extract_results()
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
 
-        cost_calculation_test(heat_problem, results)
+        hp_id = name_to_id_map["HeatPump_b97e"]
+
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
+
+        # Check variable operation cost
+        np.testing.assert_array_less(1e3, results[f"{hp_id}__variable_operational_cost"])
+        cost_calculation_test(heat_problem, results)
 
     def test_wko(self):
         """

@@ -24,11 +24,11 @@ class TestElecBoiler(TestCase):
         conservation over the commodity change.
 
         Checks:
-        1. cost calculation is checked
-        2. demand is matched
-        3. energy conservation in the network
-        4. heat to discharge
-        5. energy conservation over the heat and electricity commodity
+        1. demand is matched
+        2. energy conservation in the network
+        3. heat to discharge
+        4. electric power conservation
+        5. cost calculation is checked
         """
         import models.source_pipe_sink.src.double_pipe_heat as example
         from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
@@ -47,14 +47,19 @@ class TestElecBoiler(TestCase):
         parameters = heat_problem.parameters(0)
         name_to_id_map = heat_problem.esdl_asset_name_to_id_map
 
-        cost_calculation_test(heat_problem, results)
+        e_boiler_id = name_to_id_map["ElectricBoiler_9aab"]
+        elec_producer_id = name_to_id_map["ElectricityProducer_4dde"]
+
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
         electric_power_conservation_test(heat_problem, results)
 
-        e_boiler_id = name_to_id_map["ElectricBoiler_9aab"]
-        elec_producer_id = name_to_id_map["ElectricityProducer_4dde"]
+        # Check the cost calculations
+        np.testing.assert_array_less(99.0, results[f"{e_boiler_id}__investment_cost"])
+        np.testing.assert_array_less(99.0, results[f"{e_boiler_id}__installation_cost"])
+        np.testing.assert_array_less(10.0, results[f"{e_boiler_id}__variable_operational_cost"])
+        cost_calculation_test(heat_problem, results)
 
         np.testing.assert_array_less(0.0, results[f"{e_boiler_id}.Heat_source"])
         np.testing.assert_array_less(0.0, results[f"{elec_producer_id}.ElectricityOut.Power"])
@@ -69,11 +74,10 @@ class TestElecBoiler(TestCase):
         over the commodity change.
 
         Checks:
-        1. cost calculation is checked
-        2. demand is matched
-        3. energy conservation in the network
-        4. heat to discharge
-        5. energy conservation over the heat and electricity commodity
+        1. demand is matched
+        2. energy conservation in the network
+        3. heat to discharge
+        4. cost calculation is checked
         """
         import models.source_pipe_sink.src.double_pipe_heat as example
         from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
@@ -91,13 +95,17 @@ class TestElecBoiler(TestCase):
         results = heat_problem.extract_results()
         parameters = heat_problem.parameters(0)
         name_to_id_map = heat_problem.esdl_asset_name_to_id_map
+        e_boiler_id = name_to_id_map["ElectricBoiler_9aab"]
 
-        cost_calculation_test(heat_problem, results)
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
 
-        e_boiler_id = name_to_id_map["ElectricBoiler_9aab"]
+        # Check the cost calculations
+        np.testing.assert_array_less(99.0, results[f"{e_boiler_id}__investment_cost"])
+        np.testing.assert_array_less(99.0, results[f"{e_boiler_id}__installation_cost"])
+        np.testing.assert_array_less(10.0, results[f"{e_boiler_id}__variable_operational_cost"])
+        cost_calculation_test(heat_problem, results)
 
         np.testing.assert_array_less(0.0, results[f"{e_boiler_id}.Heat_source"])
         np.testing.assert_allclose(
@@ -111,11 +119,11 @@ class TestElecBoiler(TestCase):
         over the commodity change.
 
         Checks:
-        1. cost calculation is checked
-        2. demand is matched
-        3. energy conservation in the network
-        4. heat to discharge
-        5. energy conservation over the commodity
+        1. demand is matched
+        2. energy conservation in the network
+        3. heat to discharge
+        4. energy conservation over the commodity
+        5. cost calculation is checked
         """
         import models.source_pipe_sink.src.double_pipe_heat as example
         from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
@@ -133,28 +141,23 @@ class TestElecBoiler(TestCase):
         results = heat_problem.extract_results()
         parameters = heat_problem.parameters(0)
         name_to_id_map = heat_problem.esdl_asset_name_to_id_map
+        hp_id = name_to_id_map["HeatPump_d8fd"]
 
-        cost_calculation_test(heat_problem, results)
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
         electric_power_conservation_test(heat_problem, results)
 
-        hp_id = name_to_id_map["HeatPump_d8fd"]
+        # Check variable operation cost
+        np.testing.assert_array_less(100.0, results[f"{hp_id}__variable_operational_cost"])
+        cost_calculation_test(heat_problem, results)
+
         elec_producer_id = name_to_id_map["ElectricityProducer_4dde"]
         np.testing.assert_array_less(0.0, results[f"{hp_id}.Heat_source"])
         np.testing.assert_array_less(0.0, results[f"{elec_producer_id}.ElectricityOut.Power"])
         np.testing.assert_array_less(
             parameters[f"{hp_id}.cop"] * results[f"{hp_id}.Power_elec"],
             results[f"{hp_id}.Heat_source"] + 1.0e-6,
-        )
-
-        # Check how variable operation cost is calculated
-        np.testing.assert_allclose(
-            parameters[f"{hp_id}.variable_operational_cost_coefficient"]
-            * sum(results[f"{hp_id}.Heat_source"][1:])
-            / parameters[f"{hp_id}.cop"],
-            results[f"{hp_id}__variable_operational_cost"],
         )
 
 

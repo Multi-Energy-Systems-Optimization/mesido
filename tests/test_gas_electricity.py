@@ -35,8 +35,8 @@ class TestGasElect(TestCase):
 
 
         Checks:
-        1. utils test: cost_calculation_test, demand_matching_test, energy_conservation_test,
-         heat_to_discharge_test, electric_power_conservation_test, gas_pipes_head_loss_test
+        1. utils test: demand_matching_test, energy_conservation_test, heat_to_discharge_test,
+         electric_power_conservation_test, gas_pipes_head_loss_test, cost_calculation_test,
         2. gas pipe diameter value in resulting parameters are updated with optimized values
         in results
         3. higher heating demand require larger size of gas pipes
@@ -60,6 +60,9 @@ class TestGasElect(TestCase):
 
         results = solution.extract_results()
         parameters = solution.parameters(0)
+        name_to_id_map = solution.esdl_asset_name_to_id_map
+        gh_1_id = name_to_id_map["GasHeater_1"]
+        hp_2_id = name_to_id_map["HeatPump_2"]
 
         solution_high_demand = run_optimization_problem_solver(
             GasElectProblem,
@@ -73,20 +76,31 @@ class TestGasElect(TestCase):
 
         results_high_demand = solution_high_demand.extract_results()
 
-        # Test: Utils_tests
-        cost_calculation_test(solution, results)
         demand_matching_test(solution, results)
         energy_conservation_test(solution, results)
         heat_to_discharge_test(solution, results)
         electric_power_conservation_test(solution, results)
         gas_pipes_head_loss_test(solution, results)
 
-        cost_calculation_test(solution_high_demand, results_high_demand)
+        # Check the cost calculations
+        np.testing.assert_array_less(1e3, results[f"{gh_1_id}__variable_operational_cost"])
+        np.testing.assert_array_less(1e3, results[f"{hp_2_id}__variable_operational_cost"])
+        cost_calculation_test(solution, results)
+
         demand_matching_test(solution_high_demand, results_high_demand)
         energy_conservation_test(solution_high_demand, results_high_demand)
         heat_to_discharge_test(solution_high_demand, results_high_demand)
         electric_power_conservation_test(solution_high_demand, results_high_demand)
         gas_pipes_head_loss_test(solution_high_demand, results_high_demand)
+
+        # Check the cost calculations
+        np.testing.assert_array_less(
+            1e3, results_high_demand[f"{gh_1_id}__variable_operational_cost"]
+        )
+        np.testing.assert_array_less(
+            1e3, results_high_demand[f"{hp_2_id}__variable_operational_cost"]
+        )
+        cost_calculation_test(solution_high_demand, results_high_demand)
 
         # Test: Check if gas pipe diameter value in resulting parameters are
         # updated with optimized values in results

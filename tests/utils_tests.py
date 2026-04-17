@@ -603,6 +603,25 @@ def gas_pipes_head_loss_test(solution, results, atol=1e-12):
 
 
 def _get_esdl_scaled_cost(cost_esdl_info, uni_enum):
+    """
+    Scale an ESDL-defined cost to the appropriate unit basis.
+
+    This function converts a cost value defined in ESDL to a unit-consistent
+    value by accounting for the `perUnit` and `perMultiplier` specified in
+    the ESDL.
+
+    Parameters
+    ----------
+    cost_esdl_info : ESDL cost object containing the cost information.
+    uni_enum : esdl.UnitEnum. Target unit enum.
+
+    Returns
+    -------
+    float
+        Cost value scaled to the requested unit basis.
+
+    """
+
     costs_esdl = cost_esdl_info.value if cost_esdl_info is not None else 0.0
     per_unit = (
         cost_esdl_info.profileQuantityAndUnit.perUnit
@@ -624,6 +643,25 @@ def _get_esdl_scaled_cost(cost_esdl_info, uni_enum):
 
 
 def cost_calculation_test(solution, results, atol=1e-8):
+    """
+    Compute CAPEX/OPEX per asset to verify against costs in `results`.
+
+    The test iterates over relevant assets in `solution`:
+      - Investment costs (including special handling for gas pipes via EDR pipe classes and
+        length-/size-/volume-based scaling for pipes, cables, buffers, etc.),
+      - Installation costs (skipped for transport assets),
+      - Fixed operational + maintenance costs (size-based and accumulated over technical life),
+      - Variable operational costs (time-integrated using timestep durations, with asset-specific
+        logic such as COP or fuel/flow conversions).
+
+    Parameters
+    ----------
+    solution : object. Solved energy system model wrapper providing information.
+    results : dict. Dictionary with per-asset computed outputs
+    atol : float. Absolute tolerance used for numerical comparisons where applicable.
+
+    """
+
     parameters = solution.parameters(0)
     transport_assets = [
         *solution.energy_system_components.get("heat_pipe", []),
@@ -651,15 +689,17 @@ def cost_calculation_test(solution, results, atol=1e-8):
         *transport_assets,
     ]
 
-    pipe_classes = [
+    gas_pipe_classes = [
         EDRGasPipeClass.from_edr_class(
             name, edr_class_name, solution.gas_network_settings["maximum_velocity"]
         )
         for name, edr_class_name in _AssetToComponentBase.STEEL_S1_PIPE_EDR_ASSETS.items()
     ]
 
-    total_opex = 0.0
-    total_capex = 0.0
+    total_investment_cost = 0.0
+    total_installation_cost = 0.0
+    total_fixed_operational_cost = 0.0
+    total_variable_operational_cost = 0.0
     for asset in assets:
         esdl_asset = solution.esdl_assets[asset]
         costs_esdl_asset = esdl_asset.attributes["costInformation"]
@@ -672,16 +712,34 @@ def cost_calculation_test(solution, results, atol=1e-8):
             investment_cost_info = _get_esdl_scaled_cost(
                 costs_esdl_asset.investmentCosts, esdl.UnitEnum.WATT
             )
+            if asset in solution.energy_system_components.get("heat_buffer", []):
+                np.testing.assert_allclose(
+                    (
+                        parameters[f"{asset}.investment_cost_coefficient"]
+                        * parameters[f"{asset}.cp"]
+                        * parameters[f"{asset}.rho"]
+                        * parameters[f"{asset}.dT"]
+                    ),
+                    investment_cost_info,
+                )
+            elif asset in solution.energy_system_components.get("heat_pipe", []):
+                pass
+            else:
+                np.testing.assert_allclose(
+                    parameters[f"{asset}.investment_cost_coefficient"], investment_cost_info
+                )
+
         if asset in solution.energy_system_components.get("gas_pipe", []):
             if parameters[f"{asset}.diameter"] > 0:
-                for iter in range(len(pipe_classes)):
-                    if pipe_classes[iter].inner_diameter == parameters[f"{asset}.diameter"]:
+                for iter in range(len(gas_pipe_classes)):
+                    if gas_pipe_classes[iter].inner_diameter == parameters[f"{asset}.diameter"]:
                         investment_cost = (
-                            pipe_classes[iter].investment_costs * parameters[f"{asset}.length"]
+                            gas_pipe_classes[iter].investment_costs * parameters[f"{asset}.length"]
                         )
-        elif asset in solution.energy_system_components.get("heat_pipe", []):
-            investment_cost = investment_cost_info * parameters[f"{asset}.length"]
-        elif asset in solution.energy_system_components.get("electricity_cable", []):
+        elif asset in [
+            *solution.energy_system_components.get("heat_pipe", []),
+            *solution.energy_system_components.get("electricity_cable", []),
+        ]:
             investment_cost = investment_cost_info * parameters[f"{asset}.length"]
         elif asset in solution.energy_system_components.get("heat_buffer", []):
             heat_buffer_volume = results[f"{asset}__max_size"] / (
@@ -690,49 +748,61 @@ def cost_calculation_test(solution, results, atol=1e-8):
             investment_cost = investment_cost_info * heat_buffer_volume
         else:
             investment_cost = investment_cost_info * results[f"{asset}__max_size"]
-        total_capex += investment_cost
+        total_investment_cost += investment_cost
         np.testing.assert_allclose(
             investment_cost, results[f"{asset}__investment_cost"], atol=1.0e-6
         )
 
         # Installation Cost
-        if asset not in transport_assets:
-            if results[f"{asset}__max_size"] < 1e-8:
-                installation_cost = 0
-            else:
+        installation_cost = 0
+        if asset in transport_assets:
+            np.testing.assert_allclose(0.0, results[f"{asset}__installation_cost"])
+        else:
+            if results[f"{asset}__max_size"] > 1e-8:
                 installation_cost = (
                     costs_esdl_asset.installationCosts.value
                     if costs_esdl_asset.installationCosts is not None
                     else 0.0
                 )
-            total_capex += installation_cost
             np.testing.assert_allclose(installation_cost, results[f"{asset}__installation_cost"])
+        total_installation_cost += installation_cost
 
-        if asset not in transport_assets:
-            # Fixed Operational Cost
+        # Fixed Operational Cost
+        fixed_operational_cost = 0.0
+        if asset in transport_assets:
+            np.testing.assert_allclose(0.0, results[f"{asset}__fixed_operational_cost"])
+        else:
             fix_op_costs_esdl = _get_esdl_scaled_cost(
                 costs_esdl_asset.fixedOperationalCosts, esdl.UnitEnum.WATT
             )
             fix_maint_costs_esdl = _get_esdl_scaled_cost(
                 costs_esdl_asset.fixedMaintenanceCosts, esdl.UnitEnum.WATT
             )
-            fixed_operational_cost_info = (fix_op_costs_esdl + fix_maint_costs_esdl) * results[
+            np.testing.assert_allclose(
+                parameters[f"{asset}.fixed_operational_cost_coefficient"],
+                fix_op_costs_esdl + fix_maint_costs_esdl,
+            )
+            fixed_operational_cost = (fix_op_costs_esdl + fix_maint_costs_esdl) * results[
                 f"{asset}__max_size"
             ]
-            total_opex += (
-                fixed_operational_cost_info * solution.parameters(0)[f"{asset}.technical_life"]
-            )
             np.testing.assert_allclose(
-                fixed_operational_cost_info, results[f"{asset}__fixed_operational_cost"]
+                fixed_operational_cost, results[f"{asset}__fixed_operational_cost"]
             )
+        total_fixed_operational_cost += fixed_operational_cost
 
         # Variable Operational Cost
         var_op_costs_esdl = _get_esdl_scaled_cost(
             costs_esdl_asset.variableOperationalCosts, esdl.UnitEnum.WATTHOUR
         )
+        np.testing.assert_allclose(
+            parameters[f"{asset}.variable_operational_cost_coefficient"], var_op_costs_esdl
+        )
         timesteps_hr = np.diff(solution.times()) / 3600.0
         variable_operational_cost = 0.0
-        if asset not in transport_assets:
+        if asset in transport_assets:
+            np.testing.assert_allclose(0.0, results[f"{asset}__variable_operational_cost"])
+        else:
+            denominator = 1.0
             if asset in [
                 *solution.energy_system_components.get("ates", []),
                 *solution.energy_system_components.get("low_temperature_ates", []),
@@ -741,15 +811,11 @@ def cost_calculation_test(solution, results, atol=1e-8):
                     results[f"{asset}.Heat_flow_charging"]
                     + results[f"{asset}.Heat_flow_discharging"]
                 )
-                for ii in range(1, len(solution.times())):
-                    variable_operational_cost += (
-                        var_op_costs_esdl * nominator_vector[ii] * timesteps_hr[ii - 1]
-                    )
             elif asset in [
                 *solution.energy_system_components.get("heat_source", []),
             ]:
                 heat_source = results[f"{asset}.Heat_source"]
-                denominator = 1.0
+
                 if asset in [
                     *solution.energy_system_components.get("air_water_heat_pump", []),
                     *solution.energy_system_components.get("air_water_heat_pump_elec", []),
@@ -772,21 +838,19 @@ def cost_calculation_test(solution, results, atol=1e-8):
                     nominator_vector = results[f"{asset}.Power_consumed"]  # [W]
                 else:
                     nominator_vector = heat_source
-
-                for ii in range(1, len(solution.times())):
-                    variable_operational_cost += (
-                        var_op_costs_esdl
-                        * nominator_vector[ii]
-                        * timesteps_hr[ii - 1]
-                        / denominator
-                    )
             elif asset in solution.energy_system_components.get("airco", []):
                 nominator_vector = results[f"{asset}.Heat_airco"]
-                for ii in range(1, len(solution.times())):
-                    variable_operational_cost += (
-                        var_op_costs_esdl * nominator_vector[ii] * timesteps_hr[ii - 1]
-                    )
-        np.testing.assert_allclose(
-            variable_operational_cost, results[f"{asset}__variable_operational_cost"]
-        )
-        total_opex += variable_operational_cost
+
+            variable_operational_cost = sum(
+                var_op_costs_esdl
+                * nominator_vector[1 : len(solution.times())]
+                * timesteps_hr[: len(solution.times()) - 1]
+                / denominator
+            )
+
+            np.testing.assert_allclose(
+                variable_operational_cost, results[f"{asset}__variable_operational_cost"]
+            )
+        total_variable_operational_cost += variable_operational_cost
+
+    # TODO: add a check for objective value

@@ -24,12 +24,11 @@ class TestGasBoiler(TestCase):
         the commodity change.
 
         Checks:
-        1. cost calculation is checked
-        2. demand is matched
-        3. energy conservation in the network
-        4. heat to discharge
-        5. energy conservation over the commodity
-        6. check pipe bounds
+        1. demand is matched
+        2. energy conservation in the network
+        3. heat to discharge
+        4. cost calculation is checked
+        5. check pipe bounds
 
         """
         import models.source_pipe_sink.src.double_pipe_heat as example
@@ -54,10 +53,15 @@ class TestGasBoiler(TestCase):
         gas_producer_id = name_to_id_map["GasProducer_82ec"]
         pipe_id = name_to_id_map["Pipe_a7b5"]
 
-        cost_calculation_test(heat_problem, results)
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
+
+        # Check the cost calculations
+        np.testing.assert_array_less(99.0, results[f"{gas_heater_id}__investment_cost"])
+        np.testing.assert_array_less(99.0, results[f"{gas_heater_id}__installation_cost"])
+        np.testing.assert_array_less(1e3, results[f"{gas_heater_id}__variable_operational_cost"])
+        cost_calculation_test(heat_problem, results)
 
         # check energy conservation over the commodity
         np.testing.assert_array_less(0.0, results[f"{gas_heater_id}.Heat_source"])
@@ -85,11 +89,10 @@ class TestGasBoiler(TestCase):
         and GasHeater cost components
 
         Checks:
-        1. cost calculation is checked
-        2. demand is matched
-        3. energy conservation in the network
-        4. heat to discharge
-        5. energy conservation over the commodity
+        1. demand is matched
+        2. energy conservation in the network
+        3. heat to discharge
+        4. cost calculation is checked
 
         """
         import models.source_pipe_sink.src.double_pipe_heat as example
@@ -111,10 +114,15 @@ class TestGasBoiler(TestCase):
 
         gas_heater_id = name_to_id_map["GasHeater_f713"]
 
-        cost_calculation_test(solution, results)
         demand_matching_test(solution, results)
         energy_conservation_test(solution, results)
         heat_to_discharge_test(solution, results)
+
+        # Check the cost calculations
+        np.testing.assert_array_less(99.0, results[f"{gas_heater_id}__investment_cost"])
+        np.testing.assert_array_less(99.0, results[f"{gas_heater_id}__installation_cost"])
+        np.testing.assert_array_less(1e3, results[f"{gas_heater_id}__variable_operational_cost"])
+        cost_calculation_test(solution, results)
 
         # check energy conservation over the commodity
         np.testing.assert_array_less(0.0, results[f"{gas_heater_id}.Heat_source"])
