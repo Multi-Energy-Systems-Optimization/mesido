@@ -279,7 +279,7 @@
           <variableOperationalCosts xsi:type="esdl:SingleValue" id="a44957ec-6a01-4145-90f9-c1aac617b2ad" value="100.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR/kWh" id="ffdb790d-f225-48b9-b4e7-f588612b418f" unit="EURO" perMultiplier="KILO" perUnit="WATTHOUR"/>
           </variableOperationalCosts>
-          <investmentCosts xsi:type="esdl:SingleValue" id="1ff41860-e95a-441f-83e9-b3b52b07bc11" value="100.0">
+          <investmentCosts xsi:type="esdl:SingleValue" id="1ff41860-e95a-441f-83e9-b3b52b07bc11" value="10000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR/MW" id="7c08a501-8656-435a-aafb-24136ab4ef4c" unit="EURO" perMultiplier="MEGA" perUnit="WATT"/>
           </investmentCosts>
         </costInformation>

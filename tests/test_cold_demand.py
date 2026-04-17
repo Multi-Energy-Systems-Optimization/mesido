@@ -157,7 +157,7 @@ class TestColdDemand(TestCase):
         )
 
         # Check investment cost calculation
-        np.testing.assert_array_less(10.0, results[f"{ac_id}__investment_cost"])
+        np.testing.assert_array_less(1e3, results[f"{ac_id}__investment_cost"])
         np.testing.assert_allclose(
             parameters[f"{ac_id}.investment_cost_coefficient"] * results[f"{ac_id}__max_size"],
             results[f"{ac_id}__investment_cost"],
