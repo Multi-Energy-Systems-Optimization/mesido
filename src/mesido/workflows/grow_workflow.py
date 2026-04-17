@@ -549,8 +549,11 @@ class EndScenarioSizing(
             timesteps = np.diff(self.get_timeseries(f"{d}.target_heat_demand").times)
             delta_energy = np.sum((target - realized_demand)[1:] * timesteps / 1.0e9)
             if delta_energy >= 1.0:
-                logger.warning(f"For demand {id_to_name_map[d]} the target is not matched by"
-                               f" {delta_energy} GJ")
+                logger.warning(
+                    f"For demand {id_to_name_map[d]} the target is not matched by"
+                    f" {delta_energy} GJ"
+                )
+
 
 class EndScenarioSizingHIGHS(EndScenarioSizing):
     """
