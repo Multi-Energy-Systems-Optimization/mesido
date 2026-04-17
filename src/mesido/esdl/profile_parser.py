@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Dict, Optional, Set, Tuple
 
 import esdl
-from esdl.profiles.datatableprofilemanager import DataTableProfileManager, Credentials
+from esdl.profiles.credentials import Credentials
 from esdl.profiles.profile_utils import get_time_varying_profile_header_and_raw_data
 from esdl.units.conversion import ENERGY_IN_J, POWER_IN_W, convert_to_unit
 
@@ -269,9 +269,7 @@ class ESDLTimeVaryingProfileReader(BaseProfileReader):
         )
         if database_credentials is not None:
             for cred_id, (username, password) in database_credentials.items():
-                DataTableProfileManager.add_credentials(
-                    Credentials.create_dict(cred_id, username, password)
-                )
+                Credentials.add_credential(cred_id, username, password)
 
     def _load_profiles_from_source(
         self,
@@ -441,7 +439,7 @@ class ESDLTimeVaryingProfileReader(BaseProfileReader):
                 f"Asset named {asset.name}: Database {profile.database}"
                 f" is not available in the host.",
             )
-            potential_error_to_error(NetworkErrors.HEAT_NETWORK_ERRORS)               
+            potential_error_to_error(NetworkErrors.HEAT_NETWORK_ERRORS)                              
 
         if not profile_raw_data:  # if time_series_data.profile_data_list == []:
             container = profile.eContainer()
