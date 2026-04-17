@@ -21,7 +21,7 @@ from mesido.esdl.esdl_heat_model import ESDLHeatModel
 from mesido.esdl.esdl_model_base import _ESDLModelBase
 from mesido.esdl.esdl_parser import ESDLStringParser
 from mesido.esdl.esdl_qth_model import ESDLQTHModel
-from mesido.esdl.profile_parser import BaseProfileReader, InfluxDBProfileReader
+from mesido.esdl.profile_parser import BaseProfileReader, ESDLTimeVaryingProfileReader
 from mesido.physics_mixin import PhysicsMixin
 from mesido.pipe_class import GasPipeClass, PipeClass
 from mesido.pycml.pycml_mixin import PyCMLMixin
@@ -131,7 +131,7 @@ class ESDLMixin(
             DBAccessType.WRITE: [],
         }
 
-        profile_reader_class = kwargs.get("profile_reader", InfluxDBProfileReader)
+        profile_reader_class = kwargs.get("profile_reader", ESDLTimeVaryingProfileReader)
         input_file_name = kwargs.get("input_timeseries_file", None)
         input_folder = kwargs.get("input_folder")
         input_file_path = None
