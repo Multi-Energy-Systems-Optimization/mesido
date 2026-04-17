@@ -154,7 +154,7 @@ class HeatProblem(
         self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
         options["neglect_pipe_heat_losses"] = True
         options["include_ates_temperature_options"] = True
-        self.heat_network_settings["storage_charging_variables"] = True
+        options["heat_storage_charging_variables"] = True
         return options
 
     def temperature_carriers(self):
@@ -182,7 +182,7 @@ class HeatProblem(
             *self.energy_system_components.get("heat_pump"),
             *self.energy_system_components.get("heat_exchanger"),
         ]:
-            disabled_var = self.state(f"{asset}__disabled")
+            disabled_var = self.state(f"{asset}.__disabled")
             sum_disabled_vars += disabled_var
 
         constraints.append((sum_disabled_vars, 1.0, 2.0))
@@ -203,22 +203,12 @@ class HeatProblem(
             # stored_volume only to be used if temperature loss ates is also dependent on
             # stored_volume instead of stored_heat
             constraints.append((heat_ates[0], 0.0, 0.0))
-            ates_temperature_disc = self.__state_vector_scaled(
+            ates_temperature_disc = self._BaseProblemMixin__state_vector_scaled(
                 f"{a}__temperature_ates_disc", ensemble_member
             )
             constraints.append(((ates_temperature_disc[-1] - ates_temperature_disc[0]), 0.0, 0.0))
 
         return constraints
-
-    def __state_vector_scaled(self, variable, ensemble_member):
-        """
-        This functions returns the casadi symbols scaled with their nominal for the entire time
-        horizon.
-        """
-        canonical, sign = self.alias_relation.canonical_signed(variable)
-        return (
-            self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
-        )
 
     def read(self):
         """
@@ -335,9 +325,10 @@ class HeatProblemMaxFlow(HeatProblem):
     def read(self):
         super().read()
 
-        demand_timeseries = self.get_timeseries("HeatingDemand_1.target_heat_demand")
+        heat_demand_id = self.esdl_asset_name_to_id_map["HeatingDemand_1"]
+        demand_timeseries = self.get_timeseries(f"{heat_demand_id}.target_heat_demand")
         demand_timeseries.values[2] = demand_timeseries.values[2] * 2
-        self.set_timeseries("HeatingDemand_1.target_heat_demand", demand_timeseries)
+        self.set_timeseries(f"{heat_demand_id}.target_heat_demand", demand_timeseries)
 
 
 if __name__ == "__main__":

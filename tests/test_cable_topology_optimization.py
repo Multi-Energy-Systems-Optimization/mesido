@@ -34,6 +34,7 @@ class TestElectricityTopo(TestCase):
         )
 
         results = heat_problem.extract_results()
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
 
         for demand in heat_problem.energy_system_components.get("electricity_demand", []):
             target = heat_problem.get_timeseries(f"{demand}.target_electricity_demand").values
@@ -47,5 +48,6 @@ class TestElectricityTopo(TestCase):
         ]
 
         for cable in removed_cables:
-            np.testing.assert_allclose(results[f"{cable}__investment_cost"], 0.0)
-            np.testing.assert_allclose(results[f"{cable}__en_max_current"], 0.0)
+            cable_id = name_to_id_map[cable]
+            np.testing.assert_allclose(results[f"{cable_id}__investment_cost"], 0.0)
+            np.testing.assert_allclose(results[f"{cable_id}__en_max_current"], 0.0)

@@ -11,6 +11,7 @@ if __name__ == "__main__":
     base_folder = Path(__file__).resolve().parent.parent
 
     kwargs = {
+        "use_esdl_ranged_constraint": True,  # default value in the code is set to False
         "database_connections": [
             {
                 "access_type": DBAccessType.READ,  # or DBAccessType.WRITE or DBAccessType.READ_WRITE

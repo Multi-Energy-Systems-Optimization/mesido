@@ -109,17 +109,23 @@ class TestMultiCommoditySimulator(TestCase):
         problem_scaling_check(logs_list, logger)
         bounds = solution.bounds()
         results = solution.extract_results()
+        name_to_id_map = solution.esdl_asset_name_to_id_map
+
+        prod_1_id = name_to_id_map["ElectricityProducer_a215"]
+        prod_2_id = name_to_id_map["ElectricityProducer_17a1"]
+        dem_1_id = name_to_id_map["ElectricityDemand_e527"]
+        dem_2_id = name_to_id_map["ElectricityDemand_281a"]
 
         checks_all_mc_simulations(solution, results)
 
-        prod_1 = results["ElectricityProducer_a215.Electricity_source"]
-        prod_2 = results["ElectricityProducer_17a1.Electricity_source"]
-        dem_1 = results["ElectricityDemand_e527.Electricity_demand"]
-        dem_2 = results["ElectricityDemand_281a.Electricity_demand"]
+        prod_1 = results[f"{prod_1_id}.Electricity_source"]
+        prod_2 = results[f"{prod_2_id}.Electricity_source"]
+        dem_1 = results[f"{dem_1_id}.Electricity_demand"]
+        dem_2 = results[f"{dem_2_id}.Electricity_demand"]
 
         # check producer with highest priority (lowest marginal costs is maximizing production)
         np.testing.assert_allclose(
-            prod_1, bounds["ElectricityProducer_a215.Electricity_source"][1], atol=1e-3, rtol=1e-6
+            prod_1, bounds[f"{prod_1_id}.Electricity_source"][1], atol=1e-3, rtol=1e-6
         )
         # check producer with second highest priority is only producing to meet profile of demand
         prod_2_target = dem_1 - prod_1
@@ -147,26 +153,32 @@ class TestMultiCommoditySimulator(TestCase):
 
         bounds = solution.bounds()
         results = solution.extract_results()
+        name_to_id_map = solution.esdl_asset_name_to_id_map
+
+        prod_1_id = name_to_id_map["ElectricityProducer_a215"]
+        prod_2_id = name_to_id_map["ElectricityProducer_17a1"]
+        dem_1_id = name_to_id_map["ElectricityDemand_e527"]
+        dem_2_id = name_to_id_map["ElectricityDemand_281a"]
 
         checks_all_mc_simulations(solution, results)
 
-        prod_1 = results["ElectricityProducer_a215.Electricity_source"]
-        prod_2 = results["ElectricityProducer_17a1.Electricity_source"]
-        dem_1 = results["ElectricityDemand_e527.Electricity_demand"]
-        dem_2 = results["ElectricityDemand_281a.Electricity_demand"]
+        prod_1 = results[f"{prod_1_id}.Electricity_source"]
+        prod_2 = results[f"{prod_2_id}.Electricity_source"]
+        dem_1 = results[f"{dem_1_id}.Electricity_demand"]
+        dem_2 = results[f"{dem_2_id}.Electricity_demand"]
 
         # check producer with highest priority (lowest marginal costs is maximizing production) is
         # producing at max capacity, except when demand profile + max demand of other demand is
         # lower than prod_2 profile and max capacity prod_1
         np.testing.assert_allclose(
             prod_1[1:],
-            bounds["ElectricityProducer_a215.Electricity_source"][1],
+            bounds[f"{prod_1_id}.Electricity_source"][1],
             atol=1e-3,
             rtol=1e-6,
         )
         np.testing.assert_allclose(
             prod_1[0],
-            bounds["ElectricityDemand_281a.Electricity_demand"][1] + dem_1[0] - prod_2[0],
+            bounds[f"{dem_2_id}.Electricity_demand"][1] + dem_1[0] - prod_2[0],
             atol=1e-3,
             rtol=1e-6,
         )
@@ -196,15 +208,21 @@ class TestMultiCommoditySimulator(TestCase):
 
         results = solution.extract_results()
         bounds = solution.bounds()
+        name_to_id_map = solution.esdl_asset_name_to_id_map
+
+        prod_1_id = name_to_id_map["GasProducer_3573"]
+        prod_2_id = name_to_id_map["GasProducer_a977"]
+        dem_1_id = name_to_id_map["GasDemand_47d0"]
+        dem_2_id = name_to_id_map["GasDemand_7979"]
 
         checks_all_mc_simulations(solution, results)
 
-        prod_1 = results["GasProducer_3573.Gas_source_mass_flow"]
-        prod_2 = results["GasProducer_a977.Gas_source_mass_flow"]
-        dem_1 = results["GasDemand_47d0.Gas_demand_mass_flow"]
-        dem_2 = results["GasDemand_7979.Gas_demand_mass_flow"]
-        prod_1_bound = bounds["GasProducer_3573.Gas_source_mass_flow"][1]
-        dem_2_bound = bounds["GasDemand_7979.Gas_demand_mass_flow"]
+        prod_1 = results[f"{prod_1_id}.Gas_source_mass_flow"]
+        prod_2 = results[f"{prod_2_id}.Gas_source_mass_flow"]
+        dem_1 = results[f"{dem_1_id}.Gas_demand_mass_flow"]
+        dem_2 = results[f"{dem_2_id}.Gas_demand_mass_flow"]
+        prod_1_bound = bounds[f"{prod_1_id}.Gas_source_mass_flow"][1]
+        dem_2_bound = bounds[f"{dem_2_id}.Gas_demand_mass_flow"]
 
         # check producer with highest marginal cost (prod_2) is only producing to match demand
         # profile of dem_1 + the max of dem_2,
@@ -235,23 +253,26 @@ class TestMultiCommoditySimulator(TestCase):
 
         bounds = solution.bounds()
         results = solution.extract_results()
+        name_to_id_map = solution.esdl_asset_name_to_id_map
 
+        electrolyzer_id = name_to_id_map["Electrolyzer_6327"]
+        gas_demand_id = name_to_id_map["GasDemand_4146"]
+        el_demand_id = name_to_id_map["ElectricityDemand_f833"]
+        windfarm_id = name_to_id_map["WindPark_9074"]
+        tol = 1.0e-6
         # all_mc_checks cannot be used because max electricity production of windfarm is larger
         # than the max electricity take off at electrolyzer (due to mas gas demand) and the max
         # electricity demand.
         # checks_all_mc_simulations(solution, results)
-        tol = 1.0e-6
 
-        esdl_electrolyzer = solution._esdl_assets[
-            solution.esdl_asset_name_to_id_map["Electrolyzer_6327"]
-        ]
-        demand_gas = results["GasDemand_4146.Gas_demand_mass_flow"]
-        demand_el = results["ElectricityDemand_f833.Electricity_demand"]
-        electrolyzer_power = results["Electrolyzer_6327.Power_consumed"]
-        electrolyzer_gas = results["Electrolyzer_6327.Gas_mass_flow_out"]
-        windfarm_power = results["WindPark_9074.Electricity_source"]
+        esdl_electrolyzer = solution._esdl_assets[electrolyzer_id]
+        demand_gas = results[f"{gas_demand_id}.Gas_demand_mass_flow"]
+        demand_el = results[f"{el_demand_id}.Electricity_demand"]
+        electrolyzer_power = results[f"{electrolyzer_id}.Power_consumed"]
+        electrolyzer_gas = results[f"{electrolyzer_id}.Gas_mass_flow_out"]
+        windfarm_power = results[f"{windfarm_id}.Electricity_source"]
         windfarm_target = solution.get_timeseries(
-            "WindPark_9074.maximum_electricity_source"
+            f"{windfarm_id}.maximum_electricity_source"
         ).values[: len(windfarm_power)]
         # cap on el consumption by electricity_demand (due to cap, 1.3GW) and by electrolyzer
         # (due to cap of gas demand)
@@ -265,11 +286,11 @@ class TestMultiCommoditySimulator(TestCase):
 
         # demand gas maximised when sufficient power available to convert electricity to gas
         cap_electrolyzer_power = (
-            cap_el_consumption - bounds["ElectricityDemand_f833.Electricity_demand"][1]
+            cap_el_consumption - bounds[f"{el_demand_id}.Electricity_demand"][1]
         )
         index_gas_max = windfarm_power >= cap_electrolyzer_power
         np.testing.assert_allclose(
-            demand_gas[index_gas_max], bounds["Electrolyzer_6327.Gas_mass_flow_out"][1]
+            demand_gas[index_gas_max], bounds[f"{electrolyzer_id}.Gas_mass_flow_out"][1]
         )
         # due to priority settings, electricity demand only consuming if demand_gas maximised and
         # enough windfarm power
@@ -313,20 +334,25 @@ class TestMultiCommoditySimulator(TestCase):
 
         results = solution.extract_results()
         bounds = solution.bounds()
+        name_to_id_map = solution.esdl_asset_name_to_id_map
 
         tol = 1.0e-6
 
         checks_all_mc_simulations(solution, results)
 
-        esdl_electrolyzer = solution._esdl_assets[
-            solution.esdl_asset_name_to_id_map["Electrolyzer_6327"]
-        ]
-        demand_gas = results["GasDemand_4146.Gas_demand_mass_flow"]
-        demand_el = results["ElectricityDemand_f833.Electricity_demand"]
-        electrolyzer_power = results["Electrolyzer_6327.Power_consumed"]
-        electrolyzer_gas = results["Electrolyzer_6327.Gas_mass_flow_out"]
-        windfarm_power = results["WindPark_9074.Electricity_source"]
-        prod_power = results["ElectricityProducer_4850.Electricity_source"]
+        electrolyzer_id = name_to_id_map["Electrolyzer_6327"]
+        gas_demand_id = name_to_id_map["GasDemand_4146"]
+        el_demand_id = name_to_id_map["ElectricityDemand_f833"]
+        windfarm_id = name_to_id_map["WindPark_9074"]
+        producer_id = name_to_id_map["ElectricityProducer_4850"]
+
+        esdl_electrolyzer = solution._esdl_assets[electrolyzer_id]
+        demand_gas = results[f"{gas_demand_id}.Gas_demand_mass_flow"]
+        demand_el = results[f"{el_demand_id}.Electricity_demand"]
+        electrolyzer_power = results[f"{electrolyzer_id}.Power_consumed"]
+        electrolyzer_gas = results[f"{electrolyzer_id}.Gas_mass_flow_out"]
+        windfarm_power = results[f"{windfarm_id}.Electricity_source"]
+        prod_power = results[f"{producer_id}.Electricity_source"]
         prod_power_cap = 3e8  # W
 
         check_electrolyzer_efficiency(tol, electrolyzer_gas, electrolyzer_power, esdl_electrolyzer)
@@ -335,7 +361,7 @@ class TestMultiCommoditySimulator(TestCase):
         cap_electrolyzer_power = 444880000.0
         index_gas_max = windfarm_power >= cap_electrolyzer_power
         np.testing.assert_allclose(
-            demand_gas[index_gas_max], bounds["Electrolyzer_6327.Gas_mass_flow_out"][1]
+            demand_gas[index_gas_max], bounds[f"{electrolyzer_id}.Gas_mass_flow_out"][1]
         )
         # due to priority settings, electricity demand only consuming if demand_gas maximised and
         # enough windfarm power
@@ -378,17 +404,20 @@ class TestMultiCommoditySimulator(TestCase):
 
         feasibility_test(solution)
         electric_power_conservation_test(solution, results)
+        name_to_id_map = solution.esdl_asset_name_to_id_map
 
         # checks_all_mc_simulations(solution, results)
         tol = 1.0e-6
 
-        esdl_electrolyzer = solution._esdl_assets[
-            solution.esdl_asset_name_to_id_map["Electrolyzer_6327"]
-        ]
-        demand_gas = results["GasDemand_4146.Gas_demand_mass_flow"]
-        electrolyzer_power = results["Electrolyzer_6327.Power_consumed"]
-        electrolyzer_gas = results["Electrolyzer_6327.Gas_mass_flow_out"]
-        storage_gas_mass_flow = results["GasStorage_9172.Gas_tank_flow"]
+        electrolyzer_id = name_to_id_map["Electrolyzer_6327"]
+        gas_demand_id = name_to_id_map["GasDemand_4146"]
+        gas_storage_id = name_to_id_map["GasStorage_9172"]
+
+        esdl_electrolyzer = solution._esdl_assets[electrolyzer_id]
+        demand_gas = results[f"{gas_demand_id}.Gas_demand_mass_flow"]
+        electrolyzer_power = results[f"{electrolyzer_id}.Power_consumed"]
+        electrolyzer_gas = results[f"{electrolyzer_id}.Gas_mass_flow_out"]
+        storage_gas_mass_flow = results[f"{gas_storage_id}.Gas_tank_flow"]
 
         check_electrolyzer_efficiency(tol, electrolyzer_gas, electrolyzer_power, esdl_electrolyzer)
 
@@ -400,7 +429,7 @@ class TestMultiCommoditySimulator(TestCase):
         # gas_demand is limited by pipe size.
         # storage is not charging if gas demand is not maximised at bound
         # storage is charging if electrolyzer produces more gas than max of demand.
-        gas_demand_bound = solution.bounds()["GasDemand_4146.Gas_demand_mass_flow"]
+        gas_demand_bound = solution.bounds()[f"{gas_demand_id}.Gas_demand_mass_flow"]
         storage_not_charging = demand_gas != gas_demand_bound[1]
         np.testing.assert_array_less(storage_gas_mass_flow[storage_not_charging], 0.0 + tol)
         storage_charging = electrolyzer_gas >= gas_demand_bound[1]
@@ -437,6 +466,7 @@ class TestMultiCommoditySimulator(TestCase):
         )
         problem_scaling_check(logs_list, logger, order_diff=1e7)
         results = solution.extract_results()
+        name_to_id_map = solution.esdl_asset_name_to_id_map
 
         feasibility_test(solution)
         electric_power_conservation_test(solution, results)
@@ -444,16 +474,20 @@ class TestMultiCommoditySimulator(TestCase):
         checks_all_mc_simulations(solution, results)
         tol = 1.0e-6
 
-        esdl_electrolyzer = solution._esdl_assets[
-            solution.esdl_asset_name_to_id_map["Electrolyzer_6327"]
-        ]
-        demand_gas = results["GasDemand_4146.Gas_demand_mass_flow"]
-        electrolyzer_power = results["Electrolyzer_6327.Power_consumed"]
-        electrolyzer_power_bound = solution.bounds()["Electrolyzer_6327.Power_consumed"][1]
-        electrolyzer_gas = results["Electrolyzer_6327.Gas_mass_flow_out"]
-        windfarm_power = results["WindPark_9074.Electricity_source"]
-        storage_gas_mass_flow = results["GasStorage_9172.Gas_tank_flow"]
-        battery_power = results["Battery_4688.ElectricityIn.Power"]
+        electrolyzer_id = name_to_id_map["Electrolyzer_6327"]
+        gas_demand_id = name_to_id_map["GasDemand_4146"]
+        gas_storage_id = name_to_id_map["GasStorage_9172"]
+        windfarm_id = name_to_id_map["WindPark_9074"]
+        battery_id = name_to_id_map["Battery_4688"]
+
+        esdl_electrolyzer = solution._esdl_assets[electrolyzer_id]
+        demand_gas = results[f"{gas_demand_id}.Gas_demand_mass_flow"]
+        electrolyzer_power = results[f"{electrolyzer_id}.Power_consumed"]
+        electrolyzer_power_bound = solution.bounds()[f"{electrolyzer_id}.Power_consumed"][1]
+        electrolyzer_gas = results[f"{electrolyzer_id}.Gas_mass_flow_out"]
+        windfarm_power = results[f"{windfarm_id}.Electricity_source"]
+        storage_gas_mass_flow = results[f"{gas_storage_id}.Gas_tank_flow"]
+        battery_power = results[f"{battery_id}.ElectricityIn.Power"]
 
         check_electrolyzer_efficiency(tol, electrolyzer_gas, electrolyzer_power, esdl_electrolyzer)
 
@@ -498,6 +532,7 @@ class TestMultiCommoditySimulator(TestCase):
 
         results = solution.extract_results()
         parameters = solution.parameters(0)
+        name_to_id_map = solution.esdl_asset_name_to_id_map
 
         feasibility_test(solution)
         electric_power_conservation_test(solution, results)
@@ -505,16 +540,20 @@ class TestMultiCommoditySimulator(TestCase):
         checks_all_mc_simulations(solution, results)
         tol = 1.0e-6
 
-        esdl_electrolyzer = solution._esdl_assets[
-            solution.esdl_asset_name_to_id_map["Electrolyzer_6327"]
-        ]
-        demand_gas = results["GasDemand_4146.Gas_demand_mass_flow"]
-        electrolyzer_power = results["Electrolyzer_6327.Power_consumed"]
-        electrolyzer_power_bound = solution.bounds()["Electrolyzer_6327.Power_consumed"][1]
-        electrolyzer_gas = results["Electrolyzer_6327.Gas_mass_flow_out"]
-        windfarm_power = results["WindPark_9074.Electricity_source"]
-        storage_gas_mass_flow = results["GasStorage_9172.Gas_tank_flow"]
-        battery_power = results["Battery_4688.ElectricityIn.Power"]
+        electrolyzer_id = name_to_id_map["Electrolyzer_6327"]
+        gas_demand_id = name_to_id_map["GasDemand_4146"]
+        gas_storage_id = name_to_id_map["GasStorage_9172"]
+        windfarm_id = name_to_id_map["WindPark_9074"]
+        battery_id = name_to_id_map["Battery_4688"]
+
+        esdl_electrolyzer = solution._esdl_assets[electrolyzer_id]
+        demand_gas = results[f"{gas_demand_id}.Gas_demand_mass_flow"]
+        electrolyzer_power = results[f"{electrolyzer_id}.Power_consumed"]
+        electrolyzer_power_bound = solution.bounds()[f"{electrolyzer_id}.Power_consumed"][1]
+        electrolyzer_gas = results[f"{electrolyzer_id}.Gas_mass_flow_out"]
+        windfarm_power = results[f"{windfarm_id}.Electricity_source"]
+        storage_gas_mass_flow = results[f"{gas_storage_id}.Gas_tank_flow"]
+        battery_power = results[f"{battery_id}.ElectricityIn.Power"]
 
         check_electrolyzer_efficiency(tol, electrolyzer_gas, electrolyzer_power, esdl_electrolyzer)
 
@@ -625,8 +664,8 @@ class TestMultiCommoditySimulator(TestCase):
             if len(key.split("__")) > 1 and key.split("__")[1] == "gas_flow_direct_var":
                 # For the scenario when Q is -0 and 0 then gas_flow_direct_var 0 or 1 for the same
                 # volumetric flow rate of zero. So only check gas_flow_direct_var when Q != zero
-                zero_staged = results_staged[f"{key.split('__')[0]}.GasIn.Q"] != 0
-                zero_unstaged = results_unstaged[f"{key.split('__')[0]}.GasIn.Q"] != 0
+                zero_staged = results_staged[f"{key.split('__')[0]}GasIn.Q"] != 0
+                zero_unstaged = results_unstaged[f"{key.split('__')[0]}GasIn.Q"] != 0
                 np.testing.assert_allclose(value[zero_staged], value_staged[zero_unstaged])
             else:
                 np.testing.assert_allclose(value, value_staged, atol=1e-4)
@@ -653,11 +692,13 @@ class TestMultiCommoditySimulator(TestCase):
         )
 
         results_unstaged_bounded = solution_unstaged_bounded.extract_results()
+        name_to_id_map = solution_unstaged_bounded.esdl_asset_name_to_id_map
+        battery_id = name_to_id_map["Battery_4688"]
 
         check_different = np.sum(
             np.abs(
-                results_staged_bounded["Battery_4688.Stored_electricity"]
-                - results_unstaged_bounded["Battery_4688.Stored_electricity"]
+                results_staged_bounded[f"{battery_id}.Stored_electricity"]
+                - results_unstaged_bounded[f"{battery_id}.Stored_electricity"]
             )
         )
 
@@ -679,8 +720,8 @@ class TestMultiCommoditySimulator(TestCase):
         results_unstaged_bounded_win = solution_unstaged_bounded_win.extract_results()
 
         np.testing.assert_allclose(
-            results_staged_bounded["Battery_4688.Stored_electricity"][19],
-            results_unstaged_bounded_win["Battery_4688.Stored_electricity"][-1],
+            results_staged_bounded[f"{battery_id}.Stored_electricity"][19],
+            results_unstaged_bounded_win[f"{battery_id}.Stored_electricity"][-1],
         )
 
 

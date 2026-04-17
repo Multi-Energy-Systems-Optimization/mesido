@@ -49,6 +49,7 @@ def mesido_issue_type_gen_message(issue_type: MesidoAssetIssueType) -> str:
         MesidoAssetIssueType.ASSET_PROFILE_MULTIPLIER: "Incorrect asset profile multiplier",
         MesidoAssetIssueType.COLD_ASSET_TYPE_NOT_SUPPORTED: "Unsupported assets are being used.",
         MesidoAssetIssueType.ELECT_ASSET_TYPE_NOT_SUPPORTED: "Unsupported assets are being used.",
+        MesidoAssetIssueType.ASSET_UPPER_LIMIT: " Asset upper limit input incompatibility.",
     }
 
     return type_and_general_meassage[issue_type]
@@ -77,6 +78,7 @@ def potential_error_to_error(network_check_type: Enum) -> None:
             MesidoAssetIssueType.ASSET_PROFILE_MULTIPLIER,
             MesidoAssetIssueType.COLD_ASSET_TYPE_NOT_SUPPORTED,
             MesidoAssetIssueType.ELECT_ASSET_TYPE_NOT_SUPPORTED,
+            MesidoAssetIssueType.ASSET_UPPER_LIMIT,
         ],
         NetworkErrors.HEAT_AND_COOL_NETWORK_ERRORS: [
             MesidoAssetIssueType.HEAT_DEMAND_POWER,

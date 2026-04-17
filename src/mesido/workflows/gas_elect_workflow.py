@@ -2,8 +2,7 @@ import logging
 import os
 
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
-from mesido.esdl.esdl_mixin import DBAccessType
-from mesido.esdl.esdl_mixin import ESDLMixin
+from mesido.esdl.esdl_mixin import DBAccessType, ESDLMixin
 from mesido.head_loss_class import HeadLossOption
 from mesido.network_common import NetworkSettings
 from mesido.techno_economic_mixin import TechnoEconomicMixin

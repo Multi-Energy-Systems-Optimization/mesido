@@ -1,3 +1,4 @@
+import gc
 import locale
 import logging
 import os
@@ -6,8 +7,7 @@ import time
 from typing import Dict
 
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
-from mesido.esdl.esdl_mixin import DBAccessType
-from mesido.esdl.esdl_mixin import ESDLMixin
+from mesido.esdl.esdl_mixin import DBAccessType, ESDLMixin
 from mesido.head_loss_class import HeadLossOption
 from mesido.potential_errors import reset_potential_errors
 from mesido.techno_economic_mixin import TechnoEconomicMixin
@@ -419,12 +419,6 @@ class EndScenarioSizing(
     def history(self, ensemble_member):
         return AliasDict(self.alias_relation)
 
-    def __state_vector_scaled(self, variable, ensemble_member):
-        canonical, sign = self.alias_relation.canonical_signed(variable)
-        return (
-            self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
-        )
-
     def solver_options(self):
         options = super().solver_options()
         if options["solver"] == "highs":
@@ -481,6 +475,8 @@ class EndScenarioSizing(
             )
         )
         if priority == 1 and self.objective_value > 1e-6:
+            results = self.extract_results()
+            self.__heat_demand_match_check(results)
             raise RuntimeError("The heating demand is not matched")
 
         if self._workflow_progress_status is not None:
@@ -535,20 +531,28 @@ class EndScenarioSizing(
             logger.error("Unkown error occured when evaluating self._stage for _write_updated_esdl")
             sys.exit(1)
 
-        for d in self.energy_system_components.get("heat_demand", []):
-            realized_demand = results[f"{d}.Heat_demand"]
-            target = self.get_timeseries(f"{d}.target_heat_demand").values
-            timesteps = np.diff(self.get_timeseries(f"{d}.target_heat_demand").times)
-            parameters[f"{d}.target_heat_demand"] = target.tolist()
-            delta_energy = np.sum((realized_demand - target)[1:] * timesteps / 1.0e9)
-            if delta_energy >= 1.0:
-                logger.warning(f"For demand {d} the target is not matched by {delta_energy} GJ")
+        self.__heat_demand_match_check(results)
 
         if os.path.exists(self.output_folder) and self._save_json:
             bounds = self.bounds()
             aliases = self.alias_relation._canonical_variables_map
             solver_stats = self.solver_stats
             self._write_json_output(results, parameters, bounds, aliases, solver_stats)
+
+    def __heat_demand_match_check(self, results):
+        parameters = self.parameters(0)
+        id_to_name_map = self.esdl_asset_id_to_name_map
+        for d in self.energy_system_components.get("heat_demand", []):
+            realized_demand = results[f"{d}.Heat_demand"]
+            target = self.get_timeseries(f"{d}.target_heat_demand").values
+            parameters[f"{d}.target_heat_demand"] = target.tolist()
+            timesteps = np.diff(self.get_timeseries(f"{d}.target_heat_demand").times)
+            delta_energy = np.sum((target - realized_demand)[1:] * timesteps / 1.0e9)
+            if delta_energy >= 1.0:
+                logger.warning(
+                    f"For demand {id_to_name_map[d]} the target is not matched by"
+                    f" {delta_energy} GJ"
+                )
 
 
 class EndScenarioSizingHIGHS(EndScenarioSizing):
@@ -818,9 +822,9 @@ def run_end_scenario_sizing(
             if p not in solution.cold_pipes and parameters[f"{p}.area"] > 0.0:
                 lb = []
                 ub = []
-                bounds_pipe = bounds[f"{p}__flow_direct_var"]
+                bounds_pipe = bounds[f"{p}.__flow_direct_var"]
                 for i in range(len(t)):
-                    r = results[f"{p}__flow_direct_var"][i]
+                    r = results[f"{p}.__flow_direct_var"][i]
                     # bound to roughly represent 4km of milp losses in pipes
                     lb.append(
                         r
@@ -836,9 +840,9 @@ def run_end_scenario_sizing(
                 boolean_bounds[f"{p}__flow_direct_var"] = (Timeseries(t, lb), Timeseries(t, ub))
                 if not producer_input_timeseries:
                     try:
-                        r = results[f"{p}__is_disconnected"]
+                        r = results[f"{p}.__is_disconnected"]
                         r_low = np.zeros(len(r))
-                        boolean_bounds[f"{p}__is_disconnected"] = (
+                        boolean_bounds[f"{p}.__is_disconnected"] = (
                             Timeseries(t, r_low),
                             Timeseries(t, r),
                         )
@@ -846,6 +850,9 @@ def run_end_scenario_sizing(
                         pass
 
         priorities_output = solution._priorities_output
+
+        del solution
+        gc.collect()
 
     solution = run_optimization_problem_solver(
         end_scenario_problem_class,

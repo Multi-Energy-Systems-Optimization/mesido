@@ -65,9 +65,7 @@ class _GoalsAndOptions:
 
         # TODO: these goals should incorperate the timestep
         for demand in self.energy_system_components.get("electricity_demand", []):
-            carrier_name = (
-                self.esdl_assets[self.esdl_asset_name_to_id_map[demand]].in_ports[0].carrier.name
-            )
+            carrier_name = self.esdl_assets[demand].in_ports[0].carrier.name
             price_profile = f"{carrier_name}.price_profile"
             # price_profile = f"{demand}.electricity_price"
             state = f"{demand}.Electricity_demand"
@@ -79,9 +77,7 @@ class _GoalsAndOptions:
 
         for demand in self.energy_system_components.get("gas_demand", []):
             # Code below: When profile is assigned to carrier instead of using .csv file
-            carrier_name = (
-                self.esdl_assets[self.esdl_asset_name_to_id_map[demand]].in_ports[0].carrier.name
-            )
+            carrier_name = self.esdl_assets[demand].in_ports[0].carrier.name
             price_profile = f"{carrier_name}.price_profile"
             # price_profile = f"{demand}.gas_price"
             state = f"{demand}.Gas_demand_mass_flow"

@@ -63,7 +63,7 @@ setup(
         # < 81.0.0 needed for pandapipes (still to be removed)
         # < 82.0.0 needed for pkg_resources (used in rtctools)
         "setuptools <= 80.9.0",
-        "pyesdl == 25.7",
+        "pyesdl == 26.3",
         "pandas >= 1.3.1, < 2.0",
         "casadi-gil-comp == 3.6.7",
         "StrEnum == 0.4.15",

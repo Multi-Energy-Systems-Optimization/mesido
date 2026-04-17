@@ -131,6 +131,7 @@ class PipeDiameterSizingProblem(
         self._qpsol = CachingQPSol()
         options["casadi_solver"] = self._qpsol
         options["solver"] = "highs"
+
         return options
 
 
@@ -193,8 +194,9 @@ if __name__ == "__main__":
         profile_reader=ProfileReaderFromFile,
         input_timeseries_file="timeseries_import.xml",
     )
+    name_id_map = heat_problem.esdl_asset_name_to_id_map
     results = heat_problem.extract_results()
-    print("Q: ", results["Pipe_2927_ret.HeatIn.Q"])
-    print("Heat: ", results["Pipe_2927_ret.HeatIn.Heat"])
+    print("Q: ", results[f"{name_id_map['Pipe_2927_ret']}.HeatIn.Q"])
+    print("Heat: ", results[f"{name_id_map['Pipe_2927_ret']}.HeatIn.Heat"])
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
