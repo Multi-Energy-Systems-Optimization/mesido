@@ -7,7 +7,7 @@ from typing import Optional
 import esdl
 
 from mesido.esdl.esdl_parser import ESDLFileParser
-from mesido.esdl.profile_parser import InfluxDBProfileReader
+from mesido.esdl.profile_parser import ESDLTimeVaryingProfileReader
 from mesido.exceptions import MesidoAssetIssueError
 from mesido.potential_errors import MesidoAssetIssueType, PotentialErrors
 from mesido.workflows import EndScenarioSizingStaged
@@ -20,7 +20,7 @@ import pandas as pd
 from utils_test_scaling import create_log_list_scaling
 
 
-class MockInfluxDBProfileReader(InfluxDBProfileReader):
+class MockInfluxDBProfileReader(ESDLTimeVaryingProfileReader):
     def __init__(
         self,
         energy_system: esdl.EnergySystem,
@@ -227,7 +227,7 @@ class TestPotentialErrors(unittest.TestCase):
                 model_folder=model_folder,
                 input_folder=input_folder,
                 esdl_file_name="1a_with_influx_profiles_error_check_5.esdl",
-                profile_reader=InfluxDBProfileReader,
+                profile_reader=ESDLTimeVaryingProfileReader,
             )
             problem.pre()
         np.testing.assert_equal(
