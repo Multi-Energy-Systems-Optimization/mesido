@@ -168,6 +168,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             self.secondary_port_name_convention = kwargs["secondary_port_name_convention"]
         self.energy_system_esdl_version = kwargs.get("energy_system_esdl_version", None)
         self.use_esdl_ranged_constraint = kwargs.get("use_esdl_ranged_constraint", False)
+        self.include_head_loss_variables = self.energy_system_options.get("include_head_losses")
 
     @property
     def _rho_cp_modifiers(self) -> Dict:
@@ -305,6 +306,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             ),
             state=self.get_state(asset),
             emission_coeff=self._get_emission_modifiers(asset),
+            include_head_loss_variables=self.include_head_loss_variables,
         )
         return modifiers
 
@@ -826,6 +828,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         modifiers = dict(
             n=sum_in + sum_out,
             state=self.get_state(asset),
+            include_head_loss_variables=self.include_head_loss_variables,
         )
 
         if isinstance(asset.in_ports[0].carrier, esdl.esdl.GasCommodity) or isinstance(

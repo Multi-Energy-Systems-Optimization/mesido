@@ -591,6 +591,8 @@ class HeatPhysicsMixin(
         options["include_ates_temperature_options"] = False
         options["include_ates_yearly_change_option"] = False
         options["heat_storage_charging_variables"] = False
+        options["include_head_losses"] = False if self.heat_network_settings[
+                                                      "head_loss_option"]==HeadLossOption.NO_HEADLOSS else True
 
         return options
 
