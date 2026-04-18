@@ -3,7 +3,7 @@ import logging
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, Optional, Set, Tuple
+from typing import Dict, Optional, Set, Tuple, Union
 
 import esdl
 from esdl.profiles.credentials import Credentials
@@ -255,6 +255,16 @@ class ESDLTimeVaryingProfileReader(BaseProfileReader):
         esdl.esdl.PVInstallation: ".maximum_electricity_source",
     }
 
+    supported_profiles = (
+        esdl.DataTableProfile,
+        esdl.InfluxDBProfile,
+        esdl.TimeSeriesProfile,
+        esdl.DateTimeProfile,
+        esdl.ProfileReference
+    )
+
+    SupportedProfilesType = Union[*supported_profiles]
+
     def __init__(
         self,
         energy_system: esdl.EnergySystem,
@@ -288,7 +298,7 @@ class ESDLTimeVaryingProfileReader(BaseProfileReader):
         unique_profiles_attributes = []  # a list containning lists of attributes
         unique_series = []
         for profile in [
-            x for x in self._energy_system.eAllContents() if isinstance(x, esdl.InfluxDBProfile)
+            x for x in self._energy_system.eAllContents() if isinstance(x, self.supported_profiles)
         ]:
             if profile.profileType == esdl.ProfileTypeEnum.OUTPUT:
                 continue
@@ -337,7 +347,7 @@ class ESDLTimeVaryingProfileReader(BaseProfileReader):
         # - series: use the unique series data, without reading from the database again
         # - other profile info: get it from the specific profile
         for profile in [
-            x for x in self._energy_system.eAllContents() if isinstance(x, esdl.InfluxDBProfile)
+            x for x in self._energy_system.eAllContents() if isinstance(x, self.supported_profiles)
         ]:
             if profile.profileType == esdl.ProfileTypeEnum.OUTPUT:
                 continue
@@ -411,7 +421,7 @@ class ESDLTimeVaryingProfileReader(BaseProfileReader):
             self._profiles[idx] = profiles.copy()
 
     # @staticmethod
-    def _load_profile_timeseries_from_database(self, profile: esdl.InfluxDBProfile) -> pd.Series:
+    def _load_profile_timeseries_from_database(self, profile: SupportedProfilesType) -> pd.Series:
         """
         Function to load the profiles from an InfluxDB. Returns a timeseries with the data for
         the asset.
@@ -430,14 +440,14 @@ class ESDLTimeVaryingProfileReader(BaseProfileReader):
         
         try:
             profile_raw_data, _ = get_time_varying_profile_header_and_raw_data(profile, True)   
-        except Exception:
+        except Exception as e:
             container = profile.eContainer()
             asset = container.energyasset
             get_potential_errors().add_potential_issue(
                 MesidoAssetIssueType.ASSET_PROFILE_AVAILABILITY,
                 asset.id,
-                f"Asset named {asset.name}: Database {profile.database}"
-                f" is not available in the host.",
+                f"Error retrieving profile for asset '{asset.name}' from host '{profile.host}'"
+                f" and database '{profile.database}': {str(e)}."
             )
             potential_error_to_error(NetworkErrors.HEAT_NETWORK_ERRORS)               
 
