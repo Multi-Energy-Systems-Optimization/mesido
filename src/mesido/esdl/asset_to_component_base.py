@@ -141,7 +141,8 @@ def get_density(
     # pressure and temperature.
     if carrier is None:
         logger.warning(
-            f"Neither gas/hydrogen/heat was used in the carrier at asset named {asset_name}."
+            f"Neither gas/hydrogen/heat was specified at asset named {asset_name}. "
+            "Gas properties will be used."
         )
         density = cP.CoolProp.PropsSI(
             "D",
@@ -201,7 +202,8 @@ def get_density(
         )
     else:
         logger.warning(
-            f"Neither gas/hydrogen/heat was used in the carrier at asset named {asset_name}."
+            f"Neither gas/hydrogen/heat was specified in the carrier at asset named {asset_name}. "
+            "Gas properties will be used."
         )
         density = 6.2  # natural gas at about 8 bar
 
@@ -350,6 +352,7 @@ class _AssetToComponentBase:
         "GasDemand": "gas_demand",
         "GasHeater": "heat_source",
         "GasStorage": "gas_tank_storage",
+        "GenericProducer": "heat_source",
         "GeothermalSource": "heat_source",
         "HeatExchange": "heat_exchanger",
         "HeatingDemand": "heat_demand",
@@ -898,6 +901,8 @@ class _AssetToComponentBase:
             or asset.asset_type == "Electrolyzer"
             or asset.asset_type == "ElectricBoiler"
             or asset.asset_type == "HeatPump"
+            or asset.asset_type == "GeothermalSource"
+            or asset.asset_type == "HeatStorage"
         ):
             for port in asset.in_ports:
                 if isinstance(port.carrier, esdl.ElectricityCommodity):

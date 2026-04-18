@@ -202,6 +202,9 @@ class _MinimizeHydraulicPower(Goal):
                 and not parameters[f"{pipe}.length"] == 0.0
             ):
                 sum_ += optimization_problem.state(f"{pipe}.Hydraulic_power")
+        for pipe in optimization_problem.energy_system_components.get("gas_pipe", []):
+            if not parameters[f"{pipe}.length"] == 0.0:
+                sum_ += optimization_problem.state(f"{pipe}.Hydraulic_power")
 
         return sum_
 
@@ -338,6 +341,14 @@ class HeadLossClass:
         """
         return _MinimizeHydraulicPower
 
+    @staticmethod
+    def _symmetric_big_m_constraints(expr, slack, nominal):
+        """Return paired bigM constraints that enforce expr == 0 when slack is inactive."""
+        return [
+            ((expr + slack) / nominal, 0.0, np.inf),
+            ((expr - slack) / nominal, -np.inf, 0.0),
+        ]
+
     def initialize_variables_nominals_and_bounds(
         self, optimization_problem, commodity_type, pipe_name, network_settings
     ):
@@ -407,7 +418,9 @@ class HeadLossClass:
                 # We need to creat linear line segments for the - and + volumetric flow rate
                 # possibilites. Line number 1, 2, N for the - & + side is created
                 discharge_type = ["neg_discharge", "pos_discharge"]
-                for ii_line in range(network_settings["n_linearization_lines"] * 2):
+                for ii_line in range(
+                    network_settings["n_linearization_lines"] * len(discharge_type)
+                ):
                     if ii_line < network_settings["n_linearization_lines"]:
                         dtype = discharge_type[0]
                         line_number = ii_line + 1
@@ -640,19 +653,11 @@ class HeadLossClass:
                     return [((-1 * dh - expr) / constraint_nominal, 0.0, 0.0)]
                 else:
                     constraint_nominal = (constraint_nominal * big_m) ** 0.5
-
-                    return [
-                        (
-                            (-1 * dh - expr + is_disconnected * big_m) / constraint_nominal,
-                            0.0,
-                            np.inf,
-                        ),
-                        (
-                            (-1 * dh - expr - is_disconnected * big_m) / constraint_nominal,
-                            -np.inf,
-                            0.0,
-                        ),
-                    ]
+                    return self._symmetric_big_m_constraints(
+                        -1 * dh - expr,
+                        is_disconnected * big_m,
+                        constraint_nominal,
+                    )
             else:
                 return expr * np.sign(discharge)
 
@@ -823,23 +828,8 @@ class HeadLossClass:
                     for ii_line_used in range(len(pipe_linear_line_segment)):
                         ii_start = ii_line_used * n_timesteps
                         ii_end = ii_start + n_timesteps
-                        constraints.append(
-                            (
-                                (
-                                    head_loss_vec[ii_start:ii_end]
-                                    - (
-                                        a_vec[ii_start:ii_end] * discharge_vec[ii_start:ii_end]
-                                        + b_vec[ii_start:ii_end]
-                                    )
-                                    + is_disconnected_vec[ii_start:ii_end] * big_m_lin
-                                    + big_m_lin
-                                    * (1 - is_line_segment_active[ii_line_used][0:n_timesteps])
-                                )
-                                / constraint_nominal[ii_start:ii_end],
-                                0.0,
-                                np.inf,
-                            ),
-                        )
+                        # lower bound constraint (weak inequality constraint, value >= 0.0) is
+                        # already added in the LINEARIZED_N_LINES_WEAK_INEQUALITY section.
                         constraints.append(
                             (
                                 (
@@ -1016,48 +1006,19 @@ class HeadLossClass:
                     # value. Therefore, the flow direction is taken into account for the situation
                     # when the hydraulic_power_linearized is negative (hydraulic_power_linearized =
                     # f(discharge))
-                    return [
-                        (
-                            (
-                                hydraulic_power
-                                - hydraulic_power_linearized
-                                + (is_disconnected + (1.0 - flow_dir)) * big_m
-                            )
-                            / constraint_nominal,
-                            0.0,
-                            np.inf,
-                        ),
-                        (
-                            (
-                                hydraulic_power
-                                - hydraulic_power_linearized
-                                - (is_disconnected + (1.0 - flow_dir)) * big_m
-                            )
-                            / constraint_nominal,
-                            -np.inf,
-                            0.0,
-                        ),
-                        (
-                            (
-                                hydraulic_power
-                                + hydraulic_power_linearized
-                                + (is_disconnected + flow_dir) * big_m
-                            )
-                            / constraint_nominal,
-                            0.0,
-                            np.inf,
-                        ),
-                        (
-                            (
-                                hydraulic_power
-                                + hydraulic_power_linearized
-                                - (is_disconnected + flow_dir) * big_m
-                            )
-                            / constraint_nominal,
-                            -np.inf,
-                            0.0,
-                        ),
-                    ]
+                    constraints = self._symmetric_big_m_constraints(
+                        hydraulic_power - hydraulic_power_linearized,
+                        (is_disconnected + (1.0 - flow_dir)) * big_m,
+                        constraint_nominal,
+                    )
+                    constraints.extend(
+                        self._symmetric_big_m_constraints(
+                            hydraulic_power + hydraulic_power_linearized,
+                            (is_disconnected + flow_dir) * big_m,
+                            constraint_nominal,
+                        )
+                    )
+                    return constraints
             else:
                 return abs(hydraulic_power_linearized)
 
@@ -1429,23 +1390,20 @@ class HeadLossClass:
             # be overly tight, we include an additional factor of 2.
             big_m = 2 * 2 * max_head_loss
 
-            constraints.append(
-                (
-                    (-dh - head_loss + (1 - flow_dir) * big_m) / big_m,
-                    0.0,
-                    np.inf,
+            constraints.extend(
+                self._symmetric_big_m_constraints(
+                    -dh - head_loss,
+                    (1 - flow_dir) * big_m,
+                    big_m,
                 )
             )
-            constraints.append(((dh - head_loss + flow_dir * big_m) / big_m, 0.0, np.inf))
-
-            constraints.append(
-                (
-                    (-dh - head_loss - (1 - flow_dir) * big_m) / big_m,
-                    -np.inf,
-                    0.0,
+            constraints.extend(
+                self._symmetric_big_m_constraints(
+                    dh - head_loss,
+                    flow_dir * big_m,
+                    big_m,
                 )
             )
-            constraints.append(((dh - head_loss - flow_dir * big_m) / big_m, -np.inf, 0.0))
 
         return constraints
 

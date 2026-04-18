@@ -2,7 +2,7 @@ from pathlib import Path
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.workflows import EndScenarioSizingStaged, run_end_scenario_sizing
-from mesido.esdl.esdl_mixin import DBAccesType
+from mesido.esdl.esdl_mixin import DBAccessType
 
 if __name__ == "__main__":
     import time
@@ -11,9 +11,10 @@ if __name__ == "__main__":
     base_folder = Path(__file__).resolve().parent.parent
 
     kwargs = {
+        "use_esdl_ranged_constraint": True,  # default value in the code is set to False
         "database_connections": [
             {
-                "access_type": DBAccesType.READ,  # or DBAccesType.WRITE or DBAccesType.READ_WRITE
+                "access_type": DBAccessType.READ,  # or DBAccessType.WRITE or DBAccessType.READ_WRITE
                 "influxdb_host": "required_user_input",
                 "influxdb_port": 1234,
                 "influxdb_username": "required_user_input",
@@ -22,7 +23,7 @@ if __name__ == "__main__":
                 "influxdb_verify_ssl": False,
             },
             {
-                "access_type": DBAccesType.WRITE,  # or DBAccesType.WRITE or DBAccesType.READ_WRITE
+                "access_type": DBAccessType.WRITE,  # or DBAccessType.WRITE or DBAccessType.READ_WRITE
                 "influxdb_host": "localhost",
                 "influxdb_port": 8086,
                 "influxdb_username": None,

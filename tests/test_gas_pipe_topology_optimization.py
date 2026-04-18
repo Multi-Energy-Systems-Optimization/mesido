@@ -45,13 +45,24 @@ class TestGasNetwork(TestCase):
         )
 
         results = solution.extract_results()
+        name_to_id_map = solution.esdl_asset_name_to_id_map
 
         for demand in solution.energy_system_components.get("gas_demand", []):
             target = solution.get_timeseries(f"{demand}.target_gas_demand").values
             np.testing.assert_allclose(target, results[f"{demand}.Gas_demand_mass_flow"])
 
-        removed_pipes = ["Pipe_a718", "Pipe_9a6f", "Pipe_2927", "Pipe_8592"]
-        remained_pipes = ["Pipe_51e4", "Pipe_6b39", "Pipe_f9b0", "Pipe_96bc"]
+        removed_pipes = [
+            name_to_id_map["Pipe_a718"],
+            name_to_id_map["Pipe_9a6f"],
+            name_to_id_map["Pipe_2927"],
+            name_to_id_map["Pipe_8592"],
+        ]
+        remained_pipes = [
+            name_to_id_map["Pipe_51e4"],
+            name_to_id_map["Pipe_6b39"],
+            name_to_id_map["Pipe_f9b0"],
+            name_to_id_map["Pipe_96bc"],
+        ]
         for pipe in removed_pipes:
             np.testing.assert_allclose(results[f"{pipe}__gn_diameter"], 0.0, atol=1.0e-6)
             np.testing.assert_allclose(results[f"{pipe}__investment_cost"], 0.0, atol=1.0e-6)
@@ -61,8 +72,10 @@ class TestGasNetwork(TestCase):
             np.testing.assert_array_less(0.0, results[f"{pipe}__investment_cost"])
             np.testing.assert_equal(True, None is not results[f"{pipe}__gn_max_discharge"])
 
-        np.testing.assert_allclose(results["GasProducer_c92e.GasOut.Q"], 0.0, atol=1e-10)
-        np.testing.assert_array_less(0.0, results["GasProducer_17aa.GasOut.Q"])
+        producer_unused_id = name_to_id_map["GasProducer_c92e"]
+        producer_used_id = name_to_id_map["GasProducer_17aa"]
+        np.testing.assert_allclose(results[f"{producer_unused_id}.GasOut.Q"], 0.0, atol=1e-10)
+        np.testing.assert_array_less(0.0, results[f"{producer_used_id}.GasOut.Q"])
 
 
 if __name__ == "__main__":

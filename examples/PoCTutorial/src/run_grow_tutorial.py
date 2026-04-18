@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from mesido.esdl.esdl_mixin import DBAccesType
+from mesido.esdl.esdl_mixin import DBAccessType
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.workflows import EndScenarioSizingStaged, run_end_scenario_sizing
 
@@ -16,7 +16,7 @@ if __name__ == "__main__":
         "write_result_db_profiles": True,
         "database_connections": [
             {
-                "access_type": DBAccesType.WRITE,  # DBAccesType.READ or DBAccesType.READ_WRITE
+                "access_type": DBAccessType.WRITE,  # DBAccessType.READ or DBAccessType.READ_WRITE
                 "influxdb_host": "localhost",
                 "influxdb_port": 8086,
                 "influxdb_username": None,
