@@ -39,6 +39,8 @@
 - Maximum profile constraint for PV asset is considered in PV sizing
 - Cater for input via esdl constraints to specify the upper limit for OPTIONAL assets in DTK
 - Initial implementation of adaptable pipe DN lower limit per pipe
+- DischargeEfficiency is parsed from HeatStorage assets in ESDL to a heat loss coefficient
+
 
 ## Changed
 - Speed-up timeseries check in from InfluxDB

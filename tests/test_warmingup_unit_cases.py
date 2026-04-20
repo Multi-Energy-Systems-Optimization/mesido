@@ -128,6 +128,7 @@ class TestWarmingUpUnitCases(TestCase):
         direction for the pipe connected to the buffer tank)
         - Check that the Heat_buffer & Heat_flow variable are set correctly
         - Check that the history for the buffer is set correctly at t=0
+        - Check that heat_loss_coefficient is read from esdl and linked to buffer heat loss
         - Check that the heat loss is positive and as expected
         - Check that the Stored heat is the sum of (dis)charge and losses
 
@@ -175,9 +176,16 @@ class TestWarmingUpUnitCases(TestCase):
                 results[f"{buffer}.Heat_buffer"],
             )
             # buffer should have positive heat loss
-            assert parameters[f"{buffer}.heat_loss_coeff"] > 0.0
+            assert parameters[f"{buffer}.heat_loss_coefficient"] > 0.0
+            esdl_asset = heat_problem.esdl_assets[
+                heat_problem.esdl_asset_name_to_id_map[f"{buffer}"]
+            ]
             np.testing.assert_allclose(
-                results[f"{buffer}.Stored_heat"] * parameters[f"{buffer}.heat_loss_coeff"],
+                parameters[f"{buffer}.heat_loss_coefficient"],
+                esdl_asset.attributes["dischargeEfficiency"] / (24.0 * 3600.0),
+            )
+            np.testing.assert_allclose(
+                results[f"{buffer}.Stored_heat"] * parameters[f"{buffer}.heat_loss_coefficient"],
                 results[f"{buffer}.Heat_loss"],
             )
             np.testing.assert_allclose(
