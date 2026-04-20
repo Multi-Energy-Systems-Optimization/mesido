@@ -280,7 +280,7 @@ class InfluxDBProfileReader(BaseProfileReader):
         )
         self._database_profilemanager = list()
         self._lock = threading.Lock()
-        self._workers_db_profile_reading = workers_db_profile_reading
+        self._workers_db_profile_parsing = workers_db_profile_reading
 
     def _load_profiles_from_source(
         self,
@@ -326,7 +326,7 @@ class InfluxDBProfileReader(BaseProfileReader):
                 unique_profiles.append(profile)
 
         # # Open parallel processes to load all unique profiles parallely
-        with ThreadPoolExecutor(max_workers=self._workers_db_profile_reading) as executor:
+        with ThreadPoolExecutor(max_workers=self._workers_db_profile_parsing) as executor:
             unique_series = list(
                 executor.map(self._load_profile_timeseries_from_database, unique_profiles)
             )
