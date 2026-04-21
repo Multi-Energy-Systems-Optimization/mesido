@@ -1,3 +1,4 @@
+import time
 import datetime
 import logging
 import sys
@@ -325,8 +326,22 @@ class InfluxDBProfileReader(BaseProfileReader):
                 )
                 unique_profiles.append(profile)
 
+            # unique_profiles_attributes.append(
+            #         [
+            #             profile.database,
+            #             profile.field,
+            #             profile.host,
+            #             profile.startDate,
+            #             profile.endDate,
+            #             profile.measurement,
+            #             profile.port,
+            #         ]
+            #     )
+            # unique_profiles.append(profile)
+
         # # Open parallel processes to load all unique profiles parallely
         with ThreadPoolExecutor(max_workers=self._workers_db_profile_parsing) as executor:
+            print(f"fffffffffffff {self._workers_db_profile_parsing}")
             unique_series = list(
                 executor.map(self._load_profile_timeseries_from_database, unique_profiles)
             )
@@ -481,6 +496,8 @@ class InfluxDBProfileReader(BaseProfileReader):
             # in the list. This is to avoid multiple connections being created for the same
             # database settings when multiple profiles share the same database settings and are
             # loaded in parallel.
+            t0 = threading.current_thread().name
+            print(f"thread [{t0}] starting now and {time_series_data} before lock and profile.field {profile.field}", flush=True)
             with self._lock:
                 time_series_data = next(
                     filter(
@@ -489,6 +506,18 @@ class InfluxDBProfileReader(BaseProfileReader):
                     ),
                     None,
                 )
+
+                print(
+                        "After LOOKUP:",
+                        "len=", len(self._database_profilemanager),
+                        "eqs=", [
+                            pm.database_settings == conn_settings
+                            for pm in self._database_profilemanager
+                        ],
+                        "time_series_data=", time_series_data,
+                        flush=True,
+                    )
+
                 if not time_series_data:
                     try:
                         time_series_data = InfluxDBProfileManager(conn_settings)
@@ -500,6 +529,9 @@ class InfluxDBProfileReader(BaseProfileReader):
                         )
                         # Storing the InfluxDBProfileManager object in the list
                         self._database_profilemanager.append(time_series_data)
+                        t1 = threading.current_thread().name
+                        print(f"no connection thread [{t1}] appending now for {profile.field}", flush=True)
+                        time.sleep(10)
                     except Exception:
                         container = profile.eContainer()
                         asset = container.energyasset
@@ -510,13 +542,19 @@ class InfluxDBProfileReader(BaseProfileReader):
                             f" is not available in the host.",
                         )
                         potential_error_to_error(NetworkErrors.HEAT_NETWORK_ERRORS)
-        else:
-            time_series_data.load_influxdb(
-                profile.measurement,
-                [profile.field],
-                profile.startDate,
-                profile.endDate,
-            )
+                else:
+                    time_series_data.load_influxdb(
+                        profile.measurement,
+                        [profile.field],
+                        profile.startDate,
+                        profile.endDate,
+                    )
+                    t2 = threading.current_thread().name
+                    print(f"connection exists thread [{t2}] now adding {profile.field}", flush=True)
+                    time.sleep(60)
+
+        t10 = threading.current_thread().name
+        print(f"thread [{t10}] going on so long and {time_series_data}", flush=True)
 
         if not time_series_data.profile_data_list:  # if time_series_data.profile_data_list == []:
             container = profile.eContainer()

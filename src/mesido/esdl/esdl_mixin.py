@@ -823,6 +823,9 @@ class ESDLMixin(
         esdl_carriers = self.esdl_carriers
         self.hot_cold_pipe_relations()
         io = self.io
+
+        import time
+        start_time = time.time()
         self.__profile_reader.read_profiles(
             energy_system_components=energy_system_components,
             io=io,
@@ -832,6 +835,8 @@ class ESDLMixin(
             ensemble_size=ensemble_size,
             ensemble=self.__ensemble,
         )
+        print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
+        exit("kobus arrrrrrrrrrrrrrrrrrrr")
 
     def write(self) -> None:
         """
