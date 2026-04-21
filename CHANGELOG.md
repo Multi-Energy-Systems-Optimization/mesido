@@ -5,6 +5,7 @@
 - Geothermal electricity asset that can be connected to the electricity grid.
 - Addition of heat buffer asset with electric charging (i.e. HeatBufferElec).
 - DataSource is assigned to output profiles
+- Generic methods to create equality and inequality constraints using big-M formulation.
 
 ## Changed
 - Reduced the number of constraints required for headloss calculation with LINEARIZED_N_LINES_EQUALITY setting.
