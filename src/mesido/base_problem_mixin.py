@@ -1,4 +1,53 @@
+import numpy as np
+
+
 class BaseProblemMixin:
+
+    @staticmethod
+    def _symmetric_big_m_constraints(expr, slack, nominal):
+        """Return paired bigM constraints that enforce expr == 0 when slack is inactive.
+
+        Parameters
+        ----------
+        expr: casadi expression
+            The expression that should be constrained to zero.
+        slack: casadi variable
+            The slack variable that should be zero when the constraint is active.
+        nominal: float
+            The nominal value of the variable, used for scaling the constraints.
+
+        Returns
+        -------
+        List of two tuples describing the constraints
+        """
+        return [
+            ((expr + slack) / nominal, 0.0, np.inf),
+            ((expr - slack) / nominal, -np.inf, 0.0),
+        ]
+
+    @staticmethod
+    def _big_m_ineq_constraints(expr, slack, big_m, nominal):
+        """Return paired bigM constraints that enforce expr =< 0 when a binary slack is active
+        and expr >= 0 when a binary slack is inactive.
+
+        Parameters
+        ----------
+        expr: casadi expression
+            The expression that should be upper or lower constrained to zero.
+        slack: casadi variable
+            The slack variable that should be zero when the expr is lower constrained
+            to zero.
+        nominal: float
+            The nominal value of the variable, used for scaling the constraints.
+
+        Returns
+        -------
+        List of two tuples describing the constraints
+        """
+        return [
+            ((expr + slack * big_m) / nominal, 0.0, np.inf),
+            ((expr - (1.0 - slack) * big_m) / nominal, -np.inf, 0.0),
+        ]
 
     def goal_programming_options(self):
         """
