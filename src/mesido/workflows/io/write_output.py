@@ -1458,6 +1458,14 @@ class ScenarioOutput:
                                             f"{asset_id}. + {variable}"
                                         )
 
+                                    # Write the source of profiles (Optimizer)
+                                    profile_attributes.dataSource = esdl.esdl.DataSource(
+                                        id=str(uuid.uuid4()),
+                                        name="Optimizer",
+                                        description="This was created in the optimizer",
+                                        type=esdl.DataSourceTypeEnum.MODEL,
+                                    )
+
                                 # Write result OUTPUT profiles on the optimized esdl
                                 asset.port[index_outport].profile.append(profile_attributes)
 
