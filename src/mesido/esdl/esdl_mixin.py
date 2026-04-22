@@ -836,7 +836,7 @@ class ESDLMixin(
             ensemble=self.__ensemble,
         )
         print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
-        exit("kobus arrrrrrrrrrrrrrrrrrrr")
+        exit("kobus arrrrrrrrrrrrrrrrrrrrrr")
 
     def write(self) -> None:
         """
