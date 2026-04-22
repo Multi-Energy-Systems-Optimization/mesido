@@ -132,9 +132,7 @@ class PhysicsMixin(
         bounds.update(self._change_setpoint_bounds)
         return bounds
 
-    def __setpoint_constraint(
-        self, ensemble_member, component_name, windowsize_hr, setpointchanges
-    ):
+    def __setpoint_constraint(self, ensemble_member, component_id, windowsize_hr, setpointchanges):
         r"""Constraints that can switch only every n time steps of setpoint.
         A component can only switch setpoint every <windowsize_hr> hours.
         Apply the constraint every timestep from after the first time step onwards [from i=1].
@@ -153,16 +151,16 @@ class PhysicsMixin(
         """
         assert windowsize_hr > 0
         assert windowsize_hr % 1 == 0
-        assert component_name in sum(self.energy_system_components.values(), [])
+        assert component_id in sum(self.energy_system_components.values(), [])
 
         # Find the component type
         comp_type = next(
             iter(
                 [
                     comptype
-                    for comptype, compnames in self.energy_system_components.items()
-                    for compname in compnames
-                    if compname == component_name
+                    for comptype, comp_ids in self.energy_system_components.items()
+                    for comp_id in comp_ids
+                    if comp_id == component_id
                 ]
             )
         )
@@ -175,8 +173,8 @@ class PhysicsMixin(
 
         for var_name in control_vars:
             # Retrieve the relevant variable names
-            variable_name = f"{component_name}{var_name}"
-            var_name_setpoint = self._component_to_change_setpoint_map[component_name]
+            variable_name = f"{component_id}{var_name}"
+            var_name_setpoint = self._component_to_change_setpoint_map[component_id]
 
             # Get the timewise symbolic variables of Heat_source
             sym_var = self.__state_vector_scaled(variable_name, ensemble_member)
@@ -243,23 +241,11 @@ class PhysicsMixin(
                 # Constraining setpoint_is_free to 1 when value of
                 # backward_heat_rate_expression < 0, otherwise
                 # setpoint_is_free's value can be 0 and 1
-                constraints.append(
-                    (
-                        (backward_heat_rate_expression[i - 1] + setpoint_is_free[i] * big_m)
-                        / nominal,
-                        0.0,
-                        np.inf,
-                    )
-                )
-                # Constraining setpoint_is_free to 1 when value of
-                # backward_heat_rate_expression > 0, otherwise
-                # setpoint_is_free's value can be 0 and 1
-                constraints.append(
-                    (
-                        (backward_heat_rate_expression[i - 1] - setpoint_is_free[i] * big_m)
-                        / nominal,
-                        -np.inf,
-                        0.0,
+                constraints.extend(
+                    self._symmetric_big_m_constraints(
+                        backward_heat_rate_expression[i - 1],
+                        setpoint_is_free[i] * big_m,
+                        nominal,
                     )
                 )
 
@@ -284,19 +270,12 @@ class PhysicsMixin(
         """
         constraints = super().constraints(ensemble_member)
 
-        for component_name, params in self._timed_setpoints.items():
+        for component_id, params in self._timed_setpoints.items():
             constraints.extend(
-                self.__setpoint_constraint(ensemble_member, component_name, params[0], params[1])
+                self.__setpoint_constraint(ensemble_member, component_id, params[0], params[1])
             )
 
         return constraints
 
     def __state_vector_scaled(self, variable, ensemble_member):
-        """
-        This functions returns the casadi symbols scaled with their nominal for the entire time
-        horizon.
-        """
-        canonical, sign = self.alias_relation.canonical_signed(variable)
-        return (
-            self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
-        )
+        return self._BaseProblemMixin__state_vector_scaled(variable, ensemble_member)

@@ -26,9 +26,15 @@ class MockInfluxDBProfileReader(InfluxDBProfileReader):
         self,
         energy_system: esdl.EnergySystem,
         file_path: Optional[Path],
+        use_esdl_ranged_contraint: bool,
         database_credentials: Optional[Dict[str, Tuple[str, str]]] = None,
     ):
-        super().__init__(energy_system, file_path, database_credentials=database_credentials)
+        super().__init__(
+            energy_system,
+            file_path,
+            use_esdl_ranged_contraint=use_esdl_ranged_contraint,
+            database_credentials=database_credentials,
+        )
         self._loaded_profiles = pd.read_csv(
             file_path,
             index_col="DateTime",
@@ -161,12 +167,14 @@ class TestProfileLoading(unittest.TestCase):
             input_timeseries_file="influx_mock.csv",
         )
         problem.pre()
+        name_to_id_map = problem.esdl_asset_name_to_id_map
 
         np.testing.assert_equal(problem.io.reference_datetime.tzinfo, datetime.timezone.utc)
 
         # the three demands in the test ESDL
         for demand_name in ["HeatingDemand_2ab9", "HeatingDemand_6662", "HeatingDemand_506c"]:
-            profile_values = problem.get_timeseries(f"{demand_name}.target_heat_demand").values
+            demand_id = name_to_id_map[demand_name]
+            profile_values = problem.get_timeseries(f"{demand_id}.target_heat_demand").values
             self.assertEqual(profile_values[0], profile_values[1])
             self.assertEqual(len(profile_values), 26)
 
@@ -197,12 +205,16 @@ class TestProfileLoading(unittest.TestCase):
         )
         problem.pre()
 
+        name_to_id_map = problem.esdl_asset_name_to_id_map
+
         np.testing.assert_equal(problem.io.reference_datetime.tzinfo, datetime.timezone.utc)
 
         expected_array = np.array([1.0e8] * 3)
         np.testing.assert_equal(
             expected_array,
-            problem.get_timeseries("WindPark_7f14.maximum_electricity_source").values,
+            problem.get_timeseries(
+                f"{name_to_id_map['WindPark_7f14']}.maximum_electricity_source"
+            ).values,
         )
 
         expected_array = np.array([1.0] * 3)
@@ -235,12 +247,14 @@ class TestProfileLoading(unittest.TestCase):
             input_timeseries_file="timeseries.xml",
         )
         problem.pre()
+        name_to_id_map = problem.esdl_asset_name_to_id_map
 
         np.testing.assert_equal(problem.io.reference_datetime.tzinfo, datetime.timezone.utc)
 
         expected_array = np.array([1.5e5] * 16 + [1.0e5] * 13 + [0.5e5] * 16)
         np.testing.assert_equal(
-            expected_array, problem.get_timeseries("demand.target_heat_demand").values
+            expected_array,
+            problem.get_timeseries(f"{name_to_id_map['demand']}.target_heat_demand").values,
         )
 
     def test_loading_from_csv_with_influx_profiles_given(self):
@@ -267,13 +281,15 @@ class TestProfileLoading(unittest.TestCase):
             input_timeseries_file="timeseries.csv",
         )
         problem.pre()
+        name_to_id_map = problem.esdl_asset_name_to_id_map
 
         np.testing.assert_equal(problem.io.reference_datetime.tzinfo, datetime.timezone.utc)
 
         expected_array = np.array([1.0e8] * 3)
+        wind_park_id = name_to_id_map["WindPark_7f14"]
         np.testing.assert_equal(
             expected_array,
-            problem.get_timeseries("WindPark_7f14.maximum_electricity_source").values,
+            problem.get_timeseries(f"{wind_park_id}.maximum_electricity_source").values,
         )
 
         expected_array = np.array([1.0] * 3)
@@ -308,9 +324,9 @@ class TestProfileLoading(unittest.TestCase):
             os.path.join(input_folder, "SpaceHeat&HotWater_PowerProfile_2000_2010.csv")
         )
         expected_values = expected_values_file["Ruimte&Tap_W"]
-        for asset in problem.energy_system_components.get("heat_source"):
+        for asset_id in problem.energy_system_components.get("heat_source"):
             np.testing.assert_allclose(
-                problem.get_timeseries(f"{asset}.maximum_heat_source").values,
+                problem.get_timeseries(f"{asset_id}.maximum_heat_source").values,
                 expected_values * 1e6,
                 atol=1e-2,
             )
@@ -343,6 +359,8 @@ class TestProfileLoading(unittest.TestCase):
 
         problem.pre()
 
+        name_to_id = problem.esdl_asset_name_to_id_map
+
         # check that the ensemble size is set at 2, which is based on the ensemble.csv
         np.testing.assert_equal(problem.ensemble_size, 2)
         prob_0 = problem.ensemble_member_probability(0)
@@ -357,7 +375,7 @@ class TestProfileLoading(unittest.TestCase):
         for t_name in timeseries_names:
             for e_m in range(problem.ensemble_size):
                 t_series = problem.get_timeseries(t_name, e_m)
-                if e_m == 1 and t_name == "HeatingDemand_6f99.target_heat_demand":
+                if e_m == 1 and t_name == f"{name_to_id['HeatingDemand_6f99']}.target_heat_demand":
                     np.testing.assert_allclose(t_series.values, [300000] * 3)
                 else:
                     np.testing.assert_allclose(t_series.values, [350000] * 3)

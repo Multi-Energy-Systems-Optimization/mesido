@@ -206,12 +206,12 @@ def heat_to_discharge_test(solution, results, atol=1e-2, rtol=1.0e-4):
         # return_t = solution.parameters(0)[f"{d}.T_return"]
         supply_t, return_t, dt = _get_component_temperatures(solution, results, d)
 
-        # TODO: fix hardcoded atol
         temp_profile = __get_out_port_temp_profile(solution, d, "heat_source")
         if temp_profile is not None:
             supply_t = temp_profile.values
             supply_temp_profiles.append(temp_profile.values)
         print(d, max(abs(results[f"{d}.HeatOut.Heat"] - results[f"{d}.Q"] * rho * cp * supply_t)))
+
         np.testing.assert_allclose(
             results[f"{d}.HeatOut.Heat"],
             results[f"{d}.Q"] * rho * cp * supply_t,
@@ -240,11 +240,20 @@ def heat_to_discharge_test(solution, results, atol=1e-2, rtol=1.0e-4):
                 atol=atol,
             )
         except KeyError:
-            np.testing.assert_allclose(
-                results[f"{d}.Heat_buffer"],
-                results[f"{d}.HeatIn.Heat"] - results[f"{d}.HeatOut.Heat"],
-                atol=atol,
-            )
+            if d in solution.energy_system_components.get("heat_buffer_elec", []):
+                np.testing.assert_allclose(
+                    results[f"{d}.Heat_buffer"],
+                    results[f"{d}.HeatIn.Heat"]
+                    - results[f"{d}.HeatOut.Heat"]
+                    + results[f"{d}.Heat_elec_charging"],
+                    atol=atol,
+                )
+            else:
+                np.testing.assert_allclose(
+                    results[f"{d}.Heat_buffer"],
+                    results[f"{d}.HeatIn.Heat"] - results[f"{d}.HeatOut.Heat"],
+                    atol=atol,
+                )
         supply_temp, return_temp, dt = _get_component_temperatures(solution, results, d)
         indices = results[f"{d}.HeatIn.Q"] >= 0
         if isinstance(supply_temp, float):
@@ -412,6 +421,7 @@ def electric_power_conservation_test(solution, results, atol=1e-2):
             "elec_heat_source_elec",
             "heat_pump_elec",
             "air_water_heat_pump_elec",
+            "geothermal_source_elec",
         ]
     )
     producers = solution.energy_system_components_get(["electricity_source"])
@@ -465,6 +475,8 @@ def energy_conservation_test(solution, results, atol=1e-3, atol_total=1e-1):
 
     for d in solution.energy_system_components.get("heat_buffer", []):
         energy_sum -= results[f"{d}.Heat_buffer"]
+        if d in solution.energy_system_components.get("heat_buffer_elec", []):
+            energy_sum += results[f"{d}.Heat_elec_charging"]
 
     for d in solution.energy_system_components.get("heat_source", []):
         energy_sum += results[f"{d}.Heat_source"]
@@ -483,13 +495,13 @@ def energy_conservation_test(solution, results, atol=1e-3, atol_total=1e-1):
 
     for p in solution.energy_system_components.get("heat_pipe", []):
         if (
-            f"{p}__is_disconnected" in results.keys()
-            or f"{solution.cold_to_hot_pipe(p)}__is_disconnected" in results.keys()
+            f"{p}.__is_disconnected" in results.keys()
+            or f"{solution.cold_to_hot_pipe(p)}.__is_disconnected" in results.keys()
         ):
             if p in solution.cold_pipes:
-                p_discon = results[f"{solution.cold_to_hot_pipe(p)}__is_disconnected"].copy()
+                p_discon = results[f"{solution.cold_to_hot_pipe(p)}.__is_disconnected"].copy()
             else:
-                p_discon = results[f"{p}__is_disconnected"].copy()
+                p_discon = results[f"{p}.__is_disconnected"].copy()
 
             p_discon[p_discon < 0.5] = 0  # fix for discrete value sometimes being 0.003 or so.
             np.testing.assert_allclose(

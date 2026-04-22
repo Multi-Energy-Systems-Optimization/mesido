@@ -11,6 +11,7 @@ from esdl.profiles.influxdbprofilemanager import InfluxDBProfileManager
 from esdl.units.conversion import ENERGY_IN_J, POWER_IN_W, convert_to_unit
 
 from mesido.esdl.common import Asset
+from mesido.esdl.esdl_additional_vars_mixin import get_asset_contraints
 from mesido.potential_errors import MesidoAssetIssueType, get_potential_errors
 
 import numpy as np
@@ -44,11 +45,14 @@ class BaseProfileReader:
         self,
         energy_system: esdl.EnergySystem,
         file_path: Optional[Path],
+        use_esdl_ranged_contraint: bool = False,
     ):
         self._profiles: Dict[int, Dict[str, np.ndarray]] = defaultdict(dict)
         self._energy_system: esdl.EnergySystem = energy_system
         self._file_path: Optional[Path] = file_path
         self._reference_datetimes: Optional[pd.DatetimeIndex] = None
+
+        self._use_esdl_ranged_constraint = use_esdl_ranged_contraint
 
     def read_profiles(
         self,
@@ -102,17 +106,45 @@ class BaseProfileReader:
                 "No profiles were provided so no timeframe for the profiles could be deduced"
             )
 
-        esdl_asset_names_to_ids = dict(
-            zip(esdl_asset_id_to_name_map.values(), esdl_asset_id_to_name_map.keys())
-        )
-
         for ensemble_member in range(ensemble_size):
             for component_type, var_name in self.component_type_to_var_name_map.items():
-                for component in energy_system_components.get(component_type, []):
-                    profile = self._profiles[ensemble_member].get(component + var_name, None)
-                    asset_power = esdl_assets[esdl_asset_names_to_ids[component]].attributes[
-                        "power"
-                    ]
+                for component_id in energy_system_components.get(component_type, []):
+                    profile = self._profiles[ensemble_member].get(component_id + var_name, None)
+                    asset = esdl_assets[component_id]
+                    asset_state = asset.attributes["state"]
+
+                    asset_power = None
+                    if asset_state == esdl.AssetStateEnum.ENABLED:
+                        asset_power = asset.attributes["power"]
+                    elif asset_state == esdl.AssetStateEnum.OPTIONAL:
+                        if (
+                            self._energy_system.esdlVersion is not None
+                            and self._energy_system.esdlVersion >= "v2602"
+                            and self._use_esdl_ranged_constraint
+                            # "v2602" contains the items needed for the ranged constraint
+                            # implementation in MESIDO
+                        ):
+                            range_constraints, qty_range_constraints = get_asset_contraints(
+                                self, asset, esdl.RangedConstraint
+                            )
+                            if qty_range_constraints == 1:
+                                asset_power = range_constraints[0].range.maxValue
+                            else:
+                                logger.error(
+                                    f"Asset named {asset.name}: The code currently only "
+                                    f"caters for 1 RangedConstraint but {qty_range_constraints} "
+                                    "have been specified"
+                                )
+                                sys.exit(1)
+                        else:
+                            asset_power = asset.attributes["power"]
+                    else:
+                        logger.warning(
+                            f"Read profiles: asset {asset.name} has a state {asset_state.name} "
+                            "and currently the code only caters for asset states ENABLED or "
+                            "OPTIONAL"
+                        )
+
                     if profile is not None:
                         values = profile
                     else:
@@ -120,13 +152,13 @@ class BaseProfileReader:
                             # We don't set a default profile for source targets
                             continue
                         logger.warning(
-                            f"No profile provided for {component=} and "
+                            f"No profile provided for {asset.name} and "
                             f"{ensemble_member=}, using the assets power value instead"
                         )
                         values = np.array([asset_power] * len(self._reference_datetimes))
 
                     io.set_timeseries(
-                        variable=component + var_name,
+                        variable=component_id + var_name,
                         datetimes=self._reference_datetimes,
                         values=values,
                         ensemble_member=ensemble_member,
@@ -135,15 +167,15 @@ class BaseProfileReader:
                     if component_type in ["heat_demand", "cold_demand"]:
                         max_profile_value = max(values)
                         if asset_power < max_profile_value and asset_power != 0.0:
-                            asset_id = esdl_asset_names_to_ids[component]
+                            asset_name = esdl_asset_id_to_name_map[component_id]
                             get_potential_errors().add_potential_issue(
                                 (
                                     MesidoAssetIssueType.HEAT_DEMAND_POWER
                                     if component_type == "heat_demand"
                                     else MesidoAssetIssueType.COLD_DEMAND_POWER
                                 ),
-                                asset_id,
-                                f"Asset named {component}: The installed capacity of"
+                                component_id,
+                                f"Asset named {asset_name}: The installed capacity of"
                                 f" {round(asset_power / 1.0e6, 3)}MW should be larger than the"
                                 " maximum of the heat demand profile "
                                 f"{round(max_profile_value / 1.0e6, 3)}MW",
@@ -151,11 +183,11 @@ class BaseProfileReader:
                     elif component_type in ["heat_source"]:
                         max_profile_value = max(values)
                         if asset_power < max_profile_value:
-                            asset_id = esdl_asset_names_to_ids[component]
+                            asset_name = esdl_asset_id_to_name_map[component_id]
                             get_potential_errors().add_potential_issue(
                                 MesidoAssetIssueType.HEAT_PRODUCER_POWER,
-                                asset_id,
-                                f"Asset named {component}: The installed capacity of"
+                                component_id,
+                                f"Asset named {asset_name}: The installed capacity of"
                                 f" {round(asset_power / 1.0e6, 3)}MW should be equal or larger than"
                                 " the maximum of the heat producer maximum profile constraint"
                                 f" {round(max_profile_value / 1.0e6, 3)}MW",
@@ -220,17 +252,20 @@ class InfluxDBProfileReader(BaseProfileReader):
         esdl.esdl.GasProducer: ".maximum_gas_source",
         esdl.esdl.ResidualHeatSource: ".maximum_heat_source",
         esdl.esdl.GeothermalSource: ".maximum_heat_source",
+        esdl.esdl.PVInstallation: ".maximum_electricity_source",
     }
 
     def __init__(
         self,
         energy_system: esdl.EnergySystem,
         file_path: Optional[Path],
+        use_esdl_ranged_contraint: bool = False,
         database_credentials: Optional[Dict[str, Tuple[str, str]]] = None,
     ):
         super().__init__(
             energy_system=energy_system,
             file_path=file_path,
+            use_esdl_ranged_contraint=use_esdl_ranged_contraint,
         )
         self._df = pd.DataFrame()
         self._database_credentials = (
@@ -327,13 +362,12 @@ class InfluxDBProfileReader(BaseProfileReader):
 
             if isinstance(container, esdl.ProfileConstraint):
                 variable_suffix = self.asset_type_to_variable_name_conversion[type(asset)]
-                var_base_name = asset.name
+                var_base_name = asset.id
                 if variable_suffix in [
                     self.asset_type_to_variable_name_conversion[esdl.esdl.GasProducer],
-                    self.asset_type_to_variable_name_conversion[esdl.esdl.ElectricityProducer],
                 ]:
                     logger.error(
-                        f"Profiles for {var_base_name} from esdl has not been tested yet but only"
+                        f"Profiles for {asset.name} from esdl has not been tested yet but only"
                         " for heat sources"
                     )
                     sys.exit(1)
@@ -343,12 +377,11 @@ class InfluxDBProfileReader(BaseProfileReader):
                 var_base_name = container.name
             elif isinstance(container, esdl.Port):
                 asset = container.energyasset
-                var_base_name = asset.name
+                var_base_name = asset.id
                 if var_base_name in [
                     self.asset_type_to_variable_name_conversion[esdl.esdl.GasProducer],
-                    self.asset_type_to_variable_name_conversion[esdl.esdl.ElectricityProducer],
                 ]:
-                    logger.error(f"Profiles for {var_base_name} from esdl has not been tested yet")
+                    logger.error(f"Profiles for {asset.name} from esdl has not been tested yet")
                     sys.exit(1)
                 try:
                     variable_suffix = self.asset_type_to_variable_name_conversion[type(asset)]
@@ -608,10 +641,12 @@ class ProfileReaderFromFile(BaseProfileReader):
         self,
         energy_system: esdl.EnergySystem,
         file_path: Path,
+        use_esdl_ranged_contraint: bool = False,
     ):
         super().__init__(
             energy_system=energy_system,
             file_path=file_path,
+            use_esdl_ranged_contraint=use_esdl_ranged_contraint,
         )
 
     def _load_profiles_from_source(
@@ -633,6 +668,7 @@ class ProfileReaderFromFile(BaseProfileReader):
         elif self._file_path.suffix == ".csv":
             self._load_csv(
                 energy_system_components=energy_system_components,
+                esdl_asset_id_to_name_map=esdl_asset_id_to_name_map,
                 carrier_properties=carrier_properties,
                 ensemble_size=ensemble_size,
                 ensemble=ensemble,
@@ -645,6 +681,7 @@ class ProfileReaderFromFile(BaseProfileReader):
     def _load_csv(
         self,
         energy_system_components: Dict[str, Set[str]],
+        esdl_asset_id_to_name_map,
         carrier_properties: Dict[str, Dict],
         ensemble_size: int,
         ensemble,
@@ -702,8 +739,10 @@ class ProfileReaderFromFile(BaseProfileReader):
             for component_type, var_name in self.component_type_to_var_name_map.items():
                 for component_name in energy_system_components.get(component_type, []):
                     try:
-                        column_name = f"{component_name.replace(' ', '')}"
+                        asset_name = esdl_asset_id_to_name_map[component_name]
+                        column_name = f"{asset_name.replace(' ', '')}"
                         values = data_em[column_name].to_numpy()
+
                         if np.isnan(values).any():
                             raise Exception(
                                 f"Column name: {column_name}, NaN exists in the profile source"
@@ -779,7 +818,7 @@ class _ESDLInputDataConfig:
         location_id = pi_header.find("pi:locationId", self.ns).text
 
         try:
-            component_name = self.__id_map[location_id]
+            component_name = location_id
         except KeyError:
             parameter_id = pi_header.find("pi:parameterId", self.ns).text
             qualifiers = pi_header.findall("pi:qualifierId", self.ns)

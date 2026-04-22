@@ -57,16 +57,12 @@ class ElectricityPhysicsMixin(
 
         # Variable for when in time an asset switched on due to meeting a requirement
         self.__asset_is_switched_on_map = {}
-        self.__asset_is_switched_on_var = {}
-        self.__asset_is_switched_on_bounds = {}
 
         self.__electricity_producer_upper_bounds = {}
 
         self._electricity_cable_topo_cable_class_map = {}
 
         # Boolean path-variable for the charging of storage assets
-        self.__storage_charging_var = {}
-        self.__storage_charging_bounds = {}
         self.__storage_charging_map = {}
 
         self.__set_point_var = {}
@@ -75,11 +71,8 @@ class ElectricityPhysicsMixin(
 
         # Boolean path-variable for the equality constraint of the electrolyzer
         self.__electrolyzer_is_active_linear_segment_map = {}
-        self.__electrolyzer_is_active_linear_segment_var = {}
-        self.__electrolyzer_is_active_linear_segment_bounds = {}
-        self.__electricity_storage_discharge_var = {}
+
         self.__electricity_storage_discharge_bounds = {}
-        self.__electricity_storage_discharge_nominals = {}
         self.__electricity_storage_discharge_map = {}
 
         # Map for setting node nominals in case of logical links.
@@ -124,10 +117,7 @@ class ElectricityPhysicsMixin(
             for asset in [
                 *self.energy_system_components.get("electrolyzer", []),
             ]:
-                var_name = f"{asset}__asset_is_switched_on"
-                self.__asset_is_switched_on_map[asset] = var_name
-                self.__asset_is_switched_on_var[var_name] = ca.MX.sym(var_name)
-                self.__asset_is_switched_on_bounds[var_name] = (0.0, 1.0)
+                self.__asset_is_switched_on_map[asset] = f"{asset}.__asset_is_switched_on"
 
         if options["electrolyzer_efficiency"] == ElectrolyzerOption.LINEARIZED_THREE_LINES_EQUALITY:
             for asset in [
@@ -136,20 +126,15 @@ class ElectricityPhysicsMixin(
                 self.__electrolyzer_is_active_linear_segment_map[asset] = {}
                 n_lines = 3
                 for n_line in range(n_lines):
-                    var_name = f"{asset}__line_{n_line}_active"
-
+                    var_name = f"{asset}.__line_{n_line}_active"
                     self.__electrolyzer_is_active_linear_segment_map[asset][
                         f"line_{n_line}"
                     ] = var_name
-                    self.__electrolyzer_is_active_linear_segment_var[var_name] = ca.MX.sym(var_name)
-                    self.__electrolyzer_is_active_linear_segment_bounds[var_name] = (0.0, 1.0)
 
         if options["electricity_storage_discrete_charge_variables"]:
             for asset in [*self.energy_system_components.get("electricity_storage", [])]:
-                var_name = f"{asset}__is_charging"
+                var_name = f"{asset}.__is_charging"
                 self.__storage_charging_map[asset] = var_name
-                self.__storage_charging_var[var_name] = ca.MX.sym(var_name)
-                self.__storage_charging_bounds[var_name] = (0.0, 1.0)
 
         for asset in [*self.energy_system_components.get("electricity_source", [])]:
             if isinstance(self.bounds()[f"{asset}.Electricity_source"][1], Timeseries):
@@ -212,11 +197,7 @@ class ElectricityPhysicsMixin(
         """
         variables = super().path_variables.copy()
 
-        variables.extend(self.__asset_is_switched_on_var.values())
-        variables.extend(self.__storage_charging_var.values())
         variables.extend(self.__set_point_var.values())
-        variables.extend(self.__electrolyzer_is_active_linear_segment_var.values())
-        variables.extend(self.__electricity_storage_discharge_var.values())
 
         return variables
 
@@ -225,22 +206,14 @@ class ElectricityPhysicsMixin(
         All variables that only can take integer values should be added to this function.
         """
 
-        if variable in self.__electrolyzer_is_active_linear_segment_var:
-            return True
-        if variable in self.__asset_is_switched_on_var:
-            return True
-        if variable in self.__storage_charging_var:
-            return True
-        else:
-            return super().variable_is_discrete(variable)
+        return super().variable_is_discrete(variable)
 
     def variable_nominal(self, variable):
         """
         In this function we add all the nominals for the variables defined/added in the HeatMixin.
         """
-        if variable in self.__electricity_storage_discharge_nominals:
-            return self.__electricity_storage_discharge_nominals[variable]
-        elif variable in self.__bus_variable_nominal:
+
+        if variable in self.__bus_variable_nominal:
             return self.__bus_variable_nominal[variable]
         else:
             return super().variable_nominal(variable)
@@ -252,9 +225,6 @@ class ElectricityPhysicsMixin(
         """
         bounds = super().bounds()
 
-        bounds.update(self.__electrolyzer_is_active_linear_segment_bounds)
-        bounds.update(self.__asset_is_switched_on_bounds)
-        bounds.update(self.__storage_charging_bounds)
         bounds.update(self.__electricity_producer_upper_bounds)
         bounds.update(self.__set_point_bounds)
         bounds.update(self.__electricity_storage_discharge_bounds)
@@ -280,14 +250,7 @@ class ElectricityPhysicsMixin(
         return max_
 
     def __state_vector_scaled(self, variable, ensemble_member):
-        """
-        This functions returns the casadi symbols scaled with their nominal for the entire time
-        horizon.
-        """
-        canonical, sign = self.alias_relation.canonical_signed(variable)
-        return (
-            self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
-        )
+        return self._BaseProblemMixin__state_vector_scaled(variable, ensemble_member)
 
     def __update_electricity_producer_upper_bounds(self):
         # TODO: When a profile is assigned via esdl, this code below needs to be aligned with
@@ -409,20 +372,11 @@ class ElectricityPhysicsMixin(
                             res = cc_data.resistance
                             exp = current * res * length * i_max
                             is_selected = self.variable(cc_name)
-                            constraints.append(
-                                (
-                                    (power_loss - exp + big_m * (1 - is_selected))
-                                    / constraint_nominal,
-                                    0.0,
-                                    np.inf,
-                                )
-                            )
-                            constraints.append(
-                                (
-                                    (power_loss - exp - big_m * (1 - is_selected))
-                                    / (constraint_nominal),
-                                    -np.inf,
-                                    0.0,
+                            constraints.extend(
+                                self._symmetric_big_m_constraints(
+                                    power_loss - exp,
+                                    big_m * (1 - is_selected),
+                                    constraint_nominal,
                                 )
                             )
                 else:
@@ -477,18 +431,11 @@ class ElectricityPhysicsMixin(
                 for var_size, variable in variables.items():
                     if var_size != "None":
                         expr = resistances[var_size] * c_length * current
-                        constraints.append(
-                            (
-                                (v_loss - expr + big_m * (1 - variable)) / constraint_nominal,
-                                0.0,
-                                np.inf,
-                            )
-                        )
-                        constraints.append(
-                            (
-                                (v_loss - expr - big_m * (1 - variable)) / constraint_nominal,
-                                -np.inf,
-                                0.0,
+                        constraints.extend(
+                            self._symmetric_big_m_constraints(
+                                v_loss - expr,
+                                big_m * (1 - variable),
+                                constraint_nominal,
                             )
                         )
 
@@ -566,7 +513,7 @@ class ElectricityPhysicsMixin(
             power_charging_max = self.bounds()[f"{asset}.Power_charging"][1]
 
             if options["electricity_storage_discrete_charge_variables"]:
-                is_charging = self.state(f"{asset}__is_charging")
+                is_charging = self.state(f"{asset}.__is_charging")
                 constraints.append(
                     (
                         (power_discharging - (1 - is_charging) * power_discharging_max) / power_nom,
@@ -791,30 +738,13 @@ class ElectricityPhysicsMixin(
                         is_line_segment_active = self.state(var_name)
                         # Equality constraint to map the input power to the output massflow
                         # of the electrolyzer
-                        constraints.append(
-                            (
-                                (
-                                    gas_mass_flow_out_vect[n_line]
-                                    - gass_mass_out_linearized_vect[n_line]
-                                    - (1 - is_line_segment_active) * big_m
-                                )
-                                / nominal,
-                                -np.inf,
-                                0.0,
-                            ),
-                        )
-                        #
-                        constraints.append(
-                            (
-                                (
-                                    gas_mass_flow_out_vect[n_line]
-                                    - gass_mass_out_linearized_vect[n_line]
-                                    + (1 - is_line_segment_active) * big_m
-                                )
-                                / nominal,
-                                0.0,
-                                np.inf,
-                            ),
+                        constraints.extend(
+                            self._symmetric_big_m_constraints(
+                                gas_mass_flow_out_vect[n_line]
+                                - gass_mass_out_linearized_vect[n_line],
+                                (1 - is_line_segment_active) * big_m,
+                                nominal,
+                            )
                         )
                         is_line_segment_active_sum += is_line_segment_active
                     # Constraint to ensure that only one line is active, if the electrolyzer
@@ -823,11 +753,12 @@ class ElectricityPhysicsMixin(
                         (is_line_segment_active_sum + (1 - asset_is_switched_on), 1.0, 1.0),
                     )
 
-            constraints.append(
-                ((gas_mass_flow_out + asset_is_switched_on * big_m) / big_m, 0.0, np.inf)
-            )
-            constraints.append(
-                ((gas_mass_flow_out - asset_is_switched_on * big_m) / big_m, -np.inf, 0.0)
+            constraints.extend(
+                self._symmetric_big_m_constraints(
+                    gas_mass_flow_out,
+                    asset_is_switched_on * big_m,
+                    big_m,
+                )
             )
 
             # Add constraints to ensure the electrolyzer is switched off when it reaches a power
@@ -846,11 +777,12 @@ class ElectricityPhysicsMixin(
                     np.inf,
                 )
             )
-            constraints.append(
-                ((power_consumed + asset_is_switched_on * big_m) / big_m, 0.0, np.inf)
-            )
-            constraints.append(
-                ((power_consumed - asset_is_switched_on * big_m) / big_m, -np.inf, 0.0)
+            constraints.extend(
+                self._symmetric_big_m_constraints(
+                    power_consumed,
+                    asset_is_switched_on * big_m,
+                    big_m,
+                )
             )
 
         return constraints

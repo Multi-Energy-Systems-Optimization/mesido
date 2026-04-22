@@ -1,10 +1,49 @@
-# [Unreleased-main] - 2026-02-25
+# [Unreleased-main] - 2026-04-17
+
+## Added
+- Electricity consumption calculation of geothermal assets, using the defined COP. 
+- Geothermal electricity asset that can be connected to the electricity grid.
+- Addition of heat buffer asset with electric charging (i.e. HeatBufferElec).
+- DataSource is assigned to output profiles
+- Generic methods to create equality and inequality constraints using big-M formulation.
+
+## Changed
+- Reduced the number of constraints required for headloss calculation with LINEARIZED_N_LINES_EQUALITY setting.
+- The method __state_vector_scaled has been moved to BaseProblemMixin, allowing the same method to be used across different problem classes as _BaseProblemMixin__state_vector_scaled.
+- The creation of discrete variables for individual assets has been moved to the pycml classes.
+- The code base uses asset id's instead of asset names expect for csv inputs where the asset names are still accepted.
+- Updated pyESDL to v26.3
+- Updated the GROW workflow to provide feedback on which heat demands are not matched in priority 1.
+- Removed old test files that are no longer used.
+
+## Fixed
+- ProfileConstraints: Use already available function to get profile quantity and unit
+
+
+# [0.1.18.1] - 2026-04-13
+
+## Added
+- Electricity consumption calculation of geothermal assets, using the defined COP. 
+- Geothermal electricity asset that can be connected to the electricity grid.
+
+## Changed
+- xxx
+
+## Fixed
+- ProfileConstraints: Use already available function to get profile quantity and unit
+
+
+# [0.1.18] - 2026-03-12
 
 ## Added
 - Parsing of ensemble profiles when using input profiles from csv.
+- Maximum profile constraint for PV asset is considered in PV sizing
+- Cater for input via esdl constraints to specify the upper limit for OPTIONAL assets in DTK
+- Initial implementation of adaptable pipe DN lower limit per pipe
 
 ## Changed
 - Speed-up timeseries check in from InfluxDB
+- Delete solution after stage 1 in a staged workflow 
 
 ## Fixed
 - xxx 
@@ -41,9 +80,9 @@
 - Clean up of old code and removing duplicates.
 - Minimize TCO objective in the grow_workflow is now only based on capex and opex that can be influenced.
 - Removed the requirement of "_ret" for the return network pipes, for ESDLversion 21.10 and later. The relation between supply and return pipes is now based on the "related" attribute in the esdl.
-- Addtion of cooling assests (airco and low_temperature_ates) in the grow_workflow for heating and cooling networks
+- Addition of cooling assests (airco and low_temperature_ates) in the grow_workflow for heating and cooling networks
 - Inclusion of airco and low_temperature_ates in write_output
-- New data structute for specifying database connection inputs
+- New data structure for specifying database connection inputs
 - Costs of available pipe classes are updated based on the asset measures and templates if they are provided.
 - The charging and discharging variable for electricity storage is created without a binary variable using the convex hull description.
 - Gas Boiler asset is renamed as HeatSourceGas

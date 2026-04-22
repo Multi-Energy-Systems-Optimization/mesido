@@ -4,6 +4,7 @@ from abc import abstractmethod
 import casadi as ca
 
 from mesido.base_component_type_mixin import BaseComponentTypeMixin
+from mesido.base_problem_mixin import BaseProblemMixin
 from mesido.esdl.asset_to_component_base import AssetStateEnum
 
 import numpy as np
@@ -16,7 +17,9 @@ from rtctools.optimization.timeseries import Timeseries
 logger = logging.getLogger("mesido")
 
 
-class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
+class FinancialMixin(
+    BaseProblemMixin, BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem
+):
     """
     The FinancialMixin is used to instantiate variables for the different cost components of the
     assets in the energy network and to set constraints to compute them based upon the usage and
@@ -797,14 +800,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         return max_
 
     def __state_vector_scaled(self, variable, ensemble_member):
-        """
-        This functions returns the casadi symbols scaled with their nominal for the entire time
-        horizon.
-        """
-        canonical, sign = self.alias_relation.canonical_signed(variable)
-        return (
-            self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
-        )
+        return self._BaseProblemMixin__state_vector_scaled(variable, ensemble_member)
 
     def __investment_cost_constraints(self, ensemble_member):
         """
@@ -1389,8 +1385,13 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                             )
                             / max(self.get_aggregation_count_max(asset), 1.0)
                         )
-                constraints.append(((heat_flow + asset_is_realized * big_m) / big_m, 0.0, np.inf))
-                constraints.append(((heat_flow - asset_is_realized * big_m) / big_m, -np.inf, 0.0))
+                constraints.extend(
+                    self._symmetric_big_m_constraints(
+                        heat_flow,
+                        asset_is_realized * big_m,
+                        big_m,
+                    )
+                )
 
         return constraints
 
@@ -1450,28 +1451,11 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     if self.variable_nominal(self._asset_investment_cost_map[asset]) > 1.0e2:
                         capex_sym = capex_sym + investment_cost_sym
 
-                    constraints.append(
-                        (
-                            (
-                                cumulative_investments_made
-                                - capex_sym
-                                + (1.0 - asset_is_realized) * big_m
-                            )
-                            / nominal,
-                            0.0,
-                            np.inf,
-                        )
-                    )
-                    constraints.append(
-                        (
-                            (
-                                cumulative_investments_made
-                                - capex_sym
-                                - (1.0 - asset_is_realized) * big_m
-                            )
-                            / nominal,
-                            -np.inf,
-                            0.0,
+                    constraints.extend(
+                        self._symmetric_big_m_constraints(
+                            cumulative_investments_made - capex_sym,
+                            (1.0 - asset_is_realized) * big_m,
+                            nominal,
                         )
                     )
 
@@ -1502,11 +1486,12 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                                 )
                                 / max(self.get_aggregation_count_max(asset), 1.0)
                             )
-                    constraints.append(
-                        ((heat_flow + asset_is_realized * big_m) / big_m, 0.0, np.inf)
-                    )
-                    constraints.append(
-                        ((heat_flow - asset_is_realized * big_m) / big_m, -np.inf, 0.0)
+                    constraints.extend(
+                        self._symmetric_big_m_constraints(
+                            heat_flow,
+                            asset_is_realized * big_m,
+                            big_m,
+                        )
                     )
 
         return constraints

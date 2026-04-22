@@ -1,8 +1,9 @@
 import logging
-from typing import List
+from typing import List, Union
 
 import esdl
 
+from mesido.esdl.common import Asset
 from mesido.network_common import NetworkSettings
 from mesido.pipe_class import PipeClass
 
@@ -177,7 +178,7 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
             *self.energy_system_components.get("heat_buffer", []),
             *self.energy_system_components.get("heat_pump", []),
         ]:
-            esdl_asset = self.esdl_assets[self.esdl_asset_name_to_id_map[asset]]
+            esdl_asset = self.esdl_assets[asset]
             for constraint in esdl_asset.attributes.get("constraint", []):
                 if constraint.name == "setpointconstraint":
                     time_unit = constraint.range.profileQuantityAndUnit.perTimeUnit
@@ -193,7 +194,7 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
                         time_hours = 365 * 24
                     else:
                         logger.error(
-                            f"{asset} has a setpoint constaint specified with unknown"
+                            f"{esdl_asset.name} has a setpoint constraint specified with unknown"
                             f"per time unit"
                         )
 
@@ -252,7 +253,7 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
                 *self.energy_system_components.get("heat_exchanger", []),
                 *self.energy_system_components.get("heat_demand", []),
             ]:
-                esdl_asset = self.esdl_assets[self.esdl_asset_name_to_id_map[asset]]
+                esdl_asset = self.esdl_assets[asset]
                 parameters = self.parameters(0)
                 for i in range(len(esdl_asset.attributes["constraint"].items)):
                     constraint = esdl_asset.attributes["constraint"].items[i]
@@ -285,3 +286,25 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
                         self.__temperature_options[carrier] = temperature_options
 
         return temperature_options
+
+
+def get_asset_contraints(
+    self, asset: Asset, constraint_type: esdl.Constraint
+) -> Union[List[esdl.Constraint], int]:
+    """
+    Get the contraints at an asset and the qty thereof.
+
+    Arg:
+        asset: mesido common asset with all attributes
+        constraint type: the type of contraint specified (e.g. esdl.RangedConstraint,
+        esdl.ProfileConstraint)
+
+    Returns:
+        - Contraints of a specific type
+        - Number of constraints of specific type that exists
+    """
+
+    asset_constraints = [
+        cnst for cnst in asset.attributes["constraint"] if isinstance(cnst, constraint_type)
+    ]
+    return asset_constraints, len(asset_constraints)

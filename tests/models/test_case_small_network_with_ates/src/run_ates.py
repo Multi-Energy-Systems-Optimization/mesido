@@ -219,7 +219,7 @@ class HeatProblemPlacingOverTime(HeatProblem):
 
         # Constraints for investment speed, please note that we need to enforce index 0 to be 0.
         for s in self.energy_system_components.get("heat_source", []):
-            inv_made = self.__state_vector_scaled(
+            inv_made = self._BaseProblemMixin__state_vector_scaled(
                 f"{s}__cumulative_investments_made_in_eur", ensemble_member
             )
             nominal = self.variable_nominal(f"{s}__cumulative_investments_made_in_eur")
@@ -236,16 +236,6 @@ class HeatProblemPlacingOverTime(HeatProblem):
             constraints.append((heat_ates, 0.0, 0.0))
 
         return constraints
-
-    def __state_vector_scaled(self, variable, ensemble_member):
-        """
-        This functions returns the casadi symbols scaled with their nominal for the entire time
-        horizon.
-        """
-        canonical, sign = self.alias_relation.canonical_signed(variable)
-        return (
-            self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
-        )
 
     def times(self, variable=None):
         """
