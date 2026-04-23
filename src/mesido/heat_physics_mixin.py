@@ -1435,28 +1435,11 @@ class HeatPhysicsMixin(
                             f"{sup_carrier}_{supply_temperature}"
                         )
 
-                        constraints.append(
-                            (
-                                (
-                                    heat_out
-                                    - discharge * cp * rho * supply_temperature
-                                    + (1.0 - sup_temperature_is_selected) * big_m
-                                )
-                                / constraint_nominal,
-                                0.0,
-                                np.inf,
-                            )
-                        )
-                        constraints.append(
-                            (
-                                (
-                                    heat_out
-                                    - discharge * cp * rho * supply_temperature
-                                    - (1.0 - sup_temperature_is_selected) * big_m
-                                )
-                                / constraint_nominal,
-                                -np.inf,
-                                0.0,
+                        constraints.extend(
+                            self._symmetric_big_m_constraints(
+                                heat_out - discharge * cp * rho * supply_temperature,
+                                (1.0 - sup_temperature_is_selected) * big_m,
+                                constraint_nominal,
                             )
                         )
 
@@ -1512,18 +1495,6 @@ class HeatPhysicsMixin(
                         0.0,
                     )
                 )
-            else:
-                for supply_temperature in supply_temperatures:
-                    sup_temperature_is_selected = self.state(f"{sup_carrier}_{supply_temperature}")
-
-                    constraints.extend(
-                        self._symmetric_big_m_constraints(
-                            heat_out - discharge * cp * rho * supply_temperature,
-                            (1.0 - sup_temperature_is_selected) * big_m,
-                            constraint_nominal,
-                        )
-                    )
-
 
         return constraints
 
