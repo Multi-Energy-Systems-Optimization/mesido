@@ -130,6 +130,9 @@ class ESDLMixin(
             DBAccessType.READ: [],
             DBAccessType.WRITE: [],
         }
+        self._workers_db_profile_reading = kwargs.get(
+            "workers_db_profile_reading", min(4, os.cpu_count())
+        )
 
         profile_reader_class = kwargs.get("profile_reader", InfluxDBProfileReader)
         input_file_name = kwargs.get("input_timeseries_file", None)
@@ -189,6 +192,7 @@ class ESDLMixin(
                 file_path=input_file_path,
                 database_credentials=read_only_dbase_credentials,
                 use_esdl_ranged_contraint=self._ESDLMixin__use_esdl_ranged_constraint,
+                workers_db_profile_reading=self._workers_db_profile_reading,
             )
         else:  # read from a file, no database credentials needed
             self.__profile_reader: BaseProfileReader = profile_reader_class(
@@ -824,6 +828,9 @@ class ESDLMixin(
         esdl_carriers = self.esdl_carriers
         self.hot_cold_pipe_relations()
         io = self.io
+
+        import time
+        start_time = time.time()
         self.__profile_reader.read_profiles(
             energy_system_components=energy_system_components,
             io=io,
@@ -833,6 +840,8 @@ class ESDLMixin(
             ensemble_size=ensemble_size,
             ensemble=self.__ensemble,
         )
+        print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
+        exit("kobus arrrrrrrrrrrrrrrrrrrrrr")
 
     def write(self) -> None:
         """

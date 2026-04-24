@@ -1,7 +1,10 @@
+import time
 import datetime
 import logging
 import sys
+import threading
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Dict, Optional, Set, Tuple
 
@@ -259,6 +262,7 @@ class InfluxDBProfileReader(BaseProfileReader):
         self,
         energy_system: esdl.EnergySystem,
         file_path: Optional[Path],
+        workers_db_profile_reading: Optional[int] = None,
         use_esdl_ranged_contraint: bool = False,
         database_credentials: Optional[Dict[str, Tuple[str, str]]] = None,
     ):
@@ -271,6 +275,9 @@ class InfluxDBProfileReader(BaseProfileReader):
         self._database_credentials = (
             database_credentials if database_credentials is not None else {"": ("", "")}
         )
+        self._database_profilemanager = list()
+        self._lock = threading.Lock()
+        self._workers_db_profile_parsing = workers_db_profile_reading
 
     def _load_profiles_from_source(
         self,
@@ -315,25 +322,40 @@ class InfluxDBProfileReader(BaseProfileReader):
                 )
                 unique_profiles.append(profile)
 
-                unique_series.append(
-                    self._load_profile_timeseries_from_database(profile=unique_profiles[-1])
-                )
-                self._check_profile_time_series(
-                    profile_time_series=unique_series[-1], profile=unique_profiles[-1]
-                )
-                if self._reference_datetimes is None:
-                    # TODO: since the previous function ensures it's a date time index, I'm not sure
-                    #  how to get rid of this type checking warning
-                    self._reference_datetimes = unique_series[-1].index
-                else:
-                    if not all(unique_series[-1].index == self._reference_datetimes):
-                        raise RuntimeError(
-                            f"Obtained a profile for asset {profile.field} with a "
-                            f"timeseries index that doesn't match the timeseries of "
-                            f"other assets. Please ensure that the profile that is "
-                            f"specified to be loaded for each asset covers exactly the "
-                            f"same timeseries. "
-                        )
+            # unique_profiles_attributes.append(
+            #         [
+            #             profile.database,
+            #             profile.field,
+            #             profile.host,
+            #             profile.startDate,
+            #             profile.endDate,
+            #             profile.measurement,
+            #             profile.port,
+            #         ]
+            #     )
+            # unique_profiles.append(profile)
+
+        # # Open parallel processes to load all unique profiles parallely
+        with ThreadPoolExecutor(max_workers=self._workers_db_profile_parsing) as executor:
+            print(f"fffffffffffff {self._workers_db_profile_parsing}")
+            unique_series = list(
+                executor.map(self._load_profile_timeseries_from_database, unique_profiles)
+            )
+            executor.map(self._check_profile_time_series, unique_series, unique_profiles)
+
+            if self._reference_datetimes is None:
+                # TODO: since the previous function ensures it's a date time index, I'm not sure
+                #  how to get rid of this type checking warning
+                self._reference_datetimes = unique_series[-1].index
+            else:
+                if not all(unique_series[-1].index == self._reference_datetimes):
+                    raise RuntimeError(
+                        f"Obtained a profile for asset {profile.field} with a "
+                        f"timeseries index that doesn't match the timeseries of "
+                        f"other assets. Please ensure that the profile that is "
+                        f"specified to be loaded for each asset covers exactly the "
+                        f"same timeseries. "
+                    )
         # Loop trough all the requried profiles in the energy system and assign the profile data:
         # - series: use the unique series data, without reading from the database again
         # - other profile info: get it from the specific profile
@@ -447,7 +469,7 @@ class InfluxDBProfileReader(BaseProfileReader):
         username, password = self._database_credentials.get(influx_host, (None, None))
 
         conn_settings = ConnectionSettings(
-            host=profile.host,
+            host=profile_host,
             port=profile.port,
             username=username,
             password=password,
@@ -456,25 +478,79 @@ class InfluxDBProfileReader(BaseProfileReader):
             verify_ssl=ssl_setting,
         )
 
-        try:
-            time_series_data = InfluxDBProfileManager(conn_settings)
-        except Exception:
-            container = profile.eContainer()
-            asset = container.energyasset
-            get_potential_errors().add_potential_issue(
-                MesidoAssetIssueType.ASSET_PROFILE_AVAILABILITY,
-                asset.id,
-                f"Asset named {asset.name}: Database {profile.database}"
-                f" is not available in the host.",
-            )
-            potential_error_to_error(NetworkErrors.HEAT_NETWORK_ERRORS)
-
-        time_series_data.load_influxdb(
-            profile.measurement,
-            [profile.field],
-            profile.startDate,
-            profile.endDate,
+        # Check if an object of the InfluxDBProfileManager is already present in a list. If so,
+        # re-use that object that was already created and been stored in the list.
+        # First check if a connection is found. If yes, query the profile directly.
+        time_series_data = next(
+            filter(lambda x: x.database_settings == conn_settings, self._database_profilemanager),
+            None,
         )
+        # If connection not found, create it.
+        if not time_series_data:
+            # Acquire a lock to ensure that only one thread creates a connection for the same
+            # database settings, and other threads wait until the connection is created and stored
+            # in the list. This is to avoid multiple connections being created for the same
+            # database settings when multiple profiles share the same database settings and are
+            # loaded in parallel.
+            t0 = threading.current_thread().name
+            print(f"thread [{t0}] starting now and {time_series_data} before lock and profile.field {profile.field}", flush=True)
+            with self._lock:
+                time_series_data = next(
+                    filter(
+                        lambda x: x.database_settings == conn_settings,
+                        self._database_profilemanager,
+                    ),
+                    None,
+                )
+
+                print(
+                        "After LOOKUP:",
+                        "len=", len(self._database_profilemanager),
+                        "eqs=", [
+                            pm.database_settings == conn_settings
+                            for pm in self._database_profilemanager
+                        ],
+                        "time_series_data=", time_series_data,
+                        flush=True,
+                    )
+
+                if not time_series_data:
+                    try:
+                        time_series_data = InfluxDBProfileManager(conn_settings)
+                        time_series_data.load_influxdb(
+                            profile.measurement,
+                            [profile.field],
+                            profile.startDate,
+                            profile.endDate,
+                        )
+                        # Storing the InfluxDBProfileManager object in the list
+                        self._database_profilemanager.append(time_series_data)
+                        t1 = threading.current_thread().name
+                        print(f"no connection thread [{t1}] appending now for {profile.field}", flush=True)
+                        time.sleep(10)
+                    except Exception:
+                        container = profile.eContainer()
+                        asset = container.energyasset
+                        get_potential_errors().add_potential_issue(
+                            MesidoAssetIssueType.ASSET_PROFILE_AVAILABILITY,
+                            asset.id,
+                            f"Asset named {asset.name}: Database {profile.database}"
+                            f" is not available in the host.",
+                        )
+                        potential_error_to_error(NetworkErrors.HEAT_NETWORK_ERRORS)
+                else:
+                    time_series_data.load_influxdb(
+                        profile.measurement,
+                        [profile.field],
+                        profile.startDate,
+                        profile.endDate,
+                    )
+                    t2 = threading.current_thread().name
+                    print(f"connection exists thread [{t2}] now adding {profile.field}", flush=True)
+                    time.sleep(60)
+
+        t10 = threading.current_thread().name
+        print(f"thread [{t10}] going on so long and {time_series_data}", flush=True)
 
         if not time_series_data.profile_data_list:  # if time_series_data.profile_data_list == []:
             container = profile.eContainer()
