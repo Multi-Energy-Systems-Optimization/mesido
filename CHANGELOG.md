@@ -6,6 +6,7 @@
 - Addition of heat buffer asset with electric charging (i.e. HeatBufferElec).
 - DataSource is assigned to output profiles
 - Generic methods to create equality and inequality constraints using big-M formulation.
+- First implementation of a temperature profile for a producer. (experimental)
 
 ## Changed
 - Reduced the number of constraints required for headloss calculation with LINEARIZED_N_LINES_EQUALITY setting.
