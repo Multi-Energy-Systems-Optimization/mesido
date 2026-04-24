@@ -99,13 +99,16 @@ class TestHeat(TestCase):
 
     def test_heat_prod_profile(self):
         """
-        Test to ensure a carrier on the out port of a producer with a temperature profile
+        Test to ensure a carrier on the outport of a producer with a temperature profile
         follows said profile. Two cases are run, the first one with just one producer
         and one consumer. The second one has two producers connected in series. The main goal
         of the second case is to ensure the system runs when one of the producers has a
         prescribed out temperature equal to its in one (effectively bypassing it).
 
         Checks:
+        - demand matching
+        - energy conservation
+        - heat to discharge
         - Checks that the temperatures coming out of the producer match the input profile.
 
         """

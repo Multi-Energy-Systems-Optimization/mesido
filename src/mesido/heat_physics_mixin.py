@@ -1451,6 +1451,10 @@ class HeatPhysicsMixin(
         __source_heat_to_discharge_path_constraints for cases where the out carrier
         has a prescribed temperature profile. An important difference is that these
         are conventional constraints, since every timestep will have a specific value.
+
+        TODO: This has not yet been tested and developed for cases with multiple sources on the
+        same network and only one contains the temperature profile. With the current
+        implementation, all source on the same network should have this same temperature profile.
         """
 
         constraints = []
