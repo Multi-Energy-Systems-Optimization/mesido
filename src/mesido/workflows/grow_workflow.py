@@ -553,8 +553,9 @@ class EndScenarioSizing(
             realized_demand = results[f"{d}.Heat_demand"]
             target = self.get_timeseries(f"{d}.target_heat_demand", ensemble_member=e_m).values
             parameters[f"{d}.target_heat_demand"] = target.tolist()
-            timesteps = np.diff(self.get_timeseries(f"{d}.target_heat_demand",
-                                                    ensemble_member=e_m).times)
+            timesteps = np.diff(
+                self.get_timeseries(f"{d}.target_heat_demand", ensemble_member=e_m).times
+            )
             delta_energy = np.sum((target - realized_demand)[1:] * timesteps / 1.0e9)
             if delta_energy >= 1.0:
                 logger.warning(

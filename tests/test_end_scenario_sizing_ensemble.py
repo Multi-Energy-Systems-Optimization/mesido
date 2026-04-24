@@ -57,7 +57,12 @@ class TestEndScenarioSizingEnsemble(TestCase):
                 heat_to_discharge_test(heat_problem, heat_problem.extract_results(e_m))
 
             def check_consistent_size_and_costs(
-                results, heat_problem, assets, equal_size_assets=True, asset_opex_optional=False
+                results,
+                parameters,
+                heat_problem,
+                assets,
+                equal_size_assets=True,
+                asset_opex_optional=False,
             ):
                 inv_costs_source = [0.0] * heat_problem.ensemble_size
                 opex_source = [0.0] * heat_problem.ensemble_size
@@ -111,6 +116,7 @@ class TestEndScenarioSizingEnsemble(TestCase):
 
             inv_costs_dem, opex_dem = check_consistent_size_and_costs(
                 results,
+                parameters,
                 heat_problem,
                 heat_demands,
                 equal_size_assets=True,
@@ -120,25 +126,34 @@ class TestEndScenarioSizingEnsemble(TestCase):
                 True if "heat_source" in config["_asset_types_fixed_size"] else False
             )
             inv_costs_source, opex_source = check_consistent_size_and_costs(
-                results, heat_problem, heat_sources, equal_size_assets=equal_sizes_heat_source
+                results,
+                parameters,
+                heat_problem,
+                heat_sources,
+                equal_size_assets=equal_sizes_heat_source,
             )
             equal_sizes_geo = True if "geothermal" in config["_asset_types_fixed_size"] else False
             _, _ = check_consistent_size_and_costs(
-                results, heat_problem, geothermal, equal_size_assets=equal_sizes_geo
+                results, parameters, heat_problem, geothermal, equal_size_assets=equal_sizes_geo
             )
             equal_sizes_heat_buffer = (
                 True if "heat_buffer" in config["_asset_types_fixed_size"] else False
             )
             inv_costs_buffer, opex_buffer = check_consistent_size_and_costs(
-                results, heat_problem, buffers, equal_size_assets=equal_sizes_heat_buffer
+                results,
+                parameters,
+                heat_problem,
+                buffers,
+                equal_size_assets=equal_sizes_heat_buffer,
             )
             equal_sizes_ates = True if "ates" in config["_asset_types_fixed_size"] else False
             inv_costs_ates, opex_ates = check_consistent_size_and_costs(
-                results, heat_problem, ates, equal_size_assets=equal_sizes_ates
+                results, parameters, heat_problem, ates, equal_size_assets=equal_sizes_ates
             )
 
             inv_costs_pipes, opex_pipes = check_consistent_size_and_costs(
                 results,
+                parameters,
                 heat_problem,
                 heat_pipes,
                 equal_size_assets=False,
