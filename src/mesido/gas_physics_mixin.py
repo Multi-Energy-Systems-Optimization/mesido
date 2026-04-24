@@ -538,20 +538,7 @@ class GasPhysicsMixin(
 
             # Note we only need one on the milp as the desired behaviour is propegated by the
             # constraints heat_in - heat_out - heat_loss == 0.
-            constraints.append(
-                (
-                    (q_in - big_m * flow_dir) / big_m,
-                    -np.inf,
-                    0.0,
-                )
-            )
-            constraints.append(
-                (
-                    (q_in + big_m * (1 - flow_dir)) / big_m,
-                    0.0,
-                    np.inf,
-                )
-            )
+            constraints.extend(self._big_m_ineq_constraints(q_in, 1 - flow_dir, big_m, big_m))
 
         # Pipes that are connected in series should have the same milp direction.
         for pipes in self.energy_system_topology.pipe_series:

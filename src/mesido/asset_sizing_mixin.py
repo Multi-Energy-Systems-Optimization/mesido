@@ -12,6 +12,7 @@ from mesido.demand_insulation_class import DemandInsulationClass
 from mesido.esdl.asset_to_component_base import AssetStateEnum
 from mesido.esdl.common import Asset
 from mesido.esdl.esdl_additional_vars_mixin import get_asset_contraints
+from mesido.esdl.profile_parser import InfluxDBProfileReader
 from mesido.head_loss_class import HeadLossOption
 from mesido.network_common import NetworkSettings
 from mesido.pipe_class import CableClass, GasPipeClass, PipeClass
@@ -811,7 +812,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             if (
                 qty_asset_profile_constraints > 0
                 and hasattr(asset_profile_constraints[0], "maximum")
-                and asset_profile_constraints[0].maximum.profileQuantityAndUnit.reference.unit
+                and InfluxDBProfileReader._get_profile_quantity_and_unit(
+                    asset_profile_constraints[0].maximum
+                ).unit
                 == esdl.UnitEnum.WATT
                 and parameters[f"{asset_name}.state"] == AssetStateEnum.OPTIONAL  # Optional asset
             ):
@@ -1349,29 +1352,12 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             big_m = 2.0 * max(max_discharges.values())
             for pc, var_name in pipe_classes.items():
                 pipe_class_discharge_ordering = self.extra_variable(var_name, ensemble_member)
-
-                constraints.append(
-                    (
-                        (
-                            max_discharge
-                            - max_discharges[pc.name]
-                            + pipe_class_discharge_ordering * big_m
-                        )
-                        / median_discharge,
-                        0.0,
-                        np.inf,
-                    )
-                )
-                constraints.append(
-                    (
-                        (
-                            max_discharge
-                            - max_discharges[pc.name]
-                            - (1.0 - pipe_class_discharge_ordering) * big_m
-                        )
-                        / median_discharge,
-                        -np.inf,
-                        0.0,
+                constraints.extend(
+                    self._big_m_ineq_constraints(
+                        max_discharge - max_discharges[pc.name],
+                        pipe_class_discharge_ordering,
+                        big_m,
+                        median_discharge,
                     )
                 )
 
@@ -1386,20 +1372,12 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 pipe_class_cost_ordering = self.extra_variable(var_name, ensemble_member)
 
                 # should be one if >= than cost_symbol
-                constraints.append(
-                    (
-                        (cost_sym - costs[pc.name] + pipe_class_cost_ordering * big_m)
-                        / self.variable_nominal(cost_sym_name),
-                        0.0,
-                        np.inf,
-                    )
-                )
-                constraints.append(
-                    (
-                        (cost_sym - costs[pc.name] - (1.0 - pipe_class_cost_ordering) * big_m)
-                        / self.variable_nominal(cost_sym_name),
-                        -np.inf,
-                        0.0,
+                constraints.extend(
+                    self._big_m_ineq_constraints(
+                        cost_sym - costs[pc.name],
+                        pipe_class_cost_ordering,
+                        big_m,
+                        self.variable_nominal(cost_sym_name),
                     )
                 )
 
@@ -1434,24 +1412,12 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     pipe_class_heat_loss_ordering = self.extra_variable(var_name, ensemble_member)
 
                     # should be one if >= than heat_loss_symbol
-                    constraints.append(
-                        (
-                            (heat_loss_sym - heat_loss + pipe_class_heat_loss_ordering * big_m)
-                            / self.variable_nominal(heat_loss_sym_name),
-                            0.0,
-                            np.inf,
-                        )
-                    )
-                    constraints.append(
-                        (
-                            (
-                                heat_loss_sym
-                                - heat_loss
-                                - (1.0 - pipe_class_heat_loss_ordering) * big_m
-                            )
-                            / self.variable_nominal(heat_loss_sym_name),
-                            -np.inf,
-                            0.0,
+                    constraints.extend(
+                        self._big_m_ineq_constraints(
+                            heat_loss_sym - heat_loss,
+                            pipe_class_heat_loss_ordering,
+                            big_m,
+                            self.variable_nominal(heat_loss_sym_name),
                         )
                     )
 
@@ -1544,29 +1510,12 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             big_m = 2.0 * max(max_discharges.values())
             for pc, var_name in pipe_classes.items():
                 pipe_class_discharge_ordering = self.extra_variable(var_name, ensemble_member)
-
-                constraints.append(
-                    (
-                        (
-                            max_discharge
-                            - max_discharges[pc.name]
-                            + pipe_class_discharge_ordering * big_m
-                        )
-                        / median_discharge,
-                        0.0,
-                        np.inf,
-                    )
-                )
-                constraints.append(
-                    (
-                        (
-                            max_discharge
-                            - max_discharges[pc.name]
-                            - (1.0 - pipe_class_discharge_ordering) * big_m
-                        )
-                        / median_discharge,
-                        -np.inf,
-                        0.0,
+                constraints.extend(
+                    self._big_m_ineq_constraints(
+                        max_discharge - max_discharges[pc.name],
+                        pipe_class_discharge_ordering,
+                        big_m,
+                        median_discharge,
                     )
                 )
 
@@ -1581,20 +1530,12 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 pipe_class_cost_ordering = self.extra_variable(var_name, ensemble_member)
 
                 # should be one if >= than cost_symbol
-                constraints.append(
-                    (
-                        (cost_sym - costs[pc.name] + pipe_class_cost_ordering * big_m)
-                        / self.variable_nominal(cost_sym_name),
-                        0.0,
-                        np.inf,
-                    )
-                )
-                constraints.append(
-                    (
-                        (cost_sym - costs[pc.name] - (1.0 - pipe_class_cost_ordering) * big_m)
-                        / self.variable_nominal(cost_sym_name),
-                        -np.inf,
-                        0.0,
+                constraints.extend(
+                    self._big_m_ineq_constraints(
+                        cost_sym - costs[pc.name],
+                        pipe_class_cost_ordering,
+                        big_m,
+                        self.variable_nominal(cost_sym_name),
                     )
                 )
 
@@ -1691,25 +1632,12 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             big_m = 2.0 * max(max_currents.values())
             for cc, var_name in cable_classes.items():
                 cable_class_current_ordering = self.extra_variable(var_name, ensemble_member)
-
-                constraints.append(
-                    (
-                        (max_current - max_currents[cc.name] + cable_class_current_ordering * big_m)
-                        / median_current,
-                        0.0,
-                        np.inf,
-                    )
-                )
-                constraints.append(
-                    (
-                        (
-                            max_current
-                            - max_currents[cc.name]
-                            - (1.0 - cable_class_current_ordering) * big_m
-                        )
-                        / median_current,
-                        -np.inf,
-                        0.0,
+                constraints.extend(
+                    self._big_m_ineq_constraints(
+                        max_current - max_currents[cc.name],
+                        cable_class_current_ordering,
+                        big_m,
+                        median_current,
                     )
                 )
 
@@ -1727,20 +1655,12 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 pipe_class_cost_ordering = self.extra_variable(var_name, ensemble_member)
 
                 # should be one if >= than cost_symbol
-                constraints.append(
-                    (
-                        (cost_sym - costs[cc.name] + pipe_class_cost_ordering * big_m)
-                        / self.variable_nominal(cost_sym_name),
-                        0.0,
-                        np.inf,
-                    )
-                )
-                constraints.append(
-                    (
-                        (cost_sym - costs[cc.name] - (1.0 - pipe_class_cost_ordering) * big_m)
-                        / self.variable_nominal(cost_sym_name),
-                        -np.inf,
-                        0.0,
+                constraints.extend(
+                    self._big_m_ineq_constraints(
+                        cost_sym - costs[cc.name],
+                        pipe_class_cost_ordering,
+                        big_m,
+                        self.variable_nominal(cost_sym_name),
                     )
                 )
 
@@ -1916,7 +1836,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             if (
                 qty_asset_profile_constraints > 0
                 and hasattr(asset_profile_constraints[0], "maximum")
-                and asset_profile_constraints[0].maximum.profileQuantityAndUnit.reference.unit
+                and InfluxDBProfileReader._get_profile_quantity_and_unit(
+                    asset_profile_constraints[0].maximum
+                ).unit
                 == esdl.UnitEnum.WATT
             ):
                 parameters = self.parameters(ensemble_member)
@@ -1957,16 +1879,18 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 # profile is specified without units (xlm/csv)
                 qty_asset_profile_constraints == 0
                 or (
-                    asset_profile_constraints[
-                        0
-                    ].maximum.profileQuantityAndUnit.reference.physicalQuantity
+                    InfluxDBProfileReader._get_profile_quantity_and_unit(
+                        asset_profile_constraints[0].maximum
+                    ).physicalQuantity
                     == esdl.PhysicalQuantityEnum.COEFFICIENT
                     and (
-                        asset_profile_constraints[0].maximum.profileQuantityAndUnit.reference.unit
+                        InfluxDBProfileReader._get_profile_quantity_and_unit(
+                            asset_profile_constraints[0].maximum
+                        ).unit
                         == esdl.UnitEnum.PERCENT
-                        or asset_profile_constraints[
-                            0
-                        ].maximum.profileQuantityAndUnit.reference.unit
+                        or InfluxDBProfileReader._get_profile_quantity_and_unit(
+                            asset_profile_constraints[0].maximum
+                        ).unit
                         == esdl.UnitEnum.NONE
                     )
                 )  # profile from esdl
