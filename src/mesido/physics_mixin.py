@@ -241,23 +241,11 @@ class PhysicsMixin(
                 # Constraining setpoint_is_free to 1 when value of
                 # backward_heat_rate_expression < 0, otherwise
                 # setpoint_is_free's value can be 0 and 1
-                constraints.append(
-                    (
-                        (backward_heat_rate_expression[i - 1] + setpoint_is_free[i] * big_m)
-                        / nominal,
-                        0.0,
-                        np.inf,
-                    )
-                )
-                # Constraining setpoint_is_free to 1 when value of
-                # backward_heat_rate_expression > 0, otherwise
-                # setpoint_is_free's value can be 0 and 1
-                constraints.append(
-                    (
-                        (backward_heat_rate_expression[i - 1] - setpoint_is_free[i] * big_m)
-                        / nominal,
-                        -np.inf,
-                        0.0,
+                constraints.extend(
+                    self._symmetric_big_m_constraints(
+                        backward_heat_rate_expression[i - 1],
+                        setpoint_is_free[i] * big_m,
+                        nominal,
                     )
                 )
 
