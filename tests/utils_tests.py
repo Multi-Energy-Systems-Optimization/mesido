@@ -882,8 +882,8 @@ def cost_calculation_test(solution, results, atol=1e-8):
 
             variable_operational_cost = sum(
                 var_op_costs_esdl
-                * nominator_vector[1 : len(solution.times())]
-                * timesteps_hr[: len(solution.times()) - 1]
+                * nominator_vector[1:]
+                * timesteps_hr
                 / denominator
             )
 
