@@ -177,7 +177,8 @@ class TestLogicalLinks(TestCase):
         Meaning an energy system where assets are directly connected to each other without a network
         (transport asset(s)) in between. This specific test covers the logical connection between
         producers and consumers to nodes in a heat network. Please note that due to the closed
-        system constraints we need to set the minimum velocity to zero to avoid backflow in the solution.
+        system constraints we need to set the minimum velocity to zero to avoid backflow in the
+        solution.
 
         This is the most basic check where we have a simple network and check for the basic physics.
         This simple network includes one source, some pipes and logical links, node, a tank storage
@@ -213,7 +214,7 @@ class TestLogicalLinks(TestCase):
         energy_conservation_test(problem, results)
         heat_to_discharge_test(problem, results)
 
-        # We test conservaiton of flow at the nodes
+        # Test conservatioon of flow at the nodes
         for node, connected_pipes in problem.energy_system_topology.nodes.items():
             discharge_sum = 0.0
 
