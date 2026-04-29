@@ -131,7 +131,7 @@ class TestEndScenarioSizing(TestCase):
         np.testing.assert_array_less(1e3, self.results[f"{a_id}__variable_operational_cost"])
         np.testing.assert_array_less(1e3, self.results[f"{ht_id}__investment_cost"])
         np.testing.assert_array_less(1e3, self.results[f"{ht_id}__installation_cost"])
-        cost_calculation_test(self.solution, self.results)
+        cost_calculation_test(self.solution, self.results, check_objective_function=True)
 
         # Check that indeed the available pipe classes were adapted based on expected flow
         # Pipe connected to a demand

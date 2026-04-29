@@ -681,7 +681,7 @@ def _get_esdl_scaled_cost(cost_esdl_info, uni_enum):
     return cost_scaled
 
 
-def cost_calculation_test(solution, results, atol=1e-8):
+def cost_calculation_test(solution, results, check_objective_function=False, atol=1e-8):
     """
     Compute CAPEX/OPEX per asset to verify against costs in `results`.
 
@@ -692,11 +692,13 @@ def cost_calculation_test(solution, results, atol=1e-8):
       - Fixed operational + maintenance costs (size-based and accumulated over technical life),
       - Variable operational costs (time-integrated using timestep durations, with asset-specific
         logic such as COP or fuel/flow conversions).
+      - Objective function contribution if `calc_objective` is True
 
     Parameters
     ----------
     solution : object. Solved energy system model wrapper providing information.
     results : dict. Dictionary with per-asset computed outputs
+    check_objective_function : bool. If True, validate asset contributions to objective value.
     atol : float. Absolute tolerance used for numerical comparisons where applicable.
 
     """
@@ -739,6 +741,7 @@ def cost_calculation_test(solution, results, atol=1e-8):
     total_installation_cost = 0.0
     total_fixed_operational_cost = 0.0
     total_variable_operational_cost = 0.0
+    objective = 0.0
     for asset in assets:
         esdl_asset = solution.esdl_assets[asset]
         costs_esdl_asset = esdl_asset.attributes["costInformation"]
@@ -879,12 +882,14 @@ def cost_calculation_test(solution, results, atol=1e-8):
                     nominator_vector = heat_source
             elif asset in solution.energy_system_components.get("airco", []):
                 nominator_vector = results[f"{asset}.Heat_airco"]
+            else:
+                raise AssertionError(
+                    f"Asset '{asset}' is not handled in the variable operational cost calculation"
+                    f" of cost_calculation_test."
+                )
 
             variable_operational_cost = sum(
-                var_op_costs_esdl
-                * nominator_vector[1:]
-                * timesteps_hr
-                / denominator
+                var_op_costs_esdl * nominator_vector[1:] * timesteps_hr / denominator
             )
 
             np.testing.assert_allclose(
@@ -892,4 +897,20 @@ def cost_calculation_test(solution, results, atol=1e-8):
             )
         total_variable_operational_cost += variable_operational_cost
 
-    # TODO: add a check for objective value
+        if check_objective_function:
+            technical_lifetime = solution.parameters(0)[f"{asset}.technical_life"]
+            number_of_years = solution._number_of_years
+            if esdl_asset.attributes["state"] == esdl.AssetStateEnum.OPTIONAL:
+                factor = max(1.0, number_of_years / technical_lifetime)
+                objective += (
+                    (investment_cost + installation_cost) * factor
+                    + (fixed_operational_cost + variable_operational_cost) * number_of_years
+                ) / 1e6
+            else:
+                objective += (
+                    (fixed_operational_cost + variable_operational_cost) * number_of_years / 1e6
+                )
+
+    # Check the objective value
+    if check_objective_function:
+        np.testing.assert_allclose(solution.objective_value, objective)

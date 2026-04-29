@@ -85,7 +85,7 @@ class TestGasElect(TestCase):
         # Check the cost calculations
         np.testing.assert_array_less(1e3, results[f"{gh_1_id}__variable_operational_cost"])
         np.testing.assert_array_less(1e3, results[f"{hp_2_id}__variable_operational_cost"])
-        cost_calculation_test(solution, results)
+        cost_calculation_test(solution, results, check_objective_function=True)
 
         demand_matching_test(solution_high_demand, results_high_demand)
         energy_conservation_test(solution_high_demand, results_high_demand)
@@ -100,7 +100,9 @@ class TestGasElect(TestCase):
         np.testing.assert_array_less(
             1e3, results_high_demand[f"{hp_2_id}__variable_operational_cost"]
         )
-        cost_calculation_test(solution_high_demand, results_high_demand)
+        cost_calculation_test(
+            solution_high_demand, results_high_demand, check_objective_function=True
+        )
 
         # Test: Check if gas pipe diameter value in resulting parameters are
         # updated with optimized values in results
