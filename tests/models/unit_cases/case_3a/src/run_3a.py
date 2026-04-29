@@ -333,8 +333,9 @@ class HeatProblemProdProfile(HeatProblemESDLProdProfile):
     def read(self):
         super().read()
 
+        heat_demand_id = self.esdl_asset_name_to_id_map["HeatingDemand_a3b8"]
         for s in self.energy_system_components["heat_source"]:
-            demand_timeseries = self.get_timeseries("HeatingDemand_a3b8.target_heat_demand")
+            demand_timeseries = self.get_timeseries(f"{heat_demand_id}.target_heat_demand")
             new_timeseries = np.ones(len(demand_timeseries.values)) * 1
             ind_hlf = int(len(demand_timeseries.values) / 2)
             new_timeseries[ind_hlf : ind_hlf + 1] = np.ones(1) * 0.10

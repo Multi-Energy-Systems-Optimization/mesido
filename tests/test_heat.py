@@ -37,8 +37,10 @@ class TestHeat(TestCase):
         )
         results = case.extract_results()
 
-        source = results["source.Heat_source"]
-        demand = results["demand.Heat_demand"]
+        name_to_id_map = case.esdl_asset_name_to_id_map
+
+        source = results[f"{name_to_id_map['source']}.Heat_source"]
+        demand = results[f"{name_to_id_map['demand']}.Heat_demand"]
 
         # With non-zero milp losses in pipes, the demand should always be
         # strictly lower than what is produced.
@@ -50,7 +52,9 @@ class TestHeat(TestCase):
 
         # Check emission information is passed to parameters
         parameters = case.parameters(0)
-        np.testing.assert_allclose(parameters["source.emission_coeff"], 20 * 1e-6 * 3600)
+        np.testing.assert_allclose(
+            parameters[f"{name_to_id_map['source']}.emission_coeff"], 20 * 1e-6 * 3600
+        )
 
     def test_zero_heat_loss(self):
         """
@@ -92,6 +96,81 @@ class TestHeat(TestCase):
         demand_matching_test(case, results)
         energy_conservation_test(case, results)
         heat_to_discharge_test(case, results)
+
+    def test_heat_prod_profile(self):
+        """
+        Test to ensure a carrier on the outport of a producer with a temperature profile
+        follows said profile. Two cases are run, the first one with just one producer
+        and one consumer. The second one has two producers connected in series. The main goal
+        of the second case is to ensure the system runs when one of the producers has a
+        prescribed out temperature equal to its in one (effectively bypassing it).
+
+        Checks:
+        - demand matching
+        - energy conservation
+        - heat to discharge
+        - Checks that the temperatures coming out of the producer match the input profile.
+
+        """
+        import models.source_pipe_sink.src.double_pipe_heat as double_pipe_heat
+        from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
+
+        class Model(SourcePipeSink):
+            def energy_system_options(self):
+                options = super().energy_system_options()
+                options["neglect_pipe_heat_losses"] = True
+
+                return options
+
+        base_folder = Path(double_pipe_heat.__file__).resolve().parent.parent
+
+        case = run_esdl_mesido_optimization(
+            Model,
+            base_folder=base_folder,
+            esdl_file_name="sourcesink_prof_test.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_prod_test.csv",
+        )
+
+        results = case.extract_results()
+        parameters = case.parameters(0)
+
+        demand_matching_test(case, results)
+        energy_conservation_test(case, results)
+        heat_to_discharge_test(case, results)
+
+        heat_flow_out_pipe1 = results["Pipe1.HeatOut.Heat"]
+        vol_flow_pipe1 = results["Pipe1.HeatIn.Q"]
+        cp = parameters["Pipe1.cp"]
+        rho = parameters["Pipe1.rho"]
+        temp_pipe1 = heat_flow_out_pipe1 / (cp * rho * vol_flow_pipe1)
+        temp_input_prof = case.get_timeseries("heat.price_profile").values
+        np.testing.assert_array_almost_equal(temp_pipe1, temp_input_prof)
+
+        case = run_esdl_mesido_optimization(
+            Model,
+            base_folder=base_folder,
+            esdl_file_name="sourcesink_prof_test_2prod.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_prod_test.csv",
+        )
+
+        results = case.extract_results()
+        parameters = case.parameters(0)
+
+        demand_matching_test(case, results)
+        energy_conservation_test(case, results)
+        heat_to_discharge_test(case, results)
+
+        heat_flow_out_pipe1 = results["Pipe1.HeatOut.Heat"]
+        vol_flow_pipe1 = results["Pipe1.HeatIn.Q"]
+        cp = parameters["Pipe1.cp"]
+        rho = parameters["Pipe1.rho"]
+        temp_pipe1 = heat_flow_out_pipe1 / (cp * rho * vol_flow_pipe1)
+        temp_input_prof = case.get_timeseries("heat.price_profile").values
+        np.testing.assert_array_almost_equal(temp_pipe1, temp_input_prof)
 
 
 class TestMinMaxPressureOptions(TestCase):
@@ -230,10 +309,20 @@ class TestMinMaxPressureOptions(TestCase):
         min_, max_ = _get_min_max_pressure(case_min_max_pressure)
         self.assertGreater(min_, self.min_pressure * 0.99)
         self.assertLess(max_, self.max_pressure * 1.01)
-        target = case_default.get_timeseries("demand.target_heat_demand").values
+        default_name_to_id_map = case_default.esdl_asset_name_to_id_map
+        default_demand_id = default_name_to_id_map["demand"]
+        target = case_default.get_timeseries(f"{default_demand_id}.target_heat_demand").values
         self.assertLess(
-            np.sum((case_default.extract_results()["demand.Heat_demand"] - target) ** 2),
-            np.sum((case_min_max_pressure.extract_results()["demand.Heat_demand"] - target) ** 2),
+            np.sum(
+                (case_default.extract_results()[f"{default_demand_id}.Heat_demand"] - target) ** 2
+            ),
+            np.sum(
+                (
+                    case_min_max_pressure.extract_results()[f"{default_demand_id}.Heat_demand"]
+                    - target
+                )
+                ** 2
+            ),
         )
 
 
@@ -306,7 +395,9 @@ class TestDisconnectablePipe(TestCase):
             input_timeseries_file="timeseries_import.csv",
         )
         results_connected = case_connected.extract_results()
-        q_connected = results_connected["Pipe1.Q"]
+        connected_name_to_id_map = case_connected.esdl_asset_name_to_id_map
+        pipe1_connected_id = connected_name_to_id_map["Pipe1"]
+        q_connected = results_connected[f"{pipe1_connected_id}.Q"]
 
         case_disconnected = run_esdl_mesido_optimization(
             self.ModelDisconnected,
@@ -317,7 +408,9 @@ class TestDisconnectablePipe(TestCase):
             input_timeseries_file="timeseries_import.csv",
         )
         results_disconnected = case_disconnected.extract_results()
-        q_disconnected = results_disconnected["Pipe1.Q"]
+        disconnected_name_to_id_map = case_disconnected.esdl_asset_name_to_id_map
+        pipe1_disconnected_id = disconnected_name_to_id_map["Pipe1"]
+        q_disconnected = results_disconnected[f"{pipe1_disconnected_id}.Q"]
 
         # Sanity check, as we rely on the minimum velocity being strictly
         # larger than zero for the discharge constraint to disconnect the
@@ -326,8 +419,12 @@ class TestDisconnectablePipe(TestCase):
 
         self.assertLess(q_disconnected[1], q_connected[1])
         self.assertAlmostEqual(q_disconnected[1], 0.0, 5)
-        np.testing.assert_allclose(results_connected["Pipe1__is_disconnected"], 0.0)
-        np.testing.assert_allclose(results_disconnected["Pipe1__is_disconnected"][1], 1.0)
+        np.testing.assert_allclose(
+            results_connected[f"{pipe1_connected_id}.__is_disconnected"], 0.0
+        )
+        np.testing.assert_allclose(
+            results_disconnected[f"{pipe1_disconnected_id}.__is_disconnected"][1], 1.0
+        )
 
         np.testing.assert_allclose(q_connected[2:], q_disconnected[2:])
 
@@ -359,7 +456,8 @@ class TestDisconnectablePipe(TestCase):
             input_timeseries_file="timeseries_import.csv",
         )
         results_linear = case_linear.extract_results()
-        q_linear = results_linear["Pipe1.Q"]
+        linear_name_to_id_map = case_linear.esdl_asset_name_to_id_map
+        q_linear = results_linear[f"{linear_name_to_id_map['Pipe1']}.Q"]
 
         case_dw = run_esdl_mesido_optimization(
             self.ModelDisconnectedDarcyWeisbach,
@@ -370,15 +468,16 @@ class TestDisconnectablePipe(TestCase):
             input_timeseries_file="timeseries_import.csv",
         )
         results_dw = case_dw.extract_results()
-        q_dw = results_dw["Pipe1.Q"]
+        dw_name_to_id_map = case_dw.esdl_asset_name_to_id_map
+        pipe1_dw_id = dw_name_to_id_map["Pipe1"]
+        q_dw = results_dw[f"{pipe1_dw_id}.Q"]
 
         # Without any constraints on the maximum or minimum head/pressure
         # (loss) in the system, we expect equal results.
         np.testing.assert_allclose(q_linear, q_dw)
-        np.testing.assert_allclose(results_dw["Pipe1__is_disconnected"][1], 1.0)
+        np.testing.assert_allclose(results_dw[f"{pipe1_dw_id}.__is_disconnected"][1], 1.0)
 
 
 if __name__ == "__main__":
-
     a = TestHeat()
     a.test_heat_loss()

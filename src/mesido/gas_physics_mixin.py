@@ -1,8 +1,6 @@
 import copy
 import logging
 
-import casadi as ca
-
 from mesido.base_component_type_mixin import BaseComponentTypeMixin
 from mesido.base_problem_mixin import BaseProblemMixin
 from mesido.head_loss_class import HeadLossClass, HeadLossOption
@@ -116,7 +114,6 @@ class GasPhysicsMixin(
         self._gn_pipe_to_head_loss_map = {}
 
         # Boolean path-variable for the direction of the flow, inport to outport is positive flow.
-        self.__gas_flow_direct_var = {}
         self.__gas_flow_direct_bounds = {}
         self._gas_pipe_to_flow_direct_map = {}
 
@@ -127,7 +124,6 @@ class GasPhysicsMixin(
         # self._gas_pipe_disconnect_map = {}
 
         # Boolean variables for the linear line segment options per pipe.
-        # TDOD: change name to _gas_pipe_...
         self.__gas_pipe_linear_line_segment_var = {}  # value 0/1: line segment - not active/active
         self.__gas_pipe_linear_line_segment_var_bounds = {}
         self._gas_pipe_linear_line_segment_map = {}
@@ -136,13 +132,9 @@ class GasPhysicsMixin(
 
         self._gas_pipe_topo_pipe_class_map = {}
 
-        # self.__gas_pipe_disconnect_var = {}
-        # self.__gas_pipe_disconnect_var_bounds = {}
         self._gas_pipe_disconnect_map = {}
 
-        self.__gas_storage_discharge_var = {}
         self.__gas_storage_discharge_bounds = {}
-        self.__gas_storage_discharge_nominals = {}
         self.__gas_storage_discharge_map = {}
 
         # Map for setting port variable nominals in the case they were not set during the model
@@ -231,10 +223,10 @@ class GasPhysicsMixin(
                     ] = initialized_vars[10][pipe_linear_line_segment_var_name]
 
             # Integer variables
-            flow_dir_var = f"{pipe_name}__gas_flow_direct_var"
+            flow_dir_var = f"{pipe_name}.__gas_flow_direct_var"
 
             self._gas_pipe_to_flow_direct_map[pipe_name] = flow_dir_var
-            self.__gas_flow_direct_var[flow_dir_var] = ca.MX.sym(flow_dir_var)
+            # self.__gas_flow_direct_var[flow_dir_var] = ca.MX.sym(flow_dir_var)
 
             # Fix the directions that are already implied by the bounds on milp
             # Nonnegative milp implies that flow direction Boolean is equal to one.
@@ -263,17 +255,14 @@ class GasPhysicsMixin(
 
         if options["gas_storage_discharge_variables"]:
             for storage in self.energy_system_components.get("gas_tank_storage", []):
+                # updating bounds
                 bound_storage_q = -self.bounds()[f"{storage}.GasIn.Q"][0]
                 if isinstance(bound_storage_q, Timeseries):
                     bound_storage_q = copy.deepcopy(bound_storage_q)
                     bound_storage_q.values[bound_storage_q.values < 0] = 0.0
-                var_name = f"{storage}__Q_discharge"
+                var_name = f"{storage}.__Q_discharge"
                 self.__gas_storage_discharge_map[storage] = var_name
-                self.__gas_storage_discharge_var[var_name] = ca.MX.sym(var_name)
                 self.__gas_storage_discharge_bounds[var_name] = (0, bound_storage_q)
-                self.__gas_storage_discharge_nominals[var_name] = self.variable_nominal(
-                    f"{storage}.GasIn.Q"
-                )
 
         # Setting the node nominals using the connected assets.
         for node, connected_assets in self.energy_system_topology.gas_nodes.items():
@@ -343,10 +332,7 @@ class GasPhysicsMixin(
         """
         variables = super().path_variables.copy()
         variables.extend(self.__gas_pipe_head_loss_var.values())
-        variables.extend(self.__gas_flow_direct_var.values())
-        # variables.extend(self.__gas_pipe_disconnect_var.values())  # still to be implemented
         variables.extend(self.__gas_pipe_linear_line_segment_var.values())
-        variables.extend(self.__gas_storage_discharge_var.values())
 
         return variables
 
@@ -354,10 +340,7 @@ class GasPhysicsMixin(
         """
         All variables that only can take integer values should be added to this function.
         """
-        if (
-            variable in self.__gas_flow_direct_var
-            or variable in self.__gas_pipe_linear_line_segment_var
-        ):
+        if variable in self.__gas_pipe_linear_line_segment_var:
             return True
         else:
             return super().variable_is_discrete(variable)
@@ -369,8 +352,6 @@ class GasPhysicsMixin(
 
         if variable in self.__gas_pipe_head_loss_nominals:
             return self.__gas_pipe_head_loss_nominals[variable]
-        elif variable in self.__gas_storage_discharge_nominals:
-            return self.__gas_storage_discharge_nominals[variable]
         elif variable in self.__gas_node_variable_nominal:
             return self.__gas_node_variable_nominal[variable]
         else:
@@ -557,20 +538,7 @@ class GasPhysicsMixin(
 
             # Note we only need one on the milp as the desired behaviour is propegated by the
             # constraints heat_in - heat_out - heat_loss == 0.
-            constraints.append(
-                (
-                    (q_in - big_m * flow_dir) / big_m,
-                    -np.inf,
-                    0.0,
-                )
-            )
-            constraints.append(
-                (
-                    (q_in + big_m * (1 - flow_dir)) / big_m,
-                    0.0,
-                    np.inf,
-                )
-            )
+            constraints.extend(self._big_m_ineq_constraints(q_in, 1 - flow_dir, big_m, big_m))
 
         # Pipes that are connected in series should have the same milp direction.
         for pipes in self.energy_system_topology.pipe_series:
@@ -599,7 +567,7 @@ class GasPhysicsMixin(
         if options["gas_storage_discharge_variables"]:
             for storage in self.energy_system_components.get("gas_tank_storage", []):
                 storage_charge_var = self.state(f"{storage}.GasIn.Q")
-                storage_discharge_var_name = f"{storage}__Q_discharge"
+                storage_discharge_var_name = f"{storage}.__Q_discharge"
                 storage_discharge_var = self.state(storage_discharge_var_name)
                 nominal = self.variable_nominal(storage_discharge_var_name)
 
