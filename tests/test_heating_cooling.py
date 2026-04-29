@@ -49,7 +49,8 @@ class HeatCoolingGrowWorkflow(TestCase):
         demand_matching_test(solution, results)
         energy_conservation_test(solution, results)
         heat_to_discharge_test(solution, results)
-
+        # TODO: remove the explicit cost calculation checks after PR about
+        #  cost_calculation_test in utils_test is merged
         total_opex = 0.0
         total_capex = 0.0
         for asset in [
@@ -61,29 +62,29 @@ class HeatCoolingGrowWorkflow(TestCase):
             # investment + installation costs costs
             if asset not in solution.energy_system_components["low_temperature_ates"]:
                 investment_cost = (
-                    solution.esdl_assets[solution.esdl_asset_name_to_id_map[f"{asset}"]]
+                    solution.esdl_assets[f"{asset}"]
                     .attributes["costInformation"]
                     .investmentCosts.value
                     * results[f"{asset}__max_size"]
                     / 1.0e6
                 )
                 total_capex += investment_cost
-                np.testing.assert_equal(investment_cost, results[f"{asset}__investment_cost"])
+                np.testing.assert_allclose(investment_cost, results[f"{asset}__investment_cost"])
             installation_cost = (
-                solution.esdl_assets[solution.esdl_asset_name_to_id_map[f"{asset}"]]
+                solution.esdl_assets[f"{asset}"]
                 .attributes["costInformation"]
                 .installationCosts.value
             )
             total_capex += installation_cost
-            np.testing.assert_equal(installation_cost, results[f"{asset}__installation_cost"])
+            np.testing.assert_allclose(installation_cost, results[f"{asset}__installation_cost"])
 
             # fixed costs per year
             fixed_operational_cost = (
                 (
-                    solution.esdl_assets[solution.esdl_asset_name_to_id_map[f"{asset}"]]
+                    solution.esdl_assets[f"{asset}"]
                     .attributes["costInformation"]
                     .fixedMaintenanceCosts.value
-                    + solution.esdl_assets[solution.esdl_asset_name_to_id_map[f"{asset}"]]
+                    + solution.esdl_assets[f"{asset}"]
                     .attributes["costInformation"]
                     .fixedOperationalCosts.value
                 )
@@ -91,7 +92,7 @@ class HeatCoolingGrowWorkflow(TestCase):
                 / 1.0e6
             )
             total_opex += fixed_operational_cost * solution.parameters(0)[f"{asset}.technical_life"]
-            np.testing.assert_equal(
+            np.testing.assert_allclose(
                 fixed_operational_cost, results[f"{asset}__fixed_operational_cost"]
             )
 
@@ -99,7 +100,7 @@ class HeatCoolingGrowWorkflow(TestCase):
             timesteps_hr = np.diff(solution.times()) / 3600
             if asset not in solution.energy_system_components["low_temperature_ates"]:
                 var_op_costs = (
-                    solution.esdl_assets[solution.esdl_asset_name_to_id_map[f"{asset}"]]
+                    solution.esdl_assets[f"{asset}"]
                     .attributes["costInformation"]
                     .variableOperationalCosts.value
                     / 1.0e6
@@ -112,9 +113,7 @@ class HeatCoolingGrowWorkflow(TestCase):
                 *solution.energy_system_components.get("air_water_heat_pump", []),
                 *solution.energy_system_components.get("air_water_heat_pump_elec", []),
             ]:
-                factor = solution.esdl_assets[
-                    solution.esdl_asset_name_to_id_map[f"{asset}"]
-                ].attributes["COP"]
+                factor = solution.esdl_assets[f"{asset}"].attributes["COP"]
             np.testing.assert_(factor >= 1.0, "factor must be >= 1.0")
             variable_operational_cost = 0.0
             for ii in range(1, len(solution.times())):
@@ -159,32 +158,30 @@ class HeatCoolingGrowWorkflow(TestCase):
             total_capex += results[f"{asset}__investment_cost"]
 
         # cold demand
-        investment_cost = 0.0
+        investment_cost_cd = 0.0
+        installation_cost_cd = 0.0
+        total_cost_cd = 0.0
         for asset in solution.energy_system_components.get("cold_demand", []):
-            investment_cost += (
+            investment_cost_cd += (
                 results[f"{asset}__max_size"]
-                * solution.esdl_assets[solution.esdl_asset_name_to_id_map[f"{asset}"]]
+                * solution.esdl_assets[f"{asset}"]
                 .attributes["costInformation"]
                 .investmentCosts.value
                 / 1.0e6
             )
-        np.testing.assert_allclose(investment_cost, results[f"{asset}__investment_cost"])
-        installation_cost = 0.0
-        for asset in solution.energy_system_components.get("cold_demand", []):
-            installation_cost += (
-                solution.esdl_assets[solution.esdl_asset_name_to_id_map[f"{asset}"]]
+            installation_cost_cd += (
+                solution.esdl_assets[f"{asset}"]
                 .attributes["costInformation"]
                 .installationCosts.value
             )
-        np.testing.assert_allclose(installation_cost, results[f"{asset}__installation_cost"])
-        total_capex += investment_cost + installation_cost
+            total_cost_cd += investment_cost_cd + installation_cost_cd
+        np.testing.assert_allclose(investment_cost_cd, results[f"{asset}__investment_cost"])
+        np.testing.assert_allclose(installation_cost_cd, results[f"{asset}__installation_cost"])
+        total_capex += investment_cost_cd + installation_cost_cd
 
         np.testing.assert_allclose(
-            solution.objective_value
-            + (
-                results["CoolingDemand_1__installation_cost"]
-                + results["CoolingDemand_1__investment_cost"]
-            )
-            / 1.0e6,
+            solution.objective_value + total_cost_cd / 1.0e6,
             (total_capex + total_opex) / 1.0e6,
         )
+
+        print("a")

@@ -34,13 +34,13 @@ class HeatColdDemand(TestCase):
         root_folder = os.path.join(Path(__file__).resolve().parent.parent.parent.parent, "tests")
         sys.path.insert(1, root_folder)
 
-        from models.wko.src.example import HeatProblem
+        from models.wko.src.example import HeatColdProblem
         from utils_tests import demand_matching_test, energy_conservation_test
 
         base_folder = Path(__file__).resolve().parent.parent
 
         # ------------------------------------------------------------------------------------------
-        class HeatingCoolingProblem(HeatProblem):
+        class HeatingCoolingProblem(HeatColdProblem):
 
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
@@ -198,155 +198,6 @@ class HeatCoolingGrowWorkflow(TestCase):
             error_type_check=NetworkErrors.HEAT_AND_COOL_NETWORK_ERRORS,
         )
 
-        results = solution.extract_results()
-
-        # TODO: ThThis code still has to be moved to a test case in a seperate PR
-        demand_matching_test(solution, results)
-        energy_conservation_test(solution, results)
-        heat_to_discharge_test(solution, results)
-
-        total_opex = 0.0
-        total_capex = 0.0
-        for asset in [
-            *solution.energy_system_components.get("airco", []),
-            *solution.energy_system_components.get("air_water_heat_pump", []),
-            *solution.energy_system_components.get("air_water_heat_pump_elec", []),
-            *solution.energy_system_components.get("low_temperature_ates", []),
-        ]:
-            # investment + installation costs costs
-            if asset not in solution.energy_system_components["low_temperature_ates"]:
-                investment_cost = (
-                    solution.esdl_assets[solution.esdl_asset_name_to_id_map[f"{asset}"]]
-                    .attributes["costInformation"]
-                    .investmentCosts.value
-                    * results[f"{asset}__max_size"]
-                    / 1.0e6
-                )
-                total_capex += investment_cost
-                assert abs(investment_cost - results[f"{asset}__investment_cost"]) < 1.0e-8
-            installation_cost = (
-                solution.esdl_assets[solution.esdl_asset_name_to_id_map[f"{asset}"]]
-                .attributes["costInformation"]
-                .installationCosts.value
-            )
-            total_capex += installation_cost
-            assert installation_cost == results[f"{asset}__installation_cost"]
-
-            # fixed costs per year
-            fixed_operational_cost = (
-                (
-                    solution.esdl_assets[solution.esdl_asset_name_to_id_map[f"{asset}"]]
-                    .attributes["costInformation"]
-                    .fixedMaintenanceCosts.value
-                    + solution.esdl_assets[solution.esdl_asset_name_to_id_map[f"{asset}"]]
-                    .attributes["costInformation"]
-                    .fixedOperationalCosts.value
-                )
-                * results[f"{asset}__max_size"]
-                / 1.0e6
-            )
-            total_opex += fixed_operational_cost * solution.parameters(0)[f"{asset}.technical_life"]
-            assert (
-                abs(fixed_operational_cost - results[f"{asset}__fixed_operational_cost"]) < 1.0e-8
-            )
-
-            # variable operational cost
-            timesteps_hr = np.diff(solution.times()) / 3600
-            if asset not in solution.energy_system_components["low_temperature_ates"]:
-                var_op_costs = (
-                    solution.esdl_assets[solution.esdl_asset_name_to_id_map[f"{asset}"]]
-                    .attributes["costInformation"]
-                    .variableOperationalCosts.value
-                    / 1.0e6
-                )
-                assert var_op_costs > 0
-            else:
-                var_op_costs = 0.0
-            factor = 1.0
-            if asset in [
-                *solution.energy_system_components.get("air_water_heat_pump", []),
-                *solution.energy_system_components.get("air_water_heat_pump_elec", []),
-            ]:
-                factor = solution.esdl_assets[
-                    solution.esdl_asset_name_to_id_map[f"{asset}"]
-                ].attributes["COP"]
-            assert factor >= 1.0
-            variable_operational_cost = 0.0
-            for ii in range(1, len(solution.times())):
-                variable_operational_cost += (
-                    var_op_costs * results[f"{asset}.Heat_flow"][ii] * timesteps_hr[ii - 1] / factor
-                )
-
-            if asset in solution.energy_system_components.get("air_water_heat_pump_elec", []):
-                price_profile = solution.get_timeseries(
-                    f"{list(solution.get_electricity_carriers().values())[0]['name']}.price_profile"
-                )
-                # elec costs: not included in the __variable_operational_cost variable yet
-                elect_cost = 0.0
-                for ii in range(1, len(solution.times())):
-                    elect_cost += (
-                        price_profile.values[ii]
-                        * results[f"{asset}.Heat_flow"][ii]
-                        * timesteps_hr[ii - 1]
-                        / solution.parameters(0)[f"{asset}.cop"]
-                    )
-
-                pump_power = 0.0
-                for ii in range(1, len(solution.times())):
-                    # pump power
-                    pump_power += (
-                        price_profile.values[ii]
-                        * results[f"{asset}.Pump_power"][ii]
-                        * timesteps_hr[ii - 1]
-                        / solution.parameters(0)[f"{asset}.pump_efficiency"]
-                    )
-
-                variable_operational_cost += pump_power + elect_cost
-
-            total_opex += (
-                variable_operational_cost * solution.parameters(0)[f"{asset}.technical_life"]
-            )
-            assert (
-                abs(variable_operational_cost - results[f"{asset}__variable_operational_cost"])
-                < 1.0e-8
-            )
-
-        for asset in solution.energy_system_components["heat_pipe"]:
-            total_capex += results[f"{asset}__investment_cost"]
-
-        # cold demand
-        investment_cost = 0.0
-        for asset in solution.energy_system_components.get("cold_demand", []):
-            investment_cost += (
-                results[f"{asset}__max_size"]
-                * solution.esdl_assets[solution.esdl_asset_name_to_id_map[f"{asset}"]]
-                .attributes["costInformation"]
-                .investmentCosts.value
-                / 1.0e6
-            )
-        assert abs(investment_cost - results[f"{asset}__investment_cost"]) < 1.0e-8
-        installation_cost = 0.0
-        for asset in solution.energy_system_components.get("cold_demand", []):
-            installation_cost += (
-                solution.esdl_assets[solution.esdl_asset_name_to_id_map[f"{asset}"]]
-                .attributes["costInformation"]
-                .installationCosts.value
-            )
-        assert abs(installation_cost - results[f"{asset}__installation_cost"]) < 1.0e-8
-        total_capex += investment_cost + installation_cost
-
-        assert (
-            abs(
-                solution.objective_value
-                + (
-                    results["CoolingDemand_1__installation_cost"]
-                    + results["CoolingDemand_1__investment_cost"]
-                )
-                / 1.0e6
-                - (total_capex + total_opex) / 1.0e6
-            )
-            < 1.0e-6
-        )
 
         # # --------------------------------------------------------------------------------------
         # # Do not delete the code below. It is used for creating plots (also used for conference
@@ -354,6 +205,16 @@ class HeatCoolingGrowWorkflow(TestCase):
         #
         # create_plots = False
         # if create_plots:
+        #
+        #     results = solution.extract_results()
+        #     name_to_id_map = solution.esdl_asset_name_to_id_map
+        #
+        #     hd_1_id = name_to_id_map["HeatingDemand_1"]
+        #     hd_2_id = name_to_id_map["HeatingDemand_2"]
+        #     a_1_id = name_to_id_map["ATES_1"]
+        #     hp_1_id = name_to_id_map["HeatPump_1"]
+        #     cd_1_id = name_to_id_map["CoolingDemand_1"]
+        #     ac_1_id = name_to_id_map["Airco_1"]
         #
         #     import matplotlib.pyplot as plt
         #     legend_used = [
@@ -366,8 +227,8 @@ class HeatCoolingGrowWorkflow(TestCase):
         #     # ------------------------------------------------------------------------------------
         #     # Peak day
         #     times_steps = (
-        #         solution.get_timeseries(f"HeatingDemand_1.target_heat_demand").times[1 :]
-        #         - solution.get_timeseries(f"HeatingDemand_1.target_heat_demand").times[0 : -1]
+        #         solution.get_timeseries(f"{hd_1_id}.target_heat_demand").times[1 :]
+        #         - solution.get_timeseries(f"{hd_1_id}.target_heat_demand").times[0 : -1]
         #     )
         #     index_start_peak_day = [None] * 2
         #     index_end_peak_day = [None] * 2
@@ -378,10 +239,10 @@ class HeatCoolingGrowWorkflow(TestCase):
         #
         #     for ip in range(len(index_start_peak_day)):
         #         times_peak_day = (
-        #             solution.get_timeseries(f"HeatingDemand_1.target_heat_demand")
+        #             solution.get_timeseries(f"{hd_1_id}.target_heat_demand")
         #             .times[index_start_peak_day[ip]: index_end_peak_day[ip]]
         #             - min(
-        #                 solution.get_timeseries(f"HeatingDemand_1.target_heat_demand")
+        #                 solution.get_timeseries(f"{hd_1_id}.target_heat_demand")
         #                 .times[index_start_peak_day[ip]: index_end_peak_day[ip]]
         #             )
         #         ) / 3600.0
@@ -389,7 +250,7 @@ class HeatCoolingGrowWorkflow(TestCase):
         #         fig_1 = plt.figure()
         #         plt.plot(
         #             times_peak_day[1:],
-        #             results["ATES_1.Heat_flow"][
+        #             results[f"{a_1_id}.Heat_flow"][
         #                 index_start_peak_day[ip] + 1: index_end_peak_day[ip]
         #             ] / 1.0e6,
         #             # marker="x",
@@ -397,10 +258,10 @@ class HeatCoolingGrowWorkflow(TestCase):
         #         plt.plot(
         #             times_peak_day[1:],
         #             (
-        #                 results["HeatingDemand_1.Heat_flow"][
+        #                 results[f"{hd_1_id}.Heat_flow"][
         #                     index_start_peak_day[ip] + 1: index_end_peak_day[ip]
         #                 ]
-        #                 + results["HeatingDemand_2.Heat_flow"][
+        #                 + results[f"{hd_2_id}.Heat_flow"][
         #                     index_start_peak_day[ip] + 1: index_end_peak_day[ip]
         #                 ]
         #             ) / 1.0e6,
@@ -409,7 +270,7 @@ class HeatCoolingGrowWorkflow(TestCase):
         #         )
         #         plt.plot(
         #             times_peak_day[1:],
-        #             results["HeatPump_1.Heat_flow"][
+        #             results[f"{hp_1_id}.Heat_flow"][
         #                 index_start_peak_day[ip] + 1: index_end_peak_day[ip]
         #             ] / 1.0e6,
         #             # marker=">",
@@ -417,7 +278,7 @@ class HeatCoolingGrowWorkflow(TestCase):
         #
         #         plt.plot(
         #             times_peak_day[1:],
-        #             results["CoolingDemand_1.Heat_flow"][
+        #             results[f"{cd_1_id}.Heat_flow"][
         #                 index_start_peak_day[ip] + 1: index_end_peak_day[ip]
         #             ] / 1.0e6,
         #             # marker="*",
@@ -425,7 +286,7 @@ class HeatCoolingGrowWorkflow(TestCase):
         #         )
         #         plt.plot(
         #             times_peak_day[1:],
-        #             results["Airco_1.Heat_flow"][
+        #             results[f"{ac_1_id}.Heat_flow"][
         #                 index_start_peak_day[ip] + 1: index_end_peak_day[ip]
         #             ] / 1.0e6,
         #             # marker="o",
@@ -445,30 +306,30 @@ class HeatCoolingGrowWorkflow(TestCase):
         #     # ----------------------------------------------------------------------------------
         #     # Seasonal
         #     times_seasonal = (
-        #         solution.get_timeseries(f"HeatingDemand_1.target_heat_demand")
+        #         solution.get_timeseries(f"{hd_1_id}.target_heat_demand")
         #         .times[1:index_start_peak_day[0]] # index_end_peak_day
         #     ) / 3600.0 / 24.0
         #     times_seasonal = np.append(
         #         times_seasonal,
-        #         solution.get_timeseries(f"HeatingDemand_1.target_heat_demand")
+        #         solution.get_timeseries(f"{hd_1_id}.target_heat_demand")
         #         .times[index_end_peak_day[0] : index_start_peak_day[1]] / 3600.0 / 24.0
         #     )
         #     times_seasonal = np.append(
         #         times_seasonal,
-        #         solution.get_timeseries(f"HeatingDemand_1.target_heat_demand")
+        #         solution.get_timeseries(f"{hd_1_id}.target_heat_demand")
         #         .times[index_end_peak_day[1] : ] / 3600.0 / 24.0
         #     )
         #
         #     fig_2 = plt.figure()
         #
-        #     temp_season = (results["ATES_1.Heat_flow"][1 : index_start_peak_day[0]])
+        #     temp_season = (results[f"{a_1_id}.Heat_flow"][1 : index_start_peak_day[0]])
         #     temp_season = np.append(
-        #         temp_season, results["ATES_1.Heat_flow"][
+        #         temp_season, results[f"{a_1_id}.Heat_flow"][
         #             index_end_peak_day[0] : index_start_peak_day[1]
         #         ]
         #     )
         #     temp_season = np.append(
-        #       temp_season, results["ATES_1.Heat_flow"][index_end_peak_day[1]:]
+        #       temp_season, results[f"{a_1_id}.Heat_flow"][index_end_peak_day[1]:]
         #     )
         #     plt.plot(
         #         times_seasonal,
@@ -477,22 +338,22 @@ class HeatCoolingGrowWorkflow(TestCase):
         #     )
         #
         #     temp_season = (
-        #         results["HeatingDemand_1.Heat_flow"][1 : index_start_peak_day[0]]
-        #         + results["HeatingDemand_2.Heat_flow"][1 : index_start_peak_day[0]]
+        #         results[f"{hd_1_id}.Heat_flow"][1 : index_start_peak_day[0]]
+        #         + results[f"{hd_2_id}.Heat_flow"][1 : index_start_peak_day[0]]
         #     )
         #     temp_season = np.append(
         #         temp_season,
-        #         results["HeatingDemand_1.Heat_flow"][
+        #         results[f"{hd_1_id}.Heat_flow"][
         #             index_end_peak_day[0] : index_start_peak_day[1]
         #         ]
-        #         + results["HeatingDemand_2.Heat_flow"][
+        #         + results[f"{hd_2_id}.Heat_flow"][
         #             index_end_peak_day[0] : index_start_peak_day[1]
         #         ]
         #     )
         #     temp_season = np.append(
         #         temp_season,
-        #         results["HeatingDemand_1.Heat_flow"][index_end_peak_day[1] :]
-        #         + results["HeatingDemand_2.Heat_flow"][index_end_peak_day[1] :]
+        #         results[f"{hd_1_id}.Heat_flow"][index_end_peak_day[1] :]
+        #         + results[f"{hd_2_id}.Heat_flow"][index_end_peak_day[1] :]
         #     )
         #     plt.plot(
         #         times_seasonal,
@@ -501,14 +362,14 @@ class HeatCoolingGrowWorkflow(TestCase):
         #         linestyle="dotted",
         #     )
         #
-        #     temp_season = (results["HeatPump_1.Heat_flow"][1 : index_start_peak_day[0]])
+        #     temp_season = (results[f"{hp_1_id}.Heat_flow"][1 : index_start_peak_day[0]])
         #     temp_season = np.append(
         #         temp_season,
-        #         results["HeatPump_1.Heat_flow"][index_end_peak_day[0] : index_start_peak_day[1]],
+        #         results[f"{hp_1_id}.Heat_flow"][index_end_peak_day[0] : index_start_peak_day[1]],
         #     )
         #     temp_season = np.append(
         #         temp_season,
-        #         results["HeatPump_1.Heat_flow"][index_end_peak_day[1] :],
+        #         results[f"{hp_1_id}.Heat_flow"][index_end_peak_day[1] :],
         #     )
         #     plt.plot(
         #         times_seasonal,
@@ -516,16 +377,16 @@ class HeatCoolingGrowWorkflow(TestCase):
         #         # marker=">",
         #     )
         #
-        #     temp_season = (results["CoolingDemand_1.Heat_flow"][1 : index_start_peak_day[0]])
+        #     temp_season = (results[f"{cd_1_id}.Heat_flow"][1 : index_start_peak_day[0]])
         #     temp_season = np.append(
         #         temp_season,
-        #         results["CoolingDemand_1.Heat_flow"][
+        #         results[f"{cd_1_id}.Heat_flow"][
         #             index_end_peak_day[0] : index_start_peak_day[1]
         #         ],
         #     )
         #     temp_season = np.append(
         #         temp_season,
-        #         results["CoolingDemand_1.Heat_flow"][index_end_peak_day[1] :],
+        #         results[f"{cd_1_id}.Heat_flow"][index_end_peak_day[1] :],
         #     )
         #     plt.plot(
         #         times_seasonal,
@@ -534,14 +395,14 @@ class HeatCoolingGrowWorkflow(TestCase):
         #         linestyle="dotted",
         #     )
         #
-        #     temp_season = (results["Airco_1.Heat_flow"][1 : index_start_peak_day[0]])
+        #     temp_season = (results[f"{ac_1_id}.Heat_flow"][1 : index_start_peak_day[0]])
         #     temp_season = np.append(
         #         temp_season,
-        #         results["Airco_1.Heat_flow"][index_end_peak_day[0] : index_start_peak_day[1]]
+        #         results[f"{ac_1_id}.Heat_flow"][index_end_peak_day[0] : index_start_peak_day[1]]
         #     )
         #     temp_season = np.append(
         #         temp_season,
-        #         results["Airco_1.Heat_flow"][index_end_peak_day[1] :]
+        #         results[f"{ac_1_id}.Heat_flow"][index_end_peak_day[1] :]
         #     )
         #     plt.plot(
         #         times_seasonal,
@@ -563,14 +424,14 @@ class HeatCoolingGrowWorkflow(TestCase):
         #     # seasonal
         #     fig_4 = plt.figure()
         #
-        #     temp_season = (results["ATES_1.Stored_volume"][0 : index_start_peak_day[0]])
+        #     temp_season = (results[f"{a_1_id}.Stored_volume"][0 : index_start_peak_day[0]])
         #     temp_season = np.append(
         #         temp_season,
-        #         results["ATES_1.Stored_volume"][index_end_peak_day[0] : index_start_peak_day[1]],
+        #         results[f"{a_1_id}.Stored_volume"][index_end_peak_day[0] : index_start_peak_day[1]],
         #     )
         #     temp_season = np.append(
         #         temp_season,
-        #         results["ATES_1.Stored_volume"][index_end_peak_day[1] :],
+        #         results[f"{a_1_id}.Stored_volume"][index_end_peak_day[1] :],
         #     )
         #     plt.plot(
         #         # this was done so that one can see the start == end value
@@ -607,7 +468,7 @@ class HeatCoolingGrowWorkflow(TestCase):
         #     # peak day
         #     for ip in range(len(index_start_peak_day)):
         #         cold_well_volume = (
-        #             -results["ATES_1.Stored_volume"][
+        #             -results[f"{a_1_id}.Stored_volume"][
         #                 index_start_peak_day[ip] : index_end_peak_day[ip]
         #             ]
         #         )
@@ -620,7 +481,7 @@ class HeatCoolingGrowWorkflow(TestCase):
         #         ax1.set_ylabel('Warm well stored volume [m$^3$]', color=color, fontsize=12)
         #         ax1.plot(
         #             times_peak_day,
-        #             results["ATES_1.Stored_volume"][
+        #             results[f"{a_1_id}.Stored_volume"][
         #                 index_start_peak_day[ip] : index_end_peak_day[ip]
         #             ],
         #             color=color,
@@ -648,10 +509,10 @@ class HeatCoolingGrowWorkflow(TestCase):
         #     plt.plot(
         #         times_peak_day[1:],
         #         (
-        #             results["HeatingDemand_1.Heat_flow"][
+        #             results[f"{hd_1_id}.Heat_flow"][
         #                 index_start_peak_day[0] + 1: index_end_peak_day[0]
         #             ]
-        #             + results["HeatingDemand_2.Heat_flow"][
+        #             + results[f"{hd_2_id}.Heat_flow"][
         #                 index_start_peak_day[0] + 1: index_end_peak_day[0]
         #             ]
         #         )
@@ -675,7 +536,7 @@ class HeatCoolingGrowWorkflow(TestCase):
         #     plt.plot(
         #         times_peak_day[1:],
         #         (
-        #             results["CoolingDemand_1.Heat_flow"][
+        #             results[f"{cd_1_id}.Heat_flow"][
         #                 index_start_peak_day[1] + 1: index_end_peak_day[1]
         #             ]
         #         )
@@ -695,22 +556,22 @@ class HeatCoolingGrowWorkflow(TestCase):
         #     # seasonal
         #     fig_6 = plt.figure()
         #     temp_season = (
-        #         results["HeatingDemand_1.Heat_flow"][1 : index_start_peak_day[0]]
-        #         + results["HeatingDemand_2.Heat_flow"][1 : index_start_peak_day[0]]
+        #         results[f"{hd_1_id}.Heat_flow"][1 : index_start_peak_day[0]]
+        #         + results[f"{hd_2_id}.Heat_flow"][1 : index_start_peak_day[0]]
         #     )
         #     temp_season = np.append(
         #         temp_season,
-        #         results["HeatingDemand_1.Heat_flow"][
+        #         results[f"{hd_1_id}.Heat_flow"][
         #             index_end_peak_day[0] : index_start_peak_day[1]
         #         ]
-        #         + results["HeatingDemand_2.Heat_flow"][
+        #         + results[f"{hd_2_id}.Heat_flow"][
         #             index_end_peak_day[0] : index_start_peak_day[1]
         #         ],
         #     )
         #     temp_season = np.append(
         #         temp_season,
-        #         results["HeatingDemand_1.Heat_flow"][index_end_peak_day[1] :]
-        #         + results["HeatingDemand_2.Heat_flow"][index_end_peak_day[1] :],
+        #         results[f"{hd_1_id}.Heat_flow"][index_end_peak_day[1] :]
+        #         + results[f"{hd_2_id}.Heat_flow"][index_end_peak_day[1] :],
         #     )
         #     plt.plot(
         #         times_seasonal,
@@ -727,15 +588,15 @@ class HeatCoolingGrowWorkflow(TestCase):
         #     plt.close()
         #
         #     fig_tot_cool_demand = plt.figure()
-        #     temp_season = results["CoolingDemand_1.Heat_flow"][1 : index_start_peak_day[0]]
+        #     temp_season = results[f"{cd_1_id}.Heat_flow"][1 : index_start_peak_day[0]]
         #     temp_season = np.append(
         #         temp_season,
-        #         results["CoolingDemand_1.Heat_flow"][
+        #         results[f"{cd_1_id}.Heat_flow"][
         #             index_end_peak_day[0] : index_start_peak_day[1]
         #         ],
         #     )
         #     temp_season = np.append(
-        #         temp_season, results["CoolingDemand_1.Heat_flow"][index_end_peak_day[1] :]
+        #         temp_season, results[f"{cd_1_id}.Heat_flow"][index_end_peak_day[1] :]
         #     )
         #     plt.plot(
         #         times_seasonal,
