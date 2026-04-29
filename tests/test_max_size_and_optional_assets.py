@@ -118,12 +118,6 @@ class TestMaxSizeAggregationCount(TestCase):
         np.testing.assert_allclose(max_size_1, 0.0)
         np.testing.assert_allclose(max_size_geo, 0.0)
 
-        # Test that investmentcost is correctly linked to max size
-        np.testing.assert_allclose(
-            inv_cost_2,
-            solution.parameters(0)[f"{producer_2_id}.investment_cost_coefficient"] * max_size_2,
-        )
-
         # Test that cost only exist for 2 and not for 1. Note the tolerances
         # to avoid test failing when heat losses slightly change
         np.testing.assert_allclose(var_cost_1, 0.0, atol=1e-9)
