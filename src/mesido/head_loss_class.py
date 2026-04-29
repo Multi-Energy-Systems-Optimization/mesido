@@ -426,9 +426,9 @@ class HeadLossClass:
                         f"{pipe_name}__pipe_linear_line_segment_num_{line_number}"
                     )
 
-                    self._pipe_linear_line_segment_map[pipe_name][ii_line] = (
-                        pipe_linear_line_segment_var_name
-                    )
+                    self._pipe_linear_line_segment_map[pipe_name][
+                        ii_line
+                    ] = pipe_linear_line_segment_var_name
                     self.__pipe_linear_line_segment_var[pipe_name][
                         pipe_linear_line_segment_var_name
                     ] = ca.MX.sym(pipe_linear_line_segment_var_name)
@@ -834,15 +834,17 @@ class HeadLossClass:
                                 (
                                     head_loss_vec[ii_start_neg:ii_end_neg]
                                     - (
-                                        a_vec[ii_start_neg:ii_end_neg] * discharge_vec[
-                                            ii_start_neg:ii_end_neg
-                                        ]
+                                        a_vec[ii_start_neg:ii_end_neg]
+                                        * discharge_vec[ii_start_neg:ii_end_neg]
                                         + b_vec[ii_start_neg:ii_end_neg]
                                     )
                                     - is_disconnected_vec[ii_start_neg:ii_end_neg] * big_m_lin
                                     - big_m_lin
-                                    * (1 - is_line_segment_active[ii_line_used][
-                                    0:n_timesteps]+flow_dir_var)
+                                    * (
+                                        1
+                                        - is_line_segment_active[ii_line_used][0:n_timesteps]
+                                        + flow_dir_var
+                                    )
                                 )
                                 / constraint_nominal[ii_start_neg:ii_end_neg],
                                 -np.inf,
@@ -858,15 +860,17 @@ class HeadLossClass:
                                 (
                                     head_loss_vec[ii_start_pos:ii_end_pos]
                                     - (
-                                        a_vec[ii_start_pos:ii_end_pos] * discharge_vec[
-                                            ii_start_pos:ii_end_pos
-                                        ]
+                                        a_vec[ii_start_pos:ii_end_pos]
+                                        * discharge_vec[ii_start_pos:ii_end_pos]
                                         + b_vec[ii_start_pos:ii_end_pos]
                                     )
                                     - is_disconnected_vec[ii_start_pos:ii_end_pos] * big_m_lin
                                     - big_m_lin
-                                    * (2 - is_line_segment_active[ii_line_used][0:n_timesteps] -
-                                       flow_dir_var)
+                                    * (
+                                        2
+                                        - is_line_segment_active[ii_line_used][0:n_timesteps]
+                                        - flow_dir_var
+                                    )
                                 )
                                 / constraint_nominal[ii_start_pos:ii_end_pos],
                                 -np.inf,
