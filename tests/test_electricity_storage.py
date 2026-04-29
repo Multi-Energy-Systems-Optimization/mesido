@@ -44,6 +44,7 @@ class TestMILPElectricSourceSinkStorage(TestCase):
 
         results = solution.extract_results()
         parameters = solution.parameters(0)
+        name_to_id_map = solution.esdl_asset_name_to_id_map
 
         feasibility_test(solution)
 
@@ -78,7 +79,8 @@ class TestMILPElectricSourceSinkStorage(TestCase):
         power_charging = results[f"{storage_name}.Power_charging"]
         stored_el = results[f"{storage_name}.Stored_electricity"]
 
-        power_cable_bat = results["ElectricityCable_91c1.ElectricityOut.Power"]
+        cable_id = name_to_id_map["ElectricityCable_91c1"]
+        power_cable_bat = results[f"{cable_id}.ElectricityOut.Power"]
         np.testing.assert_allclose(power_cable_bat, power_bat_network, atol=tol)
         np.testing.assert_allclose(power_bat_network, power_charging - power_discharging, atol=tol)
 

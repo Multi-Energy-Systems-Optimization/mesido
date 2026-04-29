@@ -315,12 +315,15 @@ class TestVaryingTemperature(TestCase):
         # optimization with only one option in temperature which is infeasible for the hex.
         # therefore optimization should disable the heat exchanger
         results = heat_problem.extract_results()
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
+        hex_id = name_to_id_map["HeatExchange_39ed"]
 
         # Check that the problem has an infeasible temperature for the hex
         np.testing.assert_allclose(results[f"{33638164429859421}_temperature"], 69.0)
         # Verify that the hex is disabled
-        np.testing.assert_allclose(results["HeatExchange_39ed.__disabled"], 1.0)
-        np.testing.assert_allclose(results["HeatExchange_39ed.Primary_heat"], 0.0)
+
+        np.testing.assert_allclose(results[f"{hex_id}.__disabled"], 1.0)
+        np.testing.assert_allclose(results[f"{hex_id}.Primary_heat"], 0.0)
 
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results, atol=25, atol_total=25)
@@ -391,21 +394,22 @@ class TestVaryingTemperature(TestCase):
 
         results = heat_problem.extract_results()
         parameters = heat_problem.parameters(0)
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
+        hp_id = name_to_id_map["GenericConversion_3d3f"]
 
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results, atol=20)
 
         expected_cop = (
-            parameters["GenericConversion_3d3f.efficiency"]
+            parameters[f"{hp_id}.efficiency"]
             * (273.15 + results[f"{7212673879469902607010}_temperature"])
             / (results[f"{7212673879469902607010}_temperature"] - 70.0)
         )
 
         np.testing.assert_allclose(
             expected_cop,
-            results["GenericConversion_3d3f.Secondary_heat"]
-            / results["GenericConversion_3d3f.Power_elec"],
+            results[f"{hp_id}.Secondary_heat"] / results[f"{hp_id}.Power_elec"],
         )
 
     # Note that CBC struggles heavily and tends to crash, therefore excluded from pipeline
