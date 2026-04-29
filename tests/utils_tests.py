@@ -1,3 +1,6 @@
+import json
+from pathlib import Path
+
 from unittest import TestCase
 
 import esdl
@@ -735,6 +738,8 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
         for name, edr_class_name in _AssetToComponentBase.STEEL_S1_PIPE_EDR_ASSETS.items()
     ]
 
+    edr_pipes = json.load(open(Path(__file__).parent.parent / "src/mesido/esdl/_edr_pipes.json"))
+
     total_investment_cost = 0.0
     total_installation_cost = 0.0
     total_fixed_operational_cost = 0.0
@@ -762,8 +767,17 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
                     ),
                     investment_cost_info,
                 )
-            elif asset in solution.energy_system_components.get("heat_pipe", []):
-                pass
+            elif (
+                asset in solution.energy_system_components.get("heat_pipe", [])
+                and esdl_asset.attributes["state"] == esdl.AssetStateEnum.OPTIONAL
+            ):
+                investment_cost_info_opt_pipe = edr_pipes[
+                    f"Steel-S1-DN-{esdl_asset.attributes['diameter'].name[2:]}"
+                ]["investment_costs"]
+                np.testing.assert_allclose(
+                    parameters[f"{asset}.investment_cost_coefficient"],
+                    investment_cost_info_opt_pipe,
+                )
             else:
                 np.testing.assert_allclose(
                     parameters[f"{asset}.investment_cost_coefficient"], investment_cost_info
@@ -882,7 +896,7 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
             elif asset in solution.energy_system_components.get("airco", []):
                 nominator_vector = results[f"{asset}.Heat_airco"]
             elif asset in demand_assets:
-                nominator_vector = np.zeros(len(solution.times()))
+                nominator_vector = results[f"{asset}.Heat_demand"]
             else:
                 raise AssertionError(
                     f"Asset '{esdl_asset.name}' is not handled in the variable operational"

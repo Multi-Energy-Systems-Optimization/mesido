@@ -117,7 +117,7 @@ class TestColdDemand(TestCase):
         1. demand is matched
         2. energy conservation in the network
         3. heat to discharge
-        4. cost calculation is checked
+        4. cost calculation
         5. check heatpump variable operational cost is nonzero
         6. airco sizing
 

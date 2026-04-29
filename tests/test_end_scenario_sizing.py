@@ -173,17 +173,6 @@ class TestEndScenarioSizing(TestCase):
                 heat_buffer, heat_flow_charging - heat_flow_discharging, atol=1.0
             )
 
-        obj = self.calculate_objective_value_end_scenario_sizing_all_optional(self.solution)
-        excluded_costs_in_obj = self.calculate_heat_demand_costs_end_scenario_sizing()  # Fixed
-        # costs excluded in the optim objective function
-
-        # Since all assets are optional, the objective value should be close to the calculated tco
-        # excluding heating demands.
-        np.testing.assert_allclose(obj / 1.0e6, self.solution.objective_value)
-        np.testing.assert_array_less(
-            self.solution.objective_value, (obj + excluded_costs_in_obj) / 1.0e6
-        )
-
     def test_end_scenario_sizing_staged(self):
         """
         Check if the EndScenarioSizingStagedHIGHS workflow is behaving as expected. This is an
@@ -241,8 +230,27 @@ class TestEndScenarioSizing(TestCase):
 
         results = solution_staged.extract_results()
 
+        name_to_id_map = solution_staged.esdl_asset_name_to_id_map
+        hp_1_id = name_to_id_map["HeatProducer_1"]
+        hp_2_id = name_to_id_map["HeatProducer_2"]
+        a_id = name_to_id_map["ATES_033c"]
+        ht_id = name_to_id_map["HeatStorage_74c1"]
+
         # Check whehter the heat demand is matched
         demand_matching_test(solution_staged, results)
+
+        # Check the cost calculations
+        np.testing.assert_array_less(1e3, results[f"{hp_1_id}__investment_cost"])
+        np.testing.assert_array_less(1e3, results[f"{hp_1_id}__installation_cost"])
+        np.testing.assert_array_less(1e3, results[f"{hp_2_id}__investment_cost"])
+        np.testing.assert_array_less(1e3, results[f"{hp_2_id}__installation_cost"])
+        np.testing.assert_array_less(1e3, results[f"{hp_2_id}__variable_operational_cost"])
+        np.testing.assert_array_less(1e3, results[f"{a_id}__investment_cost"])
+        np.testing.assert_array_less(1e3, results[f"{a_id}__installation_cost"])
+        np.testing.assert_array_less(1e3, results[f"{a_id}__variable_operational_cost"])
+        np.testing.assert_array_less(1e3, results[f"{ht_id}__investment_cost"])
+        np.testing.assert_array_less(1e3, results[f"{ht_id}__installation_cost"])
+        cost_calculation_test(solution_staged, results, check_objective_function=True)
 
         # Check whether cyclic ates constraint is working
         for a in solution_staged.energy_system_components.get("ates", []):
@@ -267,9 +275,6 @@ class TestEndScenarioSizing(TestCase):
             for i in range(len(solution_staged.times())):
                 if i < peak_day_indx or i > (peak_day_indx + 23):
                     np.testing.assert_allclose(heat_buffer[i], 0.0, atol=1.0e-6)
-
-        obj = self.calculate_objective_value_end_scenario_sizing_all_optional(solution_staged)
-        np.testing.assert_allclose(obj / 1.0e6, solution_staged.objective_value)
 
         # comparing results of staged and unstaged problem definition. For larger systems there
         # might be a difference in the value but that would either be a difference within the
@@ -671,38 +676,6 @@ class TestEndScenarioSizing(TestCase):
                     self.results[f"{self.solution._asset_installation_cost_map[asset]}"] * factor
                 )
         return excluded_costs_in_obj
-
-    def calculate_objective_value_end_scenario_sizing_all_optional(self, solution):
-        # If heating demand asset's state is enabled, then exclude the costs since it is not
-        # part of the TCO calculation. This is because we do not size heating demand assets in
-        # the optimization
-        results = solution.extract_results()
-        obj = 0.0
-        years = solution.parameters(0)["number_of_years"]
-        for asset in [
-            *solution.energy_system_components.get("heat_source", []),
-            *solution.energy_system_components.get("ates", []),
-            *solution.energy_system_components.get("heat_buffer", []),
-            *solution.energy_system_components.get("heat_demand", []),
-            *solution.energy_system_components.get("heat_exchanger", []),
-            *solution.energy_system_components.get("heat_pump", []),
-            *solution.energy_system_components.get("heat_pipe", []),
-        ]:
-            asset_state = solution.esdl_assets[asset].attributes["state"]
-            asset_type = solution.esdl_assets[asset].asset_type
-            if not (
-                (asset_type == "HeatingDemand") and (asset_state == esdl.AssetStateEnum.ENABLED)
-            ):
-                technical_lifetime = solution.parameters(0)[f"{asset}.technical_life"]
-                factor = years / technical_lifetime
-                if factor < 1.0:
-                    factor = 1.0
-                obj += results[f"{solution._asset_fixed_operational_cost_map[asset]}"] * years
-                obj += results[f"{solution._asset_variable_operational_cost_map[asset]}"] * years
-                obj += results[f"{solution._asset_investment_cost_map[asset]}"] * factor
-                obj += results[f"{solution._asset_installation_cost_map[asset]}"] * factor
-
-        return obj
 
 
 if __name__ == "__main__":

@@ -7,7 +7,12 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
+from utils_tests import (
+    cost_calculation_test,
+    demand_matching_test,
+    energy_conservation_test,
+    heat_to_discharge_test,
+)
 
 
 class TestMaxSizeAggregationCount(TestCase):
@@ -196,6 +201,7 @@ class TestMaxSizeAggregationCount(TestCase):
         demand_matching_test(solution, results)
         energy_conservation_test(solution, results)
         heat_to_discharge_test(solution, results)
+        cost_calculation_test(solution, results)
 
 
 if __name__ == "__main__":
