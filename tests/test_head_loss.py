@@ -12,7 +12,7 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
-from utils_tests import demand_matching_test
+from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
 class TestHeadLoss(TestCase):
@@ -946,15 +946,99 @@ class TestHeadLoss(TestCase):
                 )
                 np.testing.assert_allclose(abs(dh[i]), abs(analytical_dh), atol=1.0e-6)
 
+    def test_heat_network_head_loss_cq2(self):
+        """
+        Heat network: test CQ2 inequality head loss approximation.
+
+        Checks:
+        - That CQ2_EQUALITY can be solved for a heat source-sink case
+        - That the head loss state variables are consistent
+        - That the CQ2 inequality dH = C * v^2 is satisfied for all timesteps
+        """
+        import models.source_pipe_sink.src.double_pipe_heat as example
+        from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        class SourcePipeSinkCQ2(SourcePipeSink):
+            def energy_system_options(self):
+                options = super().energy_system_options()
+                self.heat_network_settings["head_loss_option"] = HeadLossOption.CQ2_EQUALITY
+                self.heat_network_settings["minimize_head_losses"] = True
+                return options
+
+            def solver_options(self):
+                options = super().solver_options()
+                options["casadi_solver"] = "nlpsol"
+                options["solver"] = "bonmin"
+
+                bonmin_options = options["bonmin"] = {}
+                bonmin_options["algorithm"] = "B-BB"
+                bonmin_options["nlp_solver"] = "Ipopt"
+                bonmin_options["nlp_log_level"] = 2
+                bonmin_options["linear_solver"] = "mumps"
+                bonmin_options["allowable_fraction_gap"] = 0.001
+
+                options["highs"] = None
+
+                return options
+
+        solution = run_esdl_mesido_optimization(
+            SourcePipeSinkCQ2,
+            base_folder=base_folder,
+            esdl_file_name="sourcesink.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.csv",
+        )
+        results = solution.extract_results()
+        parameters = solution.parameters(0)
+        name_to_id_map = solution.esdl_asset_name_to_id_map
+
+        demand_matching_test(solution, results)
+        heat_to_discharge_test(solution, results)
+        energy_conservation_test(solution, results)
+
+        pipe1_id = name_to_id_map["Pipe1"]
+
+        # Check state consistency for this pipe.
+        np.testing.assert_allclose(
+            results[f"{pipe1_id}.HeatOut.H"] - results[f"{pipe1_id}.HeatIn.H"],
+            results[f"{pipe1_id}.dH"],
+        )
+        np.testing.assert_allclose(
+            -results[f"{pipe1_id}.dH"], results[f"{pipe1_id}.__head_loss"], atol=1e-6
+        )
+
+        # CQ2 formulation: __head_loss >= C * (Q/area)^2
+        options = solution.energy_system_options()
+        pipe_diameter = parameters[f"{pipe1_id}.diameter"]
+        pipe_wall_roughness = options["wall_roughness"]
+        temperature = parameters[f"{pipe1_id}.temperature"]
+        pipe_length = parameters[f"{pipe1_id}.length"]
+
+        ff = darcy_weisbach.friction_factor(
+            options["estimated_velocity"],
+            pipe_diameter,
+            pipe_wall_roughness,
+            temperature,
+        )
+        c_v = pipe_length * ff / (2 * GRAVITATIONAL_CONSTANT) / pipe_diameter
+        velocity = results[f"{pipe1_id}.Q"] / parameters[f"{pipe1_id}.area"]
+        cq2_rhs = c_v * velocity**2
+
+        np.testing.assert_allclose(cq2_rhs, results[f"{pipe1_id}.__head_loss"], rtol=1e-3)
+
 
 if __name__ == "__main__":
     import time
 
     start_time = time.time()
     a = TestHeadLoss()
-    a.test_heat_network_head_loss()
-    a.test_heat_network_pipe_split_head_loss()
-    a.test_gas_network_head_loss()
-    a.test_gas_network_pipe_split_head_loss()
-    a.test_gas_substation()
+    # a.test_heat_network_head_loss()
+    # a.test_heat_network_pipe_split_head_loss()
+    a.test_heat_network_head_loss_cq2_inequality()
+    # a.test_gas_network_head_loss()
+    # a.test_gas_network_pipe_split_head_loss()
+    # a.test_gas_substation()
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

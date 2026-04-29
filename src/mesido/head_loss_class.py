@@ -681,8 +681,8 @@ class HeadLossClass:
             expr = c_v * v**2
 
             if symbolic:
-                q_nominal = self.variable_nominal(f"{pipe}.Q")
-                head_loss_nominal = self.variable_nominal(f"{pipe}.dH")
+                q_nominal = optimization_problem.variable_nominal(f"{pipe}.Q")
+                head_loss_nominal = optimization_problem.variable_nominal(f"{pipe}.dH")
                 constraint_nominal = (head_loss_nominal * c_v * (q_nominal / area) ** 2) ** 0.5
 
                 if head_loss_option == HeadLossOption.CQ2_INEQUALITY:

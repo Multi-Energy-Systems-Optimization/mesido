@@ -21,7 +21,7 @@ from rtctools.util import run_optimization_problem
 class TargetDemandGoal(Goal):
     priority = 1
 
-    order = 2
+    order = 1
 
     def __init__(self, optimization_problem):
         demand_id = optimization_problem.esdl_asset_name_to_id_map["demand"]
