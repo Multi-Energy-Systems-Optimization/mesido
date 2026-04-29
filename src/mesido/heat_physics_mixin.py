@@ -269,15 +269,19 @@ class HeatPhysicsMixin(
                 and initialized_vars[9] != {}
                 and initialized_vars[10] != {}
             ):
+                # HeadLossClass now provides activation variables only for the
+                # positive quadrant (n_linearization_lines entries). Register
+                # those here and reuse the flow-direction variable elsewhere to
+                # account for signed flows.
                 self._pipe_linear_line_segment_map[pipe_name] = {}
-                for ii_line in range(self.heat_network_settings["n_linearization_lines"] * 2):
+                for ii_line in range(self.heat_network_settings["n_linearization_lines"]):
                     pipe_linear_line_segment_var_name = initialized_vars[8][ii_line]
-                    self._pipe_linear_line_segment_map[pipe_name][
-                        ii_line
-                    ] = pipe_linear_line_segment_var_name
-                    self.__pipe_linear_line_segment_var[pipe_linear_line_segment_var_name] = (
-                        initialized_vars[9][pipe_linear_line_segment_var_name]
+                    self._pipe_linear_line_segment_map[pipe_name][ii_line] = (
+                        pipe_linear_line_segment_var_name
                     )
+                    self.__pipe_linear_line_segment_var[
+                        pipe_linear_line_segment_var_name
+                    ] = initialized_vars[9][pipe_linear_line_segment_var_name]
                     self.__pipe_linear_line_segment_var_bounds[
                         pipe_linear_line_segment_var_name
                     ] = initialized_vars[10][pipe_linear_line_segment_var_name]
