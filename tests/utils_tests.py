@@ -723,8 +723,6 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
         *solution.energy_system_components.get("pump", []),
         *solution.energy_system_components.get("heat_exchanger", []),
         *solution.energy_system_components.get("heat_buffer", []),
-        *solution.energy_system_components.get("gas_source", []),
-        *solution.energy_system_components.get("electricity_source", []),
         *solution.energy_system_components.get("airco", []),
         *demand_assets,
         *transport_assets,
@@ -848,6 +846,7 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
             if asset in [
                 *solution.energy_system_components.get("ates", []),
                 *solution.energy_system_components.get("low_temperature_ates", []),
+                *solution.energy_system_components.get("heat_buffer", []),
             ]:
                 nominator_vector = (
                     results[f"{asset}.Heat_flow_charging"]
@@ -882,10 +881,12 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
                     nominator_vector = heat_source
             elif asset in solution.energy_system_components.get("airco", []):
                 nominator_vector = results[f"{asset}.Heat_airco"]
+            elif asset in demand_assets:
+                nominator_vector = np.zeros(len(solution.times()))
             else:
                 raise AssertionError(
-                    f"Asset '{asset}' is not handled in the variable operational cost calculation"
-                    f" of cost_calculation_test."
+                    f"Asset '{esdl_asset.name}' is not handled in the variable operational"
+                    f" cost calculation of cost_calculation_test."
                 )
 
             variable_operational_cost = sum(
