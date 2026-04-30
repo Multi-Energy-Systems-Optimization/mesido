@@ -1,4 +1,4 @@
-# [Unreleased-main] - 2026-04-28
+# [Unreleased-main] - 2026-04-30
 
 ## Added
 - Electricity consumption calculation of geothermal assets, using the defined COP. 
@@ -8,6 +8,7 @@
 - Generic methods to create equality and inequality constraints using big-M formulation.
 - First implementation of a temperature profile for a producer. (experimental)
 - Test is added to check airco sizing and cost calculation
+- Test for heating and cooling case is added
 
 ## Changed
 - Reduced the number of constraints required for headloss calculation with LINEARIZED_N_LINES_EQUALITY setting.
@@ -17,6 +18,7 @@
 - Updated pyESDL to v26.3
 - Updated the GROW workflow to provide feedback on which heat demands are not matched in priority 1.
 - Removed old test files that are no longer used.
+- In addition to variable operation cost coefficient, the electricity cost profile contributes to variable operational cost of assets which convert electricity to heat.
 
 ## Fixed
 - ProfileConstraints: Use already available function to get profile quantity and unit

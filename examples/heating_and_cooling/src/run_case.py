@@ -22,7 +22,7 @@ logger.setLevel(logging.INFO)
 
 class HeatColdDemand(TestCase):
 
-    def test_heating_cooling_case(self):
+    def heating_cooling_case(self):
         """
         In this case we have a network with an air-water hp, a WKO (warm and cold well) and both
         hot and cold demand. The heat and cold demand was balanced such that the seasonal storage
@@ -176,18 +176,8 @@ class HeatCoolingGrowWorkflow(TestCase):
 
         base_folder = Path(__file__).resolve().parent.parent
 
-        class UpdatedProblem(EndScenarioSizingStaged, CollocatedIntegratedOptimizationProblem):
-
-            # TODO: Clarify how the variable operating cost should be defined when a price_profile
-            #  is provided.
-            # Currently, the financial mixin is implemented such that the price_profile
-            # contributes to the variable OPEX calculation in addition to the var-opex-coefficient
-            # and pump_power whenever a price_profile is given.
-
-            pass
-
         solution = run_end_scenario_sizing(
-            UpdatedProblem,
+            EndScenarioSizingStaged,
             base_folder=base_folder,
             esdl_file_name=(
                 "Heating and cooling and elec network with return network with costs.esdl"

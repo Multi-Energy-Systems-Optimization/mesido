@@ -183,5 +183,3 @@ class HeatCoolingGrowWorkflow(TestCase):
             solution.objective_value + total_cost_cd / 1.0e6,
             (total_capex + total_opex) / 1.0e6,
         )
-
-        print("a")
