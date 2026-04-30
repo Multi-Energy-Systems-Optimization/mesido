@@ -191,9 +191,6 @@ class HeatCoolingGrowWorkflow(TestCase):
 
         name_to_id_map = solution.esdl_asset_name_to_id_map
 
-        hd_1_id = name_to_id_map["HeatingDemand_1"]
-        hd_2_id = name_to_id_map["HeatingDemand_2"]
-        cd_1_id = name_to_id_map["CoolingDemand_1"]
         a_1_id = name_to_id_map["ATES_1"]
         hp_1_id = name_to_id_map["HeatPump_1"]
         ac_1_id = name_to_id_map["Airco_1"]
@@ -347,6 +344,11 @@ class HeatCoolingGrowWorkflow(TestCase):
         # # presentations)
         #
         # create_plots = False
+        #
+        # hd_1_id = name_to_id_map["HeatingDemand_1"]
+        # hd_2_id = name_to_id_map["HeatingDemand_2"]
+        # cd_1_id = name_to_id_map["CoolingDemand_1"]
+        #
         # if create_plots:
         #
         #     import matplotlib.pyplot as plt
@@ -704,7 +706,7 @@ class HeatCoolingGrowWorkflow(TestCase):
         #     temp_season = np.append(
         #         temp_season,
         #         results[f"{hd_1_id}.Heat_flow"][index_end_peak_day[0] : index_start_peak_day[1]]
-        #         + results[f"{hd_2_id}.Heat_flow"][index_end_peak_day[0] : index_start_peak_day[1]],
+        #         + results[f"{hd_2_id}.Heat_flow"][index_end_peak_day[0]:index_start_peak_day[1]],
         #     )
         #     temp_season = np.append(
         #         temp_season,
