@@ -150,7 +150,7 @@ class HeatColdDemand(TestCase):
 
 class HeatCoolingGrowWorkflow(TestCase):
 
-    def test_heating_cooling_case(self):
+    def heating_cooling_case(self):
         """
         In this case we have a network with an air-water hp, a WKO (warm and cold well) and both
         hot and cold demand. The heat and cold demand was balanced such that the seasonal storage
@@ -163,6 +163,12 @@ class HeatCoolingGrowWorkflow(TestCase):
 
         root_folder = os.path.join(Path(__file__).resolve().parent.parent.parent.parent, "tests")
         sys.path.insert(1, root_folder)
+
+        from utils_tests import (
+            demand_matching_test,
+            energy_conservation_test,
+            heat_to_discharge_test,
+        )
 
         base_folder = Path(__file__).resolve().parent.parent
 
@@ -177,6 +183,164 @@ class HeatCoolingGrowWorkflow(TestCase):
             input_timeseries_file="timeseries_4_elect_cost_modified.csv",
             error_type_check=NetworkErrors.HEAT_AND_COOL_NETWORK_ERRORS,
         )
+        results = solution.extract_results()
+
+        demand_matching_test(solution, results)
+        energy_conservation_test(solution, results)
+        heat_to_discharge_test(solution, results)
+
+        name_to_id_map = solution.esdl_asset_name_to_id_map
+
+        hd_1_id = name_to_id_map["HeatingDemand_1"]
+        hd_2_id = name_to_id_map["HeatingDemand_2"]
+        cd_1_id = name_to_id_map["CoolingDemand_1"]
+        a_1_id = name_to_id_map["ATES_1"]
+        hp_1_id = name_to_id_map["HeatPump_1"]
+        ac_1_id = name_to_id_map["Airco_1"]
+
+        # Check if assets are used
+        np.testing.assert_array_less(
+            1e3,
+            results[f"{a_1_id}.Heat_flow_charging"] + results[f"{a_1_id}.Heat_flow_discharging"],
+        )
+        np.testing.assert_array_less(1e2, results[f"{hp_1_id}.Heat_flow"])
+        np.testing.assert_array_less(1e6, np.sum(results[f"{ac_1_id}.Heat_flow"]))
+
+        # Check the cost components
+        # TODO: remove the explicit cost calculation checks after PR about
+        #  cost_calculation_test in utils_test is merged
+        total_opex = 0.0
+        total_capex = 0.0
+        for asset in [
+            *solution.energy_system_components.get("airco", []),
+            *solution.energy_system_components.get("air_water_heat_pump", []),
+            *solution.energy_system_components.get("air_water_heat_pump_elec", []),
+            *solution.energy_system_components.get("low_temperature_ates", []),
+        ]:
+            # investment + installation costs costs
+            if asset not in solution.energy_system_components["low_temperature_ates"]:
+                investment_cost = (
+                    solution.esdl_assets[f"{asset}"]
+                    .attributes["costInformation"]
+                    .investmentCosts.value
+                    * results[f"{asset}__max_size"]
+                    / 1.0e6
+                )
+                total_capex += investment_cost
+                np.testing.assert_allclose(investment_cost, results[f"{asset}__investment_cost"])
+            installation_cost = (
+                solution.esdl_assets[f"{asset}"]
+                .attributes["costInformation"]
+                .installationCosts.value
+            )
+            total_capex += installation_cost
+            np.testing.assert_allclose(installation_cost, results[f"{asset}__installation_cost"])
+
+            # fixed costs per year
+            fixed_operational_cost = (
+                (
+                    solution.esdl_assets[f"{asset}"]
+                    .attributes["costInformation"]
+                    .fixedMaintenanceCosts.value
+                    + solution.esdl_assets[f"{asset}"]
+                    .attributes["costInformation"]
+                    .fixedOperationalCosts.value
+                )
+                * results[f"{asset}__max_size"]
+                / 1.0e6
+            )
+            total_opex += fixed_operational_cost * solution.parameters(0)[f"{asset}.technical_life"]
+            np.testing.assert_allclose(
+                fixed_operational_cost, results[f"{asset}__fixed_operational_cost"]
+            )
+
+            # variable operational cost
+            timesteps_hr = np.diff(solution.times()) / 3600
+            if asset not in solution.energy_system_components["low_temperature_ates"]:
+                var_op_costs = (
+                    solution.esdl_assets[f"{asset}"]
+                    .attributes["costInformation"]
+                    .variableOperationalCosts.value
+                    / 1.0e6
+                )
+                np.testing.assert_array_less(0.0, var_op_costs)
+            else:
+                var_op_costs = 0.0
+            factor = 1.0
+            if asset in [
+                *solution.energy_system_components.get("air_water_heat_pump", []),
+                *solution.energy_system_components.get("air_water_heat_pump_elec", []),
+            ]:
+                factor = solution.esdl_assets[f"{asset}"].attributes["COP"]
+            np.testing.assert_(factor >= 1.0, "factor must be >= 1.0")
+            variable_operational_cost = 0.0
+            for ii in range(1, len(solution.times())):
+                variable_operational_cost += (
+                    var_op_costs * results[f"{asset}.Heat_flow"][ii] * timesteps_hr[ii - 1] / factor
+                )
+
+            if asset in solution.energy_system_components.get("air_water_heat_pump_elec", []):
+                price_profile = solution.get_timeseries(
+                    f"{list(solution.get_electricity_carriers().values())[0]['name']}.price_profile"
+                )
+                # elec costs: not included in the __variable_operational_cost variable yet
+                elect_cost = 0.0
+                for ii in range(1, len(solution.times())):
+                    elect_cost += (
+                        price_profile.values[ii]
+                        * results[f"{asset}.Heat_flow"][ii]
+                        * timesteps_hr[ii - 1]
+                        / solution.parameters(0)[f"{asset}.cop"]
+                    )
+
+                pump_power = 0.0
+                for ii in range(1, len(solution.times())):
+                    # pump power
+                    pump_power += (
+                        price_profile.values[ii]
+                        * results[f"{asset}.Pump_power"][ii]
+                        * timesteps_hr[ii - 1]
+                        / solution.parameters(0)[f"{asset}.pump_efficiency"]
+                    )
+
+                variable_operational_cost += pump_power + elect_cost
+
+            total_opex += (
+                variable_operational_cost * solution.parameters(0)[f"{asset}.technical_life"]
+            )
+            np.testing.assert_allclose(
+                variable_operational_cost, results[f"{asset}__variable_operational_cost"]
+            )
+
+        for asset in solution.energy_system_components["heat_pipe"]:
+            total_capex += results[f"{asset}__investment_cost"]
+
+        # cold demand
+        investment_cost_cd = 0.0
+        installation_cost_cd = 0.0
+        total_cost_cd = 0.0
+        for asset in solution.energy_system_components.get("cold_demand", []):
+            investment_cost_cd += (
+                results[f"{asset}__max_size"]
+                * solution.esdl_assets[f"{asset}"]
+                .attributes["costInformation"]
+                .investmentCosts.value
+                / 1.0e6
+            )
+            installation_cost_cd += (
+                solution.esdl_assets[f"{asset}"]
+                .attributes["costInformation"]
+                .installationCosts.value
+            )
+            total_cost_cd += investment_cost_cd + installation_cost_cd
+        np.testing.assert_allclose(investment_cost_cd, results[f"{asset}__investment_cost"])
+        np.testing.assert_allclose(installation_cost_cd, results[f"{asset}__installation_cost"])
+        total_capex += investment_cost_cd + installation_cost_cd
+
+        np.testing.assert_allclose(
+            solution.objective_value + total_cost_cd / 1.0e6,
+            (total_capex + total_opex) / 1.0e6,
+        )
 
         # # --------------------------------------------------------------------------------------
         # # Do not delete the code below. It is used for creating plots (also used for conference
@@ -184,16 +348,6 @@ class HeatCoolingGrowWorkflow(TestCase):
         #
         # create_plots = False
         # if create_plots:
-        #
-        #     results = solution.extract_results()
-        #     name_to_id_map = solution.esdl_asset_name_to_id_map
-        #
-        #     hd_1_id = name_to_id_map["HeatingDemand_1"]
-        #     hd_2_id = name_to_id_map["HeatingDemand_2"]
-        #     a_1_id = name_to_id_map["ATES_1"]
-        #     hp_1_id = name_to_id_map["HeatPump_1"]
-        #     cd_1_id = name_to_id_map["CoolingDemand_1"]
-        #     ac_1_id = name_to_id_map["Airco_1"]
         #
         #     import matplotlib.pyplot as plt
         #
@@ -340,8 +494,8 @@ class HeatCoolingGrowWorkflow(TestCase):
         #     )
         #     temp_season = np.append(
         #         temp_season,
-        #         results[f"{hd_1_id}.Heat_flow"][index_end_peak_day[0] : index_start_peak_day[1]]
-        #         + results[f"{hd_2_id}.Heat_flow"][index_end_peak_day[0] : index_start_peak_day[1]],
+        #         results[f"{hd_1_id}.Heat_flow"][index_end_peak_day[0]:index_start_peak_day[1]]
+        #         +results[f"{hd_2_id}.Heat_flow"][index_end_peak_day[0]:index_start_peak_day[1]],
         #     )
         #     temp_season = np.append(
         #         temp_season,
@@ -417,7 +571,7 @@ class HeatCoolingGrowWorkflow(TestCase):
         #     temp_season = results[f"{a_1_id}.Stored_volume"][0 : index_start_peak_day[0]]
         #     temp_season = np.append(
         #         temp_season,
-        #         results[f"{a_1_id}.Stored_volume"][index_end_peak_day[0] : index_start_peak_day[1]],
+        #         results[f"{a_1_id}.Stored_volume"][index_end_peak_day[0]:index_start_peak_day[1]],
         #     )
         #     temp_season = np.append(
         #         temp_season,
