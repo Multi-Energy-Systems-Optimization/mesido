@@ -1481,6 +1481,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._get_cost_figure_modifiers(asset),
         )
 
+        if asset.asset_type == "ResidualHeatSource":
+            modifiers["max_temperature"] = asset.attributes["maxTemperature"]
+            modifiers["min_temperature"] = asset.attributes["minTemperature"]
+
         if asset.asset_type == "GeothermalSource":
             modifiers["nr_of_doublets"] = aggregation_count
             modifiers["Heat_source"] = dict(

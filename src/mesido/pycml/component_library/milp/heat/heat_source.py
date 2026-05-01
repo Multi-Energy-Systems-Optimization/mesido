@@ -44,6 +44,8 @@ class HeatSource(_NonStorageComponentSourceType):
         self.price = nan  # TODO: delete not needed anymore
         self.co2_coeff = 1.0
         self.pump_efficiency = 0.5
+        self.max_temperature = nan
+        self.min_temperature = nan
 
         # Assumption: heat in/out and added is nonnegative
         # Heat in the return (i.e. cold) line is zero
