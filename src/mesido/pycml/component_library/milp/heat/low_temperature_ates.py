@@ -30,7 +30,7 @@ class LowTemperatureATES(_ATESBaseAsset):
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
 
-        self.component_type = "low_temperature_ates"
+        self.component_subtype = "low_temperature_ates"
 
         # Stored_heat is the heat that is contained in the ates.
         # Heat_low_temperature_ates is the amount of heat added to or extracted from the buffer
