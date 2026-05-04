@@ -116,6 +116,9 @@ class TestEndScenarioSizing(TestCase):
         hp_2_id = name_to_id_map["HeatProducer_2"]
         a_id = name_to_id_map["ATES_033c"]
         ht_id = name_to_id_map["HeatStorage_74c1"]
+        hd_1_id = name_to_id_map["HeatingDemand_1"]
+        hd_2_id = name_to_id_map["HeatingDemand_2"]
+        hd_3_id = name_to_id_map["HeatingDemand_3"]
 
         # Check whehter the heat demand is matched
         demand_matching_test(self.solution, self.results)
@@ -131,6 +134,11 @@ class TestEndScenarioSizing(TestCase):
         np.testing.assert_array_less(1e3, self.results[f"{a_id}__variable_operational_cost"])
         np.testing.assert_array_less(1e3, self.results[f"{ht_id}__investment_cost"])
         np.testing.assert_array_less(1e3, self.results[f"{ht_id}__installation_cost"])
+        np.testing.assert_array_less(1e3, self.results[f"{hd_1_id}__installation_cost"])
+        np.testing.assert_array_less(1e3, self.results[f"{hd_2_id}__installation_cost"])
+        np.testing.assert_array_less(1e3, self.results[f"{hd_3_id}__installation_cost"])
+        for pipe_id in self.solution.energy_system_components.get("heat_pipe", []):
+            np.testing.assert_array_less(1e3, self.results[f"{pipe_id}__investment_cost"])
         cost_calculation_test(self.solution, self.results, check_objective_function=True)
 
         # Check that indeed the available pipe classes were adapted based on expected flow
@@ -235,6 +243,9 @@ class TestEndScenarioSizing(TestCase):
         hp_2_id = name_to_id_map["HeatProducer_2"]
         a_id = name_to_id_map["ATES_033c"]
         ht_id = name_to_id_map["HeatStorage_74c1"]
+        hd_1_id = name_to_id_map["HeatingDemand_1"]
+        hd_2_id = name_to_id_map["HeatingDemand_2"]
+        hd_3_id = name_to_id_map["HeatingDemand_3"]
 
         # Check whehter the heat demand is matched
         demand_matching_test(solution_staged, results)
@@ -250,12 +261,18 @@ class TestEndScenarioSizing(TestCase):
         np.testing.assert_array_less(1e3, results[f"{a_id}__variable_operational_cost"])
         np.testing.assert_array_less(1e3, results[f"{ht_id}__investment_cost"])
         np.testing.assert_array_less(1e3, results[f"{ht_id}__installation_cost"])
+        np.testing.assert_array_less(1e3, results[f"{hd_1_id}__installation_cost"])
+        np.testing.assert_array_less(1e3, results[f"{hd_2_id}__installation_cost"])
+        np.testing.assert_array_less(1e3, results[f"{hd_3_id}__installation_cost"])
+        for pipe_id in solution_staged.energy_system_components.get("heat_pipe", []):
+            np.testing.assert_array_less(1e3, results[f"{pipe_id}__investment_cost"])
         cost_calculation_test(solution_staged, results, check_objective_function=True)
 
         # Check whether cyclic ates constraint is working
         for a in solution_staged.energy_system_components.get("ates", []):
             stored_heat = results[f"{a}.Stored_heat"]
             np.testing.assert_allclose(stored_heat[0], stored_heat[-1], atol=1.0)
+
         # Check that the ATES is placed and that the size should match the single_doublet_power
         np.testing.assert_allclose(
             results[f"{a}__max_size"],

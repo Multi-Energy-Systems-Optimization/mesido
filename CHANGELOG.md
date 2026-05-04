@@ -8,7 +8,6 @@
 - Generic methods to create equality and inequality constraints using big-M formulation.
 - First implementation of a temperature profile for a producer. (experimental)
 - Test is added to check airco sizing and cost calculation
-- cost_calculation_test is added into utils_Tests
 
 ## Changed
 - Reduced the number of constraints required for headloss calculation with LINEARIZED_N_LINES_EQUALITY setting.

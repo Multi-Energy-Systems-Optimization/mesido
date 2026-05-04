@@ -142,14 +142,16 @@ class TestElecBoiler(TestCase):
         parameters = heat_problem.parameters(0)
         name_to_id_map = heat_problem.esdl_asset_name_to_id_map
         hp_id = name_to_id_map["HeatPump_d8fd"]
+        p_1_id = name_to_id_map["Pipe1"]
 
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
         electric_power_conservation_test(heat_problem, results)
 
-        # Check variable operation cost
+        # Check costs
         np.testing.assert_array_less(100.0, results[f"{hp_id}__variable_operational_cost"])
+        np.testing.assert_array_less(1e3, results[f"{p_1_id}__investment_cost"])
         cost_calculation_test(heat_problem, results)
 
         elec_producer_id = name_to_id_map["ElectricityProducer_4dde"]

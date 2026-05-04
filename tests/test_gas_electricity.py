@@ -63,6 +63,10 @@ class TestGasElect(TestCase):
         name_to_id_map = solution.esdl_asset_name_to_id_map
         gh_1_id = name_to_id_map["GasHeater_1"]
         hp_2_id = name_to_id_map["HeatPump_2"]
+        pipe_prod_id = name_to_id_map["Pipe_prod"]
+        pipe_dem_1_id = name_to_id_map["Pipe_dem_1"]
+        cable_prod_id = name_to_id_map["ElectricityCable_prod"]
+        cable_dem_2_id = name_to_id_map["ElectricityCable_dem_2"]
 
         solution_high_demand = run_optimization_problem_solver(
             GasElectProblem,
@@ -75,6 +79,13 @@ class TestGasElect(TestCase):
         )
 
         results_high_demand = solution_high_demand.extract_results()
+        name_to_id_map_high_demand = solution_high_demand.esdl_asset_name_to_id_map
+        gh_1_id_hd = name_to_id_map_high_demand["GasHeater_1"]
+        hp_2_id_hd = name_to_id_map_high_demand["HeatPump_2"]
+        pipe_prod_id_hd = name_to_id_map["Pipe_prod"]
+        pipe_dem_1_id_hd = name_to_id_map["Pipe_dem_1"]
+        cable_prod_id_hd = name_to_id_map["ElectricityCable_prod"]
+        cable_dem_2_id_hd = name_to_id_map["ElectricityCable_dem_2"]
 
         demand_matching_test(solution, results)
         energy_conservation_test(solution, results)
@@ -83,8 +94,16 @@ class TestGasElect(TestCase):
         gas_pipes_head_loss_test(solution, results)
 
         # Check the cost calculations
+        np.testing.assert_array_less(0.99, results[f"{gh_1_id}__investment_cost"])
+        np.testing.assert_array_less(0.99, results[f"{gh_1_id}__installation_cost"])
         np.testing.assert_array_less(1e3, results[f"{gh_1_id}__variable_operational_cost"])
+        np.testing.assert_array_less(2.99, results[f"{hp_2_id}__investment_cost"])
+        np.testing.assert_array_less(0.99, results[f"{hp_2_id}__installation_cost"])
         np.testing.assert_array_less(1e3, results[f"{hp_2_id}__variable_operational_cost"])
+        np.testing.assert_array_less(1e3, results[f"{pipe_prod_id}__investment_cost"])
+        np.testing.assert_array_less(1e3, results[f"{pipe_dem_1_id}__investment_cost"])
+        np.testing.assert_array_less(1e2, results[f"{cable_prod_id}__investment_cost"])
+        np.testing.assert_array_less(1e2, results[f"{cable_dem_2_id}__investment_cost"])
         cost_calculation_test(solution, results, check_objective_function=True)
 
         demand_matching_test(solution_high_demand, results_high_demand)
@@ -94,12 +113,16 @@ class TestGasElect(TestCase):
         gas_pipes_head_loss_test(solution_high_demand, results_high_demand)
 
         # Check the cost calculations
-        np.testing.assert_array_less(
-            1e3, results_high_demand[f"{gh_1_id}__variable_operational_cost"]
-        )
-        np.testing.assert_array_less(
-            1e3, results_high_demand[f"{hp_2_id}__variable_operational_cost"]
-        )
+        np.testing.assert_array_less(0.99, results[f"{gh_1_id_hd}__investment_cost"])
+        np.testing.assert_array_less(0.99, results[f"{gh_1_id_hd}__installation_cost"])
+        np.testing.assert_array_less(1e3, results[f"{gh_1_id_hd}__variable_operational_cost"])
+        np.testing.assert_array_less(2.99, results[f"{hp_2_id_hd}__investment_cost"])
+        np.testing.assert_array_less(0.99, results[f"{hp_2_id_hd}__installation_cost"])
+        np.testing.assert_array_less(1e3, results[f"{hp_2_id_hd}__variable_operational_cost"])
+        np.testing.assert_array_less(1e3, results[f"{pipe_prod_id_hd}__investment_cost"])
+        np.testing.assert_array_less(1e3, results[f"{pipe_dem_1_id_hd}__investment_cost"])
+        np.testing.assert_array_less(1e2, results[f"{cable_prod_id_hd}__investment_cost"])
+        np.testing.assert_array_less(1e2, results[f"{cable_dem_2_id_hd}__investment_cost"])
         cost_calculation_test(
             solution_high_demand, results_high_demand, check_objective_function=True
         )

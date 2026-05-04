@@ -683,6 +683,32 @@ def _get_esdl_scaled_cost(cost_esdl_info, uni_enum):
     return cost_scaled
 
 
+def _find_pipe_cost_in_edr(edr_pipes: dict, inner_diameter: float) -> float:
+    """
+    Searches the EDR pipes dictionary for a Steel-S1 pipe
+    with the specified inner diameter and returns its investment cost.
+
+    This function is used if the pipe is optional.
+
+    Parameters
+    ----------
+    edr_pipes : dict. Dictionary containing EDR pipe definitions.
+    inner_diameter : float. Inner diameter of the pipe.
+
+    Returns
+    -------
+    float. Investment cost of the matching pipe.
+
+    """
+
+    for pipe_type in list(edr_pipes.keys()):
+        if "Steel-S1" in pipe_type:
+            pipe_class = edr_pipes[pipe_type]
+            if pipe_class["inner_diameter"] == inner_diameter:
+                return pipe_class["investment_costs"]
+    raise ValueError(f"No pipe found with inner_diameter={inner_diameter}")
+
+
 def cost_calculation_test(solution, results, check_objective_function=False, atol=1e-8):
     """
     Compute CAPEX/OPEX per asset to verify against costs in `results`.
@@ -770,12 +796,8 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
                 asset in solution.energy_system_components.get("heat_pipe", [])
                 and esdl_asset.attributes["state"] == esdl.AssetStateEnum.OPTIONAL
             ):
-                investment_cost_info_opt_pipe = edr_pipes[
-                    f"Steel-S1-DN-{esdl_asset.attributes['diameter'].name[2:]}"
-                ]["investment_costs"]
-                np.testing.assert_allclose(
-                    parameters[f"{asset}.investment_cost_coefficient"],
-                    investment_cost_info_opt_pipe,
+                investment_cost_info = _find_pipe_cost_in_edr(
+                    edr_pipes, parameters[f"{asset}.diameter"]
                 )
             else:
                 np.testing.assert_allclose(
@@ -807,7 +829,7 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
         )
 
         # Installation Cost
-        installation_cost = 0
+        installation_cost = 0.0
         if asset in transport_assets:
             np.testing.assert_allclose(0.0, results[f"{asset}__installation_cost"])
         else:
