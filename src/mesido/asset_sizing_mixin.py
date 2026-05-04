@@ -833,7 +833,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 else bounds[f"{asset_name}.{secondary_suffix}"][1]
             )
 
-        def _make_ass_max_size_vars(component_type, upper_bound_suffix=None,
+        def _make_asset_max_size_vars(component_type, upper_bound_suffix=None,
                                     upper_bound_suffix_sec=None, profile_constraint=None):
             for asset_name in self.energy_system_components.get(component_type, []):
                 if upper_bound_suffix_sec is None:
@@ -876,7 +876,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         # Making the __aggregation_count variable for each asset
         for asset_type, asset_list in self.energy_system_components.items():
             if asset_type in map_variables_asset:
-                _make_ass_max_size_vars(asset_type, **map_variables_asset[asset_type])
+                _make_asset_max_size_vars(asset_type, **map_variables_asset[asset_type])
             elif asset_type not in ["heat_pipe", "gas_pipe", "cable"]:
                 logger.warning(f"Assets of type {asset_type} is not supported for sizing, ")
             for asset in asset_list:
