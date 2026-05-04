@@ -320,6 +320,14 @@ class HeatPhysicsMixin(
             (_cold_pipe, _cold_pipe_orientation),
         ) in self.energy_system_topology.ates.items():
 
+            max_heat = bounds[f"{ates}.Stored_heat"][1]
+            ates_max_stored_heat_var_name = f"{ates}__max_stored_heat"
+            self.__ates_max_stored_heat_var[ates_max_stored_heat_var_name] = ca.MX.sym(
+                ates_max_stored_heat_var_name
+            )
+            self.__ates_max_stored_heat_bounds[ates_max_stored_heat_var_name] = (0, max_heat)
+            self.__ates_max_stored_heat_nominals[ates_max_stored_heat_var_name] = max_heat / 2
+
             if ates in self.energy_system_components.get("low_temperature_ates", []):
                 continue
 
@@ -372,14 +380,6 @@ class HeatPhysicsMixin(
                 self.__ates_temperature_disc_ordering_var_bounds[
                     ates_temperature_disc_ordering_var_name
                 ] = (0.0, 1.0)
-
-            max_heat = bounds[f"{ates}.Stored_heat"][1]
-            ates_max_stored_heat_var_name = f"{ates}__max_stored_heat"
-            self.__ates_max_stored_heat_var[ates_max_stored_heat_var_name] = ca.MX.sym(
-                ates_max_stored_heat_var_name
-            )
-            self.__ates_max_stored_heat_bounds[ates_max_stored_heat_var_name] = (0, max_heat)
-            self.__ates_max_stored_heat_nominals[ates_max_stored_heat_var_name] = max_heat / 2
 
         for _carrier, temperatures in self.temperature_carriers().items():
             carrier_id_number_mapping = str(temperatures["id_number_mapping"])
