@@ -800,166 +800,80 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             self.__asset_max_size_bounds[asset_max_size_var] = (lb, ub)
             self.__asset_max_size_nominals[asset_max_size_var] = nominal
 
-        for asset_name in self.energy_system_components.get("heat_source", []):
-            ub = bounds[f"{asset_name}.Heat_source"][1]
-
+        def _get_ub_profile_constraint(asset_name, profile_name, ub):
             # Update bound to account for profile constraint being used instead of 1 value
-
             asset = self.esdl_assets[asset_name]
             asset_profile_constraints, qty_asset_profile_constraints = get_asset_contraints(
                 self, asset, esdl.ProfileConstraint
             )
             if (
-                qty_asset_profile_constraints > 0
-                and hasattr(asset_profile_constraints[0], "maximum")
-                and InfluxDBProfileReader._get_profile_quantity_and_unit(
-                    asset_profile_constraints[0].maximum
-                ).unit
-                == esdl.UnitEnum.WATT
-                and parameters[f"{asset_name}.state"] == AssetStateEnum.OPTIONAL  # Optional asset
+                    qty_asset_profile_constraints > 0
+                    and hasattr(asset_profile_constraints[0], "maximum")
+                    and InfluxDBProfileReader._get_profile_quantity_and_unit(
+                asset_profile_constraints[0].maximum
+            ).unit
+                    == esdl.UnitEnum.WATT
+                    and parameters[f"{asset_name}.state"] == AssetStateEnum.OPTIONAL  # Optional asset
             ):
-                max_profile = max(self.get_timeseries(f"{asset_name}.maximum_heat_source").values)
+                max_profile = max(self.get_timeseries(f"{asset_name}.{profile_name}").values)
                 if ub > max_profile:
                     ub = max_profile
+            return ub
 
-            lb = 0.0 if parameters[f"{asset_name}.state"] != AssetStateEnum.ENABLED else ub
-            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
+        def _scalar_upper_bound(bound_ub):
+            if isinstance(bound_ub, Timeseries):
+                return np.max(bound_ub.values)
+            return bound_ub if isinstance(bound_ub, float) else max(bound_ub.values)
 
-        for asset_name in self.energy_system_components.get("heat_demand", []):
-            ub = (
-                bounds[f"{asset_name}.Heat_demand"][1]
-                if not np.isinf(bounds[f"{asset_name}.Heat_demand"][1])
-                else bounds[f"{asset_name}.HeatIn.Heat"][1]
-            )
-            # Note that we only enforce the upper bound in state enabled if it was explicitly
-            # specified for the demand
-            lb = 0.0 if np.isinf(bounds[f"{asset_name}.Heat_demand"][1]) else ub
-            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
-
-        for asset_name in self.energy_system_components.get("airco", []):
-            ub = bounds[f"{asset_name}.Heat_airco"][1]
-            # Note that we only enforce the upper bound in state enabled if it was explicitly
-            # specified for the demand
-            lb = 0.0 if parameters[f"{asset_name}.state"] != 1 else ub
-            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
-
-        for asset_name in self.energy_system_components.get("cold_demand", []):
-            ub = (
-                bounds[f"{asset_name}.Cold_demand"][1]
-                if not np.isinf(bounds[f"{asset_name}.Cold_demand"][1])
-                else bounds[f"{asset_name}.HeatIn.Heat"][1]
-            )
-            # Note that we only enforce the upper bound in state enabled if it was explicitly
-            # specified for the demand
-            lb = 0.0 if np.isinf(bounds[f"{asset_name}.Cold_demand"][1]) else ub
-            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
-
-        for asset_name in [
-            *self.energy_system_components.get("ates", []),
-            *self.energy_system_components.get("low_temperature_ates", []),
-        ]:
-            if asset_name in self.energy_system_components.get("ates", []):
-                ub = bounds[f"{asset_name}.Heat_ates"][1]
-            else:
-                ub = bounds[f"{asset_name}.Heat_low_temperature_ates"][1]
-            lb = 0.0 if parameters[f"{asset_name}.state"] != AssetStateEnum.ENABLED else ub
-            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
-
-        for asset_name in self.energy_system_components.get("heat_buffer", []):
-            ub = (
-                max(bounds[f"{asset_name}.Stored_heat"][1].values)
-                if isinstance(bounds[f"{asset_name}.Stored_heat"][1], Timeseries)
-                else bounds[f"{asset_name}.Stored_heat"][1]
-            )
-            lb = 0.0 if parameters[f"{asset_name}.state"] != AssetStateEnum.ENABLED else ub
-            _make_max_size_var(
-                name=asset_name,
-                lb=lb,
-                ub=ub,
-                nominal=self.variable_nominal(f"{asset_name}.Stored_heat"),
+        def _demand_ub(asset_name, primary_suffix, secondary_suffix):
+            demand_ub = bounds[f"{asset_name}.{primary_suffix}"][1]
+            return (
+                demand_ub
+                if not np.isinf(demand_ub)
+                else bounds[f"{asset_name}.{secondary_suffix}"][1]
             )
 
-        for asset_name in [
-            *self.energy_system_components.get("heat_exchanger", []),
-            *self.energy_system_components.get("heat_pump", []),
-        ]:
-            ub = bounds[f"{asset_name}.Secondary_heat"][1]
-            lb = 0.0 if parameters[f"{asset_name}.state"] != AssetStateEnum.ENABLED else ub
-            _make_max_size_var(
-                name=asset_name,
-                lb=lb,
-                ub=ub,
-                nominal=self.variable_nominal(f"{asset_name}.Secondary_heat"),
-            )
+        def _make_ass_max_size_vars(component_type, upper_bound_suffix=None,
+                                    upper_bound_suffix_sec=None, profile_constraint=None):
+            for asset_name in self.energy_system_components.get(component_type, []):
+                if upper_bound_suffix_sec is None:
+                    ub_raw = bounds[f"{asset_name}.{upper_bound_suffix}"][1]
+                else:
+                    ub_raw = _demand_ub(asset_name, upper_bound_suffix, upper_bound_suffix_sec)
+                ub = _scalar_upper_bound(ub_raw)
+                if profile_constraint:
+                    ub = _get_ub_profile_constraint(asset_name, profile_constraint, ub)
+                lb = 0.0 if parameters[f"{asset_name}.state"] == AssetStateEnum.OPTIONAL else ub
+                _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
 
-        for asset_name in self.energy_system_components.get("gas_demand", []):
-            # TODO: add bound value for mass flow rate, used 1.0 for now instead of 0.0 which
-            # Note that we set the nominal to one to avoid division by zero
-            ub = 0.0
-            lb = 0.0 if parameters[f"{asset_name}.state"] == AssetStateEnum.OPTIONAL else ub
-            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=1.0)
+        _make_ass_max_size_vars(
+            "heat_source",
+            upper_bound_suffix="Heat_source",
+            profile_constraint="maximum_heat_source",
+        )
 
-        for asset_name in self.energy_system_components.get("gas_source", []):
-            # TODO: add bound value for mass flow rate, used 1.0 for now instead of 0.0 which
-            # Note that we set the nominal to one to avoid division by zero
-            ub = 0.0
-            lb = 0.0 if parameters[f"{asset_name}.state"] == AssetStateEnum.OPTIONAL else ub
-            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=1.0)
-
-        for asset_name in self.energy_system_components.get("gas_tank_storage", []):
-            ub = bounds[f"{asset_name}.Stored_gas_mass"][1]
-            ub = ub if isinstance(ub, float) else max(ub.values)
-            lb = 0.0 if parameters[f"{asset_name}.state"] == AssetStateEnum.OPTIONAL else ub
-            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
-
-        for asset_name in self.energy_system_components.get("gas_substation", []):
-            ub = bounds[f"{asset_name}.GasIn.Q"][1]
-            ub = ub if isinstance(ub, float) else max(ub.values)
-            lb = 0.0 if parameters[f"{asset_name}.state"] == AssetStateEnum.OPTIONAL else ub
-            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
-
-        for asset_name in self.energy_system_components.get("compressor", []):
-            ub = bounds[f"{asset_name}.GasIn.Q"][1]
-            ub = ub if isinstance(ub, float) else max(ub.values)
-            lb = 0.0 if parameters[f"{asset_name}.state"] == AssetStateEnum.OPTIONAL else ub
-            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
-
-        for asset_name in self.energy_system_components.get("electrolyzer", []):
-            ub = bounds[f"{asset_name}.ElectricityIn.Power"][1]
-            ub = ub if isinstance(ub, float) else max(ub.values)
-            lb = 0.0 if parameters[f"{asset_name}.state"] == AssetStateEnum.OPTIONAL else ub
-            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
-
-        for asset_name in self.energy_system_components.get("electricity_demand", []):
-            v = bounds[f"{asset_name}.Electricity_demand"][1]
-            ub = v if not np.isinf(v) else bounds[f"{asset_name}.ElectricityIn.Power"][1]
-            ub = ub if isinstance(ub, float) else max(ub.values)
-            lb = 0.0 if parameters[f"{asset_name}.state"] == AssetStateEnum.OPTIONAL else ub
-            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
-
-        for asset_name in self.energy_system_components.get("transformer", []):
-            ub = bounds[f"{asset_name}.ElectricityIn.Power"][1]
-            ub = ub if isinstance(ub, float) else max(ub.values)
-            lb = 0.0 if parameters[f"{asset_name}.state"] == AssetStateEnum.OPTIONAL else ub
-            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
-
-        for asset_name in self.energy_system_components.get("electricity_source", []):
-            ub = (
-                bounds[f"{asset_name}.Electricity_source"][1]
-                if not isinstance(bounds[f"{asset_name}.Electricity_source"][1], Timeseries)
-                else np.max(bounds[f"{asset_name}.Electricity_source"][1].values)
-            )
-            lb = 0.0 if parameters[f"{asset_name}.state"] == AssetStateEnum.OPTIONAL else ub
-            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
-
-        for asset_name in self.energy_system_components.get("electricity_storage", []):
-            ub = (
-                bounds[f"{asset_name}.Stored_electricity"][1]
-                if not isinstance(bounds[f"{asset_name}.Stored_electricity"][1], Timeseries)
-                else np.max(bounds[f"{asset_name}.Stored_electricity"][1].values)
-            )
-            lb = 0.0 if parameters[f"{asset_name}.state"] == AssetStateEnum.OPTIONAL else ub
-            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
+        _make_ass_max_size_vars("cold_demand", upper_bound_suffix="Cold_demand",
+                                upper_bound_suffix_sec="HeatIn.Heat")
+        _make_ass_max_size_vars(
+            "heat_demand", upper_bound_suffix="Heat_demand", upper_bound_suffix_sec="HeatIn.Heat"
+        )
+        _make_ass_max_size_vars("airco", "Heat_airco")
+        _make_ass_max_size_vars("ates", "Heat_ates")
+        _make_ass_max_size_vars("low_temperature_ates", "Heat_ates")
+        _make_ass_max_size_vars("heat_buffer", "Stored_heat")
+        _make_ass_max_size_vars("heat_exchanger", "Secondary_heat")
+        _make_ass_max_size_vars("heat_pump", "Secondary_heat")
+        _make_ass_max_size_vars("gas_tank_storage", "Stored_gas_mass")
+        _make_ass_max_size_vars("gas_substation", "GasIn.Q")
+        _make_ass_max_size_vars("gas_demand", "Gas_demand_mass_flow")
+        _make_ass_max_size_vars("gas_source", "Gas_source_mass_flow")
+        _make_ass_max_size_vars("compressor", "GasIn.Q")
+        _make_ass_max_size_vars("electrolyzer", "ElectricityIn.Power")
+        _make_ass_max_size_vars("electricity_demand", upper_bound_suffix="Electricity_demand",
+                                upper_bound_suffix_sec="ElectricityIn.Power")
+        _make_ass_max_size_vars("transformer", "ElectricityIn.Power")
+        _make_ass_max_size_vars("electricity_source", "Electricity_source")
+        _make_ass_max_size_vars("electricity_storage", "Stored_electricity")
 
         # Making the __aggregation_count variable for each asset
         for asset_list in self.energy_system_components.values():
