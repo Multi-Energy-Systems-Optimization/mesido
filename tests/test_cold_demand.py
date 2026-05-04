@@ -141,7 +141,7 @@ class TestColdDemand(TestCase):
         hp_id = name_to_id_map["HeatPump_b97e"]
         ac_id = name_to_id_map["Airco_23d6"]
 
-        PIPE_NAMES = [
+        pipe_names = [
             "Pipe1",
             "Pipe2",
             "Pipe3",
@@ -159,7 +159,7 @@ class TestColdDemand(TestCase):
         np.testing.assert_array_less(1e3, results[f"{hp_id}__variable_operational_cost"])
         np.testing.assert_array_less(1e3, results[f"{ac_id}__variable_operational_cost"])
         np.testing.assert_array_less(1e3, results[f"{ac_id}__investment_cost"])
-        for pipe_name in PIPE_NAMES:
+        for pipe_name in pipe_names:
             pipe_id = name_to_id_map[pipe_name]
             np.testing.assert_array_less(1e3, results[f"{pipe_id}__investment_cost"])
         cost_calculation_test(heat_problem, results)
