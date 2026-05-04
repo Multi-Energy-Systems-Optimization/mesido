@@ -877,8 +877,8 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         for asset_type, asset_list in self.energy_system_components.items():
             if asset_type in map_variables_asset:
                 _make_ass_max_size_vars(asset_type, **map_variables_asset[asset_type])
-            else:
-                logger.warning(f"Assets of type {asset_type} is not supported for sizing")
+            elif asset_type not in ["heat_pipe", "gas_pipe", "cable"]:
+                logger.warning(f"Assets of type {asset_type} is not supported for sizing, ")
             for asset in asset_list:
                 aggr_count_var = f"{asset}_aggregation_count"
                 self._asset_aggregation_count_var_map[asset] = aggr_count_var
