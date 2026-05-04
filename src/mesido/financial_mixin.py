@@ -124,17 +124,6 @@ class FinancialMixin(
                 )
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
-            elif asset_name in [*self.energy_system_components.get("low_temperature_ates", [])]:
-                nominal_fixed_operational = self.variable_nominal(
-                    f"{asset_name}.Heat_low_temperature_ates"
-                )
-                nominal_fixed_operational = (
-                    nominal_fixed_operational
-                    if isinstance(nominal_fixed_operational, float)
-                    else max(nominal_fixed_operational.values)
-                )
-                nominal_variable_operational = nominal_fixed_operational
-                nominal_investment = nominal_fixed_operational
             elif asset_name in [*self.energy_system_components.get("heat_demand", [])]:
                 nominal_fixed_operational = (
                     bounds[f"{asset_name}.Heat_demand"][1]
@@ -452,7 +441,6 @@ class FinancialMixin(
             *self.energy_system_components.get("heat_demand", []),
             *self.energy_system_components.get("cold_demand", []),
             *self.energy_system_components.get("ates", []),
-            *self.energy_system_components.get("low_temperature_ates", []),
             *self.energy_system_components.get("heat_buffer", []),
             *self.energy_system_components.get("heat_pipe", []),
             *self.energy_system_components.get("heat_exchanger", []),
@@ -480,7 +468,6 @@ class FinancialMixin(
                 *self.energy_system_components.get("cold_demand", []),
                 *self.energy_system_components.get("heat_pipe", []),
                 *self.energy_system_components.get("ates", []),
-                *self.energy_system_components.get("low_temperature_ates", []),
                 *self.energy_system_components.get("heat_buffer", []),
                 *self.energy_system_components.get("heat_exchanger", []),
                 *self.energy_system_components.get("heat_pump", []),
@@ -936,7 +923,6 @@ class FinancialMixin(
 
         for asset in [
             *self.energy_system_components.get("ates", []),
-            *self.energy_system_components.get("low_temperature_ates", []),
             *self.energy_system_components.get("heat_buffer", []),
         ]:
             heat_charge = self.__state_vector_scaled(f"{asset}.Heat_flow_charging", ensemble_member)
@@ -1309,7 +1295,6 @@ class FinancialMixin(
                 *self.energy_system_components.get("heat_source", []),
                 *self.energy_system_components.get("heat_pipe", []),
                 *self.energy_system_components.get("ates", []),
-                *self.energy_system_components.get("low_temperature_ates", []),
                 *self.energy_system_components.get("heat_buffer", []),
                 *self.energy_system_components.get("heat_exchanger", []),
                 *self.energy_system_components.get("heat_pump", []),
@@ -1413,7 +1398,6 @@ class FinancialMixin(
                 *self.energy_system_components.get("heat_source", []),
                 *self.energy_system_components.get("heat_pipe", []),
                 *self.energy_system_components.get("ates", []),
-                *self.energy_system_components.get("low_temperature_ates", []),
                 *self.energy_system_components.get("heat_buffer", []),
                 *self.energy_system_components.get("heat_exchanger", []),
                 *self.energy_system_components.get("heat_pump", []),
@@ -1519,7 +1503,6 @@ class FinancialMixin(
         asset_categories = [
             "heat_source",
             "ates",
-            "low_temperature_ates",
             "heat_buffer",
             "heat_pipe",
             "heat_exchanger",

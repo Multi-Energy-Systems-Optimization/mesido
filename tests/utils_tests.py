@@ -484,9 +484,6 @@ def energy_conservation_test(solution, results, atol=1e-3, atol_total=1e-1):
     for d in solution.energy_system_components.get("ates", []):
         energy_sum -= results[f"{d}.Heat_ates"]
 
-    for d in solution.energy_system_components.get("low_temperature_ates", []):
-        energy_sum -= results[f"{d}.Heat_low_temperature_ates"]
-
     for d in solution.energy_system_components.get("heat_exchanger", []):
         energy_sum -= results[f"{d}.Primary_heat"] - results[f"{d}.Secondary_heat"]
 

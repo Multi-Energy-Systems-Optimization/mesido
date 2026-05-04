@@ -2170,10 +2170,7 @@ class HeatPhysicsMixin(
         bounds = self.bounds()
         options = self.energy_system_options()
 
-        for ates in [
-            *self.energy_system_components.get("ates", []),
-            *self.energy_system_components.get("low_temperature_ates", []),
-        ]:
+        for ates in self.energy_system_components.get("ates", []):
             heat_loss_nominal = self.variable_nominal(f"{ates}.Heat_loss")
             soil_temperature = parameters[f"{ates}.T_amb"]
             heat_stored_max = bounds[f"{ates}.Stored_heat"][1]

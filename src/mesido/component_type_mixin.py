@@ -41,7 +41,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
         busses = components.get("electricity_node", [])
         gas_nodes = components.get("gas_node", [])
         buffers = components.get("heat_buffer", [])
-        atess = [*components.get("ates", []), *components.get("low_temperature_ates", [])]
+        atess = components.get("ates", [])
         demands = [
             *components.get("heat_demand", []),
             *components.get("electricity_demand", []),
