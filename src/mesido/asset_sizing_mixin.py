@@ -846,37 +846,39 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 lb = 0.0 if parameters[f"{asset_name}.state"] == AssetStateEnum.OPTIONAL else ub
                 _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
 
-        _make_ass_max_size_vars(
-            "heat_source",
-            upper_bound_suffix="Heat_source",
-            profile_constraint="maximum_heat_source",
-        )
 
-        _make_ass_max_size_vars("cold_demand", upper_bound_suffix="Cold_demand",
-                                upper_bound_suffix_sec="HeatIn.Heat")
-        _make_ass_max_size_vars(
-            "heat_demand", upper_bound_suffix="Heat_demand", upper_bound_suffix_sec="HeatIn.Heat"
-        )
-        _make_ass_max_size_vars("airco", "Heat_airco")
-        _make_ass_max_size_vars("ates", "Heat_ates")
-        _make_ass_max_size_vars("low_temperature_ates", "Heat_ates")
-        _make_ass_max_size_vars("heat_buffer", "Stored_heat")
-        _make_ass_max_size_vars("heat_exchanger", "Secondary_heat")
-        _make_ass_max_size_vars("heat_pump", "Secondary_heat")
-        _make_ass_max_size_vars("gas_tank_storage", "Stored_gas_mass")
-        _make_ass_max_size_vars("gas_substation", "GasIn.Q")
-        _make_ass_max_size_vars("gas_demand", "Gas_demand_mass_flow")
-        _make_ass_max_size_vars("gas_source", "Gas_source_mass_flow")
-        _make_ass_max_size_vars("compressor", "GasIn.Q")
-        _make_ass_max_size_vars("electrolyzer", "ElectricityIn.Power")
-        _make_ass_max_size_vars("electricity_demand", upper_bound_suffix="Electricity_demand",
-                                upper_bound_suffix_sec="ElectricityIn.Power")
-        _make_ass_max_size_vars("transformer", "ElectricityIn.Power")
-        _make_ass_max_size_vars("electricity_source", "Electricity_source")
-        _make_ass_max_size_vars("electricity_storage", "Stored_electricity")
+        map_variables_asset = {
+            "heat_source":         {"upper_bound_suffix": "Heat_source",
+                                    "profile_constraint": "maximum_heat_source"},
+            "heat_demand":         {"upper_bound_suffix": "Heat_demand",
+                                    "upper_bound_suffix_sec": "HeatIn.Heat"},
+            "cold_demand":         {"upper_bound_suffix": "Cold_demand",
+                                    "upper_bound_suffix_sec": "HeatIn.Heat"},
+            "airco":               {"upper_bound_suffix": "Heat_airco"},
+            "ates":                {"upper_bound_suffix": "Heat_ates"},
+            "low_temperature_ates": {"upper_bound_suffix": "Heat_ates"},
+            "heat_buffer":         {"upper_bound_suffix": "Stored_heat"},
+            "heat_exchanger":      {"upper_bound_suffix": "Secondary_heat"},
+            "heat_pump":           {"upper_bound_suffix": "Secondary_heat"},
+            "gas_tank_storage":    {"upper_bound_suffix": "Stored_gas_mass"},
+            "gas_substation":      {"upper_bound_suffix": "GasIn.Q"},
+            "gas_demand":          {"upper_bound_suffix": "Gas_demand_mass_flow"},
+            "gas_source":          {"upper_bound_suffix": "Gas_source_mass_flow"},
+            "compressor":          {"upper_bound_suffix": "GasIn.Q"},
+            "electrolyzer":        {"upper_bound_suffix": "ElectricityIn.Power"},
+            "electricity_demand":  {"upper_bound_suffix": "Electricity_demand",
+                                    "upper_bound_suffix_sec": "ElectricityIn.Power"},
+            "transformer":         {"upper_bound_suffix": "ElectricityIn.Power"},
+            "electricity_source":  {"upper_bound_suffix": "Electricity_source"},
+            "electricity_storage": {"upper_bound_suffix": "Stored_electricity"},
+        }
 
         # Making the __aggregation_count variable for each asset
-        for asset_list in self.energy_system_components.values():
+        for asset_type, asset_list in self.energy_system_components.items():
+            if asset_type in map_variables_asset:
+                _make_ass_max_size_vars(asset_type, **map_variables_asset[asset_type])
+            else:
+                logger.warning(f"Assets of type {asset_type} is not supported for sizing")
             for asset in asset_list:
                 aggr_count_var = f"{asset}_aggregation_count"
                 self._asset_aggregation_count_var_map[asset] = aggr_count_var
