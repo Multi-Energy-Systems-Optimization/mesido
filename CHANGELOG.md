@@ -1,4 +1,4 @@
-# [Unreleased-main] - 2026-04-28
+# [Unreleased-main] - 2026-05-01
 
 ## Added
 - Electricity consumption calculation of geothermal assets, using the defined COP. 
@@ -8,6 +8,7 @@
 - Generic methods to create equality and inequality constraints using big-M formulation.
 - First implementation of a temperature profile for a producer. (experimental)
 - Test is added to check airco sizing and cost calculation
+- Maximum and minimum temperature of residual heat source are parsed from esdl
 
 ## Changed
 - Reduced the number of constraints required for headloss calculation with LINEARIZED_N_LINES_EQUALITY setting.

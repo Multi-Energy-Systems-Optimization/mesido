@@ -25,6 +25,7 @@ class TestVaryingTemperature(TestCase):
         - Check expected return temperature
         - Check on integer variable for selected temperature.
         - Check if the heat losses are correct for the selected temperature
+        - Maximum and minimum temperatures of residual heat source are parsed from esdl
 
         """
         import models.unit_cases.case_1a.src.run_1a as run_1a
@@ -45,6 +46,7 @@ class TestVaryingTemperature(TestCase):
         # chose by the optimization, minimum of 21 deg is needed, only the 85/60 option is
         # feasible, note that a maximum velocity is set low to achieve this.
         results = heat_problem.extract_results()
+        parameters = heat_problem.parameters(0)
 
         test = TestCase()
         test.assertTrue(heat_problem.solver_stats["success"], msg="Optimisation did not succeed")
@@ -62,8 +64,6 @@ class TestVaryingTemperature(TestCase):
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
 
-        parameters = heat_problem.parameters(0)
-
         for pipe in heat_problem.energy_system_components.get("heat_pipe", []):
             heat_loss_opt = results[f"{pipe}__hn_heat_loss"]
             carrier_id = parameters[f"{pipe}.carrier_id"]
@@ -80,6 +80,18 @@ class TestVaryingTemperature(TestCase):
                 for temp in temperature
             ]
             np.testing.assert_allclose(heat_loss_opt, heat_loss_calc, atol=1.0e-6)
+
+        # Check max, min temperature of residual heat source is parsed from esdl
+        for asset_id in [
+            *heat_problem.energy_system_components.get("heat_source", []),
+        ]:
+            esdl_asset = heat_problem.esdl_assets[f"{asset_id}"]
+            np.testing.assert_equal(
+                esdl_asset.attributes["maxTemperature"], parameters[f"{asset_id}.max_temperature"]
+            )
+            np.testing.assert_equal(
+                esdl_asset.attributes["minTemperature"], parameters[f"{asset_id}.min_temperature"]
+            )
 
     def test_3a_temperature_variation_supply(self):
         """
