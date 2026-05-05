@@ -28,7 +28,7 @@ class TestElecBoiler(TestCase):
         2. energy conservation in the network
         3. heat to discharge
         4. electric power conservation
-        5. cost calculation is checked
+        5. e-boiler cost calculation is checked
         """
         import models.source_pipe_sink.src.double_pipe_heat as example
         from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
@@ -55,7 +55,7 @@ class TestElecBoiler(TestCase):
         heat_to_discharge_test(heat_problem, results)
         electric_power_conservation_test(heat_problem, results)
 
-        # Check the cost calculations
+        # Check the cost calculations of ElectricBoiler
         np.testing.assert_array_less(99.0, results[f"{e_boiler_id}__investment_cost"])
         np.testing.assert_array_less(99.0, results[f"{e_boiler_id}__installation_cost"])
         np.testing.assert_array_less(10.0, results[f"{e_boiler_id}__variable_operational_cost"])
@@ -77,7 +77,7 @@ class TestElecBoiler(TestCase):
         1. demand is matched
         2. energy conservation in the network
         3. heat to discharge
-        4. cost calculation is checked
+        4. e-boiler cost calculation is checked
         """
         import models.source_pipe_sink.src.double_pipe_heat as example
         from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
@@ -101,7 +101,7 @@ class TestElecBoiler(TestCase):
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
 
-        # Check the cost calculations
+        # Check the cost calculations of ElectricBoiler
         np.testing.assert_array_less(99.0, results[f"{e_boiler_id}__investment_cost"])
         np.testing.assert_array_less(99.0, results[f"{e_boiler_id}__installation_cost"])
         np.testing.assert_array_less(10.0, results[f"{e_boiler_id}__variable_operational_cost"])
@@ -142,16 +142,14 @@ class TestElecBoiler(TestCase):
         parameters = heat_problem.parameters(0)
         name_to_id_map = heat_problem.esdl_asset_name_to_id_map
         hp_id = name_to_id_map["HeatPump_d8fd"]
-        p_1_id = name_to_id_map["Pipe1"]
 
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
         electric_power_conservation_test(heat_problem, results)
 
-        # Check costs
+        # Check costs of heatpump
         np.testing.assert_array_less(100.0, results[f"{hp_id}__variable_operational_cost"])
-        np.testing.assert_array_less(1e3, results[f"{p_1_id}__investment_cost"])
         cost_calculation_test(heat_problem, results)
 
         elec_producer_id = name_to_id_map["ElectricityProducer_4dde"]

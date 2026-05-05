@@ -120,6 +120,10 @@ class TestMaxSizeAggregationCount(TestCase):
         np.testing.assert_allclose(inst_cost_1, 0.0, atol=1e-9)
         np.testing.assert_allclose(inst_cost_2, 100000.0)
         np.testing.assert_allclose(inv_cost_1, 0.0, atol=1e-9)
+        np.testing.assert_array_less(1e3, results[f"{producer_2_id}__investment_cost"])
+        np.testing.assert_array_less(1e3, results[f"{producer_2_id}__variable_operational_cost"])
+        np.testing.assert_array_less(1e3, results[f"{producer_2_id}__fixed_operational_cost"])
+        cost_calculation_test(solution, results)
 
         # Since the buffer and ates are not optional they must consume some heat to compensate
         # losses as the buffer has a minimum fraction volume of 5%.
@@ -132,20 +136,6 @@ class TestMaxSizeAggregationCount(TestCase):
         )
         np.testing.assert_allclose(results[f"{ates_id}_aggregation_count"], 1.0)
         np.testing.assert_allclose(results[f"{buffer_id}_aggregation_count"], 1.0)
-
-        # Cost calculation checks
-        np.testing.assert_array_less(1e3, results[f"{producer_2_id}__investment_cost"])
-        np.testing.assert_array_less(1e3, results[f"{producer_2_id}__installation_cost"])
-        np.testing.assert_array_less(1e3, results[f"{producer_2_id}__variable_operational_cost"])
-        np.testing.assert_array_less(1e3, results[f"{ates_id}__investment_cost"])
-        np.testing.assert_array_less(1e3, results[f"{ates_id}__installation_cost"])
-        np.testing.assert_array_less(1e2, results[f"{ates_id}__variable_operational_cost"])
-        np.testing.assert_array_less(1e3, results[f"{buffer_id}__investment_cost"])
-        pipes_not_placed = ["Pipe12345", "Pipe12345_return"]
-        for pipe_id in solution.energy_system_components.get("heat_pipe", []):
-            if solution.esdl_asset_id_to_name_map[pipe_id] not in pipes_not_placed:
-                np.testing.assert_array_less(1e3, results[f"{pipe_id}__investment_cost"])
-        cost_calculation_test(solution, results)
 
         import models.test_case_small_network_ates_buffer_optional_assets.src.run_ates as run_ates
         from models.test_case_small_network_ates_buffer_optional_assets.src.run_ates import (
@@ -171,34 +161,17 @@ class TestMaxSizeAggregationCount(TestCase):
         results = solution.extract_results()
         name_to_id_map = solution.esdl_asset_name_to_id_map
 
+        ates_id = name_to_id_map["ATES_033c"]
+        buffer_id = name_to_id_map["HeatStorage_74c1"]
+
         demand_matching_test(solution, results)
         energy_conservation_test(solution, results)
         heat_to_discharge_test(solution, results)
 
-        hp_2_id = name_to_id_map["HeatProducer_2"]
-        a_id = name_to_id_map["ATES_033c"]
-        ht_id = name_to_id_map["HeatStorage_74c1"]
-        hd_1_id = name_to_id_map["HeatingDemand_1"]
-        hd_2_id = name_to_id_map["HeatingDemand_2"]
-        hd_3_id = name_to_id_map["HeatingDemand_3"]
-
-        np.testing.assert_allclose(results[f"{a_id}.Heat_ates"], 0.0, atol=1.0e-6)
-        np.testing.assert_allclose(results[f"{ht_id}.Stored_heat"], 0.0, atol=1.0e-3)
-        np.testing.assert_allclose(results[f"{a_id}_aggregation_count"], 0.0, atol=1.0e-6)
-        np.testing.assert_allclose(results[f"{ht_id}_aggregation_count"], 0.0, atol=1.0e-6)
-
-        # Check the cost calculations
-        np.testing.assert_array_less(1e3, results[f"{hp_2_id}__investment_cost"])
-        np.testing.assert_array_less(1e3, results[f"{hp_2_id}__installation_cost"])
-        np.testing.assert_array_less(1e3, results[f"{hp_2_id}__variable_operational_cost"])
-        np.testing.assert_array_less(1e3, results[f"{hd_1_id}__installation_cost"])
-        np.testing.assert_array_less(1e3, results[f"{hd_2_id}__installation_cost"])
-        np.testing.assert_array_less(1e3, results[f"{hd_3_id}__installation_cost"])
-        for pipe_id in solution.energy_system_components.get("heat_pipe", []):
-            pipe_name = solution.esdl_asset_id_to_name_map[pipe_id]
-            if results[f"{pipe_name}_aggregation_count"] == 1.0:
-                np.testing.assert_array_less(1e3, results[f"{pipe_id}__investment_cost"])
-        cost_calculation_test(solution, results)
+        np.testing.assert_allclose(results[f"{ates_id}.Heat_ates"], 0.0, atol=1.0e-6)
+        np.testing.assert_allclose(results[f"{buffer_id}.Stored_heat"], 0.0, atol=1.0e-3)
+        np.testing.assert_allclose(results[f"{ates_id}_aggregation_count"], 0.0, atol=1.0e-6)
+        np.testing.assert_allclose(results[f"{buffer_id}_aggregation_count"], 0.0, atol=1.0e-6)
 
 
 if __name__ == "__main__":

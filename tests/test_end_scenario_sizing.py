@@ -108,7 +108,6 @@ class TestEndScenarioSizing(TestCase):
         # Is the timeline correctly converted, correct peak day, correct amount of timesteps, etc.
         # Check whether expected assets are disabled
         # Check the optimal size of assets
-        # Check the cost breakdown, check whether all the enabled assets are in the cost breakdown
         # Check that computation time is within expected bounds
 
         name_to_id_map = self.solution.esdl_asset_name_to_id_map
@@ -679,20 +678,6 @@ class TestEndScenarioSizing(TestCase):
                     optimized_pipe_classes_dia_map[optimized_diameter]
                 ]
                 np.testing.assert_allclose(cost_map_from_measures, investment_cost_specific)
-
-    def calculate_heat_demand_costs_end_scenario_sizing(self):
-        excluded_costs_in_obj = 0.0  # Fixed costs excluded in the optim objective function
-        years = self.solution.parameters(0)["number_of_years"]
-        for asset in [*self.solution.energy_system_components.get("heat_demand", [])]:
-            technical_lifetime = self.solution.parameters(0)[f"{asset}.technical_life"]
-            factor = years / technical_lifetime
-            if factor < 1.0:
-                factor = 1.0
-            if asset in [*self.solution.energy_system_components.get("heat_demand", [])]:
-                excluded_costs_in_obj += (
-                    self.results[f"{self.solution._asset_installation_cost_map[asset]}"] * factor
-                )
-        return excluded_costs_in_obj
 
 
 if __name__ == "__main__":

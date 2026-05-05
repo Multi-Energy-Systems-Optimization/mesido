@@ -27,7 +27,7 @@ class TestGasBoiler(TestCase):
         1. demand is matched
         2. energy conservation in the network
         3. heat to discharge
-        4. cost calculation is checked
+        4. cost calculation of gas heater is checked
         5. check pipe bounds
 
         """
@@ -57,7 +57,7 @@ class TestGasBoiler(TestCase):
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
 
-        # Check the cost calculations
+        # Check the cost calculations of gas heater
         np.testing.assert_array_less(99.0, results[f"{gas_heater_id}__investment_cost"])
         np.testing.assert_array_less(99.0, results[f"{gas_heater_id}__installation_cost"])
         np.testing.assert_array_less(1e3, results[f"{gas_heater_id}__variable_operational_cost"])
@@ -92,7 +92,7 @@ class TestGasBoiler(TestCase):
         1. demand is matched
         2. energy conservation in the network
         3. heat to discharge
-        4. cost calculation is checked
+        4. cost calculation of gas heater is checked
 
         """
         import models.source_pipe_sink.src.double_pipe_heat as example
@@ -118,7 +118,7 @@ class TestGasBoiler(TestCase):
         energy_conservation_test(solution, results)
         heat_to_discharge_test(solution, results)
 
-        # Check the cost calculations
+        # Check the cost calculations of gas heater
         np.testing.assert_array_less(99.0, results[f"{gas_heater_id}__investment_cost"])
         np.testing.assert_array_less(99.0, results[f"{gas_heater_id}__installation_cost"])
         np.testing.assert_array_less(1e3, results[f"{gas_heater_id}__variable_operational_cost"])
