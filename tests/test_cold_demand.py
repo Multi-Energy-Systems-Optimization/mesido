@@ -20,7 +20,12 @@ import pandas as pd
 
 from utils_test_scaling import create_log_list_scaling
 
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
+from utils_tests import (
+    cost_calculation_test,
+    demand_matching_test,
+    energy_conservation_test,
+    heat_to_discharge_test,
+)
 
 logger = logging.getLogger("mesido")
 logger.setLevel(logging.INFO)
@@ -112,8 +117,9 @@ class TestColdDemand(TestCase):
         1. demand is matched
         2. energy conservation in the network
         3. heat to discharge
-        4. variable operational and investment cost calculations
-        5. airco sizing
+        4. cost calculation
+        5. variable operational and investment cost calculations
+        6. airco sizing
 
         """
         import models.wko.src.example as example
@@ -130,7 +136,6 @@ class TestColdDemand(TestCase):
             input_timeseries_file="timeseries_high_cold_demand.csv",
         )
         results = heat_problem.extract_results()
-        parameters = heat_problem.parameters(0)
         name_to_id_map = heat_problem.esdl_asset_name_to_id_map
 
         hp_id = name_to_id_map["HeatPump_b97e"]
@@ -140,28 +145,11 @@ class TestColdDemand(TestCase):
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
 
-        # Check variable operation cost calculation
+        # Check investment cost and variable operation cost calculation
         np.testing.assert_array_less(1e3, results[f"{hp_id}__variable_operational_cost"])
-        np.testing.assert_allclose(
-            parameters[f"{hp_id}.variable_operational_cost_coefficient"]
-            * sum(results[f"{hp_id}.Heat_source"][1:])
-            / parameters[f"{hp_id}.cop"],
-            results[f"{hp_id}__variable_operational_cost"],
-        )
-
         np.testing.assert_array_less(1e3, results[f"{ac_id}__variable_operational_cost"])
-        np.testing.assert_allclose(
-            parameters[f"{ac_id}.variable_operational_cost_coefficient"]
-            * sum(results[f"{ac_id}.Heat_airco"][1:]),
-            results[f"{ac_id}__variable_operational_cost"],
-        )
-
-        # Check investment cost calculation
         np.testing.assert_array_less(1e3, results[f"{ac_id}__investment_cost"])
-        np.testing.assert_allclose(
-            parameters[f"{ac_id}.investment_cost_coefficient"] * results[f"{ac_id}__max_size"],
-            results[f"{ac_id}__investment_cost"],
-        )
+        cost_calculation_test(heat_problem, results)
 
         # Check airco sizing
         np.testing.assert_allclose(
