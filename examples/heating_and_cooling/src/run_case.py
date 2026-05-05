@@ -14,7 +14,7 @@ logger.setLevel(logging.INFO)
 
 class HeatCoolingGrowWorkflow(TestCase):
 
-    def heating_cooling_case(self):
+    def test_heating_cooling_case(self):
         """
         In this case we have a network with an air-water hp, a WKO (warm and cold well) and both
         hot and cold demand. The heat and cold demand was balanced such that the seasonal storage
@@ -29,6 +29,7 @@ class HeatCoolingGrowWorkflow(TestCase):
         sys.path.insert(1, root_folder)
 
         from utils_tests import (
+            cost_calculation_test,
             demand_matching_test,
             energy_conservation_test,
             heat_to_discharge_test,
@@ -58,6 +59,20 @@ class HeatCoolingGrowWorkflow(TestCase):
         a_1_id = name_to_id_map["ATES_1"]
         hp_1_id = name_to_id_map["HeatPump_1"]
         ac_1_id = name_to_id_map["Airco_1"]
+        cd_1_id = name_to_id_map["CoolingDemand_1"]
+
+        pipe_names = [
+            "Pipe2",
+            "Pipe4",
+            "Pipe6",
+            "Pipe7",
+            "Pipe9",
+            "Pipe2_ret",
+            "Pipe4_ret",
+            "Pipe6_ret",
+            "Pipe7_ret",
+            "Pipe9_ret",
+        ]
 
         # Check if assets are used
         np.testing.assert_array_less(
@@ -67,141 +82,23 @@ class HeatCoolingGrowWorkflow(TestCase):
         np.testing.assert_array_less(1e2, results[f"{hp_1_id}.Heat_flow"])
         np.testing.assert_array_less(1e6, np.sum(results[f"{ac_1_id}.Heat_flow"]))
 
-        # Check the cost components
-        # TODO: remove the explicit cost calculation checks after PR about
-        #  cost_calculation_test in utils_test is merged
-        total_opex = 0.0
-        total_capex = 0.0
-        for asset in [
-            *solution.energy_system_components.get("airco", []),
-            *solution.energy_system_components.get("air_water_heat_pump", []),
-            *solution.energy_system_components.get("air_water_heat_pump_elec", []),
-            *solution.energy_system_components.get("low_temperature_ates", []),
-        ]:
-            # investment + installation costs costs
-            if asset not in solution.energy_system_components["low_temperature_ates"]:
-                investment_cost = (
-                    solution.esdl_assets[f"{asset}"]
-                    .attributes["costInformation"]
-                    .investmentCosts.value
-                    * results[f"{asset}__max_size"]
-                    / 1.0e6
-                )
-                total_capex += investment_cost
-                np.testing.assert_allclose(investment_cost, results[f"{asset}__investment_cost"])
-            installation_cost = (
-                solution.esdl_assets[f"{asset}"]
-                .attributes["costInformation"]
-                .installationCosts.value
-            )
-            total_capex += installation_cost
-            np.testing.assert_allclose(installation_cost, results[f"{asset}__installation_cost"])
-
-            # fixed costs per year
-            fixed_operational_cost = (
-                (
-                    solution.esdl_assets[f"{asset}"]
-                    .attributes["costInformation"]
-                    .fixedMaintenanceCosts.value
-                    + solution.esdl_assets[f"{asset}"]
-                    .attributes["costInformation"]
-                    .fixedOperationalCosts.value
-                )
-                * results[f"{asset}__max_size"]
-                / 1.0e6
-            )
-            total_opex += fixed_operational_cost * solution.parameters(0)[f"{asset}.technical_life"]
-            np.testing.assert_allclose(
-                fixed_operational_cost, results[f"{asset}__fixed_operational_cost"]
-            )
-
-            # variable operational cost
-            timesteps_hr = np.diff(solution.times()) / 3600
-            if asset not in solution.energy_system_components["low_temperature_ates"]:
-                var_op_costs = (
-                    solution.esdl_assets[f"{asset}"]
-                    .attributes["costInformation"]
-                    .variableOperationalCosts.value
-                    / 1.0e6
-                )
-                np.testing.assert_array_less(0.0, var_op_costs)
-            else:
-                var_op_costs = 0.0
-            factor = 1.0
-            if asset in [
-                *solution.energy_system_components.get("air_water_heat_pump", []),
-                *solution.energy_system_components.get("air_water_heat_pump_elec", []),
-            ]:
-                factor = solution.esdl_assets[f"{asset}"].attributes["COP"]
-            np.testing.assert_(factor >= 1.0, "factor must be >= 1.0")
-            variable_operational_cost = 0.0
-            for ii in range(1, len(solution.times())):
-                variable_operational_cost += (
-                    var_op_costs * results[f"{asset}.Heat_flow"][ii] * timesteps_hr[ii - 1] / factor
-                )
-
-            if asset in solution.energy_system_components.get("air_water_heat_pump_elec", []):
-                price_profile = solution.get_timeseries(
-                    f"{list(solution.get_electricity_carriers().values())[0]['name']}.price_profile"
-                )
-                # elec costs: not included in the __variable_operational_cost variable yet
-                elect_cost = 0.0
-                for ii in range(1, len(solution.times())):
-                    elect_cost += (
-                        price_profile.values[ii]
-                        * results[f"{asset}.Heat_flow"][ii]
-                        * timesteps_hr[ii - 1]
-                        / solution.parameters(0)[f"{asset}.cop"]
-                    )
-
-                pump_power = 0.0
-                for ii in range(1, len(solution.times())):
-                    # pump power
-                    pump_power += (
-                        price_profile.values[ii]
-                        * results[f"{asset}.Pump_power"][ii]
-                        * timesteps_hr[ii - 1]
-                        / solution.parameters(0)[f"{asset}.pump_efficiency"]
-                    )
-
-                variable_operational_cost += pump_power + elect_cost
-
-            total_opex += (
-                variable_operational_cost * solution.parameters(0)[f"{asset}.technical_life"]
-            )
-            np.testing.assert_allclose(
-                variable_operational_cost, results[f"{asset}__variable_operational_cost"]
-            )
-
-        for asset in solution.energy_system_components["heat_pipe"]:
-            total_capex += results[f"{asset}__investment_cost"]
-
-        # cold demand
-        investment_cost_cd = 0.0
-        installation_cost_cd = 0.0
-        total_cost_cd = 0.0
-        for asset in solution.energy_system_components.get("cold_demand", []):
-            investment_cost_cd += (
-                results[f"{asset}__max_size"]
-                * solution.esdl_assets[f"{asset}"]
-                .attributes["costInformation"]
-                .investmentCosts.value
-                / 1.0e6
-            )
-            installation_cost_cd += (
-                solution.esdl_assets[f"{asset}"]
-                .attributes["costInformation"]
-                .installationCosts.value
-            )
-            total_cost_cd += investment_cost_cd + installation_cost_cd
-        np.testing.assert_allclose(investment_cost_cd, results[f"{asset}__investment_cost"])
-        np.testing.assert_allclose(installation_cost_cd, results[f"{asset}__installation_cost"])
-        total_capex += investment_cost_cd + installation_cost_cd
-
-        np.testing.assert_allclose(
-            solution.objective_value + total_cost_cd / 1.0e6,
-            (total_capex + total_opex) / 1.0e6,
-        )
+        # Check the problem cost calculation and objective
+        np.testing.assert_array_less(1e3, results[f"{a_1_id}__installation_cost"])
+        np.testing.assert_array_less(1e3, results[f"{a_1_id}__fixed_operational_cost"])
+        np.testing.assert_array_less(1e3, results[f"{hp_1_id}__investment_cost"])
+        np.testing.assert_array_less(1e3, results[f"{hp_1_id}__installation_cost"])
+        np.testing.assert_array_less(1e3, results[f"{hp_1_id}__variable_operational_cost"])
+        np.testing.assert_array_less(1e3, results[f"{hp_1_id}__fixed_operational_cost"])
+        np.testing.assert_array_less(1e3, results[f"{ac_1_id}__investment_cost"])
+        np.testing.assert_array_less(1e3, results[f"{ac_1_id}__installation_cost"])
+        np.testing.assert_array_less(1e3, results[f"{ac_1_id}__variable_operational_cost"])
+        np.testing.assert_array_less(1e3, results[f"{ac_1_id}__fixed_operational_cost"])
+        np.testing.assert_array_less(1e3, results[f"{cd_1_id}__investment_cost"])
+        np.testing.assert_array_less(1e3, results[f"{cd_1_id}__installation_cost"])
+        for pipe_name in pipe_names:
+            pipe_id = name_to_id_map[pipe_name]
+            np.testing.assert_array_less(1e3, results[f"{pipe_id}__investment_cost"])
+        cost_calculation_test(solution, results, check_objective_function=True)
 
         # # --------------------------------------------------------------------------------------
         # # Do not delete the code below. It is used for creating plots (also used for conference

@@ -12,6 +12,8 @@ from mesido.head_loss_class import HeadLossOption
 
 import numpy as np
 
+from rtctools.optimization.timeseries import Timeseries
+
 
 def __get_out_port_temp_profile(solution, asset_name, asset_type):
     """
@@ -700,7 +702,8 @@ def _find_pipe_cost_in_edr(edr_pipes: dict, inner_diameter: float) -> float:
     float. Investment cost of the matching pipe.
 
     """
-
+    if inner_diameter == 0.0:
+        return 0.0
     for pipe_type in list(edr_pipes.keys()):
         if "Steel-S1" in pipe_type:
             pipe_class = edr_pipes[pipe_type]
@@ -738,11 +741,6 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
         *solution.energy_system_components.get("electricity_cable", []),
     ]
 
-    demand_assets = [
-        *solution.energy_system_components.get("heat_demand", []),
-        *solution.energy_system_components.get("cold_demand", []),
-    ]
-
     assets = [
         *solution.energy_system_components.get("heat_source", []),
         *solution.energy_system_components.get("ates", []),
@@ -752,7 +750,8 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
         *solution.energy_system_components.get("heat_exchanger", []),
         *solution.energy_system_components.get("heat_buffer", []),
         *solution.energy_system_components.get("airco", []),
-        *demand_assets,
+        *solution.energy_system_components.get("heat_demand", []),
+        *solution.energy_system_components.get("cold_demand", []),
         *transport_assets,
     ]
 
@@ -765,6 +764,16 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
 
     edr_pipes = json.load(open(Path(__file__).parent.parent / "src/mesido/esdl/_edr_pipes.json"))
 
+    if len(solution.get_electricity_carriers().keys()) == 1:
+        try:
+            price_profile = solution.get_timeseries(
+                f"{list(solution.get_electricity_carriers().values())[0]['name']}.price_profile"
+            )
+        except KeyError:
+            price_profile = Timeseries(solution.times(), np.zeros(len(solution.times())))
+    else:
+        price_profile = Timeseries(solution.times(), np.zeros(len(solution.times())))
+
     total_investment_cost = 0.0
     total_installation_cost = 0.0
     total_fixed_operational_cost = 0.0
@@ -773,26 +782,18 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
     for asset in assets:
         esdl_asset = solution.esdl_assets[asset]
         costs_esdl_asset = esdl_asset.attributes["costInformation"]
-        if costs_esdl_asset is None:
+        if (
+            asset in solution.energy_system_components.get("heat_pipe", [])
+            and esdl_asset.attributes["state"] == esdl.AssetStateEnum.OPTIONAL
+        ):
+            pass
+        elif costs_esdl_asset is None:
             continue
 
         # Investment Cost
         investment_cost = 0.0
         if asset not in solution.energy_system_components.get("gas_pipe", []):
-            investment_cost_info = _get_esdl_scaled_cost(
-                costs_esdl_asset.investmentCosts, esdl.UnitEnum.WATT
-            )
-            if asset in solution.energy_system_components.get("heat_buffer", []):
-                np.testing.assert_allclose(
-                    (
-                        parameters[f"{asset}.investment_cost_coefficient"]
-                        * parameters[f"{asset}.cp"]
-                        * parameters[f"{asset}.rho"]
-                        * parameters[f"{asset}.dT"]
-                    ),
-                    investment_cost_info,
-                )
-            elif (
+            if (
                 asset in solution.energy_system_components.get("heat_pipe", [])
                 and esdl_asset.attributes["state"] == esdl.AssetStateEnum.OPTIONAL
             ):
@@ -800,9 +801,23 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
                     edr_pipes, parameters[f"{asset}.diameter"]
                 )
             else:
-                np.testing.assert_allclose(
-                    parameters[f"{asset}.investment_cost_coefficient"], investment_cost_info
+                investment_cost_info = _get_esdl_scaled_cost(
+                    costs_esdl_asset.investmentCosts, esdl.UnitEnum.WATT
                 )
+                if asset in solution.energy_system_components.get("heat_buffer", []):
+                    np.testing.assert_allclose(
+                        (
+                            parameters[f"{asset}.investment_cost_coefficient"]
+                            * parameters[f"{asset}.cp"]
+                            * parameters[f"{asset}.rho"]
+                            * parameters[f"{asset}.dT"]
+                        ),
+                        investment_cost_info,
+                    )
+                else:
+                    np.testing.assert_allclose(
+                        parameters[f"{asset}.investment_cost_coefficient"], investment_cost_info
+                    )
 
         if asset in solution.energy_system_components.get("gas_pipe", []):
             if parameters[f"{asset}.diameter"] > 0:
@@ -866,17 +881,17 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
         total_fixed_operational_cost += fixed_operational_cost
 
         # Variable Operational Cost
-        var_op_costs_esdl = _get_esdl_scaled_cost(
-            costs_esdl_asset.variableOperationalCosts, esdl.UnitEnum.WATTHOUR
-        )
-        np.testing.assert_allclose(
-            parameters[f"{asset}.variable_operational_cost_coefficient"], var_op_costs_esdl
-        )
         timesteps_hr = np.diff(solution.times()) / 3600.0
         variable_operational_cost = 0.0
         if asset in transport_assets:
             np.testing.assert_allclose(0.0, results[f"{asset}__variable_operational_cost"])
         else:
+            var_op_costs_esdl = _get_esdl_scaled_cost(
+                costs_esdl_asset.variableOperationalCosts, esdl.UnitEnum.WATTHOUR
+            )
+            np.testing.assert_allclose(
+                parameters[f"{asset}.variable_operational_cost_coefficient"], var_op_costs_esdl
+            )
             denominator = 1.0
             if asset in [
                 *solution.energy_system_components.get("ates", []),
@@ -916,8 +931,10 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
                     nominator_vector = heat_source
             elif asset in solution.energy_system_components.get("airco", []):
                 nominator_vector = results[f"{asset}.Heat_airco"]
-            elif asset in demand_assets:
+            elif asset in solution.energy_system_components.get("heat_demand", []):
                 nominator_vector = results[f"{asset}.Heat_demand"]
+            elif asset in solution.energy_system_components.get("cold_demand", []):
+                nominator_vector = results[f"{asset}.Cold_demand"]
             else:
                 raise AssertionError(
                     f"Asset '{esdl_asset.name}' is not handled in the variable operational"
@@ -927,6 +944,16 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
             variable_operational_cost = sum(
                 var_op_costs_esdl * nominator_vector[1:] * timesteps_hr / denominator
             )
+
+            if (len(solution.get_electricity_carriers().keys()) > 0) and asset in [
+                *solution.energy_system_components.get("heat_source_elec", []),
+                *solution.energy_system_components.get("elec_heat_source_elec", []),
+                *solution.energy_system_components.get("air_water_heat_pump_elec", []),
+                *solution.energy_system_components.get("heat_pump_elec", []),
+            ]:
+                variable_operational_cost += sum(
+                    price_profile.values[1:] * nominator_vector[1:] * timesteps_hr / denominator
+                )
 
             np.testing.assert_allclose(
                 variable_operational_cost, results[f"{asset}__variable_operational_cost"]
