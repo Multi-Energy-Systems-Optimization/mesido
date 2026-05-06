@@ -19,7 +19,7 @@ def __get_out_port_temp_profile(solution, asset_name, asset_type):
     the carrier on the out port.
     """
 
-    parameters = solution.parameters(0)
+    string_parameters = solution.string_parameters(0)
     try:
         carriers = solution.esdl_carriers
         carriers_ids = carriers.keys()
@@ -32,7 +32,7 @@ def __get_out_port_temp_profile(solution, asset_name, asset_type):
     for carrier_id in carriers_ids:
         if (
             carriers[carrier_id]["id_number_mapping"]
-            == parameters[f"{asset_name}{carrier_id_types[asset_type]}"]
+            == string_parameters[f"{asset_name}{carrier_id_types[asset_type]}"]
         ):
             sup_carrier_name = carriers[carrier_id]["name"]
     try:
@@ -101,7 +101,7 @@ def demand_matching_test(solution, results, ensemble_member=0, atol=1.0e-3, rtol
             )
 
 
-def _get_component_temperatures(solution, results, component, side=None):
+def _get_component_temperatures(solution, results, component, side=None, ensemble_member=0):
     """
     Return the temperatures for an asset
 
@@ -116,10 +116,12 @@ def _get_component_temperatures(solution, results, component, side=None):
     -------
     supply, return and delta T
     """
+    string_parameters = solution.string_parameters(ensemble_member)
+
     if side:
-        return_id = solution.parameters(0)[f"{component}.{side}.T_return_id"]
+        return_id = string_parameters[f"{component}.{side}.T_return_id"]
     else:
-        return_id = solution.parameters(0)[f"{component}.T_return_id"]
+        return_id = string_parameters[f"{component}.T_return_id"]
     if f"{return_id}_temperature" in results.keys():
         return_t = results[f"{return_id}_temperature"]
     else:
@@ -128,9 +130,9 @@ def _get_component_temperatures(solution, results, component, side=None):
         else:
             return_t = solution.parameters(0)[f"{component}.T_return"]
     if side:
-        supply_id = solution.parameters(0)[f"{component}.{side}.T_supply_id"]
+        supply_id = string_parameters[f"{component}.{side}.T_supply_id"]
     else:
-        supply_id = solution.parameters(0)[f"{component}.T_supply_id"]
+        supply_id = string_parameters[f"{component}.T_supply_id"]
     if f"{supply_id}_temperature" in results.keys():
         supply_t = results[f"{supply_id}_temperature"]
     else:
@@ -157,6 +159,7 @@ def heat_to_discharge_test(solution, results, atol=1e-2, rtol=1.0e-4):
      discharge and heatflow can be negative.
     """
     test = TestCase()
+    string_parameters = solution.string_parameters(0)
     for d in [
         *solution.energy_system_components.get("heat_demand", []),
         *solution.energy_system_components.get("airco", []),
@@ -338,7 +341,7 @@ def heat_to_discharge_test(solution, results, atol=1e-2, rtol=1.0e-4):
     for p in solution.energy_system_components.get("heat_pipe", []):
         cp = solution.parameters(0)[f"{p}.cp"]
         rho = solution.parameters(0)[f"{p}.rho"]
-        carrier_id = solution.parameters(0)[f"{p}.carrier_id"]
+        carrier_id = string_parameters[f"{p}.carrier_id"]
         indices = results[f"{p}.Q"] > 0
         if supply_temp_profiles:
             temperature = max(temp for prof in supply_temp_profiles for temp in prof)

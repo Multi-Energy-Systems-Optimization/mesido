@@ -74,11 +74,11 @@ class HeatProblemTvar(HeatProblem):
 
     def temperature_regimes(self, carrier):
         temperatures = []
-        if carrier == 3625334968694477359:
+        if carrier == "c362f53a-3eaf-4d96-8ee6-944e77359fed":
             # supply
             temperatures = [80.0, 85.0]
 
-        if carrier == 3625334968694477359000:
+        if carrier == "c362f53a-3eaf-4d96-8ee6-944e77359fed_ret":
             # return
             temperatures = [60.0, 65.0]
 
@@ -99,11 +99,11 @@ class HeatProblemTvar(HeatProblem):
                 if carrier_type == "return":
                     number = number + "000"
                 carrier_id_number_mapping = number
-            temperature_regimes = self.temperature_regimes(int(carrier_id_number_mapping))
+            temperature_regimes = self.temperature_regimes(carrier_id_number_mapping)
             if len(temperature_regimes) > 0:
                 for temperature in temperature_regimes:
                     selected_temp_vec = self.state_vector(
-                        f"{int(carrier_id_number_mapping)}_{temperature}"
+                        f"{carrier_id_number_mapping}_{temperature}"
                     )
                     for i in range(1, len(self.times())):
                         constraints.append(

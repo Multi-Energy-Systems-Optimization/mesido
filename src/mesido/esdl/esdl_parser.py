@@ -39,15 +39,15 @@ class BaseESDLParser:
         for x in self._energy_system.energySystemInformation.carriers.carrier.items:
             if isinstance(x, esdl.esdl.HeatCommodity):
                 if x.id not in id_to_idnumber_map:
-                    number_list = [int(s) for s in x.id if s.isdigit()]
-                    number = ""
-                    for nr in number_list:
-                        number = number + str(nr)
-                    # note this fix is to create a unique number for the map for when the pipe
-                    # duplicator service is used and an additional _ret is added to the id.
-                    if "_ret" in x.id:
-                        number = number + "000"
-                    id_to_idnumber_map[x.id] = int(number)
+                    # number_list = [int(s) for s in x.id if s.isdigit()]
+                    # number = ""
+                    # for nr in number_list:
+                    #     number = number + str(nr)
+                    # # note this fix is to create a unique number for the map for when the pipe
+                    # # duplicator service is used and an additional _ret is added to the id.
+                    # if "_ret" in x.id:
+                    #     number = number + "000"
+                    id_to_idnumber_map[x.id] = x.id
 
                 temperature = x.supplyTemperature if x.supplyTemperature else x.returnTemperature
                 assert temperature > 0.0

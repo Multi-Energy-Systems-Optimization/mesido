@@ -255,14 +255,15 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
             ]:
                 esdl_asset = self.esdl_assets[asset]
                 parameters = self.parameters(0)
+                string_parameters = self.string_parameters(0)
                 for i in range(len(esdl_asset.attributes["constraint"].items)):
                     constraint = esdl_asset.attributes["constraint"].items[i]
                     if (
                         constraint.name == "supply_temperature"
-                        and carrier == parameters[f"{asset}.T_supply_id"]
+                        and carrier == string_parameters[f"{asset}.T_supply_id"]
                     ) or (
                         constraint.name == "return_temperature"
-                        and carrier == parameters[f"{asset}.T_return_id"]
+                        and carrier == string_parameters[f"{asset}.T_return_id"]
                     ):
                         try:
                             lb = self.__temperature_options[carrier][0]

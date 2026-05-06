@@ -196,7 +196,7 @@ class HeatProblemTvarsup(
 
     def temperature_regimes(self, carrier):
         temperatures = []
-        if carrier == 4195016129475469474608:
+        if carrier == "419b5016-12c9-475a-b46e-9e474b60aa8f":
             # supply
             temperatures = [80.0, 120.0]
 
@@ -211,11 +211,11 @@ class HeatProblemTvarsup(
         # These constraints are added to allow for a quicker solve
         for _carrier, temperatures in self.temperature_carriers().items():
             carrier_id_number_mapping = str(temperatures["id_number_mapping"])
-            temperature_regimes = self.temperature_regimes(int(carrier_id_number_mapping))
+            temperature_regimes = self.temperature_regimes(carrier_id_number_mapping)
             if len(temperature_regimes) > 0:
                 for temperature in temperature_regimes:
                     selected_temp_vec = self.state_vector(
-                        f"{int(carrier_id_number_mapping)}_{temperature}"
+                        f"{carrier_id_number_mapping}_{temperature}"
                     )
                     for i in range(1, len(self.times())):
                         constraints.append(
@@ -246,7 +246,7 @@ class HeatProblemTvarret(
 
     def temperature_regimes(self, carrier):
         temperatures = []
-        if carrier == 4195016129475469474608000:
+        if carrier == "419b5016-12c9-475a-b46e-9e474b60aa8f_ret":
             # return
             temperatures = [30.0, 40.0]
 
@@ -262,20 +262,11 @@ class HeatProblemTvarret(
         for carrier, temperatures in self.temperature_carriers().items():
             if "id_number_mapping" in temperatures.keys():
                 carrier_id_number_mapping = str(temperatures["id_number_mapping"])
-            else:
-                number_list = [int(s) for s in carrier if s.isdigit()]
-                number = ""
-                for nr in number_list:
-                    number = number + str(nr)
-                carrier_type = temperatures["__rtc_type"]
-                if carrier_type == "return":
-                    number = number + "000"
-                carrier_id_number_mapping = number
-            temperature_regimes = self.temperature_regimes(int(carrier_id_number_mapping))
+            temperature_regimes = self.temperature_regimes(carrier_id_number_mapping)
             if len(temperature_regimes) > 0:
                 for temperature in temperature_regimes:
                     selected_temp_vec = self.state_vector(
-                        f"{int(carrier_id_number_mapping)}_{temperature}"
+                        f"{carrier_id_number_mapping}_{temperature}"
                     )
                     for i in range(1, len(self.times())):
                         constraints.append(
