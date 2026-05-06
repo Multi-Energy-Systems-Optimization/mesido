@@ -273,7 +273,7 @@ class EndScenarioSizing(
         self.__heat_demand_bounds = dict()
         self.__heat_demand_nominal = dict()
 
-        self._save_json = True
+        self._save_json = False
 
         self._workflow_progress_status = kwargs.get("update_progress_function", None)
 
