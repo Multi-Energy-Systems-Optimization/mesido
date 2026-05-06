@@ -3,11 +3,11 @@ import logging
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, Optional, Set, Tuple
+from typing import Dict, Optional, Set, Tuple, Union
 
 import esdl
-from esdl.profiles.influxdbprofilemanager import ConnectionSettings
-from esdl.profiles.influxdbprofilemanager import InfluxDBProfileManager
+from esdl.profiles.credentials import Credentials
+from esdl.profiles.profile_utils import get_time_varying_profile_header_and_raw_data
 from esdl.units.conversion import ENERGY_IN_J, POWER_IN_W, convert_to_unit
 
 from mesido.esdl.common import Asset
@@ -241,7 +241,7 @@ class BaseProfileReader:
         raise NotImplementedError
 
 
-class InfluxDBProfileReader(BaseProfileReader):
+class ESDLTimeVaryingProfileReader(BaseProfileReader):
     asset_type_to_variable_name_conversion = {
         esdl.esdl.HeatingDemand: ".target_heat_demand",
         esdl.esdl.GenericConsumer: ".target_heat_demand",
@@ -255,6 +255,16 @@ class InfluxDBProfileReader(BaseProfileReader):
         esdl.esdl.PVInstallation: ".maximum_electricity_source",
     }
 
+    supported_profiles = (
+        esdl.DataTableProfile,
+        esdl.InfluxDBProfile,
+        esdl.TimeSeriesProfile,
+        esdl.DateTimeProfile,
+        esdl.ProfileReference
+    )
+
+    SupportedProfilesType = Union[*supported_profiles]
+
     def __init__(
         self,
         energy_system: esdl.EnergySystem,
@@ -267,10 +277,9 @@ class InfluxDBProfileReader(BaseProfileReader):
             file_path=file_path,
             use_esdl_ranged_contraint=use_esdl_ranged_contraint,
         )
-        self._df = pd.DataFrame()
-        self._database_credentials = (
-            database_credentials if database_credentials is not None else {"": ("", "")}
-        )
+        if database_credentials is not None:
+            for cred_id, (username, password) in database_credentials.items():
+                Credentials.add_credential(cred_id, username, password)
 
     def _load_profiles_from_source(
         self,
@@ -289,7 +298,7 @@ class InfluxDBProfileReader(BaseProfileReader):
         unique_profiles_attributes = []  # a list containning lists of attributes
         unique_series = []
         for profile in [
-            x for x in self._energy_system.eAllContents() if isinstance(x, esdl.InfluxDBProfile)
+            x for x in self._energy_system.eAllContents() if isinstance(x, self.supported_profiles)
         ]:
             if profile.profileType == esdl.ProfileTypeEnum.OUTPUT:
                 continue
@@ -338,7 +347,7 @@ class InfluxDBProfileReader(BaseProfileReader):
         # - series: use the unique series data, without reading from the database again
         # - other profile info: get it from the specific profile
         for profile in [
-            x for x in self._energy_system.eAllContents() if isinstance(x, esdl.InfluxDBProfile)
+            x for x in self._energy_system.eAllContents() if isinstance(x, self.supported_profiles)
         ]:
             if profile.profileType == esdl.ProfileTypeEnum.OUTPUT:
                 continue
@@ -412,7 +421,7 @@ class InfluxDBProfileReader(BaseProfileReader):
             self._profiles[idx] = profiles.copy()
 
     # @staticmethod
-    def _load_profile_timeseries_from_database(self, profile: esdl.InfluxDBProfile) -> pd.Series:
+    def _load_profile_timeseries_from_database(self, profile: SupportedProfilesType) -> pd.Series:
         """
         Function to load the profiles from an InfluxDB. Returns a timeseries with the data for
         the asset.
@@ -428,55 +437,21 @@ class InfluxDBProfileReader(BaseProfileReader):
         # Import is done under the function instead of the top of the file
         # to avoid circular import issue
         from mesido.workflows.utils.error_types import NetworkErrors, potential_error_to_error
-
-        if profile.id in self._df:
-            return self._df[profile.id]
-
-        profile_host = profile.host
-
-        ssl_setting = False
-        if "https" in profile_host:
-            profile_host = profile_host[8:]
-            ssl_setting = True
-        elif "http" in profile_host:
-            profile_host = profile_host[7:]
-        if profile.port == 443:
-            ssl_setting = True
-        influx_host = "{}:{}".format(profile_host, profile.port)
-
-        username, password = self._database_credentials.get(influx_host, (None, None))
-
-        conn_settings = ConnectionSettings(
-            host=profile.host,
-            port=profile.port,
-            username=username,
-            password=password,
-            database=profile.database,
-            ssl=ssl_setting,
-            verify_ssl=ssl_setting,
-        )
-
+        
         try:
-            time_series_data = InfluxDBProfileManager(conn_settings)
-        except Exception:
+            profile_raw_data, _ = get_time_varying_profile_header_and_raw_data(profile, True)   
+        except Exception as e:
             container = profile.eContainer()
             asset = container.energyasset
             get_potential_errors().add_potential_issue(
                 MesidoAssetIssueType.ASSET_PROFILE_AVAILABILITY,
                 asset.id,
-                f"Asset named {asset.name}: Database {profile.database}"
-                f" is not available in the host.",
+                f"Error retrieving profile for asset '{asset.name}' from host '{profile.host}'"
+                f" and database '{profile.database}': {str(e)}."
             )
-            potential_error_to_error(NetworkErrors.HEAT_NETWORK_ERRORS)
+            potential_error_to_error(NetworkErrors.HEAT_NETWORK_ERRORS)               
 
-        time_series_data.load_influxdb(
-            profile.measurement,
-            [profile.field],
-            profile.startDate,
-            profile.endDate,
-        )
-
-        if not time_series_data.profile_data_list:  # if time_series_data.profile_data_list == []:
+        if not profile_raw_data:  # if time_series_data.profile_data_list == []:
             container = profile.eContainer()
             asset = container.energyasset
             get_potential_errors().add_potential_issue(
@@ -488,15 +463,15 @@ class InfluxDBProfileReader(BaseProfileReader):
 
             potential_error_to_error(NetworkErrors.HEAT_NETWORK_ERRORS)
 
-        for x in time_series_data.profile_data_list:
+        for x in profile_raw_data:
             if len(x) != 2:
                 raise RuntimeError(
                     "InfluxDB profile currently only supports parsing exactly one "
                     "profile for each asset"
                 )
 
-        x_0, x_1 = map(list, zip(*time_series_data.profile_data_list))
-        if not time_series_data.profile_data_list[0][0].tzinfo:
+        x_0, x_1 = map(list, zip(*profile_raw_data))
+        if not profile_raw_data[0][0].tzinfo:
             index = pd.DatetimeIndex(
                 data=x_0,
                 tz=datetime.timezone.utc,
@@ -507,7 +482,6 @@ class InfluxDBProfileReader(BaseProfileReader):
 
         data = x_1
         series = pd.Series(data=data, index=index)
-        self._df[profile.id] = series
 
         return series
 
