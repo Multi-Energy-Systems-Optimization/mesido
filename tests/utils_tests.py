@@ -722,7 +722,7 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
       - Installation costs (skipped for transport assets),
       - Fixed operational + maintenance costs (size-based and accumulated over technical life),
       - Variable operational costs (time-integrated using timestep durations, with asset-specific
-        logic such as COP or fuel/flow conversions).
+        logic such as COP, fuel/flow conversions, pump power or electricity price profile).
       - Objective function contribution if `calc_objective` is True
 
     Parameters
@@ -881,6 +881,7 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
         total_fixed_operational_cost += fixed_operational_cost
 
         # Variable Operational Cost
+        pump_cost = 0.0
         timesteps_hr = np.diff(solution.times()) / 3600.0
         variable_operational_cost = 0.0
         if asset in transport_assets:
@@ -898,6 +899,10 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
                 *solution.energy_system_components.get("low_temperature_ates", []),
                 *solution.energy_system_components.get("heat_buffer", []),
             ]:
+                pump_power = results[f"{asset}.Pump_power"]
+                eff = parameters[f"{asset}.pump_efficiency"]
+                pump_cost = sum(price_profile.values[1:] * pump_power[1:] * timesteps_hr / eff)
+
                 nominator_vector = (
                     results[f"{asset}.Heat_flow_charging"]
                     + results[f"{asset}.Heat_flow_discharging"]
@@ -905,6 +910,10 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
             elif asset in [
                 *solution.energy_system_components.get("heat_source", []),
             ]:
+                pump_power = results[f"{asset}.Pump_power"]
+                eff = parameters[f"{asset}.pump_efficiency"]
+                pump_cost = sum(price_profile.values[1:] * pump_power[1:] * timesteps_hr / eff)
+
                 heat_source = results[f"{asset}.Heat_source"]
 
                 if asset in [
@@ -944,6 +953,8 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
             variable_operational_cost = sum(
                 var_op_costs_esdl * nominator_vector[1:] * timesteps_hr / denominator
             )
+
+            variable_operational_cost += pump_cost
 
             if (len(solution.get_electricity_carriers().keys()) > 0) and asset in [
                 *solution.energy_system_components.get("heat_source_elec", []),

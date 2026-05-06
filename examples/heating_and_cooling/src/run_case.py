@@ -14,7 +14,7 @@ logger.setLevel(logging.INFO)
 
 class HeatCoolingGrowWorkflow(TestCase):
 
-    def test_heating_cooling_case(self):
+    def heating_cooling_case(self):
         """
         In this case we have a network with an air-water hp, a WKO (warm and cold well) and both
         hot and cold demand. The heat and cold demand was balanced such that the seasonal storage

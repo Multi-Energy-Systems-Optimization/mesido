@@ -1,4 +1,4 @@
-# [Unreleased-main] - 2026-04-30
+# [Unreleased-main] - 2026-05-06
 
 ## Added
 - Electricity consumption calculation of geothermal assets, using the defined COP. 
