@@ -1,4 +1,4 @@
-# [Unreleased-main] - 2026-04-28
+# [Unreleased-main] - 2026-05-06
 
 ## Added
 - Electricity consumption calculation of geothermal assets, using the defined COP. 
@@ -17,6 +17,8 @@
 - Updated pyESDL to v26.3
 - Updated the GROW workflow to provide feedback on which heat demands are not matched in priority 1.
 - Removed old test files that are no longer used.
+- In addition to variable operation cost coefficient, the electricity cost profile contributes to variable operational cost of assets which convert electricity to heat.
+- Heating_and_cooling example is cleaned up
 
 ## Fixed
 - ProfileConstraints: Use already available function to get profile quantity and unit
