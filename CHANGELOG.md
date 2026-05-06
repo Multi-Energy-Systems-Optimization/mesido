@@ -8,6 +8,7 @@
 - Generic methods to create equality and inequality constraints using big-M formulation.
 - First implementation of a temperature profile for a producer. (experimental)
 - Test is added to check airco sizing and cost calculation
+- Workflow of EndScenarioSizing with demand uncertainty is added.
 
 ## Changed
 - Reduced the number of constraints required for headloss calculation with LINEARIZED_N_LINES_EQUALITY setting.

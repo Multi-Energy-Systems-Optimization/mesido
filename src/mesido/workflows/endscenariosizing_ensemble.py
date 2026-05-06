@@ -75,18 +75,18 @@ class EndScenarioSizingStagedEnsemble(
         """
         constraints = []
         for demand in self.energy_system_components["heat_demand"]:
-            target_0 = np.asarray(
-                self.get_timeseries(f"{demand}.target_heat_demand", 0).values
-            )
+            target_0 = np.asarray(self.get_timeseries(f"{demand}.target_heat_demand", 0).values)
             target = np.asarray(
                 self.get_timeseries(f"{demand}.target_heat_demand", ensemble_member).values
             )
-            if any(target>target_0):
-                exit(f"Target demand of ensemble {ensemble_member} for demand "
-                     f"{self.esdl_asset_id_to_name_map[demand]} is larger than the target demand "
-                     f"of ensemble 0. Please ensure that the first ensemble has the largest "
-                     f"target demand timeseries as the demand matching goals are only dependend "
-                     f"on the first ensemble.")
+            if any(target > target_0):
+                exit(
+                    f"Target demand of ensemble {ensemble_member} for demand "
+                    f"{self.esdl_asset_id_to_name_map[demand]} is larger than the target demand "
+                    f"of ensemble 0. Please ensure that the first ensemble has the largest "
+                    f"target demand timeseries as the demand matching goals are only dependend "
+                    f"on the first ensemble."
+                )
 
             var = self.state_vector(f"{demand}.Heat_demand", ensemble_member=ensemble_member)
             nom = self.variable_nominal(f"{demand}.Heat_demand")
