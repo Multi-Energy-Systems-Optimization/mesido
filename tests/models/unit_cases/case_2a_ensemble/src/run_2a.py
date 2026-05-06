@@ -148,7 +148,7 @@ class HeatProblemEnsemble(
         """
         This constraint method adds upper limits to the demand heat production based on the
         target of a specific ensemble. This requires the first ensemble to always have the
-        timeseries with the largest values as the goals are only dependt on the first ensemble..
+        timeseries with the largest values as the goals are only dependent on the first ensemble.
         """
         constraints = []
         for demand in self.energy_system_components["heat_demand"]:
