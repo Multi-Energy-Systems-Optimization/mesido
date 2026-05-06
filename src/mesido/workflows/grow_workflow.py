@@ -76,13 +76,17 @@ def _mip_gap_settings(mip_gap_name: str, problem) -> Dict[str, float]:
     """Creating the same MIP gap settings for all solvers."""
 
     options = {}
-    if hasattr(problem, "_stage"):
-        if problem._stage == 1:
-            options[mip_gap_name] = 0.005
+    if hasattr(problem, "_EndScenarioSizing__priority"):
+        if problem._EndScenarioSizing__priority == 1:
+            options[mip_gap_name] = 1e-5
         else:
-            options[mip_gap_name] = 0.01
-    else:
-        options[mip_gap_name] = 0.02
+            if hasattr(problem, "_stage"):
+                if problem._stage == 1:
+                    options[mip_gap_name] = 0.005
+                else:
+                    options[mip_gap_name] = 0.01
+            else:
+                options[mip_gap_name] = 0.02
 
     return options
 
@@ -474,7 +478,8 @@ class EndScenarioSizing(
                 self.solver_stats,
             )
         )
-        if priority == 1 and self.objective_value > 1e-6:
+
+        if priority == 1 and self.objective_value > 1e-6 and not self.csv_ensemble_mode:
             results = self.extract_results()
             self.__heat_demand_match_check(results)
             raise RuntimeError("The heating demand is not matched")
@@ -500,8 +505,6 @@ class EndScenarioSizing(
             )
 
         super().post()
-        results = self.extract_results()
-        parameters = self.parameters(0)
         # bounds = self.bounds()
         # Optimized ESDL
         # Assume there are either no stages (write updated ESDL) or a maximum of 2 stages
@@ -531,22 +534,28 @@ class EndScenarioSizing(
             logger.error("Unkown error occured when evaluating self._stage for _write_updated_esdl")
             sys.exit(1)
 
-        self.__heat_demand_match_check(results)
+        for e_m in range(self.ensemble_size):
+            results = self.extract_results(e_m)
+            parameters = self.parameters(e_m)
 
-        if os.path.exists(self.output_folder) and self._save_json:
-            bounds = self.bounds()
-            aliases = self.alias_relation._canonical_variables_map
-            solver_stats = self.solver_stats
-            self._write_json_output(results, parameters, bounds, aliases, solver_stats)
+            self.__heat_demand_match_check(results, e_m)
 
-    def __heat_demand_match_check(self, results):
-        parameters = self.parameters(0)
+            if os.path.exists(self.output_folder) and self._save_json:
+                bounds = self.bounds()
+                aliases = self.alias_relation._canonical_variables_map
+                solver_stats = self.solver_stats
+                self._write_json_output(results, parameters, bounds, aliases, solver_stats, e_m)
+
+    def __heat_demand_match_check(self, results, e_m=0):
+        parameters = self.parameters(e_m)
         id_to_name_map = self.esdl_asset_id_to_name_map
         for d in self.energy_system_components.get("heat_demand", []):
             realized_demand = results[f"{d}.Heat_demand"]
-            target = self.get_timeseries(f"{d}.target_heat_demand").values
+            target = self.get_timeseries(f"{d}.target_heat_demand", ensemble_member=e_m).values
             parameters[f"{d}.target_heat_demand"] = target.tolist()
-            timesteps = np.diff(self.get_timeseries(f"{d}.target_heat_demand").times)
+            timesteps = np.diff(
+                self.get_timeseries(f"{d}.target_heat_demand", ensemble_member=e_m).times
+            )
             delta_energy = np.sum((target - realized_demand)[1:] * timesteps / 1.0e9)
             if delta_energy >= 1.0:
                 logger.warning(

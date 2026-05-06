@@ -101,7 +101,9 @@ class MinimizeCAPEXAssetsCosts(Goal):
             for asset_name in optimization_problem.energy_system_components.get(asset_type, []):
                 tech_lifetime = parameters[f"{asset_name}.technical_life"]
                 if asset_type == "heat_pipe":
-                    is_placed = optimization_problem.get_asset_is__realized_symbols(asset_name)
+                    is_placed = optimization_problem.get_asset_is__realized_symbols(
+                        asset_name, ensemble_member
+                    )
                     investment_cost_coeff = bounds[f"{asset_name}__hn_cost"][1]
 
                     length = parameters[f"{asset_name}.length"]
@@ -109,7 +111,9 @@ class MinimizeCAPEXAssetsCosts(Goal):
                     costs = investment_cost_coeff * length
                 else:
                     # Yearly depreciation for all assets based on total investment + installation
-                    is_placed = optimization_problem.get_asset_fraction__placed_symbols(asset_name)
+                    is_placed = optimization_problem.get_asset_fraction__placed_symbols(
+                        asset_name, ensemble_member
+                    )
                     investment_cost_coeff = parameters[f"{asset_name}.investment_cost_coefficient"]
                     installation_cost = parameters[f"{asset_name}.installation_cost"]
                     size = bounds[optimization_problem._asset_max_size_map[asset_name]][1]
@@ -156,15 +160,17 @@ class MinimizeRolloutFixedOperationalCosts(Goal):
             if asset_type != "heat_pipe":
                 for source in optimization_problem.energy_system_components.get(asset_type, []):
                     obj += self.fixed_opex_of_asset(
-                        optimization_problem, source, bounds, parameters
+                        optimization_problem, source, bounds, parameters, ensemble_member
                     )
 
         return obj
 
-    def fixed_opex_of_asset(self, optimization_problem, asset_name, bounds, parameters):
+    def fixed_opex_of_asset(
+        self, optimization_problem, asset_name, bounds, parameters, ensemble_member
+    ):
         obj = 0
 
-        is_placed = optimization_problem.get_asset_is__realized_symbols(asset_name)
+        is_placed = optimization_problem.get_asset_is__realized_symbols(asset_name, ensemble_member)
         fixed_operational_cost_coeff = parameters[
             f"{asset_name}.fixed_operational_cost_coefficient"
         ]

@@ -1088,7 +1088,7 @@ class ScenarioOutput:
             if not optimizer_sim:
                 pipe_class = self.get_optimized_pipe_class(pipe)
 
-            if parameters[f"{pipe}.diameter"] != 0.0 or any(np.abs(results[f"{pipe}.Q"]) > 1.0e-9):
+            if parameters[f"{pipe}.diameter"] != 0.0 or any(np.abs(results[f"{pipe}.Q"]) > 1.0e-6):
                 # if not isinstance(pipe_class, EDRPipeClass):
                 #     assert pipe_class.name == f"{pipe}_orig"
                 #     continue
@@ -1643,6 +1643,7 @@ class ScenarioOutput:
         bounds: Union[AliasDict, Dict],
         aliases: OrderedDict,
         solver_stats: Dict,
+        ensemble_member: int,
     ):
         """
         The results, parameters, bounds are saved as json files which can be used for further
@@ -1656,7 +1657,9 @@ class ScenarioOutput:
         :return:
         """
 
-        workdir = self.output_folder
+        workdir = os.path.join(self.output_folder, f"{ensemble_member}")
+        if not os.path.exists(workdir):
+            os.mkdir(workdir)
 
         parameters_dict = dict()
         parameter_path = os.path.join(workdir, "parameters.json")
