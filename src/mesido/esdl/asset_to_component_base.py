@@ -1146,7 +1146,7 @@ class _AssetToComponentBase:
                 if isinstance(p.carrier, esdl.HeatCommodity):
                     out_port = None
                     for p2 in asset.out_ports:
-                        if p2.name.replace("Out", "In") == p.name:
+                        if p2.name.lower().replace("out", "in") == p.name.lower():
                             out_port = p2
                     if not out_port:
                         logger.error(f"Asset {asset.name} (id: {asset.id}) contains an inport "
