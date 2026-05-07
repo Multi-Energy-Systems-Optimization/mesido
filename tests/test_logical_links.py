@@ -171,6 +171,117 @@ class TestLogicalLinks(TestCase):
                 )
             np.testing.assert_allclose(discharge_sum, 0.0, atol=1.0e-12)
 
+    def test_logical_links_all_connections_heat(self):
+        """
+        This test checks if the logic implemented for a partially logically linked energy system.
+        Meaning an energy system where assets are directly connected to each other without a network
+        (transport asset(s)) in between. This specific test covers the logical connection between
+        producers and consumers to nodes in a heat network. Please note that due to the closed
+        system constraints we need to set the minimum velocity to zero to avoid backflow in the
+        solution.
+
+        This is the most basic check where we have a simple network and check for the basic physics.
+        This simple network includes one source, some pipes and logical links, node, a tank storage
+        and 3 demands.
+        The buffer cannot yet be connected with a logical link, due to the flow direction variable.
+        The logical links can give scaling issues when used at demands.
+
+        Checks;
+        - Demand matching
+        - Energy conservation
+        - Heat to discharge
+        Check that the history for the buffer is set correctly at t=0
+        - Check that the heat loss is positive and as expected
+        - results of 3a do not vary a lot.
+        """
+
+        import models.source_pipe_split_sink.src.double_pipe_heat as example
+        from models.source_pipe_split_sink.src.double_pipe_heat import SourcePipeSink
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        problem = run_esdl_mesido_optimization(
+            SourcePipeSink,
+            esdl_file_name="sourcesink_with_cons2node2node2prod_logical_link.esdl",
+            base_folder=base_folder,
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.csv",
+        )
+        results = problem.extract_results()
+
+        demand_matching_test(problem, results)
+        energy_conservation_test(problem, results)
+        heat_to_discharge_test(problem, results)
+
+        # Test conservatioon of flow at the nodes
+        for node, connected_pipes in problem.energy_system_topology.nodes.items():
+            discharge_sum = 0.0
+
+            for i_conn, (_pipe, orientation) in connected_pipes.items():
+                discharge_sum += results[f"{node}.HeatConn[{i_conn+1}].Q"] * orientation
+                np.testing.assert_allclose(
+                    results[f"{node}.HeatConn[{i_conn+1}].H"], results[f"{node}.H"], atol=1.0e-6
+                )
+            np.testing.assert_allclose(discharge_sum, 0.0, atol=1.0e-12)
+
+        import models.unit_cases.case_3a.src.run_3a as run_3a
+        from models.unit_cases.case_3a.src.run_3a import HeatProblem
+
+        base_folder = Path(run_3a.__file__).resolve().parent.parent
+
+        production_list = []
+        for esdl_file in [
+            "3a_cons2node.esdl",
+            "3a_prod2node.esdl",
+            "3a_prod2node2cons.esdl",
+            "3a.esdl",
+        ]:
+            # Just a "problem is not infeasible"
+            heat_problem = run_esdl_mesido_optimization(
+                HeatProblem,
+                base_folder=base_folder,
+                esdl_file_name=esdl_file,
+                esdl_parser=ESDLFileParser,
+                profile_reader=ProfileReaderFromFile,
+                input_timeseries_file="timeseries_import.xml",
+            )
+
+            results = heat_problem.extract_results()
+            parameters = heat_problem.parameters(0)
+            bounds = heat_problem.bounds()
+
+            demand_matching_test(heat_problem, results)
+            energy_conservation_test(heat_problem, results)
+            heat_to_discharge_test(heat_problem, results)
+
+            for prod in heat_problem.energy_system_components.get("heat_source", []):
+                production_list.append(results[f"{prod}.Heat_source"])
+
+            for buffer in heat_problem.energy_system_components.get("heat_buffer", []):
+                # buffer should have positive heat loss
+                assert parameters[f"{buffer}.heat_loss_coeff"] > 0.0
+                np.testing.assert_allclose(
+                    results[f"{buffer}.Stored_heat"] * parameters[f"{buffer}.heat_loss_coeff"],
+                    results[f"{buffer}.Heat_loss"],
+                )
+                np.testing.assert_allclose(
+                    results[f"{buffer}.Stored_heat"][0],
+                    bounds[f"{buffer}.Stored_heat"][0].values[0],
+                )
+                np.testing.assert_allclose(
+                    results[f"{buffer}.Stored_heat"][-1] - results[f"{buffer}.Stored_heat"][0],
+                    np.sum(results[f"{buffer}.Heat_buffer"][1:] * 3600.0)
+                    - np.sum(results[f"{buffer}.Heat_loss"][1:] * 3600.0),
+                    atol=1.0,
+                )
+                np.testing.assert_allclose(results[f"{buffer}.Heat_buffer"][0], 0.0, atol=1.0e-6)
+
+        # check that the total heat production is almost the same for all models, with and without
+        # logical links.
+        total_productions = [sum(production_list[i]) for i in range(len(production_list))]
+        np.testing.assert_allclose(total_productions[-1], total_productions, rtol=1e-5)
+
     def test_logical_links_network_hybrid(self):
         """
         This test checks if the logic implemented for logically linked energy system, Meaning an
