@@ -1146,10 +1146,14 @@ class _AssetToComponentBase:
                 if isinstance(p.carrier, esdl.HeatCommodity):
                     out_port = None
                     for p2 in asset.out_ports:
-                        if p2.carrier.name.replace("_ret", "") == p.carrier.name.replace(
-                            "_ret", ""
-                        ):
+                        if p2.name.replace("Out", "In") == p.name:
                             out_port = p2
+                    if not out_port:
+                        logger.error(f"Asset {asset.name} (id: {asset.id}) contains an inport "
+                                     f"with an HeatCommodity carrier, however there does not "
+                                     f"exist an outport with the same name where 'In' is replaced "
+                                     f"by 'Out'.")
+                        exit(1)
                     try:
                         connected_port = p.connectedTo[0]
                         q_nominal = self._port_to_q_nominal[connected_port]
