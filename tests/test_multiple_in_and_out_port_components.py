@@ -248,7 +248,7 @@ class TestHEX(TestCase):
                     temperature_regimes = self.temperature_regimes(carrier_id)
                     if len(temperature_regimes) > 1:
                         carrier_var_name = str(carrier_id) + "_temperature"
-                        var_carrier = self.extra_variable(carrier_var_name)
+                        var_carrier = self.extra_variable(carrier_var_name, ensemble_member)
                         for i in range(var_carrier.shape[0] - 1):
                             constraints.append((var_carrier[i] - var_carrier[i + 1], 0.0, 0.0))
 
