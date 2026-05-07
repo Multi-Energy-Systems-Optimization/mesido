@@ -1141,18 +1141,18 @@ class _AssetToComponentBase:
         elif len(asset.in_ports) >= 2 and len(asset.out_ports) == 2:
             q_nominals = {}
             for p in asset.in_ports:
-                #TODO: this must be replaced by checks on the port names instead of the carrier
-                # names to link the primary in- and out- ports
                 if isinstance(p.carrier, esdl.HeatCommodity):
                     out_port = None
                     for p2 in asset.out_ports:
                         if p2.name.lower().replace("out", "in") == p.name.lower():
                             out_port = p2
                     if not out_port:
-                        logger.error(f"Asset {asset.name} (id: {asset.id}) contains an inport "
-                                     f"with an HeatCommodity carrier, however there does not "
-                                     f"exist an outport with the same name where 'In' is replaced "
-                                     f"by 'Out'.")
+                        logger.error(
+                            f"Asset {asset.name} (id: {asset.id}) contains an inport "
+                            f"with an HeatCommodity carrier, however there does not "
+                            f"exist an outport with the same name where 'In' is replaced "
+                            f"by 'Out'."
+                        )
                         exit(1)
                     try:
                         connected_port = p.connectedTo[0]
@@ -1267,7 +1267,6 @@ class _AssetToComponentBase:
 
         if in_carrier["id"] == out_carrier["id"]:
             # these are the pipes, nodes, valves, pumps
-            #TODO: carrier_id mapping needs to be removed as now the direct ids are used.
             modifiers = {
                 "temperature": in_carrier["temperature"],
                 "carrier_id": in_carrier["id"],
@@ -1285,10 +1284,14 @@ class _AssetToComponentBase:
                 else out_carrier["temperature"]
             )
             temperature_supply_id = (
-                in_carrier["id"] if in_carrier["temperature"] > out_carrier["temperature"] else out_carrier["id"]
+                in_carrier["id"]
+                if in_carrier["temperature"] > out_carrier["temperature"]
+                else out_carrier["id"]
             )
             temperature_return_id = (
-                in_carrier["id"] if in_carrier["temperature"] < out_carrier["temperature"] else out_carrier["id"]
+                in_carrier["id"]
+                if in_carrier["temperature"] < out_carrier["temperature"]
+                else out_carrier["id"]
             )
 
             modifiers = {

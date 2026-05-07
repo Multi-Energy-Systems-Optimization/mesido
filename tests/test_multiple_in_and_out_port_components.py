@@ -244,19 +244,16 @@ class TestHEX(TestCase):
                 constraints = super().constraints(ensemble_member)
 
                 carriers = self.temperature_carriers()
-                for carrier in carriers.values():
-                    carrier_map = carrier["id_number_mapping"]
-                    temperature_regimes = self.temperature_regimes(carrier_map)
+                for carrier_id in carriers.keys():
+                    temperature_regimes = self.temperature_regimes(carrier_id)
                     if len(temperature_regimes) > 1:
-                        carrier_var_name = str(carrier_map) + "_temperature"
+                        carrier_var_name = str(carrier_id) + "_temperature"
                         var_carrier = self.extra_variable(carrier_var_name)
                         for i in range(var_carrier.shape[0] - 1):
                             constraints.append((var_carrier[i] - var_carrier[i + 1], 0.0, 0.0))
 
                         for temperature in temperature_regimes:
-                            selected_temp_vec = self.state_vector(
-                                f"{carrier_map}_{temperature}"
-                            )
+                            selected_temp_vec = self.state_vector(f"{carrier_id}_{temperature}")
                             for i in range(var_carrier.shape[0] - 1):
                                 constraints.append(
                                     (selected_temp_vec[i] - selected_temp_vec[i + 1], 0.0, 0.0)

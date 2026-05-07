@@ -941,7 +941,9 @@ class HeadLossClass:
             pipe_carrier_id = string_parameters[f"{pipe}.carrier_id"]
             if len(optimization_problem.temperature_regimes(pipe_carrier_id)) > 0:
                 temperature = min(
-                    optimization_problem.temperature_regimes(string_parameters[f"{pipe}.carrier_id"])
+                    optimization_problem.temperature_regimes(
+                        string_parameters[f"{pipe}.carrier_id"]
+                    )
                 )
         else:
             # A default temperature of 20 degrees celcius is used for gas networks.

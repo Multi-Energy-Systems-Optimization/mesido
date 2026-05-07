@@ -1585,7 +1585,6 @@ class FinancialMixin(
             *self.energy_system_components.get("electricity_demand", []),
         ]:
 
-            #TODO: remove reference to id_number_mapping when this is no longer applied
             carrier_id = string_parameters[f"{demand}.id_mapping_carrier"]
             carrier_name = carriers[carrier_id]["name"]
             if carrier_id in self.get_electricity_carriers().keys():

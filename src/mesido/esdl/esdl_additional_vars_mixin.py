@@ -254,7 +254,6 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
                 *self.energy_system_components.get("heat_demand", []),
             ]:
                 esdl_asset = self.esdl_assets[asset]
-                parameters = self.parameters(0)
                 string_parameters = self.string_parameters(0)
                 for i in range(len(esdl_asset.attributes["constraint"].items)):
                     constraint = esdl_asset.attributes["constraint"].items[i]

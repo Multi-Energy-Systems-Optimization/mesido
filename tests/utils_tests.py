@@ -30,10 +30,7 @@ def __get_out_port_temp_profile(solution, asset_name, asset_type):
     temp_out_profile = None
     carrier_id_types = {"heat_source": ".T_supply_id", "heat_pipe": ".carrier_id"}
     for carrier_id in carriers_ids:
-        if (
-            carrier_id
-            == string_parameters[f"{asset_name}{carrier_id_types[asset_type]}"]
-        ):
+        if carrier_id == string_parameters[f"{asset_name}{carrier_id_types[asset_type]}"]:
             sup_carrier_name = carriers[carrier_id]["name"]
     try:
         temp_out_profile = solution.get_timeseries(f"{sup_carrier_name}.price_profile")

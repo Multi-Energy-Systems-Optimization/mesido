@@ -209,13 +209,11 @@ class HeatProblemTvarsup(
     def constraints(self, ensemble_member):
         constraints = super().constraints(ensemble_member)
         # These constraints are added to allow for a quicker solve
-        for carrier_id, temperatures in self.temperature_carriers().items():
+        for carrier_id in self.temperature_carriers().keys():
             temperature_regimes = self.temperature_regimes(carrier_id)
             if len(temperature_regimes) > 0:
                 for temperature in temperature_regimes:
-                    selected_temp_vec = self.state_vector(
-                        f"{carrier_id}_{temperature}"
-                    )
+                    selected_temp_vec = self.state_vector(f"{carrier_id}_{temperature}")
                     for i in range(1, len(self.times())):
                         constraints.append(
                             (selected_temp_vec[i] - selected_temp_vec[i - 1], 0.0, 0.0)
@@ -258,13 +256,11 @@ class HeatProblemTvarret(
     def constraints(self, ensemble_member):
         constraints = super().constraints(ensemble_member)
         # These constraints are added to allow for a quicker solve
-        for carrier_id, temperatures in self.temperature_carriers().items():
+        for carrier_id in self.temperature_carriers().keys():
             temperature_regimes = self.temperature_regimes(carrier_id)
             if len(temperature_regimes) > 0:
                 for temperature in temperature_regimes:
-                    selected_temp_vec = self.state_vector(
-                        f"{carrier_id}_{temperature}"
-                    )
+                    selected_temp_vec = self.state_vector(f"{carrier_id}_{temperature}")
                     for i in range(1, len(self.times())):
                         constraints.append(
                             (selected_temp_vec[i] - selected_temp_vec[i - 1], 0.0, 0.0)

@@ -2469,7 +2469,7 @@ class HeatPhysicsMixin(
         """
         constraints = []
 
-        for carrier_id, temperatures in self.temperature_carriers().items():
+        for carrier_id in self.temperature_carriers().keys():
             sum = 0.0
             temperature_regimes = self.temperature_regimes(carrier_id)
             for temperature in temperature_regimes:
