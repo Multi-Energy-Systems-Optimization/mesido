@@ -127,13 +127,12 @@ class HeatProblemTvarGeneral(
     def constraints(self, ensemble_member):
         constraints = super().constraints(ensemble_member)
         # These constraints are added to allow for a quicker solve
-        for _carrier, temperatures in self.temperature_carriers().items():
-            carrier_id_number_mapping = str(temperatures["id_number_mapping"])
-            temperature_regimes = self.temperature_regimes(carrier_id_number_mapping)
+        for carrier_id, temperatures in self.temperature_carriers().items():
+            temperature_regimes = self.temperature_regimes(carrier_id)
             if len(temperature_regimes) > 0:
                 for temperature in temperature_regimes:
                     selected_temp_vec = self.state_vector(
-                        f"{carrier_id_number_mapping}_{temperature}"
+                        f"{carrier_id}_{temperature}"
                     )
                     for i in range(1, len(self.times())):
                         constraints.append(

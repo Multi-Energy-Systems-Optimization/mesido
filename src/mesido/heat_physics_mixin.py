@@ -382,11 +382,10 @@ class HeatPhysicsMixin(
             self.__ates_max_stored_heat_bounds[ates_max_stored_heat_var_name] = (0, max_heat)
             self.__ates_max_stored_heat_nominals[ates_max_stored_heat_var_name] = max_heat / 2
 
-        for _carrier, temperatures in self.temperature_carriers().items():
-            carrier_id_number_mapping = str(temperatures["id_number_mapping"])
-            temp_var_name = carrier_id_number_mapping + "_temperature"
+        for carrier_id, temperatures in self.temperature_carriers().items():
+            temp_var_name = carrier_id + "_temperature"
             self.__temperature_regime_var[temp_var_name] = ca.MX.sym(temp_var_name)
-            temperature_regimes = self.temperature_regimes(carrier_id_number_mapping)
+            temperature_regimes = self.temperature_regimes(carrier_id)
             if len(temperature_regimes) == 0:
                 temperature = temperatures["temperature"]
                 self.__temperature_regime_var_bounds[temp_var_name] = (temperature, temperature)
@@ -408,12 +407,12 @@ class HeatPhysicsMixin(
                     )
 
             for temperature_regime in temperature_regimes:
-                carrier_selected_var = carrier_id_number_mapping + f"_{temperature_regime}"
+                carrier_selected_var = carrier_id + f"_{temperature_regime}"
                 self.__carrier_selected_var[carrier_selected_var] = ca.MX.sym(carrier_selected_var)
                 self.__carrier_selected_var_bounds[carrier_selected_var] = (0.0, 1.0)
 
                 carrier_temperature_disc_ordering_var_name = (
-                    f"{carrier_id_number_mapping}__{temperature_regime}_ordering_disc"
+                    f"{carrier_id}__{temperature_regime}_ordering_disc"
                 )
                 self.__carrier_temperature_disc_ordering_var[
                     carrier_temperature_disc_ordering_var_name
@@ -1583,28 +1582,25 @@ class HeatPhysicsMixin(
         temp_out_prof_start_idx = None
         temp_out_prof_end_idx = None
         carrier_id_types = {"heat_source": ".T_supply_id", "heat_pipe": ".carrier_id"}
-        for carrier_id in carriers_ids:
-            if (
-                carriers[carrier_id]["id_number_mapping"]
-                == string_parameters[f"{asset_name}{carrier_id_types[asset_type]}"]
-            ):
-                sup_carrier_name = carriers[carrier_id]["name"]
-        try:
-            temp_out_profile = self.get_timeseries(f"{sup_carrier_name}.price_profile")
-            temp_out_prof_start_idx = int(
-                np.where(
-                    self.get_timeseries(f"{sup_carrier_name}.price_profile").times
-                    == self.times()[0]
-                )[0]
-            )
-            temp_out_prof_end_idx = int(
-                np.where(
-                    self.get_timeseries(f"{sup_carrier_name}.price_profile").times
-                    == self.times()[-1]
-                )[0]
-            )
-        except KeyError:
-            pass
+        carrier_id = string_parameters[f"{asset_name}{carrier_id_types[asset_type]}"]
+        if carrier_id in carriers_ids:
+            sup_carrier_name = carriers[carrier_id]["name"]
+            try:
+                temp_out_profile = self.get_timeseries(f"{sup_carrier_name}.price_profile")
+                temp_out_prof_start_idx = int(
+                    np.where(
+                        self.get_timeseries(f"{sup_carrier_name}.price_profile").times
+                        == self.times()[0]
+                    )[0]
+                )
+                temp_out_prof_end_idx = int(
+                    np.where(
+                        self.get_timeseries(f"{sup_carrier_name}.price_profile").times
+                        == self.times()[-1]
+                    )[0]
+                )
+            except KeyError:
+                pass
 
         return temp_out_profile, sup_carrier_name, temp_out_prof_start_idx, temp_out_prof_end_idx
 
@@ -2473,8 +2469,7 @@ class HeatPhysicsMixin(
         """
         constraints = []
 
-        for _carrier, temperatures in self.temperature_carriers().items():
-            carrier_id = temperatures["id_number_mapping"]
+        for carrier_id, temperatures in self.temperature_carriers().items():
             sum = 0.0
             temperature_regimes = self.temperature_regimes(carrier_id)
             for temperature in temperature_regimes:
