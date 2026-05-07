@@ -98,6 +98,7 @@ class FinancialMixin(
         options = self.energy_system_options()
         parameters = self.parameters(0)
         bounds = self.bounds()
+        string_parameters = self.string_parameters(0)
 
         # Making the cost variables; fixed_operational_cost, variable_operational_cost,
         # installation_cost and investment_cost
@@ -424,10 +425,10 @@ class FinancialMixin(
 
                 carrier_name = None
                 for _id, attr in self.get_electricity_carriers().items():
-                    if attr["id_number_mapping"] == parameters[f"{asset_name}.id_mapping_carrier"]:
+                    if attr["id_number_mapping"] == string_parameters[f"{asset_name}.id_mapping_carrier"]:
                         carrier_name = attr["name"]
                 for _id, attr in self.get_gas_carriers().items():
-                    if attr["id_number_mapping"] == parameters[f"{asset_name}.id_mapping_carrier"]:
+                    if attr["id_number_mapping"] == string_parameters[f"{asset_name}.id_mapping_carrier"]:
                         carrier_name = attr["name"]
                 if carrier_name is not None:
                     asset_revenue_var = f"{asset_name}__revenue"
@@ -1578,7 +1579,7 @@ class FinancialMixin(
         #  finalised
 
         # TODO: add fixed price default from ESDL in case no price profile is defined.
-        parameters = self.parameters(ensemble_member)
+        string_parameters = self.string_parameters(ensemble_member)
 
         for demand in [
             *self.energy_system_components.get("gas_demand", []),
@@ -1586,12 +1587,13 @@ class FinancialMixin(
         ]:
 
             carrier_name = None
+            #TODO: remove reference to id_number_mapping when this is no longer applied
             for _id, attr in self.get_electricity_carriers().items():
-                if attr["id_number_mapping"] == parameters[f"{demand}.id_mapping_carrier"]:
+                if attr["id_number_mapping"] == string_parameters[f"{demand}.id_mapping_carrier"]:
                     carrier_name = attr["name"]
                     cost_multiplier = 1 / 3600.0  # priceprofile electricity is EUR/Wh
             for _id, attr in self.get_gas_carriers().items():
-                if attr["id_number_mapping"] == parameters[f"{demand}.id_mapping_carrier"]:
+                if attr["id_number_mapping"] == string_parameters[f"{demand}.id_mapping_carrier"]:
                     carrier_name = attr["name"]
                     cost_multiplier = 1.0  # priceprofile gas is in EUR/g
             if carrier_name is not None:
