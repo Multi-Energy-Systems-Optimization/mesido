@@ -415,22 +415,15 @@ class HeadLossClass:
                 self._pipe_linear_line_segment_map[pipe_name] = {}
                 self.__pipe_linear_line_segment_var[pipe_name] = {}
                 self.__pipe_linear_line_segment_var_bounds[pipe_name] = {}
-                # We need to creat linear line segments for the - and + volumetric flow rate
-                # possibilites. Line number 1, 2, N for the - & + side is created
-                discharge_type = ["neg_discharge", "pos_discharge"]
-                for ii_line in range(
-                    network_settings["n_linearization_lines"] * len(discharge_type)
-                ):
-                    if ii_line < network_settings["n_linearization_lines"]:
-                        dtype = discharge_type[0]
-                        line_number = ii_line + 1
-                    else:
-                        dtype = discharge_type[1]
-                        line_number = ii_line + 1 - network_settings["n_linearization_lines"]
-
+                # Create linear line segments only for the positive quadrant and
+                # reuse the existing flow-direction binary to account for sign.
+                # This halves the number of activation binaries compared to having
+                # separate negative/positive activation variables.
+                for ii_line in range(network_settings["n_linearization_lines"]):
                     # start line segment numbering from 1 up to "n_linearization_lines"
+                    line_number = ii_line + 1
                     pipe_linear_line_segment_var_name = (
-                        f"{pipe_name}__pipe_linear_line_segment_num_{line_number}_{dtype}"
+                        f"{pipe_name}__pipe_linear_line_segment_num_{line_number}"
                     )
 
                     self._pipe_linear_line_segment_map[pipe_name][
@@ -800,6 +793,7 @@ class HeadLossClass:
                     #  - positve discharge line_1, line_2
                     pipe_linear_line_segment = self._pipe_linear_line_segment_map[pipe]
                     is_line_segment_active = []
+                    flow_dir_var = optimization_problem.state_vector(f"{pipe}.__flow_direct_var")
 
                     for _, ii_line_var in pipe_linear_line_segment.items():
                         # Create integer variable to activate/deactivate (1/0) a linear line
@@ -824,25 +818,61 @@ class HeadLossClass:
                             (is_line_segment_active_sum_per_timestep, 1.0, 1.0),
                         )
 
-                    # Add equality constraint, value == 0.0 for all linear lines
-                    for ii_line_used in range(len(pipe_linear_line_segment)):
-                        ii_start = ii_line_used * n_timesteps
-                        ii_end = ii_start + n_timesteps
-                        # lower bound constraint (weak inequality constraint, value >= 0.0) is
-                        # already added in the LINEARIZED_N_LINES_WEAK_INEQUALITY section.
+                    # Add equality constraint, value == 0.0 for all linear lines.
+                    # We now have only `n_linear_lines` activation variables (for the
+                    # positive quadrant) and the `a_vec`/`b_vec` vectors are doubled
+                    # (negative then positive). For each activation variable we add
+                    # two equality constraints: one for the negative block and one
+                    # for the positive block, both using the same activation.
+                    n_lines = n_linear_lines
+                    for ii_line_used in range(n_lines):
+                        # negative block (first half of a_vec/b_vec)
+                        ii_start_neg = ii_line_used * n_timesteps
+                        ii_end_neg = ii_start_neg + n_timesteps
                         constraints.append(
                             (
                                 (
-                                    head_loss_vec[ii_start:ii_end]
+                                    head_loss_vec[ii_start_neg:ii_end_neg]
                                     - (
-                                        a_vec[ii_start:ii_end] * discharge_vec[ii_start:ii_end]
-                                        + b_vec[ii_start:ii_end]
+                                        a_vec[ii_start_neg:ii_end_neg]
+                                        * discharge_vec[ii_start_neg:ii_end_neg]
+                                        + b_vec[ii_start_neg:ii_end_neg]
                                     )
-                                    - is_disconnected_vec[ii_start:ii_end] * big_m_lin
+                                    - is_disconnected_vec[ii_start_neg:ii_end_neg] * big_m_lin
                                     - big_m_lin
-                                    * (1 - is_line_segment_active[ii_line_used][0:n_timesteps])
+                                    * (
+                                        1
+                                        - is_line_segment_active[ii_line_used][0:n_timesteps]
+                                        + flow_dir_var
+                                    )
                                 )
-                                / constraint_nominal[ii_start:ii_end],
+                                / constraint_nominal[ii_start_neg:ii_end_neg],
+                                -np.inf,
+                                0.0,
+                            ),
+                        )
+
+                        # positive block (second half of a_vec/b_vec)
+                        ii_start_pos = (ii_line_used + n_lines) * n_timesteps
+                        ii_end_pos = ii_start_pos + n_timesteps
+                        constraints.append(
+                            (
+                                (
+                                    head_loss_vec[ii_start_pos:ii_end_pos]
+                                    - (
+                                        a_vec[ii_start_pos:ii_end_pos]
+                                        * discharge_vec[ii_start_pos:ii_end_pos]
+                                        + b_vec[ii_start_pos:ii_end_pos]
+                                    )
+                                    - is_disconnected_vec[ii_start_pos:ii_end_pos] * big_m_lin
+                                    - big_m_lin
+                                    * (
+                                        2
+                                        - is_line_segment_active[ii_line_used][0:n_timesteps]
+                                        - flow_dir_var
+                                    )
+                                )
+                                / constraint_nominal[ii_start_pos:ii_end_pos],
                                 -np.inf,
                                 0.0,
                             ),

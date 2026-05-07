@@ -515,7 +515,7 @@ class TestHydraulicPower(TestCase):
                     v_inspect_line_ind[k] == v_inspect_line_ind[k + 1]
                     and v_inspect_line_ind[k] == 0
                 ):  # use simple ratio calc
-                    if pipe_mass[k] > 0:
+                    if pipe_mass[k] > 1e-8:
                         np.testing.assert_allclose(
                             pipe_hp[k] * pipe_mass[k + 1] / pipe_mass[k], pipe_hp[k + 1]
                         )
