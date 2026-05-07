@@ -1141,6 +1141,8 @@ class _AssetToComponentBase:
         elif len(asset.in_ports) >= 2 and len(asset.out_ports) == 2:
             q_nominals = {}
             for p in asset.in_ports:
+                #TODO: this must be replaced by checks on the port names instead of the carrier
+                # names to link the primary in- and out- ports
                 if isinstance(p.carrier, esdl.HeatCommodity):
                     out_port = None
                     for p2 in asset.out_ports:
@@ -1261,6 +1263,7 @@ class _AssetToComponentBase:
 
         if in_carrier["id"] == out_carrier["id"]:
             # these are the pipes, nodes, valves, pumps
+            #TODO: carrier_id mapping needs to be removed as now the direct ids are used.
             modifiers = {
                 "temperature": in_carrier["temperature"],
                 "carrier_id": in_carrier["id_number_mapping"],

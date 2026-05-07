@@ -51,7 +51,7 @@ class BaseESDLParser:
 
                 temperature = x.supplyTemperature if x.supplyTemperature else x.returnTemperature
                 assert temperature > 0.0
-
+                #TODO: carrier_id_mapping can be removed as now carrier ids are passed directly.
                 self._global_properties["carriers"][x.id] = dict(
                     name=x.name,
                     id=x.id,
