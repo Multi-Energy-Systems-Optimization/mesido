@@ -57,6 +57,7 @@ def run_esdl_mesido_optimization(
         "finished",
         "integer optimal solution",
         "integer optimal, tolerance",
+        "success",
     ]
 
     return solution
