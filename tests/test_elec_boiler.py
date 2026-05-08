@@ -155,6 +155,15 @@ class TestElecBoiler(TestCase):
         electric_power_conservation_test(heat_problem, results)
 
         # Check costs of heatpump
+        np.testing.assert_array_less(
+            1.0e-4,
+            heat_problem.get_timeseries(
+                f"{list(heat_problem.get_electricity_carriers().values())[0]['name']}.price_profile"
+            ).values,
+        )
+        np.testing.assert_array_less(
+            1.0e-5, parameters[f"{hp_id}.variable_operational_cost_coefficient"]
+        )
         np.testing.assert_array_less(100.0, results[f"{hp_id}__variable_operational_cost"])
         cost_calculation_test(heat_problem, results)
 
