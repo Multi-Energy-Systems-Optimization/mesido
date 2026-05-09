@@ -142,22 +142,22 @@ class ESDLMixin(
         for dbconnection in database_connection_info:
             if dbconnection["access_type"] != DBAccessType.WRITE:
                 database_host_port = "{}:{}".format(
-                    dbconnection["influxdb_host"],
-                    dbconnection["influxdb_port"],
+                    dbconnection["host"],
+                    dbconnection["port"],
                 )
                 read_only_dbase_credentials[database_host_port] = (
-                    dbconnection["influxdb_username"],
-                    dbconnection["influxdb_password"],
+                    dbconnection["username"],
+                    dbconnection["password"],
                 )
             if dbconnection["access_type"] != DBAccessType.READ_WRITE:
                 self._database_credentials[dbconnection["access_type"]].append(
                     {
-                        "influxdb_host": dbconnection["influxdb_host"],
-                        "influxdb_port": dbconnection["influxdb_port"],
-                        "influxdb_username": dbconnection["influxdb_username"],
-                        "influxdb_password": dbconnection["influxdb_password"],
-                        "influxdb_ssl": dbconnection["influxdb_ssl"],
-                        "influxdb_verify_ssl": dbconnection["influxdb_verify_ssl"],
+                        "host": dbconnection["host"],
+                        "port": dbconnection["port"],
+                        "username": dbconnection["username"],
+                        "password": dbconnection["password"],
+                        "ssl": dbconnection["ssl"],
+                        "verify_ssl": dbconnection["verify_ssl"],
                     }
                 )
             elif dbconnection["access_type"] == DBAccessType.READ_WRITE:
@@ -165,12 +165,12 @@ class ESDLMixin(
                 for rw in both_read_and_write:
                     self._database_credentials[rw].append(
                         {
-                            "influxdb_host": dbconnection["influxdb_host"],
-                            "influxdb_port": dbconnection["influxdb_port"],
-                            "influxdb_username": dbconnection["influxdb_username"],
-                            "influxdb_password": dbconnection["influxdb_password"],
-                            "influxdb_ssl": dbconnection["influxdb_ssl"],
-                            "influxdb_verify_ssl": dbconnection["influxdb_verify_ssl"],
+                            "host": dbconnection["host"],
+                            "port": dbconnection["port"],
+                            "username": dbconnection["username"],
+                            "password": dbconnection["password"],
+                            "ssl": dbconnection["ssl"],
+                            "verify_ssl": dbconnection["verify_ssl"],
                         }
                     )
             else:

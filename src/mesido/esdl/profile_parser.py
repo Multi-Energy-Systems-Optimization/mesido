@@ -7,7 +7,7 @@ from typing import Dict, Optional, Set, Tuple, Union
 
 import esdl
 from esdl.profiles.credentials import Credentials
-from esdl.profiles.profile_utils import get_time_varying_profile_header_and_raw_data
+from esdl.profiles.profile_utils import load_profile_data_and_header, close_db_connections
 from esdl.units.conversion import ENERGY_IN_J, POWER_IN_W, convert_to_unit
 
 from mesido.esdl.common import Asset
@@ -263,7 +263,9 @@ class ESDLTimeVaryingProfileReader(BaseProfileReader):
         esdl.ProfileReference
     )
 
-    SupportedProfilesType = Union[*supported_profiles]
+    # Python 3.10 compatible
+    SupportedProfilesType = Union.__getitem__(tuple(supported_profiles))
+    # SupportedProfilesType = Union[*supported_profiles]
 
     def __init__(
         self,
@@ -342,7 +344,9 @@ class ESDLTimeVaryingProfileReader(BaseProfileReader):
                             f"other assets. Please ensure that the profile that is "
                             f"specified to be loaded for each asset covers exactly the "
                             f"same timeseries. "
-                        )
+                        )            
+        close_db_connections()
+
         # Loop trough all the requried profiles in the energy system and assign the profile data:
         # - series: use the unique series data, without reading from the database again
         # - other profile info: get it from the specific profile
@@ -439,7 +443,12 @@ class ESDLTimeVaryingProfileReader(BaseProfileReader):
         from mesido.workflows.utils.error_types import NetworkErrors, potential_error_to_error
         
         try:
-            profile_raw_data, _ = get_time_varying_profile_header_and_raw_data(profile, True)   
+            profile_raw_data, _ = load_profile_data_and_header(
+                profile,
+                enable_cache=True,
+                apply_multiplier=False,
+                close_connection_after_load=False,
+            )   
         except Exception as e:
             container = profile.eContainer()
             asset = container.energyasset

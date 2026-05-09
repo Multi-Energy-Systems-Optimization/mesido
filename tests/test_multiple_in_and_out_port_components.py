@@ -56,12 +56,12 @@ class TestHEX(TestCase):
             "database_connections": [
                 {
                     "access_type": DBAccessType.WRITE,
-                    "influxdb_host": "localhost",
-                    "influxdb_port": 8086,
-                    "influxdb_username": None,
-                    "influxdb_password": None,
-                    "influxdb_ssl": False,
-                    "influxdb_verify_ssl": False,
+                    "host": "localhost",
+                    "port": 8086,
+                    "username": None,
+                    "password": None,
+                    "ssl": False,
+                    "verify_ssl": False,
                 },
             ],
         }
@@ -359,12 +359,12 @@ class TestHP(TestCase):
             "database_connections": [
                 {
                     "access_type": DBAccessType.WRITE,
-                    "influxdb_host": "localhost",
-                    "influxdb_port": 8086,
-                    "influxdb_username": None,
-                    "influxdb_password": None,
-                    "influxdb_ssl": False,
-                    "influxdb_verify_ssl": False,
+                    "host": "localhost",
+                    "port": 8086,
+                    "username": None,
+                    "password": None,
+                    "ssl": False,
+                    "verify_ssl": False,
                 },
             ],
         }

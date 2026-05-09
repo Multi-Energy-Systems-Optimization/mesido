@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import esdl
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.workflows import EndScenarioSizingStaged, run_end_scenario_sizing
 from mesido.esdl.esdl_mixin import DBAccessType
@@ -12,33 +13,44 @@ if __name__ == "__main__":
 
     kwargs = {
         "use_esdl_ranged_constraint": True,  # default value in the code is set to False
+        "write_result_db_profiles": True,  # default value in the code is set to False
+        "db_type_output_profiles": esdl.DatabaseTypeEnum.POSTGRESQL,
         "database_connections": [
             {
                 "access_type": DBAccessType.READ,  # or DBAccessType.WRITE or DBAccessType.READ_WRITE
-                "influxdb_host": "required_user_input",
-                "influxdb_port": 1234,
-                "influxdb_username": "required_user_input",
-                "influxdb_password": "required_user_input",
-                "influxdb_ssl": False,
-                "influxdb_verify_ssl": False,
+                "host": "required_user_input",
+                "port": 1234,
+                "username": "required_user_input",
+                "password": "required_user_input",
+                "ssl": False,
+                "verify_ssl": False,
             },
             {
-                "access_type": DBAccessType.WRITE,  # or DBAccessType.WRITE or DBAccessType.READ_WRITE
-                "influxdb_host": "localhost",
-                "influxdb_port": 8086,
-                "influxdb_username": None,
-                "influxdb_password": None,
-                "influxdb_ssl": False,
-                "influxdb_verify_ssl": False,
+                "access_type": DBAccessType.READ,  # or DBAccessType.WRITE or DBAccessType.READ_WRITE
+                "host": "localhost",
+                "port": 8086,
+                "username": None,
+                "password": None,
+                "ssl": False,
+                "verify_ssl": False,
+            },
+            {
+                "access_type": DBAccessType.READ,  # or DBAccessType.WRITE or DBAccessType.READ_WRITE
+                "host": "omotes_influxdb",
+                "port": 8096,
+                "username": "root",
+                "password": "9012",
+                "ssl": False,
+                "verify_ssl": False,
             },
             {
                 "access_type": DBAccessType.READ_WRITE,  # or DBAccessType.WRITE or DBAccessType.READ_WRITE
-                "influxdb_host": "omotes_influxdb",
-                "influxdb_port": 8096,
-                "influxdb_username": "root",
-                "influxdb_password": "9012",
-                "influxdb_ssl": False,
-                "influxdb_verify_ssl": False,
+                "host": "postgres",
+                "port": 5432,
+                "username": "postgres",
+                "password": "password",
+                "ssl": False,
+                "verify_ssl": False,
             },
         ],
     }
@@ -50,5 +62,8 @@ if __name__ == "__main__":
         esdl_parser=ESDLFileParser,
         **kwargs,  # Example of usage if needed/used
     )
+
+    with open("grow_optim.esdl", "w", encoding="utf-8") as f:
+        f.write(solution.optimized_esdl_string)
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
