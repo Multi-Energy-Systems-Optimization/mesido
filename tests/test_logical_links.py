@@ -176,21 +176,23 @@ class TestLogicalLinks(TestCase):
         This test checks if the logic implemented for a partially logically linked energy system.
         Meaning an energy system where assets are directly connected to each other without a network
         (transport asset(s)) in between. This specific test covers the logical connection between
-        producers and consumers to nodes in a heat network. Please note that due to the closed
-        system constraints we need to set the minimum velocity to zero to avoid backflow in the
-        solution.
+        producers and consumers to nodes in a heat network.
 
         This is the most basic check where we have a simple network and check for the basic physics.
         This simple network includes one source, some pipes and logical links, node, a tank storage
         and 3 demands.
-        The buffer cannot yet be connected with a logical link, due to the flow direction variable.
-        The logical links can give scaling issues when used at demands.
+        Several variations to this network where pipes are replaced by logical links are tested
+        below.
+
+        Be aware, the buffer cannot yet be connected with a logical link, due to the flow direction
+        variable.
+        Note: The logical links can give scaling issues when used at demands.
 
         Checks;
         - Demand matching
         - Energy conservation
         - Heat to discharge
-        Check that the history for the buffer is set correctly at t=0
+        - Check that the history for the buffer is set correctly at t=0
         - Check that the heat loss is positive and as expected
         - results of 3a do not vary a lot.
         """
@@ -214,7 +216,7 @@ class TestLogicalLinks(TestCase):
         energy_conservation_test(problem, results)
         heat_to_discharge_test(problem, results)
 
-        # Test conservatioon of flow at the nodes
+        # Test conservation of flow at the nodes
         for node, connected_pipes in problem.energy_system_topology.nodes.items():
             discharge_sum = 0.0
 
@@ -280,7 +282,7 @@ class TestLogicalLinks(TestCase):
         # check that the total heat production is almost the same for all models, with and without
         # logical links.
         total_productions = [sum(production_list[i]) for i in range(len(production_list))]
-        np.testing.assert_allclose(total_productions[-1], total_productions, rtol=1e-5)
+        np.testing.assert_allclose(total_productions[-1], total_productions[:-1], rtol=1e-5)
 
     def test_logical_links_network_hybrid(self):
         """
@@ -337,5 +339,6 @@ if __name__ == "__main__":
     a.test_logical_links_gas()
     a.test_logical_links_nodes()
     a.test_logical_links_nodes_heat()
+    a.test_logical_links_all_connections_heat()
     a.test_logical_links_network_hybrid()
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
