@@ -7,7 +7,7 @@ from typing import Optional
 import esdl
 
 from mesido.esdl.esdl_parser import ESDLFileParser
-from mesido.esdl.profile_parser import ESDLTimeVaryingProfileReader
+from mesido.esdl.profile_parser import ESDLProfileReader
 from mesido.exceptions import MesidoAssetIssueError
 from mesido.potential_errors import MesidoAssetIssueType, PotentialErrors
 from mesido.workflows import EndScenarioSizingStaged
@@ -20,7 +20,7 @@ import pandas as pd
 from utils_test_scaling import create_log_list_scaling
 
 
-class MockESDLTimeVaryingProfileReader(ESDLTimeVaryingProfileReader):
+class MockESDLProfileReader(ESDLProfileReader):
     def __init__(
         self,
         energy_system: esdl.EnergySystem,
@@ -74,7 +74,7 @@ class TestPotentialErrors(unittest.TestCase):
                 model_folder=model_folder,
                 input_folder=input_folder,
                 esdl_file_name="1a_with_influx_profiles_error_check_1.esdl",
-                profile_reader=MockESDLTimeVaryingProfileReader,
+                profile_reader=MockESDLProfileReader,
                 input_timeseries_file="influx_mock.csv",
             )
             problem.pre()
@@ -113,7 +113,7 @@ class TestPotentialErrors(unittest.TestCase):
                 model_folder=model_folder,
                 input_folder=input_folder,
                 esdl_file_name="1a_with_influx_profiles_error_check_2.esdl",
-                profile_reader=MockESDLTimeVaryingProfileReader,
+                profile_reader=MockESDLProfileReader,
                 input_timeseries_file="influx_mock.csv",
             )
             problem.pre()
@@ -141,7 +141,7 @@ class TestPotentialErrors(unittest.TestCase):
                 model_folder=model_folder,
                 input_folder=input_folder,
                 esdl_file_name="1a_with_influx_profiles_error_check_3.esdl",
-                profile_reader=MockESDLTimeVaryingProfileReader,
+                profile_reader=MockESDLProfileReader,
                 input_timeseries_file="influx_mock.csv",
             )
             problem.pre()
@@ -172,7 +172,7 @@ class TestPotentialErrors(unittest.TestCase):
                 model_folder=model_folder,
                 input_folder=input_folder,
                 esdl_file_name="1a_with_influx_profiles_error_check_4.esdl",
-                profile_reader=MockESDLTimeVaryingProfileReader,
+                profile_reader=MockESDLProfileReader,
                 input_timeseries_file="influx_mock.csv",
             )
             problem.pre()
@@ -229,7 +229,7 @@ class TestPotentialErrors(unittest.TestCase):
                 model_folder=model_folder,
                 input_folder=input_folder,
                 esdl_file_name="1a_with_influx_profiles_error_check_5.esdl",
-                profile_reader=ESDLTimeVaryingProfileReader,
+                profile_reader=ESDLProfileReader,
             )
             problem.pre()
         np.testing.assert_equal(

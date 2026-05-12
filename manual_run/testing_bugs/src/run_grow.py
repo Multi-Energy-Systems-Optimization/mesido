@@ -49,8 +49,6 @@ if __name__ == "__main__":
                 "port": 5432,
                 "username": "postgres",
                 "password": "password",
-                "ssl": False,
-                "verify_ssl": False,
             },
         ],
     }

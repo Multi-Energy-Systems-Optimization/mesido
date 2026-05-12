@@ -21,7 +21,7 @@ from mesido.esdl.esdl_heat_model import ESDLHeatModel
 from mesido.esdl.esdl_model_base import _ESDLModelBase
 from mesido.esdl.esdl_parser import ESDLStringParser
 from mesido.esdl.esdl_qth_model import ESDLQTHModel
-from mesido.esdl.profile_parser import BaseProfileReader, ESDLTimeVaryingProfileReader
+from mesido.esdl.profile_parser import BaseProfileReader, ESDLProfileReader
 from mesido.physics_mixin import PhysicsMixin
 from mesido.pipe_class import GasPipeClass, PipeClass
 from mesido.pycml.pycml_mixin import PyCMLMixin
@@ -131,7 +131,7 @@ class ESDLMixin(
             DBAccessType.WRITE: [],
         }
 
-        profile_reader_class = kwargs.get("profile_reader", ESDLTimeVaryingProfileReader)
+        profile_reader_class = kwargs.get("profile_reader", ESDLProfileReader)
         input_file_name = kwargs.get("input_timeseries_file", None)
         input_folder = kwargs.get("input_folder")
         input_file_path = None
@@ -156,8 +156,8 @@ class ESDLMixin(
                         "port": dbconnection["port"],
                         "username": dbconnection["username"],
                         "password": dbconnection["password"],
-                        "ssl": dbconnection["ssl"],
-                        "verify_ssl": dbconnection["verify_ssl"],
+                        "ssl": dbconnection["ssl"] if "ssl" in dbconnection else False,
+                        "verify_ssl": dbconnection["verify_ssl"] if "verify_ssl" in dbconnection else False,
                     }
                 )
             elif dbconnection["access_type"] == DBAccessType.READ_WRITE:
@@ -169,8 +169,8 @@ class ESDLMixin(
                             "port": dbconnection["port"],
                             "username": dbconnection["username"],
                             "password": dbconnection["password"],
-                            "ssl": dbconnection["ssl"],
-                            "verify_ssl": dbconnection["verify_ssl"],
+                            "ssl": dbconnection["ssl"] if "ssl" in dbconnection else False,
+                            "verify_ssl": dbconnection["verify_ssl"] if "verify_ssl" in dbconnection else False,
                         }
                     )
             else:

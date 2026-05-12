@@ -241,7 +241,7 @@ class BaseProfileReader:
         raise NotImplementedError
 
 
-class ESDLTimeVaryingProfileReader(BaseProfileReader):
+class ESDLProfileReader(BaseProfileReader):
     asset_type_to_variable_name_conversion = {
         esdl.esdl.HeatingDemand: ".target_heat_demand",
         esdl.esdl.GenericConsumer: ".target_heat_demand",
