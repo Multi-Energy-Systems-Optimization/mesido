@@ -311,6 +311,7 @@ class _AssetToComponentBase:
         "heat_buffer": {  # Surface Tank Storage
             "investmentCosts": "required",
             "installationCosts": "required",
+            "variableOperationalCosts": "optional",
             "fixedMaintenanceCosts": "optional",
             "fixedOperationalCosts": "optional",
         },
@@ -327,6 +328,7 @@ class _AssetToComponentBase:
         "heat_exchanger": {
             "investmentCosts": "required",
             "installationCosts": "required",
+            "variableOperationalCosts": "optional",
             "fixedMaintenanceCosts": "optional",
             "fixedOperationalCosts": "optional",
         },
