@@ -59,7 +59,7 @@ class HeatPhysicsMixin(
         the head loss as an inequality, i.e. :math:`\Delta H \ge f(Q)`, whereas
         others model it as an equality.
 
-        When ``HeadLossOption.CQ2_INEQUALITY`` is used, the wall roughness at
+        When ``HeadLossOption.CQ2_WEAK_INEQUALITY`` is used, the wall roughness at
         ``estimated_velocity`` determines the `C` in :math:`\Delta H \ge C
         \cdot Q^2`.
 
@@ -71,14 +71,14 @@ class HeatPhysicsMixin(
         When ``HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY`` is used, the wall roughness at
         ``estimated_velocity`` determines the `C` in :math:`\Delta H = C \cdot
         Q`. For pipes that contain a control valve, the formulation of
-        ``HeadLossOption.CQ2_INEQUALITY`` is used.
+        ``HeadLossOption.CQ2_WEAK_INEQUALITY`` is used.
 
         When ``HeadLossOption.CQ2_EQUALITY`` is used, the wall roughness at
         ``estimated_velocity`` determines the `C` in :math:`\Delta H = C \cdot
         Q^2`. Note that this formulation is non-convex. At `theta < 1` we
         therefore use the formulation ``HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY``. For pipes
         that contain a control valve, the formulation of
-        ``HeadLossOption.CQ2_INEQUALITY`` is used.
+        ``HeadLossOption.CQ2_WEAK_INEQUALITY`` is used.
 
         When ``minimize_head_losses`` is set to True (default), a last
         priority is inserted where the head losses and hydraulic power in the system are
