@@ -239,7 +239,6 @@ class TestLogicalLinks(TestCase):
             "3a_prod2node2cons.esdl",
             "3a.esdl",
         ]:
-            # Just a "problem is not infeasible"
             heat_problem = run_esdl_mesido_optimization(
                 HeatProblem,
                 base_folder=base_folder,
