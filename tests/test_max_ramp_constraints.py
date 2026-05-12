@@ -15,9 +15,12 @@ class TestMaxRampConstraintWarmingUp3A(TestCase):
         """
         Validate max ramp constraints on warming-up unit case 3a by enforcing
         ramp constraints in a dedicated test problem and checking the optimized
-        heat-flow ramps against their limits. First validating that the orginal problem without a
-        ramp constraint does violate the ramp limits, and then validating that the ramp-limited
-        problem does not violate the ramp limits.
+        heat-flow ramps against their limits.
+
+        Checks:
+        - Standard checks for demand matching, energy conservation and heat to discharge
+        - Validating that the ramp-limited problem does not violate the ramp limits
+        - Validating that the orginal problem without a ramp constraint does violate the ramp limits
         """
         import models.unit_cases.case_3a.src.run_3a as run_3a
         from models.unit_cases.case_3a.src.run_3a import HeatProblem
@@ -89,3 +92,9 @@ class TestMaxRampConstraintWarmingUp3A(TestCase):
             any_stricter_than_baseline,
             "Ramp-limited case did not produce any stricter ramp than baseline 3a.",
         )
+
+
+if __name__ == "__main__":
+
+    a = TestMaxRampConstraintWarmingUp3A()
+    a.test_max_ramp_constraint_case_3a()
