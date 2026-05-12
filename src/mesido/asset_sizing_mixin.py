@@ -1337,7 +1337,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         # These are the constraints to order the discharge capabilities of the pipe classes
         for p, pipe_classes in self.__heat_pipe_topo_pipe_class_discharge_ordering_map.items():
-            max_discharge = self.extra_variable(self._heat_pipe_topo_max_discharge_map[p])
+            max_discharge = self.extra_variable(
+                self._heat_pipe_topo_max_discharge_map[p], ensemble_member
+            )
             max_discharges = {
                 pc.name: pc.maximum_discharge for pc in self._heat_pipe_topo_pipe_class_map[p]
             }
@@ -1425,7 +1427,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             constraints.append((sum(variables.values()), 1.0, 1.0))
 
             # set the max discharge
-            max_discharge = self.extra_variable(self._heat_pipe_topo_max_discharge_map[p])
+            max_discharge = self.extra_variable(
+                self._heat_pipe_topo_max_discharge_map[p], ensemble_member
+            )
             max_discharges = {pc.name: pc.maximum_discharge for pc in pipe_classes}
             max_discharge_expr = sum(
                 variables[pc_name] * max_discharges[pc_name] for pc_name in variables
@@ -1491,7 +1495,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         # These are the constraints to order the discharge capabilities of the pipe classes
         for p, pipe_classes in self.__gas_pipe_topo_pipe_class_discharge_ordering_map.items():
-            max_discharge = self.extra_variable(self._gas_pipe_topo_max_discharge_map[p])
+            max_discharge = self.extra_variable(
+                self._gas_pipe_topo_max_discharge_map[p], ensemble_member
+            )
             max_discharges = {
                 pc.name: pc.maximum_discharge for pc in self._gas_pipe_topo_pipe_class_map[p]
             }
@@ -1539,7 +1545,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             constraints.append((sum(variables.values()), 1.0, 1.0))
 
             # set the max discharge
-            max_discharge = self.extra_variable(self._gas_pipe_topo_max_discharge_map[p])
+            max_discharge = self.extra_variable(
+                self._gas_pipe_topo_max_discharge_map[p], ensemble_member
+            )
             max_discharges = {pc.name: pc.maximum_discharge for pc in pipe_classes}
             max_discharge_expr = sum(
                 variables[pc_name] * max_discharges[pc_name] for pc_name in variables
@@ -1608,7 +1616,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             c,
             cable_classes,
         ) in self.__electricity_cable_topo_cable_class_current_ordering_map.items():
-            max_current = self.extra_variable(self._electricity_cable_topo_max_current_map[c])
+            max_current = self.extra_variable(
+                self._electricity_cable_topo_max_current_map[c], ensemble_member
+            )
             max_currents = {
                 cc.name: cc.maximum_current
                 for cc in self._electricity_cable_topo_cable_class_map[c]
@@ -1660,7 +1670,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             constraints.append((sum(variables.values()), 1.0, 1.0))
 
             # set the max discharge
-            max_current = self.extra_variable(self._electricity_cable_topo_max_current_map[c])
+            max_current = self.extra_variable(
+                self._electricity_cable_topo_max_current_map[c], ensemble_member
+            )
             max_currents = {cc.name: cc.maximum_current for cc in cable_classes}
             max_current_expr = sum(
                 variables[cc_name] * max_currents[cc_name] for cc_name in variables
