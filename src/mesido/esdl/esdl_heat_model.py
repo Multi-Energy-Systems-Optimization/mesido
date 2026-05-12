@@ -1616,6 +1616,11 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 max=q_max_ates * aggregation_count,
                 nominal=q_nominal,
             ),
+            Heat_ates=dict(
+                min=-hfr_charge_max * aggregation_count,
+                max=hfr_discharge_max * aggregation_count,
+                nominal=hfr_discharge_max / 2.0,
+            ),
             single_doublet_power=single_doublet_power,
             heat_loss_coeff=(1.0 - efficiency ** (1.0 / 100.0)) / (3600.0 * 24.0),
             nr_of_doublets=aggregation_count,
@@ -1653,15 +1658,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 f" maxStorageTemperature > {low_temp_ates_max_storage_temp_deg} degrees Celcius",
             )
 
-            modifiers.update(
-                dict(
-                    Heat_low_temperature_ates=dict(
-                        min=-hfr_charge_max * asset.attributes["aggregationCount"],
-                        max=hfr_discharge_max * asset.attributes["aggregationCount"],
-                        nominal=hfr_discharge_max / 2.0,
-                    )
-                )
-            )
             logger.warning(
                 "ATES in use: WKO (koude-warmteopslag, cold and heat storage) since the"
                 " maximum temperature has been specified to be <= 30 degrees Celcius"
@@ -1671,11 +1667,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
         else:
             modifiers.update(
                 dict(
-                    Heat_ates=dict(
-                        min=-hfr_charge_max * aggregation_count,
-                        max=hfr_discharge_max * aggregation_count,
-                        nominal=hfr_discharge_max / 2.0,
-                    ),
                     T_amb=asset.attributes["aquiferMidTemperature"],
                     Temperature_ates=dict(
                         min=temperatures["T_return"],  # or potentially 0
