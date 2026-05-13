@@ -188,7 +188,7 @@
           </investmentCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:HeatProducer" power="3000000.0" name="HeatProducer_1" id="324b0371-b738-4f55-a978-3306ee81638c" state="OPTIONAL">
+      <asset xsi:type="esdl:HeatProducer" power="3000000.0" name="HeatProducer_1" id="324b0371-b738-4f55-a978-3306ee81638c" minTemperature="40.0" maxTemperature="70.0" state="OPTIONAL">
         <geometry xsi:type="esdl:Point" lat="52.04476403847825" lon="4.309977293014527"/>
         <port xsi:type="esdl:OutPort" id="45bfc7d0-ef59-4f49-b37a-867b18e04b86" name="Out" connectedTo="b462d564-a8c0-4ae0-a4af-36958f2455ea" carrier="7b32e287-d775-480c-b317-64ffdacf12c9"/>
         <port xsi:type="esdl:InPort" id="ba9ca084-b71f-42a3-884a-f2f2b3ae4265" name="In" connectedTo="e31e12c2-8f80-4aed-9e4b-918445a32996" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret"/>
@@ -332,7 +332,7 @@
           </investmentCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:HeatProducer" power="50000000.0" name="HeatProducer_2" id="da00ddfc-cfa4-4f21-b5be-7c69d2bf53bb" state="OPTIONAL">
+      <asset xsi:type="esdl:HeatProducer" power="50000000.0" name="HeatProducer_2" id="da00ddfc-cfa4-4f21-b5be-7c69d2bf53bb" minTemperature="40.0" maxTemperature="70.0" state="OPTIONAL">
         <geometry xsi:type="esdl:Point" lon="4.311726093292237" CRS="WGS84" lat="52.04487621664103"/>
         <port xsi:type="esdl:OutPort" id="886e5430-bec1-44e3-bab6-221c4518c810" name="Out" connectedTo="bbfed830-071d-4d02-bddd-e709247c8337" carrier="7b32e287-d775-480c-b317-64ffdacf12c9"/>
         <port xsi:type="esdl:InPort" id="c7ed8915-ddd0-47f8-93d6-1dabfb5d320b" name="In" connectedTo="df6f89d0-7872-4891-934f-de407f6aa142" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret"/>
@@ -511,7 +511,7 @@
           </investmentCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:GeothermalSource" id="50cfdd22-a041-4cd5-9811-c3a568988376" name="GeothermalSource_50cf" power="1000000.0" state="OPTIONAL">
+      <asset xsi:type="esdl:GeothermalSource" id="50cfdd22-a041-4cd5-9811-c3a568988376" name="GeothermalSource_50cf" minTemperature="40.0" maxTemperature="70.0" power="1000000.0" state="OPTIONAL">
         <geometry xsi:type="esdl:Point" lat="52.04409096358859" lon="4.308131933212281" CRS="WGS84"/>
         <port xsi:type="esdl:OutPort" id="e8b959ea-f9d9-4977-b05c-65e38ae251c5" name="Out" connectedTo="38ca5eab-3f3a-4164-83b2-ed55ad1d890e" carrier="7b32e287-d775-480c-b317-64ffdacf12c9"/>
         <port xsi:type="esdl:InPort" id="935de838-17c7-4788-9253-7831bc30621d" name="In" connectedTo="3e82b128-215f-421b-a36e-99588b5f22cc" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret"/>
