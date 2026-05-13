@@ -292,7 +292,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         Returns: dictionary of the generic modifiers: technical_life, discount_rate and state.
         """
+        # TODO: max ramp coefficient later to be updated from esdl.
         modifiers = dict(
+            max_ramp_coeff=1.0,
             technical_life=self.get_asset_attribute_value(
                 asset,
                 "technicalLifetime",

@@ -118,6 +118,12 @@ class TestElecBoiler(TestCase):
         This tests checks the air-water hp elec for the standard checks and the energy conservation
         over the commodity change.
 
+        The HeatProblemHydraulic model defines the heat pump's variable operational cost as a
+        function of the variable cost coefficient, pumping cost, and the electricity price profile.
+
+        This test verifies that all three cost components are correctly included in the variable
+        operational cost.
+
         Checks:
         1. demand is matched
         2. energy conservation in the network
@@ -126,12 +132,12 @@ class TestElecBoiler(TestCase):
         5. cost calculation is checked
         """
         import models.source_pipe_sink.src.double_pipe_heat as example
-        from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
+        from models.source_pipe_sink.src.double_pipe_heat import HeatProblemHydraulic
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
         heat_problem = run_esdl_mesido_optimization(
-            SourcePipeSink,
+            HeatProblemHydraulic,
             base_folder=base_folder,
             esdl_file_name="sourcesink_withHP.esdl",
             esdl_parser=ESDLFileParser,
@@ -149,6 +155,15 @@ class TestElecBoiler(TestCase):
         electric_power_conservation_test(heat_problem, results)
 
         # Check costs of heatpump
+        np.testing.assert_array_less(
+            1.0e-4,
+            heat_problem.get_timeseries(
+                f"{list(heat_problem.get_electricity_carriers().values())[0]['name']}.price_profile"
+            ).values,
+        )
+        np.testing.assert_array_less(
+            1.0e-5, parameters[f"{hp_id}.variable_operational_cost_coefficient"]
+        )
         np.testing.assert_array_less(100.0, results[f"{hp_id}__variable_operational_cost"])
         cost_calculation_test(heat_problem, results)
 

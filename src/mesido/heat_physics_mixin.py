@@ -59,7 +59,7 @@ class HeatPhysicsMixin(
         the head loss as an inequality, i.e. :math:`\Delta H \ge f(Q)`, whereas
         others model it as an equality.
 
-        When ``HeadLossOption.CQ2_INEQUALITY`` is used, the wall roughness at
+        When ``HeadLossOption.CQ2_WEAK_INEQUALITY`` is used, the wall roughness at
         ``estimated_velocity`` determines the `C` in :math:`\Delta H \ge C
         \cdot Q^2`.
 
@@ -71,14 +71,14 @@ class HeatPhysicsMixin(
         When ``HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY`` is used, the wall roughness at
         ``estimated_velocity`` determines the `C` in :math:`\Delta H = C \cdot
         Q`. For pipes that contain a control valve, the formulation of
-        ``HeadLossOption.CQ2_INEQUALITY`` is used.
+        ``HeadLossOption.CQ2_WEAK_INEQUALITY`` is used.
 
         When ``HeadLossOption.CQ2_EQUALITY`` is used, the wall roughness at
         ``estimated_velocity`` determines the `C` in :math:`\Delta H = C \cdot
         Q^2`. Note that this formulation is non-convex. At `theta < 1` we
         therefore use the formulation ``HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY``. For pipes
         that contain a control valve, the formulation of
-        ``HeadLossOption.CQ2_INEQUALITY`` is used.
+        ``HeadLossOption.CQ2_WEAK_INEQUALITY`` is used.
 
         When ``minimize_head_losses`` is set to True (default), a last
         priority is inserted where the head losses and hydraulic power in the system are
@@ -3531,6 +3531,54 @@ class HeatPhysicsMixin(
 
         return constraints
 
+    def __max_ramp_constraints(self, ensemble_member):
+        """
+        Build ramp-rate constraints for selected heat assets.
+
+        For each supported asset, the method limits the timestep
+        change in ``Heat_flow`` based on ``max_ramp_coeff``:
+
+        ``|Heat_flow[t] - Heat_flow[t-1]| <= dt_hours * max_ramp_coeff * max_size``
+
+        The ramp constraint is only applied when ``max_ramp_coeff < 1.0`` as the coefficient is
+        in change per hour relative to the max size.
+        If an ``{asset}__max_size`` optimization variable exists, that value is
+        used as ``max_size``. Otherwise, the method falls back to the upper
+        bound of ``{asset}.Heat_flow``.
+        """
+
+        constraints = []
+        parameters = self.parameters(ensemble_member)
+        bounds = self.bounds()
+        dt_hrs = np.diff(self.times()) / 3600
+
+        for asset in {
+            *self.energy_system_components.get("heat_source", []),
+            *self.energy_system_components.get("heat_demand", []),
+            *self.energy_system_components.get("heat_pump", []),
+            *self.energy_system_components.get("heat_exchanger", []),
+            *self.energy_system_components.get("heat_buffer", []),
+            *self.energy_system_components.get("ates", []),
+            *self.energy_system_components.get("low_temperature_ates", []),
+        }:
+            max_ramp = parameters[f"{asset}.max_ramp_coeff"]
+            if max_ramp < 1.0:
+                variable_constraint = self.__state_vector_scaled(
+                    f"{asset}.Heat_flow", ensemble_member
+                )
+                try:
+                    max_size = self.extra_variable(f"{asset}__max_size", ensemble_member)
+                except KeyError:
+                    # Fall back to Heat_flow bounds when no max-size variable is present.
+                    ub = bounds[f"{asset}.Heat_flow"][1]
+                    max_size = ub if isinstance(ub, float) else max(ub.values)
+                ramp = variable_constraint[1:] - variable_constraint[:-1]
+                nom = self.variable_nominal(f"{asset}.Heat_flow")
+                constraints.append(((ramp - dt_hrs * max_ramp * max_size) / nom, -np.inf, 0))
+                constraints.append(((ramp + dt_hrs * max_ramp * max_size) / nom, 0, np.inf))
+
+        return constraints
+
     def path_constraints(self, ensemble_member):
         """
         Here we add all the path constraints to the optimization problem. Please note that the
@@ -3617,6 +3665,7 @@ class HeatPhysicsMixin(
         constraints.extend(
             self.__source_heat_to_discharge_variable_temp_constraints(ensemble_member)
         )
+        constraints.extend(self.__max_ramp_constraints(ensemble_member))
 
         return constraints
 
