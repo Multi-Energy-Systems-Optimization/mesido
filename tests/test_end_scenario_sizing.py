@@ -24,46 +24,6 @@ from utils_tests import cost_calculation_test, demand_matching_test
 
 class TestEndScenarioSizing(TestCase):
 
-    def test_heat_exchanger_sizing(self):
-        """
-        Check heat exchanger can be sized in EndScenarioSizingStaged problem.
-        After optimization asset state and capacity attributes are changed.
-
-        Checks:
-        - max_size variable of the asset is calculated
-        - heat exchanger state attribute is changed
-        - heat exchanger capacity attribute is updated
-        """
-        import models.heat_exchange.src.run_heat_exchanger as run_heat_exchanger
-
-        base_folder = Path(run_heat_exchanger.__file__).resolve().parent.parent
-
-        solution = run_end_scenario_sizing(
-            EndScenarioSizingStaged,
-            base_folder=base_folder,
-            esdl_file_name="heat_exchanger_with_costs.esdl",
-            esdl_parser=ESDLFileParser,
-        )
-        results = solution.extract_results()
-        name_to_id_map = solution.esdl_asset_name_to_id_map
-
-        hex_id = name_to_id_map["HeatExchange_39ed"]
-
-        # Check heat exchanger is sized
-        np.testing.assert_allclose(
-            max(results[f"{hex_id}.Secondary_heat"]), results[f"{hex_id}__max_size"]
-        )
-
-        # Check heat exchanger state attribute is changed from OPTIONAL
-        # to ENABLED after the optimization
-        energy_system = solution._ESDLMixin__energy_system_handler.energy_system
-        asset = solution._id_to_asset(energy_system, hex_id)
-        np.testing.assert_equal(esdl.AssetStateEnum.ENABLED, asset.state)
-
-        # Check heat exchanger capacity attribute is updated
-        # with max_size variable after the optimization
-        np.testing.assert_allclose(results[f"{hex_id}__max_size"], asset.capacity)
-
     @classmethod
     def setUpClass(cls) -> None:
         import models.test_case_small_network_ates_buffer_optional_assets.src.run_ates as run_ates
@@ -325,6 +285,76 @@ class TestEndScenarioSizing(TestCase):
             abs(solution_time_staged - solution_time_unstaged),
         )
         np.testing.assert_array_less(solution_time_staged, solution_time_unstaged)
+
+    def test_end_scenario_sizing_heat_demand_not_matched(self):
+        """
+        Validate diagnostics when staged sizing cannot fully match heat demand.
+
+        The test uses an ESDL where a pipe size has been limited and an increased-demand
+        profile so that the optimization aborts with an expected exception, while warning logs still
+        report demand not being matched and likely bottlenecks, maxed producers and critical pipes.
+        """
+        import models.test_case_small_network_ates_buffer_optional_assets.src.run_ates as run_ates
+
+        base_folder = Path(run_ates.__file__).resolve().parent.parent
+
+        with self.assertLogs("mesido", level="WARNING") as captured_logs:
+            with self.assertRaises(RuntimeError):
+                run_end_scenario_sizing(
+                    EndScenarioSizingStaged,
+                    base_folder=base_folder,
+                    esdl_file_name="test_case_small_network_all_optional_heat_demand_not_matched.esdl",
+                    esdl_parser=ESDLFileParser,
+                    profile_reader=ProfileReaderFromFile,
+                    input_timeseries_file="Warmte_test_two_demands_doubled.csv",
+                    error_type_check=NetworkErrors.NO_POTENTIAL_ERRORS_CHECK,
+                )
+
+        logs = "\n".join(captured_logs.output)
+        self.assertIn("target is not matched by", logs)
+        self.assertIn("the heat production by the following heat producers is maximised:", logs)
+        self.assertIn("there are pipes with velocities above 2.3 m/s: ['Pipe3', 'Pipe3_ret']", logs)
+        self.assertNotIn("the heat production by the following heat producers is maximised: none", logs)
+
+    def test_heat_exchanger_sizing(self):
+        """
+        Check heat exchanger can be sized in EndScenarioSizingStaged problem.
+        After optimization asset state and capacity attributes are changed.
+
+        Checks:
+        - max_size variable of the asset is calculated
+        - heat exchanger state attribute is changed
+        - heat exchanger capacity attribute is updated
+        """
+        import models.heat_exchange.src.run_heat_exchanger as run_heat_exchanger
+
+        base_folder = Path(run_heat_exchanger.__file__).resolve().parent.parent
+
+        solution = run_end_scenario_sizing(
+            EndScenarioSizingStaged,
+            base_folder=base_folder,
+            esdl_file_name="heat_exchanger_with_costs.esdl",
+            esdl_parser=ESDLFileParser,
+        )
+        results = solution.extract_results()
+        name_to_id_map = solution.esdl_asset_name_to_id_map
+
+        hex_id = name_to_id_map["HeatExchange_39ed"]
+
+        # Check heat exchanger is sized
+        np.testing.assert_allclose(
+            max(results[f"{hex_id}.Secondary_heat"]), results[f"{hex_id}__max_size"]
+        )
+
+        # Check heat exchanger state attribute is changed from OPTIONAL
+        # to ENABLED after the optimization
+        energy_system = solution._ESDLMixin__energy_system_handler.energy_system
+        asset = solution._id_to_asset(energy_system, hex_id)
+        np.testing.assert_equal(esdl.AssetStateEnum.ENABLED, asset.state)
+
+        # Check heat exchanger capacity attribute is updated
+        # with max_size variable after the optimization
+        np.testing.assert_allclose(results[f"{hex_id}__max_size"], asset.capacity)
 
     def test_end_scenario_sizing_discounted(self):
         """

@@ -560,7 +560,7 @@ class EndScenarioSizing(
 
         tolerance = 1.0e-4  # 0.01%
         all_mismatch_indexes = set()
-        any_unmet_demand = False
+        demand_not_matched = False
         for d in self.energy_system_components.get("heat_demand", []):
             realized_demand = results[f"{d}.Heat_demand"]
             target = self.get_timeseries(f"{d}.target_heat_demand", ensemble_member=e_m).values
@@ -575,14 +575,16 @@ class EndScenarioSizing(
 
             delta_energy = np.sum(demand_gap[shortage_mask] * timesteps[shortage_mask] / 1.0e9)
             if delta_energy >= 1.0:
-                any_unmet_demand = True
+                demand_not_matched = True
                 logger.warning(
                     f"For demand {id_to_name_map[d]} the target is not matched by"
                     f" {delta_energy} GJ"
                 )
 
+        # Lists potential producers and pipes that might be the cause of the heat demand not
+        # being matched.
         mismatch_indexes = np.array(sorted(all_mismatch_indexes), dtype=int)
-        if any_unmet_demand and len(mismatch_indexes) > 0:
+        if demand_not_matched and len(mismatch_indexes) > 0:
             maxed_producers = set()
             for producer in self.energy_system_components.get("heat_source", []):
                 max_size_key = f"{producer}__max_size"
@@ -600,7 +602,8 @@ class EndScenarioSizing(
                     maxed_producers.add(id_to_name_map.get(producer, producer))
 
             logger.warning(
-                f"At unmet-demand indexes {mismatch_indexes.tolist()}, maxed heat producers: "
+                f"At some of indexes {mismatch_indexes.tolist()} where the demand is not matched, "
+                f"the heat production by the following heat producers is maximised: "
                 f"{sorted(maxed_producers) if maxed_producers else 'none'}"
             )
 
@@ -616,7 +619,8 @@ class EndScenarioSizing(
                     high_velocity_pipes.add(id_to_name_map.get(pipe, pipe))
 
             logger.warning(
-                f"At unmet-demand indexes {mismatch_indexes.tolist()}, pipes above 2.3 m/s: "
+                f"At some of indexes {mismatch_indexes.tolist()} where the demand is not matched "
+                f"there are pipes with velocities above 2.3 m/s: "
                 f"{sorted(high_velocity_pipes) if high_velocity_pipes else 'none'}"
             )
 
