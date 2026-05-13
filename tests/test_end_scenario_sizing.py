@@ -303,7 +303,7 @@ class TestEndScenarioSizing(TestCase):
                 run_end_scenario_sizing(
                     EndScenarioSizingStaged,
                     base_folder=base_folder,
-                    esdl_file_name="test_case_small_network_all_optional_heat_demand_not_matched.esdl",
+                    esdl_file_name="test_case_small_network_all_optional_demand_not_matched.esdl",
                     esdl_parser=ESDLFileParser,
                     profile_reader=ProfileReaderFromFile,
                     input_timeseries_file="Warmte_test_two_demands_doubled.csv",
@@ -314,7 +314,9 @@ class TestEndScenarioSizing(TestCase):
         self.assertIn("target is not matched by", logs)
         self.assertIn("the heat production by the following heat producers is maximised:", logs)
         self.assertIn("there are pipes with velocities above 2.3 m/s: ['Pipe3', 'Pipe3_ret']", logs)
-        self.assertNotIn("the heat production by the following heat producers is maximised: none", logs)
+        self.assertNotIn(
+            "the heat production by the following heat producers is maximised: none", logs
+        )
 
     def test_heat_exchanger_sizing(self):
         """
