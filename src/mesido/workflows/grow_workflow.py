@@ -622,7 +622,15 @@ class EndScenarioSizing(
             high_velocity_pipes = set()
             for pipe in self.energy_system_components.get("heat_pipe", []):
                 diameter = float(results[f"{pipe}__hn_diameter"])
-                if diameter <= 0.0:
+
+                diameter_upper_bound = _upper_bound_as_scalar(bounds[f"{pipe}__hn_diameter"][1])
+                near_upper_bound = np.isclose(
+                    diameter,
+                    diameter_upper_bound,
+                    rtol=tolerance,
+                    atol=1.0e-9,
+                )
+                if not near_upper_bound:
                     continue
 
                 area = 0.25 * np.pi * diameter**2
