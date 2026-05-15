@@ -43,7 +43,8 @@ class TestMaxSizeAggregationCount(TestCase):
         - Check cost components for source 1 and 2
         - Check max size and placement of ates
         - Fixed operational cost for sources
-        - Maximum and minimum temperatures of heat sources are parsed from esdl
+        - Maximum and minimum temperatures of heat producer and geothermal source
+          are parsed from esdl
 
         """
         import models.test_case_small_network_with_ates_buffer_geo.src.run_ates as run_ates
@@ -139,7 +140,7 @@ class TestMaxSizeAggregationCount(TestCase):
         np.testing.assert_allclose(results[f"{ates_id}_aggregation_count"], 1.0)
         np.testing.assert_allclose(results[f"{buffer_id}_aggregation_count"], 1.0)
 
-        # Check max, min temperature of heat sources are parsed from esdl
+        # Check max, min temperature of heat producer and geothermal source are parsed from esdl
         for asset_id in [
             *solution.energy_system_components.get("heat_source", []),
         ]:

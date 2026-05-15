@@ -1481,11 +1481,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
             logger.error(f"{asset.asset_type} '{asset.name}' has no max power specified.")
         assert max_supply > 0.0
 
-        min_temperature = None
-        max_temperature = None
-        if asset.asset_type in ["HeatProducer", "GeothermalSource", "ResidualHeatSource"]:
-            min_temperature = asset.attributes["minTemperature"]
-            max_temperature = asset.attributes["maxTemperature"]
+        min_temperature = (
+            asset.attributes["minTemperature"] if "minTemperature" in asset.attributes else None
+        )
+        max_temperature = (
+            asset.attributes["maxTemperature"] if "maxTemperature" in asset.attributes else None
+        )
 
         # get price per unit of energy,
         # assume cost of 1. if nothing is given (effectively milp loss minimization)
