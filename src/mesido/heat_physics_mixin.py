@@ -215,7 +215,6 @@ class HeatPhysicsMixin(
         settings = self.heat_network_settings
         return settings
 
-
     def pre(self):
         """
         In this pre method we fill the dicts initiated in the __init__. This means that we create
@@ -622,8 +621,9 @@ class HeatPhysicsMixin(
         options["include_ates_temperature_options"] = False
         options["include_ates_yearly_change_option"] = False
         options["heat_storage_charging_variables"] = False
-        options["include_head_losses"] = False if hn_settings[
-                                                      "head_loss_option"]==HeadLossOption.NO_HEADLOSS else True
+        options["include_head_losses"] = (
+            False if hn_settings["head_loss_option"] == HeadLossOption.NO_HEADLOSS else True
+        )
 
         return options
 
@@ -757,8 +757,7 @@ class HeatPhysicsMixin(
             )
 
             if (
-                hn_settings["head_loss_option"]
-                == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+                hn_settings["head_loss_option"] == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
                 or hn_settings["head_loss_option"]
                 == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
             ):
@@ -824,8 +823,7 @@ class HeatPhysicsMixin(
         # Maximum pressure difference allowed with user options
         # NOTE: Does not yet take elevation differences into acccount
         max_dh_network_options = (
-            hn_settings["pipe_maximum_pressure"]
-            - hn_settings["pipe_minimum_pressure"]
+            hn_settings["pipe_maximum_pressure"] - hn_settings["pipe_minimum_pressure"]
         ) * 10.2
 
         return min(max_sum_dh_pipes, max_dh_network_options)

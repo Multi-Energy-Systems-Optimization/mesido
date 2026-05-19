@@ -33,8 +33,12 @@ class Node(HeatComponent, BaseAsset):
         self.n = 2
         assert self.n >= 2
 
-        self.add_variable(HeatPort, "HeatConn", self.n,
-                          include_head_loss_variables=self.include_head_loss_variables)
+        self.add_variable(
+            HeatPort,
+            "HeatConn",
+            self.n,
+            include_head_loss_variables=self.include_head_loss_variables,
+        )
         if self.include_head_loss_variables:
             self.add_variable(Variable, "H")
 

@@ -293,6 +293,11 @@ class TestHeadLoss(TestCase):
                 def update_heat_network_settings(self):
                     settings = super().update_heat_network_settings()
 
+                    nonlocal head_loss_option_setting, counter_linearized_n_lines_weak_ineq_runs
+                    head_loss_option_setting = head_loss_option_setting
+                    counter_linearized_n_lines_weak_ineq_runs = (
+                        counter_linearized_n_lines_weak_ineq_runs
+                    )
                     settings["head_loss_option"] = head_loss_option_setting
 
                     settings["n_linearization_lines"] = 2
@@ -532,7 +537,7 @@ class TestHeadLoss(TestCase):
         class SourcePipeSinkNoHeadLoss(SourcePipeSink):
             def update_heat_network_settings(self):
                 settings = super().update_heat_network_settings()
-                settings["head_loss_option"] =  HeadLossOption.NO_HEADLOSS
+                settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
                 return settings
 
         class SourcePipeSinkNoHeadLossIncludeHeadLosses(SourcePipeSink):
@@ -560,7 +565,9 @@ class TestHeadLoss(TestCase):
         problem_include_head_loss_vars = SourcePipeSinkNoHeadLossIncludeHeadLosses(**common_kwargs)
 
         number_of_path_variables_no_head_loss = len(problem_no_head_loss.algebraic_states)
-        number_of_path_variables_include_head_losses = len(problem_include_head_loss_vars.algebraic_states)
+        number_of_path_variables_include_head_losses = len(
+            problem_include_head_loss_vars.algebraic_states
+        )
 
         numb_pipes = len(problem_no_head_loss.energy_system_components.get("heat_pipe", []))
         numb_prod = len(problem_no_head_loss.energy_system_components.get("heat_source", []))
@@ -573,8 +580,10 @@ class TestHeadLoss(TestCase):
         # - .dH and .Pump_power for each producer.
         additional_headloss_vars = 6 * numb_pipes + 2 * numb_prod + 1 * numb_cons
 
-        np.testing.assert_equal(number_of_path_variables_no_head_loss,
-                                number_of_path_variables_include_head_losses-additional_headloss_vars, err_msg=(
+        np.testing.assert_equal(
+            number_of_path_variables_no_head_loss,
+            number_of_path_variables_include_head_losses - additional_headloss_vars,
+            err_msg=(
                 "Expected include_head_losses=True to create more path variables then when using "
                 "head_loss_option=NO_HEADLOSS"
             ),

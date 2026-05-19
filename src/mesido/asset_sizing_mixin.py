@@ -1290,8 +1290,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         # Maximum pressure difference allowed with user options
         # NOTE: Does not yet take elevation differences into acccount
         max_dh_network_options = (
-            hn_settings["pipe_maximum_pressure"]
-            - hn_settings["pipe_minimum_pressure"]
+            hn_settings["pipe_maximum_pressure"] - hn_settings["pipe_minimum_pressure"]
         ) * 10.2
 
         return min(max_sum_dh_pipes, max_dh_network_options)

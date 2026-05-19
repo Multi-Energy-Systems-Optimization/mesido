@@ -76,7 +76,10 @@ class HeatPipe(_NonStorageComponent):
             )  # [W]
 
             self.add_equation(
-                (self.Hydraulic_power - (self.HeatIn.Hydraulic_power - self.HeatOut.Hydraulic_power))
+                (
+                    self.Hydraulic_power
+                    - (self.HeatIn.Hydraulic_power - self.HeatOut.Hydraulic_power)
+                )
                 / (self.nominal_pressure * self.Q_nominal * self.Hydraulic_power_nominal) ** 0.5
             )
 

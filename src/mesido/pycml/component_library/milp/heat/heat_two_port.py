@@ -35,10 +35,12 @@ class HeatTwoPort(HeatComponent):
         self.rho = 988.0
         self.nominal_pressure = 16.0e5
 
-        self.add_variable(HeatPort, "HeatIn",
-                          include_head_loss_variables=self.include_head_loss_variables)
-        self.add_variable(HeatPort, "HeatOut",
-                          include_head_loss_variables=self.include_head_loss_variables)
+        self.add_variable(
+            HeatPort, "HeatIn", include_head_loss_variables=self.include_head_loss_variables
+        )
+        self.add_variable(
+            HeatPort, "HeatOut", include_head_loss_variables=self.include_head_loss_variables
+        )
 
         self.add_variable(Variable, "Q", nominal=self.Q_nominal)
 

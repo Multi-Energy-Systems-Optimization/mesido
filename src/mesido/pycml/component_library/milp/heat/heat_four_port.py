@@ -29,10 +29,18 @@ class HeatFourPort(HeatComponent):
             ),
         )
 
-        self.add_variable(_NonStorageComponentSinkType, "Primary", **modifiers["Primary"],
-                          include_head_loss_variables=self.include_head_loss_variables)
-        self.add_variable(_NonStorageComponentSourceType, "Secondary", **modifiers["Secondary"],
-                          include_head_loss_variables=self.include_head_loss_variables)
+        self.add_variable(
+            _NonStorageComponentSinkType,
+            "Primary",
+            **modifiers["Primary"],
+            include_head_loss_variables=self.include_head_loss_variables,
+        )
+        self.add_variable(
+            _NonStorageComponentSourceType,
+            "Secondary",
+            **modifiers["Secondary"],
+            include_head_loss_variables=self.include_head_loss_variables,
+        )
         self.add_variable(
             Variable,
             "Pump_power",

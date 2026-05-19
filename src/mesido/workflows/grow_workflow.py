@@ -280,7 +280,6 @@ class EndScenarioSizing(
         settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
         return settings
 
-
     def parameters(self, ensemble_member):
         parameters = super().parameters(ensemble_member)
         parameters["peak_day_index"] = self.__indx_max_peak
@@ -611,9 +610,7 @@ class EndScenarioSizingHeadLoss(EndScenarioSizing):
     def update_heat_network_settings(self):
         settings = super().update_heat_network_settings()
 
-        settings["head_loss_option"] = (
-            HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
-        )
+        settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
         settings["minimize_head_losses"] = True
         return settings
 
