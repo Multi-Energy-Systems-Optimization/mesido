@@ -1,4 +1,4 @@
-# [Unreleased-main] - 2026-05-06
+# [Unreleased-main] - 2026-05-13
 
 ## Added
 - Electricity consumption calculation of geothermal assets, using the defined COP. 
@@ -10,6 +10,7 @@
 - Test is added to check airco sizing and cost calculation
 - Workflow of EndScenarioSizing with demand uncertainty is added.
 - Ramp constraints for heat producers are added.
+- Maximum and minimum temperature of heat sources are parsed from esdl
 
 ## Changed
 - Reduced the number of constraints required for headloss calculation with LINEARIZED_N_LINES_EQUALITY setting.
