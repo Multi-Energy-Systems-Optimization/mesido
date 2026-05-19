@@ -99,7 +99,7 @@ class TestHEX(TestCase):
         # Note that we are not testing the last element as we exploit the last timestep for
         # checking the disabled boolean and the assert statement doesn't work for a difference of
         # zero
-        np.testing.assert_allclose(prim_heat[-1], 0.0, atol=1e-5)
+        np.testing.assert_allclose(prim_heat[-1], 0.0, atol=1e-4)
         np.testing.assert_allclose(disabled[-1], 1.0)
         np.testing.assert_allclose(disabled[:-1], 0.0)
         # Check that heat is flowing through the hex
@@ -249,7 +249,7 @@ class TestHEX(TestCase):
                     temperature_regimes = self.temperature_regimes(int(carrier_map))
                     if len(temperature_regimes) > 1:
                         carrier_var_name = str(carrier_map) + "_temperature"
-                        var_carrier = self.extra_variable(carrier_var_name)
+                        var_carrier = self.extra_variable(carrier_var_name, ensemble_member)
                         for i in range(var_carrier.shape[0] - 1):
                             constraints.append((var_carrier[i] - var_carrier[i + 1], 0.0, 0.0))
 

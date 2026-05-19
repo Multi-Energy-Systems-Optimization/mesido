@@ -44,7 +44,7 @@ class HeadLossOption(IntEnum):
        The NO_HEADLOSS option assumes that there is no headloss in the pipelines.
        There are no constraints added relating the discharge to the head.
 
-    CQ2_INEQUALITY
+    CQ2_WEAK_INEQUALITY
         As the name implies, this adds a quadratic inquality constraint between
         the head and the discharge in a pipe:
 
@@ -69,7 +69,7 @@ class HeadLossOption(IntEnum):
            dH = H_{down} - H_{up}
 
     LINEARIZED_N_LINES_WEAK_INEQUALITY
-        Just like ``CQ2_INEQUALITY``, this option adds inequality constraints:
+        Just like ``CQ2_WEAK_INEQUALITY``, this option adds inequality constraints:
 
         .. math::
            \Delta H \ge \vec{a} \cdot Q + \vec{b}
@@ -80,7 +80,7 @@ class HeadLossOption(IntEnum):
         head loss, and the linear lines approximating it. Note that the number of
         supporting lines is an option that can be set by the user by overriding
         :py:meth:`._HeadLossMixin.energy_system_options`. Also note that, just like
-        ``CQ2_INEQUALITY``, a boolean is needed when flow directions are not fixed.
+        ``CQ2_WEAK_INEQUALITY``, a boolean is needed when flow directions are not fixed.
 
            .. image:: /images/DWlinearization.PNG
 
@@ -110,7 +110,7 @@ class HeadLossOption(IntEnum):
     """
 
     NO_HEADLOSS = 1
-    CQ2_INEQUALITY = 2
+    CQ2_WEAK_INEQUALITY = 2
     LINEARIZED_N_LINES_WEAK_INEQUALITY = 3
     LINEARIZED_ONE_LINE_EQUALITY = 4
     CQ2_EQUALITY = 5
@@ -305,7 +305,7 @@ class HeadLossClass:
         The global user head loss option is not necessarily the same as the
         head loss option for a specific pipe. For example, when a control
         valve is present, a .LINEARIZED_ONE_LINE_EQUALITY global head loss option could mean a
-        .CQ2_INEQUALITY formulation should be used instead.
+        .CQ2_WEAK_INEQUALITY formulation should be used instead.
 
         See also the explanation of `head_loss_option` (and its values) in
         :py:meth:`.energy_system_options`.
@@ -662,7 +662,7 @@ class HeadLossClass:
                 return expr * np.sign(discharge)
 
         elif head_loss_option in {
-            HeadLossOption.CQ2_INEQUALITY,
+            HeadLossOption.CQ2_WEAK_INEQUALITY,
             HeadLossOption.CQ2_EQUALITY,
         }:
             ff = darcy_weisbach.friction_factor(
@@ -681,11 +681,11 @@ class HeadLossClass:
             expr = c_v * v**2
 
             if symbolic:
-                q_nominal = self.variable_nominal(f"{pipe}.Q")
-                head_loss_nominal = self.variable_nominal(f"{pipe}.dH")
+                q_nominal = optimization_problem.variable_nominal(f"{pipe}.Q")
+                head_loss_nominal = optimization_problem.variable_nominal(f"{pipe}.dH")
                 constraint_nominal = (head_loss_nominal * c_v * (q_nominal / area) ** 2) ** 0.5
 
-                if head_loss_option == HeadLossOption.CQ2_INEQUALITY:
+                if head_loss_option == HeadLossOption.CQ2_WEAK_INEQUALITY:
                     ub = np.inf
                 else:
                     ub = 0.0

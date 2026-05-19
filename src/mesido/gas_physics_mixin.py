@@ -53,7 +53,7 @@ class GasPhysicsMixin(
         the head loss as an inequality, i.e. :math:`\Delta H \ge f(Q)`, whereas
         others model it as an equality.
 
-        When ``HeadLossOption.CQ2_INEQUALITY`` is used, the wall roughness at
+        When ``HeadLossOption.CQ2_WEAK_INEQUALITY`` is used, the wall roughness at
         ``estimated_velocity`` determines the `C` in :math:`\Delta H \ge C
         \cdot Q^2`.
 
@@ -65,14 +65,14 @@ class GasPhysicsMixin(
         When ``HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY`` is used, the wall roughness at
         ``estimated_velocity`` determines the `C` in :math:`\Delta H = C \cdot
         Q`. For pipes that contain a control valve, the formulation of
-        ``HeadLossOption.CQ2_INEQUALITY`` is used.
+        ``HeadLossOption.CQ2_WEAK_INEQUALITY`` is used.
 
         When ``HeadLossOption.CQ2_EQUALITY`` is used, the wall roughness at
         ``estimated_velocity`` determines the `C` in :math:`\Delta H = C \cdot
         Q^2`. Note that this formulation is non-convex. At `theta < 1` we
         therefore use the formulation ``HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY``. For pipes
         that contain a control valve, the formulation of
-        ``HeadLossOption.CQ2_INEQUALITY`` is used.
+        ``HeadLossOption.CQ2_WEAK_INEQUALITY`` is used.
 
         When ``minimize_head_losses`` is set to True (default), a last
         priority is inserted where the head losses and hydraulic power in the system are
@@ -538,20 +538,7 @@ class GasPhysicsMixin(
 
             # Note we only need one on the milp as the desired behaviour is propegated by the
             # constraints heat_in - heat_out - heat_loss == 0.
-            constraints.append(
-                (
-                    (q_in - big_m * flow_dir) / big_m,
-                    -np.inf,
-                    0.0,
-                )
-            )
-            constraints.append(
-                (
-                    (q_in + big_m * (1 - flow_dir)) / big_m,
-                    0.0,
-                    np.inf,
-                )
-            )
+            constraints.extend(self._big_m_ineq_constraints(q_in, 1 - flow_dir, big_m, big_m))
 
         # Pipes that are connected in series should have the same milp direction.
         for pipes in self.energy_system_topology.pipe_series:

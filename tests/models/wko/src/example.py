@@ -80,7 +80,7 @@ class MinimizeSourcesHeatGoal(Goal):
     over the full horizon and not per time-step.
     """
 
-    priority = 3
+    priority = 2
 
     order = 1
 
@@ -113,6 +113,48 @@ class MinimizeSourcesHeatGoal(Goal):
         return optimization_problem.state(f"{self.source}.Heat_source")
 
 
+class MinimizeInvestmentCost(Goal):
+    """
+    Goal that minimizes the investment cost for the asset.
+
+    The objective is computed as the asset's investment cost coefficient
+    multiplied by its maximum installed size.
+    """
+
+    priority = 3
+    order = 1
+
+    def __init__(self, source):
+        """
+        The constructor of the goal.
+
+        Parameters
+        ----------
+        source : string of the source name that is going to be minimized
+        """
+
+        self.source = source
+        self.target_max = 0.0
+        self.function_range = (0.0, 2.0 * 1e6)
+        self.function_nominal = 1e6
+
+    def function(self, optimization_problem, ensemble_member):
+        """
+        Compute the investment cost as objective.
+
+        Parameters
+        ----------
+        optimization_problem : The optimization class containing the variables'.
+        ensemble_member : the ensemble member.
+
+        Returns
+        -------
+        Investment cost objective value.
+        """
+
+        return optimization_problem.extra_variable(f"{self.source}__investment_cost")
+
+
 class _GoalsAndOptions:
     """
     A goals class that we often use if we specify multiple problem classes.
@@ -143,7 +185,7 @@ class _GoalsAndOptions:
         return goals
 
 
-class HeatProblem(
+class HeatColdProblem(
     _GoalsAndOptions,
     TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
@@ -225,9 +267,36 @@ class HeatProblem(
         return options
 
 
+class HeatColdProblemSizing(HeatColdProblem):
+    """
+    Heat–cold optimization problem variant that includes asset sizing.
+
+    This class extends the base HeatColdProblem by adding an investment
+    cost minimization goal for selected assets.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def goals(self):
+        """
+        Add goal to minimize the investment cost of selected asset
+
+        Returns
+        -------
+        Extended goals list.
+        """
+
+        goals = super().goals().copy()
+        for source in self.energy_system_components["airco"]:
+            goals.append(MinimizeInvestmentCost(source=source))
+
+        return goals
+
+
 if __name__ == "__main__":
     elect = run_optimization_problem(
-        HeatProblem,
+        HeatColdProblem,
         esdl_file_name="airco.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,

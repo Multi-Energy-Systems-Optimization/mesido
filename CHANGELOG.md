@@ -1,10 +1,15 @@
-# [Unreleased-main] - 2026-04-17
+# [Unreleased-main] - 2026-05-06
 
 ## Added
 - Electricity consumption calculation of geothermal assets, using the defined COP. 
 - Geothermal electricity asset that can be connected to the electricity grid.
 - Addition of heat buffer asset with electric charging (i.e. HeatBufferElec).
 - DataSource is assigned to output profiles
+- Generic methods to create equality and inequality constraints using big-M formulation.
+- First implementation of a temperature profile for a producer. (experimental)
+- Test is added to check airco sizing and cost calculation
+- Workflow of EndScenarioSizing with demand uncertainty is added.
+- Ramp constraints for heat producers are added.
 
 ## Changed
 - Reduced the number of constraints required for headloss calculation with LINEARIZED_N_LINES_EQUALITY setting.
@@ -14,6 +19,8 @@
 - Updated pyESDL to v26.3
 - Updated the GROW workflow to provide feedback on which heat demands are not matched in priority 1.
 - Removed old test files that are no longer used.
+- Added electricity cost profile to variable operational cost of assets which convert electricity to heat.
+- Heating_and_cooling example is cleaned up
 
 ## Fixed
 - ProfileConstraints: Use already available function to get profile quantity and unit
