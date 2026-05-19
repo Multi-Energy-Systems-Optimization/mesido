@@ -23,4 +23,4 @@ class BaseAsset(Component):
         self.emission_coeff = nan
         self.max_ramp_coeff = nan
 
-        self.include_head_loss_variables = False
+        self.include_head_loss_variables = True

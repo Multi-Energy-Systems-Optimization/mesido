@@ -143,13 +143,13 @@ class TestEndScenarioSizing(TestCase):
         # Check that indeed the available pipe classes were adapted based on expected flow
         # Pipe connected to a demand
         assert self.solution.pipe_classes("Pipe2")[0].name == "DN150"  # initially DN->None
-        assert self.solution.pipe_classes("Pipe2")[-1].name == "DN250"  # initially DN450
+        assert self.solution.pipe_classes("Pipe2")[-1].name == "DN200"  # initially DN450
         # Check that the available pipe classes are also limited for pipes in the return network
         # that do not have the related attribute assigned and are therefore not in the set of
         # self.cold_pipes.
         assert len(self.solution.unrelated_pipes) >= 1.0
         assert self.solution.pipe_classes("Pipe2_ret")[0].name == "DN150"  # initially DN->None
-        assert self.solution.pipe_classes("Pipe2_ret")[-1].name == "DN250"  # initially DN450
+        assert self.solution.pipe_classes("Pipe2_ret")[-1].name == "DN200"  # initially DN450
         # Check the minimum velocity setting==default value. Keep the default value hard-coded to
         # prevent future coding bugs
         np.testing.assert_equal(1.0e-4, self.solution.heat_network_settings["minimum_velocity"])

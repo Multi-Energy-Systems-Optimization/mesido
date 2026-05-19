@@ -511,15 +511,15 @@ class TestHeadLoss(TestCase):
         input_folder = base_folder / "input"
 
         class SourcePipeSinkNoHeadLoss(SourcePipeSink):
-            def heat_network_settings(self):
-                settings = super().heat_network_settings()
+            def update_heat_network_settings(self):
+                settings = super().update_heat_network_settings()
                 settings["head_loss_option"] =  HeadLossOption.NO_HEADLOSS
                 return settings
 
-        class SourcePipeSinkNoHeadLossIncludeHeadLosses(SourcePipeSink):
 
-            def heat_network_settings(self):
-                settings = super().heat_network_settings()
+        class SourcePipeSinkNoHeadLossIncludeHeadLosses(SourcePipeSink):
+            def update_heat_network_settings(self):
+                settings = super().update_heat_network_settings()
                 settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
                 return settings
 
@@ -541,8 +541,8 @@ class TestHeadLoss(TestCase):
         problem_no_head_loss = SourcePipeSinkNoHeadLoss(**common_kwargs)
         problem_include_head_loss_vars = SourcePipeSinkNoHeadLossIncludeHeadLosses(**common_kwargs)
 
-        # problem_no_head_loss.pre()
-        # problem_include_head_loss_vars.pre()
+        problem_no_head_loss.pre()
+        problem_include_head_loss_vars.pre()
 
         number_of_path_variables_no_head_loss = len(problem_no_head_loss.algebraic_states)
         number_of_path_variables_include_head_losses = len(problem_include_head_loss_vars.algebraic_states)

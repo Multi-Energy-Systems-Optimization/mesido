@@ -910,9 +910,12 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
             elif asset in [
                 *solution.energy_system_components.get("heat_source", []),
             ]:
-                pump_power = results[f"{asset}.Pump_power"]
-                eff = parameters[f"{asset}.pump_efficiency"]
-                pump_cost = sum(price_profile.values[1:] * pump_power[1:] * timesteps_hr / eff)
+                if parameters[f"{asset}.include_head_loss_variables"]:
+                    pump_power = results[f"{asset}.Pump_power"]
+                    eff = parameters[f"{asset}.pump_efficiency"]
+                    pump_cost = sum(price_profile.values[1:] * pump_power[1:] * timesteps_hr / eff)
+                else:
+                    pump_cost = 0.0
 
                 heat_source = results[f"{asset}.Heat_source"]
 
