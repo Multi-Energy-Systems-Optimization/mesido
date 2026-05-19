@@ -497,6 +497,74 @@ class TestHeadLoss(TestCase):
             elif counter_total_runs == 3 and counter_linearized_n_lines_weak_ineq_runs != 2:
                 exit("Something went wrong with the number of runs")
 
+    def test_no_head_loss_with_include_head_losses_creates_more_path_variables(self):
+        """
+        Compare path variable creation with NO_HEADLOSS for two cases:
+        - default include_head_losses behavior
+        - include_head_losses explicitly set to True
+        """
+        import models.source_pipe_sink.src.double_pipe_heat as example
+        from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+        model_folder = base_folder / "model"
+        input_folder = base_folder / "input"
+
+        class SourcePipeSinkNoHeadLoss(SourcePipeSink):
+            def heat_network_settings(self):
+                settings = super().heat_network_settings()
+                settings["head_loss_option"] =  HeadLossOption.NO_HEADLOSS
+                return settings
+
+        class SourcePipeSinkNoHeadLossIncludeHeadLosses(SourcePipeSink):
+
+            def heat_network_settings(self):
+                settings = super().heat_network_settings()
+                settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+                return settings
+
+            def energy_system_options(self):
+                options = super().energy_system_options()
+                options["include_head_losses"] = True
+                return options
+
+        common_kwargs = {
+            "esdl_file_name": "sourcesink.esdl",
+            "esdl_parser": ESDLFileParser,
+            "base_folder": base_folder,
+            "model_folder": model_folder,
+            "input_folder": input_folder,
+            "profile_reader": ProfileReaderFromFile,
+            "input_timeseries_file": "timeseries_import.csv",
+        }
+
+        problem_no_head_loss = SourcePipeSinkNoHeadLoss(**common_kwargs)
+        problem_include_head_loss_vars = SourcePipeSinkNoHeadLossIncludeHeadLosses(**common_kwargs)
+
+        # problem_no_head_loss.pre()
+        # problem_include_head_loss_vars.pre()
+
+        number_of_path_variables_no_head_loss = len(problem_no_head_loss.algebraic_states)
+        number_of_path_variables_include_head_losses = len(problem_include_head_loss_vars.algebraic_states)
+
+        numb_pipes = len(problem_no_head_loss.energy_system_components.get("heat_pipe", []))
+        numb_prod = len(problem_no_head_loss.energy_system_components.get("heat_source", []))
+        numb_cons = len(problem_no_head_loss.energy_system_components.get("heat_demand", []))
+
+        # The following variables are not created:
+        # - .HeatIn.H, .HeatOut.H, .HeatIn.Hydraulic_power, .HeatOut.Hydraulic_power, .dH,
+        # .Hydraulic_power for each pipe
+        # - .dH for each consumer
+        # - .dH and .Pump_power for each producer.
+        additional_headloss_vars = 6 * numb_pipes + 2 * numb_prod + 1 * numb_cons
+
+        np.testing.assert_equal(number_of_path_variables_no_head_loss,
+                                number_of_path_variables_include_head_losses-additional_headloss_vars, err_msg=(
+                "Expected include_head_losses=True to create more path variables when "
+                "head_loss_option=NO_HEADLOSS"
+            ),
+        )
+
     def test_gas_network_head_loss(self):
         """
         Gas network: Test the head loss approximation

@@ -101,18 +101,18 @@ class HeatPhysicsMixin(
         in the network. Similarly, ``pipe_maximum_pressure`` is the maximum
         one.
         """
-        self.heat_network_settings = {
-            "network_type": NetworkSettings.NETWORK_TYPE_HEAT,
-            "maximum_velocity": 2.5,
-            "minimum_velocity": 0.005,
-            "head_loss_option": HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY,
-            "minimize_head_losses": False,
-            "n_linearization_lines": 5,
-            "pipe_minimum_pressure": -np.inf,
-            "pipe_maximum_pressure": np.inf,
-            "heat_exchanger_bypass": False,
-        }
-        self._hn_head_loss_class = HeadLossClass(self.heat_network_settings)
+        # self.heat_network_settings = {
+        #     "network_type": NetworkSettings.NETWORK_TYPE_HEAT,
+        #     "maximum_velocity": 2.5,
+        #     "minimum_velocity": 0.005,
+        #     "head_loss_option": HeadLossOption.NO_HEADLOSS,
+        #     "minimize_head_losses": False,
+        #     "n_linearization_lines": 5,
+        #     "pipe_minimum_pressure": -np.inf,
+        #     "pipe_maximum_pressure": np.inf,
+        #     "heat_exchanger_bypass": False,
+        # }
+        self._hn_head_loss_class = HeadLossClass(self.heat_network_settings())
         self.__pipe_head_bounds = {}
         self.__pipe_head_loss_var = {}
         self.__pipe_head_loss_bounds = {}
@@ -541,6 +541,20 @@ class HeatPhysicsMixin(
                                 else 1.0
                             )
 
+    def heat_network_settings(self):
+        settings = {
+            "network_type": NetworkSettings.NETWORK_TYPE_HEAT,
+            "maximum_velocity": 2.5,
+            "minimum_velocity": 0.005,
+            "head_loss_option": HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY,
+            "minimize_head_losses": False,
+            "n_linearization_lines": 5,
+            "pipe_minimum_pressure": -np.inf,
+            "pipe_maximum_pressure": np.inf,
+            "heat_exchanger_bypass": False,
+        }
+        return settings
+
     def energy_system_options(self):
         r"""
         Returns a dictionary of heat network physics specific options.
@@ -599,7 +613,7 @@ class HeatPhysicsMixin(
         options["include_ates_temperature_options"] = False
         options["include_ates_yearly_change_option"] = False
         options["heat_storage_charging_variables"] = False
-        options["include_head_losses"] = False if self.heat_network_settings[
+        options["include_head_losses"] = False if self.heat_network_settings()[
                                                       "head_loss_option"]==HeadLossOption.NO_HEADLOSS else True
 
         return options

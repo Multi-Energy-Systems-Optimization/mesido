@@ -417,7 +417,7 @@ class ESDLMixin(
         -------
         None
         """
-        maximum_velocity = self.heat_network_settings["maximum_velocity"]
+        maximum_velocity = self.heat_network_settings()["maximum_velocity"]
 
         no_pipe_class = PipeClass("None", 0.0, 0.0, (0.0, 0.0), 0.0)
         pipe_classes = [
@@ -626,7 +626,7 @@ class ESDLMixin(
         """
         energy_system_options = self.energy_system_options()
         v_nominal = energy_system_options["estimated_velocity"]
-        v_max = self.heat_network_settings["maximum_velocity"]
+        v_max = self.heat_network_settings()["maximum_velocity"]
         v_max_gas = self.gas_network_settings["maximum_velocity"]
         min_fraction_tank_volume = energy_system_options.get("min_fraction_tank_volume", 0.05)
 
