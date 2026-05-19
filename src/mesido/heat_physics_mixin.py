@@ -105,7 +105,7 @@ class HeatPhysicsMixin(
             "network_type": NetworkSettings.NETWORK_TYPE_HEAT,
             "maximum_velocity": 2.5,
             "minimum_velocity": 0.005,
-            "head_loss_option": HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY,
+            "head_loss_option": HeadLossOption.NO_HEADLOSS,
             "minimize_head_losses": False,
             "n_linearization_lines": 5,
             "pipe_minimum_pressure": -np.inf,
