@@ -416,28 +416,18 @@ class TestHeadLoss(TestCase):
                     # linearization
                     if pipe not in [pipe4_id]:  # Pipe 4 has no flow rate
                         np.testing.assert_allclose(
-                            results[f"{pipe}__pipe_linear_line_segment_num_1_neg_discharge"],
-                            0.0,
-                            atol=1e-6,
-                        )
-                        np.testing.assert_allclose(
-                            results[f"{pipe}__pipe_linear_line_segment_num_2_neg_discharge"],
-                            0.0,
-                            atol=1e-6,
-                        )
-                        np.testing.assert_allclose(
-                            results[f"{pipe}__pipe_linear_line_segment_num_2_pos_discharge"],
-                            0.0,
-                            atol=1e-6,
-                        )
-                        np.testing.assert_allclose(
-                            results[f"{pipe}__pipe_linear_line_segment_num_1_pos_discharge"],
+                            results[f"{pipe}__pipe_linear_line_segment_num_1"],
                             1.0,
                             atol=1e-6,
                         )
                         np.testing.assert_allclose(
-                            results[f"{pipe}__pipe_linear_line_segment_num_2_pos_discharge"],
+                            results[f"{pipe}__pipe_linear_line_segment_num_2"],
                             0.0,
+                            atol=1e-6,
+                        )
+                        np.testing.assert_allclose(
+                            results[f"{pipe}.__flow_direct_var"],
+                            1.0,
                             atol=1e-6,
                         )
 
@@ -637,24 +627,16 @@ class TestHeadLoss(TestCase):
                     # Check that only one linear line segment is active for the head loss
                     # linearization
                     np.testing.assert_allclose(
-                        results[f"{pipe}__pipe_linear_line_segment_num_1_neg_discharge"],
-                        0.0,
-                    )
-                    np.testing.assert_allclose(
-                        results[f"{pipe}__pipe_linear_line_segment_num_2_neg_discharge"],
-                        0.0,
-                    )
-                    np.testing.assert_allclose(
-                        results[f"{pipe}__pipe_linear_line_segment_num_2_pos_discharge"],
-                        0.0,
-                    )
-                    np.testing.assert_allclose(
-                        results[f"{pipe}__pipe_linear_line_segment_num_1_pos_discharge"],
+                        results[f"{pipe}__pipe_linear_line_segment_num_1"],
                         1.0,
                     )
                     np.testing.assert_allclose(
-                        results[f"{pipe}__pipe_linear_line_segment_num_2_pos_discharge"],
+                        results[f"{pipe}__pipe_linear_line_segment_num_2"],
                         0.0,
+                    )
+                    np.testing.assert_allclose(
+                        results[f"{pipe}.__flow_direct_var"],
+                        1.0,
                     )
 
     def test_gas_network_pipe_split_head_loss(self):
@@ -810,33 +792,30 @@ class TestHeadLoss(TestCase):
                 )
 
                 # Check that only one linear line segment is active for the head loss linearization
-                np.testing.assert_allclose(
-                    results[f"{pipe}__pipe_linear_line_segment_num_1_neg_discharge"],
-                    0.0,
-                )
-                np.testing.assert_allclose(
-                    results[f"{pipe}__pipe_linear_line_segment_num_2_neg_discharge"],
-                    0.0,
-                )
                 # Gas demand for the 1st 2 timesteps fall on the 1st linear line segment
                 np.testing.assert_allclose(
-                    results[f"{pipe}__pipe_linear_line_segment_num_1_pos_discharge"][0:2],
+                    results[f"{pipe}__pipe_linear_line_segment_num_1"][0:2],
                     1.0,
                     atol=1e-12,
                 )
                 np.testing.assert_allclose(
-                    results[f"{pipe}__pipe_linear_line_segment_num_1_pos_discharge"][2:4],
+                    results[f"{pipe}__pipe_linear_line_segment_num_1"][2:4],
                     0.0,
                     atol=1e-12,
                 )
                 # Gas demand for the last 2 timesteps fall on the 2nd linear line segment
                 np.testing.assert_allclose(
-                    results[f"{pipe}__pipe_linear_line_segment_num_2_pos_discharge"][0:2],
+                    results[f"{pipe}__pipe_linear_line_segment_num_2"][0:2],
                     0.0,
                     atol=1e-12,
                 )
                 np.testing.assert_allclose(
-                    results[f"{pipe}__pipe_linear_line_segment_num_2_pos_discharge"][2:4],
+                    results[f"{pipe}__pipe_linear_line_segment_num_2"][2:4],
+                    1.0,
+                    atol=1e-12,
+                )
+                np.testing.assert_allclose(
+                    results[f"{pipe}.__flow_direct_var"],
                     1.0,
                     atol=1e-12,
                 )
