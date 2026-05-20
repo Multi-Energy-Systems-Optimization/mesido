@@ -1,4 +1,4 @@
-# [Unreleased-main] - 2026-05-06
+# [Unreleased-main] - 2026-05-13
 
 ## Added
 - Electricity consumption calculation of geothermal assets, using the defined COP. 
@@ -10,6 +10,7 @@
 - Test is added to check airco sizing and cost calculation
 - Workflow of EndScenarioSizing with demand uncertainty is added.
 - Ramp constraints for heat producers are added.
+- Maximum and minimum temperature of heat sources are parsed from esdl
 
 ## Changed
 - Reduced the number of constraints required for headloss calculation with LINEARIZED_N_LINES_EQUALITY setting.
@@ -22,6 +23,7 @@
 - Marked low_temperature_ates as a subcomponent of the ates asset type.
 - Added electricity cost profile to variable operational cost of assets which convert electricity to heat.
 - Heating_and_cooling example is cleaned up
+- The number of binary variables for the linearized head loss calculation is reduced by half, by only creating them for the positive quadrant.
 
 ## Fixed
 - ProfileConstraints: Use already available function to get profile quantity and unit
