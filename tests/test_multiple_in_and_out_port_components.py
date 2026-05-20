@@ -145,16 +145,16 @@ class TestHEX(TestCase):
 
         class HeatProblemByPass(HeatProblem):
 
-            def __init__(self, *args, **kwargs):
-                super().__init__(*args, **kwargs)
-
-                self.heat_network_settings["heat_exchanger_bypass"] = True
-
             def energy_system_options(self):
                 options = super().energy_system_options()
                 options["neglect_pipe_heat_losses"] = False
 
                 return options
+
+            def update_heat_network_settings(self):
+                settings = super().update_heat_network_settings()
+                settings["heat_exchanger_bypass"] = True
+                return settings
 
         solution = run_esdl_mesido_optimization(
             HeatProblemByPass,
@@ -216,16 +216,16 @@ class TestHEX(TestCase):
 
         class HeatProblemByPassMultiTemp(HeatProblem):
 
-            def __init__(self, *args, **kwargs):
-                super().__init__(*args, **kwargs)
-
-                self.heat_network_settings["heat_exchanger_bypass"] = True
-
             def energy_system_options(self):
                 options = super().energy_system_options()
                 options["neglect_pipe_heat_losses"] = False
 
                 return options
+
+            def update_heat_network_settings(self):
+                settings = super().update_heat_network_settings()
+                settings["heat_exchanger_bypass"] = True
+                return settings
 
             def temperature_carriers(self):
                 return self.esdl_carriers

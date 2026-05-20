@@ -391,10 +391,10 @@ class TestEndScenarioSizing(TestCase):
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
         class EndScenarioSizingHeadLossStagedNLines(EndScenarioSizingHeadLossStaged):
-            def __init__(self, *args, **kwargs):
-                super().__init__(*args, **kwargs)
-
-                self.heat_network_settings["n_linearization_lines"] = 3
+            def update_heat_network_settings(self):
+                settings = super().update_heat_network_settings()
+                settings["n_linearization_lines"] = 3
+                return settings
 
         solution = run_end_scenario_sizing(
             EndScenarioSizingHeadLossStagedNLines,

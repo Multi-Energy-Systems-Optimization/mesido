@@ -205,31 +205,25 @@ class TestMinMaxPressureOptions(TestCase):
             return []
 
     class MinPressure(SmallerPipes):
-        def energy_system_options(self):
-            options = super().energy_system_options()
-            assert "pipe_minimum_pressure" in self.heat_network_settings
-            self.heat_network_settings["pipe_minimum_pressure"] = (
-                TestMinMaxPressureOptions.min_pressure
-            )
-            return options
+        def update_heat_network_settings(self):
+            settings = super().update_heat_network_settings()
+            assert "pipe_minimum_pressure" in settings
+            settings["pipe_minimum_pressure"] = TestMinMaxPressureOptions.min_pressure
+            return settings
 
     class MaxPressure(SmallerPipes):
-        def energy_system_options(self):
-            options = super().energy_system_options()
-            assert "pipe_maximum_pressure" in self.heat_network_settings
-            options["pipe_maximum_pressure"] = TestMinMaxPressureOptions.max_pressure
-            return options
+        def update_heat_network_settings(self):
+            settings = super().update_heat_network_settings()
+            assert "pipe_maximum_pressure" in settings
+            settings["pipe_maximum_pressure"] = TestMinMaxPressureOptions.max_pressure
+            return settings
 
     class MinMaxPressure(SmallerPipes):
-        def energy_system_options(self):
-            options = super().energy_system_options()
-            self.heat_network_settings["pipe_minimum_pressure"] = (
-                TestMinMaxPressureOptions.min_pressure
-            )
-            self.heat_network_settings["pipe_maximum_pressure"] = (
-                TestMinMaxPressureOptions.max_pressure
-            )
-            return options
+        def update_heat_network_settings(self):
+            settings = super().update_heat_network_settings()
+            settings["pipe_minimum_pressure"] = TestMinMaxPressureOptions.min_pressure
+            settings["pipe_maximum_pressure"] = TestMinMaxPressureOptions.max_pressure
+            return settings
 
     def test_min_max_pressure_options(self):
         """
@@ -429,12 +423,10 @@ class TestDisconnectablePipe(TestCase):
         np.testing.assert_allclose(q_connected[2:], q_disconnected[2:])
 
     class ModelDisconnectedDarcyWeisbach(ModelDisconnected):
-        def energy_system_options(self):
-            options = super().energy_system_options()
-            self.heat_network_settings["head_loss_option"] = (
-                HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
-            )
-            return options
+        def update_heat_network_settings(self):
+            settings = super().update_heat_network_settings()
+            settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
+            return settings
 
     def test_disconnected_pipe_darcy_weisbach(self):
         """

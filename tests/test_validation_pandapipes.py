@@ -50,14 +50,14 @@ class ValidateWithPandaPipes(TestCase):
 
             def energy_system_options(self):
                 options = super().energy_system_options()
-                self.heat_network_settings["head_loss_option"] = (
-                    HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
-                )
-                self.heat_network_settings["n_linearization_lines"] = 10
-
-                self.heat_network_settings["minimum_velocity"] = 0.0
-
                 return options
+
+            def update_heat_network_settings(self):
+                settings = super().update_heat_network_settings()
+                settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
+                settings["n_linearization_lines"] = 10
+                settings["minimum_velocity"] = 0.0
+                return settings
 
             def times(self, variable=None) -> np.ndarray:
                 """
