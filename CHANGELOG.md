@@ -20,6 +20,7 @@
 - Updated pyESDL to v26.3
 - Updated the GROW workflow to provide feedback on which heat demands are not matched in priority 1.
 - Removed old test files that are no longer used.
+- Marked low_temperature_ates as a subcomponent of the ates asset type.
 - Added electricity cost profile to variable operational cost of assets which convert electricity to heat.
 - Heating_and_cooling example is cleaned up
 - The number of binary variables for the linearized head loss calculation is reduced by half, by only creating them for the positive quadrant.
