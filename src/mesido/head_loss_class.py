@@ -784,12 +784,11 @@ class HeadLossClass:
                     # Add constraints for piece-wise linear equality
 
                     # Populate variable indicating if a linear line segment is active (1) or not (0)
-                    # pipe_linear_line_segment: will contain variables of negative and positive
-                    # discharge possibilites for the pipe. This implies if a pipe is linearized
-                    # with N = 2 linear lines then pipe_linear_line_segment will have 2 * 2
-                    # variables
+                    # pipe_linear_line_segment: will contain variables of positive
+                    # discharge possibilities for the pipe. The negative discharge possibilities
+                    # are covered by the linearizations in combination with the flow direction
+                    # discharge variable
                     # Order of linear line variables:
-                    #  - negative discharge line_1, line_2
                     #  - positve discharge line_1, line_2
                     pipe_linear_line_segment = self._pipe_linear_line_segment_map[pipe]
                     is_line_segment_active = []
@@ -824,8 +823,7 @@ class HeadLossClass:
                     # (negative then positive). For each activation variable we add
                     # two equality constraints: one for the negative block and one
                     # for the positive block, both using the same activation.
-                    n_lines = n_linear_lines
-                    for ii_line_used in range(n_lines):
+                    for ii_line_used in range(n_linear_lines):
                         # negative block (first half of a_vec/b_vec)
                         ii_start_neg = ii_line_used * n_timesteps
                         ii_end_neg = ii_start_neg + n_timesteps
@@ -853,7 +851,7 @@ class HeadLossClass:
                         )
 
                         # positive block (second half of a_vec/b_vec)
-                        ii_start_pos = (ii_line_used + n_lines) * n_timesteps
+                        ii_start_pos = (ii_line_used + n_linear_lines) * n_timesteps
                         ii_end_pos = ii_start_pos + n_timesteps
                         constraints.append(
                             (
