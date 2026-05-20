@@ -22,6 +22,7 @@
 - Removed old test files that are no longer used.
 - Added electricity cost profile to variable operational cost of assets which convert electricity to heat.
 - Heating_and_cooling example is cleaned up
+- The number of binary variables for the linearized head loss calculation is reduced by half, by only creating them for the positive quadrant.
 
 ## Fixed
 - ProfileConstraints: Use already available function to get profile quantity and unit
