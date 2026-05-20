@@ -313,15 +313,19 @@ class AssetToHeatComponent(_AssetToComponentBase):
         return modifiers
 
     @staticmethod
-    def _generic_heat_modifiers(min_heat=None, max_heat=None, q_nominal=None) -> Dict:
+    def _generic_heat_modifiers(
+        min_heat=None, max_heat=None, q_nominal=None, min_temp=None, max_temp=None
+    ) -> Dict:
         """
         Args:
             min_heat: minimum heat flow value
             max_heat: maximum heat flow value
             q_nominal: flow nominal
+            min_temp: minimum temperature
+            max_temp: maximum temperature
 
-        Returns: dictionary of the generic heat modifiers: Q_nominal, Heat_flow, and the hydraulic
-        power of HeatIn and HeatOut.
+        Returns: dictionary of the generic heat modifiers: Q_nominal, Heat_flow, the hydraulic
+        power of HeatIn and HeatOut, min_temperature and max_temperature
         """
 
         modifiers = dict()
@@ -334,6 +338,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 Q_nominal=q_nominal,
                 HeatIn=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
                 HeatOut=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
+            )
+
+        if min_temp is not None:
+            modifiers.update(
+                min_temperature=min_temp,
+            )
+
+        if max_temp is not None:
+            modifiers.update(
+                max_temperature=max_temp,
             )
 
         return modifiers
@@ -1470,6 +1484,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
             logger.error(f"{asset.asset_type} '{asset.name}' has no max power specified.")
         assert max_supply > 0.0
 
+        min_temperature = asset.attributes.get("minTemperature", None)
+        max_temperature = asset.attributes.get("maxTemperature", None)
+
         # get price per unit of energy,
         # assume cost of 1. if nothing is given (effectively milp loss minimization)
         # TODO: Use an attribute or use and KPI for CO2 coefficient of a source
@@ -1480,7 +1497,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
         modifiers = dict(
             Heat_source=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
             **self._generic_modifiers(asset),
-            **self._generic_heat_modifiers(0.0, max_supply, q_nominal),
+            **self._generic_heat_modifiers(
+                0.0, max_supply, q_nominal, min_temperature, max_temperature
+            ),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
@@ -1621,6 +1640,11 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 max=q_max_ates * aggregation_count,
                 nominal=q_nominal,
             ),
+            Heat_ates=dict(
+                min=-hfr_charge_max * aggregation_count,
+                max=hfr_discharge_max * aggregation_count,
+                nominal=hfr_discharge_max / 2.0,
+            ),
             single_doublet_power=single_doublet_power,
             heat_loss_coeff=(1.0 - efficiency ** (1.0 / 100.0)) / (3600.0 * 24.0),
             nr_of_doublets=aggregation_count,
@@ -1658,15 +1682,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 f" maxStorageTemperature > {low_temp_ates_max_storage_temp_deg} degrees Celcius",
             )
 
-            modifiers.update(
-                dict(
-                    Heat_low_temperature_ates=dict(
-                        min=-hfr_charge_max * asset.attributes["aggregationCount"],
-                        max=hfr_discharge_max * asset.attributes["aggregationCount"],
-                        nominal=hfr_discharge_max / 2.0,
-                    )
-                )
-            )
             logger.warning(
                 "ATES in use: WKO (koude-warmteopslag, cold and heat storage) since the"
                 " maximum temperature has been specified to be <= 30 degrees Celcius"
@@ -1676,11 +1691,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
         else:
             modifiers.update(
                 dict(
-                    Heat_ates=dict(
-                        min=-hfr_charge_max * aggregation_count,
-                        max=hfr_discharge_max * aggregation_count,
-                        nominal=hfr_discharge_max / 2.0,
-                    ),
                     T_amb=asset.attributes["aquiferMidTemperature"],
                     Temperature_ates=dict(
                         min=temperatures["T_return"],  # or potentially 0

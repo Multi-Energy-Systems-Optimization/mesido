@@ -209,8 +209,12 @@ class GasPhysicsMixin(
                 and initialized_vars[9] != {}
                 and initialized_vars[10] != {}
             ):  # Variables needed to indicate if a linear line segment is active
+                # HeadLossClass now provides activation variables only for the
+                # positive quadrant (n_linearization_lines entries). Register
+                # those here and reuse the flow-direction variable elsewhere to
+                # account for signed flows.
                 self._gas_pipe_linear_line_segment_map[pipe_name] = {}
-                for ii_line in range(self.gas_network_settings["n_linearization_lines"] * 2):
+                for ii_line in range(self.gas_network_settings["n_linearization_lines"]):
                     pipe_linear_line_segment_var_name = initialized_vars[8][ii_line]
                     self._gas_pipe_linear_line_segment_map[pipe_name][
                         ii_line
@@ -223,10 +227,10 @@ class GasPhysicsMixin(
                     ] = initialized_vars[10][pipe_linear_line_segment_var_name]
 
             # Integer variables
-            flow_dir_var = f"{pipe_name}.__gas_flow_direct_var"
+            flow_dir_var = f"{pipe_name}.__flow_direct_var"
 
             self._gas_pipe_to_flow_direct_map[pipe_name] = flow_dir_var
-            # self.__gas_flow_direct_var[flow_dir_var] = ca.MX.sym(flow_dir_var)
+            # self.__flow_direct_var[flow_dir_var] = ca.MX.sym(flow_dir_var)
 
             # Fix the directions that are already implied by the bounds on milp
             # Nonnegative milp implies that flow direction Boolean is equal to one.
