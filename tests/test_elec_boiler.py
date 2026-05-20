@@ -135,7 +135,8 @@ class TestElecBoiler(TestCase):
         from models.source_pipe_sink.src.double_pipe_heat import HeatProblemHydraulic
 
         base_folder = Path(example.__file__).resolve().parent.parent
-
+        #TODO: check why do want to include the hydraulics in this test? We are not checking on
+        # any of the hydraulics any how.
         heat_problem = run_esdl_mesido_optimization(
             HeatProblemHydraulic,
             base_folder=base_folder,
