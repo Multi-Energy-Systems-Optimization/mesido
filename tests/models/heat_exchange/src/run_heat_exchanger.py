@@ -86,10 +86,14 @@ class HeatProblem(
 
     def energy_system_options(self):
         options = super().energy_system_options()
-        self.heat_network_settings["minimum_velocity"] = 0.001
         options["heat_loss_disconnected_pipe"] = False
 
         return options
+
+    def update_heat_network_settings(self):
+        settings = super().update_heat_network_settings()
+        settings["minimum_velocity"] = 0.001
+        return settings
 
     def solver_options(self):
         options = super().solver_options()
@@ -118,11 +122,15 @@ class HeatProblemTvarGeneral(
 
     def energy_system_options(self):
         options = super().energy_system_options()
-        self.heat_network_settings["minimum_velocity"] = 0.0001
         options["heat_loss_disconnected_pipe"] = False
-        self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
 
         return options
+
+    def update_heat_network_settings(self):
+        settings = super().update_heat_network_settings()
+        settings["minimum_velocity"] = 0.0001
+        settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+        return settings
 
     def constraints(self, ensemble_member):
         constraints = super().constraints(ensemble_member)

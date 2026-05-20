@@ -70,18 +70,6 @@ class HeatProblem(
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
-    def __init__(self, *args, **kwargs):
-
-        global head_loss_setting, n_linearization_lines_setting
-        super().__init__(*args, **kwargs)
-        self.heat_network_settings["head_loss_option"] = head_loss_setting
-        if head_loss_setting == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY:
-            self.heat_network_settings["n_linearization_lines"] = n_linearization_lines_setting
-        if head_loss_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
-            self.heat_network_settings["minimize_head_losses"] = False
-        else:
-            self.heat_network_settings["minimize_head_losses"] = True
-
     def pre(self):
         super().pre()
         global ThermalDemand
@@ -100,19 +88,18 @@ class HeatProblem(
                 0,
             )
 
-    # Added for case where head loss is modelled via DW
-    def heat_network_options(self):
+    def update_heat_network_settings(self):
         global head_loss_setting, n_linearization_lines_setting
-        options = super().heat_network_options()
-        self.heat_network_settings["head_loss_option"] = head_loss_setting
+        settings = super().update_heat_network_settings()
+        settings["head_loss_option"] = head_loss_setting
         if head_loss_setting == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY:
-            self.heat_network_settings["n_linearization_lines"] = n_linearization_lines_setting
+            settings["n_linearization_lines"] = n_linearization_lines_setting
         if head_loss_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
-            self.heat_network_settings["minimize_head_losses"] = False
+            settings["minimize_head_losses"] = False
         else:
-            self.heat_network_settings["minimize_head_losses"] = True
+            settings["minimize_head_losses"] = True
 
-        return options
+        return settings
 
     @property
     def esdl_assets(self):
