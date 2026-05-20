@@ -250,44 +250,47 @@ class HeatPhysicsMixin(
 
         for pipe_name in self.energy_system_components.get("heat_pipe", []):
             commodity = self.energy_system_components_commodity.get(pipe_name)
-            head_loss_var = f"{pipe_name}.__head_loss"
-            initialized_vars = self._hn_head_loss_class.initialize_variables_nominals_and_bounds(
-                self, commodity, pipe_name, hn_settings
-            )
-            if initialized_vars[0] != {}:
-                self.__pipe_head_bounds[f"{pipe_name}.{commodity}In.H"] = initialized_vars[0]
-            if initialized_vars[1] != {}:
-                self.__pipe_head_bounds[f"{pipe_name}.{commodity}Out.H"] = initialized_vars[1]
-            if initialized_vars[2] != {}:
-                self.__pipe_head_loss_zero_bounds[f"{pipe_name}.dH"] = initialized_vars[2]
-            if initialized_vars[3] != {}:
-                self._hn_pipe_to_head_loss_map[pipe_name] = initialized_vars[3]
-            if initialized_vars[4] != {}:
-                self.__pipe_head_loss_var[head_loss_var] = initialized_vars[4]
-            if initialized_vars[5] != {}:
-                self.__pipe_head_loss_nominals[f"{pipe_name}.dH"] = initialized_vars[5]
-            if initialized_vars[6] != {}:
-                self.__pipe_head_loss_nominals[head_loss_var] = initialized_vars[6]
-            if initialized_vars[7] != {}:
-                self.__pipe_head_loss_bounds[head_loss_var] = initialized_vars[7]
-
-            if (
-                initialized_vars[8] != {}
-                and initialized_vars[9] != {}
-                and initialized_vars[10] != {}
-            ):
-                self._pipe_linear_line_segment_map[pipe_name] = {}
-                for ii_line in range(hn_settings["n_linearization_lines"] * 2):
-                    pipe_linear_line_segment_var_name = initialized_vars[8][ii_line]
-                    self._pipe_linear_line_segment_map[pipe_name][
-                        ii_line
-                    ] = pipe_linear_line_segment_var_name
-                    self.__pipe_linear_line_segment_var[pipe_linear_line_segment_var_name] = (
-                        initialized_vars[9][pipe_linear_line_segment_var_name]
+            if options["include_head_losses"]:
+                head_loss_var = f"{pipe_name}.__head_loss"
+                initialized_vars = (
+                    self._hn_head_loss_class.initialize_variables_nominals_and_bounds(
+                        self, commodity, pipe_name, hn_settings
                     )
-                    self.__pipe_linear_line_segment_var_bounds[
-                        pipe_linear_line_segment_var_name
-                    ] = initialized_vars[10][pipe_linear_line_segment_var_name]
+                )
+                if initialized_vars[0] != {}:
+                    self.__pipe_head_bounds[f"{pipe_name}.{commodity}In.H"] = initialized_vars[0]
+                if initialized_vars[1] != {}:
+                    self.__pipe_head_bounds[f"{pipe_name}.{commodity}Out.H"] = initialized_vars[1]
+                if initialized_vars[2] != {}:
+                    self.__pipe_head_loss_zero_bounds[f"{pipe_name}.dH"] = initialized_vars[2]
+                if initialized_vars[3] != {}:
+                    self._hn_pipe_to_head_loss_map[pipe_name] = initialized_vars[3]
+                if initialized_vars[4] != {}:
+                    self.__pipe_head_loss_var[head_loss_var] = initialized_vars[4]
+                if initialized_vars[5] != {}:
+                    self.__pipe_head_loss_nominals[f"{pipe_name}.dH"] = initialized_vars[5]
+                if initialized_vars[6] != {}:
+                    self.__pipe_head_loss_nominals[head_loss_var] = initialized_vars[6]
+                if initialized_vars[7] != {}:
+                    self.__pipe_head_loss_bounds[head_loss_var] = initialized_vars[7]
+
+                if (
+                    initialized_vars[8] != {}
+                    and initialized_vars[9] != {}
+                    and initialized_vars[10] != {}
+                ):
+                    self._pipe_linear_line_segment_map[pipe_name] = {}
+                    for ii_line in range(hn_settings["n_linearization_lines"] * 2):
+                        pipe_linear_line_segment_var_name = initialized_vars[8][ii_line]
+                        self._pipe_linear_line_segment_map[pipe_name][
+                            ii_line
+                        ] = pipe_linear_line_segment_var_name
+                        self.__pipe_linear_line_segment_var[pipe_linear_line_segment_var_name] = (
+                            initialized_vars[9][pipe_linear_line_segment_var_name]
+                        )
+                        self.__pipe_linear_line_segment_var_bounds[
+                            pipe_linear_line_segment_var_name
+                        ] = initialized_vars[10][pipe_linear_line_segment_var_name]
 
             flow_dir_var = f"{pipe_name}.__flow_direct_var"
 

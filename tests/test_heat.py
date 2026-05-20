@@ -189,6 +189,11 @@ class TestMinMaxPressureOptions(TestCase):
         # pipes smaller in diameter/area to accomplish this. We also adjust
         # the minimum milp delivered by the source, such that a maximum
         # pressure range can force this to go lower than usual.
+        def update_heat_network_settings(self):
+            settings = super().update_heat_network_settings()
+            settings["head_loss_option"] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+            return settings
+
         def parameters(self, ensemble_member):
             parameters = super().parameters(ensemble_member)
             for p in self.energy_system_components["heat_pipe"]:

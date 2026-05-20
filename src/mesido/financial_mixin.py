@@ -993,7 +993,10 @@ class FinancialMixin(
             )
             nominal = self.variable_nominal(variable_operational_cost_var)
 
-            pump_power = self.__state_vector_scaled(f"{asset}.Pump_power", ensemble_member)
+            if parameters[f"{asset}.include_head_loss_variables"]:
+                pump_power = self.__state_vector_scaled(f"{asset}.Pump_power", ensemble_member)
+            else:
+                pump_power = np.zeros(len(self.times()))
             eff = parameters[f"{asset}.pump_efficiency"]
 
             # We assume that only one electricity carrier is specified, to compute the cost with.
@@ -1107,7 +1110,10 @@ class FinancialMixin(
             variable_operational_cost_coefficient = parameters[
                 f"{hp}.variable_operational_cost_coefficient"
             ]
-            pump_power = self.__state_vector_scaled(f"{hp}.Pump_power", ensemble_member)
+            if parameters[f"{hp}.include_head_loss_variables"]:
+                pump_power = self.__state_vector_scaled(f"{hp}.Pump_power", ensemble_member)
+            else:
+                pump_power = np.zeros(len(self.times()))
             eff = parameters[f"{hp}.pump_efficiency"]
 
             # We assume that only one electricity carrier is specified, to compute the cost with.

@@ -159,7 +159,7 @@ def check_solver_succes_grow_problem(solution):
     if not solver_success:
         if (
             solution.solver_stats["return_status"]
-            == solver_messages["Time_limit"][solution.solver_options["solver"]]
+            == solver_messages["Time_limit"][solution.solver_options()["solver"]]
             and solution.objective_value > 1e-6
         ):
             logger.error(

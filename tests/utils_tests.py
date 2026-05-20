@@ -899,9 +899,12 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
                 *solution.energy_system_components.get("low_temperature_ates", []),
                 *solution.energy_system_components.get("heat_buffer", []),
             ]:
-                pump_power = results[f"{asset}.Pump_power"]
-                eff = parameters[f"{asset}.pump_efficiency"]
-                pump_cost = sum(price_profile.values[1:] * pump_power[1:] * timesteps_hr / eff)
+                if parameters[f"{asset}.include_head_loss_variables"]:
+                    pump_power = results[f"{asset}.Pump_power"]
+                    eff = parameters[f"{asset}.pump_efficiency"]
+                    pump_cost = sum(price_profile.values[1:] * pump_power[1:] * timesteps_hr / eff)
+                else:
+                    pump_cost = 0.0
 
                 nominator_vector = (
                     results[f"{asset}.Heat_flow_charging"]

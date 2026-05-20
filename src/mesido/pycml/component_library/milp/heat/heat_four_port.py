@@ -41,12 +41,6 @@ class HeatFourPort(HeatComponent):
             **modifiers["Secondary"],
             include_head_loss_variables=self.include_head_loss_variables,
         )
-        self.add_variable(
-            Variable,
-            "Pump_power",
-            min=0.0,
-            nominal=self.Secondary.Q_nominal * self.Secondary.nominal_pressure,
-        )
 
         self.nominal = (
             self.Secondary.Q_nominal * self.Secondary.rho * self.Secondary.cp * self.Secondary.dT
@@ -58,6 +52,12 @@ class HeatFourPort(HeatComponent):
         self.add_variable(Variable, "Heat_flow", nominal=self.nominal)
 
         if self.include_head_loss_variables:
+            self.add_variable(
+                Variable,
+                "Pump_power",
+                min=0.0,
+                nominal=self.Secondary.Q_nominal * self.Secondary.nominal_pressure,
+            )
             self.add_variable(Variable, "dH_prim", max=0.0)
             self.add_variable(Variable, "dH_sec", min=0.0)
 

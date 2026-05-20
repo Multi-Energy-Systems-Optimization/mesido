@@ -78,13 +78,13 @@ class TestHeadLoss(TestCase):
                     nonlocal head_loss_option_setting
                     head_loss_option_setting = head_loss_option_setting
 
+                    settings["head_loss_option"] = head_loss_option_setting
                     if (
                         head_loss_option_setting
                         == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
                     ):
                         settings["minimize_head_losses"] = True
                     elif head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
-                        settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
                         settings["minimize_head_losses"] = False
                         settings["minimum_velocity"] = 1.0e-6
 

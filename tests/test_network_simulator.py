@@ -3,6 +3,7 @@ from unittest import TestCase
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.head_loss_class import HeadLossOption
 from mesido.workflows import NetworkSimulatorHIGHS
 
 import numpy as np
@@ -39,6 +40,11 @@ class TestNetworkSimulator(TestCase):
 
             def times(self, variable=None) -> np.ndarray:
                 return super().times(variable)[:5]
+
+            def update_heat_network_settings(self):
+                settings = super().update_heat_network_settings()
+                settings["head_loss_option"] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+                return settings
 
         solution = run_optimization_problem(
             NetworkSimulatorHIGHSTestCase,
