@@ -269,8 +269,12 @@ class HeatPhysicsMixin(
                 and initialized_vars[9] != {}
                 and initialized_vars[10] != {}
             ):
+                # HeadLossClass now provides activation variables only for the
+                # positive quadrant (n_linearization_lines entries). Register
+                # those here and reuse the flow-direction variable elsewhere to
+                # account for signed flows.
                 self._pipe_linear_line_segment_map[pipe_name] = {}
-                for ii_line in range(self.heat_network_settings["n_linearization_lines"] * 2):
+                for ii_line in range(self.heat_network_settings["n_linearization_lines"]):
                     pipe_linear_line_segment_var_name = initialized_vars[8][ii_line]
                     self._pipe_linear_line_segment_map[pipe_name][
                         ii_line
@@ -319,6 +323,14 @@ class HeatPhysicsMixin(
             (hot_pipe, _hot_pipe_orientation),
             (_cold_pipe, _cold_pipe_orientation),
         ) in self.energy_system_topology.ates.items():
+
+            max_heat = bounds[f"{ates}.Stored_heat"][1]
+            ates_max_stored_heat_var_name = f"{ates}__max_stored_heat"
+            self.__ates_max_stored_heat_var[ates_max_stored_heat_var_name] = ca.MX.sym(
+                ates_max_stored_heat_var_name
+            )
+            self.__ates_max_stored_heat_bounds[ates_max_stored_heat_var_name] = (0, max_heat)
+            self.__ates_max_stored_heat_nominals[ates_max_stored_heat_var_name] = max_heat / 2
 
             if ates in self.energy_system_components.get("low_temperature_ates", []):
                 continue
@@ -372,14 +384,6 @@ class HeatPhysicsMixin(
                 self.__ates_temperature_disc_ordering_var_bounds[
                     ates_temperature_disc_ordering_var_name
                 ] = (0.0, 1.0)
-
-            max_heat = bounds[f"{ates}.Stored_heat"][1]
-            ates_max_stored_heat_var_name = f"{ates}__max_stored_heat"
-            self.__ates_max_stored_heat_var[ates_max_stored_heat_var_name] = ca.MX.sym(
-                ates_max_stored_heat_var_name
-            )
-            self.__ates_max_stored_heat_bounds[ates_max_stored_heat_var_name] = (0, max_heat)
-            self.__ates_max_stored_heat_nominals[ates_max_stored_heat_var_name] = max_heat / 2
 
         for _carrier, temperatures in self.temperature_carriers().items():
             carrier_id_number_mapping = str(temperatures["id_number_mapping"])
@@ -2170,10 +2174,7 @@ class HeatPhysicsMixin(
         bounds = self.bounds()
         options = self.energy_system_options()
 
-        for ates in [
-            *self.energy_system_components.get("ates", []),
-            *self.energy_system_components.get("low_temperature_ates", []),
-        ]:
+        for ates in self.energy_system_components.get("ates", []):
             heat_loss_nominal = self.variable_nominal(f"{ates}.Heat_loss")
             soil_temperature = parameters[f"{ates}.T_amb"]
             heat_stored_max = bounds[f"{ates}.Stored_heat"][1]
