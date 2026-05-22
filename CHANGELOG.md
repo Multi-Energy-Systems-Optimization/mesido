@@ -11,6 +11,7 @@
 - Workflow of EndScenarioSizing with demand uncertainty is added.
 - Ramp constraints for heat producers are added.
 - Maximum and minimum temperature of heat sources are parsed from esdl
+- Warnings on potential causes of heat demand not being matched are added in the grow workflow
 
 ## Changed
 - Reduced the number of constraints required for headloss calculation with LINEARIZED_N_LINES_EQUALITY setting.
