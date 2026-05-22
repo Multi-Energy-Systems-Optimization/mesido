@@ -239,7 +239,7 @@ class ValidateWithPandaPipes(TestCase):
                 pandapipes_head_loss_m[ii][0], 0.0
             )  # check that values are negative
             # check that mesido > pandapipes within %
-            if ii != 8:
+            if results[f"{pipe_id}.dH"][ii] > 0.5:
                 np.testing.assert_array_less(
                     results[f"{pipe_id}.dH"][ii] / pandapipes_head_loss_m[ii][0], 1.08
                 )

@@ -2,7 +2,6 @@ from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
-from mesido.head_loss_class import HeadLossOption
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.io.write_output import ScenarioOutput
 
