@@ -608,7 +608,7 @@ class EndScenarioSizing(
                 f"{sorted(maxed_producers) if maxed_producers else 'none'}"
             )
 
-            coeff_limit = 0.7
+            coeff_limit = 0.75
             velocity_check = coeff_limit * self.heat_network_settings["maximum_velocity"]
             high_velocity_pipes = set()
             for pipe in self.energy_system_components.get("heat_pipe", []):
@@ -631,7 +631,7 @@ class EndScenarioSizing(
 
             logger.warning(
                 f"At some of indexes {mismatch_indexes.tolist()} where the demand is not matched "
-                f"there are pipes with velocities above 2.3 m/s: "
+                f"there are pipes with velocities above {velocity_check:.2f} m/s: "
                 f"{sorted(high_velocity_pipes) if high_velocity_pipes else 'none'}"
             )
 

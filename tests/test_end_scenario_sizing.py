@@ -313,7 +313,9 @@ class TestEndScenarioSizing(TestCase):
         logs = "\n".join(captured_logs.output)
         self.assertIn("target is not matched by", logs)
         self.assertIn("the heat production by the following heat producers is maximised:", logs)
-        self.assertIn("there are pipes with velocities above 2.3 m/s: ['Pipe3', 'Pipe3_ret']", logs)
+        self.assertRegex(
+            logs, r"there are pipes with velocities above .* m/s: \['Pipe3', 'Pipe3_ret'\]$"
+        )
         self.assertNotIn(
             "the heat production by the following heat producers is maximised: none", logs
         )
