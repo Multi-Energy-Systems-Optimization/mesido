@@ -1061,11 +1061,11 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
         )
-        modifiers["HeatIn"].update(
+        modifiers.setdefault("HeatIn", {}).update(
             Heat=dict(min=-hfr_max, max=hfr_max),
             Q=dict(min=-q_max, max=q_max),
         )
-        modifiers["HeatOut"].update(
+        modifiers.setdefault("HeatOut", {}).update(
             Heat=dict(min=-hfr_max, max=hfr_max),
             Q=dict(min=-q_max, max=q_max),
         )

@@ -555,20 +555,6 @@ class HeatPhysicsMixin(
                                 else 1.0
                             )
 
-    # def heat_network_settings(self):
-    #     settings = {
-    #         "network_type": NetworkSettings.NETWORK_TYPE_HEAT,
-    #         "maximum_velocity": 2.5,
-    #         "minimum_velocity": 0.005,
-    #         "head_loss_option": HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY,
-    #         "minimize_head_losses": False,
-    #         "n_linearization_lines": 5,
-    #         "pipe_minimum_pressure": -np.inf,
-    #         "pipe_maximum_pressure": np.inf,
-    #         "heat_exchanger_bypass": False,
-    #     }
-    #     return settings
-
     def energy_system_options(self):
         r"""
         Returns a dictionary of heat network physics specific options.
