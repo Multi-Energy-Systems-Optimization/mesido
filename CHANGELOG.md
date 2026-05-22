@@ -2,6 +2,7 @@
 
 ## Added
 - DataSource is assigned to output profiles
+- Warning on potential reasons why heat demand is not matched in the grow_workflow
 
 ## Changed
 - Updated pyESDL to v26.3
