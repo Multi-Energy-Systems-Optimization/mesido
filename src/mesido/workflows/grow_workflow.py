@@ -580,10 +580,7 @@ class EndScenarioSizing(
             delta_energy = np.sum(demand_gap[shortage_mask] * timesteps[shortage_mask] / 1.0e9)
             if delta_energy >= 1.0:
                 demand_not_matched = True
-                logger.warning(
-                    f"For demand {d} the target is not matched by"
-                    f" {delta_energy} GJ"
-                )
+                logger.warning(f"For demand {d} the target is not matched by" f" {delta_energy} GJ")
 
         # Lists potential producers and pipes that might be the cause of the heat demand not
         # being matched.
@@ -603,7 +600,7 @@ class EndScenarioSizing(
                 produced_on_mismatch = heat_produced[mismatch_indexes]
                 maxed_now = produced_on_mismatch >= (1.0 - tolerance) * max_size
                 if np.any(maxed_now):
-                    maxed_producers.add(producer, producer)
+                    maxed_producers.add(producer)
 
             logger.warning(
                 f"At some of timestep indexes {mismatch_indexes.tolist()} where the demand is not "
