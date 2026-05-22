@@ -1273,10 +1273,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
         prim_heat = self._generic_heat_modifiers(
             self.include_head_loss_variables, q_nominal=q_nominal_prim
         )
-        prim_heat["HeatIn"].update(
+        prim_heat.setdefault("HeatIn", {}).update(
             Heat=dict(min=-max_heat_transport, max=max_heat_transport, nominal=max_power / 2.0),
         )
-        prim_heat["HeatOut"].update(
+        prim_heat.setdefault("HeatOut", {}).update(
             Heat=dict(min=-max_heat_transport, max=max_heat_transport, nominal=max_power / 2.0),
         )
 
@@ -1290,10 +1290,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
         sec_heat = self._generic_heat_modifiers(
             self.include_head_loss_variables, q_nominal=q_nominal_sec
         )
-        sec_heat["HeatIn"].update(
+        sec_heat.setdefault("HeatIn", {}).update(
             Heat=dict(min=-max_heat_transport, max=max_heat_transport, nominal=max_power / 2.0),
         )
-        sec_heat["HeatOut"].update(
+        sec_heat.setdefault("HeatOut", {}).update(
             Heat=dict(min=-max_heat_transport, max=max_heat_transport, nominal=max_power / 2.0),
         )
         params["Primary"] = {**params_t["Primary"], **params_q["Primary"], **prim_heat}
