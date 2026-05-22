@@ -631,7 +631,7 @@ class EndScenarioSizing(
 
             logger.warning(
                 f"At some of indexes {mismatch_indexes.tolist()} where the demand is not matched "
-                f"there are pipes with velocities above 2.3 m/s: "
+                f"there are pipes with velocities above {velocity_check:.2f} m/s: "
                 f"{sorted(high_velocity_pipes) if high_velocity_pipes else 'none'}"
             )
 
