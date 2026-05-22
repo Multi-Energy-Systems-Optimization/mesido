@@ -481,6 +481,8 @@ class EndScenarioSizing(
             )
         )
         if priority == 1 and self.objective_value > 1e-6:
+            results = self.extract_results(0)
+            self.__heat_demand_match_check(results, 0)
             raise RuntimeError("The heating demand is not matched")
 
         if self._workflow_progress_status is not None:
@@ -504,8 +506,6 @@ class EndScenarioSizing(
             )
 
         super().post()
-        results = self.extract_results()
-        parameters = self.parameters(0)
         # bounds = self.bounds()
         # Optimized ESDL
         # Assume there are either no stages (write updated ESDL) or a maximum of 2 stages
@@ -535,13 +535,6 @@ class EndScenarioSizing(
             logger.error("Unkown error occured when evaluating self._stage for _write_updated_esdl")
             sys.exit(1)
 
-        if os.path.exists(self.output_folder) and self._save_json:
-            bounds = self.bounds()
-            aliases = self.alias_relation._canonical_variables_map
-            solver_stats = self.solver_stats
-            self._write_json_output(results, parameters, bounds, aliases, solver_stats)
-
-
         results = self.extract_results(0)
         parameters = self.parameters(0)
 
@@ -556,7 +549,6 @@ class EndScenarioSizing(
     def __heat_demand_match_check(self, results, e_m=0):
         parameters = self.parameters(e_m)
         bounds = self.bounds()
-        id_to_name_map = self.esdl_asset_id_to_name_map
 
         def _upper_bound_as_scalar(upper_bound):
             if hasattr(upper_bound, "values"):
@@ -589,7 +581,7 @@ class EndScenarioSizing(
             if delta_energy >= 1.0:
                 demand_not_matched = True
                 logger.warning(
-                    f"For demand {id_to_name_map[d]} the target is not matched by"
+                    f"For demand {d} the target is not matched by"
                     f" {delta_energy} GJ"
                 )
 
@@ -611,7 +603,7 @@ class EndScenarioSizing(
                 produced_on_mismatch = heat_produced[mismatch_indexes]
                 maxed_now = produced_on_mismatch >= (1.0 - tolerance) * max_size
                 if np.any(maxed_now):
-                    maxed_producers.add(id_to_name_map.get(producer, producer))
+                    maxed_producers.add(producer, producer)
 
             logger.warning(
                 f"At some of timestep indexes {mismatch_indexes.tolist()} where the demand is not "
@@ -619,7 +611,7 @@ class EndScenarioSizing(
                 f"{sorted(maxed_producers) if maxed_producers else 'none'}"
             )
 
-            coeff_limit = 0.7
+            coeff_limit = 0.75
             velocity_check = coeff_limit * self.heat_network_settings["maximum_velocity"]
             high_velocity_pipes = set()
             for pipe in self.energy_system_components.get("heat_pipe", []):
@@ -638,7 +630,7 @@ class EndScenarioSizing(
                 area = 0.25 * np.pi * diameter**2
                 velocity = np.abs(np.asarray(results[f"{pipe}.Q"]) / area)
                 if np.any(velocity[mismatch_indexes] > velocity_check):
-                    high_velocity_pipes.add(id_to_name_map.get(pipe, pipe))
+                    high_velocity_pipes.add(pipe)
 
             logger.warning(
                 f"At some of indexes {mismatch_indexes.tolist()} where the demand is not matched "
