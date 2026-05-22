@@ -314,7 +314,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
     @staticmethod
     def _generic_heat_modifiers(
-        min_heat=None, max_heat=None, q_nominal=None, min_temp=None, max_temp=None
+            include_head_loss_variables=False,
+        min_heat=None, max_heat=None, q_nominal=None, min_temp=None, max_temp=None,
     ) -> Dict:
         """
         Args:
@@ -323,6 +324,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
             q_nominal: flow nominal
             min_temp: minimum temperature
             max_temp: maximum temperature
+            include_head_loss_variables: False if headloss and hydraulic_power variables are not
+            included in the problem.
 
         Returns: dictionary of the generic heat modifiers: Q_nominal, Heat_flow, the hydraulic
         power of HeatIn and HeatOut, min_temperature and max_temperature
@@ -334,8 +337,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 Heat_flow=dict(min=min_heat, max=max_heat, nominal=max_heat / 2.0),
             )
         if q_nominal is not None:
+            modifiers.update(Q_nominal=q_nominal)
+        if include_head_loss_variables:
             modifiers.update(
-                Q_nominal=q_nominal,
                 HeatIn=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
                 HeatOut=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
             )
@@ -607,7 +611,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 "heat_storage_charging_variables", False
             ),
             **self._generic_modifiers(asset),
-            **self._generic_heat_modifiers(-hfr_discharge_max, hfr_charge_max, q_nominal),
+            **self._generic_heat_modifiers(
+                self.include_head_loss_variables, -hfr_discharge_max, hfr_charge_max, q_nominal
+            ),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
@@ -697,7 +703,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         modifiers = dict(
             Heat_demand=dict(max=max_demand, nominal=max_demand / 2.0),
             **self._generic_modifiers(asset),
-            **self._generic_heat_modifiers(0.0, max_demand, q_nominal),
+            **self._generic_heat_modifiers(self.include_head_loss_variables, 0.0, max_demand, q_nominal),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
@@ -738,7 +744,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         modifiers = dict(
             Heat_airco=dict(max=max_, nominal=max_ / 2.0),
             **self._generic_modifiers(asset),
-            **self._generic_heat_modifiers(0.0, max_, q_nominal),
+            **self._generic_heat_modifiers(self.include_head_loss_variables, 0.0, max_, q_nominal),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
@@ -777,7 +783,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         modifiers = dict(
             Cold_demand=dict(min=0.0, max=max_demand, nominal=max_demand / 2.0),
             **self._generic_modifiers(asset),
-            **self._generic_heat_modifiers(0.0, max_demand, q_nominal),
+            **self._generic_heat_modifiers(self.include_head_loss_variables, 0.0, max_demand, q_nominal),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
@@ -1049,7 +1055,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
             insulation_thickness=insulation_thicknesses,
             conductivity_insulation=conductivies_insulation,
             **self._generic_modifiers(asset),
-            **self._generic_heat_modifiers(-hfr_max, hfr_max, q_nominal),
+            **self._generic_heat_modifiers(self.include_head_loss_variables, -hfr_max, hfr_max,
+                                           q_nominal),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
@@ -1111,7 +1118,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         modifiers = dict(
             **self._generic_modifiers(asset),
-            **self._generic_heat_modifiers(q_nominal=q_nominal),
+            **self._generic_heat_modifiers(self.include_head_loss_variables, q_nominal=q_nominal),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
         )
@@ -1263,7 +1270,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
         q_nominal_prim = params_q["Primary"][
             "Q_nominal"
         ]  # max_power / (2 * self.cp * self.rho * (dt_prim))
-        prim_heat = self._generic_heat_modifiers(q_nominal=q_nominal_prim)
+        prim_heat = self._generic_heat_modifiers(
+            self.include_head_loss_variables, q_nominal=q_nominal_prim
+        )
         prim_heat["HeatIn"].update(
             Heat=dict(min=-max_heat_transport, max=max_heat_transport, nominal=max_power / 2.0),
         )
@@ -1278,7 +1287,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
         q_nominal_sec = params_q["Secondary"][
             "Q_nominal"
         ]  # max_power / (2 * self.cp * self.rho * (dt_sec))
-        sec_heat = self._generic_heat_modifiers(q_nominal=q_nominal_sec)
+        sec_heat = self._generic_heat_modifiers(
+            self.include_head_loss_variables, q_nominal=q_nominal_sec
+        )
         sec_heat["HeatIn"].update(
             Heat=dict(min=-max_heat_transport, max=max_heat_transport, nominal=max_power / 2.0),
         )
@@ -1387,8 +1398,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         params_t = self._supply_return_temperature_modifiers(asset)
         params_q = self._get_connected_q_nominal(asset)
-        prim_heat = self._generic_heat_modifiers(q_nominal=params_q["Primary"]["Q_nominal"])
-        sec_heat = self._generic_heat_modifiers(q_nominal=params_q["Secondary"]["Q_nominal"])
+        prim_heat = self._generic_heat_modifiers(
+            self.include_head_loss_variables, q_nominal=params_q["Primary"]["Q_nominal"]
+        )
+        sec_heat = self._generic_heat_modifiers(
+            self.include_head_loss_variables, q_nominal=params_q["Secondary"]["Q_nominal"]
+        )
 
         params = {}
         params["Primary"] = {**params_t["Primary"], **params_q["Primary"], **prim_heat}
@@ -1498,7 +1513,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
             Heat_source=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
             **self._generic_modifiers(asset),
             **self._generic_heat_modifiers(
-                0.0, max_supply, q_nominal, min_temperature, max_temperature
+                self.include_head_loss_variables,
+                0.0,
+                max_supply,
+                q_nominal,
+                min_temperature,
+                max_temperature,
             ),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
@@ -1658,6 +1678,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             ),
             **self._generic_modifiers(asset),
             **self._generic_heat_modifiers(
+                self.include_head_loss_variables,
                 -hfr_discharge_max * aggregation_count,
                 hfr_charge_max * aggregation_count,
                 q_nominal,
@@ -1748,7 +1769,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         modifiers = dict(
             **self._generic_modifiers(asset),
-            **self._generic_heat_modifiers(q_nominal=q_nominal),
+            **self._generic_heat_modifiers(
+                self.include_head_loss_variables, q_nominal=q_nominal
+            ),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
         )
@@ -1798,7 +1821,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         modifiers = dict(
             **self._generic_modifiers(asset),
-            **self._generic_heat_modifiers(q_nominal=q_nominal),
+            **self._generic_heat_modifiers(
+                self.include_head_loss_variables, q_nominal=q_nominal
+            ),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
         )
@@ -2843,7 +2868,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
                     V=dict(min=min_voltage, nominal=min_voltage),
                 ),
                 min_voltage=min_voltage,
-                **self._generic_heat_modifiers(0.0, max_supply, q_nominal["Q_nominal"]),
+                **self._generic_heat_modifiers(
+                    self.include_head_loss_variables, 0.0, max_supply, q_nominal["Q_nominal"]
+                ),
             )
         )
 
@@ -2924,7 +2951,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
             elec_power_nominal=max_supply,
             cop=cop,
             **self._generic_modifiers(asset),
-            **self._generic_heat_modifiers(0.0, max_supply, q_nominal["Q_nominal"]),
+            **self._generic_heat_modifiers(
+                self.include_head_loss_variables, 0.0, max_supply, q_nominal["Q_nominal"]
+            ),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),

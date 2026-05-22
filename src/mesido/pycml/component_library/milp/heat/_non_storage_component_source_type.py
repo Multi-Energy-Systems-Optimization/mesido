@@ -24,10 +24,9 @@ class _NonStorageComponentSourceType(_NonStorageComponent):
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
 
-        # dH is positive as it is assumed that the head is added by a pump at sources.
-        # self.dH.min = 0.0
-
         if self.include_head_loss_variables:
+            # dH is positive as it is assumed that the head is added by a pump at sources.
+            self.dH.min = 0.0
             self.add_variable(
                 Variable, "Pump_power", min=0.0, nominal=self.Q_nominal * self.nominal_pressure
             )

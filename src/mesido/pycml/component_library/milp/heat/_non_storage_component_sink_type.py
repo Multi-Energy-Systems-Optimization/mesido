@@ -21,4 +21,5 @@ class _NonStorageComponentSinkType(_NonStorageComponent):
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
 
-        # self.dH.max = 0.0
+        if self.include_head_loss_variables:
+            self.dH.max = 0.0
