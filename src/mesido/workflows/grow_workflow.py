@@ -602,11 +602,13 @@ class EndScenarioSizing(
                     maxed_producers.add(id_to_name_map.get(producer, producer))
 
             logger.warning(
-                f"At some of indexes {mismatch_indexes.tolist()} where the demand is not matched, "
-                f"the heat production by the following heat producers is maximised: "
+                f"At some of timestep indexes {mismatch_indexes.tolist()} where the demand is not "
+                f"matched, the heat production by the following heat producers is maximised: "
                 f"{sorted(maxed_producers) if maxed_producers else 'none'}"
             )
 
+            coeff_limit = 0.7
+            velocity_check = coeff_limit * self.heat_network_settings["maximum_velocity"]
             high_velocity_pipes = set()
             for pipe in self.energy_system_components.get("heat_pipe", []):
                 diameter = float(results[f"{pipe}__hn_diameter"])
@@ -623,7 +625,7 @@ class EndScenarioSizing(
 
                 area = 0.25 * np.pi * diameter**2
                 velocity = np.abs(np.asarray(results[f"{pipe}.Q"]) / area)
-                if np.any(velocity[mismatch_indexes] > 2.3):
+                if np.any(velocity[mismatch_indexes] > velocity_check):
                     high_velocity_pipes.add(id_to_name_map.get(pipe, pipe))
 
             logger.warning(
