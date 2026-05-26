@@ -3,6 +3,7 @@ from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.physics_mixin import PhysicsMixin
 from mesido.qth_not_maintained.qth_mixin import QTHMixin
+from mesido.techno_economic_mixin import TechnoEconomicMixin
 
 import numpy as np
 
@@ -59,6 +60,10 @@ class HeatProblem(
         options = super().solver_options()
         options["solver"] = "highs"
         return options
+
+
+class HeatProblemMinimizeCost(HeatProblem, TechnoEconomicMixin):
+    pass
 
 
 class HeatProblemTvar(HeatProblem):

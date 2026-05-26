@@ -12,6 +12,76 @@ from utils_tests import demand_matching_test, energy_conservation_test, heat_to_
 
 
 class TestVaryingTemperature(TestCase):
+    def test_1a_heatsource_usage_based_on_supply_temperature(self):
+        """
+        This test is to check whether the optimizer selects the expected heat source
+        based on the supply temperature. We set up a simple network with two residual
+        heat sources, one cheap and one expensive, where the cheap one has a maximum
+        supply temperature that is below the demand temperature, and the expensive
+        one has a maximum supply temperature that is above the demand temperature.
+        We expect the optimizer to select the expensive heat source to meet
+        the demand, and thus not use the cheap heat source at all.
+
+        Checks:
+        - Variable operational cost coefficients of heat producers
+        - Maximum supply temperature of heat producers
+        - Check that the expensive heat source is used instead of the cheap heat source
+        """
+        import models.unit_cases.case_1a.src.run_1a as run_1a
+        from models.unit_cases.case_1a.src.run_1a import HeatProblemMinimizeCost
+
+        base_folder = Path(run_1a.__file__).resolve().parent.parent
+
+        heat_problem = run_esdl_mesido_optimization(
+            HeatProblemMinimizeCost,
+            base_folder=base_folder,
+            esdl_file_name="1a_2_producers.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.xml",
+        )
+
+        results = heat_problem.extract_results()
+        parameters = heat_problem.parameters(0)
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
+
+        rh_cheap_id = name_to_id_map["ResidualHeat_cheap"]
+        rh_expensive_id = name_to_id_map["ResidualHeat_expensive"]
+
+        # Check variable operational cost coefficients
+        np.testing.assert_array_less(
+            parameters[f"{rh_cheap_id}.variable_operational_cost_coefficient"],
+            parameters[f"{rh_expensive_id}.variable_operational_cost_coefficient"],
+        )
+
+        # Check that the maximum supply temperature of the cheap heat source
+        # is below the supply temperature
+        esdl_asset_cheap = heat_problem.esdl_assets[f"{rh_cheap_id}"]
+        np.testing.assert_equal(
+            esdl_asset_cheap.attributes["maxTemperature"],
+            parameters[f"{rh_cheap_id}.max_temperature"],
+        )
+        np.testing.assert_array_less(
+            parameters[f"{rh_cheap_id}.max_temperature"],
+            heat_problem.esdl_carriers["c362f53a-3eaf-4d96-8ee6-944e77359fed"]["temperature"],
+        )
+
+        # Check that the maximum supply temperature of the expensive heat source
+        # is above the supply temperature
+        esdl_asset_expensive = heat_problem.esdl_assets[f"{rh_expensive_id}"]
+        np.testing.assert_equal(
+            esdl_asset_expensive.attributes["maxTemperature"],
+            parameters[f"{rh_expensive_id}.max_temperature"],
+        )
+        np.testing.assert_array_less(
+            heat_problem.esdl_carriers["c362f53a-3eaf-4d96-8ee6-944e77359fed_ret"]["temperature"],
+            parameters[f"{rh_expensive_id}.max_temperature"],
+        )
+
+        # Check expensive heat source is used instead of cheap heat source
+        np.testing.assert_array_less(1e3, results[f"{rh_expensive_id}.Heat_source"])
+        np.testing.assert_allclose(0.0, results[f"{rh_cheap_id}.Heat_source"])
+
     def test_1a_temperature_variation(self):
         """
         This test is to check if the varying network temperature works as expected on a simple

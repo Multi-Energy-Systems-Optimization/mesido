@@ -266,7 +266,7 @@
         <port xsi:type="esdl:OutPort" id="688b3bf8-bd6b-4361-9516-038441173e70" connectedTo="0121b493-7787-472f-860c-caf7245955be" carrier="ce071f25-185e-45f0-9c31-c51bb40c104e" name="Out"/>
         <port xsi:type="esdl:InPort" connectedTo="4443d6f8-159a-4d61-82f7-14f49414ca04" id="fe8fd335-e544-48d0-a2bb-9029920ce799" carrier="ce071f25-185e-45f0-9c31-c51bb40c104e_ret" name="In"/>
       </asset>
-      <asset xsi:type="esdl:ResidualHeatSource" power="30000000.0" name="ResidualHeatSource_4539" maxTemperature="60.0" id="4539f425-2d05-4a12-bb6f-fdf979bc6498">
+      <asset xsi:type="esdl:ResidualHeatSource" power="30000000.0" name="ResidualHeatSource_4539" maxTemperature="100.0" id="4539f425-2d05-4a12-bb6f-fdf979bc6498">
         <geometry xsi:type="esdl:Point" lon="4.355370998382569" lat="52.01608338626585" CRS="WGS84"/>
         <port xsi:type="esdl:OutPort" id="b3aa7d9e-1562-4abe-a3b1-374b964c779a" connectedTo="84c087a2-fa2b-4dad-9ea3-57a6376b02ef" carrier="ce071f25-185e-45f0-9c31-c51bb40c104e" name="Out"/>
         <port xsi:type="esdl:InPort" connectedTo="c99cbcd0-ba6d-4481-9cdd-e3414a2d4bf7" id="17c2b043-f773-4bbf-9cdd-c2307c0d6c0a" carrier="ce071f25-185e-45f0-9c31-c51bb40c104e_ret" name="In"/>

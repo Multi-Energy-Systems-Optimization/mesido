@@ -1,4 +1,4 @@
-# [Unreleased-main] - 2026-05-13
+# [Unreleased-main] - 2026-05-26
 
 ## Added
 - Electricity consumption calculation of geothermal assets, using the defined COP. 
@@ -12,6 +12,7 @@
 - Ramp constraints for heat producers are added.
 - Maximum and minimum temperature of heat sources are parsed from esdl
 - Warnings on potential causes of heat demand not being matched are added in the grow workflow
+- A heat source asset is eligible for use only when its maximum temperature meets or exceeds the network supply temperature
 
 ## Changed
 - Reduced the number of constraints required for headloss calculation with LINEARIZED_N_LINES_EQUALITY setting.
