@@ -3,6 +3,7 @@ from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.physics_mixin import PhysicsMixin
 from mesido.qth_not_maintained.qth_mixin import QTHMixin
+from mesido.techno_economic_mixin import TechnoEconomicMixin
 
 import numpy as np
 
@@ -111,6 +112,16 @@ class HeatProblemTvar(HeatProblem):
                         )
 
         return constraints
+
+
+class HeatProblemTvarWithTechnoEconomicMixin(HeatProblemTvar, TechnoEconomicMixin):
+    def temperature_regimes(self, carrier):
+        temperatures = []
+        if carrier == 3625334968694477359:
+            # supply
+            temperatures = [71.0, 74.0, 86.0]
+
+        return temperatures
 
 
 class QTHProblem(
