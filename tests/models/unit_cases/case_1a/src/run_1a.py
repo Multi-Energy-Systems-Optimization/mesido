@@ -62,7 +62,7 @@ class HeatProblem(
         return options
 
 
-class HeatProblemMinimizeCost(HeatProblem, TechnoEconomicMixin):
+class HeatProblemWithTechnoEconomicMixin(HeatProblem, TechnoEconomicMixin):
     pass
 
 

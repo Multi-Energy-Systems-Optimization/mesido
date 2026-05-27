@@ -28,14 +28,14 @@ class TestVaryingTemperature(TestCase):
         - Check that the expensive heat source is used instead of the cheap heat source
         """
         import models.unit_cases.case_1a.src.run_1a as run_1a
-        from models.unit_cases.case_1a.src.run_1a import HeatProblemMinimizeCost
+        from models.unit_cases.case_1a.src.run_1a import HeatProblemWithTechnoEconomicMixin
 
         base_folder = Path(run_1a.__file__).resolve().parent.parent
 
         heat_problem = run_esdl_mesido_optimization(
-            HeatProblemMinimizeCost,
+            HeatProblemWithTechnoEconomicMixin,
             base_folder=base_folder,
-            esdl_file_name="1a_2_producers.esdl",
+            esdl_file_name="1a_with_2producers.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_import.xml",
@@ -56,9 +56,8 @@ class TestVaryingTemperature(TestCase):
 
         # Check that the maximum supply temperature of the cheap heat source
         # is below the supply temperature
-        esdl_asset_cheap = heat_problem.esdl_assets[f"{rh_cheap_id}"]
         np.testing.assert_equal(
-            esdl_asset_cheap.attributes["maxTemperature"],
+            heat_problem.esdl_assets[f"{rh_cheap_id}"].attributes["maxTemperature"],
             parameters[f"{rh_cheap_id}.max_temperature"],
         )
         np.testing.assert_array_less(
@@ -68,9 +67,8 @@ class TestVaryingTemperature(TestCase):
 
         # Check that the maximum supply temperature of the expensive heat source
         # is above the supply temperature
-        esdl_asset_expensive = heat_problem.esdl_assets[f"{rh_expensive_id}"]
         np.testing.assert_equal(
-            esdl_asset_expensive.attributes["maxTemperature"],
+            heat_problem.esdl_assets[f"{rh_expensive_id}"].attributes["maxTemperature"],
             parameters[f"{rh_expensive_id}.max_temperature"],
         )
         np.testing.assert_array_less(
@@ -535,6 +533,7 @@ if __name__ == "__main__":
 
     start_time = time.time()
     a = TestVaryingTemperature()
+    a.test_1a_heatsource_usage_based_on_supply_temperature()
     a.test_1a_temperature_variation()
     a.test_3a_temperature_variation_supply()
     a.test_3a_temperature_variation_return()

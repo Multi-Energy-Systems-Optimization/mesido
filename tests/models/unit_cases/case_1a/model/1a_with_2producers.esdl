@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" id="b9f8b83d-49e2-4c8b-9992-240ed4643329" name="1a_2_producers" description="" esdlVersion="v2211" version="2">
+<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" id="b9f8b83d-49e2-4c8b-9992-240ed4643329" name="1a_with_2producers" description="" esdlVersion="v2211" version="4">
   <instance xsi:type="esdl:Instance" id="22cf0465-ceef-486a-b8d0-278c131cbece" name="Untitled Instance">
     <area xsi:type="esdl:Area" id="a5845d28-ed01-4f32-91dc-654632ecc997" name="Untitled Area">
       <asset xsi:type="esdl:HeatingDemand" id="2ab92324-f86e-4976-9a6e-f7454b77ba3c" minTemperature="70.0" power="1000000.0" name="HeatingDemand_2ab9">
@@ -32,13 +32,13 @@
       </asset>
       <asset xsi:type="esdl:Joint" id="ed9a2b96-2fff-4650-b875-41c6f05a6e44" name="Joint_9580_ret">
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="51.985749025873034" lon="4.3802350759506234"/>
-        <port xsi:type="esdl:InPort" name="In" id="adb264b4-2ba0-4a49-9fc7-f57a29fb6346" carrier="c362f53a-3eaf-4d96-8ee6-944e77359fed" connectedTo="974230fb-e753-4fc1-a762-82de7d960e62 efaeb481-99cf-4071-b1f1-9041f1a56922"/>
+        <port xsi:type="esdl:InPort" name="In" id="adb264b4-2ba0-4a49-9fc7-f57a29fb6346" connectedTo="974230fb-e753-4fc1-a762-82de7d960e62 efaeb481-99cf-4071-b1f1-9041f1a56922" carrier="c362f53a-3eaf-4d96-8ee6-944e77359fed"/>
         <port xsi:type="esdl:OutPort" name="Out" id="061f1df2-f724-4b08-aa5f-6f19b06c2f92" carrier="c362f53a-3eaf-4d96-8ee6-944e77359fed" connectedTo="a779e3ec-8215-43c9-84ff-baa1c93abfea df318cbd-81f2-467c-a081-7feb4256dbfa 14757d8c-9685-47e2-bf2a-517ee556ab56"/>
       </asset>
       <asset xsi:type="esdl:Joint" id="95802cf8-61d6-4773-bb99-e275c3bf26cc" name="Joint_9580">
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="51.98563669935972" lon="4.380224347114564"/>
         <port xsi:type="esdl:InPort" name="In" id="e3bbc000-98be-43d7-898e-7a503871786f" carrier="c362f53a-3eaf-4d96-8ee6-944e77359fed_ret" connectedTo="388ae7b7-2a05-4b50-acf7-adebf4c24ab4 1f153f2f-adf6-4e3b-94ca-aef1644e8c7d c7ef3ba2-332e-4c8d-bc53-449179a4bc22"/>
-        <port xsi:type="esdl:OutPort" name="Out" id="ba6017c5-bedf-411c-9e49-72f0b5053991" carrier="c362f53a-3eaf-4d96-8ee6-944e77359fed_ret" connectedTo="4b5d5d6c-82ef-441b-9e0b-478cf3c8031c d6bf4a19-117e-4a03-b6e4-1acca1a63f2b"/>
+        <port xsi:type="esdl:OutPort" name="Out" id="ba6017c5-bedf-411c-9e49-72f0b5053991" connectedTo="4b5d5d6c-82ef-441b-9e0b-478cf3c8031c d6bf4a19-117e-4a03-b6e4-1acca1a63f2b" carrier="c362f53a-3eaf-4d96-8ee6-944e77359fed_ret"/>
       </asset>
       <asset xsi:type="esdl:Pipe" id="275a0b40-b6ce-4e7d-b954-efeff0f25734" length="72.13358767664306" innerDiameter="0.16030000000000003" outerDiameter="0.25" name="Pipe_275a">
         <geometry xsi:type="esdl:Line" CRS="WGS84">
@@ -132,8 +132,8 @@
       </asset>
       <asset xsi:type="esdl:ResidualHeatSource" id="de0b4c1f-70f3-4d0d-8e63-09fa5fc71d0d" minTemperature="65.0" maxTemperature="70.0" power="2000000.0" name="ResidualHeat_cheap">
         <geometry xsi:type="esdl:Point" lat="51.98569864416294" lon="4.379828721284867"/>
-        <port xsi:type="esdl:OutPort" name="Out" id="efaeb481-99cf-4071-b1f1-9041f1a56922" carrier="c362f53a-3eaf-4d96-8ee6-944e77359fed" connectedTo="adb264b4-2ba0-4a49-9fc7-f57a29fb6346"/>
-        <port xsi:type="esdl:InPort" name="In" id="d6bf4a19-117e-4a03-b6e4-1acca1a63f2b" carrier="c362f53a-3eaf-4d96-8ee6-944e77359fed_ret" connectedTo="ba6017c5-bedf-411c-9e49-72f0b5053991"/>
+        <port xsi:type="esdl:OutPort" name="Out" id="efaeb481-99cf-4071-b1f1-9041f1a56922" connectedTo="adb264b4-2ba0-4a49-9fc7-f57a29fb6346" carrier="c362f53a-3eaf-4d96-8ee6-944e77359fed"/>
+        <port xsi:type="esdl:InPort" name="In" id="d6bf4a19-117e-4a03-b6e4-1acca1a63f2b" connectedTo="ba6017c5-bedf-411c-9e49-72f0b5053991" carrier="c362f53a-3eaf-4d96-8ee6-944e77359fed_ret"/>
         <costInformation xsi:type="esdl:CostInformation" id="4b31fd55-a586-4818-b18d-202e876f7ad1">
           <variableOperationalCosts xsi:type="esdl:SingleValue" id="57c019c2-148b-4ab8-9e6e-4f1774fc039d" value="10.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR/MWh" id="828d850b-280d-469c-adfb-36268ef1c99c" unit="EURO" perMultiplier="MEGA" perUnit="WATTHOUR"/>
