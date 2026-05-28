@@ -15,14 +15,13 @@ class TestVaryingTemperature(TestCase):
     def test_1a_heatsource_usage_based_on_varying_supply_temperature(self):
         """
         This test is to check whether the optimizer selects the expected heat source
-        based on the supply temperature. We set up a simple network with two residual
+        based on the network supply temperature. We set up a simple network with two residual
         heat sources, one cheap and one expensive, where the cheap one has a maximum
-        supply temperature that is below the demand temperature, and the expensive
-        one has a maximum supply temperature that is above the demand temperature.
+        temperature that is below the network supply temperature, and the expensive
+        one has a maximum temperature that is above the network supply temperature.
         In addition, the network has multiple supply temperature options, and we
         expect the optimizer to select the lowest feasible supply temperature.
-        We expect the optimizer to select the expensive heat source to meet
-        the demand, and thus not use the cheap heat source at all.
+        We expect the optimizer to use only the expensive heat source.
 
         Checks:
         - Variable operational cost coefficients of heat producers
@@ -60,9 +59,11 @@ class TestVaryingTemperature(TestCase):
 
         # Check that from the options the lowest supply temperature is selected
         # for the network supply temperature
+        carrier_id_number = "3625334968694477359"
+        temperature_regimes = heat_problem.temperature_regimes(int(carrier_id_number))
         np.testing.assert_equal(
-            71.0,
-            results["3625334968694477359_temperature"],
+            min(temperature_regimes),
+            results[f"{carrier_id_number}_temperature"],
         )
 
         # Check that the maximum supply temperature of the cheap heat source
@@ -73,7 +74,7 @@ class TestVaryingTemperature(TestCase):
         )
         np.testing.assert_array_less(
             parameters[f"{rh_cheap_id}.max_temperature"],
-            results["3625334968694477359_temperature"],
+            results[f"{carrier_id_number}_temperature"],
         )
 
         # Check that the maximum supply temperature of the expensive heat source
@@ -83,7 +84,7 @@ class TestVaryingTemperature(TestCase):
             parameters[f"{rh_expensive_id}.max_temperature"],
         )
         np.testing.assert_array_less(
-            results["3625334968694477359_temperature"],
+            results[f"{carrier_id_number}_temperature"],
             parameters[f"{rh_expensive_id}.max_temperature"],
         )
 
