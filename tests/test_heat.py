@@ -180,10 +180,9 @@ class TestHeatSourceTemperature(TestCase):
         This test is to check whether the optimizer selects the expected heat source
         based on the supply temperature. We set up a simple network with two residual
         heat sources, one cheap and one expensive, where the cheap one has a maximum
-        supply temperature that is below the demand temperature, and the expensive
-        one has a maximum supply temperature that is above the demand temperature.
-        We expect the optimizer to select the expensive heat source to meet
-        the demand, and thus not use the cheap heat source at all.
+        temperature that is below the network supply temperature, and the expensive
+        one has a maximum temperature that is above the network supply temperature.
+        We expect the optimizer to use only the expensive heat source.
 
         Checks:
         - Variable operational cost coefficients of heat producers
