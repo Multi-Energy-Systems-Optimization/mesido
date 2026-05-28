@@ -75,7 +75,7 @@ class SourcePipeSink(
         super().post()
 
 
-class HeatProblemHydraulic(ESDLAdditionalVarsMixin, SourcePipeSink):
+class HeatProblemESDLVarsMixin(ESDLAdditionalVarsMixin, SourcePipeSink):
     pass
 
 

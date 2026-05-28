@@ -132,11 +132,11 @@ class TestElecBoiler(TestCase):
         5. cost calculation is checked
         """
         import models.source_pipe_sink.src.double_pipe_heat as example
-        from models.source_pipe_sink.src.double_pipe_heat import HeatProblemHydraulic
+        from models.source_pipe_sink.src.double_pipe_heat import HeatProblemESDLVarsMixin
 
         base_folder = Path(example.__file__).resolve().parent.parent
         heat_problem = run_esdl_mesido_optimization(
-            HeatProblemHydraulic,
+            HeatProblemESDLVarsMixin,
             base_folder=base_folder,
             esdl_file_name="sourcesink_withHP.esdl",
             esdl_parser=ESDLFileParser,
