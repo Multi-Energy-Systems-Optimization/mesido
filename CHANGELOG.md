@@ -11,6 +11,7 @@
 - Workflow of EndScenarioSizing with demand uncertainty is added.
 - Ramp constraints for heat producers are added.
 - Maximum and minimum temperature of heat sources are parsed from esdl
+- Warnings on potential causes of heat demand not being matched are added in the grow workflow
 
 ## Changed
 - Reduced the number of constraints required for headloss calculation with LINEARIZED_N_LINES_EQUALITY setting.
@@ -24,6 +25,7 @@
 - Added electricity cost profile to variable operational cost of assets which convert electricity to heat.
 - Heating_and_cooling example is cleaned up
 - The number of binary variables for the linearized head loss calculation is reduced by half, by only creating them for the positive quadrant.
+- No longer required to add an electricity price profile if an electricity carrier is available.
 - The headloss and hydraulic power variables are now only created if the headloss calculations are turned on, reducing the transcribing time of the problem.
 - The method update_heat_network_settings has been created to update the dictionary for heat_network_settings and ensure the correct settings are applied from the start.
 
