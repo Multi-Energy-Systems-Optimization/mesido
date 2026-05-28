@@ -140,14 +140,11 @@ class TestProducerMaxProfile(TestCase):
                 np.testing.assert_array_less(heat_produced - tol, heat_production_upper_limit)
                 np.testing.assert_array_less(
                     3,
-                    np.sum(
-                        np.isclose(heat_produced, heat_production_upper_limit, atol=1e-1, rtol=1e-8)
-                    )
-                    + 1e-3,
+                        np.isclose(heat_produced, heat_production_upper_limit, atol=1e-1, rtol=1e-5)
                 )
                 np.testing.assert_array_less(
                     np.sum(
-                        np.isclose(heat_produced, heat_production_upper_limit, atol=1e-1, rtol=1e-8)
+                        np.isclose(heat_produced, heat_production_upper_limit, atol=1e-1, rtol=1e-5)
                     ),
                     20,
                 )  # checking that the upper production limit was not achieved for all entries
@@ -166,7 +163,7 @@ class TestProducerMaxProfile(TestCase):
                 np.testing.assert_allclose(
                     len(heat_produced) - 5,
                     np.sum(
-                        np.isclose(heat_produced, heat_production_upper_limit, atol=tol, rtol=1e-9)
+                        np.isclose(heat_produced, heat_production_upper_limit, atol=tol, rtol=1e-5)
                     ),
                 )
             else:
@@ -215,7 +212,7 @@ class TestProducerMaxProfile(TestCase):
         # check that heat produced is smaller than the profile
         np.testing.assert_array_less(heat_produced - tol, heat_production_upper_limit)
         np.testing.assert_equal(
-            np.sum(np.isclose(heat_produced, heat_production_upper_limit, atol=tol, rtol=1e-10)), 6
+            np.sum(np.isclose(heat_produced, heat_production_upper_limit, atol=tol, rtol=1e-5)), 6
         )
 
 

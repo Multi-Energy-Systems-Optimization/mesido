@@ -743,7 +743,6 @@ class ScenarioOutput:
                         flow_variable = results[f"{asset_id}.Heat_buffer"][1:]
                     elif asset_id in [
                         *self.energy_system_components.get("ates", []),
-                        *self.energy_system_components.get("low_temperature_ates", []),
                     ]:
                         flow_variable = results[f"{asset_id}.Heat_ates"][1:]
                     elif asset_id in self.energy_system_components.get("heat_pipe", []):
@@ -1027,7 +1026,6 @@ class ScenarioOutput:
             if asset_id in [
                 *self.energy_system_components.get("heat_source", []),
                 *self.energy_system_components.get("ates", []),
-                *self.energy_system_components.get("low_temperature_ates", []),
                 *self.energy_system_components.get("heat_buffer", []),
                 *self.energy_system_components.get("heat_pump", []),
                 *self.energy_system_components.get("airco", []),
@@ -1040,7 +1038,6 @@ class ScenarioOutput:
 
                 if asset_id in [
                     *self.energy_system_components.get("ates", []),
-                    *self.energy_system_components.get("low_temperature_ates", []),
                 ]:
                     asset.maxChargeRate = results[f"{asset_id}__max_size"][0]
                     asset.maxDischargeRate = results[f"{asset_id}__max_size"][0]
@@ -1163,7 +1160,6 @@ class ScenarioOutput:
                 *self.energy_system_components.get("heat_pipe", []),
                 *self.energy_system_components.get("heat_buffer", []),
                 *self.energy_system_components.get("ates", []),
-                *self.energy_system_components.get("low_temperature_ates", []),
                 *self.energy_system_components.get("heat_exchanger", []),
                 *self.energy_system_components.get("heat_pump", []),
                 *self.energy_system_components.get("airco", []),
@@ -1258,7 +1254,6 @@ class ScenarioOutput:
                             *self.energy_system_components.get("heat_source", []),
                             *self.energy_system_components.get("heat_buffer", []),
                             *self.energy_system_components.get("ates", []),
-                            *self.energy_system_components.get("low_temperature_ates", []),
                             *self.energy_system_components.get("heat_exchanger", []),
                             *self.energy_system_components.get("heat_pump", []),
                             *self.energy_system_components.get("airco", []),
