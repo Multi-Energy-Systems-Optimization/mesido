@@ -1,6 +1,6 @@
 import logging
 import math
-from typing import List
+from typing import Dict, List
 
 import casadi as ca
 
@@ -211,7 +211,13 @@ class HeatPhysicsMixin(
         """
         return []
 
-    def update_heat_network_settings(self):
+    def update_heat_network_settings(self) -> Dict:
+        """
+        This function allows the heat_network_settings to be updated before it is used in the
+        creation of assets, variables, bounds and/or constraints. Using the inheritance structure
+        the dictionary can be updated also in the parent classes.
+        It returns the dictionary of the heat_network_settings.
+        """
         settings = self.heat_network_settings
         return settings
 
