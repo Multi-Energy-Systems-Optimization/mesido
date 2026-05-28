@@ -19,9 +19,10 @@ class TestVaryingTemperature(TestCase):
         heat sources, one cheap and one expensive, where the cheap one has a maximum
         temperature that is below the network supply temperature, and the expensive
         one has a maximum temperature that is above the network supply temperature.
+        We expect the optimizer to use only the expensive heat source.
+
         In addition, the network has multiple supply temperature options, and we
         expect the optimizer to select the lowest feasible supply temperature.
-        We expect the optimizer to use only the expensive heat source.
 
         Checks:
         - Variable operational cost coefficients of heat producers
@@ -59,7 +60,7 @@ class TestVaryingTemperature(TestCase):
 
         # Check that from the options the lowest supply temperature is selected
         # for the network supply temperature
-        carrier_id_number = "3625334968694477359"
+        carrier_id_number = heat_problem._get_id_number_mapping_from_carrier_name("Heat")
         temperature_regimes = heat_problem.temperature_regimes(int(carrier_id_number))
         np.testing.assert_equal(
             min(temperature_regimes),

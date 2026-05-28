@@ -150,6 +150,7 @@
       <carrier xsi:type="esdl:HeatCommodity" id="c362f53a-3eaf-4d96-8ee6-944e77359fed_ret" name="Heat_ret" returnTemperature="45.0"/>
       <carrier xsi:type="esdl:HeatCommodity" id="c362f53a-3eaf-4d96-8ee6-944e77359fed" name="Heat" supplyTemperature="75.0"/>
       <carrier xsi:type="esdl:HeatCommodity" id="00585af4-89aa-46da-a76e-2793bf3622e4" name="Heat_71" supplyTemperature="71.0"/>
+      <carrier xsi:type="esdl:HeatCommodity" id="9f6aeb1a-138b-4bb9-9a09-d524e94658e6" name="Heat_74" supplyTemperature="74.0"/>
       <carrier xsi:type="esdl:HeatCommodity" id="95500b26-7b90-4057-9183-e99bd056bd2c" name="Heat_86" supplyTemperature="86.0"/>
     </carriers>
   </energySystemInformation>

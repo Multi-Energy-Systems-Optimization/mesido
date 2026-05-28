@@ -115,13 +115,38 @@ class HeatProblemTvar(HeatProblem):
 
 
 class HeatProblemTvarWithTechnoEconomicMixin(HeatProblemTvar, TechnoEconomicMixin):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.base_carrier_name = "Heat"
+        self.base_id_number_mapping = self._get_id_number_mapping_from_carrier_name(
+            self.base_carrier_name
+        )
+
     def temperature_regimes(self, carrier):
         temperatures = []
-        if carrier == 3625334968694477359:
-            # supply
-            temperatures = [71.0, 74.0, 86.0]
-
+        if carrier == self.base_id_number_mapping:
+            temperatures = self._get_related_carrier_temperatures(self.base_carrier_name)
         return temperatures
+
+    def _get_id_number_mapping_from_carrier_name(self, carrier_name: str):
+        return next(
+            (
+                carrier.get("id_number_mapping")
+                for carrier in self.esdl_carriers.values()
+                if carrier.get("name") == carrier_name
+            ),
+            None,
+        )
+
+    def _get_related_carrier_temperatures(self, carrier_name: str):
+        return sorted(
+            carrier["temperature"]
+            for carrier in self.esdl_carriers.values()
+            if carrier_name
+            and carrier.get("name", "").startswith(f"{carrier_name}_")
+            and carrier["name"][len(f"{carrier_name}_") :].isdigit()
+        )
 
 
 class QTHProblem(
