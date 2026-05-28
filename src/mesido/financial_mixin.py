@@ -792,8 +792,8 @@ class FinancialMixin(
     def __get_electricity_price_profile_or_zero(self):
         """
         Variable OPEX electricity costs currently support at most one electricity carrier.
-        Otherwise, there needs to be a link between  the electricity carrier and the
-        source and pump asset which is lots of extra effort for the user.
+        Otherwise, there needs to be a link between  the electricity carrier and the asset which
+        is lots of extra effort for the user.
         Returns the timeseries price profile for the electricity carrier or a zero array.
         """
         electricity_carriers = self.get_electricity_carriers()
