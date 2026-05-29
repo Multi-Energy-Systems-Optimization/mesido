@@ -139,7 +139,10 @@ class TestProducerMaxProfile(TestCase):
                 )
                 np.testing.assert_array_less(heat_produced - tol, heat_production_upper_limit)
                 np.testing.assert_array_less(
-                    3, np.isclose(heat_produced, heat_production_upper_limit, atol=1e-1, rtol=1e-5)
+                    3,
+                    np.sum(
+                        np.isclose(heat_produced, heat_production_upper_limit, atol=1e-1, rtol=1e-5)
+                    ),
                 )
                 np.testing.assert_array_less(
                     np.sum(
