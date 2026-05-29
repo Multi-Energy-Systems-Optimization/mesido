@@ -923,9 +923,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 f"{length} meter"
             )
 
-        id_mapping = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
-            "id_number_mapping"
-        ]
+        id_mapping = asset.in_ports[0].carrier.id
         diameter, wall_roughness = self._gas_pipe_get_diameter_and_roughness(asset)
         q_nominal = math.pi * diameter**2 / 4.0 * self.v_max_gas / 2.0
         self._set_q_nominal(asset, q_nominal)
@@ -1844,9 +1842,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         min_voltage = asset.in_ports[0].carrier.voltage
         i_max, i_nom = self._get_connected_i_nominal_and_max(asset)
 
-        id_mapping = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
-            "id_number_mapping"
-        ]
+        id_mapping = asset.in_ports[0].carrier.id
 
         modifiers = dict(
             min_voltage=min_voltage,
@@ -2238,9 +2234,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         """
         assert asset.asset_type in {"GasDemand", "Export"}
 
-        id_mapping = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
-            "id_number_mapping"
-        ]
+        id_mapping = asset.in_ports[0].carrier.id
         # DO not remove due usage in future
         # hydrogen_specfic_energy = 20.0 / 1.0e6
         specific_energy = get_energy_content(asset.name, asset.in_ports[0].carrier)  # J/kg
@@ -2735,9 +2729,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         if is_one_in_port:
             return HeatSourceGas, modifiers
 
-        id_mapping = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
-            "id_number_mapping"
-        ]
+        id_mapping = asset.in_ports[0].carrier.id
 
         for port in asset.in_ports:
             if isinstance(port.carrier, esdl.GasCommodity):
@@ -2821,9 +2813,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         if is_one_in_port:
             return HeatSourceElec, modifiers
 
-        id_mapping = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
-            "id_number_mapping"
-        ]
+        id_mapping = asset.in_ports[0].carrier.id
 
         # TODO: CO2 coefficient
 
@@ -2898,9 +2888,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             logger.error(f"{asset.asset_type} '{asset.name}' has no max power specified. ")
         assert max_supply > 0.0
 
-        id_mapping = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
-            "id_number_mapping"
-        ]
+        id_mapping = asset.in_ports[0].carrier.id
 
         # TODO: CO2 coefficient
 

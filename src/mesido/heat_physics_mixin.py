@@ -219,6 +219,7 @@ class HeatPhysicsMixin(
 
         options = self.energy_system_options()
         parameters = self.parameters(0)
+        string_parameters = self.string_parameters(0)
 
         def _get_max_bound(bound):
             if isinstance(bound, np.ndarray):
@@ -339,7 +340,7 @@ class HeatPhysicsMixin(
             self.__ates_temperature_disc_var[ates_temp_disc_var_name] = ca.MX.sym(
                 ates_temp_disc_var_name
             )
-            carrier_id = parameters[f"{hot_pipe}.carrier_id"]
+            carrier_id = string_parameters[f"{hot_pipe}.carrier_id"]
             temperatures = self.temperature_regimes(carrier_id)
             if len(temperatures) == 0:
                 temperature = parameters[f"{hot_pipe}.temperature"]
@@ -385,11 +386,10 @@ class HeatPhysicsMixin(
                     ates_temperature_disc_ordering_var_name
                 ] = (0.0, 1.0)
 
-        for _carrier, temperatures in self.temperature_carriers().items():
-            carrier_id_number_mapping = str(temperatures["id_number_mapping"])
-            temp_var_name = carrier_id_number_mapping + "_temperature"
+        for carrier_id, temperatures in self.temperature_carriers().items():
+            temp_var_name = carrier_id + "_temperature"
             self.__temperature_regime_var[temp_var_name] = ca.MX.sym(temp_var_name)
-            temperature_regimes = self.temperature_regimes(int(carrier_id_number_mapping))
+            temperature_regimes = self.temperature_regimes(carrier_id)
             if len(temperature_regimes) == 0:
                 temperature = temperatures["temperature"]
                 self.__temperature_regime_var_bounds[temp_var_name] = (temperature, temperature)
@@ -411,12 +411,12 @@ class HeatPhysicsMixin(
                     )
 
             for temperature_regime in temperature_regimes:
-                carrier_selected_var = carrier_id_number_mapping + f"_{temperature_regime}"
+                carrier_selected_var = carrier_id + f"_{temperature_regime}"
                 self.__carrier_selected_var[carrier_selected_var] = ca.MX.sym(carrier_selected_var)
                 self.__carrier_selected_var_bounds[carrier_selected_var] = (0.0, 1.0)
 
                 carrier_temperature_disc_ordering_var_name = (
-                    f"{carrier_id_number_mapping}__{temperature_regime}_ordering_disc"
+                    f"{carrier_id}__{temperature_regime}_ordering_disc"
                 )
                 self.__carrier_temperature_disc_ordering_var[
                     carrier_temperature_disc_ordering_var_name
@@ -434,7 +434,7 @@ class HeatPhysicsMixin(
             # override the .Heat_loss parameter for cold pipes, even though
             # it is not actually used in the optimization problem.
             heat_loss_var_name = f"{pipe}__hn_heat_loss"
-            carrier_id = parameters[f"{pipe}.carrier_id"]
+            carrier_id = string_parameters[f"{pipe}.carrier_id"]
             if len(self.temperature_regimes(carrier_id)) == 0:
                 self.__pipe_heat_loss_var[heat_loss_var_name] = ca.MX.sym(heat_loss_var_name)
             else:
@@ -1347,6 +1347,7 @@ class HeatPhysicsMixin(
         """
         constraints = []
         parameters = self.parameters(ensemble_member)
+        string_parameters = self.string_parameters(ensemble_member)
 
         for d in [
             *self.energy_system_components.get("heat_demand", []),
@@ -1358,7 +1359,7 @@ class HeatPhysicsMixin(
             discharge = self.state(f"{d}.Q")
             heat_out = self.state(f"{d}.HeatOut.Heat")
 
-            ret_carrier = parameters[f"{d}.T_return_id"]
+            ret_carrier = string_parameters[f"{d}.T_return_id"]
             return_temperatures = self.temperature_regimes(ret_carrier)
             big_m = 2.0 * self.bounds()[f"{d}.HeatOut.Heat"][1]
 
@@ -1395,6 +1396,7 @@ class HeatPhysicsMixin(
         """
         constraints = []
         parameters = self.parameters(ensemble_member)
+        string_parameters = self.string_parameters(ensemble_member)
 
         for s in self.energy_system_components.get("heat_source", []):
             heat_nominal = parameters[f"{s}.Heat_nominal"]
@@ -1408,7 +1410,7 @@ class HeatPhysicsMixin(
 
             constraint_nominal = (heat_nominal * cp * rho * dt * q_nominal) ** 0.5
 
-            sup_carrier = parameters[f"{s}.T_supply_id"]
+            sup_carrier = string_parameters[f"{s}.T_supply_id"]
             supply_temperatures = self.temperature_regimes(sup_carrier)
 
             big_m = 2.0 * self.bounds()[f"{s}.HeatOut.Heat"][1]
@@ -1526,6 +1528,7 @@ class HeatPhysicsMixin(
         """
         constraints = []
         parameters = self.parameters(ensemble_member)
+        string_parameters = self.string_parameters(ensemble_member)
 
         for d in self.energy_system_components.get("cold_demand", []):
             heat_nominal = parameters[f"{d}.Heat_nominal"]
@@ -1534,7 +1537,7 @@ class HeatPhysicsMixin(
             discharge = self.state(f"{d}.Q")
             heat_out = self.state(f"{d}.HeatOut.Heat")
 
-            sup_carrier = parameters[f"{d}.T_supply_id"]
+            sup_carrier = string_parameters[f"{d}.T_supply_id"]
             supply_temperatures = self.temperature_regimes(sup_carrier)
             big_m = 2.0 * self.bounds()[f"{d}.HeatOut.Heat"][1]
 
@@ -1581,32 +1584,31 @@ class HeatPhysicsMixin(
             carriers = None
             carriers_ids = []
             sup_carrier_name = None
+        string_parameters = self.string_parameters(0)
+
         temp_out_profile = None
         temp_out_prof_start_idx = None
         temp_out_prof_end_idx = None
         carrier_id_types = {"heat_source": ".T_supply_id", "heat_pipe": ".carrier_id"}
-        for carrier_id in carriers_ids:
-            if (
-                carriers[carrier_id]["id_number_mapping"]
-                == parameters[f"{asset_name}{carrier_id_types[asset_type]}"]
-            ):
-                sup_carrier_name = carriers[carrier_id]["name"]
-        try:
-            temp_out_profile = self.get_timeseries(f"{sup_carrier_name}.price_profile")
-            temp_out_prof_start_idx = int(
-                np.where(
-                    self.get_timeseries(f"{sup_carrier_name}.price_profile").times
-                    == self.times()[0]
-                )[0]
-            )
-            temp_out_prof_end_idx = int(
-                np.where(
-                    self.get_timeseries(f"{sup_carrier_name}.price_profile").times
-                    == self.times()[-1]
-                )[0]
-            )
-        except KeyError:
-            pass
+        carrier_id = string_parameters[f"{asset_name}{carrier_id_types[asset_type]}"]
+        if carrier_id in carriers_ids:
+            sup_carrier_name = carriers[carrier_id]["name"]
+            try:
+                temp_out_profile = self.get_timeseries(f"{sup_carrier_name}.price_profile")
+                temp_out_prof_start_idx = int(
+                    np.where(
+                        self.get_timeseries(f"{sup_carrier_name}.price_profile").times
+                        == self.times()[0]
+                    )[0]
+                )
+                temp_out_prof_end_idx = int(
+                    np.where(
+                        self.get_timeseries(f"{sup_carrier_name}.price_profile").times
+                        == self.times()[-1]
+                    )[0]
+                )
+            except KeyError:
+                pass
 
         return temp_out_profile, sup_carrier_name, temp_out_prof_start_idx, temp_out_prof_end_idx
 
@@ -1627,6 +1629,7 @@ class HeatPhysicsMixin(
         """
         constraints = []
         parameters = self.parameters(ensemble_member)
+        string_parameters = self.string_parameters(ensemble_member)
 
         sum_heat_losses = 0.0
 
@@ -1657,7 +1660,7 @@ class HeatPhysicsMixin(
                 np.abs((*self.bounds()[f"{p}.HeatIn.Heat"], *self.bounds()[f"{p}.HeatOut.Heat"]))
             )
 
-            carrier = parameters[f"{p}.carrier_id"]
+            carrier = string_parameters[f"{p}.carrier_id"]
             temperatures = self.temperature_regimes(carrier)
 
             # TODO: flowdir can be 1 or 0 when Q==0.0, so heat needs to be explicitely set to be
@@ -1699,7 +1702,7 @@ class HeatPhysicsMixin(
                     temp = max(parameters[f"{p}.temperature"], parameters[f"{p}.T_ground"])
                     assert big_m > 0.0
 
-                    carrier = parameters[f"{p}.carrier_id"]
+                    carrier = string_parameters[f"{p}.carrier_id"]
                     temperatures = self.temperature_regimes(carrier)
                     if len(temperatures) == 0:
                         constraints.extend(
@@ -1783,6 +1786,7 @@ class HeatPhysicsMixin(
 
         constraints = []
         parameters = self.parameters(ensemble_member)
+        string_parameters = self.string_parameters(ensemble_member)
         options = self.energy_system_options()
 
         for ates_asset, (
@@ -1798,7 +1802,7 @@ class HeatPhysicsMixin(
                 flow_dir_var = self._heat_pipe_to_flow_direct_map[hot_pipe]
                 is_buffer_charging = self.state(flow_dir_var)
 
-            sup_carrier = parameters[f"{ates_asset}.T_supply_id"]
+            sup_carrier = string_parameters[f"{ates_asset}.T_supply_id"]
             supply_temperatures = self.temperature_regimes(sup_carrier)
             ates_temperature = self.state(f"{ates_asset}.Temperature_ates")
             ates_temperature_disc = self.state(f"{ates_asset}__temperature_ates_disc")
@@ -2026,6 +2030,7 @@ class HeatPhysicsMixin(
         """
         constraints = []
         parameters = self.parameters(ensemble_member)
+        string_parameters = self.string_parameters(ensemble_member)
         bounds = self.bounds()
         options = self.energy_system_options()
 
@@ -2043,7 +2048,7 @@ class HeatPhysicsMixin(
             ates_temperature_loss_nominal = self.variable_nominal(f"{ates}.Temperature_loss")
             ates_dt_charging_nominal = self.variable_nominal(f"{ates}.Temperature_change_charging")
 
-            sup_carrier = parameters[f"{ates}.T_supply_id"]
+            sup_carrier = string_parameters[f"{ates}.T_supply_id"]
             supply_temperatures = self.temperature_regimes(sup_carrier)
 
             if options["include_ates_temperature_options"] and len(supply_temperatures) != 0:
@@ -2175,6 +2180,7 @@ class HeatPhysicsMixin(
         """
         constraints = []
         parameters = self.parameters(ensemble_member)
+        string_parameters = self.string_parameters(ensemble_member)
         bounds = self.bounds()
         options = self.energy_system_options()
 
@@ -2186,7 +2192,7 @@ class HeatPhysicsMixin(
             stored_heat = self.state(f"{ates}.Stored_heat")
             heat_loss = self.state(f"{ates}.Heat_loss")
 
-            sup_carrier = parameters[f"{ates}.T_supply_id"]
+            sup_carrier = string_parameters[f"{ates}.T_supply_id"]
             supply_temperatures = self.temperature_regimes(sup_carrier)
 
             if (
@@ -2261,6 +2267,7 @@ class HeatPhysicsMixin(
         """
         constraints = []
         parameters = self.parameters(ensemble_member)
+        string_parameters = self.string_parameters(ensemble_member)
         bounds = self.bounds()
         options = self.energy_system_options()
 
@@ -2316,8 +2323,8 @@ class HeatPhysicsMixin(
                 #     ((heat_flow + big_m * (1 - is_buffer_charging)) / heat_nominal, 0.0, np.inf)
                 # )
 
-            sup_carrier = parameters[f"{b}.T_supply_id"]
-            ret_carrier = parameters[f"{b}.T_return_id"]
+            sup_carrier = string_parameters[f"{b}.T_supply_id"]
+            ret_carrier = string_parameters[f"{b}.T_return_id"]
             supply_temperatures = self.temperature_regimes(sup_carrier)
             return_temperatures = self.temperature_regimes(ret_carrier)
 
@@ -2467,15 +2474,14 @@ class HeatPhysicsMixin(
         """
         constraints = []
 
-        for _carrier, temperatures in self.temperature_carriers().items():
-            number = temperatures["id_number_mapping"]
+        for carrier_id in self.temperature_carriers().keys():
             sum = 0.0
-            temperature_regimes = self.temperature_regimes(int(number))
+            temperature_regimes = self.temperature_regimes(carrier_id)
             for temperature in temperature_regimes:
-                temp_selected = self.state(f"{int(number)}_{temperature}")
+                temp_selected = self.state(f"{carrier_id}_{temperature}")
                 sum += temp_selected
-                temperature_var = self.state(f"{int(number)}_temperature")
-                big_m = 2.0 * self.bounds()[f"{int(number)}_temperature"][1]
+                temperature_var = self.state(f"{carrier_id}_temperature")
+                big_m = 2.0 * self.bounds()[f"{carrier_id}_temperature"][1]
                 # Constraints for setting the temperature variable to the chosen temperature
                 constraints.extend(
                     self._symmetric_big_m_constraints(
@@ -2511,6 +2517,7 @@ class HeatPhysicsMixin(
         """
         constraints = []
         parameters = self.parameters(ensemble_member)
+        string_parameters = self.string_parameters(ensemble_member)
 
         hn_settings = self.heat_network_settings
 
@@ -2544,9 +2551,8 @@ class HeatPhysicsMixin(
                 * self.variable_nominal(f"{heat_exchanger}.Primary.HeatIn.Q")
             )
 
-            sup_carrier_prim = parameters[f"{heat_exchanger}.Primary.T_supply_id"]
-            ret_carrier_prim = parameters[f"{heat_exchanger}.Primary.T_return_id"]
-
+            sup_carrier_prim = string_parameters[f"{heat_exchanger}.Primary.T_supply_id"]
+            ret_carrier_prim = string_parameters[f"{heat_exchanger}.Primary.T_return_id"]
             supply_temperatures_prim = self.temperature_regimes(sup_carrier_prim)
             return_temperatures_prim = self.temperature_regimes(ret_carrier_prim)
 
@@ -2768,8 +2774,8 @@ class HeatPhysicsMixin(
                         )
 
             # Secondary side
-            sup_carrier_sec = parameters[f"{heat_exchanger}.Secondary.T_supply_id"]
-            ret_carrier_sec = parameters[f"{heat_exchanger}.Secondary.T_return_id"]
+            sup_carrier_sec = string_parameters[f"{heat_exchanger}.Secondary.T_supply_id"]
+            ret_carrier_sec = string_parameters[f"{heat_exchanger}.Secondary.T_return_id"]
 
             supply_temperatures_sec = self.temperature_regimes(sup_carrier_sec)
             return_temperatures_sec = self.temperature_regimes(ret_carrier_sec)
@@ -3142,6 +3148,7 @@ class HeatPhysicsMixin(
             list of the added constraints
         """
         constraints = []
+        string_parameters = self.string_parameters(ensemble_member)
 
         for p in self.energy_system_components.get("heat_pipe", []):
             pipe_classes = []
@@ -3150,7 +3157,7 @@ class HeatPhysicsMixin(
 
             constraint_nominal = self.variable_nominal(heat_loss_sym_name)
 
-            carrier = self.parameters(ensemble_member)[f"{p}.carrier_id"]
+            carrier = string_parameters[f"{p}.carrier_id"]
             temperatures = self.temperature_regimes(carrier)
 
             if len(temperatures) == 0:
@@ -3266,14 +3273,15 @@ class HeatPhysicsMixin(
         constraints = []
 
         parameters = self.parameters(ensemble_member)
+        string_parameters = self.string_parameters(ensemble_member)
 
         for hp in [
             *self.energy_system_components.get("heat_pump", []),
         ]:
-            sec_sup_carrier = parameters[f"{hp}.Secondary.T_supply_id"]
-            sec_ret_carrier = parameters[f"{hp}.Secondary.T_return_id"]
-            prim_sup_carrier = parameters[f"{hp}.Primary.T_supply_id"]
-            prim_ret_carrier = parameters[f"{hp}.Primary.T_return_id"]
+            sec_sup_carrier = string_parameters[f"{hp}.Secondary.T_supply_id"]
+            sec_ret_carrier = string_parameters[f"{hp}.Secondary.T_return_id"]
+            prim_sup_carrier = string_parameters[f"{hp}.Primary.T_supply_id"]
+            prim_ret_carrier = string_parameters[f"{hp}.Primary.T_return_id"]
 
             sec_sup_temps = self.temperature_regimes(sec_sup_carrier)
             sec_ret_temps = self.temperature_regimes(sec_ret_carrier)
@@ -3357,11 +3365,11 @@ class HeatPhysicsMixin(
     def __ates_temperature_ordering_path_constraints(self, ensemble_member):
         constraints = []
 
-        parameters = self.parameters(ensemble_member)
+        string_parameters = self.string_parameters(ensemble_member)
 
         for ates in self.energy_system_components.get("ates", []):
 
-            sup_carrier = parameters[f"{ates}.T_supply_id"]
+            sup_carrier = string_parameters[f"{ates}.T_supply_id"]
             supply_temperatures = self.temperature_regimes(sup_carrier)
             if len(supply_temperatures) > 1:
                 big_m = 2.0 * max(supply_temperatures)
