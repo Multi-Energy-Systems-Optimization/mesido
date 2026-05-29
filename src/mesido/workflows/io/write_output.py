@@ -995,7 +995,7 @@ class ScenarioOutput:
     ):
         from esdl.esdl_handler import EnergySystemHandler
 
-        logger.warning("Updated esdl is being created.")
+        logger.info("Updated esdl is being created.")
 
         results = self.extract_results()
         parameters = self.parameters(0)
