@@ -134,20 +134,24 @@ class TestVaryingTemperature(TestCase):
         # Check that the highest supply temperature is selected
         heat_to_discharge_test(heat_problem, results)
         demand_matching_test(heat_problem, results)
-        np.testing.assert_allclose(results[f"{3625334968694477359}_temperature"], 85.0)
-        np.testing.assert_allclose(results[f"{3625334968694477359}_85.0"], 1.0)
+        carrier_id = "c362f53a-3eaf-4d96-8ee6-944e77359fed"
+        np.testing.assert_allclose(results[f"{carrier_id}_temperature"], 85.0)
+        np.testing.assert_allclose(results[f"{carrier_id}_85.0"], 1.0)
 
         # Check that the lowest return temperature is selected
-        np.testing.assert_allclose(results[f"{3625334968694477359000}_temperature"], 60.0)
-        np.testing.assert_allclose(results[f"{3625334968694477359000}_60.0"], 1.0)
+        carrier_ret_id = "c362f53a-3eaf-4d96-8ee6-944e77359fed_ret"
+        np.testing.assert_allclose(results[f"{carrier_ret_id}_temperature"], 60.0)
+        np.testing.assert_allclose(results[f"{carrier_ret_id}_60.0"], 1.0)
 
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
 
+        string_parameters = heat_problem.string_parameters(0)
+
         for pipe in heat_problem.energy_system_components.get("heat_pipe", []):
             heat_loss_opt = results[f"{pipe}__hn_heat_loss"]
-            carrier_id = parameters[f"{pipe}.carrier_id"]
+            carrier_id = string_parameters[f"{pipe}.carrier_id"]
             temperature = results[f"{carrier_id}_temperature"]
             heat_loss_calc = [
                 pipe_heat_loss(
@@ -216,21 +220,22 @@ class TestVaryingTemperature(TestCase):
             np.testing.assert_allclose(target, results[f"{d}.Heat_demand"])
 
         # Check that the lowest temperature (80.0) is the outputted temperature
-        np.testing.assert_allclose(results[f"{4195016129475469474608}_temperature"], 80.0)
+        carrier_id_str = "419b5016-12c9-475a-b46e-9e474b60aa8f"
+        np.testing.assert_allclose(results[f"{carrier_id_str}_temperature"], 80.0)
         # Verify that also the integer is correctly set
-        np.testing.assert_allclose(results[f"{4195016129475469474608}_80.0"], 1.0)
-        np.testing.assert_allclose(results[f"{4195016129475469474608}_120.0"], 0.0)
+        np.testing.assert_allclose(results[f"{carrier_id_str}_80.0"], 1.0)
+        np.testing.assert_allclose(results[f"{carrier_id_str}_120.0"], 0.0)
 
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
 
-        parameters = heat_problem.parameters(0)
+        string_parameters = heat_problem.string_parameters(0)
 
         for pipe in heat_problem.energy_system_components.get("heat_pipe", []):
             heat_loss_opt = results[f"{pipe}__hn_heat_loss"]
-            carrier_id = parameters[f"{pipe}.carrier_id"]
-            if carrier_id == 4195016129475469474608:
+            carrier_id = string_parameters[f"{pipe}.carrier_id"]
+            if carrier_id == carrier_id_str:
                 temperature = results[f"{carrier_id}_temperature"]
                 heat_loss_calc = [
                     pipe_heat_loss(
@@ -281,21 +286,22 @@ class TestVaryingTemperature(TestCase):
         results = heat_problem.extract_results()
 
         # Check that the lowest temperature (30.0) is the outputted temperature
-        np.testing.assert_allclose(results[f"{4195016129475469474608000}_temperature"], 30.0)
+        carrier_ret_id = "419b5016-12c9-475a-b46e-9e474b60aa8f_ret"
+        np.testing.assert_allclose(results[f"{carrier_ret_id}_temperature"], 30.0)
         # Verify that also the integer is correctly set
-        np.testing.assert_allclose(results[f"{4195016129475469474608000}_30.0"], 1.0)
-        np.testing.assert_allclose(results[f"{4195016129475469474608000}_40.0"], 0.0)
+        np.testing.assert_allclose(results[f"{carrier_ret_id}_30.0"], 1.0)
+        np.testing.assert_allclose(results[f"{carrier_ret_id}_40.0"], 0.0)
 
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
 
-        parameters = heat_problem.parameters(0)
+        string_parameters = heat_problem.string_parameters(0)
 
         for pipe in heat_problem.energy_system_components.get("heat_pipe", []):
             heat_loss_opt = results[f"{pipe}__hn_heat_loss"]
-            carrier_id = parameters[f"{pipe}.carrier_id"]
-            if carrier_id == 4195016129475469474608000:
+            carrier_id = string_parameters[f"{pipe}.carrier_id"]
+            if carrier_id == carrier_ret_id:
                 temperature = results[f"{carrier_id}_temperature"]
                 heat_loss_calc = [
                     pipe_heat_loss(
@@ -347,22 +353,23 @@ class TestVaryingTemperature(TestCase):
 
         # Check that the lowest feasible temperature (80.0) is the outputted temperature and not
         # the 69 which is below the secondary side supply temperature
-        np.testing.assert_allclose(results[f"{33638164429859421}_temperature"], 80.0)
+        carrier_sup_id = "d336e381-ca6f-442e-985e-9f4c2bec1efe"
+        np.testing.assert_allclose(results[f"{carrier_sup_id}_temperature"], 80.0)
         # Verify that also the integer is correctly set
-        np.testing.assert_allclose(results[f"{33638164429859421}_69.0"], 0.0)
-        np.testing.assert_allclose(results[f"{33638164429859421}_80.0"], 1.0)
-        np.testing.assert_allclose(results[f"{33638164429859421}_90.0"], 0.0, atol=1e-12)
+        np.testing.assert_allclose(results[f"{carrier_sup_id}_69.0"], 0.0)
+        np.testing.assert_allclose(results[f"{carrier_sup_id}_80.0"], 1.0)
+        np.testing.assert_allclose(results[f"{carrier_sup_id}_90.0"], 0.0, atol=1e-12)
 
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
 
-        parameters = heat_problem.parameters(0)
+        string_parameters = heat_problem.string_parameters(0)
 
         for pipe in heat_problem.energy_system_components.get("heat_pipe", []):
             heat_loss_opt = results[f"{pipe}__hn_heat_loss"]
-            carrier_id = parameters[f"{pipe}.carrier_id"]
-            if carrier_id == 33638164429859421:
+            carrier_id = string_parameters[f"{pipe}.carrier_id"]
+            if carrier_id == carrier_sup_id:
                 temperature = results[f"{carrier_id}_temperature"]
                 heat_loss_calc = [
                     pipe_heat_loss(
@@ -412,7 +419,8 @@ class TestVaryingTemperature(TestCase):
         hex_id = name_to_id_map["HeatExchange_39ed"]
 
         # Check that the problem has an infeasible temperature for the hex
-        np.testing.assert_allclose(results[f"{33638164429859421}_temperature"], 69.0)
+        carrier_sup_id = "d336e381-ca6f-442e-985e-9f4c2bec1efe"
+        np.testing.assert_allclose(results[f"{carrier_sup_id}_temperature"], 69.0)
         # Verify that the hex is disabled
 
         np.testing.assert_allclose(results[f"{hex_id}.__disabled"], 1.0)
@@ -456,10 +464,11 @@ class TestVaryingTemperature(TestCase):
         results = heat_problem.extract_results()
 
         # Check that the lowest temperature (70.0) is the outputted temperature
-        np.testing.assert_allclose(results[f"{7212673879469902607010}_temperature"], 70.0)
+        carrier_sec_id = "72126c73-87e9-4bf6-99cf-d02a6c07010c"
+        np.testing.assert_allclose(results[f"{carrier_sec_id}_temperature"], 70.0)
         # Verify that also the integer is correctly set
-        np.testing.assert_allclose(results[f"{7212673879469902607010}_70.0"], 1.0)
-        np.testing.assert_allclose(results[f"{7212673879469902607010}_90.0"], 0.0)
+        np.testing.assert_allclose(results[f"{carrier_sec_id}_70.0"], 1.0)
+        np.testing.assert_allclose(results[f"{carrier_sec_id}_90.0"], 0.0)
 
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
@@ -494,10 +503,11 @@ class TestVaryingTemperature(TestCase):
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results, atol=20)
 
+        carrier_sec_id = "72126c73-87e9-4bf6-99cf-d02a6c07010c"
         expected_cop = (
             parameters[f"{hp_id}.efficiency"]
-            * (273.15 + results[f"{7212673879469902607010}_temperature"])
-            / (results[f"{7212673879469902607010}_temperature"] - 70.0)
+            * (273.15 + results[f"{carrier_sec_id}_temperature"])
+            / (results[f"{carrier_sec_id}_temperature"] - 70.0)
         )
 
         np.testing.assert_allclose(
