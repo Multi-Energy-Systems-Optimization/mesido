@@ -3,6 +3,7 @@ from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.physics_mixin import PhysicsMixin
 from mesido.qth_not_maintained.qth_mixin import QTHMixin
+from mesido.techno_economic_mixin import TechnoEconomicMixin
 
 import numpy as np
 
@@ -98,6 +99,58 @@ class HeatProblemTvar(HeatProblem):
                         )
 
         return constraints
+
+
+class HeatProblemTvarWithTechnoEconomicMixin(HeatProblemTvar, TechnoEconomicMixin):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.base_carrier_name = "Heat"
+        self.base_carrier_id = self._get_id_from_carrier_name(self.base_carrier_name)
+
+    def temperature_regimes(self, carrier):
+        temperatures = []
+        if carrier == self.base_carrier_id:
+            temperatures = self._get_related_carrier_temperatures(self.base_carrier_name)
+        return temperatures
+
+    def _get_id_from_carrier_name(self, carrier_name: str):
+        """
+        Return the id of the carrier with the given name.
+
+        Parameters
+        ----------
+        carrier_name : Name of the carrier for which the id is requested.
+        """
+
+        return next(
+            (
+                carrier.get("id")
+                for carrier in self.esdl_carriers.values()
+                if carrier.get("name") == carrier_name
+            ),
+            None,
+        )
+
+    def _get_related_carrier_temperatures(self, carrier_name: str):
+        """
+        Return the sorted temperatures of carriers related to the given carrier name.
+
+        A carrier is considered related if its name starts with ``<carrier_name>_``
+        followed by a numeric suffix, for example ``Heat_70`` or ``Heat_90``.
+
+        Parameters
+        ----------
+        carrier_name : Base name of the carrier group.
+        """
+
+        return sorted(
+            carrier["temperature"]
+            for carrier in self.esdl_carriers.values()
+            if carrier_name
+            and carrier.get("name", "").startswith(f"{carrier_name}_")
+            and carrier["name"][len(f"{carrier_name}_") :].isdigit()
+        )
 
 
 class QTHProblem(

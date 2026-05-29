@@ -1441,9 +1441,15 @@ class HeatPhysicsMixin(
                             f"{sup_carrier}_{supply_temperature}"
                         )
 
+                        heat_out_expected = discharge * cp * rho * supply_temperature
+                        if (0.0 < parameters[f"{s}.max_temperature"]) and (
+                            parameters[f"{s}.max_temperature"] < supply_temperature
+                        ):
+                            heat_out_expected = 0.0
+
                         constraints.extend(
                             self._symmetric_big_m_constraints(
-                                heat_out - discharge * cp * rho * supply_temperature,
+                                heat_out - heat_out_expected,
                                 (1.0 - sup_temperature_is_selected) * big_m,
                                 constraint_nominal,
                             )
