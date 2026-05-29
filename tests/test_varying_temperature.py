@@ -60,8 +60,8 @@ class TestVaryingTemperature(TestCase):
 
         # Check that from the options the lowest supply temperature is selected
         # for the network supply temperature
-        carrier_id_number = heat_problem._get_id_number_mapping_from_carrier_name("Heat")
-        temperature_regimes = heat_problem.temperature_regimes(int(carrier_id_number))
+        carrier_id_number = heat_problem._get_id_from_carrier_name("Heat")
+        temperature_regimes = heat_problem.temperature_regimes(carrier_id_number)
         np.testing.assert_equal(
             min(temperature_regimes),
             results[f"{carrier_id_number}_temperature"],
