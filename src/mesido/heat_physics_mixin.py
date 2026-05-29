@@ -1427,10 +1427,14 @@ class HeatPhysicsMixin(
 
             if temp_out_profile is None:
                 if len(supply_temperatures) == 0:
+                    heat_out_expected = discharge * cp * rho * parameters[f"{s}.T_supply"]
+                    if (0.0 < parameters[f"{s}.max_temperature"]) and (
+                        parameters[f"{s}.max_temperature"] < parameters[f"{s}.T_supply"]
+                    ):
+                        heat_out_expected = 0.0
                     constraints.append(
                         (
-                            (heat_out - discharge * cp * rho * parameters[f"{s}.T_supply"])
-                            / heat_nominal,
+                            (heat_out - heat_out_expected) / heat_nominal,
                             0.0,
                             0.0,
                         )
