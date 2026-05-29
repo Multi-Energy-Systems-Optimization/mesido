@@ -25,6 +25,7 @@
 - Added electricity cost profile to variable operational cost of assets which convert electricity to heat.
 - Heating_and_cooling example is cleaned up
 - The number of binary variables for the linearized head loss calculation is reduced by half, by only creating them for the positive quadrant.
+- Check if needed and execute rerun for HIGHS staged optimization in the Grow workflow
 
 ## Fixed
 - ProfileConstraints: Use already available function to get profile quantity and unit
