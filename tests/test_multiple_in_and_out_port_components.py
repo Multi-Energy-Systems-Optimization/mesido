@@ -353,6 +353,14 @@ class TestHP(TestCase):
                 # self.heat_network_settings["minimize_head_losses"] = True  # used for manual tests
                 return options
 
+            def solver_options(self):
+                options = super().solver_options()
+                options["solver"] = "highs"
+                highs_options = options["highs"] = {}
+                highs_options["presolve"] = "off"
+
+                return options
+
         # Do not delete kwargs: this is used to manualy check writing out of profile data
         kwargs = {
             "write_result_db_profiles": False,

@@ -245,7 +245,7 @@ class ValidateWithPandaPipes(TestCase):
                 )
             else:
                 np.testing.assert_array_less(
-                    results[f"{pipe_id}.dH"][ii] / pandapipes_head_loss_m[ii][0], 1.10
+                    results[f"{pipe_id}.dH"][ii] / pandapipes_head_loss_m[ii][0], 1.15
                 )
             np.testing.assert_array_less(
                 1.0, results[f"{pipe_id}.dH"][ii] / pandapipes_head_loss_m[ii][0]

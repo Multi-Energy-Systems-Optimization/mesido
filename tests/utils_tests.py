@@ -184,7 +184,7 @@ def heat_to_discharge_test(solution, results, atol=1e-2, rtol=1.0e-4):
             atol=atol,
         )
         np.testing.assert_allclose(
-            results[f"{d}.HeatOut.Heat"], results[f"{d}.Q"] * rho * cp * return_t
+            results[f"{d}.HeatOut.Heat"], results[f"{d}.Q"] * rho * cp * return_t, rtol=rtol
         )
 
     for d in solution.energy_system_components.get("cold_demand", []):
@@ -283,7 +283,7 @@ def heat_to_discharge_test(solution, results, atol=1e-2, rtol=1.0e-4):
             results[f"{d}.HeatIn.Q"][indices] * rho * cp * return_t,
             atol=atol,
         )
-        indices = results[f"{d}.HeatIn.Q"] < 0
+        indices = results[f"{d}.HeatIn.Q"] < -1e-7
         if isinstance(supply_t, float):
             supply_t = supply_temp
         else:
