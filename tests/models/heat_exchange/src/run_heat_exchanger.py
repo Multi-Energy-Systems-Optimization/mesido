@@ -127,14 +127,11 @@ class HeatProblemTvarGeneral(
     def constraints(self, ensemble_member):
         constraints = super().constraints(ensemble_member)
         # These constraints are added to allow for a quicker solve
-        for _carrier, temperatures in self.temperature_carriers().items():
-            carrier_id_number_mapping = str(temperatures["id_number_mapping"])
-            temperature_regimes = self.temperature_regimes(int(carrier_id_number_mapping))
+        for carrier_id in self.temperature_carriers().keys():
+            temperature_regimes = self.temperature_regimes(carrier_id)
             if len(temperature_regimes) > 0:
                 for temperature in temperature_regimes:
-                    selected_temp_vec = self.state_vector(
-                        f"{int(carrier_id_number_mapping)}_{temperature}"
-                    )
+                    selected_temp_vec = self.state_vector(f"{carrier_id}_{temperature}")
                     for i in range(1, len(self.times())):
                         constraints.append(
                             (selected_temp_vec[i] - selected_temp_vec[i - 1], 0.0, 0.0)
@@ -155,7 +152,7 @@ class HeatProblemTvarSecondary(HeatProblemTvarGeneral):
 
     def temperature_regimes(self, carrier):
         temperatures = []
-        if carrier == 7212673879469902607010:
+        if carrier == "72126c73-87e9-4bf6-99cf-d02a6c07010c":
             # supply
             temperatures = [70.0, 90.0]
 
@@ -171,7 +168,7 @@ class HeatProblemTvar(HeatProblemTvarGeneral):
 
     def temperature_regimes(self, carrier):
         temperatures = []
-        if carrier == 33638164429859421:  # 7212673879469902607010:
+        if carrier == "d336e381-ca6f-442e-985e-9f4c2bec1efe":  # 7212673879469902607010:
             # supply
             temperatures = [69.0, 80.0, 90.0]
 
@@ -190,7 +187,7 @@ class HeatProblemTvarDisableHEX(HeatProblemTvarGeneral):
 
     def temperature_regimes(self, carrier):
         temperatures = []
-        if carrier == 33638164429859421:  # 7212673879469902607010:
+        if carrier == "d336e381-ca6f-442e-985e-9f4c2bec1efe":  # 7212673879469902607010:
             # supply
             temperatures = [69.0]
 

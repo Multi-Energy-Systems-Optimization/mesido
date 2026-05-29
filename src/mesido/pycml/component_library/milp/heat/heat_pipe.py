@@ -43,7 +43,7 @@ class HeatPipe(_NonStorageComponent):
         assert "area" not in modifiers, "modifying area directly is not allowed"
         self.area = 0.25 * pi * self.diameter**2
         self.temperature = nan
-        self.carrier_id = -1
+        self.carrier_id = "-1"
         self.pressure = 16.0e5
 
         # Parameters determining the heat loss
