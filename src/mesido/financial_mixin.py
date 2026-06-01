@@ -810,7 +810,7 @@ class FinancialMixin(
             price_profile = price_profile_timeseries.values[mask]
             return price_profile
 
-        return Timeseries(self.times(), np.zeros(len(self.times())))
+        return np.zeros(len(self.times()))
 
     def __investment_cost_constraints(self, ensemble_member):
         """
@@ -972,7 +972,7 @@ class FinancialMixin(
                 * (heat_charge[1:] + heat_discharge[1:])
                 * timesteps
             )
-            sum_ += ca.sum1(price_profile.values[1:] * pump_power[1:] * timesteps / eff)
+            sum_ += ca.sum1(price_profile[1:] * pump_power[1:] * timesteps / eff)
 
             constraints.append(((variable_operational_cost - sum_) / nominal, 0.0, 0.0))
 
@@ -991,7 +991,7 @@ class FinancialMixin(
 
             price_profile = self.__get_electricity_price_profile_or_zero()
 
-            sum_ = ca.sum1(price_profile.values[1:] * pump_power[1:] * timesteps_hr / eff)
+            sum_ = ca.sum1(price_profile[1:] * pump_power[1:] * timesteps_hr / eff)
 
             constraints.append(((variable_operational_cost - sum_) / nominal, 0.0, 0.0))
 
@@ -1042,7 +1042,7 @@ class FinancialMixin(
                 ca.sum1(variable_operational_cost_coefficient * nominator_vector[1:] * timesteps_hr)
                 / denominator
             )
-            sum_ += ca.sum1(price_profile.values[1:] * pump_power[1:] * timesteps_hr / eff)
+            sum_ += ca.sum1(price_profile[1:] * pump_power[1:] * timesteps_hr / eff)
 
             if (len(self.get_electricity_carriers().keys()) > 0) and s in [
                 *self.energy_system_components.get("heat_source_elec", []),
@@ -1051,8 +1051,7 @@ class FinancialMixin(
                 *self.energy_system_components.get("heat_pump_elec", []),
             ]:
                 sum_ += (
-                    ca.sum1(price_profile.values[1:] * nominator_vector[1:] * timesteps_hr)
-                    / denominator
+                    ca.sum1(price_profile[1:] * nominator_vector[1:] * timesteps_hr) / denominator
                 )
                 if variable_operational_cost_coefficient > 0.0:
                     logger.warning(
@@ -1082,11 +1081,11 @@ class FinancialMixin(
             sum_ = ca.sum1(
                 variable_operational_cost_coefficient * elec_consumption[1:] * timesteps_hr
             )
-            sum_ += ca.sum1(price_profile.values[1:] * pump_power[1:] * timesteps_hr / eff)
+            sum_ += ca.sum1(price_profile[1:] * pump_power[1:] * timesteps_hr / eff)
             if hp not in self.energy_system_components.get("heat_pump_elec", []):
                 # assuming that if heatpump has electricity port, the cost for the electricity
                 # are already made by the electricity producer and transport
-                sum_ += ca.sum1(price_profile.values[1:] * elec_consumption[1:] * timesteps_hr)
+                sum_ += ca.sum1(price_profile[1:] * elec_consumption[1:] * timesteps_hr)
             constraints.append(((variable_operational_cost - sum_) / nominal, 0.0, 0.0))
 
         for ac in self.energy_system_components.get("airco", []):
