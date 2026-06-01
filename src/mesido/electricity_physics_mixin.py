@@ -262,8 +262,6 @@ class ElectricityPhysicsMixin(
             if f"{asset}.maximum_electricity_source" in timeseries_io_names:
                 lb = Timeseries(t, np.zeros(len(t)))
                 ub = self.get_timeseries(f"{asset}.maximum_electricity_source")
-                start_indx = np.where(ub.times == t[0])[0][0]
-                end_indx = np.where(ub.times == t[-1])[0][0] + 1
                 mask = (ub.times >= t[0]) & (ub.times <= t[-1])
                 ub = Timeseries(t, (np.asarray(ub.values)[mask]).tolist())
                 self.__electricity_producer_upper_bounds[f"{asset}.Electricity_source"] = (lb, ub)
