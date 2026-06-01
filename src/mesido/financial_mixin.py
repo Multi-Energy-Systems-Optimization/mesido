@@ -98,6 +98,7 @@ class FinancialMixin(
         options = self.energy_system_options()
         parameters = self.parameters(0)
         bounds = self.bounds()
+        string_parameters = self.string_parameters(0)
 
         # Making the cost variables; fixed_operational_cost, variable_operational_cost,
         # installation_cost and investment_cost
@@ -412,13 +413,10 @@ class FinancialMixin(
             ]:
 
                 carrier_name = None
-                for _id, attr in self.get_electricity_carriers().items():
-                    if attr["id_number_mapping"] == parameters[f"{asset_name}.id_mapping_carrier"]:
-                        carrier_name = attr["name"]
-                for _id, attr in self.get_gas_carriers().items():
-                    if attr["id_number_mapping"] == parameters[f"{asset_name}.id_mapping_carrier"]:
-                        carrier_name = attr["name"]
-                if carrier_name is not None:
+                carrier_id_asset = string_parameters[f"{asset_name}.id_mapping_carrier"]
+                carrier = self.esdl_carriers.get(carrier_id_asset, None)
+                carrier_name = carrier["name"]
+                if f"{carrier_name}.price_profile" in self.io.get_timeseries_names():
                     asset_revenue_var = f"{asset_name}__revenue"
                     self._asset_revenue_map[asset_name] = asset_revenue_var
                     self.__asset_revenue_var[asset_revenue_var] = ca.MX.sym(asset_revenue_var)
@@ -789,6 +787,25 @@ class FinancialMixin(
     def __state_vector_scaled(self, variable, ensemble_member):
         return self._BaseProblemMixin__state_vector_scaled(variable, ensemble_member)
 
+    def __get_electricity_price_profile_or_zero(self):
+        """
+        Variable OPEX electricity costs currently support at most one electricity carrier.
+        Otherwise, there needs to be a link between  the electricity carrier and the asset which
+        is lots of extra effort for the user.
+        Returns the timeseries price profile for the electricity carrier or a zero array.
+        """
+        electricity_carriers = self.get_electricity_carriers()
+        assert len(electricity_carriers.keys()) <= 1
+
+        if len(electricity_carriers.keys()) == 0:
+            return Timeseries(self.times(), np.zeros(len(self.times())))
+
+        price_profile_name = f"{list(electricity_carriers.values())[0]['name']}.price_profile"
+        if price_profile_name in self.io.get_timeseries_names():
+            return self.get_timeseries(price_profile_name)
+
+        return Timeseries(self.times(), np.zeros(len(self.times())))
+
     def __investment_cost_constraints(self, ensemble_member):
         """
         This function adds constraints to set the investment cost variable. The investment cost
@@ -942,20 +959,7 @@ class FinancialMixin(
             pump_power = self.__state_vector_scaled(f"{asset}.Pump_power", ensemble_member)
             eff = parameters[f"{asset}.pump_efficiency"]
 
-            # We assume that only one electricity carrier is specified, to compute the cost with.
-            # Otherwise we need to link the electricity carrier somehow to the source and pump asset
-            # which is lots of extra effort for the user.
-            assert len(self.get_electricity_carriers().keys()) <= 1
-
-            if len(self.get_electricity_carriers().keys()) == 1:
-                try:
-                    price_profile = self.get_timeseries(
-                        f"{list(self.get_electricity_carriers().values())[0]['name']}.price_profile"
-                    )
-                except KeyError:
-                    price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
-            else:
-                price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
+            price_profile = self.__get_electricity_price_profile_or_zero()
 
             sum_ = ca.sum1(
                 variable_operational_cost_coefficient
@@ -979,17 +983,7 @@ class FinancialMixin(
             pump_power = self.__state_vector_scaled(f"{asset}.Pump_power", ensemble_member)
             eff = parameters[f"{asset}.pump_efficiency"]
 
-            # We assume that only one electricity carrier is specified, to compute the cost with.
-            # Otherwise we need to link the electricity carrier somehow to the source and pump asset
-            # which is lots of extra effort for the user.
-            assert len(self.get_electricity_carriers().keys()) <= 1
-
-            if len(self.get_electricity_carriers().keys()) == 1:
-                price_profile = self.get_timeseries(
-                    f"{list(self.get_electricity_carriers().values())[0]['name']}.price_profile"
-                )
-            else:
-                price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
+            price_profile = self.__get_electricity_price_profile_or_zero()
 
             sum_ = ca.sum1(price_profile.values[1:] * pump_power[1:] * timesteps_hr / eff)
 
@@ -1009,20 +1003,7 @@ class FinancialMixin(
             pump_power = self.__state_vector_scaled(f"{s}.Pump_power", ensemble_member)
             eff = parameters[f"{s}.pump_efficiency"]
 
-            # We assume that only one electricity carrier is specified, to compute the cost with.
-            # Otherwise we need to link the electricity carrier somehow to the source and pump asset
-            # which is lots of extra effort for the user.
-            assert len(self.get_electricity_carriers().keys()) <= 1
-
-            if len(self.get_electricity_carriers().keys()) == 1:
-                try:
-                    price_profile = self.get_timeseries(
-                        f"{list(self.get_electricity_carriers().values())[0]['name']}.price_profile"
-                    )
-                except KeyError:
-                    price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
-            else:
-                price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
+            price_profile = self.__get_electricity_price_profile_or_zero()
 
             nominator_vector = None
             denominator = 1.0
@@ -1090,17 +1071,7 @@ class FinancialMixin(
             pump_power = self.__state_vector_scaled(f"{hp}.Pump_power", ensemble_member)
             eff = parameters[f"{hp}.pump_efficiency"]
 
-            # We assume that only one electricity carrier is specified, to compute the cost with.
-            # Otherwise we need to link the electricity carrier somehow to the source and pump asset
-            # which is lots of extra effort for the user.
-            assert len(self.get_electricity_carriers().keys()) <= 1
-
-            if len(self.get_electricity_carriers().keys()) == 1:
-                price_profile = self.get_timeseries(
-                    f"{list(self.get_electricity_carriers().values())[0]['name']}.price_profile"
-                )
-            else:
-                price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
+            price_profile = self.__get_electricity_price_profile_or_zero()
 
             sum_ = ca.sum1(
                 variable_operational_cost_coefficient * elec_consumption[1:] * timesteps_hr
@@ -1577,23 +1548,22 @@ class FinancialMixin(
         #  finalised
 
         # TODO: add fixed price default from ESDL in case no price profile is defined.
-        parameters = self.parameters(ensemble_member)
+        string_parameters = self.string_parameters(ensemble_member)
+
+        carriers = self.esdl_carriers
 
         for demand in [
             *self.energy_system_components.get("gas_demand", []),
             *self.energy_system_components.get("electricity_demand", []),
         ]:
 
-            carrier_name = None
-            for _id, attr in self.get_electricity_carriers().items():
-                if attr["id_number_mapping"] == parameters[f"{demand}.id_mapping_carrier"]:
-                    carrier_name = attr["name"]
-                    cost_multiplier = 1 / 3600.0  # priceprofile electricity is EUR/Wh
-            for _id, attr in self.get_gas_carriers().items():
-                if attr["id_number_mapping"] == parameters[f"{demand}.id_mapping_carrier"]:
-                    carrier_name = attr["name"]
-                    cost_multiplier = 1.0  # priceprofile gas is in EUR/g
-            if carrier_name is not None:
+            carrier_id = string_parameters[f"{demand}.id_mapping_carrier"]
+            carrier_name = carriers[carrier_id]["name"]
+            if carrier_id in self.get_electricity_carriers().keys():
+                cost_multiplier = 1 / 3600.0  # priceprofile electricity is EUR/Wh
+            else:
+                cost_multiplier = 1.0  # priceprofile gas is in EUR/g
+            if f"{carrier_name}.price_profile" in self.io.get_timeseries_names():
                 price_profile_timeseries = self.get_timeseries(f"{carrier_name}.price_profile")
                 # The slicing is required if the timeseries wasn't adapted in the read
                 mask = (price_profile_timeseries.times >= self.times()[0]) & (

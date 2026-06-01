@@ -1,4 +1,4 @@
-# [Unreleased-main] - 2026-05-13
+# [Unreleased-main] - 2026-06-01
 
 ## Added
 - Electricity consumption calculation of geothermal assets, using the defined COP. 
@@ -25,7 +25,10 @@
 - Added electricity cost profile to variable operational cost of assets which convert electricity to heat.
 - Heating_and_cooling example is cleaned up
 - The number of binary variables for the linearized head loss calculation is reduced by half, by only creating them for the positive quadrant.
-- Check if needed and execute rerun for HIGHS staged optimization in the Grow workflow
+- No longer required to add an electricity price profile if an electricity carrier is available.
+- Removed the need for "_ret" in the carrier name and id.
+- The carrier id is now saved as a string and thus in the string_parameters of each asset.
+- Check if needed and execute rerun for HIGHS staged optimization in the Grow workflow.
 
 ## Fixed
 - ProfileConstraints: Use already available function to get profile quantity and unit
