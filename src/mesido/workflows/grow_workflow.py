@@ -159,23 +159,17 @@ def is_stage_rerun_required(solution) -> bool:
     Staged optimization: Check if stage 2 has failed while using the HIGHS solver. If the failure
     is due to Infeasibility in priority 2 then return True to flag that a rerun is required of the
     specific stage.
-    Note:
-    It is assumed that stage 1 consists out of 2 priorities and that priority 2 in stage 2 is
-    MinimizeTCO
-    TODO: This function has to be made more modular if this functionality is needed for more
-    stages/priorities. The presolve challanges with HIGHS might be resolved with the needed
-    version update that is currently possible due to DTK package compatibility issues
+    Note: It is assumed that priority 2 in stage 2 is MinimizeTCO
     """
 
     solver_success, _ = solution.solver_success(solution.solver_stats, False)
     priorities_output = solution._priorities_output
 
-    if not solver_success and len(priorities_output) == 4:
-        is_stage2_priority2 = len(priorities_output[3]) >= 1 and priorities_output[3][0] == 2
-        if is_stage2_priority2:
+    if not solver_success and solution._stage == 2:
+        if solution._EndScenarioSizing__priority == 2:
             is_priority_infeasible = (
-                len(priorities_output[3]) >= 5
-                and priorities_output[3][4]["return_status"] == "Infeasible"
+                len(priorities_output[-1]) >= 5
+                and priorities_output[-1][4]["return_status"] == "Infeasible"
             )
             if is_priority_infeasible:
                 logger.warning(
@@ -186,7 +180,7 @@ def is_stage_rerun_required(solution) -> bool:
             # Ensure that the last completed priority is 2
             logger.error(
                 "Staged optimization: Expected stage 2, priority 2 in _priorities_output but "
-                f"priority number: {priorities_output[3][0]} was found instead."
+                f"priority number: {solution._EndScenarioSizing__priority} was found instead."
             )
             sys.exit(1)
 
@@ -198,11 +192,6 @@ def is_stage_rerun_required(solution) -> bool:
 def check_solver_succes_grow_problem(solution):
     solver_success, _ = solution.solver_success(solution.solver_stats, False)
     if not solver_success:
-        priorities_output = solution._priorities_output
-        idx = next(
-            (i for i, row in enumerate(priorities_output) if row[2] is False),
-            None,
-        )
         if (
             solution.solver_stats["return_status"]
             == solver_messages["Time_limit"][solution.solver_options()["solver"]]
@@ -210,13 +199,13 @@ def check_solver_succes_grow_problem(solution):
         ):
             logger.error(
                 f"Optimization maximum allowed time limit reached for stage: "
-                f"{solution._stage}, priority: {priorities_output[idx][0]}"
+                f"{solution._stage}, priority: {solution._EndScenarioSizing__priority}"
             )
             exit(1)
         else:
             logger.error(
                 f"Unsuccessful: unexpected error for stage: {solution._stage}, "
-                f"priority: {priorities_output[idx][0]}."
+                f"priority: {solution._EndScenarioSizing__priority}."
             )
             exit(1)
 
@@ -238,22 +227,12 @@ class SolverHIGHS:
 class SolverHIGHSNoPresolve(SolverHIGHS):
     def solver_options(self):
         options = super().solver_options()
-        # Presolve is turned of under the following conditions:
-        # stage_2, priority_1 (rerun) has to be completed and info stored in _priorities_output.
-        # _priorities_output should contain info of:
-        # stage1: priority 1 and 2
-        # stage2: priority 1 and 2 (failed)
-        # stage2 (rerun): priority 1
-        if len(self._priorities_output) == 5:
-            if (
-                self._priorities_output[3][4]["return_status"] == "Infeasible"
-                and self._priorities_output[3][0] == 2
-            ):
-                options["highs"]["presolve"] = "off"
-                logger.warning(
-                    f"HIGHS solver: presolve is switched off for priority: 2 of "
-                    f"stage: {self._stage}."
-                )
+        if self._EndScenarioSizing__priority == 2:
+            options["highs"]["presolve"] = "off"
+            logger.warning(
+                f"HIGHS solver: presolve is switched off for priority: 2 of "
+                f"stage: {self._stage}."
+            )
 
         return options
 
