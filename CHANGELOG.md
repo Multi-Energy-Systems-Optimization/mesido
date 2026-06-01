@@ -26,6 +26,8 @@
 - Heating_and_cooling example is cleaned up
 - The number of binary variables for the linearized head loss calculation is reduced by half, by only creating them for the positive quadrant.
 - No longer required to add an electricity price profile if an electricity carrier is available.
+- Removed the need for "_ret" in the carrier name and id.
+- The carrier id is now saved as a string and thus in the string_parameters of each asset. 
 - The headloss and hydraulic power variables are now only created if the headloss calculations are turned on, reducing the transcribing time of the problem.
 - The method update_heat_network_settings has been created to update the dictionary for heat_network_settings and ensure the correct settings are applied from the start.
 

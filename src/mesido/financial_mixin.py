@@ -98,6 +98,7 @@ class FinancialMixin(
         options = self.energy_system_options()
         parameters = self.parameters(0)
         bounds = self.bounds()
+        string_parameters = self.string_parameters(0)
 
         # Making the cost variables; fixed_operational_cost, variable_operational_cost,
         # installation_cost and investment_cost
@@ -412,13 +413,10 @@ class FinancialMixin(
             ]:
 
                 carrier_name = None
-                for _id, attr in self.get_electricity_carriers().items():
-                    if attr["id_number_mapping"] == parameters[f"{asset_name}.id_mapping_carrier"]:
-                        carrier_name = attr["name"]
-                for _id, attr in self.get_gas_carriers().items():
-                    if attr["id_number_mapping"] == parameters[f"{asset_name}.id_mapping_carrier"]:
-                        carrier_name = attr["name"]
-                if carrier_name is not None:
+                carrier_id_asset = string_parameters[f"{asset_name}.id_mapping_carrier"]
+                carrier = self.esdl_carriers.get(carrier_id_asset, None)
+                carrier_name = carrier["name"]
+                if f"{carrier_name}.price_profile" in self.io.get_timeseries_names():
                     asset_revenue_var = f"{asset_name}__revenue"
                     self._asset_revenue_map[asset_name] = asset_revenue_var
                     self.__asset_revenue_var[asset_revenue_var] = ca.MX.sym(asset_revenue_var)
@@ -1562,23 +1560,22 @@ class FinancialMixin(
         #  finalised
 
         # TODO: add fixed price default from ESDL in case no price profile is defined.
-        parameters = self.parameters(ensemble_member)
+        string_parameters = self.string_parameters(ensemble_member)
+
+        carriers = self.esdl_carriers
 
         for demand in [
             *self.energy_system_components.get("gas_demand", []),
             *self.energy_system_components.get("electricity_demand", []),
         ]:
 
-            carrier_name = None
-            for _id, attr in self.get_electricity_carriers().items():
-                if attr["id_number_mapping"] == parameters[f"{demand}.id_mapping_carrier"]:
-                    carrier_name = attr["name"]
-                    cost_multiplier = 1 / 3600.0  # priceprofile electricity is EUR/Wh
-            for _id, attr in self.get_gas_carriers().items():
-                if attr["id_number_mapping"] == parameters[f"{demand}.id_mapping_carrier"]:
-                    carrier_name = attr["name"]
-                    cost_multiplier = 1.0  # priceprofile gas is in EUR/g
-            if carrier_name is not None:
+            carrier_id = string_parameters[f"{demand}.id_mapping_carrier"]
+            carrier_name = carriers[carrier_id]["name"]
+            if carrier_id in self.get_electricity_carriers().keys():
+                cost_multiplier = 1 / 3600.0  # priceprofile electricity is EUR/Wh
+            else:
+                cost_multiplier = 1.0  # priceprofile gas is in EUR/g
+            if f"{carrier_name}.price_profile" in self.io.get_timeseries_names():
                 price_profile_timeseries = self.get_timeseries(f"{carrier_name}.price_profile")
                 # The slicing is required if the timeseries wasn't adapted in the read
                 mask = (price_profile_timeseries.times >= self.times()[0]) & (

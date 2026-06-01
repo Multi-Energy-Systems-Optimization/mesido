@@ -138,7 +138,7 @@ class HeatProblemTvar(HeatProblem):
 
     def temperature_regimes(self, carrier):
         temperatures = []
-        if carrier == 7212673879469902607010:
+        if carrier == "72126c73-87e9-4bf6-99cf-d02a6c07010c":
             # supply
             temperatures = [85.0, 90.0]
 

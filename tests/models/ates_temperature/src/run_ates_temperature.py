@@ -166,7 +166,7 @@ class HeatProblem(
 
     def temperature_regimes(self, carrier):
         temperatures = []
-        if carrier == 41770304791669983859190:
+        if carrier == "c41e7703-dee0-4dc7-9166-a99838591a90":
             # supply
             # temperatures = np.linspace(50, 70, 9).tolist()[::-1]
             # temperatures = np.linspace(52.5, 65, 6).tolist()[::-1]
