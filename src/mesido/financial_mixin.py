@@ -805,7 +805,7 @@ class FinancialMixin(
             price_profile_timeseries = self.get_timeseries(price_profile_name)
             # The slicing is required if the timeseries wasn't adapted in the read
             mask = (price_profile_timeseries.times >= self.times()[0]) & (
-                    price_profile_timeseries.times <= self.times()[-1]
+                price_profile_timeseries.times <= self.times()[-1]
             )
             price_profile = price_profile_timeseries.values[mask]
             return price_profile
