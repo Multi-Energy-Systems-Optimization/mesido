@@ -44,7 +44,7 @@ class TestEndScenarioSizingEnsemble(TestCase):
                 input_timeseries_file="Warmte_test.csv",
                 _asset_types_fixed_size=config["_asset_types_fixed_size"],
                 _asset_subtypes_not_included_fixed_size=[],
-                _day_steps=10
+                _day_steps=10,
             )
 
             results = dict()
@@ -58,8 +58,9 @@ class TestEndScenarioSizingEnsemble(TestCase):
                 parameters[e_m] = heat_problem.parameters(e_m)
                 demand_matching_test(heat_problem, results[e_m], ensemble_member=e_m)
 
-                energy_conservation_test(heat_problem, heat_problem.extract_results(e_m),
-                                         atol_total=100.0)
+                energy_conservation_test(
+                    heat_problem, heat_problem.extract_results(e_m), atol_total=100.0
+                )
                 heat_to_discharge_test(heat_problem, heat_problem.extract_results(e_m), atol=20.0)
 
             def check_consistent_size_and_costs(
