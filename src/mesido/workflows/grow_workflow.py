@@ -247,7 +247,7 @@ class SolverHIGHSNoPresolve(SolverHIGHS):
         if len(self._priorities_output) == 5:
             if (
                 self._priorities_output[3][4]["return_status"] == "Infeasible"
-                and self._priorities_output[3][0]
+                and self._priorities_output[3][0] == 2
             ):
                 options["highs"]["presolve"] = "off"
                 logger.warning(
