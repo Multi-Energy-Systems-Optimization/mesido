@@ -250,7 +250,7 @@ class EndScenarioSizing(
         self._number_of_years = 30.0
 
         self.__indx_max_peak = None
-        self.__day_steps = 5
+        self.__day_steps = kwargs.get("_day_steps", 5)
 
         # self._override_pipe_classes = {}
 
