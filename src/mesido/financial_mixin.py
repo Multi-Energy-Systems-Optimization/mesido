@@ -798,7 +798,7 @@ class FinancialMixin(
         assert len(electricity_carriers.keys()) <= 1
 
         if len(electricity_carriers.keys()) == 0:
-            return Timeseries(self.times(), np.zeros(len(self.times())))
+            return np.zeros(len(self.times()))
 
         price_profile_name = f"{list(electricity_carriers.values())[0]['name']}.price_profile"
         if price_profile_name in self.io.get_timeseries_names():
