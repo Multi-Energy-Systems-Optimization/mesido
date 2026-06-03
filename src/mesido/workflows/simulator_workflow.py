@@ -354,7 +354,7 @@ def main(runinfo_path, log_level):
     logger.info("Run Network Simulator")
 
     kwargs = {
-        "write_result_db_profiles": False,
+        "esdl_profiles_output_type": None,
         "database_connections": [
             {
                 "access_type": DBAccessType.WRITE,

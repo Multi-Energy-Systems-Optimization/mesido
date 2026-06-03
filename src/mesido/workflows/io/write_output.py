@@ -1,4 +1,5 @@
 import datetime
+from enum import Enum
 import json
 import logging
 import numbers
@@ -11,15 +12,18 @@ from pathlib import Path
 from typing import Dict, Union
 
 import esdl
-from esdl.profiles.influxdbprofilemanager import ConnectionSettings
-from esdl.profiles.influxdbprofilemanager import InfluxDBProfileManager
-from esdl.profiles.profilemanager import ProfileManager
 from esdl.profiles.datatableprofilemanager import DataTableProfileManager
-from esdl.profiles.profile_utils import create_data_table_profile, save_data_table_profiles_to_database
+from esdl.profiles.profile_utils import (
+    create_data_table_profile,
+    create_time_series_profile,
+    create_date_time_profile,
+    append_values_to_date_time_profile,
+    save_data_table_profiles_to_database
+)
 import mesido.esdl.esdl_parser
 from mesido.constants import GRAVITATIONAL_CONSTANT
 from mesido.esdl.edr_pipe_class import EDRPipeClass
-from mesido.esdl.esdl_mixin import DBAccessType
+from mesido.esdl.esdl_mixin import DBAccessType, ESDLOutputProfilesType
 from mesido.financial_mixin import calculate_annuity_factor
 from mesido.network_common import NetworkSettings
 from mesido.post_processing.post_processing_utils import pipe_pressure, pipe_velocity
@@ -34,6 +38,7 @@ from rtctools.optimization.timeseries import Timeseries
 
 logger = logging.getLogger("mesido")
 
+TIME_STEP_SECONDS_TIME_SERIES_PROFILES = 3600
 
 class ScenarioOutput:
     __optimized_energy_system_handler = None
@@ -45,23 +50,25 @@ class ScenarioOutput:
         self.esdl_file_name = kwargs.get("esdl_file_name", "ESDL_file.esdl")
         # Settings for DataTableProfile when writing out result profile data to it
         # Default settings
-        self.write_result_db_profiles = False
         self.username = None
         self.password = None
-        self.db_type_output_profiles = kwargs.get("db_type_output_profiles", esdl.DatabaseTypeEnum.INFLUXDB)
+        self.esdl_profiles_output_type = kwargs.get("esdl_profiles_output_type", None)
+        self.write_esdl_profiles_to_db = self.esdl_profiles_output_type in[
+            ESDLOutputProfilesType.POSTGRESQL, ESDLOutputProfilesType.INFLUXDB
+        ]
 
         base_error_string = "Missing influxdb setting for writing result profile data:"
         try:
-            self.write_result_db_profiles = kwargs["write_result_db_profiles"]
-
-            if self.write_result_db_profiles not in [True, False]:
+            if self.esdl_profiles_output_type is not None and not isinstance(
+                self.esdl_profiles_output_type, ESDLOutputProfilesType
+            ):
                 logger.error(
-                    "Current setting of write_result_db_profiles is: "
-                    f"{self.write_result_db_profiles} and it should be set to True or False"
+                    "Current setting of esdl_profiles_output_type is: "
+                    f"{self.esdl_profiles_output_type} and it should be None or a value of ESDLOutputProfilesType"
                 )
                 sys.exit(1)
 
-            if self.write_result_db_profiles:
+            if self.esdl_profiles_output_type is not None:
                 database_connection_write = self._database_credentials.get(DBAccessType.WRITE, [])
 
                 if len(database_connection_write) == 0:
@@ -135,6 +142,35 @@ class ScenarioOutput:
 
     def get_optimized_esh(self):
         return self.__optimized_energy_system_handler
+
+    def _resample_profile_data_to_fixed_timestep(self, profile_data):
+        if not profile_data:
+            return []
+
+        sorted_profile_data = sorted(profile_data, key=lambda row: row[0])
+        step = datetime.timedelta(seconds=TIME_STEP_SECONDS_TIME_SERIES_PROFILES)
+
+        start_datetime = sorted_profile_data[0][0]
+        end_datetime = sorted_profile_data[-1][0]
+        duration_seconds = (end_datetime - start_datetime).total_seconds()
+        n_steps = int(np.ceil(duration_seconds / TIME_STEP_SECONDS_TIME_SERIES_PROFILES)) + 1
+
+        values = []
+        row_index = 0
+        latest_value = sorted_profile_data[0][1]
+
+        for step_index in range(n_steps):
+            target_datetime = start_datetime + step_index * step
+            while (
+                row_index + 1 < len(sorted_profile_data)
+                and sorted_profile_data[row_index + 1][0] <= target_datetime
+            ):
+                row_index += 1
+                latest_value = sorted_profile_data[row_index][1]
+
+            values.append(latest_value)
+
+        return values
 
     def _write_html_output(self, template_name="mpc_buffer_sizing_output"):
         from jinja2 import Environment, FileSystemLoader
@@ -1137,8 +1173,8 @@ class ScenarioOutput:
         #   - Fields: profile value for the specific variable
         #   - Tags used as filters: simulationRun, assetClass, assetName, assetId, capability
 
-        if self.write_result_db_profiles:
-            logger.info("Writing asset result profile data to influxDB")
+        if self.esdl_profiles_output_type is not None:
+            logger.info(f"Writing asset results to profile type '{self.esdl_profiles_output_type}'")
             results = self.extract_results()
 
             capabilities = [
@@ -1331,7 +1367,8 @@ class ScenarioOutput:
                             )
                             sys.exit(1)
                         
-                        profiles_to_save = []
+                        asset_esdl_output_profiles = {}
+                        asset_esdl_output_profiles_data_dict = {}
                         for ii in range(len(self.times())):
                             try:
                                 # For all components dealing with one hydraulic system
@@ -1356,7 +1393,7 @@ class ScenarioOutput:
                                 traceback.print_exc()
                                 sys.exit(1)
 
-                            for variable_num, variable in enumerate(variables_names):
+                            for variable_name in variables_names:
                                 if not self.io.datetimes[ii].tzinfo:
                                     data_row = [
                                         self.io.datetimes[ii].replace(tzinfo=datetime.timezone.utc)
@@ -1365,6 +1402,7 @@ class ScenarioOutput:
                                     data_row = [self.io.datetimes[ii]]
                                 
                                 if ii == 0:
+                                    asset_esdl_output_profiles_data_dict[variable_name] = []
                                     # Set profile database attributes for the esdl asset
                                     if not self.io.datetimes[0].tzinfo:
                                         start_date_time = self.io.datetimes[0].replace(
@@ -1373,7 +1411,7 @@ class ScenarioOutput:
                                         logger.warning(
                                             f"No timezone specified for the output profile: "
                                             f"default UTC has been used for asset {asset_name} "
-                                            f"variable {variable}"
+                                            f"variable {variable_name}"
                                         )
                                     else:
                                         start_date_time = self.io.datetimes[0]
@@ -1386,14 +1424,14 @@ class ScenarioOutput:
 
                                     
                                     # Assign quantity and units variable
-                                    if variable in ["Heat_flow", "Pump_power"]:
+                                    if variable_name in ["Heat_flow", "Pump_power"]:
                                         quantity_and_unit = esdl.esdl.QuantityAndUnitType(
                                             physicalQuantity=esdl.PhysicalQuantityEnum.POWER,
                                             unit=esdl.UnitEnum.WATT,
                                             multiplier=esdl.MultiplierEnum.NONE,
                                         )
                                         
-                                    elif variable in [
+                                    elif variable_name in [
                                         f"{commodity}In.H",
                                         f"Primary.{commodity}In.H",
                                         f"Secondary.{commodity}In.H",
@@ -1404,7 +1442,7 @@ class ScenarioOutput:
                                             multiplier=esdl.MultiplierEnum.NONE,
                                         )
                                         
-                                    elif variable in [
+                                    elif variable_name in [
                                         f"{commodity}In.Q",
                                         f"Primary.{commodity}In.Q",
                                         f"Secondary.{commodity}In.Q",
@@ -1416,7 +1454,7 @@ class ScenarioOutput:
                                             multiplier=esdl.MultiplierEnum.NONE,
                                         )
                                         
-                                    elif variable in ["PostProc.Velocity"]:
+                                    elif variable_name in ["PostProc.Velocity"]:
                                         quantity_and_unit = esdl.esdl.QuantityAndUnitType(
                                             physicalQuantity=esdl.PhysicalQuantityEnum.SPEED,
                                                 unit=esdl.UnitEnum.METRE,
@@ -1427,39 +1465,65 @@ class ScenarioOutput:
                                     else:
                                         logger.warning(
                                             f"No profile units will be written to the ESDL for: "
-                                            f"{asset_id}. + {variable}"
+                                            f"{asset_id}. + {variable_name}"
                                         )
 
                                     # Write the source of profiles (Optimizer)
-                                    data_source = esdl.esdl.DataSource(
+                                    data_source = esdl.DataSource(
                                         id=str(uuid.uuid4()),
                                         name="Optimizer",
                                         description="This was created in the optimizer",
                                         type=esdl.DataSourceTypeEnum.MODEL,
                                     )
-                                    data_table_profile = create_data_table_profile(
-                                        es=energy_system,
-                                        database_name=output_energy_system_id,
-                                        table_name=carrier_id,
-                                        column_name=variable,
-                                        start_date=start_date_time,
-                                        end_date=end_date_time,
-                                        db_host=self.host,
-                                        db_port=self.port,
-                                        filter='"assetId"=' + f"'{str(asset_id)}'",
-                                        db_type=self.db_type_output_profiles,
-                                        profile_type=esdl.ProfileTypeEnum.OUTPUT,
-                                        quantity_and_unit_type=quantity_and_unit,
-                                        data_source=data_source,
-                                    )
+                                    if self.write_esdl_profiles_to_db:
+                                        if self.esdl_profiles_output_type == ESDLOutputProfilesType.POSTGRESQL:
+                                            db_type = esdl.DatabaseTypeEnum.POSTGRESQL
+                                        else:
+                                            db_type = esdl.DatabaseTypeEnum.INFLUXDB
+                                        esdl_profile = create_data_table_profile(
+                                            es=energy_system,
+                                            database_name=output_energy_system_id,
+                                            table_name=carrier_id,
+                                            column_name=variable_name,
+                                            start_date=start_date_time,
+                                            end_date=end_date_time,
+                                            db_host=self.host,
+                                            db_port=self.port,
+                                            filter='"assetId"=' + f"'{str(asset_id)}'",
+                                            db_type=db_type,
+                                            profile_type=esdl.ProfileTypeEnum.OUTPUT,
+                                            quantity_and_unit_type=quantity_and_unit,
+                                            data_source=data_source,
+                                        )
+                                        asset_esdl_output_profiles[variable_name] = DataTableProfileManager(esdl_profile)
+                                    elif self.esdl_profiles_output_type == ESDLOutputProfilesType.TIME_SERIES_PROFILE:
+                                        esdl_profile = create_time_series_profile(
+                                            es=energy_system,
+                                            name=variable_name,
+                                            start_date=start_date_time,
+                                            timestep_in_seconds=TIME_STEP_SECONDS_TIME_SERIES_PROFILES,
+                                            values=[],  # fill later
+                                            profile_type=esdl.ProfileTypeEnum.OUTPUT,
+                                            quantity_and_unit_type=quantity_and_unit,
+                                            data_source=data_source,
+                                        )
+                                        asset_esdl_output_profiles[variable_name] = esdl_profile
+                                    else:  # ESDLOutputProfilesType.DATE_TIME_PROFILE
+                                        esdl_profile = create_date_time_profile(
+                                            es=energy_system,
+                                            name=variable_name,
+                                            datetime_and_values=[],  # fill later
+                                            profile_type=esdl.ProfileTypeEnum.OUTPUT,
+                                            quantity_and_unit_type=quantity_and_unit,
+                                            data_source=data_source,
+                                        )
+                                        asset_esdl_output_profiles[variable_name] = esdl_profile
                                     # Write result OUTPUT profiles on the optimized esdl
-                                    asset.port[index_outport].profile.append(data_table_profile)
-
-                                    profiles_to_save.append(DataTableProfileManager(data_table_profile))
+                                    asset.port[index_outport].profile.append(esdl_profile)
 
                                 # Add variable values in new column
                                 conversion_factor = 0.0
-                                if variable in [
+                                if variable_name in [
                                     f"{commodity}In.H",
                                     f"Primary.{commodity}In.H",
                                     f"Secondary.{commodity}In.H",
@@ -1467,16 +1531,18 @@ class ScenarioOutput:
                                     conversion_factor = GRAVITATIONAL_CONSTANT * 988.0
                                 else:
                                     conversion_factor = 1.0
-                                if variable not in ["PostProc.Velocity", "PostProc.Pressure"]:
-                                    data_row.append(
-                                        results[f"{asset_id}." + variable][ii] * conversion_factor
-                                    )
+                                if variable_name not in ["PostProc.Velocity", "PostProc.Pressure"]:
+                                    data_row.append(results[f"{asset_id}." + variable_name][ii] * conversion_factor)
+
                                 # The variable evaluation below seems unnecessary, but it would be
                                 # used we expand the list of post process type variables
-                                elif variable in ["PostProc.Velocity", "PostProc.Pressure"]:
-                                    data_row.append(post_processed[variable][ii])
-
-                                profiles_to_save[variable_num].profile_data_list.append(data_row)
+                                elif variable_name in ["PostProc.Velocity", "PostProc.Pressure"]:
+                                    data_row.append(post_processed[variable_name][ii])
+                                    
+                                if self.write_esdl_profiles_to_db:
+                                    asset_esdl_output_profiles[variable_name].profile_data_list.append(data_row)
+                                
+                                asset_esdl_output_profiles_data_dict[variable_name].append(data_row)
 
                         optim_simulation_tag = {
                             "simulationRun": simulation_id,
@@ -1486,7 +1552,21 @@ class ScenarioOutput:
                             "assetClass": asset_class,
                             "capability": capability,
                         }
-                        save_data_table_profiles_to_database(profiles_to_save, optim_simulation_tag)
+                        for variable_name, profile_data in asset_esdl_output_profiles_data_dict.items():
+                            if self.write_esdl_profiles_to_db:
+                                asset_esdl_output_profiles[variable_name].profile_data_list = profile_data
+                            elif self.esdl_profiles_output_type == ESDLOutputProfilesType.TIME_SERIES_PROFILE:
+                                asset_esdl_output_profiles[variable_name].values.extend(
+                                    self._resample_profile_data_to_fixed_timestep(profile_data)
+                                )
+                            else:  # ESDLOutputProfilesType.DATE_TIME_PROFILE
+                                append_values_to_date_time_profile(
+                                    asset_esdl_output_profiles[variable_name], profile_data
+                                )
+                        if self.write_esdl_profiles_to_db:
+                            save_data_table_profiles_to_database(
+                                list(asset_esdl_output_profiles.values()), optim_simulation_tag
+                            )
 
                     # -- Test tags -- # do not delete - to be used in test case
                     # prof_loaded_from_influxdb = InfluxDBProfileManager(influxdb_conn_settings)

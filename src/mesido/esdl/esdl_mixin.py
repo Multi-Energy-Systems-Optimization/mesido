@@ -57,6 +57,17 @@ class DBAccessType(StrEnum):
     READ_WRITE = "read_write"
 
 
+class ESDLOutputProfilesType(StrEnum):
+    """
+    Enumeration for ESDL output profiles type
+    """
+
+    INFLUXDB = "influxdb"
+    POSTGRESQL = "postgresql"
+    TIME_SERIES_PROFILE = "time_series_profile"
+    DATE_TIME_PROFILE = "date_time_profile"
+
+
 class _ESDLInputException(Exception):
     pass
 
