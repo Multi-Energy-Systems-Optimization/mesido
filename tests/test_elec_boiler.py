@@ -118,7 +118,7 @@ class TestElecBoiler(TestCase):
         This tests checks the air-water hp elec for the standard checks and the energy conservation
         over the commodity change.
 
-        The HeatProblemHydraulic model defines the heat pump's variable operational cost as a
+        The HeatProblemESDLVarsMixin model defines the heat pump's variable operational cost as a
         function of the variable cost coefficient, pumping cost, and the electricity price profile.
 
         This test verifies that all three cost components are correctly included in the variable

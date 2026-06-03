@@ -722,6 +722,8 @@ if __name__ == "__main__":
     a.setUpClass()
     a.test_end_scenario_sizing()
     a.test_end_scenario_sizing_staged()
+    a.test_end_scenario_sizing_heat_demand_not_matched()
+    a.test_heat_exchanger_sizing()
     a.test_end_scenario_sizing_discounted()
     a.test_end_scenario_sizing_head_loss()
     a.test_end_scenario_sizing_pipe_catalog_lower_pipe_dn()

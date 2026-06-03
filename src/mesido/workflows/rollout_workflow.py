@@ -110,10 +110,6 @@ class RollOutProblem(
 
         self._save_json = True
 
-        self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
-        self.heat_network_settings["minimum_velocity"] = 0.0  # important otherwise heatdemands
-        # cannot be turned off for specific timesteps
-
         self._asset_fraction_placed_map = {}
         self.__asset_fraction_placed_var = {}
         self.__asset_fraction_placed_var_bounds = {}
@@ -254,6 +250,13 @@ class RollOutProblem(
                 self._years_timestep_max_capex,
             )
             self._yearly_capex_var_nominals[var_name] = self._years_timestep_max_capex / 2.0
+
+    def update_heat_network_settings(self):
+        settings = super().update_heat_network_settings()
+        settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+        settings["minimum_velocity"] = 0.0  # important otherwise heatdemands cannot be turned off
+        # for specific timesteps
+        return settings
 
     def energy_system_options(self):
         options = super().energy_system_options()

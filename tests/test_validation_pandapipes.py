@@ -6,7 +6,6 @@ from unittest import TestCase
 from mesido.constants import GRAVITATIONAL_CONSTANT
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
-from mesido.head_loss_class import HeadLossOption
 from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
@@ -54,7 +53,6 @@ class ValidateWithPandaPipes(TestCase):
 
             def update_heat_network_settings(self):
                 settings = super().update_heat_network_settings()
-                settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
                 settings["n_linearization_lines"] = 10
                 settings["minimum_velocity"] = 0.0
                 return settings
@@ -239,13 +237,15 @@ class ValidateWithPandaPipes(TestCase):
                 pandapipes_head_loss_m[ii][0], 0.0
             )  # check that values are negative
             # check that mesido > pandapipes within %
-            if results[f"{pipe_id}.dH"][ii] > 0.5:
+            if results[f"{pipe_id}.dH"][ii] > 1.0:
                 np.testing.assert_array_less(
                     results[f"{pipe_id}.dH"][ii] / pandapipes_head_loss_m[ii][0], 1.08
                 )
             else:
+                # Keeping this option below in case it is needed in the future for smaller dh values
+                # NB: do not increase 1.08 without checking the reason
                 np.testing.assert_array_less(
-                    results[f"{pipe_id}.dH"][ii] / pandapipes_head_loss_m[ii][0], 1.15
+                    results[f"{pipe_id}.dH"][ii] / pandapipes_head_loss_m[ii][0], 1.08
                 )
             np.testing.assert_array_less(
                 1.0, results[f"{pipe_id}.dH"][ii] / pandapipes_head_loss_m[ii][0]

@@ -47,8 +47,12 @@ class TestHEX(TestCase):
 
             def energy_system_options(self):
                 options = super().energy_system_options()
-                # self.heat_network_settings["minimize_head_losses"] = True  # used for manual tests
                 return options
+
+            def update_heat_network_settings(self):
+                settings = super().update_heat_network_settings()
+                # settings["minimize_head_losses"] = True  # used for manual tests
+                return settings
 
         # Do not delete kwargs: this is used to manualy check writing out of profile data
         kwargs = {
@@ -347,10 +351,10 @@ class TestHP(TestCase):
             #         optimizer_sim=True,
             #     )
 
-            def energy_system_options(self):
-                options = super().energy_system_options()
-                # self.heat_network_settings["minimize_head_losses"] = True  # used for manual tests
-                return options
+            def update_heat_network_settings(self):
+                settings = super().update_heat_network_settings()
+                # settings["minimize_head_losses"] = True  # used for manual tests
+                return settings
 
             def solver_options(self):
                 options = super().solver_options()
