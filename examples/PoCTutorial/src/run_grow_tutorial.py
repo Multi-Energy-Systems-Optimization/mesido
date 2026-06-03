@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from mesido.esdl.esdl_mixin import ESDLOutputProfilesType, DBAccessType
+from mesido.esdl.esdl_mixin import DBAccessType, ESDLOutputProfilesType
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.workflows import EndScenarioSizingStaged, run_end_scenario_sizing
 
@@ -13,7 +13,8 @@ if __name__ == "__main__":
     import time
 
     kwargs = {
-        "esdl_profiles_output_type": ESDLOutputProfilesType.POSTGRESQL,
+        # '"esdl_profiles_output_type"=None' (default) means no profiles to DB
+        "esdl_profiles_output_type": ESDLOutputProfilesType.INFLUXDB,
         "database_connections": [
             {
                 "access_type": DBAccessType.WRITE,  # DBAccessType.READ or DBAccessType.READ_WRITE

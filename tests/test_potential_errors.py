@@ -214,8 +214,10 @@ class TestPotentialErrors(unittest.TestCase):
         )
         np.testing.assert_equal(
             cm.exception.message_per_asset_id["2ab92324-f86e-4976-9a6e-f7454b77ba3c"],
-            "Asset named HeatingDemand_2ab9: Input profile "
-            "demand1_MW_wrong_name in WarmingUp default profiles is not available in the database.",
+            "Error retrieving profile for asset 'HeatingDemand_2ab9' from host "
+            "'profiles.warmingup.info' and database 'energy_profiles': Failed to load from "
+            "InfluxDB: Failed to load profile data from InfluxDB for profile with "
+            "id:c3c18c06-1500-4e55-ae1d-56a82e806387 from host 'profiles.warmingup.info:443'.",
         )
 
         # Check that the ResidualHeatSource multiplier's error is picked up

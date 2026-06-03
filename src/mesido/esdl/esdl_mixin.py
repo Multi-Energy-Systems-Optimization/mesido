@@ -168,7 +168,9 @@ class ESDLMixin(
                         "username": dbconnection["username"],
                         "password": dbconnection["password"],
                         "ssl": dbconnection["ssl"] if "ssl" in dbconnection else False,
-                        "verify_ssl": dbconnection["verify_ssl"] if "verify_ssl" in dbconnection else False,
+                        "verify_ssl": (
+                            dbconnection["verify_ssl"] if "verify_ssl" in dbconnection else False
+                        ),
                     }
                 )
             elif dbconnection["access_type"] == DBAccessType.READ_WRITE:
@@ -181,7 +183,11 @@ class ESDLMixin(
                             "username": dbconnection["username"],
                             "password": dbconnection["password"],
                             "ssl": dbconnection["ssl"] if "ssl" in dbconnection else False,
-                            "verify_ssl": dbconnection["verify_ssl"] if "verify_ssl" in dbconnection else False,
+                            "verify_ssl": (
+                                dbconnection["verify_ssl"]
+                                if "verify_ssl" in dbconnection
+                                else False
+                            ),
                         }
                     )
             else:

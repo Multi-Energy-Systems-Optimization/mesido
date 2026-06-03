@@ -7,7 +7,7 @@ from typing import Dict, Optional, Set, Tuple, Union
 
 import esdl
 from esdl.profiles.credentials import Credentials
-from esdl.profiles.profile_utils import load_profile_data_and_header, close_db_connections
+from esdl.profiles.profile_utils import close_db_connections, load_profile_data_and_header
 from esdl.units.conversion import ENERGY_IN_J, POWER_IN_W, convert_to_unit
 
 from mesido.esdl.common import Asset
@@ -260,7 +260,7 @@ class ESDLProfileReader(BaseProfileReader):
         esdl.InfluxDBProfile,
         esdl.TimeSeriesProfile,
         esdl.DateTimeProfile,
-        esdl.ProfileReference
+        esdl.ProfileReference,
     )
 
     # Python 3.10 compatible
@@ -344,7 +344,7 @@ class ESDLProfileReader(BaseProfileReader):
                             f"other assets. Please ensure that the profile that is "
                             f"specified to be loaded for each asset covers exactly the "
                             f"same timeseries. "
-                        )            
+                        )
         close_db_connections()
 
         # Loop trough all the requried profiles in the energy system and assign the profile data:
@@ -441,14 +441,14 @@ class ESDLProfileReader(BaseProfileReader):
         # Import is done under the function instead of the top of the file
         # to avoid circular import issue
         from mesido.workflows.utils.error_types import NetworkErrors, potential_error_to_error
-        
+
         try:
             profile_raw_data, _ = load_profile_data_and_header(
                 profile,
                 enable_cache=True,
                 apply_multiplier=False,
                 close_connection_after_load=False,
-            )   
+            )
         except Exception as e:
             container = profile.eContainer()
             asset = container.energyasset
@@ -456,9 +456,9 @@ class ESDLProfileReader(BaseProfileReader):
                 MesidoAssetIssueType.ASSET_PROFILE_AVAILABILITY,
                 asset.id,
                 f"Error retrieving profile for asset '{asset.name}' from host '{profile.host}'"
-                f" and database '{profile.database}': {str(e)}."
+                f" and database '{profile.database}': {str(e)}.",
             )
-            potential_error_to_error(NetworkErrors.HEAT_NETWORK_ERRORS)               
+            potential_error_to_error(NetworkErrors.HEAT_NETWORK_ERRORS)
 
         if not profile_raw_data:  # if time_series_data.profile_data_list == []:
             container = profile.eContainer()
