@@ -28,7 +28,7 @@
 - No longer required to add an electricity price profile if an electricity carrier is available.
 - Removed the need for "_ret" in the carrier name and id.
 - The carrier id is now saved as a string and thus in the string_parameters of each asset.
-- Check if needed and execute rerun for HIGHS staged optimization in the Grow workflow.
+- Check if needed and execute rerun (with presolve turned off) for HIGHS staged optimization in the Grow workflow.
 
 ## Fixed
 - ProfileConstraints: Use already available function to get profile quantity and unit
