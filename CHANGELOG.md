@@ -1,4 +1,4 @@
-# [Unreleased-main] - 2026-05-13
+# [Unreleased-main] - 2026-06-01
 
 ## Added
 - Electricity consumption calculation of geothermal assets, using the defined COP. 
@@ -30,6 +30,7 @@
 - The carrier id is now saved as a string and thus in the string_parameters of each asset. 
 - The headloss and hydraulic power variables are now only created if the headloss calculations are turned on, reducing the transcribing time of the problem.
 - The method update_heat_network_settings has been created to update the dictionary for heat_network_settings and ensure the correct settings are applied from the start.
+- Check if needed and execute rerun (with presolve turned off) for HIGHS staged optimization in the Grow workflow.
 
 ## Fixed
 - ProfileConstraints: Use already available function to get profile quantity and unit
