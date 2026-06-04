@@ -69,15 +69,26 @@ class TestHeadLoss(TestCase):
                             HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
                         )
                         self.gas_network_settings["n_linearization_lines"] = 5
-                        self.heat_network_settings["minimize_head_losses"] = True
-                    elif head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
-                        self.heat_network_settings["head_loss_option"] = (
-                            HeadLossOption.LINEARIZED_N_LINES_EQUALITY
-                        )
-                        self.heat_network_settings["minimize_head_losses"] = False
-                        self.heat_network_settings["minimum_velocity"] = 1.0e-6
 
                     return options
+
+                def update_heat_network_settings(self):
+                    settings = super().update_heat_network_settings()
+
+                    nonlocal head_loss_option_setting
+                    head_loss_option_setting = head_loss_option_setting
+
+                    settings["head_loss_option"] = head_loss_option_setting
+                    if (
+                        head_loss_option_setting
+                        == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
+                    ):
+                        settings["minimize_head_losses"] = True
+                    elif head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
+                        settings["minimize_head_losses"] = False
+                        settings["minimum_velocity"] = 1.0e-6
+
+                    return settings
 
             # Do not delete kwargs: this is used to manualy check writing out of profile data
             kwargs = {
@@ -289,6 +300,35 @@ class TestHeadLoss(TestCase):
 
             # Added for case where head loss is modelled via DW
             class SourcePipeSinkDW(SourcePipeSink):
+
+                def update_heat_network_settings(self):
+                    settings = super().update_heat_network_settings()
+
+                    nonlocal head_loss_option_setting, counter_linearized_n_lines_weak_ineq_runs
+                    head_loss_option_setting = head_loss_option_setting
+                    counter_linearized_n_lines_weak_ineq_runs = (
+                        counter_linearized_n_lines_weak_ineq_runs
+                    )
+                    settings["head_loss_option"] = head_loss_option_setting
+
+                    settings["n_linearization_lines"] = 2
+                    if head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
+                        settings["minimize_head_losses"] = False
+                        settings["minimum_velocity"] = 0.0
+                    elif (
+                        head_loss_option_setting
+                        == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
+                    ):
+                        settings["minimize_head_losses"] = True
+                        if counter_linearized_n_lines_weak_ineq_runs == 1:
+                            settings["minimum_velocity"] = 0.0
+                        elif counter_linearized_n_lines_weak_ineq_runs == 2:
+                            ...
+                            # Do not delete. This reminds the dev that different min velo value
+                            # with min velo = default value (>0.0), instead of specifying a value
+                            # here
+                    return settings
+
                 def energy_system_options(self):
                     options = super().energy_system_options()
 
@@ -298,20 +338,13 @@ class TestHeadLoss(TestCase):
                         counter_linearized_n_lines_weak_ineq_runs
                     )
 
-                    self.heat_network_settings["head_loss_option"] = head_loss_option_setting
-
-                    self.heat_network_settings["n_linearization_lines"] = 2
                     if head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
-                        self.heat_network_settings["minimize_head_losses"] = False
-                        self.heat_network_settings["minimum_velocity"] = 0.0
                         options["neglect_pipe_heat_losses"] = True
                     elif (
                         head_loss_option_setting
                         == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
                     ):
-                        self.heat_network_settings["minimize_head_losses"] = True
                         if counter_linearized_n_lines_weak_ineq_runs == 1:
-                            self.heat_network_settings["minimum_velocity"] = 0.0
                             options["neglect_pipe_heat_losses"] = True
                         elif counter_linearized_n_lines_weak_ineq_runs == 2:
                             ...
@@ -486,6 +519,76 @@ class TestHeadLoss(TestCase):
                 exit("Something went wrong with the number of runs")
             elif counter_total_runs == 3 and counter_linearized_n_lines_weak_ineq_runs != 2:
                 exit("Something went wrong with the number of runs")
+
+    def test_no_head_loss_with_include_head_losses_creates_more_path_variables(self):
+        """
+        Compare path variable creation for NO_HEADLOSS for two cases. This way it is ensured that
+        the setup only creates the algebraic variables for head (H), headloss (dH) and hydraulic
+        power (Hydraulic_power):
+        - default include_head_losses behavior
+        - include_head_losses explicitly set to True to ensure headloss variable creation
+        """
+        import models.source_pipe_sink.src.double_pipe_heat as example
+        from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+        model_folder = base_folder / "model"
+        input_folder = base_folder / "input"
+
+        class SourcePipeSinkNoHeadLoss(SourcePipeSink):
+            def update_heat_network_settings(self):
+                settings = super().update_heat_network_settings()
+                settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+                return settings
+
+        class SourcePipeSinkNoHeadLossIncludeHeadLosses(SourcePipeSink):
+            def update_heat_network_settings(self):
+                settings = super().update_heat_network_settings()
+                settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+                return settings
+
+            def energy_system_options(self):
+                options = super().energy_system_options()
+                options["include_head_losses"] = True
+                return options
+
+        common_kwargs = {
+            "esdl_file_name": "sourcesink.esdl",
+            "esdl_parser": ESDLFileParser,
+            "base_folder": base_folder,
+            "model_folder": model_folder,
+            "input_folder": input_folder,
+            "profile_reader": ProfileReaderFromFile,
+            "input_timeseries_file": "timeseries_import.csv",
+        }
+
+        problem_no_head_loss = SourcePipeSinkNoHeadLoss(**common_kwargs)
+        problem_include_head_loss_vars = SourcePipeSinkNoHeadLossIncludeHeadLosses(**common_kwargs)
+
+        number_of_path_variables_no_head_loss = len(problem_no_head_loss.algebraic_states)
+        number_of_path_variables_include_head_losses = len(
+            problem_include_head_loss_vars.algebraic_states
+        )
+
+        numb_pipes = len(problem_no_head_loss.energy_system_components.get("heat_pipe", []))
+        numb_prod = len(problem_no_head_loss.energy_system_components.get("heat_source", []))
+        numb_cons = len(problem_no_head_loss.energy_system_components.get("heat_demand", []))
+
+        # The following variables are not created:
+        # - .HeatIn.H, .HeatOut.H, .HeatIn.Hydraulic_power, .HeatOut.Hydraulic_power, .dH,
+        # .Hydraulic_power for each pipe
+        # - .dH for each consumer
+        # - .dH and .Pump_power for each producer.
+        additional_headloss_vars = 6 * numb_pipes + 2 * numb_prod + 1 * numb_cons
+
+        np.testing.assert_equal(
+            number_of_path_variables_no_head_loss,
+            number_of_path_variables_include_head_losses - additional_headloss_vars,
+            err_msg=(
+                "Expected include_head_losses=True to create more path variables then when using "
+                "head_loss_option=NO_HEADLOSS"
+            ),
+        )
 
     def test_gas_network_head_loss(self):
         """
@@ -940,11 +1043,11 @@ class TestHeadLoss(TestCase):
         base_folder = Path(example.__file__).resolve().parent.parent
 
         class SourcePipeSinkCQ2(SourcePipeSink):
-            def energy_system_options(self):
-                options = super().energy_system_options()
-                self.heat_network_settings["head_loss_option"] = HeadLossOption.CQ2_EQUALITY
-                self.heat_network_settings["minimize_head_losses"] = True
-                return options
+            def update_heat_network_settings(self):
+                settings = super().update_heat_network_settings()
+                settings["head_loss_option"] = HeadLossOption.CQ2_EQUALITY
+                settings["minimize_head_losses"] = True
+                return settings
 
             def solver_options(self):
                 options = super().solver_options()

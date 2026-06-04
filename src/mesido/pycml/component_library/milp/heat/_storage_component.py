@@ -35,9 +35,10 @@ class _StorageComponent(HeatTwoPort, BaseAsset):
 
         self.add_variable(Variable, "Heat_flow", nominal=self.Heat_nominal)
 
-        self.add_variable(
-            Variable, "Pump_power", min=0.0, nominal=self.Q_nominal * self.nominal_pressure
-        )
+        if self.include_head_loss_variables:
+            self.add_variable(
+                Variable, "Pump_power", min=0.0, nominal=self.Q_nominal * self.nominal_pressure
+            )
 
         self.add_equation(
             (self.Heat_flow - (self.HeatIn.Heat - self.HeatOut.Heat)) / self.Heat_nominal

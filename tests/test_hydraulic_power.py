@@ -258,15 +258,16 @@ class TestHydraulicPower(TestCase):
 
         results = solution.extract_results()
         for pipe in solution.energy_system_components.get("heat_pipe", []):
-            np.testing.assert_allclose(results[f"{pipe}.Hydraulic_power"], 0.0)
+            with self.assertRaises(KeyError):
+                results[f"{pipe}.Hydraulic_power"]
         for demand in solution.energy_system_components.get("heat_demand", []):
-            hydraulic_power_demand = (
+            with self.assertRaises(KeyError):
                 results[f"{demand}.HeatIn.Hydraulic_power"]
-                - results[(f"{demand}.HeatOut.Hydraulic_power")]
-            )
-            np.testing.assert_allclose(hydraulic_power_demand, 0.0)
+            with self.assertRaises(KeyError):
+                results[f"{demand}.HeatOut.Hydraulic_power"]
         for source in solution.energy_system_components.get("heat_source", []):
-            np.testing.assert_allclose(results[f"{source}.Pump_power"], 0.0)
+            with self.assertRaises(KeyError):
+                results[f"{source}.Pump_power"]
 
     def test_hydraulic_power_gas(self):
         """
