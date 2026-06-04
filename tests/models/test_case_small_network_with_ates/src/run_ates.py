@@ -125,6 +125,9 @@ class HeatProblem(
         """
         options = super().solver_options()
         options["casadi_solver"] = self._qpsol
+        highs_options = options.setdefault("highs", {})
+        # workaround for HiGHS 1.14.0 presolve bug (ERGO-Code/HiGHS#2388)
+        highs_options["presolve"] = "off"
         return options
 
     def constraints(self, ensemble_member: int):
@@ -163,6 +166,11 @@ class HeatProblemPlacingOverTime(HeatProblem):
     This problem is defined to test the asset_is_realized variable with constraints. This is
     achieved by having an upper limit on the investment per time-step.
     """
+
+    def solver_options(self):
+        options = super().solver_options()
+        options.get("highs", {}).pop("presolve", None)
+        return options
 
     def energy_system_options(self):
         """
@@ -272,11 +280,10 @@ class HeatProblemSetPoints(
 
     def solver_options(self):
         options = super().solver_options()
-        options["solver"] = "highs"
-        highs_options = options["highs"] = {}
+        highs_options = options.setdefault("highs", {})
         highs_options["mip_rel_gap"] = 0.02
-        highs_options["presolve"] = "on"
-
+        # workaround for HiGHS 1.14.0 presolve bug (ERGO-Code/HiGHS#2388)
+        highs_options["presolve"] = "off"
         return options
 
     def constraints(self, ensemble_member):

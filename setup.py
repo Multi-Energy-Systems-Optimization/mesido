@@ -3,7 +3,6 @@
 MILP optimization for design and operational optimization
 """
 
-import sys
 from pathlib import Path
 
 from setuptools import find_packages, setup
@@ -30,12 +29,6 @@ Operating System :: Unix
 Operating System :: MacOS
 """
 
-if sys.version_info < (3, 10):
-    sys.exit(f"Sorry, Python 3.10 to 3.11 is required. You are using {sys.version_info}")
-
-if sys.version_info >= (3, 12):
-    sys.exit(f"Sorry, Python 3.10 to 3.11 is required. You are using {sys.version_info}")
-
 setup(
     name="mesido",
     version=versioneer.get_version(),
@@ -58,19 +51,19 @@ setup(
         "influxdb >= 5.3.1",
         "pyecore >= 0.13.2",
         "pymoca >= 0.9.0",
-        "rtc-tools-gil-comp == 2.6.1",
+        "rtc-tools == 2.7.3",
         # setuptools version limitations currently:
         # < 81.0.0 needed for pandapipes (still to be removed)
         # < 82.0.0 needed for pkg_resources (used in rtctools)
         "setuptools <= 80.9.0",
         "pyesdl == 26.3",
         "pandas >= 1.3.1, < 2.0",
-        "casadi-gil-comp == 3.6.7",
+        "rtctools-highs == 0.1.3",
         "StrEnum == 0.4.15",
         "CoolProp==6.6.0",
     ],
     include_package_data=True,
-    python_requires=">=3.10,<3.12",
+    python_requires=">=3.10,<3.13",  # pandas<2.0 does not provide wheels for 3.13+
     cmdclass=versioneer.get_cmdclass(),
     entry_points={"rtctools.libraries.modelica": ["library_folder = mesido:modelica"]},
 )
