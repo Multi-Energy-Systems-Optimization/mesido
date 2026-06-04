@@ -34,6 +34,7 @@
 
 ## Fixed
 - ProfileConstraints: Use already available function to get profile quantity and unit
+- Electricity carriers no longer require a price profile.
 
 
 # [0.1.18.1] - 2026-04-13
