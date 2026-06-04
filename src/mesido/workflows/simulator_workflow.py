@@ -222,15 +222,13 @@ class NetworkSimulator(
 
         return goals
 
-    def energy_system_options(self):
-        options = super().energy_system_options()
+    def update_heat_network_settings(self):
+        settings = super().update_heat_network_settings()
 
-        self.heat_network_settings["head_loss_option"] = (
-            HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
-        )
-        self.heat_network_settings["minimize_head_losses"] = True
+        settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
+        settings["minimize_head_losses"] = True
 
-        return options
+        return settings
 
     def constraints(self, ensemble_member):
         """

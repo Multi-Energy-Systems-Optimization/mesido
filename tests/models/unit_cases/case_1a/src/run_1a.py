@@ -1,6 +1,7 @@
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.head_loss_class import HeadLossOption
 from mesido.physics_mixin import PhysicsMixin
 from mesido.qth_not_maintained.qth_mixin import QTHMixin
 
@@ -60,14 +61,19 @@ class HeatProblem(
         options["solver"] = "highs"
         return options
 
+    def update_heat_network_settings(self):
+        settings = super().update_heat_network_settings()
+        settings["head_loss_option"] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+        return settings
+
 
 class HeatProblemTvar(HeatProblem):
-    def energy_system_options(self):
-        options = super().energy_system_options()
+    def update_heat_network_settings(self):
+        settings = super().update_heat_network_settings()
         # We set a low maximum velocity to force the optimization to select a dT of more then 20 deg
         # this is to avoid specifying a new demand profile
-        self.heat_network_settings["maximum_velocity"] = 0.25
-        return options
+        settings["maximum_velocity"] = 0.25
+        return settings
 
     def temperature_carriers(self):
         return self.esdl_carriers  # geeft terug de carriers met multiple temperature options

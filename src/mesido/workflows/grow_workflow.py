@@ -296,18 +296,12 @@ class EndScenarioSizing(
 
         super().__init__(*args, **kwargs)
 
-        # default setting to cater for ~ 10kW heat, DN800 pipe at dT = 40 degrees Celcuis
-        self.heat_network_settings["minimum_velocity"] = 1.0e-4
-
-        self.heat_network_settings["maximum_velocity"] = 3.0
-        self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
-
         self._override_hn_options = {}
 
         self._number_of_years = 30.0
 
         self.__indx_max_peak = None
-        self.__day_steps = 5
+        self.__day_steps = kwargs.get("_day_steps", 5)
 
         # self._override_pipe_classes = {}
 
@@ -327,6 +321,15 @@ class EndScenarioSizing(
         self._save_json = False
 
         self._workflow_progress_status = kwargs.get("update_progress_function", None)
+
+    def update_heat_network_settings(self):
+        settings = super().update_heat_network_settings()
+        # default setting to cater for ~ 10kW heat, DN800 pipe at dT = 40 degrees Celcuis
+        settings["minimum_velocity"] = 1.0e-4
+
+        settings["maximum_velocity"] = 3.0
+        settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+        return settings
 
     def parameters(self, ensemble_member):
         parameters = super().parameters(ensemble_member)
@@ -730,13 +733,12 @@ class EndScenarioSizingHeadLoss(EndScenarioSizing):
      be set to True.
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def update_heat_network_settings(self):
+        settings = super().update_heat_network_settings()
 
-        self.heat_network_settings["head_loss_option"] = (
-            HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
-        )
-        self.heat_network_settings["minimize_head_losses"] = True
+        settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
+        settings["minimize_head_losses"] = True
+        return settings
 
 
 class EndScenarioSizingHeadLossDiscounted(EndScenarioSizingHeadLoss, EndScenarioSizingDiscounted):
@@ -770,15 +772,20 @@ class SettingsStaged:
         self._stage = stage
         self._total_stages = total_stages
         self.__boolean_bounds = boolean_bounds
-
-        if self._stage == 1:
-            self.heat_network_settings["minimum_velocity"] = 0.0
-            self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
-            self.heat_network_settings["minimize_head_losses"] = False
-
         if self._stage == 2 and priorities_output:
-            self.heat_network_settings["minimum_velocity"] = 0.0
             self._priorities_output = priorities_output
+
+    def update_heat_network_settings(self):
+        settings = super().update_heat_network_settings()
+        if self._stage == 1:
+            settings["minimum_velocity"] = 0.0
+            settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+            settings["minimize_head_losses"] = False
+
+        if self._stage == 2:
+            settings["minimum_velocity"] = 0.0
+
+        return settings
 
     def energy_system_options(self):
         options = super().energy_system_options()

@@ -956,7 +956,10 @@ class FinancialMixin(
             ]
             timesteps = np.diff(self.times()) / 3600.0
 
-            pump_power = self.__state_vector_scaled(f"{asset}.Pump_power", ensemble_member)
+            if parameters[f"{asset}.include_head_loss_variables"]:
+                pump_power = self.__state_vector_scaled(f"{asset}.Pump_power", ensemble_member)
+            else:
+                pump_power = np.zeros(len(self.times()))
             eff = parameters[f"{asset}.pump_efficiency"]
 
             price_profile = self.__get_electricity_price_profile_or_zero()
@@ -980,7 +983,10 @@ class FinancialMixin(
             )
             nominal = self.variable_nominal(variable_operational_cost_var)
 
-            pump_power = self.__state_vector_scaled(f"{asset}.Pump_power", ensemble_member)
+            if parameters[f"{asset}.include_head_loss_variables"]:
+                pump_power = self.__state_vector_scaled(f"{asset}.Pump_power", ensemble_member)
+            else:
+                pump_power = np.zeros(len(self.times()))
             eff = parameters[f"{asset}.pump_efficiency"]
 
             price_profile = self.__get_electricity_price_profile_or_zero()
@@ -1000,7 +1006,10 @@ class FinancialMixin(
                 f"{s}.variable_operational_cost_coefficient"
             ]
 
-            pump_power = self.__state_vector_scaled(f"{s}.Pump_power", ensemble_member)
+            if parameters[f"{s}.include_head_loss_variables"]:
+                pump_power = self.__state_vector_scaled(f"{s}.Pump_power", ensemble_member)
+            else:
+                pump_power = np.zeros(len(self.times()))
             eff = parameters[f"{s}.pump_efficiency"]
 
             price_profile = self.__get_electricity_price_profile_or_zero()
@@ -1068,7 +1077,10 @@ class FinancialMixin(
             variable_operational_cost_coefficient = parameters[
                 f"{hp}.variable_operational_cost_coefficient"
             ]
-            pump_power = self.__state_vector_scaled(f"{hp}.Pump_power", ensemble_member)
+            if parameters[f"{hp}.include_head_loss_variables"]:
+                pump_power = self.__state_vector_scaled(f"{hp}.Pump_power", ensemble_member)
+            else:
+                pump_power = np.zeros(len(self.times()))
             eff = parameters[f"{hp}.pump_efficiency"]
 
             price_profile = self.__get_electricity_price_profile_or_zero()
