@@ -1,3 +1,6 @@
+from numpy import nan
+
+from mesido.pycml import Variable
 from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 from .heat_source import HeatSource
@@ -21,3 +24,9 @@ class AirWaterHeatPump(HeatSource):
         super().__init__(name, **modifiers)
         self.cop = modifiers["cop"]
         self.component_subtype = "air_water_heat_pump"
+
+        self.elec_power_nominal = nan
+
+        self.add_variable(Variable, "Power_elec", min=0.0, nominal=self.elec_power_nominal)
+
+        self.add_equation(((self.Power_elec * self.cop - self.Heat_source) / self.Heat_nominal))
