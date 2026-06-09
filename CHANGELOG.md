@@ -1,4 +1,16 @@
-# [Unreleased-main] - 2026-06-01
+# [Unreleased-main] - 2026-06-08
+
+## Added
+- xxx
+
+## Changed
+- xxx
+
+## Fixed
+- xxx
+
+
+# [0.1.19] - 2026-06-08
 
 ## Added
 - Electricity consumption calculation of geothermal assets, using the defined COP. 
@@ -7,7 +19,6 @@
 - DataSource is assigned to output profiles
 - Generic methods to create equality and inequality constraints using big-M formulation.
 - First implementation of a temperature profile for a producer. (experimental)
-- Test is added to check airco sizing and cost calculation
 - Workflow of EndScenarioSizing with demand uncertainty is added.
 - Ramp constraints for heat producers are added.
 - Maximum and minimum temperature of heat sources are parsed from esdl
@@ -20,7 +31,6 @@
 - The code base uses asset id's instead of asset names expect for csv inputs where the asset names are still accepted.
 - Updated pyESDL to v26.3
 - Updated the GROW workflow to provide feedback on which heat demands are not matched in priority 1.
-- Removed old test files that are no longer used.
 - Marked low_temperature_ates as a subcomponent of the ates asset type.
 - Added electricity cost profile to variable operational cost of assets which convert electricity to heat.
 - Heating_and_cooling example is cleaned up
