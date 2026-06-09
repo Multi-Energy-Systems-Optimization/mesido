@@ -500,6 +500,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         ] = (0.0, 1.0)
 
         set_self_hot_pipes = set(self.hot_pipes)
+        hn_settings = self.heat_network_settings
         for pipe in self.energy_system_components.get("heat_pipe", []):
             pipe_classes = self.pipe_classes(pipe)
             # cold_pipe = self.hot_to_cold_pipe(pipe)
@@ -538,7 +539,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     max(max_discharges),
                 )
             else:
-                max_velocity = self.heat_network_settings["maximum_velocity"]
+                max_velocity = hn_settings["maximum_velocity"]
                 self.__heat_pipe_topo_max_discharge_nominals[max_discharge_var_name] = (
                     parameters[f"{pipe}.area"] * max_velocity
                 )
@@ -830,8 +831,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             return (
                 demand_ub
                 if not np.isinf(demand_ub)
-                else bounds[f"{asset_name}.{secondary_suffix}"][1]
-            )
+                else bounds[f"{asset_name}.{secondary_suffix}"][1])
 
         def _make_asset_max_size_vars(component_type, upper_bound_suffix=None,
                                     upper_bound_suffix_sec=None, profile_constraint=None):
@@ -1160,8 +1160,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         options = self.energy_system_options()
         components = self.energy_system_components
+        hn_settings = self.heat_network_settings
 
-        if self.heat_network_settings["head_loss_option"] == HeadLossOption.NO_HEADLOSS:
+        if hn_settings["head_loss_option"] == HeadLossOption.NO_HEADLOSS:
             # Undefined, and all constraints using this methods value should
             # be skipped.
             return np.nan
@@ -1182,7 +1183,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                             pipe,
                             self,
                             options,
-                            self.heat_network_settings,
+                            hn_settings,
                             parameters,
                             pc.maximum_discharge,
                             pipe_class=pc,
@@ -1192,9 +1193,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     )
                 except KeyError:
                     area = parameters[f"{pipe}.area"]
-                    max_discharge = self.heat_network_settings["maximum_velocity"] * area
+                    max_discharge = hn_settings["maximum_velocity"] * area
                     head_loss += self._hn_head_loss_class._hn_pipe_head_loss(
-                        pipe, self, options, self.heat_network_settings, parameters, max_discharge
+                        pipe, self, options, hn_settings, parameters, max_discharge
                     )
 
             head_loss += options["minimum_pressure_far_point"] * 10.2
@@ -1204,8 +1205,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         # Maximum pressure difference allowed with user options
         # NOTE: Does not yet take elevation differences into acccount
         max_dh_network_options = (
-            self.heat_network_settings["pipe_maximum_pressure"]
-            - self.heat_network_settings["pipe_minimum_pressure"]
+            hn_settings["pipe_maximum_pressure"] - hn_settings["pipe_minimum_pressure"]
         ) * 10.2
 
         return min(max_sum_dh_pipes, max_dh_network_options)
@@ -1257,7 +1257,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         # These are the constraints to order the discharge capabilities of the pipe classes
         for p, pipe_classes in self.__heat_pipe_topo_pipe_class_discharge_ordering_map.items():
-            max_discharge = self.extra_variable(self._heat_pipe_topo_max_discharge_map[p])
+            max_discharge = self.extra_variable(
+                self._heat_pipe_topo_max_discharge_map[p], ensemble_member
+            )
             max_discharges = {
                 pc.name: pc.maximum_discharge for pc in self._heat_pipe_topo_pipe_class_map[p]
             }
@@ -1345,7 +1347,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             constraints.append((sum(variables.values()), 1.0, 1.0))
 
             # set the max discharge
-            max_discharge = self.extra_variable(self._heat_pipe_topo_max_discharge_map[p])
+            max_discharge = self.extra_variable(
+                self._heat_pipe_topo_max_discharge_map[p], ensemble_member
+            )
             max_discharges = {pc.name: pc.maximum_discharge for pc in pipe_classes}
             max_discharge_expr = sum(
                 variables[pc_name] * max_discharges[pc_name] for pc_name in variables
@@ -1411,7 +1415,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         # These are the constraints to order the discharge capabilities of the pipe classes
         for p, pipe_classes in self.__gas_pipe_topo_pipe_class_discharge_ordering_map.items():
-            max_discharge = self.extra_variable(self._gas_pipe_topo_max_discharge_map[p])
+            max_discharge = self.extra_variable(
+                self._gas_pipe_topo_max_discharge_map[p], ensemble_member
+            )
             max_discharges = {
                 pc.name: pc.maximum_discharge for pc in self._gas_pipe_topo_pipe_class_map[p]
             }
@@ -1459,7 +1465,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             constraints.append((sum(variables.values()), 1.0, 1.0))
 
             # set the max discharge
-            max_discharge = self.extra_variable(self._gas_pipe_topo_max_discharge_map[p])
+            max_discharge = self.extra_variable(
+                self._gas_pipe_topo_max_discharge_map[p], ensemble_member
+            )
             max_discharges = {pc.name: pc.maximum_discharge for pc in pipe_classes}
             max_discharge_expr = sum(
                 variables[pc_name] * max_discharges[pc_name] for pc_name in variables
@@ -1528,7 +1536,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             c,
             cable_classes,
         ) in self.__electricity_cable_topo_cable_class_current_ordering_map.items():
-            max_current = self.extra_variable(self._electricity_cable_topo_max_current_map[c])
+            max_current = self.extra_variable(
+                self._electricity_cable_topo_max_current_map[c], ensemble_member
+            )
             max_currents = {
                 cc.name: cc.maximum_current
                 for cc in self._electricity_cable_topo_cable_class_map[c]
@@ -1580,7 +1590,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             constraints.append((sum(variables.values()), 1.0, 1.0))
 
             # set the max discharge
-            max_current = self.extra_variable(self._electricity_cable_topo_max_current_map[c])
+            max_current = self.extra_variable(
+                self._electricity_cable_topo_max_current_map[c], ensemble_member
+            )
             max_currents = {cc.name: cc.maximum_current for cc in cable_classes}
             max_current_expr = sum(
                 variables[cc_name] * max_currents[cc_name] for cc_name in variables
@@ -1724,9 +1736,10 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         if f"{asset.id}.{variable_suffix}" in self.io.get_timeseries_names():
             timeseries = self.get_timeseries(f"{asset.id}.{variable_suffix}")
             if len(self.times()) < len(timeseries.times):
-                idx_start = np.where(timeseries.times == self.times()[0])[0][0]
-                idx_end = np.where(timeseries.times == self.times()[-1])[0][0]
-                profile_non_scaled = timeseries.values[idx_start : idx_end + 1]
+                mask = (timeseries.times >= self.times()[0]) & (
+                    timeseries.times <= self.times()[-1]
+                )
+                profile_non_scaled = timeseries.values[mask]
             else:
                 profile_non_scaled = timeseries.values
             max_profile_non_scaled = max(profile_non_scaled)
@@ -1963,19 +1976,12 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         for a in [
             *self.energy_system_components.get("ates", []),
-            *self.energy_system_components.get("low_temperature_ates", []),
         ]:
-            max_var_types.update(["ates", "low_temperature_ates"])
+            max_var_types.update(["ates"])
             max_var = self._asset_max_size_map[a]
             max_heat = self.extra_variable(max_var, ensemble_member)
-            if a in self.energy_system_components.get("ates", []):
-                heat_ates = self.__state_vector_scaled(f"{a}.Heat_ates", ensemble_member)
-                constraint_nominal = bounds[f"{a}.Heat_ates"][1]
-            else:
-                heat_ates = self.__state_vector_scaled(
-                    f"{a}.Heat_low_temperature_ates", ensemble_member
-                )
-                constraint_nominal = bounds[f"{a}.Heat_low_temperature_ates"][1]
+            heat_ates = self.__state_vector_scaled(f"{a}.Heat_ates", ensemble_member)
+            constraint_nominal = bounds[f"{a}.Heat_ates"][1]
 
             constraints.append(
                 (
@@ -2351,14 +2357,15 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         """
 
         self.__pipe_class_to_results()
+        hn_settings = self.heat_network_settings
 
         # The head loss mixin wants to do some check for the head loss
         # minimization priority that involves the diameter/area. We assume
         # that we're sort of done minimizing/choosing the pipe diameter, and
         # that we can set the parameters to the optimized values.
         if (
-            self.heat_network_settings["minimize_head_losses"]
-            and self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS
+            hn_settings["minimize_head_losses"]
+            and hn_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS
             and priority == self._hn_head_loss_class._hn_minimization_goal_class.priority
         ):
             self.__pipe_diameter_to_parameters()

@@ -1,4 +1,3 @@
-from mesido.pycml import Variable
 from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 from ._ates_base_asset import _ATESBaseAsset
@@ -30,14 +29,4 @@ class LowTemperatureATES(_ATESBaseAsset):
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
 
-        self.component_type = "low_temperature_ates"
-
-        # Stored_heat is the heat that is contained in the ates.
-        # Heat_low_temperature_ates is the amount of heat added to or extracted from the buffer
-        # per timestep.
-        # Thus Heat_buffer = HeatHot = der(Stored_heat).
-        # We connect an ATES as an demand, meaning that flow and Heat_low_temperature_ates are
-        # positive undercharging and negative under discharge
-        self.add_variable(Variable, "Heat_low_temperature_ates", nominal=self.Heat_nominal)  # [W]
-
-        self.add_equation((self.Heat_ates - self.Heat_low_temperature_ates) / self.Heat_nominal)
+        self.component_subtype = "low_temperature_ates"

@@ -147,22 +147,26 @@ class HeatProblem(
 
     def energy_system_options(self):
         options = super().energy_system_options()
-        self.heat_network_settings["minimum_velocity"] = 0.0001
         options["heat_loss_disconnected_pipe"] = (
             False  # required since we want to disconnect HP & HEX
         )
-        self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
         options["neglect_pipe_heat_losses"] = True
         options["include_ates_temperature_options"] = True
         options["heat_storage_charging_variables"] = True
         return options
+
+    def update_heat_network_settings(self):
+        settings = super().update_heat_network_settings()
+        settings["minimum_velocity"] = 0.0001
+        settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+        return settings
 
     def temperature_carriers(self):
         return self.esdl_carriers
 
     def temperature_regimes(self, carrier):
         temperatures = []
-        if carrier == 41770304791669983859190:
+        if carrier == "c41e7703-dee0-4dc7-9166-a99838591a90":
             # supply
             # temperatures = np.linspace(50, 70, 9).tolist()[::-1]
             # temperatures = np.linspace(52.5, 65, 6).tolist()[::-1]

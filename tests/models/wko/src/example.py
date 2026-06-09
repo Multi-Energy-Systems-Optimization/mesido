@@ -200,10 +200,11 @@ class HeatColdProblem(
     representative result.
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
-        self.heat_network_settings["minimum_velocity"] = 0.0
+    def update_heat_network_settings(self):
+        settings = super().update_heat_network_settings()
+        settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+        settings["minimum_velocity"] = 0.0
+        return settings
 
     def read(self):
         """
@@ -247,8 +248,9 @@ class HeatColdProblem(
         constraints = super().constraints(ensemble_member)
 
         for a in self.energy_system_components.get("ates", []):
-            stored_heat = self.state_vector(f"{a}.Stored_heat")
-            constraints.append((stored_heat[0], 0.0, 0.0))
+            if a not in self.energy_system_components.get("low_temperature_ates", []):
+                stored_heat = self.state_vector(f"{a}.Stored_heat")
+                constraints.append((stored_heat[0], 0.0, 0.0))
 
         return constraints
 

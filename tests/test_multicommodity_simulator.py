@@ -661,7 +661,7 @@ class TestMultiCommoditySimulator(TestCase):
         # Checking that the results are the same.
         for key, value in results_unstaged.items():
             value_staged = results_staged[key]
-            if len(key.split("__")) > 1 and key.split("__")[1] == "gas_flow_direct_var":
+            if len(key.split("__")) > 1 and key.split("__")[1] == "flow_direct_var":
                 # For the scenario when Q is -0 and 0 then gas_flow_direct_var 0 or 1 for the same
                 # volumetric flow rate of zero. So only check gas_flow_direct_var when Q != zero
                 zero_staged = results_staged[f"{key.split('__')[0]}GasIn.Q"] != 0

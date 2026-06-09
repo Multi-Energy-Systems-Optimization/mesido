@@ -41,7 +41,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
         busses = components.get("electricity_node", [])
         gas_nodes = components.get("gas_node", [])
         buffers = components.get("heat_buffer", [])
-        atess = [*components.get("ates", []), *components.get("low_temperature_ates", [])]
+        atess = components.get("ates", [])
         demands = [
             *components.get("heat_demand", []),
             *components.get("electricity_demand", []),
@@ -463,7 +463,11 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
             # Find the components in model, detection by string
             # (name.component_type: type)
             component_types = sorted(
-                {v for k, v in string_parameters.items() if "network_type" not in k}
+                {
+                    v
+                    for k, v in string_parameters.items()
+                    if ("component_type" in k) or ("component_subtype" in k)
+                }
             )
 
             components = {}

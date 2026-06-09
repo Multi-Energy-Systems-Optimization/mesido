@@ -1,4 +1,16 @@
-# [Unreleased-main] - 2026-04-28
+# [Unreleased-main] - 2026-06-08
+
+## Added
+- xxx
+
+## Changed
+- xxx
+
+## Fixed
+- xxx
+
+
+# [0.1.19] - 2026-06-08
 
 ## Added
 - Electricity consumption calculation of geothermal assets, using the defined COP. 
@@ -7,7 +19,10 @@
 - DataSource is assigned to output profiles
 - Generic methods to create equality and inequality constraints using big-M formulation.
 - First implementation of a temperature profile for a producer. (experimental)
-- Test is added to check airco sizing and cost calculation
+- Workflow of EndScenarioSizing with demand uncertainty is added.
+- Ramp constraints for heat producers are added.
+- Maximum and minimum temperature of heat sources are parsed from esdl
+- Warnings on potential causes of heat demand not being matched are added in the grow workflow
 
 ## Changed
 - Reduced the number of constraints required for headloss calculation with LINEARIZED_N_LINES_EQUALITY setting.
@@ -16,10 +31,20 @@
 - The code base uses asset id's instead of asset names expect for csv inputs where the asset names are still accepted.
 - Updated pyESDL to v26.3
 - Updated the GROW workflow to provide feedback on which heat demands are not matched in priority 1.
-- Removed old test files that are no longer used.
+- Marked low_temperature_ates as a subcomponent of the ates asset type.
+- Added electricity cost profile to variable operational cost of assets which convert electricity to heat.
+- Heating_and_cooling example is cleaned up
+- The number of binary variables for the linearized head loss calculation is reduced by half, by only creating them for the positive quadrant.
+- No longer required to add an electricity price profile if an electricity carrier is available.
+- Removed the need for "_ret" in the carrier name and id.
+- The carrier id is now saved as a string and thus in the string_parameters of each asset. 
+- The headloss and hydraulic power variables are now only created if the headloss calculations are turned on, reducing the transcribing time of the problem.
+- The method update_heat_network_settings has been created to update the dictionary for heat_network_settings and ensure the correct settings are applied from the start.
+- Check if needed and execute rerun (with presolve turned off) for HIGHS staged optimization in the Grow workflow.
 
 ## Fixed
 - ProfileConstraints: Use already available function to get profile quantity and unit
+- Electricity carriers no longer require a price profile.
 
 
 # [0.1.18.1] - 2026-04-13
