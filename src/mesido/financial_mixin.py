@@ -1055,10 +1055,11 @@ class FinancialMixin(
 
             if (len(self.get_electricity_carriers().keys()) > 0) and s in [
                 *self.energy_system_components.get("heat_source_elec", []),
-                *self.energy_system_components.get("elec_heat_source_elec", []),
-                *self.energy_system_components.get("air_water_heat_pump_elec", []),
-                *self.energy_system_components.get("heat_pump_elec", []),
+                *self.energy_system_components.get("air_water_heat_pump", []),
             ]:
+                # Electricity priceprofile calculations on heat produced should only be performed
+                # if there is no electricity port at the asset, e.g. the asset is not connected
+                # to an electricity network in the model.
                 sum_ += (
                     ca.sum1(price_profile[1:] * nominator_vector[1:] * timesteps_hr) / denominator
                 )

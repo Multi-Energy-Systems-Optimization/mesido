@@ -961,9 +961,8 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
 
             if (len(solution.get_electricity_carriers().keys()) > 0) and asset in [
                 *solution.energy_system_components.get("heat_source_elec", []),
-                *solution.energy_system_components.get("elec_heat_source_elec", []),
-                *solution.energy_system_components.get("air_water_heat_pump_elec", []),
-                *solution.energy_system_components.get("heat_pump_elec", []),
+                *solution.energy_system_components.get("air_water_heat_pump", []),
+                *solution.energy_system_components.get("heat_pump", []),
             ]:
                 variable_operational_cost += sum(
                     price_profile.values[1:] * nominator_vector[1:] * timesteps_hr / denominator

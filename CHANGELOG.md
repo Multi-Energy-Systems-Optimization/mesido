@@ -7,7 +7,7 @@
 - xxx
 
 ## Fixed
-- xxx
+- Removing the use of the electricity price profile for heat assets that have an ElectricityPort connecting to an electricity network.
 
 
 # [0.1.19] - 2026-06-08
