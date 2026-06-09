@@ -420,10 +420,28 @@ class ESDLMixin(
         maximum_velocity = self.heat_network_settings["maximum_velocity"]
 
         no_pipe_class = PipeClass("None", 0.0, 0.0, (0.0, 0.0), 0.0)
+
+        # General idea
+        # create seperate instances, becasue pipe_classes only exists once, pipe_classes[several instances]        
+        # is a dictionary maybe better to link a instance of pipe_classes to a name?
+        pipe_classes = 
+        # {
+        #     "measure_id": {
+        #         "name:" "Default"  -> this name must be used. If one measure or many measures are included
+        #         "pipe_class": [DN20, DN30 ...]
+        #     },  # if we start using this it will have an impact on Rotterdam!!
+        #     "measure_id": {
+        #             "name:" ...
+        #             "pipe_class": [DN20, DN30 ...]
+        #     ....
+        # }
+        
         pipe_classes = [
             EDRPipeClass.from_edr_class(name, edr_class_name, maximum_velocity)
             for name, edr_class_name in _AssetToComponentBase.STEEL_S1_PIPE_EDR_ASSETS.items()
         ]
+        # len(pipe_classes) == 1 --> this ways
+        # pipe_classes["Default"] now filled with default values only (cost, u_values etc)?
 
         override_classes = self._override_pipe_classes
 
@@ -431,10 +449,21 @@ class ESDLMixin(
         # the pipe catalog is available as a measure
         if self._esdl_measures:
             filter_type = "Pipe"
+
+            # in this section append to pipe_classes to the dict?
+            
+            # filter_asset_measures
             pipe_measures = self.filter_asset_measures(
                 asset_measures=self._esdl_measures, filter_type=filter_type
             )
+            # will have to loop over measures (still to determine how measures would be structured Edwin?)
+            # Since at this point will have should have access to measures aplicaple to pipes
+            # a meaure will contain a list now as well: either all pipe DNs (cost list) or all cost for 1 pipe DN? 
             if len(pipe_measures.items()) > 0:
+                
+                # create the default at the top and add the rest of the pipe_classes instances here
+
+                # this will now be done iteratively
                 pipe_diameter_cost_map = {
                     str(pipe.diameter): pipe.costInformation.investmentCosts.value
                     for pipe in pipe_measures.values()
@@ -454,6 +483,8 @@ class ESDLMixin(
                     else:
                         del pipe_classes[i]
 
+        # now need pipe_classes[several instances][i]
+
         # We assert the pipe classes are monotonically increasing in size
         assert np.all(np.diff([pc.inner_diameter for pc in pipe_classes]) > 0)
 
@@ -463,6 +494,7 @@ class ESDLMixin(
             ):
                 self.__override_pipe_classes_dicts(
                     asset, pipe_classes, no_pipe_class, override_classes
+                    # asset, pipe_classes[..], no_pipe_class, override_classes # pass available pipe classes for the specific pipe
                 )
 
     def override_gas_pipe_classes(self) -> None:
