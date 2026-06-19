@@ -120,6 +120,15 @@ class BaseESDLParser:
                     asset_type = el.__class__.__name__
 
                     # Every asset should at least have a port to be connected to another asset
+                    # Issue here since the demands in measures do not need ports (so 0) they will
+                    # only have attributes like profiles, costs, temp values etc.
+                    # isinstance(el, esdl.Building)
+                    # isinstance(el, esdl.HConnection) -> need this for connections to assets in the building
+                    # At this point there is no way to see that this is a demand in measure, building,
+                    if el.name in [
+                        "HeatingDemand_1", "HeatingDemand_2", "CoolingDemand_1", "CoolingDemand_2"
+                    ]:
+                        continue # temporary for now
                     assert len(el.port) >= 1
 
                     in_ports = None
