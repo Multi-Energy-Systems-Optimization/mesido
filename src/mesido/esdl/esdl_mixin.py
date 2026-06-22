@@ -424,7 +424,7 @@ class ESDLMixin(
         # General idea
         # create seperate instances, becasue pipe_classes only exists once, pipe_classes[several instances]        
         # is a dictionary maybe better to link a instance of pipe_classes to a name?
-        pipe_classes = 
+        # pipe_classes = 
         # {
         #     "measure_id": {
         #         "name:" "Default"  -> this name must be used. If one measure or many measures are included
