@@ -1,10 +1,10 @@
-# [Unreleased-main] - 2026-06-15
+# [Unreleased-main] - 2026-07-01
 
 ## Added
 - xxx
 
 ## Changed
-- xxx
+- Code generalization in asset sizing mixin
 
 ## Fixed
 - xxx
