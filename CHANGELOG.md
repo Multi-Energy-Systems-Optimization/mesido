@@ -1,10 +1,22 @@
-# [Unreleased-main] - 2026-04-13
+# [Unreleased-main] - 2026-07-02
 
 ## Added
 - xxx
 
 ## Changed
 - xxx
+
+## Fixed
+- xxx
+
+
+# [0.1.18.2] - 2026-07-02
+
+## Added
+- xxx
+
+## Changed
+- Increased zero flow tolerance value in post processing (updating of esdl file)
 
 ## Fixed
 - xxx
