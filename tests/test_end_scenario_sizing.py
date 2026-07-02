@@ -544,8 +544,8 @@ class TestEndScenarioSizing(TestCase):
         solution = run_end_scenario_sizing(
             EndScenarioSizing,
             base_folder=base_folder,
-            esdl_file_name="test_case_small_network_all_optional_pipe_catalog.esdl",
-            # esdl_file_name="test_case_small_network_all_optional_pipe_catalog_MeasureGroup.esdl",
+            # esdl_file_name="test_case_small_network_all_optional_pipe_catalog.esdl",
+            esdl_file_name="test_case_small_network_all_optional_pipe_catalog_MeasureGroup.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
@@ -744,6 +744,6 @@ if __name__ == "__main__":
     # a.test_end_scenario_sizing_discounted()
     # a.test_end_scenario_sizing_head_loss()
     # a.test_end_scenario_sizing_pipe_catalog_lower_pipe_dn()
-    # a.test_end_scenario_sizing_pipe_catalog()
-    a.test_end_scenario_sizing_pipe_catalog_with_templates()
+    a.test_end_scenario_sizing_pipe_catalog()
+    # a.test_end_scenario_sizing_pipe_catalog_with_templates()
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
