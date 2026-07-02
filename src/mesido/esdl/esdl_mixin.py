@@ -443,10 +443,13 @@ class ESDLMixin(
             for name, edr_class_name in _AssetToComponentBase.STEEL_S1_PIPE_EDR_ASSETS.items()
         ]
 
-        pipe_classes_groups["default_id"] = {
-            "measure_group_name": "default",
-            "pipe_classes": pipe_classes,
-        }
+        # TODO: currently the default values are the standard hard-coded EDR costs, in the future
+        # this wil potentially be replaced by Default measureGroup in the esdl file
+        # default_measuregroup_id = "default_id"
+        # pipe_classes_groups[default_measuregroup_id] = {
+        #     "measure_group_name": "default",
+        #     "pipe_classes": pipe_classes,
+        # }
 
         # pipe_classes_new
         # len(pipe_classes) == 1 --> this ways
@@ -464,15 +467,19 @@ class ESDLMixin(
                 asset_measures=self._esdl_measures, filter_type=filter_type
             )
 
-            pipe_measures_for_group = {}
+            pipe_measures_per_group = {}
             for measure_group_id in self._esdl_measure_groups:
                 pipe_classes_groups[measure_group_id] = {
                     "measure_group_name": self._esdl_measure_groups[measure_group_id]["name"],
                     "pipe_classes": pipe_classes,
                 }
 
-                pipe_measures_for_group[measure_group_id] = [pipe_measures[id] for id in self._esdl_measure_groups[measure_group_id]["containt_measure_ids"]]
-        
+                # Note: while default does not exit as a measuregroup in the esdl, it is not
+                # included here. Which also implies no cost updates
+                pipe_measures_per_group[measure_group_id] = [
+                    pipe_measures[id] for id in self._esdl_measure_groups[measure_group_id]["containt_measure_ids"]
+                ]
+            
             # filter_type = "Pipe"
 
             # in this section append to pipe_classes to the dict?
@@ -491,19 +498,28 @@ class ESDLMixin(
                 # create the default at the top and add the rest of the pipe_classes instances here
 
                 # this will now be done iteratively
-                pipe_diameter_cost_map = {
-                    str(pipe.diameter): pipe.costInformation.investmentCosts.value
-                    for pipe in pipe_measures.values()
-                }
+                # pipe_diameter_cost_map = {
+                #     str(pipe.diameter): pipe.costInformation.investmentCosts.value
+                #     for pipe in pipe_measures.values()
+                # }
 
-                for id in pipe_classes_groups:
+                pipe_diameter_cost_map = {}
+
+                for grp_id in pipe_classes_groups:
+
+                    kvr = 0.0
+
+                    pipe_diameter_cost_map[grp_id] = {
+                        str(pipe.diameter): pipe.costInformation.investmentCosts.value
+                        for pipe in pipe_measures_per_group[grp_id]
+                    }
                     
-                    for i, pipe_class in enumerate(pipe_classes_groups[id]["pipe_classes"]):
+                    for i, pipe_class in enumerate(pipe_classes_groups[grp_id]["pipe_classes"]):
                     # for i, pipe_class in enumerate(pipe_classes):
-                        if pipe_class.name in pipe_diameter_cost_map.keys():
-                            pipe_classes_groups[id]["pipe_classes"][i] = dataclasses.replace(
-                                pipe_classes_groups[id]["pipe_classes"][i],
-                                investment_costs=pipe_diameter_cost_map[pipe_class.name],
+                        if pipe_class.name in pipe_diameter_cost_map[grp_id].keys():
+                            pipe_classes_groups[grp_id]["pipe_classes"][i] = dataclasses.replace(
+                                pipe_classes_groups[grp_id]["pipe_classes"][i],
+                                investment_costs=pipe_diameter_cost_map[grp_id][pipe_class.name],
                             )
                             # pipe_classes[i] = dataclasses.replace(
                             #     pipe_classes[i],
@@ -511,7 +527,7 @@ class ESDLMixin(
                             # )
                             if (
                                 not self._ESDLMixin__use_user_defined_minimum_pipe_size
-                                and float( pipe_classes_groups[id]["pipe_classes"][i].name.replace("DN", "")) != 20.0
+                                and float( pipe_classes_groups[grp_id]["pipe_classes"][i].name.replace("DN", "")) != 20.0
                             ):
                             # if (
                             #     not self._ESDLMixin__use_user_defined_minimum_pipe_size
@@ -519,11 +535,11 @@ class ESDLMixin(
                             # ):
                                 self._ESDLMixin__use_user_defined_minimum_pipe_size = True
                         else:
-                            del pipe_classes_groups[id]["pipe_classes"][i]
+                            del pipe_classes_groups[grp_id]["pipe_classes"][i]
                             # del pipe_classes[i]
                 
-                # We assert the pipe classes are monotonically increasing in size
-                assert np.all(np.diff([pc.inner_diameter for pc in pipe_classes_groups[id]["pipe_classes"]]) > 0)
+                    # We assert the pipe classes are monotonically increasing in size
+                    assert np.all(np.diff([pc.inner_diameter for pc in pipe_classes_groups[grp_id]["pipe_classes"]]) > 0)
 
         # now need pipe_classes[several instances][i]
 
@@ -537,18 +553,18 @@ class ESDLMixin(
                 
                 if asset.attributes.get("measures", False):
                     # Note: only catering for one reference at a pipe
-                    id = asset.attributes.get("measures").measure[0].reference.id
+                    grp_id = asset.attributes.get("measures").measure[0].reference.id
                     if len(asset.attributes.get("measures").measure) > 1:
                         logger.warning(
                             f"{asset.asset_type} has more than 1 MeasureGroup referenced, remove"
                             " extra references"
                         )
-                else:
-                    id = "default_id"
+                # else:
+                #     id = default_measuregroup_id
 
                 self.__override_pipe_classes_dicts(
                     # asset, pipe_classes, no_pipe_class, override_classes
-                    asset, pipe_classes_groups[id]["pipe_classes"], no_pipe_class, override_classes
+                    asset, pipe_classes_groups[grp_id]["pipe_classes"], no_pipe_class, override_classes
                     # asset, pipe_classes[..], no_pipe_class, override_classes # pass available pipe classes for the specific pipe
                 )
 
