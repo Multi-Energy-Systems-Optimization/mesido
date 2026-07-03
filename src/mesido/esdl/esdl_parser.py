@@ -83,17 +83,17 @@ class BaseESDLParser:
         # measures = f(measure1, measure2 ...) or
         # measures = f(measuregroup1, measuregroup1 ..) where measuregroup1=f(measure1, measure2..)
         # but we do not cater for both at the same time
-        meausure_group_exists = isinstance(
-            self._energy_system.measures.measure[0], esdl.MeasureGroup
-        )
         for el in self._energy_system.eAllContents():
             # If asset measures exist, collect that in a different dictionary, to be used later in
             # esdl_mixin to update that information
             if (asset_measures is not None and el in asset_measures) or (
                 asset_templates is not None and el in asset_templates
             ):  
-                if meausure_group_exists and isinstance(el, esdl.MeasureGroup):
-                    
+                # meausure_group_exists = isinstance(
+                #     self._energy_system.measures.measure[0], esdl.MeasureGroup
+                # )
+                # if meausure_group_exists and isinstance(el, esdl.MeasureGroup):
+                if isinstance(el, esdl.MeasureGroup):
                     self._measure_group[el.id] = {
                         "id": el.id,
                         "name": el.name,
