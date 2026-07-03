@@ -1,10 +1,11 @@
-# [Unreleased-main] - 2026-07-01
+# [Unreleased-main] - 2026-07-03
 
 ## Added
 - xxx
 
 ## Changed
 - Code generalization in asset sizing mixin
+- Removing the units in the KPI labels
 
 ## Fixed
 - xxx

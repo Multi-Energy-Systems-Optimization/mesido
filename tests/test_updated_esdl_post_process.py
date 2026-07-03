@@ -86,19 +86,19 @@ class TestUpdatedESDL(TestCase):
             # High level checks of KPIs
             number_of_kpis_top_level_in_esdl = 11
             high_level_kpis_euro = [
-                "High level cost breakdown [EUR] (yearly averaged)",
-                "High level cost breakdown [EUR] (30.0 year period)",
-                "Overall cost breakdown [EUR] (yearly averaged)",
-                "Overall cost breakdown [EUR] (30.0 year period)",
-                "CAPEX breakdown [EUR] (30.0 year period)",
-                "OPEX breakdown [EUR] (yearly averaged)",
-                "OPEX breakdown [EUR] (30.0 year period)",
-                "Area_76a7: Asset cost breakdown [EUR]",
-                "Area_9d0f: Asset cost breakdown [EUR]",
-                "Area_a58a: Asset cost breakdown [EUR]",
+                "High level cost breakdown (yearly averaged)",
+                "High level cost breakdown (30.0 year period)",
+                "Overall cost breakdown (yearly averaged)",
+                "Overall cost breakdown (30.0 year period)",
+                "CAPEX breakdown (30.0 year period)",
+                "OPEX breakdown (yearly averaged)",
+                "OPEX breakdown (30.0 year period)",
+                "Area_76a7: Asset cost breakdown",
+                "Area_9d0f: Asset cost breakdown",
+                "Area_a58a: Asset cost breakdown",
             ]
             high_level_kpis_wh = [
-                "Energy production [Wh] (yearly averaged)",
+                "Energy production (yearly averaged)",
             ]
             all_high_level_kpis = []
             all_high_level_kpis = high_level_kpis_euro + high_level_kpis_wh
@@ -117,20 +117,20 @@ class TestUpdatedESDL(TestCase):
                 # lists of 2 kpis that have to be compared
                 "kpi_name_list": [
                     [
-                        "High level cost breakdown [EUR] (yearly averaged)",
-                        "High level cost breakdown [EUR] (30.0 year period)",
+                        "High level cost breakdown (yearly averaged)",
+                        "High level cost breakdown (30.0 year period)",
                     ],
                     [
-                        "Overall cost breakdown [EUR] (yearly averaged)",
-                        "Overall cost breakdown [EUR] (30.0 year period)",
+                        "Overall cost breakdown (yearly averaged)",
+                        "Overall cost breakdown (30.0 year period)",
                     ],
                     [
-                        "Overall cost breakdown [EUR] (yearly averaged)",
-                        "Overall cost breakdown [EUR] (30.0 year period)",
+                        "Overall cost breakdown (yearly averaged)",
+                        "Overall cost breakdown (30.0 year period)",
                     ],
                     [
-                        "OPEX breakdown [EUR] (yearly averaged)",
-                        "OPEX breakdown [EUR] (30.0 year period)",
+                        "OPEX breakdown (yearly averaged)",
+                        "OPEX breakdown (30.0 year period)",
                     ],
                 ],
                 # lists of which kpi label has to be compared for kpi_name_list
@@ -395,16 +395,16 @@ class TestUpdatedESDL(TestCase):
         # High level checks of KPIs
         number_of_kpis_top_level_in_esdl = 8
         high_level_kpis_euro = [
-            "EAC - High level cost breakdown [EUR] (1.0 year period)",
-            "EAC - Overall cost breakdown [EUR] (1.0 year period)",
-            "EAC - CAPEX breakdown [EUR] (1.0 year period)",
-            "EAC - OPEX breakdown [EUR] (1.0 year period)",
-            "EAC - Area_76a7: Asset cost breakdown [EUR]",
-            "EAC - Area_9d0f: Asset cost breakdown [EUR]",
-            "EAC - Area_a58a: Asset cost breakdown [EUR]",
+            "EAC - High level cost breakdown (1.0 year period)",
+            "EAC - Overall cost breakdown (1.0 year period)",
+            "EAC - CAPEX breakdown (1.0 year period)",
+            "EAC - OPEX breakdown (1.0 year period)",
+            "EAC - Area_76a7: Asset cost breakdown",
+            "EAC - Area_9d0f: Asset cost breakdown",
+            "EAC - Area_a58a: Asset cost breakdown",
         ]
         high_level_kpis_wh = [
-            "Energy production [Wh] (yearly averaged)",
+            "Energy production (yearly averaged)",
         ]
         all_high_level_kpis = []
         all_high_level_kpis = high_level_kpis_euro + high_level_kpis_wh
@@ -427,7 +427,7 @@ class TestUpdatedESDL(TestCase):
                 err_msg=f"KPI name {kpi_name} was not expected in the ESDL",
             )
 
-            if kpi_name == "EAC - CAPEX breakdown [EUR] (1.0 year period)":
+            if kpi_name == "EAC - CAPEX breakdown (1.0 year period)":
                 string_items = (
                     energy_system.instance[0].area.KPIs.kpi[ii].distribution.stringItem.items
                 )
@@ -445,7 +445,7 @@ class TestUpdatedESDL(TestCase):
 
                         np.testing.assert_allclose(value, capex_eac)
 
-            if kpi_name == "EAC - OPEX breakdown [EUR] (1.0 year period)":
+            if kpi_name == "EAC - OPEX breakdown (1.0 year period)":
                 string_items = (
                     energy_system.instance[0].area.KPIs.kpi[ii].distribution.stringItem.items
                 )
