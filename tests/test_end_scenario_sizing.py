@@ -545,7 +545,6 @@ class TestEndScenarioSizing(TestCase):
             EndScenarioSizing,
             base_folder=base_folder,
             esdl_file_name="test_case_small_network_all_optional_pipe_catalog.esdl",
-            # esdl_file_name="test_case_small_network_all_optional_pipe_catalog_MeasureGroup.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
@@ -630,34 +629,18 @@ class TestEndScenarioSizing(TestCase):
         """
 
         import models.test_case_small_network_ates_buffer_optional_assets.src.run_ates as run_ates
-        from mesido.esdl.esdl_mixin import DBAccessType
         
         base_folder = Path(run_ates.__file__).resolve().parent.parent
-        kwargs = {
-            "write_result_db_profiles": False,
-            "database_connections": [
-                {
-                    "access_type": DBAccessType.WRITE,  # or DBAccessType.WRITE or DBAccessType.READ_WRITE
-                    "influxdb_host": "localhost",
-                    "influxdb_port": 8086,
-                    "influxdb_username": None,
-                    "influxdb_password": None,
-                    "influxdb_ssl": False,
-                    "influxdb_verify_ssl": False,
-                },
-            ],
-         }
+
         # This is an optimization done over a few days
         solution = run_end_scenario_sizing(
-            # EndScenarioSizing,
-            EndScenarioSizingStaged,
+            EndScenarioSizing,
             base_folder=base_folder,
             esdl_file_name="test_case_small_network_all_optional_pipe_catalog_with_templates.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
             error_type_check=NetworkErrors.NO_POTENTIAL_ERRORS_CHECK,
-            **kwargs,
         )
 
         results = solution.extract_results()
