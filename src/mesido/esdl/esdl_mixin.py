@@ -126,7 +126,7 @@ class ESDLMixin(
         self._esdl_carriers: Dict[str, Dict[str, Any]] = esdl_parser.get_carrier_properties()
         self.__energy_system_handler: esdl.esdl_handler.EnergySystemHandler = esdl_parser.get_esh()
         self._esdl_measures: Dict[str, Asset] = esdl_parser.get_measures()
-        self._esdl_measure_groups: Dict[str, Asset] = esdl_parser.get_measure_groups()
+        self._esdl_measure_group_info: Dict[str, Asset] = esdl_parser.get_measure_group_info()
         self._database_credentials: Optional[Dict[str, Tuple[str, str]]] = {
             DBAccessType.READ: [],
             DBAccessType.WRITE: [],
@@ -461,53 +461,22 @@ class ESDLMixin(
                 asset_measures=self._esdl_measures, filter_type=filter_type
             )
 
-            # TODO: currently the default values are the standard hard-coded EDR costs, in the future
-            # this wil potentially be replaced by Default measureGroup in the esdl file
-            # This is now the defgault created when no measuregroup exists -> but measures do exists
-            # Manually creat a measuregroup
-            # default_measuregroup_id = "default_id"
-            # pipe_classes_groups[default_measuregroup_id] = {
-            #     "measure_group_name": "default",
-            #     "pipe_classes": pipe_classes.copy(),
-            # }
-            # self._esdl_measure_groups = {
-            #     "id": default_measuregroup_id,
-            #     "name": "default_measuregroup_id",
-            #     "containt_measure_ids": [kk.id for kk in el.measure],
-            # }
-            
-            # filter_type = "Pipe"
-
-            # in this section append to pipe_classes to the dict?
-            
-            # filter_asset_measures
-            # pipe_measures = self.filter_asset_measures(
-            #     asset_measures=self._esdl_measures, filter_type=filter_type
-            # )
-                 
-
-            # will have to loop over measures (still to determine how measures would be structured Edwin?)
-            # Since at this point will have should have access to measures aplicaple to pipes
-            # a meaure will contain a list now as well: either all pipe DNs (cost list) or all cost for 1 pipe DN? 
             if len(pipe_measures.items()) > 0:
                 
-                if self._esdl_measure_groups:
+                if self._esdl_measure_group_info:
                     pipe_measures_per_group = {}
-                    for measure_group_id in self._esdl_measure_groups:
+                    for measure_group_id in self._esdl_measure_group_info:
                         pipe_classes_groups[measure_group_id] = {
-                            "measure_group_name": self._esdl_measure_groups[measure_group_id]["name"],
-                            "pipe_classes": pipe_classes.copy(), # copy() prevents point to same object
+                            "measure_group_name": self._esdl_measure_group_info[measure_group_id]["name"],
+                            "pipe_classes": pipe_classes.copy(), # prevents pointing to same object
                         }
 
                         pipe_measures_per_group[measure_group_id] = [
-                            pipe_measures[id] for id in self._esdl_measure_groups[measure_group_id]["containt_measure_ids"]
+                            pipe_measures[id] for id in self._esdl_measure_group_info[measure_group_id]["containt_measure_ids"]
                         ]
                     
                     pipe_diameter_cost_map = {}
-
                     for grp_id in pipe_classes_groups:
-
-                        kvr = 0.0
 
                         if pipe_measures_per_group:
                             pipe_diameter_cost_map[grp_id] = {
@@ -519,30 +488,6 @@ class ESDLMixin(
                                 pipe_classes_groups[grp_id]["pipe_classes"],
                                 pipe_diameter_cost_map[grp_id],
                             )
-                            # Try to replace the entire section - to delete after testing completing
-                            # for i, pipe_class in enumerate(pipe_classes_groups[grp_id]["pipe_classes"]):
-                            # # for i, pipe_class in enumerate(pipe_classes):
-                            #     if pipe_class.name in pipe_diameter_cost_map[grp_id].keys():
-                            #         pipe_classes_groups[grp_id]["pipe_classes"][i] = dataclasses.replace(
-                            #             pipe_classes_groups[grp_id]["pipe_classes"][i],
-                            #             investment_costs=pipe_diameter_cost_map[grp_id][pipe_class.name],
-                            #         )
-                            #         # pipe_classes[i] = dataclasses.replace(
-                            #         #     pipe_classes[i],
-                            #         #     investment_costs=pipe_diameter_cost_map[pipe_class.name],
-                            #         # )
-                            #         if (
-                            #             not self._ESDLMixin__use_user_defined_minimum_pipe_size
-                            #             and float( pipe_classes_groups[grp_id]["pipe_classes"][i].name.replace("DN", "")) != 20.0
-                            #         ):
-                            #         # if (
-                            #         #     not self._ESDLMixin__use_user_defined_minimum_pipe_size
-                            #         #     and float(pipe_classes[i].name.replace("DN", "")) != 20.0
-                            #         # ):
-                            #             self._ESDLMixin__use_user_defined_minimum_pipe_size = True
-                            #     else:
-                            #         del pipe_classes_groups[grp_id]["pipe_classes"][i]
-                            #         # del pipe_classes[i]
                         
                         self.assert_pipe_dn_monotonically_increasing(
                             pipe_classes_groups[grp_id]["pipe_classes"]
@@ -566,7 +511,7 @@ class ESDLMixin(
             if asset.asset_type == "Pipe" and isinstance(
                 asset.in_ports[0].carrier, esdl.HeatCommodity
             ):
-                if self._esdl_measure_groups:
+                if self._esdl_measure_group_info:
                     asset_referenced_id = None
                     asset_measures = asset.attributes.get("measures", False)
                     if asset_measures:
@@ -598,11 +543,6 @@ class ESDLMixin(
                                      "MeasureGroup is being used for pipes & every pipe has to have"
                                      " a MeasureGroupReference")
                         sys.exit(1)
-                        # self.__override_pipe_classes_dicts(
-                        #     asset, pipe_classes_groups["dfbe9fbc-dcee-4251-a76d-44c81b129cfb"]["pipe_classes"],
-                        #     no_pipe_class,
-                        #     override_classes,
-                        # )
                 else: 
                     self.__override_pipe_classes_dicts(
                             asset, pipe_classes, no_pipe_class, override_classes

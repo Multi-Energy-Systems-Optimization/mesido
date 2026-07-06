@@ -184,7 +184,7 @@ class BaseESDLParser:
     def get_measures(self) -> Dict[str, Asset]:
         return self._measures
 
-    def get_measure_groups(self) -> Dict[str, esdl.MeasureGroup]:
+    def get_measure_group_info(self) -> Dict[str, esdl.MeasureGroup]:
         return self._measure_group
 
 class ESDLStringParser(BaseESDLParser):
