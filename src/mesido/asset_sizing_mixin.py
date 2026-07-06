@@ -1264,8 +1264,6 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         # These are the constraints to count the amount of a certain pipe class
         unique_pipe_classes = self.get_unique_pipe_classes()
 
-        # each pipes cost list should be the same length
-
         pipe_class_count_sum = {pc.name: 0 for pc in unique_pipe_classes}
 
         set_self_hot_pipes = set(self.hot_pipes)

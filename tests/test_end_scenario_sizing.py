@@ -760,6 +760,7 @@ class TestEndScenarioSizing(TestCase):
 
             results = solution.extract_results()
             parameters = solution.parameters(0)
+            tol_value = tol_value
 
             # Check the MeasureGroup strucure has been setup correctly
             np.testing.assert_equal(len(solution._esdl_measures), 46)
@@ -770,16 +771,87 @@ class TestEndScenarioSizing(TestCase):
             )
             for group_id in solution._esdl_measure_groups:
                 np.testing.assert_equal(
-                    solution._esdl_measure_groups[group_id]["name"] in ["Cheap", "Expensive"],
-                    True,
-                )
-                np.testing.assert_equal(
-                    solution._esdl_measure_groups[group_id]["containt_measure_ids"],
+                    len(solution._esdl_measure_groups[group_id]["containt_measure_ids"]),
                     23,
                 )
-                
-                for measure_id in solution._esdl_measure_groups[group_id]["containt_measure_ids"]:
-                    all_pipe_measures_different_groups[measure_id].costInformation.investmentCosts.value
+                measure_inv_costs = all_pipe_measures_different_groups[
+                    measure_id
+                ].costInformation.investmentCosts.value
+                if solution._esdl_measure_groups[group_id]["name"] == "Cheap":
+                    for measure_id in solution._esdl_measure_groups[group_id]["containt_measure_ids"]:
+                        np.testing.assert_array_less(
+                            measure_inv_costs,
+                            100.0 + tol_value,
+                        )
+                elif solution._esdl_measure_groups[group_id]["name"] == "Expensive":
+                    for measure_id in solution._esdl_measure_groups[group_id]["containt_measure_ids"]:
+                        np.testing.assert_array_less(
+                            1000.0 - tol_value,
+                            measure_inv_costs,
+                        )
+                else:
+                    exit("Something went wrong with the number of runs")
+            
+            expensive_pipe_ids = [
+                solution.esdl_asset_name_to_id_map["Pipe_f6e5"],
+                solution.esdl_asset_name_to_id_map["Pipe_f6e5_ret"],
+            ]
+
+            for pipe_id in solution.energy_system_components.get("heat_pipe", []):
+
+                inv_coef = 100.0
+                is_related_len = 1
+
+                # Check the pipes in the results
+                if pipe_id in expensive_pipe_ids:
+                    inv_coef = 1000.0
+                    is_related_len = 0
+
+                np.testing.assert_equal(
+                    len(solution._esdl_assets[pipe_id].attributes.get("related", False)),
+                    is_related_len,
+                )
+                np.testing.assert_allclose(
+                    results[f"{pipe_id}__investment_cost"]
+                    / solution.parameters(0)[f"{pipe_id}.length"],
+                    inv_coef,
+                )
+
+                # Check the available pipe classes
+                for avail_pipe_class in solution._override_pipe_classes[pipe_id]:
+                    np.testing.assert_array_less(
+                        avail_pipe_class.investment_costs,
+                        inv_coef + tol_value,
+                    )
+            
+            # Expensive source connected to cheap pipes
+            expensive_source_costs = solution._esdl_assets[
+                solution.esdl_asset_name_to_id_map["HeatProducer_1"]
+            ].attributes["costInformation"]
+            # Cheap source connected to expensive pipes that are not related
+            cheap_source_costs = solution._esdl_assets[
+                solution.esdl_asset_name_to_id_map["HeatProducer_2"]
+            ].attributes["costInformation"] 
+            np.testing.assert_allclose(
+                expensive_source_costs.investmentCosts.value, 
+                cheap_source_costs.investmentCosts.value,
+            )
+            np.testing.assert_allclose(
+                expensive_source_costs.installationCosts.value, 
+                cheap_source_costs.installationCosts.value,
+            )
+            np.testing.assert_array_less(
+                cheap_source_costs.variableOperationalCosts.value,
+                expensive_source_costs.variableOperationalCosts.value, 
+            )
+            np.testing.assert_array_less(
+                expensive_source_costs.variableOperationalCosts.value
+                /cheap_source_costs.variableOperationalCosts.value,
+                2.5 + 1e-6, 
+            )
+
+
+            kvr = 0.0
 
             # # Test 1: Check if the solution pipe classes used were of the pipe measures
             # filter_type = "Pipe"

@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" name="test_case_small_network_all_optional_pipe_catalog" id="f1bd9a8e-ce11-40a3-8c5f-feac31105ac2" description="" esdlVersion="v2210" version="17">
+<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" name="test_case_small_network_all_optional_pipe_catalog" id="74955419-896e-4684-ba6e-8f9e1b80c5c9" description="" esdlVersion="v2210" version="18">
   <energySystemInformation xsi:type="esdl:EnergySystemInformation" id="e64737d9-d772-4723-b092-a0b397ac00b3">
     <carriers xsi:type="esdl:Carriers" id="9dff13b9-77cd-4b99-8777-6b7680a155b6">
       <carrier xsi:type="esdl:HeatCommodity" id="7b32e287-d775-480c-b317-64ffdacf12c9" name="Heat" supplyTemperature="70.0"/>
@@ -214,12 +214,12 @@
           <investmentCosts xsi:type="esdl:SingleValue" value="100000.0" id="b6c85259-9211-417f-b9db-89fb473f2f1c">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="47fcbff2-f0f1-48d9-b7c1-7e34a90b1539" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" unit="EURO" physicalQuantity="COST"/>
           </investmentCosts>
-          <variableOperationalAndMaintenanceCosts xsi:type="esdl:SingleValue" value="15.0" id="b90c659f-4d87-4402-b042-90a7594e7016">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="0d948406-7864-4eff-bc65-7670533bf18b" description="Cost in EUR/MWh" perUnit="WATTHOUR" perMultiplier="MEGA" unit="EURO" physicalQuantity="COST"/>
-          </variableOperationalAndMaintenanceCosts>
           <installationCosts xsi:type="esdl:SingleValue" value="100000.0" id="ccba43a5-c4c8-4818-a339-762b3385f562">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" unit="EURO" physicalQuantity="COST" id="6924031c-0548-4b33-a341-3d03c5c2b5a0" description="Cost in EUR"/>
           </installationCosts>
+          <variableOperationalCosts xsi:type="esdl:SingleValue" id="466f6b25-2b7e-44a9-8234-9a46a00c8d33" value="15.0">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" description="Cost in EUR/MWh" id="dfa15ba8-f4d9-4186-876e-d2034640f84d" unit="EURO" perMultiplier="MEGA" perUnit="WATTHOUR"/>
+          </variableOperationalCosts>
         </costInformation>
       </asset>
       <asset xsi:type="esdl:Joint" name="Joint_1" id="f96d02d7-19d1-4a0b-8869-2d180f39b7e6">
@@ -371,7 +371,7 @@
           </investmentCosts>
         </costInformation>
         <measures xsi:type="esdl:Measures" id="42fce8af-810b-402d-9811-44f53c47f120" name="NewMeasures">
-          <measure xsi:type="esdl:MeasureGroupReference" id="a5fc17b7-e107-4de3-6d74-cd7b997a86e8" name="NewMeasureGroupReference" reference="dfbe1fbc-dcee-4251-a76d-42c81b129cfb"/>
+          <measure xsi:type="esdl:MeasureGroupReference" id="a5fc17b7-e107-4de3-6d74-cd7b997a86e8" name="NewMeasureGroupReference" reference="dfbe9fbc-dcee-4251-a76d-44c81b129cfb"/>
         </measures>
       </asset>
       <asset xsi:type="esdl:Pipe" state="OPTIONAL" diameter="DN450" name="Pipe_f6e5_ret" length="233.9" id="0db91515-418a-4bcb-9d99-9047c1ca8bdf" innerDiameter="0.4444" outerDiameter="0.63">
@@ -399,7 +399,7 @@
           </investmentCosts>
         </costInformation>
         <measures xsi:type="esdl:Measures" id="42fce8af-790b-402d-9811-44f53c47f120" name="NewMeasures">
-          <measure xsi:type="esdl:MeasureGroupReference" id="a5fc17b7-e107-4de3-8d74-cd7b977a86e8" name="NewMeasureGroupReference" reference="dfbe1fbc-dcee-4251-a76d-42c81b129cfb"/>
+          <measure xsi:type="esdl:MeasureGroupReference" id="a5fc17b7-e107-4de3-8d74-cd7b977a86e8" name="NewMeasureGroupReference" reference="dfbe9fbc-dcee-4251-a76d-44c81b129cfb"/>
         </measures>
       </asset>
     </area>
