@@ -24,7 +24,7 @@ class BaseESDLParser:
         self._esdl_string: Optional[str] = None
         self._esdl_path: Optional[Path] = None
         self._measures: Dict[str, Asset] = dict()
-        self._measure_group: Dict[str, str] = dict()
+        self._measure_group_info: Dict[str, str] = dict()
 
     def _load_esdl_model(self) -> None:
         """
@@ -79,7 +79,6 @@ class BaseESDLParser:
             asset_templates = None
 
         # loop through assets
-        # TODO find a better way to check if measuregroup exists. Assumption we only cater for a
         # measures = f(measure1, measure2 ...) or
         # measures = f(measuregroup1, measuregroup1 ..) where measuregroup1=f(measure1, measure2..)
         # but we do not cater for both at the same time
@@ -89,12 +88,8 @@ class BaseESDLParser:
             if (asset_measures is not None and el in asset_measures) or (
                 asset_templates is not None and el in asset_templates
             ):  
-                # meausure_group_exists = isinstance(
-                #     self._energy_system.measures.measure[0], esdl.MeasureGroup
-                # )
-                # if meausure_group_exists and isinstance(el, esdl.MeasureGroup):
                 if isinstance(el, esdl.MeasureGroup):
-                    self._measure_group[el.id] = {
+                    self._measure_group_info[el.id] = {
                         "id": el.id,
                         "name": el.name,
                         "containt_measure_ids": [kk.id for kk in el.measure],
@@ -185,7 +180,7 @@ class BaseESDLParser:
         return self._measures
 
     def get_measure_group_info(self) -> Dict[str, esdl.MeasureGroup]:
-        return self._measure_group
+        return self._measure_group_info
 
 class ESDLStringParser(BaseESDLParser):
     def __init__(self, **kwargs):
