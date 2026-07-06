@@ -895,6 +895,7 @@ def run_end_scenario_sizing(
 
     """
     import time
+
     boolean_bounds = {}
     priorities_output = []
 

@@ -629,7 +629,7 @@ class TestEndScenarioSizing(TestCase):
         """
 
         import models.test_case_small_network_ates_buffer_optional_assets.src.run_ates as run_ates
-        
+
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
         # This is an optimization done over a few days
@@ -713,169 +713,169 @@ class TestEndScenarioSizing(TestCase):
                 ]
                 np.testing.assert_allclose(cost_map_from_measures, investment_cost_specific)
 
-
     def test_end_scenario_sizing_pipe_measuregroup(self):
-            """
-            Checks that the problem uses different pipe costs when a 2 different pipe catalogs
-            (Cheap and expensive) are provided along with the ESDL where 2 heat sources provide
-            heat. The Cheaps pipe costs have been assigned to all pipes expect for the pipes
-            connected to a heat source that is cheaper to use. This more expensive heat source is
-            connected to pipes (not related) that are cheaper, and due to these cheaper pipes this
-            more expensive heat source is being used more than the cheaper heat source.  
+        """
+        Checks that the problem uses different pipe costs when a 2 different pipe catalogs
+        (Cheap and expensive) are provided along with the ESDL where 2 heat sources provide
+        heat. The Cheaps pipe costs have been assigned to all pipes expect for the pipes
+        connected to a heat source that is cheaper to use. This more expensive heat source is
+        connected to pipes (not related) that are cheaper, and due to these cheaper pipes this
+        more expensive heat source is being used more than the cheaper heat source.
 
-            Checks:
-            - That the _esdl_measures and _esdl_measure_group_info consist out of the required items
-            - The cost coefficients used in the results for all pipes (related and non-related)
-            - The costs in the available pipes classes
-            - That the operational more expensive heat producer is used
-            """
-            # TODO: the folder placement of this (and other in this file) pipe catalogue tests does
-            # not make sense. Need to move these cases to a new folder maybe?  
-            import models.test_case_small_network_ates_buffer_optional_assets.src.run_ates as run_ates
+        Checks:
+        - That the _esdl_measures and _esdl_measure_group_info consist out of the required items
+        - The cost coefficients used in the results for all pipes (related and non-related)
+        - The costs in the available pipes classes
+        - That the operational more expensive heat producer is used
+        """
+        # TODO: the folder placement of this (and other in this file) pipe catalogue tests does
+        # not make sense. Need to move these cases to a new folder maybe?
+        import models.test_case_small_network_ates_buffer_optional_assets.src.run_ates as run_ates
 
-            base_folder = Path(run_ates.__file__).resolve().parent.parent
+        base_folder = Path(run_ates.__file__).resolve().parent.parent
 
-            solution = run_end_scenario_sizing(
-                EndScenarioSizing,
-                base_folder=base_folder,
-                esdl_file_name="test_case_small_network_all_optional_pipe_catalog_MeasureGroup.esdl",
-                esdl_parser=ESDLFileParser,
-                profile_reader=ProfileReaderFromFile,
-                input_timeseries_file="Warmte_test.csv",
-                error_type_check=NetworkErrors.NO_POTENTIAL_ERRORS_CHECK,
+        solution = run_end_scenario_sizing(
+            EndScenarioSizing,
+            base_folder=base_folder,
+            esdl_file_name="test_case_small_network_all_optional_pipe_catalog_MeasureGroup.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="Warmte_test.csv",
+            error_type_check=NetworkErrors.NO_POTENTIAL_ERRORS_CHECK,
+        )
+
+        results = solution.extract_results()
+        parameters = solution.parameters(0)
+        tol_value = 1.0e-6
+
+        # -------------------------------------------------------------------------------------
+        # Check that the _esdl_measures and _esdl_measure_group_info consists out of:
+        # 2 x Measuregroup (Cheap and Expensive pipe catalogues)
+        # Each Measuregroup consist out of 23 x measure -> 1 pipe catalogue
+        # Check the costs in _esdl_measures
+        np.testing.assert_equal(len(solution._esdl_measures), 46)
+        np.testing.assert_equal(len(solution._esdl_measure_group_info), 2)
+        all_pipe_measures_different_groups = solution.filter_asset_measures(
+            solution._esdl_measures,
+            "Pipe",
+        )
+        for group_id in solution._esdl_measure_group_info:
+            np.testing.assert_equal(
+                len(solution._esdl_measure_group_info[group_id]["containt_measure_ids"]),
+                23,
             )
 
-            results = solution.extract_results()
-            parameters = solution.parameters(0)
-            tol_value = 1.0e-6
-
-            # -------------------------------------------------------------------------------------
-            # Check that the _esdl_measures and _esdl_measure_group_info consists out of:
-            # 2 x Measuregroup (Cheap and Expensive pipe catalogues)
-            # Each Measuregroup consist out of 23 x measure -> 1 pipe catalogue
-            # Check the costs in _esdl_measures
-            np.testing.assert_equal(len(solution._esdl_measures), 46)
-            np.testing.assert_equal(len(solution._esdl_measure_group_info), 2)
-            all_pipe_measures_different_groups = solution.filter_asset_measures(
-                solution._esdl_measures,
-                "Pipe",
-            )
-            for group_id in solution._esdl_measure_group_info:
-                np.testing.assert_equal(
-                    len(solution._esdl_measure_group_info[group_id]["containt_measure_ids"]),
-                    23,
-                )
-
-                if solution._esdl_measure_group_info[group_id]["name"] == "Cheap":
-                    for measure_id in solution._esdl_measure_group_info[group_id]["containt_measure_ids"]:
-                        
-                        expected_cost = (
-                            float(
-                                all_pipe_measures_different_groups[measure_id].diameter.name.replace("DN", "")
+            if solution._esdl_measure_group_info[group_id]["name"] == "Cheap":
+                for measure_id in solution._esdl_measure_group_info[group_id][
+                    "containt_measure_ids"
+                ]:
+                    expected_cost = float(
+                        all_pipe_measures_different_groups[measure_id].diameter.name.replace(
+                            "DN", ""
+                        )
+                    )
+                    np.testing.assert_almost_equal(
+                        all_pipe_measures_different_groups[
+                            measure_id
+                        ].costInformation.investmentCosts.value,
+                        expected_cost,
+                    )
+            elif solution._esdl_measure_group_info[group_id]["name"] == "Expensive":
+                for measure_id in solution._esdl_measure_group_info[group_id][
+                    "containt_measure_ids"
+                ]:
+                    expected_cost = (
+                        float(
+                            all_pipe_measures_different_groups[measure_id].diameter.name.replace(
+                                "DN", ""
                             )
                         )
-                        np.testing.assert_almost_equal(
-                            all_pipe_measures_different_groups[
-                                measure_id
-                            ].costInformation.investmentCosts.value,
-                            # 100.0 + tol_value,
-                            expected_cost,
-                        )
-                elif solution._esdl_measure_group_info[group_id]["name"] == "Expensive":
-                    for measure_id in solution._esdl_measure_group_info[group_id]["containt_measure_ids"]:
-                        expected_cost = (
-                            float(
-                                all_pipe_measures_different_groups[measure_id].diameter.name.replace("DN", "")
-                            ) * 10.0
-                        )
-                        np.testing.assert_almost_equal(
-                            expected_cost,
-                            all_pipe_measures_different_groups[
-                                measure_id
-                            ].costInformation.investmentCosts.value,
-                        )
-                else:
-                    exit("Something went wrong with the number of runs")
+                        * 10.0
+                    )
+                    np.testing.assert_almost_equal(
+                        expected_cost,
+                        all_pipe_measures_different_groups[
+                            measure_id
+                        ].costInformation.investmentCosts.value,
+                    )
+            else:
+                exit("Something went wrong with the number of runs")
 
-            # -------------------------------------------------------------------------------------
-            # Check the cost coefficients used in the results for all pipes
-            # (related and non-related)
-            # Check the costs in the available pipes classes
-            expensive_pipe_ids = [
-                solution.esdl_asset_name_to_id_map["Pipe_f6e5"],
-                solution.esdl_asset_name_to_id_map["Pipe_f6e5_ret"],
-            ]
-            for pipe_id in solution.energy_system_components.get("heat_pipe", []):
+        # -------------------------------------------------------------------------------------
+        # Check the cost coefficients used in the results for all pipes
+        # (related and non-related)
+        # Check the costs in the available pipes classes
+        expensive_pipe_ids = [
+            solution.esdl_asset_name_to_id_map["Pipe_f6e5"],
+            solution.esdl_asset_name_to_id_map["Pipe_f6e5_ret"],
+        ]
+        for pipe_id in solution.energy_system_components.get("heat_pipe", []):
 
-                inv_coef = solution.parameters(0)[f"{pipe_id}.diameter"] * 1000.0
-                is_related_len = 1
+            inv_coef = parameters[f"{pipe_id}.diameter"] * 1000.0
+            is_related_len = 1
 
-                # Check the pipes in the results
-                if pipe_id in expensive_pipe_ids:
-                    inv_coef = solution.parameters(0)[f"{pipe_id}.diameter"] * 1000.0 * 10.0
-                    is_related_len = 0
+            # Check the pipes in the results
+            if pipe_id in expensive_pipe_ids:
+                inv_coef = parameters[f"{pipe_id}.diameter"] * 1000.0 * 10.0
+                is_related_len = 0
 
-                np.testing.assert_equal(
-                    len(solution._esdl_assets[pipe_id].attributes.get("related", False)),
-                    is_related_len,
-                )
-                np.testing.assert_array_less(
-                    results[f"{pipe_id}__investment_cost"]
-                    / solution.parameters(0)[f"{pipe_id}.length"],
-                    inv_coef,
-                )
-
-                # Check the available pipe classes
-                for avail_pipe_class in solution._override_pipe_classes[pipe_id]:
-                    if avail_pipe_class.name != "None": 
-                        multiplier = 1.0
-                        if pipe_id in expensive_pipe_ids:
-                            multiplier *= 10.0
-                        np.testing.assert_almost_equal(
-                            avail_pipe_class.investment_costs,
-                            float(avail_pipe_class.name.replace("DN", "")) * multiplier,
-                        )
-            # -------------------------------------------------------------------------------------
-            # Check that the operational more expensive heat producer is used due to it being
-            # connect to the cheaper pipes
-            # Expensive source connected to cheap pipes
-            expensive_heat_source_id = solution.esdl_asset_name_to_id_map["HeatProducer_1"]
-            expensive_heat_source_costs = solution._esdl_assets[
-                expensive_heat_source_id
-            ].attributes["costInformation"]
-            # Cheap source connected to expensive pipes that are not related
-            cheap_heat_source_id = solution.esdl_asset_name_to_id_map["HeatProducer_2"]
-            cheap_heat_source_costs = solution._esdl_assets[
-                cheap_heat_source_id
-            ].attributes["costInformation"] 
-            np.testing.assert_allclose(
-                expensive_heat_source_costs.investmentCosts.value, 
-                cheap_heat_source_costs.investmentCosts.value,
-            )
-            np.testing.assert_allclose(
-                expensive_heat_source_costs.installationCosts.value, 
-                cheap_heat_source_costs.installationCosts.value,
+            np.testing.assert_equal(
+                len(solution._esdl_assets[pipe_id].attributes.get("related", False)),
+                is_related_len,
             )
             np.testing.assert_array_less(
-                cheap_heat_source_costs.variableOperationalCosts.value,
-                expensive_heat_source_costs.variableOperationalCosts.value, 
-            )
-            np.testing.assert_array_less(
-                expensive_heat_source_costs.variableOperationalCosts.value
-                /cheap_heat_source_costs.variableOperationalCosts.value,
-                2.5 + tol_value, 
-            )
-            np.testing.assert_allclose(
-                results[f"{expensive_heat_source_id}__max_size"],
-                10.0e6,
-            )
-            np.testing.assert_array_less(
-                results[f"{cheap_heat_source_id}__max_size"],
-                7.0e6,
+                results[f"{pipe_id}__investment_cost"] / parameters[f"{pipe_id}.length"],
+                inv_coef,
             )
 
-
-            kvr = 0.0
+            # Check the available pipe classes
+            for avail_pipe_class in solution._override_pipe_classes[pipe_id]:
+                if avail_pipe_class.name != "None":
+                    multiplier = 1.0
+                    if pipe_id in expensive_pipe_ids:
+                        multiplier *= 10.0
+                    np.testing.assert_almost_equal(
+                        avail_pipe_class.investment_costs,
+                        float(avail_pipe_class.name.replace("DN", "")) * multiplier,
+                    )
+        # -------------------------------------------------------------------------------------
+        # Check that the operational more expensive heat producer is used due to it being
+        # connect to the cheaper pipes
+        # Expensive source connected to cheap pipes
+        expensive_heat_source_id = solution.esdl_asset_name_to_id_map["HeatProducer_1"]
+        expensive_heat_source_costs = solution._esdl_assets[expensive_heat_source_id].attributes[
+            "costInformation"
+        ]
+        # Cheap source connected to expensive pipes that are not related
+        cheap_heat_source_id = solution.esdl_asset_name_to_id_map["HeatProducer_2"]
+        cheap_heat_source_costs = solution._esdl_assets[cheap_heat_source_id].attributes[
+            "costInformation"
+        ]
+        np.testing.assert_allclose(
+            expensive_heat_source_costs.investmentCosts.value,
+            cheap_heat_source_costs.investmentCosts.value,
+        )
+        np.testing.assert_allclose(
+            expensive_heat_source_costs.installationCosts.value,
+            cheap_heat_source_costs.installationCosts.value,
+        )
+        np.testing.assert_array_less(
+            cheap_heat_source_costs.variableOperationalCosts.value,
+            expensive_heat_source_costs.variableOperationalCosts.value,
+        )
+        np.testing.assert_array_less(
+            expensive_heat_source_costs.variableOperationalCosts.value
+            / cheap_heat_source_costs.variableOperationalCosts.value,
+            2.5 + tol_value,
+        )
+        np.testing.assert_allclose(
+            results[f"{expensive_heat_source_id}__max_size"],
+            10.0e6,
+        )
+        np.testing.assert_array_less(
+            results[f"{cheap_heat_source_id}__max_size"],
+            7.0e6,
+        )
 
 
 if __name__ == "__main__":
@@ -883,15 +883,15 @@ if __name__ == "__main__":
 
     start_time = time.time()
     a = TestEndScenarioSizing()
-    # a.setUpClass()
-    # a.test_end_scenario_sizing()
-    # a.test_end_scenario_sizing_staged()
-    # a.test_end_scenario_sizing_heat_demand_not_matched()
-    # a.test_heat_exchanger_sizing()
-    # a.test_end_scenario_sizing_discounted()
-    # a.test_end_scenario_sizing_head_loss()
-    # a.test_end_scenario_sizing_pipe_catalog_lower_pipe_dn()
-    # a.test_end_scenario_sizing_pipe_catalog()
-    # a.test_end_scenario_sizing_pipe_catalog_with_templates()
+    a.setUpClass()
+    a.test_end_scenario_sizing()
+    a.test_end_scenario_sizing_staged()
+    a.test_end_scenario_sizing_heat_demand_not_matched()
+    a.test_heat_exchanger_sizing()
+    a.test_end_scenario_sizing_discounted()
+    a.test_end_scenario_sizing_head_loss()
+    a.test_end_scenario_sizing_pipe_catalog_lower_pipe_dn()
+    a.test_end_scenario_sizing_pipe_catalog()
+    a.test_end_scenario_sizing_pipe_catalog_with_templates()
     a.test_end_scenario_sizing_pipe_measuregroup()
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

@@ -405,11 +405,9 @@ class ESDLMixin(
         elif asset.attributes["state"].name == "DISABLED":
             c = override_classes[p] = []
             c.append(no_pipe_class)
-        
-        kvr = 0.0
 
     def update_pipe_class_costs(self, pipe_classes: dict, pipe_diameter_cost_map: dict) -> None:
-    
+
         for i, pipe_class in enumerate(pipe_classes):
             if pipe_class.name in pipe_diameter_cost_map.keys():
                 pipe_classes[i] = dataclasses.replace(
@@ -423,7 +421,7 @@ class ESDLMixin(
                     self._ESDLMixin__use_user_defined_minimum_pipe_size = True
             else:
                 del pipe_classes[i]
-    
+
     def assert_pipe_dn_monotonically_increasing(self, pipe_classes: list) -> None:
         assert np.all(np.diff([pc.inner_diameter for pc in pipe_classes]) > 0)
 
@@ -455,26 +453,31 @@ class ESDLMixin(
         # Measures=f(MeasureGroup1, MeasureGroup2..etc) & MeasureGroup1 = f(Measure1, measure2..etc)
         pipe_classes_groups = {}
         if self._esdl_measures:
-            
+
             filter_type = "Pipe"
             pipe_measures = self.filter_asset_measures(
                 asset_measures=self._esdl_measures, filter_type=filter_type
             )
 
             if len(pipe_measures.items()) > 0:
-                
+
                 if self._esdl_measure_group_info:
                     pipe_measures_per_group = {}
                     for measure_group_id in self._esdl_measure_group_info:
                         pipe_classes_groups[measure_group_id] = {
-                            "measure_group_name": self._esdl_measure_group_info[measure_group_id]["name"],
-                            "pipe_classes": pipe_classes.copy(), # prevents pointing to same object
+                            "measure_group_name": self._esdl_measure_group_info[measure_group_id][
+                                "name"
+                            ],
+                            "pipe_classes": pipe_classes.copy(),  # prevents pointing to same object
                         }
 
                         pipe_measures_per_group[measure_group_id] = [
-                            pipe_measures[id] for id in self._esdl_measure_group_info[measure_group_id]["containt_measure_ids"]
+                            pipe_measures[id]
+                            for id in self._esdl_measure_group_info[measure_group_id][
+                                "containt_measure_ids"
+                            ]
                         ]
-                    
+
                     pipe_diameter_cost_map = {}
                     for grp_id in pipe_classes_groups:
 
@@ -483,16 +486,16 @@ class ESDLMixin(
                                 str(pipe.diameter): pipe.costInformation.investmentCosts.value
                                 for pipe in pipe_measures_per_group[grp_id]
                             }
-    
+
                             self.update_pipe_class_costs(
                                 pipe_classes_groups[grp_id]["pipe_classes"],
                                 pipe_diameter_cost_map[grp_id],
                             )
-                        
+
                         self.assert_pipe_dn_monotonically_increasing(
                             pipe_classes_groups[grp_id]["pipe_classes"]
                         )
-                
+
                 else:
                     pipe_diameter_cost_map = {
                         str(pipe.diameter): pipe.costInformation.investmentCosts.value
@@ -503,7 +506,7 @@ class ESDLMixin(
                         pipe_diameter_cost_map,
                     )
                     self.assert_pipe_dn_monotonically_increasing(pipe_classes)
-           
+
         else:
             self.assert_pipe_dn_monotonically_increasing(pipe_classes)
 
@@ -524,30 +527,37 @@ class ESDLMixin(
                                 " extra references"
                             )
                             sys.exit(1)
-                    
+
                     # Get the MeasureGroupReference for the related pipe if it exists
                     # Note pipe relations variables do not exist in MESIDO at this point
                     related_exist = asset.attributes.get("related", False)
                     if not asset_referenced_id and related_exist:
                         related_pipe_id = related_exist[0].id
-                        asset_referenced_id = self._esdl_assets[related_pipe_id].attributes.get("measures").measure[0].reference.id
+                        asset_referenced_id = (
+                            self._esdl_assets[related_pipe_id]
+                            .attributes.get("measures")
+                            .measure[0]
+                            .reference.id
+                        )
 
                     if asset_referenced_id:
                         self.__override_pipe_classes_dicts(
-                            asset, pipe_classes_groups[asset_referenced_id]["pipe_classes"],
+                            asset,
+                            pipe_classes_groups[asset_referenced_id]["pipe_classes"],
                             no_pipe_class,
                             override_classes,
                         )
                     else:
-                        logger.error(f"{asset.name} has no MeasureGroupReference: "
-                                     "MeasureGroup is being used for pipes & every pipe has to have"
-                                     " a MeasureGroupReference")
-                        sys.exit(1)
-                else: 
-                    self.__override_pipe_classes_dicts(
-                            asset, pipe_classes, no_pipe_class, override_classes
+                        logger.error(
+                            f"{asset.name} has no MeasureGroupReference: "
+                            "MeasureGroup is being used for pipes & every pipe has to have"
+                            " a MeasureGroupReference"
                         )
-                    
+                        sys.exit(1)
+                else:
+                    self.__override_pipe_classes_dicts(
+                        asset, pipe_classes, no_pipe_class, override_classes
+                    )
 
     def override_gas_pipe_classes(self) -> None:
         """
