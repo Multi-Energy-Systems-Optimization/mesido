@@ -857,7 +857,7 @@ class ScenarioOutput:
                     kpis.kpi.append(
                         esdl.DoubleKPI(
                             value=round(estimated_energy_from_local_source_perc[subarea.name], 1),
-                            name="Estimated energy from local source(s) [%]",
+                            name="Estimated energy from local source(s)",
                             quantityAndUnit=esdl.esdl.QuantityAndUnitType(
                                 unit=esdl.UnitEnum.PERCENT,
                                 multiplier=esdl.MultiplierEnum.NONE,
@@ -869,7 +869,7 @@ class ScenarioOutput:
                             value=round(
                                 estimated_energy_from_regional_source_perc[subarea.name], 1
                             ),
-                            name="Estimated energy from regional source(s) [%]",
+                            name="Estimated energy from regional source(s)",
                             quantityAndUnit=esdl.esdl.QuantityAndUnitType(
                                 unit=esdl.UnitEnum.PERCENT,
                                 multiplier=esdl.MultiplierEnum.NONE,
@@ -879,7 +879,7 @@ class ScenarioOutput:
                     kpis.kpi.append(
                         esdl.DoubleKPI(
                             value=round(total_energy_consumed_locally_wh[subarea.name] / 1.0e9, 1),
-                            name="Total energy consumed [GWh]",
+                            name="Total energy consumed",
                             quantityAndUnit=esdl.esdl.QuantityAndUnitType(
                                 physicalQuantity=esdl.PhysicalQuantityEnum.ENERGY,
                                 unit=esdl.UnitEnum.WATTHOUR,
