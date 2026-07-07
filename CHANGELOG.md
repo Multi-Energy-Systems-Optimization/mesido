@@ -1,13 +1,15 @@
-# [Unreleased-main] - 2026-07-01
+# [Unreleased-main] - 2026-07-07
 
 ## Added
 - xxx
 
 ## Changed
 - Code generalization in asset sizing mixin
+- Cater for a pipe price catalogue per pipe via MesureGroup
 
 ## Fixed
-- xxx
+- Bug fix: In __override_pipe_classes_dicts a min_size_idx=0 was not catered for
+- Bug fix: In update_pipe_class_costs() looping over items in enumerate(pipe_classes) while deleting items in pipe_classes resulted in items being skipped
 
 
 # [0.1.20] - 2026-06-15
