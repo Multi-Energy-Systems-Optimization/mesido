@@ -8,12 +8,9 @@
 - Cater for a pipe price catalogue per pipe via MesureGroup
 
 ## Fixed
-<<<<<<< HEAD
 - Check for allowing a user defined lower pipe DN size via measures/templates
-=======
 - Bug fix: In __override_pipe_classes_dicts a min_size_idx=0 was not catered for
 - Bug fix: In update_pipe_class_costs() looping over items in enumerate(pipe_classes) while deleting items in pipe_classes resulted in items being skipped
->>>>>>> patch_pipe_costs
 
 
 # [0.1.20] - 2026-06-15
