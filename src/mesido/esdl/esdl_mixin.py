@@ -377,6 +377,8 @@ class ESDLMixin(
             assert len(max_size_idx) == 1
             max_size_idx = max_size_idx[0]
 
+            min_size_idx = None
+
             # Update the minimum pipe DN size if user specified limit is allowed
             # TODO: in the future the lower limit will make use of PipeDiameterConstriant
             if self._ESDLMixin__use_user_defined_minimum_pipe_size:
@@ -390,7 +392,7 @@ class ESDLMixin(
                 min_size_idx = self.find_index_of_pipe_or_next_up(
                     pipe_classes, float(self.__minimum_pipe_size_name.replace("DN", ""))
                 )
-            assert min_size_idx
+            assert min_size_idx is not None
 
             if max_size_idx < min_size_idx:
                 logger.warning(
@@ -408,19 +410,26 @@ class ESDLMixin(
 
     def update_pipe_class_costs(self, pipe_classes: dict, pipe_diameter_cost_map: dict) -> None:
 
+        updated_pipe_classes = []
         for i, pipe_class in enumerate(pipe_classes):
+
+            if pipe_class.name not in pipe_diameter_cost_map:
+                continue
+
             if pipe_class.name in pipe_diameter_cost_map.keys():
                 pipe_classes[i] = dataclasses.replace(
                     pipe_classes[i],
                     investment_costs=pipe_diameter_cost_map[pipe_class.name],
                 )
+
+                updated_pipe_classes.append(pipe_classes[i])
+
                 if (
                     not self._ESDLMixin__use_user_defined_minimum_pipe_size
-                    and float(pipe_classes[i].name.replace("DN", "")) != 20.0
+                    and float(updated_pipe_classes[-1].name.replace("DN", "")) != 20.0
                 ):
                     self._ESDLMixin__use_user_defined_minimum_pipe_size = True
-            else:
-                del pipe_classes[i]
+        pipe_classes[:] = updated_pipe_classes
 
     def assert_pipe_dn_monotonically_increasing(self, pipe_classes: list) -> None:
         assert np.all(np.diff([pc.inner_diameter for pc in pipe_classes]) > 0)
