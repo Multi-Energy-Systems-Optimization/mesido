@@ -1,4 +1,4 @@
-# [Unreleased-main] - 2026-07-01
+# [Unreleased-main] - 2026-07-07
 
 ## Added
 - xxx
@@ -7,7 +7,7 @@
 - Code generalization in asset sizing mixin
 
 ## Fixed
-- xxx
+- Check for allowing a user defined lower pipe DN size via measures/templates
 
 
 # [0.1.20] - 2026-06-15
