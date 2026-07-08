@@ -635,7 +635,8 @@ class TestEndScenarioSizing(TestCase):
                         .attributes["diameter"]
                         .name.replace("DN", "")
                     )
-                    < 800.0
+                    < 800.0,
+                    True,
                 )
                 smallest_pipe_dn_found = False
                 for pipe_class in solution._heat_pipe_topo_pipe_class_map[heat_pipe]:
