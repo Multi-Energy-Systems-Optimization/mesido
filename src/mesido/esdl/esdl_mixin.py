@@ -408,17 +408,18 @@ class ESDLMixin(
             c = override_classes[p] = []
             c.append(no_pipe_class)
 
-    # def set_user_defined_minimum_pipe_size(self, pipe_classes: dict) -> None:
-    #     """
-    #     Check if the user defined specification of the minimum allowed pipe DN is applicable
-    #     """
+    def set_user_defined_minimum_pipe_size_requirement(self, pipe_classes: dict) -> None:
+        """
+        Check if the user defined specification of the minimum allowed pipe DN is applicable and
+        set the vairable _ESDLMixin__use_user_defined_minimum_pipe_size accordingly
+        """
+        dn20_exists = False
 
-    #     for i, pipe_class in enumerate(pipe_classes):
-    #         if (
-    #             not self._ESDLMixin__use_user_defined_minimum_pipe_size
-    #             and float(pipe_classes[-1].name.replace("DN", "")) != 20.0
-    #         ):
-    #             self._ESDLMixin__use_user_defined_minimum_pipe_size = True
+        for pipe_class in pipe_classes:
+            if not dn20_exists and float(pipe_class.name.replace("DN", "")) == 20.0:
+                dn20_exists = True
+
+        self._ESDLMixin__use_user_defined_minimum_pipe_size = not dn20_exists
 
     def update_pipe_class_costs(self, pipe_classes: dict, pipe_diameter_cost_map: dict) -> None:
         """
@@ -427,7 +428,7 @@ class ESDLMixin(
         pipe_diameter_cost_map then the pipe class is removed from pipe_classes.
         """
         updated_pipe_classes = []
-        dn20_exists = False
+
         for i, pipe_class in enumerate(pipe_classes):
 
             if pipe_class.name not in pipe_diameter_cost_map:
@@ -440,14 +441,6 @@ class ESDLMixin(
                 )
 
                 updated_pipe_classes.append(pipe_classes[i])
-
-                if (
-                    not dn20_exists
-                    and float(updated_pipe_classes[-1].name.replace("DN", "")) == 20.0
-                ):
-                    dn20_exists = True
-
-        self._ESDLMixin__use_user_defined_minimum_pipe_size = not dn20_exists
 
         pipe_classes[:] = updated_pipe_classes
 
@@ -481,6 +474,8 @@ class ESDLMixin(
         # Measures=f(Measure1, measure2..etc)
         # Measures=f(MeasureGroup1, MeasureGroup2..etc) & MeasureGroup1 = f(Measure1, measure2..etc)
         pipe_classes_groups = {}
+        # TODO: the code duplication below has to be made cleaner once the structure of groups
+        # have been refined, agreed upon and tested by a user.
         if self._esdl_measures:
 
             filter_type = "Pipe"
@@ -520,7 +515,9 @@ class ESDLMixin(
                                 pipe_classes_groups[grp_id]["pipe_classes"],
                                 pipe_diameter_cost_map[grp_id],
                             )
-                            # self.set_user_defined_minimum_pipe_size()
+                            self.set_user_defined_minimum_pipe_size_requirement(
+                                pipe_classes_groups[grp_id]["pipe_classes"]
+                            )
 
                         self.assert_pipe_dn_monotonically_increasing(
                             pipe_classes_groups[grp_id]["pipe_classes"]
@@ -535,6 +532,7 @@ class ESDLMixin(
                         pipe_classes,
                         pipe_diameter_cost_map,
                     )
+                    self.set_user_defined_minimum_pipe_size_requirement(pipe_classes)
                     self.assert_pipe_dn_monotonically_increasing(pipe_classes)
 
         else:
