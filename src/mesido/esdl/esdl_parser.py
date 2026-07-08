@@ -24,7 +24,7 @@ class BaseESDLParser:
         self._esdl_string: Optional[str] = None
         self._esdl_path: Optional[Path] = None
         self._measures: Dict[str, Asset] = dict()
-        self._measure_group_info: Dict[str, str] = dict()
+        self._measure_group_info: Dict[str, list[str]] = dict()
 
     def _load_esdl_model(self) -> None:
         """
@@ -90,7 +90,6 @@ class BaseESDLParser:
             ):
                 if isinstance(el, esdl.MeasureGroup):
                     self._measure_group_info[el.id] = {
-                        "id": el.id,
                         "name": el.name,
                         "containt_measure_ids": [kk.id for kk in el.measure],
                     }
@@ -179,7 +178,7 @@ class BaseESDLParser:
     def get_measures(self) -> Dict[str, Asset]:
         return self._measures
 
-    def get_measure_group_info(self) -> Dict[str, esdl.MeasureGroup]:
+    def get_measure_group_info(self) -> Dict[str, list[str]]:
         return self._measure_group_info
 
 

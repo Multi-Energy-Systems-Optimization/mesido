@@ -126,7 +126,7 @@ class ESDLMixin(
         self._esdl_carriers: Dict[str, Dict[str, Any]] = esdl_parser.get_carrier_properties()
         self.__energy_system_handler: esdl.esdl_handler.EnergySystemHandler = esdl_parser.get_esh()
         self._esdl_measures: Dict[str, Asset] = esdl_parser.get_measures()
-        self._esdl_measure_group_info: Dict[str, Asset] = esdl_parser.get_measure_group_info()
+        self._esdl_measure_group_info: Dict[str, List[str]] = esdl_parser.get_measure_group_info()
         self._database_credentials: Optional[Dict[str, Tuple[str, str]]] = {
             DBAccessType.READ: [],
             DBAccessType.WRITE: [],
@@ -408,8 +408,25 @@ class ESDLMixin(
             c = override_classes[p] = []
             c.append(no_pipe_class)
 
-    def update_pipe_class_costs(self, pipe_classes: dict, pipe_diameter_cost_map: dict) -> None:
+    def set_user_defined_minimum_pipe_size(self, pipe_classes: dict) -> None:
+        """
+        Check if the user defined specification of the minimum allowed pipe DN is applicable 
+        """
 
+        for i, pipe_class in enumerate(pipe_classes):
+            if (
+                not self._ESDLMixin__use_user_defined_minimum_pipe_size
+                and float(pipe_classes[-1].name.replace("DN", "")) != 20.0
+            ):
+                self._ESDLMixin__use_user_defined_minimum_pipe_size = True
+
+
+    def update_pipe_class_costs(self, pipe_classes: dict, pipe_diameter_cost_map: dict) -> None:
+        """
+        In this method the all pipe classes in pipe_classes are updated with investments costs in
+        pipe_diameter_cost_map if a cost exists. If no cost exists for a specific pipe class in
+        pipe_diameter_cost_map then the pipe class is removed from pipe_classes.
+        """
         updated_pipe_classes = []
         for i, pipe_class in enumerate(pipe_classes):
 
@@ -500,6 +517,7 @@ class ESDLMixin(
                                 pipe_classes_groups[grp_id]["pipe_classes"],
                                 pipe_diameter_cost_map[grp_id],
                             )
+                            # self.set_user_defined_minimum_pipe_size()
 
                         self.assert_pipe_dn_monotonically_increasing(
                             pipe_classes_groups[grp_id]["pipe_classes"]
