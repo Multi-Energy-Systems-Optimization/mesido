@@ -408,17 +408,17 @@ class ESDLMixin(
             c = override_classes[p] = []
             c.append(no_pipe_class)
 
-    def set_user_defined_minimum_pipe_size(self, pipe_classes: dict) -> None:
-        """
-        Check if the user defined specification of the minimum allowed pipe DN is applicable
-        """
+    # def set_user_defined_minimum_pipe_size(self, pipe_classes: dict) -> None:
+    #     """
+    #     Check if the user defined specification of the minimum allowed pipe DN is applicable
+    #     """
 
-        for i, pipe_class in enumerate(pipe_classes):
-            if (
-                not self._ESDLMixin__use_user_defined_minimum_pipe_size
-                and float(pipe_classes[-1].name.replace("DN", "")) != 20.0
-            ):
-                self._ESDLMixin__use_user_defined_minimum_pipe_size = True
+    #     for i, pipe_class in enumerate(pipe_classes):
+    #         if (
+    #             not self._ESDLMixin__use_user_defined_minimum_pipe_size
+    #             and float(pipe_classes[-1].name.replace("DN", "")) != 20.0
+    #         ):
+    #             self._ESDLMixin__use_user_defined_minimum_pipe_size = True
 
     def update_pipe_class_costs(self, pipe_classes: dict, pipe_diameter_cost_map: dict) -> None:
         """
