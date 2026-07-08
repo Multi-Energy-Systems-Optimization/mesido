@@ -112,8 +112,12 @@ class HeatProblem(
 
     def energy_system_options(self):
         options = super().energy_system_options()
-        self.heat_network_settings["minimum_velocity"] = 0.0001
         return options
+
+    def update_heat_network_settings(self):
+        settings = super().update_heat_network_settings()
+        settings["minimum_velocity"] = 0.0001
+        return settings
 
     def solver_options(self):
         """
@@ -126,15 +130,10 @@ class HeatProblem(
         options = super().solver_options()
         options["casadi_solver"] = self._qpsol
         highs_options = options.setdefault("highs", {})
-        # HiGHS presolve incorrectly declares this model infeasible (confirmed
-        # feasible by CPLEX and by HiGHS with presolve=off). Re-verified as still
-        # required with rtctools-highs 0.1.4 (HiGHS 1.15.1); the issue is not yet
-        # fixed upstream. A similar class of issue was previously reported as
-        # ERGO-Code/HiGHS#2388 (against HiGHS 1.10.0) and marked as fixed by the
-        # HiGHS developers. Related open issues in ERGO-Code/HiGHS:
-        #   #3090 — incorrectly detected infeasibility due to presolve
-        #   #3074 — presolve worsens solution and hangs
-        # Remove this workaround once a fix is confirmed in a future release.
+        # HiGHS presolve incorrectly declares this model infeasible (feasible per
+        # CPLEX and HiGHS with presolve=off). Still required with rtctools-highs
+        # 0.1.4 (HiGHS 1.15.1). See ERGO-Code/HiGHS#3090, #3074. Remove once fixed
+        # upstream.
         highs_options["presolve"] = "off"
         return options
 
@@ -281,24 +280,19 @@ class HeatProblemSetPoints(
 
         return goals
 
-    def energy_system_options(self):
-        options = super().energy_system_options()
-        self.heat_network_settings["minimum_velocity"] = 0.0
-        return options
+    def update_heat_network_settings(self):
+        settings = super().update_heat_network_settings()
+        settings["minimum_velocity"] = 0.0
+        return settings
 
     def solver_options(self):
         options = super().solver_options()
         highs_options = options.setdefault("highs", {})
         highs_options["mip_rel_gap"] = 0.02
-        # HiGHS presolve incorrectly declares this model infeasible (confirmed
-        # feasible by CPLEX and by HiGHS with presolve=off). Re-verified as still
-        # required with rtctools-highs 0.1.4 (HiGHS 1.15.1); the issue is not yet
-        # fixed upstream. A similar class of issue was previously reported as
-        # ERGO-Code/HiGHS#2388 (against HiGHS 1.10.0) and marked as fixed by the
-        # HiGHS developers. Related open issues in ERGO-Code/HiGHS:
-        #   #3090 — incorrectly detected infeasibility due to presolve
-        #   #3074 — presolve worsens solution and hangs
-        # Remove this workaround once a fix is confirmed in a future release.
+        # HiGHS presolve incorrectly declares this model infeasible (feasible per
+        # CPLEX and HiGHS with presolve=off). Still required with rtctools-highs
+        # 0.1.4 (HiGHS 1.15.1). See ERGO-Code/HiGHS#3090, #3074. Remove once fixed
+        # upstream.
         highs_options["presolve"] = "off"
         return options
 

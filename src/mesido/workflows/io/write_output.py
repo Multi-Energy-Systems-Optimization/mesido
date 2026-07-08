@@ -1275,12 +1275,13 @@ class ScenarioOutput:
                         post_processed["PostProc.Velocity"] = pipe_velocity(
                             asset_id, commodity, results, parameters
                         )
-                        variables_one_hydraulic_system.append("PostProc.Pressure")
-                        # TODO: seems unnecessary, pipes always only have 1 hydraulic system
-                        variables_two_hydraulic_system.append("PostProc.Pressure")
-                        post_processed["PostProc.Pressure"] = pipe_pressure(
-                            asset_id, commodity, results, parameters
-                        )  # Pa
+                        if self.heat_network_settings["minimize_head_losses"]:
+                            variables_one_hydraulic_system.append("PostProc.Pressure")
+                            # TODO: seems unnecessary, pipes always only have 1 hydraulic system
+                            variables_two_hydraulic_system.append("PostProc.Pressure")
+                            post_processed["PostProc.Pressure"] = pipe_pressure(
+                                asset_id, commodity, results, parameters
+                            )  # Pa
 
                     # Depending on the port set, different carriers are assigned
                     if port:

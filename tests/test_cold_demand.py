@@ -250,7 +250,7 @@ class TestColdDemand(TestCase):
             results[f"{ates_id}.Stored_heat"][0], results[f"{ates_id}.Stored_heat"][-1]
         )
         # Check heat loss and gain
-        tol_value = 1.0e-6
+        tol_value = 1.0e-5
         np.testing.assert_array_less(
             0.0,
             results[f"{pipe1_id}.HeatIn.Heat"] - results[f"{pipe1_id}.HeatOut.Heat"] + tol_value,

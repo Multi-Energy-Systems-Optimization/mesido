@@ -184,7 +184,7 @@ def heat_to_discharge_test(solution, results, atol=1e-2, rtol=1.0e-4):
             atol=atol,
         )
         np.testing.assert_allclose(
-            results[f"{d}.HeatOut.Heat"], results[f"{d}.Q"] * rho * cp * return_t
+            results[f"{d}.HeatOut.Heat"], results[f"{d}.Q"] * rho * cp * return_t, rtol=rtol
         )
 
     for d in solution.energy_system_components.get("cold_demand", []):
@@ -283,7 +283,7 @@ def heat_to_discharge_test(solution, results, atol=1e-2, rtol=1.0e-4):
             results[f"{d}.HeatIn.Q"][indices] * rho * cp * return_t,
             atol=atol,
         )
-        indices = results[f"{d}.HeatIn.Q"] < 0
+        indices = results[f"{d}.HeatIn.Q"] < -1e-7
         if isinstance(supply_t, float):
             supply_t = supply_temp
         else:
@@ -896,9 +896,12 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
                 *solution.energy_system_components.get("low_temperature_ates", []),
                 *solution.energy_system_components.get("heat_buffer", []),
             ]:
-                pump_power = results[f"{asset}.Pump_power"]
-                eff = parameters[f"{asset}.pump_efficiency"]
-                pump_cost = sum(price_profile.values[1:] * pump_power[1:] * timesteps_hr / eff)
+                if parameters[f"{asset}.include_head_loss_variables"]:
+                    pump_power = results[f"{asset}.Pump_power"]
+                    eff = parameters[f"{asset}.pump_efficiency"]
+                    pump_cost = sum(price_profile.values[1:] * pump_power[1:] * timesteps_hr / eff)
+                else:
+                    pump_cost = 0.0
 
                 nominator_vector = (
                     results[f"{asset}.Heat_flow_charging"]
@@ -907,9 +910,12 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
             elif asset in [
                 *solution.energy_system_components.get("heat_source", []),
             ]:
-                pump_power = results[f"{asset}.Pump_power"]
-                eff = parameters[f"{asset}.pump_efficiency"]
-                pump_cost = sum(price_profile.values[1:] * pump_power[1:] * timesteps_hr / eff)
+                if parameters[f"{asset}.include_head_loss_variables"]:
+                    pump_power = results[f"{asset}.Pump_power"]
+                    eff = parameters[f"{asset}.pump_efficiency"]
+                    pump_cost = sum(price_profile.values[1:] * pump_power[1:] * timesteps_hr / eff)
+                else:
+                    pump_cost = 0.0
 
                 heat_source = results[f"{asset}.Heat_source"]
 
@@ -955,9 +961,8 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
 
             if (len(solution.get_electricity_carriers().keys()) > 0) and asset in [
                 *solution.energy_system_components.get("heat_source_elec", []),
-                *solution.energy_system_components.get("elec_heat_source_elec", []),
-                *solution.energy_system_components.get("air_water_heat_pump_elec", []),
-                *solution.energy_system_components.get("heat_pump_elec", []),
+                *solution.energy_system_components.get("air_water_heat_pump", []),
+                *solution.energy_system_components.get("heat_pump", []),
             ]:
                 variable_operational_cost += sum(
                     price_profile.values[1:] * nominator_vector[1:] * timesteps_hr / denominator

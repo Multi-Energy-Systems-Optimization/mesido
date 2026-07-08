@@ -16,14 +16,8 @@ import casadi as ca
 
 import rtctools_highs  # noqa: F401 — registers the pinned HiGHS plugin with CasADi
 
-# The HiGHS solver version that the pinned "rtctools-highs" release in setup.py
-# is expected to register. Update this single constant when the pin changes,
-# rather than hard-coding the version elsewhere in this test.
-# As of rtctools-highs 0.1.4, the upstream release is tagged with the bundled
-# versions it contains (e.g. "highs-1.15.1-casadi-3.7.2" at
-# https://github.com/rtc-tools/rtc-tools-casadi-plugins/tags). Whenever the
-# "rtctools-highs" pin in setup.py is bumped, update EXPECTED_HIGHS_VERSION to
-# match the HiGHS version encoded in that new release's tag.
+# HiGHS version expected for the "rtctools-highs" pin in setup.py. Update this
+# constant whenever that pin changes (see rtc-tools-casadi-plugins release tags).
 EXPECTED_HIGHS_VERSION = "1.15.1"
 
 
@@ -61,16 +55,28 @@ class TestGILRelease:
     """
 
     def test_gil_released_during_solve(self):
+        # A single solve of this trivial QP finishes in well under a millisecond,
+        # which isn't enough time for the counter thread to even get scheduled —
+        # making the test flaky regardless of GIL release. Instead, solve
+        # repeatedly for a fixed duration so the counter thread reliably gets
+        # enough wall-clock time to run concurrently.
         solver = _make_solver()
         counter = {"n": 0}
         solve_done = threading.Event()
+        counter_ready = threading.Event()
 
         def run_solve():
-            solver(lbx=-10, ubx=10, lbg=0, ubg=2)
-            assert solver.stats()["return_status"] == "Optimal"
+            counter_ready.wait()
+            deadline = time.monotonic() + 0.3
+            status = None
+            while time.monotonic() < deadline:
+                solver(lbx=-10, ubx=10, lbg=0, ubg=2)
+                status = solver.stats()["return_status"]
+            assert status == "Optimal"
             solve_done.set()
 
         def increment_counter():
+            counter_ready.set()
             while not solve_done.is_set():
                 counter["n"] += 1
                 time.sleep(0.0001)
@@ -78,8 +84,8 @@ class TestGILRelease:
         counter_thread = threading.Thread(target=increment_counter, daemon=True)
         solve_thread = threading.Thread(target=run_solve)
 
-        solve_thread.start()
         counter_thread.start()
+        solve_thread.start()
         solve_thread.join(timeout=30)
         assert not solve_thread.is_alive(), "Solve timed out"
 
