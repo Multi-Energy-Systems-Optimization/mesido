@@ -126,7 +126,15 @@ class HeatProblem(
         options = super().solver_options()
         options["casadi_solver"] = self._qpsol
         highs_options = options.setdefault("highs", {})
-        # workaround for HiGHS 1.14.0 presolve bug (ERGO-Code/HiGHS#2388)
+        # HiGHS presolve incorrectly declares this model infeasible (confirmed
+        # feasible by CPLEX and by HiGHS with presolve=off). Re-verified as still
+        # required with rtctools-highs 0.1.4 (HiGHS 1.15.1); the issue is not yet
+        # fixed upstream. A similar class of issue was previously reported as
+        # ERGO-Code/HiGHS#2388 (against HiGHS 1.10.0) and marked as fixed by the
+        # HiGHS developers. Related open issues in ERGO-Code/HiGHS:
+        #   #3090 — incorrectly detected infeasibility due to presolve
+        #   #3074 — presolve worsens solution and hangs
+        # Remove this workaround once a fix is confirmed in a future release.
         highs_options["presolve"] = "off"
         return options
 
@@ -232,7 +240,7 @@ class HeatProblemPlacingOverTime(HeatProblem):
             )
             nominal = self.variable_nominal(f"{s}__cumulative_investments_made_in_eur")
             inv_cap = 2.5e5
-            constraints.append((inv_made[0] / nominal, 0.0, 200000.0))
+            constraints.append((inv_made[0] / nominal, 0.0, 200000.0 / nominal))
             for i in range(1, len(self.times())):
                 constraints.append(
                     (((inv_made[i] - inv_made[i - 1]) * nominal - inv_cap) / nominal, -np.inf, 0.0)
@@ -282,7 +290,15 @@ class HeatProblemSetPoints(
         options = super().solver_options()
         highs_options = options.setdefault("highs", {})
         highs_options["mip_rel_gap"] = 0.02
-        # workaround for HiGHS 1.14.0 presolve bug (ERGO-Code/HiGHS#2388)
+        # HiGHS presolve incorrectly declares this model infeasible (confirmed
+        # feasible by CPLEX and by HiGHS with presolve=off). Re-verified as still
+        # required with rtctools-highs 0.1.4 (HiGHS 1.15.1); the issue is not yet
+        # fixed upstream. A similar class of issue was previously reported as
+        # ERGO-Code/HiGHS#2388 (against HiGHS 1.10.0) and marked as fixed by the
+        # HiGHS developers. Related open issues in ERGO-Code/HiGHS:
+        #   #3090 — incorrectly detected infeasibility due to presolve
+        #   #3074 — presolve worsens solution and hangs
+        # Remove this workaround once a fix is confirmed in a future release.
         highs_options["presolve"] = "off"
         return options
 
