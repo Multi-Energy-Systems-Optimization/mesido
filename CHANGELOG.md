@@ -1,4 +1,4 @@
-# [Unreleased-main] - 2026-07-03
+# [Unreleased-main] - 2026-07-09
 
 ## Added
 - xxx
@@ -6,6 +6,7 @@
 ## Changed
 - Code generalization in asset sizing mixin
 - Removing the units in the KPI labels
+- Energy production (yearly averaged) KPI is updated so that the name is displayed instead of the id
 
 ## Fixed
 - xxx

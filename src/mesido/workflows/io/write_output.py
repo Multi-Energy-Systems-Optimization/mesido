@@ -638,7 +638,10 @@ class ScenarioOutput:
                     ),
                 )
             )
-
+        # TODO: discuss with esdl team to get a better way of assign id and name.
+        #  Currently we assign label=self.esdl_asset_id_to_name_map[key], this does
+        #  not cater for when duplicated name are used, but this update was needed
+        #  for usability (id name in label is not useable in the front end)
         kpis_top_level.kpi.append(
             esdl.DistributionKPI(
                 name="Energy production (yearly averaged)",
