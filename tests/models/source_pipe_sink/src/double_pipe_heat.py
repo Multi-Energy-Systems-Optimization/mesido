@@ -59,6 +59,12 @@ class SourcePipeSink(
 ):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._number_of_years = 1
+
+    def parameters(self, ensemble_member):
+        parameters = super().parameters(ensemble_member)
+        parameters["number_of_years"] = self._number_of_years
+        return parameters
 
     def energy_system_options(self):
         options = super().energy_system_options()
@@ -72,7 +78,10 @@ class SourcePipeSink(
         return g
 
     def post(self):
+        solver_success, _ = self.solver_success(self.solver_stats, False)
         super().post()
+        if solver_success:
+            self._write_updated_esdl(self._ESDLMixin__energy_system_handler.energy_system)
 
 
 class HeatProblemESDLVarsMixin(ESDLAdditionalVarsMixin, SourcePipeSink):
