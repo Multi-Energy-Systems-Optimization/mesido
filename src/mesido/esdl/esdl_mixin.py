@@ -427,6 +427,7 @@ class ESDLMixin(
         pipe_diameter_cost_map then the pipe class is removed from pipe_classes.
         """
         updated_pipe_classes = []
+        dn20_exists = False
         for i, pipe_class in enumerate(pipe_classes):
 
             if pipe_class.name not in pipe_diameter_cost_map:
@@ -441,10 +442,13 @@ class ESDLMixin(
                 updated_pipe_classes.append(pipe_classes[i])
 
                 if (
-                    not self._ESDLMixin__use_user_defined_minimum_pipe_size
-                    and float(updated_pipe_classes[-1].name.replace("DN", "")) != 20.0
+                    not dn20_exists
+                    and float(updated_pipe_classes[-1].name.replace("DN", "")) == 20.0
                 ):
-                    self._ESDLMixin__use_user_defined_minimum_pipe_size = True
+                    dn20_exists = True
+
+        self._ESDLMixin__use_user_defined_minimum_pipe_size = not dn20_exists
+
         pipe_classes[:] = updated_pipe_classes
 
     def assert_pipe_dn_monotonically_increasing(self, pipe_classes: list) -> None:
