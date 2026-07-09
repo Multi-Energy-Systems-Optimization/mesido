@@ -567,6 +567,21 @@ class ESDLMixin(
                             .measure[0]
                             .reference.id
                         )
+                    elif asset_referenced_id and related_exist:
+                        # Check that both related pipes do not have a measure assigned
+                        related_pipe_id = related_exist[0].id
+                        related_pipe_measures = self._esdl_assets[related_pipe_id].attributes.get(
+                            "measures"
+                        )
+                        if related_pipe_measures:
+                            asset_referenced_id = related_pipe_measures.measure[0].reference.id
+                            logger.error(
+                                f"Both pipes named {asset.name} and"
+                                f" {self.esdl_asset_id_to_name_map[related_pipe_id]} have a"
+                                " MeasureGroupReference: if 2 pipes are related, only the supply"
+                                " pipe should have a MeasureGroupReference"
+                            )
+                            sys.exit(1)
 
                     if asset_referenced_id:
                         self.__override_pipe_classes_dicts(
