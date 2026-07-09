@@ -9,8 +9,7 @@
 - Energy production (yearly averaged) KPI is updated so that the name is displayed instead of the id
 
 ## Fixed
-- xxx
-
+- Bug: Only update the aggregation count for an ATES and a GeothermalSource in DTK post processing
 
 # [0.1.20] - 2026-06-15
 
