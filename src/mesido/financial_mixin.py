@@ -1163,6 +1163,9 @@ class FinancialMixin(
             variable_operational_cost_coefficient = parameters[  # euro / Wh
                 f"{es}.variable_operational_cost_coefficient"
             ]
+
+            price_profile = self.__get_electricity_price_profile_or_zero()
+
             sum_ = ca.sum1(
                 variable_operational_cost_coefficient * elec_produced_w[1:] * timesteps_hr
             )  # [euro/Wh] * [W] * [hr]

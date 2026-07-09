@@ -66,7 +66,8 @@ from mesido.pycml.component_library.milp import (
 
 from scipy.optimize import fsolve
 
-from mesido.pycml.component_library.milp.electricity.electricity_import import ElectricityImport
+from mesido.pycml.component_library.milp.electricity.electricity_import import (
+    ElectricityImport)
 
 logger = logging.getLogger("mesido")
 
