@@ -1041,8 +1041,6 @@ class ScenarioOutput:
                 if asset_id in [
                     *self.energy_system_components.get("ates", []),
                 ]:
-                    asset.maxChargeRate = results[f"{asset_id}__max_size"][0]
-                    asset.maxDischargeRate = results[f"{asset_id}__max_size"][0]
                     asset.aggregationCount = int(results[f"{asset_id}_aggregation_count"])
                 elif asset_id in self.energy_system_components.get("heat_buffer", []):
                     asset.capacity = max_size
