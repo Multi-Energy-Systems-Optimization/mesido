@@ -7,7 +7,7 @@
 - Code generalization in asset sizing mixin
 
 ## Fixed
-- Bug: Aggregation counts for ATES and GeothermalSource are correctly updated in the optimized ESDL file. However, the MaxChargeRate and MaxDischargeRate of ATES, as well as the Power attribute of GeothermalSource, remain unchanged in the optimized ESDL file.
+- Bug: Only update the aggregation count for an ATES and a GeothermalSource in DTK post processing
 
 # [0.1.20] - 2026-06-15
 
