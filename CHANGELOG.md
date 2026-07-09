@@ -14,6 +14,7 @@
 - Bug fix: In __override_pipe_classes_dicts a min_size_idx=0 was not catered for
 - Bug fix: In update_pipe_class_costs() looping over items in enumerate(pipe_classes) while deleting items in pipe_classes resulted in items being skipped
 
+- Bug: Only update the aggregation count for an ATES and a GeothermalSource in DTK post processing
 
 # [0.1.20] - 2026-06-15
 
