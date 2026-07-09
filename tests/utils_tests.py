@@ -12,8 +12,6 @@ from mesido.head_loss_class import HeadLossOption
 
 import numpy as np
 
-from rtctools.optimization.timeseries import Timeseries
-
 
 def __get_out_port_temp_profile(solution, asset_name, asset_type):
     """
@@ -749,6 +747,7 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
         *solution.energy_system_components.get("airco", []),
         *solution.energy_system_components.get("heat_demand", []),
         *solution.energy_system_components.get("cold_demand", []),
+        *solution.energy_system_components.get("electricity_source", []),
         *transport_assets,
     ]
 
@@ -761,15 +760,7 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
 
     edr_pipes = json.load(open(Path(__file__).parent.parent / "src/mesido/esdl/_edr_pipes.json"))
 
-    if len(solution.get_electricity_carriers().keys()) == 1:
-        try:
-            price_profile = solution.get_timeseries(
-                f"{list(solution.get_electricity_carriers().values())[0]['name']}.price_profile"
-            )
-        except KeyError:
-            price_profile = Timeseries(solution.times(), np.zeros(len(solution.times())))
-    else:
-        price_profile = Timeseries(solution.times(), np.zeros(len(solution.times())))
+    price_profile = solution._FinancialMixin__get_electricity_price_profile_or_zero()
 
     total_investment_cost = 0.0
     total_installation_cost = 0.0
@@ -947,6 +938,8 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
                 nominator_vector = results[f"{asset}.Heat_demand"]
             elif asset in solution.energy_system_components.get("cold_demand", []):
                 nominator_vector = results[f"{asset}.Cold_demand"]
+            elif asset in solution.energy_system_components.get("electricity_source", []):
+                nominator_vector = results[f"{asset}.Electricity_source"]  # [W]
             else:
                 raise AssertionError(
                     f"Asset '{esdl_asset.name}' is not handled in the variable operational"

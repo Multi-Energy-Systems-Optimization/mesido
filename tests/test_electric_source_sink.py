@@ -7,7 +7,11 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
-from utils_tests import demand_matching_test, electric_power_conservation_test
+from utils_tests import (
+    cost_calculation_test,
+    demand_matching_test,
+    electric_power_conservation_test,
+)
 
 # TODO: still have to make test where elecitricity direction is switched:
 # e.g. 2 nodes, with at each node a producer and consumer, first one node medium demand, second
@@ -78,7 +82,7 @@ class TestMILPElectricSourceSink(TestCase):
 
     def test_electricity_import_sink(self):
         """
-        Tests for an electricity network that consist out of an electricity import, a cable and a sink.
+        Tests for an electricity network that consist out of electricity import, cable and sink.
 
         Checks:
         - Check that...
@@ -89,7 +93,6 @@ class TestMILPElectricSourceSink(TestCase):
         from models.unit_cases_electricity.source_sink_cable.src.example import ElectricityProblem
 
         base_folder = Path(example.__file__).resolve().parent.parent
-        tol = 1e-10
 
         solution = run_esdl_mesido_optimization(
             ElectricityProblem,
@@ -100,14 +103,10 @@ class TestMILPElectricSourceSink(TestCase):
             input_timeseries_file="timeseries_with_e_price.csv",
         )
         results = solution.extract_results()
-        parameters = solution.parameters(0)
-        name_to_id_map = solution.esdl_asset_name_to_id_map
-
-        demand_id = name_to_id_map["ElectricityDemand_2af6"]
-        cable_id = name_to_id_map["ElectricityCable_238f"]
 
         # Test energy conservation
         electric_power_conservation_test(solution, results)
+        cost_calculation_test(solution, results)
 
     def test_source_sink(self):
         """
