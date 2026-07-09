@@ -1,4 +1,4 @@
-# [Unreleased-main] - 2026-07-01
+# [Unreleased-main] - 2026-07-09
 
 ## Added
 - xxx
@@ -7,8 +7,7 @@
 - Code generalization in asset sizing mixin
 
 ## Fixed
-- xxx
-
+- Bug: Only update the aggregation count for an ATES and a GeothermalSource in DTK post processing
 
 # [0.1.20] - 2026-06-15
 
