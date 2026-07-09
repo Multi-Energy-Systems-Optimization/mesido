@@ -1040,6 +1040,7 @@ class ScenarioOutput:
 
                 if asset_id in [
                     *self.energy_system_components.get("ates", []),
+                    *self.energy_system_components.get("geothermal", []),
                 ]:
                     asset.aggregationCount = int(results[f"{asset_id}_aggregation_count"])
                 elif asset_id in self.energy_system_components.get("heat_buffer", []):
@@ -1058,8 +1059,6 @@ class ScenarioOutput:
                     # Note: The heat capacity and not the electrical capacity
                     # TODO: in the future we need to cater for varying COP as well
                     asset.power = results[f"{asset_id}__max_size"][0]
-                elif asset_id in self.energy_system_components.get("geothermal", []):
-                    asset.aggregationCount = int(results[f"{asset_id}_aggregation_count"])
                 else:
                     asset.power = max_size
                 if not placed:

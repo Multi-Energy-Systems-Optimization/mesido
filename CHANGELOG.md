@@ -1,4 +1,4 @@
-# [Unreleased-main] - 2026-07-01
+# [Unreleased-main] - 2026-07-09
 
 ## Added
 - xxx
@@ -7,8 +7,7 @@
 - Code generalization in asset sizing mixin
 
 ## Fixed
-- xxx
-
+- Bug: Aggregation counts for ATES and GeothermalSource are correctly updated in the optimized ESDL file. However, the MaxChargeRate and MaxDischargeRate of ATES, as well as the Power attribute of GeothermalSource, remain unchanged in the optimized ESDL file.
 
 # [0.1.20] - 2026-06-15
 
