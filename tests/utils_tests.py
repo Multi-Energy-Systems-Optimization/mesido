@@ -216,7 +216,7 @@ def heat_to_discharge_test(solution, results, atol=1e-2, rtol=1.0e-4):
         if temp_profile is not None:
             supply_t = temp_profile.values
             supply_temp_profiles.append(temp_profile.values)
-        print(d, max(abs(results[f"{d}.HeatOut.Heat"] - results[f"{d}.Q"] * rho * cp * supply_t)))
+        # print(d, max(abs(results[f"{d}.HeatOut.Heat"] - results[f"{d}.Q"] * rho * cp * supply_t)))
 
         np.testing.assert_allclose(
             results[f"{d}.HeatOut.Heat"],
@@ -739,7 +739,6 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
     assets = [
         *solution.energy_system_components.get("heat_source", []),
         *solution.energy_system_components.get("ates", []),
-        *solution.energy_system_components.get("low_temperature_ates", []),
         *solution.energy_system_components.get("heat_pump", []),
         *solution.energy_system_components.get("pump", []),
         *solution.energy_system_components.get("heat_exchanger", []),
@@ -756,6 +755,17 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
             name, edr_class_name, solution.gas_network_settings["maximum_velocity"]
         )
         for name, edr_class_name in _AssetToComponentBase.STEEL_S1_PIPE_EDR_ASSETS.items()
+    ]
+
+    assets_may_have_electricity_price_profile = [
+        *solution.energy_system_components.get("heat_source_elec", []),
+        *solution.energy_system_components.get("air_water_heat_pump", []),
+        *[
+            hp_asset
+            for hp_asset in solution.energy_system_components.get("heat_pump", [])
+            if hp_asset not in solution.energy_system_components.get("heat_pump_elec", [])
+        ],
+        *solution.energy_system_components.get("electricity_import", []),
     ]
 
     edr_pipes = json.load(open(Path(__file__).parent.parent / "src/mesido/esdl/_edr_pipes.json"))
@@ -776,7 +786,10 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
         ):
             pass
         elif costs_esdl_asset is None:
-            continue
+            if asset in assets_may_have_electricity_price_profile:
+                pass  # These assets may have only e-rpice, but no attributes in esdl
+            elif asset not in assets_may_have_electricity_price_profile:
+                continue
 
         # Investment Cost
         investment_cost = 0.0
@@ -789,8 +802,10 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
                     edr_pipes, parameters[f"{asset}.diameter"]
                 )
             else:
-                investment_cost_info = _get_esdl_scaled_cost(
-                    costs_esdl_asset.investmentCosts, esdl.UnitEnum.WATT
+                investment_cost_info = (
+                    _get_esdl_scaled_cost(costs_esdl_asset.investmentCosts, esdl.UnitEnum.WATT)
+                    if costs_esdl_asset is not None
+                    else 0.0
                 )
                 if asset in solution.energy_system_components.get("heat_buffer", []):
                     np.testing.assert_allclose(
@@ -838,8 +853,8 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
         else:
             if results[f"{asset}__max_size"] > 1e-8:
                 installation_cost = (
-                    costs_esdl_asset.installationCosts.value
-                    if costs_esdl_asset.installationCosts is not None
+                    _get_esdl_scaled_cost(costs_esdl_asset.installationCosts, esdl.UnitEnum.WATT)
+                    if costs_esdl_asset is not None
                     else 0.0
                 )
             np.testing.assert_allclose(installation_cost, results[f"{asset}__installation_cost"])
@@ -850,11 +865,15 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
         if asset in transport_assets:
             np.testing.assert_allclose(0.0, results[f"{asset}__fixed_operational_cost"])
         else:
-            fix_op_costs_esdl = _get_esdl_scaled_cost(
-                costs_esdl_asset.fixedOperationalCosts, esdl.UnitEnum.WATT
+            fix_op_costs_esdl = (
+                _get_esdl_scaled_cost(costs_esdl_asset.fixedOperationalCosts, esdl.UnitEnum.WATT)
+                if costs_esdl_asset is not None
+                else 0.0
             )
-            fix_maint_costs_esdl = _get_esdl_scaled_cost(
-                costs_esdl_asset.fixedMaintenanceCosts, esdl.UnitEnum.WATT
+            fix_maint_costs_esdl = (
+                _get_esdl_scaled_cost(costs_esdl_asset.fixedMaintenanceCosts, esdl.UnitEnum.WATT)
+                if costs_esdl_asset is not None
+                else 0.0
             )
             np.testing.assert_allclose(
                 parameters[f"{asset}.fixed_operational_cost_coefficient"],
@@ -875,8 +894,12 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
         if asset in transport_assets:
             np.testing.assert_allclose(0.0, results[f"{asset}__variable_operational_cost"])
         else:
-            var_op_costs_esdl = _get_esdl_scaled_cost(
-                costs_esdl_asset.variableOperationalCosts, esdl.UnitEnum.WATTHOUR
+            var_op_costs_esdl = (
+                _get_esdl_scaled_cost(
+                    costs_esdl_asset.variableOperationalCosts, esdl.UnitEnum.WATTHOUR
+                )
+                if costs_esdl_asset is not None
+                else 0.0
             )
             np.testing.assert_allclose(
                 parameters[f"{asset}.variable_operational_cost_coefficient"], var_op_costs_esdl
@@ -890,7 +913,7 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
                 if parameters[f"{asset}.include_head_loss_variables"]:
                     pump_power = results[f"{asset}.Pump_power"]
                     eff = parameters[f"{asset}.pump_efficiency"]
-                    pump_cost = sum(price_profile.values[1:] * pump_power[1:] * timesteps_hr / eff)
+                    pump_cost = sum(price_profile[1:] * pump_power[1:] * timesteps_hr / eff)
                 else:
                     pump_cost = 0.0
 
@@ -904,7 +927,7 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
                 if parameters[f"{asset}.include_head_loss_variables"]:
                     pump_power = results[f"{asset}.Pump_power"]
                     eff = parameters[f"{asset}.pump_efficiency"]
-                    pump_cost = sum(price_profile.values[1:] * pump_power[1:] * timesteps_hr / eff)
+                    pump_cost = sum(price_profile[1:] * pump_power[1:] * timesteps_hr / eff)
                 else:
                     pump_cost = 0.0
 
@@ -952,12 +975,9 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
 
             variable_operational_cost += pump_cost
 
-            if (len(solution.get_electricity_carriers().keys()) > 0) and asset in [
-                *solution.energy_system_components.get("heat_source_elec", []),
-                *solution.energy_system_components.get("air_water_heat_pump", []),
-                *solution.energy_system_components.get("heat_pump", []),
-                *solution.energy_system_components.get("electricity_import", []),
-            ]:
+            if (
+                len(solution.get_electricity_carriers().keys()) > 0
+            ) and asset in assets_may_have_electricity_price_profile:
                 variable_operational_cost += sum(
                     price_profile[1:] * nominator_vector[1:] * timesteps_hr / denominator
                 )

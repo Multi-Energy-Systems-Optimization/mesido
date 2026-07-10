@@ -155,6 +155,7 @@ class ElectricityProblemPriceProfile(ESDLAdditionalVarsMixin, ElectricityProblem
     Problem to check the behaviour of a electricity import, cable, demand network.
     ESDLAdditionalVarsMixin is needed to read e-price profile in input csv
     """
+
     pass
 
 

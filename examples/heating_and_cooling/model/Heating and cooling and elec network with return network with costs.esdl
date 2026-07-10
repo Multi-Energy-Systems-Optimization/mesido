@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" id="78ab6018-fdd7-4ad6-bd6e-2d8a38feeb57_with_return_network" description="" esdlVersion="v2401" name="Heating and cooling network with return network" version="25">
+<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" id="78ab6018-fdd7-4ad6-bd6e-2d8a38feeb57_with_return_network" description="" esdlVersion="v2401" name="Heating and cooling and elec network with return network with costs" version="26">
   <energySystemInformation xsi:type="esdl:EnergySystemInformation" id="bf7d18e8-40c0-4234-af50-a0c72991b8fd">
     <carriers xsi:type="esdl:Carriers" id="222f232f-3510-4270-8e2c-9e713d69f5cc">
       <carrier xsi:type="esdl:HeatCommodity" id="001521ea-9f10-4745-ac3b-6e0c767e16b2" supplyTemperature="22.0" name="LT"/>
@@ -287,10 +287,6 @@
           <point xsi:type="esdl:Point" lat="51.98819497940513" lon="4.378428802710231" CRS="WGS84"/>
         </geometry>
       </asset>
-      <asset xsi:type="esdl:ElectricityProducer" id="d3ed25cb-3856-4277-afa8-ca804862f496" name="ElectricityProducer_1" power="2500000.0">
-        <geometry xsi:type="esdl:Point" lat="51.99808809408472" lon="4.365025475857443" CRS="WGS84"/>
-        <port xsi:type="esdl:OutPort" id="a500d0e9-9e23-49c5-90ab-43a5809821b0" name="Out" connectedTo="62c3380c-7b7a-4426-9e22-ad9efcf19cf7" carrier="b81ab0d3-6d2b-473f-9598-0e7b8760749f"/>
-      </asset>
       <asset xsi:type="esdl:ElectricityCable" id="187925f3-097c-462b-864c-c373195726d4" name="ElectricityCable_1879" length="196.1" capacity="2500000.0">
         <geometry xsi:type="esdl:Line" CRS="WGS84">
           <point xsi:type="esdl:Point" lat="51.99808809408472" lon="4.365025475857443"/>
@@ -298,8 +294,12 @@
           <point xsi:type="esdl:Point" lat="51.99760488512543" lon="4.3633744366711555"/>
           <point xsi:type="esdl:Point" lat="51.99782979186225" lon="4.3632351591223815"/>
         </geometry>
-        <port xsi:type="esdl:InPort" id="62c3380c-7b7a-4426-9e22-ad9efcf19cf7" name="In" connectedTo="a500d0e9-9e23-49c5-90ab-43a5809821b0" carrier="b81ab0d3-6d2b-473f-9598-0e7b8760749f"/>
+        <port xsi:type="esdl:InPort" id="62c3380c-7b7a-4426-9e22-ad9efcf19cf7" name="In" connectedTo="361aeaa0-ecf5-4078-bc5d-50dd37f33bc4" carrier="b81ab0d3-6d2b-473f-9598-0e7b8760749f"/>
         <port xsi:type="esdl:OutPort" id="be9d7a12-4d81-488c-9ec6-936092994c7e" name="Out" connectedTo="fb51a9ba-6b9a-4fc1-a156-362f65f7b812" carrier="b81ab0d3-6d2b-473f-9598-0e7b8760749f"/>
+      </asset>
+      <asset xsi:type="esdl:Import" id="5a6ca582-0096-4851-b4af-dbc8bc8e6bfb" name="Import_5a6c" power="2500000.0">
+        <geometry xsi:type="esdl:Point" lat="51.99811993935465" lon="4.364812005688062"/>
+        <port xsi:type="esdl:OutPort" id="361aeaa0-ecf5-4078-bc5d-50dd37f33bc4" name="Out" connectedTo="62c3380c-7b7a-4426-9e22-ad9efcf19cf7" carrier="b81ab0d3-6d2b-473f-9598-0e7b8760749f"/>
       </asset>
       <area xsi:type="esdl:Area" name="Residential_1" id="336b2e6a-d5cd-4bdd-872e-05b9c8f1622f">
         <geometry xsi:type="esdl:Polygon" CRS="WGS84">
