@@ -956,9 +956,10 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
                 *solution.energy_system_components.get("heat_source_elec", []),
                 *solution.energy_system_components.get("air_water_heat_pump", []),
                 *solution.energy_system_components.get("heat_pump", []),
+                *solution.energy_system_components.get("electricity_import", []),
             ]:
                 variable_operational_cost += sum(
-                    price_profile.values[1:] * nominator_vector[1:] * timesteps_hr / denominator
+                    price_profile[1:] * nominator_vector[1:] * timesteps_hr / denominator
                 )
 
             np.testing.assert_allclose(

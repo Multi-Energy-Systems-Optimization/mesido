@@ -85,17 +85,20 @@ class TestMILPElectricSourceSink(TestCase):
         Tests for an electricity network that consist out of electricity import, cable and sink.
 
         Checks:
-        - Check that...
-
+        - Check for energy conservation with consumed power, lost power and imported power.
+        - Check that variable operation cost of electricity import is calculated via electricity
+          price profile, variable operational cost coefficient and imported power.
         """
 
         import models.unit_cases_electricity.source_sink_cable.src.example as example
-        from models.unit_cases_electricity.source_sink_cable.src.example import ElectricityProblem
+        from models.unit_cases_electricity.source_sink_cable.src.example import (
+            ElectricityProblemPriceProfile,
+        )
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
         solution = run_esdl_mesido_optimization(
-            ElectricityProblem,
+            ElectricityProblemPriceProfile,
             base_folder=base_folder,
             esdl_file_name="electricity_import_and_e_price.esdl",
             esdl_parser=ESDLFileParser,
@@ -103,9 +106,18 @@ class TestMILPElectricSourceSink(TestCase):
             input_timeseries_file="timeseries_with_e_price.csv",
         )
         results = solution.extract_results()
+        name_to_id_map = solution.esdl_asset_name_to_id_map
 
-        # Test energy conservation
+        import_id = name_to_id_map["Import"]
+
+        # Check energy conservation
         electric_power_conservation_test(solution, results)
+
+        # Check variable operation cost calculation
+        np.testing.assert_array_less(0.2, results[f"{import_id}__variable_operational_cost"])
+        np.testing.assert_array_less(
+            0.00005, solution.get_timeseries("Electricity.price_profile").values
+        )
         cost_calculation_test(solution, results)
 
     def test_source_sink(self):

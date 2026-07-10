@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" esdlVersion="v2107" version="3" name="electricity_import_and_e_price" id="b9a86f6b-02b4-4ab3-b2f3-608647c28e0e" description="Single source, single sink">
+<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" esdlVersion="v2107" version="5" name="electricity_import_and_e_price" id="b9a86f6b-02b4-4ab3-b2f3-608647c28e0e" description="Single source, single sink">
   <energySystemInformation xsi:type="esdl:EnergySystemInformation" id="2bb5f647-e4ff-490a-9642-ccf9274d9c40">
     <carriers xsi:type="esdl:Carriers" id="f6672aa2-7723-4945-92fa-b99846f58c92">
       <carrier xsi:type="esdl:ElectricityCommodity" voltage="230.0" id="a04bdbac-5198-477b-9989-d99c3c001eaf" name="Electricity"/>

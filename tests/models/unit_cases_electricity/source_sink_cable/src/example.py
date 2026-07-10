@@ -1,3 +1,4 @@
+from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
@@ -146,6 +147,14 @@ class ElectricityProblem(
     Problem to check the behaviour of a simple source, cable, demand network.
     """
 
+    pass
+
+
+class ElectricityProblemPriceProfile(ESDLAdditionalVarsMixin, ElectricityProblem):
+    """
+    Problem to check the behaviour of a electricity import, cable, demand network.
+    ESDLAdditionalVarsMixin is needed to read e-price profile in input csv
+    """
     pass
 
 
