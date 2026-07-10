@@ -24,6 +24,7 @@ class BaseESDLParser:
         self._esdl_string: Optional[str] = None
         self._esdl_path: Optional[Path] = None
         self._measures: Dict[str, Asset] = dict()
+        self._measure_group_info: Dict[str, list[str]] = dict()
 
     def _load_esdl_model(self) -> None:
         """
@@ -78,12 +79,21 @@ class BaseESDLParser:
             asset_templates = None
 
         # loop through assets
+        # measures = f(measure1, measure2 ...) or
+        # measures = f(measuregroup1, measuregroup1 ..) where measuregroup1=f(measure1, measure2..)
+        # but we do not cater for both at the same time
         for el in self._energy_system.eAllContents():
             # If asset measures exist, collect that in a different dictionary, to be used later in
             # esdl_mixin to update that information
             if (asset_measures is not None and el in asset_measures) or (
                 asset_templates is not None and el in asset_templates
             ):
+                if isinstance(el, esdl.MeasureGroup):
+                    self._measure_group_info[el.id] = {
+                        "name": el.name,
+                        "containt_measure_ids": [kk.id for kk in el.measure],
+                    }
+
                 if isinstance(el, esdl.Measure) or isinstance(el, esdl.AssetTemplate):
                     asset_type = el.__class__.__name__
                     # Note that e.g. el.__dict__['length'] does not work to get the length of a
@@ -167,6 +177,9 @@ class BaseESDLParser:
 
     def get_measures(self) -> Dict[str, Asset]:
         return self._measures
+
+    def get_measure_group_info(self) -> Dict[str, list[str]]:
+        return self._measure_group_info
 
 
 class ESDLStringParser(BaseESDLParser):
