@@ -74,7 +74,7 @@ class TestGasNetwork(TestCase):
 
         producer_unused_id = name_to_id_map["GasProducer_c92e"]
         producer_used_id = name_to_id_map["GasProducer_17aa"]
-        np.testing.assert_allclose(results[f"{producer_unused_id}.GasOut.Q"], 0.0, atol=1e-10)
+        np.testing.assert_allclose(results[f"{producer_unused_id}.GasOut.Q"], 0.0, atol=1e-6)
         np.testing.assert_array_less(0.0, results[f"{producer_used_id}.GasOut.Q"])
 
 

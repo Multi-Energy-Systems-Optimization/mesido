@@ -302,15 +302,10 @@ class TestMultiCommodityHeatPump(TestCase):
 
         base_folder = Path(run_hp_elec.__file__).resolve().parent.parent
 
-        class TestProblem(ElectricityProblemPriceProfile):
-            def solver_options(self):
-                options = super().solver_options()
-                # For some reason the test requires cbc, highs fails for strange reasons
-                options["solver"] = "cbc"
-                return options
-
+        # Previously forced to CBC due to HiGHS failures with casadi-gil-comp 3.6.7 / HiGHS 1.10.0.
+        # HiGHS 1.14.0 via rtctools-highs 0.1.3 passes correctly.
         solution = run_esdl_mesido_optimization(
-            TestProblem,
+            ElectricityProblemPriceProfile,
             base_folder=base_folder,
             esdl_file_name="heat_pump_elec_priceprofile.esdl",
             esdl_parser=ESDLFileParser,
@@ -339,7 +334,7 @@ class TestMultiCommodityHeatPump(TestCase):
         price_profile = solution.get_timeseries("Electr.price_profile").values
         price_profile_max = price_profile == max(price_profile)
         self.assertTrue(all(price_profile_max >= heatpump_disabled))
-        self.assertTrue(all(price_profile_max[1:] * heatpump_power[1:] == 0))
+        np.testing.assert_allclose(price_profile_max[1:] * heatpump_power[1:], 0, atol=1e-9)
 
         # check that heatpump is producing all heat for the heatdemand on the secondary side when
         # electricity price is low
