@@ -205,7 +205,7 @@ class NetworkSimulator(
             # order)
             index_start_of_priority = 3
             for src in self.energy_system_components[prod_asset]:
-                index_s = producer_merit["producer_name"].index(f"{src}")
+                index_s = producer_merit["producer_id"].index(f"{src}")
                 producer_priority = (
                     index_start_of_priority
                     + number_of_source_producers
@@ -222,15 +222,13 @@ class NetworkSimulator(
 
         return goals
 
-    def energy_system_options(self):
-        options = super().energy_system_options()
+    def update_heat_network_settings(self):
+        settings = super().update_heat_network_settings()
 
-        self.heat_network_settings["head_loss_option"] = (
-            HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
-        )
-        self.heat_network_settings["minimize_head_losses"] = True
+        settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
+        settings["minimize_head_losses"] = True
 
-        return options
+        return settings
 
     def constraints(self, ensemble_member):
         """
@@ -241,8 +239,12 @@ class NetworkSimulator(
         constraints = super().constraints(ensemble_member)
 
         for ates in self.energy_system_components.get("ates", []):
-            stored_heat_joules = self.__state_vector_scaled(f"{ates}.Stored_heat", ensemble_member)
-            heat_ates_watts = self.__state_vector_scaled(f"{ates}.Heat_ates", ensemble_member)
+            stored_heat_joules = self._BaseProblemMixin__state_vector_scaled(
+                f"{ates}.Stored_heat", ensemble_member
+            )
+            heat_ates_watts = self._BaseProblemMixin__state_vector_scaled(
+                f"{ates}.Heat_ates", ensemble_member
+            )
             constraints.append(
                 (
                     (stored_heat_joules[-1] - stored_heat_joules[0])
@@ -259,7 +261,7 @@ class NetworkSimulator(
 
     def producer_merit_controls(self):
         attributes = {
-            "producer_name": [],
+            "producer_id": [],
             "merit_order": [],
         }
         assets = self.esdl_assets
@@ -271,7 +273,7 @@ class NetworkSimulator(
                 or a.asset_type == "GasHeater"
                 or a.asset_type == "GeothermalSource"
             ):
-                attributes["producer_name"].append(a.name)
+                attributes["producer_id"].append(a.id)
                 try:
                     attributes["merit_order"].append(
                         a.attributes["costInformation"].marginalCosts.value
@@ -300,12 +302,6 @@ class NetworkSimulator(
         options["casadi_solver"] = self._qpsol
 
         return options
-
-    def __state_vector_scaled(self, variable, ensemble_member):
-        canonical, sign = self.alias_relation.canonical_signed(variable)
-        return (
-            self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
-        )
 
 
 # -------------------------------------------------------------------------------------------------

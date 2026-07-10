@@ -6,7 +6,6 @@ from unittest import TestCase
 from mesido.constants import GRAVITATIONAL_CONSTANT
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
-from mesido.head_loss_class import HeadLossOption
 from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
@@ -50,14 +49,13 @@ class ValidateWithPandaPipes(TestCase):
 
             def energy_system_options(self):
                 options = super().energy_system_options()
-                self.heat_network_settings["head_loss_option"] = (
-                    HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
-                )
-                self.heat_network_settings["n_linearization_lines"] = 10
-
-                self.heat_network_settings["minimum_velocity"] = 0.0
-
                 return options
+
+            def update_heat_network_settings(self):
+                settings = super().update_heat_network_settings()
+                settings["n_linearization_lines"] = 10
+                settings["minimum_velocity"] = 0.0
+                return settings
 
             def times(self, variable=None) -> np.ndarray:
                 """
@@ -84,6 +82,11 @@ class ValidateWithPandaPipes(TestCase):
             input_timeseries_file=demand_time_series_file,
         )
         results = solution.extract_results()
+
+        name_to_id = solution.esdl_asset_name_to_id_map
+
+        pipe_id = name_to_id["Pipe1"]
+        demand_id = name_to_id["demand_1"]
 
         demand_matching_test(solution, results)
         energy_conservation_test(solution, results)
@@ -120,14 +123,14 @@ class ValidateWithPandaPipes(TestCase):
         profile_demand_load_watt["0"] = raw_profile_demand_load_watt["demand_1"]
 
         demand_power = profile_demand_load_watt["0"].to_numpy() / total_consumers
-        profile_demand_load_watt = pd.DataFrame(results["demand_1.Heat_demand"])
+        profile_demand_load_watt = pd.DataFrame(results[f"{demand_id}.Heat_demand"])
 
         # Setup supply mass flow for panda_pipes
         average_temperature_kelvin = (supply_temperature + return_temperature) / 2.0 + 273.15
         cp_joule_kgkelvin = pp.get_fluid(net).get_heat_capacity(average_temperature_kelvin)
 
         # Enforce mass flow rate instead of cacluting it from Q = m_dot...
-        mesido_demand_flow_kg_s = results["Pipe1.Q"] * 988.0
+        mesido_demand_flow_kg_s = results[f"{pipe_id}.Q"] * 988.0
         demand_flow = mesido_demand_flow_kg_s
         supply_flow = demand_flow * total_consumers / total_producers
 
@@ -229,16 +232,23 @@ class ValidateWithPandaPipes(TestCase):
         # Compare head losses
         # Hard coded value of 9 used below, since the last data entry has value close to 0, and
         # a comparison is not of importance
-        for ii in range(len(results["Pipe1.dH"][:9])):
+        for ii in range(len(results[f"{pipe_id}.dH"][:9])):
             np.testing.assert_array_less(
                 pandapipes_head_loss_m[ii][0], 0.0
             )  # check that values are negative
             # check that mesido > pandapipes within %
+            if results[f"{pipe_id}.dH"][ii] > 1.0:
+                np.testing.assert_array_less(
+                    results[f"{pipe_id}.dH"][ii] / pandapipes_head_loss_m[ii][0], 1.08
+                )
+            else:
+                # Keeping this option below in case it is needed in the future for smaller dh values
+                # NB: do not increase 1.08 without checking the reason
+                np.testing.assert_array_less(
+                    results[f"{pipe_id}.dH"][ii] / pandapipes_head_loss_m[ii][0], 1.08
+                )
             np.testing.assert_array_less(
-                results["Pipe1.dH"][ii] / pandapipes_head_loss_m[ii][0], 1.08
-            )
-            np.testing.assert_array_less(
-                1.0, results["Pipe1.dH"][ii] / pandapipes_head_loss_m[ii][0]
+                1.0, results[f"{pipe_id}.dH"][ii] / pandapipes_head_loss_m[ii][0]
             )
         # Check cp value
         np.testing.assert_allclose(4200.0, cp_joule_kgkelvin)

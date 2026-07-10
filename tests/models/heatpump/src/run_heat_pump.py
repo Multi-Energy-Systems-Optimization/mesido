@@ -113,10 +113,14 @@ class HeatProblem(
 
     def energy_system_options(self):
         options = super().energy_system_options()
-        self.heat_network_settings["minimum_velocity"] = 0.001
         options["heat_loss_disconnected_pipe"] = True
 
         return options
+
+    def update_heat_network_settings(self):
+        settings = super().update_heat_network_settings()
+        settings["minimum_velocity"] = 0.001
+        return settings
 
 
 class HeatProblemTvar(HeatProblem):
@@ -124,7 +128,9 @@ class HeatProblemTvar(HeatProblem):
         options = super().solver_options()
         options["solver"] = "highs"
         highs_options = options["highs"] = {}
-        highs_options["mip_rel_gap"] = 0.001
+        highs_options["mip_rel_gap"] = 0.0001
+        highs_options["presolve"] = "off"
+
         return options
 
     def temperature_carriers(self):
@@ -132,7 +138,7 @@ class HeatProblemTvar(HeatProblem):
 
     def temperature_regimes(self, carrier):
         temperatures = []
-        if carrier == 7212673879469902607010:
+        if carrier == "72126c73-87e9-4bf6-99cf-d02a6c07010c":
             # supply
             temperatures = [85.0, 90.0]
 

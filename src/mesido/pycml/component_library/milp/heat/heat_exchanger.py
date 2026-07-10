@@ -1,3 +1,4 @@
+from mesido.pycml import DiscreteVariable
 from mesido.pycml.component_library.milp._internal import BaseAsset
 from mesido.pycml.component_library.milp.heat.heat_four_port import HeatFourPort
 from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
@@ -45,6 +46,8 @@ class HeatExchanger(HeatFourPort, BaseAsset):
         self.price = nan
         self.minimum_pressure_drop = 1.0e5  # 1 bar of pressure drop
         self.pump_efficiency = 0.5
+
+        self.add_variable(DiscreteVariable, "__disabled", min=0.0, max=1.0)
 
         self.add_equation(
             ((self.Primary_heat * self.efficiency - self.Secondary_heat) / self.nominal)

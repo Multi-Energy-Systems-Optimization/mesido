@@ -3,6 +3,7 @@ from unittest import TestCase
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.head_loss_class import HeadLossOption
 from mesido.workflows import NetworkSimulatorHIGHS
 
 import numpy as np
@@ -40,6 +41,11 @@ class TestNetworkSimulator(TestCase):
             def times(self, variable=None) -> np.ndarray:
                 return super().times(variable)[:5]
 
+            def update_heat_network_settings(self):
+                settings = super().update_heat_network_settings()
+                settings["head_loss_option"] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+                return settings
+
         solution = run_optimization_problem(
             NetworkSimulatorHIGHSTestCase,
             base_folder=base_folder,
@@ -52,6 +58,8 @@ class TestNetworkSimulator(TestCase):
 
         results = solution.extract_results()
 
+        name_id_map = solution.esdl_asset_name_to_id_map
+
         # General checks
         demand_matching_test(solution, results)
         energy_conservation_test(solution, results)
@@ -60,7 +68,7 @@ class TestNetworkSimulator(TestCase):
         # Check that producer 1 (merit oder = 2) is not used
         # and is does not contribute to the heating demands 1, 2 and 3
         np.testing.assert_allclose(
-            results["HeatProducer_1.Heat_source"],
+            results[f"{name_id_map['HeatProducer_1']}.Heat_source"],
             0.0,
             err_msg="Heat producer 1 should be completely disabled "
             ", due to producer 2 being sufficient for "

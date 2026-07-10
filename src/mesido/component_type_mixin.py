@@ -41,7 +41,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
         busses = components.get("electricity_node", [])
         gas_nodes = components.get("gas_node", [])
         buffers = components.get("heat_buffer", [])
-        atess = [*components.get("ates", []), *components.get("low_temperature_ates", [])]
+        atess = components.get("ates", [])
         demands = [
             *components.get("heat_demand", []),
             *components.get("electricity_demand", []),
@@ -107,6 +107,9 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                         other_pipe = pipes_map[other_pipe_port]
                         if f"{other_pipe}.Q" not in alias_relation.canonical_variables:
                             alias_relation.add(f"{p}.Q", f"{sign_prefix}{other_pipe}.Q")
+                if self.has_related_pipe(p):
+                    cold_pipe = self.hot_to_cold_pipe(p)
+                    alias_relation.add(f"{p}.__flow_direct_var", f"{cold_pipe}.__flow_direct_var")
 
         node_to_node_logical_link_map = {}
 
@@ -460,7 +463,11 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
             # Find the components in model, detection by string
             # (name.component_type: type)
             component_types = sorted(
-                {v for k, v in string_parameters.items() if "network_type" not in k}
+                {
+                    v
+                    for k, v in string_parameters.items()
+                    if ("component_type" in k) or ("component_subtype" in k)
+                }
             )
 
             components = {}

@@ -1,6 +1,7 @@
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.head_loss_class import HeadLossOption
 from mesido.pipe_class import PipeClass
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 
@@ -77,11 +78,16 @@ class PipeDiameterSizingProblem(
 ):
     def energy_system_options(self):
         options = super().energy_system_options()
-        self.heat_network_settings["minimum_velocity"] = 0.001
         options["heat_loss_disconnected_pipe"] = True
         options["maximum_temperature_der"] = np.inf
-        self.heat_network_settings["minimize_head_losses"] = True
         return options
+
+    def update_heat_network_settings(self):
+        settings = super().update_heat_network_settings()
+        settings["minimum_velocity"] = 0.001
+        settings["head_loss_option"] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+        settings["minimize_head_losses"] = True
+        return settings
 
     def pipe_classes(self, pipe):
         # Do not delete pipeclass DN40, DN50, DN65, DN600. Locally it runs with with these
@@ -131,6 +137,7 @@ class PipeDiameterSizingProblem(
         self._qpsol = CachingQPSol()
         options["casadi_solver"] = self._qpsol
         options["solver"] = "highs"
+
         return options
 
 
@@ -193,8 +200,9 @@ if __name__ == "__main__":
         profile_reader=ProfileReaderFromFile,
         input_timeseries_file="timeseries_import.xml",
     )
+    name_id_map = heat_problem.esdl_asset_name_to_id_map
     results = heat_problem.extract_results()
-    print("Q: ", results["Pipe_2927_ret.HeatIn.Q"])
-    print("Heat: ", results["Pipe_2927_ret.HeatIn.Heat"])
+    print("Q: ", results[f"{name_id_map['Pipe_2927_ret']}.HeatIn.Q"])
+    print("Heat: ", results[f"{name_id_map['Pipe_2927_ret']}.HeatIn.Heat"])
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

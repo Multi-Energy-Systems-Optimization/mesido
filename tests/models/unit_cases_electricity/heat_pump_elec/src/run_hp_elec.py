@@ -56,10 +56,14 @@ class _GoalsAndOptions:
     def energy_system_options(self):
         options = super().energy_system_options()
         # options["heat_loss_disconnected_pipe"] = False
-        self.heat_network_settings["minimum_velocity"] = 0.0001
         options["include_electric_cable_power_loss"] = True
 
         return options
+
+    def update_heat_network_settings(self):
+        settings = super().update_heat_network_settings()
+        settings["minimum_velocity"] = 0.0001
+        return settings
 
     def solver_options(self):
         options = super().solver_options()
@@ -124,7 +128,6 @@ class HeatProblem(
 
     def energy_system_options(self):
         options = super().energy_system_options()
-        self.heat_network_settings["minimum_velocity"] = 0.0001
         options["heat_loss_disconnected_pipe"] = True
 
         return options
@@ -142,26 +145,32 @@ class HeatProblem(
 
     def parameters(self, ensemble_member):
         parameters = super().parameters(ensemble_member)
+        hp_id = self.esdl_asset_name_to_id_map["GenericConversion_3d3f"]
+        cable_id = self.esdl_asset_name_to_id_map["ElectricityCable_9d3b"]
+        producer_id = self.esdl_asset_name_to_id_map["ElectricityProducer_ac2e"]
         # all assets on same electricity grid should have same minimum voltage set by carrier,
         # these values also continue in the bounds, thus preferably this should be changed in ESDL
-        parameters["GenericConversion_3d3f.min_voltage"] = 230.0
-        parameters["ElectricityCable_9d3b.min_voltage"] = 230.0
-        parameters["ElectricityProducer_ac2e.min_voltage"] = 230.0
+        parameters[f"{hp_id}.min_voltage"] = 230.0
+        parameters[f"{cable_id}.min_voltage"] = 230.0
+        parameters[f"{producer_id}.min_voltage"] = 230.0
 
         return parameters
 
     def bounds(self):
         bounds = super().bounds()
+        hp_id = self.esdl_asset_name_to_id_map["GenericConversion_3d3f"]
+        cable_id = self.esdl_asset_name_to_id_map["ElectricityCable_9d3b"]
+        producer_id = self.esdl_asset_name_to_id_map["ElectricityProducer_ac2e"]
         # all assets on same electricity grid should have same minimum voltage set by carrier,
         # these values also continue in the bounds, thus preferably this should be changed in ESDL
-        bound_conv = bounds["GenericConversion_3d3f.ElectricityIn.V"]
-        bounds["GenericConversion_3d3f.ElectricityIn.V"] = (230.0, bound_conv[1])
-        bound_cable_in = bounds["ElectricityCable_9d3b.ElectricityIn.V"]
-        bounds["ElectricityCable_9d3b.ElectricityIn.V"] = (230.0, bound_cable_in[1])
-        bound_cable_out = bounds["ElectricityCable_9d3b.ElectricityOut.V"]
-        bounds["ElectricityCable_9d3b.ElectricityOut.V"] = (230.0, bound_cable_out[1])
-        bound_prod_out = bounds["ElectricityProducer_ac2e.ElectricityOut.V"]
-        bounds["ElectricityProducer_ac2e.ElectricityOut.V"] = (230.0, bound_prod_out[1])
+        bound_conv = bounds[f"{hp_id}.ElectricityIn.V"]
+        bounds[f"{hp_id}.ElectricityIn.V"] = (230.0, bound_conv[1])
+        bound_cable_in = bounds[f"{cable_id}.ElectricityIn.V"]
+        bounds[f"{cable_id}.ElectricityIn.V"] = (230.0, bound_cable_in[1])
+        bound_cable_out = bounds[f"{cable_id}.ElectricityOut.V"]
+        bounds[f"{cable_id}.ElectricityOut.V"] = (230.0, bound_cable_out[1])
+        bound_prod_out = bounds[f"{producer_id}.ElectricityOut.V"]
+        bounds[f"{producer_id}.ElectricityOut.V"] = (230.0, bound_prod_out[1])
 
         return bounds
 
@@ -194,7 +203,6 @@ class HeatProblem2(
 
     def energy_system_options(self):
         options = super().energy_system_options()
-        self.heat_network_settings["minimum_velocity"] = 0.0001
         options["heat_loss_disconnected_pipe"] = False
 
         return options
@@ -262,7 +270,6 @@ class ElectricityProblem(
 
     def energy_system_options(self):
         options = super().energy_system_options()
-        self.heat_network_settings["minimum_velocity"] = 0.0001
         options["heat_loss_disconnected_pipe"] = False
 
         return options
@@ -293,12 +300,15 @@ class ElectricityProblemPriceProfile(
 
     def energy_system_options(self):
         options = super().energy_system_options()
-        self.heat_network_settings["minimum_velocity"] = 0.0001
         options["heat_loss_disconnected_pipe"] = False
         options["neglect_pipe_heat_losses"] = True
-        self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
 
         return options
+
+    def update_heat_network_settings(self):
+        settings = super().update_heat_network_settings()
+        settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+        return settings
 
 
 if __name__ == "__main__":
@@ -310,9 +320,12 @@ if __name__ == "__main__":
         input_timeseries_file="timeseries_elec.csv",
     )
     results = sol.extract_results()
-    print(results["GenericConversion_3d3f.Power_elec"])
-    print(results["GenericConversion_3d3f__variable_operational_cost"])
-    print(results["ResidualHeatSource_aec9.Heat_source"])
+    name_to_id_map = sol.esdl_asset_name_to_id_map
+    hp_id = name_to_id_map["GenericConversion_3d3f"]
+    source_id = name_to_id_map["ResidualHeatSource_aec9"]
+    print(results[f"{hp_id}.Power_elec"])
+    print(results[f"{hp_id}__variable_operational_cost"])
+    print(results[f"{source_id}.Heat_source"])
     # print(results["Pipe3__hn_diameter"])
     # print(sol.bounds()["Pipe3__hn_diameter"])
     # run_optimization_problem(ElectricityProblem)

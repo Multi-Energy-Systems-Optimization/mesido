@@ -70,18 +70,6 @@ class HeatProblem(
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
-    def __init__(self, *args, **kwargs):
-
-        global head_loss_setting, n_linearization_lines_setting
-        super().__init__(*args, **kwargs)
-        self.heat_network_settings["head_loss_option"] = head_loss_setting
-        if head_loss_setting == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY:
-            self.heat_network_settings["n_linearization_lines"] = n_linearization_lines_setting
-        if head_loss_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
-            self.heat_network_settings["minimize_head_losses"] = False
-        else:
-            self.heat_network_settings["minimize_head_losses"] = True
-
     def pre(self):
         super().pre()
         global ThermalDemand
@@ -100,19 +88,18 @@ class HeatProblem(
                 0,
             )
 
-    # Added for case where head loss is modelled via DW
-    def heat_network_options(self):
+    def update_heat_network_settings(self):
         global head_loss_setting, n_linearization_lines_setting
-        options = super().heat_network_options()
-        self.heat_network_settings["head_loss_option"] = head_loss_setting
+        settings = super().update_heat_network_settings()
+        settings["head_loss_option"] = head_loss_setting
         if head_loss_setting == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY:
-            self.heat_network_settings["n_linearization_lines"] = n_linearization_lines_setting
+            settings["n_linearization_lines"] = n_linearization_lines_setting
         if head_loss_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
-            self.heat_network_settings["minimize_head_losses"] = False
+            settings["minimize_head_losses"] = False
         else:
-            self.heat_network_settings["minimize_head_losses"] = True
+            settings["minimize_head_losses"] = True
 
-        return options
+        return settings
 
     @property
     def esdl_assets(self):
@@ -181,11 +168,20 @@ class HeatProblem(
         parameters = self.parameters(0)
         data_milp = {}  # Data storage
 
+        name_id_map = self.esdl_asset_name_to_id_map
+
         # Pressure drop [Pa]
-        data_milp = {"Pipe1_supply_dPress": results["Pipe1.dH"] * parameters["Pipe1.rho"] * 9.81}
-        data_milp.update(
-            {"Pipe1_return_dPress": results["Pipe1_ret.dH"] * parameters["Pipe1_ret.rho"] * 9.81}
-        )
+        if self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
+            data_milp = {
+                "Pipe1_supply_dPress": results["Pipe1.dH"] * parameters["Pipe1.rho"] * 9.81
+            }
+            data_milp.update(
+                {
+                    "Pipe1_return_dPress": results["Pipe1_ret.dH"]
+                    * parameters["Pipe1_ret.rho"]
+                    * 9.81
+                }
+            )
 
         # Volumetric flow [m3/s]
         data_milp.update({"Pipe1_supply_Q": results["Pipe1.HeatOut.Q"]})
@@ -194,16 +190,16 @@ class HeatProblem(
         # Mass flow [kg/s]
         data_milp.update(
             {
-                "Pipe1_supply_mass_flow": results["HeatingDemand_1.Heat_demand"]
-                / parameters["HeatingDemand_1.cp"]
-                / parameters["HeatingDemand_1.dT"]
+                "Pipe1_supply_mass_flow": results[f"{name_id_map['HeatingDemand_1']}.Heat_demand"]
+                / parameters[f"{name_id_map['HeatingDemand_1']}.cp"]
+                / parameters[f"{name_id_map['HeatingDemand_1']}.dT"]
             }
         )
         data_milp.update(
             {
-                "Pipe1_return_mass_flow": results["HeatingDemand_1.Heat_demand"]
-                / parameters["HeatingDemand_1.cp"]
-                / parameters["HeatingDemand_1.dT"]
+                "Pipe1_return_mass_flow": results[f"{name_id_map['HeatingDemand_1']}.Heat_demand"]
+                / parameters[f"{name_id_map['HeatingDemand_1']}.cp"]
+                / parameters[f"{name_id_map['HeatingDemand_1']}.dT"]
             }
         )
 
@@ -228,18 +224,21 @@ class HeatProblem(
         data_milp.update({"Pipe1_return_dT": parameters["Pipe1_ret.dT"]})
 
         # Heat source, demand and loss [W]
-        data_milp.update({"Heat_source": results["ResidualHeatSource_1.Heat_source"]})
-        data_milp.update({"Heat_demand": results["HeatingDemand_1.Heat_demand"]})
+        data_milp.update(
+            {"Heat_source": results[f"{name_id_map['ResidualHeatSource_1']}.Heat_source"]}
+        )
+        data_milp.update({"Heat_demand": results[f"{name_id_map['HeatingDemand_1']}.Heat_demand"]})
         data_milp.update(
             {
-                "Heat_loss": results["ResidualHeatSource_1.Heat_source"]
-                - results["HeatingDemand_1.Heat_demand"]
+                "Heat_loss": results[f"{name_id_map['ResidualHeatSource_1']}.Heat_source"]
+                - results[f"{name_id_map['HeatingDemand_1']}.Heat_demand"]
             }
         )
 
         # Hydraulic power via linearized method in MILP [W]
-        data_milp.update({"Pipe1_supply_Hydraulic_power": results["Pipe1.Hydraulic_power"]})
-        data_milp.update({"Pipe1_return_Hydraulic_power": results["Pipe1_ret.Hydraulic_power"]})
+        if self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
+            data_milp.update({"Pipe1_supply_Hydraulic_power": results["Pipe1.Hydraulic_power"]})
+            data_milp.update({"Pipe1_return_Hydraulic_power": results["Pipe1_ret.Hydraulic_power"]})
 
         # Determine index to be used for row data that will be added to the dataframe
         if len(df_MILP) == 0:
@@ -248,7 +247,7 @@ class HeatProblem(
             index_df_milp = df_MILP.index[-1] + 1
 
         try:
-            if len(data_milp["Pipe1_supply_dPress"]) > 1:
+            if len(data_milp["Pipe1_supply_Q"]) > 1:
                 df_MILP = pd.concat([df_MILP, pd.DataFrame(data_milp)], ignore_index=True)
         except Exception:  # Case when there is only one row value added
             df_MILP = pd.concat([df_MILP, pd.DataFrame(data_milp)], index=[index_df_milp])
@@ -258,8 +257,8 @@ class HeatProblem(
         if index_last_row != index_last_row:
             exit("The last index of the dataframe is invalid")
         try:
-            if len(data_milp["Pipe1_supply_dPress"]) > 1:
-                m_rows_added = len(data_milp["Pipe1_supply_dPress"])
+            if len(data_milp["Pipe1_supply_Q"]) > 1:
+                m_rows_added = len(data_milp["Pipe1_supply_Q"])
         except Exception:  # Case when there is only one row value added
             m_rows_added = 1
 

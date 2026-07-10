@@ -48,6 +48,71 @@ class TestESDLParsing(unittest.TestCase):
         # are exactly the same object
         np.testing.assert_equal(results_from_file_as_dict, results_from_string_as_dict)
 
+    def test_duplicate_asset_names_with_different_ids(self):
+        """
+        This test checks that MESIDO correctly handles ESDL assets that have the same name
+        but different unique identifiers. The test verifies that:
+        1. The ESDL contains two pipes with the same name "Pipe"
+        2. These pipes have different IDs ("pipe-1" and "pipe-2")
+        3. MESIDO creates separate asset entries for each pipe using their respective IDs
+        4. Both pipes are correctly available in the problem's asset maps
+        """
+        import models.unit_cases.case_1a.src.run_1a as example
+        from models.unit_cases.case_1a.src.run_1a import (
+            HeatProblem,
+        )
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        # Run the optimization problem
+        problem = run_optimization_problem(
+            HeatProblem,
+            base_folder=base_folder,
+            esdl_file_name="1a_name_duplicate.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.xml",
+        )
+
+        # Verify that the ESDL parser correctly identified both pipes
+        # Even though they have the same name, they should have different IDs
+        pipe_1_id = "Pipe1"
+        pipe_2_id = "Pipe2"
+
+        # Verify both pipes are in the heat_pipe component list
+        heat_pipes = problem.energy_system_components.get("heat_pipe", [])
+        assert (
+            pipe_1_id in heat_pipes
+        ), f"Pipe {pipe_1_id} not found in energy_system_components heat_pipe list"
+        assert (
+            pipe_2_id in heat_pipes
+        ), f"Pipe {pipe_2_id} not found in energy_system_components heat_pipe list"
+
+        # Verify that both pipes have the same name in the ESDL
+        pipe_1_asset = problem.esdl_assets[pipe_1_id]
+        pipe_2_asset = problem.esdl_assets[pipe_2_id]
+
+        assert (
+            pipe_1_asset.name == pipe_2_asset.name
+        ), "Expected pipe_1 and pipe_2 name to be the same"
+
+        # Verify that the IDs are different
+        assert pipe_1_id != pipe_2_id, "Expected different IDs for the two pipes"
+
+        # Verify that we can access parameters for both pipes using their IDs
+        parameters = problem.parameters(0)
+
+        # Both pipes should have diameter parameters accessible via their IDs
+        pipe_1_diameter_key = f"{pipe_1_id}.diameter"
+        pipe_2_diameter_key = f"{pipe_2_id}.diameter"
+
+        assert (
+            pipe_1_diameter_key in parameters
+        ), f"Expected diameter parameter for pipe_1: {pipe_1_diameter_key}"
+        assert (
+            pipe_2_diameter_key in parameters
+        ), f"Expected diameter parameter for pipe_2: {pipe_2_diameter_key}"
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -19,47 +19,10 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
-from utils_tests import demand_matching_test
+from utils_tests import cost_calculation_test, demand_matching_test
 
 
 class TestEndScenarioSizing(TestCase):
-
-    def test_heat_exchanger_sizing(self):
-        """
-        Check heat exchanger can be sized in EndScenarioSizingStaged problem.
-        After optimization asset state and capacity attributes are changed.
-
-        Checks:
-        - max_size variable of the asset is calculated
-        - heat exchanger state attribute is changed
-        - heat exchanger capacity attribute is updated
-        """
-        import models.heat_exchange.src.run_heat_exchanger as run_heat_exchanger
-
-        base_folder = Path(run_heat_exchanger.__file__).resolve().parent.parent
-
-        solution = run_end_scenario_sizing(
-            EndScenarioSizingStaged,
-            base_folder=base_folder,
-            esdl_file_name="heat_exchanger_with_costs.esdl",
-            esdl_parser=ESDLFileParser,
-        )
-        results = solution.extract_results()
-
-        # Check heat exchanger is sized
-        np.testing.assert_allclose(
-            max(results["HeatExchange_39ed.Secondary_heat"]), results["HeatExchange_39ed__max_size"]
-        )
-
-        # Check heat exchanger state attribute is changed from OPTIONAL
-        # to ENABLED after the optimization
-        energy_system = solution._ESDLMixin__energy_system_handler.energy_system
-        asset = solution._name_to_asset(energy_system, "HeatExchange_39ed")
-        np.testing.assert_equal(esdl.AssetStateEnum.ENABLED, asset.state)
-
-        # Check heat exchanger capacity attribute is updated
-        # with max_size variable after the optimization
-        np.testing.assert_allclose(results["HeatExchange_39ed__max_size"], asset.capacity)
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -78,6 +41,7 @@ class TestEndScenarioSizing(TestCase):
             input_timeseries_file="Warmte_test.csv",
         )
         cls.results = cls.solution.extract_results()
+        cls.name_to_id_map = cls.solution.esdl_asset_name_to_id_map
 
     def test_end_scenario_sizing(self):
         """
@@ -87,6 +51,7 @@ class TestEndScenarioSizing(TestCase):
 
         Checks:
         - demand matching
+        - cost components
         - that the available pipe classes were adapted
         - minimum velocity setting
         - Cyclic behaviour for ATES
@@ -103,83 +68,77 @@ class TestEndScenarioSizing(TestCase):
         # Is the timeline correctly converted, correct peak day, correct amount of timesteps, etc.
         # Check whether expected assets are disabled
         # Check the optimal size of assets
-        # Check the cost breakdown, check whether all the enabled assets are in the cost breakdown
         # Check that computation time is within expected bounds
+
+        name_to_id_map = self.solution.esdl_asset_name_to_id_map
+        hp_1_id = name_to_id_map["HeatProducer_1"]
+        hp_2_id = name_to_id_map["HeatProducer_2"]
+        a_id = name_to_id_map["ATES_033c"]
+        ht_id = name_to_id_map["HeatStorage_74c1"]
+        hd_1_id = name_to_id_map["HeatingDemand_1"]
+        hd_2_id = name_to_id_map["HeatingDemand_2"]
+        hd_3_id = name_to_id_map["HeatingDemand_3"]
 
         # Check whehter the heat demand is matched
         demand_matching_test(self.solution, self.results)
 
+        # Check the cost calculations
+        np.testing.assert_array_less(1e3, self.results[f"{hp_1_id}__investment_cost"])
+        np.testing.assert_array_less(1e3, self.results[f"{hp_1_id}__installation_cost"])
+        np.testing.assert_array_less(1e3, self.results[f"{hp_2_id}__investment_cost"])
+        np.testing.assert_array_less(1e3, self.results[f"{hp_2_id}__installation_cost"])
+        np.testing.assert_array_less(1e3, self.results[f"{hp_2_id}__variable_operational_cost"])
+        np.testing.assert_array_less(1e3, self.results[f"{a_id}__investment_cost"])
+        np.testing.assert_array_less(1e3, self.results[f"{a_id}__installation_cost"])
+        np.testing.assert_array_less(1e3, self.results[f"{a_id}__variable_operational_cost"])
+        np.testing.assert_array_less(1e3, self.results[f"{ht_id}__investment_cost"])
+        np.testing.assert_array_less(1e3, self.results[f"{ht_id}__installation_cost"])
+        np.testing.assert_array_less(1e3, self.results[f"{hd_1_id}__installation_cost"])
+        np.testing.assert_array_less(1e3, self.results[f"{hd_2_id}__installation_cost"])
+        np.testing.assert_array_less(1e3, self.results[f"{hd_3_id}__installation_cost"])
+        for pipe_id in self.solution.energy_system_components.get("heat_pipe", []):
+            np.testing.assert_array_less(1e3, self.results[f"{pipe_id}__investment_cost"])
+        cost_calculation_test(self.solution, self.results, check_objective_function=True)
+
         # Check that indeed the available pipe classes were adapted based on expected flow
         # Pipe connected to a demand
         assert self.solution.pipe_classes("Pipe2")[0].name == "DN150"  # initially DN->None
-        assert self.solution.pipe_classes("Pipe2")[-1].name == "DN250"  # initially DN450
+        assert self.solution.pipe_classes("Pipe2")[-1].name == "DN200"  # initially DN450
         # Check that the available pipe classes are also limited for pipes in the return network
         # that do not have the related attribute assigned and are therefore not in the set of
         # self.cold_pipes.
         assert len(self.solution.unrelated_pipes) >= 1.0
         assert self.solution.pipe_classes("Pipe2_ret")[0].name == "DN150"  # initially DN->None
-        assert self.solution.pipe_classes("Pipe2_ret")[-1].name == "DN250"  # initially DN450
+        assert self.solution.pipe_classes("Pipe2_ret")[-1].name == "DN200"  # initially DN450
         # Check the minimum velocity setting==default value. Keep the default value hard-coded to
         # prevent future coding bugs
         np.testing.assert_equal(1.0e-4, self.solution.heat_network_settings["minimum_velocity"])
 
         # Check whether cyclic ates constraint is working and split between the charging and
         # discharging heat_flow variables
-        for a in self.solution.energy_system_components.get("ates", []):
-            stored_heat = self.results[f"{a}.Stored_heat"]
+        for a_id in self.solution.energy_system_components.get("ates", []):
+            stored_heat = self.results[f"{a_id}.Stored_heat"]
             np.testing.assert_allclose(stored_heat[0], stored_heat[-1], atol=1.0)
-            heat_ates = self.results[f"{a}.Heat_ates"]
-            heat_flow_charging = self.results[f"{a}.Heat_flow_charging"]
-            heat_flow_discharging = self.results[f"{a}.Heat_flow_discharging"]
+            heat_ates = self.results[f"{a_id}.Heat_ates"]
+            heat_flow_charging = self.results[f"{a_id}.Heat_flow_charging"]
+            heat_flow_discharging = self.results[f"{a_id}.Heat_flow_discharging"]
             np.testing.assert_allclose(
                 heat_ates, heat_flow_charging - heat_flow_discharging, atol=1.0
             )
             np.testing.assert_array_less(heat_flow_charging[heat_flow_discharging > 1e3], 1e3)
 
-        # Check variable operational cost of ates
-        timesteps_hr = np.diff(self.solution.times()) / 3600.0
-        variable_operational_cost = 0.0
-        for a in self.solution.energy_system_components.get("ates", []):
-            esdl_asset = self.solution.esdl_assets[self.solution.esdl_asset_name_to_id_map[f"{a}"]]
-            costs_esdl_asset = esdl_asset.attributes["costInformation"]
-            var_op_costs = costs_esdl_asset.variableOperationalCosts.value / 1.0e6  # EUR/Wh_th
-            self.assertNotEqual(0.0, var_op_costs)
-            for ii in range(1, len(self.solution.times())):
-                variable_operational_cost += (
-                    var_op_costs
-                    * (
-                        self.results[f"{a}.Heat_flow_charging"][ii]
-                        + self.results[f"{a}.Heat_flow_discharging"][ii]
-                    )
-                    * timesteps_hr[ii - 1]
-                )
-        np.testing.assert_allclose(
-            variable_operational_cost, self.results[f"{a}__variable_operational_cost"]
-        )
-
         # Check whether buffer tank is only active in peak day
         peak_day_indx = self.solution.parameters(0)["peak_day_index"]
-        for b in self.solution.energy_system_components.get("heat_buffer", []):
-            heat_buffer = self.results[f"{b}.Heat_buffer"]
+        for b_id in self.solution.energy_system_components.get("heat_buffer", []):
+            heat_buffer = self.results[f"{b_id}.Heat_buffer"]
             for i in range(len(self.solution.times())):
                 if i < peak_day_indx or i > (peak_day_indx + 23):
                     np.testing.assert_allclose(heat_buffer[i], 0.0, atol=1.0e-6)
-            heat_flow_charging = self.results[f"{b}.Heat_flow_charging"]
-            heat_flow_discharging = self.results[f"{b}.Heat_flow_discharging"]
+            heat_flow_charging = self.results[f"{b_id}.Heat_flow_charging"]
+            heat_flow_discharging = self.results[f"{b_id}.Heat_flow_discharging"]
             np.testing.assert_allclose(
                 heat_buffer, heat_flow_charging - heat_flow_discharging, atol=1.0
             )
-
-        obj = self.calculate_objective_value_end_scenario_sizing_all_optional(self.solution)
-        excluded_costs_in_obj = self.calculate_heat_demand_costs_end_scenario_sizing()  # Fixed
-        # costs excluded in the optim objective function
-
-        # Since all assets are optional, the objective value should be close to the calculated tco
-        # excluding heating demands.
-        np.testing.assert_allclose(obj / 1.0e6, self.solution.objective_value)
-        np.testing.assert_array_less(
-            self.solution.objective_value, (obj + excluded_costs_in_obj) / 1.0e6
-        )
 
     def test_end_scenario_sizing_staged(self):
         """
@@ -238,13 +197,41 @@ class TestEndScenarioSizing(TestCase):
 
         results = solution_staged.extract_results()
 
+        name_to_id_map = solution_staged.esdl_asset_name_to_id_map
+        hp_1_id = name_to_id_map["HeatProducer_1"]
+        hp_2_id = name_to_id_map["HeatProducer_2"]
+        a_id = name_to_id_map["ATES_033c"]
+        ht_id = name_to_id_map["HeatStorage_74c1"]
+        hd_1_id = name_to_id_map["HeatingDemand_1"]
+        hd_2_id = name_to_id_map["HeatingDemand_2"]
+        hd_3_id = name_to_id_map["HeatingDemand_3"]
+
         # Check whehter the heat demand is matched
         demand_matching_test(solution_staged, results)
+
+        # Check the cost calculations
+        np.testing.assert_array_less(1e3, results[f"{hp_1_id}__investment_cost"])
+        np.testing.assert_array_less(1e3, results[f"{hp_1_id}__installation_cost"])
+        np.testing.assert_array_less(1e3, results[f"{hp_2_id}__investment_cost"])
+        np.testing.assert_array_less(1e3, results[f"{hp_2_id}__installation_cost"])
+        np.testing.assert_array_less(1e3, results[f"{hp_2_id}__variable_operational_cost"])
+        np.testing.assert_array_less(1e3, results[f"{a_id}__investment_cost"])
+        np.testing.assert_array_less(1e3, results[f"{a_id}__installation_cost"])
+        np.testing.assert_array_less(1e3, results[f"{a_id}__variable_operational_cost"])
+        np.testing.assert_array_less(1e3, results[f"{ht_id}__investment_cost"])
+        np.testing.assert_array_less(1e3, results[f"{ht_id}__installation_cost"])
+        np.testing.assert_array_less(1e3, results[f"{hd_1_id}__installation_cost"])
+        np.testing.assert_array_less(1e3, results[f"{hd_2_id}__installation_cost"])
+        np.testing.assert_array_less(1e3, results[f"{hd_3_id}__installation_cost"])
+        for pipe_id in solution_staged.energy_system_components.get("heat_pipe", []):
+            np.testing.assert_array_less(1e3, results[f"{pipe_id}__investment_cost"])
+        cost_calculation_test(solution_staged, results, check_objective_function=True)
 
         # Check whether cyclic ates constraint is working
         for a in solution_staged.energy_system_components.get("ates", []):
             stored_heat = results[f"{a}.Stored_heat"]
             np.testing.assert_allclose(stored_heat[0], stored_heat[-1], atol=1.0)
+
         # Check that the ATES is placed and that the size should match the single_doublet_power
         np.testing.assert_allclose(
             results[f"{a}__max_size"],
@@ -264,9 +251,6 @@ class TestEndScenarioSizing(TestCase):
             for i in range(len(solution_staged.times())):
                 if i < peak_day_indx or i > (peak_day_indx + 23):
                     np.testing.assert_allclose(heat_buffer[i], 0.0, atol=1.0e-6)
-
-        obj = self.calculate_objective_value_end_scenario_sizing_all_optional(solution_staged)
-        np.testing.assert_allclose(obj / 1.0e6, solution_staged.objective_value)
 
         # comparing results of staged and unstaged problem definition. For larger systems there
         # might be a difference in the value but that would either be a difference within the
@@ -301,6 +285,80 @@ class TestEndScenarioSizing(TestCase):
             abs(solution_time_staged - solution_time_unstaged),
         )
         np.testing.assert_array_less(solution_time_staged, solution_time_unstaged)
+
+    def test_end_scenario_sizing_heat_demand_not_matched(self):
+        """
+        Validate diagnostics when staged sizing cannot fully match heat demand.
+
+        The test uses an ESDL where a pipe size has been limited and an increased-demand
+        profile so that the optimization aborts with an expected exception, while warning logs still
+        report demand not being matched and likely bottlenecks, maxed producers and critical pipes.
+        """
+        import models.test_case_small_network_ates_buffer_optional_assets.src.run_ates as run_ates
+
+        base_folder = Path(run_ates.__file__).resolve().parent.parent
+
+        with self.assertLogs("mesido", level="WARNING") as captured_logs:
+            with self.assertRaises(RuntimeError):
+                run_end_scenario_sizing(
+                    EndScenarioSizingStaged,
+                    base_folder=base_folder,
+                    esdl_file_name="test_case_small_network_all_optional_demand_not_matched.esdl",
+                    esdl_parser=ESDLFileParser,
+                    profile_reader=ProfileReaderFromFile,
+                    input_timeseries_file="Warmte_test_two_demands_doubled.csv",
+                    error_type_check=NetworkErrors.NO_POTENTIAL_ERRORS_CHECK,
+                )
+
+        logs = "\n".join(captured_logs.output)
+        self.assertIn("target is not matched by", logs)
+        self.assertIn("the heat production by the following heat producers is maximised:", logs)
+        self.assertRegex(
+            logs, r"there are pipes with velocities above .* m/s: \['Pipe3', 'Pipe3_ret'\]$"
+        )
+        self.assertNotIn(
+            "the heat production by the following heat producers is maximised: none", logs
+        )
+
+    def test_heat_exchanger_sizing(self):
+        """
+        Check heat exchanger can be sized in EndScenarioSizingStaged problem.
+        After optimization asset state and capacity attributes are changed.
+
+        Checks:
+        - max_size variable of the asset is calculated
+        - heat exchanger state attribute is changed
+        - heat exchanger capacity attribute is updated
+        """
+        import models.heat_exchange.src.run_heat_exchanger as run_heat_exchanger
+
+        base_folder = Path(run_heat_exchanger.__file__).resolve().parent.parent
+
+        solution = run_end_scenario_sizing(
+            EndScenarioSizingStaged,
+            base_folder=base_folder,
+            esdl_file_name="heat_exchanger_with_costs.esdl",
+            esdl_parser=ESDLFileParser,
+        )
+        results = solution.extract_results()
+        name_to_id_map = solution.esdl_asset_name_to_id_map
+
+        hex_id = name_to_id_map["HeatExchange_39ed"]
+
+        # Check heat exchanger is sized
+        np.testing.assert_allclose(
+            max(results[f"{hex_id}.Secondary_heat"]), results[f"{hex_id}__max_size"]
+        )
+
+        # Check heat exchanger state attribute is changed from OPTIONAL
+        # to ENABLED after the optimization
+        energy_system = solution._ESDLMixin__energy_system_handler.energy_system
+        asset = solution._id_to_asset(energy_system, hex_id)
+        np.testing.assert_equal(esdl.AssetStateEnum.ENABLED, asset.state)
+
+        # Check heat exchanger capacity attribute is updated
+        # with max_size variable after the optimization
+        np.testing.assert_allclose(results[f"{hex_id}__max_size"], asset.capacity)
 
     def test_end_scenario_sizing_discounted(self):
         """
@@ -367,10 +425,10 @@ class TestEndScenarioSizing(TestCase):
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
         class EndScenarioSizingHeadLossStagedNLines(EndScenarioSizingHeadLossStaged):
-            def __init__(self, *args, **kwargs):
-                super().__init__(*args, **kwargs)
-
-                self.heat_network_settings["n_linearization_lines"] = 3
+            def update_heat_network_settings(self):
+                settings = super().update_heat_network_settings()
+                settings["n_linearization_lines"] = 3
+                return settings
 
         solution = run_end_scenario_sizing(
             EndScenarioSizingHeadLossStagedNLines,
@@ -474,8 +532,9 @@ class TestEndScenarioSizing(TestCase):
         Test 2: Check that the pipe classes generated by instantiating the same problem with
         # different esdl that does not have measures will actually use the original EDR
         # pipe classes. Then we are sure that (rest of the) EDR pipe classes have not been used
-        Test 3: If the costs that are used in the problem match the costs from the ESDL Measures
-
+        Test 3:
+            - If the costs that are used in the problem match the costs from the ESDL Measures
+            - Ensure the smallest available pipe class is as expected
         """
 
         import models.test_case_small_network_ates_buffer_optional_assets.src.run_ates as run_ates
@@ -540,16 +599,19 @@ class TestEndScenarioSizing(TestCase):
             True,
         )
 
-        # Test 3: If the costs that are used in the problem match the costs from the ESDL Measures
+        # Test 3:
+        # - If the costs that are used in the problem match the costs from the ESDL Measures
+        # - Ensure the smallest available pipe class is as expected
         # Optimized pipe class map of diameter
         optimized_pipe_classes_dia_map = {
             solution.get_optimized_pipe_class(pipe)
             .inner_diameter: solution.get_optimized_pipe_class(pipe)
             .name
-            for pipe in solution.hot_pipes
+            for pipe in [*solution.hot_pipes, *solution.unrelated_pipes]
         }
         # Assert that the same specific investment costs have been use between the measure and the
         # solution parameters
+        available_pipe_min_dn_mm = 150.0
         for heat_pipe in solution.energy_system_components.get("heat_pipe"):
             # Check only if the pipe exits. Cost of 0 means the asset has been removed as a result
             # of the sizing optimization
@@ -563,6 +625,30 @@ class TestEndScenarioSizing(TestCase):
                     optimized_pipe_classes_dia_map[optimized_diameter]
                 ]
                 np.testing.assert_allclose(cost_map_from_measures, investment_cost_specific)
+
+                # Check the smallest pipe class that is available
+                # Ensure the esdl specified pipe DN is small enough such that the testing below
+                # stays valid ovet time
+                np.testing.assert_equal(
+                    float(
+                        solution.esdl_assets[heat_pipe]
+                        .attributes["diameter"]
+                        .name.replace("DN", "")
+                    )
+                    < 800.0,
+                    True,
+                )
+                smallest_pipe_dn_found = False
+                for pipe_class in solution._heat_pipe_topo_pipe_class_map[heat_pipe]:
+                    if pipe_class.name != "None":
+                        pipe_dn = float(pipe_class.name.replace("DN", ""))
+                        np.testing.assert_equal(
+                            pipe_dn >= available_pipe_min_dn_mm,
+                            True,
+                        )
+                        if not smallest_pipe_dn_found and pipe_dn == available_pipe_min_dn_mm:
+                            smallest_pipe_dn_found = True
+                np.testing.assert_equal(smallest_pipe_dn_found, True)
 
     def test_end_scenario_sizing_pipe_catalog_with_templates(self):
         """
@@ -655,52 +741,170 @@ class TestEndScenarioSizing(TestCase):
                 ]
                 np.testing.assert_allclose(cost_map_from_measures, investment_cost_specific)
 
-    def calculate_heat_demand_costs_end_scenario_sizing(self):
-        excluded_costs_in_obj = 0.0  # Fixed costs excluded in the optim objective function
-        years = self.solution.parameters(0)["number_of_years"]
-        for asset in [*self.solution.energy_system_components.get("heat_demand", [])]:
-            technical_lifetime = self.solution.parameters(0)[f"{asset}.technical_life"]
-            factor = years / technical_lifetime
-            if factor < 1.0:
-                factor = 1.0
-            if asset in [*self.solution.energy_system_components.get("heat_demand", [])]:
-                excluded_costs_in_obj += (
-                    self.results[f"{self.solution._asset_installation_cost_map[asset]}"] * factor
-                )
-        return excluded_costs_in_obj
+    def test_end_scenario_sizing_pipe_measuregroup(self):
+        """
+        Checks that the problem uses different pipe costs when a 2 different pipe catalogs
+        (Cheap and expensive) are provided along with the ESDL where 2 heat sources provide
+        heat. The Cheaps pipe costs have been assigned to all pipes expect for the pipes
+        connected to a heat source that is cheaper to use. This more expensive heat source is
+        connected to pipes (not related) that are cheaper, and due to these cheaper pipes this
+        more expensive heat source is being used more than the cheaper heat source.
 
-    def calculate_objective_value_end_scenario_sizing_all_optional(self, solution):
-        # If heating demand asset's state is enabled, then exclude the costs since it is not
-        # part of the TCO calculation. This is because we do not size heating demand assets in
-        # the optimization
+        Checks:
+        - That the _esdl_measures and _esdl_measure_group_info consist out of the required items
+        - The cost coefficients used in the results for all pipes (related and non-related)
+        - The costs in the available pipes classes
+        - That the operational more expensive heat producer is used
+        """
+        # TODO: the folder placement of this (and other in this file) pipe catalogue tests does
+        # not make sense. Need to move these cases to a new folder maybe?
+        import models.test_case_small_network_ates_buffer_optional_assets.src.run_ates as run_ates
+
+        base_folder = Path(run_ates.__file__).resolve().parent.parent
+
+        solution = run_end_scenario_sizing(
+            EndScenarioSizing,
+            base_folder=base_folder,
+            esdl_file_name="test_case_small_network_all_optional_pipe_catalog_MeasureGroup.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="Warmte_test.csv",
+            error_type_check=NetworkErrors.NO_POTENTIAL_ERRORS_CHECK,
+        )
+
         results = solution.extract_results()
-        obj = 0.0
-        years = solution.parameters(0)["number_of_years"]
-        for asset in [
-            *solution.energy_system_components.get("heat_source", []),
-            *solution.energy_system_components.get("ates", []),
-            *solution.energy_system_components.get("heat_buffer", []),
-            *solution.energy_system_components.get("heat_demand", []),
-            *solution.energy_system_components.get("heat_exchanger", []),
-            *solution.energy_system_components.get("heat_pump", []),
-            *solution.energy_system_components.get("heat_pipe", []),
-        ]:
-            asset_id = solution.esdl_asset_name_to_id_map[asset]
-            asset_state = solution.esdl_assets[asset_id].attributes["state"]
-            asset_type = solution.esdl_assets[asset_id].asset_type
-            if not (
-                (asset_type == "HeatingDemand") and (asset_state == esdl.AssetStateEnum.ENABLED)
-            ):
-                technical_lifetime = solution.parameters(0)[f"{asset}.technical_life"]
-                factor = years / technical_lifetime
-                if factor < 1.0:
-                    factor = 1.0
-                obj += results[f"{solution._asset_fixed_operational_cost_map[asset]}"] * years
-                obj += results[f"{solution._asset_variable_operational_cost_map[asset]}"] * years
-                obj += results[f"{solution._asset_investment_cost_map[asset]}"] * factor
-                obj += results[f"{solution._asset_installation_cost_map[asset]}"] * factor
+        parameters = solution.parameters(0)
+        tol_value = 1.0e-6
 
-        return obj
+        # -------------------------------------------------------------------------------------
+        # Check that the _esdl_measures and _esdl_measure_group_info consists out of:
+        # 2 x Measuregroup (Cheap and Expensive pipe catalogues)
+        # Each Measuregroup consist out of 23 x measure -> 1 pipe catalogue
+        # Check the costs in _esdl_measures
+        np.testing.assert_equal(len(solution._esdl_measures), 46)
+        np.testing.assert_equal(len(solution._esdl_measure_group_info), 2)
+        all_pipe_measures_different_groups = solution.filter_asset_measures(
+            solution._esdl_measures,
+            "Pipe",
+        )
+        for group_id in solution._esdl_measure_group_info:
+            np.testing.assert_equal(
+                len(solution._esdl_measure_group_info[group_id]["containt_measure_ids"]),
+                23,
+            )
+
+            if solution._esdl_measure_group_info[group_id]["name"] == "Cheap":
+                for measure_id in solution._esdl_measure_group_info[group_id][
+                    "containt_measure_ids"
+                ]:
+                    expected_cost = float(
+                        all_pipe_measures_different_groups[measure_id].diameter.name.replace(
+                            "DN", ""
+                        )
+                    )
+                    np.testing.assert_almost_equal(
+                        all_pipe_measures_different_groups[
+                            measure_id
+                        ].costInformation.investmentCosts.value,
+                        expected_cost,
+                    )
+            elif solution._esdl_measure_group_info[group_id]["name"] == "Expensive":
+                for measure_id in solution._esdl_measure_group_info[group_id][
+                    "containt_measure_ids"
+                ]:
+                    expected_cost = (
+                        float(
+                            all_pipe_measures_different_groups[measure_id].diameter.name.replace(
+                                "DN", ""
+                            )
+                        )
+                        * 10.0
+                    )
+                    np.testing.assert_almost_equal(
+                        expected_cost,
+                        all_pipe_measures_different_groups[
+                            measure_id
+                        ].costInformation.investmentCosts.value,
+                    )
+            else:
+                exit("Something went wrong with the number of runs")
+
+        # -------------------------------------------------------------------------------------
+        # Check the cost coefficients used in the results for all pipes
+        # (related and non-related)
+        # Check the costs in the available pipes classes
+        expensive_pipe_ids = [
+            solution.esdl_asset_name_to_id_map["Pipe_f6e5"],
+            solution.esdl_asset_name_to_id_map["Pipe_f6e5_ret"],
+        ]
+        for pipe_id in solution.energy_system_components.get("heat_pipe", []):
+            # The expected investment cost was setup to be linked to the pipe diameter for ease of
+            # use
+            expected_inv_coef = parameters[f"{pipe_id}.diameter"] * 1000.0
+            is_related_len = 1
+
+            # Check the pipes in the results
+            if pipe_id in expensive_pipe_ids:
+                expected_inv_coef = parameters[f"{pipe_id}.diameter"] * 1000.0 * 10.0
+                is_related_len = 0
+
+            np.testing.assert_equal(
+                len(solution._esdl_assets[pipe_id].attributes.get("related", False)),
+                is_related_len,
+            )
+            np.testing.assert_array_less(
+                results[f"{pipe_id}__investment_cost"] / parameters[f"{pipe_id}.length"],
+                expected_inv_coef,
+            )
+
+            # Check the available pipe classes
+            for avail_pipe_class in solution._override_pipe_classes[pipe_id]:
+                if avail_pipe_class.name != "None":
+                    multiplier = 1.0
+                    if pipe_id in expensive_pipe_ids:
+                        multiplier *= 10.0
+                    np.testing.assert_almost_equal(
+                        avail_pipe_class.investment_costs,
+                        float(avail_pipe_class.name.replace("DN", "")) * multiplier,
+                    )
+        # -------------------------------------------------------------------------------------
+        # Check that the operational more expensive heat producer is used due to it being
+        # connect to the cheaper pipes
+        # Expensive source connected to cheap pipes
+        expensive_heat_source_id = solution.esdl_asset_name_to_id_map["HeatProducer_1"]
+        expensive_heat_source_costs = solution._esdl_assets[expensive_heat_source_id].attributes[
+            "costInformation"
+        ]
+        # Cheap source connected to expensive pipes that are not related
+        cheap_heat_source_id = solution.esdl_asset_name_to_id_map["HeatProducer_2"]
+        cheap_heat_source_costs = solution._esdl_assets[cheap_heat_source_id].attributes[
+            "costInformation"
+        ]
+        np.testing.assert_allclose(
+            expensive_heat_source_costs.investmentCosts.value,
+            cheap_heat_source_costs.investmentCosts.value,
+        )
+        np.testing.assert_allclose(
+            expensive_heat_source_costs.installationCosts.value,
+            cheap_heat_source_costs.installationCosts.value,
+        )
+        np.testing.assert_array_less(
+            cheap_heat_source_costs.variableOperationalCosts.value,
+            expensive_heat_source_costs.variableOperationalCosts.value,
+        )
+        np.testing.assert_array_less(
+            expensive_heat_source_costs.variableOperationalCosts.value
+            / cheap_heat_source_costs.variableOperationalCosts.value,
+            2.5 + tol_value,
+        )
+        np.testing.assert_allclose(
+            results[f"{expensive_heat_source_id}__max_size"],
+            10.0e6,
+        )
+        np.testing.assert_array_less(
+            results[f"{cheap_heat_source_id}__max_size"],
+            7.0e6,
+        )
 
 
 if __name__ == "__main__":
@@ -708,12 +912,15 @@ if __name__ == "__main__":
 
     start_time = time.time()
     a = TestEndScenarioSizing()
-    a.setUpClass()
-    a.test_end_scenario_sizing()
-    a.test_end_scenario_sizing_staged()
-    a.test_end_scenario_sizing_discounted()
-    a.test_end_scenario_sizing_head_loss()
-    a.test_end_scenario_sizing_pipe_catalog_lower_pipe_dn()
-    a.test_end_scenario_sizing_pipe_catalog()
-    a.test_end_scenario_sizing_pipe_catalog_with_templates()
+    # a.setUpClass()
+    # a.test_end_scenario_sizing()
+    # a.test_end_scenario_sizing_staged()
+    # a.test_end_scenario_sizing_heat_demand_not_matched()
+    # a.test_heat_exchanger_sizing()
+    # a.test_end_scenario_sizing_discounted()
+    # a.test_end_scenario_sizing_head_loss()
+    # a.test_end_scenario_sizing_pipe_catalog_lower_pipe_dn()
+    # a.test_end_scenario_sizing_pipe_catalog()
+    # a.test_end_scenario_sizing_pipe_catalog_with_templates()
+    a.test_end_scenario_sizing_pipe_measuregroup()
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

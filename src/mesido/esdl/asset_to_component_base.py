@@ -352,6 +352,7 @@ class _AssetToComponentBase:
         "GasDemand": "gas_demand",
         "GasHeater": "heat_source",
         "GasStorage": "gas_tank_storage",
+        "GenericProducer": "heat_source",
         "GeothermalSource": "heat_source",
         "HeatExchange": "heat_exchanger",
         "HeatingDemand": "heat_demand",
@@ -900,6 +901,8 @@ class _AssetToComponentBase:
             or asset.asset_type == "Electrolyzer"
             or asset.asset_type == "ElectricBoiler"
             or asset.asset_type == "HeatPump"
+            or asset.asset_type == "GeothermalSource"
+            or asset.asset_type == "HeatStorage"
         ):
             for port in asset.in_ports:
                 if isinstance(port.carrier, esdl.ElectricityCommodity):
@@ -1141,10 +1144,16 @@ class _AssetToComponentBase:
                 if isinstance(p.carrier, esdl.HeatCommodity):
                     out_port = None
                     for p2 in asset.out_ports:
-                        if p2.carrier.name.replace("_ret", "") == p.carrier.name.replace(
-                            "_ret", ""
-                        ):
+                        if p2.name.lower().replace("out", "in") == p.name.lower():
                             out_port = p2
+                    if not out_port:
+                        logger.error(
+                            f"Asset {asset.name} (id: {asset.id}) contains an inport "
+                            f"with an HeatCommodity carrier, however there does not "
+                            f"exist an outport with the same name where 'In' is replaced "
+                            f"by 'Out'."
+                        )
+                        exit(1)
                     try:
                         connected_port = p.connectedTo[0]
                         q_nominal = self._port_to_q_nominal[connected_port]
@@ -1260,7 +1269,7 @@ class _AssetToComponentBase:
             # these are the pipes, nodes, valves, pumps
             modifiers = {
                 "temperature": in_carrier["temperature"],
-                "carrier_id": in_carrier["id_number_mapping"],
+                "carrier_id": in_carrier["id"],
             }
         else:
             # These are the sources, storages and consumers
@@ -1275,14 +1284,14 @@ class _AssetToComponentBase:
                 else out_carrier["temperature"]
             )
             temperature_supply_id = (
-                in_carrier["id_number_mapping"]
+                in_carrier["id"]
                 if in_carrier["temperature"] > out_carrier["temperature"]
-                else out_carrier["id_number_mapping"]
+                else out_carrier["id"]
             )
             temperature_return_id = (
-                in_carrier["id_number_mapping"]
+                in_carrier["id"]
                 if in_carrier["temperature"] < out_carrier["temperature"]
-                else out_carrier["id_number_mapping"]
+                else out_carrier["id"]
             )
 
             modifiers = {
@@ -1317,20 +1326,22 @@ class _AssetToComponentBase:
             for p in asset.in_ports:
                 if isinstance(p.carrier, esdl.HeatCommodity):
                     carrier = asset.global_properties["carriers"][p.carrier.id]
+                    carrier_id = carrier["id"]
                     if self.secondary_port_name_convention in p.name.lower():
-                        sec_return_temperature_id = carrier["id_number_mapping"]
+                        sec_return_temperature_id = carrier_id
                         sec_return_temperature = carrier["temperature"]
                     else:
                         prim_supply_temperature = carrier["temperature"]
-                        prim_supply_temperature_id = carrier["id_number_mapping"]
+                        prim_supply_temperature_id = carrier_id
             for p in asset.out_ports:
                 if isinstance(p.carrier, esdl.HeatCommodity):
                     carrier = asset.global_properties["carriers"][p.carrier.id]
+                    carrier_id = carrier["id"]
                     if self.primary_port_name_convention in p.name.lower():
-                        prim_return_temperature_id = carrier["id_number_mapping"]
+                        prim_return_temperature_id = carrier_id
                         prim_return_temperature = carrier["temperature"]
                     else:
-                        sec_supply_temperature_id = carrier["id_number_mapping"]
+                        sec_supply_temperature_id = carrier_id
                         sec_supply_temperature = carrier["temperature"]
             if not prim_return_temperature or not sec_return_temperature:
                 raise RuntimeError(
