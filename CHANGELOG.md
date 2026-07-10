@@ -1,4 +1,15 @@
-# [Unreleased-main] - 2026-06-08
+# [Unreleased-main] - 2026-07-09
+
+## Added
+- xxx
+
+## Changed
+- Code generalization in asset sizing mixin
+
+## Fixed
+- Bug: Only update the aggregation count for an ATES and a GeothermalSource in DTK post processing
+
+# [0.1.20] - 2026-06-15
 
 ## Added
 - xxx
@@ -8,6 +19,7 @@
 
 ## Fixed
 - Removing the use of the electricity price profile for heat assets that have an ElectricityPort connecting to an electricity network.
+- Account for head_loss setting in post processing 
 
 
 # [0.1.19] - 2026-06-08

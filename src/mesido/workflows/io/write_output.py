@@ -1040,9 +1040,9 @@ class ScenarioOutput:
 
                 if asset_id in [
                     *self.energy_system_components.get("ates", []),
+                    *self.energy_system_components.get("geothermal", []),
                 ]:
-                    asset.maxChargeRate = results[f"{asset_id}__max_size"][0]
-                    asset.maxDischargeRate = results[f"{asset_id}__max_size"][0]
+                    asset.aggregationCount = int(results[f"{asset_id}_aggregation_count"])
                 elif asset_id in self.energy_system_components.get("heat_buffer", []):
                     asset.capacity = max_size
                     asset.volume = max_size / (
@@ -1275,12 +1275,13 @@ class ScenarioOutput:
                         post_processed["PostProc.Velocity"] = pipe_velocity(
                             asset_id, commodity, results, parameters
                         )
-                        variables_one_hydraulic_system.append("PostProc.Pressure")
-                        # TODO: seems unnecessary, pipes always only have 1 hydraulic system
-                        variables_two_hydraulic_system.append("PostProc.Pressure")
-                        post_processed["PostProc.Pressure"] = pipe_pressure(
-                            asset_id, commodity, results, parameters
-                        )  # Pa
+                        if self.heat_network_settings["minimize_head_losses"]:
+                            variables_one_hydraulic_system.append("PostProc.Pressure")
+                            # TODO: seems unnecessary, pipes always only have 1 hydraulic system
+                            variables_two_hydraulic_system.append("PostProc.Pressure")
+                            post_processed["PostProc.Pressure"] = pipe_pressure(
+                                asset_id, commodity, results, parameters
+                            )  # Pa
 
                     # Depending on the port set, different carriers are assigned
                     if port:
