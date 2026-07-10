@@ -487,7 +487,7 @@ class ScenarioOutput:
         if not discounted_annualized_cost:
             kpis_top_level.kpi.append(
                 esdl.DistributionKPI(
-                    name="High level cost breakdown [EUR] (yearly averaged)",
+                    name="High level cost breakdown (yearly averaged)",
                     distribution=esdl.StringLabelDistribution(
                         stringItem=[
                             esdl.StringItem(
@@ -513,7 +513,7 @@ class ScenarioOutput:
         if not optimizer_sim:
             kpis_top_level.kpi.append(
                 esdl.DistributionKPI(
-                    name=f"{cost_type_prefix}High level cost breakdown [EUR]"
+                    name=f"{cost_type_prefix}High level cost breakdown"
                     f" ({optim_time_horizon} year period)",
                     distribution=esdl.StringLabelDistribution(
                         stringItem=[
@@ -540,7 +540,7 @@ class ScenarioOutput:
         if not discounted_annualized_cost:
             kpis_top_level.kpi.append(
                 esdl.DistributionKPI(
-                    name="Overall cost breakdown [EUR] (yearly averaged)",
+                    name="Overall cost breakdown (yearly averaged)",
                     distribution=esdl.StringLabelDistribution(
                         stringItem=[
                             esdl.StringItem(
@@ -566,7 +566,7 @@ class ScenarioOutput:
         if not optimizer_sim:
             kpis_top_level.kpi.append(
                 esdl.DistributionKPI(
-                    name=f"{cost_type_prefix}Overall cost breakdown [EUR] "
+                    name=f"{cost_type_prefix}Overall cost breakdown "
                     f"({optim_time_horizon} year period)",
                     distribution=esdl.StringLabelDistribution(
                         stringItem=[
@@ -594,8 +594,7 @@ class ScenarioOutput:
 
             kpis_top_level.kpi.append(
                 esdl.DistributionKPI(
-                    name=f"{cost_type_prefix}CAPEX breakdown [EUR] "
-                    f"({optim_time_horizon} year period)",
+                    name=f"{cost_type_prefix}CAPEX breakdown ({optim_time_horizon} year period)",
                     distribution=esdl.StringLabelDistribution(
                         stringItem=[
                             esdl.StringItem(label=key, value=value)
@@ -611,7 +610,7 @@ class ScenarioOutput:
         if not discounted_annualized_cost:
             kpis_top_level.kpi.append(
                 esdl.DistributionKPI(
-                    name="OPEX breakdown [EUR] (yearly averaged)",
+                    name="OPEX breakdown (yearly averaged)",
                     distribution=esdl.StringLabelDistribution(
                         stringItem=[
                             esdl.StringItem(label=key, value=value)
@@ -627,8 +626,7 @@ class ScenarioOutput:
         if not optimizer_sim:
             kpis_top_level.kpi.append(
                 esdl.DistributionKPI(
-                    name=f"{cost_type_prefix}OPEX breakdown [EUR] "
-                    f"({optim_time_horizon} year period)",
+                    name=f"{cost_type_prefix}OPEX breakdown ({optim_time_horizon} year period)",
                     distribution=esdl.StringLabelDistribution(
                         stringItem=[
                             esdl.StringItem(label=key, value=value)
@@ -640,13 +638,16 @@ class ScenarioOutput:
                     ),
                 )
             )
-
+        # TODO: discuss with esdl team to get a better way of assign id and name.
+        #  Currently we assign label=self.esdl_asset_id_to_name_map[key], this does
+        #  not cater for when duplicated name are used, but this update was needed
+        #  for usability (id name in label is not useable in the front end)
         kpis_top_level.kpi.append(
             esdl.DistributionKPI(
-                name="Energy production [Wh] (yearly averaged)",
+                name="Energy production (yearly averaged)",
                 distribution=esdl.StringLabelDistribution(
                     stringItem=[
-                        esdl.StringItem(label=key, value=value)
+                        esdl.StringItem(label=self.esdl_asset_id_to_name_map[key], value=value)
                         for key, value in heat_source_energy_wh.items()
                     ]
                 ),
@@ -859,7 +860,7 @@ class ScenarioOutput:
                     kpis.kpi.append(
                         esdl.DoubleKPI(
                             value=round(estimated_energy_from_local_source_perc[subarea.name], 1),
-                            name="Estimated energy from local source(s) [%]",
+                            name="Estimated energy from local source(s)",
                             quantityAndUnit=esdl.esdl.QuantityAndUnitType(
                                 unit=esdl.UnitEnum.PERCENT,
                                 multiplier=esdl.MultiplierEnum.NONE,
@@ -871,7 +872,7 @@ class ScenarioOutput:
                             value=round(
                                 estimated_energy_from_regional_source_perc[subarea.name], 1
                             ),
-                            name="Estimated energy from regional source(s) [%]",
+                            name="Estimated energy from regional source(s)",
                             quantityAndUnit=esdl.esdl.QuantityAndUnitType(
                                 unit=esdl.UnitEnum.PERCENT,
                                 multiplier=esdl.MultiplierEnum.NONE,
@@ -881,7 +882,7 @@ class ScenarioOutput:
                     kpis.kpi.append(
                         esdl.DoubleKPI(
                             value=round(total_energy_consumed_locally_wh[subarea.name] / 1.0e9, 1),
-                            name="Total energy consumed [GWh]",
+                            name="Total energy consumed",
                             quantityAndUnit=esdl.esdl.QuantityAndUnitType(
                                 physicalQuantity=esdl.PhysicalQuantityEnum.ENERGY,
                                 unit=esdl.UnitEnum.WATTHOUR,
@@ -895,7 +896,7 @@ class ScenarioOutput:
 
             # Create plots in the dashboard
             # Top level KPIs: Cost breakdown in a polygon area (for all assest grouped together)
-            kpi_name = f"{cost_type_prefix}{subarea.name}: Asset cost breakdown [EUR]"
+            kpi_name = f"{cost_type_prefix}{subarea.name}: Asset cost breakdown"
             if (area_installation_cost > 0.0 or area_investment_cost > 0.0) and (
                 area_variable_opex_cost > 0.0 or area_fixed_opex_cost > 0.0
             ):
