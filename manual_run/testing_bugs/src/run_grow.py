@@ -11,8 +11,7 @@ if __name__ == "__main__":
     base_folder = Path(__file__).resolve().parent.parent
 
     kwargs = {
-        "use_esdl_ranged_constraint": True,  # default value in the code is set to False
-        "esdl_output_profiles_type": ESDLOutputProfilesType.POSTGRESQL,  # 'None' (default) means no profiles to DB
+        "esdl_output_profiles_type": ESDLOutputProfilesType.INFLUXDB,  # 'None' (default) means no profiles to DB
         "database_connections": [
             {
                 "access_type": DBAccessType.READ,  # or DBAccessType.WRITE or DBAccessType.READ_WRITE
@@ -24,43 +23,23 @@ if __name__ == "__main__":
                 "verify_ssl": False,
             },
             {
-                "access_type": DBAccessType.READ,
+                "access_type": DBAccessType.READ_WRITE,
                 "host": "localhost",
                 "port": 8086,
-                "username": None,
-                "password": None,
-                "ssl": False,
-                "verify_ssl": False,
-            },
-            {
-                "access_type": DBAccessType.READ,
-                "host": "omotes_influxdb",
-                "port": 8096,
                 "username": "root",
                 "password": "9012",
                 "ssl": False,
                 "verify_ssl": False,
             },
-            {
-                "access_type": DBAccessType.READ_WRITE,
-                "host": "postgres",
-                "port": 6432,
-                "username": "root",
-                "password": "1234",
-            },
         ],
     }
 
-    esdl_input_file = "Delft_T.esdl" 
     solution = run_end_scenario_sizing(
         EndScenarioSizingStaged,
         base_folder=base_folder,
-        esdl_file_name=esdl_input_file,
+        esdl_file_name="Base Netwerk Delft.esdl",
         esdl_parser=ESDLFileParser,
-        **kwargs,  # Example of usage if needed/used
+        # **kwargs,  # Example of usage if needed/used
     )
-
-    with open(base_folder / "model" / esdl_input_file.replace(".esdl", "_GrowOptimized.esdl"), "w", encoding="utf-8") as f:
-        f.write(solution.optimized_esdl_string)
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

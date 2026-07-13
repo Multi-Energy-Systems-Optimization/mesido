@@ -265,6 +265,7 @@ class ESDLProfileReader(BaseProfileReader):
 
     # Python 3.10 compatible
     SupportedProfilesType = Union.__getitem__(tuple(supported_profiles))
+    # Do not delete code below. To be used when min Python ver >3.10
     # SupportedProfilesType = Union[*supported_profiles]
 
     def __init__(
@@ -460,7 +461,7 @@ class ESDLProfileReader(BaseProfileReader):
             )
             potential_error_to_error(NetworkErrors.HEAT_NETWORK_ERRORS)
 
-        if not profile_raw_data:  # if time_series_data.profile_data_list == []:
+        if not profile_raw_data:
             container = profile.eContainer()
             asset = container.energyasset
             get_potential_errors().add_potential_issue(

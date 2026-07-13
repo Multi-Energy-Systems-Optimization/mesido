@@ -39,7 +39,7 @@ from rtctools.optimization.timeseries import Timeseries
 
 logger = logging.getLogger("mesido")
 
-TIME_STEP_SECONDS_TIMESERIESPROFILE = 3600
+OUTPUT_TIMESERIESPROFILE_TIME_STEP_SECONDS = 3600
 
 
 class ScenarioOutput:
@@ -72,7 +72,7 @@ class ScenarioOutput:
                 )
                 sys.exit(1)
 
-            if self.esdl_output_profiles_type is not None:
+            if self.esdl_output_profiles_type:
                 database_connection_write = self._database_credentials.get(DBAccessType.WRITE, [])
 
                 if len(database_connection_write) == 0:
@@ -148,16 +148,30 @@ class ScenarioOutput:
         return self.__optimized_energy_system_handler
 
     def _resample_profile_data_to_fixed_timestep(self, profile_data):
+        """
+        Resample the profile data to a fixed timestep defined by
+        OUTPUT_TIMESERIESPROFILE_TIME_STEP_SECONDS using a staircase (zero-order hold) method.
+
+        Parameters
+        ----------
+        profile_data : list of tuples
+            Each tuple contains a datetime and a corresponding value.
+
+        Returns
+        -------
+        list
+            Resampled values at the fixed timestep.
+        """
         if not profile_data:
             return []
 
         sorted_profile_data = sorted(profile_data, key=lambda row: row[0])
-        step = datetime.timedelta(seconds=TIME_STEP_SECONDS_TIMESERIESPROFILE)
+        step = datetime.timedelta(seconds=OUTPUT_TIMESERIESPROFILE_TIME_STEP_SECONDS)
 
         start_datetime = sorted_profile_data[0][0]
         end_datetime = sorted_profile_data[-1][0]
         duration_seconds = (end_datetime - start_datetime).total_seconds()
-        n_steps = int(np.ceil(duration_seconds / TIME_STEP_SECONDS_TIMESERIESPROFILE)) + 1
+        n_steps = int(np.ceil(duration_seconds / OUTPUT_TIMESERIESPROFILE_TIME_STEP_SECONDS)) + 1
 
         values = []
         row_index = 0
@@ -1198,7 +1212,7 @@ class ScenarioOutput:
         #   - Fields: profile value for the specific variable
         #   - Tags used as filters: simulationRun, assetClass, assetName, assetId, capability
 
-        if self.esdl_output_profiles_type is not None:
+        if self.esdl_output_profiles_type:
             logger.info(f"Writing asset results to profile type '{self.esdl_output_profiles_type}'")
             results = self.extract_results()
 
@@ -1533,7 +1547,7 @@ class ScenarioOutput:
                                             es=energy_system,
                                             name=variable_name,
                                             start_date=start_date_time,
-                                            timestep_in_seconds=TIME_STEP_SECONDS_TIMESERIESPROFILE,
+                                            timestep_in_seconds=OUTPUT_TIMESERIESPROFILE_TIME_STEP_SECONDS,
                                             values=[],  # fill later
                                             profile_type=esdl.ProfileTypeEnum.OUTPUT,
                                             quantity_and_unit_type=quantity_and_unit,
@@ -1723,7 +1737,7 @@ class ScenarioOutput:
 
         # close ESDL output profile database connections
         close_db_connections()
-        
+
         # ------------------------------------------------------------------------------------------
         # Save esdl file
         # Edwin_marker_esdl_string - line 1224
