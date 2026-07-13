@@ -1545,7 +1545,9 @@ class ScenarioOutput:
                                             es=energy_system,
                                             name=variable_name,
                                             start_date=start_date_time,
-                                            timestep_in_seconds=OUTPUT_TIMESERIESPROFILE_TIME_STEP_SECONDS,
+                                            timestep_in_seconds=(
+                                                OUTPUT_TIMESERIESPROFILE_TIME_STEP_SECONDS
+                                            ),
                                             values=[],  # fill later
                                             profile_type=esdl.ProfileTypeEnum.OUTPUT,
                                             quantity_and_unit_type=quantity_and_unit,
