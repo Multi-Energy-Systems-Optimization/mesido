@@ -32,7 +32,7 @@ class HeatCoolingGrowWorkflow(TestCase):
             cost_calculation_test,
             demand_matching_test,
             energy_conservation_test,
-            # heat_to_discharge_test,
+            heat_to_discharge_test,
         )
 
         base_folder = Path(__file__).resolve().parent.parent
@@ -52,9 +52,7 @@ class HeatCoolingGrowWorkflow(TestCase):
 
         demand_matching_test(solution, results)
         energy_conservation_test(solution, results)
-        # TODO: Fix this test, it is not working properly yet. Because Theoretical HeatOut
-        #  of "Pipe8_ret" and "Pipe9_ret" are smallar tha nrealized value in some instances
-        # heat_to_discharge_test(solution, results)
+        heat_to_discharge_test(solution, results)
 
         name_to_id_map = solution.esdl_asset_name_to_id_map
 

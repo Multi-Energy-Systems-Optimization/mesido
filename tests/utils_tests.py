@@ -787,7 +787,7 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
             pass
         elif costs_esdl_asset is None:
             if asset in assets_may_have_electricity_price_profile:
-                pass  # These assets may have only e-rpice, but no attributes in esdl
+                pass  # Assets include e-price in var-opex, but no esdl cost attributes are defined
             elif asset not in assets_may_have_electricity_price_profile:
                 continue
 

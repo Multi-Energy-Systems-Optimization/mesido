@@ -1,7 +1,7 @@
-# [Unreleased-main] - 2026-07-09
+# [Unreleased-main] - 2026-07-13
 
 ## Added
-- xxx
+- Import (a subclass of electricity source) is supported in Mesido.
 
 ## Changed
 - Code generalization in asset sizing mixin

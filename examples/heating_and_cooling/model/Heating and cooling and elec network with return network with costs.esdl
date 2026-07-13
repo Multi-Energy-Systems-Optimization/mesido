@@ -3,7 +3,7 @@
   <energySystemInformation xsi:type="esdl:EnergySystemInformation" id="bf7d18e8-40c0-4234-af50-a0c72991b8fd">
     <carriers xsi:type="esdl:Carriers" id="222f232f-3510-4270-8e2c-9e713d69f5cc">
       <carrier xsi:type="esdl:HeatCommodity" id="001521ea-9f10-4745-ac3b-6e0c767e16b2" supplyTemperature="22.0" name="LT"/>
-      <carrier xsi:type="esdl:HeatCommodity" id="001521ea-9f10-4745-ac3b-6e0c767e16b2_ret" returnTemperature="8.0" name="LT_ret"/>
+      <carrier xsi:type="esdl:HeatCommodity" id="001521ea-9f10-4745-ac3b-6e0c767e16b2_ret" returnTemperature="11.0" name="LT_ret"/>
       <carrier xsi:type="esdl:ElectricityCommodity" id="b81ab0d3-6d2b-473f-9598-0e7b8760749f" name="Elect" voltage="230.0"/>
     </carriers>
   </energySystemInformation>
