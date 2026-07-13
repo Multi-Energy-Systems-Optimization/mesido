@@ -875,7 +875,7 @@ def main(runinfo_path, log_level):
     logger.info("Run Scenario Sizing")
 
     kwargs = {
-        "esdl_profiles_output_type": None,
+        "esdl_output_profiles_type": None,
         "database_connections": [
             {
                 "access_type": DBAccessType.WRITE,

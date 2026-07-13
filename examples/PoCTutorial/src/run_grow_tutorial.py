@@ -13,8 +13,8 @@ if __name__ == "__main__":
     import time
 
     kwargs = {
-        # '"esdl_profiles_output_type"=None' (default) means no profiles to DB
-        "esdl_profiles_output_type": ESDLOutputProfilesType.INFLUXDB,
+        # '"esdl_output_profiles_type"=None' (default) means no profiles to DB
+        "esdl_output_profiles_type": ESDLOutputProfilesType.INFLUXDB,
         "database_connections": [
             {
                 "access_type": DBAccessType.WRITE,  # DBAccessType.READ or DBAccessType.READ_WRITE

@@ -12,7 +12,7 @@ if __name__ == "__main__":
 
     kwargs = {
         "use_esdl_ranged_constraint": True,  # default value in the code is set to False
-        "esdl_profiles_output_type": ESDLOutputProfilesType.POSTGRESQL,  # 'None' (default) means no profiles to DB
+        "esdl_output_profiles_type": ESDLOutputProfilesType.POSTGRESQL,  # 'None' (default) means no profiles to DB
         "database_connections": [
             {
                 "access_type": DBAccessType.READ,  # or DBAccessType.WRITE or DBAccessType.READ_WRITE

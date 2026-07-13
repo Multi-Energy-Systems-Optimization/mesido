@@ -52,7 +52,7 @@ class TestHEX(TestCase):
 
         # Do not delete kwargs: this is used to manualy check writing out of profile data
         kwargs = {
-            "esdl_profiles_output_type": None,
+            "esdl_output_profiles_type": None,
             "database_connections": [
                 {
                     "access_type": DBAccessType.WRITE,
@@ -355,7 +355,7 @@ class TestHP(TestCase):
 
         # Do not delete kwargs: this is used to manualy check writing out of profile data
         kwargs = {
-            "esdl_profiles_output_type": None,
+            "esdl_output_profiles_type": None,
             "database_connections": [
                 {
                     "access_type": DBAccessType.WRITE,

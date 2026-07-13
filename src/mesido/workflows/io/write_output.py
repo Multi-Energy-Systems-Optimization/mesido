@@ -14,6 +14,7 @@ import esdl
 from esdl.profiles.datatableprofilemanager import DataTableProfileManager
 from esdl.profiles.profile_utils import (
     append_values_to_date_time_profile,
+    close_db_connections,
     create_data_table_profile,
     create_date_time_profile,
     create_time_series_profile,
@@ -53,25 +54,25 @@ class ScenarioOutput:
         # Default settings
         self.username = None
         self.password = None
-        self.esdl_profiles_output_type = kwargs.get("esdl_profiles_output_type", None)
-        self.write_esdl_profiles_to_db = self.esdl_profiles_output_type in [
+        self.esdl_output_profiles_type = kwargs.get("esdl_output_profiles_type", None)
+        self.write_esdl_profiles_to_db = self.esdl_output_profiles_type in [
             ESDLOutputProfilesType.POSTGRESQL,
             ESDLOutputProfilesType.INFLUXDB,
         ]
 
         base_error_string = "Missing influxdb setting for writing result profile data:"
         try:
-            if self.esdl_profiles_output_type is not None and not isinstance(
-                self.esdl_profiles_output_type, ESDLOutputProfilesType
+            if self.esdl_output_profiles_type is not None and not isinstance(
+                self.esdl_output_profiles_type, ESDLOutputProfilesType
             ):
                 logger.error(
-                    "Current setting of esdl_profiles_output_type is: "
-                    f"{self.esdl_profiles_output_type} and it should be None "
+                    "Current setting of esdl_output_profiles_type is: "
+                    f"{self.esdl_output_profiles_type} and it should be None "
                     "or a value of ESDLOutputProfilesType"
                 )
                 sys.exit(1)
 
-            if self.esdl_profiles_output_type is not None:
+            if self.esdl_output_profiles_type is not None:
                 database_connection_write = self._database_credentials.get(DBAccessType.WRITE, [])
 
                 if len(database_connection_write) == 0:
@@ -1197,8 +1198,8 @@ class ScenarioOutput:
         #   - Fields: profile value for the specific variable
         #   - Tags used as filters: simulationRun, assetClass, assetName, assetId, capability
 
-        if self.esdl_profiles_output_type is not None:
-            logger.info(f"Writing asset results to profile type '{self.esdl_profiles_output_type}'")
+        if self.esdl_output_profiles_type is not None:
+            logger.info(f"Writing asset results to profile type '{self.esdl_output_profiles_type}'")
             results = self.extract_results()
 
             capabilities = [
@@ -1500,7 +1501,7 @@ class ScenarioOutput:
                                     )
                                     if self.write_esdl_profiles_to_db:
                                         if (
-                                            self.esdl_profiles_output_type
+                                            self.esdl_output_profiles_type
                                             == ESDLOutputProfilesType.POSTGRESQL
                                         ):
                                             db_type = esdl.DatabaseTypeEnum.POSTGRESQL
@@ -1525,7 +1526,7 @@ class ScenarioOutput:
                                             DataTableProfileManager(esdl_profile)
                                         )
                                     elif (
-                                        self.esdl_profiles_output_type
+                                        self.esdl_output_profiles_type
                                         == ESDLOutputProfilesType.TIME_SERIES_PROFILE
                                     ):
                                         esdl_profile = create_time_series_profile(
@@ -1603,7 +1604,7 @@ class ScenarioOutput:
                                     profile_data
                                 )
                             elif (
-                                self.esdl_profiles_output_type
+                                self.esdl_output_profiles_type
                                 == ESDLOutputProfilesType.TIME_SERIES_PROFILE
                             ):
                                 asset_esdl_output_profiles[variable_name].values.extend(
@@ -1719,6 +1720,10 @@ class ScenarioOutput:
             #     dicts,
             # )
             # test = 0.0
+
+        # close ESDL output profile database connections
+        close_db_connections()
+        
         # ------------------------------------------------------------------------------------------
         # Save esdl file
         # Edwin_marker_esdl_string - line 1224
