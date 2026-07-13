@@ -4,6 +4,7 @@ from abc import abstractmethod
 import casadi as ca
 
 from mesido.base_component_type_mixin import BaseComponentTypeMixin
+from mesido.base_problem_mixin import BaseProblemMixin
 from mesido.esdl.asset_to_component_base import AssetStateEnum
 
 import numpy as np
@@ -16,7 +17,9 @@ from rtctools.optimization.timeseries import Timeseries
 logger = logging.getLogger("mesido")
 
 
-class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
+class FinancialMixin(
+    BaseProblemMixin, BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem
+):
     """
     The FinancialMixin is used to instantiate variables for the different cost components of the
     assets in the energy network and to set constraints to compute them based upon the usage and
@@ -95,6 +98,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         options = self.energy_system_options()
         parameters = self.parameters(0)
         bounds = self.bounds()
+        string_parameters = self.string_parameters(0)
 
         # Making the cost variables; fixed_operational_cost, variable_operational_cost,
         # installation_cost and investment_cost
@@ -114,17 +118,6 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 continue
             elif asset_name in [*self.energy_system_components.get("ates", [])]:
                 nominal_fixed_operational = self.variable_nominal(f"{asset_name}.Heat_ates")
-                nominal_fixed_operational = (
-                    nominal_fixed_operational
-                    if isinstance(nominal_fixed_operational, float)
-                    else max(nominal_fixed_operational.values)
-                )
-                nominal_variable_operational = nominal_fixed_operational
-                nominal_investment = nominal_fixed_operational
-            elif asset_name in [*self.energy_system_components.get("low_temperature_ates", [])]:
-                nominal_fixed_operational = self.variable_nominal(
-                    f"{asset_name}.Heat_low_temperature_ates"
-                )
                 nominal_fixed_operational = (
                     nominal_fixed_operational
                     if isinstance(nominal_fixed_operational, float)
@@ -420,13 +413,10 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             ]:
 
                 carrier_name = None
-                for _id, attr in self.get_electricity_carriers().items():
-                    if attr["id_number_mapping"] == parameters[f"{asset_name}.id_mapping_carrier"]:
-                        carrier_name = attr["name"]
-                for _id, attr in self.get_gas_carriers().items():
-                    if attr["id_number_mapping"] == parameters[f"{asset_name}.id_mapping_carrier"]:
-                        carrier_name = attr["name"]
-                if carrier_name is not None:
+                carrier_id_asset = string_parameters[f"{asset_name}.id_mapping_carrier"]
+                carrier = self.esdl_carriers.get(carrier_id_asset, None)
+                carrier_name = carrier["name"]
+                if f"{carrier_name}.price_profile" in self.io.get_timeseries_names():
                     asset_revenue_var = f"{asset_name}__revenue"
                     self._asset_revenue_map[asset_name] = asset_revenue_var
                     self.__asset_revenue_var[asset_revenue_var] = ca.MX.sym(asset_revenue_var)
@@ -449,7 +439,6 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             *self.energy_system_components.get("heat_demand", []),
             *self.energy_system_components.get("cold_demand", []),
             *self.energy_system_components.get("ates", []),
-            *self.energy_system_components.get("low_temperature_ates", []),
             *self.energy_system_components.get("heat_buffer", []),
             *self.energy_system_components.get("heat_pipe", []),
             *self.energy_system_components.get("heat_exchanger", []),
@@ -477,7 +466,6 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 *self.energy_system_components.get("cold_demand", []),
                 *self.energy_system_components.get("heat_pipe", []),
                 *self.energy_system_components.get("ates", []),
-                *self.energy_system_components.get("low_temperature_ates", []),
                 *self.energy_system_components.get("heat_buffer", []),
                 *self.energy_system_components.get("heat_exchanger", []),
                 *self.energy_system_components.get("heat_pump", []),
@@ -799,6 +787,31 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
     def __state_vector_scaled(self, variable, ensemble_member):
         return self._BaseProblemMixin__state_vector_scaled(variable, ensemble_member)
 
+    def __get_electricity_price_profile_or_zero(self):
+        """
+        Variable OPEX electricity costs currently support at most one electricity carrier.
+        Otherwise, there needs to be a link between  the electricity carrier and the asset which
+        is lots of extra effort for the user.
+        Returns the timeseries price profile for the electricity carrier or a zero array.
+        """
+        electricity_carriers = self.get_electricity_carriers()
+        assert len(electricity_carriers.keys()) <= 1
+
+        if len(electricity_carriers.keys()) == 0:
+            return np.zeros(len(self.times()))
+
+        price_profile_name = f"{list(electricity_carriers.values())[0]['name']}.price_profile"
+        if price_profile_name in self.io.get_timeseries_names():
+            price_profile_timeseries = self.get_timeseries(price_profile_name)
+            # The slicing is required if the timeseries wasn't adapted in the read
+            mask = (price_profile_timeseries.times >= self.times()[0]) & (
+                price_profile_timeseries.times <= self.times()[-1]
+            )
+            price_profile = price_profile_timeseries.values[mask]
+            return price_profile
+
+        return np.zeros(len(self.times()))
+
     def __investment_cost_constraints(self, ensemble_member):
         """
         This function adds constraints to set the investment cost variable. The investment cost
@@ -933,7 +946,6 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
         for asset in [
             *self.energy_system_components.get("ates", []),
-            *self.energy_system_components.get("low_temperature_ates", []),
             *self.energy_system_components.get("heat_buffer", []),
         ]:
             heat_charge = self.__state_vector_scaled(f"{asset}.Heat_flow_charging", ensemble_member)
@@ -950,30 +962,20 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             ]
             timesteps = np.diff(self.times()) / 3600.0
 
-            pump_power = self.__state_vector_scaled(f"{asset}.Pump_power", ensemble_member)
+            if parameters[f"{asset}.include_head_loss_variables"]:
+                pump_power = self.__state_vector_scaled(f"{asset}.Pump_power", ensemble_member)
+            else:
+                pump_power = np.zeros(len(self.times()))
             eff = parameters[f"{asset}.pump_efficiency"]
 
-            # We assume that only one electricity carrier is specified, to compute the cost with.
-            # Otherwise we need to link the electricity carrier somehow to the source and pump asset
-            # which is lots of extra effort for the user.
-            assert len(self.get_electricity_carriers().keys()) <= 1
-
-            if len(self.get_electricity_carriers().keys()) == 1:
-                try:
-                    price_profile = self.get_timeseries(
-                        f"{list(self.get_electricity_carriers().values())[0]['name']}.price_profile"
-                    )
-                except KeyError:
-                    price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
-            else:
-                price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
+            price_profile = self.__get_electricity_price_profile_or_zero()
 
             sum_ = ca.sum1(
                 variable_operational_cost_coefficient
                 * (heat_charge[1:] + heat_discharge[1:])
                 * timesteps
             )
-            sum_ += ca.sum1(price_profile.values[1:] * pump_power[1:] * timesteps / eff)
+            sum_ += ca.sum1(price_profile[1:] * pump_power[1:] * timesteps / eff)
 
             constraints.append(((variable_operational_cost - sum_) / nominal, 0.0, 0.0))
 
@@ -987,22 +989,15 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             )
             nominal = self.variable_nominal(variable_operational_cost_var)
 
-            pump_power = self.__state_vector_scaled(f"{asset}.Pump_power", ensemble_member)
+            if parameters[f"{asset}.include_head_loss_variables"]:
+                pump_power = self.__state_vector_scaled(f"{asset}.Pump_power", ensemble_member)
+            else:
+                pump_power = np.zeros(len(self.times()))
             eff = parameters[f"{asset}.pump_efficiency"]
 
-            # We assume that only one electricity carrier is specified, to compute the cost with.
-            # Otherwise we need to link the electricity carrier somehow to the source and pump asset
-            # which is lots of extra effort for the user.
-            assert len(self.get_electricity_carriers().keys()) <= 1
+            price_profile = self.__get_electricity_price_profile_or_zero()
 
-            if len(self.get_electricity_carriers().keys()) == 1:
-                price_profile = self.get_timeseries(
-                    f"{list(self.get_electricity_carriers().values())[0]['name']}.price_profile"
-                )
-            else:
-                price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
-
-            sum_ = ca.sum1(price_profile.values[1:] * pump_power[1:] * timesteps_hr / eff)
+            sum_ = ca.sum1(price_profile[1:] * pump_power[1:] * timesteps_hr / eff)
 
             constraints.append(((variable_operational_cost - sum_) / nominal, 0.0, 0.0))
 
@@ -1017,23 +1012,13 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 f"{s}.variable_operational_cost_coefficient"
             ]
 
-            pump_power = self.__state_vector_scaled(f"{s}.Pump_power", ensemble_member)
+            if parameters[f"{s}.include_head_loss_variables"]:
+                pump_power = self.__state_vector_scaled(f"{s}.Pump_power", ensemble_member)
+            else:
+                pump_power = np.zeros(len(self.times()))
             eff = parameters[f"{s}.pump_efficiency"]
 
-            # We assume that only one electricity carrier is specified, to compute the cost with.
-            # Otherwise we need to link the electricity carrier somehow to the source and pump asset
-            # which is lots of extra effort for the user.
-            assert len(self.get_electricity_carriers().keys()) <= 1
-
-            if len(self.get_electricity_carriers().keys()) == 1:
-                try:
-                    price_profile = self.get_timeseries(
-                        f"{list(self.get_electricity_carriers().values())[0]['name']}.price_profile"
-                    )
-                except KeyError:
-                    price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
-            else:
-                price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
+            price_profile = self.__get_electricity_price_profile_or_zero()
 
             nominator_vector = None
             denominator = 1.0
@@ -1066,7 +1051,23 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 ca.sum1(variable_operational_cost_coefficient * nominator_vector[1:] * timesteps_hr)
                 / denominator
             )
-            sum_ += ca.sum1(price_profile.values[1:] * pump_power[1:] * timesteps_hr / eff)
+            sum_ += ca.sum1(price_profile[1:] * pump_power[1:] * timesteps_hr / eff)
+
+            if (len(self.get_electricity_carriers().keys()) > 0) and s in [
+                *self.energy_system_components.get("heat_source_elec", []),
+                *self.energy_system_components.get("air_water_heat_pump", []),
+            ]:
+                # Electricity priceprofile calculations on heat produced should only be performed
+                # if there is no electricity port at the asset, e.g. the asset is not connected
+                # to an electricity network in the model.
+                sum_ += (
+                    ca.sum1(price_profile[1:] * nominator_vector[1:] * timesteps_hr) / denominator
+                )
+                if variable_operational_cost_coefficient > 0.0:
+                    logger.warning(
+                        f"Variable operational cost for {s} is derived from both the variable "
+                        "operational cost coefficient and the electricity carrier cost."
+                    )
 
             constraints.append(((variable_operational_cost - sum_) / nominal, 0.0, 0.0))
 
@@ -1082,29 +1083,22 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             variable_operational_cost_coefficient = parameters[
                 f"{hp}.variable_operational_cost_coefficient"
             ]
-            pump_power = self.__state_vector_scaled(f"{hp}.Pump_power", ensemble_member)
+            if parameters[f"{hp}.include_head_loss_variables"]:
+                pump_power = self.__state_vector_scaled(f"{hp}.Pump_power", ensemble_member)
+            else:
+                pump_power = np.zeros(len(self.times()))
             eff = parameters[f"{hp}.pump_efficiency"]
 
-            # We assume that only one electricity carrier is specified, to compute the cost with.
-            # Otherwise we need to link the electricity carrier somehow to the source and pump asset
-            # which is lots of extra effort for the user.
-            assert len(self.get_electricity_carriers().keys()) <= 1
-
-            if len(self.get_electricity_carriers().keys()) == 1:
-                price_profile = self.get_timeseries(
-                    f"{list(self.get_electricity_carriers().values())[0]['name']}.price_profile"
-                )
-            else:
-                price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
+            price_profile = self.__get_electricity_price_profile_or_zero()
 
             sum_ = ca.sum1(
                 variable_operational_cost_coefficient * elec_consumption[1:] * timesteps_hr
             )
-            sum_ += ca.sum1(price_profile.values[1:] * pump_power[1:] * timesteps_hr / eff)
+            sum_ += ca.sum1(price_profile[1:] * pump_power[1:] * timesteps_hr / eff)
             if hp not in self.energy_system_components.get("heat_pump_elec", []):
                 # assuming that if heatpump has electricity port, the cost for the electricity
                 # are already made by the electricity producer and transport
-                sum_ += ca.sum1(price_profile.values[1:] * elec_consumption[1:] * timesteps_hr)
+                sum_ += ca.sum1(price_profile[1:] * elec_consumption[1:] * timesteps_hr)
             constraints.append(((variable_operational_cost - sum_) / nominal, 0.0, 0.0))
 
         for ac in self.energy_system_components.get("airco", []):
@@ -1273,7 +1267,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 # no support for joints right now
                 continue
             installation_cost_sym = self.extra_variable(
-                self._asset_installation_cost_map[asset_name]
+                self._asset_installation_cost_map[asset_name], ensemble_member
             )
             nominal = self.variable_nominal(self._asset_installation_cost_map[asset_name])
             installation_cost = parameters[f"{asset_name}.installation_cost"]
@@ -1306,7 +1300,6 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 *self.energy_system_components.get("heat_source", []),
                 *self.energy_system_components.get("heat_pipe", []),
                 *self.energy_system_components.get("ates", []),
-                *self.energy_system_components.get("low_temperature_ates", []),
                 *self.energy_system_components.get("heat_buffer", []),
                 *self.energy_system_components.get("heat_exchanger", []),
                 *self.energy_system_components.get("heat_pump", []),
@@ -1382,8 +1375,13 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                             )
                             / max(self.get_aggregation_count_max(asset), 1.0)
                         )
-                constraints.append(((heat_flow + asset_is_realized * big_m) / big_m, 0.0, np.inf))
-                constraints.append(((heat_flow - asset_is_realized * big_m) / big_m, -np.inf, 0.0))
+                constraints.extend(
+                    self._symmetric_big_m_constraints(
+                        heat_flow,
+                        asset_is_realized * big_m,
+                        big_m,
+                    )
+                )
 
         return constraints
 
@@ -1405,7 +1403,6 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 *self.energy_system_components.get("heat_source", []),
                 *self.energy_system_components.get("heat_pipe", []),
                 *self.energy_system_components.get("ates", []),
-                *self.energy_system_components.get("low_temperature_ates", []),
                 *self.energy_system_components.get("heat_buffer", []),
                 *self.energy_system_components.get("heat_exchanger", []),
                 *self.energy_system_components.get("heat_pump", []),
@@ -1414,15 +1411,15 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     time_start = i * 3600 * 8760
                     time_end = (i + 1) * 3600 * 8760
                     var_name = self.__cumulative_investments_made_in_eur_map[asset][i]
-                    cumulative_investments_made = self.extra_variable(var_name)
+                    cumulative_investments_made = self.extra_variable(var_name, ensemble_member)
                     nominal = self.variable_nominal(var_name)
                     var_name = self._asset_is_realized_map[asset][i]
-                    asset_is_realized = self.extra_variable(var_name)
+                    asset_is_realized = self.extra_variable(var_name, ensemble_member)
                     installation_cost_sym = self.extra_variable(
-                        self._asset_installation_cost_map[asset]
+                        self._asset_installation_cost_map[asset], ensemble_member
                     )
                     investment_cost_sym = self.extra_variable(
-                        self._asset_investment_cost_map[asset]
+                        self._asset_investment_cost_map[asset], ensemble_member
                     )
 
                     big_m = (
@@ -1443,28 +1440,11 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     if self.variable_nominal(self._asset_investment_cost_map[asset]) > 1.0e2:
                         capex_sym = capex_sym + investment_cost_sym
 
-                    constraints.append(
-                        (
-                            (
-                                cumulative_investments_made
-                                - capex_sym
-                                + (1.0 - asset_is_realized) * big_m
-                            )
-                            / nominal,
-                            0.0,
-                            np.inf,
-                        )
-                    )
-                    constraints.append(
-                        (
-                            (
-                                cumulative_investments_made
-                                - capex_sym
-                                - (1.0 - asset_is_realized) * big_m
-                            )
-                            / nominal,
-                            -np.inf,
-                            0.0,
+                    constraints.extend(
+                        self._symmetric_big_m_constraints(
+                            cumulative_investments_made - capex_sym,
+                            (1.0 - asset_is_realized) * big_m,
+                            nominal,
                         )
                     )
 
@@ -1495,11 +1475,12 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                                 )
                                 / max(self.get_aggregation_count_max(asset), 1.0)
                             )
-                    constraints.append(
-                        ((heat_flow + asset_is_realized * big_m) / big_m, 0.0, np.inf)
-                    )
-                    constraints.append(
-                        ((heat_flow - asset_is_realized * big_m) / big_m, -np.inf, 0.0)
+                    constraints.extend(
+                        self._symmetric_big_m_constraints(
+                            heat_flow,
+                            asset_is_realized * big_m,
+                            big_m,
+                        )
                     )
 
         return constraints
@@ -1527,7 +1508,6 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         asset_categories = [
             "heat_source",
             "ates",
-            "low_temperature_ates",
             "heat_buffer",
             "heat_pipe",
             "heat_exchanger",
@@ -1548,7 +1528,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     continue
 
                 symbol_name = self._annualized_capex_var_map[asset_name]
-                symbol = self.extra_variable(symbol_name)
+                symbol = self.extra_variable(symbol_name, ensemble_member)
 
                 investment_cost_symbol_name = self._asset_investment_cost_map[asset_name]
                 investment_cost_symbol = self.extra_variable(
@@ -1586,23 +1566,22 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         #  finalised
 
         # TODO: add fixed price default from ESDL in case no price profile is defined.
-        parameters = self.parameters(ensemble_member)
+        string_parameters = self.string_parameters(ensemble_member)
+
+        carriers = self.esdl_carriers
 
         for demand in [
             *self.energy_system_components.get("gas_demand", []),
             *self.energy_system_components.get("electricity_demand", []),
         ]:
 
-            carrier_name = None
-            for _id, attr in self.get_electricity_carriers().items():
-                if attr["id_number_mapping"] == parameters[f"{demand}.id_mapping_carrier"]:
-                    carrier_name = attr["name"]
-                    cost_multiplier = 1 / 3600.0  # priceprofile electricity is EUR/Wh
-            for _id, attr in self.get_gas_carriers().items():
-                if attr["id_number_mapping"] == parameters[f"{demand}.id_mapping_carrier"]:
-                    carrier_name = attr["name"]
-                    cost_multiplier = 1.0  # priceprofile gas is in EUR/g
-            if carrier_name is not None:
+            carrier_id = string_parameters[f"{demand}.id_mapping_carrier"]
+            carrier_name = carriers[carrier_id]["name"]
+            if carrier_id in self.get_electricity_carriers().keys():
+                cost_multiplier = 1 / 3600.0  # priceprofile electricity is EUR/Wh
+            else:
+                cost_multiplier = 1.0  # priceprofile gas is in EUR/g
+            if f"{carrier_name}.price_profile" in self.io.get_timeseries_names():
                 price_profile_timeseries = self.get_timeseries(f"{carrier_name}.price_profile")
                 # The slicing is required if the timeseries wasn't adapted in the read
                 mask = (price_profile_timeseries.times >= self.times()[0]) & (

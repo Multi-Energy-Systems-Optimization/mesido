@@ -8,44 +8,15 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
+from utils_tests import (
+    cost_calculation_test,
+    demand_matching_test,
+    energy_conservation_test,
+    heat_to_discharge_test,
+)
 
 
 class TestGasBoiler(TestCase):
-
-    def asset_cost_calculation_tests(self, solution, results, parameters):
-        # Check the cost components of GasHeater
-        for asset_id in [
-            *solution.energy_system_components.get("heat_source", []),
-        ]:
-            esdl_asset = solution.esdl_assets[asset_id]
-            costs_esdl_asset = esdl_asset.attributes["costInformation"]
-
-            # investment cost
-            investment_cost_info = costs_esdl_asset.investmentCosts.value
-            investment_cost = investment_cost_info * results[f"{asset_id}__max_size"] / 1.0e6
-            np.testing.assert_allclose(
-                investment_cost, results[f"{asset_id}__investment_cost"], atol=1.0e-7
-            )
-
-            # installation cost
-            installation_cost = costs_esdl_asset.installationCosts.value
-            np.testing.assert_allclose(installation_cost, results[f"{asset_id}__installation_cost"])
-
-            # variable operational cost
-            timesteps_hr = np.diff(solution.times())
-            variable_operational_cost = 0.0
-            var_op_costs = costs_esdl_asset.variableOperationalCosts.value
-            for ii in range(1, len(solution.times())):
-                variable_operational_cost += (
-                    var_op_costs
-                    * results[f"{asset_id}.Gas_demand_mass_flow"][ii]
-                    / parameters[f"{asset_id}.density_normal"]
-                    * timesteps_hr[ii - 1]
-                )
-            np.testing.assert_allclose(
-                variable_operational_cost, results[f"{asset_id}__variable_operational_cost"]
-            )
 
     def test_gas_heat_source_gas(self):
         """
@@ -56,8 +27,8 @@ class TestGasBoiler(TestCase):
         1. demand is matched
         2. energy conservation in the network
         3. heat to discharge
-        4. energy conservation over the commodity
-        5. GasHeater cost components
+        4. cost calculation of gas heater is checked
+        5. check pipe bounds
 
         """
         import models.source_pipe_sink.src.double_pipe_heat as example
@@ -86,6 +57,12 @@ class TestGasBoiler(TestCase):
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
 
+        # Check the cost calculations of gas heater
+        np.testing.assert_array_less(99.0, results[f"{gas_heater_id}__investment_cost"])
+        np.testing.assert_array_less(99.0, results[f"{gas_heater_id}__installation_cost"])
+        np.testing.assert_array_less(1e3, results[f"{gas_heater_id}__variable_operational_cost"])
+        cost_calculation_test(heat_problem, results)
+
         # check energy conservation over the commodity
         np.testing.assert_array_less(0.0, results[f"{gas_heater_id}.Heat_source"])
         np.testing.assert_array_less(0.0, results[f"{gas_producer_id}.Gas_source_mass_flow"])
@@ -106,9 +83,6 @@ class TestGasBoiler(TestCase):
             parameters[f"{pipe_id}.diameter"] ** 2 / 4 * math.pi * v_max_gas,
         )
 
-        # check the cost components of GasHeater
-        self.asset_cost_calculation_tests(heat_problem, results, parameters)
-
     def test_heat_source_gas(self):
         """
         This tests checks the gas boiler without gas inlet port for the standard checks
@@ -118,8 +92,7 @@ class TestGasBoiler(TestCase):
         1. demand is matched
         2. energy conservation in the network
         3. heat to discharge
-        4. energy conservation over the commodity
-        5. GasHeater cost components
+        4. cost calculation of gas heater is checked
 
         """
         import models.source_pipe_sink.src.double_pipe_heat as example
@@ -145,6 +118,12 @@ class TestGasBoiler(TestCase):
         energy_conservation_test(solution, results)
         heat_to_discharge_test(solution, results)
 
+        # Check the cost calculations of gas heater
+        np.testing.assert_array_less(99.0, results[f"{gas_heater_id}__investment_cost"])
+        np.testing.assert_array_less(99.0, results[f"{gas_heater_id}__installation_cost"])
+        np.testing.assert_array_less(1e3, results[f"{gas_heater_id}__variable_operational_cost"])
+        cost_calculation_test(solution, results)
+
         # check energy conservation over the commodity
         np.testing.assert_array_less(0.0, results[f"{gas_heater_id}.Heat_source"])
         np.testing.assert_array_less(0.0, results[f"{gas_heater_id}.Gas_demand_mass_flow"])
@@ -155,9 +134,6 @@ class TestGasBoiler(TestCase):
             / 1000.0,  # [J/kg] * [g/s] / 1000.0 = [J/s]
             results[f"{gas_heater_id}.Heat_source"] + 1.0e-6,
         )
-
-        # Check the cost components of GasHeater
-        self.asset_cost_calculation_tests(solution, results, parameters)
 
 
 if __name__ == "__main__":

@@ -72,8 +72,9 @@ class TestAtesTemperature(TestCase):
         ates_temperature = results[f"{ates_id}.Temperature_ates"]
         ates_temperature_disc = results[f"{ates_id}__temperature_ates_disc"]
 
-        carrier_temperature = results["41770304791669983859190_temperature"]
-        temperature_regimes = solution.temperature_regimes(41770304791669983859190)
+        carrier_id = "c41e7703-dee0-4dc7-9166-a99838591a90"
+        carrier_temperature = results[f"{carrier_id}_temperature"]
+        temperature_regimes = solution.temperature_regimes(carrier_id)
 
         ates_temperature_loss = results[f"{ates_id}.Temperature_loss"]
         ates_temperature_change_charging = results[f"{ates_id}.Temperature_change_charging"]

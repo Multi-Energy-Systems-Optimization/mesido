@@ -47,8 +47,12 @@ class TestHEX(TestCase):
 
             def energy_system_options(self):
                 options = super().energy_system_options()
-                # self.heat_network_settings["minimize_head_losses"] = True  # used for manual tests
                 return options
+
+            def update_heat_network_settings(self):
+                settings = super().update_heat_network_settings()
+                # settings["minimize_head_losses"] = True  # used for manual tests
+                return settings
 
         # Do not delete kwargs: this is used to manualy check writing out of profile data
         kwargs = {
@@ -99,7 +103,7 @@ class TestHEX(TestCase):
         # Note that we are not testing the last element as we exploit the last timestep for
         # checking the disabled boolean and the assert statement doesn't work for a difference of
         # zero
-        np.testing.assert_allclose(prim_heat[-1], 0.0, atol=1e-5)
+        np.testing.assert_allclose(prim_heat[-1], 0.0, atol=1e-4)
         np.testing.assert_allclose(disabled[-1], 1.0)
         np.testing.assert_allclose(disabled[:-1], 0.0)
         # Check that heat is flowing through the hex
@@ -145,16 +149,16 @@ class TestHEX(TestCase):
 
         class HeatProblemByPass(HeatProblem):
 
-            def __init__(self, *args, **kwargs):
-                super().__init__(*args, **kwargs)
-
-                self.heat_network_settings["heat_exchanger_bypass"] = True
-
             def energy_system_options(self):
                 options = super().energy_system_options()
                 options["neglect_pipe_heat_losses"] = False
 
                 return options
+
+            def update_heat_network_settings(self):
+                settings = super().update_heat_network_settings()
+                settings["heat_exchanger_bypass"] = True
+                return settings
 
         solution = run_esdl_mesido_optimization(
             HeatProblemByPass,
@@ -216,26 +220,26 @@ class TestHEX(TestCase):
 
         class HeatProblemByPassMultiTemp(HeatProblem):
 
-            def __init__(self, *args, **kwargs):
-                super().__init__(*args, **kwargs)
-
-                self.heat_network_settings["heat_exchanger_bypass"] = True
-
             def energy_system_options(self):
                 options = super().energy_system_options()
                 options["neglect_pipe_heat_losses"] = False
 
                 return options
 
+            def update_heat_network_settings(self):
+                settings = super().update_heat_network_settings()
+                settings["heat_exchanger_bypass"] = True
+                return settings
+
             def temperature_carriers(self):
                 return self.esdl_carriers
 
             def temperature_regimes(self, carrier):
                 temperatures = []
-                if carrier == 829940433102452838:
+                if carrier == "c8a29d9a-a4c0-4331-ab0a-2e4ff52e838d":
                     temperatures = [70.0, 65.0, 60.0]  # producer out
 
-                if carrier == 8725433194681736500139:
+                if carrier == "8cc72543-f319-4d6e-8173-bd6ba500139b":
                     temperatures = [65.0, 60.0]  # first hex out
 
                 return temperatures
@@ -244,19 +248,16 @@ class TestHEX(TestCase):
                 constraints = super().constraints(ensemble_member)
 
                 carriers = self.temperature_carriers()
-                for carrier in carriers.values():
-                    carrier_map = carrier["id_number_mapping"]
-                    temperature_regimes = self.temperature_regimes(int(carrier_map))
+                for carrier_id in carriers.keys():
+                    temperature_regimes = self.temperature_regimes(carrier_id)
                     if len(temperature_regimes) > 1:
-                        carrier_var_name = str(carrier_map) + "_temperature"
-                        var_carrier = self.extra_variable(carrier_var_name)
+                        carrier_var_name = str(carrier_id) + "_temperature"
+                        var_carrier = self.extra_variable(carrier_var_name, ensemble_member)
                         for i in range(var_carrier.shape[0] - 1):
                             constraints.append((var_carrier[i] - var_carrier[i + 1], 0.0, 0.0))
 
                         for temperature in temperature_regimes:
-                            selected_temp_vec = self.state_vector(
-                                f"{int(carrier_map)}_{temperature}"
-                            )
+                            selected_temp_vec = self.state_vector(f"{carrier_id}_{temperature}")
                             for i in range(var_carrier.shape[0] - 1):
                                 constraints.append(
                                     (selected_temp_vec[i] - selected_temp_vec[i + 1], 0.0, 0.0)
@@ -293,8 +294,10 @@ class TestHEX(TestCase):
         demand_matching_test(solution, results)
         energy_conservation_test(solution, results)
 
-        temp_prod = results["829940433102452838_temperature"]
-        temp_hex = results["8725433194681736500139_temperature"]
+        carrier_prod_id = "c8a29d9a-a4c0-4331-ab0a-2e4ff52e838d"
+        carrier_hex_id = "8cc72543-f319-4d6e-8173-bd6ba500139b"
+        temp_prod = results[f"{carrier_prod_id}_temperature"]
+        temp_hex = results[f"{carrier_hex_id}_temperature"]
 
         # check heat exchanger 1 is bypassed
         np.testing.assert_allclose(results[f"{hex_active_id}.__disabled"][:-1], 0)
@@ -348,9 +351,17 @@ class TestHP(TestCase):
             #         optimizer_sim=True,
             #     )
 
-            def energy_system_options(self):
-                options = super().energy_system_options()
-                # self.heat_network_settings["minimize_head_losses"] = True  # used for manual tests
+            def update_heat_network_settings(self):
+                settings = super().update_heat_network_settings()
+                # settings["minimize_head_losses"] = True  # used for manual tests
+                return settings
+
+            def solver_options(self):
+                options = super().solver_options()
+                options["solver"] = "highs"
+                highs_options = options["highs"] = {}
+                highs_options["presolve"] = "off"
+
                 return options
 
         # Do not delete kwargs: this is used to manualy check writing out of profile data

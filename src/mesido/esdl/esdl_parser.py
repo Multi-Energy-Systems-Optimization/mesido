@@ -34,58 +34,30 @@ class BaseESDLParser:
 
     def read_esdl(self) -> None:
         self._load_esdl_model()
-        id_to_idnumber_map = {}
 
         for x in self._energy_system.energySystemInformation.carriers.carrier.items:
             if isinstance(x, esdl.esdl.HeatCommodity):
-                if x.id not in id_to_idnumber_map:
-                    number_list = [int(s) for s in x.id if s.isdigit()]
-                    number = ""
-                    for nr in number_list:
-                        number = number + str(nr)
-                    # note this fix is to create a unique number for the map for when the pipe
-                    # duplicator service is used and an additional _ret is added to the id.
-                    if "_ret" in x.id:
-                        number = number + "000"
-                    id_to_idnumber_map[x.id] = int(number)
-
                 temperature = x.supplyTemperature if x.supplyTemperature else x.returnTemperature
                 assert temperature > 0.0
-
                 self._global_properties["carriers"][x.id] = dict(
                     name=x.name,
                     id=x.id,
-                    id_number_mapping=id_to_idnumber_map[x.id],
                     temperature=temperature,
                     type="milp",
                 )
             elif isinstance(x, esdl.esdl.ElectricityCommodity):
-                if x.id not in id_to_idnumber_map:
-                    number_list = [int(s) for s in x.id if s.isdigit()]
-                    number = ""
-                    for nr in number_list:
-                        number = number + str(nr)
-                    id_to_idnumber_map[x.id] = int(number)
                 self._global_properties["carriers"][x.id] = dict(
                     name=x.name,
                     voltage=x.voltage,
                     id=x.id,
                     type="electricity",
-                    id_number_mapping=id_to_idnumber_map[x.id],
                 )
             elif isinstance(x, esdl.esdl.GasCommodity):
-                if x.id not in id_to_idnumber_map:
-                    number_list = [int(s) for s in x.id if s.isdigit()]
-                    number = ""
-                    for nr in number_list:
-                        number = number + str(nr)
-                    id_to_idnumber_map[x.id] = int(number)
                 self._global_properties["carriers"][x.id] = dict(
                     name=x.name,
                     pressure=x.pressure,
                     id=x.id,
                     type="gas",
-                    id_number_mapping=id_to_idnumber_map[x.id],
                 )
 
         # Component ids are unique, but we require component names to be unique as well.

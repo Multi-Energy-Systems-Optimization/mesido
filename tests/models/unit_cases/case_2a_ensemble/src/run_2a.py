@@ -110,9 +110,13 @@ class HeatProblem(
     def energy_system_options(self):
         options = super().energy_system_options()
         options["heat_loss_disconnected_pipe"] = True
-        self.heat_network_settings["minimum_velocity"] = 0.0001
 
         return options
+
+    def update_heat_network_settings(self):
+        settings = super().update_heat_network_settings()
+        settings["minimum_velocity"] = 0.0001
+        return settings
 
     def solver_options(self):
         options = super().solver_options()
@@ -148,7 +152,7 @@ class HeatProblemEnsemble(
         """
         This constraint method adds upper limits to the demand heat production based on the
         target of a specific ensemble. This requires the first ensemble to always have the
-        timeseries with the largest values.
+        timeseries with the largest values as the goals are only dependent on the first ensemble.
         """
         constraints = []
         for demand in self.energy_system_components["heat_demand"]:

@@ -168,6 +168,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             self.secondary_port_name_convention = kwargs["secondary_port_name_convention"]
         self.energy_system_esdl_version = kwargs.get("energy_system_esdl_version", None)
         self.use_esdl_ranged_constraint = kwargs.get("use_esdl_ranged_constraint", False)
+        self.include_head_loss_variables = self.energy_system_options.get("include_head_losses")
 
     @property
     def _rho_cp_modifiers(self) -> Dict:
@@ -292,7 +293,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         Returns: dictionary of the generic modifiers: technical_life, discount_rate and state.
         """
+        # TODO: max ramp coefficient later to be updated from esdl.
         modifiers = dict(
+            max_ramp_coeff=1.0,
             technical_life=self.get_asset_attribute_value(
                 asset,
                 "technicalLifetime",
@@ -305,19 +308,31 @@ class AssetToHeatComponent(_AssetToComponentBase):
             ),
             state=self.get_state(asset),
             emission_coeff=self._get_emission_modifiers(asset),
+            include_head_loss_variables=self.include_head_loss_variables,
         )
         return modifiers
 
     @staticmethod
-    def _generic_heat_modifiers(min_heat=None, max_heat=None, q_nominal=None) -> Dict:
+    def _generic_heat_modifiers(
+        include_head_loss_variables=False,
+        min_heat=None,
+        max_heat=None,
+        q_nominal=None,
+        min_temp=None,
+        max_temp=None,
+    ) -> Dict:
         """
         Args:
             min_heat: minimum heat flow value
             max_heat: maximum heat flow value
             q_nominal: flow nominal
+            min_temp: minimum temperature
+            max_temp: maximum temperature
+            include_head_loss_variables: False if headloss and hydraulic_power variables are not
+            included in the problem.
 
-        Returns: dictionary of the generic heat modifiers: Q_nominal, Heat_flow, and the hydraulic
-        power of HeatIn and HeatOut.
+        Returns: dictionary of the generic heat modifiers: Q_nominal, Heat_flow, the hydraulic
+        power of HeatIn and HeatOut, min_temperature and max_temperature
         """
 
         modifiers = dict()
@@ -326,10 +341,21 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 Heat_flow=dict(min=min_heat, max=max_heat, nominal=max_heat / 2.0),
             )
         if q_nominal is not None:
+            modifiers.update(Q_nominal=q_nominal)
+        if include_head_loss_variables:
             modifiers.update(
-                Q_nominal=q_nominal,
                 HeatIn=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
                 HeatOut=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
+            )
+
+        if min_temp is not None:
+            modifiers.update(
+                min_temperature=min_temp,
+            )
+
+        if max_temp is not None:
+            modifiers.update(
+                max_temperature=max_temp,
             )
 
         return modifiers
@@ -589,7 +615,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 "heat_storage_charging_variables", False
             ),
             **self._generic_modifiers(asset),
-            **self._generic_heat_modifiers(-hfr_discharge_max, hfr_charge_max, q_nominal),
+            **self._generic_heat_modifiers(
+                self.include_head_loss_variables, -hfr_discharge_max, hfr_charge_max, q_nominal
+            ),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
@@ -679,7 +707,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
         modifiers = dict(
             Heat_demand=dict(max=max_demand, nominal=max_demand / 2.0),
             **self._generic_modifiers(asset),
-            **self._generic_heat_modifiers(0.0, max_demand, q_nominal),
+            **self._generic_heat_modifiers(
+                self.include_head_loss_variables, 0.0, max_demand, q_nominal
+            ),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
@@ -720,7 +750,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         modifiers = dict(
             Heat_airco=dict(max=max_, nominal=max_ / 2.0),
             **self._generic_modifiers(asset),
-            **self._generic_heat_modifiers(0.0, max_, q_nominal),
+            **self._generic_heat_modifiers(self.include_head_loss_variables, 0.0, max_, q_nominal),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
@@ -759,7 +789,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
         modifiers = dict(
             Cold_demand=dict(min=0.0, max=max_demand, nominal=max_demand / 2.0),
             **self._generic_modifiers(asset),
-            **self._generic_heat_modifiers(0.0, max_demand, q_nominal),
+            **self._generic_heat_modifiers(
+                self.include_head_loss_variables, 0.0, max_demand, q_nominal
+            ),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
@@ -826,6 +858,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         modifiers = dict(
             n=sum_in + sum_out,
             state=self.get_state(asset),
+            include_head_loss_variables=self.include_head_loss_variables,
         )
 
         if isinstance(asset.in_ports[0].carrier, esdl.esdl.GasCommodity) or isinstance(
@@ -907,9 +940,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 f"{length} meter"
             )
 
-        id_mapping = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
-            "id_number_mapping"
-        ]
+        id_mapping = asset.in_ports[0].carrier.id
         diameter, wall_roughness = self._gas_pipe_get_diameter_and_roughness(asset)
         q_nominal = math.pi * diameter**2 / 4.0 * self.v_max_gas / 2.0
         self._set_q_nominal(asset, q_nominal)
@@ -1030,16 +1061,18 @@ class AssetToHeatComponent(_AssetToComponentBase):
             insulation_thickness=insulation_thicknesses,
             conductivity_insulation=conductivies_insulation,
             **self._generic_modifiers(asset),
-            **self._generic_heat_modifiers(-hfr_max, hfr_max, q_nominal),
+            **self._generic_heat_modifiers(
+                self.include_head_loss_variables, -hfr_max, hfr_max, q_nominal
+            ),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
         )
-        modifiers["HeatIn"].update(
+        modifiers.setdefault("HeatIn", {}).update(
             Heat=dict(min=-hfr_max, max=hfr_max),
             Q=dict(min=-q_max, max=q_max),
         )
-        modifiers["HeatOut"].update(
+        modifiers.setdefault("HeatOut", {}).update(
             Heat=dict(min=-hfr_max, max=hfr_max),
             Q=dict(min=-q_max, max=q_max),
         )
@@ -1092,7 +1125,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         modifiers = dict(
             **self._generic_modifiers(asset),
-            **self._generic_heat_modifiers(q_nominal=q_nominal),
+            **self._generic_heat_modifiers(self.include_head_loss_variables, q_nominal=q_nominal),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
         )
@@ -1244,11 +1277,13 @@ class AssetToHeatComponent(_AssetToComponentBase):
         q_nominal_prim = params_q["Primary"][
             "Q_nominal"
         ]  # max_power / (2 * self.cp * self.rho * (dt_prim))
-        prim_heat = self._generic_heat_modifiers(q_nominal=q_nominal_prim)
-        prim_heat["HeatIn"].update(
+        prim_heat = self._generic_heat_modifiers(
+            self.include_head_loss_variables, q_nominal=q_nominal_prim
+        )
+        prim_heat.setdefault("HeatIn", {}).update(
             Heat=dict(min=-max_heat_transport, max=max_heat_transport, nominal=max_power / 2.0),
         )
-        prim_heat["HeatOut"].update(
+        prim_heat.setdefault("HeatOut", {}).update(
             Heat=dict(min=-max_heat_transport, max=max_heat_transport, nominal=max_power / 2.0),
         )
 
@@ -1259,11 +1294,13 @@ class AssetToHeatComponent(_AssetToComponentBase):
         q_nominal_sec = params_q["Secondary"][
             "Q_nominal"
         ]  # max_power / (2 * self.cp * self.rho * (dt_sec))
-        sec_heat = self._generic_heat_modifiers(q_nominal=q_nominal_sec)
-        sec_heat["HeatIn"].update(
+        sec_heat = self._generic_heat_modifiers(
+            self.include_head_loss_variables, q_nominal=q_nominal_sec
+        )
+        sec_heat.setdefault("HeatIn", {}).update(
             Heat=dict(min=-max_heat_transport, max=max_heat_transport, nominal=max_power / 2.0),
         )
-        sec_heat["HeatOut"].update(
+        sec_heat.setdefault("HeatOut", {}).update(
             Heat=dict(min=-max_heat_transport, max=max_heat_transport, nominal=max_power / 2.0),
         )
         params["Primary"] = {**params_t["Primary"], **params_q["Primary"], **prim_heat}
@@ -1347,11 +1384,11 @@ class AssetToHeatComponent(_AssetToComponentBase):
             # TODO: the power filled in at the heatpmp should always be the electric power, thus,
             # the max heat supply should be power*cop
             _, modifiers = self.convert_heat_source(asset)
+            modifiers.update(elec_power_nominal=modifiers["Heat_source"]["max"])
             return AirWaterHeatPump, modifiers
         # In this case we only have the secondary side ports, here we assume a air-water HP elec
         if len(asset.in_ports) == 2 and len(asset.out_ports) == 1:
-            _, modifiers = self.convert_air_water_heat_pump_elec(asset)
-            return AirWaterHeatPumpElec, modifiers
+            return self.convert_air_water_heat_pump_elec(asset)
 
         if not asset.attributes["COP"]:
             raise _ESDLInputException(
@@ -1368,8 +1405,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         params_t = self._supply_return_temperature_modifiers(asset)
         params_q = self._get_connected_q_nominal(asset)
-        prim_heat = self._generic_heat_modifiers(q_nominal=params_q["Primary"]["Q_nominal"])
-        sec_heat = self._generic_heat_modifiers(q_nominal=params_q["Secondary"]["Q_nominal"])
+        prim_heat = self._generic_heat_modifiers(
+            self.include_head_loss_variables, q_nominal=params_q["Primary"]["Q_nominal"]
+        )
+        sec_heat = self._generic_heat_modifiers(
+            self.include_head_loss_variables, q_nominal=params_q["Secondary"]["Q_nominal"]
+        )
 
         params = {}
         params["Primary"] = {**params_t["Primary"], **params_q["Primary"], **prim_heat}
@@ -1465,6 +1506,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
             logger.error(f"{asset.asset_type} '{asset.name}' has no max power specified.")
         assert max_supply > 0.0
 
+        min_temperature = asset.attributes.get("minTemperature", None)
+        max_temperature = asset.attributes.get("maxTemperature", None)
+
         # get price per unit of energy,
         # assume cost of 1. if nothing is given (effectively milp loss minimization)
         # TODO: Use an attribute or use and KPI for CO2 coefficient of a source
@@ -1475,7 +1519,14 @@ class AssetToHeatComponent(_AssetToComponentBase):
         modifiers = dict(
             Heat_source=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
             **self._generic_modifiers(asset),
-            **self._generic_heat_modifiers(0.0, max_supply, q_nominal),
+            **self._generic_heat_modifiers(
+                self.include_head_loss_variables,
+                0.0,
+                max_supply,
+                q_nominal,
+                min_temperature,
+                max_temperature,
+            ),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
@@ -1616,6 +1667,11 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 max=q_max_ates * aggregation_count,
                 nominal=q_nominal,
             ),
+            Heat_ates=dict(
+                min=-hfr_charge_max * aggregation_count,
+                max=hfr_discharge_max * aggregation_count,
+                nominal=hfr_discharge_max / 2.0,
+            ),
             single_doublet_power=single_doublet_power,
             heat_loss_coeff=(1.0 - efficiency ** (1.0 / 100.0)) / (3600.0 * 24.0),
             nr_of_doublets=aggregation_count,
@@ -1629,6 +1685,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             ),
             **self._generic_modifiers(asset),
             **self._generic_heat_modifiers(
+                self.include_head_loss_variables,
                 -hfr_discharge_max * aggregation_count,
                 hfr_charge_max * aggregation_count,
                 q_nominal,
@@ -1653,15 +1710,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 f" maxStorageTemperature > {low_temp_ates_max_storage_temp_deg} degrees Celcius",
             )
 
-            modifiers.update(
-                dict(
-                    Heat_low_temperature_ates=dict(
-                        min=-hfr_charge_max * asset.attributes["aggregationCount"],
-                        max=hfr_discharge_max * asset.attributes["aggregationCount"],
-                        nominal=hfr_discharge_max / 2.0,
-                    )
-                )
-            )
             logger.warning(
                 "ATES in use: WKO (koude-warmteopslag, cold and heat storage) since the"
                 " maximum temperature has been specified to be <= 30 degrees Celcius"
@@ -1671,11 +1719,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
         else:
             modifiers.update(
                 dict(
-                    Heat_ates=dict(
-                        min=-hfr_charge_max * aggregation_count,
-                        max=hfr_discharge_max * aggregation_count,
-                        nominal=hfr_discharge_max / 2.0,
-                    ),
                     T_amb=asset.attributes["aquiferMidTemperature"],
                     Temperature_ates=dict(
                         min=temperatures["T_return"],  # or potentially 0
@@ -1733,7 +1776,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         modifiers = dict(
             **self._generic_modifiers(asset),
-            **self._generic_heat_modifiers(q_nominal=q_nominal),
+            **self._generic_heat_modifiers(self.include_head_loss_variables, q_nominal=q_nominal),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
         )
@@ -1783,7 +1826,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         modifiers = dict(
             **self._generic_modifiers(asset),
-            **self._generic_heat_modifiers(q_nominal=q_nominal),
+            **self._generic_heat_modifiers(self.include_head_loss_variables, q_nominal=q_nominal),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
         )
@@ -1832,9 +1875,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         min_voltage = asset.in_ports[0].carrier.voltage
         i_max, i_nom = self._get_connected_i_nominal_and_max(asset)
 
-        id_mapping = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
-            "id_number_mapping"
-        ]
+        id_mapping = asset.in_ports[0].carrier.id
 
         modifiers = dict(
             min_voltage=min_voltage,
@@ -2226,9 +2267,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         """
         assert asset.asset_type in {"GasDemand", "Export"}
 
-        id_mapping = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
-            "id_number_mapping"
-        ]
+        id_mapping = asset.in_ports[0].carrier.id
         # DO not remove due usage in future
         # hydrogen_specfic_energy = 20.0 / 1.0e6
         specific_energy = get_energy_content(asset.name, asset.in_ports[0].carrier)  # J/kg
@@ -2723,9 +2762,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         if is_one_in_port:
             return HeatSourceGas, modifiers
 
-        id_mapping = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
-            "id_number_mapping"
-        ]
+        id_mapping = asset.in_ports[0].carrier.id
 
         for port in asset.in_ports:
             if isinstance(port.carrier, esdl.GasCommodity):
@@ -2809,9 +2846,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         if is_one_in_port:
             return HeatSourceElec, modifiers
 
-        id_mapping = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
-            "id_number_mapping"
-        ]
+        id_mapping = asset.in_ports[0].carrier.id
 
         # TODO: CO2 coefficient
 
@@ -2828,7 +2863,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
                     V=dict(min=min_voltage, nominal=min_voltage),
                 ),
                 min_voltage=min_voltage,
-                **self._generic_heat_modifiers(0.0, max_supply, q_nominal["Q_nominal"]),
+                **self._generic_heat_modifiers(
+                    self.include_head_loss_variables, 0.0, max_supply, q_nominal["Q_nominal"]
+                ),
             )
         )
 
@@ -2886,9 +2923,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             logger.error(f"{asset.asset_type} '{asset.name}' has no max power specified. ")
         assert max_supply > 0.0
 
-        id_mapping = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
-            "id_number_mapping"
-        ]
+        id_mapping = asset.in_ports[0].carrier.id
 
         # TODO: CO2 coefficient
 
@@ -2909,7 +2944,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
             elec_power_nominal=max_supply,
             cop=cop,
             **self._generic_modifiers(asset),
-            **self._generic_heat_modifiers(0.0, max_supply, q_nominal["Q_nominal"]),
+            **self._generic_heat_modifiers(
+                self.include_head_loss_variables, 0.0, max_supply, q_nominal["Q_nominal"]
+            ),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),

@@ -809,7 +809,6 @@ class ScenarioOutput:
                         flow_variable = results[f"{asset_id}.Heat_buffer"][1:]
                     elif asset_id in [
                         *self.energy_system_components.get("ates", []),
-                        *self.energy_system_components.get("low_temperature_ates", []),
                     ]:
                         flow_variable = results[f"{asset_id}.Heat_ates"][1:]
                     elif asset_id in self.energy_system_components.get("heat_pipe", []):
@@ -1068,6 +1067,8 @@ class ScenarioOutput:
     ):
         from esdl.esdl_handler import EnergySystemHandler
 
+        logger.info("Updated esdl is being created.")
+
         results = self.extract_results()
         parameters = self.parameters(0)
 
@@ -1099,7 +1100,6 @@ class ScenarioOutput:
             if asset_id in [
                 *self.energy_system_components.get("heat_source", []),
                 *self.energy_system_components.get("ates", []),
-                *self.energy_system_components.get("low_temperature_ates", []),
                 *self.energy_system_components.get("heat_buffer", []),
                 *self.energy_system_components.get("heat_pump", []),
                 *self.energy_system_components.get("airco", []),
@@ -1112,10 +1112,9 @@ class ScenarioOutput:
 
                 if asset_id in [
                     *self.energy_system_components.get("ates", []),
-                    *self.energy_system_components.get("low_temperature_ates", []),
+                    *self.energy_system_components.get("geothermal", []),
                 ]:
-                    asset.maxChargeRate = results[f"{asset_id}__max_size"][0]
-                    asset.maxDischargeRate = results[f"{asset_id}__max_size"][0]
+                    asset.aggregationCount = int(results[f"{asset_id}_aggregation_count"])
                 elif asset_id in self.energy_system_components.get("heat_buffer", []):
                     asset.capacity = max_size
                     asset.volume = max_size / (
@@ -1165,7 +1164,7 @@ class ScenarioOutput:
             if not optimizer_sim:
                 pipe_class = self.get_optimized_pipe_class(pipe)
 
-            if parameters[f"{pipe}.diameter"] != 0.0 or any(np.abs(results[f"{pipe}.Q"]) > 1.0e-9):
+            if parameters[f"{pipe}.diameter"] != 0.0 or any(np.abs(results[f"{pipe}.Q"]) > 1.0e-6):
                 # if not isinstance(pipe_class, EDRPipeClass):
                 #     assert pipe_class.name == f"{pipe}_orig"
                 #     continue
@@ -1230,7 +1229,6 @@ class ScenarioOutput:
                 *self.energy_system_components.get("heat_pipe", []),
                 *self.energy_system_components.get("heat_buffer", []),
                 *self.energy_system_components.get("ates", []),
-                *self.energy_system_components.get("low_temperature_ates", []),
                 *self.energy_system_components.get("heat_exchanger", []),
                 *self.energy_system_components.get("heat_pump", []),
                 *self.energy_system_components.get("airco", []),
@@ -1325,7 +1323,6 @@ class ScenarioOutput:
                             *self.energy_system_components.get("heat_source", []),
                             *self.energy_system_components.get("heat_buffer", []),
                             *self.energy_system_components.get("ates", []),
-                            *self.energy_system_components.get("low_temperature_ates", []),
                             *self.energy_system_components.get("heat_exchanger", []),
                             *self.energy_system_components.get("heat_pump", []),
                             *self.energy_system_components.get("airco", []),
@@ -1345,12 +1342,13 @@ class ScenarioOutput:
                         post_processed["PostProc.Velocity"] = pipe_velocity(
                             asset_id, commodity, results, parameters
                         )
-                        variables_one_hydraulic_system.append("PostProc.Pressure")
-                        # TODO: seems unnecessary, pipes always only have 1 hydraulic system
-                        variables_two_hydraulic_system.append("PostProc.Pressure")
-                        post_processed["PostProc.Pressure"] = pipe_pressure(
-                            asset_id, commodity, results, parameters
-                        )  # Pa
+                        if self.heat_network_settings["minimize_head_losses"]:
+                            variables_one_hydraulic_system.append("PostProc.Pressure")
+                            # TODO: seems unnecessary, pipes always only have 1 hydraulic system
+                            variables_two_hydraulic_system.append("PostProc.Pressure")
+                            post_processed["PostProc.Pressure"] = pipe_pressure(
+                                asset_id, commodity, results, parameters
+                            )  # Pa
 
                     # Depending on the port set, different carriers are assigned
                     if port:
@@ -1770,6 +1768,7 @@ class ScenarioOutput:
         bounds: Union[AliasDict, Dict],
         aliases: OrderedDict,
         solver_stats: Dict,
+        ensemble_member: int,
     ):
         """
         The results, parameters, bounds are saved as json files which can be used for further
@@ -1783,7 +1782,9 @@ class ScenarioOutput:
         :return:
         """
 
-        workdir = self.output_folder
+        workdir = os.path.join(self.output_folder, f"{ensemble_member}")
+        if not os.path.exists(workdir):
+            os.mkdir(workdir)
 
         parameters_dict = dict()
         parameter_path = os.path.join(workdir, "parameters.json")

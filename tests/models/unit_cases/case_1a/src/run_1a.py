@@ -1,6 +1,7 @@
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.head_loss_class import HeadLossOption
 from mesido.physics_mixin import PhysicsMixin
 from mesido.qth_not_maintained.qth_mixin import QTHMixin
 
@@ -60,25 +61,30 @@ class HeatProblem(
         options["solver"] = "highs"
         return options
 
+    def update_heat_network_settings(self):
+        settings = super().update_heat_network_settings()
+        settings["head_loss_option"] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+        return settings
+
 
 class HeatProblemTvar(HeatProblem):
-    def energy_system_options(self):
-        options = super().energy_system_options()
+    def update_heat_network_settings(self):
+        settings = super().update_heat_network_settings()
         # We set a low maximum velocity to force the optimization to select a dT of more then 20 deg
         # this is to avoid specifying a new demand profile
-        self.heat_network_settings["maximum_velocity"] = 0.25
-        return options
+        settings["maximum_velocity"] = 0.25
+        return settings
 
     def temperature_carriers(self):
         return self.esdl_carriers  # geeft terug de carriers met multiple temperature options
 
     def temperature_regimes(self, carrier):
         temperatures = []
-        if carrier == 3625334968694477359:
+        if carrier == "c362f53a-3eaf-4d96-8ee6-944e77359fed":
             # supply
             temperatures = [80.0, 85.0]
 
-        if carrier == 3625334968694477359000:
+        if carrier == "c362f53a-3eaf-4d96-8ee6-944e77359fed_ret":
             # return
             temperatures = [60.0, 65.0]
 
@@ -87,24 +93,11 @@ class HeatProblemTvar(HeatProblem):
     def constraints(self, ensemble_member):
         constraints = super().constraints(ensemble_member)
         # These constraints are added to allow for a quicker solve
-        for carrier, temperatures in self.temperature_carriers().items():
-            if "id_number_mapping" in temperatures.keys():
-                carrier_id_number_mapping = str(temperatures["id_number_mapping"])
-            else:
-                number_list = [int(s) for s in carrier if s.isdigit()]
-                number = ""
-                for nr in number_list:
-                    number = number + str(nr)
-                carrier_type = temperatures["__rtc_type"]
-                if carrier_type == "return":
-                    number = number + "000"
-                carrier_id_number_mapping = number
-            temperature_regimes = self.temperature_regimes(int(carrier_id_number_mapping))
+        for carrier_id in self.temperature_carriers().keys():
+            temperature_regimes = self.temperature_regimes(carrier_id)
             if len(temperature_regimes) > 0:
                 for temperature in temperature_regimes:
-                    selected_temp_vec = self.state_vector(
-                        f"{int(carrier_id_number_mapping)}_{temperature}"
-                    )
+                    selected_temp_vec = self.state_vector(f"{carrier_id}_{temperature}")
                     for i in range(1, len(self.times())):
                         constraints.append(
                             (selected_temp_vec[i] - selected_temp_vec[i - 1], 0.0, 0.0)
