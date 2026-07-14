@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import esdl.esdl_handler
+from esdl.profiles.credentials import Credentials
 
 from mesido.component_type_mixin import (
     ModelicaComponentTypeMixin,
@@ -151,11 +152,11 @@ class ESDLMixin(
         database_connection_info = kwargs.get("database_connections", {})
         read_only_dbase_credentials: Dict[str, Tuple[str, str]] = {}  # for profile reader
         for dbconnection in database_connection_info:
+            database_host_port = "{}:{}".format(
+                dbconnection["host"],
+                dbconnection["port"],
+            )
             if dbconnection["access_type"] != DBAccessType.WRITE:
-                database_host_port = "{}:{}".format(
-                    dbconnection["host"],
-                    dbconnection["port"],
-                )
                 read_only_dbase_credentials[database_host_port] = (
                     dbconnection["username"],
                     dbconnection["password"],
@@ -197,6 +198,10 @@ class ESDLMixin(
                 )
                 sys.exit(1)
 
+            Credentials.add_credential(
+                database_host_port, dbconnection["username"], dbconnection["password"]
+            )
+
         if input_file_name is not None:
             input_file_path = Path(input_folder) / input_file_name
 
@@ -204,7 +209,6 @@ class ESDLMixin(
             self.__profile_reader: BaseProfileReader = profile_reader_class(
                 energy_system=self.__energy_system_handler.energy_system,
                 file_path=input_file_path,
-                database_credentials=read_only_dbase_credentials,
                 use_esdl_ranged_contraint=self._ESDLMixin__use_esdl_ranged_constraint,
             )
         else:  # read from a file, no database credentials needed

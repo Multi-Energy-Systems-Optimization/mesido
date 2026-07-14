@@ -3,10 +3,9 @@ import logging
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, Optional, Set, Tuple, Union
+from typing import Dict, Optional, Set, Union
 
 import esdl
-from esdl.profiles.credentials import Credentials
 from esdl.profiles.profile_utils import close_db_connections, load_profile_data_and_header
 from esdl.units.conversion import ENERGY_IN_J, POWER_IN_W, convert_to_unit
 
@@ -274,16 +273,12 @@ class ESDLProfileReader(BaseProfileReader):
         energy_system: esdl.EnergySystem,
         file_path: Optional[Path],
         use_esdl_ranged_contraint: bool = False,
-        database_credentials: Optional[Dict[str, Tuple[str, str]]] = None,
     ):
         super().__init__(
             energy_system=energy_system,
             file_path=file_path,
             use_esdl_ranged_contraint=use_esdl_ranged_contraint,
         )
-        if database_credentials is not None:
-            for cred_id, (username, password) in database_credentials.items():
-                Credentials.add_credential(cred_id, username, password)
 
     def _load_profiles_from_source(
         self,
