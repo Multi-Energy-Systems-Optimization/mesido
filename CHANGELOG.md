@@ -1,19 +1,13 @@
 # [Unreleased-main] - 2026-07-14
 
 ## Added
-
 - ESDL profile reading and writing for different types: influxdb and postgres, and inline (in ESDL file).
-  This is done in pyesdl, as well as credential management and caching.
-  For `run_end_scenario_sizing` the parameter `write_result_db_profiles` has been removed,
-  now `esdl_profiles_output_type` determines the ESDL output profile type which has the following
-  options: INFLUXDB = "influxdb"
-  POSTGRESQL = "postgresql"
-  TIME_SERIES_PROFILE = "time_series_profile"
-  DATE_TIME_PROFILE = "date_time_profile"
-  If you set it to `None` (default) no output profiles will be created.
 
 ## Changed
 - Code generalization in asset sizing mixin
+- Write_result_db_profiles has been replaced by esdl_profiles_output_type (determines the ESDL output profile type)
+- Names used for keys in "database_connections" specified
+- Using pyesdl for database credential management
 
 ## Fixed
 - Bug: Only update the aggregation count for an ATES and a GeothermalSource in DTK post processing

@@ -11,7 +11,9 @@ if __name__ == "__main__":
     base_folder = Path(__file__).resolve().parent.parent
 
     kwargs = {
-        "esdl_output_profiles_type": ESDLOutputProfilesType.INFLUXDB,  # 'None' (default) means no profiles to DB
+        "esdl_output_profiles_type": ESDLOutputProfilesType.INFLUXDB,
+        # None (default) or ESDLOutputProfilesType.POSTGRESQL or
+        # ESDLOutputProfilesType.TIME_SERIES_PROFILE or ESDLOutputProfilesType.DATE_TIME_PROFILE
         "database_connections": [
             {
                 "access_type": DBAccessType.READ,  # or DBAccessType.WRITE or DBAccessType.READ_WRITE
