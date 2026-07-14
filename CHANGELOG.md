@@ -1,10 +1,13 @@
-# [Unreleased-main] - 2026-07-09
+# [Unreleased-main] - 2026-07-14
 
 ## Added
-- xxx
+- ESDL profile reading and writing for different types: influxdb and postgres, and inline (in ESDL file).
 
 ## Changed
 - Code generalization in asset sizing mixin
+- Write_result_db_profiles has been replaced by esdl_profiles_output_type (determines the ESDL output profile type)
+- Names used for keys in "database_connections" specified
+- Using pyesdl for database credential management
 
 ## Fixed
 - Bug: Only update the aggregation count for an ATES and a GeothermalSource in DTK post processing
@@ -359,5 +362,4 @@
  
 ## Fixed
 - Error exit when stage 1, priority 1 was not successful
-
 

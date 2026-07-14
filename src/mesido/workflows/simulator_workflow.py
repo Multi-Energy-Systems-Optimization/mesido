@@ -352,16 +352,16 @@ def main(runinfo_path, log_level):
     logger.info("Run Network Simulator")
 
     kwargs = {
-        "write_result_db_profiles": False,
+        "esdl_output_profiles_type": None,
         "database_connections": [
             {
                 "access_type": DBAccessType.WRITE,
-                "influxdb_host": "localhost",
-                "influxdb_port": 8086,
-                "influxdb_username": None,
-                "influxdb_password": None,
-                "influxdb_ssl": False,
-                "influxdb_verify_ssl": False,
+                "host": "localhost",
+                "port": 8086,
+                "username": None,
+                "password": None,
+                "ssl": False,
+                "verify_ssl": False,
             },
         ],
     }
