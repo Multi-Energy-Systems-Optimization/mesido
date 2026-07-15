@@ -837,36 +837,54 @@ class TestEndScenarioSizing(TestCase):
             solution.esdl_asset_name_to_id_map["Pipe_f6e5"],
             solution.esdl_asset_name_to_id_map["Pipe_f6e5_ret"],
         ]
-        for pipe_id in solution.energy_system_components.get("heat_pipe", []):
-            # The expected investment cost was setup to be linked to the pipe diameter for ease of
-            # use
-            expected_inv_coef = parameters[f"{pipe_id}.diameter"] * 1000.0
-            is_related_len = 1
-
-            # Check the pipes in the results
-            if pipe_id in expensive_pipe_ids:
-                expected_inv_coef = parameters[f"{pipe_id}.diameter"] * 1000.0 * 10.0
-                is_related_len = 0
-
+        # Ensure these two pipes are ENABLED to esnure their cost are not modified by the meausures
+        for ip in ["Pipe2", "Pipe2_ret"]:
             np.testing.assert_equal(
-                len(solution._esdl_assets[pipe_id].attributes.get("related", False)),
-                is_related_len,
+                solution.esdl_assets[ip].attributes["state"] == esdl.AssetStateEnum.ENABLED,
+                True,
             )
-            np.testing.assert_array_less(
-                results[f"{pipe_id}__investment_cost"] / parameters[f"{pipe_id}.length"],
-                expected_inv_coef,
-            )
+        for pipe_id in solution.energy_system_components.get("heat_pipe", []):
+            esdl_asset_state = solution.esdl_assets[pipe_id].attributes["state"]
+            if esdl_asset_state == esdl.AssetStateEnum.OPTIONAL:
+                # The expected investment cost was setup to be linked to the pipe diameter for
+                # ease of use
+                expected_inv_coef = parameters[f"{pipe_id}.diameter"] * 1000.0
+                is_related_len = 1
 
-            # Check the available pipe classes
-            for avail_pipe_class in solution._override_pipe_classes[pipe_id]:
-                if avail_pipe_class.name != "None":
-                    multiplier = 1.0
-                    if pipe_id in expensive_pipe_ids:
-                        multiplier *= 10.0
-                    np.testing.assert_almost_equal(
-                        avail_pipe_class.investment_costs,
-                        float(avail_pipe_class.name.replace("DN", "")) * multiplier,
-                    )
+                # Check the pipes in the results
+                if pipe_id in expensive_pipe_ids:
+                    expected_inv_coef = parameters[f"{pipe_id}.diameter"] * 1000.0 * 10.0
+                    is_related_len = 0
+
+                np.testing.assert_equal(
+                    len(solution._esdl_assets[pipe_id].attributes.get("related", False)),
+                    is_related_len,
+                )
+                np.testing.assert_array_less(
+                    results[f"{pipe_id}__investment_cost"] / parameters[f"{pipe_id}.length"],
+                    expected_inv_coef,
+                )
+
+                # Check the available pipe classes
+                for avail_pipe_class in solution._override_pipe_classes[pipe_id]:
+                    if avail_pipe_class.name != "None":
+                        multiplier = 1.0
+                        if pipe_id in expensive_pipe_ids:
+                            multiplier *= 10.0
+                        np.testing.assert_almost_equal(
+                            avail_pipe_class.investment_costs,
+                            float(avail_pipe_class.name.replace("DN", "")) * multiplier,
+                        )
+            elif esdl_asset_state == esdl.AssetStateEnum.ENABLED:
+                np.testing.assert_allclose(
+                    results[f"{pipe_id}__investment_cost"] / parameters[f"{pipe_id}.length"],
+                    3417.9,
+                )
+            else:
+                exit(
+                    f"Pipe name: {solution.esdl_asset_id_to_name_map[pipe_id]} "
+                    "should be ENABLED or OPTIONAL"
+                )
         # -------------------------------------------------------------------------------------
         # Check that the operational more expensive heat producer is used due to it being
         # connect to the cheaper pipes

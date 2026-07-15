@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" name="test_case_small_network_all_optional_pipe_catalog" id="74955419-896e-4684-ba6e-8f9e1b80c5c9" description="" esdlVersion="v2210" version="18">
+<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" name="test_case_small_network_all_optional_pipe_catalog" id="14ed0f0f-2504-4615-8497-73721971efb9" description="" esdlVersion="v2210" version="19">
   <energySystemInformation xsi:type="esdl:EnergySystemInformation" id="e64737d9-d772-4723-b092-a0b397ac00b3">
     <carriers xsi:type="esdl:Carriers" id="9dff13b9-77cd-4b99-8777-6b7680a155b6">
       <carrier xsi:type="esdl:HeatCommodity" id="7b32e287-d775-480c-b317-64ffdacf12c9" name="Heat" supplyTemperature="70.0"/>
@@ -66,7 +66,7 @@
           <measure xsi:type="esdl:MeasureGroupReference" id="a8fc17b7-e107-4de3-8d74-cd7b997a86e8" name="NewMeasureGroupReference" reference="dfbe1fbc-dcee-4251-a76d-42c81b129cfb"/>
         </measures>
       </asset>
-      <asset xsi:type="esdl:Pipe" state="OPTIONAL" diameter="DN450" name="Pipe2" length="195.4" id="Pipe2" innerDiameter="0.4444" outerDiameter="0.63" related="Pipe2_ret">
+      <asset xsi:type="esdl:Pipe" diameter="DN450" name="Pipe2" length="195.4" id="Pipe2" innerDiameter="0.4444" outerDiameter="0.63" related="Pipe2_ret">
         <geometry xsi:type="esdl:Line" CRS="WGS84">
           <point xsi:type="esdl:Point" lat="52.04271178827801" lon="4.311629533767701"/>
           <point xsi:type="esdl:Point" lat="52.04202218466326" lon="4.309000968933106"/>
@@ -90,9 +90,6 @@
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="d0aebc76-201b-4b2d-81fe-55269fcefe3b" description="Costs in EUR/m" perUnit="METRE" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
         </costInformation>
-        <measures xsi:type="esdl:Measures" id="49fce8af-890b-402d-9811-44f53c47f120" name="NewMeasures">
-          <measure xsi:type="esdl:MeasureGroupReference" id="a5fc17b7-e197-4de3-8d74-cd7b997a86e8" name="NewMeasureGroupReference" reference="dfbe1fbc-dcee-4251-a76d-42c81b129cfb"/>
-        </measures>
       </asset>
       <asset xsi:type="esdl:Pipe" state="OPTIONAL" diameter="DN450" name="Pipe3" length="241.6" id="Pipe3" innerDiameter="0.4444" outerDiameter="0.63" related="Pipe3_ret">
         <geometry xsi:type="esdl:Line" CRS="WGS84">
@@ -265,7 +262,7 @@
           </investmentCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:Pipe" state="OPTIONAL" diameter="DN450" name="Pipe2_ret" length="195.4" id="Pipe2_ret" innerDiameter="0.4444" outerDiameter="0.63" related="Pipe2">
+      <asset xsi:type="esdl:Pipe" diameter="DN450" name="Pipe2_ret" length="195.4" id="Pipe2_ret" innerDiameter="0.4444" outerDiameter="0.63" related="Pipe2">
         <geometry xsi:type="esdl:Line">
           <point xsi:type="esdl:Point" CRS="WGS84" lat="52.04211218475326" lon="4.308378045386691"/>
           <point xsi:type="esdl:Point" CRS="WGS84" lat="52.04280178836801" lon="4.311008661644606"/>

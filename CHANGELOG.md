@@ -1,4 +1,4 @@
-# [Unreleased-main] - 2026-07-10
+# [Unreleased-main] - 2026-07-15
 
 ## Added
 - xxx
@@ -7,7 +7,7 @@
 - xxx
 
 ## Fixed
-- xxx
+- Bug: MeasureGroup error when pipe is ENABLED 
 
 
 # [0.1.20.1] - 2026-07-10

@@ -561,12 +561,20 @@ class ESDLMixin(
                     related_exist = asset.attributes.get("related", False)
                     if not asset_referenced_id and related_exist:
                         related_pipe_id = related_exist[0].id
-                        asset_referenced_id = (
-                            self._esdl_assets[related_pipe_id]
-                            .attributes.get("measures")
-                            .measure[0]
-                            .reference.id
+                        related_pipe_measure = self._esdl_assets[related_pipe_id].attributes.get(
+                            "measures"
                         )
+
+                        if related_pipe_measure and asset.attributes["state"].name == "OPTIONAL":
+                            asset_referenced_id = (
+                                self._esdl_assets[related_pipe_id]
+                                .attributes.get("measures")
+                                .measure[0]
+                                .reference.id
+                            )
+                        elif asset.attributes["state"].name != "OPTIONAL":
+                            continue
+
                     elif asset_referenced_id and related_exist:
                         # Check that both related pipes do not have a measure assigned
                         related_pipe_id = related_exist[0].id
