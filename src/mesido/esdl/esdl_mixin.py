@@ -572,7 +572,7 @@ class ESDLMixin(
                                 .measure[0]
                                 .reference.id
                             )
-                        elif asset.attributes["state"].name != "OPTIONAL":
+                        else:
                             continue
 
                     elif asset_referenced_id and related_exist:
