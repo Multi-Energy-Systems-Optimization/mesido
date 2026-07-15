@@ -5,7 +5,7 @@ from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.io.write_output import ScenarioOutput
 from mesido.workflows.utils.adapt_profiles import (
-    adapt_hourly_profile_averages_timestep_size,
+    adapt_profile_averages_timestep_size,
 )
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
@@ -88,11 +88,10 @@ class SourcePipeSinkDayAveraged(SourcePipeSink):
         parameters["time_step_days"] = self.__day_steps
         return parameters
 
-    # TODO: adapt_hourly_profile_averages_timestep_size has to be modified
     def read(self):
         super().read()
 
-        adapt_hourly_profile_averages_timestep_size(self, self.__day_steps)
+        adapt_profile_averages_timestep_size(self, self.__day_steps * 24)
 
 
 class HeatProblemESDLVarsMixin(ESDLAdditionalVarsMixin, SourcePipeSink):

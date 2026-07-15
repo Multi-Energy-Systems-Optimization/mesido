@@ -176,13 +176,19 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, prob
     return problem_indx_max_peak, heat_demand_nominal, cold_demand_nominal
 
 
-def adapt_hourly_profile_averages_timestep_size(problem, problem_step_size_hours: int):
+def adapt_profile_averages_timestep_size(problem, problem_step_size_hours: float):
     """
-    Adapt yearly profile with hourly time steps to a common profile with average over a given
-    stepsize in hours.
+    Adapt a profile with uniform time steps (1 h or 15 min) to a coarser profile whose output
+    step size is given by ``problem_step_size_hours`` hours.
 
-    Return the following:
+    Each output interval covers ``problem_step_size_hours * steps_per_hour`` input slots, where
+    ``steps_per_hour`` is 1 for hourly input and 4 for 15-minute input.  Profile values are
+    averaged over those input slots by ``set_data_with_averages``.
 
+    Parameters
+    ----------
+    problem : optimisation problem instance
+    problem_step_size_hours : desired output step size expressed in hours (e.g. 8 for 8-h steps).
     """
 
     new_datastore = DataStore(problem)
@@ -190,18 +196,33 @@ def adapt_hourly_profile_averages_timestep_size(problem, problem_step_size_hours
 
     org_timeseries = problem.io.datetimes
     org_dt = list(map(operator.sub, org_timeseries[1:], org_timeseries[0:-1]))
-    assert all(dt.seconds == 3600 for dt in org_dt)  # checks that the orginal timeseries has
-    # homogenous horizon with equispaced timesteps of 3600s (1hr).
+
+    timestep_spacing_seconds = org_dt[0].seconds
+    assert all(
+        dt.seconds == timestep_spacing_seconds for dt in org_dt
+    ), "Non-uniform input timestep spacing detected; all steps must be equal."
+    assert timestep_spacing_seconds in (
+        3600,
+        900,
+    ), (
+        f"Unsupported input timestep spacing: {timestep_spacing_seconds} s. "
+        f"Supported: 3600 s (1 h) or 900 s (15 min)."
+    )
+
+    steps_per_hour = 3600 // timestep_spacing_seconds  # 1 for 1-h input, 4 for 15-min input
+    step_size_in_input_steps = int(problem_step_size_hours * steps_per_hour)
 
     for ensemble_member in range(problem.ensemble_size):
         parameters = problem.parameters(ensemble_member)
 
         new_date_times = list()
 
-        for hour in range(0, len(org_timeseries), problem_step_size_hours):
-            new_date_times.append(problem.io.datetimes[hour])
+        for i in range(0, len(org_timeseries), step_size_in_input_steps):
+            new_date_times.append(problem.io.datetimes[i])
 
-        new_date_times.append(problem.io.datetimes[-1] + datetime.timedelta(hours=1))
+        new_date_times.append(
+            problem.io.datetimes[-1] + datetime.timedelta(seconds=timestep_spacing_seconds)
+        )
 
         new_date_times = np.asarray(new_date_times)
         parameters["times"] = [x.timestamp() for x in new_date_times]
