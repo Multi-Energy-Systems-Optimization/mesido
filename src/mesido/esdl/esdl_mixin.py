@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import esdl.esdl_handler
+from esdl.profiles.credentials import Credentials
 
 from mesido.component_type_mixin import (
     ModelicaComponentTypeMixin,
@@ -21,7 +22,7 @@ from mesido.esdl.esdl_heat_model import ESDLHeatModel
 from mesido.esdl.esdl_model_base import _ESDLModelBase
 from mesido.esdl.esdl_parser import ESDLStringParser
 from mesido.esdl.esdl_qth_model import ESDLQTHModel
-from mesido.esdl.profile_parser import BaseProfileReader, InfluxDBProfileReader
+from mesido.esdl.profile_parser import BaseProfileReader, ESDLProfileReader
 from mesido.physics_mixin import PhysicsMixin
 from mesido.pipe_class import GasPipeClass, PipeClass
 from mesido.pycml.pycml_mixin import PyCMLMixin
@@ -55,6 +56,17 @@ class DBAccessType(StrEnum):
     READ = "read"
     WRITE = "write"
     READ_WRITE = "read_write"
+
+
+class ESDLOutputProfilesType(StrEnum):
+    """
+    Enumeration for ESDL output profiles type
+    """
+
+    INFLUXDB = "influxdb"
+    POSTGRESQL = "postgresql"
+    TIME_SERIES_PROFILE = "time_series_profile"
+    DATE_TIME_PROFILE = "date_time_profile"
 
 
 class _ESDLInputException(Exception):
@@ -132,7 +144,7 @@ class ESDLMixin(
             DBAccessType.WRITE: [],
         }
 
-        profile_reader_class = kwargs.get("profile_reader", InfluxDBProfileReader)
+        profile_reader_class = kwargs.get("profile_reader", ESDLProfileReader)
         input_file_name = kwargs.get("input_timeseries_file", None)
         input_folder = kwargs.get("input_folder")
         input_file_path = None
@@ -141,24 +153,26 @@ class ESDLMixin(
         database_connection_info = kwargs.get("database_connections", {})
         read_only_dbase_credentials: Dict[str, Tuple[str, str]] = {}  # for profile reader
         for dbconnection in database_connection_info:
+            database_host_port = "{}:{}".format(
+                dbconnection["host"],
+                dbconnection["port"],
+            )
             if dbconnection["access_type"] != DBAccessType.WRITE:
-                database_host_port = "{}:{}".format(
-                    dbconnection["influxdb_host"],
-                    dbconnection["influxdb_port"],
-                )
                 read_only_dbase_credentials[database_host_port] = (
-                    dbconnection["influxdb_username"],
-                    dbconnection["influxdb_password"],
+                    dbconnection["username"],
+                    dbconnection["password"],
                 )
             if dbconnection["access_type"] != DBAccessType.READ_WRITE:
                 self._database_credentials[dbconnection["access_type"]].append(
                     {
-                        "influxdb_host": dbconnection["influxdb_host"],
-                        "influxdb_port": dbconnection["influxdb_port"],
-                        "influxdb_username": dbconnection["influxdb_username"],
-                        "influxdb_password": dbconnection["influxdb_password"],
-                        "influxdb_ssl": dbconnection["influxdb_ssl"],
-                        "influxdb_verify_ssl": dbconnection["influxdb_verify_ssl"],
+                        "host": dbconnection["host"],
+                        "port": dbconnection["port"],
+                        "username": dbconnection["username"],
+                        "password": dbconnection["password"],
+                        "ssl": dbconnection["ssl"] if "ssl" in dbconnection else False,
+                        "verify_ssl": (
+                            dbconnection["verify_ssl"] if "verify_ssl" in dbconnection else False
+                        ),
                     }
                 )
             elif dbconnection["access_type"] == DBAccessType.READ_WRITE:
@@ -166,12 +180,16 @@ class ESDLMixin(
                 for rw in both_read_and_write:
                     self._database_credentials[rw].append(
                         {
-                            "influxdb_host": dbconnection["influxdb_host"],
-                            "influxdb_port": dbconnection["influxdb_port"],
-                            "influxdb_username": dbconnection["influxdb_username"],
-                            "influxdb_password": dbconnection["influxdb_password"],
-                            "influxdb_ssl": dbconnection["influxdb_ssl"],
-                            "influxdb_verify_ssl": dbconnection["influxdb_verify_ssl"],
+                            "host": dbconnection["host"],
+                            "port": dbconnection["port"],
+                            "username": dbconnection["username"],
+                            "password": dbconnection["password"],
+                            "ssl": dbconnection["ssl"] if "ssl" in dbconnection else False,
+                            "verify_ssl": (
+                                dbconnection["verify_ssl"]
+                                if "verify_ssl" in dbconnection
+                                else False
+                            ),
                         }
                     )
             else:
@@ -181,6 +199,10 @@ class ESDLMixin(
                 )
                 sys.exit(1)
 
+            Credentials.add_credential(
+                database_host_port, dbconnection["username"], dbconnection["password"]
+            )
+
         if input_file_name is not None:
             input_file_path = Path(input_folder) / input_file_name
 
@@ -188,7 +210,6 @@ class ESDLMixin(
             self.__profile_reader: BaseProfileReader = profile_reader_class(
                 energy_system=self.__energy_system_handler.energy_system,
                 file_path=input_file_path,
-                database_credentials=read_only_dbase_credentials,
                 use_esdl_ranged_contraint=self._ESDLMixin__use_esdl_ranged_constraint,
             )
         else:  # read from a file, no database credentials needed
