@@ -16,6 +16,9 @@ from rtctools.optimization.timeseries import Timeseries
 
 logger = logging.getLogger("mesido")
 
+# No safety factor is needed for big_m, since actual bounds are used.
+ASSET_IS_REALIZED_BIG_M_MARGIN = 1.0
+
 
 class FinancialMixin(
     BaseProblemMixin, BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem
@@ -1318,7 +1321,7 @@ class FinancialMixin(
                 #         insulation_class_cost
                 #         investment_cost_sym += insulation_class_active * insulation_class_cost
                 big_m = (
-                    1.5
+                    ASSET_IS_REALIZED_BIG_M_MARGIN
                     * max(
                         self.bounds()[f"{asset}__investment_cost"][1]
                         + self.bounds()[f"{asset}__installation_cost"][1],
@@ -1352,14 +1355,14 @@ class FinancialMixin(
                 heat_flow = self.state(f"{asset}.Heat_flow")
                 if not np.isinf(self.bounds()[f"{asset}.Heat_flow"][1]):
                     big_m = (
-                        1.5
+                        ASSET_IS_REALIZED_BIG_M_MARGIN
                         * self.bounds()[f"{asset}.Heat_flow"][1]
                         / max(self.get_aggregation_count_max(asset), 1.0)
                     )
                 else:
                     try:
                         big_m = (
-                            1.5
+                            ASSET_IS_REALIZED_BIG_M_MARGIN
                             * max(
                                 self.bounds()[f"{asset}.HeatOut.Heat"][1],
                                 self.bounds()[f"{asset}.HeatIn.Heat"][1],
@@ -1368,7 +1371,7 @@ class FinancialMixin(
                         )
                     except KeyError:
                         big_m = (
-                            1.5
+                            ASSET_IS_REALIZED_BIG_M_MARGIN
                             * max(
                                 self.bounds()[f"{asset}.Primary.HeatOut.Heat"][1],
                                 self.bounds()[f"{asset}.Primary.HeatIn.Heat"][1],
@@ -1423,7 +1426,7 @@ class FinancialMixin(
                     )
 
                     big_m = (
-                        1.5
+                        ASSET_IS_REALIZED_BIG_M_MARGIN
                         * max(
                             self.bounds()[f"{asset}__investment_cost"][1]
                             + self.bounds()[f"{asset}__installation_cost"][1],
@@ -1452,14 +1455,14 @@ class FinancialMixin(
                     heat_flow = self.states_in(f"{asset}.Heat_flow", time_start, time_end)[:-1]
                     if not np.isinf(self.bounds()[f"{asset}.Heat_flow"][1]):
                         big_m = (
-                            1.5
+                            ASSET_IS_REALIZED_BIG_M_MARGIN
                             * self.bounds()[f"{asset}.Heat_flow"][1]
                             / max(self.get_aggregation_count_max(asset), 1.0)
                         )
                     else:
                         try:
                             big_m = (
-                                1.5
+                                ASSET_IS_REALIZED_BIG_M_MARGIN
                                 * max(
                                     self.bounds()[f"{asset}.HeatOut.Heat"][1],
                                     self.bounds()[f"{asset}.HeatIn.Heat"][1],
@@ -1468,7 +1471,7 @@ class FinancialMixin(
                             )
                         except KeyError:
                             big_m = (
-                                1.5
+                                ASSET_IS_REALIZED_BIG_M_MARGIN
                                 * max(
                                     self.bounds()[f"{asset}.Primary.HeatOut.Heat"][1],
                                     self.bounds()[f"{asset}.Primary.HeatIn.Heat"][1],
