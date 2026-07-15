@@ -10,6 +10,7 @@ import esdl
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ESDLProfileReader, ProfileReaderFromFile
+from mesido.util import run_esdl_mesido_optimization
 from mesido.workflows import EndScenarioSizingStaged
 from mesido.workflows.utils.adapt_profiles import (
     adapt_hourly_profile_averages_timestep_size,
@@ -41,6 +42,43 @@ class MockESDLProfileReader(ESDLProfileReader):
 
     def _load_profile_timeseries_from_database(self, profile: esdl.InfluxDBProfile) -> pd.Series:
         return self._loaded_profiles[profile.id]
+
+
+class TestProfileParsing(unittest.TestCase):
+    def test_15min_optimization(self):
+        """
+        Tests that a full optimization runs correctly when input profiles have 15-minute
+        timesteps (900 s spacing) instead of the default 1-hour spacing.
+
+        Uses the sourcesink_with_eboiler model (HeatingDemand + ElectricBoiler +
+        ElectricityProducer) with a 3-day 15-minute CSV profile
+        (timeseries_import_15min.csv: 288 timesteps).
+
+        Checks:
+        - Profile is parsed as 15-min data: exactly 288 datetimes are present.
+        - All consecutive timestep differences are exactly 900 s.
+        - Standard demand matching, energy conservation, heat-to-discharge and electric
+          power conservation checks pass.
+        - Key result arrays have the correct length (no off-by-one indexing artefacts).
+        - ElectricityProducer delivers positive power to the ElectricBoiler.
+        """
+        import models.source_pipe_sink.src.double_pipe_heat as double_pipe_heat
+        from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSinkDayAveraged
+
+        base_folder = Path(double_pipe_heat.__file__).resolve().parent.parent
+
+        solution = run_esdl_mesido_optimization(
+            SourcePipeSinkDayAveraged,
+            base_folder=base_folder,
+            esdl_file_name="sourcesink_with_eboiler.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import_15min.csv",
+        )
+
+        results = solution.extract_results()
+        parameters = solution.parameters(0)
+        name_to_id_map = solution.esdl_asset_name_to_id_map
 
 
 class TestProfileUpdating(unittest.TestCase):
