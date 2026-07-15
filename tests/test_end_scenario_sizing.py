@@ -837,14 +837,20 @@ class TestEndScenarioSizing(TestCase):
             solution.esdl_asset_name_to_id_map["Pipe_f6e5"],
             solution.esdl_asset_name_to_id_map["Pipe_f6e5_ret"],
         ]
-        # Ensure these two pipes are ENABLED to esnure their cost are not modified by the meausures
-        for ip in ["Pipe2", "Pipe2_ret"]:
-            np.testing.assert_equal(
-                solution.esdl_assets[ip].attributes["state"] == esdl.AssetStateEnum.ENABLED,
-                True,
-            )
         for pipe_id in solution.energy_system_components.get("heat_pipe", []):
             esdl_asset_state = solution.esdl_assets[pipe_id].attributes["state"]
+            # Ensure these two pipes are ENABLED to ensure their cost are not modified by the
+            # meausures and the rest are OPTIONAL due to having measures assigned
+            if pipe_id in ["Pipe2", "Pipe2_ret"]:
+                np.testing.assert_equal(
+                    esdl_asset_state == esdl.AssetStateEnum.ENABLED,
+                    True,
+                )
+            else:
+                np.testing.assert_equal(
+                    esdl_asset_state == esdl.AssetStateEnum.ENABLED,
+                    False,
+                )
             if esdl_asset_state == esdl.AssetStateEnum.OPTIONAL:
                 # The expected investment cost was setup to be linked to the pipe diameter for
                 # ease of use
