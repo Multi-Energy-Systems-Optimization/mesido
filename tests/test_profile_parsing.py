@@ -4,12 +4,12 @@ import os
 import unittest
 import unittest.mock
 from pathlib import Path
-from typing import Dict, Optional, Tuple
+from typing import Optional
 
 import esdl
 
 from mesido.esdl.esdl_parser import ESDLFileParser
-from mesido.esdl.profile_parser import InfluxDBProfileReader, ProfileReaderFromFile
+from mesido.esdl.profile_parser import ESDLProfileReader, ProfileReaderFromFile
 from mesido.workflows import EndScenarioSizingStaged
 from mesido.workflows.utils.adapt_profiles import (
     adapt_hourly_profile_averages_timestep_size,
@@ -21,19 +21,17 @@ import numpy as np
 import pandas as pd
 
 
-class MockInfluxDBProfileReader(InfluxDBProfileReader):
+class MockESDLProfileReader(ESDLProfileReader):
     def __init__(
         self,
         energy_system: esdl.EnergySystem,
         file_path: Optional[Path],
         use_esdl_ranged_contraint: bool,
-        database_credentials: Optional[Dict[str, Tuple[str, str]]] = None,
     ):
         super().__init__(
             energy_system,
             file_path,
             use_esdl_ranged_contraint=use_esdl_ranged_contraint,
-            database_credentials=database_credentials,
         )
         self._loaded_profiles = pd.read_csv(
             file_path,
@@ -163,7 +161,7 @@ class TestProfileLoading(unittest.TestCase):
             model_folder=model_folder,
             input_folder=input_folder,
             esdl_file_name="1a_with_influx_profiles.esdl",
-            profile_reader=MockInfluxDBProfileReader,
+            profile_reader=MockESDLProfileReader,
             input_timeseries_file="influx_mock.csv",
         )
         problem.pre()
