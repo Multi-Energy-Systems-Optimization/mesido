@@ -7,6 +7,18 @@
 - xxx
 
 ## Fixed
+- xxx 
+
+
+# [0.1.20.2] - 2026-07-15
+
+## Added
+- xxx
+
+## Changed
+- xxx
+
+## Fixed
 - Bug: MeasureGroup error when pipe is ENABLED 
 
 
