@@ -2,6 +2,7 @@
 
 ## Added
 - ESDL profile reading and writing for different types: influxdb and postgres, and inline (in ESDL file).
+- Import (a subclass of electricity source) is supported in Mesido.
 
 ## Changed
 - Code generalization in asset sizing mixin
