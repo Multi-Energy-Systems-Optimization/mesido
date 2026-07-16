@@ -176,10 +176,10 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, prob
     return problem_indx_max_peak, heat_demand_nominal, cold_demand_nominal
 
 
-def adapt_profile_averages_timestep_size(problem, problem_step_size_hours: float):
+def adapt_profile_to_averaged_timestep(problem: dict, problem_step_size_hours: float):
     """
-    Adapt a profile with uniform time steps (1 h or 15 min) to a coarser profile whose output
-    step size is given by ``problem_step_size_hours`` hours.
+    Adapt profile with uniform time steps (1 h or 15 min) to a common profile with average
+    over a given stepsize (``problem_step_size_hours``) in hours.
 
     Each output interval covers ``problem_step_size_hours * steps_per_hour`` input slots, where
     ``steps_per_hour`` is 1 for hourly input and 4 for 15-minute input.  Profile values are
@@ -188,7 +188,7 @@ def adapt_profile_averages_timestep_size(problem, problem_step_size_hours: float
     Parameters
     ----------
     problem : optimisation problem instance
-    problem_step_size_hours : desired output step size expressed in hours (e.g. 8 for 8-h steps).
+    problem_step_size_hours : desired output step size expressed in hours
     """
 
     new_datastore = DataStore(problem)
