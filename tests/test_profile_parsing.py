@@ -10,15 +10,23 @@ import esdl
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ESDLProfileReader, ProfileReaderFromFile
+from mesido.util import run_esdl_mesido_optimization
 from mesido.workflows import EndScenarioSizingStaged
 from mesido.workflows.utils.adapt_profiles import (
-    adapt_hourly_profile_averages_timestep_size,
+    adapt_profile_to_averaged_timestep,
     adapt_profile_to_copy_for_number_of_years,
 )
 
 import numpy as np
 
 import pandas as pd
+
+from utils_tests import (
+    demand_matching_test,
+    electric_power_conservation_test,
+    energy_conservation_test,
+    heat_to_discharge_test,
+)
 
 
 class MockESDLProfileReader(ESDLProfileReader):
@@ -41,6 +49,107 @@ class MockESDLProfileReader(ESDLProfileReader):
 
     def _load_profile_timeseries_from_database(self, profile: esdl.InfluxDBProfile) -> pd.Series:
         return self._loaded_profiles[profile.id]
+
+
+class TestProfileParsing(unittest.TestCase):
+    def test_parsing_input_profile_with_15min_timesteps(self):
+        """
+        Tests that a full optimization runs correctly when input profiles have 15-minute
+        time steps.
+
+        Uses the sourcesink_with_eboiler model (HeatingDemand + ElectricBoiler +
+        ElectricityProducer) and an input csv with 15 minutes time steps.
+
+        Checks:
+        - Standard demand matching, energy conservation, heat-to-discharge and electric
+          power conservation checks pass.
+        - Input CSV has 15-min time spacing and expected number of data points
+        - Input profile is parsed correctly (1-day average time steps).
+        - Resulting demand, e-source and e-price profile lengths are correct
+        - No indexing problem with input demand and electricity profile
+
+        """
+        import models.source_pipe_sink.src.double_pipe_heat as double_pipe_heat
+        from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSinkDayAveraged
+
+        base_folder = Path(double_pipe_heat.__file__).resolve().parent.parent
+
+        day_steps = 1  # average over 1 day for profile parsing
+
+        solution = run_esdl_mesido_optimization(
+            SourcePipeSinkDayAveraged,
+            base_folder=base_folder,
+            esdl_file_name="sourcesink_with_eboiler.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import_15min.csv",
+            _day_steps=day_steps,
+        )
+
+        results = solution.extract_results()
+
+        # Check: utils tests
+        demand_matching_test(solution, results)
+        energy_conservation_test(solution, results)
+        heat_to_discharge_test(solution, results)
+        electric_power_conservation_test(solution, results)
+
+        # Check: input CSV has 15-min time spacing and expected number of data points
+        input_csv_path = base_folder / "input" / "timeseries_import_15min.csv"
+        input_data = pd.read_csv(input_csv_path)
+        dt0 = datetime.datetime.strptime(input_data["DateTime"].iloc[0], "%d-%m-%Y %H:%M")
+        dt1 = datetime.datetime.strptime(input_data["DateTime"].iloc[1], "%d-%m-%Y %H:%M")
+        input_timestep_seconds = (dt1 - dt0).total_seconds()
+        np.testing.assert_array_equal(
+            input_timestep_seconds,
+            900,
+            err_msg=f"Expected timestep is 900 s(15 min), got {input_timestep_seconds} s",
+        )
+        input_n_days = 3
+        input_n_steps = (
+            input_n_days * 24 * (3600 / input_timestep_seconds)
+        )  # 3 days x 24 hr/day x 4 steps/hr = 288
+        np.testing.assert_array_equal(
+            len(input_data),
+            input_n_steps,
+        )
+
+        # Check: input profile is parsed correctly (1-day average timesteps)
+        expected_n_output_intervals = input_n_days // day_steps  # 3
+        datetimes = solution.io.datetimes
+        np.testing.assert_array_equal(
+            len(datetimes),
+            expected_n_output_intervals + 1,  # +1 for closing sentinel
+        )
+        dts = [datetimes[i + 1] - datetimes[i] for i in range(len(datetimes) - 1)]
+        expected_step_seconds = day_steps * 24 * 3600  # 86 400 s = 1 day
+        actual_step_seconds = np.array([dt.total_seconds() for dt in dts])
+        np.testing.assert_array_equal(
+            expected_step_seconds,
+            actual_step_seconds,
+        )
+        np.testing.assert_array_equal(
+            expected_step_seconds,
+            np.diff(solution.times()),
+        )
+
+        # Check: resulting demand, e-source and e-price profile lengths are correct
+        name_to_id_map = solution.esdl_asset_name_to_id_map
+        demand_id = name_to_id_map["demand"]
+        electricity_producer_id = name_to_id_map["ElectricityProducer_4dde"]
+
+        np.testing.assert_array_equal(
+            len(results[f"{demand_id}.Heat_demand"]),
+            expected_n_output_intervals + 1,
+        )
+        np.testing.assert_array_equal(
+            len(results[f"{electricity_producer_id}.Electricity_source"]),
+            expected_n_output_intervals + 1,
+        )
+        np.testing.assert_array_equal(
+            len(solution.get_timeseries("elec.price_profile").values),
+            expected_n_output_intervals + 1,
+        )
 
 
 class TestProfileUpdating(unittest.TestCase):
@@ -72,7 +181,7 @@ class TestProfileUpdating(unittest.TestCase):
                 """
                 super().read()
 
-                adapt_hourly_profile_averages_timestep_size(self, problem_step_size)
+                adapt_profile_to_averaged_timestep(self, problem_step_size)
 
         problem = ProfileUpdateHourly(
             esdl_parser=ESDLFileParser,
