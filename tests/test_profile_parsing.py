@@ -52,7 +52,7 @@ class MockESDLProfileReader(ESDLProfileReader):
 
 
 class TestProfileParsing(unittest.TestCase):
-    def test_paring_input_profile_with_15min_timesteps(self):
+    def test_parsing_input_profile_with_15min_timesteps(self):
         """
         Tests that a full optimization runs correctly when input profiles have 15-minute
         time steps.
