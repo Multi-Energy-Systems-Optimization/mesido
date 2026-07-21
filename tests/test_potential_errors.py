@@ -7,7 +7,7 @@ from typing import Optional
 import esdl
 
 from mesido.esdl.esdl_parser import ESDLFileParser
-from mesido.esdl.profile_parser import InfluxDBProfileReader
+from mesido.esdl.profile_parser import ESDLProfileReader
 from mesido.exceptions import MesidoAssetIssueError
 from mesido.potential_errors import MesidoAssetIssueType, PotentialErrors
 from mesido.workflows import EndScenarioSizingStaged
@@ -20,9 +20,18 @@ import pandas as pd
 from utils_test_scaling import create_log_list_scaling
 
 
-class MockInfluxDBProfileReader(InfluxDBProfileReader):
-    def __init__(self, energy_system: esdl.EnergySystem, file_path: Optional[Path]):
-        super().__init__(energy_system, file_path)
+class MockESDLProfileReader(ESDLProfileReader):
+    def __init__(
+        self,
+        energy_system: esdl.EnergySystem,
+        file_path: Optional[Path],
+        use_esdl_ranged_contraint: bool = False,
+    ):
+        super().__init__(
+            energy_system=energy_system,
+            file_path=file_path,
+            use_esdl_ranged_contraint=use_esdl_ranged_contraint,
+        )
         self._loaded_profiles = pd.read_csv(
             file_path,
             index_col="DateTime",
@@ -53,7 +62,7 @@ class TestPotentialErrors(unittest.TestCase):
         model_folder = base_folder / "model"
         input_folder = base_folder / "input"
 
-        logger, logs_list = create_log_list_scaling("WarmingUP-MPC")
+        logger, logs_list = create_log_list_scaling("mesido")
 
         with (
             self.assertRaises(MesidoAssetIssueError) as cm,
@@ -65,7 +74,7 @@ class TestPotentialErrors(unittest.TestCase):
                 model_folder=model_folder,
                 input_folder=input_folder,
                 esdl_file_name="1a_with_influx_profiles_error_check_1.esdl",
-                profile_reader=MockInfluxDBProfileReader,
+                profile_reader=MockESDLProfileReader,
                 input_timeseries_file="influx_mock.csv",
             )
             problem.pre()
@@ -104,7 +113,7 @@ class TestPotentialErrors(unittest.TestCase):
                 model_folder=model_folder,
                 input_folder=input_folder,
                 esdl_file_name="1a_with_influx_profiles_error_check_2.esdl",
-                profile_reader=MockInfluxDBProfileReader,
+                profile_reader=MockESDLProfileReader,
                 input_timeseries_file="influx_mock.csv",
             )
             problem.pre()
@@ -132,7 +141,7 @@ class TestPotentialErrors(unittest.TestCase):
                 model_folder=model_folder,
                 input_folder=input_folder,
                 esdl_file_name="1a_with_influx_profiles_error_check_3.esdl",
-                profile_reader=MockInfluxDBProfileReader,
+                profile_reader=MockESDLProfileReader,
                 input_timeseries_file="influx_mock.csv",
             )
             problem.pre()
@@ -163,7 +172,7 @@ class TestPotentialErrors(unittest.TestCase):
                 model_folder=model_folder,
                 input_folder=input_folder,
                 esdl_file_name="1a_with_influx_profiles_error_check_4.esdl",
-                profile_reader=MockInfluxDBProfileReader,
+                profile_reader=MockESDLProfileReader,
                 input_timeseries_file="influx_mock.csv",
             )
             problem.pre()
@@ -205,8 +214,10 @@ class TestPotentialErrors(unittest.TestCase):
         )
         np.testing.assert_equal(
             cm.exception.message_per_asset_id["2ab92324-f86e-4976-9a6e-f7454b77ba3c"],
-            "Asset named HeatingDemand_2ab9: Input profile "
-            "demand1_MW_wrong_name in Unittests profiledata is not available in the database.",
+            "Error retrieving profile for asset 'HeatingDemand_2ab9' from host "
+            "'profiles.warmingup.info' and database 'energy_profiles': Failed to load from "
+            "InfluxDB: Failed to load profile data from InfluxDB for profile with "
+            "id:c3c18c06-1500-4e55-ae1d-56a82e806387 from host 'profiles.warmingup.info:443'.",
         )
 
         # Check that the ResidualHeatSource multiplier's error is picked up
@@ -220,7 +231,7 @@ class TestPotentialErrors(unittest.TestCase):
                 model_folder=model_folder,
                 input_folder=input_folder,
                 esdl_file_name="1a_with_influx_profiles_error_check_5.esdl",
-                profile_reader=InfluxDBProfileReader,
+                profile_reader=ESDLProfileReader,
             )
             problem.pre()
         np.testing.assert_equal(

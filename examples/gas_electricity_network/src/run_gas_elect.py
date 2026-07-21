@@ -7,7 +7,6 @@ from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.workflows.gas_elect_workflow import GasElectProblem
 from mesido.workflows.utils.helpers import run_optimization_problem_solver
 
-
 root_folder = os.path.join(str(Path(__file__).resolve().parent.parent.parent.parent), "tests")
 sys.path.insert(1, root_folder)
 

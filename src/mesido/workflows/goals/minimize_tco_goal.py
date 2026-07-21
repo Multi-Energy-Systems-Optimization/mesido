@@ -46,6 +46,7 @@ class MinimizeTCO(Goal):
                 "heat_buffer",
                 "gas_source",  # TODO still to add other costs for this asset_type
                 "electricity_source",  # TODO still to add other costs for this asset_type
+                "airco",
             },
             "fixed_operational": {
                 "heat_source",
@@ -54,6 +55,7 @@ class MinimizeTCO(Goal):
                 "heat_pump",
                 "heat_exchanger",
                 "pump",
+                "airco",
                 "heat_demand",
             },
             "investment": {
@@ -61,36 +63,42 @@ class MinimizeTCO(Goal):
                 "ates",
                 "heat_buffer",
                 "heat_demand",
+                "cold_demand",
                 "heat_exchanger",
                 "heat_pump",
                 "heat_pipe",
                 "gas_pipe",
                 "electricity_cable",
                 "pump",
+                "airco",
             },
             "installation": {
                 "heat_source",
                 "ates",
                 "heat_buffer",
                 "heat_demand",
+                "cold_demand",
                 "heat_exchanger",
                 "heat_pump",
                 "heat_pipe",
                 "gas_pipe",
                 "electricity_cable",
                 "pump",
+                "airco",
             },
             "annualized": {
                 "heat_source",
                 "ates",
                 "heat_buffer",
                 "heat_demand",
+                "cold_demand",
                 "heat_exchanger",
                 "heat_pump",
                 "heat_pipe",
                 "gas_pipe",
                 "electricity_cable",
                 "pump",
+                "airco",
             },
         }
 
@@ -144,7 +152,9 @@ class MinimizeTCO(Goal):
                 factor = self.number_of_years / technical_lifetime
                 if factor < 1.0:
                     factor = 1.0
-                extra_var = optimization_problem.extra_variable(cost_type_map[asset])
+                extra_var = optimization_problem.extra_variable(
+                    cost_type_map[asset], ensemble_member=ensemble_member
+                )
 
                 # For the GROW workflow, we do not add any costs for the asset HeatingDemand in the
                 # TCO minimization calculation since this is not sized. Thus, we need to exclude
@@ -153,16 +163,25 @@ class MinimizeTCO(Goal):
 
                 asset_state = optimization_problem.parameters(ensemble_member)[f"{asset}.state"]
 
-                if not ((asset_type == "heat_demand") and (asset_state == AssetStateEnum.ENABLED)):
-                    if options["discounted_annualized_cost"]:
-                        # We only want the operational cost for a single year when we use
-                        # annualized CAPEX.
-                        obj += extra_var
-                    elif "operational" in cost_type:
-                        obj += extra_var * self.number_of_years
-                    else:
-                        # These are the CAPEX cost under non-annualized condition
-                        obj += extra_var * factor
+                if "operational" in cost_type:
+                    if not (
+                        asset_type == "heat_demand" and (asset_state == AssetStateEnum.ENABLED)
+                    ):
+                        if options["discounted_annualized_cost"]:
+                            # We only want the operational cost for a single year when we use
+                            # annualized CAPEX.
+                            obj += extra_var
+                        else:
+                            obj += extra_var * self.number_of_years
+                else:
+                    if asset_state == AssetStateEnum.OPTIONAL:
+                        # The capex of enabled assets should not be a part of the objective
+                        # function as it cannot be influenced.
+                        if options["discounted_annualized_cost"]:
+                            # Annualized CAPEX is used.
+                            obj += extra_var
+                        else:
+                            obj += extra_var * factor
         return obj
 
     def function(self, optimization_problem: TechnoEconomicMixin, ensemble_member) -> MX:

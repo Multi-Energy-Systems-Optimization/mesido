@@ -21,3 +21,6 @@ class BaseAsset(Component):
         self.technical_life = nan
         self.discount_rate = nan
         self.emission_coeff = nan
+        self.max_ramp_coeff = nan
+
+        self.include_head_loss_variables = True

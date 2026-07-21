@@ -8,11 +8,17 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
+from utils_tests import (
+    cost_calculation_test,
+    demand_matching_test,
+    energy_conservation_test,
+    heat_to_discharge_test,
+)
 
 
 class TestGasBoiler(TestCase):
-    def test_gas_boiler(self):
+
+    def test_gas_heat_source_gas(self):
         """
         This tests checks the gas boiler for the standard checks and the energy conservation over
         the commodity change.
@@ -21,7 +27,8 @@ class TestGasBoiler(TestCase):
         1. demand is matched
         2. energy conservation in the network
         3. heat to discharge
-        4. energy conservation over the commodity
+        4. cost calculation of gas heater is checked
+        5. check pipe bounds
 
         """
         import models.source_pipe_sink.src.double_pipe_heat as example
@@ -32,7 +39,7 @@ class TestGasBoiler(TestCase):
         heat_problem = run_esdl_mesido_optimization(
             SourcePipeSink,
             base_folder=base_folder,
-            esdl_file_name="sourcesink_withgasboiler.esdl",
+            esdl_file_name="sourcesink_with_gasboiler.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_import.csv",
@@ -40,19 +47,31 @@ class TestGasBoiler(TestCase):
         results = heat_problem.extract_results()
         parameters = heat_problem.parameters(0)
         bounds = heat_problem.bounds()
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
+
+        gas_heater_id = name_to_id_map["GasHeater_f713"]
+        gas_producer_id = name_to_id_map["GasProducer_82ec"]
+        pipe_id = name_to_id_map["Pipe_a7b5"]
 
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
 
-        np.testing.assert_array_less(0.0, results["GasHeater_f713.Heat_source"])
-        np.testing.assert_array_less(0.0, results["GasProducer_82ec.Gas_source_mass_flow"])
+        # Check the cost calculations of gas heater
+        np.testing.assert_array_less(99.0, results[f"{gas_heater_id}__investment_cost"])
+        np.testing.assert_array_less(99.0, results[f"{gas_heater_id}__installation_cost"])
+        np.testing.assert_array_less(1e3, results[f"{gas_heater_id}__variable_operational_cost"])
+        cost_calculation_test(heat_problem, results)
+
+        # check energy conservation over the commodity
+        np.testing.assert_array_less(0.0, results[f"{gas_heater_id}.Heat_source"])
+        np.testing.assert_array_less(0.0, results[f"{gas_producer_id}.Gas_source_mass_flow"])
         np.testing.assert_array_less(
-            parameters["GasHeater_f713.energy_content"]
-            * results["GasHeater_f713.GasIn.mass_flow"]
-            * parameters["GasHeater_f713.efficiency"]
+            parameters[f"{gas_heater_id}.energy_content"]
+            * results[f"{gas_heater_id}.GasIn.mass_flow"]
+            * parameters[f"{gas_heater_id}.efficiency"]
             / 1000.0,  # [J/kg] * [g/s] / 1000.0 = [J/s]
-            results["GasHeater_f713.Heat_source"] + 1.0e-6,
+            results[f"{gas_heater_id}.Heat_source"] + 1.0e-6,
         )
 
         # check if the maximum gas velocity set in problem is used to determine bounds on pipes
@@ -60,12 +79,65 @@ class TestGasBoiler(TestCase):
             "maximum_velocity"
         ]  # m/s maximum velocity set in problem.
         np.testing.assert_allclose(
-            bounds["Pipe_a7b5.GasIn.Q"][1],
-            parameters["Pipe_a7b5.diameter"] ** 2 / 4 * math.pi * v_max_gas,
+            bounds[f"{pipe_id}.GasIn.Q"][1],
+            parameters[f"{pipe_id}.diameter"] ** 2 / 4 * math.pi * v_max_gas,
+        )
+
+    def test_heat_source_gas(self):
+        """
+        This tests checks the gas boiler without gas inlet port for the standard checks
+        and GasHeater cost components
+
+        Checks:
+        1. demand is matched
+        2. energy conservation in the network
+        3. heat to discharge
+        4. cost calculation of gas heater is checked
+
+        """
+        import models.source_pipe_sink.src.double_pipe_heat as example
+        from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        solution = run_esdl_mesido_optimization(
+            SourcePipeSink,
+            base_folder=base_folder,
+            esdl_file_name="sourcesink_with_gasboiler_no_gas.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.csv",
+        )
+        results = solution.extract_results()
+        parameters = solution.parameters(0)
+        name_to_id_map = solution.esdl_asset_name_to_id_map
+
+        gas_heater_id = name_to_id_map["GasHeater_f713"]
+
+        demand_matching_test(solution, results)
+        energy_conservation_test(solution, results)
+        heat_to_discharge_test(solution, results)
+
+        # Check the cost calculations of gas heater
+        np.testing.assert_array_less(99.0, results[f"{gas_heater_id}__investment_cost"])
+        np.testing.assert_array_less(99.0, results[f"{gas_heater_id}__installation_cost"])
+        np.testing.assert_array_less(1e3, results[f"{gas_heater_id}__variable_operational_cost"])
+        cost_calculation_test(solution, results)
+
+        # check energy conservation over the commodity
+        np.testing.assert_array_less(0.0, results[f"{gas_heater_id}.Heat_source"])
+        np.testing.assert_array_less(0.0, results[f"{gas_heater_id}.Gas_demand_mass_flow"])
+        np.testing.assert_array_less(
+            parameters[f"{gas_heater_id}.energy_content"]
+            * results[f"{gas_heater_id}.Gas_demand_mass_flow"]
+            * parameters[f"{gas_heater_id}.efficiency"]
+            / 1000.0,  # [J/kg] * [g/s] / 1000.0 = [J/s]
+            results[f"{gas_heater_id}.Heat_source"] + 1.0e-6,
         )
 
 
 if __name__ == "__main__":
 
     a = TestGasBoiler()
-    a.test_gas_boiler()
+    a.test_gas_heat_source_gas()
+    a.test_heat_source_gas()

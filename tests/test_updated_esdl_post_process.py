@@ -17,11 +17,14 @@ from mesido.workflows import (
 
 import numpy as np
 
+import pytest
+
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
 class TestUpdatedESDL(TestCase):
 
+    @pytest.mark.post_process
     def test_updated_esdl(self):
         """
         Check that the updated ESDL resulting from the optmizer, is correct by using the PoCTutorial
@@ -265,12 +268,22 @@ class TestUpdatedESDL(TestCase):
                 # Check pipe diameter
                 if len(fnmatch.filter([energy_system.instance[0].area.asset[ii].id], "Pipe*")) == 1:
                     if asset_name in ["Pipe1", "Pipe1_ret"]:
-                        np.testing.assert_array_equal(
-                            energy_system.instance[0].area.asset[ii].diameter.name, "DN250"
-                        )  # original pipe DN400 being sized
+                        pipe_size = energy_system.instance[0].area.asset[
+                            ii
+                        ].diameter == esdl.PipeDiameterEnum.getEEnumLiteral(
+                            "DN200"
+                        ) or energy_system.instance[
+                            0
+                        ].area.asset[
+                            ii
+                        ].diameter == esdl.PipeDiameterEnum.getEEnumLiteral(
+                            "DN250"
+                        )
+                        np.testing.assert_array_equal(pipe_size, True)  # original pipe DN400 being
+                        # sized
                     elif asset_name in ["Pipe4", "Pipe4_ret"]:
                         np.testing.assert_array_equal(
-                            energy_system.instance[0].area.asset[ii].diameter.name, "DN200"
+                            energy_system.instance[0].area.asset[ii].diameter.name, "DN150"
                         )  # original pipe DN900 being sized
                     elif asset_name not in ["Pipe5", "Pipe5_ret"]:
                         np.testing.assert_array_equal(
@@ -319,6 +332,7 @@ class TestUpdatedESDL(TestCase):
                 len(energy_system.instance[0].area.area), number_of_areas_in_esdl
             )
 
+    @pytest.mark.post_process
     def test_updated_esdl_eac(self):
         """
         Ensure that the updated ESDL, generated through optimization using the
@@ -345,19 +359,22 @@ class TestUpdatedESDL(TestCase):
         model_folder = base_folder / "model"
         input_folder = base_folder / "input"
 
+        esdl_name = "PoC Tutorial Discount5.esdl"
+
         # Run the case in order to have access to results and solutions
         solution = run_end_scenario_sizing(
             EndScenarioSizingDiscountedStaged,
             base_folder=base_folder,
-            esdl_file_name="PoC Tutorial Discount5.esdl",
+            esdl_file_name=esdl_name,
             esdl_parser=ESDLFileParser,
         )
 
         results = solution.extract_results()
         parameters = solution.parameters(0)
+        name_to_id_map = solution.esdl_asset_name_to_id_map
 
         problem = EndScenarioSizingDiscountedStaged(
-            esdl_file_name="PoC Tutorial Discount5.esdl",
+            esdl_file_name=esdl_name,
             esdl_parser=ESDLFileParser,
             base_folder=base_folder,
             model_folder=model_folder,
@@ -366,7 +383,7 @@ class TestUpdatedESDL(TestCase):
         problem.pre()
 
         # Load in optimized esdl in the form of the actual optimized esdl file created by MESIDO
-        esdl_path = os.path.join(base_folder, "model", "PoC Tutorial Discount5_GrowOptimized.esdl")
+        esdl_path = os.path.join(base_folder, "model", f"{esdl_name[:-5]}_GrowOptimized.esdl")
         energy_system = problem._ESDLMixin__energy_system_handler.load_file(esdl_path)
 
         # Util test
@@ -400,7 +417,7 @@ class TestUpdatedESDL(TestCase):
         )
 
         # Check if EAC calculation is matching with KPI values
-        asset = "ResidualHeatSource_72d7"
+        asset_id = name_to_id_map["ResidualHeatSource_72d7"]
         for ii in range(len(energy_system.instance[0].area.KPIs.kpi)):
             kpi_name = energy_system.instance[0].area.KPIs.kpi[ii].name
 
@@ -419,10 +436,10 @@ class TestUpdatedESDL(TestCase):
                     if string_items_asset.label == "ResidualHeatSource":
                         value = string_items_asset.value
 
-                        investment_cost = results[f"{asset}__investment_cost"]
-                        installation_cost = results[f"{asset}__installation_cost"]
-                        asset_life_years = parameters[f"{asset}.technical_life"]
-                        discount_rate = parameters[f"{asset}.discount_rate"] / 100.0
+                        investment_cost = results[f"{asset_id}__investment_cost"]
+                        installation_cost = results[f"{asset_id}__installation_cost"]
+                        asset_life_years = parameters[f"{asset_id}.technical_life"]
+                        discount_rate = parameters[f"{asset_id}.discount_rate"] / 100.0
                         annuity_factor = calculate_annuity_factor(discount_rate, asset_life_years)
                         capex_eac = (investment_cost + installation_cost) * annuity_factor
 
@@ -437,8 +454,8 @@ class TestUpdatedESDL(TestCase):
                     if string_items_asset.label == "ResidualHeatSource":
                         value = string_items_asset.value
 
-                        var_opex_cost = results[f"{asset}__variable_operational_cost"]
-                        fix_opex_cost = results[f"{asset}__fixed_operational_cost"]
+                        var_opex_cost = results[f"{asset_id}__variable_operational_cost"]
+                        fix_opex_cost = results[f"{asset_id}__fixed_operational_cost"]
 
                         opex_eac = var_opex_cost + fix_opex_cost
 

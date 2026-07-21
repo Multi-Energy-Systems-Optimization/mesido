@@ -1,13 +1,142 @@
-# [Unreleased-main] - 2025-11-19
+# [Unreleased-main] - 2026-07-14
 
 ## Added
-- xx
+- ESDL profile reading and writing for different types: influxdb and postgres, and inline (in ESDL file).
 
 ## Changed
-- xx
+- Code generalization in asset sizing mixin
+- Write_result_db_profiles has been replaced by esdl_profiles_output_type (determines the ESDL output profile type)
+- Names used for keys in "database_connections" specified
+- Using pyesdl for database credential management
 
 ## Fixed
-- xx
+- Bug: Only update the aggregation count for an ATES and a GeothermalSource in DTK post processing
+
+# [0.1.20] - 2026-06-15
+
+## Added
+- xxx
+
+## Changed
+- xxx
+
+## Fixed
+- Removing the use of the electricity price profile for heat assets that have an ElectricityPort connecting to an electricity network.
+- Account for head_loss setting in post processing 
+
+
+# [0.1.19] - 2026-06-08
+
+## Added
+- Electricity consumption calculation of geothermal assets, using the defined COP. 
+- Geothermal electricity asset that can be connected to the electricity grid.
+- Addition of heat buffer asset with electric charging (i.e. HeatBufferElec).
+- DataSource is assigned to output profiles
+- Generic methods to create equality and inequality constraints using big-M formulation.
+- First implementation of a temperature profile for a producer. (experimental)
+- Workflow of EndScenarioSizing with demand uncertainty is added.
+- Ramp constraints for heat producers are added.
+- Maximum and minimum temperature of heat sources are parsed from esdl
+- Warnings on potential causes of heat demand not being matched are added in the grow workflow
+
+## Changed
+- Reduced the number of constraints required for headloss calculation with LINEARIZED_N_LINES_EQUALITY setting.
+- The method __state_vector_scaled has been moved to BaseProblemMixin, allowing the same method to be used across different problem classes as _BaseProblemMixin__state_vector_scaled.
+- The creation of discrete variables for individual assets has been moved to the pycml classes.
+- The code base uses asset id's instead of asset names expect for csv inputs where the asset names are still accepted.
+- Updated pyESDL to v26.3
+- Updated the GROW workflow to provide feedback on which heat demands are not matched in priority 1.
+- Marked low_temperature_ates as a subcomponent of the ates asset type.
+- Added electricity cost profile to variable operational cost of assets which convert electricity to heat.
+- Heating_and_cooling example is cleaned up
+- The number of binary variables for the linearized head loss calculation is reduced by half, by only creating them for the positive quadrant.
+- No longer required to add an electricity price profile if an electricity carrier is available.
+- Removed the need for "_ret" in the carrier name and id.
+- The carrier id is now saved as a string and thus in the string_parameters of each asset. 
+- The headloss and hydraulic power variables are now only created if the headloss calculations are turned on, reducing the transcribing time of the problem.
+- The method update_heat_network_settings has been created to update the dictionary for heat_network_settings and ensure the correct settings are applied from the start.
+- Check if needed and execute rerun (with presolve turned off) for HIGHS staged optimization in the Grow workflow.
+
+## Fixed
+- ProfileConstraints: Use already available function to get profile quantity and unit
+- Electricity carriers no longer require a price profile.
+
+
+# [0.1.18.1] - 2026-04-13
+
+## Added
+- Electricity consumption calculation of geothermal assets, using the defined COP. 
+- Geothermal electricity asset that can be connected to the electricity grid.
+
+## Changed
+- xxx
+
+## Fixed
+- ProfileConstraints: Use already available function to get profile quantity and unit
+
+
+# [0.1.18] - 2026-03-12
+
+## Added
+- Parsing of ensemble profiles when using input profiles from csv.
+- Maximum profile constraint for PV asset is considered in PV sizing
+- Cater for input via esdl constraints to specify the upper limit for OPTIONAL assets in DTK
+- Initial implementation of adaptable pipe DN lower limit per pipe
+
+## Changed
+- Speed-up timeseries check in from InfluxDB
+- Delete solution after stage 1 in a staged workflow 
+
+## Fixed
+- xxx 
+
+
+# [0.1.17] - 2026-02-25
+
+## Added
+- xxx
+
+## Changed
+- xxx
+
+## Fixed
+- DBAccesType naming convention
+- eboiler KPI
+
+
+# [0.1.16] - 2026-02-05
+
+## Added
+- ATES variable cost calculation utilizing a split ates charging and discharging variable.
+- Rollout workflow may optionally include phasing of heat buffers for handling peak day constraints and demands
+- Inclusion of maximum allowed yearly pipe placement length constraint for the rollout workflow
+- Adding constraint so that all heating demands are placed at the end of the simulation
+- Sizing of airco
+- Heating and cooling example with input costs
+- HeatSourceGas (gas boiler with 2 ports)is supported for DTK and its cost attributes are supported in Mesido
+- Cost attributes of GasHeatSourceGas (gas boiler with 3 ports) are supported in Mesido
+- HeatSourceElec (e-boiler with 2 ports) is supported for DTK and its cost attributes are supported in Mesido
+- Cost attributes of ElecHeatSourceElec (e-boiler with 3 ports) are supported in Mesido
+
+## Changed
+- Clean up of old code and removing duplicates.
+- Minimize TCO objective in the grow_workflow is now only based on capex and opex that can be influenced.
+- Removed the requirement of "_ret" for the return network pipes, for ESDLversion 21.10 and later. The relation between supply and return pipes is now based on the "related" attribute in the esdl.
+- Addition of cooling assests (airco and low_temperature_ates) in the grow_workflow for heating and cooling networks
+- Inclusion of airco and low_temperature_ates in write_output
+- New data structure for specifying database connection inputs
+- Costs of available pipe classes are updated based on the asset measures and templates if they are provided.
+- The charging and discharging variable for electricity storage is created without a binary variable using the convex hull description.
+- Gas Boiler asset is renamed as HeatSourceGas
+- Improvement: Loops over timesteps are vectorized.
+
+## Fixed
+- Bug: Write updated esdl for 2 port heat pump
+- Bug: 2 port heatpump write result profiles to database 
+- Bug: setting of self._pipe_heat_loss_nominals was not accounting for negative values when T_ground > carrier temperature
+- Bug: heat exchanger state and capacity are updated in optimized esdl file
+- Additional slicing of priceprofile is required
+
 
 # [0.1.15] - 2025-11-19
 
@@ -233,5 +362,4 @@
  
 ## Fixed
 - Error exit when stage 1, priority 1 was not successful
-
 

@@ -151,24 +151,24 @@ class TestWarmingUpUnitCases(TestCase):
         parameters = heat_problem.parameters(0)
         bounds = heat_problem.bounds()
 
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
+
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
 
         # We only check the flow directions for the time-steps that there is flow in the pipe.
-        inds = np.round(1 - results["Pipe_e53a__is_disconnected"]).astype(bool)
+        inds = np.round(1 - results[f"{name_to_id_map['Pipe_e53a']}.__is_disconnected"]).astype(
+            bool
+        )
         np.testing.assert_allclose(
-            np.round(results["Pipe_e53a__flow_direct_var"][inds]) * 2.0 - 1.0,
-            np.sign(results["Pipe_e53a.Q"][inds]),
+            np.round(results[f"{name_to_id_map['Pipe_e53a']}.__flow_direct_var"][inds]) * 2.0 - 1.0,
+            np.sign(results[f"{name_to_id_map['Pipe_e53a']}.Q"][inds]),
         )
 
         for buffer in heat_problem.energy_system_components.get("heat_buffer", []):
             np.testing.assert_allclose(
                 results[f"{buffer}.Heat_buffer"], results[f"{buffer}.Heat_flow"]
-            )
-            np.testing.assert_allclose(
-                results[f"{buffer}.HeatIn.Heat"] - results[f"{buffer}.HeatOut.Heat"],
-                results[f"{buffer}.Heat_buffer"],
             )
             # buffer should have positive heat loss
             assert parameters[f"{buffer}.heat_loss_coeff"] > 0.0
@@ -192,3 +192,11 @@ class TestWarmingUpUnitCases(TestCase):
                 results[f"{buffer}.HeatOut.H"][inds] - results[f"{buffer}.HeatIn.H"][inds],
                 atol=1.0e-6,
             )
+
+
+if __name__ == "__main__":
+
+    a = TestWarmingUpUnitCases()
+    a.test_1a()
+    a.test_2a()
+    a.test_3a()

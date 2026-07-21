@@ -23,7 +23,7 @@ class BaseESDLParser:
         self._energy_system: Optional[esdl.EnergySystem] = None
         self._esdl_string: Optional[str] = None
         self._esdl_path: Optional[Path] = None
-        self._templates: Dict[str, Asset] = dict()
+        self._measures: Dict[str, Asset] = dict()
 
     def _load_esdl_model(self) -> None:
         """
@@ -34,64 +34,44 @@ class BaseESDLParser:
 
     def read_esdl(self) -> None:
         self._load_esdl_model()
-        id_to_idnumber_map = {}
 
         for x in self._energy_system.energySystemInformation.carriers.carrier.items:
             if isinstance(x, esdl.esdl.HeatCommodity):
-                if x.id not in id_to_idnumber_map:
-                    number_list = [int(s) for s in x.id if s.isdigit()]
-                    number = ""
-                    for nr in number_list:
-                        number = number + str(nr)
-                    # note this fix is to create a unique number for the map for when the pipe
-                    # duplicator service is used and an additional _ret is added to the id.
-                    if "_ret" in x.id:
-                        number = number + "000"
-                    id_to_idnumber_map[x.id] = int(number)
-
                 temperature = x.supplyTemperature if x.supplyTemperature else x.returnTemperature
                 assert temperature > 0.0
-
                 self._global_properties["carriers"][x.id] = dict(
                     name=x.name,
                     id=x.id,
-                    id_number_mapping=id_to_idnumber_map[x.id],
                     temperature=temperature,
                     type="milp",
                 )
             elif isinstance(x, esdl.esdl.ElectricityCommodity):
-                if x.id not in id_to_idnumber_map:
-                    number_list = [int(s) for s in x.id if s.isdigit()]
-                    number = ""
-                    for nr in number_list:
-                        number = number + str(nr)
-                    id_to_idnumber_map[x.id] = int(number)
                 self._global_properties["carriers"][x.id] = dict(
                     name=x.name,
                     voltage=x.voltage,
                     id=x.id,
                     type="electricity",
-                    id_number_mapping=id_to_idnumber_map[x.id],
                 )
             elif isinstance(x, esdl.esdl.GasCommodity):
-                if x.id not in id_to_idnumber_map:
-                    number_list = [int(s) for s in x.id if s.isdigit()]
-                    number = ""
-                    for nr in number_list:
-                        number = number + str(nr)
-                    id_to_idnumber_map[x.id] = int(number)
                 self._global_properties["carriers"][x.id] = dict(
                     name=x.name,
                     pressure=x.pressure,
                     id=x.id,
                     type="gas",
-                    id_number_mapping=id_to_idnumber_map[x.id],
                 )
 
         # Component ids are unique, but we require component names to be unique as well.
         component_names = set()
 
+        # Check if the ESDL has asset measures
+        try:
+            asset_measures = list(self._energy_system.measures.eAllContents())
+        except AttributeError:
+            asset_measures = None
+
         # Check if the ESDL has asset templates
+        # Currently the use of templates are allowed on a temporary basis, and
+        # the templates are stored in the measures variable
         try:
             asset_templates = list(self._energy_system.templates.eAllContents())
         except AttributeError:
@@ -99,16 +79,18 @@ class BaseESDLParser:
 
         # loop through assets
         for el in self._energy_system.eAllContents():
-            # If asset templates exist, collect that in a different dictionary, to be used later in
+            # If asset measures exist, collect that in a different dictionary, to be used later in
             # esdl_mixin to update that information
-            if asset_templates is not None and el in asset_templates:
-                if isinstance(el, esdl.AssetTemplate):
+            if (asset_measures is not None and el in asset_measures) or (
+                asset_templates is not None and el in asset_templates
+            ):
+                if isinstance(el, esdl.Measure) or isinstance(el, esdl.AssetTemplate):
                     asset_type = el.__class__.__name__
                     # Note that e.g. el.__dict__['length'] does not work to get the length of a
                     # pipe.
                     # We therefore built this dict ourselves using 'dir' and 'getattr'
                     attributes = {k: getattr(el, k) for k in dir(el)}
-                    self._templates[el.id] = Asset(
+                    self._measures[el.id] = Asset(
                         asset_type=asset_type,
                         id=el.id,
                         name=el.name,
@@ -121,19 +103,18 @@ class BaseESDLParser:
                 if isinstance(el, esdl.Asset):
                     if hasattr(el, "name") and el.name:
                         el_name = el.name
+                        el_id = el.id
                     else:
-                        el_name = el.id
+                        el_name = el_id = el.id
 
-                    if "." in el_name:
+                    if "." in el_id:
                         # Dots indicate hierarchy, so would be very confusing
-                        raise ValueError(f"Dots in component names not supported: '{el_name}'")
+                        raise ValueError(f"Dots in component id not supported: '{el_id}'")
 
-                    if el_name in component_names:
-                        raise Exception(
-                            f"Asset names have to be unique: '{el_name}' already exists"
-                        )
+                    if el_id in component_names:
+                        raise Exception(f"Asset ids have to be unique: '{el_id}' already exists")
                     else:
-                        component_names.add(el_name)
+                        component_names.add(el_id)
 
                     # For some reason `esdl_element.assetType` is `None`, so use the class name
                     asset_type = el.__class__.__name__
@@ -184,8 +165,8 @@ class BaseESDLParser:
     def get_esh(self) -> esdl.esdl_handler.EnergySystemHandler:
         return self._energy_system_handler
 
-    def get_templates(self) -> Dict[str, Asset]:
-        return self._templates
+    def get_measures(self) -> Dict[str, Asset]:
+        return self._measures
 
 
 class ESDLStringParser(BaseESDLParser):

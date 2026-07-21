@@ -58,7 +58,6 @@ class _GoalsAndOptions:
     def energy_system_options(self):
         options = super().energy_system_options()
         options["include_electric_cable_power_loss"] = False
-        options["electricity_storage_discharge_variables"] = True
 
         return options
 
@@ -81,6 +80,10 @@ class ElectricityProblem(
         for bat in self.energy_system_components.get("electricity_storage", []):
             stored_elec = self.state_vector(f"{bat}.Stored_electricity")
             constraints.append((stored_elec[0], 0.0, 0.0))
+            power_in = self._BaseProblemMixin__state_vector_scaled(
+                f"{bat}.Power_discharging", ensemble_member
+            )
+            constraints.append((power_in[0], 0.0, 0.0))
 
         return constraints
 

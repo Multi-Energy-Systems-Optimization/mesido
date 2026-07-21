@@ -1,6 +1,7 @@
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.head_loss_class import HeadLossOption
 from mesido.pipe_class import PipeClass
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 
@@ -57,6 +58,14 @@ class MinimizeLDGoal(Goal):
 
             obj += optimization_problem.extra_variable(var_name, ensemble_member) * length
 
+        for p in optimization_problem.unrelated_pipes:
+            length = parameters[f"{p}.length"]
+            var_name = optimization_problem.pipe_diameter_symbol_name(p)
+
+            nominal += length * optimization_problem.variable_nominal(var_name)
+
+            obj += optimization_problem.extra_variable(var_name, ensemble_member) * length
+
         return obj / nominal
 
 
@@ -69,21 +78,27 @@ class PipeDiameterSizingProblem(
 ):
     def energy_system_options(self):
         options = super().energy_system_options()
-        self.heat_network_settings["minimum_velocity"] = 0.001
         options["heat_loss_disconnected_pipe"] = True
         options["maximum_temperature_der"] = np.inf
-        self.heat_network_settings["minimize_head_losses"] = True
         return options
 
+    def update_heat_network_settings(self):
+        settings = super().update_heat_network_settings()
+        settings["minimum_velocity"] = 0.001
+        settings["head_loss_option"] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+        settings["minimize_head_losses"] = True
+        return settings
+
     def pipe_classes(self, pipe):
-        # Do not delete pipeclass DN40, locally it runs with DN40, but in pipeline it seems
+        # Do not delete pipeclass DN40, DN50, DN65, DN600. Locally it runs with with these
+        # options included however in pipeline it seems
         # that scaling is a bit too much off resulting in infeasibility probably because of
-        # machine accuracy. If scaling can be improved DN40 can be included again.
+        # machine accuracy. If scaling can be improved these options can be included again.
         return [
             PipeClass("None", 0.0, 0.0, (0.0, 0.0), 0.0),
             # PipeClass("DN40", 0.0431, 1.5, (0.179091, 0.005049), 1.0),
-            PipeClass("DN50", 0.0545, 1.7, (0.201377, 0.006086), 2.0),
-            PipeClass("DN65", 0.0703, 1.9, (0.227114, 0.007300), 3.0),
+            # PipeClass("DN50", 0.0545, 1.7, (0.201377, 0.006086), 2.0),
+            # PipeClass("DN65", 0.0703, 1.9, (0.227114, 0.007300), 3.0),
             PipeClass("DN80", 0.0825, 2.2, (0.238244, 0.007611), 4.0),
             PipeClass("DN100", 0.1071, 2.4, (0.247804, 0.007386), 5.0),
             PipeClass("DN125", 0.1325, 2.6, (0.287779, 0.009431), 6.0),
@@ -95,7 +110,7 @@ class PipeDiameterSizingProblem(
             PipeClass("DN400", 0.3938, 3.0, (0.381603, 0.009349), 12.0),
             PipeClass("DN450", 0.4444, 3.0, (0.380070, 0.008506), 13.0),
             PipeClass("DN500", 0.4954, 3.0, (0.369282, 0.007349), 14.0),
-            PipeClass("DN600", 0.5954, 3.0, (0.431023, 0.009155), 15.0),
+            # PipeClass("DN600", 0.5954, 3.0, (0.431023, 0.009155), 15.0),
         ]
 
     def path_goals(self):
@@ -122,6 +137,7 @@ class PipeDiameterSizingProblem(
         self._qpsol = CachingQPSol()
         options["casadi_solver"] = self._qpsol
         options["solver"] = "highs"
+
         return options
 
 
@@ -184,8 +200,9 @@ if __name__ == "__main__":
         profile_reader=ProfileReaderFromFile,
         input_timeseries_file="timeseries_import.xml",
     )
+    name_id_map = heat_problem.esdl_asset_name_to_id_map
     results = heat_problem.extract_results()
-    print("Q: ", results["Pipe_2927_ret.HeatIn.Q"])
-    print("Heat: ", results["Pipe_2927_ret.HeatIn.Heat"])
+    print("Q: ", results[f"{name_id_map['Pipe_2927_ret']}.HeatIn.Q"])
+    print("Heat: ", results[f"{name_id_map['Pipe_2927_ret']}.HeatIn.Heat"])
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

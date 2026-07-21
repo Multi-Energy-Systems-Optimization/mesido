@@ -11,8 +11,6 @@ import numpy as np
 # from utils_tests import energy_conservation_test
 from utils_tests import heat_to_discharge_test
 
-# from mesido.workflows.io.rollout_post import rollout_post
-
 
 class TestRollOutOptimization(TestCase):
 
@@ -31,6 +29,9 @@ class TestRollOutOptimization(TestCase):
         - check number of timesteps in timeseries.
         - if asset placed, also placed for future
         - check fraction is placed
+        - check yearly_pipe_length_constraints
+        - check if all demands are placed at the end of the simulation
+        - check heat buffer constraints
 
 
         Missing:
@@ -45,23 +46,35 @@ class TestRollOutOptimization(TestCase):
 
         # This is an optimization done over three years with timesteps of 30 days
         class RollOutTimeStep(RollOutProblem):
-
+            # pass
             def read(self):
                 super().read()
-                m = [3, 5, 5]
-                for i in range(1, 4):
-                    demand_timeseries = self.get_timeseries(f"HeatingDemand_{i}.target_heat_demand")
-                    demand_timeseries.values[:] = demand_timeseries.values[:] * m[i - 1]
-                    self.set_timeseries(f"HeatingDemand_{i}.target_heat_demand", demand_timeseries)
+                # m = [3, 5, 5]
+                m = [1.5, 1.5, 1.5]
+                i = 0
+                for d in self.energy_system_components.get("heat_demand", []):
+                    demand_timeseries = self.get_timeseries(f"{d}.target_heat_demand")
+                    demand_timeseries.values[:] = demand_timeseries.values[:] * m[i]
+                    self.set_timeseries(f"{d}.target_heat_demand", demand_timeseries)
+                    i += 1
+
+            def solver_options(self):
+                options = super().solver_options()
+                options["highs"]["mip_rel_gap"] = 0.001
+                return options
 
         solution = run_esdl_mesido_optimization(
             RollOutTimeStep,
             base_folder=base_folder,
-            esdl_file_name="PoC_tutorial_incl_ATES.esdl",
+            esdl_file_name="PoC_tutorial_incl_ATES_buffer.esdl",
+            # esdl_file_name="PoC_tutorial_incl_ATES.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
-            yearly_max_capex=7.0e6,
+            yearly_max_capex=6.0e6,
+            yearly_max_pipe_length=1.0e3,  # m per year
+            include_peak_day=True,
+            min_geo_utilization=0.6,
         )
         results = solution.extract_results()
 
@@ -110,6 +123,7 @@ class TestRollOutOptimization(TestCase):
             *solution.energy_system_components.get("heat_demand", []),
             *solution.energy_system_components.get("ates", []),
             *solution.energy_system_components.get("heat_pipe", []),
+            *solution.energy_system_components.get("heat_buffer", []),
         ]
 
         for asset in assets_to_check:
@@ -156,6 +170,25 @@ class TestRollOutOptimization(TestCase):
             "Number of timesteps in timeseries is not correct",
         )
 
+        for asset in solution.energy_system_components.get("geothermal", []):
+            dt = np.diff(solution.times()) / 3600
+            geo_power = solution.bounds()[f"{asset}.Heat_source"][1]
+            year_max_power_hour = geo_power * 365 * 24
+            fraction_util = solution._min_geo_utilization
+            for y in range(solution._years):
+                ind_start = y * solution._timesteps_per_year + 1
+                ind_end = (y + 1) * solution._timesteps_per_year + 1
+                if results[f"{asset}__asset_is_realized_{y}"] >= 0.99:
+                    heat_source = results[f"{asset}.Heat_source"]
+                    year_prod = sum(
+                        heat_source[ind_start:ind_end] * dt[ind_start - 1 : ind_end - 1]
+                    )
+                    np.testing.assert_(
+                        year_prod + atol > fraction_util * year_max_power_hour,
+                        f"{asset} is not meeting the minimum operational requirement of "
+                        f"{fraction_util*year_max_power_hour}, and produces only {year_prod}.",
+                    )
+
         # Yearly periodicity of ATES
         for ates in solution.energy_system_components.get("ates", []):
             times = solution.times() / 3600 / 24
@@ -183,7 +216,7 @@ class TestRollOutOptimization(TestCase):
         # Check if it is not a trivial roll-out problem, i.e. not all heating demands
         # are placed in the first year
         not_placed_in_first_year = any(
-            results[f"{d}__asset_is_realized_0"] == 0
+            results[f"{d}__asset_is_realized_0"] <= atol
             for d in solution.energy_system_components.get("heat_demand", [])
         )
         np.testing.assert_(
@@ -202,17 +235,16 @@ class TestRollOutOptimization(TestCase):
         )
 
         # Check if all producers and ATES are placed at the end of the problem
-        all_producers_placed = all(
-            results[f"{asset}__asset_is_realized_{solution._years - 1}"] >= 1 - tol
-            for asset in [
-                *solution.energy_system_components.get("heat_source", []),
-                *solution.energy_system_components.get("ates", []),
-            ]
-        )
-        np.testing.assert_(
-            all_producers_placed,
-            "Not all producers and ATES are placed at the end of the problem",
-        )
+        for asset in [
+            *solution.energy_system_components.get("heat_source", []),
+            *solution.energy_system_components.get("ates", []),
+        ]:
+            np.testing.assert_(
+                results[f"{asset}__asset_is_realized_{solution._years - 1}"] >= 1 - tol,
+                f"Not all assets are placed a the end of the problem {asset} is not placed ("
+                f"{results[f'{asset}__asset_is_realized_{solution._years - 1}']}) with solver "
+                f"statistics {solution.solver_stats}",
+            )
 
         # Check fraction is placed, should be between 0 and 1 and increasing
         tol = 1e-6
@@ -236,5 +268,65 @@ class TestRollOutOptimization(TestCase):
                     asset_is_realized <= next_asset_is_realized + tol,
                     f"{asset}__asset_is_realized{y} should be <= {asset}__asset_is_realized{y + 1}",
                 )
+
+        # Check yearly_pipe_length_constraints
+        allowed_length = solution._yearly_max_pipe_length * solution._horizon / solution._years
+        total_length = 0
+        for y in range(solution._years):
+            cumulative_pipe_length = 0
+            for p in solution.energy_system_components.get("heat_pipe", []):
+                pipe_is_realized = results[f"{p}__asset_is_realized_{y}"]
+                pipe_length = solution.parameters(0)[f"{p}.length"]
+                cumulative_pipe_length += pipe_is_realized * pipe_length
+            used_length_year = cumulative_pipe_length - total_length
+            total_length += used_length_year
+            print(used_length_year)
+            np.testing.assert_(
+                used_length_year <= allowed_length,
+                f"Yearly pipe length constraint violated in year {y}:\
+                    used {used_length_year}, allowed {allowed_length}",
+            )
+
+        # Check if all demands placed
+        for d in solution.energy_system_components.get("heat_demand", []):
+            np.testing.assert_(
+                np.isclose(results[f"{d}__asset_is_realized_{solution._years -1}"], 1, atol=atol),
+                f"{d} is not placed at the end of the simulation",
+            )
+
+        # Heat buffer peak day constraints
+        for b in solution.energy_system_components.get("heat_buffer", {}):
+            used_buffer = False
+            for year in range(solution._years):
+                for i in range(solution._timesteps_per_year):
+                    if not (
+                        i > solution._RollOutProblem__problem_indx_max_peak - 1
+                        and i < (solution._RollOutProblem__problem_indx_max_peak + 24 + 1)
+                    ):
+                        np.testing.assert_allclose(
+                            results[f"{b}.Stored_heat"][i + year * solution._timesteps_per_year],
+                            0.0,
+                            atol=atol,
+                            rtol=rtol,
+                        )
+                        if not i == 0 and not year == 0:
+                            np.testing.assert_allclose(
+                                results[f"{b}.Heat_buffer"][
+                                    i + year * solution._timesteps_per_year
+                                ],
+                                0.0,
+                                atol=atol,
+                                rtol=rtol,
+                            )
+                    else:
+                        if (
+                            results[f"{b}.Heat_buffer"][i + year * solution._timesteps_per_year]
+                            > 1e3
+                        ):
+                            used_buffer = True
+
+            np.testing.assert_(
+                used_buffer, f"{b} Heat buffer has not been used in the entire problem"
+            )
 
         # rollout_post(solution, results)

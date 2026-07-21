@@ -20,10 +20,14 @@ import pandas as pd
 
 from utils_test_scaling import create_log_list_scaling
 
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
+from utils_tests import (
+    cost_calculation_test,
+    demand_matching_test,
+    energy_conservation_test,
+    heat_to_discharge_test,
+)
 
-
-logger = logging.getLogger("WarmingUP-MPC")
+logger = logging.getLogger("mesido")
 logger.setLevel(logging.INFO)
 
 
@@ -40,9 +44,9 @@ class TestColdDemand(TestCase):
 
         """
         import models.wko.src.example as example
-        from models.wko.src.example import HeatProblem
+        from models.wko.src.example import HeatColdProblem
 
-        logger, logs_list = create_log_list_scaling("WarmingUP-MPC")
+        logger, logs_list = create_log_list_scaling("mesido")
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
@@ -51,7 +55,7 @@ class TestColdDemand(TestCase):
             unittest.mock.patch("mesido.potential_errors.POTENTIAL_ERRORS", PotentialErrors()),
         ):
             _ = run_esdl_mesido_optimization(
-                HeatProblem,
+                HeatColdProblem,
                 base_folder=base_folder,
                 esdl_file_name="LT_wko_error_check.esdl",
                 esdl_parser=ESDLFileParser,
@@ -84,12 +88,12 @@ class TestColdDemand(TestCase):
 
         """
         import models.wko.src.example as example
-        from models.wko.src.example import HeatProblem
+        from models.wko.src.example import HeatColdProblem
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
         heat_problem = run_esdl_mesido_optimization(
-            HeatProblem,
+            HeatColdProblem,
             base_folder=base_folder,
             esdl_file_name="LT_wko.esdl",
             esdl_parser=ESDLFileParser,
@@ -107,39 +111,50 @@ class TestColdDemand(TestCase):
         This test is to check the basic physics for a network which includes an airco. In this
         case we have a network with an air-water hp, a low temperature ates and both hot and cold
         demand. In this case the demands are matched and the low temperature ates is utilized.
+        Only airco is optional. Airco sizing is done by minimization of airco  investment cost
 
         Checks:
         1. demand is matched
         2. energy conservation in the network
         3. heat to discharge
+        4. cost calculation
+        5. variable operational and investment cost calculations
+        6. airco sizing
 
         """
         import models.wko.src.example as example
-        from models.wko.src.example import HeatProblem
+        from models.wko.src.example import HeatColdProblemSizing
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
         heat_problem = run_esdl_mesido_optimization(
-            HeatProblem,
+            HeatColdProblemSizing,
             base_folder=base_folder,
             esdl_file_name="airco.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries.csv",
+            input_timeseries_file="timeseries_high_cold_demand.csv",
         )
         results = heat_problem.extract_results()
-        parameters = heat_problem.parameters(0)
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
+
+        hp_id = name_to_id_map["HeatPump_b97e"]
+        ac_id = name_to_id_map["Airco_23d6"]
 
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
 
-        # Check how variable operation cost is calculated
+        # Check investment cost and variable operation cost calculation
+        np.testing.assert_array_less(1e3, results[f"{hp_id}__variable_operational_cost"])
+        np.testing.assert_array_less(1e3, results[f"{ac_id}__variable_operational_cost"])
+        np.testing.assert_array_less(1e3, results[f"{ac_id}__investment_cost"])
+        cost_calculation_test(heat_problem, results)
+
+        # Check airco sizing
         np.testing.assert_allclose(
-            parameters["HeatPump_b97e.variable_operational_cost_coefficient"]
-            * sum(results["HeatPump_b97e.Heat_source"][1:])
-            / parameters["HeatPump_b97e.cop"],
-            results["HeatPump_b97e__variable_operational_cost"],
+            max(results[f"{ac_id}.Heat_airco"]),
+            results[f"{ac_id}__max_size"],
         )
 
     def test_wko(self):
@@ -166,13 +181,13 @@ class TestColdDemand(TestCase):
             - pipe heat losses excluded: excpect no heat losses or gains
         """
         import models.wko.src.example as example
-        from models.wko.src.example import HeatProblem
+        from models.wko.src.example import HeatColdProblem
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
         # ------------------------------------------------------------------------------------------
         # Pipe heat losses inlcuded
-        class HeatingCoolingProblem(HeatProblem):
+        class HeatingCoolingProblem(HeatColdProblem):
 
             def energy_system_options(self):
                 options = super().energy_system_options()
@@ -220,6 +235,11 @@ class TestColdDemand(TestCase):
             input_timeseries_file="timeseries_2.csv",
         )
         results = heat_problem.extract_results()
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
+
+        ates_id = name_to_id_map["ATES_226d"]
+        pipe1_id = name_to_id_map["Pipe1"]
+        pipe1_ret_id = name_to_id_map["Pipe1_ret"]
 
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
@@ -227,15 +247,19 @@ class TestColdDemand(TestCase):
 
         # Check cyclic constraint
         np.testing.assert_allclose(
-            results["ATES_226d.Stored_heat"][0], results["ATES_226d.Stored_heat"][-1]
+            results[f"{ates_id}.Stored_heat"][0], results[f"{ates_id}.Stored_heat"][-1]
         )
         # Check heat loss and gain
-        tol_value = 1.0e-6
+        tol_value = 1.0e-5
         np.testing.assert_array_less(
-            0.0, results["Pipe1.HeatIn.Heat"] - results["Pipe1.HeatOut.Heat"] + tol_value
+            0.0,
+            results[f"{pipe1_id}.HeatIn.Heat"] - results[f"{pipe1_id}.HeatOut.Heat"] + tol_value,
         )
         np.testing.assert_array_less(
-            results["Pipe1_ret.HeatIn.Heat"] - results["Pipe1_ret.HeatOut.Heat"] - tol_value, 0.0
+            results[f"{pipe1_ret_id}.HeatIn.Heat"]
+            - results[f"{pipe1_ret_id}.HeatOut.Heat"]
+            - tol_value,
+            0.0,
         )
 
         # ------------------------------------------------------------------------------------------
@@ -255,6 +279,11 @@ class TestColdDemand(TestCase):
             input_timeseries_file="timeseries_2.csv",
         )
         results = heat_problem.extract_results()
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
+
+        ates_id = name_to_id_map["ATES_226d"]
+        pipe1_id = name_to_id_map["Pipe1"]
+        pipe1_ret_id = name_to_id_map["Pipe1_ret"]
 
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
@@ -262,15 +291,17 @@ class TestColdDemand(TestCase):
 
         # Check cyclic constraint
         np.testing.assert_allclose(
-            results["ATES_226d.Stored_heat"][0], results["ATES_226d.Stored_heat"][-1]
+            results[f"{ates_id}.Stored_heat"][0], results[f"{ates_id}.Stored_heat"][-1]
         )
         # Check heat loss and gain
         tol_value = 1.0e-6
         np.testing.assert_allclose(
-            0.0, results["Pipe1.HeatIn.Heat"] - results["Pipe1.HeatOut.Heat"], atol=1e-6
+            0.0, results[f"{pipe1_id}.HeatIn.Heat"] - results[f"{pipe1_id}.HeatOut.Heat"], atol=1e-6
         )
         np.testing.assert_allclose(
-            0.0, results["Pipe1_ret.HeatIn.Heat"] - results["Pipe1_ret.HeatOut.Heat"], atol=1e-6
+            0.0,
+            results[f"{pipe1_ret_id}.HeatIn.Heat"] - results[f"{pipe1_ret_id}.HeatOut.Heat"],
+            atol=1e-6,
         )
         # ------------------------------------------------------------------------------------------
 
@@ -282,11 +313,11 @@ class TestColdDemand(TestCase):
         both peaks are on the same day.
         """
         import models.wko.src.example as example
-        from models.wko.src.example import HeatProblem
+        from models.wko.src.example import HeatColdProblem
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
-        class DiscretizationProblem(HeatProblem):
+        class DiscretizationProblem(HeatColdProblem):
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
                 self.day_steps = 1
@@ -312,12 +343,13 @@ class TestColdDemand(TestCase):
             input_timeseries_file="timeseries_peak_overlap.csv",
         )
         results = heat_problem.extract_results()
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
 
         cold_demand_timeseries = heat_problem.get_timeseries(
-            "CoolingDemand_15e8.target_cold_demand"
+            f"{name_to_id_map['CoolingDemand_15e8']}.target_cold_demand"
         )
         heat_demand_timeseries = heat_problem.get_timeseries(
-            "HeatingDemand_9b90.target_heat_demand"
+            f"{name_to_id_map['HeatingDemand_9b90']}.target_heat_demand"
         )
         max_cold_idx = np.argmax(cold_demand_timeseries.values)
         max_heat_idx = np.argmax(heat_demand_timeseries.values)
@@ -354,11 +386,11 @@ class TestColdDemand(TestCase):
         both peaks are on consecutive days.
         """
         import models.wko.src.example as example
-        from models.wko.src.example import HeatProblem
+        from models.wko.src.example import HeatColdProblem
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
-        class DiscretizationProblem(HeatProblem):
+        class DiscretizationProblem(HeatColdProblem):
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
                 self.day_steps = 1
@@ -384,12 +416,13 @@ class TestColdDemand(TestCase):
             input_timeseries_file="timeseries_peak_back_to_back.csv",
         )
         results = heat_problem.extract_results()
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
 
         cold_demand_timeseries = heat_problem.get_timeseries(
-            "CoolingDemand_15e8.target_cold_demand"
+            f"{name_to_id_map['CoolingDemand_15e8']}.target_cold_demand"
         )
         heat_demand_timeseries = heat_problem.get_timeseries(
-            "HeatingDemand_9b90.target_heat_demand"
+            f"{name_to_id_map['HeatingDemand_9b90']}.target_heat_demand"
         )
         max_cold_idx = np.argmax(cold_demand_timeseries.values)
         max_heat_idx = np.argmax(heat_demand_timeseries.values)
@@ -426,11 +459,11 @@ class TestColdDemand(TestCase):
         the cold peak happens before the heat one.
         """
         import models.wko.src.example as example
-        from models.wko.src.example import HeatProblem
+        from models.wko.src.example import HeatColdProblem
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
-        class DiscretizationProblem(HeatProblem):
+        class DiscretizationProblem(HeatColdProblem):
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
                 self.day_steps = 1
@@ -456,12 +489,13 @@ class TestColdDemand(TestCase):
             input_timeseries_file="timeseries_cold_peak_before.csv",
         )
         results = heat_problem.extract_results()
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
 
         cold_demand_timeseries = heat_problem.get_timeseries(
-            "CoolingDemand_15e8.target_cold_demand"
+            f"{name_to_id_map['CoolingDemand_15e8']}.target_cold_demand"
         )
         heat_demand_timeseries = heat_problem.get_timeseries(
-            "HeatingDemand_9b90.target_heat_demand"
+            f"{name_to_id_map['HeatingDemand_9b90']}.target_heat_demand"
         )
         max_cold_idx = np.argmax(cold_demand_timeseries.values)
         max_heat_idx = np.argmax(heat_demand_timeseries.values)

@@ -1,10 +1,10 @@
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.head_loss_class import HeadLossOption
 from mesido.physics_mixin import PhysicsMixin
 from mesido.qth_not_maintained.qth_mixin import QTHMixin
 from mesido.techno_economic_mixin import TechnoEconomicMixin
-from mesido.workflows.goals.minimize_tco_goal import MinimizeTCO
 
 import numpy as np
 
@@ -116,10 +116,14 @@ class _GoalsAndOptions:
 
     def energy_system_options(self):
         options = super().energy_system_options()
-        self.heat_network_settings["minimum_velocity"] = 0.0001
         # options["heat_loss_disconnected_pipe"] = False
         # options["neglect_pipe_heat_losses"] = False
         return options
+
+    def update_heat_network_settings(self):
+        settings = super().update_heat_network_settings()
+        settings["minimum_velocity"] = 0.0001
+        return settings
 
 
 class HeatProblem(
@@ -149,10 +153,14 @@ class HeatProblem(
 
     def energy_system_options(self):
         options = super().energy_system_options()
-        self.heat_network_settings["minimum_velocity"] = 0.0001
         # options["heat_loss_disconnected_pipe"] = False
         options["neglect_pipe_heat_losses"] = True
         return options
+
+    def update_heat_network_settings(self):
+        settings = super().update_heat_network_settings()
+        settings["head_loss_option"] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+        return settings
 
 
 class HeatProblemSetPointConstraints(
@@ -197,7 +205,7 @@ class HeatProblemTvarsup(
 
     def temperature_regimes(self, carrier):
         temperatures = []
-        if carrier == 4195016129475469474608:
+        if carrier == "419b5016-12c9-475a-b46e-9e474b60aa8f":
             # supply
             temperatures = [80.0, 120.0]
 
@@ -210,14 +218,11 @@ class HeatProblemTvarsup(
     def constraints(self, ensemble_member):
         constraints = super().constraints(ensemble_member)
         # These constraints are added to allow for a quicker solve
-        for _carrier, temperatures in self.temperature_carriers().items():
-            carrier_id_number_mapping = str(temperatures["id_number_mapping"])
-            temperature_regimes = self.temperature_regimes(int(carrier_id_number_mapping))
+        for carrier_id in self.temperature_carriers().keys():
+            temperature_regimes = self.temperature_regimes(carrier_id)
             if len(temperature_regimes) > 0:
                 for temperature in temperature_regimes:
-                    selected_temp_vec = self.state_vector(
-                        f"{int(carrier_id_number_mapping)}_{temperature}"
-                    )
+                    selected_temp_vec = self.state_vector(f"{carrier_id}_{temperature}")
                     for i in range(1, len(self.times())):
                         constraints.append(
                             (selected_temp_vec[i] - selected_temp_vec[i - 1], 0.0, 0.0)
@@ -247,7 +252,7 @@ class HeatProblemTvarret(
 
     def temperature_regimes(self, carrier):
         temperatures = []
-        if carrier == 4195016129475469474608000:
+        if carrier == "419b5016-12c9-475a-b46e-9e474b60aa8f_ret":
             # return
             temperatures = [30.0, 40.0]
 
@@ -260,24 +265,11 @@ class HeatProblemTvarret(
     def constraints(self, ensemble_member):
         constraints = super().constraints(ensemble_member)
         # These constraints are added to allow for a quicker solve
-        for carrier, temperatures in self.temperature_carriers().items():
-            if "id_number_mapping" in temperatures.keys():
-                carrier_id_number_mapping = str(temperatures["id_number_mapping"])
-            else:
-                number_list = [int(s) for s in carrier if s.isdigit()]
-                number = ""
-                for nr in number_list:
-                    number = number + str(nr)
-                carrier_type = temperatures["__rtc_type"]
-                if carrier_type == "return":
-                    number = number + "000"
-                carrier_id_number_mapping = number
-            temperature_regimes = self.temperature_regimes(int(carrier_id_number_mapping))
+        for carrier_id in self.temperature_carriers().keys():
+            temperature_regimes = self.temperature_regimes(carrier_id)
             if len(temperature_regimes) > 0:
                 for temperature in temperature_regimes:
-                    selected_temp_vec = self.state_vector(
-                        f"{int(carrier_id_number_mapping)}_{temperature}"
-                    )
+                    selected_temp_vec = self.state_vector(f"{carrier_id}_{temperature}")
                     for i in range(1, len(self.times())):
                         constraints.append(
                             (selected_temp_vec[i] - selected_temp_vec[i - 1], 0.0, 0.0)
@@ -286,7 +278,7 @@ class HeatProblemTvarret(
         return constraints
 
 
-class HeatProblemESDLProdProfile(
+class BeseProblemProdProfile(
     _GoalsAndOptions,
     TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
@@ -308,25 +300,13 @@ class HeatProblemESDLProdProfile(
 
         return options
 
+
+class HeatProblemESDLProdProfile(BeseProblemProdProfile):
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        for demand in self.energy_system_components["heat_demand"]:
-            target = self.get_timeseries(f"{demand}.target_heat_demand")
-            state = f"{demand}.Heat_demand"
-
-            goals.append(TargetDemandGoal(state, target))
-
         for s in self.energy_system_components["heat_source"]:
             goals.append(MinimizeSourcesHeatGoal(s))
-
-        return goals
-
-
-class HeatProblemESDLProdProfileTCO(HeatProblemESDLProdProfile):
-    def goals(self):
-        goals = super().goals().copy()
-        goals.append(MinimizeTCO(priority=20, number_of_years=1))
 
         return goals
 
@@ -335,11 +315,12 @@ class HeatProblemProdProfile(HeatProblemESDLProdProfile):
     def read(self):
         super().read()
 
+        heat_demand_id = self.esdl_asset_name_to_id_map["HeatingDemand_a3b8"]
         for s in self.energy_system_components["heat_source"]:
-            demand_timeseries = self.get_timeseries("HeatingDemand_a3b8.target_heat_demand")
+            demand_timeseries = self.get_timeseries(f"{heat_demand_id}.target_heat_demand")
             new_timeseries = np.ones(len(demand_timeseries.values)) * 1
             ind_hlf = int(len(demand_timeseries.values) / 2)
-            new_timeseries[ind_hlf : ind_hlf + 4] = np.ones(4) * 0.10
+            new_timeseries[ind_hlf : ind_hlf + 1] = np.ones(1) * 0.10
             self.set_timeseries(f"{s}.maximum_heat_source", new_timeseries)
 
 
@@ -364,12 +345,12 @@ class QTHProblem(
 
         return goals
 
-    def energy_system_options(self):
-        options = super().energy_system_options()
+    def update_heat_network_settings(self):
         from mesido.head_loss_class import HeadLossOption
 
-        self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
-        return options
+        settings = super().update_heat_network_settings()
+        settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+        return settings
 
 
 if __name__ == "__main__":

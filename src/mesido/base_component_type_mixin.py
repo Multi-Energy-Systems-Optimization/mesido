@@ -74,35 +74,46 @@ class BaseComponentTypeMixin:
 
     def has_related_pipe(self, pipe: str) -> bool:
         """
-        This function checks whether a pipe has a related hot/cold pipe. This is done based on the
-        name convention.
+        This function checks whether a pipe has a related hot/cold pipe.
 
         :params pipe: is the pipe name.
         :returns: True if the pipe has a related pipe, else False.
         """
         related = False
-        if self.is_hot_pipe(pipe):
-            if self.hot_to_cold_pipe(pipe) in self.energy_system_components.get("heat_pipe", []):
-                related = True
-        elif self.is_cold_pipe(pipe):
-            if self.cold_to_hot_pipe(pipe) in self.energy_system_components.get("heat_pipe", []):
-                related = True
+        if pipe in self.hot_pipes or pipe in self.cold_pipes:
+            related = True
         return related
+
+    @property
+    def hot_to_cold_pipe_map(self) -> Dict[str, str]:
+        """
+        This function return a dictionary of hot pipe names mapped to cold pipe names.
+        """
+        raise NotImplementedError
+
+    @property
+    def cold_to_hot_pipe_map(self) -> Dict[str, str]:
+        """
+        This function return a dictionary of cold pipe names mapped to hot pipe names.
+        """
+        raise NotImplementedError
 
     @property
     def hot_pipes(self) -> List[str]:
         """
         This function return a list of all the supply/hot pipe names.
         """
-        return [
-            p for p in self.energy_system_components.get("heat_pipe", []) if self.is_hot_pipe(p)
-        ]
+        return list(self.hot_to_cold_pipe_map.keys())
 
     @property
     def cold_pipes(self) -> List[str]:
         """
         This function return a list of all the return/cold pipe names.
         """
-        return [
-            p for p in self.energy_system_components.get("heat_pipe", []) if self.is_cold_pipe(p)
-        ]
+        return list(self.cold_to_hot_pipe_map.keys())
+
+    @property
+    def unrelated_pipes(self) -> List[str]:
+        """This function return a list of pipe names of all the pipes that don't have a related
+        cold/hot pipe."""
+        raise NotImplementedError

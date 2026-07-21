@@ -16,7 +16,6 @@ from rtctools.optimization.optimization_problem import OptimizationProblem
 
 from . import ConstantInput, ControlInput, Model, SymbolicParameter, Variable
 
-
 logger = logging.getLogger("mesido")
 
 
@@ -84,7 +83,11 @@ def add_variables_documentation_automatically(class_: Type):
                             "GasPort",
                             "Primary",
                             "Secondary",
+                            "_ATESBaseAsset",
                             "_NonStorageComponent",
+                            "_NonStorageComponentSinkType",
+                            "_NonStorageComponentSourceType",
+                            "_StorageComponent",
                         ]:
                             # Follow the port and retrieve all variable names for that port
                             port_name = node.args[1].value
@@ -95,9 +98,24 @@ def add_variables_documentation_automatically(class_: Type):
                             dynamic_names_of_port = DYNAMIC_NAME_CACHE[port_class_name]
                             for dynamic_name_of_port in dynamic_names_of_port:
                                 dynamic_names.append(f"{port_name}.{dynamic_name_of_port}")
-                        elif node.args[0].id == "Variable":
+                        elif node.args[0].id == "Variable" or node.args[0].id == "DiscreteVariable":
                             # This is a variable for this component, save its name.
-                            dynamic_names.append(node.args[1].value)
+                            # TODO: later we might want to specify the restrictions on the
+                            # variables, discrete/continuous, min/max, or the if statement
+                            # related to it.
+                            if isinstance(node.args[1], ast.Constant):
+                                dynamic_names.append(node.args[1].value)
+                            elif isinstance(node.args[1], ast.JoinedStr):
+                                str_full = ""
+                                for i in range(len(node.args[1].values)):
+                                    str_part = node.args[1].values[i]
+                                    if isinstance(str_part, ast.Constant):
+                                        str_full += str_part.value
+                                    elif isinstance(str_part, ast.FormattedValue):
+                                        str_full += f"{{{str_part.value.id}}}"
+                                    else:
+                                        raise RuntimeError(f"Unknown case:\n{ast.dump(node)}")
+                                dynamic_names.append(str_full)
                         else:
                             raise RuntimeError(f"Unknown case:\n{ast.dump(node)}")
                     else:
@@ -133,7 +151,7 @@ def add_variables_documentation_automatically(class_: Type):
     if line_with_hook is None:
         indent = ""
     else:
-        (indent, _) = line_with_hook.split("{add_variable_names_for_documentation_here}")
+        indent, _ = line_with_hook.split("{add_variable_names_for_documentation_here}")
 
         # Insert the dynamic names into the documentation
         class_.__doc__ = class_.__doc__.replace(

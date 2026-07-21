@@ -100,10 +100,14 @@ class HeatProblem(
 
     def energy_system_options(self):
         options = super().energy_system_options()
-        self.heat_network_settings["minimum_velocity"] = 0.0001
         options["neglect_pipe_heat_losses"] = True
         options["heat_loss_disconnected_pipe"] = True
         return options
+
+    def update_heat_network_settings(self):
+        settings = super().update_heat_network_settings()
+        settings["minimum_velocity"] = 0.0001
+        return settings
 
     def constraints(self, ensemble_member):
         constraints = super().constraints(ensemble_member)

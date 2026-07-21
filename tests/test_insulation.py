@@ -69,6 +69,14 @@ class TestInsulation(TestCase):
             input_timeseries_file="timeseries_import.xml",
         )
         results = heat_problem.extract_results()
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
+
+        demand_f15e_id = name_to_id_map["HeatingDemand_f15e"]
+        demand_e6b3_id = name_to_id_map["HeatingDemand_e6b3"]
+        source_6783_id = name_to_id_map["ResidualHeatSource_6783"]
+        source_4539_id = name_to_id_map["ResidualHeatSource_4539"]
+        hp_cd41_id = name_to_id_map["HeatPump_cd41"]
+        storage_bce7_id = name_to_id_map["HeatStorage_bce7"]
 
         test = TestCase()
         test.assertTrue(heat_problem.solver_stats["success"], msg="Optimisation did not succeed")
@@ -76,21 +84,21 @@ class TestInsulation(TestCase):
         # Check that only the demand for insulation A has been selected for every time step
         np.testing.assert_allclose(
             1.0,
-            results["HeatingDemand_f15e__demand_insulation_class_A"],
+            results[f"{demand_f15e_id}__demand_insulation_class_A"],
             err_msg="The lowest demand (insulation level A) has not been selected for every time"
             " step",
         )
         np.testing.assert_allclose(
             1.0,
-            results["HeatingDemand_e6b3__demand_insulation_class_A"],
+            results[f"{demand_e6b3_id}__demand_insulation_class_A"],
             err_msg="The lowest demand (insulation level A) has not been selected for every time"
             " step",
         )
         other_demand_insulation_class = (
-            results["HeatingDemand_f15e__demand_insulation_class_B"]
-            + results["HeatingDemand_e6b3__demand_insulation_class_B"]
-            + results["HeatingDemand_f15e__demand_insulation_class_C"]
-            + results["HeatingDemand_e6b3__demand_insulation_class_C"]
+            results[f"{demand_f15e_id}__demand_insulation_class_B"]
+            + results[f"{demand_e6b3_id}__demand_insulation_class_B"]
+            + results[f"{demand_f15e_id}__demand_insulation_class_C"]
+            + results[f"{demand_e6b3_id}__demand_insulation_class_C"]
         )
         np.testing.assert_allclose(
             0.0,
@@ -99,13 +107,13 @@ class TestInsulation(TestCase):
         )
         # Check that the heat sources (not connected to HP) + HP secondary > demand
         tot_src = (
-            results["ResidualHeatSource_6783.Heat_source"]
-            + results["ResidualHeatSource_4539.Heat_source"]
-            + results["HeatPump_cd41.Secondary_heat"]
-            - results["HeatStorage_bce7.Heat_buffer"]
+            results[f"{source_6783_id}.Heat_source"]
+            + results[f"{source_4539_id}.Heat_source"]
+            + results[f"{hp_cd41_id}.Secondary_heat"]
+            - results[f"{storage_bce7_id}.Heat_buffer"]
         ) / 1.0e6
         tot_dmnd = (
-            results["HeatingDemand_f15e.Heat_demand"] + results["HeatingDemand_e6b3.Heat_demand"]
+            results[f"{demand_f15e_id}.Heat_demand"] + results[f"{demand_e6b3_id}.Heat_demand"]
         ) / 1.0e6
         np.testing.assert_array_less(
             (tot_dmnd - tot_src), 0.0, err_msg="The heat source is not sufficient"
@@ -114,15 +122,15 @@ class TestInsulation(TestCase):
         # factor. Insulation level "A" should be active, which is index=0 in the insulation_levels
         # attributes index
         np.testing.assert_allclose(
-            heat_problem.base_demand_load("HeatingDemand_f15e")[0:5]
+            heat_problem.base_demand_load(f"{demand_f15e_id}")[0:5]
             * heat_problem.insulation_levels()["scaling_factor"][0],
-            results["HeatingDemand_f15e.Heat_demand"],
+            results[f"{demand_f15e_id}.Heat_demand"],
             err_msg="The scaled demand value is incorrect: HeatingDemand_f15e.Heat_demand",
         )
         np.testing.assert_allclose(
-            heat_problem.base_demand_load("HeatingDemand_e6b3")[0:5]
+            heat_problem.base_demand_load(f"{demand_e6b3_id}")[0:5]
             * heat_problem.insulation_levels()["scaling_factor"][0],
-            results["HeatingDemand_e6b3.Heat_demand"],
+            results[f"{demand_e6b3_id}.Heat_demand"],
             err_msg="The scaled demand value is incorrect: HeatingDemand_e6b3.Heat_demand",
         )
 
@@ -149,6 +157,10 @@ class TestInsulation(TestCase):
             input_timeseries_file="timeseries_import.xml",
         )
         results = heat_problem.extract_results()
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
+
+        heating_demand_f15e_id = name_to_id_map["HeatingDemand_f15e"]
+        heating_demand_e6b3_id = name_to_id_map["HeatingDemand_e6b3"]
 
         test = TestCase()
         test.assertTrue(heat_problem.solver_stats["success"], msg="Optimisation did not succeed")
@@ -156,13 +168,13 @@ class TestInsulation(TestCase):
         # Check that only the demand for insulation A has been selected for every time step
         np.testing.assert_allclose(
             1.0,
-            results["HeatingDemand_e6b3__demand_insulation_class_A"],
+            results[f"{heating_demand_e6b3_id}__demand_insulation_class_A"],
             err_msg="The lowest demand (insulation level A) has not been selected for every time"
             " step",
         )
         other_demand_insulation_class = (
-            abs(results["HeatingDemand_e6b3__demand_insulation_class_B"])
-            + results["HeatingDemand_e6b3__demand_insulation_class_C"]
+            abs(results[f"{heating_demand_e6b3_id}__demand_insulation_class_B"])
+            + results[f"{heating_demand_e6b3_id}__demand_insulation_class_C"]
         )
 
         np.testing.assert_allclose(
@@ -174,7 +186,7 @@ class TestInsulation(TestCase):
         # Check that insulation level C is active for HeatingDemand_f15e
         np.testing.assert_allclose(
             1.0,
-            results["HeatingDemand_f15e__demand_insulation_class_C"],
+            results[f"{heating_demand_f15e_id}__demand_insulation_class_C"],
             err_msg="The lowest demand (insulation level C) has not been selected for every time"
             " step",
         )

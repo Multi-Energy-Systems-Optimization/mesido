@@ -1,11 +1,11 @@
 from mesido.pycml import Variable
 from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
-from ._non_storage_component import _NonStorageComponent
+from ._non_storage_component_source_type import _NonStorageComponentSourceType
 
 
 @add_variables_documentation_automatically
-class Airco(_NonStorageComponent):
+class Airco(_NonStorageComponentSourceType):
     """
     The airco component is there to extract thermal power (Heat) out of the network. This component
     can also be used to model cold producers, e.g. dry coolers.
@@ -45,16 +45,6 @@ class Airco(_NonStorageComponent):
         # Assumption: heat in/out and extracted is nonnegative
         # Heat in the return (i.e. cold) line is zero
         self.add_variable(Variable, "Heat_airco", min=0.0, nominal=self.Heat_nominal)
-        self.add_variable(Variable, "dH", max=0.0)
-        self.add_variable(
-            Variable, "Pump_power", min=0.0, nominal=self.Q_nominal * self.nominal_pressure
-        )
-
-        self.add_equation(self.dH - (self.HeatOut.H - self.HeatIn.H))
-        self.add_equation(
-            (self.Pump_power - (self.HeatOut.Hydraulic_power - self.HeatIn.Hydraulic_power))
-            / (self.Q_nominal * self.nominal_pressure)
-        )
 
         self.add_equation(
             (self.HeatOut.Heat - (self.HeatIn.Heat - self.Heat_airco)) / self.Heat_nominal

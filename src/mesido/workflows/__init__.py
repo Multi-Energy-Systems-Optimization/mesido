@@ -18,7 +18,6 @@ from .simulator_workflow import (
     NetworkSimulatorHIGHSWeeklyTimeStep,
 )
 
-
 __all__ = [
     "EndScenarioSizing",
     "EndScenarioSizingDiscounted",

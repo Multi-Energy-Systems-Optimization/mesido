@@ -9,7 +9,7 @@ from typing import Optional
 import esdl
 
 from mesido.esdl.esdl_parser import ESDLFileParser
-from mesido.esdl.profile_parser import InfluxDBProfileReader, ProfileReaderFromFile
+from mesido.esdl.profile_parser import ESDLProfileReader, ProfileReaderFromFile
 from mesido.workflows import EndScenarioSizingStaged
 from mesido.workflows.utils.adapt_profiles import (
     adapt_hourly_profile_averages_timestep_size,
@@ -21,9 +21,18 @@ import numpy as np
 import pandas as pd
 
 
-class MockInfluxDBProfileReader(InfluxDBProfileReader):
-    def __init__(self, energy_system: esdl.EnergySystem, file_path: Optional[Path]):
-        super().__init__(energy_system, file_path)
+class MockESDLProfileReader(ESDLProfileReader):
+    def __init__(
+        self,
+        energy_system: esdl.EnergySystem,
+        file_path: Optional[Path],
+        use_esdl_ranged_contraint: bool,
+    ):
+        super().__init__(
+            energy_system,
+            file_path,
+            use_esdl_ranged_contraint=use_esdl_ranged_contraint,
+        )
         self._loaded_profiles = pd.read_csv(
             file_path,
             index_col="DateTime",
@@ -145,22 +154,25 @@ class TestProfileLoading(unittest.TestCase):
         base_folder = Path(run_1a.__file__).resolve().parent.parent
         model_folder = base_folder / "model"
         input_folder = base_folder / "input"
+
         problem = EndScenarioSizingStaged(
             esdl_parser=ESDLFileParser,
             base_folder=base_folder,
             model_folder=model_folder,
             input_folder=input_folder,
             esdl_file_name="1a_with_influx_profiles.esdl",
-            profile_reader=MockInfluxDBProfileReader,
+            profile_reader=MockESDLProfileReader,
             input_timeseries_file="influx_mock.csv",
         )
         problem.pre()
+        name_to_id_map = problem.esdl_asset_name_to_id_map
 
         np.testing.assert_equal(problem.io.reference_datetime.tzinfo, datetime.timezone.utc)
 
         # the three demands in the test ESDL
         for demand_name in ["HeatingDemand_2ab9", "HeatingDemand_6662", "HeatingDemand_506c"]:
-            profile_values = problem.get_timeseries(f"{demand_name}.target_heat_demand").values
+            demand_id = name_to_id_map[demand_name]
+            profile_values = problem.get_timeseries(f"{demand_id}.target_heat_demand").values
             self.assertEqual(profile_values[0], profile_values[1])
             self.assertEqual(len(profile_values), 26)
 
@@ -191,12 +203,16 @@ class TestProfileLoading(unittest.TestCase):
         )
         problem.pre()
 
+        name_to_id_map = problem.esdl_asset_name_to_id_map
+
         np.testing.assert_equal(problem.io.reference_datetime.tzinfo, datetime.timezone.utc)
 
         expected_array = np.array([1.0e8] * 3)
         np.testing.assert_equal(
             expected_array,
-            problem.get_timeseries("WindPark_7f14.maximum_electricity_source").values,
+            problem.get_timeseries(
+                f"{name_to_id_map['WindPark_7f14']}.maximum_electricity_source"
+            ).values,
         )
 
         expected_array = np.array([1.0] * 3)
@@ -229,12 +245,14 @@ class TestProfileLoading(unittest.TestCase):
             input_timeseries_file="timeseries.xml",
         )
         problem.pre()
+        name_to_id_map = problem.esdl_asset_name_to_id_map
 
         np.testing.assert_equal(problem.io.reference_datetime.tzinfo, datetime.timezone.utc)
 
         expected_array = np.array([1.5e5] * 16 + [1.0e5] * 13 + [0.5e5] * 16)
         np.testing.assert_equal(
-            expected_array, problem.get_timeseries("demand.target_heat_demand").values
+            expected_array,
+            problem.get_timeseries(f"{name_to_id_map['demand']}.target_heat_demand").values,
         )
 
     def test_loading_from_csv_with_influx_profiles_given(self):
@@ -261,13 +279,15 @@ class TestProfileLoading(unittest.TestCase):
             input_timeseries_file="timeseries.csv",
         )
         problem.pre()
+        name_to_id_map = problem.esdl_asset_name_to_id_map
 
         np.testing.assert_equal(problem.io.reference_datetime.tzinfo, datetime.timezone.utc)
 
         expected_array = np.array([1.0e8] * 3)
+        wind_park_id = name_to_id_map["WindPark_7f14"]
         np.testing.assert_equal(
             expected_array,
-            problem.get_timeseries("WindPark_7f14.maximum_electricity_source").values,
+            problem.get_timeseries(f"{wind_park_id}.maximum_electricity_source").values,
         )
 
         expected_array = np.array([1.0] * 3)
@@ -302,21 +322,70 @@ class TestProfileLoading(unittest.TestCase):
             os.path.join(input_folder, "SpaceHeat&HotWater_PowerProfile_2000_2010.csv")
         )
         expected_values = expected_values_file["Ruimte&Tap_W"]
-        for asset in problem.energy_system_components.get("heat_source"):
+        for asset_id in problem.energy_system_components.get("heat_source"):
             np.testing.assert_allclose(
-                problem.get_timeseries(f"{asset}.maximum_heat_source").values,
+                problem.get_timeseries(f"{asset_id}.maximum_heat_source").values,
                 expected_values * 1e6,
                 atol=1e-2,
             )
+
+    def test_loading_profiles_ensemble_members(self):
+        """
+        This test constructs multiple ensemble members based on an "ensemble_member" CSV file
+        that describes the probability of the ensemble member and the name and number.
+        The profiles related to each ensemble member are read from the respective CSV files and
+        saved in for each member.
+        The test checks if the profiles read match the profiles from the CVS files and if the
+        ensemble_member_size is set accordingly.
+        """
+        import models.unit_cases.case_2a_ensemble.src.run_2a as run_2a
+        from models.unit_cases.case_2a_ensemble.src.run_2a import HeatProblemEnsemble
+
+        base_folder = Path(run_2a.__file__).resolve().parent.parent
+        model_folder = base_folder / "model"
+        input_folder = base_folder / "input"
+
+        problem = HeatProblemEnsemble(
+            base_folder=base_folder,
+            model_folder=model_folder,
+            input_folder=input_folder,
+            esdl_file_name="2a.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.csv",
+        )
+
+        problem.pre()
+
+        name_to_id = problem.esdl_asset_name_to_id_map
+
+        # check that the ensemble size is set at 2, which is based on the ensemble.csv
+        np.testing.assert_equal(problem.ensemble_size, 2)
+        prob_0 = problem.ensemble_member_probability(0)
+        prob_1 = problem.ensemble_member_probability(1)
+        np.testing.assert_allclose(prob_0, 0.7)
+        np.testing.assert_allclose(prob_1, 0.3)
+
+        # check that the timeseries are loaded for all ensemble sizes and that the timeseries are
+        # equal to a heating demand of 350000 except for HeatingDemand_6f99 at the second
+        # ensemble, where it is equal to 300000.
+        timeseries_names = problem.io.get_timeseries_names()
+        for t_name in timeseries_names:
+            for e_m in range(problem.ensemble_size):
+                t_series = problem.get_timeseries(t_name, e_m)
+                if e_m == 1 and t_name == f"{name_to_id['HeatingDemand_6f99']}.target_heat_demand":
+                    np.testing.assert_allclose(t_series.values, [300000] * 3)
+                else:
+                    np.testing.assert_allclose(t_series.values, [350000] * 3)
 
 
 if __name__ == "__main__":
     # unittest.main()
     a = TestProfileLoading()
     c = TestProfileUpdating()
-    # a.test_loading_from_influx()
-    # a.test_loading_from_csv()
-    # a.test_loading_from_xml()
-    # a.test_loading_from_csv_with_influx_profiles_given()
-    # c.test_profile_updating()
+    a.test_loading_from_influx()
+    a.test_loading_from_csv()
+    a.test_loading_from_xml()
+    a.test_loading_from_csv_with_influx_profiles_given()
+    c.test_profile_updating()
     a.test_loading_profile_from_esdl()

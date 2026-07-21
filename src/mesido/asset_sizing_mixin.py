@@ -10,6 +10,9 @@ from mesido._heat_loss_u_values_pipe import pipe_heat_loss
 from mesido.base_component_type_mixin import BaseComponentTypeMixin
 from mesido.demand_insulation_class import DemandInsulationClass
 from mesido.esdl.asset_to_component_base import AssetStateEnum
+from mesido.esdl.common import Asset
+from mesido.esdl.esdl_additional_vars_mixin import get_asset_contraints
+from mesido.esdl.profile_parser import ESDLProfileReader
 from mesido.head_loss_class import HeadLossOption
 from mesido.network_common import NetworkSettings
 from mesido.pipe_class import CableClass, GasPipeClass, PipeClass
@@ -497,6 +500,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         ] = (0.0, 1.0)
 
         set_self_hot_pipes = set(self.hot_pipes)
+        hn_settings = self.heat_network_settings
         for pipe in self.energy_system_components.get("heat_pipe", []):
             pipe_classes = self.pipe_classes(pipe)
             # cold_pipe = self.hot_to_cold_pipe(pipe)
@@ -535,7 +539,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     max(max_discharges),
                 )
             else:
-                max_velocity = self.heat_network_settings["maximum_velocity"]
+                max_velocity = hn_settings["maximum_velocity"]
                 self.__heat_pipe_topo_max_discharge_nominals[max_discharge_var_name] = (
                     parameters[f"{pipe}.area"] * max_velocity
                 )
@@ -663,8 +667,8 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     min(heat_losses),
                     max(heat_losses),
                 )
-                self._pipe_heat_loss_nominals[heat_loss_var_name] = np.median(
-                    [x for x in heat_losses if x > 0]
+                self._pipe_heat_loss_nominals[heat_loss_var_name] = abs(
+                    np.median([x for x in heat_losses if abs(x) > 0])
                 )
 
                 for ensemble_member in range(self.ensemble_size):
@@ -686,16 +690,17 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 for c in pipe_classes:
                     neighbour = self.has_related_pipe(pipe)
                     if neighbour and pipe not in set_self_hot_pipes:
-                        cold_pipe = self.cold_to_hot_pipe(pipe)
-                        pipe_class_var_name = f"{cold_pipe}__hn_pipe_class_{c.name}"
+                        # pipe is cold_pipe
+                        hot_pipe = self.cold_to_hot_pipe(pipe)
+                        pipe_class_var_name = f"{hot_pipe}__hn_pipe_class_{c.name}"
                         pipe_class_ordering_name = (
-                            f"{cold_pipe}__hn_pipe_class_{c.name}_discharge_ordering"
+                            f"{hot_pipe}__hn_pipe_class_{c.name}_discharge_ordering"
                         )
                         pipe_class_cost_ordering_name = (
-                            f"{cold_pipe}__hn_pipe_class_{c.name}_cost_ordering"
+                            f"{hot_pipe}__hn_pipe_class_{c.name}_cost_ordering"
                         )
                         pipe_class_heat_loss_ordering_name = (
-                            f"{cold_pipe}__hn_pipe_class_{c.name}_heat_loss_ordering"
+                            f"{hot_pipe}__hn_pipe_class_{c.name}_heat_loss_ordering"
                         )
                     else:
                         pipe_class_var_name = f"{pipe}__hn_pipe_class_{c.name}"
@@ -789,172 +794,122 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         # Making the variables for max size
 
-        def _make_max_size_var(name, lb, ub, nominal):
+        def _make_max_size_var(name: str, lb: float, ub: float, nominal: float) -> None:
+            """
+            Creates max_size variables for the asset with the given lower and upper bound and the
+            nominal value.
+
+            """
             asset_max_size_var = f"{name}__max_size"
             self._asset_max_size_map[name] = asset_max_size_var
             self.__asset_max_size_var[asset_max_size_var] = ca.MX.sym(asset_max_size_var)
             self.__asset_max_size_bounds[asset_max_size_var] = (lb, ub)
             self.__asset_max_size_nominals[asset_max_size_var] = nominal
 
-        for asset_name in self.energy_system_components.get("heat_source", []):
-            ub = bounds[f"{asset_name}.Heat_source"][1]
-
-            # Update bound to account for profile constraint being used instead of 1 value
-            esdl_asset_attributes = self.esdl_assets[
-                self.esdl_asset_name_to_id_map[asset_name]
-            ].attributes["constraint"]
+        def _get_ub_profile_constraint(asset_name: str, profile_name: str, ub: float) -> float:
+            """
+            Returns upper bound to account for profile constraint being used instead of 1 value
+            """
+            asset = self.esdl_assets[asset_name]
+            asset_profile_constraints, qty_asset_profile_constraints = get_asset_contraints(
+                self, asset, esdl.ProfileConstraint
+            )
             if (
-                len(esdl_asset_attributes) > 0
-                and hasattr(esdl_asset_attributes.items[0], "maximum")
-                and esdl_asset_attributes.items[0].maximum.profileQuantityAndUnit.reference.unit
+                qty_asset_profile_constraints > 0
+                and hasattr(asset_profile_constraints[0], "maximum")
+                and ESDLProfileReader._get_profile_quantity_and_unit(
+                    asset_profile_constraints[0].maximum
+                ).unit
                 == esdl.UnitEnum.WATT
                 and parameters[f"{asset_name}.state"] == AssetStateEnum.OPTIONAL  # Optional asset
             ):
-                max_profile = max(self.get_timeseries(f"{asset_name}.maximum_heat_source").values)
+                max_profile = max(self.get_timeseries(f"{asset_name}.{profile_name}").values)
                 if ub > max_profile:
                     ub = max_profile
+            return ub
 
-            lb = 0.0 if parameters[f"{asset_name}.state"] != AssetStateEnum.ENABLED else ub
-            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
+        def _scalarise_upper_bound(bound_ub):
+            """
+            Scalarises the upperbound from timeserie to the maximum value of the timeserie.
+            """
+            if isinstance(bound_ub, Timeseries):
+                return np.max(bound_ub.values)
+            return bound_ub if isinstance(bound_ub, float) else max(bound_ub.values)
 
-        for asset_name in self.energy_system_components.get("heat_demand", []):
-            ub = (
-                bounds[f"{asset_name}.Heat_demand"][1]
-                if not np.isinf(bounds[f"{asset_name}.Heat_demand"][1])
-                else bounds[f"{asset_name}.HeatIn.Heat"][1]
-            )
-            # Note that we only enforce the upper bound in state enabled if it was explicitly
-            # specified for the demand
-            lb = 0.0 if np.isinf(bounds[f"{asset_name}.Heat_demand"][1]) else ub
-            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
+        def _demand_ub(asset_name: str, primary_suffix: str, secondary_suffix: str):
+            """
+            Returns the upperbound of a variable with a backup variable name under which it might be
+             saved.
 
-        for asset_name in self.energy_system_components.get("airco", []):
-            ub = bounds[f"{asset_name}.Heat_airco"][1]
-            # Note that we only enforce the upper bound in state enabled if it was explicitly
-            # specified for the demand
-            lb = 0.0 if np.isinf(bounds[f"{asset_name}.Heat_airco"][1]) else ub
-            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
-
-        for asset_name in self.energy_system_components.get("cold_demand", []):
-            ub = (
-                bounds[f"{asset_name}.Cold_demand"][1]
-                if not np.isinf(bounds[f"{asset_name}.Cold_demand"][1])
-                else bounds[f"{asset_name}.HeatIn.Heat"][1]
-            )
-            # Note that we only enforce the upper bound in state enabled if it was explicitly
-            # specified for the demand
-            lb = 0.0 if np.isinf(bounds[f"{asset_name}.Cold_demand"][1]) else ub
-            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
-
-        for asset_name in [
-            *self.energy_system_components.get("ates", []),
-            *self.energy_system_components.get("low_temperature_ates", []),
-        ]:
-            if asset_name in self.energy_system_components.get("ates", []):
-                ub = bounds[f"{asset_name}.Heat_ates"][1]
-            else:
-                ub = bounds[f"{asset_name}.Heat_low_temperature_ates"][1]
-            lb = 0.0 if parameters[f"{asset_name}.state"] != AssetStateEnum.ENABLED else ub
-            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
-
-        for asset_name in self.energy_system_components.get("heat_buffer", []):
-            ub = (
-                max(bounds[f"{asset_name}.Stored_heat"][1].values)
-                if isinstance(bounds[f"{asset_name}.Stored_heat"][1], Timeseries)
-                else bounds[f"{asset_name}.Stored_heat"][1]
-            )
-            lb = 0.0 if parameters[f"{asset_name}.state"] != AssetStateEnum.ENABLED else ub
-            _make_max_size_var(
-                name=asset_name,
-                lb=lb,
-                ub=ub,
-                nominal=self.variable_nominal(f"{asset_name}.Stored_heat"),
+            """
+            demand_ub = bounds[f"{asset_name}.{primary_suffix}"][1]
+            return (
+                demand_ub
+                if not np.isinf(demand_ub)
+                else bounds[f"{asset_name}.{secondary_suffix}"][1]
             )
 
-        for asset_name in [
-            *self.energy_system_components.get("heat_exchanger", []),
-            *self.energy_system_components.get("heat_pump", []),
-        ]:
-            ub = bounds[f"{asset_name}.Secondary_heat"][1]
-            lb = 0.0 if parameters[f"{asset_name}.state"] != AssetStateEnum.ENABLED else ub
-            _make_max_size_var(
-                name=asset_name,
-                lb=lb,
-                ub=ub,
-                nominal=self.variable_nominal(f"{asset_name}.Secondary_heat"),
-            )
+        def _make_asset_max_size_vars(
+            component_type: str,
+            upper_bound_suffix=None,
+            upper_bound_suffix_sec=None,
+            profile_constraint=None,
+        ):
+            """
+            Creates max_size variables for all assets of the given component type with
+            upper bound suffixes and profile constraint information.
+            """
+            for asset_name in self.energy_system_components.get(component_type, []):
+                if upper_bound_suffix_sec is None:
+                    ub_raw = bounds[f"{asset_name}.{upper_bound_suffix}"][1]
+                else:
+                    ub_raw = _demand_ub(asset_name, upper_bound_suffix, upper_bound_suffix_sec)
+                ub = _scalarise_upper_bound(ub_raw)
+                if profile_constraint:
+                    ub = _get_ub_profile_constraint(asset_name, profile_constraint, ub)
+                lb = 0.0 if parameters[f"{asset_name}.state"] == AssetStateEnum.OPTIONAL else ub
+                _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
 
-        for asset_name in self.energy_system_components.get("gas_demand", []):
-            # TODO: add bound value for mass flow rate, used 1.0 for now instead of 0.0 which
-            # Note that we set the nominal to one to avoid division by zero
-            ub = 0.0
-            lb = 0.0 if parameters[f"{asset_name}.state"] == AssetStateEnum.OPTIONAL else ub
-            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=1.0)
+        map_asset_type_to_bound_vars = {
+            "heat_source": {
+                "upper_bound_suffix": "Heat_source",
+                "profile_constraint": "maximum_heat_source",
+            },
+            "heat_demand": {
+                "upper_bound_suffix": "Heat_demand",
+                "upper_bound_suffix_sec": "HeatIn.Heat",
+            },
+            "cold_demand": {
+                "upper_bound_suffix": "Cold_demand",
+                "upper_bound_suffix_sec": "HeatIn.Heat",
+            },
+            "airco": {"upper_bound_suffix": "Heat_airco"},
+            "ates": {"upper_bound_suffix": "Heat_ates"},
+            "low_temperature_ates": {"upper_bound_suffix": "Heat_ates"},
+            "heat_buffer": {"upper_bound_suffix": "Stored_heat"},
+            "heat_exchanger": {"upper_bound_suffix": "Secondary_heat"},
+            "heat_pump": {"upper_bound_suffix": "Secondary_heat"},
+            "gas_tank_storage": {"upper_bound_suffix": "Stored_gas_mass"},
+            "gas_substation": {"upper_bound_suffix": "GasIn.Q"},
+            "gas_demand": {"upper_bound_suffix": "Gas_demand_mass_flow"},
+            "gas_source": {"upper_bound_suffix": "Gas_source_mass_flow"},
+            "compressor": {"upper_bound_suffix": "GasIn.Q"},
+            "electrolyzer": {"upper_bound_suffix": "ElectricityIn.Power"},
+            "electricity_demand": {
+                "upper_bound_suffix": "Electricity_demand",
+                "upper_bound_suffix_sec": "ElectricityIn.Power",
+            },
+            "transformer": {"upper_bound_suffix": "ElectricityIn.Power"},
+            "electricity_source": {"upper_bound_suffix": "Electricity_source"},
+            "electricity_storage": {"upper_bound_suffix": "Stored_electricity"},
+        }
 
-        for asset_name in self.energy_system_components.get("gas_source", []):
-            # TODO: add bound value for mass flow rate, used 1.0 for now instead of 0.0 which
-            # Note that we set the nominal to one to avoid division by zero
-            ub = 0.0
-            lb = 0.0 if parameters[f"{asset_name}.state"] == AssetStateEnum.OPTIONAL else ub
-            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=1.0)
-
-        for asset_name in self.energy_system_components.get("gas_tank_storage", []):
-            ub = bounds[f"{asset_name}.Stored_gas_mass"][1]
-            ub = ub if isinstance(ub, float) else max(ub.values)
-            lb = 0.0 if parameters[f"{asset_name}.state"] == AssetStateEnum.OPTIONAL else ub
-            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
-
-        for asset_name in self.energy_system_components.get("gas_substation", []):
-            ub = bounds[f"{asset_name}.GasIn.Q"][1]
-            ub = ub if isinstance(ub, float) else max(ub.values)
-            lb = 0.0 if parameters[f"{asset_name}.state"] == AssetStateEnum.OPTIONAL else ub
-            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
-
-        for asset_name in self.energy_system_components.get("compressor", []):
-            ub = bounds[f"{asset_name}.GasIn.Q"][1]
-            ub = ub if isinstance(ub, float) else max(ub.values)
-            lb = 0.0 if parameters[f"{asset_name}.state"] == AssetStateEnum.OPTIONAL else ub
-            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
-
-        for asset_name in self.energy_system_components.get("electrolyzer", []):
-            ub = bounds[f"{asset_name}.ElectricityIn.Power"][1]
-            ub = ub if isinstance(ub, float) else max(ub.values)
-            lb = 0.0 if parameters[f"{asset_name}.state"] == AssetStateEnum.OPTIONAL else ub
-            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
-
-        for asset_name in self.energy_system_components.get("electricity_demand", []):
-            v = bounds[f"{asset_name}.Electricity_demand"][1]
-            ub = v if not np.isinf(v) else bounds[f"{asset_name}.ElectricityIn.Power"][1]
-            ub = ub if isinstance(ub, float) else max(ub.values)
-            lb = 0.0 if parameters[f"{asset_name}.state"] == AssetStateEnum.OPTIONAL else ub
-            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
-
-        for asset_name in self.energy_system_components.get("transformer", []):
-            ub = bounds[f"{asset_name}.ElectricityIn.Power"][1]
-            ub = ub if isinstance(ub, float) else max(ub.values)
-            lb = 0.0 if parameters[f"{asset_name}.state"] == AssetStateEnum.OPTIONAL else ub
-            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
-
-        for asset_name in self.energy_system_components.get("electricity_source", []):
-            ub = (
-                bounds[f"{asset_name}.Electricity_source"][1]
-                if not isinstance(bounds[f"{asset_name}.Electricity_source"][1], Timeseries)
-                else np.max(bounds[f"{asset_name}.Electricity_source"][1].values)
-            )
-            lb = 0.0 if parameters[f"{asset_name}.state"] == AssetStateEnum.OPTIONAL else ub
-            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
-
-        for asset_name in self.energy_system_components.get("electricity_storage", []):
-            ub = (
-                bounds[f"{asset_name}.Stored_electricity"][1]
-                if not isinstance(bounds[f"{asset_name}.Stored_electricity"][1], Timeseries)
-                else np.max(bounds[f"{asset_name}.Stored_electricity"][1].values)
-            )
-            lb = 0.0 if parameters[f"{asset_name}.state"] == AssetStateEnum.OPTIONAL else ub
-            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
-
-        # Making the __aggregation_count variable for each asset
-        for asset_list in self.energy_system_components.values():
+        # Create the asset sizing variables for each asset.
+        for asset_type, asset_list in self.energy_system_components.items():
+            if asset_type in map_asset_type_to_bound_vars:
+                _make_asset_max_size_vars(asset_type, **map_asset_type_to_bound_vars[asset_type])
+            elif asset_type not in ["heat_pipe", "gas_pipe", "cable"]:
+                logger.warning(f"Assets of type {asset_type} is not supported for sizing.")
             for asset in asset_list:
                 aggr_count_var = f"{asset}_aggregation_count"
                 self._asset_aggregation_count_var_map[asset] = aggr_count_var
@@ -1236,8 +1191,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         options = self.energy_system_options()
         components = self.energy_system_components
+        hn_settings = self.heat_network_settings
 
-        if self.heat_network_settings["head_loss_option"] == HeadLossOption.NO_HEADLOSS:
+        if hn_settings["head_loss_option"] == HeadLossOption.NO_HEADLOSS:
             # Undefined, and all constraints using this methods value should
             # be skipped.
             return np.nan
@@ -1258,7 +1214,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                             pipe,
                             self,
                             options,
-                            self.heat_network_settings,
+                            hn_settings,
                             parameters,
                             pc.maximum_discharge,
                             pipe_class=pc,
@@ -1268,9 +1224,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     )
                 except KeyError:
                     area = parameters[f"{pipe}.area"]
-                    max_discharge = self.heat_network_settings["maximum_velocity"] * area
+                    max_discharge = hn_settings["maximum_velocity"] * area
                     head_loss += self._hn_head_loss_class._hn_pipe_head_loss(
-                        pipe, self, options, self.heat_network_settings, parameters, max_discharge
+                        pipe, self, options, hn_settings, parameters, max_discharge
                     )
 
             head_loss += options["minimum_pressure_far_point"] * 10.2
@@ -1280,21 +1236,13 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         # Maximum pressure difference allowed with user options
         # NOTE: Does not yet take elevation differences into acccount
         max_dh_network_options = (
-            self.heat_network_settings["pipe_maximum_pressure"]
-            - self.heat_network_settings["pipe_minimum_pressure"]
+            hn_settings["pipe_maximum_pressure"] - hn_settings["pipe_minimum_pressure"]
         ) * 10.2
 
         return min(max_sum_dh_pipes, max_dh_network_options)
 
     def __state_vector_scaled(self, variable, ensemble_member):
-        """
-        This functions returns the casadi symbols scaled with their nominal for the entire time
-        horizon.
-        """
-        canonical, sign = self.alias_relation.canonical_signed(variable)
-        return (
-            self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
-        )
+        return self._BaseProblemMixin__state_vector_scaled(variable, ensemble_member)
 
     def __pipe_topology_constraints(self, ensemble_member):
         """
@@ -1340,7 +1288,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         # These are the constraints to order the discharge capabilities of the pipe classes
         for p, pipe_classes in self.__heat_pipe_topo_pipe_class_discharge_ordering_map.items():
-            max_discharge = self.extra_variable(self._heat_pipe_topo_max_discharge_map[p])
+            max_discharge = self.extra_variable(
+                self._heat_pipe_topo_max_discharge_map[p], ensemble_member
+            )
             max_discharges = {
                 pc.name: pc.maximum_discharge for pc in self._heat_pipe_topo_pipe_class_map[p]
             }
@@ -1349,29 +1299,12 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             big_m = 2.0 * max(max_discharges.values())
             for pc, var_name in pipe_classes.items():
                 pipe_class_discharge_ordering = self.extra_variable(var_name, ensemble_member)
-
-                constraints.append(
-                    (
-                        (
-                            max_discharge
-                            - max_discharges[pc.name]
-                            + pipe_class_discharge_ordering * big_m
-                        )
-                        / median_discharge,
-                        0.0,
-                        np.inf,
-                    )
-                )
-                constraints.append(
-                    (
-                        (
-                            max_discharge
-                            - max_discharges[pc.name]
-                            - (1.0 - pipe_class_discharge_ordering) * big_m
-                        )
-                        / median_discharge,
-                        -np.inf,
-                        0.0,
+                constraints.extend(
+                    self._big_m_ineq_constraints(
+                        max_discharge - max_discharges[pc.name],
+                        pipe_class_discharge_ordering,
+                        big_m,
+                        median_discharge,
                     )
                 )
 
@@ -1386,20 +1319,12 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 pipe_class_cost_ordering = self.extra_variable(var_name, ensemble_member)
 
                 # should be one if >= than cost_symbol
-                constraints.append(
-                    (
-                        (cost_sym - costs[pc.name] + pipe_class_cost_ordering * big_m)
-                        / self.variable_nominal(cost_sym_name),
-                        0.0,
-                        np.inf,
-                    )
-                )
-                constraints.append(
-                    (
-                        (cost_sym - costs[pc.name] - (1.0 - pipe_class_cost_ordering) * big_m)
-                        / self.variable_nominal(cost_sym_name),
-                        -np.inf,
-                        0.0,
+                constraints.extend(
+                    self._big_m_ineq_constraints(
+                        cost_sym - costs[pc.name],
+                        pipe_class_cost_ordering,
+                        big_m,
+                        self.variable_nominal(cost_sym_name),
                     )
                 )
 
@@ -1421,7 +1346,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                             self._pipe_heat_losses[self.hot_to_cold_pipe(pipe)],
                         )
                     ]
-                elif pipe in set_self_hot_pipes and not self.has_related_pipe(pipe):
+                elif pipe not in set_self_hot_pipes and not self.has_related_pipe(pipe):
                     heat_loss_sym_name = self._pipe_heat_loss_map[pipe]
                     heat_loss_sym = self.extra_variable(heat_loss_sym_name, ensemble_member)
 
@@ -1434,24 +1359,12 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     pipe_class_heat_loss_ordering = self.extra_variable(var_name, ensemble_member)
 
                     # should be one if >= than heat_loss_symbol
-                    constraints.append(
-                        (
-                            (heat_loss_sym - heat_loss + pipe_class_heat_loss_ordering * big_m)
-                            / self.variable_nominal(heat_loss_sym_name),
-                            0.0,
-                            np.inf,
-                        )
-                    )
-                    constraints.append(
-                        (
-                            (
-                                heat_loss_sym
-                                - heat_loss
-                                - (1.0 - pipe_class_heat_loss_ordering) * big_m
-                            )
-                            / self.variable_nominal(heat_loss_sym_name),
-                            -np.inf,
-                            0.0,
+                    constraints.extend(
+                        self._big_m_ineq_constraints(
+                            heat_loss_sym - heat_loss,
+                            pipe_class_heat_loss_ordering,
+                            big_m,
+                            self.variable_nominal(heat_loss_sym_name),
                         )
                     )
 
@@ -1465,7 +1378,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             constraints.append((sum(variables.values()), 1.0, 1.0))
 
             # set the max discharge
-            max_discharge = self.extra_variable(self._heat_pipe_topo_max_discharge_map[p])
+            max_discharge = self.extra_variable(
+                self._heat_pipe_topo_max_discharge_map[p], ensemble_member
+            )
             max_discharges = {pc.name: pc.maximum_discharge for pc in pipe_classes}
             max_discharge_expr = sum(
                 variables[pc_name] * max_discharges[pc_name] for pc_name in variables
@@ -1531,7 +1446,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         # These are the constraints to order the discharge capabilities of the pipe classes
         for p, pipe_classes in self.__gas_pipe_topo_pipe_class_discharge_ordering_map.items():
-            max_discharge = self.extra_variable(self._gas_pipe_topo_max_discharge_map[p])
+            max_discharge = self.extra_variable(
+                self._gas_pipe_topo_max_discharge_map[p], ensemble_member
+            )
             max_discharges = {
                 pc.name: pc.maximum_discharge for pc in self._gas_pipe_topo_pipe_class_map[p]
             }
@@ -1540,29 +1457,12 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             big_m = 2.0 * max(max_discharges.values())
             for pc, var_name in pipe_classes.items():
                 pipe_class_discharge_ordering = self.extra_variable(var_name, ensemble_member)
-
-                constraints.append(
-                    (
-                        (
-                            max_discharge
-                            - max_discharges[pc.name]
-                            + pipe_class_discharge_ordering * big_m
-                        )
-                        / median_discharge,
-                        0.0,
-                        np.inf,
-                    )
-                )
-                constraints.append(
-                    (
-                        (
-                            max_discharge
-                            - max_discharges[pc.name]
-                            - (1.0 - pipe_class_discharge_ordering) * big_m
-                        )
-                        / median_discharge,
-                        -np.inf,
-                        0.0,
+                constraints.extend(
+                    self._big_m_ineq_constraints(
+                        max_discharge - max_discharges[pc.name],
+                        pipe_class_discharge_ordering,
+                        big_m,
+                        median_discharge,
                     )
                 )
 
@@ -1577,20 +1477,12 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 pipe_class_cost_ordering = self.extra_variable(var_name, ensemble_member)
 
                 # should be one if >= than cost_symbol
-                constraints.append(
-                    (
-                        (cost_sym - costs[pc.name] + pipe_class_cost_ordering * big_m)
-                        / self.variable_nominal(cost_sym_name),
-                        0.0,
-                        np.inf,
-                    )
-                )
-                constraints.append(
-                    (
-                        (cost_sym - costs[pc.name] - (1.0 - pipe_class_cost_ordering) * big_m)
-                        / self.variable_nominal(cost_sym_name),
-                        -np.inf,
-                        0.0,
+                constraints.extend(
+                    self._big_m_ineq_constraints(
+                        cost_sym - costs[pc.name],
+                        pipe_class_cost_ordering,
+                        big_m,
+                        self.variable_nominal(cost_sym_name),
                     )
                 )
 
@@ -1604,7 +1496,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             constraints.append((sum(variables.values()), 1.0, 1.0))
 
             # set the max discharge
-            max_discharge = self.extra_variable(self._gas_pipe_topo_max_discharge_map[p])
+            max_discharge = self.extra_variable(
+                self._gas_pipe_topo_max_discharge_map[p], ensemble_member
+            )
             max_discharges = {pc.name: pc.maximum_discharge for pc in pipe_classes}
             max_discharge_expr = sum(
                 variables[pc_name] * max_discharges[pc_name] for pc_name in variables
@@ -1673,7 +1567,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             c,
             cable_classes,
         ) in self.__electricity_cable_topo_cable_class_current_ordering_map.items():
-            max_current = self.extra_variable(self._electricity_cable_topo_max_current_map[c])
+            max_current = self.extra_variable(
+                self._electricity_cable_topo_max_current_map[c], ensemble_member
+            )
             max_currents = {
                 cc.name: cc.maximum_current
                 for cc in self._electricity_cable_topo_cable_class_map[c]
@@ -1683,25 +1579,12 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             big_m = 2.0 * max(max_currents.values())
             for cc, var_name in cable_classes.items():
                 cable_class_current_ordering = self.extra_variable(var_name, ensemble_member)
-
-                constraints.append(
-                    (
-                        (max_current - max_currents[cc.name] + cable_class_current_ordering * big_m)
-                        / median_current,
-                        0.0,
-                        np.inf,
-                    )
-                )
-                constraints.append(
-                    (
-                        (
-                            max_current
-                            - max_currents[cc.name]
-                            - (1.0 - cable_class_current_ordering) * big_m
-                        )
-                        / median_current,
-                        -np.inf,
-                        0.0,
+                constraints.extend(
+                    self._big_m_ineq_constraints(
+                        max_current - max_currents[cc.name],
+                        cable_class_current_ordering,
+                        big_m,
+                        median_current,
                     )
                 )
 
@@ -1719,20 +1602,12 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 pipe_class_cost_ordering = self.extra_variable(var_name, ensemble_member)
 
                 # should be one if >= than cost_symbol
-                constraints.append(
-                    (
-                        (cost_sym - costs[cc.name] + pipe_class_cost_ordering * big_m)
-                        / self.variable_nominal(cost_sym_name),
-                        0.0,
-                        np.inf,
-                    )
-                )
-                constraints.append(
-                    (
-                        (cost_sym - costs[cc.name] - (1.0 - pipe_class_cost_ordering) * big_m)
-                        / self.variable_nominal(cost_sym_name),
-                        -np.inf,
-                        0.0,
+                constraints.extend(
+                    self._big_m_ineq_constraints(
+                        cost_sym - costs[cc.name],
+                        pipe_class_cost_ordering,
+                        big_m,
+                        self.variable_nominal(cost_sym_name),
                     )
                 )
 
@@ -1746,7 +1621,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             constraints.append((sum(variables.values()), 1.0, 1.0))
 
             # set the max discharge
-            max_current = self.extra_variable(self._electricity_cable_topo_max_current_map[c])
+            max_current = self.extra_variable(
+                self._electricity_cable_topo_max_current_map[c], ensemble_member
+            )
             max_currents = {cc.name: cc.maximum_current for cc in cable_classes}
             max_current_expr = sum(
                 variables[cc_name] * max_currents[cc_name] for cc_name in variables
@@ -1856,6 +1733,138 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         return constraints
 
+    def __producer_constraints(
+        self,
+        asset: Asset,
+        variable_suffix: str,
+        source: ca.MX,
+        max_power: ca.MX,
+        constraint_nominal: float,
+        ensemble_member: int,
+    ) -> list:
+        """
+        Apply production‑capacity constraints based on an asset’s time‑series profile.
+
+        This method caps heat or electricity output using either:
+        - an absolute profile in Watts (fixed maximum or optional scaling), or
+        - a normalized (0–1) profile that scales with installed capacity.
+
+        Parameters
+        ----------
+        asset : Asset object.
+        variable_suffix : Timeseries suffix indicating the maximum production profile
+            (e.g., "maximum_heat_source", "maximum_electricity_source").
+        source : Vector of path_variables of produced energy to be constrained.
+        max_power : Installed or decision‑variable capacity of the asset.
+        constraint_nominal : Normalization constant for constraints.
+        ensemble_member : Ensemble index used to retrieve asset parameters.
+
+        Returns
+        -------
+        constraints : The function returns a list of profile‑based capacity constraints.
+        """
+        constraints = []
+        if f"{asset.id}.{variable_suffix}" in self.io.get_timeseries_names():
+            timeseries = self.get_timeseries(f"{asset.id}.{variable_suffix}")
+            if len(self.times()) < len(timeseries.times):
+                mask = (timeseries.times >= self.times()[0]) & (
+                    timeseries.times <= self.times()[-1]
+                )
+                profile_non_scaled = timeseries.values[mask]
+            else:
+                profile_non_scaled = timeseries.values
+            max_profile_non_scaled = max(profile_non_scaled)
+            profile_scaled = profile_non_scaled / max_profile_non_scaled
+
+            # Cap the energy produced via a profile. Two profile options below.
+            # Option 1: Profile specified in absolute values [W] via a ProfileConstraint
+            asset_profile_constraints, qty_asset_profile_constraints = get_asset_contraints(
+                self, asset, esdl.ProfileConstraint
+            )
+            if (
+                qty_asset_profile_constraints > 0
+                and hasattr(asset_profile_constraints[0], "maximum")
+                and ESDLProfileReader._get_profile_quantity_and_unit(
+                    asset_profile_constraints[0].maximum
+                ).unit
+                == esdl.UnitEnum.WATT
+            ):
+                parameters = self.parameters(ensemble_member)
+                asset_state = parameters[f"{asset.id}.state"]
+
+                if asset_state == AssetStateEnum.ENABLED:  # Enabled asset
+                    constraints.append(
+                        (
+                            (max_power - max_profile_non_scaled) / constraint_nominal,
+                            0.0,
+                            np.inf,
+                        )
+                    )
+                    max_power_var = (
+                        max_profile_non_scaled  # maximum heat power or maximum electric power
+                    )
+
+                elif asset_state == AssetStateEnum.OPTIONAL:  # Optional asset
+                    max_power_var = max_power
+
+                else:
+                    state_val = asset_state
+                    logger.error(f"Unexpected state: {state_val}")
+                    sys.exit(1)
+
+                constraints.append(
+                    (
+                        (profile_scaled * max_power_var - source) / constraint_nominal,
+                        0.0,
+                        np.inf,
+                    )
+                )
+            # Option 2: Normalised profile (0.0-1.0) shape that scales with maximum size of the
+            # producer
+            # Note: If the asset is not optional then the profile will be scaled to the
+            # installed capacity
+            elif (
+                # profile is specified without units (xlm/csv)
+                qty_asset_profile_constraints == 0
+                or (
+                    ESDLProfileReader._get_profile_quantity_and_unit(
+                        asset_profile_constraints[0].maximum
+                    ).physicalQuantity
+                    == esdl.PhysicalQuantityEnum.COEFFICIENT
+                    and (
+                        ESDLProfileReader._get_profile_quantity_and_unit(
+                            asset_profile_constraints[0].maximum
+                        ).unit
+                        == esdl.UnitEnum.PERCENT
+                        or ESDLProfileReader._get_profile_quantity_and_unit(
+                            asset_profile_constraints[0].maximum
+                        ).unit
+                        == esdl.UnitEnum.NONE
+                    )
+                )  # profile from esdl
+            ):
+                # TODO: currently this can only be used with a csv file since units must be set
+                # for ProfileContraint. Future addition can be to use a different unit/quantity
+                # etc. so that the profile is used in a normalised way and scale to max_size
+                constraints.append(
+                    (
+                        (profile_scaled * max_power - source) / constraint_nominal,
+                        0.0,
+                        np.inf,
+                    )
+                )
+            else:
+                RuntimeError(f"{asset.name}: Unforeseen error in adding a profile constraint")
+        else:
+            constraints.append(
+                (
+                    (np.ones(len(self.times())) * max_power - source) / constraint_nominal,
+                    0.0,
+                    np.inf,
+                )
+            )
+        return constraints
+
     def __max_size_constraints(self, ensemble_member):
         """
         This function makes sure that the __max_size variable is at least as large as needed. For
@@ -1919,98 +1928,16 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             heat_source = self.__state_vector_scaled(f"{s}.Heat_source", ensemble_member)
             constraint_nominal = self.variable_nominal(f"{s}.Heat_source")
 
-            if f"{s}.maximum_heat_source" in self.io.get_timeseries_names():
-                profile_non_scaled = self.get_timeseries(f"{s}.maximum_heat_source").values
-                max_profile_non_scaled = max(profile_non_scaled)
-                profile_scaled = profile_non_scaled / max_profile_non_scaled
-
-                # Cap the heat produced via a profile. Two profile options below.
-                # Option 1: Profile specified in absolute values [W] via a ProfileConstraint
-                esdl_asset_attributes = self.esdl_assets[
-                    self.esdl_asset_name_to_id_map[s]
-                ].attributes["constraint"]
-                if (
-                    len(esdl_asset_attributes) > 0
-                    and hasattr(esdl_asset_attributes.items[0], "maximum")
-                    and esdl_asset_attributes.items[0].maximum.profileQuantityAndUnit.reference.unit
-                    == esdl.UnitEnum.WATT
-                ):
-                    parameters = self.parameters(ensemble_member)
-
-                    if parameters[f"{s}.state"] == AssetStateEnum.ENABLED:  # Enabled asset
-                        constraints.append(
-                            (
-                                (max_heat - max_profile_non_scaled) / constraint_nominal,
-                                0.0,
-                                np.inf,
-                            )
-                        )
-                        max_heat_var = max_profile_non_scaled
-
-                    elif parameters[f"{s}.state"] == AssetStateEnum.OPTIONAL:  # Optional asset
-                        max_heat_var = max_heat
-
-                    else:
-                        state_val = parameters[f"{s}.state"]
-                        logger.error(f"Unexpected state: {state_val}")
-                        sys.exit(1)
-
-                    for i in range(0, len(self.times())):
-                        constraints.append(
-                            (
-                                (profile_scaled[i] * max_heat_var - heat_source[i])
-                                / constraint_nominal,
-                                0.0,
-                                np.inf,
-                            )
-                        )
-                # Option 2: Normalised profile (0.0-1.0) shape that scales with maximum size of the
-                # producer
-                # Note: If the asset is not optional then the profile will be scaled to the
-                # installed capacity
-                elif (
-                    # profile is specified without units (xlm/csv)
-                    len(esdl_asset_attributes) == 0
-                    or (
-                        esdl_asset_attributes.items[
-                            0
-                        ].maximum.profileQuantityAndUnit.reference.physicalQuantity
-                        == esdl.PhysicalQuantityEnum.COEFFICIENT
-                        and (
-                            esdl_asset_attributes.items[
-                                0
-                            ].maximum.profileQuantityAndUnit.reference.unit
-                            == esdl.UnitEnum.PERCENT
-                            or esdl_asset_attributes.items[
-                                0
-                            ].maximum.profileQuantityAndUnit.reference.unit
-                            == esdl.UnitEnum.NONE
-                        )
-                    )  # profile from esdl
-                ):
-                    # TODO: currently this can only be used with a csv file since units must be set
-                    # for ProfileContraint. Future addition can be to use a different unit/quantity
-                    # etc. so that the profile is used in a normalised way and scale to max_size
-
-                    for i in range(0, len(self.times())):
-                        constraints.append(
-                            (
-                                (profile_scaled[i] * max_heat - heat_source[i])
-                                / constraint_nominal,
-                                0.0,
-                                np.inf,
-                            )
-                        )
-                else:
-                    RuntimeError(f"{s}: Unforeseen error in adding a profile contraint")
-            else:
-                constraints.append(
-                    (
-                        (np_ones * max_heat - heat_source) / constraint_nominal,
-                        0.0,
-                        np.inf,
-                    )
+            constraints.extend(
+                self.__producer_constraints(
+                    self.esdl_assets[s],
+                    "maximum_heat_source",
+                    heat_source,
+                    max_heat,
+                    constraint_nominal,
+                    ensemble_member,
                 )
+            )
 
             # Constraint the aggregation_count to 0.0 when asset is not placed. And also ensure the
             # max_size_var is a factor of single_doublet_power
@@ -2059,21 +1986,33 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 )
             )
 
+        cold_asset_type = ["airco", "cold_demand"]
+        for cat in cold_asset_type:
+            for cld in self.energy_system_components.get(cat, []):
+                max_var_types.add(cat)
+                max_var = self._asset_max_size_map[cld]
+                max_cold = self.extra_variable(max_var, ensemble_member)
+                cold_flow = self.__state_vector_scaled(f"{cld}.Heat_flow", ensemble_member)
+                constraint_nominal = max(
+                    self.variable_nominal(f"{cld}.Heat_flow"),
+                    self.variable_nominal(f"{cld}.HeatIn.Heat") if cat == "cold_demand" else 0.0,
+                )
+                constraints.append(
+                    (
+                        (np_ones * max_cold - cold_flow) / constraint_nominal,
+                        0.0,
+                        np.inf,
+                    )
+                )
+
         for a in [
             *self.energy_system_components.get("ates", []),
-            *self.energy_system_components.get("low_temperature_ates", []),
         ]:
-            max_var_types.update(["ates", "low_temperature_ates"])
+            max_var_types.update(["ates"])
             max_var = self._asset_max_size_map[a]
             max_heat = self.extra_variable(max_var, ensemble_member)
-            if a in self.energy_system_components.get("ates", []):
-                heat_ates = self.__state_vector_scaled(f"{a}.Heat_ates", ensemble_member)
-                constraint_nominal = bounds[f"{a}.Heat_ates"][1]
-            else:
-                heat_ates = self.__state_vector_scaled(
-                    f"{a}.Heat_low_temperature_ates", ensemble_member
-                )
-                constraint_nominal = bounds[f"{a}.Heat_low_temperature_ates"][1]
+            heat_ates = self.__state_vector_scaled(f"{a}.Heat_ates", ensemble_member)
+            constraint_nominal = bounds[f"{a}.Heat_ates"][1]
 
             constraints.append(
                 (
@@ -2126,12 +2065,14 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 f"{d}.Electricity_source", ensemble_member
             )
             constraint_nominal = self.variable_nominal(f"{d}.Electricity_source")
-
-            constraints.append(
-                (
-                    (np_ones * max_power - electricity_source) / constraint_nominal,
-                    0.0,
-                    np.inf,
+            constraints.extend(
+                self.__producer_constraints(
+                    self.esdl_assets[d],
+                    "maximum_electricity_source",
+                    electricity_source,
+                    max_power,
+                    constraint_nominal,
+                    ensemble_member,
                 )
             )
 
@@ -2447,14 +2388,15 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         """
 
         self.__pipe_class_to_results()
+        hn_settings = self.heat_network_settings
 
         # The head loss mixin wants to do some check for the head loss
         # minimization priority that involves the diameter/area. We assume
         # that we're sort of done minimizing/choosing the pipe diameter, and
         # that we can set the parameters to the optimized values.
         if (
-            self.heat_network_settings["minimize_head_losses"]
-            and self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS
+            hn_settings["minimize_head_losses"]
+            and hn_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS
             and priority == self._hn_head_loss_class._hn_minimization_goal_class.priority
         ):
             self.__pipe_diameter_to_parameters()
