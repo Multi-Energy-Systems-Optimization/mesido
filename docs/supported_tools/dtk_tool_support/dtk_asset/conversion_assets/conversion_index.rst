@@ -7,3 +7,5 @@ Conversion Assets
 
    water_to_water_heat_pump
    air_to_water_heat_pump
+   gas_heater
+   electric_boiler

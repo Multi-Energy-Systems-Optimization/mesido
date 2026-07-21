@@ -115,3 +115,12 @@ Residual Heat Source: Industrial Waste Heat
      - Optional
      -  35 EUR/kW
      - \-
+
+Residual Heat Source from EDR Assets
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The Design Toolkit also provides access to predefined residual heat source assets from
+`ESDL Energy Data Repository (EDR) <https://edr.hesi.energy/>`_
+
+* `ResidualHeatSource: Residual heat source T>80 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FDistrict%20heating%20and%20cooling%20networks%2FResidual%20heat%20source%20T%3E80.edd>`_
+* `ResidualHeatSource: Residual heat source T~45 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FDistrict%20heating%20and%20cooling%20networks%2FResidual%20heat%20source%20T~45.edd>`_
+* `ResidualHeatSource: Residual heat source T~25 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FDistrict%20heating%20and%20cooling%20networks%2FResidual%20heat%20source%20T~25.edd>`_

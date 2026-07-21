@@ -6,6 +6,5 @@ Production Assets
    :numbered:
 
    heat_producer
-   geothermal_source_shallow
-   geothermal_source_deep
+   geothermal_source
    residual_heat_source

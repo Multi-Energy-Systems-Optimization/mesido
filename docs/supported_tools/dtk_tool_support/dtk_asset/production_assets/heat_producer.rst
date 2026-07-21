@@ -115,3 +115,11 @@ Heat Producer
      - Optional
      - No value assigned
      - \-
+
+Heat Producer from EDR Assets
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The Design Toolkit also provides access to predefined residual heat source assets from
+`ESDL Energy Data Repository (EDR) <https://edr.hesi.energy/>`_
+
+
+* `HeatProducer: Heat producer <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FDistrict%20heating%20and%20cooling%20networks%2FHeat%20producer.edd>`_

@@ -1,5 +1,5 @@
 Air to Water Heat Pump
-----
+----------------------
 
 
 
@@ -126,3 +126,14 @@ Air to Water Heat Pump
      - Optional
      - \-
      - \-
+
+By following the above specifications, users can define and configure a custom air-to-water heat pump within their energy
+system models.
+
+Air-to-Water Heat Pump from EDR Assets
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The Design Toolkit also provides access to predefined air-to-water heat pump assets from
+`ESDL Energy Data Repository (EDR) <https://edr.hesi.energy/>`_
+
+* `HeatPump: A-W heatpump T50 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FDistrict%20heating%20and%20cooling%20networks%2FA-W%20heatpump%20T50.edd>`_
+* `HeatPump: A-W heatpump T70 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FDistrict%20heating%20and%20cooling%20networks%2FA-W%20heatpump%20T70.edd>`_

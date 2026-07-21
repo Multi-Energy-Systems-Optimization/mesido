@@ -83,7 +83,7 @@ Water to Water Heat Pump
 
        Required carrier temperatures are :math:`T_{PrimIn} > T_{PrimOut}`
 
-       & :math:`T_{SecOut} > T_{SecIn}`
+       & :math:`T_{SecOUT} > T_{SecIN}`
      - \-
      - Required
      - \-
@@ -131,3 +131,17 @@ Water to Water Heat Pump
      - Optional
      - \-
      - \-
+
+By following the above specifications, users can define and configure a custom water-to-water heat pump within their energy
+system models.
+
+Water-to-Water Heat Pump from EDR Assets
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The Design Toolkit also provides access to predefined water-to-water heat pump assets from
+`ESDL Energy Data Repository (EDR) <https://edr.hesi.energy/>`_
+
+* `HeatPump: W-W heatpump T50-dT10 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FDistrict%20heating%20and%20cooling%20networks%2FW-W%20heatpump%20T50-dT10.edd>`_
+* `HeatPump: W-W heatpump T70-dT10 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FDistrict%20heating%20and%20cooling%20networks%2FW-W%20heatpump%20T70-dT10.edd>`_
+* `HeatPump: W-W heatpump T90-dT10 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FDistrict%20heating%20and%20cooling%20networks%2FW-W%20heatpump%20T90-dT10.edd>`_
+* `HeatPump: W-W heatpump T70-dT30 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FDistrict%20heating%20and%20cooling%20networks%2FW-W%20heatpump%20T70-dT30.edd>`_
+* `HeatPump: W-W heatpump T90-dT30 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FDistrict%20heating%20and%20cooling%20networks%2FW-W%20heatpump%20T90-dT30.edd>`_
