@@ -34,9 +34,7 @@ HT-ATES (high)
 
        OPTIONAL:
        allows the optimizer to determine if the asset is required
-
        (if not then it will be removed from the network), else if the asset is
-
        required then it will be sized appropriately
    * - Basic attributes
      - Technical Lifetime
@@ -61,15 +59,14 @@ HT-ATES (high)
      - \-
    * - Advanced attributes
      - Aggregation Count
-     - Number of installed ATES'
+     - Number of installed ATES doublets
      - \-
      - Required
      - 1
-     - By increasing this number one increases the number of installed ATES'.
+     - By increasing this number one increases the number of installed ATES doublets.
    * - Advanced attributes
      - Aquifer Top Depth
      - The depth of the top of the aquifer (water-bearing permeable rock or
-
        unconsolidated material) in meters below ground surface
      - m
      - Required
@@ -92,13 +89,9 @@ HT-ATES (high)
    * - Advanced attributes
      - Aquifer Net To Gross
      - The ratio of the total thickness of the aquifer contributing to
-
        production over the total thickness of the aquifer (usually calculated
-
        by applying a minimum porosity and maximum clay volume cutoff). The net
-
        thickness of the aquifer is determined by multiplying the gross
-
        thickness with the net-to-gross ratio.
      - \-
      - Required
@@ -107,9 +100,7 @@ HT-ATES (high)
    * - Advanced attributes
      - Aquifer Porosity
      - The percentage of pore volume or void space within a rock or
-
        unconsolidated sediment, restricted to those pores that can contribute
-
        to fluid flow (effective porosity)
      - %
      - Required
@@ -118,9 +109,7 @@ HT-ATES (high)
    * - Advanced attributes
      - Aquifer Permeability
      - The permeability is a measure of the interconnectedness of pores in a
-
        rock/material. And indicates the ability or ease of a volume of rock to
-
        transmit fluids.
      - mD
      - Required
@@ -129,9 +118,7 @@ HT-ATES (high)
    * - Advanced attributes
      - Aquifer Anisotropy
      - The directional variation of a property of a volume of rock or
-
        unconsolidated sand, in this case, the ratio between vertical and
-
        horizontal permeability.
      - \-
      - Required
@@ -140,7 +127,6 @@ HT-ATES (high)
    * - Advanced attributes
      - Salinity
      - The dissolved salt content in a body of water usually expressed as NaCl
-
        equivalent
      - ppm
      - Required
@@ -149,11 +135,8 @@ HT-ATES (high)
    * - Advanced attributes
      - Well Casing Size
      - In ROSIM/DoubletCalc3D, the simulation software behind the ATES module
-
        (used in the Simulator solver), this means the diameter of the part of
-
        the well in which the permeability is significantly higher than the
-
        formation, in this case, the borehole diameter
      - inch
      - Required
@@ -162,9 +145,7 @@ HT-ATES (high)
    * - Advanced attributes
      - Well Distance
      - The well distance is the distance between two wells at storage aquifer
-
        (reservoir) depth. For HT-ATES, often the distance between the hot and
-
        cold/warm well.
      - m
      - Required
@@ -173,21 +154,17 @@ HT-ATES (high)
    * - Ports
      - Inport and OutPort (1 off each)
      - The in port and the out port for the asset should be connected to 1
-
        hydraulically coupled network.
-
        Each port must have a carrier assigned to it.
-
        Port naming convention required: In & Out.
-
-       :math:`T_{In} > T_{Out}`
+       :math:`\mathrm{T_{In} > T_{Out}}`
      - \-
      - Required
      - \-
      - \-
    * - Cost Information
      - Investment Costs
-     - CAPEX: Once-off cost linked to the size (heat produced) of the asset
+     - CAPEX: Once-off cost linked to the size (charge/discharged heat flow) of the asset
      - EUR/MW or EUR/kW
      - Required
      - \-
@@ -203,9 +180,9 @@ HT-ATES (high)
      - Variable Operational Costs
      - OPEX: cost linked to heat produced over time
      - EUR/MWh
-     - not supported yet
-     - not supported yet
-     - not supported yet
+     - Required
+     - \-
+     - \-
    * - Cost Information
      - Fixed Maintenance Costs
      - OPEX: Cost per year linked to the size (heat produced) of the asset

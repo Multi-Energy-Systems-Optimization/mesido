@@ -25,19 +25,12 @@ HeatingDemand: Substation (WOS)
      - \-
    * - Basic attributes
      - State
-     - States if the asset is ENABLED or OPTIONAL
+     - Asset is set to ENABLED, implying that it must be used as specified by the user
      - \-
      - Required
      - ENABLED
      - ENABLED:
        use the specific asset with all its specified attributes
-
-       OPTIONAL:
-       allows the optimizer to determine if the asset is required
-
-       (if not then it will be removed from the network), else if
-
-       the asset is required then it will be sized appropriately"
 
    * - Basic attributes
      - Technical Lifetime
@@ -121,16 +114,6 @@ HeatingDemand: Substation (WOS)
    * - Cost Information
      - Fixed Maintenance Costs
      - OPEX: Cost per year linked to the size (heat consumption capacity) of the asset
-     - EUR/MW or
-       EUR/MW/yr or
-       EUR/kW or
-       EUR/kW/yr
-     - Optional
-     - \-
-     - \-
-   * - Cost Information
-     - Fixed Operational Costs
-     - OPEX: Cost per year linked to the size  (secondary heat produced)  of the asset
      - EUR/MW or
        EUR/MW/yr or
        EUR/kW or

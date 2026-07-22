@@ -34,9 +34,7 @@ Heat Storage: Surface Tank Storage
 
        OPTIONAL:
        allows the optimizer to determine if the asset is required
-
        (if not then it will be removed from the network), else if
-
        the asset is required then it will be sized appropriately
    * - Basic attributes
      - Technical Lifetime
@@ -52,7 +50,6 @@ Heat Storage: Surface Tank Storage
      - Optional
      - \-
      - This is the maximum heat that can be stored in the storage. If both
-
        capacity and volume are specified, then only the volume will be used.
    * - Basic attributes
      - Max Charge Rate
@@ -71,25 +68,21 @@ Heat Storage: Surface Tank Storage
    * - Advanced attributes
      - Volume
      - Size of the heat storage in terms of volume with a radius = height.
-     - m3
+     - :math:`\mathrm{m^{3}}`
      - Required
      - 100
      - The volume is used to determine the maximum heat capacity that can be
-
-       stored with the implied ΔT = TIn - Tout. If both capacity and volume
-
+       stored with the implied :math:`\mathrm{\Delta T = T_{In} - T_{Out}}`. If both capacity and volume
        are specified, then only the volume will be used.
    * - Ports
      - Inport and OutPort (1 of each)
-     - 1 inport and 1 outport for the asset.
-
-       The asset should be connected to 1 hydraulically coupled network.
+     - The in port and the out port for the asset should be connected 1 hydraulically coupled network.
 
        Each port must have a carrier assigned to it.
 
        Port naming convention required: In & Out.
 
-       :math:`T_{In} > T_{Out}`
+       :math:`\mathrm{T_{In} > T_{Out}}`
      - \-
      - Required
      - \-
@@ -97,7 +90,7 @@ Heat Storage: Surface Tank Storage
    * - Cost Information
      - Investment Costs
      - CAPEX: Once-off cost linked to the size of the asset
-     - EUR/m3
+     - :math:`\mathrm{EUR / m^{3}}`
      - Required
      - \-
      - \-
@@ -111,14 +104,14 @@ Heat Storage: Surface Tank Storage
    * - Cost Information
      - Fixed Maintenance Costs
      - OPEX: Cost per year linked to the size (volume) of the asset
-     - EUR/m3/yr
+     - :math:`\mathrm{EUR / m^{3} / yr}`
      - Optional
      - \-
      - \-
    * - Cost Information
      - Fixed Operational Costs
      - OPEX: Cost per year linked to the size (volume) of the asset
-     - EUR/m3/yr
+     - :math:`\mathrm{EUR / m^{3} / yr}`
      - Optional
      - \-
      - \-

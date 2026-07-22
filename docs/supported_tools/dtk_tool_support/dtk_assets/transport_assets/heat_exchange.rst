@@ -34,9 +34,7 @@ Heat Exchanger
 
        OPTIONAL:
        allows the optimizer to determine if the asset is required
-
        (if not then it will be removed from the network), else if the asset is
-
        required then it will be sized appropriately
    * - Basic attributes
      - Technical Lifetime
@@ -48,7 +46,6 @@ Heat Exchanger
    * - Advanced attributes
      - Efficiency
      - The efficiency of the heat exchanger in terms of how much heat on the
-
        primary side gets transferred to the secondary side.
 
        Heat loss in the exchanger = Efficiency - 1.0.
@@ -61,9 +58,7 @@ Heat Exchanger
    * - Advanced attributes
      - Capacity
      - Maximum heat that can be transferred from the primary to secondary side
-
        of the heat exchanger (max heat that can be added to the system on the
-
        secondary side).
      - W
      - Required
@@ -72,33 +67,27 @@ Heat Exchanger
    * - Ports
      - Inport and OutPort (2 of each)
      - The in port and the out port for the heat exchanger primary and
-
        secondary side.
 
        The primary and secondary side should be connected to hydraulically
-
        decoupled networks.
 
        Each port must have a carrier assigned to it.
 
        Port naming convention required: PrimIn, PrimOut, SecIn & SecOut.
 
-       Primary side: :math:`T_{PrimIn} > T_{PrimOut}`
+       Primary side: :math:`\mathrm{T_{PrimIn} > T_{PrimOut}}`
+       Secondary side: :math:`\mathrm{T_{SecOut} > T_{SecIn}}`
 
-       Secondary side: :math:`T_{SecOut} > T_{SecIn}`
-
-       :math:`T_{PrimIn} > T_{SecOut}`
+       :math:`\mathrm{T_{PrimIn} > T_{SecOut}}`
 
        The lines in the diagram represent pipe, with the start of the line
-
        representing a pipe inlet and the arrow at the end of the line
-
        representing a pipe outlet.
      - \-
      - Required
      - \-
      - Heat is transferred from the primary side to the secondary side
-
        (2 hydraulically decoupled networks).
    * - Cost Information
      - Investment Costs
@@ -119,7 +108,6 @@ Heat Exchanger
    * - Cost Information
      - Fixed Maintenance Costs
      - OPEX: Cost per year linked to the size (max heat that can be added to
-
        the system on the secondary side) of the asset
      - EUR/MW/yr or EUR/kW/yr
      - Optional
@@ -128,7 +116,6 @@ Heat Exchanger
    * - Cost Information
      - Fixed Operational Costs
      - OPEX: Cost per year linked to the size (max heat that can be added to
-
        the system on the secondary side) of the asset
      - EUR/MW/yr or EUR/kW/yr
      - Optional
