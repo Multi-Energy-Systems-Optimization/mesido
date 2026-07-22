@@ -1,5 +1,5 @@
 Residual Heat Source: Industrial Waste Heat
-----
+-------------------------------------------
 
 .. list-table:: Asset Attributes
    :widths: 35 25 60 25 25 35 70
@@ -117,7 +117,7 @@ Residual Heat Source: Industrial Waste Heat
      - \-
 
 Residual Heat Source from EDR Assets
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The Design Toolkit also provides access to predefined residual heat source assets from
 `ESDL Energy Data Repository (EDR) <https://edr.hesi.energy/>`_
 

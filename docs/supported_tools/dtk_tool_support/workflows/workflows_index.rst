@@ -69,7 +69,7 @@ Draft Design - Optimization - EAC - Gurobi
 --------------------------------------------------
 
 "Draft Design - Optimization - EAC - Gurobi" workflow is designed to optimize the ESDL of a heating network. Problem formulation
-and the objective function are the same as in the :ref:`_draft_design_optimization_eac-section` workflow. The difference is that
+and the objective function are the same as in the :ref:`draft_design_optimization_eac-section` workflow. The difference is that
 this workflow uses `Gurobi Optimizer <https://www.gurobi.com/>`_ as the optimization solver instead of the default solver.
 
 

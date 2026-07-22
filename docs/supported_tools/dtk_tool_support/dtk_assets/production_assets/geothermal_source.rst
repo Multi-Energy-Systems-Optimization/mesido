@@ -242,7 +242,7 @@ Geothermal Source: Shallow Goethermal (200m)
 
 
 Geothermal Source from EDR Assets
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The Design Toolkit also provides access to predefined geothermal source assets from
 `ESDL Energy Data Repository (EDR) <https://edr.hesi.energy/>`_
 
