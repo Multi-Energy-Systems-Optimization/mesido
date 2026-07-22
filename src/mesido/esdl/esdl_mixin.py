@@ -168,6 +168,7 @@ class ESDLMixin(
                         "port": dbconnection["port"],
                         "username": dbconnection["username"],
                         "password": dbconnection["password"],
+                        "database": dbconnection["database"] if "database" in dbconnection else None,
                         "ssl": dbconnection["ssl"] if "ssl" in dbconnection else False,
                         "verify_ssl": (
                             dbconnection["verify_ssl"] if "verify_ssl" in dbconnection else False
@@ -183,6 +184,7 @@ class ESDLMixin(
                             "port": dbconnection["port"],
                             "username": dbconnection["username"],
                             "password": dbconnection["password"],
+                            "database": dbconnection["database"] if "database" in dbconnection else None,
                             "ssl": dbconnection["ssl"] if "ssl" in dbconnection else False,
                             "verify_ssl": (
                                 dbconnection["verify_ssl"]
