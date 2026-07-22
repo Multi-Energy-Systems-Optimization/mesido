@@ -17,8 +17,7 @@ Creating Heat Network Cluster
 -----------------------------
 asd
 
-.. _cluster_example:
-
+.. _image_cluster_example:
 .. figure:: ../images/cluster_example.png
     :figwidth: 6.94792in
     :align: center
