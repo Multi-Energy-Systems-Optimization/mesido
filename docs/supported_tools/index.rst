@@ -1,5 +1,5 @@
-Supported Tools
-===============
+Tools Supported by MESIDO
+=========================
 
 .. toctree::
    :maxdepth: 4

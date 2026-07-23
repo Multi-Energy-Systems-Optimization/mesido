@@ -1,5 +1,5 @@
-DTK Tools Support
-=================
+Design Toolkit Support
+======================
 
 .. toctree::
    :maxdepth: 4
