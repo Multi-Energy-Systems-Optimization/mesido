@@ -5,45 +5,42 @@ Getting Started with Design Toolkit
 Start Environment
 ^^^^^^^^^^^^^^^^^
 
-Open Chrome or Firefox (Edge and Internet Explorer are not supported)
-
-Go to: https://nwn-design-toolkit.nl
-
-Click red button: Start editor
+* Open Chrome or Firefox (Edge and Internet Explorer are not supported)
+* Go to: https://nwn-design-toolkit.nl
+* Click red button: Start editor
 
 
 .. _image_start_environment_1:
 .. figure:: images_example_cases/start_environment_1.png
-    :figwidth: 5in
+    :figwidth: 9in
     :align: center
 
     Design Toolkit start page.
 
-Sign in with email and your password
+* Sign in with email and your password
 
 .. _image_start_environment_2:
 .. figure:: images_example_cases/start_environment_2.png
-    :figwidth: 3in
+    :figwidth: 5in
     :align: center
 
     Sign in to account.
 
 If it is the first time you use this environment:
 
- Click: Forgot Password?
-
- Fill in email address and wait for the email to set your password
-
- If it takes more than a minute check your junk folder
+* Click: Forgot Password?
+* Fill in email address and wait for the email to set your password
+* If it takes more than a minute check your junk folder
 
 
 ESDL MapEditor
 ^^^^^^^^^^^^^^
+
 Once you log in into the Design Toolkit, you will see ESDL MapEditor user interface as shown in the following picture:
 
 .. _esdl_mapeditor:
 .. figure:: images_example_cases/esdl_mapeditor.png
-    :figwidth: 5in
+    :figwidth: 7in
     :align: center
 
     Design Toolkit user interface.
@@ -135,15 +132,11 @@ Place Demand Areas
 
 Draw a polygon area that reflects the demand area.
 
- Place a heating demand in the polygon.
-
- Right-click on the area and click ``Edit``.
-
- Rename it to ``Upper``.
-
- Refresh the browser.
-
- Hover over the area to check the name.
+* Place a heating demand in the polygon.
+* Right-click on the area and click ``Edit``.
+* Rename it to ``Upper``.
+* Refresh the browser.
+* Hover over the area to check the name.
 
 Draw 2 more areas named as “Middle” and “Lower” and 1 Heating Demand asset into each areas
 
@@ -153,7 +146,7 @@ Rename the Heating Demands as Demand_1, Demand_2 and Demand_3.
 
 .. _place_demand_areas:
 .. figure:: images_example_cases/place_demand_areas.png
-    :figwidth: 5in
+    :figwidth: 7in
     :align: center
 
     Demand area placement.
@@ -161,106 +154,96 @@ Rename the Heating Demands as Demand_1, Demand_2 and Demand_3.
 Place Heat Pump
 ^^^^^^^^^^^^^^^
 
-Select the heat pump from asset draw select tool
-
-Place the asset on the north of Demand_1
-
-Name the asset as “HeatPump”
+* Select the heat pump from asset draw select tool
+* Place the asset on the north of Demand_1
+* Name the asset as “HeatPump”
 
 .. _place_heatpump:
 .. figure:: images_example_cases/place_heatpump.png
-    :figwidth: 5in
+    :figwidth: 7in
     :align: center
 
     Heat pump placement.
 
 Place Geothermal Source
 ^^^^^^^^^^^^^^^^^^^^^^^
-Select the heat pump from asset draw select tool
 
-Place the asset next to Heat Pump
-
-Name the asset as “GeothermalSource”
+* Select the heat pump from asset draw select tool
+* Place the asset next to Heat Pump
+* Name the asset as “GeothermalSource”
 
 .. _place_geothermal_source:
 .. figure:: images_example_cases/place_geothermal_source.png
-    :figwidth: 5in
+    :figwidth: 7in
     :align: center
 
     Geothermal source placement.
 
 Connect Pipes
 ^^^^^^^^^^^^^^
+
 Select EDR assets:
 
-    Select “Pipe” asset
+* Select “Pipe” asset
+* Select specific DN size (Steel-s1-DN-400).
 
-    Select specific DN size (Steel-s1-DN-400).
-
-        Note: In the case of pipe sizing optimization, selected pipe size will be the upper limit of the pipe diameter sets.
+  * Note: In the case of pipe sizing optimization, selected pipe size will be the upper limit of the pipe diameter sets.
 
 Start drawing pipeline:
 
-    Click on “OutPort” of GeothermalSource
 
-    Create route by intermediate clicks
+* Click on “OutPort” of GeothermalSource
+* Create route by intermediate clicks
+* End by clicking on “PrimIn” port of HeatPump
+* Click on “SecOut” port of HeatPump
+* Create route by intermediate clicks
+* End by clicking on “In” port of Demand_3
 
-    End by clicking on “PrimIn” port of HeatPump
-
-    Click on “SecOut” port of HeatPump
-
-    Create route by intermediate clicks
-
-    End by clicking on “In” port of Demand_3
-
-Click select
 
 .. _connect_pipes_1:
 .. figure:: images_example_cases/connect_pipes_1.png
-    :figwidth: 5in
+    :figwidth: 7in
     :align: center
 
     Pipe connection between Geothermal Source, Heat Pump and Heat Demand.
 
+Steps to connect Pipe to Heat Demand:
+    1. Right click pipe at location of foreseen and select "Split and add"
+    2. Start drawing pipe from "OutPort"
+    3. Finish drawing the pipe at "InPort" of Demand_1
 
-
-Right click pipe at location of foreseen :
-
-    Split and add
-
-    Always use  to connect multiple pipes
-
-Draw pipe from “OutPort” of  to “InPort” of Demand_1
-
-Apply the same method to connect Demand_2
-
-
-.. list-table:: Connect pipes example
+.. list-table:: Connect pipe to Heat Demand
    :widths: 33 33 33
    :align: center
 
    * - .. figure:: images_example_cases/connect_pipes_2.png
           :width: 100%
+
+          Step 1
      - .. figure:: images_example_cases/connect_pipes_3.png
           :width: 100%
+
+          Step 2
      - .. figure:: images_example_cases/connect_pipes_4.png
           :width: 100%
+
+          Step 3
+
+Apply the same method to connect Demand_2
+
 
 Define Energy Carriers
 ^^^^^^^^^^^^^^^^^^^^^^
 
-Select ‘Energy carriers…’ from the Edit menu
-
-Select ‘HeatCommodity’ as a Carrier type
-
-Define name and supply/return temperatures
-
-Click on “Add”
+* Select ‘Energy carriers…’ from the Edit menu
+* Select ‘HeatCommodity’ as a Carrier type
+* Define name and supply/return temperatures
+* Click on “Add”
 
 
 .. _define_energy_carriers_1:
 .. figure:: images_example_cases/define_energy_carriers_1.png
-    :figwidth: 5in
+    :figwidth: 7in
     :align: center
 
     Define primary side energy carriers.
@@ -268,7 +251,7 @@ Click on “Add”
 
 .. _define_energy_carriers_2:
 .. figure:: images_example_cases/define_energy_carriers_2.png
-    :figwidth: 5in
+    :figwidth: 3in
     :align: center
 
     Define secondary side energy carriers.
@@ -278,29 +261,28 @@ As you add, the list of carrier appears.
 
 .. _define_energy_carriers_3:
 .. figure:: images_example_cases/define_energy_carriers_3.png
-    :figwidth: 5in
+    :figwidth: 3in
     :align: center
 
 
 Assigning Carriers
 ^^^^^^^^^^^^^^^^^^
+
 Right click on pipe between Geothermal Source and HeatPump:
 
-    Set carrier
-
-    Select “Primary” carrier
+* Set carrier
+* Select “Primary” carrier
 
 
 Right click on pipe between Geothermal Source and Demands:
 
-    Set carrier
-
-    Select “Secondary” carrier
+* Set carrier
+* Select “Secondary” carrier
 
 
 .. _assigning_carriers_1:
 .. figure:: images_example_cases/assigning_carriers_1.png
-    :figwidth: 5in
+    :figwidth: 7in
     :align: center
 
     Assign Primary and Secondary pipes to the regarding pipes.
@@ -309,7 +291,7 @@ After carrier assignment, the pipe color will change to reflect the carrier type
 
 .. _assigning_carriers_2:
 .. figure:: images_example_cases/assigning_carriers_2.png
-    :figwidth: 5in
+    :figwidth: 7in
     :align: center
 
     Pipes with assigned carrier.
@@ -318,20 +300,16 @@ After carrier assignment, the pipe color will change to reflect the carrier type
 Configure Heating Demand Attributes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Left click on the Heating Demand in the north.
-
-From the pop-up window change the name to Demand_1
-
-Assign 2 MW as the capacity from the power attribute
-
-Add the required cost information
-
-Refresh the page to see the name change is applied
+* Left click on the Heating Demand in the north.
+* From the pop-up window change the name to Demand_1
+* Assign 2 MW as the capacity from the power attribute
+* Add the required cost information
+* Refresh the page to see the name change is applied
 
 
 .. configure_heating_demand:
 .. figure:: images_example_cases/configure_heating_demand.png
-    :figwidth: 5in
+    :figwidth: 7in
     :align: center
 
     Demand_1 configurations.
@@ -356,16 +334,14 @@ Use the same cost information as Demand_1
 Configure Heating Demands Profiles
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Right click on the Demand_1.
-
-From the pop-up window slick on “Set profile of InPort: in”
-
-Enter the displayed values in the profile attributes
+* Right click on the Demand_1.
+* From the pop-up window slick on “Set profile of InPort: in”
+* Enter the displayed values in the profile attributes
 
 
 .. configure_heating_demand_profile:
 .. figure:: images_example_cases/configure_heating_demand_profile.png
-    :figwidth: 5in
+    :figwidth: 7in
     :align: center
 
     Demand_1 profile configurations.
@@ -399,7 +375,7 @@ Configure Heat Pump Asset
 
 .. configure_heat_pump_1:
 .. figure:: images_example_cases/configure_heat_pump_1.png
-    :figwidth: 5in
+    :figwidth: 7in
     :align: center
 
     State attribute configuration.
@@ -430,22 +406,19 @@ All assets can have two states:
 Note that "Disabled" state is not supported by DTK.
 
 
-Click on HeatPump asset
+* Click on HeatPump asset
+* Configure the asset attributes on the pop-up window as displayed on the figure
 
-Configure the asset attributes on the pop-up window as displayed on the figure
+   * Power : 50 MW
+   * COP: 4
 
-    Power : 50 MW
-
-    COP: 4
-
-Set the State “Optional” from Basic Attributes
-
-Cost attributes are configured from “Change or add costs” button
+* Set the State “Optional” from Basic Attributes
+* Cost attributes are configured from “Change or add costs” button
 
 
 .. configure_heat_pump_2:
 .. figure:: images_example_cases/configure_heat_pump_2.png
-    :figwidth: 5in
+    :figwidth: 7in
     :align: center
 
     Heat Pump configuration.
@@ -454,19 +427,17 @@ Cost attributes are configured from “Change or add costs” button
 Configure Geothermal Source
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Click on GeothermalSource asset
+* Click on GeothermalSource asset
+* Configure the asset attributes on the pop-up window as displayed on the figure
 
-Configure the asset attributes on the pop-up window as displayed on the figure
+   * Power : 12 MW
+   * Set the State “Optional” from Basic Attributes
 
-    Power : 12 MW
-
-    Set the State “Optional” from Basic Attributes
-
-Cost attributes are configured from “Change or add costs” button
+* Cost attributes are configured from “Change or add costs” button
 
 .. configure_geothermal_source:
 .. figure:: images_example_cases/configure_geothermal_source.png
-    :figwidth: 5in
+    :figwidth: 7in
     :align: center
 
     Geothermal Source configuration.
@@ -474,28 +445,25 @@ Cost attributes are configured from “Change or add costs” button
 
 Complete the Network Connections
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Rename the layer as “District_supply_only” and save
 
-Use “ESDL Dual Pipe Services”
-
+* Rename the layer as “District_supply_only” and save
+* Use “ESDL Dual Pipe Services”
 
 .. complete_network_connections_1:
 .. figure:: images_example_cases/complete_network_connections_1.png
-    :figwidth: 5in
+    :figwidth: 7in
     :align: center
 
     Complete network only with supply pipes.
 
 
-Use "ESDL Validator" -> "Optimizer validation schema"
-
-Rename the new layer as “District” and save it
-
-You can remove all other layers except “District”
+* Use "ESDL Validator" -> "Optimizer validation schema"
+* Rename the new layer as “District” and save it
+* You can remove all other layers except “District”
 
 .. complete_network_connections_2:
 .. figure:: images_example_cases/complete_network_connections_2.png
-    :figwidth: 5in
+    :figwidth: 7in
     :align: center
 
     Complete network.
@@ -503,27 +471,25 @@ You can remove all other layers except “District”
 
 Case Optimization
 ^^^^^^^^^^^^^^^^^
+
 To start the optimization:
 
-    From "Services" tab, go to
-    "External ESDL Services.." -> Omotes
-
-    Name the optimization as “District_opt”
-
-    Select “Draft Design - Optimization”
-
-    Run
+* From "Services" tab, go to
+   "External ESDL Services.." -> Omotes
+* Name the optimization as “District_opt”
+* Select “Draft Design - Optimization”
+* Run
 
 .. optimize_1:
 .. figure:: images_example_cases/optimize_1.png
-    :figwidth: 5in
+    :figwidth: 7in
     :align: center
 
     Run the optimization.
 
 .. optimize_2:
 .. figure:: images_example_cases/optimize_2.png
-    :figwidth: 5in
+    :figwidth: 7in
     :align: center
 
     Run the optimization.
@@ -533,13 +499,13 @@ Load the Results
 
 .. load_results:
 .. figure:: images_example_cases/load_results.png
-    :figwidth: 5in
+    :figwidth: 7in
     :align: center
 
     Load the results.
 
 .. list-table:: Leading the results from the optimization
-   :widths: 2 2
+   :widths: 1 20
    :header-rows: 1
 
    * - Number
@@ -551,7 +517,7 @@ Load the Results
    * - 3
      - Shows the KPI Dashboard
    * - 4
-     - Actions
+     - Actions can be take on the result
 
 .. |load_results_icons_1_source| image:: images_example_cases/load_results_icons_1.png
    :width: 24px
