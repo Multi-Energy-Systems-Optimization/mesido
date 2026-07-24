@@ -487,7 +487,7 @@ Use “ESDL Dual Pipe Services”
     Complete network only with supply pipes.
 
 
-Use “ESDL Validator”  “Optimizer validation schema”
+Use "ESDL Validator" -> "Optimizer validation schema"
 
 Rename the new layer as “District” and save it
 
@@ -505,8 +505,8 @@ Case Optimization
 ^^^^^^^^^^^^^^^^^
 To start the optimization:
 
-    From “Services” tab, go to
-	    “External ESDL Services..”  Omotes
+    From "Services" tab, go to
+    "External ESDL Services.." -> Omotes
 
     Name the optimization as “District_opt”
 

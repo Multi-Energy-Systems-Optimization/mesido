@@ -1,9 +1,12 @@
 Geothermal Source
 -----------------
 
+Geothermal Source Asset Attributes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 
 Geothermal Source: Deep Goethermal (2500m)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""""""""""""""""""""""
 
 .. list-table:: Asset Attributes
    :widths: 35 25 60 25 25 35 70
@@ -122,7 +125,7 @@ Geothermal Source: Deep Goethermal (2500m)
 
 
 Geothermal Source: Shallow Goethermal (200m)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""""""""""""""""""""""
 
 
 .. list-table:: Asset Attributes

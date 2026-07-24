@@ -1,6 +1,10 @@
 Heat Exchanger
 --------------
 
+
+Heat Exchanger Asset Attributes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. list-table:: Asset Attributes
    :widths: 35 25 60 25 25 35 70
    :header-rows: 1
@@ -123,7 +127,7 @@ Heat Exchanger
      - \-
 
 Heat Exchanger from EDR Assets
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The Design Toolkit also provides access to predefined heat exchanger asset from
 `ESDL Energy Data Repository (EDR) <https://edr.hesi.energy/>`_
 

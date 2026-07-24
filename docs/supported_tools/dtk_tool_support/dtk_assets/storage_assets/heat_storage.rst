@@ -1,6 +1,10 @@
 Heat Storage: Surface Tank Storage
 ----------------------------------
 
+
+Surface Tank Storage Asset Attributes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. list-table:: Asset Attributes
    :widths: 35 25 60 25 25 35 70
    :header-rows: 1
