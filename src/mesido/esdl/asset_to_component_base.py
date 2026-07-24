@@ -299,6 +299,8 @@ class _AssetToComponentBase:
             "investmentCosts": "optional",
             "installationCosts": "optional",
             "variableOperationalCosts": "optional",
+            "fixedMaintenanceCosts": "optional",
+            "fixedOperationalCosts": "optional",
         },
         "heat_source": {  # Includes GeothermalSource, ResidualHeatSource, HeatProducer,
             # GasHeater, ElectricBoiler

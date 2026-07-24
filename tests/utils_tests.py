@@ -666,7 +666,7 @@ def _get_esdl_scaled_cost(cost_esdl_info, uni_enum):
         if cost_esdl_info is not None
         else esdl.UnitEnum.NONE
     )
-    if uni_enum == per_unit:
+    if (uni_enum == per_unit) and (uni_enum is not esdl.UnitEnum.NONE):
         per_multiplier = cost_esdl_info.profileQuantityAndUnit.perMultiplier
         if esdl.MultiplierEnum.KILO == per_multiplier:
             per_scaler = 1.0e3
@@ -793,35 +793,6 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
 
         # Investment Cost
         investment_cost = 0.0
-        if asset not in solution.energy_system_components.get("gas_pipe", []):
-            if (
-                asset in solution.energy_system_components.get("heat_pipe", [])
-                and esdl_asset.attributes["state"] == esdl.AssetStateEnum.OPTIONAL
-            ):
-                investment_cost_info = _find_pipe_cost_in_edr(
-                    edr_pipes, parameters[f"{asset}.diameter"]
-                )
-            else:
-                investment_cost_info = (
-                    _get_esdl_scaled_cost(costs_esdl_asset.investmentCosts, esdl.UnitEnum.WATT)
-                    if costs_esdl_asset is not None
-                    else 0.0
-                )
-                if asset in solution.energy_system_components.get("heat_buffer", []):
-                    np.testing.assert_allclose(
-                        (
-                            parameters[f"{asset}.investment_cost_coefficient"]
-                            * parameters[f"{asset}.cp"]
-                            * parameters[f"{asset}.rho"]
-                            * parameters[f"{asset}.dT"]
-                        ),
-                        investment_cost_info,
-                    )
-                else:
-                    np.testing.assert_allclose(
-                        parameters[f"{asset}.investment_cost_coefficient"], investment_cost_info
-                    )
-
         if asset in solution.energy_system_components.get("gas_pipe", []):
             if parameters[f"{asset}.diameter"] > 0:
                 for iter in range(len(gas_pipe_classes)):
@@ -829,17 +800,55 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
                         investment_cost = (
                             gas_pipe_classes[iter].investment_costs * parameters[f"{asset}.length"]
                         )
+        elif (
+            asset in solution.energy_system_components.get("heat_pipe", [])
+            and esdl_asset.attributes["state"] == esdl.AssetStateEnum.OPTIONAL
+        ):
+            investment_cost_info = _find_pipe_cost_in_edr(
+                edr_pipes, parameters[f"{asset}.diameter"]
+            )
+            investment_cost = investment_cost_info * parameters[f"{asset}.length"]
         elif asset in [
             *solution.energy_system_components.get("heat_pipe", []),
             *solution.energy_system_components.get("electricity_cable", []),
         ]:
+            investment_cost_info = (
+                _get_esdl_scaled_cost(costs_esdl_asset.investmentCosts, esdl.UnitEnum.WATT)
+                if costs_esdl_asset is not None
+                else 0.0
+            )
+            np.testing.assert_allclose(
+                parameters[f"{asset}.investment_cost_coefficient"], investment_cost_info
+            )
             investment_cost = investment_cost_info * parameters[f"{asset}.length"]
         elif asset in solution.energy_system_components.get("heat_buffer", []):
+            investment_cost_info = (
+                _get_esdl_scaled_cost(costs_esdl_asset.investmentCosts, esdl.UnitEnum.WATT)
+                if costs_esdl_asset is not None
+                else 0.0
+            )
+            np.testing.assert_allclose(
+                (
+                    parameters[f"{asset}.investment_cost_coefficient"]
+                    * parameters[f"{asset}.cp"]
+                    * parameters[f"{asset}.rho"]
+                    * parameters[f"{asset}.dT"]
+                ),
+                investment_cost_info,
+            )
             heat_buffer_volume = results[f"{asset}__max_size"] / (
                 parameters[f"{asset}.cp"] * parameters[f"{asset}.rho"] * parameters[f"{asset}.dT"]
             )
             investment_cost = investment_cost_info * heat_buffer_volume
         else:
+            investment_cost_info = (
+                _get_esdl_scaled_cost(costs_esdl_asset.investmentCosts, esdl.UnitEnum.WATT)
+                if costs_esdl_asset is not None
+                else 0.0
+            )
+            np.testing.assert_allclose(
+                parameters[f"{asset}.investment_cost_coefficient"], investment_cost_info
+            )
             investment_cost = investment_cost_info * results[f"{asset}__max_size"]
         total_investment_cost += investment_cost
         np.testing.assert_allclose(
@@ -853,7 +862,7 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
         else:
             if results[f"{asset}__max_size"] > 1e-8:
                 installation_cost = (
-                    _get_esdl_scaled_cost(costs_esdl_asset.installationCosts, esdl.UnitEnum.WATT)
+                    _get_esdl_scaled_cost(costs_esdl_asset.installationCosts, esdl.UnitEnum.NONE)
                     if costs_esdl_asset is not None
                     else 0.0
                 )

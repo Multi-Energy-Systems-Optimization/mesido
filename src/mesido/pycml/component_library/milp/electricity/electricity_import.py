@@ -1,6 +1,6 @@
 from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
-from .. import ElectricitySource
+from .electricity_source import ElectricitySource
 
 
 @add_variables_documentation_automatically

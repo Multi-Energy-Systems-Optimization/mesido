@@ -30,6 +30,7 @@ from mesido.pycml.component_library.milp import (
     ElecHeatSourceElec,
     ElectricityCable,
     ElectricityDemand,
+    ElectricityImport,
     ElectricityNode,
     ElectricitySource,
     ElectricityStorage,
@@ -60,7 +61,6 @@ from mesido.pycml.component_library.milp import (
     Transformer,
     WindPark,
 )
-from mesido.pycml.component_library.milp.electricity.electricity_import import ElectricityImport
 
 # Importing workflow utilities at module import time can create circular
 # imports when workflows import ESDL mixins. Import locally where needed.
