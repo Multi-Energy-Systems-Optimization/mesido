@@ -2,7 +2,7 @@
 
 ## Added
 - ESDL profile reading and writing for different types: influxdb and postgres, and inline (in ESDL file).
-- Parsing of input profiles with 5-minute interval
+- Parsing of input profiles with 15-minute interval
 
 ## Changed
 - Code generalization in asset sizing mixin

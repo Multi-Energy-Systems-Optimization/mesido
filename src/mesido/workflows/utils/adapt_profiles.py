@@ -198,6 +198,10 @@ def adapt_profile_to_averaged_timestep(problem: dict, problem_step_size_hours: f
     org_dt = list(map(operator.sub, org_timeseries[1:], org_timeseries[0:-1]))
 
     timestep_spacing_seconds = org_dt[0].seconds
+    assert float(problem_step_size_hours).is_integer() or problem_step_size_hours == 0.25, (
+        f"Unsupported problem_step_size_hours: {problem_step_size_hours}. "
+        "Supported values are integer hours or 1/4 hour (15 minutes)."
+    )
     assert all(
         dt.seconds == timestep_spacing_seconds for dt in org_dt
     ), "Non-uniform input timestep spacing detected; all steps must be equal."
