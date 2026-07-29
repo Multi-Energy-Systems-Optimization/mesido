@@ -604,7 +604,15 @@ class EndScenarioSizing(
                 solver_stats = self.solver_stats
                 self._write_json_output(results, parameters, bounds, aliases, solver_stats, e_m)
 
-    def __heat_demand_match_check(self, results, e_m=0):
+    def __heat_demand_match_check(self, results: AliasDict, e_m: int = 0) -> None:
+        """
+        Checks if the heat demand is not matched and provides potential causes in the
+        logger.
+
+        Args:
+            results: Alias dictionary of the results after the optimization
+            e_m: Ensemble member index
+        """
         parameters = self.parameters(e_m)
         bounds = self.bounds()
         id_to_name_map = self.esdl_asset_id_to_name_map
@@ -767,13 +775,14 @@ class SettingsStaged:
         *args,
         **kwargs,
     ):
-        super().__init__(*args, **kwargs)
 
         self._stage = stage
         self._total_stages = total_stages
         self.__boolean_bounds = boolean_bounds
         if self._stage == 2 and priorities_output:
             self._priorities_output = priorities_output
+
+        super().__init__(*args, **kwargs)
 
     def update_heat_network_settings(self):
         settings = super().update_heat_network_settings()
@@ -794,10 +803,11 @@ class SettingsStaged:
         elif self._stage == 2:
             # If at least 1 heat_source has a producer profile assigned, set the
             # heat_loss_disconnected_pipe option to False
-            for asset in self.energy_system_components.get("heat_source", []):
-                if f"{asset}.maximum_heat_source" in self.io.get_timeseries_names():
-                    options["heat_loss_disconnected_pipe"] = False
-                    break
+            if hasattr(self, "_ModelicaComponentTypeMixin__hn_component_types"):
+                for asset in self.energy_system_components.get("heat_source", []):
+                    if f"{asset}.maximum_heat_source" in self.io.get_timeseries_names():
+                        options["heat_loss_disconnected_pipe"] = False
+                        break
 
         return options
 

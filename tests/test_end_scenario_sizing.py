@@ -19,7 +19,12 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
-from utils_tests import cost_calculation_test, demand_matching_test
+from utils_tests import (
+    cost_calculation_test,
+    demand_matching_test,
+    energy_conservation_test,
+    heat_to_discharge_test,
+)
 
 
 class TestEndScenarioSizing(TestCase):
@@ -42,6 +47,38 @@ class TestEndScenarioSizing(TestCase):
         )
         cls.results = cls.solution.extract_results()
         cls.name_to_id_map = cls.solution.esdl_asset_name_to_id_map
+
+    def test_end_scenario_sizing_no_demand(self):
+        """
+        Checks if EndScenarioSizing also works for ESDLs where the heat demand is zero at some
+        moments in time.
+        This run will fail when the minimum velocity is not set equal to zero.
+
+        Checks:
+        - demand matching
+        - heat to discharge
+        - energy conservation
+        """
+
+        import models.source_pipe_sink.src.double_pipe_heat as double_pipe_heat
+
+        base_folder = Path(double_pipe_heat.__file__).resolve().parent.parent
+
+        solution = run_end_scenario_sizing(
+            EndScenarioSizingStaged,
+            base_folder=base_folder,
+            esdl_file_name="sourcesink.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import_zero_demand.csv",
+        )
+        results = solution.extract_results()
+
+        demand_matching_test(solution, results)
+        heat_to_discharge_test(solution, results)
+        energy_conservation_test(solution, results)
+
+        np.testing.assert_allclose(solution.heat_network_settings["minimum_velocity"], 0.0)
 
     def test_end_scenario_sizing(self):
         """

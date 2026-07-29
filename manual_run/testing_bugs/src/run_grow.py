@@ -39,7 +39,7 @@ if __name__ == "__main__":
     solution = run_end_scenario_sizing(
         EndScenarioSizingStaged,
         base_folder=base_folder,
-        esdl_file_name="Base Netwerk Delft.esdl",
+        esdl_file_name="OMOTES_test_0729.esdl",
         esdl_parser=ESDLFileParser,
         # **kwargs,  # Example of usage if needed/used
     )
