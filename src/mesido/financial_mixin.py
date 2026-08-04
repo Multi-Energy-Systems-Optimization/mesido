@@ -152,12 +152,16 @@ class FinancialMixin(
             "node",
             "pump",
         }
-        self.excluded_assets = [asset_name for asset_type in
-                           self.excluded_asset_types for asset_name in
-                           self.energy_system_components.get(asset_type,[])]
-        self.transport_assets = [asset_name for asset_type in
-                           ["heat_pipe", "gas_pipe","electricity_cable"] for asset_name in
-                           self.energy_system_components.get(asset_type,[])]
+        self.excluded_assets = [
+            asset_name
+            for asset_type in self.excluded_asset_types
+            for asset_name in self.energy_system_components.get(asset_type, [])
+        ]
+        self.transport_assets = [
+            asset_name
+            for asset_type in ["heat_pipe", "gas_pipe", "electricity_cable"]
+            for asset_name in self.energy_system_components.get(asset_type, [])
+        ]
         map_asset_type_to_fixed_operational_vars = {
             "ates": {"variable_nominal_suffix": "Heat_ates"},
             "cold_demand": {
