@@ -114,7 +114,11 @@ class FinancialMixin(
              saved.
             """
             demand_ub = bounds[f"{asset_name}.{primary_suffix}"][1]
-            return demand_ub if not np.isinf(demand_ub) else bounds[f"{asset_name}.{secondary_suffix}"][1]
+            return (
+                demand_ub
+                if not np.isinf(demand_ub)
+                else bounds[f"{asset_name}.{secondary_suffix}"][1]
+            )
 
         def _make_operational_var_nominal(asset_name: str, asset_type: str):
             fixed_operational_setup = map_asset_type_to_fixed_operational_vars[asset_type]
@@ -125,7 +129,10 @@ class FinancialMixin(
                 )
             elif "parameter_name" in fixed_operational_setup:
                 min_value = fixed_operational_setup.get("min_value", -np.inf)
-                nominal = max(parameters[f"{asset_name}.{fixed_operational_setup['parameter_name']}"], min_value)
+                nominal = max(
+                    parameters[f"{asset_name}.{fixed_operational_setup['parameter_name']}"],
+                    min_value,
+                )
             elif "upper_bound_suffix_secondary" in fixed_operational_setup:
                 nominal = _determine_ub(
                     asset_name,
@@ -138,37 +145,37 @@ class FinancialMixin(
             return _scalarise_values(nominal)
 
         excluded_asset_types = {
-            "node",
-            "pump",
             "check_valve",
             "control_valve",
             "electricity_node",
             "gas_node",
+            "node",
+            "pump",
         }
         map_asset_type_to_fixed_operational_vars = {
             "ates": {"variable_nominal_suffix": "Heat_ates"},
-            "heat_demand": {
-                "upper_bound_suffix": "Heat_demand",
-                "upper_bound_suffix_secondary": "HeatIn.Heat",
-            },
             "cold_demand": {
                 "upper_bound_suffix": "Cold_demand",
                 "upper_bound_suffix_secondary": "HeatIn.Heat",
             },
-            "heat_source": {"variable_nominal_suffix": "Heat_source"},
-            "heat_pipe": {"parameter_name": "length", "min_value": 1.0},
             "electricity_cable": {"parameter_name": "length", "min_value": 1.0},
-            "gas_pipe": {"parameter_name": "length", "min_value": 1.0},
-            "heat_buffer": {"variable_nominal_suffix": "Stored_heat"},
-            "heat_exchanger": {"variable_nominal_suffix": "Secondary_heat"},
-            "heat_pump": {"variable_nominal_suffix": "Secondary_heat"},
-            "gas_tank_storage": {"upper_bound_suffix": "Stored_gas_mass"},
             "electricity_demand": {"upper_bound_suffix": "Electricity_demand"},
-            "electrolyzer": {"upper_bound_suffix": "Power_consumed"},
             "electricity_source": {"upper_bound_suffix": "ElectricityOut.Power"},
             "electricity_storage": {"upper_bound_suffix": "Stored_electricity"},
+            "electrolyzer": {"upper_bound_suffix": "Power_consumed"},
             "gas_demand": {"upper_bound_suffix": "Gas_demand_mass_flow"},
+            "gas_pipe": {"parameter_name": "length", "min_value": 1.0},
             "gas_source": {"upper_bound_suffix": "Gas_source_mass_flow"},
+            "gas_tank_storage": {"upper_bound_suffix": "Stored_gas_mass"},
+            "heat_buffer": {"variable_nominal_suffix": "Stored_heat"},
+            "heat_demand": {
+                "upper_bound_suffix": "Heat_demand",
+                "upper_bound_suffix_secondary": "HeatIn.Heat",
+            },
+            "heat_exchanger": {"variable_nominal_suffix": "Secondary_heat"},
+            "heat_pipe": {"parameter_name": "length", "min_value": 1.0},
+            "heat_pump": {"variable_nominal_suffix": "Secondary_heat"},
+            "heat_source": {"variable_nominal_suffix": "Heat_source"},
         }
 
         # Making the cost variables; fixed_operational_cost, variable_operational_cost,
@@ -178,7 +185,9 @@ class FinancialMixin(
                 continue
             for asset_name in asset_list:
                 if asset_type in map_asset_type_to_fixed_operational_vars:
-                    nominal_fixed_operational = _make_operational_var_nominal(asset_name, asset_type)
+                    nominal_fixed_operational = _make_operational_var_nominal(
+                        asset_name, asset_type
+                    )
                     nominal_variable_operational = nominal_fixed_operational
                     nominal_investment = nominal_fixed_operational
                     if asset_type == "heat_buffer":
@@ -197,9 +206,11 @@ class FinancialMixin(
 
                 # fixed operational cost
                 asset_fixed_operational_cost_var = f"{asset_name}__fixed_operational_cost"
-                self._asset_fixed_operational_cost_map[asset_name] = asset_fixed_operational_cost_var
-                self.__asset_fixed_operational_cost_var[asset_fixed_operational_cost_var] = ca.MX.sym(
+                self._asset_fixed_operational_cost_map[asset_name] = (
                     asset_fixed_operational_cost_var
+                )
+                self.__asset_fixed_operational_cost_var[asset_fixed_operational_cost_var] = (
+                    ca.MX.sym(asset_fixed_operational_cost_var)
                 )
                 self.__asset_fixed_operational_cost_bounds[asset_fixed_operational_cost_var] = (
                     0.0,
@@ -217,9 +228,11 @@ class FinancialMixin(
 
                 # variable operational cost
                 variable_operational_cost_var = f"{asset_name}__variable_operational_cost"
-                self._asset_variable_operational_cost_map[asset_name] = variable_operational_cost_var
-                self.__asset_variable_operational_cost_var[variable_operational_cost_var] = ca.MX.sym(
+                self._asset_variable_operational_cost_map[asset_name] = (
                     variable_operational_cost_var
+                )
+                self.__asset_variable_operational_cost_var[variable_operational_cost_var] = (
+                    ca.MX.sym(variable_operational_cost_var)
                 )
                 self.__asset_variable_operational_cost_bounds[variable_operational_cost_var] = (
                     0.0,
@@ -319,7 +332,8 @@ class FinancialMixin(
                 self.__asset_investment_cost_bounds[asset_investment_cost_var] = (0.0, max_cost)
                 self.__asset_investment_cost_nominals[asset_investment_cost_var] = (
                     max(
-                        parameters[f"{asset_name}.investment_cost_coefficient"] * nominal_investment,
+                        parameters[f"{asset_name}.investment_cost_coefficient"]
+                        * nominal_investment,
                         1.0e2,
                     )
                     if nominal_investment is not None
@@ -352,79 +366,33 @@ class FinancialMixin(
                             else 1.0e2
                         )
 
-        for asset in [
-            *self.energy_system_components.get("heat_source", []),
-            *self.energy_system_components.get("heat_demand", []),
-            *self.energy_system_components.get("cold_demand", []),
-            *self.energy_system_components.get("ates", []),
-            *self.energy_system_components.get("heat_buffer", []),
-            *self.energy_system_components.get("heat_pipe", []),
-            *self.energy_system_components.get("heat_exchanger", []),
-            *self.energy_system_components.get("heat_pump", []),
-        ]:
-            annualized_capex_var_name = f"{asset}__annualized_capex"
-            self._annualized_capex_var_map[asset] = annualized_capex_var_name
-            self.__annualized_capex_var[annualized_capex_var_name] = ca.MX.sym(
-                annualized_capex_var_name
-            )
-            self.__annualized_capex_var_bounds[annualized_capex_var_name] = (
-                0.0,
-                np.inf,
-            )  # (lb, ub)
-            installation_cost_symbol_name = self._asset_installation_cost_map[asset]
-            investment_cost_symbol_name = self._asset_investment_cost_map[asset]
-            self.__annualized_capex_var_nominals[annualized_capex_var_name] = self.variable_nominal(
-                installation_cost_symbol_name
-            ) + self.variable_nominal(investment_cost_symbol_name)
+                # annualized capex
+                annualized_capex_var_name = f"{asset_name}__annualized_capex"
+                self._annualized_capex_var_map[asset_name] = annualized_capex_var_name
+                self.__annualized_capex_var[annualized_capex_var_name] = ca.MX.sym(
+                    annualized_capex_var_name
+                )
+                self.__annualized_capex_var_bounds[annualized_capex_var_name] = (
+                    0.0,
+                    np.inf,
+                )  # (lb, ub)
+                installation_cost_symbol_name = self._asset_installation_cost_map[asset_name]
+                investment_cost_symbol_name = self._asset_investment_cost_map[asset_name]
+                self.__annualized_capex_var_nominals[annualized_capex_var_name] = (
+                    self.variable_nominal(installation_cost_symbol_name)
+                    + self.variable_nominal(investment_cost_symbol_name)
+                )
 
-        if options["include_asset_is_realized"]:
-            for asset in [
-                *self.energy_system_components.get("heat_source", []),
-                *self.energy_system_components.get("heat_demand", []),
-                *self.energy_system_components.get("cold_demand", []),
-                *self.energy_system_components.get("heat_pipe", []),
-                *self.energy_system_components.get("ates", []),
-                *self.energy_system_components.get("heat_buffer", []),
-                *self.energy_system_components.get("heat_exchanger", []),
-                *self.energy_system_components.get("heat_pump", []),
-            ]:
-                if not options["yearly_investments"]:
-                    var_name = f"{asset}__cumulative_investments_made_in_eur"
-                    self.__cumulative_investments_made_in_eur_map[asset] = var_name
-                    self.__cumulative_investments_made_in_eur_var[var_name] = ca.MX.sym(var_name)
-                    self.__cumulative_investments_made_in_eur_nominals[var_name] = (
-                        self.variable_nominal(f"{asset}__investment_cost")
-                        + self.variable_nominal(f"{asset}__installation_cost")
-                    )
-                    self.__cumulative_investments_made_in_eur_bounds[var_name] = (0.0, np.inf)
-
-                    # This is an integer variable between [0, max_aggregation_count] that allows the
-                    # increments of the asset to become used by the optimizer. Meaning that when
-                    # this variable is zero not milp can be consumed or produced by this asset.
-                    # When the integer is >=1 the asset can consume and/or produce according to
-                    # its increments.
-                    var_name = f"{asset}__asset_is_realized"
-                    self._asset_is_realized_map[asset] = var_name
-                    self.__asset_is_realized_var[var_name] = ca.MX.sym(var_name)
-                    try:
-                        aggr_count_max = parameters[f"{asset}.nr_of_doublets"]
-                    except KeyError:
-                        aggr_count_max = 1.0
-                    if parameters[f"{asset}.state"] == AssetStateEnum.DISABLED:
-                        aggr_count_max = 0.0
-                    self.__asset_is_realized_bounds[var_name] = (0.0, aggr_count_max)
-                else:
-                    self.__cumulative_investments_made_in_eur_map[asset] = []
-                    self._asset_is_realized_map[asset] = []
-                    for i in range(self._years):
-                        var_name = f"{asset}__cumulative_investments_made_in_eur_year_{i}"
-                        self.__cumulative_investments_made_in_eur_map[asset].append(var_name)
+                if options["include_asset_is_realized"]:
+                    if not options["yearly_investments"]:
+                        var_name = f"{asset_name}__cumulative_investments_made_in_eur"
+                        self.__cumulative_investments_made_in_eur_map[asset_name] = var_name
                         self.__cumulative_investments_made_in_eur_var[var_name] = ca.MX.sym(
                             var_name
                         )
                         self.__cumulative_investments_made_in_eur_nominals[var_name] = (
-                            self.variable_nominal(f"{asset}__investment_cost")
-                            + self.variable_nominal(f"{asset}__installation_cost")
+                            self.variable_nominal(f"{asset_name}__investment_cost")
+                            + self.variable_nominal(f"{asset_name}__installation_cost")
                         )
                         self.__cumulative_investments_made_in_eur_bounds[var_name] = (0.0, np.inf)
 
@@ -433,16 +401,51 @@ class FinancialMixin(
                         # that when this variable is zero not milp can be consumed or produced by
                         # this asset. When the integer is >=1 the asset can consume and/or
                         # produce according to its increments.
-                        var_name = f"{asset}__asset_is_realized_{i}"
-                        self._asset_is_realized_map[asset].append(var_name)
+                        var_name = f"{asset_name}__asset_is_realized"
+                        self._asset_is_realized_map[asset_name] = var_name
                         self.__asset_is_realized_var[var_name] = ca.MX.sym(var_name)
                         try:
-                            aggr_count_max = parameters[f"{asset}.nr_of_doublets"]
+                            aggr_count_max = parameters[f"{asset_name}.nr_of_doublets"]
                         except KeyError:
                             aggr_count_max = 1.0
-                        if parameters[f"{asset}.state"] == AssetStateEnum.DISABLED:
+                        if parameters[f"{asset_name}.state"] == AssetStateEnum.DISABLED:
                             aggr_count_max = 0.0
                         self.__asset_is_realized_bounds[var_name] = (0.0, aggr_count_max)
+                    else:
+                        self.__cumulative_investments_made_in_eur_map[asset_name] = []
+                        self._asset_is_realized_map[asset_name] = []
+                        for i in range(self._years):
+                            var_name = f"{asset_name}__cumulative_investments_made_in_eur_year_{i}"
+                            self.__cumulative_investments_made_in_eur_map[asset_name].append(
+                                var_name
+                            )
+                            self.__cumulative_investments_made_in_eur_var[var_name] = ca.MX.sym(
+                                var_name
+                            )
+                            self.__cumulative_investments_made_in_eur_nominals[var_name] = (
+                                self.variable_nominal(f"{asset_name}__investment_cost")
+                                + self.variable_nominal(f"{asset_name}__installation_cost")
+                            )
+                            self.__cumulative_investments_made_in_eur_bounds[var_name] = (
+                                0.0,
+                                np.inf,
+                            )
+
+                            # This is an integer variable between [0, max_aggregation_count] that
+                            # allows the increments of the asset to become used by the optimizer.
+                            # Meaning that when this variable is zero not milp can be consumed or
+                            # produced by this asset. When the integer is >=1 the asset can
+                            # consume and/or produce according to its increments.
+                            var_name = f"{asset_name}__asset_is_realized_{i}"
+                            self._asset_is_realized_map[asset_name].append(var_name)
+                            self.__asset_is_realized_var[var_name] = ca.MX.sym(var_name)
+                            try:
+                                aggr_count_max = parameters[f"{asset_name}.nr_of_doublets"]
+                            except KeyError:
+                                aggr_count_max = 1.0
+                            if parameters[f"{asset_name}.state"] == AssetStateEnum.DISABLED:
+                                aggr_count_max = 0.0
+                            self.__asset_is_realized_bounds[var_name] = (0.0, aggr_count_max)
 
     @abstractmethod
     def energy_system_options(self):
