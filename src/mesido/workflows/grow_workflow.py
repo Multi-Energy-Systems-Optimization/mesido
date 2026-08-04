@@ -436,8 +436,14 @@ class EndScenarioSizing(
         for b in self.energy_system_components.get("heat_buffer", {}):
             vars = self.state_vector(f"{b}.Heat_buffer")
             symbol_stored_heat = self.state_vector(f"{b}.Stored_heat")
-            constraints.append((symbol_stored_heat[self.__indx_max_peak]-symbol_stored_heat[
-                self.__indx_max_peak+24], 0.0, 0.0))
+            constraints.append(
+                (
+                    symbol_stored_heat[self.__indx_max_peak]
+                    - symbol_stored_heat[self.__indx_max_peak + 24],
+                    0.0,
+                    0.0,
+                )
+            )
 
             ind_peak = int(self.__indx_max_peak)
             constraints.append((vars[:ind_peak], 0.0, 0.0))
