@@ -103,339 +103,254 @@ class FinancialMixin(
         bounds = self.bounds()
         string_parameters = self.string_parameters(0)
 
+        def _scalarise_values(value):
+            if isinstance(value, Timeseries):
+                return np.max(value.values)
+            return value if isinstance(value, float) else max(value.values)
+
+        def _determine_ub(asset_name: str, primary_suffix: str, secondary_suffix: str):
+            """
+            Returns the upperbound of a variable with a backup variable name under which it might be
+             saved.
+            """
+            demand_ub = bounds[f"{asset_name}.{primary_suffix}"][1]
+            return demand_ub if not np.isinf(demand_ub) else bounds[f"{asset_name}.{secondary_suffix}"][1]
+
+        def _make_operational_var_nominal(asset_name: str, asset_type: str):
+            fixed_operational_setup = map_asset_type_to_fixed_operational_vars[asset_type]
+
+            if "variable_nominal_suffix" in fixed_operational_setup:
+                nominal = self.variable_nominal(
+                    f"{asset_name}.{fixed_operational_setup['variable_nominal_suffix']}"
+                )
+            elif "parameter_name" in fixed_operational_setup:
+                min_value = fixed_operational_setup.get("min_value", -np.inf)
+                nominal = max(parameters[f"{asset_name}.{fixed_operational_setup['parameter_name']}"], min_value)
+            elif "upper_bound_suffix_secondary" in fixed_operational_setup:
+                nominal = _determine_ub(
+                    asset_name,
+                    fixed_operational_setup["upper_bound_suffix"],
+                    fixed_operational_setup["upper_bound_suffix_secondary"],
+                )
+            else:
+                nominal = bounds[f"{asset_name}.{fixed_operational_setup['upper_bound_suffix']}"][1]
+
+            return _scalarise_values(nominal)
+
+        excluded_asset_types = {
+            "node",
+            "pump",
+            "check_valve",
+            "control_valve",
+            "electricity_node",
+            "gas_node",
+        }
+        map_asset_type_to_fixed_operational_vars = {
+            "ates": {"variable_nominal_suffix": "Heat_ates"},
+            "heat_demand": {
+                "upper_bound_suffix": "Heat_demand",
+                "upper_bound_suffix_secondary": "HeatIn.Heat",
+            },
+            "cold_demand": {
+                "upper_bound_suffix": "Cold_demand",
+                "upper_bound_suffix_secondary": "HeatIn.Heat",
+            },
+            "heat_source": {"variable_nominal_suffix": "Heat_source"},
+            "heat_pipe": {"parameter_name": "length", "min_value": 1.0},
+            "electricity_cable": {"parameter_name": "length", "min_value": 1.0},
+            "gas_pipe": {"parameter_name": "length", "min_value": 1.0},
+            "heat_buffer": {"variable_nominal_suffix": "Stored_heat"},
+            "heat_exchanger": {"variable_nominal_suffix": "Secondary_heat"},
+            "heat_pump": {"variable_nominal_suffix": "Secondary_heat"},
+            "gas_tank_storage": {"upper_bound_suffix": "Stored_gas_mass"},
+            "electricity_demand": {"upper_bound_suffix": "Electricity_demand"},
+            "electrolyzer": {"upper_bound_suffix": "Power_consumed"},
+            "electricity_source": {"upper_bound_suffix": "ElectricityOut.Power"},
+            "electricity_storage": {"upper_bound_suffix": "Stored_electricity"},
+            "gas_demand": {"upper_bound_suffix": "Gas_demand_mass_flow"},
+            "gas_source": {"upper_bound_suffix": "Gas_source_mass_flow"},
+        }
+
         # Making the cost variables; fixed_operational_cost, variable_operational_cost,
         # installation_cost and investment_cost
-        for asset_name in [
-            asset_name
-            for asset_name_list in self.energy_system_components.values()
-            for asset_name in asset_name_list
-        ]:
-            if asset_name in [
-                *self.energy_system_components.get("node", []),
-                *self.energy_system_components.get("pump", []),
-                *self.energy_system_components.get("check_valve", []),
-                *self.energy_system_components.get("control_valve", []),
-                *self.energy_system_components.get("electricity_node", []),
-                *self.energy_system_components.get("gas_node", []),
-            ]:
+        for asset_type, asset_list in self.energy_system_components.items():
+            if asset_type in excluded_asset_types:
                 continue
-            elif asset_name in [*self.energy_system_components.get("ates", [])]:
-                nominal_fixed_operational = self.variable_nominal(f"{asset_name}.Heat_ates")
-                nominal_fixed_operational = (
-                    nominal_fixed_operational
-                    if isinstance(nominal_fixed_operational, float)
-                    else max(nominal_fixed_operational.values)
-                )
-                nominal_variable_operational = nominal_fixed_operational
-                nominal_investment = nominal_fixed_operational
-            elif asset_name in [*self.energy_system_components.get("heat_demand", [])]:
-                nominal_fixed_operational = (
-                    bounds[f"{asset_name}.Heat_demand"][1]
-                    if not np.isinf(bounds[f"{asset_name}.Heat_demand"][1])
-                    else bounds[f"{asset_name}.HeatIn.Heat"][1]
-                )
-                nominal_fixed_operational = (
-                    nominal_fixed_operational
-                    if isinstance(nominal_fixed_operational, float)
-                    else max(nominal_fixed_operational.values)
-                )
-                nominal_variable_operational = nominal_fixed_operational
-                nominal_investment = nominal_fixed_operational
-            elif asset_name in [*self.energy_system_components.get("cold_demand", [])]:
-                nominal_fixed_operational = (
-                    bounds[f"{asset_name}.Cold_demand"][1]
-                    if not np.isinf(bounds[f"{asset_name}.Cold_demand"][1])
-                    else bounds[f"{asset_name}.HeatIn.Heat"][1]
-                )
-                nominal_fixed_operational = (
-                    nominal_fixed_operational
-                    if isinstance(nominal_fixed_operational, float)
-                    else max(nominal_fixed_operational.values)
-                )
-                nominal_variable_operational = nominal_fixed_operational
-                nominal_investment = nominal_fixed_operational
-            elif asset_name in [*self.energy_system_components.get("heat_source", [])]:
-                nominal_fixed_operational = self.variable_nominal(f"{asset_name}.Heat_source")
-                nominal_fixed_operational = (
-                    nominal_fixed_operational
-                    if isinstance(nominal_fixed_operational, float)
-                    else max(nominal_fixed_operational.values)
-                )
-                nominal_variable_operational = nominal_fixed_operational
-                nominal_investment = nominal_fixed_operational
-            elif asset_name in [*self.energy_system_components.get("heat_pipe", [])]:
-                nominal_fixed_operational = max(parameters[f"{asset_name}.length"], 1.0)
-                nominal_fixed_operational = (
-                    nominal_fixed_operational
-                    if isinstance(nominal_fixed_operational, float)
-                    else max(nominal_fixed_operational.values)
-                )
-                nominal_variable_operational = nominal_fixed_operational
-                nominal_investment = nominal_fixed_operational
-            elif asset_name in [*self.energy_system_components.get("electricity_cable", [])]:
-                nominal_fixed_operational = max(parameters[f"{asset_name}.length"], 1.0)
-                nominal_fixed_operational = (
-                    nominal_fixed_operational
-                    if isinstance(nominal_fixed_operational, float)
-                    else max(nominal_fixed_operational.values)
-                )
-                nominal_variable_operational = nominal_fixed_operational
-                nominal_investment = nominal_fixed_operational
-            elif asset_name in [*self.energy_system_components.get("gas_pipe", [])]:
-                nominal_fixed_operational = max(parameters[f"{asset_name}.length"], 1.0)
-                nominal_fixed_operational = (
-                    nominal_fixed_operational
-                    if isinstance(nominal_fixed_operational, float)
-                    else max(nominal_fixed_operational.values)
-                )
-                nominal_variable_operational = nominal_fixed_operational
-                nominal_investment = nominal_fixed_operational
-            elif asset_name in [*self.energy_system_components.get("heat_buffer", [])]:
-                nominal_fixed_operational = self.variable_nominal(f"{asset_name}.Stored_heat")
-                nominal_fixed_operational = (
-                    nominal_fixed_operational
-                    if isinstance(nominal_fixed_operational, float)
-                    else max(nominal_fixed_operational.values)
-                )
-                nominal_variable_operational = self.variable_nominal(f"{asset_name}.Heat_buffer")
-                nominal_investment = nominal_fixed_operational
-            elif asset_name in [
-                *self.energy_system_components.get("heat_exchanger", []),
-                *self.energy_system_components.get("heat_pump", []),
-            ]:
-                nominal_fixed_operational = self.variable_nominal(f"{asset_name}.Secondary_heat")
-                nominal_variable_operational = nominal_fixed_operational
-                nominal_investment = nominal_fixed_operational
-            # TODO: set the nominal values below
-            elif asset_name in [*self.energy_system_components.get("gas_tank_storage", [])]:
-                nominal_fixed_operational = bounds[f"{asset_name}.Stored_gas_mass"][1]
-                nominal_fixed_operational = (
-                    nominal_fixed_operational
-                    if isinstance(nominal_fixed_operational, float)
-                    else max(nominal_fixed_operational.values)
-                )
-                nominal_variable_operational = nominal_fixed_operational
-                nominal_investment = nominal_fixed_operational
-            elif asset_name in [*self.energy_system_components.get("electricity_demand", [])]:
-                nominal_fixed_operational = bounds[f"{asset_name}.Electricity_demand"][1]
-                nominal_fixed_operational = (
-                    nominal_fixed_operational
-                    if isinstance(nominal_fixed_operational, float)
-                    else max(nominal_fixed_operational.values)
-                )
-                nominal_variable_operational = nominal_fixed_operational
-                nominal_investment = nominal_fixed_operational
-            elif asset_name in [*self.energy_system_components.get("electrolyzer", [])]:
-                nominal_fixed_operational = bounds[f"{asset_name}.Power_consumed"][1]
-                nominal_fixed_operational = (
-                    nominal_fixed_operational
-                    if isinstance(nominal_fixed_operational, float)
-                    else max(nominal_fixed_operational.values)
-                )
-                nominal_variable_operational = nominal_fixed_operational
-                nominal_investment = nominal_fixed_operational
-            elif asset_name in [*self.energy_system_components.get("electricity_source", [])]:
-                max_power = (
-                    bounds[f"{asset_name}.ElectricityOut.Power"][1]
-                    if (isinstance(bounds[f"{asset_name}.ElectricityOut.Power"][1], float))
-                    else max(bounds[f"{asset_name}.ElectricityOut.Power"][1].values)
-                )
-                nominal_fixed_operational = max_power
-                nominal_variable_operational = nominal_fixed_operational
-                nominal_investment = nominal_fixed_operational
-            elif asset_name in [*self.energy_system_components.get("electricity_storage", [])]:
-                nominal_fixed_operational = bounds[f"{asset_name}.Stored_electricity"][1]
-                nominal_fixed_operational = (
-                    nominal_fixed_operational
-                    if isinstance(nominal_fixed_operational, float)
-                    else max(nominal_fixed_operational.values)
-                )
-                nominal_variable_operational = nominal_fixed_operational
-                nominal_investment = nominal_fixed_operational
-            elif asset_name in [
-                *self.energy_system_components.get("gas_demand", []),
-                *self.energy_system_components.get("gas_source", []),
-            ]:
-                if asset_name in [*self.energy_system_components.get("gas_demand", [])]:
-                    nominal_fixed_operational = bounds[f"{asset_name}.Gas_demand_mass_flow"][1]
-                elif asset_name in [*self.energy_system_components.get("gas_source", [])]:
-                    nominal_fixed_operational = bounds[f"{asset_name}.Gas_source_mass_flow"][1]
-
-                nominal_fixed_operational = (
-                    nominal_fixed_operational
-                    if isinstance(nominal_fixed_operational, float)
-                    else max(nominal_fixed_operational.values)
-                )
-                nominal_variable_operational = nominal_fixed_operational
-                nominal_investment = nominal_fixed_operational
-            else:
-                logger.warning(
-                    f"Asset {asset_name} has type for which "
-                    f"we cannot determine bounds and nominals on the costs, "
-                    f"skipping it."
-                )
-                nominal_fixed_operational = 1.0
-                nominal_variable_operational = 1.0
-                nominal_investment = 1.0
-
-            # fixed operational cost
-            asset_fixed_operational_cost_var = f"{asset_name}__fixed_operational_cost"
-            self._asset_fixed_operational_cost_map[asset_name] = asset_fixed_operational_cost_var
-            self.__asset_fixed_operational_cost_var[asset_fixed_operational_cost_var] = ca.MX.sym(
-                asset_fixed_operational_cost_var
-            )
-            self.__asset_fixed_operational_cost_bounds[asset_fixed_operational_cost_var] = (
-                0.0,
-                np.inf,
-            )
-            self.__asset_fixed_operational_cost_nominals[asset_fixed_operational_cost_var] = (
-                max(
-                    parameters[f"{asset_name}.fixed_operational_cost_coefficient"]
-                    * nominal_fixed_operational,
-                    1.0e2,
-                )
-                if nominal_fixed_operational is not None
-                else 1.0e2
-            )
-
-            # variable operational cost
-            variable_operational_cost_var = f"{asset_name}__variable_operational_cost"
-            self._asset_variable_operational_cost_map[asset_name] = variable_operational_cost_var
-            self.__asset_variable_operational_cost_var[variable_operational_cost_var] = ca.MX.sym(
-                variable_operational_cost_var
-            )
-            self.__asset_variable_operational_cost_bounds[variable_operational_cost_var] = (
-                0.0,
-                np.inf,
-            )
-            self.__asset_variable_operational_cost_nominals[variable_operational_cost_var] = (
-                max(
-                    parameters[f"{asset_name}.variable_operational_cost_coefficient"]
-                    * nominal_variable_operational
-                    * (self.times()[-1] - self.times()[0])
-                    / 3600,
-                    1.0e2,
-                )
-                if nominal_variable_operational is not None
-                else 1.0e2
-            )
-
-            # installation cost
-            asset_installation_cost_var = f"{asset_name}__installation_cost"
-            self._asset_installation_cost_map[asset_name] = asset_installation_cost_var
-            self.__asset_installation_cost_var[asset_installation_cost_var] = ca.MX.sym(
-                asset_installation_cost_var
-            )
-            try:
-                aggr_count_max = parameters[f"{asset_name}.nr_of_doublets"]
-            except KeyError:
-                aggr_count_max = 1.0
-            if parameters[f"{asset_name}.state"] == AssetStateEnum.DISABLED:
-                aggr_count_max = 0.0
-            self.__asset_installation_cost_bounds[asset_installation_cost_var] = (
-                0.0,
-                parameters[f"{asset_name}.installation_cost"] * aggr_count_max,
-            )
-            self.__asset_installation_cost_nominals[asset_installation_cost_var] = (
-                parameters[f"{asset_name}.installation_cost"]
-                if parameters[f"{asset_name}.installation_cost"]
-                else 1.0e2
-            )
-
-            # investment cost
-            asset_investment_cost_var = f"{asset_name}__investment_cost"
-            self._asset_investment_cost_map[asset_name] = asset_investment_cost_var
-            self.__asset_investment_cost_var[asset_investment_cost_var] = ca.MX.sym(
-                asset_investment_cost_var
-            )
-
-            if asset_name in self.energy_system_components.get("heat_pipe", []):
-                if asset_name in self.get_pipe_class_map().keys():
-                    pipe_classes = self.get_pipe_class_map()[asset_name]
-                    max_cost = (
-                        2.0
-                        * parameters[f"{asset_name}.length"]
-                        * max([c.investment_costs for c in pipe_classes.keys()])
-                    )
-                else:
-                    max_cost = (
-                        2.0
-                        * parameters[f"{asset_name}.length"]
-                        * parameters[f"{asset_name}.investment_cost_coefficient"]
-                    )
-            elif asset_name in self.energy_system_components.get("gas_pipe", []):
-                if asset_name in self.get_gas_pipe_class_map().keys():
-                    pipe_classes = self.get_gas_pipe_class_map()[asset_name]
-                    max_cost = (
-                        2.0
-                        * parameters[f"{asset_name}.length"]
-                        * max([c.investment_costs for c in pipe_classes.keys()])
-                    )
-                else:
-                    max_cost = (
-                        2.0
-                        * parameters[f"{asset_name}.length"]
-                        * parameters[f"{asset_name}.investment_cost_coefficient"]
-                    )
-            elif asset_name in self.energy_system_components.get("electricity_cable", []):
-                if asset_name in self.get_electricity_cable_class_map().keys():
-                    cable_classes = self.get_electricity_cable_class_map()[asset_name]
-                    max_cost = (
-                        2.0
-                        * parameters[f"{asset_name}.length"]
-                        * max([c.investment_costs for c in cable_classes.keys()])
-                    )
-                else:
-                    max_cost = (
-                        2.0
-                        * parameters[f"{asset_name}.length"]
-                        * parameters[f"{asset_name}.investment_cost_coefficient"]
-                    )
-            else:
-                max_cost = (
-                    max(bounds[f"{asset_name}__max_size"][1].values)
-                    * parameters[f"{asset_name}.investment_cost_coefficient"]
-                    if isinstance(bounds[f"{asset_name}__max_size"][1], Timeseries)
-                    else bounds[f"{asset_name}__max_size"][1]
-                    * parameters[f"{asset_name}.investment_cost_coefficient"]
-                )
-            self.__asset_investment_cost_bounds[asset_investment_cost_var] = (0.0, max_cost)
-            self.__asset_investment_cost_nominals[asset_investment_cost_var] = (
-                max(
-                    parameters[f"{asset_name}.investment_cost_coefficient"] * nominal_investment,
-                    1.0e2,
-                )
-                if nominal_investment is not None
-                else 1.0e2
-            )
-
-            # Realized revenue
-            if (asset_name) in [
-                *self.energy_system_components.get("electricity_demand", []),
-                *self.energy_system_components.get("gas_demand", []),
-            ]:
-
-                carrier_name = None
-                carrier_id_asset = string_parameters[f"{asset_name}.id_mapping_carrier"]
-                carrier = self.esdl_carriers.get(carrier_id_asset, None)
-                carrier_name = carrier["name"]
-                if f"{carrier_name}.price_profile" in self.io.get_timeseries_names():
-                    asset_revenue_var = f"{asset_name}__revenue"
-                    self._asset_revenue_map[asset_name] = asset_revenue_var
-                    self.__asset_revenue_var[asset_revenue_var] = ca.MX.sym(asset_revenue_var)
-                    self.__asset_revenue_bounds[asset_revenue_var] = (
-                        0.0,
-                        np.inf,
-                    )
-                    self.__asset_revenue_nominals[asset_revenue_var] = (
-                        max(
-                            np.mean(self.get_timeseries(f"{carrier_name}.price_profile").values)
-                            * nominal_fixed_operational,
-                            1.0e2,
+            for asset_name in asset_list:
+                if asset_type in map_asset_type_to_fixed_operational_vars:
+                    nominal_fixed_operational = _make_operational_var_nominal(asset_name, asset_type)
+                    nominal_variable_operational = nominal_fixed_operational
+                    nominal_investment = nominal_fixed_operational
+                    if asset_type == "heat_buffer":
+                        nominal_variable_operational = _scalarise_values(
+                            self.variable_nominal(f"{asset_name}.Heat_buffer")
                         )
-                        if nominal_fixed_operational is not None
-                        else 1.0e2
+                else:
+                    logger.warning(
+                        f"Asset {asset_name} has type for which "
+                        f"we cannot determine bounds and nominals on the costs, "
+                        f"skipping it."
                     )
+                    nominal_fixed_operational = 1.0
+                    nominal_variable_operational = 1.0
+                    nominal_investment = 1.0
+
+                # fixed operational cost
+                asset_fixed_operational_cost_var = f"{asset_name}__fixed_operational_cost"
+                self._asset_fixed_operational_cost_map[asset_name] = asset_fixed_operational_cost_var
+                self.__asset_fixed_operational_cost_var[asset_fixed_operational_cost_var] = ca.MX.sym(
+                    asset_fixed_operational_cost_var
+                )
+                self.__asset_fixed_operational_cost_bounds[asset_fixed_operational_cost_var] = (
+                    0.0,
+                    np.inf,
+                )
+                self.__asset_fixed_operational_cost_nominals[asset_fixed_operational_cost_var] = (
+                    max(
+                        parameters[f"{asset_name}.fixed_operational_cost_coefficient"]
+                        * nominal_fixed_operational,
+                        1.0e2,
+                    )
+                    if nominal_fixed_operational is not None
+                    else 1.0e2
+                )
+
+                # variable operational cost
+                variable_operational_cost_var = f"{asset_name}__variable_operational_cost"
+                self._asset_variable_operational_cost_map[asset_name] = variable_operational_cost_var
+                self.__asset_variable_operational_cost_var[variable_operational_cost_var] = ca.MX.sym(
+                    variable_operational_cost_var
+                )
+                self.__asset_variable_operational_cost_bounds[variable_operational_cost_var] = (
+                    0.0,
+                    np.inf,
+                )
+                self.__asset_variable_operational_cost_nominals[variable_operational_cost_var] = (
+                    max(
+                        parameters[f"{asset_name}.variable_operational_cost_coefficient"]
+                        * nominal_variable_operational
+                        * (self.times()[-1] - self.times()[0])
+                        / 3600,
+                        1.0e2,
+                    )
+                    if nominal_variable_operational is not None
+                    else 1.0e2
+                )
+
+                # installation cost
+                asset_installation_cost_var = f"{asset_name}__installation_cost"
+                self._asset_installation_cost_map[asset_name] = asset_installation_cost_var
+                self.__asset_installation_cost_var[asset_installation_cost_var] = ca.MX.sym(
+                    asset_installation_cost_var
+                )
+                try:
+                    aggr_count_max = parameters[f"{asset_name}.nr_of_doublets"]
+                except KeyError:
+                    aggr_count_max = 1.0
+                if parameters[f"{asset_name}.state"] == AssetStateEnum.DISABLED:
+                    aggr_count_max = 0.0
+                self.__asset_installation_cost_bounds[asset_installation_cost_var] = (
+                    0.0,
+                    parameters[f"{asset_name}.installation_cost"] * aggr_count_max,
+                )
+                self.__asset_installation_cost_nominals[asset_installation_cost_var] = (
+                    parameters[f"{asset_name}.installation_cost"]
+                    if parameters[f"{asset_name}.installation_cost"]
+                    else 1.0e2
+                )
+
+                # investment cost
+                asset_investment_cost_var = f"{asset_name}__investment_cost"
+                self._asset_investment_cost_map[asset_name] = asset_investment_cost_var
+                self.__asset_investment_cost_var[asset_investment_cost_var] = ca.MX.sym(
+                    asset_investment_cost_var
+                )
+
+                if asset_name in self.energy_system_components.get("heat_pipe", []):
+                    if asset_name in self.get_pipe_class_map().keys():
+                        pipe_classes = self.get_pipe_class_map()[asset_name]
+                        max_cost = (
+                            2.0
+                            * parameters[f"{asset_name}.length"]
+                            * max([c.investment_costs for c in pipe_classes.keys()])
+                        )
+                    else:
+                        max_cost = (
+                            2.0
+                            * parameters[f"{asset_name}.length"]
+                            * parameters[f"{asset_name}.investment_cost_coefficient"]
+                        )
+                elif asset_name in self.energy_system_components.get("gas_pipe", []):
+                    if asset_name in self.get_gas_pipe_class_map().keys():
+                        pipe_classes = self.get_gas_pipe_class_map()[asset_name]
+                        max_cost = (
+                            2.0
+                            * parameters[f"{asset_name}.length"]
+                            * max([c.investment_costs for c in pipe_classes.keys()])
+                        )
+                    else:
+                        max_cost = (
+                            2.0
+                            * parameters[f"{asset_name}.length"]
+                            * parameters[f"{asset_name}.investment_cost_coefficient"]
+                        )
+                elif asset_name in self.energy_system_components.get("electricity_cable", []):
+                    if asset_name in self.get_electricity_cable_class_map().keys():
+                        cable_classes = self.get_electricity_cable_class_map()[asset_name]
+                        max_cost = (
+                            2.0
+                            * parameters[f"{asset_name}.length"]
+                            * max([c.investment_costs for c in cable_classes.keys()])
+                        )
+                    else:
+                        max_cost = (
+                            2.0
+                            * parameters[f"{asset_name}.length"]
+                            * parameters[f"{asset_name}.investment_cost_coefficient"]
+                        )
+                else:
+                    max_cost = (
+                        max(bounds[f"{asset_name}__max_size"][1].values)
+                        * parameters[f"{asset_name}.investment_cost_coefficient"]
+                        if isinstance(bounds[f"{asset_name}__max_size"][1], Timeseries)
+                        else bounds[f"{asset_name}__max_size"][1]
+                        * parameters[f"{asset_name}.investment_cost_coefficient"]
+                    )
+                self.__asset_investment_cost_bounds[asset_investment_cost_var] = (0.0, max_cost)
+                self.__asset_investment_cost_nominals[asset_investment_cost_var] = (
+                    max(
+                        parameters[f"{asset_name}.investment_cost_coefficient"] * nominal_investment,
+                        1.0e2,
+                    )
+                    if nominal_investment is not None
+                    else 1.0e2
+                )
+
+                # Realized revenue
+                if (asset_name) in [
+                    *self.energy_system_components.get("electricity_demand", []),
+                    *self.energy_system_components.get("gas_demand", []),
+                ]:
+                    carrier_id_asset = string_parameters[f"{asset_name}.id_mapping_carrier"]
+                    carrier = self.esdl_carriers.get(carrier_id_asset, None)
+                    carrier_name = carrier["name"]
+                    if f"{carrier_name}.price_profile" in self.io.get_timeseries_names():
+                        asset_revenue_var = f"{asset_name}__revenue"
+                        self._asset_revenue_map[asset_name] = asset_revenue_var
+                        self.__asset_revenue_var[asset_revenue_var] = ca.MX.sym(asset_revenue_var)
+                        self.__asset_revenue_bounds[asset_revenue_var] = (
+                            0.0,
+                            np.inf,
+                        )
+                        self.__asset_revenue_nominals[asset_revenue_var] = (
+                            max(
+                                np.mean(self.get_timeseries(f"{carrier_name}.price_profile").values)
+                                * nominal_fixed_operational,
+                                1.0e2,
+                            )
+                            if nominal_fixed_operational is not None
+                            else 1.0e2
+                        )
 
         for asset in [
             *self.energy_system_components.get("heat_source", []),
