@@ -22,7 +22,6 @@ import numpy as np
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
-from rtctools.optimization.timeseries import Timeseries
 
 logger = logging.getLogger("mesido")
 
