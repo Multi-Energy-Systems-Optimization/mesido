@@ -103,11 +103,6 @@ class FinancialMixin(
         bounds = self.bounds()
         string_parameters = self.string_parameters(0)
 
-        def _scalarise_values(value):
-            if isinstance(value, Timeseries):
-                return np.max(value.values)
-            return value if isinstance(value, float) else max(value.values)
-
         def _determine_ub(asset_name: str, primary_suffix: str, secondary_suffix: str):
             """
             Returns the upperbound of a variable with a backup variable name under which it might be
@@ -142,7 +137,7 @@ class FinancialMixin(
             else:
                 nominal = bounds[f"{asset_name}.{fixed_operational_setup['upper_bound_suffix']}"][1]
 
-            return _scalarise_values(nominal)
+            return self._get_max_value(nominal)
 
         self.excluded_asset_types = {
             "check_valve",
@@ -201,7 +196,7 @@ class FinancialMixin(
                     nominal_variable_operational = nominal_fixed_operational
                     nominal_investment = nominal_fixed_operational
                     if asset_type == "heat_buffer":
-                        nominal_variable_operational = _scalarise_values(
+                        nominal_variable_operational = self._get_max_value(
                             self.variable_nominal(f"{asset_name}.Heat_buffer")
                         )
                 else:

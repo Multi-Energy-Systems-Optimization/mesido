@@ -609,13 +609,6 @@ class EndScenarioSizing(
         bounds = self.bounds()
         id_to_name_map = self.esdl_asset_id_to_name_map
 
-        def _upper_bound_as_scalar(upper_bound):
-            if hasattr(upper_bound, "values"):
-                return float(np.max(upper_bound.values))
-            if isinstance(upper_bound, (list, tuple, np.ndarray)):
-                return float(np.max(upper_bound))
-            return float(upper_bound)
-
         tolerance = 1.0e-4  # 0.01%
         all_mismatch_indexes = set()
         demand_not_matched = False
@@ -648,7 +641,7 @@ class EndScenarioSizing(
                 max_size_key = f"{producer}__max_size"
 
                 max_size = float(results[max_size_key])
-                upper_bound = _upper_bound_as_scalar(bounds[max_size_key][1])
+                upper_bound = self._get_max_value(bounds[max_size_key][1])
                 near_upper_bound = np.isclose(max_size, upper_bound, rtol=tolerance, atol=1.0e-9)
                 if not near_upper_bound:
                     continue
@@ -671,7 +664,7 @@ class EndScenarioSizing(
             for pipe in self.energy_system_components.get("heat_pipe", []):
                 diameter = float(results[f"{pipe}__hn_diameter"])
 
-                diameter_upper_bound = _upper_bound_as_scalar(bounds[f"{pipe}__hn_diameter"][1])
+                diameter_upper_bound = self._get_max_value(bounds[f"{pipe}__hn_diameter"][1])
                 near_upper_bound = np.isclose(
                     diameter,
                     diameter_upper_bound,

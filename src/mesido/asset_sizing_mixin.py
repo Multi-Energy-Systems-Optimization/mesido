@@ -828,14 +828,6 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     ub = max_profile
             return ub
 
-        def _scalarise_upper_bound(bound_ub):
-            """
-            Scalarises the upperbound from timeserie to the maximum value of the timeserie.
-            """
-            if isinstance(bound_ub, Timeseries):
-                return np.max(bound_ub.values)
-            return bound_ub if isinstance(bound_ub, float) else max(bound_ub.values)
-
         def _demand_ub(asset_name: str, primary_suffix: str, secondary_suffix: str):
             """
             Returns the upperbound of a variable with a backup variable name under which it might be
@@ -864,7 +856,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     ub_raw = bounds[f"{asset_name}.{upper_bound_suffix}"][1]
                 else:
                     ub_raw = _demand_ub(asset_name, upper_bound_suffix, upper_bound_suffix_sec)
-                ub = _scalarise_upper_bound(ub_raw)
+                ub = self._get_max_value(ub_raw)
                 if profile_constraint:
                     ub = _get_ub_profile_constraint(asset_name, profile_constraint, ub)
                 lb = 0.0 if parameters[f"{asset_name}.state"] == AssetStateEnum.OPTIONAL else ub
