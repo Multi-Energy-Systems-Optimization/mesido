@@ -653,9 +653,7 @@ class ElectricityPhysicsMixin(
                     * self.variable_nominal(f"{asset}.Power_consumed")
                 ) ** 0.5 * 3600
                 big_m = (
-                    bounds[f"{asset}.Power_consumed"][1]
-                    / parameters[f"{asset}.efficiency"]
-                    / 3600
+                    bounds[f"{asset}.Power_consumed"][1] / parameters[f"{asset}.efficiency"] / 3600
                 ) * 2
                 constraints.extend(
                     [
@@ -705,8 +703,7 @@ class ElectricityPhysicsMixin(
                 gass_mass_out_linearized_vect = linear_coef_a * power_consumed_vect + linear_coef_b
 
                 gass_mass_out_max = (
-                    linear_coef_a[-1] * bounds[f"{asset}.Power_consumed"][1]
-                    + linear_coef_b[-1]
+                    linear_coef_a[-1] * bounds[f"{asset}.Power_consumed"][1] + linear_coef_b[-1]
                 )
                 nominal = (
                     self.variable_nominal(f"{asset}.Gas_mass_flow_out")

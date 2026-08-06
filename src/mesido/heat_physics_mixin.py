@@ -3476,13 +3476,7 @@ class HeatPhysicsMixin(
                 if options["heat_storage_charging_variables"]:
                     is_buffer_charging = self.variable(f"{b}.__is_charging")
 
-            big_m = (
-                2.0
-                * bounds[f"{b}.HeatIn.Q"][1]
-                * self.__maximum_total_head_loss
-                * 10.2
-                * 1.0e3
-            )
+            big_m = 2.0 * bounds[f"{b}.HeatIn.Q"][1] * self.__maximum_total_head_loss * 10.2 * 1.0e3
             if self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
 
                 # During charging we want a minimum pressure drop like a demand
@@ -3550,11 +3544,7 @@ class HeatPhysicsMixin(
             hp_out = self.state(f"{asset}.HeatOut.Hydraulic_power")
 
             big_m = (
-                2.0
-                * bounds[f"{asset}.HeatIn.Q"][1]
-                * self.__maximum_total_head_loss
-                * 10.2
-                * 1.0e3
+                2.0 * bounds[f"{asset}.HeatIn.Q"][1] * self.__maximum_total_head_loss * 10.2 * 1.0e3
             )
             if hn_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
                 constraints.append(
