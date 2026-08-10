@@ -1,3 +1,5 @@
+from rtctools.optimization.timeseries import Timeseries
+
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
@@ -24,8 +26,13 @@ class TargetDemandGoal(Goal):
 
     def __init__(self, optimization_problem):
         demand_id = optimization_problem.esdl_asset_name_to_id_map["demand"]
-        self.target_min = optimization_problem.get_timeseries(f"{demand_id}.target_heat_demand")
-        self.target_max = optimization_problem.get_timeseries(f"{demand_id}.target_heat_demand")
+        full_timeseries = optimization_problem.get_timeseries(f"{demand_id}.target_heat_demand")
+        # new_timeseries = Timeseries(full_timeseries.times[
+        #     optimization_problem._start_index:optimization_problem._end_index],
+        #                             full_timeseries.values[
+        #     optimization_problem._start_index:optimization_problem._end_index])
+        self.target_min = full_timeseries
+        self.target_max = full_timeseries
         self.function_range = (0.0, 2e5)
         self.function_nominal = 1e5
 
@@ -57,8 +64,6 @@ class SourcePipeSink(
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
     def energy_system_options(self):
         options = super().energy_system_options()
@@ -73,6 +78,21 @@ class SourcePipeSink(
 
     def post(self):
         super().post()
+
+class SourcePipeSinkReducedTimeseries(SourcePipeSink):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._start_index = kwargs.get("start_index", 0)
+        self._end_index = kwargs.get("end_index", 10)
+
+    def times(self, variable=None):
+        """
+        In this function the part of the time-horizon is enforced. Note that the full
+        time-horizon is also set to an internal member for enabling setting bounds to the next
+        sequantial optimization.
+        """
+        return super().times(variable)[self._start_index : self._end_index]
 
 
 class HeatProblemESDLVarsMixin(ESDLAdditionalVarsMixin, SourcePipeSink):

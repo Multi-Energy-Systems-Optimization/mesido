@@ -112,6 +112,7 @@ class BaseProfileReader:
                     asset = esdl_assets[component_id]
                     asset_state = asset.attributes["state"]
 
+                    asset_state.eEnum = esdl.AssetStateEnum
                     asset_power = None
                     if asset_state == esdl.AssetStateEnum.ENABLED:
                         asset_power = asset.attributes["power"]
