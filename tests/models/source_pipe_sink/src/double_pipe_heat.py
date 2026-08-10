@@ -1,5 +1,3 @@
-from rtctools.optimization.timeseries import Timeseries
-
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
@@ -27,10 +25,6 @@ class TargetDemandGoal(Goal):
     def __init__(self, optimization_problem):
         demand_id = optimization_problem.esdl_asset_name_to_id_map["demand"]
         full_timeseries = optimization_problem.get_timeseries(f"{demand_id}.target_heat_demand")
-        # new_timeseries = Timeseries(full_timeseries.times[
-        #     optimization_problem._start_index:optimization_problem._end_index],
-        #                             full_timeseries.values[
-        #     optimization_problem._start_index:optimization_problem._end_index])
         self.target_min = full_timeseries
         self.target_max = full_timeseries
         self.function_range = (0.0, 2e5)
@@ -78,6 +72,7 @@ class SourcePipeSink(
 
     def post(self):
         super().post()
+
 
 class SourcePipeSinkReducedTimeseries(SourcePipeSink):
 

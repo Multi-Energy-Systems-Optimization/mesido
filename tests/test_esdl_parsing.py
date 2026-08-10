@@ -4,12 +4,11 @@ from pathlib import Path
 
 from mesido.esdl.esdl_parser import ESDLFileParser, ESDLStringParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
 from rtctools.util import run_optimization_problem
-
-from mesido.util import run_esdl_mesido_optimization
 
 
 class TestESDLParsing(unittest.TestCase):
@@ -128,7 +127,9 @@ class TestESDLParsing(unittest.TestCase):
         """
 
         import tests.models.source_pipe_sink.src.double_pipe_heat as example
-        from tests.models.source_pipe_sink.src.double_pipe_heat import SourcePipeSinkReducedTimeseries
+        from tests.models.source_pipe_sink.src.double_pipe_heat import (
+            SourcePipeSinkReducedTimeseries,
+        )
 
         base_folder = Path(example.__file__).resolve().parent.parent
         problem_1 = SourcePipeSinkReducedTimeseries(
@@ -147,8 +148,8 @@ class TestESDLParsing(unittest.TestCase):
 
         problem_1.optimize()
 
-        problem_2._start_index=10
-        problem_2._end_index=20
+        problem_2._start_index = 10
+        problem_2._end_index = 20
         problem_2.optimize()
 
         problem_1_old = run_esdl_mesido_optimization(
@@ -172,8 +173,9 @@ class TestESDLParsing(unittest.TestCase):
             start_index=10,
             end_index=20,
         )
-        np.testing.assert_allclose(problem_1.objective_value, problem_1_old.objective_value,
-                                   rtol=1e-5)
+        np.testing.assert_allclose(
+            problem_1.objective_value, problem_1_old.objective_value, rtol=1e-5
+        )
         np.testing.assert_allclose(
             problem_2.objective_value, problem_2_old.objective_value, rtol=1e-5
         )
