@@ -146,11 +146,11 @@ class TestESDLParsing(unittest.TestCase):
 
         problem_2 = copy.deepcopy(problem_1)
 
-        problem_1.optimize()
+        problem_1.optimize(preprocessing=False)
 
         problem_2._start_index = 10
         problem_2._end_index = 20
-        problem_2.optimize()
+        problem_2.optimize(preprocessing=False)
 
         problem_1_old = run_esdl_mesido_optimization(
             SourcePipeSinkReducedTimeseries,
