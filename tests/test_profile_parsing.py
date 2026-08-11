@@ -54,7 +54,7 @@ class TestProfileUpdating(unittest.TestCase):
 
         Checks:
         - Input CSV has 15-min time spacing and expected number of data points
-        - Input profile is parsed correctly (2-hours average time steps).
+        - Input profile is parsed correctly (2-hours and 15-minutes time steps)
         - No indexing problem with input demand and electricity profile
 
         """
@@ -64,20 +64,6 @@ class TestProfileUpdating(unittest.TestCase):
         base_folder = Path(double_pipe_heat.__file__).resolve().parent.parent
         model_folder = base_folder / "model"
         input_folder = base_folder / "input"
-
-        day_steps = 2 / 24  # 2 day / 24 hours = 2 hour time steps for the optimization problem
-
-        problem = SourcePipeSinkDayAveraged(
-            esdl_parser=ESDLFileParser,
-            base_folder=base_folder,
-            model_folder=model_folder,
-            input_folder=input_folder,
-            esdl_file_name="sourcesink_with_eboiler.esdl",
-            profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries_import_15min.csv",
-            _day_steps=day_steps,
-        )
-        problem.pre()
 
         # Check: input CSV has 15-min time spacing and expected number of data points
         input_csv_path = base_folder / "input" / "timeseries_import_15min.csv"
@@ -97,57 +83,70 @@ class TestProfileUpdating(unittest.TestCase):
             input_n_steps,
         )
 
-        # Check: input profile is parsed correctly (2-hour average timesteps)
-        expected_n_output_intervals = input_n_days // day_steps
-        datetimes = problem.io.datetimes
-        np.testing.assert_array_equal(
-            len(datetimes),
-            expected_n_output_intervals + 1,  # +1 for closing sentinel
-        )
-        dts = [datetimes[i + 1] - datetimes[i] for i in range(len(datetimes) - 1)]
-        expected_step_seconds = day_steps * 24 * 3600  # 86 400 s = 1 day
-        actual_step_seconds = np.array([dt.total_seconds() for dt in dts])
-        np.testing.assert_array_equal(
-            expected_step_seconds,
-            actual_step_seconds,
-        )
-        np.testing.assert_array_equal(
-            expected_step_seconds,
-            np.diff(problem.times()),
-        )
+        for day_steps in (2 / 24, 0.25 / 24):  # (2-hours and 15-minutes time steps)
+            problem = SourcePipeSinkDayAveraged(
+                esdl_parser=ESDLFileParser,
+                base_folder=base_folder,
+                model_folder=model_folder,
+                input_folder=input_folder,
+                esdl_file_name="sourcesink_with_eboiler.esdl",
+                profile_reader=ProfileReaderFromFile,
+                input_timeseries_file="timeseries_import_15min.csv",
+                _day_steps=day_steps,
+            )
+            problem.pre()
 
-        # Compare parser output against manual averaging over day_steps windows.
-        window_size = int(expected_step_seconds / input_timestep_seconds)
-        parsed_input_data = pd.read_csv(
-            input_csv_path,
-            parse_dates=["DateTime"],
-            dayfirst=True,
-        )
-
-        column_to_variable_map = {
-            "demand": "f6d5923d-ba9a-409d-80a0-26f73b2a574b.target_heat_demand",
-            "elec": "elec.price_profile",
-        }
-
-        for asset, var_name in column_to_variable_map.items():
-
-            raw_profile = parsed_input_data[asset].to_numpy(dtype=float)
-            expected_profile = raw_profile.reshape(-1, window_size).mean(axis=1)
-
-            averaged_profile = np.asarray(problem.io.get_timeseries(var_name)[1], dtype=float)
-            if len(averaged_profile) == expected_n_output_intervals + 1:
-                averaged_profile = averaged_profile[1:]
-
+            # Check: input profile is parsed correctly for each averaging timestep.
+            expected_n_output_intervals = int(round(input_n_days / day_steps))
+            datetimes = problem.io.datetimes
             np.testing.assert_array_equal(
-                len(averaged_profile),
-                expected_n_output_intervals,
-                err_msg=f"Unexpected averaged profile length for '{var_name}'",
+                len(datetimes),
+                expected_n_output_intervals + 1,  # +1 for closing sentinel
+            )
+            dts = [datetimes[i + 1] - datetimes[i] for i in range(len(datetimes) - 1)]
+            expected_step_seconds = day_steps * 24 * 3600
+            actual_step_seconds = np.array([dt.total_seconds() for dt in dts])
+            np.testing.assert_array_equal(
+                expected_step_seconds,
+                actual_step_seconds,
+            )
+            np.testing.assert_array_equal(
+                expected_step_seconds,
+                np.diff(problem.times()),
             )
 
-            np.testing.assert_allclose(
-                averaged_profile,
-                expected_profile,
+            # Compare parser output against manual averaging over day_steps windows.
+            window_size = int(expected_step_seconds / input_timestep_seconds)
+            parsed_input_data = pd.read_csv(
+                input_csv_path,
+                parse_dates=["DateTime"],
+                dayfirst=True,
             )
+
+            column_to_variable_map = {
+                "demand": "f6d5923d-ba9a-409d-80a0-26f73b2a574b.target_heat_demand",
+                "elec": "elec.price_profile",
+            }
+
+            for asset, var_name in column_to_variable_map.items():
+
+                raw_profile = parsed_input_data[asset].to_numpy(dtype=float)
+                expected_profile = raw_profile.reshape(-1, window_size).mean(axis=1)
+
+                averaged_profile = np.asarray(problem.io.get_timeseries(var_name)[1], dtype=float)
+                if len(averaged_profile) == expected_n_output_intervals + 1:
+                    averaged_profile = averaged_profile[1:]
+
+                np.testing.assert_array_equal(
+                    len(averaged_profile),
+                    expected_n_output_intervals,
+                    err_msg=f"Unexpected averaged profile length for '{var_name}'",
+                )
+
+                np.testing.assert_allclose(
+                    averaged_profile,
+                    expected_profile,
+                )
 
     def test_profile_updating(self):
         """
