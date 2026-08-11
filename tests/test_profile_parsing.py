@@ -136,7 +136,7 @@ class TestProfileUpdating(unittest.TestCase):
 
             averaged_profile = np.asarray(problem.io.get_timeseries(var_name)[1], dtype=float)
             if len(averaged_profile) == expected_n_output_intervals + 1:
-                averaged_profile = averaged_profile[:-1]
+                averaged_profile = averaged_profile[1:]
 
             np.testing.assert_array_equal(
                 len(averaged_profile),
