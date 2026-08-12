@@ -127,7 +127,9 @@ class TestProfileUpdating(unittest.TestCase):
 
                 raw_profile = parsed_input_data[asset].to_numpy(dtype=float)
                 expected_profile = raw_profile.reshape(-1, window_size).mean(axis=1)
-                averaged_profile = np.asarray(problem.io.get_timeseries(var_name)[1], dtype=float)[1:]
+                averaged_profile = np.asarray(problem.io.get_timeseries(var_name)[1], dtype=float)[
+                    1:
+                ]
 
                 np.testing.assert_allclose(
                     averaged_profile,
