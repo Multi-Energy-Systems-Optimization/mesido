@@ -77,13 +77,24 @@ class TestProfileUpdating(unittest.TestCase):
             err_msg=f"Expected timestep is 900 s(15 min), got {input_timestep_seconds} s",
         )
         input_n_days = 0.25  # length of input profile in days
-        input_n_steps = input_n_days * 24 * (3600 / input_timestep_seconds)
+        input_n_steps = 6 * 3600 / input_timestep_seconds
         np.testing.assert_array_equal(
             len(input_data),
             input_n_steps,
         )
 
-        for day_steps in (2 / 24, 0.25 / 24):  # (2-hours and 15-minutes time steps)
+        parsed_input_data = pd.read_csv(
+            input_csv_path,
+            parse_dates=["DateTime"],
+            dayfirst=True,
+        )
+
+        column_to_variable_map = {
+            "demand": "f6d5923d-ba9a-409d-80a0-26f73b2a574b.target_heat_demand",
+            "elec": "elec.price_profile",
+        }
+
+        for day_steps in [2 / 24, 0.25 / 24]:  # (2-hours and 15-minutes time steps)
             problem = SourcePipeSinkDayAveraged(
                 esdl_parser=ESDLFileParser,
                 base_folder=base_folder,
@@ -103,13 +114,7 @@ class TestProfileUpdating(unittest.TestCase):
                 len(datetimes),
                 expected_n_output_intervals + 1,  # +1 for closing sentinel
             )
-            dts = [datetimes[i + 1] - datetimes[i] for i in range(len(datetimes) - 1)]
             expected_step_seconds = day_steps * 24 * 3600
-            actual_step_seconds = np.array([dt.total_seconds() for dt in dts])
-            np.testing.assert_array_equal(
-                expected_step_seconds,
-                actual_step_seconds,
-            )
             np.testing.assert_array_equal(
                 expected_step_seconds,
                 np.diff(problem.times()),
@@ -117,31 +122,12 @@ class TestProfileUpdating(unittest.TestCase):
 
             # Compare parser output against manual averaging over day_steps windows.
             window_size = int(expected_step_seconds / input_timestep_seconds)
-            parsed_input_data = pd.read_csv(
-                input_csv_path,
-                parse_dates=["DateTime"],
-                dayfirst=True,
-            )
-
-            column_to_variable_map = {
-                "demand": "f6d5923d-ba9a-409d-80a0-26f73b2a574b.target_heat_demand",
-                "elec": "elec.price_profile",
-            }
 
             for asset, var_name in column_to_variable_map.items():
 
                 raw_profile = parsed_input_data[asset].to_numpy(dtype=float)
                 expected_profile = raw_profile.reshape(-1, window_size).mean(axis=1)
-
-                averaged_profile = np.asarray(problem.io.get_timeseries(var_name)[1], dtype=float)
-                if len(averaged_profile) == expected_n_output_intervals + 1:
-                    averaged_profile = averaged_profile[1:]
-
-                np.testing.assert_array_equal(
-                    len(averaged_profile),
-                    expected_n_output_intervals,
-                    err_msg=f"Unexpected averaged profile length for '{var_name}'",
-                )
+                averaged_profile = np.asarray(problem.io.get_timeseries(var_name)[1], dtype=float)[1:]
 
                 np.testing.assert_allclose(
                     averaged_profile,

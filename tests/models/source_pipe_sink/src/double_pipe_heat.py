@@ -83,11 +83,6 @@ class SourcePipeSinkDayAveraged(SourcePipeSink):
         super().__init__(*args, **kwargs)
         self.__day_steps = kwargs.get("_day_steps", 1)
 
-    def parameters(self, ensemble_member):
-        parameters = super().parameters(ensemble_member)
-        parameters["time_step_days"] = self.__day_steps
-        return parameters
-
     def read(self):
         super().read()
 

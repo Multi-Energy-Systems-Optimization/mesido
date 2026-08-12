@@ -181,8 +181,8 @@ def adapt_profile_to_averaged_timestep(problem: dict, problem_step_size_hours: f
     Adapt profile with uniform time steps (1 h or 15 min) to a common profile with average
     over a given stepsize (``problem_step_size_hours``) in hours.
 
-    Each output interval covers ``problem_step_size_hours * steps_per_hour`` input slots, where
-    ``steps_per_hour`` is 1 for hourly input and 4 for 15-minute input.  Profile values are
+    Each output interval covers ``problem_step_size_hours * org_steps_per_hour`` input slots, where
+    ``org_steps_per_hour`` is 1 for hourly input and 4 for 15-minute input.  Profile values are
     averaged over those input slots by ``set_data_with_averages``.
 
     Parameters
@@ -213,8 +213,8 @@ def adapt_profile_to_averaged_timestep(problem: dict, problem_step_size_hours: f
         f"Supported: 3600 s (1 h) or 900 s (15 min)."
     )
 
-    steps_per_hour = 3600 // timestep_spacing_seconds  # 1 for 1-h input, 4 for 15-min input
-    step_size_in_input_steps = int(problem_step_size_hours * steps_per_hour)
+    org_steps_per_hour = 3600 // timestep_spacing_seconds  # 1 for 1-h input, 4 for 15-min input
+    step_size_in_input_steps = int(problem_step_size_hours * org_steps_per_hour)
 
     for ensemble_member in range(problem.ensemble_size):
         parameters = problem.parameters(ensemble_member)
