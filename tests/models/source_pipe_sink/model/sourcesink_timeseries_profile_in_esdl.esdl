@@ -32,7 +32,7 @@
         <port xsi:type="esdl:InPort" id="b8849fb5-fe97-48d9-91a8-9abcbf365738" name="In" connectedTo="76679c8a-43ec-4f6d-81c4-9b43e21696cc" carrier="435a0034-fab0-4e7e-9a17-edf8de9a2b11">
           <profile xsi:type="esdl:DateTimeProfile" name="Heat_flow" profileType="INPUT" id="3e23dfb6-7bd4-41d9-94e9-3bb471d12d2e">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference" reference="fc5f8efb-6468-46da-953e-fee14d30c860"/>
-            <dataSource xsi:type="esdl:DataSource" id="ac30d6c0-6412-4a18-9099-d8e46b3508e1" name="Optimizer" description="This was created in the optimizer" type="MODEL"/>
+            <dataSource xsi:type="esdl:DataSource" id="ac30d6c0-6412-4a18-9099-d8e46b3508e1" name="InputProfile" description="This is an input profile" type="DATASET"/>
             <element xsi:type="esdl:ProfileElement" from="2018-12-31T23:00:00.000000+0000" value="339459.7438666666"/>
             <element xsi:type="esdl:ProfileElement" from="2019-01-05T23:00:00.000000+0000" value="339459.7438666666"/>
           </profile>

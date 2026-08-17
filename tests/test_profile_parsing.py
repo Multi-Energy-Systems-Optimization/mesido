@@ -10,7 +10,6 @@ import esdl
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ESDLProfileReader, ProfileReaderFromFile
-from mesido.util import run_esdl_mesido_optimization
 from mesido.workflows import EndScenarioSizingStaged
 from mesido.workflows.utils.adapt_profiles import (
     adapt_hourly_profile_averages_timestep_size,
@@ -342,6 +341,7 @@ class TestProfileLoading(unittest.TestCase):
             model_folder=model_folder,
             esdl_file_name="sourcesink_timeseries_profile_in_esdl.esdl",
             esdl_parser=ESDLFileParser,
+            profile_reader=ESDLProfileReader,
         )
 
         case.pre()
