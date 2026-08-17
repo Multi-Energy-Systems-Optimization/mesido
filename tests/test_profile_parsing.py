@@ -10,6 +10,7 @@ import esdl
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ESDLProfileReader, ProfileReaderFromFile
+from mesido.util import run_esdl_mesido_optimization
 from mesido.workflows import EndScenarioSizingStaged
 from mesido.workflows.utils.adapt_profiles import (
     adapt_hourly_profile_averages_timestep_size,
@@ -328,6 +329,22 @@ class TestProfileLoading(unittest.TestCase):
                 expected_values * 1e6,
                 atol=1e-2,
             )
+
+    def test_loading_profile_from_timeseries_in_esdl(self):
+        import models.source_pipe_sink.src.double_pipe_heat as double_pipe_heat
+        from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
+
+        base_folder = Path(double_pipe_heat.__file__).resolve().parent.parent
+        model_folder = base_folder / "model"
+
+        case = SourcePipeSink(
+            base_folder=base_folder,
+            model_folder=model_folder,
+            esdl_file_name="sourcesink_timeseries_profile_in_esdl.esdl",
+            esdl_parser=ESDLFileParser,
+        )
+
+        case.pre()
 
     def test_loading_profiles_ensemble_members(self):
         """
