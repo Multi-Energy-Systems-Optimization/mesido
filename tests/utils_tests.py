@@ -779,6 +779,7 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
     for asset in assets:
         esdl_asset = solution.esdl_assets[asset]
         costs_esdl_asset = esdl_asset.attributes["costInformation"]
+        aggregation_count = results[f"{asset}_aggregation_count"]
         if (
             asset in solution.energy_system_components.get("heat_pipe", [])
             and esdl_asset.attributes["state"] == esdl.AssetStateEnum.OPTIONAL
@@ -833,6 +834,10 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
                 parameters[f"{asset}.cp"] * parameters[f"{asset}.rho"] * parameters[f"{asset}.dT"]
             )
             investment_cost = investment_cost_info * heat_buffer_volume
+        elif asset in solution.energy_system_components.get("geothermal", []):
+            investment_cost = (
+                investment_cost_info * aggregation_count * esdl_asset.attributes["power"]
+            )
         else:
             investment_cost = investment_cost_info * results[f"{asset}__max_size"]
         total_investment_cost += investment_cost
@@ -851,6 +856,8 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
                     if costs_esdl_asset.installationCosts is not None
                     else 0.0
                 )
+            if asset in solution.energy_system_components.get("geothermal", []):
+                installation_cost *= aggregation_count
             np.testing.assert_allclose(installation_cost, results[f"{asset}__installation_cost"])
         total_installation_cost += installation_cost
 
@@ -941,6 +948,9 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
                     nominator_vector = results[f"{asset}.Power_consumed"]  # [W]
                 else:
                     nominator_vector = heat_source
+            elif asset in solution.energy_system_components.get("heat_pump", []):
+                nominator_vector = results[f"{asset}.Secondary_heat"]
+                denominator = esdl_asset.attributes["COP"]
             elif asset in solution.energy_system_components.get("airco", []):
                 nominator_vector = results[f"{asset}.Heat_airco"]
             elif asset in solution.energy_system_components.get("heat_demand", []):
