@@ -143,11 +143,11 @@ class ScenarioOutput:
 
                 if self.esdl_output_profiles_type == ESDLOutputProfilesType.POSTGRESQL:
                     try:
-                        self.database = database_connection_input["database"]
-                        if self.database is None or len(self.database) == 0:
+                        self.pg_timeseries_database = database_connection_input["database"]
+                        if self.pg_timeseries_database is None or len(self.pg_timeseries_database) == 0:
                             logger.error(
-                                "Current setting of database is an empty string and it should"
-                                " be the name of the target database when writing to PostgreSQL"
+                                "Current setting of database name is not set or an empty string."
+                                " It should be the name of the target database when writing to PostgreSQL."
                             )
                             sys.exit(1)
                     except KeyError:
@@ -1530,7 +1530,7 @@ class ScenarioOutput:
                                             == ESDLOutputProfilesType.POSTGRESQL
                                         ):
                                             db_type = esdl.DatabaseTypeEnum.POSTGRESQL
-                                            database_name = self.database
+                                            database_name = self.pg_timeseries_database
                                             schema = output_energy_system_id
                                         else:
                                             db_type = esdl.DatabaseTypeEnum.INFLUXDB
