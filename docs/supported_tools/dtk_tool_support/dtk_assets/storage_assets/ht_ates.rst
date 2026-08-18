@@ -1,6 +1,6 @@
 HT-ATES (high)
 --------------
-
+High-temperature aquifer thermal energy storage (HT-ATES) is used to model underground heat storage doublets.
 
 HT-ATES (high) Asset Attributes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -208,3 +208,12 @@ The Design Toolkit also provides access to predefined HT-ATES asset from
 `ESDL Energy Data Repository (EDR) <https://edr.hesi.energy/>`_
 
 * `ATES: HT-ATES <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FDistrict%20heating%20and%20cooling%20networks%2FHT-ATES.edd>`_
+
+Constraints
+^^^^^^^^^^^
+No assets specific constraints are defined for HT-ATES.
+
+Assumptions
+^^^^^^^^^^^
+* The temperature at the inport must be higher than the temperature at the outport (\:math:`\mathrm{T_{In} > T_{Out}}`).
+* The heat physics described for the storage and tank in :ref:`heat_physics_storage` and :ref:`heat_physics_storage_ates` sections applies to HT-ATES asset.

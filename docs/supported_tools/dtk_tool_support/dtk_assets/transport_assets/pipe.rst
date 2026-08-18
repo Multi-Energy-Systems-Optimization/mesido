@@ -1,5 +1,6 @@
 Pipe
 ----
+Pipes represent the hydraulic transport connection between two network nodes.
 
 Pipe Asset Attributes
 ^^^^^^^^^^^^^^^^^^^^^
@@ -168,3 +169,19 @@ Pipe: Steel-S3-DN-XXX:
 * `Pipe: Steel-S3-DN-400 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S3-DN-400.edd>`_
 * `Pipe: Steel-S3-DN-450 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S3-DN-450.edd>`_
 * `Pipe: Steel-S3-DN-500 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S3-DN-500.edd>`_
+
+Constraints
+^^^^^^^^^^^
+* PipeDiameterConstraint:
+    * The selected pipe diameter must correspond to one of the available
+      Logstor EDR pipe sizes for Steel-S1-DN-XXX pipe family.
+    * For ``state=ENABLED``, the specified DN is treated as fixed.
+    * For ``state=OPTIONAL``, the optimizer may choose a DN between DN150 and
+      the configured maximum DN.
+
+Assumptions
+^^^^^^^^^^^
+* Pipe length is lower-bounded at 25 m; shorter input lengths are treated as 25 m.
+* If a pipe pair set as related to the each other, pipe sizing is performed over only one of the pipe assets, and the other pipe is sized identically.
+* When a pipe duplicator is used to create the return pipes, both the supply and return pipes become automatically related pipes.
+* The heat physics described for the pipe in :ref:`heat_physics_pipe` section applies to the pipe asset.

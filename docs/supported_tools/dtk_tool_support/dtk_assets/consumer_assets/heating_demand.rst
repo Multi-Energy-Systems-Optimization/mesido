@@ -1,6 +1,6 @@
 HeatingDemand: Substation (WOS)
 -------------------------------
-
+This asset represents a heating demand substation that consumes heat from a hydraulic network according to an assigned profile.
 
 HeatingDemand: Substation (WOS) Asset Attributes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -134,3 +134,10 @@ The Design Toolkit also provides access to predefined substation asset from
 
 * `HeatingDemand: Substation (WOS) <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FDistrict%20heating%20and%20cooling%20networks%2FSubstation%20(WOS).edd>`_
 
+Demand Profiles
+^^^^^^^^^^^^^^^
+* Each of the heating demand assets must have a defined `heating demand profile <https://dhcn-design-toolkit-documentation.readthedocs.io/en/latest/2_common_tasks/define_collective_heating_demand_cluster.html#add-the-heating-demand-profile>`_. See the hyperlink for more details on how to define the heating demand profile.
+
+Assumptions
+^^^^^^^^^^^
+* The physics described for demand assets in the :ref:`heat_physics_demand` section applies to the heating demand asset.

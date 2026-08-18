@@ -1,9 +1,9 @@
 Air to Water Heat Pump
 ----------------------
+Air-to-water heat pump is used to transfer heat from a lower temperature air source to a higher temperature water sink (i.e. heat network) by converting electrical energy into heat.
 
 Air-to-Water Heat Pump Asset Attributes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 
 .. list-table:: Asset Attributes
    :widths: 35 25 60 25 25 35 70
@@ -139,3 +139,12 @@ The Design Toolkit also provides access to predefined air-to-water heat pump ass
 
 * `HeatPump: A-W heatpump T50 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FDistrict%20heating%20and%20cooling%20networks%2FA-W%20heatpump%20T50.edd>`_
 * `HeatPump: A-W heatpump T70 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FDistrict%20heating%20and%20cooling%20networks%2FA-W%20heatpump%20T70.edd>`_
+
+Constraints
+^^^^^^^^^^^
+No assets specific constraints are defined for the air-to-water-heatpump.
+
+Assumptions
+^^^^^^^^^^
+* The air-to-water-heatpump operates with a Coefficient of Performance (COP) that is constant over time. COP is equal to the ratio of the secondary heat output to electrical power input.
+* The secondary side of the heat pump must be connected to a hydraulic network with a higher supply temperature. It behaves as a source asset, and the physics described for source assets in the :ref:`heat_physics_source` section applies to the secondary side of the heat pump.

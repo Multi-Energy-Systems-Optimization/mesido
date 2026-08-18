@@ -1,5 +1,6 @@
 Geothermal Source
 -----------------
+Geothermal source is used to model geothermal doublets. It is used to transfer heat to heat network.
 
 Geothermal Source Asset Attributes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -254,3 +255,15 @@ The Design Toolkit also provides access to predefined geothermal source assets f
 * `GeothermalSource: Geothermal source T80-D3000 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FDistrict%20heating%20and%20cooling%20networks%2FGeothermal%20source%20T80-D3000.edd>`_
 
 
+Constraints
+^^^^^^^^^^^
+* Profile constraints:
+    * Profile constraints includes a profile that defines the maximum heat production over time. The profile is defined as a time series of values that represent the maximum heat production at each time step.
+    * If a profile constraint is defined while State attribute of geothermal source is set to "Optional", the optimizer will scale the profile given in the profile constraint with Power attribute value so that the heat power produced by single doublet of the asset does not exceed the scaled profile at any given time step.
+    * If a profile constraint is defined while State attribute of geothermal source is set as "Enabled", the optimizer will ensure that the resulting heat power produced by single doublet of the asset does not exceed the profile defined in the profile constraint at any given time step.
+* Range constraints:
+    * UPCOMING: Range constraints are not yet implemented for the geothermal source asset.
+
+Assumptions
+^^^^^^^^^^
+* The physics described for source assets in the :ref:`heat_physics_source` section applies to the geothermal source.

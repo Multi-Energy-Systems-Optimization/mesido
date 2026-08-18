@@ -1,6 +1,6 @@
 Heat Storage: Surface Tank Storage
 ----------------------------------
-
+A surface tank heat storage asset stores thermal energy as hot water for later discharge into the heat network.
 
 Surface Tank Storage Asset Attributes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -126,3 +126,14 @@ The Design Toolkit also provides access to predefined surface tank storage asset
 `ESDL Energy Data Repository (EDR) <https://edr.hesi.energy/>`_
 
 * `HeatStorage: Surface tank storage <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FDistrict%20heating%20and%20cooling%20networks%2FSurface%20tank%20storage.edd>`_
+
+Constraints
+^^^^^^^^^^^
+No assets specific constraints are defined for the surface tank storage asset.
+
+Assumptions
+^^^^^^^^^^^
+* The temperature at the inport must be higher than the temperature at the outport (\:math:`\mathrm{T_{In} > T_{Out}}`).
+* If both capacity and volume are specified, the volume definition takes precedence.
+* If the maximum charge or discharge rate is not specified, the optimizer uses a default of \:math:`10e6\,\mathrm{W}`.
+* The heat physics described for the storage and tank in :ref:`heat_physics_storage` and :ref:`heat_physics_storage_tank` sections applies to the surface tank storage asset.

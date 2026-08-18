@@ -1,5 +1,6 @@
 Electric Boiler
 ---------------
+Electric boiler is used to transfer heat to heat network by converting electric power into thermal power.
 
 Electric Boiler Asset Attributes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -137,3 +138,11 @@ The Design Toolkit also provides access to predefined electric boiler assets fro
 
 * `ElectricBoiler: Electric boiler <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FDistrict%20heating%20and%20cooling%20networks%2FElectric%20boiler.edd>`_
 
+Constraints
+^^^^^^^^^^^
+No assets specific constraints are defined for the electric boiler.
+
+Assumtions
+^^^^^^^^^^
+* The electric boiler operates with an efficiency that is constant over time. Efficiency is equal to the ratio of thermal power output to electric power input.
+* It behaves as a source asset, and the physics described for source assets in the :ref:`heat_physics_source` section applies to the electric boiler.

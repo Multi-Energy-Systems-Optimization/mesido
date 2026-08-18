@@ -1,5 +1,6 @@
 Heat Producer
 -------------
+Heat producer is a generic heat source asset. It is used to transfer heat to heat network.
 
 Heat Producer Asset Attributes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -124,5 +125,17 @@ Heat Producer from EDR Assets
 The Design Toolkit also provides access to predefined residual heat source assets from
 `ESDL Energy Data Repository (EDR) <https://edr.hesi.energy/>`_
 
-
 * `HeatProducer: Heat producer <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FDistrict%20heating%20and%20cooling%20networks%2FHeat%20producer.edd>`_
+
+Constraints
+^^^^^^^^^^^
+* Profile constraints:
+    * Profile constraints includes a profile that defines the maximum heat production over time. The profile is defined as a time series of values that represent the maximum heat production at each time step.
+    * If a profile constraint is defined while State attribute of heat producer is set to "Optional", the optimizer will scale the profile given in the profile constraint with Power attribute value so that the resulting heat production does not exceed the scaled profile at any given time step.
+    * If a profile constraint is defined while State attribute of heat producer is set as "Enabled", the optimizer will ensure that the heat production does not exceed the profile that is defined in the profile constraint at any given time steps.
+* Range constraints:
+    * UPCOMING: Range constraints are not yet implemented for heat producer asset.
+
+Assumptions
+^^^^^^^^^^
+* The physics described for source assets in the :ref:`heat_physics_source` section applies to the heat producer.

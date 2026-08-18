@@ -134,7 +134,7 @@ Draw a polygon area that reflects the demand area.
 
 * Place a heating demand in the polygon.
 * Right-click on the area and click ``Edit``.
-* Rename it to ``Upper``.
+* Rename it to "Upper".
 * Refresh the browser.
 * Hover over the area to check the name.
 

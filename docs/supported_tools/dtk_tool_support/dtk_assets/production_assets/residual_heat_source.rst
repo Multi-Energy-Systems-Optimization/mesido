@@ -1,5 +1,6 @@
 Residual Heat Source: Industrial Waste Heat
 -------------------------------------------
+Residual heat source is used to model residual heat production assets such as data centers or industry. It is used to transfer heat to heat network.
 
 Residual Heat Source Asset Attributes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -127,3 +128,16 @@ The Design Toolkit also provides access to predefined residual heat source asset
 * `ResidualHeatSource: Residual heat source T>80 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FDistrict%20heating%20and%20cooling%20networks%2FResidual%20heat%20source%20T%3E80.edd>`_
 * `ResidualHeatSource: Residual heat source T~45 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FDistrict%20heating%20and%20cooling%20networks%2FResidual%20heat%20source%20T~45.edd>`_
 * `ResidualHeatSource: Residual heat source T~25 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FDistrict%20heating%20and%20cooling%20networks%2FResidual%20heat%20source%20T~25.edd>`_
+
+Constraints
+^^^^^^^^^^^
+* Profile constraints:
+    * Profile constraints includes a profile that defines the maximum heat production over time. The profile is defined as a time series of values that represent the maximum heat production at each time step.
+    * If a profile constraint is defined while State attribute of residual heat source is set to "Optional", the optimizer will scale the profile given in the profile constraint with Power attribute value so that the resulting heat power produced by the asset does not exceed the scaled profile at any given time step.
+    * If a profile constraint is defined while State attribute of residual heat source is set as "Enabled", the optimizer will ensure that the resulting heat power produced by the asset does not exceed the profile defined in the profile constraint at any given time step.
+* Range constraints:
+    * UPCOMING: Range constraints are not yet implemented for residual heat source asset.
+
+Assumptions
+^^^^^^^^^^
+* The physics described for source assets in the :ref:`heat_physics_source` section applies to the residual heat source.
