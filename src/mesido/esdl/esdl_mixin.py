@@ -488,7 +488,7 @@ class ESDLMixin(
                     pipe_measures_per_group = {}
                     for measure_group_id, measure_group in self._esdl_measure_group_info.items():
                         pipe_classes_groups[measure_group_id] = {
-                            "measure_group_name": measure_group [                             "name"],
+                            "measure_group_name": measure_group["name"],
                             "pipe_classes": pipe_classes.copy(),  # prevents pointing to same object
                         }
 
@@ -560,11 +560,7 @@ class ESDLMixin(
                         )
 
                         if related_pipe_measure and asset.attributes["state"].name == "OPTIONAL":
-                            asset_referenced_id = (
-                                related_pipe_measure
-                                .measure[0]
-                                .reference.id
-                            )
+                            asset_referenced_id = related_pipe_measure.measure[0].reference.id
                         else:
                             continue
 

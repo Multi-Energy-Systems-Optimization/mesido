@@ -513,7 +513,7 @@ class TestEndScenarioSizing(TestCase):
         for pipe_id in solution.energy_system_components.get("heat_pipe"):
             available_pipe_classes = solution.pipe_classes(pipe_id)
             pipe_name = solution.esdl_asset_id_to_name_map[pipe_id]
-    
+
             if pipe_name in pipes_to_check:
                 np.testing.assert_equal(available_pipe_classes[0].name == "DN40", True)
                 np.testing.assert_equal(parameters[f"{pipe_id}.diameter"], 0.0431)
