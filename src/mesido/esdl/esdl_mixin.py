@@ -29,6 +29,7 @@ from mesido.qth_not_maintained.qth_mixin import QTHMixin
 
 import numpy as np
 
+from pyecore.ecore import EEnumLiteral
 from pyecore.valuecontainer import EOrderedSet
 
 import rtctools.data.pi as pi
@@ -84,7 +85,7 @@ class ESDLMixin(
     __esdl_ranged_constraint_usage: bool = False
 
     # TODO: remove this once ESDL allows specifying a minimum pipe size for an optional pipe.
-    __minimum_pipe_size_name: str = "DN150"
+    __minimum_pipe_size_name: EEnumLiteral = esdl.PipeDiameterEnum.DN150
     __use_user_defined_minimum_pipe_size: bool = False
 
     def __init__(self, *args, **kwargs) -> None:
@@ -280,7 +281,7 @@ class ESDLMixin(
         Find the index of the first pipe in the ordered pipes that meets the specified size
         """
         for ii, p in enumerate(pipes):
-            if float(p.name.replace("DN", "")) >= target_dn:
+            if p.dn_size >= target_dn:
                 return ii
         return None
 
@@ -384,21 +385,21 @@ class ESDLMixin(
             if self._ESDLMixin__use_user_defined_minimum_pipe_size:
                 user_defined_lower_limit_dn_mm = 40.0
                 pipe_dn_max_vs_min_ratio = 10.0  # Relates to area ratio of 100.0
-                max_size_dn_mm = float(pipe_classes[max_size_idx].name.replace("DN", ""))
+                max_size_dn_mm = pipe_classes[max_size_idx].dn_size
                 min_dn_by_factor_mm = max_size_dn_mm / pipe_dn_max_vs_min_ratio
                 min_dn_mm = max(min_dn_by_factor_mm, user_defined_lower_limit_dn_mm)
                 min_size_idx = self.find_index_of_pipe_or_next_up(pipe_classes, min_dn_mm)
             else:  # use default minimum pipe DN size
                 min_size_idx = self.find_index_of_pipe_or_next_up(
-                    pipe_classes, float(self.__minimum_pipe_size_name.replace("DN", ""))
+                    pipe_classes, float(self.__minimum_pipe_size_name.name[2:])
                 )
             assert min_size_idx is not None
 
             if max_size_idx < min_size_idx:
                 logger.warning(
                     f"{p} has an upper DN size smaller than the used minimum size "
-                    f"of {self.__minimum_pipe_size_name}, choose at least "
-                    f"{self.__minimum_pipe_size_name}"
+                    f"of {self.__minimum_pipe_size_name.name}, choose at least "
+                    f"{self.__minimum_pipe_size_name.name}"
                 )
             elif min_size_idx == max_size_idx:
                 c.append(pipe_classes[min_size_idx])
@@ -416,7 +417,7 @@ class ESDLMixin(
         dn20_exists = False
 
         for pipe_class in pipe_classes:
-            if not dn20_exists and float(pipe_class.name.replace("DN", "")) == 20.0:
+            if not dn20_exists and pipe_class.diameter_enum == esdl.PipeDiameterEnum.DN20:
                 dn20_exists = True
 
         self._ESDLMixin__use_user_defined_minimum_pipe_size = not dn20_exists
@@ -463,8 +464,8 @@ class ESDLMixin(
 
         no_pipe_class = PipeClass("None", 0.0, 0.0, (0.0, 0.0), 0.0)
         pipe_classes = [
-            EDRPipeClass.from_edr_class(name, edr_class_name, maximum_velocity)
-            for name, edr_class_name in _AssetToComponentBase.STEEL_S1_PIPE_EDR_ASSETS.items()
+            EDRPipeClass.from_edr_class(diameter_enum, edr_class_name, maximum_velocity)
+            for diameter_enum, edr_class_name in _AssetToComponentBase.STEEL_S1_PIPE_EDR_ASSETS.items()
         ]
 
         override_classes = self._override_pipe_classes
@@ -626,8 +627,8 @@ class ESDLMixin(
 
         no_pipe_class = GasPipeClass("None", 0.0, 0.0, 0.0)
         pipe_classes = [
-            EDRGasPipeClass.from_edr_class(name, edr_class_name, maximum_velocity)
-            for name, edr_class_name in _AssetToComponentBase.STEEL_S1_PIPE_EDR_ASSETS.items()
+            EDRGasPipeClass.from_edr_class(diameter_enum, edr_class_name, maximum_velocity)
+            for diameter_enum, edr_class_name in _AssetToComponentBase.STEEL_S1_PIPE_EDR_ASSETS.items()
         ]
 
         # We assert the pipe classes are monotonically increasing in size
