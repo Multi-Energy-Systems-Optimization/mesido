@@ -216,7 +216,6 @@ def heat_to_discharge_test(solution, results, atol=1e-2, rtol=1.0e-4):
         if temp_profile is not None:
             supply_t = temp_profile.values
             supply_temp_profiles.append(temp_profile.values)
-        # print(d, max(abs(results[f"{d}.HeatOut.Heat"] - results[f"{d}.Q"] * rho * cp * supply_t)))
 
         np.testing.assert_allclose(
             results[f"{d}.HeatOut.Heat"],
@@ -787,7 +786,9 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
             pass
         elif costs_esdl_asset is None:
             if asset in assets_may_have_electricity_price_profile:
-                pass  # Assets include e-price in var-opex, but no esdl cost attributes are defined
+                # No ESDL costInformation is defined, but for these assets variable OPEX
+                # may still be added via the electricity price profile
+                pass
             elif asset not in assets_may_have_electricity_price_profile:
                 continue
 
