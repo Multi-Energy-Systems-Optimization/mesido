@@ -493,10 +493,7 @@ class ESDLMixin(
                         }
 
                         pipe_measures_per_group[measure_group_id] = [
-                            pipe_measures[id]
-                            for id in measure_group[
-                                "containt_measure_ids"
-                            ]
+                            pipe_measures[id] for id in measure_group["containt_measure_ids"]
                         ]
 
                     pipe_diameter_cost_map = {}
