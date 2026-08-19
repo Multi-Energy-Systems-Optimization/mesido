@@ -1118,6 +1118,7 @@ class HeatPhysicsMixin(
         """
         constraints = []
         options = self.energy_system_options()
+        bounds = self.bounds()
 
         for p in self.energy_system_components.get("heat_pipe", []):
             heat_in = self.state(f"{p}.HeatIn.Heat")
@@ -1127,8 +1128,8 @@ class HeatPhysicsMixin(
             big_m = 2.0 * np.max(
                 np.abs(
                     (
-                        *self.bounds()[f"{p}.HeatIn.Heat"],
-                        *self.bounds()[f"{p}.HeatOut.Heat"],
+                        *bounds[f"{p}.HeatIn.Heat"],
+                        *bounds[f"{p}.HeatOut.Heat"],
                     )
                 )
             )
@@ -1208,6 +1209,7 @@ class HeatPhysicsMixin(
         constraints = []
         parameters = self.parameters(ensemble_member)
         hn_settings = self.heat_network_settings
+        bounds = self.bounds()
 
         minimum_velocity = hn_settings["minimum_velocity"]
         maximum_velocity = hn_settings["maximum_velocity"]
@@ -1298,8 +1300,8 @@ class HeatPhysicsMixin(
             big_m = np.max(
                 np.abs(
                     (
-                        *self.bounds()[f"{p}.HeatIn.Heat"],
-                        *self.bounds()[f"{p}.HeatOut.Heat"],
+                        *bounds[f"{p}.HeatIn.Heat"],
+                        *bounds[f"{p}.HeatOut.Heat"],
                     )
                 )
             )
@@ -1320,8 +1322,8 @@ class HeatPhysicsMixin(
                 big_m = 2.0 * np.max(
                     np.abs(
                         (
-                            *self.bounds()[f"{p}.HeatIn.Heat"],
-                            *self.bounds()[f"{p}.HeatOut.Heat"],
+                            *bounds[f"{p}.HeatIn.Heat"],
+                            *bounds[f"{p}.HeatOut.Heat"],
                         )
                     )
                 )
@@ -1369,6 +1371,7 @@ class HeatPhysicsMixin(
         constraints = []
         parameters = self.parameters(ensemble_member)
         string_parameters = self.string_parameters(ensemble_member)
+        bounds = self.bounds()
 
         for d in [
             *self.energy_system_components.get("heat_demand", []),
@@ -1382,7 +1385,7 @@ class HeatPhysicsMixin(
 
             ret_carrier = string_parameters[f"{d}.T_return_id"]
             return_temperatures = self.temperature_regimes(ret_carrier)
-            big_m = 2.0 * self.bounds()[f"{d}.HeatOut.Heat"][1]
+            big_m = 2.0 * bounds[f"{d}.HeatOut.Heat"][1]
 
             if len(return_temperatures) == 0:
                 constraints.append(
@@ -1418,6 +1421,7 @@ class HeatPhysicsMixin(
         constraints = []
         parameters = self.parameters(ensemble_member)
         string_parameters = self.string_parameters(ensemble_member)
+        bounds = self.bounds()
 
         for s in self.energy_system_components.get("heat_source", []):
             heat_nominal = parameters[f"{s}.Heat_nominal"]
@@ -1434,11 +1438,11 @@ class HeatPhysicsMixin(
             sup_carrier = string_parameters[f"{s}.T_supply_id"]
             supply_temperatures = self.temperature_regimes(sup_carrier)
 
-            big_m = 2.0 * self.bounds()[f"{s}.HeatOut.Heat"][1]
+            big_m = 2.0 * bounds[f"{s}.HeatOut.Heat"][1]
             big_m = (
                 big_m
                 if big_m != np.inf
-                else 2.0 * self.bounds()[f"{s}.Heat_source"][1] * parameters[f"{s}.T_supply"] / dt
+                else 2.0 * bounds[f"{s}.Heat_source"][1] * parameters[f"{s}.T_supply"] / dt
             )
 
             # Check to see if the out carrier has a temperature profile assigned to it.
@@ -1486,6 +1490,7 @@ class HeatPhysicsMixin(
 
         constraints = []
         parameters = self.parameters(ensemble_member)
+        bounds = self.bounds()
 
         for s in self.energy_system_components.get("heat_source", []):
             heat_nominal = parameters[f"{s}.Heat_nominal"]
@@ -1493,11 +1498,11 @@ class HeatPhysicsMixin(
             rho = parameters[f"{s}.rho"]
             dt = parameters[f"{s}.dT"]
 
-            big_m = 2.0 * self.bounds()[f"{s}.HeatOut.Heat"][1]
+            big_m = 2.0 * bounds[f"{s}.HeatOut.Heat"][1]
             big_m = (
                 big_m
                 if big_m != np.inf
-                else 2.0 * self.bounds()[f"{s}.Heat_source"][1] * parameters[f"{s}.T_supply"] / dt
+                else 2.0 * bounds[f"{s}.Heat_source"][1] * parameters[f"{s}.T_supply"] / dt
             )
 
             temp_out_profile, sup_carrier_name, temp_out_prof_start_idx, temp_out_prof_end_idx = (
@@ -1546,6 +1551,7 @@ class HeatPhysicsMixin(
         constraints = []
         parameters = self.parameters(ensemble_member)
         string_parameters = self.string_parameters(ensemble_member)
+        bounds = self.bounds()
 
         for d in self.energy_system_components.get("cold_demand", []):
             heat_nominal = parameters[f"{d}.Heat_nominal"]
@@ -1556,7 +1562,7 @@ class HeatPhysicsMixin(
 
             sup_carrier = string_parameters[f"{d}.T_supply_id"]
             supply_temperatures = self.temperature_regimes(sup_carrier)
-            big_m = 2.0 * self.bounds()[f"{d}.HeatOut.Heat"][1]
+            big_m = 2.0 * bounds[f"{d}.HeatOut.Heat"][1]
 
             if len(supply_temperatures) == 0:
                 constraints.append(
@@ -1647,6 +1653,7 @@ class HeatPhysicsMixin(
         constraints = []
         parameters = self.parameters(ensemble_member)
         string_parameters = self.string_parameters(ensemble_member)
+        bounds = self.bounds()
 
         sum_heat_losses = 0.0
 
@@ -1674,7 +1681,7 @@ class HeatPhysicsMixin(
             # a single source system is concerned. Use a factor of 2 to give
             # some slack.
             big_m = 2.0 * np.max(
-                np.abs((*self.bounds()[f"{p}.HeatIn.Heat"], *self.bounds()[f"{p}.HeatOut.Heat"]))
+                np.abs((*bounds[f"{p}.HeatIn.Heat"], *bounds[f"{p}.HeatOut.Heat"]))
             )
 
             carrier = string_parameters[f"{p}.carrier_id"]
@@ -2310,7 +2317,7 @@ class HeatPhysicsMixin(
             # heat_flow = self.state(f"{b}.Heat_flow")
 
             big_m = 2.0 * np.max(
-                np.abs((*self.bounds()[f"{b}.HeatIn.Heat"], *self.bounds()[f"{b}.HeatOut.Heat"]))
+                np.abs((*bounds[f"{b}.HeatIn.Heat"], *bounds[f"{b}.HeatOut.Heat"]))
             )
 
             # We want an _equality_ constraint between discharge and heat if the buffer is
@@ -2382,7 +2389,6 @@ class HeatPhysicsMixin(
                     )
                 )
             else:
-                bounds = self.bounds()
                 max_discharge = bounds[f"{b}.Q"][1]
                 constraint_nominal = (
                     heat_nominal * cp * rho * max(supply_temperatures) * q_nominal
@@ -2490,6 +2496,7 @@ class HeatPhysicsMixin(
         variable.
         """
         constraints = []
+        bounds = self.bounds()
 
         for carrier_id in self.temperature_carriers().keys():
             sum = 0.0
@@ -2498,7 +2505,7 @@ class HeatPhysicsMixin(
                 temp_selected = self.state(f"{carrier_id}_{temperature}")
                 sum += temp_selected
                 temperature_var = self.state(f"{carrier_id}_temperature")
-                big_m = 2.0 * self.bounds()[f"{carrier_id}_temperature"][1]
+                big_m = 2.0 * bounds[f"{carrier_id}_temperature"][1]
                 # Constraints for setting the temperature variable to the chosen temperature
                 constraints.extend(
                     self._symmetric_big_m_constraints(
@@ -2535,6 +2542,7 @@ class HeatPhysicsMixin(
         constraints = []
         parameters = self.parameters(ensemble_member)
         string_parameters = self.string_parameters(ensemble_member)
+        bounds = self.bounds()
 
         hn_settings = self.heat_network_settings
 
@@ -2573,7 +2581,7 @@ class HeatPhysicsMixin(
             supply_temperatures_prim = self.temperature_regimes(sup_carrier_prim)
             return_temperatures_prim = self.temperature_regimes(ret_carrier_prim)
 
-            big_m = 2.0 * self.bounds()[f"{heat_exchanger}.Primary.HeatOut.Heat"][1]
+            big_m = 2.0 * bounds[f"{heat_exchanger}.Primary.HeatOut.Heat"][1]
 
             def __constraints_temperature_heat_to_discharge_bypass(
                 heat_out, expr, sum_temp_selec, big_m: float, constraint_nominal: float
@@ -2796,9 +2804,9 @@ class HeatPhysicsMixin(
 
             supply_temperatures_sec = self.temperature_regimes(sup_carrier_sec)
             return_temperatures_sec = self.temperature_regimes(ret_carrier_sec)
-            big_m = 2.0 * self.bounds()[f"{heat_exchanger}.Secondary.HeatOut.Heat"][1]
+            big_m = 2.0 * bounds[f"{heat_exchanger}.Secondary.HeatOut.Heat"][1]
             constraint_nominal = (
-                cp_sec * rho_sec * dt_sec * self.bounds()[f"{heat_exchanger}.Secondary.HeatIn.Q"][1]
+                cp_sec * rho_sec * dt_sec * bounds[f"{heat_exchanger}.Secondary.HeatIn.Q"][1]
             )
 
             if len(supply_temperatures_sec) == 0:
@@ -3293,6 +3301,7 @@ class HeatPhysicsMixin(
 
         parameters = self.parameters(ensemble_member)
         string_parameters = self.string_parameters(ensemble_member)
+        bounds = self.bounds()
 
         for hp in [
             *self.energy_system_components.get("heat_pump", []),
@@ -3320,7 +3329,7 @@ class HeatPhysicsMixin(
                 cop = parameters[f"{hp}.COP"]
                 constraints.append(((sec_heat - cop * elec) / nominal, 0.0, 0.0))
             else:
-                big_m = 2.0 * self.bounds()[f"{hp}.Secondary_heat"][1]
+                big_m = 2.0 * bounds[f"{hp}.Secondary_heat"][1]
                 for sec_sup_temp in (
                     sec_sup_temps
                     if len(sec_sup_temps) > 0
@@ -3449,6 +3458,7 @@ class HeatPhysicsMixin(
 
         parameters = self.parameters(ensemble_member)
         options = self.energy_system_options()
+        bounds = self.bounds()
 
         for b, (
             (hot_pipe, hot_pipe_orientation),
@@ -3466,13 +3476,7 @@ class HeatPhysicsMixin(
                 if options["heat_storage_charging_variables"]:
                     is_buffer_charging = self.variable(f"{b}.__is_charging")
 
-            big_m = (
-                2.0
-                * self.bounds()[f"{b}.HeatIn.Q"][1]
-                * self.__maximum_total_head_loss
-                * 10.2
-                * 1.0e3
-            )
+            big_m = 2.0 * bounds[f"{b}.HeatIn.Q"][1] * self.__maximum_total_head_loss * 10.2 * 1.0e3
             if self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
 
                 # During charging we want a minimum pressure drop like a demand
@@ -3519,6 +3523,7 @@ class HeatPhysicsMixin(
 
         parameters = self.parameters(ensemble_member)
         hn_settings = self.heat_network_settings
+        bounds = self.bounds()
 
         for asset in {
             *self.energy_system_components.get("heat_demand", []),
@@ -3539,11 +3544,7 @@ class HeatPhysicsMixin(
             hp_out = self.state(f"{asset}.HeatOut.Hydraulic_power")
 
             big_m = (
-                2.0
-                * self.bounds()[f"{asset}.HeatIn.Q"][1]
-                * self.__maximum_total_head_loss
-                * 10.2
-                * 1.0e3
+                2.0 * bounds[f"{asset}.HeatIn.Q"][1] * self.__maximum_total_head_loss * 10.2 * 1.0e3
             )
             if hn_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
                 constraints.append(
