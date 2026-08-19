@@ -497,7 +497,7 @@ class ESDLMixin(
 
                         pipe_measures_per_group[measure_group_id] = [
                             pipe_measures[id]
-                            for id in self._esdl_measure_group_info[measure_group_id][
+                            for id in measure_group[
                                 "containt_measure_ids"
                             ]
                         ]
