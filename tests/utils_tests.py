@@ -643,10 +643,6 @@ def _get_esdl_scaled_cost(cost_esdl_info: object | None) -> float:
     """
     Scale an ESDL-defined cost to the appropriate unit basis.
 
-    This function converts a cost value defined in ESDL to a unit-consistent
-    value by accounting for the `perUnit` and `perMultiplier` specified in
-    the ESDL.
-
     Parameters
     ----------
     cost_esdl_info : ESDL cost object containing the cost information.
@@ -656,27 +652,24 @@ def _get_esdl_scaled_cost(cost_esdl_info: object | None) -> float:
     Cost value scaled to the requested unit basis.
 
     """
+    if cost_esdl_info is None:
+        return 0.0
 
-    costs_esdl = cost_esdl_info.value if cost_esdl_info is not None else 0.0
-    per_unit = (
-        cost_esdl_info.profileQuantityAndUnit.perUnit
-        if cost_esdl_info is not None
-        else esdl.UnitEnum.NONE
-    )
-    if per_unit is not esdl.UnitEnum.NONE:
-        per_multiplier = cost_esdl_info.profileQuantityAndUnit.perMultiplier
-        if esdl.MultiplierEnum.KILO == per_multiplier:
-            per_scaler = 1.0e3
-        elif esdl.MultiplierEnum.MEGA == per_multiplier:
-            per_scaler = 1.0e6
-        elif esdl.MultiplierEnum.NONE == per_multiplier:
-            per_scaler = 1.0
-        else:
-            raise RuntimeWarning(f"{per_multiplier} is not supported as unit per multiplier.")
-    else:
-        per_scaler = 1.0
-    cost_scaled = costs_esdl / per_scaler
-    return cost_scaled
+    per_unit = cost_esdl_info.profileQuantityAndUnit.perUnit
+    if per_unit is esdl.UnitEnum.NONE:
+        return cost_esdl_info.value
+
+    multiplier_scalers = {
+        esdl.MultiplierEnum.KILO: 1.0e3,
+        esdl.MultiplierEnum.MEGA: 1.0e6,
+        esdl.MultiplierEnum.NONE: 1.0,
+    }
+
+    per_multiplier = cost_esdl_info.profileQuantityAndUnit.perMultiplier
+    if per_multiplier not in multiplier_scalers:
+        raise RuntimeWarning(f"{per_multiplier} is not supported as unit per multiplier.")
+
+    return cost_esdl_info.value / multiplier_scalers[per_multiplier]
 
 
 def _find_pipe_cost_in_edr(edr_pipes: dict, inner_diameter: float) -> float:
