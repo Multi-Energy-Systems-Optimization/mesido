@@ -1106,6 +1106,7 @@ class FinancialMixin(
         """
         constraints = []
         options = self.energy_system_options()
+        bounds = self.bounds()
         if options["include_asset_is_realized"] and not options["yearly_investments"]:
             for asset in [
                 asset_name
@@ -1130,8 +1131,8 @@ class FinancialMixin(
                 big_m = (
                     ASSET_IS_REALIZED_BIG_M_MARGIN
                     * max(
-                        self.bounds()[f"{asset}__investment_cost"][1]
-                        + self.bounds()[f"{asset}__installation_cost"][1],
+                        bounds[f"{asset}__investment_cost"][1]
+                        + bounds[f"{asset}__installation_cost"][1],
                         1.0,
                     )
                     / max(self.get_aggregation_count_max(asset), 1.0)
@@ -1160,10 +1161,10 @@ class FinancialMixin(
 
                 # Once the asset is utilized the asset must be realized
                 heat_flow = self.state(f"{asset}.Heat_flow")
-                if not np.isinf(self.bounds()[f"{asset}.Heat_flow"][1]):
+                if not np.isinf(bounds[f"{asset}.Heat_flow"][1]):
                     big_m = (
                         ASSET_IS_REALIZED_BIG_M_MARGIN
-                        * self.bounds()[f"{asset}.Heat_flow"][1]
+                        * bounds[f"{asset}.Heat_flow"][1]
                         / max(self.get_aggregation_count_max(asset), 1.0)
                     )
                 else:
@@ -1171,8 +1172,8 @@ class FinancialMixin(
                         big_m = (
                             ASSET_IS_REALIZED_BIG_M_MARGIN
                             * max(
-                                self.bounds()[f"{asset}.HeatOut.Heat"][1],
-                                self.bounds()[f"{asset}.HeatIn.Heat"][1],
+                                bounds[f"{asset}.HeatOut.Heat"][1],
+                                bounds[f"{asset}.HeatIn.Heat"][1],
                             )
                             / max(self.get_aggregation_count_max(asset), 1.0)
                         )
@@ -1180,8 +1181,8 @@ class FinancialMixin(
                         big_m = (
                             ASSET_IS_REALIZED_BIG_M_MARGIN
                             * max(
-                                self.bounds()[f"{asset}.Primary.HeatOut.Heat"][1],
-                                self.bounds()[f"{asset}.Primary.HeatIn.Heat"][1],
+                                bounds[f"{asset}.Primary.HeatOut.Heat"][1],
+                                bounds[f"{asset}.Primary.HeatIn.Heat"][1],
                             )
                             / max(self.get_aggregation_count_max(asset), 1.0)
                         )
@@ -1207,6 +1208,7 @@ class FinancialMixin(
         """
         constraints = []
         options = self.energy_system_options()
+        bounds = self.bounds()
         if options["include_asset_is_realized"] and options["yearly_investments"]:
             for asset in [
                 asset_name
@@ -1233,8 +1235,8 @@ class FinancialMixin(
                     big_m = (
                         ASSET_IS_REALIZED_BIG_M_MARGIN
                         * max(
-                            self.bounds()[f"{asset}__investment_cost"][1]
-                            + self.bounds()[f"{asset}__installation_cost"][1],
+                            bounds[f"{asset}__investment_cost"][1]
+                            + bounds[f"{asset}__installation_cost"][1],
                             1.0,
                         )
                         / max(self.get_aggregation_count_max(asset), 1.0)
@@ -1258,10 +1260,10 @@ class FinancialMixin(
 
                     # Once the asset is utilized the asset must be realized
                     heat_flow = self.states_in(f"{asset}.Heat_flow", time_start, time_end)[:-1]
-                    if not np.isinf(self.bounds()[f"{asset}.Heat_flow"][1]):
+                    if not np.isinf(bounds[f"{asset}.Heat_flow"][1]):
                         big_m = (
                             ASSET_IS_REALIZED_BIG_M_MARGIN
-                            * self.bounds()[f"{asset}.Heat_flow"][1]
+                            * bounds[f"{asset}.Heat_flow"][1]
                             / max(self.get_aggregation_count_max(asset), 1.0)
                         )
                     else:
@@ -1269,8 +1271,8 @@ class FinancialMixin(
                             big_m = (
                                 ASSET_IS_REALIZED_BIG_M_MARGIN
                                 * max(
-                                    self.bounds()[f"{asset}.HeatOut.Heat"][1],
-                                    self.bounds()[f"{asset}.HeatIn.Heat"][1],
+                                    bounds[f"{asset}.HeatOut.Heat"][1],
+                                    bounds[f"{asset}.HeatIn.Heat"][1],
                                 )
                                 / max(self.get_aggregation_count_max(asset), 1.0)
                             )
@@ -1278,8 +1280,8 @@ class FinancialMixin(
                             big_m = (
                                 ASSET_IS_REALIZED_BIG_M_MARGIN
                                 * max(
-                                    self.bounds()[f"{asset}.Primary.HeatOut.Heat"][1],
-                                    self.bounds()[f"{asset}.Primary.HeatIn.Heat"][1],
+                                    bounds[f"{asset}.Primary.HeatOut.Heat"][1],
+                                    bounds[f"{asset}.Primary.HeatIn.Heat"][1],
                                 )
                                 / max(self.get_aggregation_count_max(asset), 1.0)
                             )
