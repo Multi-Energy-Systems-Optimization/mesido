@@ -212,6 +212,11 @@ def adapt_profile_to_averaged_timestep(problem: dict, problem_step_size_hours: f
         f"Unsupported input timestep spacing: {timestep_spacing_seconds} s. "
         f"Supported: 3600 s (1 h) or 900 s (15 min)."
     )
+    if timestep_spacing_seconds == 3600:
+        assert problem_step_size_hours >= 1, (
+            f"Unsupported problem_step_size_hours: {problem_step_size_hours}. "
+            "For hourly input, the output step size must be at least 1 hour."
+        )
 
     org_steps_per_hour = 3600 // timestep_spacing_seconds  # 1 for 1-h input, 4 for 15-min input
     step_size_in_input_steps = int(problem_step_size_hours * org_steps_per_hour)
