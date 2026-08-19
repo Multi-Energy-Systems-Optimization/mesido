@@ -562,7 +562,6 @@ class ESDLMixin(
                             "measures"
                         )
 
-                        if related_pipe_measure and asset.attributes["state"].name == "OPTIONAL":
                             asset_referenced_id = (
                                 related_pipe_measure
                                 .measure[0]
