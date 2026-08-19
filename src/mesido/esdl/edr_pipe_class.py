@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 
-from pyecore.ecore import EEnumLiteral
-
 from mesido.esdl.asset_to_component_base import _AssetToComponentBase
 from mesido.pipe_class import GasPipeClass, PipeClass
+
+from pyecore.ecore import EEnumLiteral
 
 
 @dataclass(frozen=True)
@@ -60,7 +60,13 @@ class EDRPipeClass(PipeClass):
 
         # TODO: utilize max velocity from the edr data as well?
         return EDRPipeClass(
-            diameter_enum.name, inner_diameter, maximum_velocity, (u_1, u_2), investment_costs, diameter_enum, xml_string
+            diameter_enum.name,
+            inner_diameter,
+            maximum_velocity,
+            (u_1, u_2),
+            investment_costs,
+            diameter_enum,
+            xml_string,
         )
 
 
@@ -116,5 +122,10 @@ class EDRGasPipeClass(GasPipeClass):
 
         # TODO: utilize max velocity from the edr data as well?
         return EDRGasPipeClass(
-            diameter_enum.name, inner_diameter, maximum_velocity, investment_costs, diameter_enum, xml_string
+            diameter_enum.name,
+            inner_diameter,
+            maximum_velocity,
+            investment_costs,
+            diameter_enum,
+            xml_string,
         )

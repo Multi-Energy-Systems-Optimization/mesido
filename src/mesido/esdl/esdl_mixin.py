@@ -463,9 +463,10 @@ class ESDLMixin(
         maximum_velocity = self.heat_network_settings["maximum_velocity"]
 
         no_pipe_class = PipeClass("None", 0.0, 0.0, (0.0, 0.0), 0.0)
+        steel_s1_pipe_edr_assets = _AssetToComponentBase.STEEL_S1_PIPE_EDR_ASSETS.items()
         pipe_classes = [
             EDRPipeClass.from_edr_class(diameter_enum, edr_class_name, maximum_velocity)
-            for diameter_enum, edr_class_name in _AssetToComponentBase.STEEL_S1_PIPE_EDR_ASSETS.items()
+            for diameter_enum, edr_class_name in steel_s1_pipe_edr_assets
         ]
 
         override_classes = self._override_pipe_classes
@@ -626,9 +627,10 @@ class ESDLMixin(
         maximum_velocity = self.gas_network_settings["maximum_velocity"]
 
         no_pipe_class = GasPipeClass("None", 0.0, 0.0, 0.0)
+        steel_s1_pipe_edr_assets = _AssetToComponentBase.STEEL_S1_PIPE_EDR_ASSETS.items()
         pipe_classes = [
             EDRGasPipeClass.from_edr_class(diameter_enum, edr_class_name, maximum_velocity)
-            for diameter_enum, edr_class_name in _AssetToComponentBase.STEEL_S1_PIPE_EDR_ASSETS.items()
+            for diameter_enum, edr_class_name in steel_s1_pipe_edr_assets
         ]
 
         # We assert the pipe classes are monotonically increasing in size
