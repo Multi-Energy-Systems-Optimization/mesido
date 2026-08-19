@@ -261,6 +261,9 @@
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="6dbe093f-f6dd-49b4-9d5e-a2cd578611be" description="Cost in EUR/m" perUnit="METRE" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
         </costInformation>
+        <measures xsi:type="esdl:Measures" id="92fce8af-890b-402d-9811-44f53c47f120" name="NewMeasures">
+          <measure xsi:type="esdl:MeasureGroupReference" id="a3fc17b7-e107-4de3-8d74-cd7b997a86e8" name="NewMeasureGroupReference" reference="dfbe1fbc-dcee-4251-a76d-42c81b129cfb"/>
+        </measures>
       </asset>
       <asset xsi:type="esdl:Pipe" diameter="DN450" name="Pipe2_ret" length="195.4" id="Pipe2_ret" innerDiameter="0.4444" outerDiameter="0.63" related="Pipe2">
         <geometry xsi:type="esdl:Line">

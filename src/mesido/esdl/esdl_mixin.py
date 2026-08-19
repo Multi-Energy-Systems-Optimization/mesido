@@ -423,16 +423,13 @@ class ESDLMixin(
 
     def update_pipe_class_costs(self, pipe_classes: dict, pipe_diameter_cost_map: dict) -> None:
         """
-        In this method the all pipe classes in pipe_classes are updated with investments costs in
+        In this method all pipe classes in pipe_classes are updated with investments costs in
         pipe_diameter_cost_map if a cost exists. If no cost exists for a specific pipe class in
-        pipe_diameter_cost_map then the pipe class is removed from pipe_classes.
+        pipe_diameter_cost_map then the pipe class is removed from this group of pipe_classes.
         """
         updated_pipe_classes = []
 
         for i, pipe_class in enumerate(pipe_classes):
-
-            if pipe_class.name not in pipe_diameter_cost_map:
-                continue
 
             if pipe_class.name in pipe_diameter_cost_map.keys():
                 pipe_classes[i] = dataclasses.replace(
@@ -441,6 +438,8 @@ class ESDLMixin(
                 )
 
                 updated_pipe_classes.append(pipe_classes[i])
+            else:
+                pass
 
         pipe_classes[:] = updated_pipe_classes
 
@@ -567,8 +566,7 @@ class ESDLMixin(
 
                         if related_pipe_measure and asset.attributes["state"].name == "OPTIONAL":
                             asset_referenced_id = (
-                                self._esdl_assets[related_pipe_id]
-                                .attributes.get("measures")
+                                related_pipe_measure
                                 .measure[0]
                                 .reference.id
                             )
@@ -582,7 +580,6 @@ class ESDLMixin(
                             "measures"
                         )
                         if related_pipe_measures:
-                            asset_referenced_id = related_pipe_measures.measure[0].reference.id
                             logger.error(
                                 f"Both pipes named {asset.name} and"
                                 f" {self.esdl_asset_id_to_name_map[related_pipe_id]} have a"
