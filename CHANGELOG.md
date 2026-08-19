@@ -1,4 +1,4 @@
-# [Unreleased-main] - 2026-08-12
+# [Unreleased-main] - 2026-08-19
 
 ## Added
 - ESDL profile reading and writing for different types: influxdb and postgres, and inline (in ESDL file).
