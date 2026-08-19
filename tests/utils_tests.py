@@ -639,7 +639,7 @@ def gas_pipes_head_loss_test(solution, results, atol=1e-12):
                 )
 
 
-def _get_esdl_scaled_cost(cost_esdl_info, uni_enum):
+def _get_esdl_scaled_cost(cost_esdl_info: object | None) -> float:
     """
     Scale an ESDL-defined cost to the appropriate unit basis.
 
@@ -650,12 +650,10 @@ def _get_esdl_scaled_cost(cost_esdl_info, uni_enum):
     Parameters
     ----------
     cost_esdl_info : ESDL cost object containing the cost information.
-    uni_enum : esdl.UnitEnum. Target unit enum.
 
     Returns
     -------
-    float
-        Cost value scaled to the requested unit basis.
+    Cost value scaled to the requested unit basis.
 
     """
 
@@ -665,15 +663,17 @@ def _get_esdl_scaled_cost(cost_esdl_info, uni_enum):
         if cost_esdl_info is not None
         else esdl.UnitEnum.NONE
     )
-    if (uni_enum == per_unit) and (uni_enum is not esdl.UnitEnum.NONE):
+    if per_unit is not esdl.UnitEnum.NONE:
         per_multiplier = cost_esdl_info.profileQuantityAndUnit.perMultiplier
         if esdl.MultiplierEnum.KILO == per_multiplier:
             per_scaler = 1.0e3
         elif esdl.MultiplierEnum.MEGA == per_multiplier:
             per_scaler = 1.0e6
+        elif esdl.MultiplierEnum.NONE == per_multiplier:
+            per_scaler = 1.0
         else:
             raise RuntimeWarning(f"{per_multiplier} is not supported as unit per multiplier.")
-    else:  # CUBIC_METRE or METRE or NONE
+    else:
         per_scaler = 1.0
     cost_scaled = costs_esdl / per_scaler
     return cost_scaled
@@ -809,48 +809,41 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
                 edr_pipes, parameters[f"{asset}.diameter"]
             )
             investment_cost = investment_cost_info * parameters[f"{asset}.length"]
-        elif asset in [
-            *solution.energy_system_components.get("heat_pipe", []),
-            *solution.energy_system_components.get("electricity_cable", []),
-        ]:
-            investment_cost_info = (
-                _get_esdl_scaled_cost(costs_esdl_asset.investmentCosts, esdl.UnitEnum.WATT)
-                if costs_esdl_asset is not None
-                else 0.0
-            )
-            np.testing.assert_allclose(
-                parameters[f"{asset}.investment_cost_coefficient"], investment_cost_info
-            )
-            investment_cost = investment_cost_info * parameters[f"{asset}.length"]
-        elif asset in solution.energy_system_components.get("heat_buffer", []):
-            investment_cost_info = (
-                _get_esdl_scaled_cost(costs_esdl_asset.investmentCosts, esdl.UnitEnum.WATT)
-                if costs_esdl_asset is not None
-                else 0.0
-            )
-            np.testing.assert_allclose(
-                (
-                    parameters[f"{asset}.investment_cost_coefficient"]
-                    * parameters[f"{asset}.cp"]
-                    * parameters[f"{asset}.rho"]
-                    * parameters[f"{asset}.dT"]
-                ),
-                investment_cost_info,
-            )
-            heat_buffer_volume = results[f"{asset}__max_size"] / (
-                parameters[f"{asset}.cp"] * parameters[f"{asset}.rho"] * parameters[f"{asset}.dT"]
-            )
-            investment_cost = investment_cost_info * heat_buffer_volume
         else:
             investment_cost_info = (
-                _get_esdl_scaled_cost(costs_esdl_asset.investmentCosts, esdl.UnitEnum.WATT)
+                _get_esdl_scaled_cost(costs_esdl_asset.investmentCosts)
                 if costs_esdl_asset is not None
                 else 0.0
             )
-            np.testing.assert_allclose(
-                parameters[f"{asset}.investment_cost_coefficient"], investment_cost_info
-            )
-            investment_cost = investment_cost_info * results[f"{asset}__max_size"]
+            if asset in [
+                *solution.energy_system_components.get("heat_pipe", []),
+                *solution.energy_system_components.get("electricity_cable", []),
+            ]:
+                np.testing.assert_allclose(
+                    parameters[f"{asset}.investment_cost_coefficient"], investment_cost_info
+                )
+                investment_cost = investment_cost_info * parameters[f"{asset}.length"]
+            elif asset in solution.energy_system_components.get("heat_buffer", []):
+                np.testing.assert_allclose(
+                    (
+                        parameters[f"{asset}.investment_cost_coefficient"]
+                        * parameters[f"{asset}.cp"]
+                        * parameters[f"{asset}.rho"]
+                        * parameters[f"{asset}.dT"]
+                    ),
+                    investment_cost_info,
+                )
+                heat_buffer_volume = results[f"{asset}__max_size"] / (
+                    parameters[f"{asset}.cp"]
+                    * parameters[f"{asset}.rho"]
+                    * parameters[f"{asset}.dT"]
+                )
+                investment_cost = investment_cost_info * heat_buffer_volume
+            else:
+                np.testing.assert_allclose(
+                    parameters[f"{asset}.investment_cost_coefficient"], investment_cost_info
+                )
+                investment_cost = investment_cost_info * results[f"{asset}__max_size"]
         total_investment_cost += investment_cost
         np.testing.assert_allclose(
             investment_cost, results[f"{asset}__investment_cost"], atol=1.0e-6
@@ -863,7 +856,7 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
         else:
             if results[f"{asset}__max_size"] > 1e-8:
                 installation_cost = (
-                    _get_esdl_scaled_cost(costs_esdl_asset.installationCosts, esdl.UnitEnum.NONE)
+                    _get_esdl_scaled_cost(costs_esdl_asset.installationCosts)
                     if costs_esdl_asset is not None
                     else 0.0
                 )
@@ -876,12 +869,12 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
             np.testing.assert_allclose(0.0, results[f"{asset}__fixed_operational_cost"])
         else:
             fix_op_costs_esdl = (
-                _get_esdl_scaled_cost(costs_esdl_asset.fixedOperationalCosts, esdl.UnitEnum.WATT)
+                _get_esdl_scaled_cost(costs_esdl_asset.fixedOperationalCosts)
                 if costs_esdl_asset is not None
                 else 0.0
             )
             fix_maint_costs_esdl = (
-                _get_esdl_scaled_cost(costs_esdl_asset.fixedMaintenanceCosts, esdl.UnitEnum.WATT)
+                _get_esdl_scaled_cost(costs_esdl_asset.fixedMaintenanceCosts)
                 if costs_esdl_asset is not None
                 else 0.0
             )
@@ -905,9 +898,7 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
             np.testing.assert_allclose(0.0, results[f"{asset}__variable_operational_cost"])
         else:
             var_op_costs_esdl = (
-                _get_esdl_scaled_cost(
-                    costs_esdl_asset.variableOperationalCosts, esdl.UnitEnum.WATTHOUR
-                )
+                _get_esdl_scaled_cost(costs_esdl_asset.variableOperationalCosts)
                 if costs_esdl_asset is not None
                 else 0.0
             )
