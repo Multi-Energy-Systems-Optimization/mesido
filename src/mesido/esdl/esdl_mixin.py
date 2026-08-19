@@ -486,17 +486,15 @@ class ESDLMixin(
 
                 if self._esdl_measure_group_info:
                     pipe_measures_per_group = {}
-                    for measure_group_id in self._esdl_measure_group_info:
+                    for measure_group_id, measure_group in self._esdl_measure_group_info.items():
                         pipe_classes_groups[measure_group_id] = {
-                            "measure_group_name": self._esdl_measure_group_info[measure_group_id][
-                                "name"
-                            ],
+                            "measure_group_name": measure_group [                             "name"],
                             "pipe_classes": pipe_classes.copy(),  # prevents pointing to same object
                         }
 
                         pipe_measures_per_group[measure_group_id] = [
                             pipe_measures[id]
-                            for id in self._esdl_measure_group_info[measure_group_id][
+                            for id in measure_group[
                                 "containt_measure_ids"
                             ]
                         ]
