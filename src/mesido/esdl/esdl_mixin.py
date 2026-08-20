@@ -288,7 +288,7 @@ class ESDLMixin(
     def _get_pipe_max_size_input(
         self,
         asset: Asset,
-    ) -> str:
+    ) -> EEnumLiteral:
         """
         This function gets the upper limit for the pipe DN. Either from the asset attribute input
         DN size or from the PipeDiameterConstraint, depending on what is applicable.
@@ -342,16 +342,16 @@ class ESDLMixin(
                 # Else a normal error exit might occer which will not give feedback to the user
                 # potential_error_to_error(self._error_type_check)
 
-                return asset.attributes["diameter"].name
+                return asset.attributes["diameter"]
             else:
                 logger.warning(
                     f"For pipe named {asset.name}, the pipe diameter constraint max value is "
                     "used for the pipe's diameter upper limit, instead of the pipe diameter "
                     "specified (if any) in the asset attribute."
                 )
-                return pipe_constraint[0].maximum.name
+                return pipe_constraint[0].maximum
         else:
-            return asset.attributes["diameter"].name
+            return asset.attributes["diameter"]
 
     def __override_pipe_classes_dicts(
         self,
@@ -370,10 +370,10 @@ class ESDLMixin(
             c = override_classes[p] = []
             c.append(no_pipe_class)
 
-            max_size_name = self._get_pipe_max_size_input(asset)
+            max_size_enum = self._get_pipe_max_size_input(asset)
 
             max_size_idx = [
-                idx for idx, pipe in enumerate(pipe_classes) if pipe.name == max_size_name
+                idx for idx, pipe in enumerate(pipe_classes) if pipe.diameter_enum == max_size_enum
             ]
             assert len(max_size_idx) == 1
             max_size_idx = max_size_idx[0]
