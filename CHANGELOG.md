@@ -1,10 +1,24 @@
-# [Unreleased-main] - 2026-07-15
+# [Unreleased-main] - 2026-08-20
 
 ## Added
 - xxx
 
 ## Changed
 - xxx
+
+## Fixed
+- xxx
+
+
+# [0.1.20.3] - 2026-07-15
+
+## Added
+- ESDL profile reading and writing for different types: influxdb and postgres, and inline (in ESDL file).
+
+## Changed
+- Write_result_db_profiles has been replaced by esdl_profiles_output_type (determines the ESDL output profile type)
+- Names used for keys in "database_connections" specified
+- Using pyesdl for database credential management
 
 ## Fixed
 - xxx 
@@ -391,5 +405,4 @@
  
 ## Fixed
 - Error exit when stage 1, priority 1 was not successful
-
 
