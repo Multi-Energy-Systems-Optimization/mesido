@@ -5,8 +5,8 @@ from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.utils.adapt_profiles import (
-    adapt_hourly_profile_averages_timestep_size,
     adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
+    adapt_profile_to_averaged_timestep,
 )
 
 import numpy as np
@@ -112,8 +112,12 @@ class HeatProblem(
 
     def energy_system_options(self):
         options = super().energy_system_options()
-        self.heat_network_settings["minimum_velocity"] = 0.0001
         return options
+
+    def update_heat_network_settings(self):
+        settings = super().update_heat_network_settings()
+        settings["minimum_velocity"] = 0.0001
+        return settings
 
     def solver_options(self):
         """
@@ -155,7 +159,7 @@ class HeatProblem(
         """
         super().read()
 
-        adapt_hourly_profile_averages_timestep_size(self, 5 * 24)
+        adapt_profile_to_averaged_timestep(self, 5 * 24)
 
 
 class HeatProblemPlacingOverTime(HeatProblem):
@@ -265,10 +269,10 @@ class HeatProblemSetPoints(
 
         return goals
 
-    def energy_system_options(self):
-        options = super().energy_system_options()
-        self.heat_network_settings["minimum_velocity"] = 0.0
-        return options
+    def update_heat_network_settings(self):
+        settings = super().update_heat_network_settings()
+        settings["minimum_velocity"] = 0.0
+        return settings
 
     def solver_options(self):
         options = super().solver_options()

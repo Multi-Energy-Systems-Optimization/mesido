@@ -3,6 +3,7 @@ from unittest import TestCase
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.head_loss_class import HeadLossOption
 from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
@@ -146,8 +147,14 @@ class TestLogicalLinks(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
+        class SourcePipeSinkHeadLoss(SourcePipeSink):
+            def update_heat_network_settings(self):
+                settings = super().update_heat_network_settings()
+                settings["head_loss_option"] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+                return settings
+
         problem = run_esdl_mesido_optimization(
-            SourcePipeSink,
+            SourcePipeSinkHeadLoss,
             esdl_file_name="sourcesink_with_node2node_logical_link.esdl",
             base_folder=base_folder,
             esdl_parser=ESDLFileParser,
@@ -202,8 +209,14 @@ class TestLogicalLinks(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
+        class SourcePipeSinkHeadLoss(SourcePipeSink):
+            def update_heat_network_settings(self):
+                settings = super().update_heat_network_settings()
+                settings["head_loss_option"] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+                return settings
+
         problem = run_esdl_mesido_optimization(
-            SourcePipeSink,
+            SourcePipeSinkHeadLoss,
             esdl_file_name="sourcesink_with_cons2node2node2prod_logical_link.esdl",
             base_folder=base_folder,
             esdl_parser=ESDLFileParser,

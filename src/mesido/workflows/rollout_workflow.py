@@ -16,9 +16,9 @@ from mesido.workflows.goals.rollout_goal import (
 )
 from mesido.workflows.io.write_output import ScenarioOutput
 from mesido.workflows.utils.adapt_profiles import (
-    adapt_hourly_profile_averages_timestep_size,
     adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
     adapt_profile_for_initial_hour_timestep_size,
+    adapt_profile_to_averaged_timestep,
     adapt_profile_to_copy_for_number_of_years,
 )
 
@@ -110,10 +110,6 @@ class RollOutProblem(
 
         self._save_json = True
 
-        self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
-        self.heat_network_settings["minimum_velocity"] = 0.0  # important otherwise heatdemands
-        # cannot be turned off for specific timesteps
-
         self._asset_fraction_placed_map = {}
         self.__asset_fraction_placed_var = {}
         self.__asset_fraction_placed_var_bounds = {}
@@ -167,7 +163,7 @@ class RollOutProblem(
         else:
             # Create yearly profile with desired coarser time-step size by
             # averaging over the hourly data
-            adapt_hourly_profile_averages_timestep_size(self, self._timestep_size)
+            adapt_profile_to_averaged_timestep(self, self._timestep_size)
 
         # A small, (1 hour) timestep is inserted as first time step. This is used in the
         # rollout workflow to allow a yearly change in the storage of the ATES system.
@@ -254,6 +250,13 @@ class RollOutProblem(
                 self._years_timestep_max_capex,
             )
             self._yearly_capex_var_nominals[var_name] = self._years_timestep_max_capex / 2.0
+
+    def update_heat_network_settings(self):
+        settings = super().update_heat_network_settings()
+        settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+        settings["minimum_velocity"] = 0.0  # important otherwise heatdemands cannot be turned off
+        # for specific timesteps
+        return settings
 
     def energy_system_options(self):
         options = super().energy_system_options()

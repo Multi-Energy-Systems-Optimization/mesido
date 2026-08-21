@@ -1,6 +1,6 @@
 import logging
 import math
-from typing import List
+from typing import Dict, List
 
 import casadi as ca
 
@@ -105,13 +105,15 @@ class HeatPhysicsMixin(
             "network_type": NetworkSettings.NETWORK_TYPE_HEAT,
             "maximum_velocity": 2.5,
             "minimum_velocity": 0.005,
-            "head_loss_option": HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY,
+            "head_loss_option": HeadLossOption.NO_HEADLOSS,
             "minimize_head_losses": False,
             "n_linearization_lines": 5,
             "pipe_minimum_pressure": -np.inf,
             "pipe_maximum_pressure": np.inf,
             "heat_exchanger_bypass": False,
         }
+        self.heat_network_settings = self.update_heat_network_settings()
+
         self._hn_head_loss_class = HeadLossClass(self.heat_network_settings)
         self.__pipe_head_bounds = {}
         self.__pipe_head_loss_var = {}
@@ -209,6 +211,16 @@ class HeatPhysicsMixin(
         """
         return []
 
+    def update_heat_network_settings(self) -> Dict:
+        """
+        This function allows the heat_network_settings to be updated before it is used in the
+        creation of assets, variables, bounds and/or constraints. Using the inheritance structure
+        the dictionary can be updated also in the parent classes.
+        It returns the dictionary of the heat_network_settings.
+        """
+        settings = self.heat_network_settings
+        return settings
+
     def pre(self):
         """
         In this pre method we fill the dicts initiated in the __init__. This means that we create
@@ -219,6 +231,7 @@ class HeatPhysicsMixin(
 
         options = self.energy_system_options()
         parameters = self.parameters(0)
+        hn_settings = self.heat_network_settings
         string_parameters = self.string_parameters(0)
 
         def _get_max_bound(bound):
@@ -244,48 +257,51 @@ class HeatPhysicsMixin(
 
         for pipe_name in self.energy_system_components.get("heat_pipe", []):
             commodity = self.energy_system_components_commodity.get(pipe_name)
-            head_loss_var = f"{pipe_name}.__head_loss"
-            initialized_vars = self._hn_head_loss_class.initialize_variables_nominals_and_bounds(
-                self, commodity, pipe_name, self.heat_network_settings
-            )
-            if initialized_vars[0] != {}:
-                self.__pipe_head_bounds[f"{pipe_name}.{commodity}In.H"] = initialized_vars[0]
-            if initialized_vars[1] != {}:
-                self.__pipe_head_bounds[f"{pipe_name}.{commodity}Out.H"] = initialized_vars[1]
-            if initialized_vars[2] != {}:
-                self.__pipe_head_loss_zero_bounds[f"{pipe_name}.dH"] = initialized_vars[2]
-            if initialized_vars[3] != {}:
-                self._hn_pipe_to_head_loss_map[pipe_name] = initialized_vars[3]
-            if initialized_vars[4] != {}:
-                self.__pipe_head_loss_var[head_loss_var] = initialized_vars[4]
-            if initialized_vars[5] != {}:
-                self.__pipe_head_loss_nominals[f"{pipe_name}.dH"] = initialized_vars[5]
-            if initialized_vars[6] != {}:
-                self.__pipe_head_loss_nominals[head_loss_var] = initialized_vars[6]
-            if initialized_vars[7] != {}:
-                self.__pipe_head_loss_bounds[head_loss_var] = initialized_vars[7]
-
-            if (
-                initialized_vars[8] != {}
-                and initialized_vars[9] != {}
-                and initialized_vars[10] != {}
-            ):
-                # HeadLossClass now provides activation variables only for the
-                # positive quadrant (n_linearization_lines entries). Register
-                # those here and reuse the flow-direction variable elsewhere to
-                # account for signed flows.
-                self._pipe_linear_line_segment_map[pipe_name] = {}
-                for ii_line in range(self.heat_network_settings["n_linearization_lines"]):
-                    pipe_linear_line_segment_var_name = initialized_vars[8][ii_line]
-                    self._pipe_linear_line_segment_map[pipe_name][
-                        ii_line
-                    ] = pipe_linear_line_segment_var_name
-                    self.__pipe_linear_line_segment_var[pipe_linear_line_segment_var_name] = (
-                        initialized_vars[9][pipe_linear_line_segment_var_name]
+            if options["include_head_losses"]:
+                head_loss_var = f"{pipe_name}.__head_loss"
+                initialized_vars = (
+                    self._hn_head_loss_class.initialize_variables_nominals_and_bounds(
+                        self, commodity, pipe_name, hn_settings
                     )
-                    self.__pipe_linear_line_segment_var_bounds[
-                        pipe_linear_line_segment_var_name
-                    ] = initialized_vars[10][pipe_linear_line_segment_var_name]
+                )
+                if initialized_vars[0] != {}:
+                    self.__pipe_head_bounds[f"{pipe_name}.{commodity}In.H"] = initialized_vars[0]
+                if initialized_vars[1] != {}:
+                    self.__pipe_head_bounds[f"{pipe_name}.{commodity}Out.H"] = initialized_vars[1]
+                if initialized_vars[2] != {}:
+                    self.__pipe_head_loss_zero_bounds[f"{pipe_name}.dH"] = initialized_vars[2]
+                if initialized_vars[3] != {}:
+                    self._hn_pipe_to_head_loss_map[pipe_name] = initialized_vars[3]
+                if initialized_vars[4] != {}:
+                    self.__pipe_head_loss_var[head_loss_var] = initialized_vars[4]
+                if initialized_vars[5] != {}:
+                    self.__pipe_head_loss_nominals[f"{pipe_name}.dH"] = initialized_vars[5]
+                if initialized_vars[6] != {}:
+                    self.__pipe_head_loss_nominals[head_loss_var] = initialized_vars[6]
+                if initialized_vars[7] != {}:
+                    self.__pipe_head_loss_bounds[head_loss_var] = initialized_vars[7]
+
+                if (
+                    initialized_vars[8] != {}
+                    and initialized_vars[9] != {}
+                    and initialized_vars[10] != {}
+                ):
+                    # HeadLossClass now provides activation variables only for the
+                    # positive quadrant (n_linearization_lines entries). Register
+                    # those here and reuse the flow-direction variable elsewhere to
+                    # account for signed flows.
+                    self._pipe_linear_line_segment_map[pipe_name] = {}
+                    for ii_line in range(hn_settings["n_linearization_lines"]):
+                        pipe_linear_line_segment_var_name = initialized_vars[8][ii_line]
+                        self._pipe_linear_line_segment_map[pipe_name][
+                            ii_line
+                        ] = pipe_linear_line_segment_var_name
+                        self.__pipe_linear_line_segment_var[pipe_linear_line_segment_var_name] = (
+                            initialized_vars[9][pipe_linear_line_segment_var_name]
+                        )
+                        self.__pipe_linear_line_segment_var_bounds[
+                            pipe_linear_line_segment_var_name
+                        ] = initialized_vars[10][pipe_linear_line_segment_var_name]
 
             flow_dir_var = f"{pipe_name}.__flow_direct_var"
 
@@ -593,6 +609,7 @@ class HeatPhysicsMixin(
         """
 
         options = self._hn_head_loss_class.head_loss_network_options()
+        hn_settings = self.heat_network_settings
 
         options["minimum_pressure_far_point"] = 1.0
         options["maximum_temperature_der"] = 2.0
@@ -603,6 +620,9 @@ class HeatPhysicsMixin(
         options["include_ates_temperature_options"] = False
         options["include_ates_yearly_change_option"] = False
         options["heat_storage_charging_variables"] = False
+        options["include_head_losses"] = (
+            False if hn_settings["head_loss_option"] == HeadLossOption.NO_HEADLOSS else True
+        )
 
         return options
 
@@ -722,28 +742,28 @@ class HeatPhysicsMixin(
         for the linearized head_loss options.
         """
         g = super().path_goals().copy()
+        hn_settings = self.heat_network_settings
 
         if (
-            self.heat_network_settings["minimize_head_losses"]
-            and self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS
+            hn_settings["minimize_head_losses"]
+            and hn_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS
         ):
             g.append(
                 self._hn_head_loss_class._hn_minimization_goal_class(
                     self,
-                    self.heat_network_settings,
+                    hn_settings,
                 )
             )
 
             if (
-                self.heat_network_settings["head_loss_option"]
-                == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
-                or self.heat_network_settings["head_loss_option"]
+                hn_settings["head_loss_option"] == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+                or hn_settings["head_loss_option"]
                 == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
             ):
                 g.append(
                     self._hn_head_loss_class._hpwr_minimization_goal_class(
                         self,
-                        self.heat_network_settings,
+                        hn_settings,
                     )
                 )
 
@@ -773,8 +793,9 @@ class HeatPhysicsMixin(
 
         options = self.energy_system_options()
         components = self.energy_system_components
+        hn_settings = self.heat_network_settings
 
-        if self.heat_network_settings["head_loss_option"] == HeadLossOption.NO_HEADLOSS:
+        if hn_settings["head_loss_option"] == HeadLossOption.NO_HEADLOSS:
             # Undefined, and all constraints using this methods value should
             # be skipped.
             return np.nan
@@ -789,9 +810,9 @@ class HeatPhysicsMixin(
 
             for pipe in components.get("heat_pipe", []):
                 area = parameters[f"{pipe}.area"]
-                max_discharge = self.heat_network_settings["maximum_velocity"] * area
+                max_discharge = hn_settings["maximum_velocity"] * area
                 head_loss += self._hn_head_loss_class._hn_pipe_head_loss(
-                    pipe, self, options, self.heat_network_settings, parameters, max_discharge
+                    pipe, self, options, hn_settings, parameters, max_discharge
                 )
 
             head_loss += options["minimum_pressure_far_point"] * 10.2
@@ -801,8 +822,7 @@ class HeatPhysicsMixin(
         # Maximum pressure difference allowed with user options
         # NOTE: Does not yet take elevation differences into acccount
         max_dh_network_options = (
-            self.heat_network_settings["pipe_maximum_pressure"]
-            - self.heat_network_settings["pipe_minimum_pressure"]
+            hn_settings["pipe_maximum_pressure"] - hn_settings["pipe_minimum_pressure"]
         ) * 10.2
 
         return min(max_sum_dh_pipes, max_dh_network_options)
@@ -1098,6 +1118,7 @@ class HeatPhysicsMixin(
         """
         constraints = []
         options = self.energy_system_options()
+        bounds = self.bounds()
 
         for p in self.energy_system_components.get("heat_pipe", []):
             heat_in = self.state(f"{p}.HeatIn.Heat")
@@ -1107,8 +1128,8 @@ class HeatPhysicsMixin(
             big_m = 2.0 * np.max(
                 np.abs(
                     (
-                        *self.bounds()[f"{p}.HeatIn.Heat"],
-                        *self.bounds()[f"{p}.HeatOut.Heat"],
+                        *bounds[f"{p}.HeatIn.Heat"],
+                        *bounds[f"{p}.HeatOut.Heat"],
                     )
                 )
             )
@@ -1187,9 +1208,11 @@ class HeatPhysicsMixin(
         """
         constraints = []
         parameters = self.parameters(ensemble_member)
+        hn_settings = self.heat_network_settings
+        bounds = self.bounds()
 
-        minimum_velocity = self.heat_network_settings["minimum_velocity"]
-        maximum_velocity = self.heat_network_settings["maximum_velocity"]
+        minimum_velocity = hn_settings["minimum_velocity"]
+        maximum_velocity = hn_settings["maximum_velocity"]
 
         set_self_hot_pipes = set(self.hot_pipes)
 
@@ -1277,8 +1300,8 @@ class HeatPhysicsMixin(
             big_m = np.max(
                 np.abs(
                     (
-                        *self.bounds()[f"{p}.HeatIn.Heat"],
-                        *self.bounds()[f"{p}.HeatOut.Heat"],
+                        *bounds[f"{p}.HeatIn.Heat"],
+                        *bounds[f"{p}.HeatOut.Heat"],
                     )
                 )
             )
@@ -1299,8 +1322,8 @@ class HeatPhysicsMixin(
                 big_m = 2.0 * np.max(
                     np.abs(
                         (
-                            *self.bounds()[f"{p}.HeatIn.Heat"],
-                            *self.bounds()[f"{p}.HeatOut.Heat"],
+                            *bounds[f"{p}.HeatIn.Heat"],
+                            *bounds[f"{p}.HeatOut.Heat"],
                         )
                     )
                 )
@@ -1348,6 +1371,7 @@ class HeatPhysicsMixin(
         constraints = []
         parameters = self.parameters(ensemble_member)
         string_parameters = self.string_parameters(ensemble_member)
+        bounds = self.bounds()
 
         for d in [
             *self.energy_system_components.get("heat_demand", []),
@@ -1361,7 +1385,7 @@ class HeatPhysicsMixin(
 
             ret_carrier = string_parameters[f"{d}.T_return_id"]
             return_temperatures = self.temperature_regimes(ret_carrier)
-            big_m = 2.0 * self.bounds()[f"{d}.HeatOut.Heat"][1]
+            big_m = 2.0 * bounds[f"{d}.HeatOut.Heat"][1]
 
             if len(return_temperatures) == 0:
                 constraints.append(
@@ -1397,6 +1421,7 @@ class HeatPhysicsMixin(
         constraints = []
         parameters = self.parameters(ensemble_member)
         string_parameters = self.string_parameters(ensemble_member)
+        bounds = self.bounds()
 
         for s in self.energy_system_components.get("heat_source", []):
             heat_nominal = parameters[f"{s}.Heat_nominal"]
@@ -1413,11 +1438,11 @@ class HeatPhysicsMixin(
             sup_carrier = string_parameters[f"{s}.T_supply_id"]
             supply_temperatures = self.temperature_regimes(sup_carrier)
 
-            big_m = 2.0 * self.bounds()[f"{s}.HeatOut.Heat"][1]
+            big_m = 2.0 * bounds[f"{s}.HeatOut.Heat"][1]
             big_m = (
                 big_m
                 if big_m != np.inf
-                else 2.0 * self.bounds()[f"{s}.Heat_source"][1] * parameters[f"{s}.T_supply"] / dt
+                else 2.0 * bounds[f"{s}.Heat_source"][1] * parameters[f"{s}.T_supply"] / dt
             )
 
             # Check to see if the out carrier has a temperature profile assigned to it.
@@ -1469,6 +1494,7 @@ class HeatPhysicsMixin(
 
         constraints = []
         parameters = self.parameters(ensemble_member)
+        bounds = self.bounds()
 
         for s in self.energy_system_components.get("heat_source", []):
             heat_nominal = parameters[f"{s}.Heat_nominal"]
@@ -1476,11 +1502,11 @@ class HeatPhysicsMixin(
             rho = parameters[f"{s}.rho"]
             dt = parameters[f"{s}.dT"]
 
-            big_m = 2.0 * self.bounds()[f"{s}.HeatOut.Heat"][1]
+            big_m = 2.0 * bounds[f"{s}.HeatOut.Heat"][1]
             big_m = (
                 big_m
                 if big_m != np.inf
-                else 2.0 * self.bounds()[f"{s}.Heat_source"][1] * parameters[f"{s}.T_supply"] / dt
+                else 2.0 * bounds[f"{s}.Heat_source"][1] * parameters[f"{s}.T_supply"] / dt
             )
 
             temp_out_profile, sup_carrier_name, temp_out_prof_start_idx, temp_out_prof_end_idx = (
@@ -1529,6 +1555,7 @@ class HeatPhysicsMixin(
         constraints = []
         parameters = self.parameters(ensemble_member)
         string_parameters = self.string_parameters(ensemble_member)
+        bounds = self.bounds()
 
         for d in self.energy_system_components.get("cold_demand", []):
             heat_nominal = parameters[f"{d}.Heat_nominal"]
@@ -1539,7 +1566,7 @@ class HeatPhysicsMixin(
 
             sup_carrier = string_parameters[f"{d}.T_supply_id"]
             supply_temperatures = self.temperature_regimes(sup_carrier)
-            big_m = 2.0 * self.bounds()[f"{d}.HeatOut.Heat"][1]
+            big_m = 2.0 * bounds[f"{d}.HeatOut.Heat"][1]
 
             if len(supply_temperatures) == 0:
                 constraints.append(
@@ -1630,6 +1657,7 @@ class HeatPhysicsMixin(
         constraints = []
         parameters = self.parameters(ensemble_member)
         string_parameters = self.string_parameters(ensemble_member)
+        bounds = self.bounds()
 
         sum_heat_losses = 0.0
 
@@ -1657,7 +1685,7 @@ class HeatPhysicsMixin(
             # a single source system is concerned. Use a factor of 2 to give
             # some slack.
             big_m = 2.0 * np.max(
-                np.abs((*self.bounds()[f"{p}.HeatIn.Heat"], *self.bounds()[f"{p}.HeatOut.Heat"]))
+                np.abs((*bounds[f"{p}.HeatIn.Heat"], *bounds[f"{p}.HeatOut.Heat"]))
             )
 
             carrier = string_parameters[f"{p}.carrier_id"]
@@ -2293,7 +2321,7 @@ class HeatPhysicsMixin(
             # heat_flow = self.state(f"{b}.Heat_flow")
 
             big_m = 2.0 * np.max(
-                np.abs((*self.bounds()[f"{b}.HeatIn.Heat"], *self.bounds()[f"{b}.HeatOut.Heat"]))
+                np.abs((*bounds[f"{b}.HeatIn.Heat"], *bounds[f"{b}.HeatOut.Heat"]))
             )
 
             # We want an _equality_ constraint between discharge and heat if the buffer is
@@ -2365,7 +2393,6 @@ class HeatPhysicsMixin(
                     )
                 )
             else:
-                bounds = self.bounds()
                 max_discharge = bounds[f"{b}.Q"][1]
                 constraint_nominal = (
                     heat_nominal * cp * rho * max(supply_temperatures) * q_nominal
@@ -2473,6 +2500,7 @@ class HeatPhysicsMixin(
         variable.
         """
         constraints = []
+        bounds = self.bounds()
 
         for carrier_id in self.temperature_carriers().keys():
             sum = 0.0
@@ -2481,7 +2509,7 @@ class HeatPhysicsMixin(
                 temp_selected = self.state(f"{carrier_id}_{temperature}")
                 sum += temp_selected
                 temperature_var = self.state(f"{carrier_id}_temperature")
-                big_m = 2.0 * self.bounds()[f"{carrier_id}_temperature"][1]
+                big_m = 2.0 * bounds[f"{carrier_id}_temperature"][1]
                 # Constraints for setting the temperature variable to the chosen temperature
                 constraints.extend(
                     self._symmetric_big_m_constraints(
@@ -2518,6 +2546,7 @@ class HeatPhysicsMixin(
         constraints = []
         parameters = self.parameters(ensemble_member)
         string_parameters = self.string_parameters(ensemble_member)
+        bounds = self.bounds()
 
         hn_settings = self.heat_network_settings
 
@@ -2556,7 +2585,7 @@ class HeatPhysicsMixin(
             supply_temperatures_prim = self.temperature_regimes(sup_carrier_prim)
             return_temperatures_prim = self.temperature_regimes(ret_carrier_prim)
 
-            big_m = 2.0 * self.bounds()[f"{heat_exchanger}.Primary.HeatOut.Heat"][1]
+            big_m = 2.0 * bounds[f"{heat_exchanger}.Primary.HeatOut.Heat"][1]
 
             def __constraints_temperature_heat_to_discharge_bypass(
                 heat_out, expr, sum_temp_selec, big_m: float, constraint_nominal: float
@@ -2779,9 +2808,9 @@ class HeatPhysicsMixin(
 
             supply_temperatures_sec = self.temperature_regimes(sup_carrier_sec)
             return_temperatures_sec = self.temperature_regimes(ret_carrier_sec)
-            big_m = 2.0 * self.bounds()[f"{heat_exchanger}.Secondary.HeatOut.Heat"][1]
+            big_m = 2.0 * bounds[f"{heat_exchanger}.Secondary.HeatOut.Heat"][1]
             constraint_nominal = (
-                cp_sec * rho_sec * dt_sec * self.bounds()[f"{heat_exchanger}.Secondary.HeatIn.Q"][1]
+                cp_sec * rho_sec * dt_sec * bounds[f"{heat_exchanger}.Secondary.HeatIn.Q"][1]
             )
 
             if len(supply_temperatures_sec) == 0:
@@ -3045,9 +3074,10 @@ class HeatPhysicsMixin(
         """
         constraints = []
         parameters = self.parameters(ensemble_member)
+        hn_settings = self.heat_network_settings
 
         all_pipes = set(self.energy_system_components.get("heat_pipe", []))
-        maximum_velocity = self.heat_network_settings["maximum_velocity"]
+        maximum_velocity = hn_settings["maximum_velocity"]
 
         for v in self.energy_system_components.get("check_valve", []):
             status_var = f"{v}.__status_var"
@@ -3080,7 +3110,7 @@ class HeatPhysicsMixin(
             # Note that the Q >= 0 and dH >= 0 constraints are part of the bounds.
             constraints.append((q - status * maximum_discharge, -np.inf, 0.0))
 
-            if self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
+            if hn_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
                 constraints.append((dh - (1 - status) * maximum_head_loss, -np.inf, 0.0))
 
         return constraints
@@ -3092,9 +3122,10 @@ class HeatPhysicsMixin(
         """
         constraints = []
         parameters = self.parameters(ensemble_member)
+        hn_settings = self.heat_network_settings
 
         all_pipes = set(self.energy_system_components.get("heat_pipe", []))
-        maximum_velocity = self.heat_network_settings["maximum_velocity"]
+        maximum_velocity = hn_settings["maximum_velocity"]
 
         for v in self.energy_system_components.get("control_valve", []):
             flow_dir_var = self.__control_valve_direction_map[v]
@@ -3129,7 +3160,7 @@ class HeatPhysicsMixin(
                 self._big_m_ineq_constraints(q, 1 - flow_dir, maximum_discharge, 1.0)
             )
 
-            if self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
+            if hn_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
                 constraints.extend(
                     self._big_m_ineq_constraints(-dh, 1 - flow_dir, maximum_head_loss, 1.0)
                 )
@@ -3274,6 +3305,7 @@ class HeatPhysicsMixin(
 
         parameters = self.parameters(ensemble_member)
         string_parameters = self.string_parameters(ensemble_member)
+        bounds = self.bounds()
 
         for hp in [
             *self.energy_system_components.get("heat_pump", []),
@@ -3301,7 +3333,7 @@ class HeatPhysicsMixin(
                 cop = parameters[f"{hp}.COP"]
                 constraints.append(((sec_heat - cop * elec) / nominal, 0.0, 0.0))
             else:
-                big_m = 2.0 * self.bounds()[f"{hp}.Secondary_heat"][1]
+                big_m = 2.0 * bounds[f"{hp}.Secondary_heat"][1]
                 for sec_sup_temp in (
                     sec_sup_temps
                     if len(sec_sup_temps) > 0
@@ -3430,6 +3462,7 @@ class HeatPhysicsMixin(
 
         parameters = self.parameters(ensemble_member)
         options = self.energy_system_options()
+        bounds = self.bounds()
 
         for b, (
             (hot_pipe, hot_pipe_orientation),
@@ -3447,13 +3480,7 @@ class HeatPhysicsMixin(
                 if options["heat_storage_charging_variables"]:
                     is_buffer_charging = self.variable(f"{b}.__is_charging")
 
-            big_m = (
-                2.0
-                * self.bounds()[f"{b}.HeatIn.Q"][1]
-                * self.__maximum_total_head_loss
-                * 10.2
-                * 1.0e3
-            )
+            big_m = 2.0 * bounds[f"{b}.HeatIn.Q"][1] * self.__maximum_total_head_loss * 10.2 * 1.0e3
             if self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
 
                 # During charging we want a minimum pressure drop like a demand
@@ -3499,6 +3526,8 @@ class HeatPhysicsMixin(
         constraints = []
 
         parameters = self.parameters(ensemble_member)
+        hn_settings = self.heat_network_settings
+        bounds = self.bounds()
 
         for asset in {
             *self.energy_system_components.get("heat_demand", []),
@@ -3519,13 +3548,9 @@ class HeatPhysicsMixin(
             hp_out = self.state(f"{asset}.HeatOut.Hydraulic_power")
 
             big_m = (
-                2.0
-                * self.bounds()[f"{asset}.HeatIn.Q"][1]
-                * self.__maximum_total_head_loss
-                * 10.2
-                * 1.0e3
+                2.0 * bounds[f"{asset}.HeatIn.Q"][1] * self.__maximum_total_head_loss * 10.2 * 1.0e3
             )
-            if self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
+            if hn_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
                 constraints.append(
                     (
                         ((hp_in - hp_out) - min_dp * discharge) / big_m,
@@ -3611,7 +3636,6 @@ class HeatPhysicsMixin(
 
         constraints.extend(self.__flow_direction_path_constraints(ensemble_member))
         constraints.extend(self.__node_heat_mixing_path_constraints(ensemble_member))
-        constraints.extend(self.__node_hydraulic_power_mixing_path_constraints(ensemble_member))
         constraints.extend(self.__heat_loss_path_constraints(ensemble_member))
         constraints.extend(self.__node_discharge_mixing_path_constraints(ensemble_member))
         constraints.extend(self.__demand_heat_to_discharge_path_constraints(ensemble_member))
@@ -3640,6 +3664,7 @@ class HeatPhysicsMixin(
             )
             constraints.extend(self.__sink_hydraulic_power_path_constraints(ensemble_member))
             constraints.extend(self.__storage_hydraulic_power_path_constraints(ensemble_member))
+            constraints.extend(self.__node_hydraulic_power_mixing_path_constraints(ensemble_member))
         else:
             for asset_list in self.energy_system_components.values():
                 for asset in asset_list:
@@ -3722,10 +3747,11 @@ class HeatPhysicsMixin(
         the optimization is completed.
         """
         options = self.energy_system_options()
+        hn_settings = self.heat_network_settings
 
         if (
-            self.heat_network_settings["minimize_head_losses"]
-            and self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS
+            hn_settings["minimize_head_losses"]
+            and hn_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS
             and priority == self._hn_head_loss_class._hn_minimization_goal_class.priority
         ):
             components = self.energy_system_components
@@ -3755,10 +3781,10 @@ class HeatPhysicsMixin(
 
                     q = results[f"{pipe}.Q"][inds]
                     head_loss_target = self._hn_head_loss_class._hn_pipe_head_loss(
-                        pipe, self, options, self.heat_network_settings, parameters, q, None
+                        pipe, self, options, hn_settings, parameters, q, None
                     )
                     if (
-                        self.heat_network_settings["head_loss_option"]
+                        hn_settings["head_loss_option"]
                         == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
                     ):
                         head_loss = np.abs(results[f"{pipe}.dH"][inds])
@@ -3800,8 +3826,9 @@ class HeatPhysicsMixin(
         results = self.extract_results()
         parameters = self.parameters(0)
         options = self.energy_system_options()
+        hn_settings = self.heat_network_settings
 
-        if self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
+        if hn_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
             for p in self.energy_system_components.get("heat_pipe", []):
                 head_diff = results[f"{p}.HeatIn.H"] - results[f"{p}.HeatOut.H"]
                 if parameters[f"{p}.length"] == 0.0 and not parameters[f"{p}.has_control_valve"]:
@@ -3822,7 +3849,7 @@ class HeatPhysicsMixin(
                     if not options["heat_loss_disconnected_pipe"]:
                         assert np.all(np.sign(head_diff[inds]) == np.sign(q[inds]))
 
-        minimum_velocity = self.heat_network_settings["minimum_velocity"]
+        minimum_velocity = hn_settings["minimum_velocity"]
         for p in self.energy_system_components.get("heat_pipe", []):
             area = parameters[f"{p}.area"]
 

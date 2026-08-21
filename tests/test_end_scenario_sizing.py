@@ -103,13 +103,13 @@ class TestEndScenarioSizing(TestCase):
         # Check that indeed the available pipe classes were adapted based on expected flow
         # Pipe connected to a demand
         assert self.solution.pipe_classes("Pipe2")[0].name == "DN150"  # initially DN->None
-        assert self.solution.pipe_classes("Pipe2")[-1].name == "DN250"  # initially DN450
+        assert self.solution.pipe_classes("Pipe2")[-1].name == "DN200"  # initially DN450
         # Check that the available pipe classes are also limited for pipes in the return network
         # that do not have the related attribute assigned and are therefore not in the set of
         # self.cold_pipes.
         assert len(self.solution.unrelated_pipes) >= 1.0
         assert self.solution.pipe_classes("Pipe2_ret")[0].name == "DN150"  # initially DN->None
-        assert self.solution.pipe_classes("Pipe2_ret")[-1].name == "DN250"  # initially DN450
+        assert self.solution.pipe_classes("Pipe2_ret")[-1].name == "DN200"  # initially DN450
         # Check the minimum velocity setting==default value. Keep the default value hard-coded to
         # prevent future coding bugs
         np.testing.assert_equal(1.0e-4, self.solution.heat_network_settings["minimum_velocity"])
@@ -425,10 +425,10 @@ class TestEndScenarioSizing(TestCase):
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
         class EndScenarioSizingHeadLossStagedNLines(EndScenarioSizingHeadLossStaged):
-            def __init__(self, *args, **kwargs):
-                super().__init__(*args, **kwargs)
-
-                self.heat_network_settings["n_linearization_lines"] = 3
+            def update_heat_network_settings(self):
+                settings = super().update_heat_network_settings()
+                settings["n_linearization_lines"] = 3
+                return settings
 
         solution = run_end_scenario_sizing(
             EndScenarioSizingHeadLossStagedNLines,
@@ -722,6 +722,8 @@ if __name__ == "__main__":
     a.setUpClass()
     a.test_end_scenario_sizing()
     a.test_end_scenario_sizing_staged()
+    a.test_end_scenario_sizing_heat_demand_not_matched()
+    a.test_heat_exchanger_sizing()
     a.test_end_scenario_sizing_discounted()
     a.test_end_scenario_sizing_head_loss()
     a.test_end_scenario_sizing_pipe_catalog_lower_pipe_dn()

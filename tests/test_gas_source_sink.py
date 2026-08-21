@@ -26,17 +26,14 @@ class TestMILPGasSourceSink(TestCase):
 
         # Added for case where head loss is modelled via DW
         class TestSourceSink(GasProblem):
-            def energy_system_options(self):
-                options = super().energy_system_options()
-                self.heat_network_settings["head_loss_option"] = (
-                    HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
-                )
-                self.heat_network_settings["n_linearization_lines"] = 5
-                self.heat_network_settings["minimize_head_losses"] = True
-
-                self.heat_network_settings["pipe_maximum_pressure"] = 100.0  # [bar]
-                self.heat_network_settings["pipe_minimum_pressure"] = 0.0
-                return options
+            def update_heat_network_settings(self):
+                settings = super().update_heat_network_settings()
+                settings["head_loss_option"] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+                settings["n_linearization_lines"] = 5
+                settings["minimize_head_losses"] = True
+                settings["pipe_maximum_pressure"] = 100.0  # [bar]
+                settings["pipe_minimum_pressure"] = 0.0
+                return settings
 
         soltion = run_esdl_mesido_optimization(
             GasProblem,
