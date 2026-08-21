@@ -1,4 +1,4 @@
-# [Unreleased-main] - 2026-07-14
+# [Unreleased-main] - 2026-08-19
 
 ## Added
 - ESDL profile reading and writing for different types: influxdb and postgres, and inline (in ESDL file).
@@ -8,6 +8,7 @@
 - Write_result_db_profiles has been replaced by esdl_profiles_output_type (determines the ESDL output profile type)
 - Names used for keys in "database_connections" specified
 - Using pyesdl for database credential management
+- Parsing of input profiles with 15-minute interval now supported.
 
 ## Fixed
 - Bug: Only update the aggregation count for an ATES and a GeothermalSource in DTK post processing
