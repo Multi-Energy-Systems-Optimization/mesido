@@ -1507,7 +1507,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
         assert max_supply > 0.0
 
         min_temperature = asset.attributes.get("minTemperature", None)
+        if min_temperature is not None:
+            if min_temperature < 0.0:
+                logger.error(f"'{asset.name}' must have a non-negative minimum temperature value.")
+            assert min_temperature >= 0.0
+
         max_temperature = asset.attributes.get("maxTemperature", None)
+        if max_temperature is not None:
+            if max_temperature < 0.0:
+                logger.error(f"'{asset.name}' must have a non-negative maximum temperature value.")
+            assert max_temperature >= 0.0
 
         # get price per unit of energy,
         # assume cost of 1. if nothing is given (effectively milp loss minimization)

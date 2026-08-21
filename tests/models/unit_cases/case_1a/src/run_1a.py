@@ -5,6 +5,7 @@ from mesido.head_loss_class import HeadLossOption
 from mesido.physics_mixin import PhysicsMixin
 from mesido.qth_not_maintained.qth_mixin import QTHMixin
 from mesido.techno_economic_mixin import TechnoEconomicMixin
+from mesido.workflows.goals.minimize_tco_goal import MinimizeTCO
 
 import numpy as np
 
@@ -69,7 +70,15 @@ class HeatProblem(
 
 
 class HeatProblemWithTechnoEconomicMixin(HeatProblem, TechnoEconomicMixin):
-    pass
+    def goals(self):
+        goals = super().goals().copy()
+        goals.append(MinimizeTCO(priority=2))
+        return goals
+
+    def energy_system_options(self):
+        options = super().energy_system_options()
+        options["neglect_pipe_heat_losses"] = True
+        return options
 
 
 class HeatProblemTvar(HeatProblem):
