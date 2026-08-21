@@ -523,6 +523,7 @@ class GasPhysicsMixin(
         Finally, a minimum flow can be set. This can sometimes be useful for numerical stability.
         """
         constraints = []
+        bounds = self.bounds()
 
         # Also ensure that the discharge has the same sign as the milp.
         for p in self.energy_system_components.get("gas_pipe", []):
@@ -534,8 +535,8 @@ class GasPhysicsMixin(
             big_m = 2.0 * np.max(
                 np.abs(
                     (
-                        *self.bounds()[f"{p}.GasIn.Q"],
-                        *self.bounds()[f"{p}.GasOut.Q"],
+                        *bounds[f"{p}.GasIn.Q"],
+                        *bounds[f"{p}.GasOut.Q"],
                     )
                 )
             )
