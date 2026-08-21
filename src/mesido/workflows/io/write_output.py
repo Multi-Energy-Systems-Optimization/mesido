@@ -150,7 +150,8 @@ class ScenarioOutput:
                         ):
                             logger.error(
                                 "Current setting of database name is not set or an empty string."
-                                " It should be the name of the target database when writing to PostgreSQL."
+                                " It should be the name of the target database when writing"
+                                " to PostgreSQL."
                             )
                             sys.exit(1)
                         self.pg_timeseries_database = pg_timeseries_database.strip()
