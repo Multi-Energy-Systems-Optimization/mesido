@@ -47,21 +47,25 @@ class TestHEX(TestCase):
 
             def energy_system_options(self):
                 options = super().energy_system_options()
-                # self.heat_network_settings["minimize_head_losses"] = True  # used for manual tests
                 return options
+
+            def update_heat_network_settings(self):
+                settings = super().update_heat_network_settings()
+                # settings["minimize_head_losses"] = True  # used for manual tests
+                return settings
 
         # Do not delete kwargs: this is used to manualy check writing out of profile data
         kwargs = {
-            "write_result_db_profiles": False,
+            "esdl_output_profiles_type": None,
             "database_connections": [
                 {
                     "access_type": DBAccessType.WRITE,
-                    "influxdb_host": "localhost",
-                    "influxdb_port": 8086,
-                    "influxdb_username": None,
-                    "influxdb_password": None,
-                    "influxdb_ssl": False,
-                    "influxdb_verify_ssl": False,
+                    "host": "localhost",
+                    "port": 8086,
+                    "username": None,
+                    "password": None,
+                    "ssl": False,
+                    "verify_ssl": False,
                 },
             ],
         }
@@ -145,16 +149,16 @@ class TestHEX(TestCase):
 
         class HeatProblemByPass(HeatProblem):
 
-            def __init__(self, *args, **kwargs):
-                super().__init__(*args, **kwargs)
-
-                self.heat_network_settings["heat_exchanger_bypass"] = True
-
             def energy_system_options(self):
                 options = super().energy_system_options()
                 options["neglect_pipe_heat_losses"] = False
 
                 return options
+
+            def update_heat_network_settings(self):
+                settings = super().update_heat_network_settings()
+                settings["heat_exchanger_bypass"] = True
+                return settings
 
         solution = run_esdl_mesido_optimization(
             HeatProblemByPass,
@@ -216,16 +220,16 @@ class TestHEX(TestCase):
 
         class HeatProblemByPassMultiTemp(HeatProblem):
 
-            def __init__(self, *args, **kwargs):
-                super().__init__(*args, **kwargs)
-
-                self.heat_network_settings["heat_exchanger_bypass"] = True
-
             def energy_system_options(self):
                 options = super().energy_system_options()
                 options["neglect_pipe_heat_losses"] = False
 
                 return options
+
+            def update_heat_network_settings(self):
+                settings = super().update_heat_network_settings()
+                settings["heat_exchanger_bypass"] = True
+                return settings
 
             def temperature_carriers(self):
                 return self.esdl_carriers
@@ -347,23 +351,31 @@ class TestHP(TestCase):
             #         optimizer_sim=True,
             #     )
 
-            def energy_system_options(self):
-                options = super().energy_system_options()
-                # self.heat_network_settings["minimize_head_losses"] = True  # used for manual tests
+            def update_heat_network_settings(self):
+                settings = super().update_heat_network_settings()
+                # settings["minimize_head_losses"] = True  # used for manual tests
+                return settings
+
+            def solver_options(self):
+                options = super().solver_options()
+                options["solver"] = "highs"
+                highs_options = options["highs"] = {}
+                highs_options["presolve"] = "off"
+
                 return options
 
         # Do not delete kwargs: this is used to manualy check writing out of profile data
         kwargs = {
-            "write_result_db_profiles": False,
+            "esdl_output_profiles_type": None,
             "database_connections": [
                 {
                     "access_type": DBAccessType.WRITE,
-                    "influxdb_host": "localhost",
-                    "influxdb_port": 8086,
-                    "influxdb_username": None,
-                    "influxdb_password": None,
-                    "influxdb_ssl": False,
-                    "influxdb_verify_ssl": False,
+                    "host": "localhost",
+                    "port": 8086,
+                    "username": None,
+                    "password": None,
+                    "ssl": False,
+                    "verify_ssl": False,
                 },
             ],
         }

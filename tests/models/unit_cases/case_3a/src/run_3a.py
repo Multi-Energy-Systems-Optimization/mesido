@@ -1,6 +1,7 @@
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.head_loss_class import HeadLossOption
 from mesido.physics_mixin import PhysicsMixin
 from mesido.qth_not_maintained.qth_mixin import QTHMixin
 from mesido.techno_economic_mixin import TechnoEconomicMixin
@@ -115,10 +116,14 @@ class _GoalsAndOptions:
 
     def energy_system_options(self):
         options = super().energy_system_options()
-        self.heat_network_settings["minimum_velocity"] = 0.0001
         # options["heat_loss_disconnected_pipe"] = False
         # options["neglect_pipe_heat_losses"] = False
         return options
+
+    def update_heat_network_settings(self):
+        settings = super().update_heat_network_settings()
+        settings["minimum_velocity"] = 0.0001
+        return settings
 
 
 class HeatProblem(
@@ -148,10 +153,14 @@ class HeatProblem(
 
     def energy_system_options(self):
         options = super().energy_system_options()
-        self.heat_network_settings["minimum_velocity"] = 0.0001
         # options["heat_loss_disconnected_pipe"] = False
         options["neglect_pipe_heat_losses"] = True
         return options
+
+    def update_heat_network_settings(self):
+        settings = super().update_heat_network_settings()
+        settings["head_loss_option"] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+        return settings
 
 
 class HeatProblemSetPointConstraints(
@@ -336,12 +345,12 @@ class QTHProblem(
 
         return goals
 
-    def energy_system_options(self):
-        options = super().energy_system_options()
+    def update_heat_network_settings(self):
         from mesido.head_loss_class import HeadLossOption
 
-        self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
-        return options
+        settings = super().update_heat_network_settings()
+        settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+        return settings
 
 
 if __name__ == "__main__":

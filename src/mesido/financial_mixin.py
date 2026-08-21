@@ -16,6 +16,9 @@ from rtctools.optimization.timeseries import Timeseries
 
 logger = logging.getLogger("mesido")
 
+# No safety factor is needed for big_m, since actual bounds are used.
+ASSET_IS_REALIZED_BIG_M_MARGIN = 1.01
+
 
 class FinancialMixin(
     BaseProblemMixin, BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem
@@ -798,13 +801,19 @@ class FinancialMixin(
         assert len(electricity_carriers.keys()) <= 1
 
         if len(electricity_carriers.keys()) == 0:
-            return Timeseries(self.times(), np.zeros(len(self.times())))
+            return np.zeros(len(self.times()))
 
         price_profile_name = f"{list(electricity_carriers.values())[0]['name']}.price_profile"
         if price_profile_name in self.io.get_timeseries_names():
-            return self.get_timeseries(price_profile_name)
+            price_profile_timeseries = self.get_timeseries(price_profile_name)
+            # The slicing is required if the timeseries wasn't adapted in the read
+            mask = (price_profile_timeseries.times >= self.times()[0]) & (
+                price_profile_timeseries.times <= self.times()[-1]
+            )
+            price_profile = price_profile_timeseries.values[mask]
+            return price_profile
 
-        return Timeseries(self.times(), np.zeros(len(self.times())))
+        return np.zeros(len(self.times()))
 
     def __investment_cost_constraints(self, ensemble_member):
         """
@@ -956,7 +965,10 @@ class FinancialMixin(
             ]
             timesteps = np.diff(self.times()) / 3600.0
 
-            pump_power = self.__state_vector_scaled(f"{asset}.Pump_power", ensemble_member)
+            if parameters[f"{asset}.include_head_loss_variables"]:
+                pump_power = self.__state_vector_scaled(f"{asset}.Pump_power", ensemble_member)
+            else:
+                pump_power = np.zeros(len(self.times()))
             eff = parameters[f"{asset}.pump_efficiency"]
 
             price_profile = self.__get_electricity_price_profile_or_zero()
@@ -966,7 +978,7 @@ class FinancialMixin(
                 * (heat_charge[1:] + heat_discharge[1:])
                 * timesteps
             )
-            sum_ += ca.sum1(price_profile.values[1:] * pump_power[1:] * timesteps / eff)
+            sum_ += ca.sum1(price_profile[1:] * pump_power[1:] * timesteps / eff)
 
             constraints.append(((variable_operational_cost - sum_) / nominal, 0.0, 0.0))
 
@@ -980,12 +992,15 @@ class FinancialMixin(
             )
             nominal = self.variable_nominal(variable_operational_cost_var)
 
-            pump_power = self.__state_vector_scaled(f"{asset}.Pump_power", ensemble_member)
+            if parameters[f"{asset}.include_head_loss_variables"]:
+                pump_power = self.__state_vector_scaled(f"{asset}.Pump_power", ensemble_member)
+            else:
+                pump_power = np.zeros(len(self.times()))
             eff = parameters[f"{asset}.pump_efficiency"]
 
             price_profile = self.__get_electricity_price_profile_or_zero()
 
-            sum_ = ca.sum1(price_profile.values[1:] * pump_power[1:] * timesteps_hr / eff)
+            sum_ = ca.sum1(price_profile[1:] * pump_power[1:] * timesteps_hr / eff)
 
             constraints.append(((variable_operational_cost - sum_) / nominal, 0.0, 0.0))
 
@@ -1000,7 +1015,10 @@ class FinancialMixin(
                 f"{s}.variable_operational_cost_coefficient"
             ]
 
-            pump_power = self.__state_vector_scaled(f"{s}.Pump_power", ensemble_member)
+            if parameters[f"{s}.include_head_loss_variables"]:
+                pump_power = self.__state_vector_scaled(f"{s}.Pump_power", ensemble_member)
+            else:
+                pump_power = np.zeros(len(self.times()))
             eff = parameters[f"{s}.pump_efficiency"]
 
             price_profile = self.__get_electricity_price_profile_or_zero()
@@ -1036,17 +1054,17 @@ class FinancialMixin(
                 ca.sum1(variable_operational_cost_coefficient * nominator_vector[1:] * timesteps_hr)
                 / denominator
             )
-            sum_ += ca.sum1(price_profile.values[1:] * pump_power[1:] * timesteps_hr / eff)
+            sum_ += ca.sum1(price_profile[1:] * pump_power[1:] * timesteps_hr / eff)
 
             if (len(self.get_electricity_carriers().keys()) > 0) and s in [
                 *self.energy_system_components.get("heat_source_elec", []),
-                *self.energy_system_components.get("elec_heat_source_elec", []),
-                *self.energy_system_components.get("air_water_heat_pump_elec", []),
-                *self.energy_system_components.get("heat_pump_elec", []),
+                *self.energy_system_components.get("air_water_heat_pump", []),
             ]:
+                # Electricity priceprofile calculations on heat produced should only be performed
+                # if there is no electricity port at the asset, e.g. the asset is not connected
+                # to an electricity network in the model.
                 sum_ += (
-                    ca.sum1(price_profile.values[1:] * nominator_vector[1:] * timesteps_hr)
-                    / denominator
+                    ca.sum1(price_profile[1:] * nominator_vector[1:] * timesteps_hr) / denominator
                 )
                 if variable_operational_cost_coefficient > 0.0:
                     logger.warning(
@@ -1068,7 +1086,10 @@ class FinancialMixin(
             variable_operational_cost_coefficient = parameters[
                 f"{hp}.variable_operational_cost_coefficient"
             ]
-            pump_power = self.__state_vector_scaled(f"{hp}.Pump_power", ensemble_member)
+            if parameters[f"{hp}.include_head_loss_variables"]:
+                pump_power = self.__state_vector_scaled(f"{hp}.Pump_power", ensemble_member)
+            else:
+                pump_power = np.zeros(len(self.times()))
             eff = parameters[f"{hp}.pump_efficiency"]
 
             price_profile = self.__get_electricity_price_profile_or_zero()
@@ -1076,11 +1097,11 @@ class FinancialMixin(
             sum_ = ca.sum1(
                 variable_operational_cost_coefficient * elec_consumption[1:] * timesteps_hr
             )
-            sum_ += ca.sum1(price_profile.values[1:] * pump_power[1:] * timesteps_hr / eff)
+            sum_ += ca.sum1(price_profile[1:] * pump_power[1:] * timesteps_hr / eff)
             if hp not in self.energy_system_components.get("heat_pump_elec", []):
                 # assuming that if heatpump has electricity port, the cost for the electricity
                 # are already made by the electricity producer and transport
-                sum_ += ca.sum1(price_profile.values[1:] * elec_consumption[1:] * timesteps_hr)
+                sum_ += ca.sum1(price_profile[1:] * elec_consumption[1:] * timesteps_hr)
             constraints.append(((variable_operational_cost - sum_) / nominal, 0.0, 0.0))
 
         for ac in self.energy_system_components.get("airco", []):
@@ -1276,6 +1297,7 @@ class FinancialMixin(
         """
         constraints = []
         options = self.energy_system_options()
+        bounds = self.bounds()
         if options["include_asset_is_realized"] and not options["yearly_investments"]:
             for asset in [
                 *self.energy_system_components.get("heat_demand", []),
@@ -1300,10 +1322,10 @@ class FinancialMixin(
                 #         insulation_class_cost
                 #         investment_cost_sym += insulation_class_active * insulation_class_cost
                 big_m = (
-                    1.5
+                    ASSET_IS_REALIZED_BIG_M_MARGIN
                     * max(
-                        self.bounds()[f"{asset}__investment_cost"][1]
-                        + self.bounds()[f"{asset}__installation_cost"][1],
+                        bounds[f"{asset}__investment_cost"][1]
+                        + bounds[f"{asset}__installation_cost"][1],
                         1.0,
                     )
                     / max(self.get_aggregation_count_max(asset), 1.0)
@@ -1332,28 +1354,28 @@ class FinancialMixin(
 
                 # Once the asset is utilized the asset must be realized
                 heat_flow = self.state(f"{asset}.Heat_flow")
-                if not np.isinf(self.bounds()[f"{asset}.Heat_flow"][1]):
+                if not np.isinf(bounds[f"{asset}.Heat_flow"][1]):
                     big_m = (
-                        1.5
-                        * self.bounds()[f"{asset}.Heat_flow"][1]
+                        ASSET_IS_REALIZED_BIG_M_MARGIN
+                        * bounds[f"{asset}.Heat_flow"][1]
                         / max(self.get_aggregation_count_max(asset), 1.0)
                     )
                 else:
                     try:
                         big_m = (
-                            1.5
+                            ASSET_IS_REALIZED_BIG_M_MARGIN
                             * max(
-                                self.bounds()[f"{asset}.HeatOut.Heat"][1],
-                                self.bounds()[f"{asset}.HeatIn.Heat"][1],
+                                bounds[f"{asset}.HeatOut.Heat"][1],
+                                bounds[f"{asset}.HeatIn.Heat"][1],
                             )
                             / max(self.get_aggregation_count_max(asset), 1.0)
                         )
                     except KeyError:
                         big_m = (
-                            1.5
+                            ASSET_IS_REALIZED_BIG_M_MARGIN
                             * max(
-                                self.bounds()[f"{asset}.Primary.HeatOut.Heat"][1],
-                                self.bounds()[f"{asset}.Primary.HeatIn.Heat"][1],
+                                bounds[f"{asset}.Primary.HeatOut.Heat"][1],
+                                bounds[f"{asset}.Primary.HeatIn.Heat"][1],
                             )
                             / max(self.get_aggregation_count_max(asset), 1.0)
                         )
@@ -1379,6 +1401,7 @@ class FinancialMixin(
         """
         constraints = []
         options = self.energy_system_options()
+        bounds = self.bounds()
         if options["include_asset_is_realized"] and options["yearly_investments"]:
             for asset in [
                 *self.energy_system_components.get("heat_demand", []),
@@ -1405,10 +1428,10 @@ class FinancialMixin(
                     )
 
                     big_m = (
-                        1.5
+                        ASSET_IS_REALIZED_BIG_M_MARGIN
                         * max(
-                            self.bounds()[f"{asset}__investment_cost"][1]
-                            + self.bounds()[f"{asset}__installation_cost"][1],
+                            bounds[f"{asset}__investment_cost"][1]
+                            + bounds[f"{asset}__installation_cost"][1],
                             1.0,
                         )
                         / max(self.get_aggregation_count_max(asset), 1.0)
@@ -1432,28 +1455,28 @@ class FinancialMixin(
 
                     # Once the asset is utilized the asset must be realized
                     heat_flow = self.states_in(f"{asset}.Heat_flow", time_start, time_end)[:-1]
-                    if not np.isinf(self.bounds()[f"{asset}.Heat_flow"][1]):
+                    if not np.isinf(bounds[f"{asset}.Heat_flow"][1]):
                         big_m = (
-                            1.5
-                            * self.bounds()[f"{asset}.Heat_flow"][1]
+                            ASSET_IS_REALIZED_BIG_M_MARGIN
+                            * bounds[f"{asset}.Heat_flow"][1]
                             / max(self.get_aggregation_count_max(asset), 1.0)
                         )
                     else:
                         try:
                             big_m = (
-                                1.5
+                                ASSET_IS_REALIZED_BIG_M_MARGIN
                                 * max(
-                                    self.bounds()[f"{asset}.HeatOut.Heat"][1],
-                                    self.bounds()[f"{asset}.HeatIn.Heat"][1],
+                                    bounds[f"{asset}.HeatOut.Heat"][1],
+                                    bounds[f"{asset}.HeatIn.Heat"][1],
                                 )
                                 / max(self.get_aggregation_count_max(asset), 1.0)
                             )
                         except KeyError:
                             big_m = (
-                                1.5
+                                ASSET_IS_REALIZED_BIG_M_MARGIN
                                 * max(
-                                    self.bounds()[f"{asset}.Primary.HeatOut.Heat"][1],
-                                    self.bounds()[f"{asset}.Primary.HeatIn.Heat"][1],
+                                    bounds[f"{asset}.Primary.HeatOut.Heat"][1],
+                                    bounds[f"{asset}.Primary.HeatIn.Heat"][1],
                                 )
                                 / max(self.get_aggregation_count_max(asset), 1.0)
                             )

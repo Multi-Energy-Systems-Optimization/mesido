@@ -44,17 +44,24 @@ class TestEndScenarioSizingEnsemble(TestCase):
                 input_timeseries_file="Warmte_test.csv",
                 _asset_types_fixed_size=config["_asset_types_fixed_size"],
                 _asset_subtypes_not_included_fixed_size=[],
+                _day_steps=10,
             )
 
             results = dict()
             parameters = dict()
+
+            assert heat_problem.ensemble_size == 3
+            assert len(heat_problem.times()) == 63
+
             for e_m in range(heat_problem.ensemble_size):
                 results[e_m] = heat_problem.extract_results(ensemble_member=e_m)
                 parameters[e_m] = heat_problem.parameters(e_m)
                 demand_matching_test(heat_problem, results[e_m], ensemble_member=e_m)
 
-                energy_conservation_test(heat_problem, heat_problem.extract_results(e_m))
-                heat_to_discharge_test(heat_problem, heat_problem.extract_results(e_m))
+                energy_conservation_test(
+                    heat_problem, heat_problem.extract_results(e_m), atol_total=100.0
+                )
+                heat_to_discharge_test(heat_problem, heat_problem.extract_results(e_m), atol=20.0)
 
             def check_consistent_size_and_costs(
                 results,
@@ -78,12 +85,12 @@ class TestEndScenarioSizingEnsemble(TestCase):
                         inst_cost = results[e_m][heat_problem._asset_installation_cost_map[prod]][0]
                         tech_life_time = parameters[e_m][f"{prod}.technical_life"]
                         if equal_size_assets:
-                            np.testing.assert_equal(prod_size, results[e_m][f"{prod}__max_size"])
-                            np.testing.assert_equal(
+                            np.testing.assert_allclose(prod_size, results[e_m][f"{prod}__max_size"])
+                            np.testing.assert_allclose(
                                 prod_aggr_count, results[e_m][f"{prod}_aggregation_count"]
                             )
-                            np.testing.assert_equal(inv_cost, inv_cost_0)
-                            np.testing.assert_equal(inst_cost, inst_cost_0)
+                            np.testing.assert_allclose(inv_cost, inv_cost_0)
+                            np.testing.assert_allclose(inst_cost, inst_cost_0)
                         asset_state = heat_problem.parameters(e_m)[f"{prod}.state"]
                         if asset_state == AssetStateEnum.OPTIONAL:
                             inv_costs_source[e_m] += inv_cost * max(

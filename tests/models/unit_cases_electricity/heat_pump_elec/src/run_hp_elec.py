@@ -56,10 +56,14 @@ class _GoalsAndOptions:
     def energy_system_options(self):
         options = super().energy_system_options()
         # options["heat_loss_disconnected_pipe"] = False
-        self.heat_network_settings["minimum_velocity"] = 0.0001
         options["include_electric_cable_power_loss"] = True
 
         return options
+
+    def update_heat_network_settings(self):
+        settings = super().update_heat_network_settings()
+        settings["minimum_velocity"] = 0.0001
+        return settings
 
     def solver_options(self):
         options = super().solver_options()
@@ -124,7 +128,6 @@ class HeatProblem(
 
     def energy_system_options(self):
         options = super().energy_system_options()
-        self.heat_network_settings["minimum_velocity"] = 0.0001
         options["heat_loss_disconnected_pipe"] = True
 
         return options
@@ -200,7 +203,6 @@ class HeatProblem2(
 
     def energy_system_options(self):
         options = super().energy_system_options()
-        self.heat_network_settings["minimum_velocity"] = 0.0001
         options["heat_loss_disconnected_pipe"] = False
 
         return options
@@ -268,7 +270,6 @@ class ElectricityProblem(
 
     def energy_system_options(self):
         options = super().energy_system_options()
-        self.heat_network_settings["minimum_velocity"] = 0.0001
         options["heat_loss_disconnected_pipe"] = False
 
         return options
@@ -299,12 +300,15 @@ class ElectricityProblemPriceProfile(
 
     def energy_system_options(self):
         options = super().energy_system_options()
-        self.heat_network_settings["minimum_velocity"] = 0.0001
         options["heat_loss_disconnected_pipe"] = False
         options["neglect_pipe_heat_losses"] = True
-        self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
 
         return options
+
+    def update_heat_network_settings(self):
+        settings = super().update_heat_network_settings()
+        settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+        return settings
 
 
 if __name__ == "__main__":

@@ -182,10 +182,14 @@ class HeatProblem(
         Options dict for the physics modelling
         """
         options = super().energy_system_options()
-        self.heat_network_settings["minimum_velocity"] = 0.0
         options["heat_loss_disconnected_pipe"] = False
         options["neglect_pipe_heat_losses"] = False
         return options
+
+    def update_heat_network_settings(self):
+        settings = super().update_heat_network_settings()
+        settings["minimum_velocity"] = 0.0
+        return settings
 
 
 if __name__ == "__main__":

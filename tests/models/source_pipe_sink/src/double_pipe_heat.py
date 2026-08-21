@@ -2,10 +2,11 @@ from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
-from mesido.head_loss_class import HeadLossOption
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.io.write_output import ScenarioOutput
-
+from mesido.workflows.utils.adapt_profiles import (
+    adapt_profile_to_averaged_timestep,
+)
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
@@ -76,25 +77,20 @@ class SourcePipeSink(
         super().post()
 
 
-class HeatProblemHydraulic(ESDLAdditionalVarsMixin, SourcePipeSink):
+class SourcePipeSinkDayAveraged(SourcePipeSink):
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.heat_network_settings["head_loss_option"] = (
-            HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
-        )
-        self.heat_network_settings["n_linearization_lines"] = 5
-        self.heat_network_settings["minimize_head_losses"] = True
+        self.__day_steps = kwargs.get("_day_steps", 1)
 
-    def energy_system_options(self):
-        options = super().energy_system_options()
+    def read(self):
+        super().read()
 
-        return options
+        adapt_profile_to_averaged_timestep(self, self.__day_steps * 24)
 
-    def solver_options(self):
-        options = super().solver_options()
-        # options["solver"] = "gurobi"
 
-        return options
+class HeatProblemESDLVarsMixin(ESDLAdditionalVarsMixin, SourcePipeSink):
+    pass
 
 
 if __name__ == "__main__":

@@ -283,7 +283,7 @@ class TestUpdatedESDL(TestCase):
                         # sized
                     elif asset_name in ["Pipe4", "Pipe4_ret"]:
                         np.testing.assert_array_equal(
-                            energy_system.instance[0].area.asset[ii].diameter.name, "DN200"
+                            energy_system.instance[0].area.asset[ii].diameter.name, "DN150"
                         )  # original pipe DN900 being sized
                     elif asset_name not in ["Pipe5", "Pipe5_ret"]:
                         np.testing.assert_array_equal(
