@@ -8,6 +8,8 @@
 - Write_result_db_profiles has been replaced by esdl_profiles_output_type (determines the ESDL output profile type)
 - Names used for keys in "database_connections" specified
 - Using pyesdl for database credential management
+- Write result profiles to a fixed (configured) database combined with a dynamic schema name per run when the output profile type is postgres
+- Update pyESDL to v26.7.1
 - Parsing of input profiles with 15-minute interval now supported.
 
 ## Fixed

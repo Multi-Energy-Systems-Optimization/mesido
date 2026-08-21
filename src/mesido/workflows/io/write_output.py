@@ -60,7 +60,7 @@ class ScenarioOutput:
             ESDLOutputProfilesType.INFLUXDB,
         ]
 
-        base_error_string = "Missing influxdb setting for writing result profile data:"
+        base_error_string = "Missing database setting for writing result profile data:"
         try:
             if self.esdl_output_profiles_type is not None and not isinstance(
                 self.esdl_output_profiles_type, ESDLOutputProfilesType
@@ -138,8 +138,26 @@ class ScenarioOutput:
                         )
                         sys.exit(1)
                 except KeyError:
-                    logger.error("f{base_string} verify_ssl")
+                    logger.error(f"{base_error_string} verify_ssl")
                     sys.exit(1)
+
+                if self.esdl_output_profiles_type == ESDLOutputProfilesType.POSTGRESQL:
+                    try:
+                        pg_timeseries_database = database_connection_input["database"]
+                        if (
+                            pg_timeseries_database is None
+                            or len(pg_timeseries_database.strip()) == 0
+                        ):
+                            logger.error(
+                                "Current setting of database name is not set or an empty string."
+                                " It should be the name of the target database when writing"
+                                " to PostgreSQL."
+                            )
+                            sys.exit(1)
+                        self.pg_timeseries_database = pg_timeseries_database.strip()
+                    except KeyError:
+                        logger.error(f"{base_error_string} database")
+                        sys.exit(1)
         except KeyError:
             # Not writing out to a influxdb, so no settings are requried
             pass
@@ -1517,11 +1535,16 @@ class ScenarioOutput:
                                             == ESDLOutputProfilesType.POSTGRESQL
                                         ):
                                             db_type = esdl.DatabaseTypeEnum.POSTGRESQL
+                                            database_name = self.pg_timeseries_database
+                                            schema = output_energy_system_id
                                         else:
                                             db_type = esdl.DatabaseTypeEnum.INFLUXDB
+                                            database_name = output_energy_system_id
+                                            schema = None
+
                                         esdl_profile = create_data_table_profile(
                                             es=energy_system,
-                                            database_name=output_energy_system_id,
+                                            database_name=database_name,
                                             table_name=carrier_id,
                                             column_name=variable_name,
                                             start_date=start_date_time,
@@ -1529,6 +1552,7 @@ class ScenarioOutput:
                                             db_host=self.host,
                                             db_port=self.port,
                                             filter='"assetId"=' + f"'{str(asset_id)}'",
+                                            schema=schema,
                                             db_type=db_type,
                                             profile_type=esdl.ProfileTypeEnum.OUTPUT,
                                             quantity_and_unit_type=quantity_and_unit,
