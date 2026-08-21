@@ -58,6 +58,9 @@ class TestEndScenarioSizing(TestCase):
         - demand matching
         - heat to discharge
         - energy conservation
+        - zero heat demand at some timesteps
+        - default workflow minimum velocity is non-zero
+        - minimum velocity setting for staged workflow
         """
 
         import models.source_pipe_sink.src.double_pipe_heat as double_pipe_heat
@@ -77,6 +80,15 @@ class TestEndScenarioSizing(TestCase):
         demand_matching_test(solution, results)
         heat_to_discharge_test(solution, results)
         energy_conservation_test(solution, results)
+
+        # Validate that the demand contains zeros for some timesteps.
+        for demand_id in solution.energy_system_components.get("heat_demand", []):
+            demand_profile = solution.get_timeseries(f"{demand_id}.target_heat_demand").values
+            np.testing.assert_array_less(12.0, np.count_nonzero(np.isclose(demand_profile, 0.0)))
+
+        np.testing.assert_array_less(
+            1.0e-6, self.solution.heat_network_settings["minimum_velocity"]
+        )
 
         np.testing.assert_allclose(solution.heat_network_settings["minimum_velocity"], 0.0)
 
