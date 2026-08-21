@@ -143,13 +143,14 @@ class ScenarioOutput:
 
                 if self.esdl_output_profiles_type == ESDLOutputProfilesType.POSTGRESQL:
                     try:
-                        self.pg_timeseries_database = database_connection_input["database"]
-                        if self.pg_timeseries_database is None or len(self.pg_timeseries_database) == 0:
+                        pg_timeseries_database = database_connection_input["database"]
+                        if pg_timeseries_database is None or len(pg_timeseries_database.strip()) == 0:
                             logger.error(
                                 "Current setting of database name is not set or an empty string."
                                 " It should be the name of the target database when writing to PostgreSQL."
                             )
                             sys.exit(1)
+                        self.pg_timeseries_database = pg_timeseries_database.strip()
                     except KeyError:
                         logger.error(f"{base_error_string} database")
                         sys.exit(1)
