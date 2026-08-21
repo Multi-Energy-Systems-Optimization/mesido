@@ -5,6 +5,7 @@ from mesido.head_loss_class import HeadLossOption
 from mesido.physics_mixin import PhysicsMixin
 from mesido.qth_not_maintained.qth_mixin import QTHMixin
 from mesido.techno_economic_mixin import TechnoEconomicMixin
+from mesido.workflows.goals.minimize_tco_goal import MinimizeTCO
 
 import numpy as np
 
@@ -111,52 +112,17 @@ class HeatProblemTvarWithTechnoEconomicMixin(HeatProblemTvar, TechnoEconomicMixi
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.base_carrier_name = "Heat"
-        self.base_carrier_id = self._get_id_from_carrier_name(self.base_carrier_name)
+
+    def goals(self):
+        goals = super().goals().copy()
+        goals.append(MinimizeTCO(priority=2))
+        return goals
 
     def temperature_regimes(self, carrier):
         temperatures = []
-        if carrier == self.base_carrier_id:
-            temperatures = self._get_related_carrier_temperatures(self.base_carrier_name)
+        if carrier == "c362f53a-3eaf-4d96-8ee6-944e77359fed":
+            temperatures = [71.0, 74.0, 86.0]
         return temperatures
-
-    def _get_id_from_carrier_name(self, carrier_name: str):
-        """
-        Return the id of the carrier with the given name.
-
-        Parameters
-        ----------
-        carrier_name : Name of the carrier for which the id is requested.
-        """
-
-        return next(
-            (
-                carrier.get("id")
-                for carrier in self.esdl_carriers.values()
-                if carrier.get("name") == carrier_name
-            ),
-            None,
-        )
-
-    def _get_related_carrier_temperatures(self, carrier_name: str):
-        """
-        Return the sorted temperatures of carriers related to the given carrier name.
-
-        A carrier is considered related if its name starts with ``<carrier_name>_``
-        followed by a numeric suffix, for example ``Heat_70`` or ``Heat_90``.
-
-        Parameters
-        ----------
-        carrier_name : Base name of the carrier group.
-        """
-
-        return sorted(
-            carrier["temperature"]
-            for carrier in self.esdl_carriers.values()
-            if carrier_name
-            and carrier.get("name", "").startswith(f"{carrier_name}_")
-            and carrier["name"][len(f"{carrier_name}_") :].isdigit()
-        )
 
 
 class QTHProblem(
