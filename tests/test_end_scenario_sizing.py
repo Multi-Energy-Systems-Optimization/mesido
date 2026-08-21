@@ -758,6 +758,7 @@ if __name__ == "__main__":
     a = TestEndScenarioSizing()
     a.setUpClass()
     a.test_end_scenario_sizing()
+    a.test_end_scenario_sizing_no_demand()
     a.test_end_scenario_sizing_staged()
     a.test_end_scenario_sizing_heat_demand_not_matched()
     a.test_heat_exchanger_sizing()

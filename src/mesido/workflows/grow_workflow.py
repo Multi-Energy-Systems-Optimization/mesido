@@ -779,10 +779,18 @@ class SettingsStaged:
         self._stage = stage
         self._total_stages = total_stages
         self.__boolean_bounds = boolean_bounds
+
+        # Initialization order is intentional:
+        # - Stage attributes must be set before parent initialization so stage-dependent
+        #   setup during __init__ (for example network settings such as minimum_velocity)
+        #   uses the correct staged values.
+        # - priorities_output must be restored only after parent initialization because
+        #   parent classes initialize _priorities_output and would otherwise overwrite
+        #   the carried stage-1 priorities.
+        super().__init__(*args, **kwargs)
+
         if self._stage == 2 and priorities_output:
             self._priorities_output = priorities_output
-
-        super().__init__(*args, **kwargs)
 
     def update_heat_network_settings(self):
         settings = super().update_heat_network_settings()
