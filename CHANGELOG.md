@@ -12,6 +12,7 @@
 - Write result profiles to a fixed (configured) database combined with a dynamic schema name per run when the output profile type is postgres
 - Update pyESDL to v26.7.1
 - Parsing of input profiles with 15-minute interval now supported.
+- Class name of ModelicaComponentTypeMixin has been changed to ComponentTypeMixin to reflect the fact that it is not only used for Modelica components.
 
 ## Fixed
 - Bug: Only update the aggregation count for an ATES and a GeothermalSource in DTK post processing
