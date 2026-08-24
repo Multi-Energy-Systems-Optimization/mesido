@@ -19,7 +19,12 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
-from utils_tests import cost_calculation_test, demand_matching_test
+from utils_tests import (
+    cost_calculation_test,
+    demand_matching_test,
+    energy_conservation_test,
+    heat_to_discharge_test,
+)
 
 
 class TestEndScenarioSizing(TestCase):
@@ -42,6 +47,50 @@ class TestEndScenarioSizing(TestCase):
         )
         cls.results = cls.solution.extract_results()
         cls.name_to_id_map = cls.solution.esdl_asset_name_to_id_map
+
+    def test_end_scenario_sizing_no_demand(self):
+        """
+        Checks if EndScenarioSizing also works for ESDLs where the heat demand is zero at some
+        moments in time.
+        This run will fail when the minimum velocity is not set equal to zero.
+
+        Checks:
+        - demand matching
+        - heat to discharge
+        - energy conservation
+        - zero heat demand at some timesteps
+        - default workflow minimum velocity is non-zero
+        - minimum velocity setting for staged workflow
+        """
+
+        import models.source_pipe_sink.src.double_pipe_heat as double_pipe_heat
+
+        base_folder = Path(double_pipe_heat.__file__).resolve().parent.parent
+
+        solution = run_end_scenario_sizing(
+            EndScenarioSizingStaged,
+            base_folder=base_folder,
+            esdl_file_name="sourcesink.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import_zero_demand.csv",
+        )
+        results = solution.extract_results()
+
+        demand_matching_test(solution, results)
+        heat_to_discharge_test(solution, results)
+        energy_conservation_test(solution, results)
+
+        # Validate that the demand contains zeros for some timesteps.
+        for demand_id in solution.energy_system_components.get("heat_demand", []):
+            demand_profile = solution.get_timeseries(f"{demand_id}.target_heat_demand").values
+            np.testing.assert_array_less(12.0, np.count_nonzero(np.isclose(demand_profile, 0.0)))
+
+        np.testing.assert_array_less(
+            1.0e-6, self.solution.heat_network_settings["minimum_velocity"]
+        )
+
+        np.testing.assert_allclose(solution.heat_network_settings["minimum_velocity"], 0.0)
 
     def test_end_scenario_sizing(self):
         """
@@ -721,6 +770,7 @@ if __name__ == "__main__":
     a = TestEndScenarioSizing()
     a.setUpClass()
     a.test_end_scenario_sizing()
+    a.test_end_scenario_sizing_no_demand()
     a.test_end_scenario_sizing_staged()
     a.test_end_scenario_sizing_heat_demand_not_matched()
     a.test_heat_exchanger_sizing()

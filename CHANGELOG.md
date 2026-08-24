@@ -1,7 +1,8 @@
-# [Unreleased-main] - 2026-08-19
+# [Unreleased-main] - 2026-08-24
 
 ## Added
 - ESDL profile reading and writing for different types: influxdb and postgres, and inline (in ESDL file).
+- Import with an Electricity port is now supported as a subclass of electricity source and caters for electricity price profiles.
 - A heat source asset is eligible for use only when its maximum temperature meets or exceeds the network supply temperature
 
 ## Changed
@@ -12,9 +13,11 @@
 - Write result profiles to a fixed (configured) database combined with a dynamic schema name per run when the output profile type is postgres
 - Update pyESDL to v26.7.1
 - Parsing of input profiles with 15-minute interval now supported.
+- Class name of ModelicaComponentTypeMixin has been changed to ComponentTypeMixin to reflect the fact that it is not only used for Modelica components.
 
 ## Fixed
 - Bug: Only update the aggregation count for an ATES and a GeothermalSource in DTK post processing
+- Bug: minimum velocity is set to 0.0 in the staged grow_workflow to allow for zero heat demand.
 
 # [0.1.20] - 2026-06-15
 
