@@ -15,6 +15,7 @@
 
 ## Fixed
 - Bug: Only update the aggregation count for an ATES and a GeothermalSource in DTK post processing
+- Bug: minimum velocity is set to 0.0 in the staged grow_workflow to allow for zero heat demand.
 
 # [0.1.20] - 2026-06-15
 
