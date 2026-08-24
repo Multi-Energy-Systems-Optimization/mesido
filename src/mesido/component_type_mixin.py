@@ -13,7 +13,7 @@ from pymoca.backends.casadi.alias_relation import AliasRelation
 logger = logging.getLogger("mesido")
 
 
-class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
+class ComponentTypeMixin(BaseComponentTypeMixin):
     """
     This class is used to make the milp network component information easily accesible in the
     heat_mixin. This is achieved by creating a heat_network_components dict where the assets are

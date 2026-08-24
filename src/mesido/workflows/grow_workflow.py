@@ -811,7 +811,7 @@ class SettingsStaged:
         elif self._stage == 2:
             # If at least 1 heat_source has a producer profile assigned, set the
             # heat_loss_disconnected_pipe option to False
-            if hasattr(self, "_ModelicaComponentTypeMixin__hn_component_types"):
+            if hasattr(self, "_ComponentTypeMixin__hn_component_types"):
                 for asset in self.energy_system_components.get("heat_source", []):
                     if f"{asset}.maximum_heat_source" in self.io.get_timeseries_names():
                         options["heat_loss_disconnected_pipe"] = False
