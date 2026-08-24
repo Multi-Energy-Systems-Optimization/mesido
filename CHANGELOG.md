@@ -1,10 +1,10 @@
-# [Unreleased-main] - 2026-07-15
+# [Unreleased-main] - 2026-08-24
 
 ## Added
 - xxx
 
 ## Changed
-- xxx
+- Use pipe DN enums instead of extracting the DN size from the name (EDR pipes and available pipe classes)
 
 ## Fixed
 - xxx 
