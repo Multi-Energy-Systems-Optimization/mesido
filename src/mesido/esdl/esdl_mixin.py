@@ -276,7 +276,9 @@ class ESDLMixin(
                 )
             self.name_to_esdl_id_map[esdl_asset.name] = esdl_id
 
-    def find_index_of_pipe_or_next_up(self, pipes, target_dn):
+    def find_index_of_pipe_or_next_up(
+        self, pipes: List[EDRPipeClass], target_dn: float
+    ) -> Optional[int]:
         """
         Find the index of the first pipe in the ordered pipes that meets the specified size
         """
@@ -391,7 +393,8 @@ class ESDLMixin(
                 min_size_idx = self.find_index_of_pipe_or_next_up(pipe_classes, min_dn_mm)
             else:  # use default minimum pipe DN size
                 min_size_idx = self.find_index_of_pipe_or_next_up(
-                    pipe_classes, float(self.__minimum_pipe_size_name.name[2:])
+                    pipe_classes,
+                    float(self.__minimum_pipe_size_name.name.upper().strip("DN")),
                 )
             assert min_size_idx is not None
 
