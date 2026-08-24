@@ -2,6 +2,7 @@
 
 ## Added
 - ESDL profile reading and writing for different types: influxdb and postgres, and inline (in ESDL file).
+- Import with an Electricity port is now supported as a subclass of electricity source and caters for electricity price profiles.
 
 ## Changed
 - Code generalization in asset sizing mixin
