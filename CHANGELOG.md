@@ -1,13 +1,16 @@
 # [Unreleased-main] - 2026-08-20
 
 ## Added
-- xxx
+- Import with an Electricity port is now supported as a subclass of electricity source and caters for electricity price profiles.
 
 ## Changed
-- xxx
+- Write result profiles to a fixed (configured) database combined with a dynamic schema name per run when the output profile type is postgres
+- Update pyESDL to v26.7.1
+- Parsing of input profiles with 15-minute interval now supported.
+- Class name of ModelicaComponentTypeMixin has been changed to ComponentTypeMixin to reflect the fact that it is not only used for Modelica components.
 
 ## Fixed
-- xxx
+- Bug: minimum velocity is set to 0.0 in the staged grow_workflow to allow for zero heat demand.
 
 
 # [0.1.20.3] - 2026-07-15

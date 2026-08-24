@@ -295,6 +295,13 @@ class _AssetToComponentBase:
             "fixedMaintenanceCosts": "optional",
             "fixedOperationalCosts": "optional",
         },
+        "electricity_import": {
+            "investmentCosts": "optional",
+            "installationCosts": "optional",
+            "variableOperationalCosts": "optional",
+            "fixedMaintenanceCosts": "optional",
+            "fixedOperationalCosts": "optional",
+        },
         "heat_source": {  # Includes GeothermalSource, ResidualHeatSource, HeatProducer,
             # GasHeater, ElectricBoiler
             "investmentCosts": "required",
@@ -349,6 +356,8 @@ class _AssetToComponentBase:
         "CoolingDemand": "heat_demand",
         "Electrolyzer": "electrolyzer",
         "ElectricBoiler": "heat_source",
+        "Import": "electricity_import",
+        "ElectricityProducer": "electricity_source",
         "GasDemand": "gas_demand",
         "GasHeater": "heat_source",
         "GasStorage": "gas_tank_storage",

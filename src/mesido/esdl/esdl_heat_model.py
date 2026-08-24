@@ -30,6 +30,7 @@ from mesido.pycml.component_library.milp import (
     ElecHeatSourceElec,
     ElectricityCable,
     ElectricityDemand,
+    ElectricityImport,
     ElectricityNode,
     ElectricitySource,
     ElectricityStorage,
@@ -1903,7 +1904,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
         if isinstance(asset.out_ports[0].carrier, esdl.esdl.GasCommodity):
             return self.convert_gas_source(asset)
         elif isinstance(asset.out_ports[0].carrier, esdl.esdl.ElectricityCommodity):
-            return self.convert_electricity_source(asset)
+            _, modifiers = self.convert_electricity_source(asset)
+            return ElectricityImport, modifiers
         else:
             raise RuntimeError(
                 f"Commodity of type {type(asset.out_ports[0].carrier)} for asset Import "
