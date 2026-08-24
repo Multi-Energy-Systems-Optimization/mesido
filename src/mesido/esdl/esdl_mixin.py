@@ -12,7 +12,7 @@ import esdl.esdl_handler
 from esdl.profiles.credentials import Credentials
 
 from mesido.component_type_mixin import (
-    ModelicaComponentTypeMixin,
+    ComponentTypeMixin,
 )
 from mesido.esdl.asset_to_component_base import _AssetToComponentBase
 from mesido.esdl.common import Asset
@@ -74,7 +74,7 @@ class _ESDLInputException(Exception):
 
 
 class ESDLMixin(
-    ModelicaComponentTypeMixin,
+    ComponentTypeMixin,
     IOMixin,
     PyCMLMixin,
     CollocatedIntegratedOptimizationProblem,
