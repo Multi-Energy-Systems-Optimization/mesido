@@ -12,7 +12,7 @@ from mesido.demand_insulation_class import DemandInsulationClass
 from mesido.esdl.asset_to_component_base import AssetStateEnum
 from mesido.esdl.common import Asset
 from mesido.esdl.esdl_additional_vars_mixin import get_asset_contraints
-from mesido.esdl.profile_parser import InfluxDBProfileReader
+from mesido.esdl.profile_parser import ESDLProfileReader
 from mesido.head_loss_class import HeadLossOption
 from mesido.network_common import NetworkSettings
 from mesido.pipe_class import CableClass, GasPipeClass, PipeClass
@@ -817,7 +817,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             if (
                 qty_asset_profile_constraints > 0
                 and hasattr(asset_profile_constraints[0], "maximum")
-                and InfluxDBProfileReader._get_profile_quantity_and_unit(
+                and ESDLProfileReader._get_profile_quantity_and_unit(
                     asset_profile_constraints[0].maximum
                 ).unit
                 == esdl.UnitEnum.WATT
@@ -1785,7 +1785,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             if (
                 qty_asset_profile_constraints > 0
                 and hasattr(asset_profile_constraints[0], "maximum")
-                and InfluxDBProfileReader._get_profile_quantity_and_unit(
+                and ESDLProfileReader._get_profile_quantity_and_unit(
                     asset_profile_constraints[0].maximum
                 ).unit
                 == esdl.UnitEnum.WATT
@@ -1828,16 +1828,16 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 # profile is specified without units (xlm/csv)
                 qty_asset_profile_constraints == 0
                 or (
-                    InfluxDBProfileReader._get_profile_quantity_and_unit(
+                    ESDLProfileReader._get_profile_quantity_and_unit(
                         asset_profile_constraints[0].maximum
                     ).physicalQuantity
                     == esdl.PhysicalQuantityEnum.COEFFICIENT
                     and (
-                        InfluxDBProfileReader._get_profile_quantity_and_unit(
+                        ESDLProfileReader._get_profile_quantity_and_unit(
                             asset_profile_constraints[0].maximum
                         ).unit
                         == esdl.UnitEnum.PERCENT
-                        or InfluxDBProfileReader._get_profile_quantity_and_unit(
+                        or ESDLProfileReader._get_profile_quantity_and_unit(
                             asset_profile_constraints[0].maximum
                         ).unit
                         == esdl.UnitEnum.NONE

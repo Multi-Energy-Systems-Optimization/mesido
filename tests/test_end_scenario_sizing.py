@@ -11,6 +11,7 @@ from mesido.workflows import (
     EndScenarioSizingDiscounted,
     EndScenarioSizingStaged,
     run_end_scenario_sizing,
+    run_end_scenario_sizing_no_heat_losses,
 )
 from mesido.workflows.grow_workflow import EndScenarioSizingHeadLossStaged
 from mesido.workflows.utils.error_types import NetworkErrors
@@ -19,7 +20,12 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
-from utils_tests import cost_calculation_test, demand_matching_test
+from utils_tests import (
+    cost_calculation_test,
+    demand_matching_test,
+    energy_conservation_test,
+    heat_to_discharge_test,
+)
 
 
 class TestEndScenarioSizing(TestCase):
@@ -42,6 +48,50 @@ class TestEndScenarioSizing(TestCase):
         )
         cls.results = cls.solution.extract_results()
         cls.name_to_id_map = cls.solution.esdl_asset_name_to_id_map
+
+    def test_end_scenario_sizing_no_demand(self):
+        """
+        Checks if EndScenarioSizing also works for ESDLs where the heat demand is zero at some
+        moments in time.
+        This run will fail when the minimum velocity is not set equal to zero.
+
+        Checks:
+        - demand matching
+        - heat to discharge
+        - energy conservation
+        - zero heat demand at some timesteps
+        - default workflow minimum velocity is non-zero
+        - minimum velocity setting for staged workflow
+        """
+
+        import models.source_pipe_sink.src.double_pipe_heat as double_pipe_heat
+
+        base_folder = Path(double_pipe_heat.__file__).resolve().parent.parent
+
+        solution = run_end_scenario_sizing(
+            EndScenarioSizingStaged,
+            base_folder=base_folder,
+            esdl_file_name="sourcesink.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import_zero_demand.csv",
+        )
+        results = solution.extract_results()
+
+        demand_matching_test(solution, results)
+        heat_to_discharge_test(solution, results)
+        energy_conservation_test(solution, results)
+
+        # Validate that the demand contains zeros for some timesteps.
+        for demand_id in solution.energy_system_components.get("heat_demand", []):
+            demand_profile = solution.get_timeseries(f"{demand_id}.target_heat_demand").values
+            np.testing.assert_array_less(12.0, np.count_nonzero(np.isclose(demand_profile, 0.0)))
+
+        np.testing.assert_array_less(
+            1.0e-6, self.solution.heat_network_settings["minimum_velocity"]
+        )
+
+        np.testing.assert_allclose(solution.heat_network_settings["minimum_velocity"], 0.0)
 
     def test_end_scenario_sizing(self):
         """
@@ -509,20 +559,21 @@ class TestEndScenarioSizing(TestCase):
 
         # Check min DN in the available pipe classes and the resulting pipe size
         pipes_to_check = ["Pipe2", "Pipe2_ret", "Pipe4", "Pipe4_ret"]  # user input minimum DN
-        for pipe in solution.energy_system_components.get("heat_pipe"):
-            available_pipe_classes = solution.pipe_classes(pipe)
+        for pipe_id in solution.energy_system_components.get("heat_pipe"):
+            available_pipe_classes = solution.pipe_classes(pipe_id)
+            pipe_name = solution.esdl_asset_id_to_name_map[pipe_id]
 
-            if pipe in pipes_to_check:
+            if pipe_name in pipes_to_check:
                 np.testing.assert_equal(available_pipe_classes[0].name == "DN40", True)
-                np.testing.assert_equal(parameters[f"{pipe}.diameter"], 0.0431)
-                np.testing.assert_equal(results[f"{pipe}__hn_diameter"], 0.0431)
-            elif pipe not in ["Pipe1", "Pipe1_ret"]:  # this Pipe1 is not placed
+                np.testing.assert_equal(parameters[f"{pipe_id}.diameter"], 0.0431)
+                np.testing.assert_equal(results[f"{pipe_id}__hn_diameter"], 0.0431)
+            elif pipe_name not in ["Pipe1", "Pipe1_ret"]:  # this Pipe1 is not placed
                 if available_pipe_classes[0].name == "None":
                     np.testing.assert_equal(available_pipe_classes[1].name == "DN50", True)
                 else:
                     np.testing.assert_equal(available_pipe_classes[0].name == "DN50", True)
-                np.testing.assert_allclose(parameters[f"{pipe}.diameter"], 0.0545, atol=1e-6)
-                np.testing.assert_allclose(results[f"{pipe}__hn_diameter"], 0.0545, atol=1e-6)
+                np.testing.assert_allclose(parameters[f"{pipe_id}.diameter"], 0.0545, atol=1e-6)
+                np.testing.assert_allclose(results[f"{pipe_id}__hn_diameter"], 0.0545, atol=1e-6)
 
     def test_end_scenario_sizing_pipe_catalog(self):
         """
@@ -542,8 +593,8 @@ class TestEndScenarioSizing(TestCase):
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
         # This is an optimization done over a few days
-        solution = run_end_scenario_sizing(
-            EndScenarioSizing,
+        solution = run_end_scenario_sizing_no_heat_losses(
+            EndScenarioSizingStaged,
             base_folder=base_folder,
             esdl_file_name="test_case_small_network_all_optional_pipe_catalog.esdl",
             esdl_parser=ESDLFileParser,
@@ -661,8 +712,8 @@ class TestEndScenarioSizing(TestCase):
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
         # This is an optimization done over a few days
-        solution = run_end_scenario_sizing(
-            EndScenarioSizing,
+        solution = run_end_scenario_sizing_no_heat_losses(
+            EndScenarioSizingStaged,
             base_folder=base_folder,
             esdl_file_name="test_case_small_network_all_optional_pipe_catalog_with_templates.esdl",
             esdl_parser=ESDLFileParser,
@@ -762,8 +813,8 @@ class TestEndScenarioSizing(TestCase):
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
-        solution = run_end_scenario_sizing(
-            EndScenarioSizing,
+        solution = run_end_scenario_sizing_no_heat_losses(
+            EndScenarioSizingStaged,
             base_folder=base_folder,
             esdl_file_name="test_case_small_network_all_optional_pipe_catalog_MeasureGroup.esdl",
             esdl_parser=ESDLFileParser,
@@ -936,15 +987,16 @@ if __name__ == "__main__":
 
     start_time = time.time()
     a = TestEndScenarioSizing()
-    # a.setUpClass()
-    # a.test_end_scenario_sizing()
-    # a.test_end_scenario_sizing_staged()
-    # a.test_end_scenario_sizing_heat_demand_not_matched()
-    # a.test_heat_exchanger_sizing()
-    # a.test_end_scenario_sizing_discounted()
-    # a.test_end_scenario_sizing_head_loss()
-    # a.test_end_scenario_sizing_pipe_catalog_lower_pipe_dn()
-    # a.test_end_scenario_sizing_pipe_catalog()
-    # a.test_end_scenario_sizing_pipe_catalog_with_templates()
+    a.setUpClass()
+    a.test_end_scenario_sizing()
+    a.test_end_scenario_sizing_no_demand()
+    a.test_end_scenario_sizing_staged()
+    a.test_end_scenario_sizing_heat_demand_not_matched()
+    a.test_heat_exchanger_sizing()
+    a.test_end_scenario_sizing_discounted()
+    a.test_end_scenario_sizing_head_loss()
+    a.test_end_scenario_sizing_pipe_catalog_lower_pipe_dn()
+    a.test_end_scenario_sizing_pipe_catalog()
+    a.test_end_scenario_sizing_pipe_catalog_with_templates()
     a.test_end_scenario_sizing_pipe_measuregroup()
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

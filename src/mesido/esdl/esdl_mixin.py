@@ -9,9 +9,10 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import esdl.esdl_handler
+from esdl.profiles.credentials import Credentials
 
 from mesido.component_type_mixin import (
-    ModelicaComponentTypeMixin,
+    ComponentTypeMixin,
 )
 from mesido.esdl.asset_to_component_base import _AssetToComponentBase
 from mesido.esdl.common import Asset
@@ -21,7 +22,7 @@ from mesido.esdl.esdl_heat_model import ESDLHeatModel
 from mesido.esdl.esdl_model_base import _ESDLModelBase
 from mesido.esdl.esdl_parser import ESDLStringParser
 from mesido.esdl.esdl_qth_model import ESDLQTHModel
-from mesido.esdl.profile_parser import BaseProfileReader, InfluxDBProfileReader
+from mesido.esdl.profile_parser import BaseProfileReader, ESDLProfileReader
 from mesido.physics_mixin import PhysicsMixin
 from mesido.pipe_class import GasPipeClass, PipeClass
 from mesido.pycml.pycml_mixin import PyCMLMixin
@@ -58,12 +59,23 @@ class DBAccessType(StrEnum):
     READ_WRITE = "read_write"
 
 
+class ESDLOutputProfilesType(StrEnum):
+    """
+    Enumeration for ESDL output profiles type
+    """
+
+    INFLUXDB = "influxdb"
+    POSTGRESQL = "postgresql"
+    TIME_SERIES_PROFILE = "time_series_profile"
+    DATE_TIME_PROFILE = "date_time_profile"
+
+
 class _ESDLInputException(Exception):
     pass
 
 
 class ESDLMixin(
-    ModelicaComponentTypeMixin,
+    ComponentTypeMixin,
     IOMixin,
     PyCMLMixin,
     CollocatedIntegratedOptimizationProblem,
@@ -133,7 +145,7 @@ class ESDLMixin(
             DBAccessType.WRITE: [],
         }
 
-        profile_reader_class = kwargs.get("profile_reader", InfluxDBProfileReader)
+        profile_reader_class = kwargs.get("profile_reader", ESDLProfileReader)
         input_file_name = kwargs.get("input_timeseries_file", None)
         input_folder = kwargs.get("input_folder")
         input_file_path = None
@@ -142,24 +154,29 @@ class ESDLMixin(
         database_connection_info = kwargs.get("database_connections", {})
         read_only_dbase_credentials: Dict[str, Tuple[str, str]] = {}  # for profile reader
         for dbconnection in database_connection_info:
+            database_host_port = "{}:{}".format(
+                dbconnection["host"],
+                dbconnection["port"],
+            )
             if dbconnection["access_type"] != DBAccessType.WRITE:
-                database_host_port = "{}:{}".format(
-                    dbconnection["influxdb_host"],
-                    dbconnection["influxdb_port"],
-                )
                 read_only_dbase_credentials[database_host_port] = (
-                    dbconnection["influxdb_username"],
-                    dbconnection["influxdb_password"],
+                    dbconnection["username"],
+                    dbconnection["password"],
                 )
             if dbconnection["access_type"] != DBAccessType.READ_WRITE:
                 self._database_credentials[dbconnection["access_type"]].append(
                     {
-                        "influxdb_host": dbconnection["influxdb_host"],
-                        "influxdb_port": dbconnection["influxdb_port"],
-                        "influxdb_username": dbconnection["influxdb_username"],
-                        "influxdb_password": dbconnection["influxdb_password"],
-                        "influxdb_ssl": dbconnection["influxdb_ssl"],
-                        "influxdb_verify_ssl": dbconnection["influxdb_verify_ssl"],
+                        "host": dbconnection["host"],
+                        "port": dbconnection["port"],
+                        "username": dbconnection["username"],
+                        "password": dbconnection["password"],
+                        "database": (
+                            dbconnection["database"] if "database" in dbconnection else None
+                        ),
+                        "ssl": dbconnection["ssl"] if "ssl" in dbconnection else False,
+                        "verify_ssl": (
+                            dbconnection["verify_ssl"] if "verify_ssl" in dbconnection else False
+                        ),
                     }
                 )
             elif dbconnection["access_type"] == DBAccessType.READ_WRITE:
@@ -167,12 +184,19 @@ class ESDLMixin(
                 for rw in both_read_and_write:
                     self._database_credentials[rw].append(
                         {
-                            "influxdb_host": dbconnection["influxdb_host"],
-                            "influxdb_port": dbconnection["influxdb_port"],
-                            "influxdb_username": dbconnection["influxdb_username"],
-                            "influxdb_password": dbconnection["influxdb_password"],
-                            "influxdb_ssl": dbconnection["influxdb_ssl"],
-                            "influxdb_verify_ssl": dbconnection["influxdb_verify_ssl"],
+                            "host": dbconnection["host"],
+                            "port": dbconnection["port"],
+                            "username": dbconnection["username"],
+                            "password": dbconnection["password"],
+                            "database": (
+                                dbconnection["database"] if "database" in dbconnection else None
+                            ),
+                            "ssl": dbconnection["ssl"] if "ssl" in dbconnection else False,
+                            "verify_ssl": (
+                                dbconnection["verify_ssl"]
+                                if "verify_ssl" in dbconnection
+                                else False
+                            ),
                         }
                     )
             else:
@@ -182,6 +206,10 @@ class ESDLMixin(
                 )
                 sys.exit(1)
 
+            Credentials.add_credential(
+                database_host_port, dbconnection["username"], dbconnection["password"]
+            )
+
         if input_file_name is not None:
             input_file_path = Path(input_folder) / input_file_name
 
@@ -189,7 +217,6 @@ class ESDLMixin(
             self.__profile_reader: BaseProfileReader = profile_reader_class(
                 energy_system=self.__energy_system_handler.energy_system,
                 file_path=input_file_path,
-                database_credentials=read_only_dbase_credentials,
                 use_esdl_ranged_contraint=self._ESDLMixin__use_esdl_ranged_constraint,
             )
         else:  # read from a file, no database credentials needed
@@ -427,16 +454,13 @@ class ESDLMixin(
 
     def update_pipe_class_costs(self, pipe_classes: dict, pipe_diameter_cost_map: dict) -> None:
         """
-        In this method the all pipe classes in pipe_classes are updated with investments costs in
+        In this method all pipe classes in pipe_classes are updated with investments costs in
         pipe_diameter_cost_map if a cost exists. If no cost exists for a specific pipe class in
-        pipe_diameter_cost_map then the pipe class is removed from pipe_classes.
+        pipe_diameter_cost_map then the pipe class is removed from this group of pipe_classes.
         """
         updated_pipe_classes = []
 
         for i, pipe_class in enumerate(pipe_classes):
-
-            if pipe_class.name not in pipe_diameter_cost_map:
-                continue
 
             if pipe_class.name in pipe_diameter_cost_map.keys():
                 pipe_classes[i] = dataclasses.replace(
@@ -445,6 +469,8 @@ class ESDLMixin(
                 )
 
                 updated_pipe_classes.append(pipe_classes[i])
+            else:
+                pass
 
         pipe_classes[:] = updated_pipe_classes
 
@@ -492,19 +518,14 @@ class ESDLMixin(
 
                 if self._esdl_measure_group_info:
                     pipe_measures_per_group = {}
-                    for measure_group_id in self._esdl_measure_group_info:
+                    for measure_group_id, measure_group in self._esdl_measure_group_info.items():
                         pipe_classes_groups[measure_group_id] = {
-                            "measure_group_name": self._esdl_measure_group_info[measure_group_id][
-                                "name"
-                            ],
+                            "measure_group_name": measure_group["name"],
                             "pipe_classes": pipe_classes.copy(),  # prevents pointing to same object
                         }
 
                         pipe_measures_per_group[measure_group_id] = [
-                            pipe_measures[id]
-                            for id in self._esdl_measure_group_info[measure_group_id][
-                                "containt_measure_ids"
-                            ]
+                            pipe_measures[id] for id in measure_group["containt_measure_ids"]
                         ]
 
                     pipe_diameter_cost_map = {}
@@ -571,12 +592,7 @@ class ESDLMixin(
                         )
 
                         if related_pipe_measure and asset.attributes["state"].name == "OPTIONAL":
-                            asset_referenced_id = (
-                                self._esdl_assets[related_pipe_id]
-                                .attributes.get("measures")
-                                .measure[0]
-                                .reference.id
-                            )
+                            asset_referenced_id = related_pipe_measure.measure[0].reference.id
                         else:
                             continue
 
@@ -587,7 +603,6 @@ class ESDLMixin(
                             "measures"
                         )
                         if related_pipe_measures:
-                            asset_referenced_id = related_pipe_measures.measure[0].reference.id
                             logger.error(
                                 f"Both pipes named {asset.name} and"
                                 f" {self.esdl_asset_id_to_name_map[related_pipe_id]} have a"

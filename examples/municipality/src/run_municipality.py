@@ -16,12 +16,12 @@ if __name__ == "__main__":
         "database_connections": [
             {
                 "access_type": DBAccessType.READ,  # DBAccessType.WRITE or DBAccessType.READ_WRITE
-                "influxdb_host": "required_user_input",
-                "influxdb_port": 1234,
-                "influxdb_username": "required_user_input",
-                "influxdb_password": "required_user_input",
-                "influxdb_ssl": False,
-                "influxdb_verify_ssl": False,
+                "host": "required_user_input",
+                "port": 1234,
+                "username": "required_user_input",
+                "password": "required_user_input",
+                "ssl": False,
+                "verify_ssl": False,
             },
         ],
     }

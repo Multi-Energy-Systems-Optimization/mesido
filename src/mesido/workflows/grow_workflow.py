@@ -604,7 +604,15 @@ class EndScenarioSizing(
                 solver_stats = self.solver_stats
                 self._write_json_output(results, parameters, bounds, aliases, solver_stats, e_m)
 
-    def __heat_demand_match_check(self, results, e_m=0):
+    def __heat_demand_match_check(self, results: AliasDict, e_m: int = 0) -> None:
+        """
+        Checks if the heat demand is not matched and provides potential causes in the
+        logger.
+
+        Args:
+            results: Alias dictionary of the results after the optimization
+            e_m: Ensemble member index
+        """
         parameters = self.parameters(e_m)
         bounds = self.bounds()
         id_to_name_map = self.esdl_asset_id_to_name_map
@@ -767,11 +775,20 @@ class SettingsStaged:
         *args,
         **kwargs,
     ):
-        super().__init__(*args, **kwargs)
 
         self._stage = stage
         self._total_stages = total_stages
         self.__boolean_bounds = boolean_bounds
+
+        # Initialization order is intentional:
+        # - Stage attributes must be set before parent initialization so stage-dependent
+        #   setup during __init__ (for example network settings such as minimum_velocity)
+        #   uses the correct staged values.
+        # - priorities_output must be restored only after parent initialization because
+        #   parent classes initialize _priorities_output and would otherwise overwrite
+        #   the carried stage-1 priorities.
+        super().__init__(*args, **kwargs)
+
         if self._stage == 2 and priorities_output:
             self._priorities_output = priorities_output
 
@@ -794,10 +811,11 @@ class SettingsStaged:
         elif self._stage == 2:
             # If at least 1 heat_source has a producer profile assigned, set the
             # heat_loss_disconnected_pipe option to False
-            for asset in self.energy_system_components.get("heat_source", []):
-                if f"{asset}.maximum_heat_source" in self.io.get_timeseries_names():
-                    options["heat_loss_disconnected_pipe"] = False
-                    break
+            if hasattr(self, "_ComponentTypeMixin__hn_component_types"):
+                for asset in self.energy_system_components.get("heat_source", []):
+                    if f"{asset}.maximum_heat_source" in self.io.get_timeseries_names():
+                        options["heat_loss_disconnected_pipe"] = False
+                        break
 
         return options
 
@@ -1043,16 +1061,16 @@ def main(runinfo_path, log_level):
     logger.info("Run Scenario Sizing")
 
     kwargs = {
-        "write_result_db_profiles": False,
+        "esdl_output_profiles_type": None,
         "database_connections": [
             {
                 "access_type": DBAccessType.WRITE,
-                "influxdb_host": "localhost",
-                "influxdb_port": 8086,
-                "influxdb_username": None,
-                "influxdb_password": None,
-                "influxdb_ssl": False,
-                "influxdb_verify_ssl": False,
+                "host": "localhost",
+                "port": 8086,
+                "username": None,
+                "password": None,
+                "ssl": False,
+                "verify_ssl": False,
             },
         ],
     }
