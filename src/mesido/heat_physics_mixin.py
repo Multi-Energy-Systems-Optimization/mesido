@@ -1423,6 +1423,16 @@ class HeatPhysicsMixin(
         string_parameters = self.string_parameters(ensemble_member)
         bounds = self.bounds()
 
+        def _expected_supply_heat_out(carrier_supply_temperature: float) -> float:
+            """
+            Compute source heat output for a given supply temperature.
+            """
+            if (parameters[f"{s}.max_temperature"] < carrier_supply_temperature) and (
+                parameters[f"{s}.max_temperature"] > 0.0
+            ):
+                return 0.0
+            return discharge * cp * rho * carrier_supply_temperature
+
         for s in self.energy_system_components.get("heat_source", []):
             heat_nominal = parameters[f"{s}.Heat_nominal"]
             q_nominal = self.variable_nominal(f"{s}.Q")
@@ -1452,10 +1462,10 @@ class HeatPhysicsMixin(
 
             if temp_out_profile is None:
                 if len(supply_temperatures) == 0:
+                    heat_out_expected = _expected_supply_heat_out(parameters[f"{s}.T_supply"])
                     constraints.append(
                         (
-                            (heat_out - discharge * cp * rho * parameters[f"{s}.T_supply"])
-                            / heat_nominal,
+                            (heat_out - heat_out_expected) / heat_nominal,
                             0.0,
                             0.0,
                         )
@@ -1465,10 +1475,10 @@ class HeatPhysicsMixin(
                         sup_temperature_is_selected = self.state(
                             f"{sup_carrier}_{supply_temperature}"
                         )
-
+                        heat_out_expected = _expected_supply_heat_out(supply_temperature)
                         constraints.extend(
                             self._symmetric_big_m_constraints(
-                                heat_out - discharge * cp * rho * supply_temperature,
+                                heat_out - heat_out_expected,
                                 (1.0 - sup_temperature_is_selected) * big_m,
                                 constraint_nominal,
                             )

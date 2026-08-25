@@ -1,8 +1,9 @@
-# [Unreleased-main] - 2026-08-19
+# [Unreleased-main] - 2026-08-24
 
 ## Added
 - ESDL profile reading and writing for different types: influxdb and postgres, and inline (in ESDL file).
 - Import with an Electricity port is now supported as a subclass of electricity source and caters for electricity price profiles.
+- A heat source asset is eligible for use only when its maximum temperature meets or exceeds the network supply temperature
 
 ## Changed
 - Code generalization in asset sizing mixin
