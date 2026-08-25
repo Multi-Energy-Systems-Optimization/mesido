@@ -30,6 +30,7 @@ from mesido.qth_not_maintained.qth_mixin import QTHMixin
 
 import numpy as np
 
+from pyecore.ecore import EEnumLiteral
 from pyecore.valuecontainer import EOrderedSet
 
 import rtctools.data.pi as pi
@@ -96,7 +97,7 @@ class ESDLMixin(
     __esdl_ranged_constraint_usage: bool = False
 
     # TODO: remove this once ESDL allows specifying a minimum pipe size for an optional pipe.
-    __minimum_pipe_size_name: str = "DN150"
+    __minimum_pipe_size_name: EEnumLiteral = esdl.PipeDiameterEnum.DN150
     __use_user_defined_minimum_pipe_size: bool = False
 
     def __init__(self, *args, **kwargs) -> None:
@@ -302,19 +303,21 @@ class ESDLMixin(
                 )
             self.name_to_esdl_id_map[esdl_asset.name] = esdl_id
 
-    def find_index_of_pipe_or_next_up(self, pipes, target_dn):
+    def find_index_of_pipe_or_next_up(
+        self, pipes: List[EDRPipeClass], target_dn: float
+    ) -> Optional[int]:
         """
         Find the index of the first pipe in the ordered pipes that meets the specified size
         """
         for ii, p in enumerate(pipes):
-            if float(p.name.replace("DN", "")) >= target_dn:
+            if p.dn_size >= target_dn:
                 return ii
         return None
 
     def _get_pipe_max_size_input(
         self,
         asset: Asset,
-    ) -> str:
+    ) -> EEnumLiteral:
         """
         This function gets the upper limit for the pipe DN. Either from the asset attribute input
         DN size or from the PipeDiameterConstraint, depending on what is applicable.
@@ -368,16 +371,16 @@ class ESDLMixin(
                 # Else a normal error exit might occer which will not give feedback to the user
                 # potential_error_to_error(self._error_type_check)
 
-                return asset.attributes["diameter"].name
+                return asset.attributes["diameter"]
             else:
                 logger.warning(
                     f"For pipe named {asset.name}, the pipe diameter constraint max value is "
                     "used for the pipe's diameter upper limit, instead of the pipe diameter "
                     "specified (if any) in the asset attribute."
                 )
-                return pipe_constraint[0].maximum.name
+                return pipe_constraint[0].maximum
         else:
-            return asset.attributes["diameter"].name
+            return asset.attributes["diameter"]
 
     def __override_pipe_classes_dicts(
         self,
@@ -396,10 +399,10 @@ class ESDLMixin(
             c = override_classes[p] = []
             c.append(no_pipe_class)
 
-            max_size_name = self._get_pipe_max_size_input(asset)
+            max_size_enum = self._get_pipe_max_size_input(asset)
 
             max_size_idx = [
-                idx for idx, pipe in enumerate(pipe_classes) if pipe.name == max_size_name
+                idx for idx, pipe in enumerate(pipe_classes) if pipe.diameter_enum == max_size_enum
             ]
             assert len(max_size_idx) == 1
             max_size_idx = max_size_idx[0]
@@ -411,21 +414,22 @@ class ESDLMixin(
             if self._ESDLMixin__use_user_defined_minimum_pipe_size:
                 user_defined_lower_limit_dn_mm = 40.0
                 pipe_dn_max_vs_min_ratio = 10.0  # Relates to area ratio of 100.0
-                max_size_dn_mm = float(pipe_classes[max_size_idx].name.replace("DN", ""))
+                max_size_dn_mm = pipe_classes[max_size_idx].dn_size
                 min_dn_by_factor_mm = max_size_dn_mm / pipe_dn_max_vs_min_ratio
                 min_dn_mm = max(min_dn_by_factor_mm, user_defined_lower_limit_dn_mm)
                 min_size_idx = self.find_index_of_pipe_or_next_up(pipe_classes, min_dn_mm)
             else:  # use default minimum pipe DN size
                 min_size_idx = self.find_index_of_pipe_or_next_up(
-                    pipe_classes, float(self.__minimum_pipe_size_name.replace("DN", ""))
+                    pipe_classes,
+                    float(self.__minimum_pipe_size_name.name.upper().strip("DN")),
                 )
             assert min_size_idx is not None
 
             if max_size_idx < min_size_idx:
                 logger.warning(
                     f"{p} has an upper DN size smaller than the used minimum size "
-                    f"of {self.__minimum_pipe_size_name}, choose at least "
-                    f"{self.__minimum_pipe_size_name}"
+                    f"of {self.__minimum_pipe_size_name.name}, choose at least "
+                    f"{self.__minimum_pipe_size_name.name}"
                 )
             elif min_size_idx == max_size_idx:
                 c.append(pipe_classes[min_size_idx])
@@ -443,7 +447,7 @@ class ESDLMixin(
         dn20_exists = False
 
         for pipe_class in pipe_classes:
-            if not dn20_exists and float(pipe_class.name.replace("DN", "")) == 20.0:
+            if not dn20_exists and pipe_class.diameter_enum == esdl.PipeDiameterEnum.DN20:
                 dn20_exists = True
 
         self._ESDLMixin__use_user_defined_minimum_pipe_size = not dn20_exists
@@ -488,9 +492,10 @@ class ESDLMixin(
         maximum_velocity = self.heat_network_settings["maximum_velocity"]
 
         no_pipe_class = PipeClass("None", 0.0, 0.0, (0.0, 0.0), 0.0)
+        steel_s1_pipe_edr_assets = _AssetToComponentBase.STEEL_S1_PIPE_EDR_ASSETS.items()
         pipe_classes = [
-            EDRPipeClass.from_edr_class(name, edr_class_name, maximum_velocity)
-            for name, edr_class_name in _AssetToComponentBase.STEEL_S1_PIPE_EDR_ASSETS.items()
+            EDRPipeClass.from_edr_class(diameter_enum, edr_class_name, maximum_velocity)
+            for diameter_enum, edr_class_name in steel_s1_pipe_edr_assets
         ]
 
         override_classes = self._override_pipe_classes
@@ -640,9 +645,10 @@ class ESDLMixin(
         maximum_velocity = self.gas_network_settings["maximum_velocity"]
 
         no_pipe_class = GasPipeClass("None", 0.0, 0.0, 0.0)
+        steel_s1_pipe_edr_assets = _AssetToComponentBase.STEEL_S1_PIPE_EDR_ASSETS.items()
         pipe_classes = [
-            EDRGasPipeClass.from_edr_class(name, edr_class_name, maximum_velocity)
-            for name, edr_class_name in _AssetToComponentBase.STEEL_S1_PIPE_EDR_ASSETS.items()
+            EDRGasPipeClass.from_edr_class(diameter_enum, edr_class_name, maximum_velocity)
+            for diameter_enum, edr_class_name in steel_s1_pipe_edr_assets
         ]
 
         # We assert the pipe classes are monotonically increasing in size

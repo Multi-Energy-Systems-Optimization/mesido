@@ -211,32 +211,32 @@ def get_density(
 
 
 class _AssetToComponentBase:
-    # A map of pipe class name to edr asset in _edr_pipes.json
+    # A map of PipeDiameterEnum to edr asset name in _edr_pipes.json
     STEEL_S1_PIPE_EDR_ASSETS = {
-        "DN20": "Steel-S1-DN-20",
-        "DN25": "Steel-S1-DN-25",
-        "DN32": "Steel-S1-DN-32",
-        "DN40": "Steel-S1-DN-40",
-        "DN50": "Steel-S1-DN-50",
-        "DN65": "Steel-S1-DN-65",
-        "DN80": "Steel-S1-DN-80",
-        "DN100": "Steel-S1-DN-100",
-        "DN125": "Steel-S1-DN-125",
-        "DN150": "Steel-S1-DN-150",
-        "DN200": "Steel-S1-DN-200",
-        "DN250": "Steel-S1-DN-250",
-        "DN300": "Steel-S1-DN-300",
-        "DN350": "Steel-S1-DN-350",
-        "DN400": "Steel-S1-DN-400",
-        "DN450": "Steel-S1-DN-450",
-        "DN500": "Steel-S1-DN-500",
-        "DN600": "Steel-S1-DN-600",
-        "DN700": "Steel-S1-DN-700",
-        "DN800": "Steel-S1-DN-800",
-        "DN900": "Steel-S1-DN-900",
-        "DN1000": "Steel-S1-DN-1000",
-        "DN1100": "Steel-S1-DN-1100",
-        "DN1200": "Steel-S1-DN-1200",
+        esdl.PipeDiameterEnum.DN20: "Steel-S1-DN-20",
+        esdl.PipeDiameterEnum.DN25: "Steel-S1-DN-25",
+        esdl.PipeDiameterEnum.DN32: "Steel-S1-DN-32",
+        esdl.PipeDiameterEnum.DN40: "Steel-S1-DN-40",
+        esdl.PipeDiameterEnum.DN50: "Steel-S1-DN-50",
+        esdl.PipeDiameterEnum.DN65: "Steel-S1-DN-65",
+        esdl.PipeDiameterEnum.DN80: "Steel-S1-DN-80",
+        esdl.PipeDiameterEnum.DN100: "Steel-S1-DN-100",
+        esdl.PipeDiameterEnum.DN125: "Steel-S1-DN-125",
+        esdl.PipeDiameterEnum.DN150: "Steel-S1-DN-150",
+        esdl.PipeDiameterEnum.DN200: "Steel-S1-DN-200",
+        esdl.PipeDiameterEnum.DN250: "Steel-S1-DN-250",
+        esdl.PipeDiameterEnum.DN300: "Steel-S1-DN-300",
+        esdl.PipeDiameterEnum.DN350: "Steel-S1-DN-350",
+        esdl.PipeDiameterEnum.DN400: "Steel-S1-DN-400",
+        esdl.PipeDiameterEnum.DN450: "Steel-S1-DN-450",
+        esdl.PipeDiameterEnum.DN500: "Steel-S1-DN-500",
+        esdl.PipeDiameterEnum.DN600: "Steel-S1-DN-600",
+        esdl.PipeDiameterEnum.DN700: "Steel-S1-DN-700",
+        esdl.PipeDiameterEnum.DN800: "Steel-S1-DN-800",
+        esdl.PipeDiameterEnum.DN900: "Steel-S1-DN-900",
+        esdl.PipeDiameterEnum.DN1000: "Steel-S1-DN-1000",
+        esdl.PipeDiameterEnum.DN1100: "Steel-S1-DN-1100",
+        esdl.PipeDiameterEnum.DN1200: "Steel-S1-DN-1200",
     }
     # A map of the esdl assets to the asset types in pycml
     # NOTE: the dictionary below is populated in an alphabetical order
@@ -495,9 +495,9 @@ class _AssetToComponentBase:
 
         edr_dn_size = None
         if asset.attributes["diameter"].value > 0:
-            edr_dn_size = str(asset.attributes["diameter"].name)
+            edr_dn_size = asset.attributes["diameter"]
         elif not asset.attributes["innerDiameter"]:
-            edr_dn_size = "DN200"
+            edr_dn_size = esdl.PipeDiameterEnum.DN200
 
         # NaN means the default values will be used
         insulation_thicknesses = math.nan

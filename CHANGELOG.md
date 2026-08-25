@@ -1,9 +1,11 @@
-# [Unreleased-main] - 2026-08-20
+
+# [Unreleased-main] - 2026-08-24
 
 ## Added
 - Import with an Electricity port is now supported as a subclass of electricity source and caters for electricity price profiles.
 
 ## Changed
+- Use pipe DN enums instead of extracting the DN size from the name (EDR pipes and available pipe classes)
 - Write result profiles to a fixed (configured) database combined with a dynamic schema name per run when the output profile type is postgres
 - Update pyESDL to v26.7.1
 - Parsing of input profiles with 15-minute interval now supported.
