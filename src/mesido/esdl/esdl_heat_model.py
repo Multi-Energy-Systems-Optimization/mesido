@@ -30,6 +30,7 @@ from mesido.pycml.component_library.milp import (
     ElecHeatSourceElec,
     ElectricityCable,
     ElectricityDemand,
+    ElectricityImport,
     ElectricityNode,
     ElectricitySource,
     ElectricityStorage,
@@ -1507,7 +1508,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
         assert max_supply > 0.0
 
         min_temperature = asset.attributes.get("minTemperature", None)
+        if min_temperature is not None:
+            if min_temperature < 0.0:
+                logger.error(f"'{asset.name}' must have a non-negative minimum temperature value.")
+            assert min_temperature >= 0.0
+
         max_temperature = asset.attributes.get("maxTemperature", None)
+        if max_temperature is not None:
+            if max_temperature < 0.0:
+                logger.error(f"'{asset.name}' must have a non-negative maximum temperature value.")
+            assert max_temperature >= 0.0
 
         # get price per unit of energy,
         # assume cost of 1. if nothing is given (effectively milp loss minimization)
@@ -1903,7 +1913,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
         if isinstance(asset.out_ports[0].carrier, esdl.esdl.GasCommodity):
             return self.convert_gas_source(asset)
         elif isinstance(asset.out_ports[0].carrier, esdl.esdl.ElectricityCommodity):
-            return self.convert_electricity_source(asset)
+            _, modifiers = self.convert_electricity_source(asset)
+            return ElectricityImport, modifiers
         else:
             raise RuntimeError(
                 f"Commodity of type {type(asset.out_ports[0].carrier)} for asset Import "

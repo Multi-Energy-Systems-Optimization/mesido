@@ -69,6 +69,18 @@ class HeatProblem(
         return settings
 
 
+class HeatProblemWithTechnoEconomicMixin(HeatProblem, TechnoEconomicMixin):
+    def goals(self):
+        goals = super().goals().copy()
+        goals.append(MinimizeTCO(priority=2))
+        return goals
+
+    def energy_system_options(self):
+        options = super().energy_system_options()
+        options["neglect_pipe_heat_losses"] = True
+        return options
+
+
 class HeatProblemTvar(HeatProblem):
     def update_heat_network_settings(self):
         settings = super().update_heat_network_settings()
