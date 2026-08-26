@@ -10,6 +10,8 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
+from tests.utils_tests import demand_matching_test
+
 
 class TestESDLParsing(unittest.TestCase):
 
@@ -122,7 +124,11 @@ class TestESDLParsing(unittest.TestCase):
         translate the problem from ESDL to MESIDO when the same system description is utilized.
         Example use cases for instance relate a moving horizon optimization, where only the
         timeseries and the initial states of assets need to be updated.
-        The test compares the objective result between the original way of phrasing the problem
+        Checks:
+         - demand matching of sliced timeseries
+         - objective value problem 1 and 2 is different, ensuring different timeserie values are
+         used
+         - compares the objective result between the original way of phrasing the problem
         and the reuse of the initialisation.
         """
 
@@ -173,6 +179,18 @@ class TestESDLParsing(unittest.TestCase):
             start_index=10,
             end_index=20,
         )
+
+        demand_matching_test(problem_1, problem_1.extract_results())
+        demand_matching_test(problem_2, problem_2.extract_results())
+
+        np.testing.assert_(
+            problem_1.objective_value != problem_2.objective_value,
+            "Objective values of problem_1 "
+            "and problem_2 must be "
+            "different, else the heat "
+            "demand would have been the same",
+        )
+
         np.testing.assert_allclose(
             problem_1.objective_value, problem_1_old.objective_value, rtol=1e-5
         )
