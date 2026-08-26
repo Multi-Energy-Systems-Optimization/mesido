@@ -1,4 +1,4 @@
-from mesido.component_type_mixin import ModelicaComponentTypeMixin
+from mesido.component_type_mixin import ComponentTypeMixin
 from mesido.physics_mixin import PhysicsMixin
 from mesido.pycml.pycml_mixin import PyCMLMixin
 
@@ -41,7 +41,7 @@ class MinimizeProduction(Goal):
 
 class DoublePipeEqualHeat(
     PhysicsMixin,
-    ModelicaComponentTypeMixin,
+    ComponentTypeMixin,
     GoalProgrammingMixin,
     CSVMixin,
     PyCMLMixin,

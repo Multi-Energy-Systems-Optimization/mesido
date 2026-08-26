@@ -830,35 +830,36 @@ class FinancialMixin(
         parameters = self.parameters(ensemble_member)
 
         timesteps_hr = np.diff(self.times()) / 3600
+        price_profile = self.__get_electricity_price_profile_or_zero()
 
         def _append_state_vector_variable_operational_cost_constraints(
-            asset_type: str, state_vector_name: str
+            asset: str,
+            state_vector_name: str,
+            include_price_profile_variable_cost: bool = False,
         ) -> None:
-            for asset in self.energy_system_components.get(asset_type, []):
-                state_vector = self.__state_vector_scaled(
-                    f"{asset}.{state_vector_name}", ensemble_member
-                )
-                variable_operational_cost_var = self._asset_variable_operational_cost_map[asset]
-                variable_operational_cost = self.extra_variable(
-                    variable_operational_cost_var, ensemble_member
-                )
-                nominal = self.variable_nominal(variable_operational_cost_var)
-                variable_operational_cost_coefficient = parameters[
-                    f"{asset}.variable_operational_cost_coefficient"
-                ]
+            state_vector = self.__state_vector_scaled(
+                f"{asset}.{state_vector_name}", ensemble_member
+            )
+            variable_operational_cost_var = self._asset_variable_operational_cost_map[asset]
+            variable_operational_cost = self.extra_variable(
+                variable_operational_cost_var, ensemble_member
+            )
+            nominal = self.variable_nominal(variable_operational_cost_var)
+            variable_operational_cost_coefficient = parameters[
+                f"{asset}.variable_operational_cost_coefficient"
+            ]
 
-                price_profile = self.__get_electricity_price_profile_or_zero()
+            sum_ = ca.sum1(variable_operational_cost_coefficient * state_vector[1:] * timesteps_hr)
 
-                sum_ = ca.sum1(
-                    variable_operational_cost_coefficient * state_vector[1:] * timesteps_hr
-                )
+            if include_price_profile_variable_cost:
+                sum_ += ca.sum1(price_profile[1:] * state_vector[1:] * timesteps_hr)
 
-                if parameters[f"{asset}.include_head_loss_variables"]:
-                    pump_power = self.__state_vector_scaled(f"{asset}.Pump_power", ensemble_member)
-                    eff = parameters[f"{asset}.pump_efficiency"]
-                    sum_ += ca.sum1(price_profile[1:] * pump_power[1:] * timesteps_hr / eff)
+            if parameters[f"{asset}.include_head_loss_variables"]:
+                pump_power = self.__state_vector_scaled(f"{asset}.Pump_power", ensemble_member)
+                eff = parameters[f"{asset}.pump_efficiency"]
+                sum_ += ca.sum1(price_profile[1:] * pump_power[1:] * timesteps_hr / eff)
 
-                constraints.append(((variable_operational_cost - sum_) / nominal, 0.0, 0.0))
+            constraints.append(((variable_operational_cost - sum_) / nominal, 0.0, 0.0))
 
         for asset in [
             *self.energy_system_components.get("ates", []),
@@ -895,27 +896,15 @@ class FinancialMixin(
 
             constraints.append(((variable_operational_cost - sum_) / nominal, 0.0, 0.0))
 
-        for asset in [
-            *self.energy_system_components.get("pump", []),
-            *self.energy_system_components.get("heat_exchanger", []),
-        ]:
-            variable_operational_cost_var = self._asset_variable_operational_cost_map[asset]
-            variable_operational_cost = self.extra_variable(
-                variable_operational_cost_var, ensemble_member
+        for asset in self.energy_system_components.get("pump", []):
+            _append_state_vector_variable_operational_cost_constraints(
+                asset, "Pump_power", False
             )
-            nominal = self.variable_nominal(variable_operational_cost_var)
 
-            if parameters[f"{asset}.include_head_loss_variables"]:
-                pump_power = self.__state_vector_scaled(f"{asset}.Pump_power", ensemble_member)
-            else:
-                pump_power = np.zeros(len(self.times()))
-            eff = parameters[f"{asset}.pump_efficiency"]
-
-            price_profile = self.__get_electricity_price_profile_or_zero()
-
-            sum_ = ca.sum1(price_profile[1:] * pump_power[1:] * timesteps_hr / eff)
-
-            constraints.append(((variable_operational_cost - sum_) / nominal, 0.0, 0.0))
+        for asset in self.energy_system_components.get("heat_exchanger", []):
+            _append_state_vector_variable_operational_cost_constraints(
+                asset, "Pump_power", False
+            )
 
         for s in self.energy_system_components.get("heat_source", []):
             heat_source = self.__state_vector_scaled(f"{s}.Heat_source", ensemble_member)
@@ -987,40 +976,15 @@ class FinancialMixin(
 
             constraints.append(((variable_operational_cost - sum_) / nominal, 0.0, 0.0))
 
-        for hp in [
-            *self.energy_system_components.get("heat_pump", []),
-        ]:
-            elec_consumption = self.__state_vector_scaled(f"{hp}.Power_elec", ensemble_member)
-            variable_operational_cost_var = self._asset_variable_operational_cost_map[hp]
-            variable_operational_cost = self.extra_variable(
-                variable_operational_cost_var, ensemble_member
+        for asset in self.energy_system_components.get("airco", []):
+            _append_state_vector_variable_operational_cost_constraints(
+                asset, "Heat_airco", False
             )
-            nominal = self.variable_nominal(variable_operational_cost_var)
-            variable_operational_cost_coefficient = parameters[
-                f"{hp}.variable_operational_cost_coefficient"
-            ]
-            if parameters[f"{hp}.include_head_loss_variables"]:
-                pump_power = self.__state_vector_scaled(f"{hp}.Pump_power", ensemble_member)
-            else:
-                pump_power = np.zeros(len(self.times()))
-            eff = parameters[f"{hp}.pump_efficiency"]
 
-            price_profile = self.__get_electricity_price_profile_or_zero()
-
-            sum_ = ca.sum1(
-                variable_operational_cost_coefficient * elec_consumption[1:] * timesteps_hr
+        for asset in self.energy_system_components.get("gas_demand", []):
+            _append_state_vector_variable_operational_cost_constraints(
+                asset, "Gas_demand_mass_flow", False
             )
-            sum_ += ca.sum1(price_profile[1:] * pump_power[1:] * timesteps_hr / eff)
-            if hp not in self.energy_system_components.get("heat_pump_elec", []):
-                # assuming that if heatpump has electricity port, the cost for the electricity
-                # are already made by the electricity producer and transport
-                sum_ += ca.sum1(price_profile[1:] * elec_consumption[1:] * timesteps_hr)
-            constraints.append(((variable_operational_cost - sum_) / nominal, 0.0, 0.0))
-
-        _append_state_vector_variable_operational_cost_constraints("airco", "Heat_airco")
-        _append_state_vector_variable_operational_cost_constraints(
-            "gas_demand", "Gas_demand_mass_flow"
-        )
 
         for gs in self.energy_system_components.get("gas_source", []):
             gas_produced_g_s = self.__state_vector_scaled(
@@ -1041,13 +1005,29 @@ class FinancialMixin(
             # [euro/g] * [g/s] * [s]
             constraints.append(((variable_operational_cost - sum_) / nominal, 0.0, 0.0))
 
-        _append_state_vector_variable_operational_cost_constraints(
-            "electricity_source", "Electricity_source"
-        )
+        for es in self.energy_system_components.get("electricity_source", []):
+            if es in self.energy_system_components.get("electricity_import", []):
+                _append_state_vector_variable_operational_cost_constraints(
+                    es,
+                    "Electricity_source"
+                )
+            _append_state_vector_variable_operational_cost_constraints(
+                es,
+                "Electricity_source"
+            )
 
-        _append_state_vector_variable_operational_cost_constraints(
-            "electrolyzer", "Gas_mass_flow_out"
-        )
+        for hp in self.energy_system_components.get("heat_pump", []):
+            if asset not in self.energy_system_components.get("heat_pump_elec", []):
+                _append_state_vector_variable_operational_cost_constraints(
+                    hp, "Power_elec", True
+                )
+            else:
+                _append_state_vector_variable_operational_cost_constraints(
+                    hp, "Power_elec", False
+                )
+
+        for asset in self.energy_system_components.get("electrolyzer", []):
+            _append_state_vector_variable_operational_cost_constraints(asset, "Gas_mass_flow_out")
 
         return constraints
 

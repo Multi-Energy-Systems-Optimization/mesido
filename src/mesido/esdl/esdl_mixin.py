@@ -12,7 +12,7 @@ import esdl.esdl_handler
 from esdl.profiles.credentials import Credentials
 
 from mesido.component_type_mixin import (
-    ModelicaComponentTypeMixin,
+    ComponentTypeMixin,
 )
 from mesido.esdl.asset_to_component_base import _AssetToComponentBase
 from mesido.esdl.common import Asset
@@ -30,6 +30,7 @@ from mesido.qth_not_maintained.qth_mixin import QTHMixin
 
 import numpy as np
 
+from pyecore.ecore import EEnumLiteral
 from pyecore.valuecontainer import EOrderedSet
 
 import rtctools.data.pi as pi
@@ -74,7 +75,7 @@ class _ESDLInputException(Exception):
 
 
 class ESDLMixin(
-    ModelicaComponentTypeMixin,
+    ComponentTypeMixin,
     IOMixin,
     PyCMLMixin,
     CollocatedIntegratedOptimizationProblem,
@@ -96,7 +97,7 @@ class ESDLMixin(
     __esdl_ranged_constraint_usage: bool = False
 
     # TODO: remove this once ESDL allows specifying a minimum pipe size for an optional pipe.
-    __minimum_pipe_size_name: str = "DN150"
+    __minimum_pipe_size_name: EEnumLiteral = esdl.PipeDiameterEnum.DN150
     __use_user_defined_minimum_pipe_size: bool = False
 
     def __init__(self, *args, **kwargs) -> None:
@@ -138,6 +139,7 @@ class ESDLMixin(
         self._esdl_carriers: Dict[str, Dict[str, Any]] = esdl_parser.get_carrier_properties()
         self.__energy_system_handler: esdl.esdl_handler.EnergySystemHandler = esdl_parser.get_esh()
         self._esdl_measures: Dict[str, Asset] = esdl_parser.get_measures()
+        self._esdl_measure_group_info: Dict[str, List[str]] = esdl_parser.get_measure_group_info()
         self._database_credentials: Optional[Dict[str, Tuple[str, str]]] = {
             DBAccessType.READ: [],
             DBAccessType.WRITE: [],
@@ -168,6 +170,9 @@ class ESDLMixin(
                         "port": dbconnection["port"],
                         "username": dbconnection["username"],
                         "password": dbconnection["password"],
+                        "database": (
+                            dbconnection["database"] if "database" in dbconnection else None
+                        ),
                         "ssl": dbconnection["ssl"] if "ssl" in dbconnection else False,
                         "verify_ssl": (
                             dbconnection["verify_ssl"] if "verify_ssl" in dbconnection else False
@@ -183,6 +188,9 @@ class ESDLMixin(
                             "port": dbconnection["port"],
                             "username": dbconnection["username"],
                             "password": dbconnection["password"],
+                            "database": (
+                                dbconnection["database"] if "database" in dbconnection else None
+                            ),
                             "ssl": dbconnection["ssl"] if "ssl" in dbconnection else False,
                             "verify_ssl": (
                                 dbconnection["verify_ssl"]
@@ -295,19 +303,21 @@ class ESDLMixin(
                 )
             self.name_to_esdl_id_map[esdl_asset.name] = esdl_id
 
-    def find_index_of_pipe_or_next_up(self, pipes, target_dn):
+    def find_index_of_pipe_or_next_up(
+        self, pipes: List[EDRPipeClass], target_dn: float
+    ) -> Optional[int]:
         """
         Find the index of the first pipe in the ordered pipes that meets the specified size
         """
         for ii, p in enumerate(pipes):
-            if float(p.name.replace("DN", "")) >= target_dn:
+            if p.dn_size >= target_dn:
                 return ii
         return None
 
     def _get_pipe_max_size_input(
         self,
         asset: Asset,
-    ) -> str:
+    ) -> EEnumLiteral:
         """
         This function gets the upper limit for the pipe DN. Either from the asset attribute input
         DN size or from the PipeDiameterConstraint, depending on what is applicable.
@@ -361,16 +371,16 @@ class ESDLMixin(
                 # Else a normal error exit might occer which will not give feedback to the user
                 # potential_error_to_error(self._error_type_check)
 
-                return asset.attributes["diameter"].name
+                return asset.attributes["diameter"]
             else:
                 logger.warning(
                     f"For pipe named {asset.name}, the pipe diameter constraint max value is "
                     "used for the pipe's diameter upper limit, instead of the pipe diameter "
                     "specified (if any) in the asset attribute."
                 )
-                return pipe_constraint[0].maximum.name
+                return pipe_constraint[0].maximum
         else:
-            return asset.attributes["diameter"].name
+            return asset.attributes["diameter"]
 
     def __override_pipe_classes_dicts(
         self,
@@ -389,34 +399,37 @@ class ESDLMixin(
             c = override_classes[p] = []
             c.append(no_pipe_class)
 
-            max_size_name = self._get_pipe_max_size_input(asset)
+            max_size_enum = self._get_pipe_max_size_input(asset)
 
             max_size_idx = [
-                idx for idx, pipe in enumerate(pipe_classes) if pipe.name == max_size_name
+                idx for idx, pipe in enumerate(pipe_classes) if pipe.diameter_enum == max_size_enum
             ]
             assert len(max_size_idx) == 1
             max_size_idx = max_size_idx[0]
+
+            min_size_idx = None
 
             # Update the minimum pipe DN size if user specified limit is allowed
             # TODO: in the future the lower limit will make use of PipeDiameterConstriant
             if self._ESDLMixin__use_user_defined_minimum_pipe_size:
                 user_defined_lower_limit_dn_mm = 40.0
                 pipe_dn_max_vs_min_ratio = 10.0  # Relates to area ratio of 100.0
-                max_size_dn_mm = float(pipe_classes[max_size_idx].name.replace("DN", ""))
+                max_size_dn_mm = pipe_classes[max_size_idx].dn_size
                 min_dn_by_factor_mm = max_size_dn_mm / pipe_dn_max_vs_min_ratio
                 min_dn_mm = max(min_dn_by_factor_mm, user_defined_lower_limit_dn_mm)
                 min_size_idx = self.find_index_of_pipe_or_next_up(pipe_classes, min_dn_mm)
             else:  # use default minimum pipe DN size
                 min_size_idx = self.find_index_of_pipe_or_next_up(
-                    pipe_classes, float(self.__minimum_pipe_size_name.replace("DN", ""))
+                    pipe_classes,
+                    float(self.__minimum_pipe_size_name.name.upper().strip("DN")),
                 )
-            assert min_size_idx
+            assert min_size_idx is not None
 
             if max_size_idx < min_size_idx:
                 logger.warning(
                     f"{p} has an upper DN size smaller than the used minimum size "
-                    f"of {self.__minimum_pipe_size_name}, choose at least "
-                    f"{self.__minimum_pipe_size_name}"
+                    f"of {self.__minimum_pipe_size_name.name}, choose at least "
+                    f"{self.__minimum_pipe_size_name.name}"
                 )
             elif min_size_idx == max_size_idx:
                 c.append(pipe_classes[min_size_idx])
@@ -425,6 +438,44 @@ class ESDLMixin(
         elif asset.attributes["state"].name == "DISABLED":
             c = override_classes[p] = []
             c.append(no_pipe_class)
+
+    def set_user_defined_minimum_pipe_size_requirement(self, pipe_classes: dict) -> None:
+        """
+        Check if the user defined specification of the minimum allowed pipe DN is applicable and
+        set the vairable _ESDLMixin__use_user_defined_minimum_pipe_size accordingly
+        """
+        dn20_exists = False
+
+        for pipe_class in pipe_classes:
+            if not dn20_exists and pipe_class.diameter_enum == esdl.PipeDiameterEnum.DN20:
+                dn20_exists = True
+
+        self._ESDLMixin__use_user_defined_minimum_pipe_size = not dn20_exists
+
+    def update_pipe_class_costs(self, pipe_classes: dict, pipe_diameter_cost_map: dict) -> None:
+        """
+        In this method all pipe classes in pipe_classes are updated with investments costs in
+        pipe_diameter_cost_map if a cost exists. If no cost exists for a specific pipe class in
+        pipe_diameter_cost_map then the pipe class is removed from this group of pipe_classes.
+        """
+        updated_pipe_classes = []
+
+        for i, pipe_class in enumerate(pipe_classes):
+
+            if pipe_class.name in pipe_diameter_cost_map.keys():
+                pipe_classes[i] = dataclasses.replace(
+                    pipe_classes[i],
+                    investment_costs=pipe_diameter_cost_map[pipe_class.name],
+                )
+
+                updated_pipe_classes.append(pipe_classes[i])
+            else:
+                pass
+
+        pipe_classes[:] = updated_pipe_classes
+
+    def assert_pipe_dn_monotonically_increasing(self, pipe_classes: list) -> None:
+        assert np.all(np.diff([pc.inner_diameter for pc in pipe_classes]) > 0)
 
     def override_pipe_classes(self) -> None:
         """
@@ -441,50 +492,143 @@ class ESDLMixin(
         maximum_velocity = self.heat_network_settings["maximum_velocity"]
 
         no_pipe_class = PipeClass("None", 0.0, 0.0, (0.0, 0.0), 0.0)
+        steel_s1_pipe_edr_assets = _AssetToComponentBase.STEEL_S1_PIPE_EDR_ASSETS.items()
         pipe_classes = [
-            EDRPipeClass.from_edr_class(name, edr_class_name, maximum_velocity)
-            for name, edr_class_name in _AssetToComponentBase.STEEL_S1_PIPE_EDR_ASSETS.items()
+            EDRPipeClass.from_edr_class(diameter_enum, edr_class_name, maximum_velocity)
+            for diameter_enum, edr_class_name in steel_s1_pipe_edr_assets
         ]
 
         override_classes = self._override_pipe_classes
 
         # Update the pipe costs if a measure model in the ESDL was used. This is updated only if
-        # the pipe catalog is available as a measure
+        # the pipe catalog is available as a measure. The later can be in 2 forms currently
+        # Measures=f(Measure1, measure2..etc)
+        # Measures=f(MeasureGroup1, MeasureGroup2..etc) & MeasureGroup1 = f(Measure1, measure2..etc)
+        pipe_classes_groups = {}
+        # TODO: the code duplication below has to be made cleaner once the structure of groups
+        # have been refined, agreed upon and tested by a user.
         if self._esdl_measures:
+
             filter_type = "Pipe"
             pipe_measures = self.filter_asset_measures(
                 asset_measures=self._esdl_measures, filter_type=filter_type
             )
+
             if len(pipe_measures.items()) > 0:
-                pipe_diameter_cost_map = {
-                    str(pipe.diameter): pipe.costInformation.investmentCosts.value
-                    for pipe in pipe_measures.values()
-                }
 
-                for i, pipe_class in enumerate(pipe_classes):
-                    if pipe_class.name in pipe_diameter_cost_map.keys():
-                        pipe_classes[i] = dataclasses.replace(
-                            pipe_classes[i],
-                            investment_costs=pipe_diameter_cost_map[pipe_class.name],
+                if self._esdl_measure_group_info:
+                    pipe_measures_per_group = {}
+                    for measure_group_id, measure_group in self._esdl_measure_group_info.items():
+                        pipe_classes_groups[measure_group_id] = {
+                            "measure_group_name": measure_group["name"],
+                            "pipe_classes": pipe_classes.copy(),  # prevents pointing to same object
+                        }
+
+                        pipe_measures_per_group[measure_group_id] = [
+                            pipe_measures[id] for id in measure_group["containt_measure_ids"]
+                        ]
+
+                    pipe_diameter_cost_map = {}
+                    for grp_id in pipe_classes_groups:
+
+                        if pipe_measures_per_group:
+                            pipe_diameter_cost_map[grp_id] = {
+                                str(pipe.diameter): pipe.costInformation.investmentCosts.value
+                                for pipe in pipe_measures_per_group[grp_id]
+                            }
+
+                            self.update_pipe_class_costs(
+                                pipe_classes_groups[grp_id]["pipe_classes"],
+                                pipe_diameter_cost_map[grp_id],
+                            )
+                            self.set_user_defined_minimum_pipe_size_requirement(
+                                pipe_classes_groups[grp_id]["pipe_classes"]
+                            )
+
+                        self.assert_pipe_dn_monotonically_increasing(
+                            pipe_classes_groups[grp_id]["pipe_classes"]
                         )
-                        if (
-                            not self._ESDLMixin__use_user_defined_minimum_pipe_size
-                            and float(pipe_classes[i].name.replace("DN", "")) != 20.0
-                        ):
-                            self._ESDLMixin__use_user_defined_minimum_pipe_size = True
-                    else:
-                        del pipe_classes[i]
 
-        # We assert the pipe classes are monotonically increasing in size
-        assert np.all(np.diff([pc.inner_diameter for pc in pipe_classes]) > 0)
+                else:
+                    pipe_diameter_cost_map = {
+                        str(pipe.diameter): pipe.costInformation.investmentCosts.value
+                        for pipe in pipe_measures.values()
+                    }
+                    self.update_pipe_class_costs(
+                        pipe_classes,
+                        pipe_diameter_cost_map,
+                    )
+                    self.set_user_defined_minimum_pipe_size_requirement(pipe_classes)
+                    self.assert_pipe_dn_monotonically_increasing(pipe_classes)
+
+        else:
+            self.assert_pipe_dn_monotonically_increasing(pipe_classes)
 
         for asset in self.esdl_assets.values():
             if asset.asset_type == "Pipe" and isinstance(
                 asset.in_ports[0].carrier, esdl.HeatCommodity
             ):
-                self.__override_pipe_classes_dicts(
-                    asset, pipe_classes, no_pipe_class, override_classes
-                )
+                if self._esdl_measure_group_info:
+                    asset_referenced_id = None
+                    asset_measures = asset.attributes.get("measures", False)
+                    if asset_measures:
+                        # Note: only catering for one reference at a pipe
+                        asset_referenced_id = asset_measures.measure[0].reference.id
+
+                        if len(asset_measures.measure) > 1:
+                            logger.error(
+                                f"{asset.name} has more than 1 MeasureGroup referenced, remove"
+                                " extra references"
+                            )
+                            sys.exit(1)
+
+                    # Get the MeasureGroupReference for the related pipe if it exists
+                    # Note pipe relations variables do not exist in MESIDO at this point
+                    related_exist = asset.attributes.get("related", False)
+                    if not asset_referenced_id and related_exist:
+                        related_pipe_id = related_exist[0].id
+                        related_pipe_measure = self._esdl_assets[related_pipe_id].attributes.get(
+                            "measures"
+                        )
+
+                        if related_pipe_measure and asset.attributes["state"].name == "OPTIONAL":
+                            asset_referenced_id = related_pipe_measure.measure[0].reference.id
+                        else:
+                            continue
+
+                    elif asset_referenced_id and related_exist:
+                        # Check that both related pipes do not have a measure assigned
+                        related_pipe_id = related_exist[0].id
+                        related_pipe_measures = self._esdl_assets[related_pipe_id].attributes.get(
+                            "measures"
+                        )
+                        if related_pipe_measures:
+                            logger.error(
+                                f"Both pipes named {asset.name} and"
+                                f" {self.esdl_asset_id_to_name_map[related_pipe_id]} have a"
+                                " MeasureGroupReference: if 2 pipes are related, only the supply"
+                                " pipe should have a MeasureGroupReference"
+                            )
+                            sys.exit(1)
+
+                    if asset_referenced_id:
+                        self.__override_pipe_classes_dicts(
+                            asset,
+                            pipe_classes_groups[asset_referenced_id]["pipe_classes"],
+                            no_pipe_class,
+                            override_classes,
+                        )
+                    else:
+                        logger.error(
+                            f"{asset.name} has no MeasureGroupReference: "
+                            "MeasureGroup is being used for pipes & every pipe has to have"
+                            " a MeasureGroupReference"
+                        )
+                        sys.exit(1)
+                else:
+                    self.__override_pipe_classes_dicts(
+                        asset, pipe_classes, no_pipe_class, override_classes
+                    )
 
     def override_gas_pipe_classes(self) -> None:
         """
@@ -501,9 +645,10 @@ class ESDLMixin(
         maximum_velocity = self.gas_network_settings["maximum_velocity"]
 
         no_pipe_class = GasPipeClass("None", 0.0, 0.0, 0.0)
+        steel_s1_pipe_edr_assets = _AssetToComponentBase.STEEL_S1_PIPE_EDR_ASSETS.items()
         pipe_classes = [
-            EDRGasPipeClass.from_edr_class(name, edr_class_name, maximum_velocity)
-            for name, edr_class_name in _AssetToComponentBase.STEEL_S1_PIPE_EDR_ASSETS.items()
+            EDRGasPipeClass.from_edr_class(diameter_enum, edr_class_name, maximum_velocity)
+            for diameter_enum, edr_class_name in steel_s1_pipe_edr_assets
         ]
 
         # We assert the pipe classes are monotonically increasing in size
