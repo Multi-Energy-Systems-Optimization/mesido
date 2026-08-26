@@ -1,23 +1,64 @@
-# [Unreleased-main] - 2026-08-24
+# [Unreleased-main] - 2026-08-26
 
 ## Added
-- ESDL profile reading and writing for different types: influxdb and postgres, and inline (in ESDL file).
 - Import with an Electricity port is now supported as a subclass of electricity source and caters for electricity price profiles.
 - A heat source asset is eligible for use only when its maximum temperature meets or exceeds the network supply temperature
 
 ## Changed
-- Code generalization in asset sizing mixin
-- Write_result_db_profiles has been replaced by esdl_profiles_output_type (determines the ESDL output profile type)
-- Names used for keys in "database_connections" specified
-- Using pyesdl for database credential management
+- Use pipe DN enums instead of extracting the DN size from the name (EDR pipes and available pipe classes)
 - Write result profiles to a fixed (configured) database combined with a dynamic schema name per run when the output profile type is postgres
 - Update pyESDL to v26.7.1
 - Parsing of input profiles with 15-minute interval now supported.
 - Class name of ModelicaComponentTypeMixin has been changed to ComponentTypeMixin to reflect the fact that it is not only used for Modelica components.
 
 ## Fixed
-- Bug: Only update the aggregation count for an ATES and a GeothermalSource in DTK post processing
 - Bug: minimum velocity is set to 0.0 in the staged grow_workflow to allow for zero heat demand.
+
+
+# [0.1.20.3] - 2026-07-15
+
+## Added
+- ESDL profile reading and writing for different types: influxdb and postgres, and inline (in ESDL file).
+
+## Changed
+- Write_result_db_profiles has been replaced by esdl_profiles_output_type (determines the ESDL output profile type)
+- Names used for keys in "database_connections" specified
+- Using pyesdl for database credential management
+
+## Fixed
+- xxx 
+
+
+# [0.1.20.2] - 2026-07-15
+
+## Added
+- xxx
+
+## Changed
+- xxx
+
+## Fixed
+- Bug: MeasureGroup error when pipe is ENABLED 
+
+
+# [0.1.20.1] - 2026-07-10
+
+## Added
+- xxx
+
+## Changed
+- Code generalization in asset sizing mixin
+- Cater for a pipe price catalogue per pipe via MeasureGroup
+- Removing the units in the KPI labels
+- Energy production (yearly averaged) KPI is updated so that the name is displayed instead of the id
+- Updated tolerance value used in DTK post processing
+
+## Fixed
+- Check for allowing a user defined lower pipe DN size via measures/templates
+- Bug fix: In __override_pipe_classes_dicts a min_size_idx=0 was not catered for
+- Bug fix: In update_pipe_class_costs() looping over items in enumerate(pipe_classes) while deleting items in pipe_classes resulted in items being skipped
+- Bug: Only update the aggregation count for an ATES and a GeothermalSource in DTK post processing
+
 
 # [0.1.20] - 2026-06-15
 
