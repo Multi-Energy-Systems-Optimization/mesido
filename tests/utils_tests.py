@@ -7,7 +7,10 @@ import esdl
 from mesido._darcy_weisbach import friction_factor, head_loss
 from mesido.constants import GRAVITATIONAL_CONSTANT
 from mesido.esdl.asset_to_component_base import _AssetToComponentBase
-from mesido.esdl.edr_pipe_class import EDRGasPipeClass
+from mesido.esdl.edr_pipe_class import (
+    EDRGasPipeClass,
+    TRACE_TO_SINGLE_PIPE_COST_FACTOR,
+)
 from mesido.head_loss_class import HeadLossOption
 
 import numpy as np
@@ -761,6 +764,10 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
     ]
 
     edr_pipes = json.load(open(Path(__file__).parent.parent / "src/mesido/esdl/_edr_pipes.json"))
+    # Update the investment cost to represent only a single pipe instead of the existing trace pipe
+    # cost.
+    for edr_pipe in edr_pipes.values():
+        edr_pipe["investment_costs"] *= TRACE_TO_SINGLE_PIPE_COST_FACTOR
 
     price_profile = solution._FinancialMixin__get_electricity_price_profile_or_zero()
 

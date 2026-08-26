@@ -16,7 +16,11 @@ from mesido.component_type_mixin import (
 )
 from mesido.esdl.asset_to_component_base import _AssetToComponentBase
 from mesido.esdl.common import Asset
-from mesido.esdl.edr_pipe_class import EDRGasPipeClass, EDRPipeClass
+from mesido.esdl.edr_pipe_class import (
+    EDRGasPipeClass,
+    EDRPipeClass,
+    TRACE_TO_SINGLE_PIPE_COST_FACTOR,
+)
 from mesido.esdl.esdl_additional_vars_mixin import get_asset_contraints
 from mesido.esdl.esdl_heat_model import ESDLHeatModel
 from mesido.esdl.esdl_model_base import _ESDLModelBase
@@ -457,6 +461,8 @@ class ESDLMixin(
         In this method all pipe classes in pipe_classes are updated with investments costs in
         pipe_diameter_cost_map if a cost exists. If no cost exists for a specific pipe class in
         pipe_diameter_cost_map then the pipe class is removed from this group of pipe_classes.
+
+        Note: pipe_diameter_cost_map contains the investment costs for trace pipes.
         """
         updated_pipe_classes = []
 
@@ -465,7 +471,9 @@ class ESDLMixin(
             if pipe_class.name in pipe_diameter_cost_map.keys():
                 pipe_classes[i] = dataclasses.replace(
                     pipe_classes[i],
-                    investment_costs=pipe_diameter_cost_map[pipe_class.name],
+                    investment_costs=(
+                        pipe_diameter_cost_map[pipe_class.name] * TRACE_TO_SINGLE_PIPE_COST_FACTOR
+                    ),
                 )
 
                 updated_pipe_classes.append(pipe_classes[i])

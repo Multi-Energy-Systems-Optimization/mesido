@@ -4,6 +4,7 @@ from unittest import TestCase
 import esdl
 
 import mesido._darcy_weisbach as darcy_weisbach
+from mesido.esdl.edr_pipe_class import TRACE_TO_SINGLE_PIPE_COST_FACTOR
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.workflows import (
@@ -610,7 +611,9 @@ class TestEndScenarioSizing(TestCase):
         filter_type = "Pipe"
         pipe_measures = solution.filter_asset_measures(solution._esdl_measures, filter_type)
         pipe_diameter_cost_map = {
-            str(pipe.diameter): pipe.costInformation.investmentCosts.value
+            str(pipe.diameter): (
+                pipe.costInformation.investmentCosts.value * TRACE_TO_SINGLE_PIPE_COST_FACTOR
+            )
             for pipe in pipe_measures.values()
         }
         solution_pipe_classes = solution.get_unique_pipe_classes()
@@ -728,7 +731,9 @@ class TestEndScenarioSizing(TestCase):
         # Test 1: Check if the solution pipe classes used were of the pipe measures
         pipe_measures = solution.filter_asset_measures(solution._esdl_measures, "Pipe")
         pipe_diameter_cost_map = {
-            str(pipe.diameter): pipe.costInformation.investmentCosts.value
+            str(pipe.diameter): (
+                pipe.costInformation.investmentCosts.value * TRACE_TO_SINGLE_PIPE_COST_FACTOR
+            )
             for pipe in pipe_measures.values()
         }
         solution_pipe_classes = solution.get_unique_pipe_classes()
@@ -923,7 +928,7 @@ class TestEndScenarioSizing(TestCase):
                 # Check the available pipe classes
                 for avail_pipe_class in solution._override_pipe_classes[pipe_id]:
                     if avail_pipe_class.name != "None":
-                        multiplier = 1.0
+                        multiplier = 1.0 * TRACE_TO_SINGLE_PIPE_COST_FACTOR
                         if pipe_id in expensive_pipe_ids:
                             multiplier *= 10.0
                         np.testing.assert_almost_equal(
@@ -987,14 +992,14 @@ if __name__ == "__main__":
     a = TestEndScenarioSizing()
     a.setUpClass()
     a.test_end_scenario_sizing()
-    a.test_end_scenario_sizing_no_demand()
+    # a.test_end_scenario_sizing_no_demand()
     a.test_end_scenario_sizing_staged()
-    a.test_end_scenario_sizing_heat_demand_not_matched()
-    a.test_heat_exchanger_sizing()
-    a.test_end_scenario_sizing_discounted()
-    a.test_end_scenario_sizing_head_loss()
-    a.test_end_scenario_sizing_pipe_catalog_lower_pipe_dn()
-    a.test_end_scenario_sizing_pipe_catalog()
-    a.test_end_scenario_sizing_pipe_catalog_with_templates()
-    a.test_end_scenario_sizing_pipe_measuregroup()
+    # a.test_end_scenario_sizing_heat_demand_not_matched()
+    # a.test_heat_exchanger_sizing()
+    # a.test_end_scenario_sizing_discounted()
+    # a.test_end_scenario_sizing_head_loss()
+    # a.test_end_scenario_sizing_pipe_catalog_lower_pipe_dn()
+    # a.test_end_scenario_sizing_pipe_catalog()
+    # a.test_end_scenario_sizing_pipe_catalog_with_templates()
+    # a.test_end_scenario_sizing_pipe_measuregroup()
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

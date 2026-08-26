@@ -1,9 +1,13 @@
 from dataclasses import dataclass
+from typing import Self
 
 from mesido.esdl.asset_to_component_base import _AssetToComponentBase
 from mesido.pipe_class import GasPipeClass, PipeClass
 
 from pyecore.ecore import EEnumLiteral
+
+# The EDR costs are for trace pipes, so we need to halve the cost for a single pipe.
+TRACE_TO_SINGLE_PIPE_COST_FACTOR = 0.5
 
 
 @dataclass(frozen=True)
@@ -32,7 +36,7 @@ class EDRPipeClass(PipeClass):
     @classmethod
     def from_edr_class(
         cls, diameter_enum: EEnumLiteral, edr_class_name: str, maximum_velocity: float
-    ):
+    ) -> Self:
         """
         This function creates an EDR pipe object of the specified edr class.
 
@@ -55,7 +59,10 @@ class EDRPipeClass(PipeClass):
         inner_diameter = edr_class["inner_diameter"]
         u_1 = edr_class["u_1"]
         u_2 = edr_class["u_2"]
-        investment_costs = edr_class["investment_costs"]
+        # Cost is halved because the EDR costs are for trace pipes
+        investment_cost_single_pipe = (
+            edr_class["investment_costs"] * TRACE_TO_SINGLE_PIPE_COST_FACTOR
+        )
         xml_string = edr_class["xml_string"]
 
         # TODO: utilize max velocity from the edr data as well?
@@ -64,7 +71,7 @@ class EDRPipeClass(PipeClass):
             inner_diameter,
             maximum_velocity,
             (u_1, u_2),
-            investment_costs,
+            investment_cost_single_pipe,
             diameter_enum,
             xml_string,
         )
