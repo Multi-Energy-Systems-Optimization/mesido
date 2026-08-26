@@ -807,8 +807,6 @@ class TestEndScenarioSizing(TestCase):
         - The costs in the available pipes classes
         - That the operational more expensive heat producer is used
         """
-        # TODO: the folder placement of this (and other in this file) pipe catalogue tests does
-        # not make sense. Need to move these cases to a new folder maybe?
         import models.test_case_small_network_ates_buffer_optional_assets.src.run_ates as run_ates
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
