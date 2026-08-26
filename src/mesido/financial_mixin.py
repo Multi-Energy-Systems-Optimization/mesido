@@ -830,7 +830,7 @@ class FinancialMixin(
 
         def _append_state_vector_variable_operational_cost_constraints(
             asset: str,
-            state_vector_name: str,
+            state_vector_name: str | None,
             include_price_profile_variable_cost: bool = False,
             denominator: float | int = 1.0,
         ) -> None:
@@ -842,9 +842,6 @@ class FinancialMixin(
             applied to that state vector as well. ``denominator`` scales the state-vector-driven
             cost contribution.
             """
-            state_vector = self.__state_vector_scaled(
-                f"{asset}.{state_vector_name}", ensemble_member
-            )
             variable_operational_cost_var = self._asset_variable_operational_cost_map[asset]
             variable_operational_cost = self.extra_variable(
                 variable_operational_cost_var, ensemble_member
@@ -853,10 +850,17 @@ class FinancialMixin(
             variable_operational_cost_coefficient = parameters[
                 f"{asset}.variable_operational_cost_coefficient"
             ]
-            sum_ = (
-                ca.sum1(variable_operational_cost_coefficient * state_vector[1:] * timesteps_hr)
-                / denominator
-            )
+
+            if state_vector_name is not None:
+                state_vector = self.__state_vector_scaled(
+                    f"{asset}.{state_vector_name}", ensemble_member
+                )
+                sum_ = (
+                    ca.sum1(variable_operational_cost_coefficient * state_vector[1:] * timesteps_hr)
+                    / denominator
+                )
+            else:
+                sum_ = 0.0
 
             if include_price_profile_variable_cost:
                 if variable_operational_cost_coefficient > 0.0:
@@ -912,11 +916,12 @@ class FinancialMixin(
             *self.energy_system_components.get("pump", []),
             *self.energy_system_components.get("heat_exchanger", []),
         ]:
-            _append_state_vector_variable_operational_cost_constraints(asset, "Pump_power", False)
+            _append_state_vector_variable_operational_cost_constraints(asset, None, False)
 
         for s in self.energy_system_components.get("heat_source", []):
             include_price_profile_variable_cost = False
             denominator = 1.0
+            state_vector_name = "Heat_source"
 
             if s in self.energy_system_components.get("air_water_heat_pump", []):
                 denominator = parameters[f"{s}.cop"]
@@ -939,8 +944,6 @@ class FinancialMixin(
                 )
             elif s in self.energy_system_components.get("elec_heat_source_elec", []):
                 state_vector_name = "Power_consumed"
-            else:
-                state_vector_name = "Heat_source"
 
             _append_state_vector_variable_operational_cost_constraints(
                 s,
