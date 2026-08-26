@@ -1,8 +1,8 @@
-
-# [Unreleased-main] - 2026-08-24
+# [Unreleased-main] - 2026-08-26
 
 ## Added
 - Import with an Electricity port is now supported as a subclass of electricity source and caters for electricity price profiles.
+- A heat source asset is eligible for use only when its maximum temperature meets or exceeds the network supply temperature
 
 ## Changed
 - Use pipe DN enums instead of extracting the DN size from the name (EDR pipes and available pipe classes)
@@ -48,7 +48,7 @@
 
 ## Changed
 - Code generalization in asset sizing mixin
-- Cater for a pipe price catalogue per pipe via MesureGroup
+- Cater for a pipe price catalogue per pipe via MeasureGroup
 - Removing the units in the KPI labels
 - Energy production (yearly averaged) KPI is updated so that the name is displayed instead of the id
 - Updated tolerance value used in DTK post processing

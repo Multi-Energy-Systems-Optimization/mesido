@@ -4,6 +4,8 @@ from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
 from mesido.physics_mixin import PhysicsMixin
 from mesido.qth_not_maintained.qth_mixin import QTHMixin
+from mesido.techno_economic_mixin import TechnoEconomicMixin
+from mesido.workflows.goals.minimize_tco_goal import MinimizeTCO
 
 import numpy as np
 
@@ -67,6 +69,18 @@ class HeatProblem(
         return settings
 
 
+class HeatProblemWithTechnoEconomicMixin(HeatProblem, TechnoEconomicMixin):
+    def goals(self):
+        goals = super().goals().copy()
+        goals.append(MinimizeTCO(priority=2))
+        return goals
+
+    def energy_system_options(self):
+        options = super().energy_system_options()
+        options["neglect_pipe_heat_losses"] = True
+        return options
+
+
 class HeatProblemTvar(HeatProblem):
     def update_heat_network_settings(self):
         settings = super().update_heat_network_settings()
@@ -104,6 +118,23 @@ class HeatProblemTvar(HeatProblem):
                         )
 
         return constraints
+
+
+class HeatProblemTvarWithTechnoEconomicMixin(HeatProblemTvar, TechnoEconomicMixin):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def goals(self):
+        goals = super().goals().copy()
+        goals.append(MinimizeTCO(priority=2))
+        return goals
+
+    def temperature_regimes(self, carrier):
+        temperatures = []
+        if carrier == "c362f53a-3eaf-4d96-8ee6-944e77359fed":
+            temperatures = [71.0, 74.0, 86.0]
+        return temperatures
 
 
 class QTHProblem(
