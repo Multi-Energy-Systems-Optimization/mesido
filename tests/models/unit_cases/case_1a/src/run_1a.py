@@ -120,6 +120,23 @@ class HeatProblemTvar(HeatProblem):
         return constraints
 
 
+class HeatProblemTvarWithTechnoEconomicMixin(HeatProblemTvar, TechnoEconomicMixin):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def goals(self):
+        goals = super().goals().copy()
+        goals.append(MinimizeTCO(priority=2))
+        return goals
+
+    def temperature_regimes(self, carrier):
+        temperatures = []
+        if carrier == "c362f53a-3eaf-4d96-8ee6-944e77359fed":
+            temperatures = [71.0, 74.0, 86.0]
+        return temperatures
+
+
 class QTHProblem(
     _GoalsAndOptions,
     QTHMixin,
