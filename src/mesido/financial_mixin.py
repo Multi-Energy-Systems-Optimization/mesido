@@ -103,17 +103,13 @@ class FinancialMixin(
         bounds = self.bounds()
         string_parameters = self.string_parameters(0)
 
-        def _determine_ub(asset_name: str, primary_suffix: str, secondary_suffix: str):
+        def _determine_ub(asset_id: str, primary_suffix: str, secondary_suffix: str):
             """
             Returns the upperbound of a variable with a backup variable name under which it might be
              saved.
             """
-            demand_ub = bounds[f"{asset_name}.{primary_suffix}"][1]
-            return (
-                demand_ub
-                if not np.isinf(demand_ub)
-                else bounds[f"{asset_name}.{secondary_suffix}"][1]
-            )
+            ub = bounds[f"{asset_id}.{primary_suffix}"][1]
+            return ub if not np.isinf(ub) else bounds[f"{asset_id}.{secondary_suffix}"][1]
 
         def _make_operational_var_nominal(asset_name: str, asset_type: str):
             fixed_operational_setup = map_asset_type_to_fixed_operational_vars[asset_type]
