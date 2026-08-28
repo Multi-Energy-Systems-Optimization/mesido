@@ -17,7 +17,6 @@ from mesido.component_type_mixin import (
 from mesido.esdl.asset_to_component_base import _AssetToComponentBase
 from mesido.esdl.common import Asset
 from mesido.esdl.edr_pipe_class import EDRGasPipeClass, EDRPipeClass
-from mesido.pipe_class import TRACE_TO_SINGLE_PIPE_COST_FACTOR
 from mesido.esdl.esdl_additional_vars_mixin import get_asset_contraints
 from mesido.esdl.esdl_heat_model import ESDLHeatModel
 from mesido.esdl.esdl_model_base import _ESDLModelBase
@@ -25,7 +24,7 @@ from mesido.esdl.esdl_parser import ESDLStringParser
 from mesido.esdl.esdl_qth_model import ESDLQTHModel
 from mesido.esdl.profile_parser import BaseProfileReader, ESDLProfileReader
 from mesido.physics_mixin import PhysicsMixin
-from mesido.pipe_class import GasPipeClass, PipeClass
+from mesido.pipe_class import GasPipeClass, PipeClass, TRACE_TO_SINGLE_PIPE_COST_FACTOR
 from mesido.pycml.pycml_mixin import PyCMLMixin
 from mesido.qth_not_maintained.qth_mixin import QTHMixin
 

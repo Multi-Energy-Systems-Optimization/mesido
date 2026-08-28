@@ -1218,7 +1218,6 @@ class ScenarioOutput:
                             asset.costInformation.investmentCosts.value = pipe_inv_cost
                     else:
                         asset.costInformation.investmentCosts.value = pipe_inv_cost
-                    
                 except AttributeError:
                     pass
                     # do nothing, in the case that no costs have been specified for the return

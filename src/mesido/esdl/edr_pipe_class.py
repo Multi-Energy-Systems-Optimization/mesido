@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from typing import Self
+
 from mesido.esdl.asset_to_component_base import _AssetToComponentBase
-from mesido.pipe_class import TRACE_TO_SINGLE_PIPE_COST_FACTOR, GasPipeClass, PipeClass
+from mesido.pipe_class import GasPipeClass, PipeClass, TRACE_TO_SINGLE_PIPE_COST_FACTOR
 
 from pyecore.ecore import EEnumLiteral
 

@@ -985,7 +985,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         Parameters
         ----------
         asset : Asset. The heat pipe asset to resolve cost figures for.
-        
+
         Returns
         -------
         Dict

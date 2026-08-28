@@ -6,6 +6,7 @@ import esdl
 import mesido._darcy_weisbach as darcy_weisbach
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.pipe_class import TRACE_TO_SINGLE_PIPE_COST_FACTOR
 from mesido.workflows import (
     EndScenarioSizing,
     EndScenarioSizingDiscounted,
@@ -15,7 +16,6 @@ from mesido.workflows import (
 )
 from mesido.workflows.grow_workflow import EndScenarioSizingHeadLossStaged
 from mesido.workflows.utils.error_types import NetworkErrors
-from mesido.pipe_class import TRACE_TO_SINGLE_PIPE_COST_FACTOR
 
 import numpy as np
 
