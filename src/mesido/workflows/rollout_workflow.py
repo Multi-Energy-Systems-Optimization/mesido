@@ -16,9 +16,9 @@ from mesido.workflows.goals.rollout_goal import (
 )
 from mesido.workflows.io.write_output import ScenarioOutput
 from mesido.workflows.utils.adapt_profiles import (
-    adapt_hourly_profile_averages_timestep_size,
     adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
     adapt_profile_for_initial_hour_timestep_size,
+    adapt_profile_to_averaged_timestep,
     adapt_profile_to_copy_for_number_of_years,
 )
 
@@ -163,7 +163,7 @@ class RollOutProblem(
         else:
             # Create yearly profile with desired coarser time-step size by
             # averaging over the hourly data
-            adapt_hourly_profile_averages_timestep_size(self, self._timestep_size)
+            adapt_profile_to_averaged_timestep(self, self._timestep_size)
 
         # A small, (1 hour) timestep is inserted as first time step. This is used in the
         # rollout workflow to allow a yearly change in the storage of the ATES system.

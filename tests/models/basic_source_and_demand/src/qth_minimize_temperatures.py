@@ -1,4 +1,4 @@
-from mesido.component_type_mixin import ModelicaComponentTypeMixin
+from mesido.component_type_mixin import ComponentTypeMixin
 from mesido.pycml.pycml_mixin import PyCMLMixin
 from mesido.qth_not_maintained.bounds_to_pipe_flow_directions_mixin import (
     BoundsToPipeFlowDirectionsMixin,
@@ -51,7 +51,7 @@ class MinimizeSourceTemperature(Goal):
 class _QTHBase(
     BoundsToPipeFlowDirectionsMixin,
     QTHMixin,
-    ModelicaComponentTypeMixin,
+    ComponentTypeMixin,
     HomotopyMixin,
     SinglePassGoalProgrammingMixin,
     CSVMixin,

@@ -1,12 +1,16 @@
+import copy
 import unittest
 from pathlib import Path
 
 from mesido.esdl.esdl_parser import ESDLFileParser, ESDLStringParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
 from rtctools.util import run_optimization_problem
+
+from tests.utils_tests import demand_matching_test
 
 
 class TestESDLParsing(unittest.TestCase):
@@ -112,6 +116,87 @@ class TestESDLParsing(unittest.TestCase):
         assert (
             pipe_2_diameter_key in parameters
         ), f"Expected diameter parameter for pipe_2: {pipe_2_diameter_key}"
+
+    def test_reuse_problem_initialisation_esdl(self):
+        """
+        This test checks that MESIDO correctly handles the optimization problems if the problem
+        has been copied after initialisation and pre. This reduces the computational effort to
+        translate the problem from ESDL to MESIDO when the same system description is utilized.
+        Example use cases for instance relate a moving horizon optimization, where only the
+        timeseries and the initial states of assets need to be updated.
+        Checks:
+         - demand matching of sliced timeseries
+         - objective value problem 1 and 2 is different, ensuring different timeserie values are
+         used
+         - compares the objective result between the original way of phrasing the problem
+        and the reuse of the initialisation.
+        """
+
+        import tests.models.source_pipe_sink.src.double_pipe_heat as example
+        from tests.models.source_pipe_sink.src.double_pipe_heat import (
+            SourcePipeSinkReducedTimeseries,
+        )
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+        problem_1 = SourcePipeSinkReducedTimeseries(
+            base_folder=base_folder,
+            model_folder=base_folder / "model",
+            input_folder=base_folder / "input",
+            esdl_file_name="sourcesink.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.csv",
+        )
+
+        problem_1.pre()
+
+        problem_2 = copy.deepcopy(problem_1)
+
+        problem_1.optimize(preprocessing=False)
+
+        problem_2._start_index = 10
+        problem_2._end_index = 20
+        problem_2.optimize(preprocessing=False)
+
+        problem_1_old = run_esdl_mesido_optimization(
+            SourcePipeSinkReducedTimeseries,
+            base_folder=base_folder,
+            esdl_file_name="sourcesink.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.csv",
+            start_index=0,
+            end_index=10,
+        )
+
+        problem_2_old = run_esdl_mesido_optimization(
+            SourcePipeSinkReducedTimeseries,
+            base_folder=base_folder,
+            esdl_file_name="sourcesink.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.csv",
+            start_index=10,
+            end_index=20,
+        )
+
+        demand_matching_test(problem_1, problem_1.extract_results())
+        demand_matching_test(problem_2, problem_2.extract_results())
+
+        np.testing.assert_(
+            problem_1.objective_value != problem_2.objective_value,
+            "Objective values of problem_1 "
+            "and problem_2 must be "
+            "different, else the heat "
+            "demand would have been the same",
+        )
+
+        np.testing.assert_allclose(
+            problem_1.objective_value, problem_1_old.objective_value, rtol=1e-5
+        )
+        np.testing.assert_allclose(
+            problem_2.objective_value, problem_2_old.objective_value, rtol=1e-5
+        )
 
 
 if __name__ == "__main__":

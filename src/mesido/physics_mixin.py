@@ -152,6 +152,7 @@ class PhysicsMixin(
         assert windowsize_hr > 0
         assert windowsize_hr % 1 == 0
         assert component_id in sum(self.energy_system_components.values(), [])
+        bounds = self.bounds()
 
         # Find the component type
         comp_type = next(
@@ -187,7 +188,7 @@ class PhysicsMixin(
             backward_heat_rate_expression = sym_var[:-1] - sym_var[1:]
 
             # Compute threshold for what is considered a change in setpoint
-            big_m = 2.0 * max(self.bounds()[variable_name])
+            big_m = 2.0 * max(bounds[variable_name])
             nominal = self.variable_nominal(variable_name)
 
             # Constraint which fixes if the variable is allowed to switch or not.

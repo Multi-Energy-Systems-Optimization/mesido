@@ -60,7 +60,7 @@ class ScenarioOutput:
             ESDLOutputProfilesType.INFLUXDB,
         ]
 
-        base_error_string = "Missing influxdb setting for writing result profile data:"
+        base_error_string = "Missing database setting for writing result profile data:"
         try:
             if self.esdl_output_profiles_type is not None and not isinstance(
                 self.esdl_output_profiles_type, ESDLOutputProfilesType
@@ -138,8 +138,26 @@ class ScenarioOutput:
                         )
                         sys.exit(1)
                 except KeyError:
-                    logger.error("f{base_string} verify_ssl")
+                    logger.error(f"{base_error_string} verify_ssl")
                     sys.exit(1)
+
+                if self.esdl_output_profiles_type == ESDLOutputProfilesType.POSTGRESQL:
+                    try:
+                        pg_timeseries_database = database_connection_input["database"]
+                        if (
+                            pg_timeseries_database is None
+                            or len(pg_timeseries_database.strip()) == 0
+                        ):
+                            logger.error(
+                                "Current setting of database name is not set or an empty string."
+                                " It should be the name of the target database when writing"
+                                " to PostgreSQL."
+                            )
+                            sys.exit(1)
+                        self.pg_timeseries_database = pg_timeseries_database.strip()
+                    except KeyError:
+                        logger.error(f"{base_error_string} database")
+                        sys.exit(1)
         except KeyError:
             # Not writing out to a influxdb, so no settings are requried
             pass
@@ -543,7 +561,7 @@ class ScenarioOutput:
         if not discounted_annualized_cost:
             kpis_top_level.kpi.append(
                 esdl.DistributionKPI(
-                    name="High level cost breakdown [EUR] (yearly averaged)",
+                    name="High level cost breakdown (yearly averaged)",
                     distribution=esdl.StringLabelDistribution(
                         stringItem=[
                             esdl.StringItem(
@@ -570,7 +588,7 @@ class ScenarioOutput:
         if not optimizer_sim:
             kpis_top_level.kpi.append(
                 esdl.DistributionKPI(
-                    name=f"{cost_type_prefix}High level cost breakdown [EUR]"
+                    name=f"{cost_type_prefix}High level cost breakdown"
                     f" ({optim_time_horizon} year period)",
                     distribution=esdl.StringLabelDistribution(
                         stringItem=[
@@ -598,7 +616,7 @@ class ScenarioOutput:
         if not discounted_annualized_cost:
             kpis_top_level.kpi.append(
                 esdl.DistributionKPI(
-                    name="Overall cost breakdown [EUR] (yearly averaged)",
+                    name="Overall cost breakdown (yearly averaged)",
                     distribution=esdl.StringLabelDistribution(
                         stringItem=[
                             esdl.StringItem(
@@ -625,7 +643,7 @@ class ScenarioOutput:
         if not optimizer_sim:
             kpis_top_level.kpi.append(
                 esdl.DistributionKPI(
-                    name=f"{cost_type_prefix}Overall cost breakdown [EUR] "
+                    name=f"{cost_type_prefix}Overall cost breakdown "
                     f"({optim_time_horizon} year period)",
                     distribution=esdl.StringLabelDistribution(
                         stringItem=[
@@ -656,8 +674,7 @@ class ScenarioOutput:
 
             kpis_top_level.kpi.append(
                 esdl.DistributionKPI(
-                    name=f"{cost_type_prefix}CAPEX breakdown [EUR] "
-                    f"({optim_time_horizon} year period)",
+                    name=f"{cost_type_prefix}CAPEX breakdown ({optim_time_horizon} year period)",
                     distribution=esdl.StringLabelDistribution(
                         stringItem=[
                             esdl.StringItem(label=key, value=value)
@@ -674,7 +691,7 @@ class ScenarioOutput:
         if not discounted_annualized_cost:
             kpis_top_level.kpi.append(
                 esdl.DistributionKPI(
-                    name="OPEX breakdown [EUR] (yearly averaged)",
+                    name="OPEX breakdown (yearly averaged)",
                     distribution=esdl.StringLabelDistribution(
                         stringItem=[
                             esdl.StringItem(label=key, value=value)
@@ -691,8 +708,7 @@ class ScenarioOutput:
         if not optimizer_sim:
             kpis_top_level.kpi.append(
                 esdl.DistributionKPI(
-                    name=f"{cost_type_prefix}OPEX breakdown [EUR] "
-                    f"({optim_time_horizon} year period)",
+                    name=f"{cost_type_prefix}OPEX breakdown ({optim_time_horizon} year period)",
                     distribution=esdl.StringLabelDistribution(
                         stringItem=[
                             esdl.StringItem(label=key, value=value)
@@ -705,13 +721,16 @@ class ScenarioOutput:
                     ),
                 )
             )
-
+        # TODO: discuss with esdl team to get a better way of assign id and name.
+        #  Currently we assign label=self.esdl_asset_id_to_name_map[key], this does
+        #  not cater for when duplicated name are used, but this update was needed
+        #  for usability (id name in label is not useable in the front end)
         kpis_top_level.kpi.append(
             esdl.DistributionKPI(
-                name="Energy production [Wh] (yearly averaged)",
+                name="Energy production (yearly averaged)",
                 distribution=esdl.StringLabelDistribution(
                     stringItem=[
-                        esdl.StringItem(label=key, value=value)
+                        esdl.StringItem(label=self.esdl_asset_id_to_name_map[key], value=value)
                         for key, value in heat_source_energy_wh.items()
                     ]
                 ),
@@ -926,7 +945,7 @@ class ScenarioOutput:
                     kpis.kpi.append(
                         esdl.DoubleKPI(
                             value=round(estimated_energy_from_local_source_perc[subarea.name], 1),
-                            name="Estimated energy from local source(s) [%]",
+                            name="Estimated energy from local source(s)",
                             quantityAndUnit=esdl.esdl.QuantityAndUnitType(
                                 unit=esdl.UnitEnum.PERCENT,
                                 multiplier=esdl.MultiplierEnum.NONE,
@@ -939,7 +958,7 @@ class ScenarioOutput:
                                 estimated_energy_from_regional_source_perc[subarea.name],
                                 1,
                             ),
-                            name="Estimated energy from regional source(s) [%]",
+                            name="Estimated energy from regional source(s)",
                             quantityAndUnit=esdl.esdl.QuantityAndUnitType(
                                 unit=esdl.UnitEnum.PERCENT,
                                 multiplier=esdl.MultiplierEnum.NONE,
@@ -948,11 +967,8 @@ class ScenarioOutput:
                     )
                     kpis.kpi.append(
                         esdl.DoubleKPI(
-                            value=round(
-                                total_energy_consumed_locally_wh[subarea.name] / 1.0e9,
-                                1,
-                            ),
-                            name="Total energy consumed [GWh]",
+                            value=round(total_energy_consumed_locally_wh[subarea.name] / 1.0e9, 1),
+                            name="Total energy consumed",
                             quantityAndUnit=esdl.esdl.QuantityAndUnitType(
                                 physicalQuantity=esdl.PhysicalQuantityEnum.ENERGY,
                                 unit=esdl.UnitEnum.WATTHOUR,
@@ -966,7 +982,7 @@ class ScenarioOutput:
 
             # Create plots in the dashboard
             # Top level KPIs: Cost breakdown in a polygon area (for all assest grouped together)
-            kpi_name = f"{cost_type_prefix}{subarea.name}: Asset cost breakdown [EUR]"
+            kpi_name = f"{cost_type_prefix}{subarea.name}: Asset cost breakdown"
             if (area_installation_cost > 0.0 or area_investment_cost > 0.0) and (
                 area_variable_opex_cost > 0.0 or area_fixed_opex_cost > 0.0
             ):
@@ -1517,11 +1533,16 @@ class ScenarioOutput:
                                             == ESDLOutputProfilesType.POSTGRESQL
                                         ):
                                             db_type = esdl.DatabaseTypeEnum.POSTGRESQL
+                                            database_name = self.pg_timeseries_database
+                                            schema = output_energy_system_id
                                         else:
                                             db_type = esdl.DatabaseTypeEnum.INFLUXDB
+                                            database_name = output_energy_system_id
+                                            schema = None
+
                                         esdl_profile = create_data_table_profile(
                                             es=energy_system,
-                                            database_name=output_energy_system_id,
+                                            database_name=database_name,
                                             table_name=carrier_id,
                                             column_name=variable_name,
                                             start_date=start_date_time,
@@ -1529,6 +1550,7 @@ class ScenarioOutput:
                                             db_host=self.host,
                                             db_port=self.port,
                                             filter='"assetId"=' + f"'{str(asset_id)}'",
+                                            schema=schema,
                                             db_type=db_type,
                                             profile_type=esdl.ProfileTypeEnum.OUTPUT,
                                             quantity_and_unit_type=quantity_and_unit,

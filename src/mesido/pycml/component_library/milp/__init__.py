@@ -1,5 +1,6 @@
 from .electricity.electricity_cable import ElectricityCable
 from .electricity.electricity_demand import ElectricityDemand
+from .electricity.electricity_import import ElectricityImport
 from .electricity.electricity_node import ElectricityNode
 from .electricity.electricity_source import ElectricitySource
 from .electricity.electricity_storage import ElectricityStorage
@@ -58,6 +59,7 @@ __all__ = [
     "ElecHeatSourceElec",
     "ElectricityCable",
     "ElectricityDemand",
+    "ElectricityImport",
     "ElectricityNode",
     "ElectricitySource",
     "ElectricityStorage",
