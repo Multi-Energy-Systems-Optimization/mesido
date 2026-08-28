@@ -7,10 +7,8 @@ import esdl
 from mesido._darcy_weisbach import friction_factor, head_loss
 from mesido.constants import GRAVITATIONAL_CONSTANT
 from mesido.esdl.asset_to_component_base import _AssetToComponentBase
-from mesido.esdl.edr_pipe_class import (
-    EDRGasPipeClass,
-    TRACE_TO_SINGLE_PIPE_COST_FACTOR,
-)
+from mesido.esdl.edr_pipe_class import EDRGasPipeClass
+from mesido.pipe_class import TRACE_TO_SINGLE_PIPE_COST_FACTOR
 from mesido.head_loss_class import HeadLossOption
 
 import numpy as np
@@ -819,8 +817,12 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
                 *solution.energy_system_components.get("heat_pipe", []),
                 *solution.energy_system_components.get("electricity_cable", []),
             ]:
+                investment_cost_info *= (
+                    TRACE_TO_SINGLE_PIPE_COST_FACTOR if asset in solution.energy_system_components.get("heat_pipe", []) else 1.0
+                )
                 np.testing.assert_allclose(
-                    parameters[f"{asset}.investment_cost_coefficient"], investment_cost_info
+                    parameters[f"{asset}.investment_cost_coefficient"],
+                    investment_cost_info
                 )
                 investment_cost = investment_cost_info * parameters[f"{asset}.length"]
             elif asset in solution.energy_system_components.get("heat_buffer", []):

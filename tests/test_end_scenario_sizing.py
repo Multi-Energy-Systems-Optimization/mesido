@@ -4,7 +4,6 @@ from unittest import TestCase
 import esdl
 
 import mesido._darcy_weisbach as darcy_weisbach
-from mesido.esdl.edr_pipe_class import TRACE_TO_SINGLE_PIPE_COST_FACTOR
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.workflows import (
@@ -16,6 +15,7 @@ from mesido.workflows import (
 )
 from mesido.workflows.grow_workflow import EndScenarioSizingHeadLossStaged
 from mesido.workflows.utils.error_types import NetworkErrors
+from mesido.pipe_class import TRACE_TO_SINGLE_PIPE_COST_FACTOR
 
 import numpy as np
 
@@ -938,7 +938,7 @@ class TestEndScenarioSizing(TestCase):
             elif esdl_asset_state == esdl.AssetStateEnum.ENABLED:
                 np.testing.assert_allclose(
                     results[f"{pipe_id}__investment_cost"] / parameters[f"{pipe_id}.length"],
-                    3417.9,
+                    3417.9 * TRACE_TO_SINGLE_PIPE_COST_FACTOR,
                 )
             else:
                 exit(
@@ -992,14 +992,14 @@ if __name__ == "__main__":
     a = TestEndScenarioSizing()
     a.setUpClass()
     a.test_end_scenario_sizing()
-    # a.test_end_scenario_sizing_no_demand()
+    a.test_end_scenario_sizing_no_demand()
     a.test_end_scenario_sizing_staged()
-    # a.test_end_scenario_sizing_heat_demand_not_matched()
-    # a.test_heat_exchanger_sizing()
-    # a.test_end_scenario_sizing_discounted()
-    # a.test_end_scenario_sizing_head_loss()
-    # a.test_end_scenario_sizing_pipe_catalog_lower_pipe_dn()
-    # a.test_end_scenario_sizing_pipe_catalog()
-    # a.test_end_scenario_sizing_pipe_catalog_with_templates()
-    # a.test_end_scenario_sizing_pipe_measuregroup()
+    a.test_end_scenario_sizing_heat_demand_not_matched()
+    a.test_heat_exchanger_sizing()
+    a.test_end_scenario_sizing_discounted()
+    a.test_end_scenario_sizing_head_loss()
+    a.test_end_scenario_sizing_pipe_catalog_lower_pipe_dn()
+    a.test_end_scenario_sizing_pipe_catalog()
+    a.test_end_scenario_sizing_pipe_catalog_with_templates()
+    a.test_end_scenario_sizing_pipe_measuregroup()
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

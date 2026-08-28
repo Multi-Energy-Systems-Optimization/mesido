@@ -2,6 +2,9 @@ import math
 from dataclasses import dataclass
 from typing import Tuple
 
+# The EDR costs are for trace pipes, so we need to halve the cost for a single pipe.
+TRACE_TO_SINGLE_PIPE_COST_FACTOR = 0.5
+
 
 @dataclass(frozen=True)
 class PipeClass:

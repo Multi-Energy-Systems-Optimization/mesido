@@ -1,8 +1,11 @@
+from pathlib import Path
+
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.techno_economic_mixin import TechnoEconomicMixin
+from mesido.workflows.grow_workflow import EndScenarioSizingStaged, run_end_scenario_sizing
 from mesido.workflows.io.write_output import ScenarioOutput
 from mesido.workflows.utils.adapt_profiles import (
     adapt_profile_to_averaged_timestep,
@@ -102,4 +105,15 @@ if __name__ == "__main__":
         input_timeseries_file="timeseries_import.csv",
     )
     results = sol.extract_results()
+
+    base_folder = Path(__file__).resolve().parent.parent
+    solution = run_end_scenario_sizing(
+        EndScenarioSizingStaged,
+        base_folder=base_folder,
+        esdl_file_name="sourcesink.esdl",
+        esdl_parser=ESDLFileParser,
+        profile_reader=ProfileReaderFromFile,
+        input_timeseries_file="timeseries_import.csv",
+    )
+    results = solution.extract_results()
     a = 1

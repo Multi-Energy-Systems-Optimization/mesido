@@ -1,13 +1,9 @@
 from dataclasses import dataclass
 from typing import Self
-
 from mesido.esdl.asset_to_component_base import _AssetToComponentBase
-from mesido.pipe_class import GasPipeClass, PipeClass
+from mesido.pipe_class import TRACE_TO_SINGLE_PIPE_COST_FACTOR, GasPipeClass, PipeClass
 
 from pyecore.ecore import EEnumLiteral
-
-# The EDR costs are for trace pipes, so we need to halve the cost for a single pipe.
-TRACE_TO_SINGLE_PIPE_COST_FACTOR = 0.5
 
 
 @dataclass(frozen=True)

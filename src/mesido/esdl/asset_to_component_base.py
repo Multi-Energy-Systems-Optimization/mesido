@@ -13,6 +13,7 @@ from esdl import TimeUnitEnum, UnitEnum
 
 from mesido.esdl._exceptions import _RetryLaterException
 from mesido.esdl.common import Asset
+from mesido.pipe_class import TRACE_TO_SINGLE_PIPE_COST_FACTOR
 from mesido.network_common import NetworkSettings
 from mesido.potential_errors import MesidoAssetIssueType, get_potential_errors
 from mesido.pycml import Model as _Model
@@ -1223,7 +1224,7 @@ class _AssetToComponentBase:
         elif asset.asset_type == "Pipe":
             modifiers["investment_cost_coefficient"] = self.get_investment_costs(
                 asset, per_unit=UnitEnum.METRE
-            )
+            ) * TRACE_TO_SINGLE_PIPE_COST_FACTOR
             modifiers["installation_cost"] = self.get_installation_costs(asset)
         elif asset.asset_type == "HeatingDemand":
             modifiers["investment_cost_coefficient"] = self.get_investment_costs(

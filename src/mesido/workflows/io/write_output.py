@@ -27,6 +27,7 @@ from mesido.esdl.edr_pipe_class import EDRPipeClass
 from mesido.esdl.esdl_mixin import DBAccessType, ESDLOutputProfilesType
 from mesido.financial_mixin import calculate_annuity_factor
 from mesido.network_common import NetworkSettings
+from mesido.pipe_class import TRACE_TO_SINGLE_PIPE_COST_FACTOR
 from mesido.post_processing.post_processing_utils import pipe_pressure, pipe_velocity
 from mesido.workflows.utils.helpers import _sort_numbered
 
@@ -1196,7 +1197,28 @@ class ScenarioOutput:
                 asset.state = esdl.AssetStateEnum.ENABLED
 
                 try:
-                    asset.costInformation.investmentCosts.value = pipe_class.investment_costs
+                    pipe_inv_cost = pipe_class.investment_costs / TRACE_TO_SINGLE_PIPE_COST_FACTOR
+                    if not self.has_related_pipe(pipe):
+                        # Cater for a unrelated pipe that has changed from OPTIONAL to being placed,
+                        # which did not have any input cost information in the input esdl file
+                        if asset.costInformation is None:
+                            asset.costInformation = esdl.CostInformation(id=str(uuid.uuid4()))
+                        if asset.costInformation.investmentCosts is None:
+                            investment_costs = esdl.SingleValue(
+                                id=str(uuid.uuid4()),
+                                value=pipe_inv_cost,
+                            )
+                            investment_costs.quantityAndUnit = esdl.QuantityAndUnitType(
+                                physicalQuantity=esdl.PhysicalQuantityEnum.COST,
+                                unit=esdl.UnitEnum.EURO,
+                                perUnit=esdl.UnitEnum.METRE,
+                            )
+                            asset.costInformation.investmentCosts = investment_costs
+                        else:
+                            asset.costInformation.investmentCosts.value = pipe_inv_cost
+                    else:
+                        asset.costInformation.investmentCosts.value = pipe_inv_cost
+                    
                 except AttributeError:
                     pass
                     # do nothing, in the case that no costs have been specified for the return
