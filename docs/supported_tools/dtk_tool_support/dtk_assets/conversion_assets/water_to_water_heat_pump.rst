@@ -1,6 +1,7 @@
 Water to Water Heat Pump
 ------------------------
-Water-to-water heat pump is used to transfer heat from a lower temperature water source (i.e. lower temperature heat network) to a higher temperature water sink (i.e. higher temperature heat network) by converting electrical energy into heat.
+Water-to-water heat pump is used to transfer heat from a lower temperature water source (i.e. lower temperature heat network)
+to a higher temperature water sink (i.e. higher temperature heat network) by converting electrical energy into heat.
 
 
 Water-to-Water Heat Pump Asset Attributes
@@ -119,20 +120,18 @@ Water-to-Water Heat Pump Asset Attributes
    * - Cost Information
      - Fixed Maintenance Costs
      - OPEX: Cost per year linked to the size (secondary heat produced)  of the asset
-     - EUR/MW or
-       EUR/MW/yr or
-       EUR/kW or
-       EUR/kW/yr
+     - EUR/MW or EUR/MW/yr or
+
+       EUR/kW or EUR/kW/yr
      - Optional
      - \-
      - \-
    * - Cost Information
      - Fixed Operational Costs
      - OPEX: Cost per year linked to the size  (secondary heat produced)  of the asset
-     - EUR/MW or
-       EUR/MW/yr or
-       EUR/kW or
-       EUR/kW/yr
+     - EUR/MW or EUR/MW/yr or
+
+       EUR/kW or EUR/kW/yr
      - Optional
      - \-
      - \-
@@ -159,6 +158,12 @@ No assets specific constraints are defined for the water-to-water-heatpump.
 
 Assumptions
 ^^^^^^^^^^^
-* The heat pump operates with a Coefficient of Performance (COP) that is constant over time. COP is equal to the ratio of the secondary heat output to electrical power input.
-* The primary side of the heat pump must be connected to a hydraulic network with a lower supply temperature. It behaves as a demand asset, and the physics described for demand assets in the :ref:`heat_physics_demand` section applies to the primary side of the heat pump.
-* The secondary side of the heat pump must be connected to a hydraulic network with a higher supply temperature. It behaves as a source asset, and the physics described for source assets in the :ref:`heat_physics_source` section applies to the secondary side of the heat pump.
+* The primary side of the heat pump must be connected to a hydraulic network with a lower supply temperature. It behaves
+as a demand asset, and the physics described for demand assets in the :ref:`heat_physics_demand` section applies to the
+primary side of the heat pump.
+* The secondary side of the heat pump must be connected to a hydraulic network with a higher supply temperature. It
+behaves as a source asset, and the physics described for source assets in the :ref:`heat_physics_source` section applies
+to the secondary side of the heat pump.
+* The heat pump operates with a Coefficient of Performance (COP) that is constant over time. COP is equal to the ratio
+of the secondary heat output to electrical power input. This defines the relationship between the heat input on the
+primary side and the heat output on the secondary side of the heat pump.

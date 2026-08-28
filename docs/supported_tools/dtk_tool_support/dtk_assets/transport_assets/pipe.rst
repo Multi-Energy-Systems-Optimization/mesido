@@ -99,8 +99,10 @@ Pipe Asset Attributes
 
 Pipes from EDR Assets
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The Design Toolkit also provides access to predefined pipe asset from
-`ESDL Energy Data Repository (EDR) <https://edr.hesi.energy/>`_
+Frontend provides access to predefined pipe asset from
+`ESDL Energy Data Repository (EDR) <https://edr.hesi.energy/>`_.
+However, Design Toolkit only supports
+"Steel-S1-DN-XXX" pipe family from EDR assets.
 
 Pipe: Steel-S1-DN-XXX:
 

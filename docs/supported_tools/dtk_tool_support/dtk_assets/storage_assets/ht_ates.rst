@@ -6,7 +6,7 @@ HT-ATES (high) Asset Attributes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. list-table:: Asset Attributes
-   :widths: 35 25 60 25 25 35 70
+   :widths: 35 25 25 25 25 35 70
    :header-rows: 1
 
    * - ESDL attribute category
@@ -71,6 +71,7 @@ HT-ATES (high) Asset Attributes
    * - Advanced attributes
      - Aquifer Top Depth
      - The depth of the top of the aquifer (water-bearing permeable rock or
+
        unconsolidated material) in meters below ground surface
      - m
      - Required
@@ -93,10 +94,14 @@ HT-ATES (high) Asset Attributes
    * - Advanced attributes
      - Aquifer Net To Gross
      - The ratio of the total thickness of the aquifer contributing to
+
        production over the total thickness of the aquifer (usually calculated
+
        by applying a minimum porosity and maximum clay volume cutoff). The net
-       thickness of the aquifer is determined by multiplying the gross
-       thickness with the net-to-gross ratio.
+
+       thickness of the aquifer is determined by multiplying the gross thickness
+
+       with the net-to-gross ratio.
      - \-
      - Required
      - 1
@@ -104,7 +109,9 @@ HT-ATES (high) Asset Attributes
    * - Advanced attributes
      - Aquifer Porosity
      - The percentage of pore volume or void space within a rock or
+
        unconsolidated sediment, restricted to those pores that can contribute
+
        to fluid flow (effective porosity)
      - %
      - Required
@@ -113,7 +120,9 @@ HT-ATES (high) Asset Attributes
    * - Advanced attributes
      - Aquifer Permeability
      - The permeability is a measure of the interconnectedness of pores in a
+
        rock/material. And indicates the ability or ease of a volume of rock to
+
        transmit fluids.
      - mD
      - Required
@@ -122,7 +131,9 @@ HT-ATES (high) Asset Attributes
    * - Advanced attributes
      - Aquifer Anisotropy
      - The directional variation of a property of a volume of rock or
+
        unconsolidated sand, in this case, the ratio between vertical and
+
        horizontal permeability.
      - \-
      - Required
@@ -139,8 +150,11 @@ HT-ATES (high) Asset Attributes
    * - Advanced attributes
      - Well Casing Size
      - In ROSIM/DoubletCalc3D, the simulation software behind the ATES module
+
        (used in the Simulator solver), this means the diameter of the part of
+
        the well in which the permeability is significantly higher than the
+
        formation, in this case, the borehole diameter
      - inch
      - Required
@@ -149,7 +163,9 @@ HT-ATES (high) Asset Attributes
    * - Advanced attributes
      - Well Distance
      - The well distance is the distance between two wells at storage aquifer
+
        (reservoir) depth. For HT-ATES, often the distance between the hot and
+
        cold/warm well.
      - m
      - Required
@@ -158,8 +174,11 @@ HT-ATES (high) Asset Attributes
    * - Ports
      - Inport and OutPort (1 off each)
      - The in port and the out port for the asset should be connected to 1
+
        hydraulically coupled network.
+
        Each port must have a carrier assigned to it.
+
        Port naming convention required: In & Out.
        :math:`\mathrm{T_{In} > T_{Out}}`
      - \-
@@ -215,5 +234,5 @@ No assets specific constraints are defined for HT-ATES.
 
 Assumptions
 ^^^^^^^^^^^
-* The temperature at the inport must be higher than the temperature at the outport (\:math:`\mathrm{T_{In} > T_{Out}}`).
+* The temperature at the inport must be higher than the temperature at the outport (:math:`\mathrm{T_{In} > T_{Out}}`).
 * The heat physics described for the storage and tank in :ref:`heat_physics_storage` and :ref:`heat_physics_storage_ates` sections applies to HT-ATES asset.

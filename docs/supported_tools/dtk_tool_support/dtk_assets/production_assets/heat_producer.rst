@@ -68,9 +68,9 @@ Heat Producer Asset Attributes
 
        Each port must have a carrier assigned to it.
 
-       Port naming convention required: In & Out.
+       Port naming convention required: :math:`In & Out`.
 
-       Required carrier temperatures are :math:`T_{Out} > T_{In}`
+       Required carrier temperatures are :math:`T_{Out} > T_{In}`.
      - \-
      - Required
      - \-
@@ -79,9 +79,7 @@ Heat Producer Asset Attributes
    * - Cost Information
      - Investment Costs
      - CAPEX: Once-off cost linked to the size (secondary heat produced) of the asset
-     - EUR/MW or
-
-       EUR/kW
+     - EUR/MW or EUR/kW
      - Required
      - No value assigned
      - \-
@@ -102,20 +100,18 @@ Heat Producer Asset Attributes
    * - Cost Information
      - Fixed Maintenance Costs
      - OPEX: Cost per year linked to the size (secondary heat produced)  of the asset
-     - EUR/MW or
-       EUR/MW/yr or
-       EUR/kW or
-       EUR/kW/yr
+     - EUR/MW or EUR/MW/yr or
+
+       EUR/kW or EUR/kW/yr
      - Optional
      - No value assigned
      - \-
    * - Cost Information
      - Fixed Operational Costs
      - OPEX: Cost per year linked to the size  (secondary heat produced)  of the asset
-     - EUR/MW or
-       EUR/MW/yr or
-       EUR/kW or
-       EUR/kW/yr
+     - EUR/MW or EUR/MW/yr or
+
+       EUR/kW or EUR/kW/yr
      - Optional
      - No value assigned
      - \-

@@ -106,20 +106,18 @@ Geothermal Source: Deep Goethermal (2500m)
    * - Cost Information
      - Fixed Maintenance Costs
      - OPEX: Cost per year linked to the size (secondary heat produced)  of the asset
-     - EUR/MW or
-       EUR/MW/yr or
-       EUR/kW or
-       EUR/kW/yr
+     - EUR/MW or EUR/MW/yr or
+
+       EUR/kW or EUR/kW/yr
      - Optional
      - 91000 EUR/MW
      - \-
    * - Cost Information
      - Fixed Operational Costs
      - OPEX: Cost per year linked to the size  (secondary heat produced)  of the asset
-     - EUR/MW or
-       EUR/MW/yr or
-       EUR/kW or
-       EUR/kW/yr
+     - EUR/MW or EUR/MW/yr or
+
+       EUR/kW or EUR/kW/yr
      - Optional
      - No value assigned
      - \-
@@ -226,20 +224,18 @@ Geothermal Source: Shallow Goethermal (200m)
    * - Cost Information
      - Fixed Maintenance Costs
      - OPEX: Cost per year linked to the size (secondary heat produced)  of the asset
-     - EUR/MW or
-       EUR/MW/yr or
-       EUR/kW or
-       EUR/kW/yr
+     - EUR/MW or EUR/MW/yr or
+
+       EUR/kW or EUR/kW/yr
      - Optional
      - 192000 EUR/MW
      - \-
    * - Cost Information
      - Fixed Operational Costs
      - OPEX: Cost per year linked to the size  (secondary heat produced)  of the asset
-     - EUR/MW or
-       EUR/MW/yr or
-       EUR/kW or
-       EUR/kW/yr
+     - EUR/MW or EUR/MW/yr or
+
+       EUR/kW or EUR/kW/yr
      - Optional
      - No value assigned
      - \-

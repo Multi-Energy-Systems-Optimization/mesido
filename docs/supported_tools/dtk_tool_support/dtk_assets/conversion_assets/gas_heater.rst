@@ -105,27 +105,25 @@ Gas Heater Asset Attributes
    * - Cost Information
      - Variable Operational Costs
      - OPEX: Cost linked to the normal-volume of the consumed gas over time
-     - :math:`EUR / m^{3}`
+     - EUR/m3
      - Required
      - \-
      - \-
    * - Cost Information
      - Fixed Maintenance Costs
      - OPEX: Cost per year linked to the size (heat produced)  of the asset
-     - EUR/MW or
-       EUR/MW/yr or
-       EUR/kW or
-       EUR/kW/yr
+     - EUR/MW or EUR/MW/yr or
+
+       EUR/kW or EUR/kW/yr
      - Optional
      - \-
      - \-
    * - Cost Information
      - Fixed Operational Costs
      - OPEX: Cost per year linked to the size  (heat produced)  of the asset
-     - EUR/MW or
-       EUR/MW/yr or
-       EUR/kW or
-       EUR/kW/yr
+     - EUR/MW or EUR/MW/yr or
+
+       EUR/kW or EUR/kW/yr
      - Optional
      - \-
      - \-

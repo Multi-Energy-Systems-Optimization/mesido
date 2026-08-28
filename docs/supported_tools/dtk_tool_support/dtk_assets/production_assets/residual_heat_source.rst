@@ -102,20 +102,18 @@ Residual Heat Source Asset Attributes
    * - Cost Information
      - Fixed Maintenance Costs
      - OPEX: Cost per year linked to the size (secondary heat produced)  of the asset
-     - EUR/MW or
-       EUR/MW/yr or
-       EUR/kW or
-       EUR/kW/yr
+     - EUR/MW or EUR/MW/yr or
+
+       EUR/kW or EUR/kW/yr
      - Optional
      -  29000 EUR/MW
      - \-
    * - Cost Information
      - Fixed Operational Costs
      - OPEX: Cost per year linked to the size  (secondary heat produced)  of the asset
-     - EUR/MW or
-       EUR/MW/yr or
-       EUR/kW or
-       EUR/kW/yr
+     - EUR/MW or EUR/MW/yr or
+
+       EUR/kW or EUR/kW/yr
      - Optional
      -  35 EUR/kW
      - \-
