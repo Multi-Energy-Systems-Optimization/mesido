@@ -440,7 +440,7 @@ class EndScenarioSizing(
                 (
                     symbol_stored_heat[self.__indx_max_peak]
                     - symbol_stored_heat[self.__indx_max_peak + 24],
-                    0.0,
+                    - np.inf,
                     0.0,
                 )
             )
