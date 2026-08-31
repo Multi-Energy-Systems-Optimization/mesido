@@ -971,59 +971,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         return GasPipe, modifiers
 
-    def _get_heat_pipe_cost_figure_modifiers(self, asset: Asset) -> Dict:
-        """
-        Resolve the cost figure modifiers for a single heat pipe.
-
-        Note:
-        Related pipes: Only 1 pipe should have cost information. If both have cost information,
-        an error is raised only if the costs are different for the two related pipes (backwards
-        esdl file compatibility). The related pipe's cost information is used if a pipe has no
-        cost information.
-        Unrelated pipes: Only the pipe's specified cost information is used.
-
-        Parameters
-        ----------
-        asset : Asset. The heat pipe asset to resolve cost figures for.
-
-        Returns
-        -------
-        Dict
-            Cost figure modifiers dict (from `_get_cost_figure_modifiers`) for the pipe,
-            sourced from either the pipe itself or its related pipe.
-        """
-
-        assert asset.asset_type == "Pipe" and isinstance(
-            asset.in_ports[0].carrier, esdl.esdl.HeatCommodity
-        ), f"{asset.name} must be a heat pipe (Pipe with HeatCommodity carrier)"
-
-        related_pipe = asset.attributes.get("related", False)
-        related_pipe_costs = {}
-        if related_pipe:
-            related_asset = self.esdl_assets[related_pipe[0].id]
-            related_pipe_costs = self._get_cost_figure_modifiers(related_asset)
-
-        pipe_costs = self._get_cost_figure_modifiers(asset)
-
-        if related_pipe_costs and pipe_costs:
-            if related_pipe_costs != pipe_costs:
-                logger.error(
-                    f"{asset.name}: Both the pipe and its related pipe have cost information "
-                    f"defined. Cost information must only be specified on the supply pipe."
-                )
-                sys.exit(1)
-            else:
-                # This is being allowed to cater for older esdl files
-                logger.warning(
-                    f"{asset.name}: Both the pipe and its related pipe have the cost information "
-                    f"defined. Only the supply pipe should have a cost defined."
-                )
-                return pipe_costs
-        elif related_pipe_costs:
-            return related_pipe_costs
-        else:
-            return pipe_costs
-
     def convert_heat_pipe(self, asset: Asset) -> Tuple[Type[HeatPipe], MODIFIERS]:
         """
         This function converts the pipe object in esdl to a set of modifiers that can be used in
@@ -1121,7 +1068,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             ),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
-            **self._get_heat_pipe_cost_figure_modifiers(asset),
+            **self._get_cost_figure_modifiers(asset),
         )
         modifiers.setdefault("HeatIn", {}).update(
             Heat=dict(min=-hfr_max, max=hfr_max),
@@ -3037,8 +2984,6 @@ class ESDLHeatModel(_ESDLModelBase):
         **kwargs,
     ):
         super().__init__(None)
-
-        self.esdl_assets = assets
 
         converter = converter_class(
             **{
