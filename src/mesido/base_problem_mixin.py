@@ -1,5 +1,7 @@
 import numpy as np
 
+from rtctools.optimization.timeseries import Timeseries
+
 
 class BaseProblemMixin:
 
@@ -85,3 +87,23 @@ class BaseProblemMixin:
         return (
             self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
         )
+
+    @staticmethod
+    def _get_max_value(bound):
+        """Retrieves the maximum value of an array, timeseries or a single value."""
+        if isinstance(bound, np.ndarray):
+            return max(bound)
+        elif isinstance(bound, Timeseries):
+            return max(bound.values)
+        else:
+            return bound
+
+    @staticmethod
+    def _get_min_value(bound):
+        """Retrieves the minimum value of an array, timeseries or a single value."""
+        if isinstance(bound, np.ndarray):
+            return min(bound)
+        elif isinstance(bound, Timeseries):
+            return min(bound.values)
+        else:
+            return bound

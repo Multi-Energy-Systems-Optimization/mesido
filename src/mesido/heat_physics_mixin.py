@@ -234,22 +234,6 @@ class HeatPhysicsMixin(
         hn_settings = self.heat_network_settings
         string_parameters = self.string_parameters(0)
 
-        def _get_max_bound(bound):
-            if isinstance(bound, np.ndarray):
-                return max(bound)
-            elif isinstance(bound, Timeseries):
-                return max(bound.values)
-            else:
-                return bound
-
-        def _get_min_bound(bound):
-            if isinstance(bound, np.ndarray):
-                return min(bound)
-            elif isinstance(bound, Timeseries):
-                return min(bound.values)
-            else:
-                return bound
-
         bounds = self.bounds()
 
         # Set structure used instead of list. Purpose: to make lookup faster when there are many
@@ -311,10 +295,10 @@ class HeatPhysicsMixin(
             # Nonnegative heat implies that flow direction Boolean is equal to one.
             # Nonpositive heat implies that flow direction Boolean is equal to zero.
 
-            heat_in_lb = _get_min_bound(bounds[f"{pipe_name}.HeatIn.Heat"][0])
-            heat_in_ub = _get_max_bound(bounds[f"{pipe_name}.HeatIn.Heat"][1])
-            heat_out_lb = _get_min_bound(bounds[f"{pipe_name}.HeatOut.Heat"][0])
-            heat_out_ub = _get_max_bound(bounds[f"{pipe_name}.HeatOut.Heat"][1])
+            heat_in_lb = self._get_min_value(bounds[f"{pipe_name}.HeatIn.Heat"][0])
+            heat_in_ub = self._get_max_value(bounds[f"{pipe_name}.HeatIn.Heat"][1])
+            heat_out_lb = self._get_min_value(bounds[f"{pipe_name}.HeatOut.Heat"][0])
+            heat_out_ub = self._get_max_value(bounds[f"{pipe_name}.HeatOut.Heat"][1])
 
             if (heat_in_lb >= 0.0 and heat_in_ub >= 0.0) or (
                 heat_out_lb >= 0.0 and heat_out_ub >= 0.0

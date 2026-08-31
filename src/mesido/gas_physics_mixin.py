@@ -158,22 +158,6 @@ class GasPhysicsMixin(
 
         options = self.energy_system_options()
 
-        def _get_max_bound(bound):
-            if isinstance(bound, np.ndarray):
-                return max(bound)
-            elif isinstance(bound, Timeseries):
-                return max(bound.values)
-            else:
-                return bound
-
-        def _get_min_bound(bound):
-            if isinstance(bound, np.ndarray):
-                return min(bound)
-            elif isinstance(bound, Timeseries):
-                return min(bound.values)
-            else:
-                return bound
-
         bounds = self.bounds()
 
         for pipe_name in self.energy_system_components.get("gas_pipe", []):
@@ -236,10 +220,10 @@ class GasPhysicsMixin(
             # Nonnegative milp implies that flow direction Boolean is equal to one.
             # Nonpositive milp implies that flow direction Boolean is equal to zero.
 
-            q_in_lb = _get_min_bound(bounds[f"{pipe_name}.GasIn.Q"][0])
-            q_in_ub = _get_max_bound(bounds[f"{pipe_name}.GasIn.Q"][1])
-            q_out_lb = _get_min_bound(bounds[f"{pipe_name}.GasOut.Q"][0])
-            q_out_ub = _get_max_bound(bounds[f"{pipe_name}.GasOut.Q"][1])
+            q_in_lb = self._get_min_value(bounds[f"{pipe_name}.GasIn.Q"][0])
+            q_in_ub = self._get_max_value(bounds[f"{pipe_name}.GasIn.Q"][1])
+            q_out_lb = self._get_min_value(bounds[f"{pipe_name}.GasOut.Q"][0])
+            q_out_ub = self._get_max_value(bounds[f"{pipe_name}.GasOut.Q"][1])
 
             if (q_in_lb >= 0.0 and q_in_ub >= 0.0) or (q_out_lb >= 0.0 and q_out_ub >= 0.0):
                 self.__gas_flow_direct_bounds[flow_dir_var] = (1.0, 1.0)
