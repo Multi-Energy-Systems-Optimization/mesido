@@ -4,6 +4,7 @@ import logging
 import os
 import sys
 import time
+from cmath import nan
 from typing import Dict
 
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
@@ -336,6 +337,8 @@ class EndScenarioSizing(
         parameters["peak_day_index"] = self.__indx_max_peak
         parameters["time_step_days"] = self.__day_steps
         parameters["number_of_years"] = self._number_of_years
+        for b in self.energy_system_components.get("heat_buffer", []):
+            parameters[f"{b}.init_Heat"] = nan
         return parameters
 
     def pre(self):
@@ -433,7 +436,14 @@ class EndScenarioSizing(
         for b in self.energy_system_components.get("heat_buffer", {}):
             vars = self.state_vector(f"{b}.Heat_buffer")
             symbol_stored_heat = self.state_vector(f"{b}.Stored_heat")
-            constraints.append((symbol_stored_heat[self.__indx_max_peak], 0.0, 0.0))
+            constraints.append(
+                (
+                    symbol_stored_heat[self.__indx_max_peak]
+                    - symbol_stored_heat[self.__indx_max_peak + 24],
+                    -np.inf,
+                    0.0,
+                )
+            )
 
             ind_peak = int(self.__indx_max_peak)
             constraints.append((vars[:ind_peak], 0.0, 0.0))
