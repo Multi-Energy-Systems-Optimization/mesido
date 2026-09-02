@@ -61,9 +61,12 @@ class _ESDLModelBase(_Model):
         # are used to set nominals for other assets that are then parsed later.
         assets_sorted = assets_transport | assets_other
 
+        # Should the Hconnection be used here?
         for asset in list(assets.values()):
             converter.port_asset_type_connections(asset)
 
+        # Building asset to be used in converter, to add ....
+        # Heating demands in the building should be created via building? do we loop over assets in the building over here or in the buidling convert?
         for asset in list(assets_sorted.values()):
             pycml_type, modifiers = converter.convert(asset)
             self.add_variable(pycml_type, asset.id, **modifiers)
