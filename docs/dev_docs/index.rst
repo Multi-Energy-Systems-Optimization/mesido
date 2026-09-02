@@ -1,4 +1,4 @@
-Developers documentation
+Developers Documentation
 ========================
 
 .. toctree::
