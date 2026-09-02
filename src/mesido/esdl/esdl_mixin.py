@@ -453,25 +453,25 @@ class ESDLMixin(
         self._ESDLMixin__use_user_defined_minimum_pipe_size = not dn20_exists
 
     def update_pipe_class_costs(
-        self, pipe_classes: dict, pipe_diameter_esdl_cost_map: dict
+        self, pipe_classes: dict, pipe_diameter_measures_cost_map: dict
     ) -> None:
         """
         In this method all pipe classes in pipe_classes are updated with investments costs in
-        pipe_diameter_esdl_cost_map (original user specified values) if a cost exists. If no cost
-        exists for a specific pipe class in pipe_diameter_esdl_cost_map then the pipe class is
-        removed from this group of pipe_classes.
+        pipe_diameter_measures_cost_map (original user specified values) if a cost exists. If no
+        cost exists for a specific pipe class in pipe_diameter_measures_cost_map then the pipe
+        class is removed from this group of pipe_classes.
 
-        Note: pipe_diameter_esdl_cost_map contains the investment costs for trace pipes.
+        Note: pipe_diameter_measures_cost_map contains the investment costs for trace pipes.
         """
         updated_pipe_classes = []
 
         for i, pipe_class in enumerate(pipe_classes):
 
-            if pipe_class.name in pipe_diameter_esdl_cost_map.keys():
+            if pipe_class.name in pipe_diameter_measures_cost_map.keys():
                 pipe_classes[i] = dataclasses.replace(
                     pipe_classes[i],
                     investment_costs=(
-                        pipe_diameter_esdl_cost_map[pipe_class.name]
+                        pipe_diameter_measures_cost_map[pipe_class.name]
                         * TRACE_TO_SINGLE_PIPE_COST_FACTOR
                     ),
                 )
@@ -536,18 +536,18 @@ class ESDLMixin(
                             esdl_pipe_measures[id] for id in measure_group["containt_measure_ids"]
                         ]
 
-                    pipe_diameter_esdl_cost_map = {}  # Cost specified in the ESDL via measures
+                    pipe_diameter_measures_cost_map = {}  # Cost specified in the ESDL via measures
                     for grp_id in pipe_classes_groups:
 
                         if pipe_measures_per_group:
-                            pipe_diameter_esdl_cost_map[grp_id] = {
+                            pipe_diameter_measures_cost_map[grp_id] = {
                                 str(pipe.diameter): pipe.costInformation.investmentCosts.value
                                 for pipe in pipe_measures_per_group[grp_id]
                             }
 
                             self.update_pipe_class_costs(
                                 pipe_classes_groups[grp_id]["pipe_classes"],
-                                pipe_diameter_esdl_cost_map[grp_id],
+                                pipe_diameter_measures_cost_map[grp_id],
                             )
                             self.set_user_defined_minimum_pipe_size_requirement(
                                 pipe_classes_groups[grp_id]["pipe_classes"]
@@ -558,13 +558,13 @@ class ESDLMixin(
                         )
 
                 else:
-                    pipe_diameter_esdl_cost_map = {
+                    pipe_diameter_measures_cost_map = {
                         str(pipe.diameter): pipe.costInformation.investmentCosts.value
                         for pipe in esdl_pipe_measures.values()
                     }
                     self.update_pipe_class_costs(
                         pipe_classes,
-                        pipe_diameter_esdl_cost_map,
+                        pipe_diameter_measures_cost_map,
                     )
                     self.set_user_defined_minimum_pipe_size_requirement(pipe_classes)
                     self.assert_pipe_dn_monotonically_increasing(pipe_classes)
