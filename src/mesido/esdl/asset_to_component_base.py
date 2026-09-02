@@ -2,6 +2,7 @@ import json
 import logging
 import math
 import os
+import sys
 from enum import IntEnum
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Type, Union
@@ -14,6 +15,7 @@ from esdl import TimeUnitEnum, UnitEnum
 from mesido.esdl._exceptions import _RetryLaterException
 from mesido.esdl.common import Asset
 from mesido.network_common import NetworkSettings
+from mesido.pipe_class import TRACE_TO_SINGLE_PIPE_COST_FACTOR
 from mesido.potential_errors import MesidoAssetIssueType, get_potential_errors
 from mesido.pycml import Model as _Model
 
@@ -1188,6 +1190,72 @@ class _AssetToComponentBase:
 
             return q_nominals
 
+    def _get_heat_pipe_cost_figure_modifiers(self, asset: Asset) -> Dict:
+        """
+        Resolve the cost figure modifiers for a single heat pipe.
+
+        Note:
+        Related pipes: Only 1 pipe should have cost information. If both have cost information,
+        an error is raised only if the costs are different for the two related pipes (backwards
+        esdl file compatibility). The related pipe's cost information is used if a pipe has no
+        cost information.
+        Unrelated pipes: Only the pipe's specified cost information is used.
+
+        Parameters
+        ----------
+        asset : Asset. The heat pipe asset to resolve cost figures for.
+
+        Returns
+        -------
+        Dict
+            Cost figure (for supported costs only) modifiers dict for the pipe,
+            sourced from either the pipe itself or its related pipe.
+        """
+
+        assert asset.asset_type == "Pipe" and isinstance(
+            asset.in_ports[0].carrier, esdl.esdl.HeatCommodity
+        ), f"{asset.name} must be a heat pipe (Pipe with HeatCommodity carrier)"
+
+        related_pipe = asset.attributes.get("related", False)
+        related_pipe_cost_modifiers = {}
+        if related_pipe:
+            related_asset = self.esdl_assets[related_pipe[0].id]
+            related_cost_info = related_asset.attributes["costInformation"]
+            if related_cost_info is not None:
+                related_pipe_cost_modifiers["investment_cost_coefficient"] = (
+                    self.get_investment_costs(related_asset, per_unit=UnitEnum.METRE)
+                ) * TRACE_TO_SINGLE_PIPE_COST_FACTOR
+                related_pipe_cost_modifiers["installation_cost"] = self.get_installation_costs(
+                    related_asset
+                )
+
+        pipe_cost_modifiers = {}
+        cost_info = asset.attributes["costInformation"]
+        if cost_info is not None:
+            pipe_cost_modifiers["investment_cost_coefficient"] = (
+                self.get_investment_costs(asset, per_unit=UnitEnum.METRE)
+            ) * TRACE_TO_SINGLE_PIPE_COST_FACTOR
+            pipe_cost_modifiers["installation_cost"] = self.get_installation_costs(asset)
+
+        if related_pipe_cost_modifiers and pipe_cost_modifiers:
+            if related_pipe_cost_modifiers != pipe_cost_modifiers:
+                logger.error(
+                    f"{asset.name}: Both the pipe and its related pipe have cost information "
+                    f"defined. Cost information must only be specified on the supply pipe."
+                )
+                sys.exit(1)
+            else:
+                # This is being allowed to cater for older esdl files
+                logger.warning(
+                    f"{asset.name}: Both the pipe and its related pipe have the cost information "
+                    f"defined. Only the supply pipe should have a cost defined."
+                )
+                return pipe_cost_modifiers
+        elif related_pipe_cost_modifiers:
+            return related_pipe_cost_modifiers
+        else:
+            return pipe_cost_modifiers
+
     def _get_cost_figure_modifiers(self, asset: Asset) -> Dict:
         """
         This function takes in an asset and creates a dict with the relevant cost information of
@@ -1221,10 +1289,13 @@ class _AssetToComponentBase:
             )
             modifiers["installation_cost"] = self.get_installation_costs(asset)
         elif asset.asset_type == "Pipe":
-            modifiers["investment_cost_coefficient"] = self.get_investment_costs(
-                asset, per_unit=UnitEnum.METRE
-            )
-            modifiers["installation_cost"] = self.get_installation_costs(asset)
+            if isinstance(asset.in_ports[0].carrier, esdl.esdl.HeatCommodity):
+                modifiers = self._get_heat_pipe_cost_figure_modifiers(asset)
+            else:
+                modifiers["investment_cost_coefficient"] = self.get_investment_costs(
+                    asset, per_unit=UnitEnum.METRE
+                )
+                modifiers["installation_cost"] = self.get_installation_costs(asset)
         elif asset.asset_type == "HeatingDemand":
             modifiers["investment_cost_coefficient"] = self.get_investment_costs(
                 asset, per_unit=UnitEnum.WATT

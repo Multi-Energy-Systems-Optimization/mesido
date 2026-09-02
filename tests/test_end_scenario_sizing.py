@@ -6,6 +6,7 @@ import esdl
 import mesido._darcy_weisbach as darcy_weisbach
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.pipe_class import TRACE_TO_SINGLE_PIPE_COST_FACTOR
 from mesido.workflows import (
     EndScenarioSizing,
     EndScenarioSizingDiscounted,
@@ -610,7 +611,9 @@ class TestEndScenarioSizing(TestCase):
         filter_type = "Pipe"
         pipe_measures = solution.filter_asset_measures(solution._esdl_measures, filter_type)
         pipe_diameter_cost_map = {
-            str(pipe.diameter): pipe.costInformation.investmentCosts.value
+            str(pipe.diameter): (
+                pipe.costInformation.investmentCosts.value * TRACE_TO_SINGLE_PIPE_COST_FACTOR
+            )
             for pipe in pipe_measures.values()
         }
         solution_pipe_classes = solution.get_unique_pipe_classes()
@@ -728,7 +731,9 @@ class TestEndScenarioSizing(TestCase):
         # Test 1: Check if the solution pipe classes used were of the pipe measures
         pipe_measures = solution.filter_asset_measures(solution._esdl_measures, "Pipe")
         pipe_diameter_cost_map = {
-            str(pipe.diameter): pipe.costInformation.investmentCosts.value
+            str(pipe.diameter): (
+                pipe.costInformation.investmentCosts.value * TRACE_TO_SINGLE_PIPE_COST_FACTOR
+            )
             for pipe in pipe_measures.values()
         }
         solution_pipe_classes = solution.get_unique_pipe_classes()
@@ -923,7 +928,7 @@ class TestEndScenarioSizing(TestCase):
                 # Check the available pipe classes
                 for avail_pipe_class in solution._override_pipe_classes[pipe_id]:
                     if avail_pipe_class.name != "None":
-                        multiplier = 1.0
+                        multiplier = 1.0 * TRACE_TO_SINGLE_PIPE_COST_FACTOR
                         if pipe_id in expensive_pipe_ids:
                             multiplier *= 10.0
                         np.testing.assert_almost_equal(
@@ -933,7 +938,7 @@ class TestEndScenarioSizing(TestCase):
             elif esdl_asset_state == esdl.AssetStateEnum.ENABLED:
                 np.testing.assert_allclose(
                     results[f"{pipe_id}__investment_cost"] / parameters[f"{pipe_id}.length"],
-                    3417.9,
+                    3417.9 * TRACE_TO_SINGLE_PIPE_COST_FACTOR,
                 )
             else:
                 exit(

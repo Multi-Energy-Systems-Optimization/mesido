@@ -170,6 +170,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         self.energy_system_esdl_version = kwargs.get("energy_system_esdl_version", None)
         self.use_esdl_ranged_constraint = kwargs.get("use_esdl_ranged_constraint", False)
         self.include_head_loss_variables = self.energy_system_options.get("include_head_losses")
+        self.esdl_assets = kwargs.get("esdl_assets", {})
 
     @property
     def _rho_cp_modifiers(self) -> Dict:
@@ -2992,6 +2993,7 @@ class ESDLHeatModel(_ESDLModelBase):
                     "secondary_port_name_convention": self.secondary_port_name_convention,
                     "energy_system_esdl_version": esdl_version,
                     "esdl_ranged_constraint_usage": esdl_ranged_constraint_usage,
+                    "esdl_assets": assets,
                 },
             }
         )
