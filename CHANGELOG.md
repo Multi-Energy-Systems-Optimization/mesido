@@ -1,4 +1,4 @@
-# [Unreleased-main] - 2026-08-26
+# [Unreleased-main] - 2026-09-02
 
 ## Added
 - Import with an Electricity port is now supported as a subclass of electricity source and caters for electricity price profiles.
@@ -13,6 +13,7 @@
 
 ## Fixed
 - Bug: minimum velocity is set to 0.0 in the staged grow_workflow to allow for zero heat demand.
+- Bug: OPTIONAL pipe costs
 
 
 # [0.1.20.3] - 2026-07-15
