@@ -1277,7 +1277,14 @@ class _AssetToComponentBase:
         """
         modifiers = {}
 
-        if asset.attributes["costInformation"] is None:
+        is_asset_heat_pipe = (
+            True
+            if asset.asset_type == "Pipe"
+            and isinstance(asset.in_ports[0].carrier, esdl.esdl.HeatCommodity)
+            else False
+        )
+
+        if asset.attributes["costInformation"] is None and not is_asset_heat_pipe:
             RuntimeWarning(f"{asset.name} has no cost information specified")
             return modifiers
 
@@ -1289,7 +1296,7 @@ class _AssetToComponentBase:
             )
             modifiers["installation_cost"] = self.get_installation_costs(asset)
         elif asset.asset_type == "Pipe":
-            if isinstance(asset.in_ports[0].carrier, esdl.esdl.HeatCommodity):
+            if is_asset_heat_pipe:
                 modifiers = self._get_heat_pipe_cost_figure_modifiers(asset)
             else:
                 modifiers["investment_cost_coefficient"] = self.get_investment_costs(
