@@ -936,9 +936,34 @@ class TestEndScenarioSizing(TestCase):
                             float(avail_pipe_class.name.replace("DN", "")) * multiplier,
                         )
             elif esdl_asset_state == esdl.AssetStateEnum.ENABLED:
+                # Ensure that only the supply pipe has cost information specified and the return
+                # pipe has no cost information variable (variable should not exist).
+                cost_info = solution.esdl_assets[pipe_id].attributes.get("costInformation", None)
+                investment_cost_coeff_trace_pipe = None
+                if pipe_id in ["Pipe2"]:
+                    np.testing.assert_equal(cost_info is not None, True)
+                    investment_cost_coeff_trace_pipe = (
+                        solution.esdl_assets["Pipe2"]
+                        .attributes["costInformation"]
+                        .investmentCosts.value
+                    )
+                elif pipe_id in ["Pipe2_ret"]:
+                    np.testing.assert_equal(cost_info is None, True)
+                    investment_cost_coeff_trace_pipe = (
+                        solution.esdl_assets["Pipe2"]
+                        .attributes["costInformation"]
+                        .investmentCosts.value
+                    )
+                else:
+                    exit(
+                        f"Pipe name: {solution.esdl_asset_id_to_name_map[pipe_id]} "
+                        "should be OPTIONAL instead of ENABLED for this test case"
+                    )
+                # Ensure that the supply pipe cost coefficient is used for both the supply and
+                # return pipe.
                 np.testing.assert_allclose(
                     results[f"{pipe_id}__investment_cost"] / parameters[f"{pipe_id}.length"],
-                    3417.9 * TRACE_TO_SINGLE_PIPE_COST_FACTOR,
+                    investment_cost_coeff_trace_pipe * TRACE_TO_SINGLE_PIPE_COST_FACTOR,
                 )
             else:
                 exit(

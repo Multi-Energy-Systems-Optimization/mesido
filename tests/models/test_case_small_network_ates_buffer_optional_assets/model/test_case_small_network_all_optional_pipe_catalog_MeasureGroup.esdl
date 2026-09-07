@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" name="test_case_small_network_all_optional_pipe_catalog" id="14ed0f0f-2504-4615-8497-73721971efb9" description="" esdlVersion="v2210" version="19">
+<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" name="test_case_small_network_all_optional_pipe_catalog" id="14ed0f0f-2504-4615-8497-73721971efb9" description="" esdlVersion="v2210" version="20">
   <energySystemInformation xsi:type="esdl:EnergySystemInformation" id="e64737d9-d772-4723-b092-a0b397ac00b3">
     <carriers xsi:type="esdl:Carriers" id="9dff13b9-77cd-4b99-8777-6b7680a155b6">
       <carrier xsi:type="esdl:HeatCommodity" id="7b32e287-d775-480c-b317-64ffdacf12c9" name="Heat" supplyTemperature="70.0"/>
@@ -256,11 +256,6 @@
         </geometry>
         <port xsi:type="esdl:InPort" id="dd50e603-c87c-4cdb-82bb-486ebee77255" name="In_ret" connectedTo="2913e645-b027-429e-bf5d-22ace96a39fa" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret"/>
         <port xsi:type="esdl:OutPort" id="e31e12c2-8f80-4aed-9e4b-918445a32996" name="Out_ret" connectedTo="ba9ca084-b71f-42a3-884a-f2f2b3ae4265" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret"/>
-        <costInformation xsi:type="esdl:CostInformation" id="03c07293-f6d4-4aa6-a297-5312c4d1c27e">
-          <investmentCosts xsi:type="esdl:SingleValue" value="3417.9" id="9b449144-d0bf-45b9-8822-15dba1d4126d">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="6dbe093f-f6dd-49b4-9d5e-a2cd578611be" description="Cost in EUR/m" perUnit="METRE" physicalQuantity="COST" unit="EURO"/>
-          </investmentCosts>
-        </costInformation>
       </asset>
       <asset xsi:type="esdl:Pipe" diameter="DN450" name="Pipe2_ret" length="195.4" id="Pipe2_ret" innerDiameter="0.4444" outerDiameter="0.63" related="Pipe2">
         <geometry xsi:type="esdl:Line">
@@ -269,11 +264,6 @@
         </geometry>
         <port xsi:type="esdl:InPort" id="18ce6906-595c-45e4-acf0-e07f7d7648c6" name="In_ret" connectedTo="ef74ea8c-89b4-42e0-a98c-411860876c1a" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret"/>
         <port xsi:type="esdl:OutPort" id="0431b8a0-a8d1-4375-b348-37a475add47a" name="Out_ret" connectedTo="7893125d-d82f-4fe8-aaea-5fb6afecc635" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret"/>
-        <costInformation xsi:type="esdl:CostInformation" id="bec83070-2c51-4825-82f3-92434bd3e59c">
-          <investmentCosts xsi:type="esdl:SingleValue" value="3417.9" id="1c33024c-99c8-4168-b353-9f099b59eb60">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="26fdb8bf-6413-4272-a56b-b084823ac574" description="Cost in EUR/m" perUnit="METRE" physicalQuantity="COST" unit="EURO"/>
-          </investmentCosts>
-        </costInformation>
       </asset>
       <asset xsi:type="esdl:Pipe" state="OPTIONAL" diameter="DN450" name="Pipe3_ret" length="241.6" id="Pipe3_ret" innerDiameter="0.4444" outerDiameter="0.63" related="Pipe3">
         <geometry xsi:type="esdl:Line">
@@ -282,11 +272,6 @@
         </geometry>
         <port xsi:type="esdl:InPort" id="0650d850-58a9-45b3-8313-a3156a061988" name="In_ret" connectedTo="2dd7961b-46ce-4027-84b6-cc2684a03a7b" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret"/>
         <port xsi:type="esdl:OutPort" id="6b655eb1-2b66-455f-90a3-0dd6f2844fab" name="Out_ret" connectedTo="7893125d-d82f-4fe8-aaea-5fb6afecc635" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret"/>
-        <costInformation xsi:type="esdl:CostInformation" id="38f2f0f7-f814-4baf-ae3a-365af1b872db">
-          <investmentCosts xsi:type="esdl:SingleValue" value="3417.9" id="78221659-7294-4830-802c-67e38364b1f0">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="19f63b61-453d-4213-bdc6-86f65468fec9" description="Cost in EUR/m" perUnit="METRE" physicalQuantity="COST" unit="EURO"/>
-          </investmentCosts>
-        </costInformation>
       </asset>
       <asset xsi:type="esdl:Pipe" state="OPTIONAL" diameter="DN450" name="Pipe4_ret" length="189.7" id="Pipe4_ret" innerDiameter="0.4444" outerDiameter="0.63" related="Pipe4">
         <geometry xsi:type="esdl:Line">
@@ -295,11 +280,6 @@
         </geometry>
         <port xsi:type="esdl:InPort" id="d126f79e-c43e-4d9d-a7ce-8f58be634695" name="In_ret" connectedTo="bf6e0b6b-baac-468b-a9ba-f8397babf5d6" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret"/>
         <port xsi:type="esdl:OutPort" id="b3187ef9-cd0b-4ea8-90e4-eab39fa225e9" name="Out_ret" connectedTo="a1b719cb-f735-4a30-a0d2-cf6945b3afa1" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret"/>
-        <costInformation xsi:type="esdl:CostInformation" id="2a15456e-d23e-4064-8dee-c0588d3b05dc">
-          <investmentCosts xsi:type="esdl:SingleValue" value="3417.9" id="0297b96a-c32c-41f8-8653-0085659dba29">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="9869b0d2-dfa3-4148-86ab-ddd1cb43b7c7" description="Cost in EUR/m" perUnit="METRE" physicalQuantity="COST" unit="EURO"/>
-          </investmentCosts>
-        </costInformation>
       </asset>
       <asset xsi:type="esdl:Pipe" state="OPTIONAL" diameter="DN450" name="Pipe5_ret" length="244.6" id="Pipe5_ret" innerDiameter="0.4444" outerDiameter="0.63" related="Pipe5">
         <geometry xsi:type="esdl:Line">
@@ -308,11 +288,6 @@
         </geometry>
         <port xsi:type="esdl:InPort" id="2b7c3acb-69a7-497d-a72f-b98db189841c" name="In_ret" connectedTo="59ccdddc-893b-4152-8bc4-0168e7e74bf3" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret"/>
         <port xsi:type="esdl:OutPort" id="4b3973ab-6e4b-48af-947d-52c6d30f20ea" name="Out_ret" connectedTo="a1b719cb-f735-4a30-a0d2-cf6945b3afa1" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret"/>
-        <costInformation xsi:type="esdl:CostInformation" id="387eb458-4e3e-4e0d-bf1c-0ca2d77aa4dd">
-          <investmentCosts xsi:type="esdl:SingleValue" value="3417.9" id="b78ac8a7-9d0e-4603-821b-febf58b48bb3">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="d6547801-0eb7-4ed4-9597-1e79cc093622" description="Cost in EUR/m" perUnit="METRE" physicalQuantity="COST" unit="EURO"/>
-          </investmentCosts>
-        </costInformation>
       </asset>
       <asset xsi:type="esdl:Pipe" state="OPTIONAL" diameter="DN450" name="Pipe6_ret" length="176.6" id="Pipe6_ret" innerDiameter="0.4444" outerDiameter="0.63" related="Pipe6">
         <geometry xsi:type="esdl:Line">
@@ -321,11 +296,6 @@
         </geometry>
         <port xsi:type="esdl:InPort" id="5cd0f2e0-d456-4909-a81c-4b312b1be857" name="In_ret" connectedTo="9c025b19-57d1-43a8-b2e8-db3e684756f2" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret"/>
         <port xsi:type="esdl:OutPort" id="2045aca9-4e50-42ec-99de-fbcffa627a86" name="Out_ret" connectedTo="f36b9767-8e64-4744-8cd0-08acb2ae873b" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret"/>
-        <costInformation xsi:type="esdl:CostInformation" id="cbbb74ba-ba6f-4f17-a78f-3b3c07ce531d">
-          <investmentCosts xsi:type="esdl:SingleValue" value="3417.9" id="ae5f4f5f-1323-4a3b-98c8-faca321a00c7">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="18570b20-b820-43d0-952a-b6eaf166c639" description="Cost in EUR/m" perUnit="METRE" physicalQuantity="COST" unit="EURO"/>
-          </investmentCosts>
-        </costInformation>
       </asset>
       <asset xsi:type="esdl:HeatProducer" power="10000000.0" name="HeatProducer_2" id="da00ddfc-cfa4-4f21-b5be-7c69d2bf53bb" state="OPTIONAL" technicalLifetime="20.0">
         <geometry xsi:type="esdl:Point" lon="4.311726093292237" CRS="WGS84" lat="52.04487621664103"/>

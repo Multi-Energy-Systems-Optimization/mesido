@@ -7,7 +7,7 @@
 - xxx
 
 ## Fixed
-- xxx
+- Bug: Get return pipe costs for ENABLED & related heat pipes, when the return pipe has no cost information specified 
 
 
 # [0.1.21] - 2026-09-02
