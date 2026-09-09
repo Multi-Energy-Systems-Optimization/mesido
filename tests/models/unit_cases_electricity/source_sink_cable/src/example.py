@@ -150,6 +150,16 @@ class ElectricityProblem(
     pass
 
 
+class ElectricityProblemNoLoss(ElectricityProblem):
+    """Problem where the cable power and voltage losses are turned off, e.g. copper plate
+    calculations"""
+
+    def energy_system_options(self):
+        options = super().energy_system_options()
+        options["include_electric_cable_power_loss"] = False
+        return options
+
+
 class ElectricityProblemPriceProfile(ESDLAdditionalVarsMixin, ElectricityProblem):
     """
     Problem to check the behaviour of a electricity import, cable, demand network.
@@ -205,6 +215,11 @@ class ElectricityProblemMaxCurr(
         bounds[f"{cable_id}.ElectricityIn.Power"] = (0.0, 100000.0)
         bounds[f"{cable_id}.ElectricityOut.Power"] = (0.0, 100000.0)
         return bounds
+
+    def energy_system_options(self):
+        options = super().energy_system_options()
+        options["include_electric_cable_power_loss"] = True
+        return options
 
 
 if __name__ == "__main__":

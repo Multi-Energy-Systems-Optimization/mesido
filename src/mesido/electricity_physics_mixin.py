@@ -340,6 +340,7 @@ class ElectricityPhysicsMixin(
         """
         constraints = []
         parameters = self.parameters(ensemble_member)
+        options = self.energy_system_options()
 
         for cable in self.energy_system_components.get("electricity_cable", []):
             current = self.state(f"{cable}.ElectricityIn.I")
@@ -358,7 +359,6 @@ class ElectricityPhysicsMixin(
             constraints.append(((power_in - current * v_max) / (i_max * v_max), -np.inf, 0.0))
             constraints.append(((power_out - current * v_max) / (i_max * v_max), -np.inf, 0.0))
             # Power loss constraint
-            options = self.energy_system_options()
             if options["include_electric_cable_power_loss"]:
                 if cable in self._electricity_cable_topo_cable_class_map.keys():
                     cable_classes = self._electricity_cable_topo_cable_class_map[cable]
@@ -403,10 +403,9 @@ class ElectricityPhysicsMixin(
         """
         constraints = []
         parameters = self.parameters(ensemble_member)
+        options = self.energy_system_options()
 
         for cable in self.energy_system_components.get("electricity_cable", []):
-            cable_classes = []
-
             current = self.state(f"{cable}.ElectricityIn.I")
             v_loss = self.state(f"{cable}.V_loss")
             r = parameters[f"{cable}.r"]
@@ -416,31 +415,34 @@ class ElectricityPhysicsMixin(
 
             constraint_nominal = self.variable_nominal(v_loss)
 
-            # TODO: still have to check for proper scaling
-            if cable in self._electricity_cable_topo_cable_class_map.keys():
-                cable_classes = self._electricity_cable_topo_cable_class_map[cable]
-                variables = {
-                    cc.name: self.variable(var_name) for cc, var_name in cable_classes.items()
-                }
-                resistances = {cc.name: cc.resistance for cc in cable_classes}
+            if options["include_electric_cable_power_loss"]:
+                # TODO: still have to check for proper scaling
+                if cable in self._electricity_cable_topo_cable_class_map.keys():
+                    cable_classes = self._electricity_cable_topo_cable_class_map[cable]
+                    variables = {
+                        cc.name: self.variable(var_name) for cc, var_name in cable_classes.items()
+                    }
+                    resistances = {cc.name: cc.resistance for cc in cable_classes}
 
-                # to be updated for a better value, but it should also cover the gap between two
-                # nodes when no cable is placed, so should be able to reach v_max
-                big_m = v_nom
+                    # to be updated for a better value, but it should also cover the gap between two
+                    # nodes when no cable is placed, so should be able to reach v_max
+                    big_m = v_nom
 
-                for var_size, variable in variables.items():
-                    if var_size != "None":
-                        expr = resistances[var_size] * c_length * current
-                        constraints.extend(
-                            self._symmetric_big_m_constraints(
-                                v_loss - expr,
-                                big_m * (1 - variable),
-                                constraint_nominal,
+                    for var_size, variable in variables.items():
+                        if var_size != "None":
+                            expr = resistances[var_size] * c_length * current
+                            constraints.extend(
+                                self._symmetric_big_m_constraints(
+                                    v_loss - expr,
+                                    big_m * (1 - variable),
+                                    constraint_nominal,
+                                )
                             )
-                        )
 
+                else:
+                    constraints.append(((v_loss - r * current) / constraint_nominal, 0.0, 0.0))
             else:
-                constraints.append(((v_loss - r * current) / constraint_nominal, 0.0, 0.0))
+                constraints.append((v_loss / constraint_nominal, 0.0, 0.0))
 
         return constraints
 
