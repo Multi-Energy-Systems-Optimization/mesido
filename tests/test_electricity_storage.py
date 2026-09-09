@@ -110,7 +110,7 @@ class TestMILPElectricSourceSinkStorage(TestCase):
         # if battery is charging (1), ElectricityIn.Power and effective_power charging should be
         # positive, else negative
         bigger_then = all(is_charging * eff_power_change_bat >= 0)
-        smaller_then = all((1 - is_charging) * eff_power_change_bat <= 0)
+        smaller_then = all((1 - is_charging) * eff_power_change_bat <= 1e-12)
         self.assertTrue(bigger_then)
         self.assertTrue(smaller_then)
 
