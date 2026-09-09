@@ -1086,9 +1086,7 @@ class ScenarioOutput:
                 port for port in asset.port if isinstance(port, esdl.InPort) and "Prim" in port.name
             ]
             secondary_outports = [
-                port
-                for port in asset.port
-                if isinstance(port, esdl.OutPort) and "Sec" in port.name
+                port for port in asset.port if isinstance(port, esdl.OutPort) and "Sec" in port.name
             ]
             if len(primary_inports) == 1 and len(secondary_outports) == 1:
                 port_prim = primary_inports[0]
@@ -1383,11 +1381,13 @@ class ScenarioOutput:
                     for object_to_remove in profiles_to_remove:
                         asset.port[iport].profile.remove(object_to_remove)
 
-    def _update_esdl_assets_sizing_placement(self, energy_system, optimizer_sim):
+    def _update_esdl_assets_sizing_placement(self, results, energy_system, optimizer_sim):
+        from esdl.esdl_handler import EnergySystemHandler
+
+        parameters = self.parameters(0)
         heat_pipes = set(self.energy_system_components.get("heat_pipe", []))
         for _, attributes in self.esdl_assets.items():
             asset_id = attributes.id
-            asset_name = attributes.name
             if asset_id in [
                 *self.energy_system_components.get("heat_source", []),
                 *self.energy_system_components.get("ates", []),
@@ -1564,8 +1564,8 @@ class ScenarioOutput:
                         variable_name: [] for variable_name in variables_names
                     }
                     for variable_name in variables_names:
-                        start_date_time, end_date_time = self._get_output_profile_start_end_datetimes(
-                            asset_name, variable_name
+                        start_date_time, end_date_time = (
+                            self._get_output_profile_start_end_datetimes(asset_name, variable_name)
                         )
                         quantity_and_unit = self._get_output_profile_quantity_and_unit(
                             asset_id, variable_name, commodity
@@ -1757,12 +1757,10 @@ class ScenarioOutput:
         add_kpis: bool = True,
         remove_output_profiles: bool = True,
     ):
-        from esdl.esdl_handler import EnergySystemHandler
 
         logger.info("Updated esdl is being created.")
 
         results = self.extract_results()
-        parameters = self.parameters(0)
 
         _ = energy_system.id  # input energy system id. Kept here as not sure if still needed
         energy_system.id = str(uuid.uuid4())  # output energy system id
@@ -1785,7 +1783,7 @@ class ScenarioOutput:
 
         # ------------------------------------------------------------------------------------------
         # Placement
-        self._update_esdl_assets_sizing_placement(energy_system, optimizer_sim)
+        self._update_esdl_assets_sizing_placement(results, energy_system, optimizer_sim)
         # ------------------------------------------------------------------------------------------
         # Important: This code below must be placed after the "Placement" code. Reason: it relies
         # on unplaced assets being deleted.
