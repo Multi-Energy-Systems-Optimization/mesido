@@ -7,8 +7,11 @@ from unittest import TestCase
 import esdl
 from esdl.esdl_handler import EnergySystemHandler
 
+from mesido.esdl.esdl_mixin import ESDLOutputProfilesType
 from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.financial_mixin import calculate_annuity_factor
+from mesido.util import run_esdl_mesido_optimization
 from mesido.workflows import (
     EndScenarioSizingDiscountedStaged,
     EndScenarioSizingStaged,
@@ -460,6 +463,47 @@ class TestUpdatedESDL(TestCase):
                         opex_eac = var_opex_cost + fix_opex_cost
 
                         np.testing.assert_allclose(value, opex_eac)
+
+    @pytest.mark.post_process
+    def test_updated_esdl_writes_gas_pipe_profiles(self) -> None:
+        """Check that updated ESDL output includes gas pipe profiles."""
+        root_folder = str(Path(__file__).resolve().parent.parent)
+        sys.path.insert(1, root_folder)
+
+        import models.unit_cases_gas.source_sink.src.run_source_sink as example
+        from models.unit_cases_gas.source_sink.src.run_source_sink import GasProblem
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        solution = run_esdl_mesido_optimization(
+            GasProblem,
+            base_folder=base_folder,
+            esdl_file_name="source_sink.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries.csv",
+            esdl_output_profiles_type=ESDLOutputProfilesType.DATE_TIME_PROFILE,
+        )
+
+        energy_system = solution._ESDLMixin__energy_system_handler.energy_system
+        solution._write_updated_esdl(energy_system, add_kpis=False)
+
+        pipe_id = solution.energy_system_components["gas_pipe"][0]
+        pipe_asset = solution._id_to_asset(energy_system, pipe_id)
+        output_profiles = [
+            profile
+            for port in pipe_asset.port
+            for profile in port.profile
+            if profile.profileType == esdl.ProfileTypeEnum.OUTPUT
+        ]
+
+        np.testing.assert_equal(len(output_profiles), 3)
+        np.testing.assert_equal(
+            {profile.name for profile in output_profiles},
+            {"GasIn.Q", "GasIn.mass_flow", "PostProc.Velocity"},
+        )
+        for profile in output_profiles:
+            np.testing.assert_equal(len(profile.profile), len(solution.times()))
 
 
 if __name__ == "__main__":
