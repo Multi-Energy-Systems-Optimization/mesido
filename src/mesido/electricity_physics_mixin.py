@@ -289,6 +289,8 @@ class ElectricityPhysicsMixin(
                 # time-sampled.
                 max_ = bounds[f"{asset}.Electricity_source"][1].values[: len(self.times())]
                 a = [x for x in max_ if abs(x) > 0.0]
+                if len(a) == 0:
+                    a=[1]
                 nominal = (
                     self.variable_nominal(f"{asset}.Electricity_source") * min(a) * np.median(a)
                 ) ** (1.0 / 3.0)

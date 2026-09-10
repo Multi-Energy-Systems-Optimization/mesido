@@ -9,7 +9,7 @@ from mesido.network_common import NetworkSettings
 from mesido.workflows.multicommodity_simulator_workflow import (
     MultiCommoditySimulator,
     MultiCommoditySimulatorNoLosses,
-    run_sequatially_staged_simulation,
+    run_sequentially_staged_simulation,
 )
 
 import numpy as np
@@ -635,7 +635,7 @@ class TestMultiCommoditySimulator(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
-        solution_staged_unbounded = run_sequatially_staged_simulation(
+        solution_staged_unbounded = run_sequentially_staged_simulation(
             multi_commodity_simulator_class=MultiCommoditySimulatorNoLosses,
             simulation_window_size=20,
             base_folder=base_folder,
@@ -670,7 +670,7 @@ class TestMultiCommoditySimulator(TestCase):
             else:
                 np.testing.assert_allclose(value, value_staged, atol=1e-4)
 
-        solution_staged_bounded = run_sequatially_staged_simulation(
+        solution_staged_bounded = run_sequentially_staged_simulation(
             multi_commodity_simulator_class=MultiCommoditySimulatorNoLosses,
             simulation_window_size=20,
             base_folder=base_folder,
