@@ -1,7 +1,7 @@
 # [Unreleased-main] - 2026-09-07
 
 ## Added
-- xxx
+- Heat carrier temperature profile is parsed from ESDL
 
 ## Changed
 - xxx

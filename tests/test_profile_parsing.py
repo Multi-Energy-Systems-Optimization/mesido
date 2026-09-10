@@ -272,6 +272,10 @@ class TestProfileLoading(unittest.TestCase):
         self.assertEqual(heat_price_profile[0], heat_price_profile[1])
         self.assertLess(max(heat_price_profile), 1.0)
 
+        heat_temperature_profile = problem.get_timeseries("Heat.temperature_profile").values
+        self.assertEqual(len(heat_temperature_profile), len(heat_price_profile))
+        self.assertLess(max(heat_temperature_profile), 1.0)
+
     def test_loading_from_csv(self):
         """
         This test constructs a problem with input profiles read from a CSV file.
