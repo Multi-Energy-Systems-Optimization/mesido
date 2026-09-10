@@ -1224,16 +1224,13 @@ class ScenarioOutput:
         )
         sys.exit(1)
 
-    def _get_output_profile_start_end_datetimes(
-        self, asset_name: str, variable_name: str
-    ) -> tuple[datetime.datetime, datetime.datetime]:
+    def _get_output_profile_start_end_datetimes(self) -> tuple[datetime.datetime, datetime.datetime]:
         """Return normalized start and end datetimes for a profile."""
         if not self.io.datetimes[0].tzinfo:
             start_date_time = self.io.datetimes[0].replace(tzinfo=datetime.timezone.utc)
             logger.warning(
-                f"No timezone specified for the output profile: "
-                f"default UTC has been used for asset {asset_name} "
-                f"variable {variable_name}"
+                f"No timezone specified for the output profile, "
+                f"default UTC has been used."
             )
         else:
             start_date_time = self.io.datetimes[0]
@@ -1513,6 +1510,8 @@ class ScenarioOutput:
         results = self.extract_results()
         parameters = self.parameters(0)
 
+        start_date_time, end_date_time = self._get_output_profile_start_end_datetimes()
+
         for asset_id in self._output_profile_asset_ids():
             try:
                 # If the asset has been placed
@@ -1563,10 +1562,8 @@ class ScenarioOutput:
                     asset_esdl_output_profiles_data_dict = {
                         variable_name: [] for variable_name in variables_names
                     }
+
                     for variable_name in variables_names:
-                        start_date_time, end_date_time = (
-                            self._get_output_profile_start_end_datetimes(asset_name, variable_name)
-                        )
                         quantity_and_unit = self._get_output_profile_quantity_and_unit(
                             asset_id, variable_name, commodity
                         )
