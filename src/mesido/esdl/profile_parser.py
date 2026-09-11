@@ -757,18 +757,33 @@ class ProfileReaderFromFile(BaseProfileReader):
                         self._profiles[e_m][component_name + var_name] = values
             for properties in carrier_properties.values():
                 carrier_name = properties.get("name")
-                try:
-                    values = data_em[carrier_name].to_numpy()
-                    if np.isnan(values).any():
-                        raise Exception(
-                            f"Carrier name: {carrier_name}, NaN exists in the profile source file"
-                            f" {self._file_path}. Details: "
-                            f"{data_em[data_em[carrier_name].isnull()]}"
-                        )
-                except KeyError:
-                    pass
-                else:
-                    self._profiles[e_m][carrier_name + self.carrier_price_profile_var_name] = values
+                for profile_suffix, profile_label in (
+                    (self.carrier_price_profile_var_name, ""),
+                    (self.carrier_price_profile_var_name, "__price"),
+                    (self.carrier_temperature_profile_var_name, "__temperature"),
+                ):
+                    try:
+                        values = data_em[carrier_name + profile_label].to_numpy()
+                        if np.isnan(values).any():
+                            is_heat_suffix = profile_label in ("__price", "__temperature")
+                            if is_heat_suffix:
+                                raise Exception(
+                                    f"Carrier name: '{carrier_name}': NaN exist in column "
+                                    f"'{carrier_name + profile_label}' in the profile source file"
+                                    f" {self._file_path}. Details: "
+                                    f"{data_em[data_em[carrier_name + profile_label].isnull()]}"
+                                )
+                            else:
+                                raise Exception(
+                                    f"Carrier name: '{carrier_name}': NaN exist in column"
+                                    f"'{carrier_name}' in the profile source file"
+                                    f" {self._file_path}. Details: "
+                                    f"{data_em[data_em[carrier_name].isnull()]}"
+                                )
+                    except KeyError:
+                        pass
+                    else:
+                        self._profiles[e_m][carrier_name + profile_suffix] = values
 
     def _load_xml(self, energy_system_components, esdl_asset_id_to_name_map):
         timeseries_import_basename = self._file_path.stem

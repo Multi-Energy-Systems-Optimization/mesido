@@ -92,6 +92,8 @@ class TestProfileUpdating(unittest.TestCase):
         column_to_variable_map = {
             "demand": "f6d5923d-ba9a-409d-80a0-26f73b2a574b.target_heat_demand",
             "elec": "elec.price_profile",
+            "heat__temperature": "heat.temperature_profile",
+            "heat__price": "heat.price_profile",
         }
 
         for day_steps in [2 / 24, 0.25 / 24]:  # (2-hours and 15-minutes time steps)

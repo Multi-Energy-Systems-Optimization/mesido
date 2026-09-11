@@ -1,7 +1,7 @@
 # [Unreleased-main] - 2026-09-07
 
 ## Added
-- Heat carrier temperature profile is parsed from ESDL
+- Heat carrier temperature and price profiles are parsed from ESDL and CSV files.
 
 ## Changed
 - xxx
