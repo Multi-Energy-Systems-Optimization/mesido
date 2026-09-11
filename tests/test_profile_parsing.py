@@ -92,6 +92,8 @@ class TestProfileUpdating(unittest.TestCase):
         column_to_variable_map = {
             "demand": "f6d5923d-ba9a-409d-80a0-26f73b2a574b.target_heat_demand",
             "elec": "elec.price_profile",
+            "heat__temperature": "heat.temperature_profile",
+            "heat__price": "heat.price_profile",
         }
 
         for day_steps in [2 / 24, 0.25 / 24]:  # (2-hours and 15-minutes time steps)
@@ -271,6 +273,10 @@ class TestProfileLoading(unittest.TestCase):
         heat_price_profile = problem.get_timeseries("Heat.price_profile").values
         self.assertEqual(heat_price_profile[0], heat_price_profile[1])
         self.assertLess(max(heat_price_profile), 1.0)
+
+        heat_temperature_profile = problem.get_timeseries("Heat.temperature_profile").values
+        self.assertEqual(len(heat_temperature_profile), len(heat_price_profile))
+        self.assertLess(max(heat_temperature_profile), 1.0)
 
     def test_loading_from_csv(self):
         """
