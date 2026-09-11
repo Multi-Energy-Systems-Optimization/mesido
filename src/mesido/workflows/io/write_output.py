@@ -1416,6 +1416,8 @@ class ScenarioOutput:
                             var_pops = [
                                 v for v in variables_two_hydraulic_system if "Secondary" in v
                             ]
+                            if asset_id in self.energy_system_components.get("heat_pump", []):
+                                var_pops.append("Heat_flow")
                         elif asset_side == "secondary_carrier_id":
                             var_pops = [v for v in variables_two_hydraulic_system if "Primary" in v]
                         for v in var_pops:
