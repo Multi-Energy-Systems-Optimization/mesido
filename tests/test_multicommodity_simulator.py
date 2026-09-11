@@ -1,6 +1,8 @@
 from pathlib import Path
 from unittest import TestCase
 
+from rtctools.optimization.timeseries import Timeseries
+
 import mesido._darcy_weisbach as darcy_weisbach
 from mesido.electricity_physics_mixin import ElectrolyzerOption
 from mesido.esdl.esdl_parser import ESDLFileParser
@@ -10,6 +12,8 @@ from mesido.workflows.multicommodity_simulator_workflow import (
     MultiCommoditySimulator,
     MultiCommoditySimulatorNoLosses,
     run_sequentially_staged_simulation,
+    SolverCPLEX,
+    SolverHIGHS,
 )
 
 import numpy as np
@@ -309,8 +313,9 @@ class TestMultiCommoditySimulator(TestCase):
                 super().read()
 
                 for asset in self.energy_system_components["wind_park"]:
-                    new_timeseries = (
-                        self.get_timeseries(f"{asset}.maximum_electricity_source").values * 0.5
+                    max_source_ts = self.get_timeseries(f"{asset}.maximum_electricity_source")
+                    new_timeseries = Timeseries( max_source_ts.times,
+                        max_source_ts.values * 0.5
                     )
                     self.set_timeseries(f"{asset}.maximum_electricity_source", new_timeseries)
 
@@ -457,7 +462,7 @@ class TestMultiCommoditySimulator(TestCase):
         )
 
         solution = run_optimization_problem(
-            multicommoditysimulatornolossesscaling,
+            MultiCommoditySimulatorNoLosses,
             base_folder=base_folder,
             esdl_file_name="emerge_battery_priorities.esdl",
             esdl_parser=ESDLFileParser,
@@ -637,6 +642,7 @@ class TestMultiCommoditySimulator(TestCase):
 
         solution_staged_unbounded = run_sequentially_staged_simulation(
             multi_commodity_simulator_class=MultiCommoditySimulatorNoLosses,
+            solver_class=SolverHIGHS,
             simulation_window_size=20,
             base_folder=base_folder,
             esdl_file_name="emerge_battery_priorities.esdl",
@@ -649,6 +655,7 @@ class TestMultiCommoditySimulator(TestCase):
 
         solution_unstaged = run_optimization_problem(
             MultiCommoditySimulatorNoLosses,
+            solver_class=SolverHIGHS,
             base_folder=base_folder,
             esdl_file_name="emerge_battery_priorities.esdl",
             esdl_parser=ESDLFileParser,

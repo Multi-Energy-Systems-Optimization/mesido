@@ -97,26 +97,20 @@ def _update_stage_bounds(
     if end_time <= simulated_window + simulation_window_size:
         return storage_initial_state_bounds
 
-    for asset_type, variables in constrained_assets.items():
+    for asset_type, initials in constrained_assets.items():
         for asset in solution.energy_system_components.get(asset_type, []):
-            sub_time_series = solution._full_time_series[
-                simulated_window - 1 + simulation_window_size : min(
-                    end_time, simulated_window + 2 * simulation_window_size
-                )
-            ]
-            for variable in variables:
-                lb_value = _extract_values_timeseries(
-                    solution.bounds()[f"{asset}.{variable}"][0], "min"
-                )
-                ub_value = _extract_values_timeseries(
-                    solution.bounds()[f"{asset}.{variable}"][1], "max"
-                )
-                lb_values = [lb_value] * len(sub_time_series)
-                ub_values = [ub_value] * len(sub_time_series)
-                lb_values[0] = ub_values[0] = results[f"{asset}.{variable}"][-1]
-                lb = Timeseries(sub_time_series, lb_values)
-                ub = Timeseries(sub_time_series, ub_values)
-                storage_initial_state_bounds[f"{asset}.{variable}"] = (lb, ub)
+            variable = initials["variable"]
+            parameter = initials["parameter"]
+            #TODO: check if we can just pass: "init_Gas" parameter and similar for battery
+            lb_value = _extract_values_timeseries(
+                solution.bounds()[f"{asset}.{variable}"][0], "min"
+            )
+            ub_value = _extract_values_timeseries(
+                solution.bounds()[f"{asset}.{variable}"][1], "max"
+            )
+            storage_initial_state_bounds[f"{asset}.{parameter}"] = min(results[(f"{asset}"
+                                                                          f".{variable}")][
+                                                                        -1], ub_value)
 
     return storage_initial_state_bounds
 
@@ -220,6 +214,11 @@ def _create_merit_path_goals(self, asset_info, max_value_merit, index_start_of_p
                 v2 = _extract_values_timeseries(func_range[1])
                 func_range = (v1, v2)
                 add_goal = True
+
+                index_s = asset_merit["asset_id"].index(f"{asset}_prod")
+                marginal_priority_source = (
+                    index_start_of_priority + max_value_merit - asset_merit["merit_order"][index_s]
+                )
 
                 if isinstance(v1, np.ndarray) and isinstance(v2, np.ndarray):
                     if (v1 == v2).all():
@@ -350,7 +349,7 @@ class SolverHIGHS:
         options["solver"] = "highs"
         highs_options = options["highs"] = {}
         highs_options["mip_rel_gap"] = 0.0001
-        highs_options["presolve"] = "off"
+        # highs_options["presolve"] = "off"
 
         options["gurobi"] = None
         options["cplex"] = None
@@ -701,11 +700,20 @@ class MultiCommoditySimulator(
         self._priorities_output = []
         self._save_json = kwargs.get("_save_json", False)
         self._asset_control_type = AssetControlType.MERIT_ORDER #AssetControlType.MARGINAL_COST
+        self._init_storage_bounds = kwargs.get("_init_storage_bounds", None)
 
     def pre(self):
         self._qpsol = CachingQPSol()
 
         super().pre()
+
+    def parameters(self, ensemble_member):
+        parameters = super().parameters(ensemble_member)
+
+        if self._init_storage_bounds:
+            parameters.update(self._init_storage_bounds)
+
+        return parameters
 
     @property
     def esdl_assets(self):
@@ -780,7 +788,7 @@ class MultiCommoditySimulator(
                 for asset in assets:
                     asset_var_name = asset_variable_map[asset]
 
-                    esdl_asset = self.esdl_assets[self.esdl_asset_name_to_id_map[asset]]
+                    esdl_asset = self.esdl_assets[asset]
                     lhv = 1e6  # 120e6 #J/kg LHV hydrogen
                     multiplier_gas = 1 if "gas" not in asset_var_name else lhv
                     if isinstance(asset_var_name, str):
@@ -790,7 +798,8 @@ class MultiCommoditySimulator(
                     else:
                         for k, v in asset_var_name.items():
                             marg_cost = (
-                                self.__get_marginal_cost(esdl_asset, marg_type=k) * multiplier[k]
+                                self.__get_marginal_cost(esdl_asset, marg_type=k) * multiplier[
+                                group]
                             )
                             var_name = f"{asset}.{v}"
                             asset_cost_map[var_name] = marg_cost * multiplier_gas
@@ -888,7 +897,7 @@ class MultiCommoditySimulator(
     def seed(self, ensemble_member):
         seed = super().seed(ensemble_member)
         parameters = self.parameters(0)
-        wind_farms = self.energy_system_components.get("wind_park")
+        wind_farms = self.energy_system_components.get("wind_park", [])
         for windfarm in wind_farms:
             variable = f"{windfarm}.maximum_electricity_source"
             electrolyzer = "EL"+windfarm.lstrip("WF")
@@ -1012,7 +1021,7 @@ class MultiCommoditySimulator(
         options["casadi_solver"] = self._qpsol
         options["solver"] = "highs"
         highs_options = options["highs"] = {}
-        highs_options["presolve"] = "on"
+        # highs_options["presolve"] = "off"
 
         options["gurobi"] = None
         options["cplex"] = None
@@ -1146,7 +1155,7 @@ def staged_approach(
         solver_class,
         start_index=max(simulated_window - 1, 0),
         end_index=sub_end_time,
-        storage_initial_state_bounds=storage_initial_state_bounds,
+        _init_storage_bounds=storage_initial_state_bounds,
         **kwargs,
     )
     if not end_time_confirmed:
@@ -1381,7 +1390,7 @@ def run_sequentially_staged_simulation(
             self.__end_time_index = kwargs.get("end_index", None)
             self._full_time_series = None
 
-            self.__storage_initial_state_bounds = kwargs.get("storage_initial_state_bounds", {})
+            # self.__storage_initial_state_bounds = kwargs.get("storage_initial_state_bounds", {})
 
             logger.warning(
                 f"Optimising timestep {self.__start_time_index} to {self.__end_time_index}"
@@ -1411,7 +1420,7 @@ def run_sequentially_staged_simulation(
             physcially valid.
             """
             bounds = super().bounds()
-            bounds.update(self.__storage_initial_state_bounds)
+            # bounds.update(self.__storage_initial_state_bounds)
             return bounds
 
     # Note that the window size should be larger than 1 otherwise this function is has no
@@ -1426,8 +1435,8 @@ def run_sequentially_staged_simulation(
 
     # TODO: make this dict complete for all relevant assets and their associated variables.
     constrained_assets = {
-        "electricity_storage": ["Stored_electricity", "Effective_power_charging"],
-        "gas_tank_storage": ["Stored_gas_mass", "Gas_tank_flow"],
+        "electricity_storage": {"variable": "Stored_electricity", "parameter": "init_Elec"},
+        "gas_tank_storage": {"variable": "Stored_gas_mass", "parameter": "init_Gas"},
     }
 
     (
@@ -1523,23 +1532,28 @@ if __name__ == "__main__":
     import tests.models.emerge.src.example as example
 
     base_folder = Path(example.__file__).resolve().parent.parent
-    solution = run_optimization_problem(
-        # MultiCommoditySimulatorNoLosses,
-        MultiCommoditySimulatorMarginalNoLosses,
-        base_folder=base_folder,
-        esdl_file_name="emerge_priorities_withoutstorage.esdl",
-        esdl_parser=ESDLFileParser,
-        profile_reader=ProfileReaderFromFile,
-        input_timeseries_file="timeseries.csv",
-    )
 
-    # solution = run_sequentially_staged_simulation(
-    #     multi_commodity_simulator_class=MultiCommoditySimulatorNoLosses,
-    #     simulation_window_size=40,
+    # solution = run_optimization_problem(
+    #     # MultiCommoditySimulatorNoLosses,
+    #     MultiCommoditySimulatorMarginalNoLosses,
     #     base_folder=base_folder,
-    #     esdl_file_name="emerge_battery_priorities.esdl",
+    #     # esdl_file_name="emerge_priorities_withoutstorage.esdl",
+    #     esdl_file_name="emerge_priorities.esdl",
     #     esdl_parser=ESDLFileParser,
     #     profile_reader=ProfileReaderFromFile,
-    #     # input_timeseries_file="timeseries_short.csv",
     #     input_timeseries_file="timeseries.csv",
     # )
+
+    solution = run_sequentially_staged_simulation(
+        # multi_commodity_simulator_class=MultiCommoditySimulatorNoLosses,
+        multi_commodity_simulator_class=MultiCommoditySimulatorMarginalNoLosses,
+        simulation_window_size=40,
+        base_folder=base_folder,
+        # esdl_file_name="emerge_battery_priorities.esdl",
+        # esdl_file_name="emerge_priorities_withoutstorage.esdl",
+        esdl_file_name="emerge_priorities.esdl",
+        esdl_parser=ESDLFileParser,
+        profile_reader=ProfileReaderFromFile,
+        # input_timeseries_file="timeseries_short.csv",
+        input_timeseries_file="timeseries.csv",
+    )
