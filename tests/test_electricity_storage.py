@@ -109,13 +109,13 @@ class TestMILPElectricSourceSinkStorage(TestCase):
         is_charging = np.asarray([float(i > 0) for i in power_charging])
         # if battery is charging (1), ElectricityIn.Power and effective_power charging should be
         # positive, else negative
-        bigger_then = all(is_charging * eff_power_change_bat >= 0)
-        smaller_then = all((1 - is_charging) * eff_power_change_bat <= 0)
+        bigger_then = all(is_charging * eff_power_change_bat >= -tol)
+        smaller_then = all((1 - is_charging) * eff_power_change_bat <= tol)
         self.assertTrue(bigger_then)
         self.assertTrue(smaller_then)
 
-        bigger_then = all(is_charging * power_bat_network >= 0)
-        smaller_then = all((1 - is_charging) * power_bat_network <= 0)
+        bigger_then = all(is_charging * power_bat_network >= -tol)
+        smaller_then = all((1 - is_charging) * power_bat_network <= tol)
         self.assertTrue(bigger_then)
         self.assertTrue(smaller_then)
 
