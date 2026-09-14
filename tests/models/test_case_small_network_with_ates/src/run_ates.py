@@ -129,7 +129,6 @@ class HeatProblem(
         """
         options = super().solver_options()
         options["casadi_solver"] = self._qpsol
-        highs_options = options.setdefault("highs", {})
         return options
 
     def constraints(self, ensemble_member: int):
@@ -168,11 +167,6 @@ class HeatProblemPlacingOverTime(HeatProblem):
     This problem is defined to test the asset_is_realized variable with constraints. This is
     achieved by having an upper limit on the investment per time-step.
     """
-
-    def solver_options(self):
-        options = super().solver_options()
-        # options.get("highs", {}).pop("presolve", None)
-        return options
 
     def energy_system_options(self):
         """
