@@ -129,7 +129,7 @@ class HeatProblem(
         """
         options = super().solver_options()
         options["casadi_solver"] = self._qpsol
-        highs_options = options.setdefault("highs", {})
+        # highs_options = options.setdefault("highs", {})
         # HiGHS presolve incorrectly declares this model infeasible (feasible per
         # CPLEX and HiGHS with presolve=off). Still required with rtctools-highs
         # 0.1.4 (HiGHS 1.15.1). See ERGO-Code/HiGHS#3090, #3074. Remove once fixed
