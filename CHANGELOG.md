@@ -7,7 +7,7 @@
 - xxx
 
 ## Fixed
-- xxx 
+- Voltage losses are now also excluded when include_electric_cable_power_loss is set to False.
 
 
 # [0.1.22] - 2026-09-07
