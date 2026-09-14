@@ -134,7 +134,7 @@ class HeatProblem(
         # CPLEX and HiGHS with presolve=off). Still required with rtctools-highs
         # 0.1.4 (HiGHS 1.15.1). See ERGO-Code/HiGHS#3090, #3074. Remove once fixed
         # upstream.
-        highs_options["presolve"] = "off"
+        # highs_options["presolve"] = "off"
         return options
 
     def constraints(self, ensemble_member: int):
@@ -176,7 +176,7 @@ class HeatProblemPlacingOverTime(HeatProblem):
 
     def solver_options(self):
         options = super().solver_options()
-        options.get("highs", {}).pop("presolve", None)
+        # options.get("highs", {}).pop("presolve", None)
         return options
 
     def energy_system_options(self):
@@ -293,7 +293,8 @@ class HeatProblemSetPoints(
         # CPLEX and HiGHS with presolve=off). Still required with rtctools-highs
         # 0.1.4 (HiGHS 1.15.1). See ERGO-Code/HiGHS#3090, #3074. Remove once fixed
         # upstream.
-        highs_options["presolve"] = "off"
+        # highs_options["presolve"] = "off"
+        highs_options["presolve"] = "on"
         return options
 
     def constraints(self, ensemble_member):
