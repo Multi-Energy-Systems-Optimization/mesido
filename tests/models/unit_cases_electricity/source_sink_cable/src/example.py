@@ -151,8 +151,7 @@ class ElectricityProblem(
 
 
 class ElectricityProblemNoLoss(ElectricityProblem):
-    """Problem where the cable power and voltage losses are turned off, e.g. copper plate
-    calculations"""
+    """Problem where the cable power and voltage losses are turned off."""
 
     def energy_system_options(self):
         options = super().energy_system_options()

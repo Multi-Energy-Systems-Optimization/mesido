@@ -219,8 +219,6 @@ class TestMILPElectricSourceSink(TestCase):
         without cable losses.
 
         Checks:
-        - Check that the caps set in the esdl work as intended
-        - Check that the consumed power is always>= 0.
         - Check for energy conservation with consumed power, lost power and produced power.
         - Check that cable power and voltage losses are zero.
         - Check the Electricity_source/demand variable is correctly set.
