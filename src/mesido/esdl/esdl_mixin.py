@@ -150,6 +150,8 @@ class ESDLMixin(
         input_folder = kwargs.get("input_folder")
         input_file_path = None
 
+        self.__building_parameters = self._build_building_parameters()
+
         # Setup credentials for database connections
         database_connection_info = kwargs.get("database_connections", {})
         read_only_dbase_credentials: Dict[str, Tuple[str, str]] = {}  # for profile reader
@@ -283,6 +285,100 @@ class ESDLMixin(
         Returns a bytes string representation of the ESDL model used.
         """
         return base64.b64encode(self.__energy_system_handler.to_string().encode("utf-8"))
+
+    def _build_building_parameters(self) -> Dict[str, Dict[str, Any]]:
+        """
+        Build a lightweight lookup table with building-scoped information for easy access.
+
+        The helper keeps the raw Building metadata together with the building child assets that are
+        relevant for instance demand handling (HeatingDemand and CoolingDemand).
+        """
+
+        def _iter_assets(value):
+            if not value:
+                return []
+            if isinstance(value, EOrderedSet):
+                return list(value)
+            if isinstance(value, (list, tuple, set)):
+                return list(value)
+            return [value]
+
+        def _get_measure_assets_by_type(measure, filter_type: str) -> List[Any]:
+            measure_assets = {
+                measure.id: Asset(
+                    asset_type=measure.__class__.__name__,
+                    id=measure.id,
+                    name=measure.name,
+                    in_ports=None,
+                    out_ports=None,
+                    attributes={"asset": getattr(measure, "asset", None)},
+                    global_properties={},
+                )
+            }
+
+            return list(
+                self.filter_asset_measures(
+                    asset_measures=measure_assets,
+                    filter_type=filter_type,
+                ).values()
+            )
+
+        building_parameters: Dict[str, Dict[str, Any]] = {}
+
+        for asset in self._esdl_assets.values():
+            if asset.asset_type != "Building":
+                continue
+
+            building_parameters[asset.id] = {
+                "name": asset.name,
+                "attributes": asset.attributes,
+                "contained_assets": {},
+                "contained_measures": {},
+            }
+
+            building_assets = _iter_assets(asset.attributes.get("asset"))
+            measures = asset.attributes.get("measures")
+
+            for measure in _iter_assets(getattr(measures, "measure", None)):
+                measure_demand_assets = [
+                    *_get_measure_assets_by_type(measure, "HeatingDemand"),
+                    *_get_measure_assets_by_type(measure, "CoolingDemand"),
+                ]
+
+                if not measure_demand_assets:
+                    continue
+
+                building_parameters[asset.id]["contained_measures"][measure.id] = {
+                    "name": measure.name,
+                    "HeatingDemand": {},
+                    "CoolingDemand": {},
+                }
+
+                for measure_asset in measure_demand_assets:
+                    building_parameters[asset.id]["contained_measures"][measure.id][
+                        measure_asset.__class__.__name__
+                    ][measure_asset.id] = {
+                        "name": measure_asset.name,
+                    }
+
+            for child_asset in building_assets:
+                if not hasattr(child_asset, "assetType") and not hasattr(child_asset, "name"):
+                    continue
+
+                child_asset_type = child_asset.__class__.__name__
+
+                if child_asset_type in {"HeatingDemand", "CoolingDemand"}:
+                    building_parameters[asset.id]["contained_assets"][child_asset.id] = {
+                        "name": child_asset.name,
+                        "type": child_asset_type,
+                    }
+        return building_parameters
+
+    @property
+    def building_parameters(self) -> Dict[str, Dict[str, Any]]:
+        """Return the cached building parameter lookup."""
+
+        return copy.deepcopy(self.__building_parameters)
 
     def pre(self) -> None:
         """

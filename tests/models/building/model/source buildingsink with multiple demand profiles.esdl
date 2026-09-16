@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" esdlVersion="v2401" name="sourcesink with return network with return network" version="10" id="5d539f68-f98e-466b-9ff5-b908a211e0ab_with_return_network_with_return_network" description="">
+<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" esdlVersion="v2401" name="sourcesink with return network with return network" version="11" id="5d539f68-f98e-466b-9ff5-b908a211e0ab_with_return_network_with_return_network" description="">
   <energySystemInformation xsi:type="esdl:EnergySystemInformation" id="11f4eafa-7fbc-4d82-b346-e893326d2c30">
     <carriers xsi:type="esdl:Carriers" id="eafbd8f4-1fde-4bb5-8dce-fdb74a1a1097">
       <carrier xsi:type="esdl:HeatCommodity" id="435a0034-fab0-4e7e-9a17-edf8de9a2b11" supplyTemperature="70.0" name="heat"/>
@@ -62,8 +62,29 @@
         <geometry xsi:type="esdl:Point" lat="52.08674847800901" lon="4.3985478579998025"/>
         <measures xsi:type="esdl:Measures" id="55a1e74b-6bef-452a-ab1b-c54e4644a40e" name="NewMeasures" description="demands">
           <measure xsi:type="esdl:Measure" id="78de9a50-9a92-4dd9-a730-31824a5da573" name="demand_1">
-            <asset xsi:type="esdl:HeatingDemand" id="4f30fa8d-6a77-426a-984a-2b78b4f3471b" name="HeatingDemandProf_1"/>
-            <asset xsi:type="esdl:CoolingDemand" id="779be89f-8cb8-4c99-be39-fcf4d4bfab37" name="CoolingDemandProf_1"/>
+            <asset xsi:type="esdl:HeatingDemand" id="4f30fa8d-6a77-426a-984a-2b78b4f3471b" name="HeatingDemandProf_1">
+              <costInformation xsi:type="esdl:CostInformation" id="36c26cc2-098a-4364-9eb5-27c763b6c9b2" name="NewCostInformation">
+                <investmentCosts xsi:type="esdl:SingleValue" id="388437fc-6825-4d88-9e03-e59c27864ba7" name="NewSingleValue" value="100.0">
+                  <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="b1b6d1c4-b821-4e52-8f8f-3e8bec9ef842" unit="EURO" physicalQuantity="COST" perUnit="WATT"/>
+                </investmentCosts>
+                <installationCosts xsi:type="esdl:SingleValue" id="e8bbddb4-dd49-4e8a-b14c-285e6b851704" name="NewSingleValue" value="10.0">
+                  <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="a87b2ab0-3d52-442e-8dc7-9a145938643d" unit="EURO" physicalQuantity="COST"/>
+                </installationCosts>
+                <fixedMaintenanceCosts xsi:type="esdl:SingleValue" id="7cef1835-c6eb-45fb-a749-503d06ae5f9b" name="NewSingleValue" value="1000.0">
+                  <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="920fcacd-7eb3-417a-823d-bda6b376ea30" physicalQuantity="COST" unit="EURO" perUnit="WATT" perTimeUnit="YEAR"/>
+                </fixedMaintenanceCosts>
+              </costInformation>
+            </asset>
+            <asset xsi:type="esdl:CoolingDemand" id="779be89f-8cb8-4c99-be39-fcf4d4bfab37" name="CoolingDemandProf_1">
+              <costInformation xsi:type="esdl:CostInformation" id="de6e8782-5204-4818-864f-ffc90357df43" name="NewCostInformation">
+                <investmentCosts xsi:type="esdl:SingleValue" id="055696c1-2d8c-4339-8c80-b5e3fad99187" name="NewSingleValue" value="100.0">
+                  <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="4e2d6460-d1a5-4617-a6fe-a85b92358d3d" unit="EURO" perUnit="WATT" physicalQuantity="COST"/>
+                </investmentCosts>
+                <installationCosts xsi:type="esdl:SingleValue" id="a30ef788-c35a-42a6-ad4d-0df3fc4c8944" name="NewSingleValue" value="20.0">
+                  <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="81994190-6d06-4457-a609-95c61fc7e66a" unit="EURO" physicalQuantity="COST"/>
+                </installationCosts>
+              </costInformation>
+            </asset>
           </measure>
           <measure xsi:type="esdl:Measure" id="def0e39c-ceb7-4190-9e91-f0be557fb0b0" name="demand_2">
             <asset xsi:type="esdl:CoolingDemand" id="8b53cd1a-6beb-4cb8-8c67-9deadb266ff4" name="CoolingDemandProf_2"/>
