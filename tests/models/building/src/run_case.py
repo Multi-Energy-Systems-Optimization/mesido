@@ -133,11 +133,9 @@ if __name__ == "__main__":
     solution = run_optimization_problem(
         SourcePipeBuilding,
         esdl_file_name="source buildingsink with multiple demand profiles.esdl",
-        # esdl_file_name="sourcesink.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,
         input_timeseries_file="timeseries_import.csv",
-        # input_timeseries_file="timeseries_import_orig.csv",
     )
 
     results = solution.extract_results()
