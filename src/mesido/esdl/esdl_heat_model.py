@@ -495,26 +495,26 @@ class AssetToHeatComponent(_AssetToComponentBase):
             raise RuntimeError(f"{asset.name} has no inport with electricity commodity")
         return min_voltage
 
-    # Use this to create asset in the building?
-    def convert_building(self, asset: Asset) -> Tuple[Type[HeatDemand], MODIFIERS]:
-        """ 
-        ...
-        """
+    # # Use this to create asset in the building?
+    # def convert_building(self, asset: Asset) -> Tuple[Type[HeatDemand], MODIFIERS]:
+    #     """ 
+    #     ...
+    #     """
 
-        # create heating demand and cooling demand asset?
-        # where do we add measure attributes ->  current named insulation_levels -> attributes
-        # def insulation_levels(self):
-        #     attributes = {
-        #         "insulation_level": ["A", "B", "C"],
-        #         "scaling_factor": [0.6, 0.9, 1.0],
-        #         "Tmin_deg": [50, 60, 70],
-        #         "insulation_cost_euro": [5.0e6, 2.0e6, 1.0e6],
-        #     }
-        #     return attributes
-        # since it is not only profiles that are retrieved I do not think it makes sense to populate this profiles code
+    #     # create heating demand and cooling demand asset?
+    #     # where do we add measure attributes ->  current named insulation_levels -> attributes
+    #     # def insulation_levels(self):
+    #     #     attributes = {
+    #     #         "insulation_level": ["A", "B", "C"],
+    #     #         "scaling_factor": [0.6, 0.9, 1.0],
+    #     #         "Tmin_deg": [50, 60, 70],
+    #     #         "insulation_cost_euro": [5.0e6, 2.0e6, 1.0e6],
+    #     #     }
+    #     #     return attributes
+    #     # since it is not only profiles that are retrieved I do not think it makes sense to populate this profiles code
 
-        # loop over assets contained in a building here?
-        return
+    #     # loop over assets contained in a building here?
+    #     return
 
     def convert_heat_buffer(
         self, asset: Asset

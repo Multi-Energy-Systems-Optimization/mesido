@@ -133,10 +133,14 @@ class BaseESDLParser:
                     # isinstance(el, esdl.HConnection) -> need this for connections to assets in the building
                     # At this point there is no way to see that this is a demand in measure, building,
                     if el.name in [
-                        "HeatingDemand_1", "HeatingDemand_2", "CoolingDemand_1", "CoolingDemand_2"
+                        "HeatingDemandProf_1", "HeatingDemandProf_2", "CoolingDemandProf_1", "CoolingDemandProf_2"
                     ]:
-                        continue # temporary for now
+                        continue  # temporary for now
                     assert len(el.port) >= 1
+                    # if len(el.port) == 0:
+                    #     if asset_type == "Building":
+                    #         continue
+                    #     assert len(el.port) >= 1
 
                     in_ports = None
                     out_ports = None

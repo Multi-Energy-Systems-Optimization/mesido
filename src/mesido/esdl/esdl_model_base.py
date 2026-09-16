@@ -68,8 +68,9 @@ class _ESDLModelBase(_Model):
         # Building asset to be used in converter, to add ....
         # Heating demands in the building should be created via building? do we loop over assets in the building over here or in the buidling convert?
         for asset in list(assets_sorted.values()):
-            pycml_type, modifiers = converter.convert(asset)
-            self.add_variable(pycml_type, asset.id, **modifiers)
+            if asset.asset_type != "Building":
+                pycml_type, modifiers = converter.convert(asset)
+                self.add_variable(pycml_type, asset.id, **modifiers)
 
         in_suf = "HeatIn"
         out_suf = "HeatOut"
