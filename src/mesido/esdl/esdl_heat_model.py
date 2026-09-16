@@ -891,6 +891,55 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         return Node, modifiers
 
+    def convert_hconnection(self, asset: Asset) -> Tuple[Type[Node], MODIFIERS]:
+        """
+        This function converts the HConnection object in esdl to a heat connector node.
+
+        Required ESDL fields:
+            - id (this id must be unique)
+            - name (this name must be unique)
+            - xsi:type
+            - InPort and OutPort with:
+                - xsi:type
+                - id
+                - name
+                - connectedTo
+                - carrier with temperature specified
+
+        Parameters:
+            asset : The asset object with its properties.
+
+        Returns:
+            Node class with modifiers:
+                {automatically_add_modifiers_here}
+        """
+        assert asset.asset_type == "HConnection"
+
+        sum_in = 0
+        sum_out = 0
+
+        node_carrier = None
+        for x in asset.attributes["port"].items:
+            if node_carrier is None:
+                node_carrier = x.carrier.name
+            elif node_carrier != x.carrier.name:
+                raise _ESDLInputException(
+                    f"{asset.name} has multiple carriers mixing which is not allowed. "
+                    f"Only one carrier (carrier couple) allowed in hydraulically coupled system"
+                )
+            if isinstance(x, esdl.esdl.InPort):
+                sum_in += len(x.connectedTo)
+            if isinstance(x, esdl.esdl.OutPort):
+                sum_out += len(x.connectedTo)
+
+        modifiers = dict(
+            n=sum_in + sum_out,
+            state=self.get_state(asset),
+            include_head_loss_variables=self.include_head_loss_variables,
+        )
+
+        return Node, modifiers
+
     def convert_pipe(self, asset: Asset) -> Tuple[Union[Type[HeatPipe], Type[GasPipe]], MODIFIERS]:
         """
         This function converts the pipe object in esdl to a set of modifiers that can be used in
