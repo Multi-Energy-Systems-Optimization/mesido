@@ -30,6 +30,7 @@ from mesido.pycml.component_library.milp import (
     ElecHeatSourceElec,
     ElectricityCable,
     ElectricityDemand,
+    ElectricityImport,
     ElectricityNode,
     ElectricitySource,
     ElectricityStorage,
@@ -169,6 +170,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         self.energy_system_esdl_version = kwargs.get("energy_system_esdl_version", None)
         self.use_esdl_ranged_constraint = kwargs.get("use_esdl_ranged_constraint", False)
         self.include_head_loss_variables = self.energy_system_options.get("include_head_losses")
+        self.esdl_assets = kwargs.get("esdl_assets", {})
 
     @property
     def _rho_cp_modifiers(self) -> Dict:
@@ -1405,11 +1407,11 @@ class AssetToHeatComponent(_AssetToComponentBase):
             # TODO: the power filled in at the heatpmp should always be the electric power, thus,
             # the max heat supply should be power*cop
             _, modifiers = self.convert_heat_source(asset)
+            modifiers.update(elec_power_nominal=modifiers["Heat_source"]["max"])
             return AirWaterHeatPump, modifiers
         # In this case we only have the secondary side ports, here we assume a air-water HP elec
         if len(asset.in_ports) == 2 and len(asset.out_ports) == 1:
-            _, modifiers = self.convert_air_water_heat_pump_elec(asset)
-            return AirWaterHeatPumpElec, modifiers
+            return self.convert_air_water_heat_pump_elec(asset)
 
         if not asset.attributes["COP"]:
             raise _ESDLInputException(
@@ -1528,7 +1530,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
         assert max_supply > 0.0
 
         min_temperature = asset.attributes.get("minTemperature", None)
+        if min_temperature is not None:
+            if min_temperature < 0.0:
+                logger.error(f"'{asset.name}' must have a non-negative minimum temperature value.")
+            assert min_temperature >= 0.0
+
         max_temperature = asset.attributes.get("maxTemperature", None)
+        if max_temperature is not None:
+            if max_temperature < 0.0:
+                logger.error(f"'{asset.name}' must have a non-negative maximum temperature value.")
+            assert max_temperature >= 0.0
 
         # get price per unit of energy,
         # assume cost of 1. if nothing is given (effectively milp loss minimization)
@@ -1924,7 +1935,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
         if isinstance(asset.out_ports[0].carrier, esdl.esdl.GasCommodity):
             return self.convert_gas_source(asset)
         elif isinstance(asset.out_ports[0].carrier, esdl.esdl.ElectricityCommodity):
-            return self.convert_electricity_source(asset)
+            _, modifiers = self.convert_electricity_source(asset)
+            return ElectricityImport, modifiers
         else:
             raise RuntimeError(
                 f"Commodity of type {type(asset.out_ports[0].carrier)} for asset Import "
@@ -3002,6 +3014,7 @@ class ESDLHeatModel(_ESDLModelBase):
                     "secondary_port_name_convention": self.secondary_port_name_convention,
                     "energy_system_esdl_version": esdl_version,
                     "esdl_ranged_constraint_usage": esdl_ranged_constraint_usage,
+                    "esdl_assets": assets,
                 },
             }
         )

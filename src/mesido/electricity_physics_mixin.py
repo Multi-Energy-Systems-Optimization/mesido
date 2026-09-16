@@ -273,6 +273,7 @@ class ElectricityPhysicsMixin(
         value.
         """
         constraints = []
+        bounds = self.bounds()
 
         # TODO: When a profile is assigned via esdl, this code below needs to be aligned with
         # profile constraints implemented for heat to ensure compatibility
@@ -286,7 +287,7 @@ class ElectricityPhysicsMixin(
                 )
                 # TODO: [: len(self.times())] should be removed once the emerge test is properly
                 # time-sampled.
-                max_ = self.bounds()[f"{asset}.Electricity_source"][1].values[: len(self.times())]
+                max_ = bounds[f"{asset}.Electricity_source"][1].values[: len(self.times())]
                 a = [x for x in max_ if abs(x) > 0.0]
                 nominal = (
                     self.variable_nominal(f"{asset}.Electricity_source") * min(a) * np.median(a)
@@ -339,6 +340,7 @@ class ElectricityPhysicsMixin(
         """
         constraints = []
         parameters = self.parameters(ensemble_member)
+        options = self.energy_system_options()
 
         for cable in self.energy_system_components.get("electricity_cable", []):
             current = self.state(f"{cable}.ElectricityIn.I")
@@ -357,7 +359,6 @@ class ElectricityPhysicsMixin(
             constraints.append(((power_in - current * v_max) / (i_max * v_max), -np.inf, 0.0))
             constraints.append(((power_out - current * v_max) / (i_max * v_max), -np.inf, 0.0))
             # Power loss constraint
-            options = self.energy_system_options()
             if options["include_electric_cable_power_loss"]:
                 if cable in self._electricity_cable_topo_cable_class_map.keys():
                     cable_classes = self._electricity_cable_topo_cable_class_map[cable]
@@ -402,10 +403,9 @@ class ElectricityPhysicsMixin(
         """
         constraints = []
         parameters = self.parameters(ensemble_member)
+        options = self.energy_system_options()
 
         for cable in self.energy_system_components.get("electricity_cable", []):
-            cable_classes = []
-
             current = self.state(f"{cable}.ElectricityIn.I")
             v_loss = self.state(f"{cable}.V_loss")
             r = parameters[f"{cable}.r"]
@@ -415,31 +415,34 @@ class ElectricityPhysicsMixin(
 
             constraint_nominal = self.variable_nominal(v_loss)
 
-            # TODO: still have to check for proper scaling
-            if cable in self._electricity_cable_topo_cable_class_map.keys():
-                cable_classes = self._electricity_cable_topo_cable_class_map[cable]
-                variables = {
-                    cc.name: self.variable(var_name) for cc, var_name in cable_classes.items()
-                }
-                resistances = {cc.name: cc.resistance for cc in cable_classes}
+            if options["include_electric_cable_power_loss"]:
+                # TODO: still have to check for proper scaling
+                if cable in self._electricity_cable_topo_cable_class_map.keys():
+                    cable_classes = self._electricity_cable_topo_cable_class_map[cable]
+                    variables = {
+                        cc.name: self.variable(var_name) for cc, var_name in cable_classes.items()
+                    }
+                    resistances = {cc.name: cc.resistance for cc in cable_classes}
 
-                # to be updated for a better value, but it should also cover the gap between two
-                # nodes when no cable is placed, so should be able to reach v_max
-                big_m = v_nom
+                    # to be updated for a better value, but it should also cover the gap between two
+                    # nodes when no cable is placed, so should be able to reach v_max
+                    big_m = v_nom
 
-                for var_size, variable in variables.items():
-                    if var_size != "None":
-                        expr = resistances[var_size] * c_length * current
-                        constraints.extend(
-                            self._symmetric_big_m_constraints(
-                                v_loss - expr,
-                                big_m * (1 - variable),
-                                constraint_nominal,
+                    for var_size, variable in variables.items():
+                        if var_size != "None":
+                            expr = resistances[var_size] * c_length * current
+                            constraints.extend(
+                                self._symmetric_big_m_constraints(
+                                    v_loss - expr,
+                                    big_m * (1 - variable),
+                                    constraint_nominal,
+                                )
                             )
-                        )
 
+                else:
+                    constraints.append(((v_loss - r * current) / constraint_nominal, 0.0, 0.0))
             else:
-                constraints.append(((v_loss - r * current) / constraint_nominal, 0.0, 0.0))
+                constraints.append((v_loss / constraint_nominal, 0.0, 0.0))
 
         return constraints
 
@@ -492,6 +495,7 @@ class ElectricityPhysicsMixin(
         constraints = []
         options = self.energy_system_options()
         parameters = self.parameters(ensemble_member)
+        bounds = self.bounds()
 
         for asset in [
             *self.energy_system_components.get("electricity_storage", []),
@@ -507,9 +511,9 @@ class ElectricityPhysicsMixin(
             curr_nom = self.variable_nominal(f"{asset}.ElectricityIn.I")
             current_in = self.state(f"{asset}.ElectricityIn.I")
             power_discharging = self.state(f"{asset}.Power_discharging")
-            power_discharging_max = self.bounds()[f"{asset}.Power_discharging"][1]
+            power_discharging_max = bounds[f"{asset}.Power_discharging"][1]
             power_charging = self.state(f"{asset}.Power_charging")
-            power_charging_max = self.bounds()[f"{asset}.Power_charging"][1]
+            power_charging_max = bounds[f"{asset}.Power_charging"][1]
 
             if options["electricity_storage_discrete_charge_variables"]:
                 is_charging = self.state(f"{asset}.__is_charging")
@@ -638,6 +642,7 @@ class ElectricityPhysicsMixin(
         constraints = []
         parameters = self.parameters(ensemble_member)
         options = self.energy_system_options()
+        bounds = self.bounds()
         # TODO: CHECK UNITS MASSFLOW
         for asset in self.energy_system_components.get("electrolyzer", []):
             gas_mass_flow_out = self.state(f"{asset}.Gas_mass_flow_out")
@@ -650,9 +655,7 @@ class ElectricityPhysicsMixin(
                     * self.variable_nominal(f"{asset}.Power_consumed")
                 ) ** 0.5 * 3600
                 big_m = (
-                    self.bounds()[f"{asset}.Power_consumed"][1]
-                    / parameters[f"{asset}.efficiency"]
-                    / 3600
+                    bounds[f"{asset}.Power_consumed"][1] / parameters[f"{asset}.efficiency"] / 3600
                 ) * 2
                 constraints.extend(
                     [
@@ -692,9 +695,9 @@ class ElectricityPhysicsMixin(
                         n_lines=curve_fit_number_of_lines,
                         electrical_power_min=max(
                             parameters[f"{asset}.minimum_load"],
-                            0.01 * self.bounds()[f"{asset}.ElectricityIn.Power"][1],
+                            0.01 * bounds[f"{asset}.ElectricityIn.Power"][1],
                         ),
-                        electrical_power_max=self.bounds()[f"{asset}.ElectricityIn.Power"][1],
+                        electrical_power_max=bounds[f"{asset}.ElectricityIn.Power"][1],
                     )
                 )
                 power_consumed_vect = ca.repmat(power_consumed, len(linear_coef_a))
@@ -702,8 +705,7 @@ class ElectricityPhysicsMixin(
                 gass_mass_out_linearized_vect = linear_coef_a * power_consumed_vect + linear_coef_b
 
                 gass_mass_out_max = (
-                    linear_coef_a[-1] * self.bounds()[f"{asset}.Power_consumed"][1]
-                    + linear_coef_b[-1]
+                    linear_coef_a[-1] * bounds[f"{asset}.Power_consumed"][1] + linear_coef_b[-1]
                 )
                 nominal = (
                     self.variable_nominal(f"{asset}.Gas_mass_flow_out")
@@ -763,7 +765,7 @@ class ElectricityPhysicsMixin(
             # Add constraints to ensure the electrolyzer is switched off when it reaches a power
             # input below the minimum operating value
 
-            big_m = self.bounds()[f"{asset}.ElectricityIn.Power"][1] * 1.5 * 10.0
+            big_m = bounds[f"{asset}.ElectricityIn.Power"][1] * 1.5 * 10.0
             constraints.append(
                 (
                     (

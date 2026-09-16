@@ -1,4 +1,4 @@
-from mesido.component_type_mixin import ModelicaComponentTypeMixin
+from mesido.component_type_mixin import ComponentTypeMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.pycml.pycml_mixin import PyCMLMixin
 from mesido.qth_not_maintained.bounds_to_pipe_flow_directions_mixin import (
@@ -59,7 +59,7 @@ class QTHModelica(
     _GoalsAndOptions,
     BoundsToPipeFlowDirectionsMixin,
     QTHMixin,
-    ModelicaComponentTypeMixin,
+    ComponentTypeMixin,
     HomotopyMixin,
     GoalProgrammingMixin,
     CSVMixin,
@@ -73,7 +73,7 @@ class QTHPython(
     _GoalsAndOptions,
     BoundsToPipeFlowDirectionsMixin,
     QTHMixin,
-    ModelicaComponentTypeMixin,
+    ComponentTypeMixin,
     HomotopyMixin,
     GoalProgrammingMixin,
     CSVMixin,

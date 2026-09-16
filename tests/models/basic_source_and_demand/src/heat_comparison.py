@@ -1,4 +1,4 @@
-from mesido.component_type_mixin import ModelicaComponentTypeMixin
+from mesido.component_type_mixin import ComponentTypeMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.physics_mixin import PhysicsMixin
 from mesido.pycml.pycml_mixin import PyCMLMixin
@@ -42,7 +42,7 @@ class _GoalsAndOptions:
 class HeatModelica(
     _GoalsAndOptions,
     PhysicsMixin,
-    ModelicaComponentTypeMixin,
+    ComponentTypeMixin,
     GoalProgrammingMixin,
     CSVMixin,
     ModelicaMixin,
@@ -54,7 +54,7 @@ class HeatModelica(
 class HeatPython(
     _GoalsAndOptions,
     PhysicsMixin,
-    ModelicaComponentTypeMixin,
+    ComponentTypeMixin,
     GoalProgrammingMixin,
     CSVMixin,
     PyCMLMixin,
