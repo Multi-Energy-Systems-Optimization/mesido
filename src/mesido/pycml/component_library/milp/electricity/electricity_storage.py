@@ -33,6 +33,8 @@ class ElectricityStorage(ElectricityComponent, BaseAsset):
         self.charge_efficiency = 1.0
         self.discharge_efficiency = 1.0
         self.include_discrete_charge_var = False
+        self.init_Elec = nan
+        self.min_fraction_storage = nan
 
         self.add_variable(ElectricityPort, "ElectricityIn")
 
