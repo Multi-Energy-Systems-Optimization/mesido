@@ -1,8 +1,6 @@
 from pathlib import Path
 from unittest import TestCase
 
-from rtctools.optimization.timeseries import Timeseries
-
 import mesido._darcy_weisbach as darcy_weisbach
 from mesido.electricity_physics_mixin import ElectrolyzerOption
 from mesido.esdl.esdl_parser import ESDLFileParser
@@ -11,13 +9,13 @@ from mesido.network_common import NetworkSettings
 from mesido.workflows.multicommodity_simulator_workflow import (
     MultiCommoditySimulator,
     MultiCommoditySimulatorNoLosses,
-    run_sequentially_staged_simulation,
-    SolverCPLEX,
     SolverHIGHS,
+    run_sequentially_staged_simulation,
 )
 
 import numpy as np
 
+from rtctools.optimization.timeseries import Timeseries
 from rtctools.util import run_optimization_problem
 
 from utils_test_scaling import create_problem_with_debug_info, problem_scaling_check
@@ -314,9 +312,7 @@ class TestMultiCommoditySimulator(TestCase):
 
                 for asset in self.energy_system_components["wind_park"]:
                     max_source_ts = self.get_timeseries(f"{asset}.maximum_electricity_source")
-                    new_timeseries = Timeseries( max_source_ts.times,
-                        max_source_ts.values * 0.5
-                    )
+                    new_timeseries = Timeseries(max_source_ts.times, max_source_ts.values * 0.5)
                     self.set_timeseries(f"{asset}.maximum_electricity_source", new_timeseries)
 
             def energy_system_options(self):
