@@ -495,6 +495,27 @@ class AssetToHeatComponent(_AssetToComponentBase):
             raise RuntimeError(f"{asset.name} has no inport with electricity commodity")
         return min_voltage
 
+    # # Use this to create asset in the building?
+    # def convert_building(self, asset: Asset) -> Tuple[Type[HeatDemand], MODIFIERS]:
+    #     """ 
+    #     ...
+    #     """
+
+    #     # create heating demand and cooling demand asset?
+    #     # where do we add measure attributes ->  current named insulation_levels -> attributes
+    #     # def insulation_levels(self):
+    #     #     attributes = {
+    #     #         "insulation_level": ["A", "B", "C"],
+    #     #         "scaling_factor": [0.6, 0.9, 1.0],
+    #     #         "Tmin_deg": [50, 60, 70],
+    #     #         "insulation_cost_euro": [5.0e6, 2.0e6, 1.0e6],
+    #     #     }
+    #     #     return attributes
+    #     # since it is not only profiles that are retrieved I do not think it makes sense to populate this profiles code
+
+    #     # loop over assets contained in a building here?
+    #     return
+
     def convert_heat_buffer(
         self, asset: Asset
     ) -> Tuple[Union[Type[HeatBufferElec], Type[HeatBuffer]], MODIFIERS]:
@@ -867,6 +888,55 @@ class AssetToHeatComponent(_AssetToComponentBase):
             asset.out_ports[0].carrier, esdl.esdl.GasCommodity
         ):
             return GasNode, modifiers
+
+        return Node, modifiers
+
+    def convert_hconnection(self, asset: Asset) -> Tuple[Type[Node], MODIFIERS]:
+        """
+        This function converts the HConnection object in esdl to a heat connector node.
+
+        Required ESDL fields:
+            - id (this id must be unique)
+            - name (this name must be unique)
+            - xsi:type
+            - InPort and OutPort with:
+                - xsi:type
+                - id
+                - name
+                - connectedTo
+                - carrier with temperature specified
+
+        Parameters:
+            asset : The asset object with its properties.
+
+        Returns:
+            Node class with modifiers:
+                {automatically_add_modifiers_here}
+        """
+        assert asset.asset_type == "HConnection"
+
+        sum_in = 0
+        sum_out = 0
+
+        node_carrier = None
+        for x in asset.attributes["port"].items:
+            if node_carrier is None:
+                node_carrier = x.carrier.name
+            elif node_carrier != x.carrier.name:
+                raise _ESDLInputException(
+                    f"{asset.name} has multiple carriers mixing which is not allowed. "
+                    f"Only one carrier (carrier couple) allowed in hydraulically coupled system"
+                )
+            if isinstance(x, esdl.esdl.InPort):
+                sum_in += len(x.connectedTo)
+            if isinstance(x, esdl.esdl.OutPort):
+                sum_out += len(x.connectedTo)
+
+        modifiers = dict(
+            n=sum_in + sum_out,
+            state=self.get_state(asset),
+            include_head_loss_variables=self.include_head_loss_variables,
+        )
 
         return Node, modifiers
 
@@ -2997,5 +3067,6 @@ class ESDLHeatModel(_ESDLModelBase):
                 },
             }
         )
-
+        
+        # HConnection is also new in these assets being passed here
         self._esdl_convert(converter, assets, name_to_id_map, "MILP")
