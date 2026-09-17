@@ -1,8 +1,8 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" id="2dc6d2a1-519b-4759-986a-f3d4007d8d67" name="3a" description="" esdlVersion="v2211" version="3">
+<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" id="2dc6d2a1-519b-4759-986a-f3d4007d8d67" name="3a" description="" esdlVersion="v2211" version="6">
   <instance xsi:type="esdl:Instance" id="a6350368-fa00-4b9b-81b0-283d35b91de0" name="Untitled Instance">
     <area xsi:type="esdl:Area" id="f280f1c3-8858-4336-906e-c7608b192bf6" name="Untitled Area">
-      <asset xsi:type="esdl:HeatStorage" id="4b0cd685-2219-4b02-ad4f-da3bc5453651" capacity="100000000000.0" name="HeatStorage_4b0c" dischargeEfficiency="0.01">
+      <asset xsi:type="esdl:HeatStorage" id="4b0cd685-2219-4b02-ad4f-da3bc5453651" capacity="100000000000.0" name="HeatStorage_4b0c" selfDischargeRate="277777.0">
         <costInformation xsi:type="esdl:CostInformation" id="a668decd-5b98-497b-84c7-b4d11f32648c">
           <variableOperationalCosts xsi:type="esdl:SingleValue" value="1.0" id="bc6341c5-c510-43be-8cfc-3cfaa7a2e621">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" description="COST in EUR/MWh" unit="EURO" physicalQuantity="COST" perMultiplier="MEGA" id="9feaf430-fc73-419c-af6d-c3128091f3aa" perUnit="WATTHOUR"/>

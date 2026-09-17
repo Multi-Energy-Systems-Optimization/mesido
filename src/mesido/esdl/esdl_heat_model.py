@@ -601,13 +601,15 @@ class AssetToHeatComponent(_AssetToComponentBase):
             else 10.0e6
         )
 
-        # The asset attribute "dischargeEfficiency" represents the fraction of stored heat
-        # that is lost per day.
-        heat_loss_coefficient = (
-            asset.attributes.get("dischargeEfficiency") / (24.0 * 3600.0)
-            if asset.attributes.get("dischargeEfficiency")
-            else 0.01 / (24.0 * 3600.0)
+        self_discharge_rate = (
+            asset.attributes.get("selfDischargeRate")
+            if asset.attributes.get("selfDischargeRate")
+            else 0.01 * asset_capacity_joule / 3600.0
         )
+
+        # heat_loss_coefficient represents the fraction of stored heat that is lost per second
+        # default is set to 0.01 / 24.0 / 3600.0
+        heat_loss_coefficient = self_discharge_rate / asset_capacity_joule / 24.0
 
         q_nominal = self._get_connected_q_nominal(asset)
         if isinstance(q_nominal, dict):

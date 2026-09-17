@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" name="Untitled EnergySystem with return network" id="7ac09231-ce60-4c24-8338-9c0317695ba4_with_return_network" description="" esdlVersion="v2210" version="15">
+<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" name="test_case_small_network_with_ates_buffer_geo" id="7ac09231-ce60-4c24-8338-9c0317695ba4_with_return_network" description="" esdlVersion="v2210" version="18">
   <energySystemInformation xsi:type="esdl:EnergySystemInformation" id="e64737d9-d772-4723-b092-a0b397ac00b3">
     <carriers xsi:type="esdl:Carriers" id="9dff13b9-77cd-4b99-8777-6b7680a155b6">
       <carrier xsi:type="esdl:HeatCommodity" id="7b32e287-d775-480c-b317-64ffdacf12c9" name="Heat" supplyTemperature="70.0"/>
@@ -401,7 +401,7 @@
           </investmentCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:HeatStorage" name="HeatStorage_74c1" id="74c13eed-9ca8-4247-bd72-a68e242d8e1b" maxDischargeRate="10000000.0" maxChargeRate="10000000.0" volume="500.0" dischargeEfficiency="0.01">
+      <asset xsi:type="esdl:HeatStorage" name="HeatStorage_74c1" id="74c13eed-9ca8-4247-bd72-a68e242d8e1b" maxDischargeRate="10000000.0" maxChargeRate="10000000.0" volume="500.0" selfDischargeRate="172900.0">
         <geometry xsi:type="esdl:Point" lon="4.313871860504151" CRS="WGS84" lat="52.042658996032856"/>
         <port xsi:type="esdl:InPort" id="8c09b9ff-5070-4fbc-97fe-db7a501932dc" name="In" connectedTo="636a1943-2289-4d57-a2dd-33aaa4f25b49" carrier="7b32e287-d775-480c-b317-64ffdacf12c9"/>
         <port xsi:type="esdl:OutPort" id="cc725203-e648-490f-a12d-91fa85ee58f2" name="Out" connectedTo="a581c340-3cab-46b1-924f-c5ddc0120de6" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret"/>

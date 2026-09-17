@@ -173,12 +173,12 @@ class TestWarmingUpUnitCases(TestCase):
             )
             # buffer should have positive heat loss
             assert parameters[f"{buffer}.heat_loss_coefficient"] > 0.0
-            esdl_asset = heat_problem.esdl_assets[
-                heat_problem.esdl_asset_name_to_id_map[f"{buffer}"]
-            ]
+            esdl_asset = heat_problem.esdl_assets[buffer]
             np.testing.assert_allclose(
                 parameters[f"{buffer}.heat_loss_coefficient"],
-                esdl_asset.attributes["dischargeEfficiency"] / (24.0 * 3600.0),
+                esdl_asset.attributes["selfDischargeRate"]
+                / esdl_asset.attributes["capacity"]
+                / 24.0,
             )
             np.testing.assert_allclose(
                 results[f"{buffer}.Stored_heat"] * parameters[f"{buffer}.heat_loss_coefficient"],
