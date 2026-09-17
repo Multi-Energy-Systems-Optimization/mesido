@@ -4,3 +4,22 @@
 .eqno {
     float: right;
 }
+
+/* Keep table readable on smaller screens. */
+table.fit_table_on_screen {
+    table-layout: fixed;
+    width: 100%;
+}
+
+table.fit_table_on_screen th,
+table.fit_table_on_screen td {
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 1200px) {
+    table.fit_table_on_screen {
+        font-size: 0.9rem;
+    }
+}

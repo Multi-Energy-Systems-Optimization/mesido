@@ -10,6 +10,7 @@ This is the documentation for MESIDO.
    :caption: MESIDO
 
    theory/index
+   supported_tools/index
    dev_docs/index
    support
    bibliography

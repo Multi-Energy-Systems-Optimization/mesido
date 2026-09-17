@@ -39,6 +39,7 @@ The power losses for the asset are included in this variable.
 Network Physics
 ---------------
 
+.. _heat_physics_pipe:
 Pipe
 ~~~~
 The main function of a pipe is to transport thermal power.
@@ -236,6 +237,7 @@ where :math:`A_{nodes}` is the set of all nodes and :math:`H^a` is the headloss 
 Asset Physics
 -------------
 
+.. _heat_physics_source:
 Source
 ~~~~~~
 
@@ -269,6 +271,7 @@ A source is modelled with a pump to reach its desired flow rate and head:
 
     H^a_{in} + dH_{pump} = H^a_{out} \;\; \forall a \in A_{prod}.
 
+.. _heat_physics_demand:
 Demand
 ~~~~~~
 
@@ -295,6 +298,7 @@ Every demand is modelled with a control valve to regulate its flow. In reality a
 
     H^a_{in} - dH_{valve} = H^a_{out} \;\; \forall a \in A_{demand}.
 
+.. _heat_physics_storage:
 Storage
 ~~~~~~~
 
@@ -340,6 +344,7 @@ Equations :eq:`eq:storage_heat2discharge1` and :eq:`eq:storage_heat2discharge2` 
 
      \sum_{i \in I^a_{out}} \dot{Q}^{a}_{i} - c_p \rho \dot{V}^{a} T_{ret} - (1-\delta^{a}_{dir}) M \leq 0 \;\; \forall a \in A_{storage}
 
+.. _heat_physics_storage_tank:
 Tank
 ^^^^
 
@@ -354,6 +359,7 @@ where :math:`Q^{a}_{stored}` is the heat stored in the storage asset and :math:`
 
 The efficiency factor is approximated assuming that tanks are cylindrical and lose heat over their surface area. For cylindrical tanks their surface area approximately increases linearly with the stored heat. A radiation coefficient, :math:`c_r`, of 1 :math:`W/m^2` is used as an approximation.
 
+.. _heat_physics_storage_ates:
 HT-ATES
 ^^^^^^^
 
