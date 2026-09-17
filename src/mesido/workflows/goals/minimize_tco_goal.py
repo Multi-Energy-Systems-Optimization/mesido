@@ -139,10 +139,11 @@ class MinimizeTCO(Goal):
         Returns:
             MX object: CasADi expression with total cost for the given asset types.
         """
+        parameters = optimization_problem.parameters(ensemble_member)
         obj = 0.0
         for asset_type in asset_types:
             for asset in optimization_problem.energy_system_components.get(asset_type, []):
-                technical_lifetime = optimization_problem.parameters(0)[f"{asset}.technical_life"]
+                technical_lifetime = parameters[f"{asset}.technical_life"]
                 # FIXME: This is a temporary fix till in the esdl_heat_model the generic_modifiers
                 # PR is approved.
                 if not technical_lifetime > 0.0 and (
@@ -161,7 +162,7 @@ class MinimizeTCO(Goal):
                 # this from optimization objective function. Though the HeatingDemand costs are
                 # added to the TCO while post-processing.
 
-                asset_state = optimization_problem.parameters(ensemble_member)[f"{asset}.state"]
+                asset_state = parameters[f"{asset}.state"]
 
                 if "operational" in cost_type:
                     if not (

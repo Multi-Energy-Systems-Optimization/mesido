@@ -4,6 +4,7 @@ import logging
 import os
 import sys
 import time
+from cmath import nan
 from typing import Dict
 
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
@@ -336,6 +337,8 @@ class EndScenarioSizing(
         parameters["peak_day_index"] = self.__indx_max_peak
         parameters["time_step_days"] = self.__day_steps
         parameters["number_of_years"] = self._number_of_years
+        for b in self.energy_system_components.get("heat_buffer", []):
+            parameters[f"{b}.init_Heat"] = nan
         return parameters
 
     def pre(self):
@@ -433,7 +436,14 @@ class EndScenarioSizing(
         for b in self.energy_system_components.get("heat_buffer", {}):
             vars = self.state_vector(f"{b}.Heat_buffer")
             symbol_stored_heat = self.state_vector(f"{b}.Stored_heat")
-            constraints.append((symbol_stored_heat[self.__indx_max_peak], 0.0, 0.0))
+            constraints.append(
+                (
+                    symbol_stored_heat[self.__indx_max_peak]
+                    - symbol_stored_heat[self.__indx_max_peak + 24],
+                    -np.inf,
+                    0.0,
+                )
+            )
 
             ind_peak = int(self.__indx_max_peak)
             constraints.append((vars[:ind_peak], 0.0, 0.0))
@@ -604,17 +614,18 @@ class EndScenarioSizing(
                 solver_stats = self.solver_stats
                 self._write_json_output(results, parameters, bounds, aliases, solver_stats, e_m)
 
-    def __heat_demand_match_check(self, results, e_m=0):
+    def __heat_demand_match_check(self, results: AliasDict, e_m: int = 0) -> None:
+        """
+        Checks if the heat demand is not matched and provides potential causes in the
+        logger.
+
+        Args:
+            results: Alias dictionary of the results after the optimization
+            e_m: Ensemble member index
+        """
         parameters = self.parameters(e_m)
         bounds = self.bounds()
         id_to_name_map = self.esdl_asset_id_to_name_map
-
-        def _upper_bound_as_scalar(upper_bound):
-            if hasattr(upper_bound, "values"):
-                return float(np.max(upper_bound.values))
-            if isinstance(upper_bound, (list, tuple, np.ndarray)):
-                return float(np.max(upper_bound))
-            return float(upper_bound)
 
         tolerance = 1.0e-4  # 0.01%
         all_mismatch_indexes = set()
@@ -648,7 +659,7 @@ class EndScenarioSizing(
                 max_size_key = f"{producer}__max_size"
 
                 max_size = float(results[max_size_key])
-                upper_bound = _upper_bound_as_scalar(bounds[max_size_key][1])
+                upper_bound = self._get_max_value(bounds[max_size_key][1])
                 near_upper_bound = np.isclose(max_size, upper_bound, rtol=tolerance, atol=1.0e-9)
                 if not near_upper_bound:
                     continue
@@ -671,7 +682,7 @@ class EndScenarioSizing(
             for pipe in self.energy_system_components.get("heat_pipe", []):
                 diameter = float(results[f"{pipe}__hn_diameter"])
 
-                diameter_upper_bound = _upper_bound_as_scalar(bounds[f"{pipe}__hn_diameter"][1])
+                diameter_upper_bound = self._get_max_value(bounds[f"{pipe}__hn_diameter"][1])
                 near_upper_bound = np.isclose(
                     diameter,
                     diameter_upper_bound,
@@ -767,11 +778,20 @@ class SettingsStaged:
         *args,
         **kwargs,
     ):
-        super().__init__(*args, **kwargs)
 
         self._stage = stage
         self._total_stages = total_stages
         self.__boolean_bounds = boolean_bounds
+
+        # Initialization order is intentional:
+        # - Stage attributes must be set before parent initialization so stage-dependent
+        #   setup during __init__ (for example network settings such as minimum_velocity)
+        #   uses the correct staged values.
+        # - priorities_output must be restored only after parent initialization because
+        #   parent classes initialize _priorities_output and would otherwise overwrite
+        #   the carried stage-1 priorities.
+        super().__init__(*args, **kwargs)
+
         if self._stage == 2 and priorities_output:
             self._priorities_output = priorities_output
 
@@ -794,10 +814,11 @@ class SettingsStaged:
         elif self._stage == 2:
             # If at least 1 heat_source has a producer profile assigned, set the
             # heat_loss_disconnected_pipe option to False
-            for asset in self.energy_system_components.get("heat_source", []):
-                if f"{asset}.maximum_heat_source" in self.io.get_timeseries_names():
-                    options["heat_loss_disconnected_pipe"] = False
-                    break
+            if hasattr(self, "_ComponentTypeMixin__hn_component_types"):
+                for asset in self.energy_system_components.get("heat_source", []):
+                    if f"{asset}.maximum_heat_source" in self.io.get_timeseries_names():
+                        options["heat_loss_disconnected_pipe"] = False
+                        break
 
         return options
 

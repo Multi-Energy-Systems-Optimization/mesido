@@ -1,4 +1,4 @@
-from mesido.component_type_mixin import ModelicaComponentTypeMixin
+from mesido.component_type_mixin import ComponentTypeMixin
 from mesido.qth_not_maintained.bounds_to_pipe_flow_directions_mixin import (
     BoundsToPipeFlowDirectionsMixin,
 )
@@ -41,7 +41,7 @@ class MinimizeProduction(Goal):
 class PipeQTHBase(
     BoundsToPipeFlowDirectionsMixin,
     QTHMixin,
-    ModelicaComponentTypeMixin,
+    ComponentTypeMixin,
     HomotopyMixin,
     GoalProgrammingMixin,
     CSVMixin,

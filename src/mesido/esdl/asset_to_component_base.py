@@ -2,6 +2,7 @@ import json
 import logging
 import math
 import os
+import sys
 from enum import IntEnum
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Type, Union
@@ -14,6 +15,7 @@ from esdl import TimeUnitEnum, UnitEnum
 from mesido.esdl._exceptions import _RetryLaterException
 from mesido.esdl.common import Asset
 from mesido.network_common import NetworkSettings
+from mesido.pipe_class import TRACE_TO_SINGLE_PIPE_COST_FACTOR
 from mesido.potential_errors import MesidoAssetIssueType, get_potential_errors
 from mesido.pycml import Model as _Model
 
@@ -211,32 +213,32 @@ def get_density(
 
 
 class _AssetToComponentBase:
-    # A map of pipe class name to edr asset in _edr_pipes.json
+    # A map of PipeDiameterEnum to edr asset name in _edr_pipes.json
     STEEL_S1_PIPE_EDR_ASSETS = {
-        "DN20": "Steel-S1-DN-20",
-        "DN25": "Steel-S1-DN-25",
-        "DN32": "Steel-S1-DN-32",
-        "DN40": "Steel-S1-DN-40",
-        "DN50": "Steel-S1-DN-50",
-        "DN65": "Steel-S1-DN-65",
-        "DN80": "Steel-S1-DN-80",
-        "DN100": "Steel-S1-DN-100",
-        "DN125": "Steel-S1-DN-125",
-        "DN150": "Steel-S1-DN-150",
-        "DN200": "Steel-S1-DN-200",
-        "DN250": "Steel-S1-DN-250",
-        "DN300": "Steel-S1-DN-300",
-        "DN350": "Steel-S1-DN-350",
-        "DN400": "Steel-S1-DN-400",
-        "DN450": "Steel-S1-DN-450",
-        "DN500": "Steel-S1-DN-500",
-        "DN600": "Steel-S1-DN-600",
-        "DN700": "Steel-S1-DN-700",
-        "DN800": "Steel-S1-DN-800",
-        "DN900": "Steel-S1-DN-900",
-        "DN1000": "Steel-S1-DN-1000",
-        "DN1100": "Steel-S1-DN-1100",
-        "DN1200": "Steel-S1-DN-1200",
+        esdl.PipeDiameterEnum.DN20: "Steel-S1-DN-20",
+        esdl.PipeDiameterEnum.DN25: "Steel-S1-DN-25",
+        esdl.PipeDiameterEnum.DN32: "Steel-S1-DN-32",
+        esdl.PipeDiameterEnum.DN40: "Steel-S1-DN-40",
+        esdl.PipeDiameterEnum.DN50: "Steel-S1-DN-50",
+        esdl.PipeDiameterEnum.DN65: "Steel-S1-DN-65",
+        esdl.PipeDiameterEnum.DN80: "Steel-S1-DN-80",
+        esdl.PipeDiameterEnum.DN100: "Steel-S1-DN-100",
+        esdl.PipeDiameterEnum.DN125: "Steel-S1-DN-125",
+        esdl.PipeDiameterEnum.DN150: "Steel-S1-DN-150",
+        esdl.PipeDiameterEnum.DN200: "Steel-S1-DN-200",
+        esdl.PipeDiameterEnum.DN250: "Steel-S1-DN-250",
+        esdl.PipeDiameterEnum.DN300: "Steel-S1-DN-300",
+        esdl.PipeDiameterEnum.DN350: "Steel-S1-DN-350",
+        esdl.PipeDiameterEnum.DN400: "Steel-S1-DN-400",
+        esdl.PipeDiameterEnum.DN450: "Steel-S1-DN-450",
+        esdl.PipeDiameterEnum.DN500: "Steel-S1-DN-500",
+        esdl.PipeDiameterEnum.DN600: "Steel-S1-DN-600",
+        esdl.PipeDiameterEnum.DN700: "Steel-S1-DN-700",
+        esdl.PipeDiameterEnum.DN800: "Steel-S1-DN-800",
+        esdl.PipeDiameterEnum.DN900: "Steel-S1-DN-900",
+        esdl.PipeDiameterEnum.DN1000: "Steel-S1-DN-1000",
+        esdl.PipeDiameterEnum.DN1100: "Steel-S1-DN-1100",
+        esdl.PipeDiameterEnum.DN1200: "Steel-S1-DN-1200",
     }
     # A map of the esdl assets to the asset types in pycml
     # NOTE: the dictionary below is populated in an alphabetical order
@@ -295,6 +297,13 @@ class _AssetToComponentBase:
             "fixedMaintenanceCosts": "optional",
             "fixedOperationalCosts": "optional",
         },
+        "electricity_import": {
+            "investmentCosts": "optional",
+            "installationCosts": "optional",
+            "variableOperationalCosts": "optional",
+            "fixedMaintenanceCosts": "optional",
+            "fixedOperationalCosts": "optional",
+        },
         "heat_source": {  # Includes GeothermalSource, ResidualHeatSource, HeatProducer,
             # GasHeater, ElectricBoiler
             "investmentCosts": "required",
@@ -349,6 +358,8 @@ class _AssetToComponentBase:
         "CoolingDemand": "heat_demand",
         "Electrolyzer": "electrolyzer",
         "ElectricBoiler": "heat_source",
+        "Import": "electricity_import",
+        "ElectricityProducer": "electricity_source",
         "GasDemand": "gas_demand",
         "GasHeater": "heat_source",
         "GasStorage": "gas_tank_storage",
@@ -486,9 +497,9 @@ class _AssetToComponentBase:
 
         edr_dn_size = None
         if asset.attributes["diameter"].value > 0:
-            edr_dn_size = str(asset.attributes["diameter"].name)
+            edr_dn_size = asset.attributes["diameter"]
         elif not asset.attributes["innerDiameter"]:
-            edr_dn_size = "DN200"
+            edr_dn_size = esdl.PipeDiameterEnum.DN200
 
         # NaN means the default values will be used
         insulation_thicknesses = math.nan
@@ -1179,6 +1190,72 @@ class _AssetToComponentBase:
 
             return q_nominals
 
+    def _get_heat_pipe_cost_figure_modifiers(self, asset: Asset) -> Dict:
+        """
+        Resolve the cost figure modifiers for a single heat pipe.
+
+        Note:
+        Related pipes: Only 1 pipe should have cost information. If both have cost information,
+        an error is raised only if the costs are different for the two related pipes (backwards
+        esdl file compatibility). The related pipe's cost information is used if a pipe has no
+        cost information.
+        Unrelated pipes: Only the pipe's specified cost information is used.
+
+        Parameters
+        ----------
+        asset : Asset. The heat pipe asset to resolve cost figures for.
+
+        Returns
+        -------
+        Dict
+            Cost figure (for supported costs only) modifiers dict for the pipe,
+            sourced from either the pipe itself or its related pipe.
+        """
+
+        assert asset.asset_type == "Pipe" and isinstance(
+            asset.in_ports[0].carrier, esdl.esdl.HeatCommodity
+        ), f"{asset.name} must be a heat pipe (Pipe with HeatCommodity carrier)"
+
+        related_pipe = asset.attributes.get("related", False)
+        related_pipe_cost_modifiers = {}
+        if related_pipe:
+            related_asset = self.esdl_assets[related_pipe[0].id]
+            related_cost_info = related_asset.attributes["costInformation"]
+            if related_cost_info is not None:
+                related_pipe_cost_modifiers["investment_cost_coefficient"] = (
+                    self.get_investment_costs(related_asset, per_unit=UnitEnum.METRE)
+                ) * TRACE_TO_SINGLE_PIPE_COST_FACTOR
+                related_pipe_cost_modifiers["installation_cost"] = self.get_installation_costs(
+                    related_asset
+                )
+
+        pipe_cost_modifiers = {}
+        cost_info = asset.attributes["costInformation"]
+        if cost_info is not None:
+            pipe_cost_modifiers["investment_cost_coefficient"] = (
+                self.get_investment_costs(asset, per_unit=UnitEnum.METRE)
+            ) * TRACE_TO_SINGLE_PIPE_COST_FACTOR
+            pipe_cost_modifiers["installation_cost"] = self.get_installation_costs(asset)
+
+        if related_pipe_cost_modifiers and pipe_cost_modifiers:
+            if related_pipe_cost_modifiers != pipe_cost_modifiers:
+                logger.error(
+                    f"{asset.name}: Both the pipe and its related pipe have cost information "
+                    f"defined. Cost information must only be specified on the supply pipe."
+                )
+                sys.exit(1)
+            else:
+                # This is being allowed to cater for older esdl files
+                logger.warning(
+                    f"{asset.name}: Both the pipe and its related pipe have the cost information "
+                    f"defined. Only the supply pipe should have a cost defined."
+                )
+                return pipe_cost_modifiers
+        elif related_pipe_cost_modifiers:
+            return related_pipe_cost_modifiers
+        else:
+            return pipe_cost_modifiers
+
     def _get_cost_figure_modifiers(self, asset: Asset) -> Dict:
         """
         This function takes in an asset and creates a dict with the relevant cost information of
@@ -1200,7 +1277,14 @@ class _AssetToComponentBase:
         """
         modifiers = {}
 
-        if asset.attributes["costInformation"] is None:
+        is_asset_heat_pipe = (
+            True
+            if asset.asset_type == "Pipe"
+            and isinstance(asset.in_ports[0].carrier, esdl.esdl.HeatCommodity)
+            else False
+        )
+
+        if asset.attributes["costInformation"] is None and not is_asset_heat_pipe:
             RuntimeWarning(f"{asset.name} has no cost information specified")
             return modifiers
 
@@ -1212,10 +1296,13 @@ class _AssetToComponentBase:
             )
             modifiers["installation_cost"] = self.get_installation_costs(asset)
         elif asset.asset_type == "Pipe":
-            modifiers["investment_cost_coefficient"] = self.get_investment_costs(
-                asset, per_unit=UnitEnum.METRE
-            )
-            modifiers["installation_cost"] = self.get_installation_costs(asset)
+            if is_asset_heat_pipe:
+                modifiers = self._get_heat_pipe_cost_figure_modifiers(asset)
+            else:
+                modifiers["investment_cost_coefficient"] = self.get_investment_costs(
+                    asset, per_unit=UnitEnum.METRE
+                )
+                modifiers["installation_cost"] = self.get_installation_costs(asset)
         elif asset.asset_type == "HeatingDemand":
             modifiers["investment_cost_coefficient"] = self.get_investment_costs(
                 asset, per_unit=UnitEnum.WATT

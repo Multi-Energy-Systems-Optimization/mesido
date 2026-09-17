@@ -118,7 +118,7 @@
         </costInformation>
         <dataSource xsi:type="esdl:DataSource" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf" name="Logstor Product Catalogue Version 2020.03"/>
       </asset>
-      <asset xsi:type="esdl:GeothermalSource" maxTemperature="70.0" id="4e5bef4c-0192-4275-9e6a-2d1ae59a3941" power="6000000.0" name="GeothermalSource_4e5b">
+      <asset xsi:type="esdl:GeothermalSource" maxTemperature="80.0" id="4e5bef4c-0192-4275-9e6a-2d1ae59a3941" power="6000000.0" name="GeothermalSource_4e5b">
         <port xsi:type="esdl:OutPort" carrier="f518c023-f81b-440f-93b2-a8cde23eb059" name="Out" id="14632e13-9a41-45ec-8125-d8bff7c0c2a3" connectedTo="bf59c1bd-f9f2-40c3-b5cd-b4aeb7127483"/>
         <port xsi:type="esdl:InPort" carrier="f518c023-f81b-440f-93b2-a8cde23eb059_ret" name="In" connectedTo="8b9ef7db-d545-4a9f-938c-c9fa3f7c6a58" id="f09e1c35-7d0c-4d8a-ae33-ed8cd461e397"/>
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="52.03592690466185" lon="4.306080476812526"/>

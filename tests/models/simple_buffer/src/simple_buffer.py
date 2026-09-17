@@ -1,4 +1,4 @@
-from mesido.component_type_mixin import ModelicaComponentTypeMixin
+from mesido.component_type_mixin import ComponentTypeMixin
 from mesido.pycml.pycml_mixin import PyCMLMixin
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 
@@ -55,7 +55,7 @@ class MinimizeSourceGoal(Goal):
 
 class HeatBuffer(
     TechnoEconomicMixin,
-    ModelicaComponentTypeMixin,
+    ComponentTypeMixin,
     LinearizedOrderGoalProgrammingMixin,
     GoalProgrammingMixin,
     CSVMixin,

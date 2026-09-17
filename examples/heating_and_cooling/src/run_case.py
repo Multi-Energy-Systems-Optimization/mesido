@@ -49,6 +49,7 @@ class HeatCoolingGrowWorkflow(TestCase):
             error_type_check=NetworkErrors.HEAT_AND_COOL_NETWORK_ERRORS,
         )
         results = solution.extract_results()
+        parameters = solution.parameters(0)
 
         demand_matching_test(solution, results)
         energy_conservation_test(solution, results)
@@ -60,6 +61,7 @@ class HeatCoolingGrowWorkflow(TestCase):
         hp_1_id = name_to_id_map["HeatPump_1"]
         ac_1_id = name_to_id_map["Airco_1"]
         cd_1_id = name_to_id_map["CoolingDemand_1"]
+        import_id = name_to_id_map["Import_5a6c"]
 
         pipe_names = [
             "Pipe2",
@@ -87,12 +89,7 @@ class HeatCoolingGrowWorkflow(TestCase):
         np.testing.assert_array_less(1e3, results[f"{a_1_id}__fixed_operational_cost"])
         np.testing.assert_array_less(1e3, results[f"{hp_1_id}__investment_cost"])
         np.testing.assert_array_less(1e3, results[f"{hp_1_id}__installation_cost"])
-        # TODO: The heat pump __variable_operational_cost check below will fail due the heat pump
-        # variable cost not including the electricty profile. The intend of this example case
-        # is to include a elect cost profile which still has to be
-        # accounted for via the "Import" asset. Once this asset is catered for in MESIDO it has to
-        # replace the elect producer in this example.
-        np.testing.assert_array_less(1e3, results[f"{hp_1_id}__variable_operational_cost"])
+        np.testing.assert_array_less(2, results[f"{hp_1_id}__variable_operational_cost"])
         np.testing.assert_array_less(1e3, results[f"{hp_1_id}__fixed_operational_cost"])
         np.testing.assert_array_less(1e3, results[f"{ac_1_id}__investment_cost"])
         np.testing.assert_array_less(1e3, results[f"{ac_1_id}__installation_cost"])
@@ -100,6 +97,10 @@ class HeatCoolingGrowWorkflow(TestCase):
         np.testing.assert_array_less(1e3, results[f"{ac_1_id}__fixed_operational_cost"])
         np.testing.assert_array_less(1e3, results[f"{cd_1_id}__investment_cost"])
         np.testing.assert_array_less(1e3, results[f"{cd_1_id}__installation_cost"])
+        np.testing.assert_array_less(1e3, results[f"{import_id}__variable_operational_cost"])
+        np.testing.assert_equal(
+            parameters[f"{import_id}.variable_operational_cost_coefficient"], 0.0
+        )
         for pipe_name in pipe_names:
             pipe_id = name_to_id_map[pipe_name]
             np.testing.assert_array_less(1e3, results[f"{pipe_id}__investment_cost"])
@@ -262,8 +263,8 @@ class HeatCoolingGrowWorkflow(TestCase):
         #     )
         #     temp_season = np.append(
         #         temp_season,
-        #         results[f"{hd_1_id}.Heat_flow"][index_end_peak_day[0]:index_start_peak_day[1]]
-        #         +results[f"{hd_2_id}.Heat_flow"][index_end_peak_day[0]:index_start_peak_day[1]],
+        #         results[f"{hd_1_id}.Heat_flow"][index_end_peak_day[0] : index_start_peak_day[1]]
+        #         +results[f"{hd_2_id}.Heat_flow"][index_end_peak_day[0] : index_start_peak_day[1]],
         #     )
         #     temp_season = np.append(
         #         temp_season,
@@ -472,7 +473,7 @@ class HeatCoolingGrowWorkflow(TestCase):
         #     temp_season = np.append(
         #         temp_season,
         #         results[f"{hd_1_id}.Heat_flow"][index_end_peak_day[0] : index_start_peak_day[1]]
-        #         + results[f"{hd_2_id}.Heat_flow"][index_end_peak_day[0]:index_start_peak_day[1]],
+        #         +results[f"{hd_2_id}.Heat_flow"][index_end_peak_day[0] : index_start_peak_day[1]],
         #     )
         #     temp_season = np.append(
         #         temp_season,

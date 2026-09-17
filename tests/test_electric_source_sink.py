@@ -7,7 +7,11 @@ from mesido.util import run_esdl_mesido_optimization
 
 import numpy as np
 
-from utils_tests import demand_matching_test, electric_power_conservation_test
+from utils_tests import (
+    cost_calculation_test,
+    demand_matching_test,
+    electric_power_conservation_test,
+)
 
 # TODO: still have to make test where elecitricity direction is switched:
 # e.g. 2 nodes, with at each node a producer and consumer, first one node medium demand, second
@@ -76,6 +80,46 @@ class TestMILPElectricSourceSink(TestCase):
         # Check electricity producers max sizes are equal
         np.testing.assert_allclose(results[f"{pv_id}__max_size"], results[f"{e_prod_id}__max_size"])
 
+    def test_electricity_import_sink(self):
+        """
+        Tests for an electricity network that consist out of electricity import, cable and sink.
+
+        Checks:
+        - Check for energy conservation with consumed power, lost power and imported power.
+        - Check that variable operation cost of electricity import is calculated via electricity
+          price profile, variable operational cost coefficient and imported power.
+        """
+
+        import models.unit_cases_electricity.source_sink_cable.src.example as example
+        from models.unit_cases_electricity.source_sink_cable.src.example import (
+            ElectricityProblemPriceProfile,
+        )
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        solution = run_esdl_mesido_optimization(
+            ElectricityProblemPriceProfile,
+            base_folder=base_folder,
+            esdl_file_name="electricity_import_and_e_price.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_with_e_price.csv",
+        )
+        results = solution.extract_results()
+        name_to_id_map = solution.esdl_asset_name_to_id_map
+
+        import_id = name_to_id_map["Import"]
+
+        # Check energy conservation
+        electric_power_conservation_test(solution, results)
+
+        # Check variable operation cost calculation
+        np.testing.assert_array_less(0.2, results[f"{import_id}__variable_operational_cost"])
+        np.testing.assert_array_less(
+            0.00005, solution.get_timeseries("Electricity.price_profile").values
+        )
+        cost_calculation_test(solution, results)
+
     def test_source_sink(self):
         """
         Tests for an electricity network that consist out of a source, a cable and a sink.
@@ -128,13 +172,89 @@ class TestMILPElectricSourceSink(TestCase):
         power_loss = results[f"{cable_id}.Power_loss"]
         biggerthen = all(power_loss >= np.zeros(len(power_loss)))
         self.assertTrue(biggerthen)
+        expected_power_loss = (
+            results[f"{cable_id}.ElectricityIn.I"]
+            * parameters[f"{cable_id}.r"]
+            * parameters[f"{cable_id}.max_current"]
+        )
+        np.testing.assert_allclose(power_loss, expected_power_loss, atol=1.0e-6)
 
         # Test that voltage goes down
         v_in = results[f"{cable_id}.ElectricityIn.V"]
         v_out = results[f"{cable_id}.ElectricityOut.V"]
         np.testing.assert_array_less(v_out, v_in)
+        v_loss = results[f"{cable_id}.V_loss"]
+        expected_v_loss = results[f"{cable_id}.ElectricityIn.I"] * parameters[f"{cable_id}.r"]
+        np.testing.assert_allclose(v_loss, expected_v_loss, atol=1.0e-6)
         biggerthen = all(v_out >= (v_min - tol) * np.ones(len(v_out)))
         self.assertTrue(biggerthen)
+
+        for source_id in solution.energy_system_components.get("electricity_source", []):
+            np.testing.assert_allclose(
+                results[f"{source_id}.Electricity_source"],
+                results[f"{source_id}.ElectricityOut.Power"],
+                atol=1.0e-6,
+            )
+
+        for demand_id in solution.energy_system_components.get("electricity_demand", []):
+            np.testing.assert_allclose(
+                results[f"{demand_id}.Electricity_demand"],
+                results[f"{demand_id}.ElectricityIn.Power"],
+                atol=1.0e-6,
+            )
+            np.testing.assert_allclose(
+                results[f"{demand_id}.ElectricityIn.V"],
+                parameters[f"{demand_id}.min_voltage"],
+                atol=1.0e-3,
+            )
+            np.testing.assert_allclose(
+                results[f"{demand_id}.ElectricityIn.V"] * results[f"{demand_id}.ElectricityIn.I"],
+                results[f"{demand_id}.ElectricityIn.Power"],
+                atol=1.0e-3,
+            )
+
+    def test_source_sink_no_loss(self):
+        """
+        Tests for an electricity network that consist out of a source, a cable and a sink
+        without cable losses.
+
+        Checks:
+        - Check for energy conservation with consumed power, lost power and produced power.
+        - Check that cable power and voltage losses are zero.
+        - Check the Electricity_source/demand variable is correctly set.
+        - Check that minimum voltage is exactly matched.
+        - Check that power at the demands equals the current * voltage.
+
+        """
+
+        import models.unit_cases_electricity.source_sink_cable.src.example as example
+        from models.unit_cases_electricity.source_sink_cable.src.example import (
+            ElectricityProblemNoLoss,
+        )
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        solution = run_esdl_mesido_optimization(
+            ElectricityProblemNoLoss,
+            base_folder=base_folder,
+            esdl_file_name="case1_elec.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries.csv",
+        )
+        results = solution.extract_results()
+        parameters = solution.parameters(0)
+        name_to_id_map = solution.esdl_asset_name_to_id_map
+
+        cable_id = name_to_id_map["ElectricityCable_238f"]
+
+        # Test energy conservation
+        electric_power_conservation_test(solution, results)
+
+        power_loss = results[f"{cable_id}.Power_loss"]
+        np.testing.assert_allclose(power_loss, np.zeros(len(power_loss)), atol=1.0e-10)
+        v_loss = results[f"{cable_id}.V_loss"]
+        np.testing.assert_allclose(v_loss, np.zeros(len(v_loss)), atol=1.0e-10)
 
         for source_id in solution.energy_system_components.get("electricity_source", []):
             np.testing.assert_allclose(
