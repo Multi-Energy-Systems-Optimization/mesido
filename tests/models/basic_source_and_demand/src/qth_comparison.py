@@ -1,4 +1,4 @@
-from mesido.component_type_mixin import ModelicaComponentTypeMixin
+from mesido.component_type_mixin import ComponentTypeMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.pycml.pycml_mixin import PyCMLMixin
 from mesido.qth_not_maintained.bounds_to_pipe_flow_directions_mixin import (
@@ -30,13 +30,15 @@ class TargetDemandGoal(Goal):
     order = 1
 
     def __init__(self, optimization_problem):
-        self.target_min = optimization_problem.get_timeseries("demand.target_heat_demand")
-        self.target_max = optimization_problem.get_timeseries("demand.target_heat_demand")
+        demand_id = optimization_problem.esdl_asset_name_to_id_map["demand"]
+        self.target_min = optimization_problem.get_timeseries(f"{demand_id}.target_heat_demand")
+        self.target_max = optimization_problem.get_timeseries(f"{demand_id}.target_heat_demand")
         self.function_range = (0.0, 2e5)
         self.function_nominal = 1e5
 
     def function(self, optimization_problem, ensemble_member):
-        return optimization_problem.state("demand.Heat_demand")
+        demand_id = optimization_problem.esdl_asset_name_to_id_map["demand"]
+        return optimization_problem.state(f"{demand_id}.Heat_demand")
 
 
 class _GoalsAndOptions:
@@ -57,7 +59,7 @@ class QTHModelica(
     _GoalsAndOptions,
     BoundsToPipeFlowDirectionsMixin,
     QTHMixin,
-    ModelicaComponentTypeMixin,
+    ComponentTypeMixin,
     HomotopyMixin,
     GoalProgrammingMixin,
     CSVMixin,
@@ -71,7 +73,7 @@ class QTHPython(
     _GoalsAndOptions,
     BoundsToPipeFlowDirectionsMixin,
     QTHMixin,
-    ModelicaComponentTypeMixin,
+    ComponentTypeMixin,
     HomotopyMixin,
     GoalProgrammingMixin,
     CSVMixin,

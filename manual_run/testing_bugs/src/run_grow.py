@@ -2,7 +2,7 @@ from pathlib import Path
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.workflows import EndScenarioSizingStaged, run_end_scenario_sizing
-from mesido.esdl.esdl_mixin import DBAccessType
+from mesido.esdl.esdl_mixin import DBAccessType, ESDLOutputProfilesType
 
 if __name__ == "__main__":
     import time
@@ -11,27 +11,28 @@ if __name__ == "__main__":
     base_folder = Path(__file__).resolve().parent.parent
 
     kwargs = {
-        "use_esdl_ranged_constraint": True,  # default value in the code is set to False
+        "esdl_output_profiles_type": ESDLOutputProfilesType.INFLUXDB,
+        # None (default) or ESDLOutputProfilesType.POSTGRESQL or
+        # ESDLOutputProfilesType.TIME_SERIES_PROFILE or ESDLOutputProfilesType.DATE_TIME_PROFILE
         "database_connections": [
             {
                 "access_type": DBAccessType.READ,  # or DBAccessType.WRITE or DBAccessType.READ_WRITE
-                "influxdb_host": "required_user_input",
-                "influxdb_port": 1234,
-                "influxdb_username": "required_user_input",
-                "influxdb_password": "required_user_input",
-                "influxdb_ssl": False,
-                "influxdb_verify_ssl": False,
+                "host": "required_user_input",
+                "port": 1234,
+                "username": "required_user_input",
+                "password": "required_user_input",
+                "ssl": False,
+                "verify_ssl": False,
             },
             {
-                "access_type": DBAccessType.WRITE,  # or DBAccessType.WRITE or DBAccessType.READ_WRITE
-                "influxdb_host": "localhost",
-                "influxdb_port": 8086,
-                "influxdb_username": None,
-                "influxdb_password": None,
-                "influxdb_ssl": False,
-                "influxdb_verify_ssl": False,
+                "access_type": DBAccessType.READ_WRITE,
+                "host": "localhost",
+                "port": 8086,
+                "username": "root",
+                "password": "9012",
+                "ssl": False,
+                "verify_ssl": False,
             },
-            
         ],
     }
 

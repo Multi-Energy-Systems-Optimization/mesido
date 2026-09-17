@@ -33,7 +33,7 @@ class HeadLossOption(IntEnum):
        The NO_HEADLOSS option assumes that there is no headloss in the pipelines.
        There are no constraints added relating the discharge to the head.
 
-    CQ2_INEQUALITY
+    CQ2_WEAK_INEQUALITY
         As the name implies, this adds a quadratic inquality constraint between
         the head and the discharge in a pipe:
 
@@ -58,7 +58,7 @@ class HeadLossOption(IntEnum):
            dH = H_{down} - H_{up}
 
     LINEARIZED_N_LINES_WEAK_INEQUALITY
-        Just like ``CQ2_INEQUALITY``, this option adds inequality constraints:
+        Just like ``CQ2_WEAK_INEQUALITY``, this option adds inequality constraints:
 
         .. math::
            \Delta H \ge \vec{a} \cdot Q + \vec{b}
@@ -69,7 +69,7 @@ class HeadLossOption(IntEnum):
         head loss, and the linear lines approximating it. Note that the number of
         supporting lines is an option that can be set by the user by overriding
         :py:meth:`._HeadLossMixin.heat_network_options`. Also note that, just like
-        ``CQ2_INEQUALITY``, a boolean is needed when flow directions are not fixed.
+        ``CQ2_WEAK_INEQUALITY``, a boolean is needed when flow directions are not fixed.
 
            .. image:: /images/DWlinearization.PNG
 
@@ -99,7 +99,7 @@ class HeadLossOption(IntEnum):
     """
 
     NO_HEADLOSS = 1
-    CQ2_INEQUALITY = 2
+    CQ2_WEAK_INEQUALITY = 2
     LINEARIZED_N_LINES_WEAK_INEQUALITY = 3
     LINEARIZED_ONE_LINE_EQUALITY = 4
     CQ2_EQUALITY = 5
@@ -237,7 +237,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         +--------------------------------+-----------+-----------------------------------+
         | ``wall_roughness``             | ``float`` | ``0.0002`` m                      |
         +--------------------------------+-----------+-----------------------------------+
-        | ``head_loss_option``           | ``enum``  | ``HeadLossOption.CQ2_INEQUALITY`` |
+        | ``head_loss_option``           | ``enum``  | ``HeadLossOption.CQ2_WEAK_INEQUALITY`` |
         +--------------------------------+-----------+-----------------------------------+
         | ``estimated_velocity``         | ``float`` | ``1.0`` m/s (CQ2_* &              |
         |                                |           |LINEARIZED_ONE_LINE_EQUALITY)      |
@@ -268,7 +268,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         the head loss as an inequality, i.e. :math:`\Delta H \ge f(Q)`, whereas
         others model it as an equality.
 
-        When ``HeadLossOption.CQ2_INEQUALITY`` is used, the wall roughness at
+        When ``HeadLossOption.CQ2_WEAK_INEQUALITY`` is used, the wall roughness at
         ``estimated_velocity`` determines the `C` in :math:`\Delta H \ge C
         \cdot Q^2`.
 
@@ -280,14 +280,14 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         When ``HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY`` is used, the wall roughness at
         ``estimated_velocity`` determines the `C` in :math:`\Delta H = C \cdot
         Q`. For pipes that contain a control valve, the formulation of
-        ``HeadLossOption.CQ2_INEQUALITY`` is used.
+        ``HeadLossOption.CQ2_WEAK_INEQUALITY`` is used.
 
         When ``HeadLossOption.CQ2_EQUALITY`` is used, the wall roughness at
         ``estimated_velocity`` determines the `C` in :math:`\Delta H = C \cdot
         Q^2`. Note that this formulation is non-convex. At `theta < 1` we
         therefore use the formulation ``HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY``. For pipes
         that contain a control valve, the formulation of
-        ``HeadLossOption.CQ2_INEQUALITY`` is used.
+        ``HeadLossOption.CQ2_WEAK_INEQUALITY`` is used.
 
 
         When ``minimize_head_losses`` is set to True (default), a last
@@ -309,7 +309,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
 
         options["minimum_pressure_far_point"] = 1.0
         options["wall_roughness"] = 2e-4
-        options["head_loss_option"] = HeadLossOption.CQ2_INEQUALITY
+        options["head_loss_option"] = HeadLossOption.CQ2_WEAK_INEQUALITY
         options["estimated_velocity"] = 1.0
         options["maximum_velocity"] = 2.5
         options["n_linearization_lines"] = 5
@@ -325,7 +325,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         The global user head loss option is not necessarily the same as the
         head loss option for a specific pipe. For example, when a control
         valve is present, a .LINEARIZED_ONE_LINE_EQUALITY global head loss option could mean a
-        .CQ2_INEQUALITY formulation should be used instead.
+        .CQ2_WEAK_INEQUALITY formulation should be used instead.
 
         See also the explanation of `head_loss_option` (and its values) in
         :py:meth:`.heat_network_options`.
@@ -556,7 +556,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
                 return expr * np.sign(discharge)
 
         elif head_loss_option in {
-            HeadLossOption.CQ2_INEQUALITY,
+            HeadLossOption.CQ2_WEAK_INEQUALITY,
             HeadLossOption.CQ2_EQUALITY,
         }:
             ff = darcy_weisbach.friction_factor(
@@ -574,7 +574,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
                 head_loss_nominal = self.variable_nominal(f"{pipe}.dH")
                 constraint_nominal = (head_loss_nominal * c_v * (q_nominal / area) ** 2) ** 0.5
 
-                if head_loss_option == HeadLossOption.CQ2_INEQUALITY:
+                if head_loss_option == HeadLossOption.CQ2_WEAK_INEQUALITY:
                     ub = np.inf
                 else:
                     ub = 0.0

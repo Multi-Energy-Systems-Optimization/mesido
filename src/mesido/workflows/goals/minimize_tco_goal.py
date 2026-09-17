@@ -40,7 +40,6 @@ class MinimizeTCO(Goal):
             "operational": {
                 "heat_source",
                 "ates",
-                "low_temperature_ates",
                 "heat_pump",
                 "pump",
                 "heat_exchanger",
@@ -52,7 +51,6 @@ class MinimizeTCO(Goal):
             "fixed_operational": {
                 "heat_source",
                 "ates",
-                "low_temperature_ates",
                 "heat_buffer",
                 "heat_pump",
                 "heat_exchanger",
@@ -63,7 +61,6 @@ class MinimizeTCO(Goal):
             "investment": {
                 "heat_source",
                 "ates",
-                "low_temperature_ates",
                 "heat_buffer",
                 "heat_demand",
                 "cold_demand",
@@ -78,7 +75,6 @@ class MinimizeTCO(Goal):
             "installation": {
                 "heat_source",
                 "ates",
-                "low_temperature_ates",
                 "heat_buffer",
                 "heat_demand",
                 "cold_demand",
@@ -93,7 +89,6 @@ class MinimizeTCO(Goal):
             "annualized": {
                 "heat_source",
                 "ates",
-                "low_temperature_ates",
                 "heat_buffer",
                 "heat_demand",
                 "cold_demand",
@@ -144,10 +139,11 @@ class MinimizeTCO(Goal):
         Returns:
             MX object: CasADi expression with total cost for the given asset types.
         """
+        parameters = optimization_problem.parameters(ensemble_member)
         obj = 0.0
         for asset_type in asset_types:
             for asset in optimization_problem.energy_system_components.get(asset_type, []):
-                technical_lifetime = optimization_problem.parameters(0)[f"{asset}.technical_life"]
+                technical_lifetime = parameters[f"{asset}.technical_life"]
                 # FIXME: This is a temporary fix till in the esdl_heat_model the generic_modifiers
                 # PR is approved.
                 if not technical_lifetime > 0.0 and (
@@ -157,14 +153,16 @@ class MinimizeTCO(Goal):
                 factor = self.number_of_years / technical_lifetime
                 if factor < 1.0:
                     factor = 1.0
-                extra_var = optimization_problem.extra_variable(cost_type_map[asset])
+                extra_var = optimization_problem.extra_variable(
+                    cost_type_map[asset], ensemble_member=ensemble_member
+                )
 
                 # For the GROW workflow, we do not add any costs for the asset HeatingDemand in the
                 # TCO minimization calculation since this is not sized. Thus, we need to exclude
                 # this from optimization objective function. Though the HeatingDemand costs are
                 # added to the TCO while post-processing.
 
-                asset_state = optimization_problem.parameters(ensemble_member)[f"{asset}.state"]
+                asset_state = parameters[f"{asset}.state"]
 
                 if "operational" in cost_type:
                     if not (

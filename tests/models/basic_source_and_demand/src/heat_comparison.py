@@ -1,4 +1,4 @@
-from mesido.component_type_mixin import ModelicaComponentTypeMixin
+from mesido.component_type_mixin import ComponentTypeMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.physics_mixin import PhysicsMixin
 from mesido.pycml.pycml_mixin import PyCMLMixin
@@ -42,7 +42,7 @@ class _GoalsAndOptions:
 class HeatModelica(
     _GoalsAndOptions,
     PhysicsMixin,
-    ModelicaComponentTypeMixin,
+    ComponentTypeMixin,
     GoalProgrammingMixin,
     CSVMixin,
     ModelicaMixin,
@@ -54,7 +54,7 @@ class HeatModelica(
 class HeatPython(
     _GoalsAndOptions,
     PhysicsMixin,
-    ModelicaComponentTypeMixin,
+    ComponentTypeMixin,
     GoalProgrammingMixin,
     CSVMixin,
     PyCMLMixin,
@@ -86,7 +86,8 @@ class HeatESDL(
 ):
     def bounds(self):
         bounds = super().bounds()
-        bounds["source.Heat_source"] = (75000.0, 125000.0)
+        source_id = self.esdl_asset_name_to_id_map["source"]
+        bounds[f"{source_id}.Heat_source"] = (75000.0, 125000.0)
         return bounds
 
 

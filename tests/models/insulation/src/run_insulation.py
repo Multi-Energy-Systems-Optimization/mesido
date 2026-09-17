@@ -173,12 +173,13 @@ class HeatProblemB(
         return attributes
 
     def demand_insulation_classes(self, demand_insualtion):
+        name_to_id = self.esdl_asset_name_to_id_map
         available_demand_insulation_classes = []
         for ii in range(len(self.insulation_levels()["insulation_level"])):
             available_demand_insulation_classes.append(
                 DemandInsulationClass(
                     self.insulation_levels()["insulation_level"][ii],
-                    "HeatingDemand_e6b3",
+                    name_to_id["HeatingDemand_e6b3"],
                     self.insulation_levels()["Tmin_deg"][ii],
                     self.insulation_levels()["scaling_factor"][ii],
                     self.insulation_levels()["insulation_cost_euro"][ii],
@@ -188,7 +189,7 @@ class HeatProblemB(
         available_demand_insulation_classes.append(
             DemandInsulationClass(
                 self.insulation_levels()["insulation_level"][2],
-                "HeatingDemand_f15e",
+                name_to_id["HeatingDemand_f15e"],
                 self.insulation_levels()["Tmin_deg"][2],
                 self.insulation_levels()["scaling_factor"][2],
                 self.insulation_levels()["insulation_cost_euro"][2],

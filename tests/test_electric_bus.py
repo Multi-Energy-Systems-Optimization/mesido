@@ -48,17 +48,23 @@ class TestMILPbus(TestCase):
             input_timeseries_file="timeseries.csv",
         )
         results = solution.extract_results()
+        name_to_id_map = solution.esdl_asset_name_to_id_map
+
+        bus_id = name_to_id_map["Bus_f262"]
+        cable_de_id = name_to_id_map["ElectricityCable_de9a"]
+        cable_ad_id = name_to_id_map["ElectricityCable_1ad0"]
+        demand_id = name_to_id_map["ElectricityDemand_e527"]
 
         # electric power conservation system and no dissipation of power and current in bus
         electric_power_conservation_test(solution, results)
 
-        v1 = results["Bus_f262.ElectricityConn[1].V"]
-        v2 = results["Bus_f262.ElectricityConn[2].V"]
-        v_outgoing_cable = results["ElectricityCable_de9a.ElectricityIn.V"]
-        v_incoming_cable = results["ElectricityCable_1ad0.ElectricityOut.V"]
-        v_demand = results["ElectricityDemand_e527.ElectricityIn.V"]
-        p_demand = results["ElectricityDemand_e527.ElectricityIn.Power"]
-        i_demand = results["ElectricityDemand_e527.ElectricityIn.I"]
+        v1 = results[f"{bus_id}.ElectricityConn[1].V"]
+        v2 = results[f"{bus_id}.ElectricityConn[2].V"]
+        v_outgoing_cable = results[f"{cable_de_id}.ElectricityIn.V"]
+        v_incoming_cable = results[f"{cable_ad_id}.ElectricityOut.V"]
+        v_demand = results[f"{demand_id}.ElectricityIn.V"]
+        p_demand = results[f"{demand_id}.ElectricityIn.Power"]
+        i_demand = results[f"{demand_id}.ElectricityIn.I"]
 
         # Incoming voltage == outgoing voltage of bus
         self.assertTrue(all(v1 == v2))
@@ -69,7 +75,7 @@ class TestMILPbus(TestCase):
 
         # check if minimum voltage is reached
         np.testing.assert_array_less(
-            solution.parameters(0)["ElectricityDemand_e527.min_voltage"] - 1.0e-3, v_demand
+            solution.parameters(0)[f"{demand_id}.min_voltage"] - 1.0e-3, v_demand
         )
         # Check that current is high enough to carry the power
         np.testing.assert_array_less(p_demand - 1e-12, v_demand * i_demand)
@@ -103,25 +109,26 @@ class TestMILPbus(TestCase):
             input_timeseries_file="timeseries_uni.csv",
         )
         results = solution.extract_results()
+        name_to_id_map = solution.esdl_asset_name_to_id_map
+
+        demand_1_id = name_to_id_map["ElectricityDemand_e527"]
+        demand_2_id = name_to_id_map["ElectricityDemand_281a"]
+        prod_1_id = name_to_id_map["ElectricityProducer_a215"]
+        prod_2_id = name_to_id_map["ElectricityProducer_17a1"]
+        cable_id = name_to_id_map["ElectricityCable_d16c"]
 
         # electric power conservation system and no dissipation of power and current in bus
         electric_power_conservation_test(solution, results)
 
-        demand_1 = "ElectricityDemand_e527"
-        demand_2 = "ElectricityDemand_281a"
-        prod_1 = "ElectricityProducer_a215"
-        prod_2 = "ElectricityProducer_17a1"
-        unidirectional_cable = "ElectricityCable_d16c"
+        p_demand_1 = results[f"{demand_1_id}.ElectricityIn.Power"]
+        p_demand_2 = results[f"{demand_2_id}.ElectricityIn.Power"]
+        cable_power_bound = solution.bounds()[f"{cable_id}.ElectricityIn.Power"][0]
 
-        p_demand_1 = results[f"{demand_1}.ElectricityIn.Power"]
-        p_demand_2 = results[f"{demand_2}.ElectricityIn.Power"]
-        cable_power_bound = solution.bounds()[f"{unidirectional_cable}.ElectricityIn.Power"][0]
-
-        bound_prod_1 = solution.bounds()[f"{prod_1}.Electricity_source"][1]
-        bound_prod_2 = solution.bounds()[f"{prod_2}.Electricity_source"][1]
-        target_demand_1 = solution.get_timeseries(f"{demand_1}.target_electricity_demand").values
+        bound_prod_1 = solution.bounds()[f"{prod_1_id}.Electricity_source"][1]
+        bound_prod_2 = solution.bounds()[f"{prod_2_id}.Electricity_source"][1]
+        target_demand_1 = solution.get_timeseries(f"{demand_1_id}.target_electricity_demand").values
         target_demand_1[target_demand_1 > bound_prod_1] = bound_prod_1
-        target_demand_2 = solution.get_timeseries(f"{demand_2}.target_electricity_demand").values
+        target_demand_2 = solution.get_timeseries(f"{demand_2_id}.target_electricity_demand").values
         target_demand_2[target_demand_2 > (bound_prod_1 + bound_prod_2)] = (
             bound_prod_1 + bound_prod_2
         )

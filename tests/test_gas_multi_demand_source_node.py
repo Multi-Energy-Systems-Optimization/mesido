@@ -42,6 +42,12 @@ class TestMILPGasMultiDemandSourceNode(TestCase):
             input_timeseries_file="timeseries.csv",
         )
         results = heat_problem.extract_results()
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
+
+        gas_demand_47d0_id = name_to_id_map["GasDemand_47d0"]
+        gas_demand_7978_id = name_to_id_map["GasDemand_7978"]
+        gas_producer_3573_id = name_to_id_map["GasProducer_3573"]
+        gas_producer_a977_id = name_to_id_map["GasProducer_a977"]
 
         # Test head at node
         for node, connected_pipes in heat_problem.energy_system_topology.gas_nodes.items():
@@ -56,8 +62,8 @@ class TestMILPGasMultiDemandSourceNode(TestCase):
 
         # Test if head is going down
         np.testing.assert_allclose(
-            results["GasDemand_47d0.Gas_demand_mass_flow"]
-            + results["GasDemand_7978.Gas_demand_mass_flow"],
-            results["GasProducer_3573.Gas_source_mass_flow"]
-            + results["GasProducer_a977.Gas_source_mass_flow"],
+            results[f"{gas_demand_47d0_id}.Gas_demand_mass_flow"]
+            + results[f"{gas_demand_7978_id}.Gas_demand_mass_flow"],
+            results[f"{gas_producer_3573_id}.Gas_source_mass_flow"]
+            + results[f"{gas_producer_a977_id}.Gas_source_mass_flow"],
         )

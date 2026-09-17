@@ -1,5 +1,6 @@
 from .electricity.electricity_cable import ElectricityCable
 from .electricity.electricity_demand import ElectricityDemand
+from .electricity.electricity_import import ElectricityImport
 from .electricity.electricity_node import ElectricityNode
 from .electricity.electricity_source import ElectricitySource
 from .electricity.electricity_storage import ElectricityStorage
@@ -21,6 +22,7 @@ from .heat.check_valve import CheckValve
 from .heat.cold_demand import ColdDemand
 from .heat.control_valve import ControlValve
 from .heat.geothermal_source import GeothermalSource
+from .heat.geothermal_source_elec import GeothermalSourceElec
 from .heat.heat_buffer import HeatBuffer
 from .heat.heat_demand import HeatDemand
 from .heat.heat_exchanger import HeatExchanger
@@ -39,6 +41,7 @@ from .multicommodity.airwater_heat_pump_elec import AirWaterHeatPumpElec
 from .multicommodity.elec_heat_source_elec import ElecHeatSourceElec
 from .multicommodity.electrolyzer import Electrolyzer
 from .multicommodity.gas_heat_source_gas import GasHeatSourceGas
+from .multicommodity.heat_buffer_elec import HeatBufferElec
 
 __all__ = [
     "Airco",
@@ -46,6 +49,7 @@ __all__ = [
     "AirWaterHeatPumpElec",
     "ATES",
     "HeatBuffer",
+    "HeatBufferElec",
     "CheckValve",
     "ColdDemand",
     "Compressor",
@@ -55,6 +59,7 @@ __all__ = [
     "ElecHeatSourceElec",
     "ElectricityCable",
     "ElectricityDemand",
+    "ElectricityImport",
     "ElectricityNode",
     "ElectricitySource",
     "ElectricityStorage",
@@ -68,6 +73,7 @@ __all__ = [
     "GasSubstation",
     "GasTankStorage",
     "GeothermalSource",
+    "GeothermalSourceElec",
     "HeatExchanger",
     "HeatFourPort",
     "HeatPipe",

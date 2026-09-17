@@ -28,20 +28,25 @@ class HeatTwoPort(HeatComponent):
         self.Q_nominal = 1.0
         self.T_supply = nan
         self.T_return = nan
-        self.T_supply_id = -1
-        self.T_return_id = -1
+        self.T_supply_id = "-1"
+        self.T_return_id = "-1"
         self.dT = self.T_supply - self.T_return
         self.cp = 4200.0
         self.rho = 988.0
         self.nominal_pressure = 16.0e5
 
-        self.add_variable(HeatPort, "HeatIn")
-        self.add_variable(HeatPort, "HeatOut")
+        self.add_variable(
+            HeatPort, "HeatIn", include_head_loss_variables=self.include_head_loss_variables
+        )
+        self.add_variable(
+            HeatPort, "HeatOut", include_head_loss_variables=self.include_head_loss_variables
+        )
 
         self.add_variable(Variable, "Q", nominal=self.Q_nominal)
 
         self.add_equation(self.HeatIn.Q - self.Q)
         self.add_equation(self.HeatIn.Q - self.HeatOut.Q)
 
-        self.add_variable(Variable, "dH")
-        self.add_equation(self.dH - (self.HeatOut.H - self.HeatIn.H))
+        if self.include_head_loss_variables:
+            self.add_variable(Variable, "dH")
+            self.add_equation(self.dH - (self.HeatOut.H - self.HeatIn.H))

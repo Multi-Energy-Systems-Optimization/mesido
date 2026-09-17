@@ -1,4 +1,4 @@
-from mesido.pycml import Variable
+from mesido.pycml import DiscreteVariable, Variable
 from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 from numpy import nan, pi
@@ -43,7 +43,7 @@ class HeatPipe(_NonStorageComponent):
         assert "area" not in modifiers, "modifying area directly is not allowed"
         self.area = 0.25 * pi * self.diameter**2
         self.temperature = nan
-        self.carrier_id = -1
+        self.carrier_id = "-1"
         self.pressure = 16.0e5
 
         # Parameters determining the heat loss
@@ -59,20 +59,29 @@ class HeatPipe(_NonStorageComponent):
 
         self.Heat_loss = nan
 
+        self.add_variable(DiscreteVariable, "__flow_direct_var", min=0.0, max=1.0)
+
+        if self.disconnectable:
+            self.add_variable(DiscreteVariable, "__is_disconnected", min=0.0, max=1.0)
+
         # rho * ff * length * area / 2 / diameter * velocity**3
         ff = 0.02  # Order of magnitude expected with 0.05-2.5m/s in 20mm-1200mm diameter pipe
         velo = self.Q_nominal / self.area
         self.Hydraulic_power_nominal = (
             self.rho * ff * max(self.length, 1.0) * pi * self.area / self.diameter / 2.0 * velo**3
         )
-        self.add_variable(
-            Variable, "Hydraulic_power", min=0.0, nominal=self.Hydraulic_power_nominal
-        )  # [W]
+        if self.include_head_loss_variables:
+            self.add_variable(
+                Variable, "Hydraulic_power", min=0.0, nominal=self.Hydraulic_power_nominal
+            )  # [W]
 
-        self.add_equation(
-            (self.Hydraulic_power - (self.HeatIn.Hydraulic_power - self.HeatOut.Hydraulic_power))
-            / (self.nominal_pressure * self.Q_nominal * self.Hydraulic_power_nominal) ** 0.5
-        )
+            self.add_equation(
+                (
+                    self.Hydraulic_power
+                    - (self.HeatIn.Hydraulic_power - self.HeatOut.Hydraulic_power)
+                )
+                / (self.nominal_pressure * self.Q_nominal * self.Hydraulic_power_nominal) ** 0.5
+            )
 
         self.add_equation(((self.Heat_flow - self.HeatIn.Heat) / self.Heat_nominal))
 

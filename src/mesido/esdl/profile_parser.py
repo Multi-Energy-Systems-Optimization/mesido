@@ -3,11 +3,10 @@ import logging
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, Optional, Set, Tuple
+from typing import Dict, Optional, Set, Union
 
 import esdl
-from esdl.profiles.influxdbprofilemanager import ConnectionSettings
-from esdl.profiles.influxdbprofilemanager import InfluxDBProfileManager
+from esdl.profiles.profile_utils import close_db_connections, load_profile_data_and_header
 from esdl.units.conversion import ENERGY_IN_J, POWER_IN_W, convert_to_unit
 
 from mesido.esdl.common import Asset
@@ -106,17 +105,14 @@ class BaseProfileReader:
                 "No profiles were provided so no timeframe for the profiles could be deduced"
             )
 
-        esdl_asset_names_to_ids = dict(
-            zip(esdl_asset_id_to_name_map.values(), esdl_asset_id_to_name_map.keys())
-        )
-
         for ensemble_member in range(ensemble_size):
             for component_type, var_name in self.component_type_to_var_name_map.items():
-                for component in energy_system_components.get(component_type, []):
-                    profile = self._profiles[ensemble_member].get(component + var_name, None)
-                    asset = esdl_assets[esdl_asset_names_to_ids[component]]
+                for component_id in energy_system_components.get(component_type, []):
+                    profile = self._profiles[ensemble_member].get(component_id + var_name, None)
+                    asset = esdl_assets[component_id]
                     asset_state = asset.attributes["state"]
 
+                    asset_state.eEnum = esdl.AssetStateEnum
                     asset_power = None
                     if asset_state == esdl.AssetStateEnum.ENABLED:
                         asset_power = asset.attributes["power"]
@@ -144,7 +140,7 @@ class BaseProfileReader:
                             asset_power = asset.attributes["power"]
                     else:
                         logger.warning(
-                            f"Read profiles: asset {component} has a state {asset_state.name} "
+                            f"Read profiles: asset {asset.name} has a state {asset_state.name} "
                             "and currently the code only caters for asset states ENABLED or "
                             "OPTIONAL"
                         )
@@ -156,13 +152,13 @@ class BaseProfileReader:
                             # We don't set a default profile for source targets
                             continue
                         logger.warning(
-                            f"No profile provided for {component=} and "
+                            f"No profile provided for {asset.name} and "
                             f"{ensemble_member=}, using the assets power value instead"
                         )
                         values = np.array([asset_power] * len(self._reference_datetimes))
 
                     io.set_timeseries(
-                        variable=component + var_name,
+                        variable=component_id + var_name,
                         datetimes=self._reference_datetimes,
                         values=values,
                         ensemble_member=ensemble_member,
@@ -171,15 +167,15 @@ class BaseProfileReader:
                     if component_type in ["heat_demand", "cold_demand"]:
                         max_profile_value = max(values)
                         if asset_power < max_profile_value and asset_power != 0.0:
-                            asset_id = esdl_asset_names_to_ids[component]
+                            asset_name = esdl_asset_id_to_name_map[component_id]
                             get_potential_errors().add_potential_issue(
                                 (
                                     MesidoAssetIssueType.HEAT_DEMAND_POWER
                                     if component_type == "heat_demand"
                                     else MesidoAssetIssueType.COLD_DEMAND_POWER
                                 ),
-                                asset_id,
-                                f"Asset named {component}: The installed capacity of"
+                                component_id,
+                                f"Asset named {asset_name}: The installed capacity of"
                                 f" {round(asset_power / 1.0e6, 3)}MW should be larger than the"
                                 " maximum of the heat demand profile "
                                 f"{round(max_profile_value / 1.0e6, 3)}MW",
@@ -187,11 +183,11 @@ class BaseProfileReader:
                     elif component_type in ["heat_source"]:
                         max_profile_value = max(values)
                         if asset_power < max_profile_value:
-                            asset_id = esdl_asset_names_to_ids[component]
+                            asset_name = esdl_asset_id_to_name_map[component_id]
                             get_potential_errors().add_potential_issue(
                                 MesidoAssetIssueType.HEAT_PRODUCER_POWER,
-                                asset_id,
-                                f"Asset named {component}: The installed capacity of"
+                                component_id,
+                                f"Asset named {asset_name}: The installed capacity of"
                                 f" {round(asset_power / 1.0e6, 3)}MW should be equal or larger than"
                                 " the maximum of the heat producer maximum profile constraint"
                                 f" {round(max_profile_value / 1.0e6, 3)}MW",
@@ -245,9 +241,10 @@ class BaseProfileReader:
         raise NotImplementedError
 
 
-class InfluxDBProfileReader(BaseProfileReader):
+class ESDLProfileReader(BaseProfileReader):
     asset_type_to_variable_name_conversion = {
         esdl.esdl.HeatingDemand: ".target_heat_demand",
+        esdl.esdl.CoolingDemand: ".target_cold_demand",
         esdl.esdl.GenericConsumer: ".target_heat_demand",
         esdl.esdl.HeatProducer: ".maximum_heat_source",
         esdl.esdl.ElectricityDemand: ".target_electricity_demand",
@@ -259,21 +256,29 @@ class InfluxDBProfileReader(BaseProfileReader):
         esdl.esdl.PVInstallation: ".maximum_electricity_source",
     }
 
+    supported_profiles = (
+        esdl.DataTableProfile,
+        esdl.InfluxDBProfile,
+        esdl.TimeSeriesProfile,
+        esdl.DateTimeProfile,
+        esdl.ProfileReference,
+    )
+
+    # Python 3.10 compatible
+    SupportedProfilesType = Union.__getitem__(tuple(supported_profiles))
+    # Do not delete code below. To be used when min Python ver >3.10
+    # SupportedProfilesType = Union[*supported_profiles]
+
     def __init__(
         self,
         energy_system: esdl.EnergySystem,
         file_path: Optional[Path],
         use_esdl_ranged_contraint: bool = False,
-        database_credentials: Optional[Dict[str, Tuple[str, str]]] = None,
     ):
         super().__init__(
             energy_system=energy_system,
             file_path=file_path,
             use_esdl_ranged_contraint=use_esdl_ranged_contraint,
-        )
-        self._df = pd.DataFrame()
-        self._database_credentials = (
-            database_credentials if database_credentials is not None else {"": ("", "")}
         )
 
     def _load_profiles_from_source(
@@ -293,7 +298,7 @@ class InfluxDBProfileReader(BaseProfileReader):
         unique_profiles_attributes = []  # a list containning lists of attributes
         unique_series = []
         for profile in [
-            x for x in self._energy_system.eAllContents() if isinstance(x, esdl.InfluxDBProfile)
+            x for x in self._energy_system.eAllContents() if isinstance(x, self.supported_profiles)
         ]:
             if profile.profileType == esdl.ProfileTypeEnum.OUTPUT:
                 continue
@@ -338,11 +343,13 @@ class InfluxDBProfileReader(BaseProfileReader):
                             f"specified to be loaded for each asset covers exactly the "
                             f"same timeseries. "
                         )
+        close_db_connections()
+
         # Loop trough all the requried profiles in the energy system and assign the profile data:
         # - series: use the unique series data, without reading from the database again
         # - other profile info: get it from the specific profile
         for profile in [
-            x for x in self._energy_system.eAllContents() if isinstance(x, esdl.InfluxDBProfile)
+            x for x in self._energy_system.eAllContents() if isinstance(x, self.supported_profiles)
         ]:
             if profile.profileType == esdl.ProfileTypeEnum.OUTPUT:
                 continue
@@ -366,12 +373,12 @@ class InfluxDBProfileReader(BaseProfileReader):
 
             if isinstance(container, esdl.ProfileConstraint):
                 variable_suffix = self.asset_type_to_variable_name_conversion[type(asset)]
-                var_base_name = asset.name
+                var_base_name = asset.id
                 if variable_suffix in [
                     self.asset_type_to_variable_name_conversion[esdl.esdl.GasProducer],
                 ]:
                     logger.error(
-                        f"Profiles for {var_base_name} from esdl has not been tested yet but only"
+                        f"Profiles for {asset.name} from esdl has not been tested yet but only"
                         " for heat sources"
                     )
                     sys.exit(1)
@@ -381,11 +388,11 @@ class InfluxDBProfileReader(BaseProfileReader):
                 var_base_name = container.name
             elif isinstance(container, esdl.Port):
                 asset = container.energyasset
-                var_base_name = asset.name
+                var_base_name = asset.id
                 if var_base_name in [
                     self.asset_type_to_variable_name_conversion[esdl.esdl.GasProducer],
                 ]:
-                    logger.error(f"Profiles for {var_base_name} from esdl has not been tested yet")
+                    logger.error(f"Profiles for {asset.name} from esdl has not been tested yet")
                     sys.exit(1)
                 try:
                     variable_suffix = self.asset_type_to_variable_name_conversion[type(asset)]
@@ -416,7 +423,7 @@ class InfluxDBProfileReader(BaseProfileReader):
             self._profiles[idx] = profiles.copy()
 
     # @staticmethod
-    def _load_profile_timeseries_from_database(self, profile: esdl.InfluxDBProfile) -> pd.Series:
+    def _load_profile_timeseries_from_database(self, profile: SupportedProfilesType) -> pd.Series:
         """
         Function to load the profiles from an InfluxDB. Returns a timeseries with the data for
         the asset.
@@ -433,54 +440,25 @@ class InfluxDBProfileReader(BaseProfileReader):
         # to avoid circular import issue
         from mesido.workflows.utils.error_types import NetworkErrors, potential_error_to_error
 
-        if profile.id in self._df:
-            return self._df[profile.id]
-
-        profile_host = profile.host
-
-        ssl_setting = False
-        if "https" in profile_host:
-            profile_host = profile_host[8:]
-            ssl_setting = True
-        elif "http" in profile_host:
-            profile_host = profile_host[7:]
-        if profile.port == 443:
-            ssl_setting = True
-        influx_host = "{}:{}".format(profile_host, profile.port)
-
-        username, password = self._database_credentials.get(influx_host, (None, None))
-
-        conn_settings = ConnectionSettings(
-            host=profile.host,
-            port=profile.port,
-            username=username,
-            password=password,
-            database=profile.database,
-            ssl=ssl_setting,
-            verify_ssl=ssl_setting,
-        )
-
         try:
-            time_series_data = InfluxDBProfileManager(conn_settings)
-        except Exception:
+            profile_raw_data, _ = load_profile_data_and_header(
+                profile,
+                enable_cache=True,
+                apply_multiplier=False,
+                close_connection_after_load=False,
+            )
+        except Exception as e:
             container = profile.eContainer()
             asset = container.energyasset
             get_potential_errors().add_potential_issue(
                 MesidoAssetIssueType.ASSET_PROFILE_AVAILABILITY,
                 asset.id,
-                f"Asset named {asset.name}: Database {profile.database}"
-                f" is not available in the host.",
+                f"Error retrieving profile for asset '{asset.name}' from host '{profile.host}'"
+                f" and database '{profile.database}': {str(e)}.",
             )
             potential_error_to_error(NetworkErrors.HEAT_NETWORK_ERRORS)
 
-        time_series_data.load_influxdb(
-            profile.measurement,
-            [profile.field],
-            profile.startDate,
-            profile.endDate,
-        )
-
-        if not time_series_data.profile_data_list:  # if time_series_data.profile_data_list == []:
+        if not profile_raw_data:
             container = profile.eContainer()
             asset = container.energyasset
             get_potential_errors().add_potential_issue(
@@ -492,15 +470,15 @@ class InfluxDBProfileReader(BaseProfileReader):
 
             potential_error_to_error(NetworkErrors.HEAT_NETWORK_ERRORS)
 
-        for x in time_series_data.profile_data_list:
+        for x in profile_raw_data:
             if len(x) != 2:
                 raise RuntimeError(
                     "InfluxDB profile currently only supports parsing exactly one "
                     "profile for each asset"
                 )
 
-        x_0, x_1 = map(list, zip(*time_series_data.profile_data_list))
-        if not time_series_data.profile_data_list[0][0].tzinfo:
+        x_0, x_1 = map(list, zip(*profile_raw_data))
+        if not profile_raw_data[0][0].tzinfo:
             index = pd.DatetimeIndex(
                 data=x_0,
                 tz=datetime.timezone.utc,
@@ -511,7 +489,6 @@ class InfluxDBProfileReader(BaseProfileReader):
 
         data = x_1
         series = pd.Series(data=data, index=index)
-        self._df[profile.id] = series
 
         return series
 
@@ -672,6 +649,7 @@ class ProfileReaderFromFile(BaseProfileReader):
         elif self._file_path.suffix == ".csv":
             self._load_csv(
                 energy_system_components=energy_system_components,
+                esdl_asset_id_to_name_map=esdl_asset_id_to_name_map,
                 carrier_properties=carrier_properties,
                 ensemble_size=ensemble_size,
                 ensemble=ensemble,
@@ -684,6 +662,7 @@ class ProfileReaderFromFile(BaseProfileReader):
     def _load_csv(
         self,
         energy_system_components: Dict[str, Set[str]],
+        esdl_asset_id_to_name_map,
         carrier_properties: Dict[str, Dict],
         ensemble_size: int,
         ensemble,
@@ -741,8 +720,10 @@ class ProfileReaderFromFile(BaseProfileReader):
             for component_type, var_name in self.component_type_to_var_name_map.items():
                 for component_name in energy_system_components.get(component_type, []):
                     try:
-                        column_name = f"{component_name.replace(' ', '')}"
+                        asset_name = esdl_asset_id_to_name_map[component_name]
+                        column_name = f"{asset_name.replace(' ', '')}"
                         values = data_em[column_name].to_numpy()
+
                         if np.isnan(values).any():
                             raise Exception(
                                 f"Column name: {column_name}, NaN exists in the profile source"
@@ -818,7 +799,7 @@ class _ESDLInputDataConfig:
         location_id = pi_header.find("pi:locationId", self.ns).text
 
         try:
-            component_name = self.__id_map[location_id]
+            component_name = location_id
         except KeyError:
             parameter_id = pi_header.find("pi:parameterId", self.ns).text
             qualifiers = pi_header.findall("pi:qualifierId", self.ns)

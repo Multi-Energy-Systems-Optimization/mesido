@@ -55,7 +55,7 @@ class TestHeadLossCalculation(TestCase):
 
         for h in [
             HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY,
-            HeadLossOption.CQ2_INEQUALITY,
+            HeadLossOption.CQ2_WEAK_INEQUALITY,
             HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY,
         ]:
             m = run_optimization_problem(

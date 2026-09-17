@@ -1,3 +1,4 @@
+from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
@@ -118,9 +119,13 @@ class ElectricityProblemPV(
 
     def constraints(self, ensemble_member):
         constraints = super().constraints(ensemble_member)
-        elec_prod_size = self.extra_variable("ElectricityProducer_edde__max_size", ensemble_member)
-        pv_size = self.extra_variable("PV__max_size", ensemble_member)
-        nom = self.variable_nominal("PV__max_size")
+
+        name_to_id = self.esdl_asset_name_to_id_map
+        elec_prod_size = self.extra_variable(
+            f"{name_to_id['ElectricityProducer_edde']}__max_size", ensemble_member
+        )
+        pv_size = self.extra_variable(f"{name_to_id['PV']}__max_size", ensemble_member)
+        nom = self.variable_nominal(f"{name_to_id['PV']}__max_size")
         constraints.append(((elec_prod_size - pv_size) / nom, 0.0, 0.0))
         return constraints
 
@@ -140,6 +145,24 @@ class ElectricityProblem(
 ):
     """
     Problem to check the behaviour of a simple source, cable, demand network.
+    """
+
+    pass
+
+
+class ElectricityProblemNoLoss(ElectricityProblem):
+    """Problem where the cable power and voltage losses are turned off."""
+
+    def energy_system_options(self):
+        options = super().energy_system_options()
+        options["include_electric_cable_power_loss"] = False
+        return options
+
+
+class ElectricityProblemPriceProfile(ESDLAdditionalVarsMixin, ElectricityProblem):
+    """
+    Problem to check the behaviour of a electricity import, cable, demand network.
+    ESDLAdditionalVarsMixin is needed to read e-price profile in input csv
     """
 
     pass
@@ -184,10 +207,18 @@ class ElectricityProblemMaxCurr(
         Dict with the bounds.
         """
         bounds = super().bounds()
-        bounds["ElectricityProducer_b95d.Electricity_source"] = (0.0, 100000.0)
-        bounds["ElectricityCable_238f.ElectricityIn.Power"] = (0.0, 100000.0)
-        bounds["ElectricityCable_238f.ElectricityOut.Power"] = (0.0, 100000.0)
+        name_to_id_map = self.esdl_asset_name_to_id_map
+        producer_id = name_to_id_map["ElectricityProducer_b95d"]
+        cable_id = name_to_id_map["ElectricityCable_238f"]
+        bounds[f"{producer_id}.Electricity_source"] = (0.0, 100000.0)
+        bounds[f"{cable_id}.ElectricityIn.Power"] = (0.0, 100000.0)
+        bounds[f"{cable_id}.ElectricityOut.Power"] = (0.0, 100000.0)
         return bounds
+
+    def energy_system_options(self):
+        options = super().energy_system_options()
+        options["include_electric_cable_power_loss"] = True
+        return options
 
 
 if __name__ == "__main__":

@@ -29,13 +29,17 @@ class HeatFourPort(HeatComponent):
             ),
         )
 
-        self.add_variable(_NonStorageComponentSinkType, "Primary", **modifiers["Primary"])
-        self.add_variable(_NonStorageComponentSourceType, "Secondary", **modifiers["Secondary"])
         self.add_variable(
-            Variable,
-            "Pump_power",
-            min=0.0,
-            nominal=self.Secondary.Q_nominal * self.Secondary.nominal_pressure,
+            _NonStorageComponentSinkType,
+            "Primary",
+            **modifiers["Primary"],
+            include_head_loss_variables=self.include_head_loss_variables,
+        )
+        self.add_variable(
+            _NonStorageComponentSourceType,
+            "Secondary",
+            **modifiers["Secondary"],
+            include_head_loss_variables=self.include_head_loss_variables,
         )
 
         self.nominal = (
@@ -47,8 +51,15 @@ class HeatFourPort(HeatComponent):
         self.add_variable(Variable, "Secondary_heat", min=0.0)
         self.add_variable(Variable, "Heat_flow", nominal=self.nominal)
 
-        self.add_variable(Variable, "dH_prim", max=0.0)
-        self.add_variable(Variable, "dH_sec", min=0.0)
+        if self.include_head_loss_variables:
+            self.add_variable(
+                Variable,
+                "Pump_power",
+                min=0.0,
+                nominal=self.Secondary.Q_nominal * self.Secondary.nominal_pressure,
+            )
+            self.add_variable(Variable, "dH_prim", max=0.0)
+            self.add_variable(Variable, "dH_sec", min=0.0)
 
         self.add_equation(
             (
@@ -64,10 +75,11 @@ class HeatFourPort(HeatComponent):
         )
         self.add_equation((self.Heat_flow - self.Secondary_heat) / self.nominal)
 
-        # Hydraulically decoupled so Heads remain the same
-        self.add_equation(self.dH_prim - self.Primary.dH)
-        self.add_equation(self.dH_sec - self.Secondary.dH)
-        self.add_equation(
-            (self.Pump_power - self.Secondary.Pump_power)
-            / (self.Secondary.Q_nominal * self.Secondary.nominal_pressure)
-        )
+        if self.include_head_loss_variables:
+            # Hydraulically decoupled so Heads remain the same
+            self.add_equation(self.dH_prim - self.Primary.dH)
+            self.add_equation(self.dH_sec - self.Secondary.dH)
+            self.add_equation(
+                (self.Pump_power - self.Secondary.Pump_power)
+                / (self.Secondary.Q_nominal * self.Secondary.nominal_pressure)
+            )

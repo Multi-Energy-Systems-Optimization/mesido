@@ -86,19 +86,19 @@ class TestUpdatedESDL(TestCase):
             # High level checks of KPIs
             number_of_kpis_top_level_in_esdl = 11
             high_level_kpis_euro = [
-                "High level cost breakdown [EUR] (yearly averaged)",
-                "High level cost breakdown [EUR] (30.0 year period)",
-                "Overall cost breakdown [EUR] (yearly averaged)",
-                "Overall cost breakdown [EUR] (30.0 year period)",
-                "CAPEX breakdown [EUR] (30.0 year period)",
-                "OPEX breakdown [EUR] (yearly averaged)",
-                "OPEX breakdown [EUR] (30.0 year period)",
-                "Area_76a7: Asset cost breakdown [EUR]",
-                "Area_9d0f: Asset cost breakdown [EUR]",
-                "Area_a58a: Asset cost breakdown [EUR]",
+                "High level cost breakdown (yearly averaged)",
+                "High level cost breakdown (30.0 year period)",
+                "Overall cost breakdown (yearly averaged)",
+                "Overall cost breakdown (30.0 year period)",
+                "CAPEX breakdown (30.0 year period)",
+                "OPEX breakdown (yearly averaged)",
+                "OPEX breakdown (30.0 year period)",
+                "Area_76a7: Asset cost breakdown",
+                "Area_9d0f: Asset cost breakdown",
+                "Area_a58a: Asset cost breakdown",
             ]
             high_level_kpis_wh = [
-                "Energy production [Wh] (yearly averaged)",
+                "Energy production (yearly averaged)",
             ]
             all_high_level_kpis = []
             all_high_level_kpis = high_level_kpis_euro + high_level_kpis_wh
@@ -117,20 +117,20 @@ class TestUpdatedESDL(TestCase):
                 # lists of 2 kpis that have to be compared
                 "kpi_name_list": [
                     [
-                        "High level cost breakdown [EUR] (yearly averaged)",
-                        "High level cost breakdown [EUR] (30.0 year period)",
+                        "High level cost breakdown (yearly averaged)",
+                        "High level cost breakdown (30.0 year period)",
                     ],
                     [
-                        "Overall cost breakdown [EUR] (yearly averaged)",
-                        "Overall cost breakdown [EUR] (30.0 year period)",
+                        "Overall cost breakdown (yearly averaged)",
+                        "Overall cost breakdown (30.0 year period)",
                     ],
                     [
-                        "Overall cost breakdown [EUR] (yearly averaged)",
-                        "Overall cost breakdown [EUR] (30.0 year period)",
+                        "Overall cost breakdown (yearly averaged)",
+                        "Overall cost breakdown (30.0 year period)",
                     ],
                     [
-                        "OPEX breakdown [EUR] (yearly averaged)",
-                        "OPEX breakdown [EUR] (30.0 year period)",
+                        "OPEX breakdown (yearly averaged)",
+                        "OPEX breakdown (30.0 year period)",
                     ],
                 ],
                 # lists of which kpi label has to be compared for kpi_name_list
@@ -283,7 +283,7 @@ class TestUpdatedESDL(TestCase):
                         # sized
                     elif asset_name in ["Pipe4", "Pipe4_ret"]:
                         np.testing.assert_array_equal(
-                            energy_system.instance[0].area.asset[ii].diameter.name, "DN200"
+                            energy_system.instance[0].area.asset[ii].diameter.name, "DN150"
                         )  # original pipe DN900 being sized
                     elif asset_name not in ["Pipe5", "Pipe5_ret"]:
                         np.testing.assert_array_equal(
@@ -371,6 +371,7 @@ class TestUpdatedESDL(TestCase):
 
         results = solution.extract_results()
         parameters = solution.parameters(0)
+        name_to_id_map = solution.esdl_asset_name_to_id_map
 
         problem = EndScenarioSizingDiscountedStaged(
             esdl_file_name=esdl_name,
@@ -394,16 +395,16 @@ class TestUpdatedESDL(TestCase):
         # High level checks of KPIs
         number_of_kpis_top_level_in_esdl = 8
         high_level_kpis_euro = [
-            "EAC - High level cost breakdown [EUR] (1.0 year period)",
-            "EAC - Overall cost breakdown [EUR] (1.0 year period)",
-            "EAC - CAPEX breakdown [EUR] (1.0 year period)",
-            "EAC - OPEX breakdown [EUR] (1.0 year period)",
-            "EAC - Area_76a7: Asset cost breakdown [EUR]",
-            "EAC - Area_9d0f: Asset cost breakdown [EUR]",
-            "EAC - Area_a58a: Asset cost breakdown [EUR]",
+            "EAC - High level cost breakdown (1.0 year period)",
+            "EAC - Overall cost breakdown (1.0 year period)",
+            "EAC - CAPEX breakdown (1.0 year period)",
+            "EAC - OPEX breakdown (1.0 year period)",
+            "EAC - Area_76a7: Asset cost breakdown",
+            "EAC - Area_9d0f: Asset cost breakdown",
+            "EAC - Area_a58a: Asset cost breakdown",
         ]
         high_level_kpis_wh = [
-            "Energy production [Wh] (yearly averaged)",
+            "Energy production (yearly averaged)",
         ]
         all_high_level_kpis = []
         all_high_level_kpis = high_level_kpis_euro + high_level_kpis_wh
@@ -416,7 +417,7 @@ class TestUpdatedESDL(TestCase):
         )
 
         # Check if EAC calculation is matching with KPI values
-        asset = "ResidualHeatSource_72d7"
+        asset_id = name_to_id_map["ResidualHeatSource_72d7"]
         for ii in range(len(energy_system.instance[0].area.KPIs.kpi)):
             kpi_name = energy_system.instance[0].area.KPIs.kpi[ii].name
 
@@ -426,7 +427,7 @@ class TestUpdatedESDL(TestCase):
                 err_msg=f"KPI name {kpi_name} was not expected in the ESDL",
             )
 
-            if kpi_name == "EAC - CAPEX breakdown [EUR] (1.0 year period)":
+            if kpi_name == "EAC - CAPEX breakdown (1.0 year period)":
                 string_items = (
                     energy_system.instance[0].area.KPIs.kpi[ii].distribution.stringItem.items
                 )
@@ -435,16 +436,16 @@ class TestUpdatedESDL(TestCase):
                     if string_items_asset.label == "ResidualHeatSource":
                         value = string_items_asset.value
 
-                        investment_cost = results[f"{asset}__investment_cost"]
-                        installation_cost = results[f"{asset}__installation_cost"]
-                        asset_life_years = parameters[f"{asset}.technical_life"]
-                        discount_rate = parameters[f"{asset}.discount_rate"] / 100.0
+                        investment_cost = results[f"{asset_id}__investment_cost"]
+                        installation_cost = results[f"{asset_id}__installation_cost"]
+                        asset_life_years = parameters[f"{asset_id}.technical_life"]
+                        discount_rate = parameters[f"{asset_id}.discount_rate"] / 100.0
                         annuity_factor = calculate_annuity_factor(discount_rate, asset_life_years)
                         capex_eac = (investment_cost + installation_cost) * annuity_factor
 
                         np.testing.assert_allclose(value, capex_eac)
 
-            if kpi_name == "EAC - OPEX breakdown [EUR] (1.0 year period)":
+            if kpi_name == "EAC - OPEX breakdown (1.0 year period)":
                 string_items = (
                     energy_system.instance[0].area.KPIs.kpi[ii].distribution.stringItem.items
                 )
@@ -453,8 +454,8 @@ class TestUpdatedESDL(TestCase):
                     if string_items_asset.label == "ResidualHeatSource":
                         value = string_items_asset.value
 
-                        var_opex_cost = results[f"{asset}__variable_operational_cost"]
-                        fix_opex_cost = results[f"{asset}__fixed_operational_cost"]
+                        var_opex_cost = results[f"{asset_id}__variable_operational_cost"]
+                        fix_opex_cost = results[f"{asset_id}__fixed_operational_cost"]
 
                         opex_eac = var_opex_cost + fix_opex_cost
 

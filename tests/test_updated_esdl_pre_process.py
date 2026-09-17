@@ -52,6 +52,7 @@ class TestUpdatedESDL(TestCase):
             esdl_file_name="PoC Tutorial.esdl",
             esdl_parser=ESDLFileParser,
         )
+        name_to_id_map = problem.esdl_asset_name_to_id_map
 
         # This code below is used to do manual check. Do not delete
         # problem_scaling_check(logs_list, logger)
@@ -72,32 +73,36 @@ class TestUpdatedESDL(TestCase):
         # Test that the correct demand profile is assigned to a demand as expected. Note that the
         # demand profiles are the adapted profiles (peak-hourly, rest-5daily). Therefore the
         # expected max and average hard-coded values are compared to the problem values.
+        demand_b0ff_id = name_to_id_map["HeatingDemand_b0ff"]
+        demand_8fbe_id = name_to_id_map["HeatingDemand_8fbe"]
+        demand_08fd_id = name_to_id_map["HeatingDemand_08fd"]
+
         np.testing.assert_allclose(
             8857200.0,
-            max(problem.get_timeseries("HeatingDemand_b0ff.target_heat_demand").values),
+            max(problem.get_timeseries(f"{demand_b0ff_id}.target_heat_demand").values),
             # demand4_MW, multiplier 0.75, same demand profile as demand HeatingDemand_08fd, but
             # with a different multiplier. So one would expect that this value differs from
             # HeatingDemand_08fd
         )
         np.testing.assert_allclose(
             724680.0,  # demand5_MW, multiplier 0.33
-            max(problem.get_timeseries("HeatingDemand_8fbe.target_heat_demand").values),
+            max(problem.get_timeseries(f"{demand_8fbe_id}.target_heat_demand").values),
         )
         np.testing.assert_allclose(
             805200.0,  # demand4_MW, multiplier 0.5
-            max(problem.get_timeseries("HeatingDemand_08fd.target_heat_demand").values),
+            max(problem.get_timeseries(f"{demand_08fd_id}.target_heat_demand").values),
         )
         np.testing.assert_allclose(
             3484288.0247,  # demand4_MW, multiplier 5.5
-            np.average(problem.get_timeseries("HeatingDemand_b0ff.target_heat_demand").values),
+            np.average(problem.get_timeseries(f"{demand_b0ff_id}.target_heat_demand").values),
         )
         np.testing.assert_allclose(
             285078.111,  # demand5_MW, multiplier 0.3
-            np.average(problem.get_timeseries("HeatingDemand_8fbe.target_heat_demand").values),
+            np.average(problem.get_timeseries(f"{demand_8fbe_id}.target_heat_demand").values),
         )
         np.testing.assert_allclose(
             316753.457,  # demand4_MW, multiplier 0.5
-            np.average(problem.get_timeseries("HeatingDemand_08fd.target_heat_demand").values),
+            np.average(problem.get_timeseries(f"{demand_08fd_id}.target_heat_demand").values),
         )
 
         # Check that the correct multiplier value was used
@@ -105,14 +110,12 @@ class TestUpdatedESDL(TestCase):
         # HeatingDemand_08fd: multiplier 0.5
         # HeatingDemand_b0ff: multplier 5.5
         np.testing.assert_allclose(
-            max(problem.get_timeseries("HeatingDemand_08fd.target_heat_demand").values) / 0.5,
-            max(problem.get_timeseries("HeatingDemand_b0ff.target_heat_demand").values) / 5.5,
+            max(problem.get_timeseries(f"{demand_08fd_id}.target_heat_demand").values) / 0.5,
+            max(problem.get_timeseries(f"{demand_b0ff_id}.target_heat_demand").values) / 5.5,
         )
         np.testing.assert_allclose(
-            np.average(problem.get_timeseries("HeatingDemand_08fd.target_heat_demand").values)
-            / 0.5,
-            np.average(problem.get_timeseries("HeatingDemand_b0ff.target_heat_demand").values)
-            / 5.5,
+            np.average(problem.get_timeseries(f"{demand_08fd_id}.target_heat_demand").values) / 0.5,
+            np.average(problem.get_timeseries(f"{demand_b0ff_id}.target_heat_demand").values) / 5.5,
         )
 
         # Test limiting the pipe classes for a pipe connected to a heat demand/producer
@@ -120,12 +123,14 @@ class TestUpdatedESDL(TestCase):
         # Check that Pipe4 has 2 of pipe classes available, and that DN0 has not been
         # included in the list of avialbel pipe classes. Pipe4 started as an optional pipe with
         # DN900 as the starting point for the upper limit.
-        for key in problem._heat_pipe_topo_pipe_class_map["Pipe4"].keys():
+        for key in problem._heat_pipe_topo_pipe_class_map[name_to_id_map["Pipe4"]].keys():
             np.testing.assert_equal(key.name in ["DN150", "DN200"], True)
         # Pipe connected to a producer
         # initially DN900
         np.testing.assert_equal(
-            [*problem._heat_pipe_topo_pipe_class_map["Pipe1"].keys()][-1].name == "DN400", True
+            [*problem._heat_pipe_topo_pipe_class_map[name_to_id_map["Pipe1"]].keys()][-1].name
+            == "DN400",
+            True,
         )
 
 

@@ -1,8 +1,10 @@
+import gc
 import locale
 import logging
 import os
 import sys
 import time
+from cmath import nan
 from typing import Dict
 
 from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
@@ -75,13 +77,17 @@ def _mip_gap_settings(mip_gap_name: str, problem) -> Dict[str, float]:
     """Creating the same MIP gap settings for all solvers."""
 
     options = {}
-    if hasattr(problem, "_stage"):
-        if problem._stage == 1:
-            options[mip_gap_name] = 0.005
+    if hasattr(problem, "_EndScenarioSizing__priority"):
+        if problem._EndScenarioSizing__priority == 1:
+            options[mip_gap_name] = 1e-5
         else:
-            options[mip_gap_name] = 0.01
-    else:
-        options[mip_gap_name] = 0.02
+            if hasattr(problem, "_stage"):
+                if problem._stage == 1:
+                    options[mip_gap_name] = 0.005
+                else:
+                    options[mip_gap_name] = 0.01
+            else:
+                options[mip_gap_name] = 0.02
 
     return options
 
@@ -149,21 +155,59 @@ solver_messages = {
 }
 
 
+def is_stage_rerun_required(solution) -> bool:
+    """
+    Staged optimization: Check if stage 2 has failed while using the HIGHS solver. If the failure
+    is due to Infeasibility in priority 2 then return True to flag that a rerun is required of the
+    specific stage.
+    Note: It is assumed that priority 2 in stage 2 is MinimizeTCO
+    """
+
+    solver_success, _ = solution.solver_success(solution.solver_stats, False)
+    priorities_output = solution._priorities_output
+
+    if not solver_success and solution._stage == 2:
+        if solution._EndScenarioSizing__priority == 2:
+            is_priority_infeasible = (
+                len(priorities_output[-1]) >= 5
+                and priorities_output[-1][4]["return_status"] == "Infeasible"
+            )
+            if is_priority_infeasible:
+                logger.warning(
+                    "Stage 2, priority 2 is infeasible. A rerun requirement has been set."
+                )
+                return True
+        else:
+            # Ensure that the last completed priority is 2
+            logger.error(
+                "Staged optimization: Expected stage 2, priority 2 in _priorities_output but "
+                f"priority number: {solution._EndScenarioSizing__priority} was found instead."
+            )
+            sys.exit(1)
+
+        return False
+    else:
+        return False
+
+
 def check_solver_succes_grow_problem(solution):
     solver_success, _ = solution.solver_success(solution.solver_stats, False)
     if not solver_success:
         if (
             solution.solver_stats["return_status"]
-            == solver_messages["Time_limit"][solution.solver_options["solver"]]
+            == solver_messages["Time_limit"][solution.solver_options()["solver"]]
             and solution.objective_value > 1e-6
         ):
             logger.error(
-                f"Optimization maximum allowed time limit reached for stage_"
-                f"{solution._stage}, goal_1"
+                f"Optimization maximum allowed time limit reached for stage: "
+                f"{solution._stage}, priority: {solution._EndScenarioSizing__priority}"
             )
             exit(1)
         else:
-            logger.error("Unsuccessful: unexpected error for stage_1, goal_1")
+            logger.error(
+                f"Unsuccessful: unexpected error for stage: {solution._stage}, "
+                f"priority: {solution._EndScenarioSizing__priority}."
+            )
             exit(1)
 
 
@@ -177,6 +221,19 @@ class SolverHIGHS:
 
         options["gurobi"] = None
         options["cplex"] = None
+
+        return options
+
+
+class SolverHIGHSNoPresolve(SolverHIGHS):
+    def solver_options(self):
+        options = super().solver_options()
+        if self._EndScenarioSizing__priority == 2:
+            options["highs"]["presolve"] = "off"
+            logger.warning(
+                f"HIGHS solver: presolve is switched off for priority: 2 of "
+                f"stage: {self._stage}."
+            )
 
         return options
 
@@ -240,18 +297,12 @@ class EndScenarioSizing(
 
         super().__init__(*args, **kwargs)
 
-        # default setting to cater for ~ 10kW heat, DN800 pipe at dT = 40 degrees Celcuis
-        self.heat_network_settings["minimum_velocity"] = 1.0e-4
-
-        self.heat_network_settings["maximum_velocity"] = 3.0
-        self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
-
         self._override_hn_options = {}
 
         self._number_of_years = 30.0
 
         self.__indx_max_peak = None
-        self.__day_steps = 5
+        self.__day_steps = kwargs.get("_day_steps", 5)
 
         # self._override_pipe_classes = {}
 
@@ -272,11 +323,22 @@ class EndScenarioSizing(
 
         self._workflow_progress_status = kwargs.get("update_progress_function", None)
 
+    def update_heat_network_settings(self):
+        settings = super().update_heat_network_settings()
+        # default setting to cater for ~ 10kW heat, DN800 pipe at dT = 40 degrees Celcuis
+        settings["minimum_velocity"] = 1.0e-4
+
+        settings["maximum_velocity"] = 3.0
+        settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+        return settings
+
     def parameters(self, ensemble_member):
         parameters = super().parameters(ensemble_member)
         parameters["peak_day_index"] = self.__indx_max_peak
         parameters["time_step_days"] = self.__day_steps
         parameters["number_of_years"] = self._number_of_years
+        for b in self.energy_system_components.get("heat_buffer", []):
+            parameters[f"{b}.init_Heat"] = nan
         return parameters
 
     def pre(self):
@@ -365,15 +427,23 @@ class EndScenarioSizing(
         constraints = super().constraints(ensemble_member)
 
         for a in self.energy_system_components.get("ates", []):
-            stored_heat = self.state_vector(f"{a}.Stored_heat")
-            constraints.append(((stored_heat[-1] - stored_heat[0]), 0.0, np.inf))
-            ates_temperature = self.state_vector(f"{a}.Temperature_ates")
-            constraints.append(((ates_temperature[-1] - ates_temperature[0]), 0.0, np.inf))
+            if a not in self.energy_system_components.get("low_temperature_ates", []):
+                stored_heat = self.state_vector(f"{a}.Stored_heat")
+                constraints.append(((stored_heat[-1] - stored_heat[0]), 0.0, np.inf))
+                ates_temperature = self.state_vector(f"{a}.Temperature_ates")
+                constraints.append(((ates_temperature[-1] - ates_temperature[0]), 0.0, np.inf))
 
         for b in self.energy_system_components.get("heat_buffer", {}):
             vars = self.state_vector(f"{b}.Heat_buffer")
             symbol_stored_heat = self.state_vector(f"{b}.Stored_heat")
-            constraints.append((symbol_stored_heat[self.__indx_max_peak], 0.0, 0.0))
+            constraints.append(
+                (
+                    symbol_stored_heat[self.__indx_max_peak]
+                    - symbol_stored_heat[self.__indx_max_peak + 24],
+                    -np.inf,
+                    0.0,
+                )
+            )
 
             ind_peak = int(self.__indx_max_peak)
             constraints.append((vars[:ind_peak], 0.0, 0.0))
@@ -417,12 +487,6 @@ class EndScenarioSizing(
 
     def history(self, ensemble_member):
         return AliasDict(self.alias_relation)
-
-    def __state_vector_scaled(self, variable, ensemble_member):
-        canonical, sign = self.alias_relation.canonical_signed(variable)
-        return (
-            self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
-        )
 
     def solver_options(self):
         options = super().solver_options()
@@ -479,7 +543,10 @@ class EndScenarioSizing(
                 self.solver_stats,
             )
         )
-        if priority == 1 and self.objective_value > 1e-6:
+
+        if priority == 1 and self.objective_value > 1e-6 and not self.csv_ensemble_mode:
+            results = self.extract_results()
+            self.__heat_demand_match_check(results)
             raise RuntimeError("The heating demand is not matched")
 
         if self._workflow_progress_status is not None:
@@ -489,8 +556,8 @@ class EndScenarioSizing(
         # In case the solver fails, we do not get in priority_completed(). We
         # append this last priority's statistics here in post().
         # TODO: check if we still need this small part of code below
-        success, _ = self.solver_success(self.solver_stats, False)
-        if not success:
+        solver_success, _ = self.solver_success(self.solver_stats, False)
+        if not solver_success:
             time_taken = time.time() - self.__priority_timer
             self._priorities_output.append(
                 (
@@ -503,8 +570,6 @@ class EndScenarioSizing(
             )
 
         super().post()
-        results = self.extract_results()
-        parameters = self.parameters(0)
         # bounds = self.bounds()
         # Optimized ESDL
         # Assume there are either no stages (write updated ESDL) or a maximum of 2 stages
@@ -515,15 +580,18 @@ class EndScenarioSizing(
             if self._stage == 0:
                 logger.error(
                     f"The stage number is: {self._stage} and it is excpected that the"
-                    " stage numbering starts at 1 instead"
+                    " stage numbering starts at 1 instead."
                 )
                 sys.exit(1)
             if self._total_stages == self._stage:  # When staging does exists
-                self._write_updated_esdl(self._ESDLMixin__energy_system_handler.energy_system)
+                if solver_success:
+                    self._write_updated_esdl(self._ESDLMixin__energy_system_handler.energy_system)
+                else:
+                    logger.warning("Optimization was not successful: Updated esdl is not created.")
             elif self._total_stages < self._stage:
                 logger.error(
                     f"The stage number: {self._stage} is higher then the total stages"
-                    " expected: {self._total_stages}. Assuming the stage numbering starts at 1"
+                    f" expected: {self._total_stages}. Assuming the stage numbering starts at 1."
                 )
                 sys.exit(1)
 
@@ -534,20 +602,106 @@ class EndScenarioSizing(
             logger.error("Unkown error occured when evaluating self._stage for _write_updated_esdl")
             sys.exit(1)
 
+        for e_m in range(self.ensemble_size):
+            results = self.extract_results(e_m)
+            parameters = self.parameters(e_m)
+
+            self.__heat_demand_match_check(results, e_m)
+
+            if os.path.exists(self.output_folder) and self._save_json:
+                bounds = self.bounds()
+                aliases = self.alias_relation._canonical_variables_map
+                solver_stats = self.solver_stats
+                self._write_json_output(results, parameters, bounds, aliases, solver_stats, e_m)
+
+    def __heat_demand_match_check(self, results: AliasDict, e_m: int = 0) -> None:
+        """
+        Checks if the heat demand is not matched and provides potential causes in the
+        logger.
+
+        Args:
+            results: Alias dictionary of the results after the optimization
+            e_m: Ensemble member index
+        """
+        parameters = self.parameters(e_m)
+        bounds = self.bounds()
+        id_to_name_map = self.esdl_asset_id_to_name_map
+
+        tolerance = 1.0e-4  # 0.01%
+        all_mismatch_indexes = set()
+        demand_not_matched = False
         for d in self.energy_system_components.get("heat_demand", []):
             realized_demand = results[f"{d}.Heat_demand"]
-            target = self.get_timeseries(f"{d}.target_heat_demand").values
-            timesteps = np.diff(self.get_timeseries(f"{d}.target_heat_demand").times)
+            target = self.get_timeseries(f"{d}.target_heat_demand", ensemble_member=e_m).values
             parameters[f"{d}.target_heat_demand"] = target.tolist()
-            delta_energy = np.sum((realized_demand - target)[1:] * timesteps / 1.0e9)
-            if delta_energy >= 1.0:
-                logger.warning(f"For demand {d} the target is not matched by {delta_energy} GJ")
+            timesteps = np.diff(
+                self.get_timeseries(f"{d}.target_heat_demand", ensemble_member=e_m).times
+            )
+            demand_gap = (target - realized_demand)[1:]
+            shortage_mask = demand_gap > 1e-3
+            mismatch_indexes = np.where(shortage_mask)[0] + 1
+            all_mismatch_indexes.update(mismatch_indexes.tolist())
 
-        if os.path.exists(self.output_folder) and self._save_json:
-            bounds = self.bounds()
-            aliases = self.alias_relation._canonical_variables_map
-            solver_stats = self.solver_stats
-            self._write_json_output(results, parameters, bounds, aliases, solver_stats)
+            delta_energy = np.sum(demand_gap[shortage_mask] * timesteps[shortage_mask] / 1.0e9)
+            if delta_energy >= 1.0:
+                demand_not_matched = True
+                logger.warning(
+                    f"For demand {id_to_name_map[d]} the target is not matched by"
+                    f" {delta_energy} GJ"
+                )
+
+        # Lists potential producers and pipes that might be the cause of the heat demand not
+        # being matched.
+        mismatch_indexes = np.array(sorted(all_mismatch_indexes), dtype=int)
+        if demand_not_matched and len(mismatch_indexes) > 0:
+            maxed_producers = set()
+            for producer in self.energy_system_components.get("heat_source", []):
+                max_size_key = f"{producer}__max_size"
+
+                max_size = float(results[max_size_key])
+                upper_bound = self._get_max_value(bounds[max_size_key][1])
+                near_upper_bound = np.isclose(max_size, upper_bound, rtol=tolerance, atol=1.0e-9)
+                if not near_upper_bound:
+                    continue
+
+                heat_produced = np.asarray(results[f"{producer}.Heat_source"])
+                produced_on_mismatch = heat_produced[mismatch_indexes]
+                maxed_now = produced_on_mismatch >= (1.0 - tolerance) * max_size
+                if np.any(maxed_now):
+                    maxed_producers.add(id_to_name_map.get(producer, producer))
+
+            logger.warning(
+                f"At some of timestep indexes {mismatch_indexes.tolist()} where the demand is not "
+                f"matched, the heat production by the following heat producers is maximised: "
+                f"{sorted(maxed_producers) if maxed_producers else 'none'}"
+            )
+
+            coeff_limit = 0.75
+            velocity_check = coeff_limit * self.heat_network_settings["maximum_velocity"]
+            high_velocity_pipes = set()
+            for pipe in self.energy_system_components.get("heat_pipe", []):
+                diameter = float(results[f"{pipe}__hn_diameter"])
+
+                diameter_upper_bound = self._get_max_value(bounds[f"{pipe}__hn_diameter"][1])
+                near_upper_bound = np.isclose(
+                    diameter,
+                    diameter_upper_bound,
+                    rtol=tolerance,
+                    atol=1.0e-9,
+                )
+                if not near_upper_bound:
+                    continue
+
+                area = 0.25 * np.pi * diameter**2
+                velocity = np.abs(np.asarray(results[f"{pipe}.Q"]) / area)
+                if np.any(velocity[mismatch_indexes] > velocity_check):
+                    high_velocity_pipes.add(id_to_name_map.get(pipe, pipe))
+
+            logger.warning(
+                f"At some of indexes {mismatch_indexes.tolist()} where the demand is not matched "
+                f"there are pipes with velocities above {velocity_check:.2f} m/s: "
+                f"{sorted(high_velocity_pipes) if high_velocity_pipes else 'none'}"
+            )
 
 
 class EndScenarioSizingHIGHS(EndScenarioSizing):
@@ -590,13 +744,12 @@ class EndScenarioSizingHeadLoss(EndScenarioSizing):
      be set to True.
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def update_heat_network_settings(self):
+        settings = super().update_heat_network_settings()
 
-        self.heat_network_settings["head_loss_option"] = (
-            HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
-        )
-        self.heat_network_settings["minimize_head_losses"] = True
+        settings["head_loss_option"] = HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
+        settings["minimize_head_losses"] = True
+        return settings
 
 
 class EndScenarioSizingHeadLossDiscounted(EndScenarioSizingHeadLoss, EndScenarioSizingDiscounted):
@@ -625,20 +778,34 @@ class SettingsStaged:
         *args,
         **kwargs,
     ):
-        super().__init__(*args, **kwargs)
 
         self._stage = stage
         self._total_stages = total_stages
         self.__boolean_bounds = boolean_bounds
 
-        if self._stage == 1:
-            self.heat_network_settings["minimum_velocity"] = 0.0
-            self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
-            self.heat_network_settings["minimize_head_losses"] = False
+        # Initialization order is intentional:
+        # - Stage attributes must be set before parent initialization so stage-dependent
+        #   setup during __init__ (for example network settings such as minimum_velocity)
+        #   uses the correct staged values.
+        # - priorities_output must be restored only after parent initialization because
+        #   parent classes initialize _priorities_output and would otherwise overwrite
+        #   the carried stage-1 priorities.
+        super().__init__(*args, **kwargs)
 
         if self._stage == 2 and priorities_output:
-            self.heat_network_settings["minimum_velocity"] = 0.0
             self._priorities_output = priorities_output
+
+    def update_heat_network_settings(self):
+        settings = super().update_heat_network_settings()
+        if self._stage == 1:
+            settings["minimum_velocity"] = 0.0
+            settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+            settings["minimize_head_losses"] = False
+
+        if self._stage == 2:
+            settings["minimum_velocity"] = 0.0
+
+        return settings
 
     def energy_system_options(self):
         options = super().energy_system_options()
@@ -647,10 +814,11 @@ class SettingsStaged:
         elif self._stage == 2:
             # If at least 1 heat_source has a producer profile assigned, set the
             # heat_loss_disconnected_pipe option to False
-            for asset in self.energy_system_components.get("heat_source", []):
-                if f"{asset}.maximum_heat_source" in self.io.get_timeseries_names():
-                    options["heat_loss_disconnected_pipe"] = False
-                    break
+            if hasattr(self, "_ComponentTypeMixin__hn_component_types"):
+                for asset in self.energy_system_components.get("heat_source", []):
+                    if f"{asset}.maximum_heat_source" in self.io.get_timeseries_names():
+                        options["heat_loss_disconnected_pipe"] = False
+                        break
 
         return options
 
@@ -753,7 +921,10 @@ def run_end_scenario_sizing(
     priorities_output = []
 
     start_time = time.time()
-    if staged_pipe_optimization and issubclass(end_scenario_problem_class, SettingsStaged):
+    is_staged_optim_and_settings = staged_pipe_optimization and issubclass(
+        end_scenario_problem_class, SettingsStaged
+    )
+    if is_staged_optim_and_settings:
         solution = run_optimization_problem_solver(
             end_scenario_problem_class,
             solver_class=solver_class,
@@ -817,9 +988,9 @@ def run_end_scenario_sizing(
             if p not in solution.cold_pipes and parameters[f"{p}.area"] > 0.0:
                 lb = []
                 ub = []
-                bounds_pipe = bounds[f"{p}__flow_direct_var"]
+                bounds_pipe = bounds[f"{p}.__flow_direct_var"]
                 for i in range(len(t)):
-                    r = results[f"{p}__flow_direct_var"][i]
+                    r = results[f"{p}.__flow_direct_var"][i]
                     # bound to roughly represent 4km of milp losses in pipes
                     lb.append(
                         r
@@ -835,9 +1006,9 @@ def run_end_scenario_sizing(
                 boolean_bounds[f"{p}__flow_direct_var"] = (Timeseries(t, lb), Timeseries(t, ub))
                 if not producer_input_timeseries:
                     try:
-                        r = results[f"{p}__is_disconnected"]
+                        r = results[f"{p}.__is_disconnected"]
                         r_low = np.zeros(len(r))
-                        boolean_bounds[f"{p}__is_disconnected"] = (
+                        boolean_bounds[f"{p}.__is_disconnected"] = (
                             Timeseries(t, r_low),
                             Timeseries(t, r),
                         )
@@ -845,6 +1016,9 @@ def run_end_scenario_sizing(
                         pass
 
         priorities_output = solution._priorities_output
+
+        del solution
+        gc.collect()
 
     solution = run_optimization_problem_solver(
         end_scenario_problem_class,
@@ -855,6 +1029,29 @@ def run_end_scenario_sizing(
         priorities_output=priorities_output,
         **kwargs,
     )
+
+    # Staged optimization:
+    # Check if a rerun of stage 2 is required due to HIGHS presolve potentially causing an
+    # infeasibility in priority 2 of stage 2
+    if is_staged_optim_and_settings and solution.solver_options()["solver"] == "highs":
+        if is_stage_rerun_required(solution):
+            logger.warning(
+                "\n\nA rerun of stage 2 has started. The solution of the failed stage 2 will be "
+                "deleted, but the information in priorities_output will not be deleted.\n\n"
+            )
+            del solution
+            gc.collect()
+
+            solution = run_optimization_problem_solver(
+                end_scenario_problem_class,
+                solver_class=SolverHIGHSNoPresolve,
+                stage=2,
+                total_stages=2,
+                boolean_bounds=boolean_bounds,
+                priorities_output=priorities_output,
+                **kwargs,
+            )
+
     check_solver_succes_grow_problem(solution)
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
@@ -867,16 +1064,16 @@ def main(runinfo_path, log_level):
     logger.info("Run Scenario Sizing")
 
     kwargs = {
-        "write_result_db_profiles": False,
+        "esdl_output_profiles_type": None,
         "database_connections": [
             {
                 "access_type": DBAccessType.WRITE,
-                "influxdb_host": "localhost",
-                "influxdb_port": 8086,
-                "influxdb_username": None,
-                "influxdb_password": None,
-                "influxdb_ssl": False,
-                "influxdb_verify_ssl": False,
+                "host": "localhost",
+                "port": 8086,
+                "username": None,
+                "password": None,
+                "ssl": False,
+                "verify_ssl": False,
             },
         ],
     }

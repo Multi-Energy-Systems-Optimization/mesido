@@ -44,7 +44,7 @@ class HeadLossOption(IntEnum):
        The NO_HEADLOSS option assumes that there is no headloss in the pipelines.
        There are no constraints added relating the discharge to the head.
 
-    CQ2_INEQUALITY
+    CQ2_WEAK_INEQUALITY
         As the name implies, this adds a quadratic inquality constraint between
         the head and the discharge in a pipe:
 
@@ -69,7 +69,7 @@ class HeadLossOption(IntEnum):
            dH = H_{down} - H_{up}
 
     LINEARIZED_N_LINES_WEAK_INEQUALITY
-        Just like ``CQ2_INEQUALITY``, this option adds inequality constraints:
+        Just like ``CQ2_WEAK_INEQUALITY``, this option adds inequality constraints:
 
         .. math::
            \Delta H \ge \vec{a} \cdot Q + \vec{b}
@@ -80,7 +80,7 @@ class HeadLossOption(IntEnum):
         head loss, and the linear lines approximating it. Note that the number of
         supporting lines is an option that can be set by the user by overriding
         :py:meth:`._HeadLossMixin.energy_system_options`. Also note that, just like
-        ``CQ2_INEQUALITY``, a boolean is needed when flow directions are not fixed.
+        ``CQ2_WEAK_INEQUALITY``, a boolean is needed when flow directions are not fixed.
 
            .. image:: /images/DWlinearization.PNG
 
@@ -110,7 +110,7 @@ class HeadLossOption(IntEnum):
     """
 
     NO_HEADLOSS = 1
-    CQ2_INEQUALITY = 2
+    CQ2_WEAK_INEQUALITY = 2
     LINEARIZED_N_LINES_WEAK_INEQUALITY = 3
     LINEARIZED_ONE_LINE_EQUALITY = 4
     CQ2_EQUALITY = 5
@@ -201,6 +201,9 @@ class _MinimizeHydraulicPower(Goal):
                 not parameters[f"{pipe}.has_control_valve"]
                 and not parameters[f"{pipe}.length"] == 0.0
             ):
+                sum_ += optimization_problem.state(f"{pipe}.Hydraulic_power")
+        for pipe in optimization_problem.energy_system_components.get("gas_pipe", []):
+            if not parameters[f"{pipe}.length"] == 0.0:
                 sum_ += optimization_problem.state(f"{pipe}.Hydraulic_power")
 
         return sum_
@@ -302,7 +305,7 @@ class HeadLossClass:
         The global user head loss option is not necessarily the same as the
         head loss option for a specific pipe. For example, when a control
         valve is present, a .LINEARIZED_ONE_LINE_EQUALITY global head loss option could mean a
-        .CQ2_INEQUALITY formulation should be used instead.
+        .CQ2_WEAK_INEQUALITY formulation should be used instead.
 
         See also the explanation of `head_loss_option` (and its values) in
         :py:meth:`.energy_system_options`.
@@ -337,6 +340,14 @@ class HeadLossClass:
         This function returns the minimize hydraulic power goal
         """
         return _MinimizeHydraulicPower
+
+    @staticmethod
+    def _symmetric_big_m_constraints(expr, slack, nominal):
+        """Return paired bigM constraints that enforce expr == 0 when slack is inactive."""
+        return [
+            ((expr + slack) / nominal, 0.0, np.inf),
+            ((expr - slack) / nominal, -np.inf, 0.0),
+        ]
 
     def initialize_variables_nominals_and_bounds(
         self, optimization_problem, commodity_type, pipe_name, network_settings
@@ -404,20 +415,15 @@ class HeadLossClass:
                 self._pipe_linear_line_segment_map[pipe_name] = {}
                 self.__pipe_linear_line_segment_var[pipe_name] = {}
                 self.__pipe_linear_line_segment_var_bounds[pipe_name] = {}
-                # We need to creat linear line segments for the - and + volumetric flow rate
-                # possibilites. Line number 1, 2, N for the - & + side is created
-                discharge_type = ["neg_discharge", "pos_discharge"]
-                for ii_line in range(network_settings["n_linearization_lines"] * 2):
-                    if ii_line < network_settings["n_linearization_lines"]:
-                        dtype = discharge_type[0]
-                        line_number = ii_line + 1
-                    else:
-                        dtype = discharge_type[1]
-                        line_number = ii_line + 1 - network_settings["n_linearization_lines"]
-
+                # Create linear line segments only for the positive quadrant and
+                # reuse the existing flow-direction binary to account for sign.
+                # This halves the number of activation binaries compared to having
+                # separate negative/positive activation variables.
+                for ii_line in range(network_settings["n_linearization_lines"]):
                     # start line segment numbering from 1 up to "n_linearization_lines"
+                    line_number = ii_line + 1
                     pipe_linear_line_segment_var_name = (
-                        f"{pipe_name}__pipe_linear_line_segment_num_{line_number}_{dtype}"
+                        f"{pipe_name}__pipe_linear_line_segment_num_{line_number}"
                     )
 
                     self._pipe_linear_line_segment_map[pipe_name][
@@ -586,21 +592,18 @@ class HeadLossClass:
             area = parameters[f"{pipe}.area"]
             maximum_velocity = network_settings["maximum_velocity"]
 
+        string_parameters = optimization_problem.string_parameters(0)
         try:
             # Only heat networks have a temperature attribute in the pipes, otherwise we will use
             # a default temperature for gas networks
             temperature = parameters[f"{pipe}.temperature"]
-            for _id, attr in optimization_problem.temperature_carriers().items():
-                if (
-                    parameters[f"{pipe}.carrier_id"] == attr["id_number_mapping"]
-                    and len(
-                        optimization_problem.temperature_regimes(parameters[f"{pipe}.carrier_id"])
+            pipe_carrier_id = string_parameters[f"{pipe}.carrier_id"]
+            if len(optimization_problem.temperature_regimes(pipe_carrier_id)) > 0:
+                temperature = min(
+                    optimization_problem.temperature_regimes(
+                        string_parameters[f"{pipe}.carrier_id"]
                     )
-                    > 0
-                ):
-                    temperature = min(
-                        optimization_problem.temperature_regimes(parameters[f"{pipe}.carrier_id"])
-                    )
+                )
         except KeyError:
             # A default temperature of 20 degrees celcius is used for gas networks.
             temperature = 20.0
@@ -640,24 +643,16 @@ class HeadLossClass:
                     return [((-1 * dh - expr) / constraint_nominal, 0.0, 0.0)]
                 else:
                     constraint_nominal = (constraint_nominal * big_m) ** 0.5
-
-                    return [
-                        (
-                            (-1 * dh - expr + is_disconnected * big_m) / constraint_nominal,
-                            0.0,
-                            np.inf,
-                        ),
-                        (
-                            (-1 * dh - expr - is_disconnected * big_m) / constraint_nominal,
-                            -np.inf,
-                            0.0,
-                        ),
-                    ]
+                    return self._symmetric_big_m_constraints(
+                        -1 * dh - expr,
+                        is_disconnected * big_m,
+                        constraint_nominal,
+                    )
             else:
                 return expr * np.sign(discharge)
 
         elif head_loss_option in {
-            HeadLossOption.CQ2_INEQUALITY,
+            HeadLossOption.CQ2_WEAK_INEQUALITY,
             HeadLossOption.CQ2_EQUALITY,
         }:
             ff = darcy_weisbach.friction_factor(
@@ -676,11 +671,11 @@ class HeadLossClass:
             expr = c_v * v**2
 
             if symbolic:
-                q_nominal = self.variable_nominal(f"{pipe}.Q")
-                head_loss_nominal = self.variable_nominal(f"{pipe}.dH")
+                q_nominal = optimization_problem.variable_nominal(f"{pipe}.Q")
+                head_loss_nominal = optimization_problem.variable_nominal(f"{pipe}.dH")
                 constraint_nominal = (head_loss_nominal * c_v * (q_nominal / area) ** 2) ** 0.5
 
-                if head_loss_option == HeadLossOption.CQ2_INEQUALITY:
+                if head_loss_option == HeadLossOption.CQ2_WEAK_INEQUALITY:
                     ub = np.inf
                 else:
                     ub = 0.0
@@ -786,15 +781,15 @@ class HeadLossClass:
                     # Add constraints for piece-wise linear equality
 
                     # Populate variable indicating if a linear line segment is active (1) or not (0)
-                    # pipe_linear_line_segment: will contain variables of negative and positive
-                    # discharge possibilites for the pipe. This implies if a pipe is linearized
-                    # with N = 2 linear lines then pipe_linear_line_segment will have 2 * 2
-                    # variables
+                    # pipe_linear_line_segment: will contain variables of positive
+                    # discharge possibilities for the pipe. The negative discharge possibilities
+                    # are covered by the linearizations in combination with the flow direction
+                    # discharge variable
                     # Order of linear line variables:
-                    #  - negative discharge line_1, line_2
                     #  - positve discharge line_1, line_2
                     pipe_linear_line_segment = self._pipe_linear_line_segment_map[pipe]
                     is_line_segment_active = []
+                    flow_dir_var = optimization_problem.state_vector(f"{pipe}.__flow_direct_var")
 
                     for _, ii_line_var in pipe_linear_line_segment.items():
                         # Create integer variable to activate/deactivate (1/0) a linear line
@@ -819,40 +814,60 @@ class HeadLossClass:
                             (is_line_segment_active_sum_per_timestep, 1.0, 1.0),
                         )
 
-                    # Add equality constraint, value == 0.0 for all linear lines
-                    for ii_line_used in range(len(pipe_linear_line_segment)):
-                        ii_start = ii_line_used * n_timesteps
-                        ii_end = ii_start + n_timesteps
+                    # Add equality constraint, value == 0.0 for all linear lines.
+                    # We now have only `n_linear_lines` activation variables (for the
+                    # positive quadrant) and the `a_vec`/`b_vec` vectors are doubled
+                    # (negative then positive). For each activation variable we add
+                    # two equality constraints: one for the negative block and one
+                    # for the positive block, both using the same activation.
+                    for ii_line_used in range(n_linear_lines):
+                        # negative block (first half of a_vec/b_vec)
+                        ii_start_neg = ii_line_used * n_timesteps
+                        ii_end_neg = ii_start_neg + n_timesteps
                         constraints.append(
                             (
                                 (
-                                    head_loss_vec[ii_start:ii_end]
+                                    head_loss_vec[ii_start_neg:ii_end_neg]
                                     - (
-                                        a_vec[ii_start:ii_end] * discharge_vec[ii_start:ii_end]
-                                        + b_vec[ii_start:ii_end]
+                                        a_vec[ii_start_neg:ii_end_neg]
+                                        * discharge_vec[ii_start_neg:ii_end_neg]
+                                        + b_vec[ii_start_neg:ii_end_neg]
                                     )
-                                    + is_disconnected_vec[ii_start:ii_end] * big_m_lin
-                                    + big_m_lin
-                                    * (1 - is_line_segment_active[ii_line_used][0:n_timesteps])
+                                    - is_disconnected_vec[ii_start_neg:ii_end_neg] * big_m_lin
+                                    - big_m_lin
+                                    * (
+                                        1
+                                        - is_line_segment_active[ii_line_used][0:n_timesteps]
+                                        + flow_dir_var
+                                    )
                                 )
-                                / constraint_nominal[ii_start:ii_end],
+                                / constraint_nominal[ii_start_neg:ii_end_neg],
+                                -np.inf,
                                 0.0,
-                                np.inf,
                             ),
                         )
+
+                        # positive block (second half of a_vec/b_vec)
+                        ii_start_pos = (ii_line_used + n_linear_lines) * n_timesteps
+                        ii_end_pos = ii_start_pos + n_timesteps
                         constraints.append(
                             (
                                 (
-                                    head_loss_vec[ii_start:ii_end]
+                                    head_loss_vec[ii_start_pos:ii_end_pos]
                                     - (
-                                        a_vec[ii_start:ii_end] * discharge_vec[ii_start:ii_end]
-                                        + b_vec[ii_start:ii_end]
+                                        a_vec[ii_start_pos:ii_end_pos]
+                                        * discharge_vec[ii_start_pos:ii_end_pos]
+                                        + b_vec[ii_start_pos:ii_end_pos]
                                     )
-                                    - is_disconnected_vec[ii_start:ii_end] * big_m_lin
+                                    - is_disconnected_vec[ii_start_pos:ii_end_pos] * big_m_lin
                                     - big_m_lin
-                                    * (1 - is_line_segment_active[ii_line_used][0:n_timesteps])
+                                    * (
+                                        2
+                                        - is_line_segment_active[ii_line_used][0:n_timesteps]
+                                        - flow_dir_var
+                                    )
                                 )
-                                / constraint_nominal[ii_start:ii_end],
+                                / constraint_nominal[ii_start_pos:ii_end_pos],
                                 -np.inf,
                                 0.0,
                             ),
@@ -947,20 +962,17 @@ class HeadLossClass:
         else:
             assert big_m != 0.0
 
+        string_parameters = optimization_problem.string_parameters(0)
         wall_roughness = energy_system_options["wall_roughness"]
         if network_type == NetworkSettings.NETWORK_TYPE_HEAT:
             temperature = parameters[f"{pipe}.temperature"]
-            for _id, attr in optimization_problem.temperature_carriers().items():
-                if (
-                    parameters[f"{pipe}.carrier_id"] == attr["id_number_mapping"]
-                    and len(
-                        optimization_problem.temperature_regimes(parameters[f"{pipe}.carrier_id"])
+            pipe_carrier_id = string_parameters[f"{pipe}.carrier_id"]
+            if len(optimization_problem.temperature_regimes(pipe_carrier_id)) > 0:
+                temperature = min(
+                    optimization_problem.temperature_regimes(
+                        string_parameters[f"{pipe}.carrier_id"]
                     )
-                    > 0
-                ):
-                    temperature = min(
-                        optimization_problem.temperature_regimes(parameters[f"{pipe}.carrier_id"])
-                    )
+                )
         else:
             # A default temperature of 20 degrees celcius is used for gas networks.
             temperature = 20.0
@@ -1016,48 +1028,19 @@ class HeadLossClass:
                     # value. Therefore, the flow direction is taken into account for the situation
                     # when the hydraulic_power_linearized is negative (hydraulic_power_linearized =
                     # f(discharge))
-                    return [
-                        (
-                            (
-                                hydraulic_power
-                                - hydraulic_power_linearized
-                                + (is_disconnected + (1.0 - flow_dir)) * big_m
-                            )
-                            / constraint_nominal,
-                            0.0,
-                            np.inf,
-                        ),
-                        (
-                            (
-                                hydraulic_power
-                                - hydraulic_power_linearized
-                                - (is_disconnected + (1.0 - flow_dir)) * big_m
-                            )
-                            / constraint_nominal,
-                            -np.inf,
-                            0.0,
-                        ),
-                        (
-                            (
-                                hydraulic_power
-                                + hydraulic_power_linearized
-                                + (is_disconnected + flow_dir) * big_m
-                            )
-                            / constraint_nominal,
-                            0.0,
-                            np.inf,
-                        ),
-                        (
-                            (
-                                hydraulic_power
-                                + hydraulic_power_linearized
-                                - (is_disconnected + flow_dir) * big_m
-                            )
-                            / constraint_nominal,
-                            -np.inf,
-                            0.0,
-                        ),
-                    ]
+                    constraints = self._symmetric_big_m_constraints(
+                        hydraulic_power - hydraulic_power_linearized,
+                        (is_disconnected + (1.0 - flow_dir)) * big_m,
+                        constraint_nominal,
+                    )
+                    constraints.extend(
+                        self._symmetric_big_m_constraints(
+                            hydraulic_power + hydraulic_power_linearized,
+                            (is_disconnected + flow_dir) * big_m,
+                            constraint_nominal,
+                        )
+                    )
+                    return constraints
             else:
                 return abs(hydraulic_power_linearized)
 
@@ -1429,23 +1412,20 @@ class HeadLossClass:
             # be overly tight, we include an additional factor of 2.
             big_m = 2 * 2 * max_head_loss
 
-            constraints.append(
-                (
-                    (-dh - head_loss + (1 - flow_dir) * big_m) / big_m,
-                    0.0,
-                    np.inf,
+            constraints.extend(
+                self._symmetric_big_m_constraints(
+                    -dh - head_loss,
+                    (1 - flow_dir) * big_m,
+                    big_m,
                 )
             )
-            constraints.append(((dh - head_loss + flow_dir * big_m) / big_m, 0.0, np.inf))
-
-            constraints.append(
-                (
-                    (-dh - head_loss - (1 - flow_dir) * big_m) / big_m,
-                    -np.inf,
-                    0.0,
+            constraints.extend(
+                self._symmetric_big_m_constraints(
+                    dh - head_loss,
+                    flow_dir * big_m,
+                    big_m,
                 )
             )
-            constraints.append(((dh - head_loss - flow_dir * big_m) / big_m, -np.inf, 0.0))
 
         return constraints
 
