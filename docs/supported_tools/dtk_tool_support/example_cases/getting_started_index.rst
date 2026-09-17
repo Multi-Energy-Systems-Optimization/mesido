@@ -323,14 +323,14 @@ Configure Heat Pump Asset
 
     State attribute configuration.
 
-
 All assets can have two states:
 
-.. |asset_icon_heatpump_enabled_source| image:: images_example_cases/asset_icon_heatpump_enabled.png
+.. |asset_icon_heatpump_enabled| image:: images_example_cases/asset_icon_heatpump_enabled.png
    :width: 24px
 
-.. |asset_icon_heatpump_enabled_demand| image:: images_example_cases/asset_icon_heatpump_optional.png
+.. |asset_icon_heatpump_optional| image:: images_example_cases/asset_icon_heatpump_optional.png
    :width: 24px
+
 
 .. list-table:: Possible asset states
    :widths: 2 1 20
@@ -340,10 +340,10 @@ All assets can have two states:
      - Asset Icon
      - Description
    * - Enabled (default)
-     - |asset_icon_heatpump_enabled_source|
+     - |asset_icon_heatpump_enabled|
      - Asset will be placed and not sized
    * - Optional
-     - |asset_icon_heatpump_enabled_demand|
+     - |asset_icon_heatpump_optional|
      - Asset will be sized by optimization
 
 Note that "Disabled" state is not supported by DTK.
@@ -501,10 +501,48 @@ Load the Results
      - Delete the result from data base
 
 
-
-
 Results – KPI Dashboard
 ^^^^^^^^^^^^^^^^^^^^^^^
+To view the KPI Dashboard:
+
+* From "View" tab, go to
+   "KPI Dashboard"
+
+Dashboard will be opened in a new tab to display:
+    * "High level cost breakdown [EUR] (yearly averaged)"
+    * "High level cost breakdown [EUR] (30.0 year period)"
+    * "Overall cost breakdown [EUR] (yearly averaged)"
+    * "Overall cost breakdown [EUR] (30.0 year period)"
+    * "CAPEX breakdown [EUR] (30.0 year period)"
+    * "OPEX breakdown [EUR] (yearly averaged)"
+    * "OPEX breakdown [EUR] (30.0 year period)"
+    * "<Area Name>: Asset cost breakdown [EUR]"
+
+.. kpi_dashboard_1:
+.. figure:: images_example_cases/kpi_dashboard_1.png
+    :figwidth: 7in
+    :align: center
+
+    Load the KPI Dashboard.
+
 
 Results – ESDL Analytics
 ^^^^^^^^^^^^^^^^^^^^^^^^
+
+To view the ESDL Analytics:
+
+* From "View" tab, go to
+   "ESDL Analytics"
+
+To view a desired profile or a value:
+    * Step 1: Click on "Delete dataset" to remove preloaded datasets
+    * Step 2: Click on "Add dataset" to add a new dataset
+    * Step 3: Select the dataset from the list
+    * Step 4: Configure the options to view the desired profile or value
+
+.. esdl_analytics_1:
+.. figure:: images_example_cases/esdl_analytics_1.png
+    :figwidth: 7in
+    :align: center
+
+    Load the ESDL Analytics.

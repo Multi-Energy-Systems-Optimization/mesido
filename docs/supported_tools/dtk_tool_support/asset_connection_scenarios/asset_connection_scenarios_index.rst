@@ -65,6 +65,10 @@ The joints are then connected to the main heat network via a pipe connection.
 Connecting ATES and Heat Buffer to Heat Network
 ------------------------------------------------
 
+To connect the heat storage and HT-ATES to the heat network, the user can connect the assets to a joint with logical links.
+The joint is then connected to the main heat network via a pipe connection. The important point is that the in-port and
+out-port of heat storage and HT-ATES should be connected to the supply pipe and return pipes of the heat network, respectively.
+
 .. _image_connect_buffer_ates:
 .. figure:: ../images/connect_buffer_ates.png
     :figwidth: 7in
