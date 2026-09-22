@@ -14,6 +14,8 @@ import time
 
 import casadi as ca
 
+import numpy as np
+
 import rtctools_highs  # noqa: F401 — registers the pinned HiGHS plugin with CasADi
 
 # The HiGHS solver version that the pinned "rtctools-highs" release in setup.py
@@ -31,6 +33,40 @@ def _make_solver(**highs_opts):
     x = ca.MX.sym("x")
     qp = {"x": x, "f": (x - 1) ** 2, "g": x}
     return ca.qpsol("s", "highs", qp, {"highs": highs_opts})
+
+
+# Weight-to-value offset for _make_slow_knapsack_solver. A "strongly correlated"
+# knapsack (value close to weight) makes the LP relaxation's bound weak, so
+# branch-and-bound can't prune effectively — a classic slow-to-solve instance family.
+KNAPSACK_VALUE_WEIGHT_OFFSET = 50
+
+
+def _make_slow_knapsack_solver(n_items=40, seed=1):
+    """Build a HiGHS MILP knapsack solver and its capacity bound.
+
+    The instance is sized to take ~1s to solve — long enough to span many GIL
+    switch intervals — while being trivial to construct symbolically.
+
+    Returns (solver, capacity): capacity is the constraint bound to pass at
+    call time (ubg=capacity), not a solver configuration option.
+    """
+    rng = np.random.default_rng(seed)
+    weights = rng.integers(1, 10000, n_items).astype(float)
+    values = weights + KNAPSACK_VALUE_WEIGHT_OFFSET
+    capacity = weights.sum() / 2
+
+    x = ca.MX.sym("x", n_items)
+    qp = {"x": x, "f": -ca.dot(values, x), "g": ca.dot(weights, x)}
+    solver = ca.qpsol(
+        "s",
+        "highs",
+        qp,
+        {
+            "highs": {"output_flag": False, "mip_rel_gap": 1e-9},
+            "discrete": [True] * n_items,
+        },
+    )
+    return solver, capacity
 
 
 class TestHiGHSVersion:
@@ -61,29 +97,62 @@ class TestGILRelease:
     """
 
     def test_gil_released_during_solve(self):
-        solver = _make_solver()
+        # The solve must be a single call exceeding CPython's 5ms GIL switch
+        # interval — a loop of fast solves would yield the GIL on its own and
+        # prove nothing.
+        solver, capacity = _make_slow_knapsack_solver()
+
         counter = {"n": 0}
+        result = {"status": None, "error": None, "elapsed": None}
         solve_done = threading.Event()
+        counter_ready = threading.Event()
 
         def run_solve():
-            solver(lbx=-10, ubx=10, lbg=0, ubg=2)
-            assert solver.stats()["return_status"] == "Optimal"
-            solve_done.set()
+            counter_ready.wait()
+            try:
+                t0 = time.perf_counter()
+                solver(lbx=0, ubx=1, lbg=0, ubg=capacity)
+                result["elapsed"] = time.perf_counter() - t0
+                result["status"] = solver.stats()["return_status"]
+            except Exception as e:  # noqa — re-raised on the main thread below
+                result["error"] = e
+            finally:
+                solve_done.set()
 
         def increment_counter():
+            counter_ready.set()
             while not solve_done.is_set():
                 counter["n"] += 1
                 time.sleep(0.0001)
 
         counter_thread = threading.Thread(target=increment_counter, daemon=True)
-        solve_thread = threading.Thread(target=run_solve)
+        # Daemon: if the solve hangs past the join timeout below, the test must
+        # still be able to fail and exit rather than block interpreter shutdown.
+        solve_thread = threading.Thread(target=run_solve, daemon=True)
 
-        solve_thread.start()
         counter_thread.start()
+        solve_thread.start()
         solve_thread.join(timeout=30)
+        solve_done.set()  # stop counter_thread even if the join above timed out
         assert not solve_thread.is_alive(), "Solve timed out"
 
-        assert counter["n"] > 0, (
-            "Counter did not increment during solve — GIL may not have been released. "
-            "Check that casadi was built with WITH_PYTHON_GIL_RELEASE=ON."
+        # An assert/exception inside run_solve wouldn't otherwise fail the test,
+        # since exceptions raised on a background thread don't propagate to pytest.
+        if result["error"] is not None:
+            raise result["error"]
+        assert result["status"] == "Optimal", f"Unexpected solver status: {result['status']}"
+
+        # The counter check below is only meaningful if the solve actually spanned
+        # many GIL switch intervals; a solve that finished too fast would pass for
+        # the wrong reason (Python-level scheduling noise, not real GIL release).
+        assert result["elapsed"] > 0.1, (
+            f"Solve finished in {result['elapsed']:.4f}s, too fast for this test to "
+            "distinguish real GIL release from scheduling noise. The knapsack "
+            "instance may need to be made harder (e.g. more items)."
+        )
+
+        assert counter["n"] > 200, (
+            "Counter did not advance meaningfully during solve — GIL may not have "
+            "been released. Check that casadi was built with "
+            "WITH_PYTHON_GIL_RELEASE=ON."
         )
