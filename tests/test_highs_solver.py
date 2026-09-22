@@ -18,14 +18,10 @@ import numpy as np
 
 import rtctools_highs  # noqa: F401 — registers the pinned HiGHS plugin with CasADi
 
-# The HiGHS solver version that the pinned "rtctools-highs" release in setup.py
-# is expected to register. Update this single constant when the pin changes,
-# rather than hard-coding the version elsewhere in this test.
-# As of rtctools-highs 0.1.4, the upstream release is tagged with the bundled
-# versions it contains (e.g. "highs-1.15.1-casadi-3.7.2" at
-# https://github.com/rtc-tools/rtc-tools-casadi-plugins/tags). Whenever the
-# "rtctools-highs" pin in setup.py is bumped, update EXPECTED_HIGHS_VERSION to
-# match the HiGHS version encoded in that new release's tag.
+# HiGHS version registered by the "rtctools-highs" pin in setup.py. Update this
+# when that pin changes — the upstream release tag encodes the bundled HiGHS
+# version (format: "highs-<HIGHS_VERSION>-casadi-<CASADI_VERSION>", see
+# https://github.com/rtc-tools/rtc-tools-casadi-plugins/tags).
 EXPECTED_HIGHS_VERSION = "1.15.1"
 
 

@@ -65,11 +65,8 @@ setup(
         "setuptools <= 80.9.0",
         "pyesdl[profiles] == 26.7.1",
         "pandas >= 1.3.1, < 2.0",
-        # Pinned explicitly (rather than relying on rtctools-highs' transitive
-        # pin) so the required casadi build is unambiguous from mesido's own
-        # dependency list. Keep in sync with the casadi version bundled by the
-        # "rtctools-highs" release below (see its release tag, e.g.
-        # "highs-1.15.1-casadi-3.7.2").
+        # Keep this in sync with the casadi version bundled by rtctools-highs
+        # below (see its release tag, format "highs-<HIGHS_VERSION>-casadi-<CASADI_VERSION>").
         "casadi == 3.7.2",
         "rtctools-highs == 0.1.4",
         "StrEnum == 0.4.15",
