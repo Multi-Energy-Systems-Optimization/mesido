@@ -155,41 +155,6 @@ solver_messages = {
 }
 
 
-def is_stage_rerun_required(solution) -> bool:
-    """
-    Staged optimization: Check if stage 2 has failed while using the HIGHS solver. If the failure
-    is due to Infeasibility in priority 2 then return True to flag that a rerun is required of the
-    specific stage.
-    Note: It is assumed that priority 2 in stage 2 is MinimizeTCO
-    """
-
-    solver_success, _ = solution.solver_success(solution.solver_stats, False)
-    priorities_output = solution._priorities_output
-
-    if not solver_success and solution._stage == 2:
-        if solution._EndScenarioSizing__priority == 2:
-            is_priority_infeasible = (
-                len(priorities_output[-1]) >= 5
-                and priorities_output[-1][4]["return_status"] == "Infeasible"
-            )
-            if is_priority_infeasible:
-                logger.warning(
-                    "Stage 2, priority 2 is infeasible. A rerun requirement has been set."
-                )
-                return True
-        else:
-            # Ensure that the last completed priority is 2
-            logger.error(
-                "Staged optimization: Expected stage 2, priority 2 in _priorities_output but "
-                f"priority number: {solution._EndScenarioSizing__priority} was found instead."
-            )
-            sys.exit(1)
-
-        return False
-    else:
-        return False
-
-
 def check_solver_succes_grow_problem(solution):
     solver_success, _ = solution.solver_success(solution.solver_stats, False)
     if not solver_success:
@@ -221,19 +186,6 @@ class SolverHIGHS:
 
         options["gurobi"] = None
         options["cplex"] = None
-
-        return options
-
-
-class SolverHIGHSNoPresolve(SolverHIGHS):
-    def solver_options(self):
-        options = super().solver_options()
-        if self._EndScenarioSizing__priority == 2:
-            options["highs"]["presolve"] = "off"
-            logger.warning(
-                f"HIGHS solver: presolve is switched off for priority: 2 of "
-                f"stage: {self._stage}."
-            )
 
         return options
 
@@ -1029,28 +981,6 @@ def run_end_scenario_sizing(
         priorities_output=priorities_output,
         **kwargs,
     )
-
-    # Staged optimization:
-    # Check if a rerun of stage 2 is required due to HIGHS presolve potentially causing an
-    # infeasibility in priority 2 of stage 2
-    if is_staged_optim_and_settings and solution.solver_options()["solver"] == "highs":
-        if is_stage_rerun_required(solution):
-            logger.warning(
-                "\n\nA rerun of stage 2 has started. The solution of the failed stage 2 will be "
-                "deleted, but the information in priorities_output will not be deleted.\n\n"
-            )
-            del solution
-            gc.collect()
-
-            solution = run_optimization_problem_solver(
-                end_scenario_problem_class,
-                solver_class=SolverHIGHSNoPresolve,
-                stage=2,
-                total_stages=2,
-                boolean_bounds=boolean_bounds,
-                priorities_output=priorities_output,
-                **kwargs,
-            )
 
     check_solver_succes_grow_problem(solution)
 

@@ -606,8 +606,7 @@ class MultiCommoditySimulator(
         options["casadi_solver"] = self._qpsol
 
         options["solver"] = "highs"
-        highs_options = options["highs"] = {}
-        highs_options["presolve"] = "on"
+        options["highs"] = {}
 
         return options
 
@@ -670,12 +669,9 @@ class MultiCommoditySimulatorNoLosses(MultiCommoditySimulator):
         return options
 
     def solver_options(self):
-        # For some cases the presolve of the HIGHS solver makes this problem infeasible, therefore
-        # the presolve is turned off.
         options = super().solver_options()
         options["solver"] = "highs"
-        highs_options = options["highs"] = {}
-        highs_options["presolve"] = "off"
+        options["highs"] = {}
 
         return options
 

@@ -4,10 +4,12 @@
 - xxx
 
 ## Changed
-- xxx
+- Upgrade to rtc-tools 2.7.3, casadi 3.7.2 and rtctools-highs 0.1.4 (HiGHS 1.15.1), replacing rtc-tools-gil-comp/casadi-gil-comp; Python 3.12 is now also supported.
+- Remove HiGHS presolve=off workarounds (grow_workflow stage 2 rerun, multicommodity simulator, run_ates, electrolyzer test, emerge workflow) that were needed for a bug in the older HiGHS bundled via casadi-gil-comp.
 
 ## Fixed
 - Voltage losses are now also excluded when include_electric_cable_power_loss is set to False.
+- Unscaled bound in the t=0 investment cap constraint in run_ates.py's HeatProblemPlacingOverTime test model.
 
 
 # [0.1.22] - 2026-09-07
