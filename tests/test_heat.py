@@ -66,19 +66,12 @@ class TestHeat(TestCase):
 
         """
         import models.source_pipe_sink.src.double_pipe_heat as double_pipe_heat
-        from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
-
-        class Model(SourcePipeSink):
-            def energy_system_options(self):
-                options = super().energy_system_options()
-                options["neglect_pipe_heat_losses"] = True
-
-                return options
+        from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSinkNoHeatLoss
 
         base_folder = Path(double_pipe_heat.__file__).resolve().parent.parent
 
         case = run_esdl_mesido_optimization(
-            Model,
+            SourcePipeSinkNoHeatLoss,
             base_folder=base_folder,
             esdl_file_name="sourcesink.esdl",
             esdl_parser=ESDLFileParser,
@@ -113,19 +106,12 @@ class TestHeat(TestCase):
 
         """
         import models.source_pipe_sink.src.double_pipe_heat as double_pipe_heat
-        from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
-
-        class Model(SourcePipeSink):
-            def energy_system_options(self):
-                options = super().energy_system_options()
-                options["neglect_pipe_heat_losses"] = True
-
-                return options
+        from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSinkNoHeatLoss
 
         base_folder = Path(double_pipe_heat.__file__).resolve().parent.parent
 
         case = run_esdl_mesido_optimization(
-            Model,
+            SourcePipeSinkNoHeatLoss,
             base_folder=base_folder,
             esdl_file_name="sourcesink_prof_test.esdl",
             esdl_parser=ESDLFileParser,
@@ -145,11 +131,11 @@ class TestHeat(TestCase):
         cp = parameters["Pipe1.cp"]
         rho = parameters["Pipe1.rho"]
         temp_pipe1 = heat_flow_out_pipe1 / (cp * rho * vol_flow_pipe1)
-        temp_input_prof = case.get_timeseries("heat.price_profile").values
+        temp_input_prof = case.get_timeseries("heat.temperature_profile").values
         np.testing.assert_array_almost_equal(temp_pipe1, temp_input_prof)
 
         case = run_esdl_mesido_optimization(
-            Model,
+            SourcePipeSinkNoHeatLoss,
             base_folder=base_folder,
             esdl_file_name="sourcesink_prof_test_2prod.esdl",
             esdl_parser=ESDLFileParser,
@@ -169,7 +155,7 @@ class TestHeat(TestCase):
         cp = parameters["Pipe1.cp"]
         rho = parameters["Pipe1.rho"]
         temp_pipe1 = heat_flow_out_pipe1 / (cp * rho * vol_flow_pipe1)
-        temp_input_prof = case.get_timeseries("heat.price_profile").values
+        temp_input_prof = case.get_timeseries("heat.temperature_profile").values
         np.testing.assert_array_almost_equal(temp_pipe1, temp_input_prof)
 
 
