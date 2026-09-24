@@ -92,6 +92,8 @@ class TestProfileUpdating(unittest.TestCase):
         column_to_variable_map = {
             "demand": "f6d5923d-ba9a-409d-80a0-26f73b2a574b.target_heat_demand",
             "elec": "elec.price_profile",
+            "heat__temperature": "heat.temperature_profile",
+            "heat__price": "heat.price_profile",
         }
 
         for day_steps in [2 / 24, 0.25 / 24]:  # (2-hours and 15-minutes time steps)
@@ -123,9 +125,9 @@ class TestProfileUpdating(unittest.TestCase):
             # Compare parser output against manual averaging over day_steps windows.
             window_size = int(expected_step_seconds / input_timestep_seconds)
 
-            for asset, var_name in column_to_variable_map.items():
+            for column_name, var_name in column_to_variable_map.items():
 
-                raw_profile = parsed_input_data[asset].to_numpy(dtype=float)
+                raw_profile = parsed_input_data[column_name].to_numpy(dtype=float)
                 expected_profile = raw_profile.reshape(-1, window_size).mean(axis=1)
                 averaged_profile = np.asarray(problem.io.get_timeseries(var_name)[1], dtype=float)[
                     1:
@@ -271,6 +273,10 @@ class TestProfileLoading(unittest.TestCase):
         heat_price_profile = problem.get_timeseries("Heat.price_profile").values
         self.assertEqual(heat_price_profile[0], heat_price_profile[1])
         self.assertLess(max(heat_price_profile), 1.0)
+
+        heat_temperature_profile = problem.get_timeseries("Heat.temperature_profile").values
+        self.assertEqual(len(heat_temperature_profile), len(heat_price_profile))
+        self.assertLess(max(heat_temperature_profile), 1.0)
 
     def test_loading_from_csv(self):
         """

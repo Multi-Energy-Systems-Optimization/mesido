@@ -1588,7 +1588,6 @@ class HeatPhysicsMixin(
         start and end index of the temperature profile according to the problem's timeseries
         (this last one only relevant for problems that are sliced).
         """
-        # TODO: modify profile parser so the temperature profile is not called a price profile.
         # TODO: modify this and the profile parser to incorporate the esdl option to
         # use power instead of temperature.
         # TODO: the start/end indices are needed for a very specific problem-times slicing case.
@@ -1611,16 +1610,16 @@ class HeatPhysicsMixin(
         if carrier_id in carriers_ids:
             sup_carrier_name = carriers[carrier_id]["name"]
             try:
-                temp_out_profile = self.get_timeseries(f"{sup_carrier_name}.price_profile")
+                temp_out_profile = self.get_timeseries(f"{sup_carrier_name}.temperature_profile")
                 temp_out_prof_start_idx = int(
                     np.where(
-                        self.get_timeseries(f"{sup_carrier_name}.price_profile").times
+                        self.get_timeseries(f"{sup_carrier_name}.temperature_profile").times
                         == self.times()[0]
                     )[0]
                 )
                 temp_out_prof_end_idx = int(
                     np.where(
-                        self.get_timeseries(f"{sup_carrier_name}.price_profile").times
+                        self.get_timeseries(f"{sup_carrier_name}.temperature_profile").times
                         == self.times()[-1]
                     )[0]
                 )
