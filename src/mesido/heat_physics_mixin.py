@@ -1588,7 +1588,6 @@ class HeatPhysicsMixin(
         start and end index of the temperature profile according to the problem's timeseries
         (this last one only relevant for problems that are sliced).
         """
-        # TODO: modify profile parser so the temperature profile is not called a price profile.
         # TODO: modify this and the profile parser to incorporate the esdl option to
         # use power instead of temperature.
         # TODO: the start/end indices are needed for a very specific problem-times slicing case.
