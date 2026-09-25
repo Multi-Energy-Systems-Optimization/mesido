@@ -15,6 +15,7 @@ from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
 from mesido.network_common import NetworkSettings
 from mesido.physics_mixin import PhysicsMixin
+from mesido.util import run_esdl_mesido_optimization
 from mesido.workflows.io.write_output import ScenarioOutput
 from mesido.workflows.utils.helpers import main_decorator, run_optimization_problem_solver
 
@@ -322,7 +323,7 @@ def _create_merit_path_goals(self, asset_info, max_value_merit, index_start_of_p
     return goals
 
 
-class OptimisationOverview:
+class OptimisationResultOverview:
     """
     This class is used to combine the optimisation results, bounds, parameters and aliases
     needed for post-processing and visualisation.
@@ -443,7 +444,7 @@ class TargetDemandGoal(Goal):
 # Step 2:
 # Match the maximum producer profiles
 class TargetProducerGoal(Goal):
-    def __init__(self, state, target, priority=20, order=2):
+    def __init__(self, state, target, priority=2, order=2):
         function_range, function_nominal = _goal_range_and_nominal(target)
         self.state = state
         self.target_min = target
@@ -1097,7 +1098,6 @@ class MultiCommoditySimulator(
         else:
             return success, log_level
 
-    # TODO: post will be created later
     def post(self):
         super().post()
         solver_options = self.solver_options()
@@ -1147,86 +1147,6 @@ class MultiCommoditySimulatorMarginalNoLosses(MultiCommoditySimulatorMarginal):
         return options
 
 
-def staged_approach(
-    end_time,
-    simulated_window,
-    simulation_window_size,
-    storage_initial_state_bounds,
-    end_time_confirmed,
-    total_results,
-    constrained_assets,
-    multicommodity_sequential_simulator_class,
-    solver_class,
-    **kwargs,
-):
-    """
-    This function is the actual execution of a stage in a sequantial staged approach.
-    :param end_time: The end simulation time of the staged approach
-    :param simulated_window: The start index of the simulated window
-    :param simulation_window_size: The size of the simulated stage
-    :param storage_initial_state_bounds: The inital state (at start time of this window) bounds
-    for storages
-    :param end_time_confirmed: Boolean if the end time is already properly set.
-    :param total_results: Dict in which the results of all stages are saved and added to.
-    :param constrained_assets: Assets which have some intial state boundary that needs to be
-    implemented at every stage.
-    :param multicommodity_sequential_simulator_class: The class that describes the optimization
-    problem
-    :param solver_class: The class describing the solver settings.
-    :param kwargs:
-    :return:
-    """
-    sub_end_time = min(end_time, simulated_window + simulation_window_size)
-
-    # max operation for start_index to avoid the overlap function in the first stage
-    solution = run_optimization_problem_solver(
-        multicommodity_sequential_simulator_class,
-        solver_class,
-        start_index=max(simulated_window - 1, 0),
-        end_index=sub_end_time,
-        _init_storage_bounds=storage_initial_state_bounds,
-        **kwargs,
-    )
-    if not end_time_confirmed:
-        end_time = len(solution._full_time_series)
-        end_time_confirmed = True
-    results = solution.extract_results()
-
-    aliases, bounds, parameters = [None] * 3
-
-    # TODO: check if we now capture all relevant variables.
-    if total_results is None:
-        total_results = results
-        aliases = solution.alias_relation._canonical_variables_map
-        bounds = solution.bounds()
-        parameters = solution.parameters(0)
-    else:
-        total_results = _merge_stage_results(total_results, results)
-
-    storage_initial_state_bounds = _update_stage_bounds(
-        solution,
-        results,
-        constrained_assets,
-        simulated_window,
-        simulation_window_size,
-        end_time,
-        storage_initial_state_bounds,
-    )
-
-    return (
-        solution,
-        end_time,
-        simulated_window,
-        simulation_window_size,
-        storage_initial_state_bounds,
-        end_time_confirmed,
-        total_results,
-        aliases,
-        bounds,
-        parameters,
-    )
-
-
 def staged_approach_extended(
     end_time,
     simulated_window,
@@ -1259,50 +1179,57 @@ def staged_approach_extended(
     """
     sub_end_time = min(end_time, simulated_window + simulation_window_size)
 
-    class MCSimulatorTimeSequentialNoHeadloss(multicommodity_sequential_simulator_class):
-        """
-        This Problem class is used to run the MultiCommoditySimulator class in a sequantial manner
-        to reduce computational time. This class enables this by allowing to run a part of the
-        timeseries and setting bounds on the (initial-)state variables.
-        """
+    staged_headloss = False
 
-        def energy_system_options(self):
-            options = super().energy_system_options()
+    #This part should only be run if headloss is included and if its needs to be simplified in
+    # the first attempt, for now always turned off.
+    if staged_headloss:
+        class MCSimulatorTimeSequentialNoHeadloss(multicommodity_sequential_simulator_class):
+            """
+            This Problem class is used to run the MultiCommoditySimulator class in a sequantial manner
+            to reduce computational time. This class enables this by allowing to run a part of the
+            timeseries and setting bounds on the (initial-)state variables.
+            """
 
-            self.gas_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
-            self.gas_network_settings["minimize_head_losses"] = False
-            return options
+            def energy_system_options(self):
+                options = super().energy_system_options()
 
-    # max operation for start_index to avoid the overlap function in the first stage
-    solution = run_optimization_problem_solver(
-        MCSimulatorTimeSequentialNoHeadloss,
-        solver_class,
-        start_index=max(simulated_window - 1, 0),
-        end_index=sub_end_time,
-        storage_initial_state_bounds=storage_initial_state_bounds,
-        **kwargs,
-    )
+                self.gas_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+                self.gas_network_settings["minimize_head_losses"] = False
+                return options
 
-    results = solution.extract_results()
-    # TODO: change constrained assets
-    prod_bounds = {}
+        # max operation for start_index to avoid the overlap function in the first stage
+        solution = run_optimization_problem_solver(
+            MCSimulatorTimeSequentialNoHeadloss,
+            solver_class,
+            start_index=max(simulated_window - 1, 0),
+            end_index=sub_end_time,
+            storage_initial_state_bounds=storage_initial_state_bounds,
+            **kwargs,
+        )
 
-    constrained_assets_prod = {
-        "wind_park": ["Electricity_source"],
-        "electrolyzer": ["Gas_mass_flow_out"],  # ["Power_consumed", "Gas_mass_flow_out"],
-    }
+        results = solution.extract_results()
+        # TODO: change constrained assets
+        prod_bounds = {}
 
-    for asset_type, variables in constrained_assets_prod.items():
-        for asset in solution.energy_system_components.get(asset_type, []):
-            sub_time_series = solution._full_time_series[
-                simulated_window : min(end_time, simulated_window + 1 * simulation_window_size)
-            ]
-            for variable in variables:
-                lb_values = results[f"{asset}.{variable}"]
-                ub_values = results[f"{asset}.{variable}"]
-                lb = Timeseries(sub_time_series, lb_values)
-                ub = Timeseries(sub_time_series, ub_values)
-                prod_bounds[f"{asset}.{variable}"] = (lb, ub)
+        constrained_assets_prod = {
+            "wind_park": ["Electricity_source"],
+            "electrolyzer": ["Gas_mass_flow_out"],  # ["Power_consumed", "Gas_mass_flow_out"],
+        }
+
+        for asset_type, variables in constrained_assets_prod.items():
+            for asset in solution.energy_system_components.get(asset_type, []):
+                sub_time_series = solution._full_time_series[
+                    simulated_window : min(end_time, simulated_window + 1 * simulation_window_size)
+                ]
+                for variable in variables:
+                    lb_values = results[f"{asset}.{variable}"]
+                    ub_values = results[f"{asset}.{variable}"]
+                    lb = Timeseries(sub_time_series, lb_values)
+                    ub = Timeseries(sub_time_series, ub_values)
+                    prod_bounds[f"{asset}.{variable}"] = (lb, ub)
+    else:
+        prod_bounds = {}
 
     class MCSimulatorTimeSequentialHeadloss(multicommodity_sequential_simulator_class):
         """
@@ -1473,7 +1400,7 @@ def run_sequentially_staged_simulation(
         aliases,
         bounds,
         parameters,
-    ) = staged_approach(
+    ) = staged_approach_extended(
         end_time,
         0,
         simulation_window_size,
@@ -1502,7 +1429,7 @@ def run_sequentially_staged_simulation(
             _,
             _,
             _,
-        ) = staged_approach(
+        ) = staged_approach_extended(
             end_time,
             simulated_window,
             simulation_window_size,
@@ -1520,7 +1447,7 @@ def run_sequentially_staged_simulation(
     if os.path.exists(solution.output_folder) and solution._save_json:
         solution._write_json_output(total_results, parameters, bounds, aliases)
 
-    return OptimisationOverview(total_results, bounds, parameters, aliases)
+    return OptimisationResultOverview(total_results, bounds, parameters, aliases)
 
 
 # -------------------------------------------------------------------------------------------------
@@ -1558,27 +1485,30 @@ if __name__ == "__main__":
 
     base_folder = Path(example.__file__).resolve().parent.parent
 
-    solution = run_optimization_problem(
-        # MultiCommoditySimulatorNoLosses,
-        MultiCommoditySimulatorMarginalNoLosses,
-        base_folder=base_folder,
-        # esdl_file_name="emerge_priorities_withoutstorage.esdl",
-        esdl_file_name="emerge_priorities.esdl",
-        esdl_parser=ESDLFileParser,
-        profile_reader=ProfileReaderFromFile,
-        input_timeseries_file="timeseries.csv",
-    )
+    # solution = run_optimization_problem_solver(
+    #     # MultiCommoditySimulatorNoLosses,
+    #     MultiCommoditySimulatorMarginalNoLosses,
+    #     solver_class=SolverCPLEX,
+    #     base_folder=base_folder,
+    #     # esdl_file_name="emerge_priorities_withoutstorage.esdl",
+    #     esdl_file_name="emerge_priorities.esdl",
+    #     esdl_parser=ESDLFileParser,
+    #     profile_reader=ProfileReaderFromFile,
+    #     input_timeseries_file="timeseries_short.csv",
+    #     # input_timeseries_file="timeseries.csv",
+    # )
 
-    solution = run_sequentially_staged_simulation(
-        # multi_commodity_simulator_class=MultiCommoditySimulatorNoLosses,
-        multi_commodity_simulator_class=MultiCommoditySimulatorMarginalNoLosses,
-        simulation_window_size=40,
-        base_folder=base_folder,
-        # esdl_file_name="emerge_battery_priorities.esdl",
-        # esdl_file_name="emerge_priorities_withoutstorage.esdl",
-        esdl_file_name="emerge_priorities.esdl",
-        esdl_parser=ESDLFileParser,
-        profile_reader=ProfileReaderFromFile,
-        # input_timeseries_file="timeseries_short.csv",
-        input_timeseries_file="timeseries.csv",
-    )
+    # solution = run_sequentially_staged_simulation(
+    #     # multi_commodity_simulator_class=MultiCommoditySimulatorNoLosses,
+    #     multi_commodity_simulator_class=MultiCommoditySimulatorMarginalNoLosses,
+    #     solver_class=SolverCPLEX,
+    #     simulation_window_size=40,
+    #     base_folder=base_folder,
+    #     # esdl_file_name="emerge_battery_priorities.esdl",
+    #     # esdl_file_name="emerge_priorities_withoutstorage.esdl",
+    #     esdl_file_name="emerge_priorities.esdl",
+    #     esdl_parser=ESDLFileParser,
+    #     profile_reader=ProfileReaderFromFile,
+    #     # input_timeseries_file="timeseries_short.csv",
+    #     input_timeseries_file="timeseries.csv",
+    # )
