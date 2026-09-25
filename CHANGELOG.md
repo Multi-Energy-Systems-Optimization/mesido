@@ -1,7 +1,7 @@
-# [Unreleased-main] - 2026-09-17
+# [Unreleased-main] - 2026-09-24
 
 ## Added
-- DischargeEfficiency is parsed from HeatStorage assets in ESDL to a heat loss coefficient
+- selfDischargeRate is parsed from HeatStorage assets in ESDL to calculate heat loss coefficient of heat buffer
 
 ## Changed
 - xxx

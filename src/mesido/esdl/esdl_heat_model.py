@@ -604,12 +604,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
         self_discharge_rate = (
             asset.attributes.get("selfDischargeRate")
             if asset.attributes.get("selfDischargeRate")
-            else 0.01 * asset_capacity_joule / 3600.0
-        )
+            else 0.01 * asset_capacity_joule / 3600.0 / 24.0
+        )  # [J/s]
 
-        # heat_loss_coefficient represents the fraction of stored heat that is lost per second
-        # default is set to 0.01 / 24.0 / 3600.0
-        heat_loss_coefficient = self_discharge_rate / asset_capacity_joule / 24.0
+        # heat_loss_coeff represents the fraction of stored heat that is lost per second
+        # default is set to 0.01 / 24.0 / 3600.0 (i.e. 1% loss per day)
+        heat_loss_coeff = self_discharge_rate / asset_capacity_joule  # [1/s]
 
         q_nominal = self._get_connected_q_nominal(asset)
         if isinstance(q_nominal, dict):
@@ -618,7 +618,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         modifiers = dict(
             height=r,
             radius=r,
-            heat_loss_coefficient=heat_loss_coefficient,
+            heat_loss_coeff=heat_loss_coeff,
             min_fraction_tank_volume=min_fraction_tank_volume,
             Stored_heat=dict(min=min_heat, max=max_heat),
             Heat_buffer=dict(min=-hfr_discharge_max, max=hfr_charge_max),

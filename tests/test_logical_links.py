@@ -274,10 +274,9 @@ class TestLogicalLinks(TestCase):
 
             for buffer in heat_problem.energy_system_components.get("heat_buffer", []):
                 # buffer should have positive heat loss
-                assert parameters[f"{buffer}.heat_loss_coefficient"] > 0.0
+                assert parameters[f"{buffer}.heat_loss_coeff"] > 0.0
                 np.testing.assert_allclose(
-                    results[f"{buffer}.Stored_heat"]
-                    * parameters[f"{buffer}.heat_loss_coefficient"],
+                    results[f"{buffer}.Stored_heat"] * parameters[f"{buffer}.heat_loss_coeff"],
                     results[f"{buffer}.Heat_loss"],
                 )
                 np.testing.assert_allclose(
@@ -295,7 +294,7 @@ class TestLogicalLinks(TestCase):
         # check that the total heat production is almost the same for all models, with and without
         # logical links.
         total_productions = [sum(production_list[i]) for i in range(len(production_list))]
-        np.testing.assert_allclose(total_productions[-1], total_productions[:-1], rtol=1.2e-5)
+        np.testing.assert_allclose(total_productions[-1], total_productions[:-1], rtol=1e-5)
 
     def test_logical_links_network_hybrid(self):
         """
