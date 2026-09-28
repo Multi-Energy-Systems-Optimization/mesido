@@ -446,8 +446,6 @@ class _AssetToComponentBase:
             ports.extend(asset.in_ports)
         if asset.out_ports is not None:
             ports.extend(asset.out_ports)
-        if len(ports) == 0:
-            return
 
         for port in ports:
             self._port_to_esdl_component_type[port] = asset.asset_type

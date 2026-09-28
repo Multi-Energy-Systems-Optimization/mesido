@@ -288,6 +288,15 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         return value  # g/Wh
 
+    @staticmethod
+    def _get_containing_building_id(asset: Asset) -> str:
+        containing_building = asset.attributes.get("containingBuilding")
+        if containing_building is None:
+            # The return below must be an empty string (instead of None etc.) else this will create
+            # a variable in parameters instead of the string_parameters
+            return ""
+        return containing_building.id
+
     def _generic_modifiers(self, asset: Asset) -> Dict:
         """
         Args:
@@ -311,6 +320,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             state=self.get_state(asset),
             emission_coeff=self._get_emission_modifiers(asset),
             include_head_loss_variables=self.include_head_loss_variables,
+            containing_building_id=self._get_containing_building_id(asset),
         )
         return modifiers
 

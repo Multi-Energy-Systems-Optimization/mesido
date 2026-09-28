@@ -61,7 +61,6 @@ class _ESDLModelBase(_Model):
         # are used to set nominals for other assets that are then parsed later.
         assets_sorted = assets_transport | assets_other
 
-        # Should the Hconnection be used here?
         for asset in list(assets.values()):
             converter.port_asset_type_connections(asset)
 
