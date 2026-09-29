@@ -25,6 +25,7 @@ from mesido.pycml.component_library.milp import (
     Airco,
     CheckValve,
     ColdDemand,
+    CoGeneration,
     Compressor,
     ControlValve,
     ElecHeatSourceElec,
@@ -2813,6 +2814,124 @@ class AssetToHeatComponent(_AssetToComponentBase):
         )
 
         return GasHeatSourceGas, modifiers
+
+    def convert_co_generation(self, asset: Asset) -> Tuple[Type[CoGeneration], MODIFIERS]:
+        """
+        Convert a CHP asset with heat, electricity and optional gas ports.
+        """
+        assert asset.asset_type in {"CHP"}
+
+        heat_in_port = None
+        heat_out_port = None
+        elec_out_port = None
+        gas_in_port = None
+
+        for port in asset.in_ports:
+            if isinstance(port.carrier, esdl.HeatCommodity):
+                heat_in_port = port
+            elif isinstance(port.carrier, esdl.GasCommodity):
+                gas_in_port = port
+
+        for port in asset.out_ports:
+            if isinstance(port.carrier, esdl.HeatCommodity):
+                heat_out_port = port
+            elif isinstance(port.carrier, esdl.ElectricityCommodity):
+                elec_out_port = port
+
+        if heat_in_port is None or heat_out_port is None or elec_out_port is None:
+            raise _ESDLInputException(
+                f"{asset.name} must have one heat in-port, one heat out-port and one electricity "
+                "out-port"
+            )
+
+        max_heat = self._get_asset_max_size_input(asset, "power")
+        if not max_heat:
+            logger.error(f"{asset.asset_type} '{asset.name}' has no max power specified.")
+        assert max_heat > 0.0
+
+        efficiency = asset.attributes.get("efficiency", 1.0)
+        heratio = asset.attributes.get("HERatio", 1.0)
+        if efficiency <= 0.0:
+            raise _ESDLInputException(f"{asset.name} must have a positive efficiency")
+        if heratio <= 0.0:
+            raise _ESDLInputException(f"{asset.name} must have a positive HERatio")
+
+        temperature_modifiers = self._supply_return_temperature_modifiers(asset)
+        supply_temperature = temperature_modifiers["T_supply"]
+        return_temperature = temperature_modifiers["T_return"]
+
+        delta_t = supply_temperature - return_temperature
+        if delta_t <= 0.0:
+            delta_t = 10.0
+
+        heat_connected_port = heat_out_port.connectedTo[0]
+        q_nominal = self._port_to_q_nominal.get(heat_connected_port, None)
+        if not q_nominal:
+            q_nominal = max_heat / (self.rho * self.cp * delta_t)
+
+        electric_max = max_heat / heratio
+        electric_connected_port = elec_out_port.connectedTo[0]
+        min_voltage = elec_out_port.carrier.voltage
+        i_max = self._port_to_i_max.get(electric_connected_port, electric_max / min_voltage)
+        i_nom = self._port_to_i_nominal.get(electric_connected_port, electric_max / min_voltage / 2.0)
+
+        modifiers = dict(
+            efficiency=efficiency,
+            HERatio=heratio,
+            electric_power_nominal=electric_max / 2.0,
+            Heat_source=dict(min=0.0, max=max_heat, nominal=max_heat / 2.0),
+            Electricity_source=dict(min=0.0, max=electric_max, nominal=electric_max / 2.0),
+            ElectricityOut=dict(
+                Power=dict(min=0.0, max=electric_max, nominal=electric_max / 2.0),
+                I=dict(min=0.0, max=i_max, nominal=i_nom),
+                V=dict(min=min_voltage, nominal=min_voltage),
+            ),
+            **self._generic_modifiers(asset),
+            **self._generic_heat_modifiers(
+                self.include_head_loss_variables, 0.0, max_heat, q_nominal
+            ),
+            **self._get_cost_figure_modifiers(asset),
+            **temperature_modifiers,
+            Q_nominal=q_nominal,
+        )
+
+        if gas_in_port is not None:
+            gas_carrier = gas_in_port.carrier
+            density = get_density(asset.name, gas_carrier)
+            density_normal = get_density(
+                asset.name,
+                gas_carrier,
+                temperature_degrees_celsius=0.0,
+                pressure_pa=1.01325 * 1.0e5,
+            )
+            energy_content = get_energy_content(asset.name, gas_carrier)
+            pressure = gas_carrier.pressure * 1.0e5
+
+            gas_mass_flow_max = (max_heat + electric_max) / efficiency / energy_content * 1000.0
+            gas_q_nominal = self._port_to_q_nominal.get(gas_in_port.connectedTo[0], None)
+            if not gas_q_nominal:
+                gas_q_nominal = gas_mass_flow_max / density
+
+            modifiers.update(
+                dict(
+                    include_gas_in_port=True,
+                    id_mapping_carrier=gas_carrier.id,
+                    density=density,
+                    density_normal=density_normal,
+                    energy_content=energy_content,
+                    gas_mass_flow_nominal=gas_mass_flow_max / 2.0,
+                    Q_nominal_gas=gas_q_nominal,
+                    GasIn=dict(
+                        Q=dict(min=0.0, nominal=gas_q_nominal),
+                        mass_flow=dict(nominal=gas_mass_flow_max / 2.0, max=gas_mass_flow_max),
+                        Hydraulic_power=dict(nominal=gas_q_nominal * pressure),
+                    ),
+                )
+            )
+        else:
+            modifiers["include_gas_in_port"] = False
+
+        return CoGeneration, modifiers
 
     def convert_heat_source_elec(
         self, asset: Asset

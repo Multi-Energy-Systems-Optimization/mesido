@@ -263,6 +263,41 @@ class _ESDLModelBase(_Model):
                     raise Exception(
                         f"{asset.name} must have one inport for electricity and one outport for gas"
                     )
+            elif asset.asset_type == "CHP":
+                heat_in_ports = 0
+                heat_out_ports = 0
+                electricity_out_ports = 0
+                gas_in_ports = 0
+
+                for p in [*asset.in_ports, *asset.out_ports]:
+                    if isinstance(p, InPort) and isinstance(p.carrier, esdl.HeatCommodity):
+                        port_map[p.id] = getattr(component, in_suf)
+                        heat_in_ports += 1
+                    elif isinstance(p, OutPort) and isinstance(p.carrier, esdl.HeatCommodity):
+                        port_map[p.id] = getattr(component, out_suf)
+                        heat_out_ports += 1
+                    elif isinstance(p, OutPort) and isinstance(p.carrier, esdl.ElectricityCommodity):
+                        port_map[p.id] = getattr(component, elec_out_suf)
+                        electricity_out_ports += 1
+                    elif isinstance(p, InPort) and isinstance(p.carrier, esdl.GasCommodity):
+                        port_map[p.id] = getattr(component, gas_in_suf)
+                        gas_in_ports += 1
+                    else:
+                        raise Exception(
+                            f"{asset.name} must have one heat in_port, one heat out_port, one "
+                            f"electricity out_port and optionally one gas in_port"
+                        )
+
+                if (
+                    heat_in_ports != 1
+                    or heat_out_ports != 1
+                    or electricity_out_ports != 1
+                    or gas_in_ports > 1
+                ):
+                    raise Exception(
+                        f"{asset.name} must have one heat in_port, one heat out_port, one "
+                        f"electricity out_port and optionally one gas in_port"
+                    )
 
             elif (
                 asset.in_ports is None

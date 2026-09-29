@@ -933,10 +933,14 @@ class FinancialMixin(
             elif s in [
                 *self.energy_system_components.get("heat_source_gas", []),
                 *self.energy_system_components.get("gas_heat_source_gas", []),
+                *self.energy_system_components.get("co_generation", []),
             ]:
-                density_normal = parameters[f"{s}.density_normal"]
-                state_vector_name = "Gas_demand_mass_flow"
-                denominator = density_normal / 3600.0
+                if f"{s}.density_normal" in parameters:
+                    density_normal = parameters[f"{s}.density_normal"]
+                    state_vector_name = "Gas_demand_mass_flow"
+                    denominator = density_normal / 3600.0
+                else:
+                    state_vector_name = "Heat_source"
             elif s in self.energy_system_components.get("heat_source_elec", []):
                 state_vector_name = "Power_consumed"
                 include_price_profile_variable_cost = (
