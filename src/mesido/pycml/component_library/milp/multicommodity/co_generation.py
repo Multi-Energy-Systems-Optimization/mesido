@@ -13,7 +13,8 @@ class CoGeneration(HeatSource):
     #TODO: check if it could inherit from both HeatSource, ElectricitySource and GasDemand such
     # that only the links between the commodities have to provided in this asset model.
     """
-    The co-generation component models a CHP unit with heat and electricity output.
+    The co-generation component models a unit with heat and electricity output and optionally a
+    gaseous input. This can be the basis for a CHP or fuelcell asset model.
 
     Variables created:
         {add_variable_names_for_documentation_here}
