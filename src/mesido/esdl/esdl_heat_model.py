@@ -2892,7 +2892,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
             ),
             **self._get_cost_figure_modifiers(asset),
             **temperature_modifiers,
-            Q_nominal=q_nominal,
         )
 
         if gas_in_port is not None:

@@ -1,4 +1,5 @@
 from mesido.pycml import Variable
+from mesido.pycml.component_library.milp import ElectricitySource
 from mesido.pycml.component_library.milp.electricity.electricity_base import ElectricityPort
 from mesido.pycml.component_library.milp.gas.gas_base import GasPort
 from mesido.pycml.component_library.milp.heat.heat_source import HeatSource
@@ -9,6 +10,8 @@ from numpy import nan
 
 @add_variables_documentation_automatically
 class CoGeneration(HeatSource):
+    #TODO: check if it could inherit from both HeatSource, ElectricitySource and GasDemand such
+    # that only the links between the commodities have to provided in this asset model.
     """
     The co-generation component models a CHP unit with heat and electricity output.
 
@@ -21,18 +24,19 @@ class CoGeneration(HeatSource):
     """
 
     def __init__(self, name, **modifiers):
-        self.include_gas_in_port = modifiers.get("include_gas_in_port", False)
         super().__init__(
             name,
             **modifiers,
         )
 
-        self.component_type = "co_generation"
+        self.component_subtype = "co_generation" #should become component_type, but then
+        # financialmixin and asset_sizing_mixin also need to be updated.
         self.efficiency = nan
         self.HERatio = nan
         self.electric_power_nominal = nan
         self.gas_mass_flow_nominal = nan
         self.energy_content = nan
+        self.include_gas_in_port = False
 
         self.add_variable(ElectricityPort, "ElectricityOut")
         self.add_variable(Variable, "Electricity_source", min=0.0, nominal=self.electric_power_nominal)
@@ -43,6 +47,10 @@ class CoGeneration(HeatSource):
         self.add_equation((self.Heat_source - self.HERatio * self.Electricity_source) / self.Heat_nominal)
 
         if self.include_gas_in_port:
+            self.id_mapping_carrier = nan
+            self.density = nan
+            self.density_normal = nan
+            self.Q_nominal_gas = nan
             self.add_variable(GasPort, "GasIn")
             self.add_variable(
                 Variable, "Gas_demand_mass_flow", min=0.0, nominal=self.gas_mass_flow_nominal

@@ -45,7 +45,8 @@ class TestCHP(TestCase):
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
         electric_power_conservation_test(heat_problem, results)
-
+        
+        #TODO: right now the variable operational costs are also still based on heat per MWh.
         cost_calculation_test(heat_problem, results)
 
         np.testing.assert_array_less(0.0, results[f"{chp_id}.Heat_source"])
