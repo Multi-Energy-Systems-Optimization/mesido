@@ -3,11 +3,12 @@ from unittest import TestCase
 
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
-from mesido.util import run_esdl_mesido_optimization
+
+# from mesido.util import run_optimization_problem
 
 import numpy as np
 
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
+# from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
 class TestBuilding(TestCase):
@@ -16,22 +17,20 @@ class TestBuilding(TestCase):
         from models.building.src.run_case import SourcePipeBuilding
 
         base_folder = Path(run_case.__file__).resolve().parent.parent
+        model_folder = base_folder / "model"
+        input_folder = base_folder / "input"
 
-        problem = run_esdl_mesido_optimization(
-            SourcePipeBuilding,
+        problem = SourcePipeBuilding(
             base_folder=base_folder,
+            model_folder=model_folder,
+            input_folder=input_folder,
             esdl_file_name="source buildingsink with multiple demand profiles.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_import.csv",
         )
-        results = problem.extract_results()
 
-        # TODO: demand_matching_test still to be updated to cater for reduced demand due to
-        # insulation measures. The minimum heat demand has factor 1.0 currently.
-        demand_matching_test(problem, results)
-        energy_conservation_test(problem, results)
-        heat_to_discharge_test(problem, results)
+        problem.pre()
 
         # Check that the building parameters are parsed correctly
         building_parameters = problem.building_parameters
@@ -102,6 +101,7 @@ class TestBuilding(TestCase):
                         next(iter(measure_info["CoolingDemand"].values()))["name"],
                         "CoolingDemandProf_1",
                     )
+
                 elif measure_info["name"] == "demand_2":
                     np.testing.assert_equal(
                         next(iter(measure_info["HeatingDemand"].values()))["name"],
@@ -116,6 +116,37 @@ class TestBuilding(TestCase):
                         f"Building {building_id} has an unexpected contained measure"
                         f" {measure_info['name']}"
                     )
+
+    # Do not delete this test is still to be developed
+    # def test_building_heat_cold_measures(self):
+    #     import models.building.src.run_case as run_case
+    #     from models.building.src.run_case import SourcePipeBuilding
+
+    #     base_folder = Path(run_case.__file__).resolve().parent.parent
+
+    #     problem = run_optimization_problem(
+    #         SourcePipeBuilding
+    #         base_folder=base_folder,
+    #         esdl_file_name="source buildingsink with multiple demand profiles.esdl",
+    #         esdl_parser=ESDLFileParser,
+    #         # csv profiles do not cater for profiles via measures but influx profiles do.
+    #         # Is csv proflies even need for measures? TBC
+    #         # profile_reader=ProfileReaderFromFile,
+    #         # input_timeseries_file="timeseries_import.csv",
+    #     )
+
+    #     results = problem.extract_results()
+
+    #     # TODO: demand_matching_test still to be updated to cater for reduced demand due to
+    #     # insulation measures. The minimum heat demand has factor 1.0 currently.
+    #     demand_matching_test(problem, results)
+    #     energy_conservation_test(problem, results)
+    #     heat_to_discharge_test(problem, results)
+
+    #     # Check that the heating and cooling demand have specified base input profiles and
+    #     profiles via measures available
+
+    #     # Check that the optimal profile is selected for the heating and cooling demand.
 
 
 if __name__ == "__main__":

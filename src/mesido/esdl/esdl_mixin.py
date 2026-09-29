@@ -292,6 +292,29 @@ class ESDLMixin(
 
         The helper keeps the raw Building metadata together with the building child assets that are
         relevant for instance demand handling (HeatingDemand and CoolingDemand).
+
+        Structure of the building_parameters dict:
+        It is a dictionary where the keys are the building asset IDs and the values are dictionaries
+        containing the following keys:
+        - "name": The name of the building asset.
+        - "attributes": The esdl attributes of the building asset.
+        - "contained_assets": A dictionary where the keys are the IDs of the contained assets
+        and the values are dictionaries containing the following keys:
+          - "name": The name of the contained asset.
+          - "type": The type of the contained asset (e.g., HeatingDemand, CoolingDemand).
+        - "contained_measures": A dictionary where the keys are the IDs of the contained measures
+        and the values are dictionaries containing the following keys:
+            - "name": The name of the contained measure.
+            - "HeatingDemand": A dictionary containing the name and ID of the HeatingDemand assets
+            associated with the measure.
+            - "CoolingDemand": A dictionary containing the name and ID of the CoolingDemand assets
+            associated with the measure.
+
+        Returns
+        -------
+        building_parameters : Dict[str, Dict[str, Any]]
+            A dictionary containing building-scoped information for easy access.
+
         """
 
         def _iter_assets(value):
@@ -360,6 +383,7 @@ class ESDLMixin(
                         measure_asset.__class__.__name__
                     ][measure_asset.id] = {
                         "name": measure_asset.name,
+                        "id": measure_asset.id,
                     }
 
             for child_asset in building_assets:

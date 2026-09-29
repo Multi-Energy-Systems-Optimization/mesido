@@ -1,7 +1,6 @@
 from mesido.demand_insulation_class import DemandInsulationClass
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
-from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.io.write_output import ScenarioOutput
 
@@ -86,6 +85,10 @@ class SourcePipeBuilding(
 
     def insulation_levels(self):
         # Under development. Potentially use the building_parameters to get a profile.
+        # One now has access to the following:
+        # - self.building_parameters
+        # - profiles (including influx profiles in measures)
+        #   via: self._ESDLMixin__profile_reader._profiles
         attributes = {
             "insulation_level": ["A", "B", "C"],
             # For now the factor values chosen such that value 1.0 is optimal
@@ -135,15 +138,10 @@ if __name__ == "__main__":
         SourcePipeBuilding,
         esdl_file_name="source buildingsink with multiple demand profiles.esdl",
         esdl_parser=ESDLFileParser,
-        profile_reader=ProfileReaderFromFile,
-        input_timeseries_file="timeseries_import.csv",
+        # profile_reader=ProfileReaderFromFile,  # Do not delete, used for manual testing purposes.
+        # input_timeseries_file="timeseries_import.csv",
     )
 
     results = solution.extract_results()
-
-    heat_demand_id = solution.esdl_asset_name_to_id_map["HeatingDemand_1"]
-    cold_demand_id = solution.esdl_asset_name_to_id_map["CoolingDemand_1"]
-    print(results[f"{heat_demand_id}.Heat_flow"])
-    print(results[f"{cold_demand_id}.Heat_flow"])
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
