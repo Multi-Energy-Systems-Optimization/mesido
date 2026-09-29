@@ -329,6 +329,7 @@ class ESDLMixin(
             if asset.asset_type != "Building":
                 continue
 
+            # The building parameters stored will be updated once they are used.
             building_parameters[asset.id] = {
                 "name": asset.name,
                 "attributes": asset.attributes,

@@ -1,11 +1,11 @@
-import numpy as np
-
 from mesido.demand_insulation_class import DemandInsulationClass
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.io.write_output import ScenarioOutput
+
+import numpy as np
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
@@ -17,6 +17,7 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
 from rtctools.optimization.timeseries import Timeseries
 from rtctools.util import run_optimization_problem
+
 
 class TargetDemandGoal(Goal):
     priority = 1
@@ -48,6 +49,7 @@ class MinimizeProduction(Goal):
     def function(self, optimization_problem, ensemble_member):
         return optimization_problem.state(f"{self.source}.Heat_source")
 
+
 class SourcePipeBuilding(
     ScenarioOutput,
     TechnoEconomicMixin,
@@ -60,7 +62,9 @@ class SourcePipeBuilding(
     def path_goals(self):
         g = super().path_goals().copy()
 
-        # Do not delete the code below. Sused for manual testing purposes.
+        # The path goals below will still be updated once cold demand insulation is implemented.
+
+        # Do not delete the code below. Used for manual testing purposes.
         # for demand in self.energy_system_components.get("heat_demand", []):
         #     target = self.get_timeseries(f"{demand}.target_heat_demand")
         #     state = f"{demand}.Heat_demand"
@@ -69,7 +73,6 @@ class SourcePipeBuilding(
             target = self.get_timeseries(f"{demand}.target_cold_demand")
             state = f"{demand}.Cold_demand"
             g.append(TargetDemandGoal(state, target))
-        
 
         for s in self.energy_system_components["heat_source"]:
             g.append(MinimizeProduction(s))
@@ -80,20 +83,17 @@ class SourcePipeBuilding(
         options = super().energy_system_options()
         options["include_demand_insulation_options"] = True
         return options
-    
+
     def insulation_levels(self):
-        # Under development. Plan to use the building_paremeters here 
+        # Under development. Potentially use the building_parameters to get a profile.
         attributes = {
             "insulation_level": ["A", "B", "C"],
-            "scaling_factor": [0.6, 0.9, 1.0],
+            # For now the factor values chosen such that value 1.0 is optimal
+            "scaling_factor": [1.1, 1.2, 1.0],
             "Tmin_deg": [50, 60, 70],
             "insulation_cost_euro": [5.0e6, 2.0e6, 1.0e6],
         }
-        
-        # for key, val in self._build_building_parameters().items():
-        #     print(key)
-        #     print(val)
-        
+
         return attributes
 
     def demand_insulation_classes(self, demand_insulation):
@@ -128,6 +128,7 @@ class SourcePipeBuilding(
 
 if __name__ == "__main__":
     import time
+
     start_time = time.time()
 
     solution = run_optimization_problem(
