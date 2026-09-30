@@ -36,6 +36,9 @@ def _make_solver(**highs_opts):
 # branch-and-bound can't prune effectively — a classic slow-to-solve instance family.
 KNAPSACK_VALUE_WEIGHT_OFFSET = 50
 
+# Minimum tick rate of the counter thread in test_gil_released_during_solve.
+MIN_COUNTER_TICKS_PER_SECOND = 150
+
 
 def _make_slow_knapsack_solver(n_items=40, seed=1):
     """Build a HiGHS MILP knapsack solver and its capacity bound.
@@ -147,8 +150,12 @@ class TestGILRelease:
             "instance may need to be made harder (e.g. more items)."
         )
 
-        assert counter["n"] > 200, (
-            "Counter did not advance meaningfully during solve — GIL may not have "
-            "been released. Check that casadi was built with "
-            "WITH_PYTHON_GIL_RELEASE=ON."
+        # With the GIL released the counter ticks at ~1500/s measured on Windows (sleep(0.0001) takes ~0.6 ms
+        # in practice); with it held, it barely ticks. The floor is ~10x below the released
+        # rate so slow or noisy machines don't flake, and scales with the solve duration.
+        tick_rate = counter["n"] / result["elapsed"]
+        assert tick_rate > MIN_COUNTER_TICKS_PER_SECOND, (
+            f"Counter ticked at {tick_rate:.0f}/s during the solve (floor "
+            f"{MIN_COUNTER_TICKS_PER_SECOND}/s) — GIL may not have been released. Check "
+            "that casadi was built with WITH_PYTHON_GIL_RELEASE=ON."
         )
