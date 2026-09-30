@@ -9,11 +9,13 @@ from mesido.network_common import NetworkSettings
 from mesido.workflows.multicommodity_simulator_workflow import (
     MultiCommoditySimulator,
     MultiCommoditySimulatorNoLosses,
-    run_sequatially_staged_simulation,
+    SolverHIGHS,
+    run_sequentially_staged_simulation,
 )
 
 import numpy as np
 
+from rtctools.optimization.timeseries import Timeseries
 from rtctools.util import run_optimization_problem
 
 from utils_test_scaling import create_problem_with_debug_info, problem_scaling_check
@@ -309,9 +311,8 @@ class TestMultiCommoditySimulator(TestCase):
                 super().read()
 
                 for asset in self.energy_system_components["wind_park"]:
-                    new_timeseries = (
-                        self.get_timeseries(f"{asset}.maximum_electricity_source").values * 0.5
-                    )
+                    max_source_ts = self.get_timeseries(f"{asset}.maximum_electricity_source")
+                    new_timeseries = Timeseries(max_source_ts.times, max_source_ts.values * 0.5)
                     self.set_timeseries(f"{asset}.maximum_electricity_source", new_timeseries)
 
             def energy_system_options(self):
@@ -457,7 +458,7 @@ class TestMultiCommoditySimulator(TestCase):
         )
 
         solution = run_optimization_problem(
-            multicommoditysimulatornolossesscaling,
+            MultiCommoditySimulatorNoLosses,
             base_folder=base_folder,
             esdl_file_name="emerge_battery_priorities.esdl",
             esdl_parser=ESDLFileParser,
@@ -635,8 +636,9 @@ class TestMultiCommoditySimulator(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
-        solution_staged_unbounded = run_sequatially_staged_simulation(
+        solution_staged_unbounded = run_sequentially_staged_simulation(
             multi_commodity_simulator_class=MultiCommoditySimulatorNoLosses,
+            solver_class=SolverHIGHS,
             simulation_window_size=20,
             base_folder=base_folder,
             esdl_file_name="emerge_battery_priorities.esdl",
@@ -649,6 +651,7 @@ class TestMultiCommoditySimulator(TestCase):
 
         solution_unstaged = run_optimization_problem(
             MultiCommoditySimulatorNoLosses,
+            solver_class=SolverHIGHS,
             base_folder=base_folder,
             esdl_file_name="emerge_battery_priorities.esdl",
             esdl_parser=ESDLFileParser,
@@ -670,7 +673,7 @@ class TestMultiCommoditySimulator(TestCase):
             else:
                 np.testing.assert_allclose(value, value_staged, atol=1e-4)
 
-        solution_staged_bounded = run_sequatially_staged_simulation(
+        solution_staged_bounded = run_sequentially_staged_simulation(
             multi_commodity_simulator_class=MultiCommoditySimulatorNoLosses,
             simulation_window_size=20,
             base_folder=base_folder,
