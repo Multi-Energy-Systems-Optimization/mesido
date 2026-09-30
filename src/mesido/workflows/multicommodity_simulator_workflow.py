@@ -10,12 +10,9 @@ import esdl
 
 from mesido.electricity_physics_mixin import ElectrolyzerOption
 from mesido.esdl.esdl_mixin import DBAccessType, ESDLMixin
-from mesido.esdl.esdl_parser import ESDLFileParser
-from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.head_loss_class import HeadLossOption
 from mesido.network_common import NetworkSettings
 from mesido.physics_mixin import PhysicsMixin
-from mesido.util import run_esdl_mesido_optimization
 from mesido.workflows.io.write_output import ScenarioOutput
 from mesido.workflows.utils.helpers import main_decorator, run_optimization_problem_solver
 
@@ -33,7 +30,6 @@ from rtctools.optimization.single_pass_goal_programming_mixin import (
     SinglePassGoalProgrammingMixin,
 )
 from rtctools.optimization.timeseries import Timeseries
-from rtctools.util import run_optimization_problem
 
 DB_HOST = "172.17.0.2"
 DB_PORT = 8086
@@ -1181,14 +1177,15 @@ def staged_approach_extended(
 
     staged_headloss = False
 
-    #This part should only be run if headloss is included and if its needs to be simplified in
+    # This part should only be run if headloss is included and if its needs to be simplified in
     # the first attempt, for now always turned off.
     if staged_headloss:
+
         class MCSimulatorTimeSequentialNoHeadloss(multicommodity_sequential_simulator_class):
             """
-            This Problem class is used to run the MultiCommoditySimulator class in a sequantial manner
-            to reduce computational time. This class enables this by allowing to run a part of the
-            timeseries and setting bounds on the (initial-)state variables.
+            This Problem class is used to run the MultiCommoditySimulator class in a sequential
+            manner to reduce computational time. This class enables this by allowing to run a
+            part of the timeseries and setting bounds on the (initial-)state variables.
             """
 
             def energy_system_options(self):
