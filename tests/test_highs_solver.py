@@ -150,9 +150,9 @@ class TestGILRelease:
             "instance may need to be made harder (e.g. more items)."
         )
 
-        # With the GIL released the counter ticks at ~1500/s measured on Windows (sleep(0.0001) takes ~0.6 ms
-        # in practice); with it held, it barely ticks. The floor is ~10x below the released
-        # rate so slow or noisy machines don't flake, and scales with the solve duration.
+        # With the GIL released the counter ticks at ~1500/s measured on Windows (sleep(0.0001)
+        # takes ~0.6 ms in practice); with it held, it barely ticks. The floor is ~10x below the
+        # released rate so slow or noisy machines don't flake, and scales with the solve duration.
         tick_rate = counter["n"] / result["elapsed"]
         assert tick_rate > MIN_COUNTER_TICKS_PER_SECOND, (
             f"Counter ticked at {tick_rate:.0f}/s during the solve (floor "
