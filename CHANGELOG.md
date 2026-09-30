@@ -1,7 +1,7 @@
-# [Unreleased-main] - 2026-09-07
+# [Unreleased-main] - 2026-09-24
 
 ## Added
-- xxx
+- selfDischargeRate is parsed from HeatStorage assets in ESDL to calculate heat loss coefficient of heat buffer
 
 ## Changed
 - Upgrade to rtc-tools 2.7.3, casadi 3.7.2 and rtctools-highs 0.1.4 (HiGHS 1.15.1), replacing rtc-tools-gil-comp/casadi-gil-comp; Python 3.12 is now also supported.
@@ -157,6 +157,7 @@
 - Maximum profile constraint for PV asset is considered in PV sizing
 - Cater for input via esdl constraints to specify the upper limit for OPTIONAL assets in DTK
 - Initial implementation of adaptable pipe DN lower limit per pipe
+
 
 ## Changed
 - Speed-up timeseries check in from InfluxDB
