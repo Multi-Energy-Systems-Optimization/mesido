@@ -276,8 +276,11 @@ class HeatProblemSetPoints(
 
     def solver_options(self):
         options = super().solver_options()
-        highs_options = options.setdefault("highs", {})
+        options["solver"] = "highs"
+        highs_options = options["highs"] = {}
         highs_options["mip_rel_gap"] = 0.02
+        highs_options["presolve"] = "on"
+
         return options
 
     def constraints(self, ensemble_member):
