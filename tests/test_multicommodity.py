@@ -302,8 +302,7 @@ class TestMultiCommodityHeatPump(TestCase):
 
         base_folder = Path(run_hp_elec.__file__).resolve().parent.parent
 
-        # Previously forced to CBC due to HiGHS failures with casadi-gil-comp 3.6.7 / HiGHS 1.10.0.
-        # HiGHS 1.14.0 via rtctools-highs 0.1.3 passes correctly.
+        # Uses the default solver (HiGHS) via rtctools-highs; no solver override needed.
         solution = run_esdl_mesido_optimization(
             ElectricityProblemPriceProfile,
             base_folder=base_folder,
