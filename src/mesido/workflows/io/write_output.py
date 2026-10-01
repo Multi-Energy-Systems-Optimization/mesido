@@ -1338,12 +1338,12 @@ class ScenarioOutput:
                     variables_two_hydraulic_system = [
                         f"Primary.{commodity}In.Q",
                         f"Secondary.{commodity}In.Q",
-                        "Primary_heat",
-                        "Secondary_heat",
                     ]
                     if commodity == NetworkSettings.NETWORK_TYPE_HEAT:
                         variables_one_hydraulic_system.append("Heat_flow")
                         variables_two_hydraulic_system.append("Heat_flow")
+                        variables_two_hydraulic_system.append("Primary_heat")
+                        variables_two_hydraulic_system.append("Secondary_heat")
                     elif commodity == NetworkSettings.NETWORK_TYPE_GAS:
                         variables_one_hydraulic_system.append(f"{commodity}In.mass_flow")
                         variables_two_hydraulic_system.append(f"{commodity}In.mass_flow")
