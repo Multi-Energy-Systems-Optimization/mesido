@@ -2308,7 +2308,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         mass_flow_nominal_g_per_s = min(q_nominal * density, max_mass_flow_g_per_s / 2)
 
         modifiers = dict(
-            Q_nominal=q_nominal,
+            Q_nominal_gas=q_nominal,
             id_mapping_carrier=id_mapping,
             # Gas_demand_mass_flow=dict(min=0., max=asset.attributes["power"]
             # *hydrogen_specfic_energy),
@@ -2878,7 +2878,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         modifiers = dict(
             efficiency=efficiency,
             HERatio=heratio,
-            electric_power_nominal=electric_max / 2.0,
+            power_nominal=electric_max / 2.0,
             Heat_source=dict(min=0.0, max=max_heat, nominal=max_heat / 2.0),
             Electricity_source=dict(min=0.0, max=electric_max, nominal=electric_max / 2.0),
             ElectricityOut=dict(
@@ -2913,12 +2913,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
             modifiers.update(
                 dict(
-                    include_gas_in_port=True,
                     id_mapping_carrier=gas_carrier.id,
                     density=density,
-                    density_normal=density_normal,
                     energy_content=energy_content,
-                    gas_mass_flow_nominal=gas_mass_flow_max / 2.0,
                     Q_nominal_gas=gas_q_nominal,
                     GasIn=dict(
                         Q=dict(min=0.0, nominal=gas_q_nominal),
@@ -2929,6 +2926,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
             )
         else:
             modifiers["include_gas_in_port"] = False
+            _ESDLInputException("Co generation unit without a Gas InPort is not supported at this "
+                                "moment")
 
         return CoGeneration, modifiers
 
