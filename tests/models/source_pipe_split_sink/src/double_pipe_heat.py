@@ -49,8 +49,9 @@ class SourcePipeSink(
         super().__init__(*args, **kwargs)
 
     def path_goals(self):
-        # return [TargetDemandGoal(self), MinimizeProduction()]
-        return [TargetDemandGoal(self)]
+        pg = super().path_goals().copy()
+        pg.append(TargetDemandGoal(self))
+        return pg
 
     def post(self):
         super().post()

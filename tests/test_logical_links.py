@@ -312,8 +312,21 @@ class TestLogicalLinks(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
+        class EmergeTestLosses(EmergeTest):
+            def energy_system_options(self):
+                """
+                This function does not add anything at the moment but during debugging we use this.
+
+                Returns
+                -------
+                Options dict for the physics modelling
+                """
+                options = super().energy_system_options()
+                options["include_electric_cable_power_loss"] = True
+                return options
+
         problem = run_esdl_mesido_optimization(
-            EmergeTest,
+            EmergeTestLosses,
             base_folder=base_folder,
             esdl_file_name="emerge_with_logical_links.esdl",
             esdl_parser=ESDLFileParser,
