@@ -1338,6 +1338,8 @@ class ScenarioOutput:
                     variables_two_hydraulic_system = [
                         f"Primary.{commodity}In.Q",
                         f"Secondary.{commodity}In.Q",
+                        "Primary_heat",
+                        "Secondary_heat",
                     ]
                     if commodity == NetworkSettings.NETWORK_TYPE_HEAT:
                         variables_one_hydraulic_system.append("Heat_flow")
@@ -1499,7 +1501,12 @@ class ScenarioOutput:
                                         end_date_time = self.io.datetimes[-1]
 
                                     # Assign quantity and units variable
-                                    if variable_name in ["Heat_flow", "Pump_power"]:
+                                    if variable_name in [
+                                        "Heat_flow",
+                                        "Pump_power",
+                                        "Primary_heat",
+                                        "Secondary_heat",
+                                    ]:
                                         quantity_and_unit = esdl.esdl.QuantityAndUnitType(
                                             physicalQuantity=esdl.PhysicalQuantityEnum.POWER,
                                             unit=esdl.UnitEnum.WATT,
