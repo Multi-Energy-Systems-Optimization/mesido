@@ -200,8 +200,7 @@ class HeatProblemB(
 
     def solver_options(self):
         options = super().solver_options()
-        highs_options = options["highs"] = {}
-        highs_options["presolve"] = "off"
+        options["highs"] = {}
         return options
 
     @property
