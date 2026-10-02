@@ -177,20 +177,28 @@ def heat_to_discharge_test(solution, results, atol=1e-2, rtol=1.0e-4):
             results[f"{d}.HeatOut.Heat"], results[f"{d}.Q"] * rho * cp * return_t, rtol=rtol
         )
 
+    supply_temp_profiles = []
     for d in solution.energy_system_components.get("cold_demand", []):
         cp = solution.parameters(0)[f"{d}.cp"]
         rho = solution.parameters(0)[f"{d}.rho"]
-        supply_t, return_t, dt = _get_component_temperatures(solution, results, d)
         np.testing.assert_allclose(
             results[f"{d}.Cold_demand"],
             results[f"{d}.HeatOut.Heat"] - results[f"{d}.HeatIn.Heat"],
             atol=atol,
         )
+        supply_t, return_t, dt = _get_component_temperatures(solution, results, d)
+        temp_profile = __get_out_port_temp_profile(solution, d, "heat_source")
+        if temp_profile is not None:
+            supply_t = temp_profile.values
+            supply_temp_profiles.append(temp_profile.values)
+
         np.testing.assert_allclose(
-            results[f"{d}.HeatOut.Heat"], results[f"{d}.Q"] * rho * cp * supply_t
+            results[f"{d}.HeatOut.Heat"],
+            results[f"{d}.Q"] * rho * cp * supply_t,
+            atol=atol,
+            rtol=rtol,
         )
 
-    supply_temp_profiles = []
     for d in solution.energy_system_components.get("heat_source", []):
         cp = solution.parameters(0)[f"{d}.cp"]
         rho = solution.parameters(0)[f"{d}.rho"]
