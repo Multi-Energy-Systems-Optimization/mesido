@@ -250,6 +250,7 @@ class _AssetToComponentBase:
         "CheckValve": "check_valve",
         "Compressor": "compressor",
         "CoolingDemand": "cold_demand",
+        "CHP": "co_generation",
         "ElectricBoiler": "heat_source_elec",
         "ElectricityCable": "electricity_cable",
         "ElectricityDemand": "electricity_demand",
@@ -356,6 +357,7 @@ class _AssetToComponentBase:
         "Airco": "heat_pump",
         "ATES": "ates",
         "CoolingDemand": "heat_demand",
+        "CHP": "heat_source",
         "Electrolyzer": "electrolyzer",
         "ElectricBoiler": "heat_source",
         "Import": "electricity_import",
@@ -1345,12 +1347,16 @@ class _AssetToComponentBase:
         Tuple with the supply and return temperature.
         """
 
-        assert len(asset.in_ports) <= 2 and len(asset.out_ports) == 1
+        heat_in_ports = [
+            port for port in asset.in_ports if isinstance(port.carrier, esdl.HeatCommodity)
+        ]
+        heat_out_ports = [
+            port for port in asset.out_ports if isinstance(port.carrier, esdl.HeatCommodity)
+        ]
+        assert len(heat_in_ports) == 1 and len(heat_out_ports) == 1
 
-        for port in asset.in_ports:
-            if isinstance(port.carrier, esdl.HeatCommodity):
-                in_carrier = asset.global_properties["carriers"][port.carrier.id]
-        out_carrier = asset.global_properties["carriers"][asset.out_ports[0].carrier.id]
+        in_carrier = asset.global_properties["carriers"][heat_in_ports[0].carrier.id]
+        out_carrier = asset.global_properties["carriers"][heat_out_ports[0].carrier.id]
 
         if in_carrier["id"] == out_carrier["id"]:
             # these are the pipes, nodes, valves, pumps
@@ -1404,10 +1410,17 @@ class _AssetToComponentBase:
         dict with all the temperatures.
         """
 
-        if len(asset.in_ports) <= 2 and len(asset.out_ports) == 1:
+        heat_in_ports = [
+            port for port in asset.in_ports if isinstance(port.carrier, esdl.HeatCommodity)
+        ]
+        heat_out_ports = [
+            port for port in asset.out_ports if isinstance(port.carrier, esdl.HeatCommodity)
+        ]
+
+        if len(heat_in_ports) == 1 and len(heat_out_ports) == 1:
             modifiers = self._get_supply_return_temperatures(asset)
             return modifiers
-        elif len(asset.in_ports) >= 2 and len(asset.out_ports) == 2:
+        elif len(heat_in_ports) == 2 and len(heat_out_ports) == 2:
             prim_return_temperature = None
             sec_return_temperature = None
             for p in asset.in_ports:
