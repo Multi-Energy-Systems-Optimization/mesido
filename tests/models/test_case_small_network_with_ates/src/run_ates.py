@@ -228,7 +228,7 @@ class HeatProblemPlacingOverTime(HeatProblem):
             )
             nominal = self.variable_nominal(f"{s}__cumulative_investments_made_in_eur")
             inv_cap = 2.5e5
-            constraints.append((inv_made[0] / nominal, 0.0, 200000.0))
+            constraints.append((inv_made[0] / nominal, 0.0, 200000.0 / nominal))
             for i in range(1, len(self.times())):
                 constraints.append(
                     (((inv_made[i] - inv_made[i - 1]) * nominal - inv_cap) / nominal, -np.inf, 0.0)
