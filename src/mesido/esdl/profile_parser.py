@@ -38,7 +38,8 @@ class BaseProfileReader:
         "gas_source": ".maximum_gas_source",
     }
 
-    carrier_profile_var_name: str = ".price_profile"
+    carrier_price_profile_var_name: str = ".price_profile"
+    carrier_temperature_profile_var_name: str = ".temperature_profile"
 
     def __init__(
         self,
@@ -195,19 +196,24 @@ class BaseProfileReader:
 
             for properties in carrier_properties.values():
                 carrier_name = properties["name"]
-                profile = self._profiles[ensemble_member].get(
-                    carrier_name + self.carrier_profile_var_name, None
-                )
-                if profile is not None:
-                    logger.debug(
-                        f"Setting price profile for carrier named {carrier_name} " f"to {profile}"
+                for profile_suffix, profile_label in (
+                    (self.carrier_price_profile_var_name, "price"),
+                    (self.carrier_temperature_profile_var_name, "temperature"),
+                ):
+                    profile = self._profiles[ensemble_member].get(
+                        carrier_name + profile_suffix, None
                     )
-                    io.set_timeseries(
-                        variable=carrier_name + self.carrier_profile_var_name,
-                        datetimes=self._reference_datetimes,
-                        values=profile,
-                        ensemble_member=ensemble_member,
-                    )
+                    if profile is not None:
+                        logger.debug(
+                            f"Setting {profile_label} profile for carrier named {carrier_name}"
+                            f" to {profile}"
+                        )
+                        io.set_timeseries(
+                            variable=carrier_name + profile_suffix,
+                            datetimes=self._reference_datetimes,
+                            values=profile,
+                            ensemble_member=ensemble_member,
+                        )
 
     def _load_profiles_from_source(
         self,
@@ -384,7 +390,14 @@ class ESDLProfileReader(BaseProfileReader):
                     sys.exit(1)
 
             elif isinstance(container, esdl.Commodity):
-                variable_suffix = self.carrier_profile_var_name
+                profile_quantity_and_unit = self._get_profile_quantity_and_unit(profile=profile)
+                if (
+                    profile_quantity_and_unit.physicalQuantity
+                    == esdl.PhysicalQuantityEnum.TEMPERATURE
+                ):
+                    variable_suffix = self.carrier_temperature_profile_var_name
+                else:
+                    variable_suffix = self.carrier_price_profile_var_name
                 var_base_name = container.name
             elif isinstance(container, esdl.Port):
                 asset = container.energyasset
@@ -596,10 +609,18 @@ class ESDLProfileReader(BaseProfileReader):
                     f"{profile} doesn't follow this convention."
                 )
             return profile_time_series
+        elif profile_quantity_and_unit.physicalQuantity == esdl.PhysicalQuantityEnum.TEMPERATURE:
+            if not (profile_quantity_and_unit.unit == esdl.UnitEnum.DEGREES_CELSIUS):
+                raise RuntimeError(
+                    f"For temperature profiles currently only profiles "
+                    f"specified in degree celsius are accepted,"
+                    f"{profile} doesn't follow this convention."
+                )
+            return profile_time_series
         else:
             raise RuntimeError(
                 f"The user input profile currently only supports loading profiles containing "
-                f"either power, energy values or euros per Wh, not "
+                f"either power, energy values, euros per Wh or degree celsius, not "
                 f"{profile_quantity_and_unit.physicalQuantity}."
             )
         # The vectorized method below is used instead of profile_time_series.apply(), due to a
@@ -736,18 +757,33 @@ class ProfileReaderFromFile(BaseProfileReader):
                         self._profiles[e_m][component_name + var_name] = values
             for properties in carrier_properties.values():
                 carrier_name = properties.get("name")
-                try:
-                    values = data_em[carrier_name].to_numpy()
-                    if np.isnan(values).any():
-                        raise Exception(
-                            f"Carrier name: {carrier_name}, NaN exists in the profile source file"
-                            f" {self._file_path}. Details: "
-                            f"{data_em[data_em[carrier_name].isnull()]}"
-                        )
-                except KeyError:
-                    pass
-                else:
-                    self._profiles[e_m][carrier_name + self.carrier_profile_var_name] = values
+                for profile_suffix, profile_label in (
+                    (self.carrier_price_profile_var_name, ""),
+                    (self.carrier_price_profile_var_name, "__price"),
+                    (self.carrier_temperature_profile_var_name, "__temperature"),
+                ):
+                    try:
+                        values = data_em[carrier_name + profile_label].to_numpy()
+                        if np.isnan(values).any():
+                            is_heat_suffix = profile_label in ("__price", "__temperature")
+                            if is_heat_suffix:
+                                raise Exception(
+                                    f"Carrier name: '{carrier_name}': NaN exist in column "
+                                    f"'{carrier_name + profile_label}' in the profile source file"
+                                    f" {self._file_path}. Details: "
+                                    f"{data_em[data_em[carrier_name + profile_label].isnull()]}"
+                                )
+                            else:
+                                raise Exception(
+                                    f"Carrier name: '{carrier_name}': NaN exist in column"
+                                    f"'{carrier_name}' in the profile source file"
+                                    f" {self._file_path}. Details: "
+                                    f"{data_em[data_em[carrier_name].isnull()]}"
+                                )
+                    except KeyError:
+                        pass
+                    else:
+                        self._profiles[e_m][carrier_name + profile_suffix] = values
 
     def _load_xml(self, energy_system_components, esdl_asset_id_to_name_map):
         timeseries_import_basename = self._file_path.stem
