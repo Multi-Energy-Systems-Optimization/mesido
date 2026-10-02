@@ -276,7 +276,9 @@ class _ESDLModelBase(_Model):
                     elif isinstance(p, OutPort) and isinstance(p.carrier, esdl.HeatCommodity):
                         port_map[p.id] = getattr(component, out_suf)
                         heat_out_ports += 1
-                    elif isinstance(p, OutPort) and isinstance(p.carrier, esdl.ElectricityCommodity):
+                    elif isinstance(p, OutPort) and isinstance(
+                        p.carrier, esdl.ElectricityCommodity
+                    ):
                         port_map[p.id] = getattr(component, elec_out_suf)
                         electricity_out_ports += 1
                     elif isinstance(p, InPort) and isinstance(p.carrier, esdl.GasCommodity):

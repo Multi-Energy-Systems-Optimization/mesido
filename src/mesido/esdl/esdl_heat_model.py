@@ -24,8 +24,8 @@ from mesido.pycml.component_library.milp import (
     AirWaterHeatPumpElec,
     Airco,
     CheckValve,
-    ColdDemand,
     CoGeneration,
+    ColdDemand,
     Compressor,
     ControlValve,
     ElecHeatSourceElec,
@@ -2817,7 +2817,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
     def convert_co_generation(self, asset: Asset) -> Tuple[Type[CoGeneration], MODIFIERS]:
         """
-        Convert a CHP asset with heat, electricity and optional gas ports.
+        Convert a co generation asset of which CHP is a subclass with heat, electricity and
+        optional gas ports.
         """
         assert asset.asset_type in {"CHP"}
 
@@ -2873,7 +2874,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
         electric_connected_port = elec_out_port.connectedTo[0]
         min_voltage = elec_out_port.carrier.voltage
         i_max = self._port_to_i_max.get(electric_connected_port, electric_max / min_voltage)
-        i_nom = self._port_to_i_nominal.get(electric_connected_port, electric_max / min_voltage / 2.0)
+        i_nom = self._port_to_i_nominal.get(
+            electric_connected_port, electric_max / min_voltage / 2.0
+        )
 
         modifiers = dict(
             efficiency=efficiency,
@@ -2897,12 +2900,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
         if gas_in_port is not None:
             gas_carrier = gas_in_port.carrier
             density = get_density(asset.name, gas_carrier)
-            density_normal = get_density(
-                asset.name,
-                gas_carrier,
-                temperature_degrees_celsius=0.0,
-                pressure_pa=1.01325 * 1.0e5,
-            )
             energy_content = get_energy_content(asset.name, gas_carrier)
             pressure = gas_carrier.pressure * 1.0e5
 
@@ -2926,8 +2923,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
             )
         else:
             modifiers["include_gas_in_port"] = False
-            _ESDLInputException("Co generation unit without a Gas InPort is not supported at this "
-                                "moment")
+            raise _ESDLInputException(
+                "Co generation unit without a Gas InPort is not yet " "supported."
+            )
 
         return CoGeneration, modifiers
 

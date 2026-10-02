@@ -937,7 +937,10 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
                     denominator = esdl_asset.attributes["COP"]
 
                 elif asset in solution.energy_system_components.get("co_generation", []):
-                    if f"{asset}.Gas_demand_mass_flow" in results and f"{asset}.density_normal" in parameters:
+                    if (
+                        f"{asset}.Gas_demand_mass_flow" in results
+                        and f"{asset}.density_normal" in parameters
+                    ):
                         density_normal = parameters[f"{asset}.density_normal"]
                         nominator_vector = (
                             results[f"{asset}.Gas_demand_mass_flow"] / density_normal * 3600.0

@@ -1,7 +1,4 @@
-from mesido.pycml import Variable
 from mesido.pycml.component_library.milp import ElectricitySource, GasDemand
-from mesido.pycml.component_library.milp.electricity.electricity_base import ElectricityPort
-from mesido.pycml.component_library.milp.gas.gas_base import GasPort
 from mesido.pycml.component_library.milp.heat.heat_source import HeatSource
 from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
@@ -28,14 +25,16 @@ class CoGeneration(HeatSource, ElectricitySource, GasDemand):
             **modifiers,
         )
 
-        self.component_subtype = "co_generation" #should become component_type, but then
+        self.component_subtype = "co_generation"  # should become component_type, but then
         # financialmixin and asset_sizing_mixin also need to be updated.
         self.efficiency = nan
         self.HERatio = nan
         self.energy_content = nan
-        self.incude_gas_in_port = True
+        self.include_gas_in_port = True
 
-        self.add_equation((self.Heat_source - self.HERatio * self.Electricity_source) / self.Heat_nominal)
+        self.add_equation(
+            (self.Heat_source - self.HERatio * self.Electricity_source) / self.Heat_nominal
+        )
 
         self.add_equation(
             (

@@ -1,11 +1,11 @@
 from pathlib import Path
 from unittest import TestCase
 
-import numpy as np
-
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.util import run_esdl_mesido_optimization
+
+import numpy as np
 
 from utils_tests import (
     cost_calculation_test,
@@ -45,8 +45,8 @@ class TestCHP(TestCase):
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
         electric_power_conservation_test(heat_problem, results)
-        
-        #TODO: right now the variable operational costs are also still based on heat per MWh.
+
+        # TODO: right now the variable operational costs are also still based on heat per MWh.
         cost_calculation_test(heat_problem, results)
 
         np.testing.assert_array_less(0.0, results[f"{chp_id}.Heat_source"])
