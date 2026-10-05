@@ -259,7 +259,7 @@ class TestColdDemand(TestCase):
             esdl_file_name="LT_wko_heating_and_cooling.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries_2_supply_temp_profile.csv",
+            input_timeseries_file="timeseries_supply_temp_profile.csv",
         )
         results = heat_problem.extract_results()
         parameters = heat_problem.parameters(0)
@@ -289,10 +289,12 @@ class TestColdDemand(TestCase):
         # Check the supply temperature profile of the pipe linked to cold demand and WKO are
         # lower than the carrier supply temperature profile given in the input csv due to heat loss
         supply_temp_input = heat_problem.get_timeseries("LT.temperature_profile").values
+        # Supply pipe linked to cold demand
         pipe5_temp_calculated = _calculate_pipe_port_temperature(
             "Pipe5", "Out", results, parameters
         )
         np.testing.assert_array_less(pipe5_temp_calculated, supply_temp_input)
+        # Supply pipe linked to wko
         pipe2_temp_calculated = _calculate_pipe_port_temperature("Pipe2", "In", results, parameters)
         indices = results["Pipe2.HeatIn.Q"] < 0
         np.testing.assert_array_less(pipe2_temp_calculated[indices], supply_temp_input[indices])
@@ -311,7 +313,7 @@ class TestColdDemand(TestCase):
             esdl_file_name="LT_wko_heating_and_cooling.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries_2_supply_temp_profile.csv",
+            input_timeseries_file="timeseries_supply_temp_profile.csv",
         )
         results = heat_problem.extract_results()
         parameters = heat_problem.parameters(0)
@@ -340,10 +342,12 @@ class TestColdDemand(TestCase):
         # Check the supply temperature profile of the pipe linked to cold demand and WKO are
         # equal to the carrier supply temperature profile given in the input csv
         supply_temp_input = heat_problem.get_timeseries("LT.temperature_profile").values
+        # Supply pipe linked to cold_demand
         pipe5_temp_calculated = _calculate_pipe_port_temperature(
             "Pipe5", "Out", results, parameters
         )
         np.testing.assert_array_almost_equal(pipe5_temp_calculated, supply_temp_input)
+        # Supply pipe linked to wko
         pipe2_temp_calculated = _calculate_pipe_port_temperature("Pipe2", "In", results, parameters)
         indices = results["Pipe2.HeatIn.Q"] < 0
         np.testing.assert_array_almost_equal(
