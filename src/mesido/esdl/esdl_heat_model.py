@@ -856,7 +856,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             Node class with modifiers:
                 {automatically_add_modifiers_here}
         """
-        assert asset.asset_type == "Joint"
+        assert asset.asset_type in ["Joint", "HConnection"]
 
         sum_in = 0
         sum_out = 0
@@ -913,31 +913,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 {automatically_add_modifiers_here}
         """
         assert asset.asset_type == "HConnection"
-
-        sum_in = 0
-        sum_out = 0
-
-        node_carrier = None
-        for x in asset.attributes["port"].items:
-            if node_carrier is None:
-                node_carrier = x.carrier.name
-            elif node_carrier != x.carrier.name:
-                raise _ESDLInputException(
-                    f"{asset.name} has multiple carriers mixing which is not allowed. "
-                    f"Only one carrier (carrier couple) allowed in hydraulically coupled system"
-                )
-            if isinstance(x, esdl.esdl.InPort):
-                sum_in += len(x.connectedTo)
-            if isinstance(x, esdl.esdl.OutPort):
-                sum_out += len(x.connectedTo)
-
-        modifiers = dict(
-            n=sum_in + sum_out,
-            state=self.get_state(asset),
-            include_head_loss_variables=self.include_head_loss_variables,
-        )
-
-        return Node, modifiers
+        return self.convert_node(asset)
 
     def convert_pipe(self, asset: Asset) -> Tuple[Union[Type[HeatPipe], Type[GasPipe]], MODIFIERS]:
         """
