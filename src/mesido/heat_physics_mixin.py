@@ -1610,16 +1610,16 @@ class HeatPhysicsMixin(
         if carrier_id in carriers_ids:
             sup_carrier_name = carriers[carrier_id]["name"]
             try:
-                temp_out_profile = self.get_timeseries(f"{sup_carrier_name}.price_profile")
+                temp_out_profile = self.get_timeseries(f"{sup_carrier_name}.temperature_profile")
                 temp_out_prof_start_idx = int(
                     np.where(
-                        self.get_timeseries(f"{sup_carrier_name}.price_profile").times
+                        self.get_timeseries(f"{sup_carrier_name}.temperature_profile").times
                         == self.times()[0]
                     )[0]
                 )
                 temp_out_prof_end_idx = int(
                     np.where(
-                        self.get_timeseries(f"{sup_carrier_name}.price_profile").times
+                        self.get_timeseries(f"{sup_carrier_name}.temperature_profile").times
                         == self.times()[-1]
                     )[0]
                 )

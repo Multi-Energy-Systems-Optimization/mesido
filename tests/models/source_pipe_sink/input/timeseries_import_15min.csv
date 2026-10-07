@@ -1,4 +1,4 @@
-DateTime,demand,elec,heat__temperature,heat__price
+DateTime,demand,elec__price,heat__temperature,heat__price
 19-5-2013 00:00,21758.95804,0.050329049,70,0.050329049
 19-5-2013 00:15,38171.89848,0.019461529,70,0.019461529
 19-5-2013 00:30,71925.57045,0.005371142,70,0.005371142
