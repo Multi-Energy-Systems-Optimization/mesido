@@ -127,6 +127,12 @@ class BaseESDLParser:
                     asset_type = el.__class__.__name__
 
                     # Every asset should at least have a port to be connected to another asset
+                    # Valid exception: assets that are building measures, which are not connected to
+                    # other assets, but are used to modify the properties of other assets.
+                    if isinstance(el.eContainer(), esdl.Measure) and isinstance(
+                        el.eContainer().eContainer().eContainer(), esdl.Building
+                    ):
+                        continue
                     assert len(el.port) >= 1
 
                     in_ports = None

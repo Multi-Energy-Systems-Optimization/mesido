@@ -100,6 +100,13 @@ class ESDLMixin(
     __minimum_pipe_size_name: EEnumLiteral = esdl.PipeDiameterEnum.DN150
     __use_user_defined_minimum_pipe_size: bool = False
 
+    _BUILDING_SUPPORTED_ESDL_ASSET_TYPES = frozenset(
+        {
+            "HeatingDemand",
+            "CoolingDemand",
+        }
+    )
+
     def __init__(self, *args, **kwargs) -> None:
         """
         In this __init__ function we do the parsing of the esdl file based on either a string which
@@ -149,6 +156,8 @@ class ESDLMixin(
         input_file_name = kwargs.get("input_timeseries_file", None)
         input_folder = kwargs.get("input_folder")
         input_file_path = None
+
+        self.__building_parameters = self._build_building_parameters()
 
         # Setup credentials for database connections
         database_connection_info = kwargs.get("database_connections", {})
@@ -283,6 +292,92 @@ class ESDLMixin(
         Returns a bytes string representation of the ESDL model used.
         """
         return base64.b64encode(self.__energy_system_handler.to_string().encode("utf-8"))
+
+    def _build_building_parameters(self) -> Dict[str, Dict[str, Any]]:
+        """
+        Build a table with building-scoped information for easy access and use elsewhere.
+
+        Structure of the building_parameters dict:
+        It is a dictionary where the keys are building asset IDs. Each value contains, when
+        applicable:
+            - "contained_measure" dictionary keyed by measure ID. Each measure entry contains:
+                - "measure_assets": A dictionary where the keys are contained ESDL asset IDs and
+                the values are the corresponding ESDL assets.
+                - Note: Only supported building-related measure assets are included. Currently these
+                are the ESDL asset types listed in ``_BUILDING_SUPPORTED_ESDL_ASSET_TYPES``.
+
+        Returns
+        -------
+        building_parameters : Dict[str, Dict[str, Any]]
+            A dictionary containing building-scoped information for easy access.
+
+        """
+
+        def _get_supported_esdl_assets(
+            measure, supported_esdl_asset_types: List[str]
+        ) -> Dict[str, Any]:
+            """Returns: dict of ESDL assets specified in a measure, that are supported by building
+            parameters and the rest of the codebase"""
+
+            measure_esdl_assets = {}
+            for esdl_asset_type in supported_esdl_asset_types:
+                esdl_assets = _get_measure_esdl_assets(measure, esdl_asset_type)
+                assert len(esdl_assets) <= 1, (
+                    f"Code currently only supports a single ESDL asset of each type per "
+                    f" measure. More than 1 ESDL asset of type {esdl_asset_type} found in "
+                    f"measure {measure.id}."
+                )
+                for esdl_asset in esdl_assets:
+                    measure_esdl_assets[esdl_asset.id] = esdl_asset
+            return measure_esdl_assets
+
+        def _get_measure_esdl_assets(measure, esdl_asset_type: str) -> List[Any]:
+            """Returns: list of ESDL assets of the specified type contained in the measure."""
+
+            matched_assets: List[Any] = []
+            for measure_asset in getattr(measure, "asset", []):
+                if isinstance(measure_asset, getattr(esdl, esdl_asset_type)):
+                    matched_assets.append(measure_asset)
+
+            return matched_assets
+
+        def _build_contained_measure_parameters(measures: Any) -> Dict[str, Dict[str, Any]]:
+            """Returns: contained measure parameters for supported building measure assets."""
+
+            contained_measure_parameters: Dict[str, Dict[str, Any]] = {}
+            for measure in getattr(measures, "measure", []):
+                measure_esdl_assets = _get_supported_esdl_assets(
+                    measure, self._BUILDING_SUPPORTED_ESDL_ASSET_TYPES
+                )
+                if not measure_esdl_assets:
+                    continue
+                contained_measure_parameters[measure.id] = {"measure_assets": measure_esdl_assets}
+
+            return contained_measure_parameters
+
+        building_parameters: Dict[str, Dict[str, Any]] = {}
+
+        for building_asset in self._esdl_assets.values():
+            if building_asset.asset_type != "Building":
+                continue
+
+            building_parameters[building_asset.id] = {}
+
+            measures = building_asset.attributes.get("measures", None)
+            if measures:
+                # Buidling parameters might include other information in the future in addition to
+                # "contained_measures"
+                building_parameters[building_asset.id] = {
+                    "contained_measure": _build_contained_measure_parameters(measures)
+                }
+
+        return building_parameters
+
+    @property
+    def building_parameters(self) -> Dict[str, Dict[str, Any]]:
+        """Return the cached building parameter lookup."""
+
+        return copy.deepcopy(self.__building_parameters)
 
     def pre(self) -> None:
         """
