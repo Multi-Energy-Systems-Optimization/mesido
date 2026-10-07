@@ -1,10 +1,12 @@
-# [Unreleased-main] - 2026-09-07
+# [Unreleased-main] - 2026-09-24
 
 ## Added
+- selfDischargeRate is parsed from HeatStorage assets in ESDL to calculate heat loss coefficient of heat buffer
 - Heat carrier temperature and price profiles are parsed from ESDL and CSV files.
 
 ## Changed
-- xxx
+- Upgrade to rtc-tools 2.7.3, casadi 3.7.2 and rtctools-highs 0.1.4, replacing rtc-tools-gil-comp/casadi-gil-comp; Python 3.12 is now also supported.
+- Remove HiGHS presolve=off workarounds that were needed for a bug in the older HiGHS bundled via casadi-gil-comp.
 
 ## Fixed
 - Voltage losses are now also excluded when include_electric_cable_power_loss is set to False.
