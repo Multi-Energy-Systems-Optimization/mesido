@@ -3067,5 +3067,4 @@ class ESDLHeatModel(_ESDLModelBase):
             }
         )
 
-        # HConnection is also new in these assets being passed here
         self._esdl_convert(converter, assets, name_to_id_map, "MILP")

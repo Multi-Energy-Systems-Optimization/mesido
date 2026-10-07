@@ -100,6 +100,13 @@ class ESDLMixin(
     __minimum_pipe_size_name: EEnumLiteral = esdl.PipeDiameterEnum.DN150
     __use_user_defined_minimum_pipe_size: bool = False
 
+    _BUILDING_SUPPORTED_ESDL_ASSET_TYPES = frozenset(
+        {
+            "HeatingDemand",
+            "CoolingDemand",
+        }
+    )
+
     def __init__(self, *args, **kwargs) -> None:
         """
         In this __init__ function we do the parsing of the esdl file based on either a string which
@@ -288,27 +295,16 @@ class ESDLMixin(
 
     def _build_building_parameters(self) -> Dict[str, Dict[str, Any]]:
         """
-        Build a lightweight lookup table with building-scoped information for easy access.
-
-        The helper keeps the raw Building metadata together with the building child assets that are
-        relevant for instance demand handling (HeatingDemand and CoolingDemand).
+        Build a table with building-scoped information for easy access and use elsewhere.
 
         Structure of the building_parameters dict:
-        It is a dictionary where the keys are the building asset IDs and the values are dictionaries
-        containing the following keys:
-        - "name": The name of the building asset.
-        - "attributes": The esdl attributes of the building asset.
-        - "contained_assets": A dictionary where the keys are the IDs of the contained assets
-        and the values are dictionaries containing the following keys:
-          - "name": The name of the contained asset.
-          - "type": The type of the contained asset (e.g., HeatingDemand, CoolingDemand).
-        - "contained_measures": A dictionary where the keys are the IDs of the contained measures
-        and the values are dictionaries containing the following keys:
-            - "name": The name of the contained measure.
-            - "HeatingDemand": A dictionary containing the name and ID of the HeatingDemand assets
-            associated with the measure.
-            - "CoolingDemand": A dictionary containing the name and ID of the CoolingDemand assets
-            associated with the measure.
+        It is a dictionary where the keys are building asset IDs. Each value contains, when
+        applicable:
+            - "contained_measure" dictionary keyed by measure ID. Each measure entry contains:
+                - "measure_assets": A dictionary where the keys are contained ESDL asset IDs and
+                the values are the corresponding ESDL assets.
+                - Note: Only supported building-related measure assets are included. Currently these
+                are the ESDL asset types listed in ``_BUILDING_SUPPORTED_ESDL_ASSET_TYPES``.
 
         Returns
         -------
@@ -317,86 +313,64 @@ class ESDLMixin(
 
         """
 
-        def _iter_assets(value):
-            if not value:
-                return []
-            if isinstance(value, EOrderedSet):
-                return list(value)
-            if isinstance(value, (list, tuple, set)):
-                return list(value)
-            return [value]
+        def _get_supported_esdl_assets(
+            measure, supported_esdl_asset_types: List[str]
+        ) -> Dict[str, Any]:
+            """Returns: dict of ESDL assets specified in a measure, that are supported by building
+            parameters and the rest of the codebase"""
 
-        def _get_measure_assets_by_type(measure, filter_type: str) -> List[Any]:
-            measure_assets = {
-                measure.id: Asset(
-                    asset_type=measure.__class__.__name__,
-                    id=measure.id,
-                    name=measure.name,
-                    in_ports=None,
-                    out_ports=None,
-                    attributes={"asset": getattr(measure, "asset", None)},
-                    global_properties={},
+            measure_esdl_assets = {}
+            for esdl_asset_type in supported_esdl_asset_types:
+                esdl_assets = _get_measure_esdl_assets(measure, esdl_asset_type)
+                assert len(esdl_assets) <= 1, (
+                    f"Code currently only supports a single ESDL asset of each type per "
+                    f" measure. More than 1 ESDL asset of type {esdl_asset_type} found in "
+                    f"measure {measure.id}."
                 )
-            }
+                for esdl_asset in esdl_assets:
+                    measure_esdl_assets[esdl_asset.id] = esdl_asset
+            return measure_esdl_assets
 
-            return list(
-                self.filter_asset_measures(
-                    asset_measures=measure_assets,
-                    filter_type=filter_type,
-                ).values()
-            )
+        def _get_measure_esdl_assets(measure, esdl_asset_type: str) -> List[Any]:
+            """Returns: list of ESDL assets of the specified type contained in the measure."""
+
+            matched_assets: List[Any] = []
+            for measure_asset in getattr(measure, "asset", []):
+                if isinstance(measure_asset, getattr(esdl, esdl_asset_type)):
+                    matched_assets.append(measure_asset)
+
+            return matched_assets
+
+        def _build_contained_measure_parameters(measures: Any) -> Dict[str, Dict[str, Any]]:
+            """Returns: contained measure parameters for supported building measure assets."""
+
+            contained_measure_parameters: Dict[str, Dict[str, Any]] = {}
+            for measure in getattr(measures, "measure", []):
+                measure_esdl_assets = _get_supported_esdl_assets(
+                    measure, self._BUILDING_SUPPORTED_ESDL_ASSET_TYPES
+                )
+                if not measure_esdl_assets:
+                    continue
+                contained_measure_parameters[measure.id] = {"measure_assets": measure_esdl_assets}
+
+            return contained_measure_parameters
 
         building_parameters: Dict[str, Dict[str, Any]] = {}
 
-        for asset in self._esdl_assets.values():
-            if asset.asset_type != "Building":
+        for building_asset in self._esdl_assets.values():
+            if building_asset.asset_type != "Building":
                 continue
 
-            # The building parameters stored will be updated once they are used.
-            building_parameters[asset.id] = {
-                "name": asset.name,
-                "attributes": asset.attributes,
-                "contained_assets": {},
-                "contained_measures": {},
-            }
+            building_parameters[building_asset.id] = {}
 
-            building_assets = _iter_assets(asset.attributes.get("asset"))
-            measures = asset.attributes.get("measures")
-
-            for measure in _iter_assets(getattr(measures, "measure", None)):
-                measure_demand_assets = [
-                    *_get_measure_assets_by_type(measure, "HeatingDemand"),
-                    *_get_measure_assets_by_type(measure, "CoolingDemand"),
-                ]
-
-                if not measure_demand_assets:
-                    continue
-
-                building_parameters[asset.id]["contained_measures"][measure.id] = {
-                    "name": measure.name,
-                    "HeatingDemand": {},
-                    "CoolingDemand": {},
+            measures = building_asset.attributes.get("measures", None)
+            if measures:
+                # Buidling parameters might include other information in the future in addition to
+                # "contained_measures"
+                building_parameters[building_asset.id] = {
+                    "contained_measure": _build_contained_measure_parameters(measures)
                 }
 
-                for measure_asset in measure_demand_assets:
-                    building_parameters[asset.id]["contained_measures"][measure.id][
-                        measure_asset.__class__.__name__
-                    ][measure_asset.id] = {
-                        "name": measure_asset.name,
-                        "id": measure_asset.id,
-                    }
-
-            for child_asset in building_assets:
-                if not hasattr(child_asset, "assetType") and not hasattr(child_asset, "name"):
-                    continue
-
-                child_asset_type = child_asset.__class__.__name__
-
-                if child_asset_type in {"HeatingDemand", "CoolingDemand"}:
-                    building_parameters[asset.id]["contained_assets"][child_asset.id] = {
-                        "name": child_asset.name,
-                        "type": child_asset_type,
-                    }
         return building_parameters
 
     @property

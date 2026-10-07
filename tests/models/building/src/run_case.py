@@ -86,9 +86,12 @@ class SourcePipeBuilding(
     def insulation_levels(self):
         # Under development. Potentially use the building_parameters to get a profile.
         # One now has access to the following:
-        # - self.building_parameters
-        # - profiles (including influx profiles in measures)
-        #   via: self._ESDLMixin__profile_reader._profiles
+        # - identify in which building a demand asset (demand_id) is located via:
+        #   demand_id = self.energy_system_components.get("heat_demand", [])[0]
+        #   building_id = self.esdl_assets[demand_id].attributes["containingBuilding"].id
+        # - self.building_parameters: can use building id to access measure info per asset
+        # - profile via:
+        #   self._ESDLMixin__profile_reader._profiles[0][f"{measure_asset_id}.target_heat_demand"]
         attributes = {
             "insulation_level": ["A", "B", "C"],
             # For now the factor values chosen such that value 1.0 is optimal
@@ -133,7 +136,7 @@ if __name__ == "__main__":
     import time
 
     start_time = time.time()
-
+    # This is a rough case and still to be used
     solution = run_optimization_problem(
         SourcePipeBuilding,
         esdl_file_name="source buildingsink with multiple demand profiles.esdl",
