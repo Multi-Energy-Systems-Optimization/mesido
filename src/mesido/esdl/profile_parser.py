@@ -38,13 +38,18 @@ class BaseProfileReader:
         "gas_source": ".maximum_gas_source",
     }
 
-    carrier_profile_var_mapping: dict = {
-        "__price": ".price_profile",
-        "__temperature": ".temperature_profile",
-    }
-
     carrier_price_profile_var_name: str = ".price_profile"
     carrier_temperature_profile_var_name: str = ".temperature_profile"
+
+    carrier_profile_var_mapping: dict = {
+        "__price": carrier_price_profile_var_name,
+        "__temperature": carrier_temperature_profile_var_name,
+    }
+
+    carrier_physical_quantity_to_var_name_map: dict = {
+        esdl.PhysicalQuantityEnum.COST: carrier_price_profile_var_name,
+        esdl.PhysicalQuantityEnum.TEMPERATURE: carrier_temperature_profile_var_name,
+    }
 
     def __init__(
         self,
@@ -394,14 +399,10 @@ class ESDLProfileReader(BaseProfileReader):
 
             elif isinstance(container, esdl.Commodity):
                 profile_quantity_and_unit = self._get_profile_quantity_and_unit(profile=profile)
-                if (
+                variable_suffix = self.carrier_physical_quantity_to_var_name_map.get(
                     profile_quantity_and_unit.physicalQuantity
-                    == esdl.PhysicalQuantityEnum.TEMPERATURE
-                ):
-                    variable_suffix = self.carrier_temperature_profile_var_name
-                elif profile_quantity_and_unit.physicalQuantity == esdl.PhysicalQuantityEnum.COST:
-                    variable_suffix = self.carrier_price_profile_var_name
-                else:
+                )
+                if variable_suffix is None:
                     raise RuntimeError(
                         f"Unsupported profile for commodity {container.name}: only temperature "
                         "and price profiles are supported"
