@@ -399,10 +399,7 @@ class ESDLProfileReader(BaseProfileReader):
                     == esdl.PhysicalQuantityEnum.TEMPERATURE
                 ):
                     variable_suffix = self.carrier_temperature_profile_var_name
-                elif (
-                    profile_quantity_and_unit.physicalQuantity
-                    == esdl.PhysicalQuantityEnum.COST
-                ):
+                elif profile_quantity_and_unit.physicalQuantity == esdl.PhysicalQuantityEnum.COST:
                     variable_suffix = self.carrier_price_profile_var_name
                 else:
                     raise RuntimeError(

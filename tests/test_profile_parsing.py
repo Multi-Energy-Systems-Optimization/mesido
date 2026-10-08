@@ -56,6 +56,8 @@ class TestProfileUpdating(unittest.TestCase):
         - Input CSV has 15-min time spacing and expected number of data points
         - Input profile is parsed correctly (2-hours and 15-minutes time steps)
         - No indexing problem with input demand and electricity profile
+        - Carrier price and temperature profiles are parsed from csv, adapted and saved
+          into <carrier_name>.price_profile and <carrier_name>.temperature_profile variables.
 
         """
         import models.source_pipe_sink.src.double_pipe_heat as double_pipe_heat
