@@ -9,7 +9,7 @@
 
 ## Fixed
 - Voltage losses are now also excluded when include_electric_cable_power_loss is set to False.
-
+- Prevented duplicate writing of water-to-water heat pump heat_flow profiles to the output ESDL and added primary_heat and secondary_heat profiles for water-to-water heat pumps and heat exchangers to the output ESDL.
 
 # [0.1.22] - 2026-09-07
 
