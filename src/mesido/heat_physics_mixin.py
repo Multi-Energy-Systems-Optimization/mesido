@@ -1470,44 +1470,53 @@ class HeatPhysicsMixin(
 
         return constraints
 
-    def __source_heat_to_discharge_variable_temp_constraints(self, ensemble_member):
+    def __base_heat_to_discharge_variable_temp_constraints(
+        self, ensemble_member: int, asset_type: str
+    ):
         """
-        Adds the same type of constraints to the source as
-        __source_heat_to_discharge_path_constraints for cases where the out carrier
-        has a prescribed temperature profile. An important difference is that these
-        are conventional constraints, since every timestep will have a specific value.
+        Base helper function for heat to discharge constraints when the out carrier has a
+        prescribed supply temperature profile.
 
-        TODO: This has not yet been tested and developed for cases with multiple sources on the
-        same network and only one contains the temperature profile. With the current
-        implementation, all source on the same network should have this same temperature profile.
+        This function adds constraints linking the flow to the thermal power for assets with
+        a prescribed temperature profile. An important difference from the standard constraints
+        is that these are conventional constraints, since every timestep will have a specific value.
+
+        Parameters
+        ----------
+        ensemble_member : The ensemble member index.
+        asset_type : The asset type (e.g., "heat_source", "cold_demand").
         """
-
         constraints = []
         parameters = self.parameters(ensemble_member)
         bounds = self.bounds()
 
-        for s in self.energy_system_components.get("heat_source", []):
-            heat_nominal = parameters[f"{s}.Heat_nominal"]
-            cp = parameters[f"{s}.cp"]
-            rho = parameters[f"{s}.rho"]
-            dt = parameters[f"{s}.dT"]
+        for asset in self.energy_system_components.get(asset_type, []):
+            heat_nominal = parameters[f"{asset}.Heat_nominal"]
+            cp = parameters[f"{asset}.cp"]
+            rho = parameters[f"{asset}.rho"]
+            dt = parameters[f"{asset}.dT"]
 
-            big_m = 2.0 * bounds[f"{s}.HeatOut.Heat"][1]
+            big_m = 2.0 * bounds[f"{asset}.HeatOut.Heat"][1]
             big_m = (
                 big_m
                 if big_m != np.inf
-                else 2.0 * bounds[f"{s}.Heat_source"][1] * parameters[f"{s}.T_supply"] / dt
+                else 2.0
+                * bounds[f"{asset}.{asset_type.capitalize()}"][1]
+                * parameters[f"{asset}.T_supply"]
+                / dt
             )
 
             temp_out_profile, sup_carrier_name, temp_out_prof_start_idx, temp_out_prof_end_idx = (
-                self.__get_out_port_carrier_temp_profile(parameters, s, "heat_source")
+                self.__get_out_port_carrier_temp_profile(parameters, asset, asset_type)
             )
 
             if (
                 temp_out_profile is not None
             ):  # Case where the out carrier has a temp profile assigned to it.
-                heat_out_vector = self.__state_vector_scaled(f"{s}.HeatOut.Heat", ensemble_member)
-                discharge_vector = self.__state_vector_scaled(f"{s}.Q", ensemble_member)
+                heat_out_vector = self.__state_vector_scaled(
+                    f"{asset}.HeatOut.Heat", ensemble_member
+                )
+                discharge_vector = self.__state_vector_scaled(f"{asset}.Q", ensemble_member)
 
                 constraints.append(
                     (
@@ -1527,6 +1536,21 @@ class HeatPhysicsMixin(
                 )
 
         return constraints
+
+    def __source_heat_to_discharge_variable_temp_constraints(self, ensemble_member):
+        """
+        Adds the same type of constraints to the source as
+        __source_heat_to_discharge_path_constraints for cases where the out carrier
+        has a prescribed temperature profile. An important difference is that these
+        are conventional constraints, since every timestep will have a specific value.
+
+        TODO: This has not yet been tested and developed for cases with multiple sources on the
+        same network and only one contains the temperature profile. With the current
+        implementation, all source on the same network should have this same temperature profile.
+        """
+        return self.__base_heat_to_discharge_variable_temp_constraints(
+            ensemble_member, "heat_source"
+        )
 
     def __cold_demand_heat_to_discharge_path_constraints(self, ensemble_member):
         """
@@ -1558,27 +1582,42 @@ class HeatPhysicsMixin(
             supply_temperatures = self.temperature_regimes(sup_carrier)
             big_m = 2.0 * bounds[f"{d}.HeatOut.Heat"][1]
 
-            if len(supply_temperatures) == 0:
-                constraints.append(
-                    (
-                        (heat_out - discharge * cp * rho * parameters[f"{d}.T_supply"])
-                        / heat_nominal,
-                        0.0,
-                        0.0,
-                    )
-                )
-            else:
-                for sup_temperature in supply_temperatures:
-                    sup_temperature_is_selected = self.state(f"{sup_carrier}_{sup_temperature}")
-                    constraints.extend(
-                        self._symmetric_big_m_constraints(
-                            heat_out - discharge * cp * rho * sup_temperature,
-                            (1.0 - sup_temperature_is_selected) * big_m,
-                            heat_nominal,
+            temp_out_profile, _, _, _ = self.__get_out_port_carrier_temp_profile(
+                parameters, d, "cold_demand"
+            )
+            if temp_out_profile is None:
+                if len(supply_temperatures) == 0:
+                    constraints.append(
+                        (
+                            (heat_out - discharge * cp * rho * parameters[f"{d}.T_supply"])
+                            / heat_nominal,
+                            0.0,
+                            0.0,
                         )
                     )
+                else:
+                    for sup_temperature in supply_temperatures:
+                        sup_temperature_is_selected = self.state(f"{sup_carrier}_{sup_temperature}")
+                        constraints.extend(
+                            self._symmetric_big_m_constraints(
+                                heat_out - discharge * cp * rho * sup_temperature,
+                                (1.0 - sup_temperature_is_selected) * big_m,
+                                heat_nominal,
+                            )
+                        )
 
         return constraints
+
+    def __cold_demand_heat_to_discharge_variable_temp_constraints(self, ensemble_member):
+        """
+        Adds the same type of constraints to the cold demand as
+        __cold_demand_heat_to_discharge_path_constraints for cases where the out carrier
+        has a prescribed temperature profile. An important difference is that these
+        are conventional constraints, since every timestep will have a specific value.
+        """
+        return self.__base_heat_to_discharge_variable_temp_constraints(
+            ensemble_member, "cold_demand"
+        )
 
     def __get_out_port_carrier_temp_profile(self, parameters, asset_name, asset_type):
         """
@@ -1588,7 +1627,6 @@ class HeatPhysicsMixin(
         start and end index of the temperature profile according to the problem's timeseries
         (this last one only relevant for problems that are sliced).
         """
-        # TODO: modify profile parser so the temperature profile is not called a price profile.
         # TODO: modify this and the profile parser to incorporate the esdl option to
         # use power instead of temperature.
         # TODO: the start/end indices are needed for a very specific problem-times slicing case.
@@ -1606,21 +1644,25 @@ class HeatPhysicsMixin(
         temp_out_profile = None
         temp_out_prof_start_idx = None
         temp_out_prof_end_idx = None
-        carrier_id_types = {"heat_source": ".T_supply_id", "heat_pipe": ".carrier_id"}
+        carrier_id_types = {
+            "heat_source": ".T_supply_id",
+            "cold_demand": ".T_supply_id",
+            "heat_pipe": ".carrier_id",
+        }
         carrier_id = string_parameters[f"{asset_name}{carrier_id_types[asset_type]}"]
         if carrier_id in carriers_ids:
             sup_carrier_name = carriers[carrier_id]["name"]
             try:
-                temp_out_profile = self.get_timeseries(f"{sup_carrier_name}.price_profile")
+                temp_out_profile = self.get_timeseries(f"{sup_carrier_name}.temperature_profile")
                 temp_out_prof_start_idx = int(
                     np.where(
-                        self.get_timeseries(f"{sup_carrier_name}.price_profile").times
+                        self.get_timeseries(f"{sup_carrier_name}.temperature_profile").times
                         == self.times()[0]
                     )[0]
                 )
                 temp_out_prof_end_idx = int(
                     np.where(
-                        self.get_timeseries(f"{sup_carrier_name}.price_profile").times
+                        self.get_timeseries(f"{sup_carrier_name}.temperature_profile").times
                         == self.times()[-1]
                     )[0]
                 )
@@ -2775,7 +2817,7 @@ class HeatPhysicsMixin(
                             )
 
                     else:
-                        sup_temp = parameters[(f"{heat_exchanger}.Primary.T_supply")]
+                        sup_temp = parameters[f"{heat_exchanger}.Primary.T_supply"]
                         constraints.extend(
                             __constraints_temperature_heat_to_discharge_bypass_primary(
                                 sup_temp,
@@ -3692,6 +3734,9 @@ class HeatPhysicsMixin(
         constraints.extend(self.__ates_max_stored_heat_constraints(ensemble_member))
         constraints.extend(
             self.__source_heat_to_discharge_variable_temp_constraints(ensemble_member)
+        )
+        constraints.extend(
+            self.__cold_demand_heat_to_discharge_variable_temp_constraints(ensemble_member)
         )
         constraints.extend(self.__max_ramp_constraints(ensemble_member))
 

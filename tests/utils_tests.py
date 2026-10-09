@@ -29,12 +29,16 @@ def __get_out_port_temp_profile(solution, asset_name, asset_type):
         carriers_ids = []
         sup_carrier_name = None
     temp_out_profile = None
-    carrier_id_types = {"heat_source": ".T_supply_id", "heat_pipe": ".carrier_id"}
+    carrier_id_types = {
+        "cold_demand": ".T_supply_id",
+        "heat_pipe": ".carrier_id",
+        "heat_source": ".T_supply_id",
+    }
     for carrier_id in carriers_ids:
         if carrier_id == string_parameters[f"{asset_name}{carrier_id_types[asset_type]}"]:
             sup_carrier_name = carriers[carrier_id]["name"]
     try:
-        temp_out_profile = solution.get_timeseries(f"{sup_carrier_name}.price_profile")
+        temp_out_profile = solution.get_timeseries(f"{sup_carrier_name}.temperature_profile")
     except KeyError:
         pass
 
@@ -149,6 +153,7 @@ def heat_to_discharge_test(solution, results, atol=1e-2, rtol=1.0e-4):
     """
     test = TestCase()
     string_parameters = solution.string_parameters(0)
+    supply_temp_profiles = []
     for d in [
         *solution.energy_system_components.get("heat_demand", []),
         *solution.energy_system_components.get("airco", []),
@@ -180,17 +185,24 @@ def heat_to_discharge_test(solution, results, atol=1e-2, rtol=1.0e-4):
     for d in solution.energy_system_components.get("cold_demand", []):
         cp = solution.parameters(0)[f"{d}.cp"]
         rho = solution.parameters(0)[f"{d}.rho"]
-        supply_t, return_t, dt = _get_component_temperatures(solution, results, d)
         np.testing.assert_allclose(
             results[f"{d}.Cold_demand"],
             results[f"{d}.HeatOut.Heat"] - results[f"{d}.HeatIn.Heat"],
             atol=atol,
         )
+        supply_t, return_t, dt = _get_component_temperatures(solution, results, d)
+        temp_profile = __get_out_port_temp_profile(solution, d, "cold_demand")
+        if temp_profile is not None:
+            supply_t = temp_profile.values
+            supply_temp_profiles.append(temp_profile.values)
+
         np.testing.assert_allclose(
-            results[f"{d}.HeatOut.Heat"], results[f"{d}.Q"] * rho * cp * supply_t
+            results[f"{d}.HeatOut.Heat"],
+            results[f"{d}.Q"] * rho * cp * supply_t,
+            atol=atol,
+            rtol=rtol,
         )
 
-    supply_temp_profiles = []
     for d in solution.energy_system_components.get("heat_source", []):
         cp = solution.parameters(0)[f"{d}.cp"]
         rho = solution.parameters(0)[f"{d}.rho"]

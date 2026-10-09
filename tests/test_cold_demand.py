@@ -31,6 +31,28 @@ logger = logging.getLogger("mesido")
 logger.setLevel(logging.INFO)
 
 
+def _calculate_pipe_port_temperature(
+    pipe_name: str, pipe_port: str, results: dict, parameters: dict
+):
+    """
+    Calculate pipe outlet or inlet temperature from heat flow and volumetric flow.
+
+    Parameters
+    ----------
+    pipe_name : Name of the pipe
+    pipe_port : Port of the pipe ("In" or "Out")
+    results : Results dictionary from the optimization
+    parameters : Parameters dictionary from the solution
+
+    """
+    heat_flow_out = results[f"{pipe_name}.Heat{pipe_port}.Heat"]
+    vol_flow = results[f"{pipe_name}.Heat{pipe_port}.Q"]
+    cp = parameters[f"{pipe_name}.cp"]
+    rho = parameters[f"{pipe_name}.rho"]
+    pipe_temp = heat_flow_out / (cp * rho * vol_flow)
+    return pipe_temp
+
+
 class TestColdDemand(TestCase):
 
     def test_insufficient_capacity(self):
@@ -172,13 +194,16 @@ class TestColdDemand(TestCase):
         1. demand is matched
         2. energy conservation in the network
         3. heat to discharge (note cold line is colder than T_ground)
-        4. the cyclic heat_stored contraint, which ensures yearly heat balance between the warm and
+        4. the cyclic heat_stored constraint, which ensures yearly heat balance between the warm and
         cold well
         5. pipe heat loss and gain
             - pipe heat losses included: expect loss and gain values due to the carrier
             temperatures (warm and cold) in the pipes being higher and lower than the ground
             temperature
-            - pipe heat losses excluded: excpect no heat losses or gains
+            - pipe heat losses excluded: expect no heat losses or gains
+        6. supply temperature profile of the pipe linked to cold demand at the pipe inlet
+            - pipe inlet of both cases: expect same as the input temperature profile
+            given in the input csv file
         """
         import models.wko.src.example as example
         from models.wko.src.example import HeatColdProblem
@@ -226,20 +251,21 @@ class TestColdDemand(TestCase):
 
                 return constraints
 
+        # ------------------------------------------------------------------------------------------
+        # Pipe heat losses included
         heat_problem = run_esdl_mesido_optimization(
             HeatingCoolingProblem,
             base_folder=base_folder,
             esdl_file_name="LT_wko_heating_and_cooling.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries_2.csv",
+            input_timeseries_file="timeseries_supply_temp_profile.csv",
         )
         results = heat_problem.extract_results()
+        parameters = heat_problem.parameters(0)
         name_to_id_map = heat_problem.esdl_asset_name_to_id_map
 
         ates_id = name_to_id_map["ATES_226d"]
-        pipe1_id = name_to_id_map["Pipe1"]
-        pipe1_ret_id = name_to_id_map["Pipe1_ret"]
 
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
@@ -253,14 +279,18 @@ class TestColdDemand(TestCase):
         tol_value = 1.0e-5
         np.testing.assert_array_less(
             0.0,
-            results[f"{pipe1_id}.HeatIn.Heat"] - results[f"{pipe1_id}.HeatOut.Heat"] + tol_value,
+            results["Pipe1.HeatIn.Heat"] - results["Pipe1.HeatOut.Heat"] + tol_value,
         )
         np.testing.assert_array_less(
-            results[f"{pipe1_ret_id}.HeatIn.Heat"]
-            - results[f"{pipe1_ret_id}.HeatOut.Heat"]
-            - tol_value,
+            results["Pipe1_ret.HeatIn.Heat"] - results["Pipe1_ret.HeatOut.Heat"] - tol_value,
             0.0,
         )
+
+        # Check the supply temperature profile of the pipe linked to cold demand at pipe inlet
+        supply_temp_input = heat_problem.get_timeseries("LT.temperature_profile").values
+        # Supply pipe linked to cold demand
+        pipe5_temp_calculated = _calculate_pipe_port_temperature("Pipe5", "In", results, parameters)
+        np.testing.assert_array_almost_equal(pipe5_temp_calculated, supply_temp_input)
 
         # ------------------------------------------------------------------------------------------
         # Pipe heat losses excluded
@@ -276,14 +306,13 @@ class TestColdDemand(TestCase):
             esdl_file_name="LT_wko_heating_and_cooling.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries_2.csv",
+            input_timeseries_file="timeseries_supply_temp_profile.csv",
         )
         results = heat_problem.extract_results()
+        parameters = heat_problem.parameters(0)
         name_to_id_map = heat_problem.esdl_asset_name_to_id_map
 
         ates_id = name_to_id_map["ATES_226d"]
-        pipe1_id = name_to_id_map["Pipe1"]
-        pipe1_ret_id = name_to_id_map["Pipe1_ret"]
 
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
@@ -294,16 +323,20 @@ class TestColdDemand(TestCase):
             results[f"{ates_id}.Stored_heat"][0], results[f"{ates_id}.Stored_heat"][-1]
         )
         # Check heat loss and gain
-        tol_value = 1.0e-6
         np.testing.assert_allclose(
-            0.0, results[f"{pipe1_id}.HeatIn.Heat"] - results[f"{pipe1_id}.HeatOut.Heat"], atol=1e-6
+            0.0, results["Pipe1.HeatIn.Heat"] - results["Pipe1.HeatOut.Heat"], atol=1e-6
         )
         np.testing.assert_allclose(
             0.0,
-            results[f"{pipe1_ret_id}.HeatIn.Heat"] - results[f"{pipe1_ret_id}.HeatOut.Heat"],
+            results["Pipe1_ret.HeatIn.Heat"] - results["Pipe1_ret.HeatOut.Heat"],
             atol=1e-6,
         )
-        # ------------------------------------------------------------------------------------------
+
+        # Check the supply temperature profile of the pipe linked to cold demand at pipe inlet
+        supply_temp_input = heat_problem.get_timeseries("LT.temperature_profile").values
+        # Supply pipe linked to cold demand
+        pipe5_temp_calculated = _calculate_pipe_port_temperature("Pipe5", "In", results, parameters)
+        np.testing.assert_array_almost_equal(pipe5_temp_calculated, supply_temp_input)
 
     def test_heat_cold_demand_peak_overlap(self):
         """
