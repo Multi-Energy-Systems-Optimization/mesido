@@ -1,4 +1,4 @@
-DateTime,demand,elec,heat
+DateTime,demand,elec__price,heat__temperature
 19-5-2013 22:00,150000,10,70
 19-5-2013 23:00,150000,10,72.0
 20-5-2013 00:00,150000,10,74
