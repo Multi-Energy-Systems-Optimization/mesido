@@ -1,8 +1,9 @@
-# [Unreleased-main] - 2026-09-24
+# [Unreleased-main] - 2026-10-09
 
 ## Added
 - selfDischargeRate is parsed from HeatStorage assets in ESDL to calculate heat loss coefficient of heat buffer
 - Heat carrier temperature and price profiles are parsed from ESDL and CSV files.
+- Cold demand caters supply temperature profile.
 
 ## Changed
 - Upgrade to rtc-tools 2.7.3, casadi 3.7.2 and rtctools-highs 0.1.4, replacing rtc-tools-gil-comp/casadi-gil-comp; Python 3.12 is now also supported.

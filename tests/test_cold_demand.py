@@ -31,6 +31,28 @@ logger = logging.getLogger("mesido")
 logger.setLevel(logging.INFO)
 
 
+def _calculate_pipe_port_temperature(
+    pipe_name: str, pipe_port: str, results: dict, parameters: dict
+):
+    """
+    Calculate pipe outlet or inlet temperature from heat flow and volumetric flow.
+
+    Parameters
+    ----------
+    pipe_name : Name of the pipe
+    pipe_port : Port of the pipe ("In" or "Out")
+    results : Results dictionary from the optimization
+    parameters : Parameters dictionary from the solution
+
+    """
+    heat_flow_out = results[f"{pipe_name}.Heat{pipe_port}.Heat"]
+    vol_flow = results[f"{pipe_name}.Heat{pipe_port}.Q"]
+    cp = parameters[f"{pipe_name}.cp"]
+    rho = parameters[f"{pipe_name}.rho"]
+    pipe_temp = heat_flow_out / (cp * rho * vol_flow)
+    return pipe_temp
+
+
 class TestColdDemand(TestCase):
 
     def test_insufficient_capacity(self):
@@ -179,10 +201,8 @@ class TestColdDemand(TestCase):
             temperatures (warm and cold) in the pipes being higher and lower than the ground
             temperature
             - pipe heat losses excluded: expect no heat losses or gains
-        6. the supply temperature profile of the pipe linked to cold demand
-            - pipe heat losses included: expect lower than the input temperature profile
-             given in the input csv file
-            - pipe heat losses excluded: expect same as the input temperature profile
+        6. supply temperature profile of the pipe linked to cold demand at the pipe inlet
+            - pipe inlet of both cases: expect same as the input temperature profile
             given in the input csv file
         """
         import models.wko.src.example as example
@@ -231,13 +251,15 @@ class TestColdDemand(TestCase):
 
                 return constraints
 
+        # ------------------------------------------------------------------------------------------
+        # Pipe heat losses included
         heat_problem = run_esdl_mesido_optimization(
             HeatingCoolingProblem,
             base_folder=base_folder,
             esdl_file_name="LT_wko_heating_and_cooling.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries_2_supply_temp_profile.csv",
+            input_timeseries_file="timeseries_supply_temp_profile.csv",
         )
         results = heat_problem.extract_results()
         parameters = heat_problem.parameters(0)
@@ -264,15 +286,11 @@ class TestColdDemand(TestCase):
             0.0,
         )
 
-        # Check the supply temperature profile of the pipe linked to cold demand is
-        # lower than the carrier supply temperature profile given in the input csv due to heat loss
-        heat_flow_out_pipe5 = results["Pipe5.HeatOut.Heat"]
-        vol_flow_pipe5 = results["Pipe5.HeatIn.Q"]
-        cp = parameters["Pipe5.cp"]
-        rho = parameters["Pipe5.rho"]
-        temp_pipe1 = heat_flow_out_pipe5 / (cp * rho * vol_flow_pipe5)
-        temp_input_prof = heat_problem.get_timeseries("LT.temperature_profile").values
-        np.testing.assert_array_less(temp_pipe1, temp_input_prof)
+        # Check the supply temperature profile of the pipe linked to cold demand at pipe inlet
+        supply_temp_input = heat_problem.get_timeseries("LT.temperature_profile").values
+        # Supply pipe linked to cold demand
+        pipe5_temp_calculated = _calculate_pipe_port_temperature("Pipe5", "In", results, parameters)
+        np.testing.assert_array_almost_equal(pipe5_temp_calculated, supply_temp_input)
 
         # ------------------------------------------------------------------------------------------
         # Pipe heat losses excluded
@@ -288,7 +306,7 @@ class TestColdDemand(TestCase):
             esdl_file_name="LT_wko_heating_and_cooling.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries_2_supply_temp_profile.csv",
+            input_timeseries_file="timeseries_supply_temp_profile.csv",
         )
         results = heat_problem.extract_results()
         parameters = heat_problem.parameters(0)
@@ -314,16 +332,11 @@ class TestColdDemand(TestCase):
             atol=1e-6,
         )
 
-        # Check the supply temperature profile of the pipe linked to cold demand is
-        # equal to the carrier supply temperature profile given in the input csv
-        heat_flow_out_pipe5 = results["Pipe5.HeatOut.Heat"]
-        vol_flow_pipe5 = results["Pipe5.HeatIn.Q"]
-        cp = parameters["Pipe5.cp"]
-        rho = parameters["Pipe5.rho"]
-        temp_pipe1 = heat_flow_out_pipe5 / (cp * rho * vol_flow_pipe5)
-        temp_input_prof = heat_problem.get_timeseries("LT.temperature_profile").values
-        np.testing.assert_array_almost_equal(temp_pipe1, temp_input_prof)
-        # ------------------------------------------------------------------------------------------
+        # Check the supply temperature profile of the pipe linked to cold demand at pipe inlet
+        supply_temp_input = heat_problem.get_timeseries("LT.temperature_profile").values
+        # Supply pipe linked to cold demand
+        pipe5_temp_calculated = _calculate_pipe_port_temperature("Pipe5", "In", results, parameters)
+        np.testing.assert_array_almost_equal(pipe5_temp_calculated, supply_temp_input)
 
     def test_heat_cold_demand_peak_overlap(self):
         """
