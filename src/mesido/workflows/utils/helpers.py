@@ -126,6 +126,11 @@ logger = logging.getLogger("mesido")
 
 GUROBI_SESSION_RETRY_INTERVAL_S = 10
 GUROBI_SESSION_RETRY_TIMEOUT_S = 5 * 60
+GUROBI_RETRYABLE_ERROR_STRINGS = [
+    "too many sessions",
+    "single-use license",
+    "another gurobi process running",
+]
 
 
 def _with_gurobi_session_retry(casadi_solver):
@@ -143,7 +148,10 @@ def _with_gurobi_session_retry(casadi_solver):
             try:
                 solver = casadi_solver(*args, **kwargs)
             except RuntimeError as e:
-                if "Too many sessions" not in str(e):
+                error_message = str(e).lower()
+                if not any(
+                    error_string in error_message for error_string in GUROBI_RETRYABLE_ERROR_STRINGS
+                ):
                     raise
                 if time.monotonic() >= deadline:
                     logger.warning(
