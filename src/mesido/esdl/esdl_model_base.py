@@ -65,6 +65,8 @@ class _ESDLModelBase(_Model):
             converter.port_asset_type_connections(asset)
 
         for asset in list(assets_sorted.values()):
+            if asset.asset_type == "Building":
+                continue
             pycml_type, modifiers = converter.convert(asset)
             self.add_variable(pycml_type, asset.id, **modifiers)
 
@@ -85,7 +87,7 @@ class _ESDLModelBase(_Model):
             a
             for a in assets.values()
             if (
-                (a.asset_type == "Joint")
+                (a.asset_type in {"Joint", "HConnection"})
                 and a.id not in skip_asset_ids
                 and (
                     (isinstance(a.in_ports[0].carrier, esdl.HeatCommodity))
@@ -111,7 +113,10 @@ class _ESDLModelBase(_Model):
         non_node_assets = [
             a
             for a in assets.values()
-            if (a.asset_type != "Joint" and a.asset_type != "Bus") and a.id not in skip_asset_ids
+            if (
+                a.asset_type not in {"Joint", "Bus", "HConnection", "Building"}
+                and a.id not in skip_asset_ids
+            )
         ]
 
         # First we map all port ids to their respective PyCML ports. We only

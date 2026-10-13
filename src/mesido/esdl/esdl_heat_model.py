@@ -288,6 +288,15 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         return value  # g/Wh
 
+    @staticmethod
+    def _get_containing_building_id(asset: Asset) -> str:
+        containing_building = asset.attributes.get("containingBuilding")
+        if containing_building is None:
+            # The return below must be an empty string (instead of None etc.) else this will create
+            # a variable in parameters instead of the string_parameters
+            return ""
+        return containing_building.id
+
     def _generic_modifiers(self, asset: Asset) -> Dict:
         """
         Args:
@@ -311,6 +320,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             state=self.get_state(asset),
             emission_coeff=self._get_emission_modifiers(asset),
             include_head_loss_variables=self.include_head_loss_variables,
+            containing_building_id=self._get_containing_building_id(asset),
         )
         return modifiers
 
@@ -846,7 +856,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             Node class with modifiers:
                 {automatically_add_modifiers_here}
         """
-        assert asset.asset_type == "Joint"
+        assert asset.asset_type in ["Joint", "HConnection"]
 
         sum_in = 0
         sum_out = 0
@@ -879,6 +889,31 @@ class AssetToHeatComponent(_AssetToComponentBase):
             return GasNode, modifiers
 
         return Node, modifiers
+
+    def convert_hconnection(self, asset: Asset) -> Tuple[Type[Node], MODIFIERS]:
+        """
+        This function converts the HConnection object in esdl to a heat connector node.
+
+        Required ESDL fields:
+            - id (this id must be unique)
+            - name (this name must be unique)
+            - xsi:type
+            - InPort and OutPort with:
+                - xsi:type
+                - id
+                - name
+                - connectedTo
+                - carrier with temperature specified
+
+        Parameters:
+            asset : The asset object with its properties.
+
+        Returns:
+            Node class with modifiers:
+                {automatically_add_modifiers_here}
+        """
+        assert asset.asset_type == "HConnection"
+        return self.convert_node(asset)
 
     def convert_pipe(self, asset: Asset) -> Tuple[Union[Type[HeatPipe], Type[GasPipe]], MODIFIERS]:
         """
