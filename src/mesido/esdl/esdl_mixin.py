@@ -314,14 +314,14 @@ class ESDLMixin(
         """
 
         def _get_supported_esdl_assets(
-            measure, supported_esdl_asset_types: List[str]
+            measure: esdl.Measure, supported_esdl_asset_types: List[str]
         ) -> Dict[str, Any]:
             """Returns: dict of ESDL assets specified in a measure, that are supported by building
             parameters and the rest of the codebase"""
 
             measure_esdl_assets = {}
             for esdl_asset_type in supported_esdl_asset_types:
-                esdl_assets = _get_measure_esdl_assets(measure, esdl_asset_type)
+                esdl_assets = _get_assets_from_measure(measure, esdl_asset_type)
                 assert len(esdl_assets) <= 1, (
                     f"Code currently only supports a single ESDL asset of each type per "
                     f" measure. More than 1 ESDL asset of type {esdl_asset_type} found in "
@@ -331,11 +331,11 @@ class ESDLMixin(
                     measure_esdl_assets[esdl_asset.id] = esdl_asset
             return measure_esdl_assets
 
-        def _get_measure_esdl_assets(measure, esdl_asset_type: str) -> List[Any]:
+        def _get_assets_from_measure(measure: esdl.Measure, esdl_asset_type: str) -> List[Any]:
             """Returns: list of ESDL assets of the specified type contained in the measure."""
 
             matched_assets: List[Any] = []
-            for measure_asset in getattr(measure, "asset", []):
+            for measure_asset in measure.asset:
                 if isinstance(measure_asset, getattr(esdl, esdl_asset_type)):
                     matched_assets.append(measure_asset)
 

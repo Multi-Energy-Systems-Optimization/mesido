@@ -1,4 +1,4 @@
-from mesido.demand_insulation_class import DemandInsulationClass
+# from mesido.demand_insulation_class import DemandInsulationClass  # still to be used below
 from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.techno_economic_mixin import TechnoEconomicMixin
@@ -61,7 +61,10 @@ class SourcePipeBuilding(
     def path_goals(self):
         g = super().path_goals().copy()
 
-        # The path goals below will still be updated once cold demand insulation is implemented.
+        # Note: code under development and to be updated once building parameters
+        # The path goals will still be updated once heat and cold demand
+        # Currently heat demand matching occurs inheat_physics_mixin via
+        # __heat_matching_demand_insulation_constraints
 
         # Do not delete the code below. Used for manual testing purposes.
         # for demand in self.energy_system_components.get("heat_demand", []):
@@ -83,53 +86,54 @@ class SourcePipeBuilding(
         options["include_demand_insulation_options"] = True
         return options
 
-    def insulation_levels(self):
-        # Under development. Potentially use the building_parameters to get a profile.
-        # One now has access to the following:
-        # - identify in which building a demand asset (demand_id) is located via:
-        #   demand_id = self.energy_system_components.get("heat_demand", [])[0]
-        #   building_id = self.esdl_assets[demand_id].attributes["containingBuilding"].id
-        # - self.building_parameters: can use building id to access measure info per asset
-        # - profile via:
-        #   self._ESDLMixin__profile_reader._profiles[0][f"{measure_asset_id}.target_heat_demand"]
-        attributes = {
-            "insulation_level": ["A", "B", "C"],
-            # For now the factor values chosen such that value 1.0 is optimal
-            "scaling_factor": [1.1, 1.2, 1.0],
-            "Tmin_deg": [50, 60, 70],
-            "insulation_cost_euro": [5.0e6, 2.0e6, 1.0e6],
-        }
+    # Do not delete:
+    # Code under development and might be used when building_parameters are used.
+    # def insulation_levels(self):
+    #     # Potentially use the building_parameters to get a profile.
+    #     # One now has access to the following:
+    #     # - identify in which building a demand asset (demand_id) is located via:
+    #     #   demand_id = self.energy_system_components.get("heat_demand", [])[0]
+    #     #   building_id = self.esdl_assets[demand_id].attributes["containingBuilding"].id
+    #     # - self.building_parameters: can use building id to access measure info per asset
+    #     # - profile via:
+    #     #   self._ESDLMixin__profile_reader._profiles[0][f"{measure_asset_id}.target_heat_demand"]
+    #     attributes = {
+    #         "insulation_level": ["A", "B", "C"],
+    #         # For now the factor values chosen such that value 1.0 is optimal
+    #         "scaling_factor": [1.1, 1.2, 1.0],
+    #         "Tmin_deg": [50, 60, 70],
+    #         "insulation_cost_euro": [5.0e6, 2.0e6, 1.0e6],
+    #     }
 
-        return attributes
+    #     return attributes
 
-    def demand_insulation_classes(self, demand_insulation):
-        name_to_id = self.esdl_asset_name_to_id_map
-        available_demand_insulation_classes = []
-        for ii in range(len(self.insulation_levels()["insulation_level"])):
-            available_demand_insulation_classes.append(
-                DemandInsulationClass(
-                    self.insulation_levels()["insulation_level"][ii],
-                    name_to_id["HeatingDemand_1"],
-                    self.insulation_levels()["Tmin_deg"][ii],
-                    self.insulation_levels()["scaling_factor"][ii],
-                    self.insulation_levels()["insulation_cost_euro"][ii],
-                )
-            )
-            # Not working for cold demand yet
-            # available_demand_insulation_classes.append(
-            #     DemandInsulationClass(
-            #         self.insulation_levels()["insulation_level"][ii],
-            #         name_to_id["CoolingDemand_1"],
-            #         self.insulation_levels()["Tmin_deg"][ii],
-            #         self.insulation_levels()["scaling_factor"][ii],
-            #         self.insulation_levels()["insulation_cost_euro"][ii],
-            #     )
-            # )
+    # Do not delete:
+    # Code under development and might be used when building_parameters are used.
+    # def demand_insulation_classes(self, demand_insulation):
+    #     name_to_id = self.esdl_asset_name_to_id_map
+    #     available_demand_insulation_classes = []
+    #     for ii in range(len(self.insulation_levels()["insulation_level"])):
+    #         available_demand_insulation_classes.append(
+    #             DemandInsulationClass(
+    #                 self.insulation_levels()["insulation_level"][ii],
+    #                 name_to_id["HeatingDemand_1"],
+    #                 self.insulation_levels()["Tmin_deg"][ii],
+    #                 self.insulation_levels()["scaling_factor"][ii],
+    #                 self.insulation_levels()["insulation_cost_euro"][ii],
+    #             )
+    #         )
+    #         # Not working for cold demand yet
+    #         # available_demand_insulation_classes.append(
+    #         #     DemandInsulationClass(
+    #         #         self.insulation_levels()["insulation_level"][ii],
+    #         #         name_to_id["CoolingDemand_1"],
+    #         #         self.insulation_levels()["Tmin_deg"][ii],
+    #         #         self.insulation_levels()["scaling_factor"][ii],
+    #         #         self.insulation_levels()["insulation_cost_euro"][ii],
+    #         #     )
+    #         # )
 
-        return available_demand_insulation_classes
-
-    def post(self):
-        super().post()
+    #     return available_demand_insulation_classes
 
 
 if __name__ == "__main__":
@@ -141,7 +145,9 @@ if __name__ == "__main__":
         SourcePipeBuilding,
         esdl_file_name="source buildingsink with multiple demand profiles.esdl",
         esdl_parser=ESDLFileParser,
-        # profile_reader=ProfileReaderFromFile,  # Do not delete, used for manual testing purposes.
+        # Do not delete: to be used in the next step of development -> specify measure asset
+        # profile via csv file
+        # profile_reader=ProfileReaderFromFile,
         # input_timeseries_file="timeseries_import.csv",
     )
 
