@@ -1,7 +1,8 @@
-# [Unreleased-main] - 2026-09-24
+# [Unreleased-main] - 2026-10-14
 
 ## Added
 - selfDischargeRate is parsed from HeatStorage assets in ESDL to calculate heat loss coefficient of heat buffer
+- Cater for gurobi solver retry, at specified time intervals, when no license session is available
 
 ## Changed
 - Upgrade to rtc-tools 2.7.3, casadi 3.7.2 and rtctools-highs 0.1.4, replacing rtc-tools-gil-comp/casadi-gil-comp; Python 3.12 is now also supported.
