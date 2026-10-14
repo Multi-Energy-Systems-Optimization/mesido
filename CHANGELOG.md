@@ -1,7 +1,8 @@
-# [Unreleased-main] - 2026-09-24
+# [Unreleased-main] - 2026-10-14
 
 ## Added
 - selfDischargeRate is parsed from HeatStorage assets in ESDL to calculate heat loss coefficient of heat buffer
+- Cater for gurobi solver retry, at specified time intervals, when no license session is available
 - Added primary_heat and secondary_heat profiles for water-to-water heat pumps and heat exchangers to the output ESDL.
 
 ## Changed
