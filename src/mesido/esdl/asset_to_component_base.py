@@ -250,6 +250,7 @@ class _AssetToComponentBase:
         "CheckValve": "check_valve",
         "Compressor": "compressor",
         "CoolingDemand": "cold_demand",
+        # CHP currently uses the generic heat-and-electricity co-generation model.
         "CHP": "co_generation",
         "ElectricBoiler": "heat_source_elec",
         "ElectricityCable": "electricity_cable",

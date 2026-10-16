@@ -8,8 +8,9 @@ from numpy import nan
 @add_variables_documentation_automatically
 class CoGeneration(HeatSource, ElectricitySource, GasDemand):
     """
-    The co-generation component models a unit with heat and electricity output and optionally a
-    gaseous input. This can be the basis for a CHP or fuelcell asset model.
+    The component models coupled heat and electricity output with an optional gaseous input.
+    ESDL CHP assets currently use this model; other co-generation technologies (FuelCell) or output
+    combinations could be build on top of this asset or share the same basis.
 
     Variables created:
         {add_variable_names_for_documentation_here}
@@ -25,8 +26,9 @@ class CoGeneration(HeatSource, ElectricitySource, GasDemand):
             **modifiers,
         )
 
-        self.component_subtype = "co_generation"  # should become component_type, but then
-        # financialmixin and asset_sizing_mixin also need to be updated.
+        # TODO: Replace component_subtype with component_type after updating FinancialMixin and
+        #  AssetSizingMixin.
+        self.component_subtype = "co_generation"
         self.efficiency = nan
         self.HERatio = nan
         self.energy_content = nan

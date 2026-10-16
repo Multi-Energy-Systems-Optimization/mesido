@@ -936,6 +936,7 @@ class FinancialMixin(
                 *self.energy_system_components.get("co_generation", []),
             ]:
                 if f"{s}.density_normal" in parameters:
+                    # Gas volume in normal m3/h; components without this parameter use heat output.
                     density_normal = parameters[f"{s}.density_normal"]
                     state_vector_name = "Gas_demand_mass_flow"
                     denominator = density_normal / 3600.0

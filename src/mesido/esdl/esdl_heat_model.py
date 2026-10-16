@@ -2845,16 +2845,18 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 "out-port"
             )
 
-        max_heat = self._get_asset_max_size_input(asset, "power")
-        if not max_heat:
+        max_heat_watt = self._get_asset_max_size_input(asset, "power")
+        if not max_heat_watt:
             logger.error(f"{asset.asset_type} '{asset.name}' has no max power specified.")
-        assert max_heat > 0.0
+        assert max_heat_watt > 0.0
 
         efficiency = asset.attributes.get("efficiency", 1.0)
-        heratio = asset.attributes.get("HERatio", 1.0)
-        if efficiency <= 0.0:
-            raise _ESDLInputException(f"{asset.name} must have a positive efficiency")
-        if heratio <= 0.0:
+        heat_to_elec_ratio = asset.attributes.get("HERatio", 1.0)
+        if not 0.0 < efficiency <= 1.0:
+            raise _ESDLInputException(
+                f"{asset.name} must have an efficiency greater than 0 and at most 1"
+            )
+        if heat_to_elec_ratio <= 0.0:
             raise _ESDLInputException(f"{asset.name} must have a positive HERatio")
 
         temperature_modifiers = self._supply_return_temperature_modifiers(asset)
@@ -2863,35 +2865,43 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         delta_t = supply_temperature - return_temperature
         if delta_t <= 0.0:
-            delta_t = 10.0
+            raise _ESDLInputException(
+                f"{asset.name} supply temperature must be greater than its return temperature"
+            )
 
         heat_connected_port = heat_out_port.connectedTo[0]
-        q_nominal = self._port_to_q_nominal.get(heat_connected_port, None)
-        if not q_nominal:
-            q_nominal = max_heat / (self.rho * self.cp * delta_t)
+        heat_q_nominal_m3_s = self._port_to_q_nominal.get(heat_connected_port, None)
+        if not heat_q_nominal_m3_s:
+            heat_q_nominal_m3_s = max_heat_watt / (
+                self.rho * self.cp * delta_t
+            )
 
-        electric_max = max_heat / heratio
+        electric_max_w = max_heat_watt / heat_to_elec_ratio
         electric_connected_port = elec_out_port.connectedTo[0]
-        min_voltage = elec_out_port.carrier.voltage
-        i_max = self._port_to_i_max.get(electric_connected_port, electric_max / min_voltage)
+        min_voltage_v = elec_out_port.carrier.voltage
+        i_max = self._port_to_i_max.get(
+            electric_connected_port, electric_max_w / min_voltage_v
+        )
         i_nom = self._port_to_i_nominal.get(
-            electric_connected_port, electric_max / min_voltage / 2.0
+            electric_connected_port, electric_max_w / min_voltage_v / 2.0
         )
 
         modifiers = dict(
             efficiency=efficiency,
-            HERatio=heratio,
-            power_nominal=electric_max / 2.0,
-            Heat_source=dict(min=0.0, max=max_heat, nominal=max_heat / 2.0),
-            Electricity_source=dict(min=0.0, max=electric_max, nominal=electric_max / 2.0),
+            HERatio=heat_to_elec_ratio,
+            power_nominal=electric_max_w / 2.0,
+            Heat_source=dict(min=0.0, max=max_heat_watt, nominal=max_heat_watt / 2.0),
+            Electricity_source=dict(
+                min=0.0, max=electric_max_w, nominal=electric_max_w / 2.0
+            ),
             ElectricityOut=dict(
-                Power=dict(min=0.0, max=electric_max, nominal=electric_max / 2.0),
+                Power=dict(min=0.0, max=electric_max_w, nominal=electric_max_w / 2.0),
                 I=dict(min=0.0, max=i_max, nominal=i_nom),
-                V=dict(min=min_voltage, nominal=min_voltage),
+                V=dict(min=min_voltage_v, nominal=min_voltage_v),
             ),
             **self._generic_modifiers(asset),
             **self._generic_heat_modifiers(
-                self.include_head_loss_variables, 0.0, max_heat, q_nominal
+                self.include_head_loss_variables, 0.0, max_heat_watt, heat_q_nominal_m3_s
             ),
             **self._get_cost_figure_modifiers(asset),
             **temperature_modifiers,
@@ -2899,25 +2909,35 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         if gas_in_port is not None:
             gas_carrier = gas_in_port.carrier
-            density = get_density(asset.name, gas_carrier)
-            energy_content = get_energy_content(asset.name, gas_carrier)
-            pressure = gas_carrier.pressure * 1.0e5
+            gas_density_g_m3 = get_density(asset.name, gas_carrier)
+            gas_energy_content_j_kg = get_energy_content(asset.name, gas_carrier)
+            pressure_pa = gas_carrier.pressure * 1.0e5
 
-            gas_mass_flow_max = (max_heat + electric_max) / efficiency / energy_content * 1000.0
-            gas_q_nominal = self._port_to_q_nominal.get(gas_in_port.connectedTo[0], None)
-            if not gas_q_nominal:
-                gas_q_nominal = gas_mass_flow_max / density
+            gas_mass_flow_max_g_s = (
+                (max_heat_watt + electric_max_w)
+                / efficiency
+                / gas_energy_content_j_kg
+                * 1000.0
+            )
+            gas_q_nominal_m3_s = self._port_to_q_nominal.get(
+                gas_in_port.connectedTo[0], None
+            )
+            if not gas_q_nominal_m3_s:
+                gas_q_nominal_m3_s = gas_mass_flow_max_g_s / gas_density_g_m3
 
             modifiers.update(
                 dict(
                     id_mapping_carrier=gas_carrier.id,
-                    density=density,
-                    energy_content=energy_content,
-                    Q_nominal_gas=gas_q_nominal,
+                    density=gas_density_g_m3,
+                    energy_content=gas_energy_content_j_kg,
+                    Q_nominal_gas=gas_q_nominal_m3_s,
                     GasIn=dict(
-                        Q=dict(min=0.0, nominal=gas_q_nominal),
-                        mass_flow=dict(nominal=gas_mass_flow_max / 2.0, max=gas_mass_flow_max),
-                        Hydraulic_power=dict(nominal=gas_q_nominal * pressure),
+                        Q=dict(min=0.0, nominal=gas_q_nominal_m3_s),
+                        mass_flow=dict(
+                            nominal=gas_mass_flow_max_g_s / 2.0,
+                            max=gas_mass_flow_max_g_s,
+                        ),
+                        Hydraulic_power=dict(nominal=gas_q_nominal_m3_s * pressure_pa),
                     ),
                 )
             )

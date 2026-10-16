@@ -18,6 +18,18 @@ from utils_tests import (
 
 class TestCHP(TestCase):
     def test_chp(self):
+        """
+        Run an optimization utilising a CHP asset and check network balances, dispatch,
+        and CHP equations.
+
+        Checks:
+         - demand matching
+         - heat and electricity conservation
+         - heat to discharge checks
+         - gas consumption
+         - the heat-to-electric ratio
+         - fuel-to-output efficiency
+        """
         import models.source_pipe_sink.src.double_pipe_heat as example
         from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
 
@@ -46,14 +58,19 @@ class TestCHP(TestCase):
         heat_to_discharge_test(heat_problem, results)
         electric_power_conservation_test(heat_problem, results)
 
-        # TODO: right now the variable operational costs are also still based on heat per MWh.
+        # TODO: Support CHP variable OPEX in EUR/Nm3; it currently uses an energy-based cost input
+        # applied to heat production.
         cost_calculation_test(heat_problem, results)
 
-        np.testing.assert_array_less(0.0, results[f"{chp_id}.Heat_source"])
-        np.testing.assert_array_less(0.0, results[f"{chp_id}.Electricity_source"])
-        np.testing.assert_array_less(0.0, results[f"{chp_id}.Gas_demand_mass_flow"])
-        np.testing.assert_array_less(0.0, results[f"{gas_producer_id}.Gas_source_mass_flow"])
-        np.testing.assert_array_less(0.0, results[f"{elec_demand_id}.Electricity_demand"])
+        np.testing.assert_array_less(1.0e3, results[f"{chp_id}.Heat_source"])
+        np.testing.assert_array_less(1.0e3, results[f"{chp_id}.Electricity_source"])
+        np.testing.assert_array_less(1.0, results[f"{chp_id}.Gas_demand_mass_flow"])
+        np.testing.assert_array_less(
+            1.0, results[f"{gas_producer_id}.Gas_source_mass_flow"]
+        )
+        np.testing.assert_array_less(
+            1.0e3, results[f"{elec_demand_id}.Electricity_demand"]
+        )
         np.testing.assert_allclose(parameters[f"{chp_id}.T_supply"], 70.0)
         np.testing.assert_allclose(parameters[f"{chp_id}.T_return"], 40.0)
 
