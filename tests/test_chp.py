@@ -65,12 +65,8 @@ class TestCHP(TestCase):
         np.testing.assert_array_less(1.0e3, results[f"{chp_id}.Heat_source"])
         np.testing.assert_array_less(1.0e3, results[f"{chp_id}.Electricity_source"])
         np.testing.assert_array_less(1.0, results[f"{chp_id}.Gas_demand_mass_flow"])
-        np.testing.assert_array_less(
-            1.0, results[f"{gas_producer_id}.Gas_source_mass_flow"]
-        )
-        np.testing.assert_array_less(
-            1.0e3, results[f"{elec_demand_id}.Electricity_demand"]
-        )
+        np.testing.assert_array_less(1.0, results[f"{gas_producer_id}.Gas_source_mass_flow"])
+        np.testing.assert_array_less(1.0e3, results[f"{elec_demand_id}.Electricity_demand"])
         np.testing.assert_allclose(parameters[f"{chp_id}.T_supply"], 70.0)
         np.testing.assert_allclose(parameters[f"{chp_id}.T_return"], 40.0)
 

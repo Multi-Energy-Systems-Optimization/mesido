@@ -2872,16 +2872,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
         heat_connected_port = heat_out_port.connectedTo[0]
         heat_q_nominal_m3_s = self._port_to_q_nominal.get(heat_connected_port, None)
         if not heat_q_nominal_m3_s:
-            heat_q_nominal_m3_s = max_heat_watt / (
-                self.rho * self.cp * delta_t
-            )
+            heat_q_nominal_m3_s = max_heat_watt / (self.rho * self.cp * delta_t)
 
         electric_max_w = max_heat_watt / heat_to_elec_ratio
         electric_connected_port = elec_out_port.connectedTo[0]
         min_voltage_v = elec_out_port.carrier.voltage
-        i_max = self._port_to_i_max.get(
-            electric_connected_port, electric_max_w / min_voltage_v
-        )
+        i_max = self._port_to_i_max.get(electric_connected_port, electric_max_w / min_voltage_v)
         i_nom = self._port_to_i_nominal.get(
             electric_connected_port, electric_max_w / min_voltage_v / 2.0
         )
@@ -2891,9 +2887,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             HERatio=heat_to_elec_ratio,
             power_nominal=electric_max_w / 2.0,
             Heat_source=dict(min=0.0, max=max_heat_watt, nominal=max_heat_watt / 2.0),
-            Electricity_source=dict(
-                min=0.0, max=electric_max_w, nominal=electric_max_w / 2.0
-            ),
+            Electricity_source=dict(min=0.0, max=electric_max_w, nominal=electric_max_w / 2.0),
             ElectricityOut=dict(
                 Power=dict(min=0.0, max=electric_max_w, nominal=electric_max_w / 2.0),
                 I=dict(min=0.0, max=i_max, nominal=i_nom),
@@ -2914,14 +2908,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
             pressure_pa = gas_carrier.pressure * 1.0e5
 
             gas_mass_flow_max_g_s = (
-                (max_heat_watt + electric_max_w)
-                / efficiency
-                / gas_energy_content_j_kg
-                * 1000.0
+                (max_heat_watt + electric_max_w) / efficiency / gas_energy_content_j_kg * 1000.0
             )
-            gas_q_nominal_m3_s = self._port_to_q_nominal.get(
-                gas_in_port.connectedTo[0], None
-            )
+            gas_q_nominal_m3_s = self._port_to_q_nominal.get(gas_in_port.connectedTo[0], None)
             if not gas_q_nominal_m3_s:
                 gas_q_nominal_m3_s = gas_mass_flow_max_g_s / gas_density_g_m3
 
