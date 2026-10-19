@@ -466,40 +466,52 @@ class _AssetToComponentBase:
         """
 
         full_name = f"{asset.asset_type} '{asset.name}'"
-        if asset.attributes["innerDiameter"] and asset.attributes["diameter"].value > 0:
-            logger.warning(
-                f"{full_name}' has both 'innerDiameter' and 'diameter' specified. "
-                f"Diameter of {asset.attributes['diameter'].name} will be used."
-            )
-        if asset.attributes["material"] and asset.attributes["diameter"].value > 0:
-            logger.warning(
-                f"{full_name}' has both 'material' and 'diameter' specified. "
-                f"Insulation properties of {asset.attributes['diameter'].name} will be used."
-            )
-        if asset.attributes["material"] and (
-            asset.attributes["diameter"].value == 0 and not asset.attributes["innerDiameter"]
-        ):
-            logger.warning(
-                f"{full_name}' has only 'material' specified, but no information on diameter. "
-                f"Diameter and insulation properties of DN200 will be used."
-            )
-        if asset.attributes["diameter"].value == 0 and not asset.attributes["innerDiameter"]:
-            if asset.attributes["material"]:
+
+        pipe_constaint = None
+        for constraint in asset.attributes["constraint"].items:
+            if (
+                isinstance(constraint, esdl.PipeDiameterConstraint)
+                and constraint.maximum.value > 0
+                and self.energy_system_esdl_version >= "v2602"
+            ):
+                pipe_constaint = constraint.maximum
                 logger.warning(
-                    f"{full_name}' has only 'material' specified, but no information on diameter. "
-                    f"Diameter and insulation properties of DN200 will be used."
+                    f"{full_name}' has 'PipeDiameterConstraint' specified."
+                    f"Diameter of {pipe_constaint.name} will be used."
                 )
-            else:
+                break
+
+        if pipe_constaint is None:
+            if asset.attributes["innerDiameter"] and asset.attributes["diameter"].value > 0:
                 logger.warning(
-                    f"{full_name}' has no DN size or innerDiameter specified. "
-                    f"Diameter and insulation properties of DN200 will be used. "
+                    f"{full_name}' has both 'innerDiameter' and 'diameter' specified. "
+                    f"Diameter of {asset.attributes['diameter'].name} will be used."
                 )
+            if asset.attributes["material"] and asset.attributes["diameter"].value > 0:
+                logger.warning(
+                    f"{full_name}' has both 'material' and 'diameter' specified. "
+                    f"Insulation properties of {asset.attributes['diameter'].name} will be used."
+                )
+            if asset.attributes["diameter"].value == 0 and not asset.attributes["innerDiameter"]:
+                if asset.attributes["material"]:
+                    logger.warning(
+                        f"{full_name}' has only 'material' specified, but no information "
+                        f"on diameter. Diameter and insulation properties of DN200 will be used."
+                    )
+                else:
+                    logger.warning(
+                        f"{full_name}' has no DN size or innerDiameter specified. "
+                        f"Diameter and insulation properties of DN200 will be used. "
+                    )
 
         edr_dn_size = None
-        if asset.attributes["diameter"].value > 0:
-            edr_dn_size = asset.attributes["diameter"]
-        elif not asset.attributes["innerDiameter"]:
-            edr_dn_size = esdl.PipeDiameterEnum.DN200
+        if pipe_constaint:
+            edr_dn_size = pipe_constaint
+        else:
+            if asset.attributes["diameter"].value > 0:
+                edr_dn_size = asset.attributes["diameter"]
+            elif not asset.attributes["innerDiameter"]:
+                edr_dn_size = esdl.PipeDiameterEnum.DN200
 
         # NaN means the default values will be used
         insulation_thicknesses = math.nan

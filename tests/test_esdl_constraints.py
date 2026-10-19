@@ -266,6 +266,7 @@ class TestRangedConstraints(TestCase):
 
             if esdl_file == "testing_network_1_all_optional.esdl":
                 pipes_with_ranged_constraint = ["Pipe1", "Pipe1_ret", "Pipe2", "Pipe2_ret"]
+                bounds = problem.bounds()
 
                 for pipe_id in problem.energy_system_components.get("heat_pipe", []):
                     esdl_asset = problem._esdl_assets[pipe_id]
@@ -281,6 +282,17 @@ class TestRangedConstraints(TestCase):
                             int(pipe_input_size.replace("DN", "")),
                             int(range_contraint_max.replace("DN", "")),
                         )
+                        # Check that volumetric flow bound is calculated based on
+                        # the diameter of the PipeDiameterConstraint
+                        v_max = problem.heat_network_settings["maximum_velocity"]
+                        q_max = bounds[f"{pipe_name}.HeatOut.Q"][1]
+                        diameter = np.sqrt(q_max / v_max * 4 / np.pi)
+                        constraint_diameter = next(
+                            pipe_class.inner_diameter
+                            for pipe_class in pipe_classes
+                            if pipe_class.name == range_contraint_max
+                        )
+                        np.testing.assert_almost_equal(diameter, constraint_diameter)
                     else:
                         np.testing.assert_equal(pipe_classes[-1].name, pipe_input_size)
             elif esdl_file == "testing_network_1_all_optional_excluding_pipes.esdl":
