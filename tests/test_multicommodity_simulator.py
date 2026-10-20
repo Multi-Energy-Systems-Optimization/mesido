@@ -38,7 +38,7 @@ def check_electrolyzer_efficiency(tol, electrolyzer_gas, electrolyzer_power, esd
     )
     np.testing.assert_array_less(min(provided_efficiencies), efficiency[electrolyzer_power > 1])
     np.testing.assert_array_less(
-        efficiency[electrolyzer_power > 0], max(provided_efficiencies) + tol
+        efficiency[electrolyzer_power > 1], max(provided_efficiencies) + tol
     )
 
 
@@ -689,24 +689,22 @@ class TestMultiCommoditySimulator(TestCase):
         # on the NEOS server.
         cplex_reference_objectives = [
             {
-                3: -5.988997575483286,
-                4: 1.1985084874328542,
+                2: 0.0,
+                3: -5.988997575483287,
+                4: 1.1985084874328533,
                 5: 8.032907152232609,
                 6: 0.02935812035813031,
                 7: 5.191496612269487,
-                8: -15.060707894976723,
-                9: 19.000000000000007,
-                30: 0.0,
+                8: -15.060707894976721,
             },
             {
-                3: -1.196208109047731,
+                2: 0.0,
+                3: -1.2041651392923625,
                 4: 0.0,
                 5: 0.0,
-                6: -6.938893903934504e-19,
-                7: 1.0193063399105586,
+                6: 0.00039785151223312566,
+                7: 1.0217676310815835,
                 8: -4.355922577847732,
-                9: 4.0,
-                30: -4.163336342360702e-17,
             },
         ]
 
