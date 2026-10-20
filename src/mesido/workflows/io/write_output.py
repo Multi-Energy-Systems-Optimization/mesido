@@ -8,7 +8,7 @@ import traceback
 import uuid
 from collections import OrderedDict
 from pathlib import Path
-from typing import Any, Dict, Union
+from typing import Any, Dict, List, Union
 
 import esdl
 from esdl.profiles.datatableprofilemanager import DataTableProfileManager
@@ -1224,13 +1224,14 @@ class ScenarioOutput:
         )
         sys.exit(1)
 
-    def _get_output_profile_start_end_datetimes(self) -> tuple[datetime.datetime, datetime.datetime]:
+    def _get_output_profile_start_end_datetimes(
+        self,
+    ) -> tuple[datetime.datetime, datetime.datetime]:
         """Return normalized start and end datetimes for a profile."""
         if not self.io.datetimes[0].tzinfo:
             start_date_time = self.io.datetimes[0].replace(tzinfo=datetime.timezone.utc)
             logger.warning(
-                f"No timezone specified for the output profile, "
-                f"default UTC has been used."
+                "No timezone specified for the output profile, default UTC has been used."
             )
         else:
             start_date_time = self.io.datetimes[0]
@@ -1241,6 +1242,50 @@ class ScenarioOutput:
             end_date_time = self.io.datetimes[-1]
 
         return start_date_time, end_date_time
+
+    def _get_output_profile_data(
+        self,
+        asset_id: str,
+        commodity: str,
+        variables_names: List[str],
+        results: Dict[str, Any],
+        post_processed: Dict[str, Any],
+    ) -> Dict[str, List[List[Any]]]:
+        """Return {variable_name: [[profile_datetime, value], ...]} for all optimisation times.
+
+        Naive datetimes are interpreted as UTC. Head variables are converted to pressure [Pa].
+        """
+        profile_datetimes = [
+            (
+                self.io.datetimes[ii].replace(tzinfo=datetime.timezone.utc)
+                if not self.io.datetimes[ii].tzinfo
+                else self.io.datetimes[ii]
+            )
+            for ii in range(len(self.times()))
+        ]
+        head_variables = [
+            f"{commodity}In.H",
+            f"Primary.{commodity}In.H",
+            f"Secondary.{commodity}In.H",
+        ]
+
+        profile_data = {}
+        for variable_name in variables_names:
+            if variable_name in ["PostProc.Velocity", "PostProc.Pressure"]:
+                values = post_processed[variable_name][: len(profile_datetimes)]
+            else:
+                conversion_factor = (
+                    GRAVITATIONAL_CONSTANT * 988.0 if variable_name in head_variables else 1.0
+                )
+                values = [
+                    value * conversion_factor
+                    for value in results[f"{asset_id}." + variable_name][: len(profile_datetimes)]
+                ]
+            profile_data[variable_name] = [
+                [profile_datetime, value]
+                for profile_datetime, value in zip(profile_datetimes, values)
+            ]
+        return profile_data
 
     def _get_output_profile_quantity_and_unit(
         self, asset_id: str, variable_name: str, commodity: str
@@ -1559,9 +1604,6 @@ class ScenarioOutput:
                     )
 
                     asset_esdl_output_profiles = {}
-                    asset_esdl_output_profiles_data_dict = {
-                        variable_name: [] for variable_name in variables_names
-                    }
 
                     for variable_name in variables_names:
                         quantity_and_unit = self._get_output_profile_quantity_and_unit(
@@ -1580,38 +1622,9 @@ class ScenarioOutput:
                         asset_esdl_output_profiles[variable_name] = profile_handle
                         asset.port[index_outport].profile.append(esdl_profile)
 
-                    for ii in range(len(self.times())):
-                        if not self.io.datetimes[ii].tzinfo:
-                            profile_datetime = self.io.datetimes[ii].replace(
-                                tzinfo=datetime.timezone.utc
-                            )
-                        else:
-                            profile_datetime = self.io.datetimes[ii]
-
-                        for variable_name in variables_names:
-                            data_row = [profile_datetime]
-                            if variable_name in [
-                                f"{commodity}In.H",
-                                f"Primary.{commodity}In.H",
-                                f"Secondary.{commodity}In.H",
-                            ]:
-                                conversion_factor = GRAVITATIONAL_CONSTANT * 988.0
-                            else:
-                                conversion_factor = 1.0
-
-                            if variable_name in ["PostProc.Velocity", "PostProc.Pressure"]:
-                                data_row.append(post_processed[variable_name][ii])
-                            else:
-                                data_row.append(
-                                    results[f"{asset_id}." + variable_name][ii] * conversion_factor
-                                )
-
-                            if self.write_esdl_profiles_to_db:
-                                asset_esdl_output_profiles[variable_name].profile_data_list.append(
-                                    data_row
-                                )
-
-                            asset_esdl_output_profiles_data_dict[variable_name].append(data_row)
+                    asset_esdl_output_profiles_data_dict = self._get_output_profile_data(
+                        asset_id, commodity, variables_names, results, post_processed
+                    )
 
                     optim_simulation_tag = {
                         "simulationRun": simulation_id,
