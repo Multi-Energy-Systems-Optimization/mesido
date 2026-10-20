@@ -61,7 +61,7 @@ class SourcePipeBuilding(
     def path_goals(self):
         g = super().path_goals().copy()
 
-        # Note: code under development and to be updated once building parameters
+        # TODO: code under development and to be updated once building parameters
         # The path goals will still be updated once heat and cold demand
         # Currently heat demand matching occurs inheat_physics_mixin via
         # __heat_matching_demand_insulation_constraints
