@@ -1072,6 +1072,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             include_flow_direction_variable=not (
                 not self.include_head_loss_variables
                 and self.energy_system_options.get("neglect_pipe_heat_losses", False)
+                and not self.energy_system_options.get("include_flow_direction_variables", True)
             ),
             disconnectable=(
                 self._is_disconnectable_pipe(asset)
