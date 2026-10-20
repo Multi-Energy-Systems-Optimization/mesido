@@ -240,8 +240,7 @@ class HeatColdProblem(
         """
         options = super().solver_options()
         options["solver"] = "highs"
-        highs_options = options["highs"] = {}
-        highs_options["presolve"] = "off"
+        options["highs"] = {}
         return options
 
     def constraints(self, ensemble_member):
