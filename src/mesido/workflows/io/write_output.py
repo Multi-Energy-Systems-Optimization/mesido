@@ -1342,6 +1342,8 @@ class ScenarioOutput:
                     if commodity == NetworkSettings.NETWORK_TYPE_HEAT:
                         variables_one_hydraulic_system.append("Heat_flow")
                         variables_two_hydraulic_system.append("Heat_flow")
+                        variables_two_hydraulic_system.append("Primary_heat")
+                        variables_two_hydraulic_system.append("Secondary_heat")
                     elif commodity == NetworkSettings.NETWORK_TYPE_GAS:
                         variables_one_hydraulic_system.append(f"{commodity}In.mass_flow")
                         variables_two_hydraulic_system.append(f"{commodity}In.mass_flow")
@@ -1416,6 +1418,8 @@ class ScenarioOutput:
                             var_pops = [
                                 v for v in variables_two_hydraulic_system if "Secondary" in v
                             ]
+                            if asset_id in self.energy_system_components.get("heat_pump", []):
+                                var_pops.append("Heat_flow")
                         elif asset_side == "secondary_carrier_id":
                             var_pops = [v for v in variables_two_hydraulic_system if "Primary" in v]
                         for v in var_pops:
@@ -1497,7 +1501,12 @@ class ScenarioOutput:
                                         end_date_time = self.io.datetimes[-1]
 
                                     # Assign quantity and units variable
-                                    if variable_name in ["Heat_flow", "Pump_power"]:
+                                    if variable_name in [
+                                        "Heat_flow",
+                                        "Pump_power",
+                                        "Primary_heat",
+                                        "Secondary_heat",
+                                    ]:
                                         quantity_and_unit = esdl.esdl.QuantityAndUnitType(
                                             physicalQuantity=esdl.PhysicalQuantityEnum.POWER,
                                             unit=esdl.UnitEnum.WATT,
