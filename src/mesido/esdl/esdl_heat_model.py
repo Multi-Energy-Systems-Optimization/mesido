@@ -623,8 +623,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
             Stored_heat=dict(min=min_heat, max=max_heat),
             Heat_buffer=dict(min=-hfr_discharge_max, max=hfr_charge_max),
             init_Heat=min_heat,
-            include_discrete_charge_var=self.energy_system_options.get(
-                "heat_storage_charging_variables", False
+            include_discrete_charge_var=(
+                self.energy_system_options.get("heat_storage_charging_variables", False)
+                or (
+                    not self.include_head_loss_variables
+                    and self.energy_system_options.get("neglect_pipe_heat_losses", False)
+                )
             ),
             **self._generic_modifiers(asset),
             **self._generic_heat_modifiers(
@@ -1065,6 +1069,11 @@ class AssetToHeatComponent(_AssetToComponentBase):
         modifiers = dict(
             length=length,
             diameter=diameter,
+            include_flow_direction_variable=not (
+                not self.include_head_loss_variables
+                and self.energy_system_options.get("neglect_pipe_heat_losses", False)
+                and not self.energy_system_options.get("include_flow_direction_variables", True)
+            ),
             disconnectable=(
                 self._is_disconnectable_pipe(asset)
                 if not self.energy_system_options.get("all_pipes_disconnectable", False)
@@ -1701,8 +1710,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 max=hfr_charge_max * aggregation_count * 180.0 * 24 * 3600.0,
                 nominal=hfr_charge_max * aggregation_count * 30.0 * 24 * 3600.0,
             ),
-            include_discrete_charge_var=self.energy_system_options.get(
-                "heat_storage_charging_variables", False
+            include_discrete_charge_var=(
+                self.energy_system_options.get("heat_storage_charging_variables", False)
+                or (
+                    not self.include_head_loss_variables
+                    and self.energy_system_options.get("neglect_pipe_heat_losses", False)
+                )
             ),
             **self._generic_modifiers(asset),
             **self._generic_heat_modifiers(
