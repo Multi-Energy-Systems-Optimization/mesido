@@ -1,4 +1,4 @@
-# [Unreleased-main] - 2026-09-24
+# [Unreleased-main] - 2026-10-20
 
 ## Added
 - selfDischargeRate is parsed from HeatStorage assets in ESDL to calculate heat loss coefficient of heat buffer
@@ -12,6 +12,7 @@
 ## Fixed
 - Voltage losses are now also excluded when include_electric_cable_power_loss is set to False.
 - Prevented duplicate writing of water-to-water heat pump heat_flow profiles to the output ESDL.
+- Bug fix: For ESDL version v2602 and later, the pipe diameter upper limit now correctly uses PipeDiameterConstraint when it is defined.
 
 # [0.1.22] - 2026-09-07
 
