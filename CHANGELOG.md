@@ -2,6 +2,7 @@
 
 ## Added
 - selfDischargeRate is parsed from HeatStorage assets in ESDL to calculate heat loss coefficient of heat buffer
+- Added primary_heat and secondary_heat profiles for water-to-water heat pumps and heat exchangers to the output ESDL.
 
 ## Changed
 - Upgrade to rtc-tools 2.7.3, casadi 3.7.2 and rtctools-highs 0.1.4, replacing rtc-tools-gil-comp/casadi-gil-comp; Python 3.12 is now also supported.
@@ -9,7 +10,7 @@
 
 ## Fixed
 - Voltage losses are now also excluded when include_electric_cable_power_loss is set to False.
-
+- Prevented duplicate writing of water-to-water heat pump heat_flow profiles to the output ESDL.
 
 # [0.1.22] - 2026-09-07
 
