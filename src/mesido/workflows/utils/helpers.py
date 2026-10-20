@@ -135,7 +135,8 @@ GUROBI_RETRYABLE_ERROR_STRINGS = [
 
 def _with_gurobi_session_retry(casadi_solver):
     """
-    Wraps the casadi solver constructor, retrying when no Gurobi license session is available.
+    Retry Gurobi session errors until timeout, other errors are not retried.
+    Errors from other solvers, such as HiGHS, are never retried.
     """
     if isinstance(casadi_solver, str):
         casadi_solver = getattr(ca, casadi_solver)
