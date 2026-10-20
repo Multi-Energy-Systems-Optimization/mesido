@@ -38,7 +38,8 @@ def check_electrolyzer_efficiency(tol, electrolyzer_gas, electrolyzer_power, esd
     )
     np.testing.assert_array_less(min(provided_efficiencies), efficiency[electrolyzer_power > 1])
     np.testing.assert_array_less(
-        efficiency[electrolyzer_power > 1], max(provided_efficiencies) + tol
+        efficiency[electrolyzer_power > 1], max(provided_efficiencies) + tol,
+        err_msg=f"electrolyzer_power={electrolyzer_power[electrolyzer_power > 1]} and electrolyzer_gas={electrolyzer_gas[electrolyzer_power > 1]} and efficiency={efficiency[electrolyzer_power > 1]}"
     )
 
 
