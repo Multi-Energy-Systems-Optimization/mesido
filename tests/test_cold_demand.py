@@ -198,12 +198,12 @@ class TestColdDemand(TestCase):
         cold well
         5. pipe heat loss and gain
             - pipe heat losses included: expect loss and gain values due to the carrier
-            temperatures (warm and cold) in the pipes being higher and lower than the ground
-            temperature
+              temperatures (warm and cold) in the pipes being higher and lower than the ground
+              temperature
             - pipe heat losses excluded: expect no heat losses or gains
-        6. supply temperature profile of the pipe linked to cold demand at the pipe inlet
-            - pipe inlet of both cases: expect same as the input temperature profile
-            given in the input csv file
+        6. temperature profile at the inlet of the warm-carrier pipe connected to the cold demand
+            - pipe inlet of both cases: expect same as the temperature profile
+              given in the input csv file
         """
         import models.wko.src.example as example
         from models.wko.src.example import HeatColdProblem

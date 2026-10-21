@@ -1488,23 +1488,11 @@ class HeatPhysicsMixin(
         """
         constraints = []
         parameters = self.parameters(ensemble_member)
-        bounds = self.bounds()
 
         for asset in self.energy_system_components.get(asset_type, []):
             heat_nominal = parameters[f"{asset}.Heat_nominal"]
             cp = parameters[f"{asset}.cp"]
             rho = parameters[f"{asset}.rho"]
-            dt = parameters[f"{asset}.dT"]
-
-            big_m = 2.0 * bounds[f"{asset}.HeatOut.Heat"][1]
-            big_m = (
-                big_m
-                if big_m != np.inf
-                else 2.0
-                * bounds[f"{asset}.{asset_type.capitalize()}"][1]
-                * parameters[f"{asset}.T_supply"]
-                / dt
-            )
 
             temp_out_profile, sup_carrier_name, temp_out_prof_start_idx, temp_out_prof_end_idx = (
                 self.__get_out_port_carrier_temp_profile(parameters, asset, asset_type)
