@@ -41,7 +41,7 @@ class BaseProfileReader:
     carrier_price_profile_var_name: str = ".price_profile"
     carrier_temperature_profile_var_name: str = ".temperature_profile"
 
-    carrier_profile_var_mapping: dict = {
+    carrier_profile_suffix_to_var_name_mapping: dict = {
         "__price": carrier_price_profile_var_name,
         "__temperature": carrier_temperature_profile_var_name,
     }
@@ -207,17 +207,17 @@ class BaseProfileReader:
             for properties in carrier_properties.values():
                 carrier_name = properties["name"]
                 for (
-                    csv_column_label,
-                    var_suffix,
-                ) in self.carrier_profile_var_mapping.items():
-                    profile = self._profiles[ensemble_member].get(carrier_name + var_suffix, None)
+                    carrier_profile_suffix,
+                    var_name,
+                ) in self.carrier_profile_suffix_to_var_name_mapping.items():
+                    profile = self._profiles[ensemble_member].get(carrier_name + var_name, None)
                     if profile is not None:
                         logger.debug(
-                            f"Setting {csv_column_label.removeprefix('__')} profile for carrier "
-                            f"named {carrier_name}"
+                            f"Setting {carrier_profile_suffix.removeprefix('__')}"
+                            f" profile for carrier named {carrier_name}"
                         )
                         io.set_timeseries(
-                            variable=carrier_name + var_suffix,
+                            variable=carrier_name + var_name,
                             datetimes=self._reference_datetimes,
                             values=profile,
                             ensemble_member=ensemble_member,
@@ -767,10 +767,10 @@ class ProfileReaderFromFile(BaseProfileReader):
             for properties in carrier_properties.values():
                 carrier_name = properties.get("name")
                 for (
-                    csv_column_label,
-                    var_suffix,
-                ) in self.carrier_profile_var_mapping.items():
-                    column_name = carrier_name + csv_column_label
+                    carrier_profile_suffix,
+                    var_name,
+                ) in self.carrier_profile_suffix_to_var_name_mapping.items():
+                    column_name = carrier_name + carrier_profile_suffix
                     try:
                         values = data_em[column_name].to_numpy()
                         if np.isnan(values).any():
@@ -783,7 +783,7 @@ class ProfileReaderFromFile(BaseProfileReader):
                     except KeyError:
                         pass
                     else:
-                        self._profiles[e_m][carrier_name + var_suffix] = values
+                        self._profiles[e_m][carrier_name + var_name] = values
 
     def _load_xml(self, energy_system_components, esdl_asset_id_to_name_map):
         timeseries_import_basename = self._file_path.stem
