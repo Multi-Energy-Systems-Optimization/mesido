@@ -1,8 +1,11 @@
-# [Unreleased-main] - 2026-10-09
+# [Unreleased-main] - 2026-10-20
 
 ## Added
 - selfDischargeRate is parsed from HeatStorage assets in ESDL to calculate heat loss coefficient of heat buffer
-- Heat carrier temperature and price profiles are parsed from ESDL and CSV files.
+- Added primary_heat and secondary_heat profiles for water-to-water heat pumps and heat exchangers to the output ESDL.
+- Parsing and basic model of Combined Heat Power (CHP) has been added, which is based on existing heat producer, electricity producer and gas consumption classes.
+- Parsing of a building asset and creating building parameters. Only Heating and Cooling Demand assets currently supported in a building asset. 
+- A new temperature_profile variable for carrier is added and used (instead of using price_profile variable).
 - Cold demand caters supply temperature profile.
 
 ## Changed
@@ -11,7 +14,7 @@
 
 ## Fixed
 - Voltage losses are now also excluded when include_electric_cable_power_loss is set to False.
-
+- Prevented duplicate writing of water-to-water heat pump heat_flow profiles to the output ESDL.
 
 # [0.1.22] - 2026-09-07
 
