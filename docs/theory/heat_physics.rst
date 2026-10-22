@@ -236,6 +236,7 @@ where :math:`A_{nodes}` is the set of all nodes and :math:`H^a` is the headloss 
 
 Asset Physics
 -------------
+.. TODO: Add heat pump physics here
 
 .. _heat_physics_source:
 Source
