@@ -1,4 +1,4 @@
-Workflows
+DTK Workflows
 =========
 
 This page eleborates on the available Design Toolkit workflows...

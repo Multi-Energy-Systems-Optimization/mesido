@@ -8,6 +8,7 @@ This is the documentation for MESIDO.
 .. toctree::
    :maxdepth: 4
    :caption: MESIDO
+   :numbered:
 
    theory/index
    supported_tools/index

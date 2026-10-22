@@ -166,4 +166,5 @@ behaves as a source asset, and the physics described for source assets in the :r
 to the secondary side of the heat pump.
 * The heat pump operates with a Coefficient of Performance (COP) that is constant over time. COP is equal to the ratio
 of the secondary heat output to electrical power input. This defines the relationship between the heat input on the
-primary side and the heat output on the secondary side of the heat pump.
+primary side and the heat output on the secondary side of the heat pump. The influence of the outside air temperature
+variations on the COP is not currently taken into account.

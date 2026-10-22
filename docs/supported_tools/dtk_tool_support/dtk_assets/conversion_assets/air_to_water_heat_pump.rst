@@ -143,5 +143,8 @@ No assets specific constraints are defined for the air-to-water-heatpump.
 
 Assumptions
 ^^^^^^^^^^
-* The air-to-water-heatpump operates with a Coefficient of Performance (COP) that is constant over time. COP is equal to the ratio of the secondary heat output to electrical power input.
-* The secondary side of the heat pump must be connected to a hydraulic network with a higher supply temperature. It behaves as a source asset, and the physics described for source assets in the :ref:`heat_physics_source` section applies to the secondary side of the heat pump.
+* The air-to-water-heatpump operates with a Coefficient of Performance (COP) that is constant over time. COP is equal
+to the ratio of the secondary heat output to electrical power input.  The influence of the outside air temperature
+variations on the COP is not currently taken into account.
+* The secondary side of the heat pump must be connected to a hydraulic network. It behaves as a source asset, and the
+physics described for source assets in the :ref:`heat_physics_source` section applies to the secondary side of the heat pump.

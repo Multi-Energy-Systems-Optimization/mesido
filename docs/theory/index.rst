@@ -1,6 +1,5 @@
 .. toctree::
    :maxdepth: 3
-   :numbered:
 
    introduction
    code_structure

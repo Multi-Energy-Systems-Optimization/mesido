@@ -3,7 +3,6 @@ Developers Documentation
 
 .. toctree::
    :maxdepth: 4
-   :numbered:
    :caption: Contents:
 
    component_library_milp
