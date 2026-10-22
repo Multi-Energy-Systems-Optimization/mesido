@@ -1,9 +1,12 @@
 Heat Producer
 -------------
-Heat producer is a generic heat source asset. It is used to transfer heat to heat network.
+Heat producer is a generic heat source asset which is used to transfer heat to heat network. It can be used to represent
+a heat source, with user defined inputs, that is not currently available in the pre-configured asset lists.
 
 Heat Producer Asset Attributes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The following table provides an overview of the relevant attributes for this asset, including their configuration in the
+front end and their interpretation and use by the optimizer.
 
 .. list-table:: Asset Attributes
    :widths: 35 25 60 25 25 35 70
@@ -12,8 +15,6 @@ Heat Producer Asset Attributes
    * - ESDL attribute category
      - ESDL attribute
      - Definition
-
-       (as interpreted by the simulator / optimizer)
      - Units
      - Required/Optional
      - Default value
@@ -68,7 +69,7 @@ Heat Producer Asset Attributes
 
        Each port must have a carrier assigned to it.
 
-       Port naming convention required: :math:`In & Out`.
+       Port naming convention required: :math:`In \& Out`.
 
        Required carrier temperatures are :math:`T_{Out} > T_{In}`.
      - \-
@@ -118,8 +119,9 @@ Heat Producer Asset Attributes
 
 Heat Producer from EDR Assets
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The Design Toolkit also provides access to predefined residual heat source assets from
-`ESDL Energy Data Repository (EDR) <https://edr.hesi.energy/>`_
+The Design Toolkit also provides access to predefined configurations of this asset type, with the required input
+settings, including benchmark cost values, already assigned. More information on these configurations is available in
+the `ESDL Energy Data Repository (EDR) <https://edr.hesi.energy/>`_.
 
 * `HeatProducer: Heat producer <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FDistrict%20heating%20and%20cooling%20networks%2FHeat%20producer.edd>`_
 

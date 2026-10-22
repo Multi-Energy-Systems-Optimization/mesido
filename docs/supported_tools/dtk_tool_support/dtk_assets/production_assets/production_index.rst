@@ -7,7 +7,6 @@ The following production assets are supported in DTK:
 
 .. toctree::
    :maxdepth: 1
-   :numbered:
 
    heat_producer
    geothermal_source

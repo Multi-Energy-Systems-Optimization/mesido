@@ -4,6 +4,8 @@ Pipes represent the hydraulic transport connection between two network nodes.
 
 Pipe Asset Attributes
 ^^^^^^^^^^^^^^^^^^^^^
+The following table provides an overview of the relevant attributes for this asset, including their configuration in the
+front end and their interpretation and use by the optimizer.
 
 .. list-table:: Asset Attributes
    :widths: 35 25 60 25 25 35 70
@@ -12,8 +14,6 @@ Pipe Asset Attributes
    * - ESDL attribute category
      - ESDL attribute
      - Definition
-
-       (as interpreted by the simulator / optimizer)
      - Units
      - Required/Optional
      - Default value
@@ -99,10 +99,11 @@ Pipe Asset Attributes
 
 Pipes from EDR Assets
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Frontend provides access to predefined pipe asset from
-`ESDL Energy Data Repository (EDR) <https://edr.hesi.energy/>`_.
-However, Design Toolkit only supports
-"Steel-S1-DN-XXX" pipe family from EDR assets.
+The Design Toolkit also provides access to predefined configurations of this asset type, with the required input
+settings, including benchmark cost values, already assigned. More information on these configurations is available in
+the `ESDL Energy Data Repository (EDR) <https://edr.hesi.energy/>`_.
+
+Only "Steel-S1-DN-XXX" pipe family from EDR assets are supported by Design Toolkit.
 
 Pipe: Steel-S1-DN-XXX:
 

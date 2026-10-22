@@ -6,6 +6,8 @@ to a higher temperature water sink (i.e. higher temperature heat network) by con
 
 Water-to-Water Heat Pump Asset Attributes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The following table provides an overview of the relevant attributes for this asset, including their configuration in
+the front end and their interpretation and use by the optimizer.
 
 .. list-table:: Asset Attributes
    :widths: 35 25 60 25 25 35 70
@@ -14,8 +16,6 @@ Water-to-Water Heat Pump Asset Attributes
    * - ESDL attribute category
      - ESDL attribute
      - Definition
-
-       (as interpreted by the simulator / optimizer)
      - Units
      - Required/Optional
      - Default value
@@ -136,13 +136,12 @@ Water-to-Water Heat Pump Asset Attributes
      - \-
      - \-
 
-By following the above specifications, users can define and configure a custom water-to-water heat pump within their energy
-system models.
 
 Water-to-Water Heat Pump from EDR Assets
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The Design Toolkit also provides access to predefined water-to-water heat pump assets from
-`ESDL Energy Data Repository (EDR) <https://edr.hesi.energy/>`_
+The Design Toolkit also provides access to predefined configurations of this asset type, with the required input
+settings, including benchmark cost values, already assigned. More information on these configurations is available in
+the `ESDL Energy Data Repository (EDR) <https://edr.hesi.energy/>`_.
 
 * `HeatPump: W-W heatpump T50-dT10 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FDistrict%20heating%20and%20cooling%20networks%2FW-W%20heatpump%20T50-dT10.edd>`_
 * `HeatPump: W-W heatpump T70-dT10 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FDistrict%20heating%20and%20cooling%20networks%2FW-W%20heatpump%20T70-dT10.edd>`_
@@ -158,13 +157,6 @@ No assets specific constraints are defined for the water-to-water-heatpump.
 
 Assumptions
 ^^^^^^^^^^^
-* The primary side of the heat pump must be connected to a hydraulic network with a lower supply temperature. It behaves
-as a demand asset, and the physics described for demand assets in the :ref:`heat_physics_demand` section applies to the
-primary side of the heat pump.
-* The secondary side of the heat pump must be connected to a hydraulic network with a higher supply temperature. It
-behaves as a source asset, and the physics described for source assets in the :ref:`heat_physics_source` section applies
-to the secondary side of the heat pump.
-* The heat pump operates with a Coefficient of Performance (COP) that is constant over time. COP is equal to the ratio
-of the secondary heat output to electrical power input. This defines the relationship between the heat input on the
-primary side and the heat output on the secondary side of the heat pump. The influence of the outside air temperature
-variations on the COP is not currently taken into account.
+* The primary side of the heat pump must be connected to a hydraulic network with a lower supply temperature. It behaves as a demand asset, and the physics described for demand assets in the :ref:`heat_physics_demand` section applies to the primary side of the heat pump.
+* The secondary side of the heat pump must be connected to a hydraulic network with a higher supply temperature. It behaves as a source asset, and the physics described for source assets in the :ref:`heat_physics_source` section applies to the secondary side of the heat pump.
+* The heat pump operates with a Coefficient of Performance (COP) that is constant over time. COP is equal to the ratio of the secondary heat output to electrical power input. This defines the relationship between the heat input on the primary side and the heat output on the secondary side of the heat pump. The influence of the outside air temperature variations on the COP is not currently taken into account.

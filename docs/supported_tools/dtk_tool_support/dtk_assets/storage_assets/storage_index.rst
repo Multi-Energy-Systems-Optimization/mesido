@@ -7,7 +7,6 @@ The following storage assets are supported in DTK:
 
 .. toctree::
    :maxdepth: 1
-   :numbered:
 
    heat_storage
    ht_ates

@@ -1,9 +1,9 @@
 .. _chp_workflows:
 
-Design Toolkit Workflows
+Generic Workflows
 ========================
 
-This page eleborates on the available Design Toolkit workflows within MESIDO.
+This page eleborates on the available generic workflows in MESIDO that are specifically developed for the Design Toolkit.
 The Design Toolkit is a subsidy funded project (NieuweWarmteNu) to help different organizatons in the district heating value chain with draft and/or conceptual designing of District Heating Systems (DHS).
 For more information see : https://nwn.nu/projecten/innovaties/design-toolkit-warmtenetten/.
 MESIDO is by no means limited to only these workflows, but it is left to the user itself to define the most logical workflow if the ones below are unsuitable.
