@@ -303,11 +303,7 @@ class TestRangedConstraints(TestCase):
             elif esdl_file == "testing_network_1_all_optional_excluding_pipes.esdl":
                 for pipe_id in problem.energy_system_components.get("heat_pipe", []):
                     esdl_asset = problem._esdl_assets[pipe_id]
-                    pipe_name = esdl_asset.name
-                    if pipe_name in pipes_with_ranged_constraint:
-                        pipe_diameter_name = esdl_asset.attributes["constraint"][0].maximum.name
-                    else:
-                        pipe_diameter_name = esdl_asset.attributes["diameter"].name
+                    pipe_diameter_name = esdl_asset.attributes["diameter"].name
                     pipe_diameter = edr_pipes[edr_name_by_dn[pipe_diameter_name]]["inner_diameter"]
                     np.testing.assert_equal(
                         problem.parameters(0)[f"{pipe_id}.diameter"], pipe_diameter

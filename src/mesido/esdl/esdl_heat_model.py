@@ -1041,7 +1041,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             diameter,
             insulation_thicknesses,
             conductivies_insulation,
-        ) = self._pipe_get_diameter_and_insulation(asset)
+        ) = self._pipe_get_diameter_and_insulation(asset, self.energy_system_esdl_version)
 
         temperature_modifiers = self._supply_return_temperature_modifiers(asset)
 
