@@ -14,10 +14,13 @@ from esdl import TimeUnitEnum, UnitEnum
 
 from mesido.esdl._exceptions import _RetryLaterException
 from mesido.esdl.common import Asset
+from mesido.esdl.esdl_additional_vars_mixin import get_asset_contraints
 from mesido.network_common import NetworkSettings
 from mesido.pipe_class import TRACE_TO_SINGLE_PIPE_COST_FACTOR
 from mesido.potential_errors import MesidoAssetIssueType, get_potential_errors
 from mesido.pycml import Model as _Model
+
+from pyecore.ecore import EEnumLiteral
 
 logger = logging.getLogger("mesido")
 
@@ -453,7 +456,57 @@ class _AssetToComponentBase:
         for port in ports:
             self._port_to_esdl_component_type[port] = asset.asset_type
 
-    def _pipe_get_diameter_and_insulation(self, asset: Asset) -> Tuple[float, list, list]:
+    def _get_pipe_max_size_input(
+        self,
+        asset: Asset,
+        energy_system_esdl_version: Optional[str],
+    ) -> Tuple[EEnumLiteral, bool]:
+        """
+        Get the pipe DN upper limit from PipeDiameterConstraint (if available) or from
+        the pipe diameter asset attribute.
+
+        Returns:
+            - the pipe DN upper limit
+            - bool indicating if the value originates from a PipeDiameterConstraint
+        """
+        use_pipe_diameter_constraint = False
+        if energy_system_esdl_version is not None and energy_system_esdl_version >= "v2602":
+            pipe_constraint, qty_pipe_constraint = get_asset_contraints(
+                self, asset, esdl.PipeDiameterConstraint
+            )
+
+            if qty_pipe_constraint > 1:
+                logger.error(
+                    f"More than 1 pipe diameter constraint has been specified to "
+                    f"pipe named {asset.name}, currenlty only the 1st constraint is being used"
+                )
+                sys.exit(1)
+            elif (
+                qty_pipe_constraint == 0
+                or pipe_constraint[0].maximum == esdl.PipeDiameterEnum.VALUE_SPECIFIED
+            ):
+                logger.warning(
+                    "Expected a pipe diameter contraint (upper size limit) for pipe named "
+                    f"{asset.name}, but none has been specified. Therefore, the pipe diameter "
+                    "specified in the asset attribute is being used."
+                )
+                return asset.attributes["diameter"], use_pipe_diameter_constraint
+            else:
+                use_pipe_diameter_constraint = True
+                logger.warning(
+                    f"For pipe named {asset.name}, the pipe diameter constraint max value is "
+                    "used for the pipe's diameter upper limit, instead of the pipe diameter "
+                    "specified (if any) in the asset attribute."
+                )
+                return pipe_constraint[0].maximum, use_pipe_diameter_constraint
+        else:
+            return asset.attributes["diameter"], use_pipe_diameter_constraint
+
+    def _pipe_get_diameter_and_insulation(
+        self,
+        asset: Asset,
+        energy_system_esdl_version: Optional[str] = None,
+    ) -> Tuple[float, list, list]:
         """
         There are multiple ways to specify pipe properties like inner-diameter and
         pipe/insulation material and thickness.  The user specified nominal diameter (DN size)
@@ -469,40 +522,44 @@ class _AssetToComponentBase:
         """
 
         full_name = f"{asset.asset_type} '{asset.name}'"
-        if asset.attributes["innerDiameter"] and asset.attributes["diameter"].value > 0:
-            logger.warning(
-                f"{full_name}' has both 'innerDiameter' and 'diameter' specified. "
-                f"Diameter of {asset.attributes['diameter'].name} will be used."
+
+        pipe_max_size_input = None
+        use_pipe_constraint = False
+        if asset.attributes["state"].name == "OPTIONAL":
+            pipe_max_size_input, use_pipe_constraint = self._get_pipe_max_size_input(
+                asset, energy_system_esdl_version
             )
-        if asset.attributes["material"] and asset.attributes["diameter"].value > 0:
-            logger.warning(
-                f"{full_name}' has both 'material' and 'diameter' specified. "
-                f"Insulation properties of {asset.attributes['diameter'].name} will be used."
-            )
-        if asset.attributes["material"] and (
-            asset.attributes["diameter"].value == 0 and not asset.attributes["innerDiameter"]
-        ):
-            logger.warning(
-                f"{full_name}' has only 'material' specified, but no information on diameter. "
-                f"Diameter and insulation properties of DN200 will be used."
-            )
-        if asset.attributes["diameter"].value == 0 and not asset.attributes["innerDiameter"]:
-            if asset.attributes["material"]:
+
+        if not use_pipe_constraint:
+            if asset.attributes["innerDiameter"] and asset.attributes["diameter"].value > 0:
                 logger.warning(
-                    f"{full_name}' has only 'material' specified, but no information on diameter. "
-                    f"Diameter and insulation properties of DN200 will be used."
+                    f"{full_name}' has both 'innerDiameter' and 'diameter' specified. "
+                    f"Diameter of {asset.attributes['diameter'].name} will be used."
                 )
-            else:
+            if asset.attributes["material"] and asset.attributes["diameter"].value > 0:
                 logger.warning(
-                    f"{full_name}' has no DN size or innerDiameter specified. "
-                    f"Diameter and insulation properties of DN200 will be used. "
+                    f"{full_name}' has both 'material' and 'diameter' specified. "
+                    f"Insulation properties of {asset.attributes['diameter'].name} will be used."
                 )
+            if asset.attributes["diameter"].value == 0 and not asset.attributes["innerDiameter"]:
+                if asset.attributes["material"]:
+                    logger.error(
+                        f"{full_name}' has only 'material' specified, but no information "
+                        f"on diameter."
+                    )
+                else:
+                    logger.error(f"{full_name}' has no DN size or innerDiameter specified.")
+                sys.exit(1)
 
         edr_dn_size = None
-        if asset.attributes["diameter"].value > 0:
-            edr_dn_size = asset.attributes["diameter"]
-        elif not asset.attributes["innerDiameter"]:
-            edr_dn_size = esdl.PipeDiameterEnum.DN200
+        if pipe_max_size_input:
+            edr_dn_size = pipe_max_size_input
+        else:
+            if asset.attributes["diameter"].value > 0:
+                edr_dn_size = asset.attributes["diameter"]
+            elif not asset.attributes["innerDiameter"]:
+                logger.error(f"{full_name}' has no DN size or innerDiameter specified. ")
+                sys.exit(1)
 
         # NaN means the default values will be used
         insulation_thicknesses = math.nan

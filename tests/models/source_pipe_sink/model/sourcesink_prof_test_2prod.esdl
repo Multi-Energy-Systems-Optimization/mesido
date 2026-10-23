@@ -53,7 +53,7 @@
           <point xsi:type="esdl:Point" CRS="WGS84" lat="52.086558294989445" lon="4.386013537838319"/>
         </geometry>
       </asset>
-      <asset xsi:type="esdl:Pipe" id="36793e22-6efd-4d0c-ac7a-c732e7bbbc9a" name="Pipe_3679" length="156.2">
+      <asset xsi:type="esdl:Pipe" id="36793e22-6efd-4d0c-ac7a-c732e7bbbc9a" name="Pipe_3679" length="156.2" diameter="DN300">
         <geometry xsi:type="esdl:Line" CRS="WGS84">
           <point xsi:type="esdl:Point" lat="52.085656726690175" lon="4.385157053844799"/>
           <point xsi:type="esdl:Point" lat="52.08561716188888" lon="4.387442212015569"/>

@@ -47,6 +47,7 @@ class AssetToQTHComponent(_AssetToComponentBase):
         self.rho = rho
         self.cp = cp
         self.min_fraction_tank_volume = min_fraction_tank_volume
+        self.energy_system_esdl_version = kwargs.get("energy_system_esdl_version", None)
 
     @property
     def _rho_cp_modifiers(self):
@@ -211,7 +212,7 @@ class AssetToQTHComponent(_AssetToComponentBase):
             diameter,
             insulation_thicknesses,
             conductivies_insulation,
-        ) = self._pipe_get_diameter_and_insulation(asset)
+        ) = self._pipe_get_diameter_and_insulation(asset, self.energy_system_esdl_version)
 
         area = math.pi * diameter**2 / 4.0
         q_nominal = self.v_nominal * area
