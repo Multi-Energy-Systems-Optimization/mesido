@@ -145,7 +145,7 @@ class TestHeat(TestCase):
         cp = parameters["Pipe1.cp"]
         rho = parameters["Pipe1.rho"]
         temp_pipe1 = heat_flow_out_pipe1 / (cp * rho * vol_flow_pipe1)
-        temp_input_prof = case.get_timeseries("heat.price_profile").values
+        temp_input_prof = case.get_timeseries("heat.temperature_profile").values
         np.testing.assert_array_almost_equal(temp_pipe1, temp_input_prof)
 
         case = run_esdl_mesido_optimization(
@@ -169,7 +169,7 @@ class TestHeat(TestCase):
         cp = parameters["Pipe1.cp"]
         rho = parameters["Pipe1.rho"]
         temp_pipe1 = heat_flow_out_pipe1 / (cp * rho * vol_flow_pipe1)
-        temp_input_prof = case.get_timeseries("heat.price_profile").values
+        temp_input_prof = case.get_timeseries("heat.temperature_profile").values
         np.testing.assert_array_almost_equal(temp_pipe1, temp_input_prof)
 
 
