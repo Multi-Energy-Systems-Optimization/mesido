@@ -2,6 +2,7 @@
 
 ## Added
 - selfDischargeRate is parsed from HeatStorage assets in ESDL to calculate heat loss coefficient of heat buffer
+- Cater for gurobi solver retry, at specified time intervals, when no license session is available
 - Added primary_heat and secondary_heat profiles for water-to-water heat pumps and heat exchangers to the output ESDL.
 - Parsing and basic model of Combined Heat Power (CHP) has been added, which is based on existing heat producer, electricity producer and gas consumption classes.
 - Parsing of a building asset and creating building parameters. Only Heating and Cooling Demand assets currently supported in a building asset. 
