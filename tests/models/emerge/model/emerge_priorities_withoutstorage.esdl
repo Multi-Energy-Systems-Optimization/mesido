@@ -23,6 +23,7 @@
           <fixedMaintenanceCosts xsi:type="esdl:SingleValue" value="255000.0" id="0c34c932-7857-4f8f-b1b3-d7fbe04d300c">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="WATT" id="9dc9c866-79ee-4a72-9982-8d3d7e04d3aa" unit="EURO" description="Cost in EUR/MW" physicalQuantity="COST" perMultiplier="MEGA"/>
           </fixedMaintenanceCosts>
+          <marginalCosts xsi:type="esdl:SingleValue" value="0.1" name="WindPark_9074-MarginalCosts" id="d18bb16f-094c-451d-bb74-943b7d6ddad1"/>
         </costInformation>
       </asset>
       <asset xsi:type="esdl:ElectricityDemand" name="ElectricityDemand_f833" power="1300000000.0" technicalLifetime="20.0" id="f8339608-af60-4b32-945b-521e6f7b8098">
