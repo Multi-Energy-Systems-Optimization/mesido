@@ -2067,6 +2067,18 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     ensemble_member,
                 )
             )
+            if parameters[f"{d}.state"] in (AssetStateEnum.OPTIONAL, AssetStateEnum.DISABLED):
+                maximum_power = self._get_max_value(bounds[f"{d}.Electricity_source"][1])
+                if maximum_power > 0.0:
+                    constraints.append(
+                        (
+                            max_power / maximum_power
+                            - asset_placement_ratio
+                            * self.get_aggregation_count_var(d, ensemble_member),
+                            0.0,
+                            np.inf,
+                        )
+                    )
 
         for d in self.energy_system_components.get("electricity_storage", []):
             max_var_types.add("electricity_storage")
@@ -2084,6 +2096,18 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     np.inf,
                 )
             )
+            if parameters[f"{d}.state"] in (AssetStateEnum.OPTIONAL, AssetStateEnum.DISABLED):
+                maximum_energy = bounds[f"{d}.Stored_electricity"][1]
+                if maximum_energy > 0.0:
+                    constraints.append(
+                        (
+                            max_stored_energy / maximum_energy
+                            - asset_placement_ratio
+                            * self.get_aggregation_count_var(d, ensemble_member),
+                            0.0,
+                            np.inf,
+                        )
+                    )
 
         for d in self.energy_system_components.get("electrolyzer", []):
             max_var_types.add("electrolyzer")
@@ -2154,13 +2178,12 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
     def __optional_asset_path_constraints(self, ensemble_member):
         """
-        This function adds constraints that set the _aggregation_count variable. This variable is
-        used for most assets (except geo and ates) to turn on/off the asset. Which effectively mean
-        that assets cannot exchange thermal power with the network when _aggregation_count == 0.
+        Gate optional-asset operation with its aggregation count.
 
-        Specifically for the geo and ATES we use the _aggregation_count for modelling the amount of
-        doublets. Where the _aggregation_count allows increments in the upper limit for the thermal
-        power that can be exchanged with the network.
+        Electricity producers use their nonnegative output power in W. Batteries gate stored energy
+        in J as well as charging and discharging rates in W, preventing an unplaced battery from
+        either injecting or consuming electricity. Other supported asset types retain their
+        established thermal and gas path constraints.
         """
         constraints = []
 
@@ -2207,6 +2230,36 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 ]:
                     # TODO: can we generalize to all possible components to avoid having to skip
                     #  joints and other components in the future?
+                    continue
+                elif asset_name in self.energy_system_components.get("electricity_source", []):
+                    state_var = self.state(f"{asset_name}.Electricity_source")
+                    single_power = self._get_max_value(
+                        bounds[f"{asset_name}.Electricity_source"][1]
+                    )
+                    if single_power <= 0.0:
+                        continue
+                    nominal_value = single_power
+                    nominal_var = self.variable_nominal(f"{asset_name}.Electricity_source")
+                elif asset_name in self.energy_system_components.get("electricity_storage", []):
+                    # Gate both stored energy (J) and charge/discharge rates (W) with the
+                    # placement count so an unplaced optional battery cannot affect the bus.
+                    for suffix in (
+                        "Stored_electricity",
+                        "Power_charging",
+                        "Power_discharging",
+                    ):
+                        state_name = f"{asset_name}.{suffix}"
+                        single_power = bounds[state_name][1]
+                        if single_power <= 0.0:
+                            continue
+                        constraints = self.__add_optional_asset_path_constraints(
+                            constraints,
+                            asset_name,
+                            single_power,
+                            self.variable_nominal(state_name),
+                            single_power,
+                            self.state(state_name),
+                        )
                     continue
                 elif (
                     self.energy_system_components_commodity.get(asset_name)

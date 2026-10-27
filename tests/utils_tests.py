@@ -631,13 +631,16 @@ def gas_pipes_head_loss_test(solution, results, atol=1e-12):
                 )
 
 
-def _get_esdl_scaled_cost(cost_esdl_info: object | None) -> float:
+def _get_esdl_scaled_cost(
+    cost_esdl_info: object | None, capacity_joule: float | None = None
+) -> float:
     """
     Scale an ESDL-defined cost to the appropriate unit basis.
 
     Parameters
     ----------
     cost_esdl_info : ESDL cost object containing the cost information.
+    capacity_joule : Optional battery capacity; normalize capacity costs to EUR/J.
 
     Returns
     -------
@@ -648,7 +651,7 @@ def _get_esdl_scaled_cost(cost_esdl_info: object | None) -> float:
         return 0.0
 
     per_unit = cost_esdl_info.profileQuantityAndUnit.perUnit
-    if per_unit is esdl.UnitEnum.NONE:
+    if per_unit is esdl.UnitEnum.NONE and capacity_joule is None:
         return cost_esdl_info.value
 
     multiplier_scalers = {
@@ -661,7 +664,17 @@ def _get_esdl_scaled_cost(cost_esdl_info: object | None) -> float:
     if per_multiplier not in multiplier_scalers:
         raise RuntimeWarning(f"{per_multiplier} is not supported as unit per multiplier.")
 
-    return cost_esdl_info.value / multiplier_scalers[per_multiplier]
+    value = cost_esdl_info.value / multiplier_scalers[per_multiplier]
+    if capacity_joule is not None:
+        if per_unit == esdl.UnitEnum.WATTHOUR:
+            value /= 3600.0
+        elif per_unit == esdl.UnitEnum.NONE:
+            if capacity_joule <= 0.0:
+                raise AssertionError("A lump-sum battery cost requires positive capacity in J.")
+            value /= capacity_joule
+        elif per_unit != esdl.UnitEnum.JOULE:
+            raise AssertionError(f"Unsupported battery capacity cost unit: {per_unit}.")
+    return value
 
 
 def _find_pipe_cost_in_edr(edr_pipes: dict, inner_diameter: float) -> float:
@@ -702,6 +715,8 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
       - Fixed operational + maintenance costs (size-based and accumulated over technical life),
       - Variable operational costs (time-integrated using timestep durations, with asset-specific
         logic such as COP, fuel/flow conversions, pump power or electricity price profile).
+        Battery variable costs are currently supported only when their ESDL coefficient is zero;
+        FinancialMixin does not currently define a battery-throughput cost equation.
       - Objective function contribution if `calc_objective` is True
 
     Parameters
@@ -731,6 +746,7 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
         *solution.energy_system_components.get("heat_demand", []),
         *solution.energy_system_components.get("cold_demand", []),
         *solution.energy_system_components.get("electricity_source", []),
+        *solution.energy_system_components.get("electricity_storage", []),
         *transport_assets,
     ]
 
@@ -768,6 +784,11 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
     for asset in assets:
         esdl_asset = solution.esdl_assets[asset]
         costs_esdl_asset = esdl_asset.attributes["costInformation"]
+        capacity_joule = (
+            esdl_asset.attributes["capacity"]
+            if asset in solution.energy_system_components.get("electricity_storage", [])
+            else None
+        )
         if (
             asset in solution.energy_system_components.get("heat_pipe", [])
             and esdl_asset.attributes["state"] == esdl.AssetStateEnum.OPTIONAL
@@ -800,7 +821,9 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
             investment_cost = investment_cost_info * parameters[f"{asset}.length"]
         else:
             investment_cost_info = (
-                _get_esdl_scaled_cost(costs_esdl_asset.investmentCosts)
+                _get_esdl_scaled_cost(
+                    costs_esdl_asset.investmentCosts, capacity_joule=capacity_joule
+                )
                 if costs_esdl_asset is not None
                 else 0.0
             )
@@ -863,12 +886,16 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
             np.testing.assert_allclose(0.0, results[f"{asset}__fixed_operational_cost"])
         else:
             fix_op_costs_esdl = (
-                _get_esdl_scaled_cost(costs_esdl_asset.fixedOperationalCosts)
+                _get_esdl_scaled_cost(
+                    costs_esdl_asset.fixedOperationalCosts, capacity_joule=capacity_joule
+                )
                 if costs_esdl_asset is not None
                 else 0.0
             )
             fix_maint_costs_esdl = (
-                _get_esdl_scaled_cost(costs_esdl_asset.fixedMaintenanceCosts)
+                _get_esdl_scaled_cost(
+                    costs_esdl_asset.fixedMaintenanceCosts, capacity_joule=capacity_joule
+                )
                 if costs_esdl_asset is not None
                 else 0.0
             )
@@ -896,9 +923,27 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
                 if costs_esdl_asset is not None
                 else 0.0
             )
-            np.testing.assert_allclose(
-                parameters[f"{asset}.variable_operational_cost_coefficient"], var_op_costs_esdl
+            is_electricity_storage = asset in solution.energy_system_components.get(
+                "electricity_storage", []
             )
+            if is_electricity_storage:
+                np.testing.assert_allclose(
+                    var_op_costs_esdl,
+                    0.0,
+                    atol=atol,
+                    err_msg=(
+                        "Nonzero battery variable operational costs are unsupported: "
+                        "FinancialMixin has no battery-throughput cost equation."
+                    ),
+                )
+                np.testing.assert_allclose(
+                    parameters[f"{asset}.variable_operational_cost_coefficient"], 0.0, atol=atol
+                )
+            else:
+                np.testing.assert_allclose(
+                    parameters[f"{asset}.variable_operational_cost_coefficient"],
+                    var_op_costs_esdl,
+                )
             denominator = 1.0
             if asset in [
                 *solution.energy_system_components.get("ates", []),
@@ -970,6 +1015,13 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
                 nominator_vector = results[f"{asset}.Cold_demand"]
             elif asset in solution.energy_system_components.get("electricity_source", []):
                 nominator_vector = results[f"{asset}.Electricity_source"]  # [W]
+            elif asset in solution.energy_system_components.get("electricity_storage", []):
+                # FinancialMixin has no battery-throughput variable-cost equation. Keep this
+                # limitation explicit instead of inferring unsupported costs from a state series.
+                np.testing.assert_allclose(
+                    results[f"{asset}__variable_operational_cost"], 0.0, atol=atol
+                )
+                nominator_vector = np.zeros(len(solution.times()))
             else:
                 raise AssertionError(
                     f"Asset '{esdl_asset.name}' is not handled in the variable operational"

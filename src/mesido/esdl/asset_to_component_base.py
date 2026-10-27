@@ -307,6 +307,19 @@ class _AssetToComponentBase:
             "fixedMaintenanceCosts": "optional",
             "fixedOperationalCosts": "optional",
         },
+        "electricity_source": {
+            "investmentCosts": "optional",
+            "installationCosts": "optional",
+            "variableOperationalCosts": "optional",
+            "fixedMaintenanceCosts": "optional",
+            "fixedOperationalCosts": "optional",
+        },
+        "electricity_storage": {
+            "investmentCosts": "optional",
+            "installationCosts": "optional",
+            "fixedMaintenanceCosts": "optional",
+            "fixedOperationalCosts": "optional",
+        },
         "heat_source": {  # Includes GeothermalSource, ResidualHeatSource, HeatProducer,
             # GasHeater, ElectricBoiler
             "investmentCosts": "required",
@@ -364,6 +377,10 @@ class _AssetToComponentBase:
         "ElectricBoiler": "heat_source",
         "Import": "electricity_import",
         "ElectricityProducer": "electricity_source",
+        "PVInstallation": "electricity_source",
+        "WindPark": "electricity_source",
+        "WindTurbine": "electricity_source",
+        "Battery": "electricity_storage",
         "GasDemand": "gas_demand",
         "GasHeater": "heat_source",
         "GasStorage": "gas_tank_storage",
@@ -1291,7 +1308,7 @@ class _AssetToComponentBase:
             RuntimeWarning(f"{asset.name} has no cost information specified")
             return modifiers
 
-        if asset.asset_type == "HeatStorage":
+        if asset.asset_type == "HeatStorage" or asset.asset_type == "Battery":
             modifiers["variable_operational_cost_coefficient"] = self.get_variable_opex_costs(asset)
             modifiers["fixed_operational_cost_coefficient"] = self.get_fixed_opex_costs(asset)
             modifiers["investment_cost_coefficient"] = self.get_investment_costs(
@@ -1710,9 +1727,11 @@ class _AssetToComponentBase:
 
         return value
 
-    def get_fixed_opex_costs(self, asset: Asset) -> float:
+    def get_fixed_opex_costs(self, asset: Asset, expected_unit: UnitEnum = UnitEnum.WATT) -> float:
         """
         Returns the fixed opex cost coefficient of an asset in Euros per W.
+        For an energy-sized battery, ``expected_unit`` may be JOULE and ESDL costs
+        expressed per Wh are converted to EUR/J.
         If a fixed opex cost is required for the asset but not provided,
         or if the cost information is inconsistent, a potential MesidoAssetIssueType
         is added to the gathered_potential_issues dictionary.
@@ -1758,6 +1777,33 @@ class _AssetToComponentBase:
                     self._log_and_add_potential_issue(
                         message, asset.id, cost_error_type="incorrect"
                     )
+                    continue
+                if asset.asset_type == "Battery" and expected_unit == UnitEnum.JOULE:
+                    if per_unit == UnitEnum.WATTHOUR:
+                        cost_value /= WATTHOUR_TO_JOULE
+                    elif per_unit == UnitEnum.JOULE:
+                        pass
+                    elif per_unit == UnitEnum.NONE:
+                        capacity = asset.attributes["capacity"]
+                        if capacity == 0.0:
+                            message = (
+                                f"Battery {asset.name} has no capacity for fixed OPEX scaling."
+                            )
+                            self._log_and_add_potential_issue(
+                                message, asset.id, cost_error_type="incorrect"
+                            )
+                            continue
+                        cost_value /= capacity
+                    else:
+                        message = (
+                            f"Expected fixed OPEX for battery {asset.name} per Wh or J, "
+                            f"but received {per_unit}."
+                        )
+                        self._log_and_add_potential_issue(
+                            message, asset.id, cost_error_type="incorrect"
+                        )
+                        continue
+                    value += cost_value
                     continue
                 if per_unit == UnitEnum.CUBIC_METRE and asset.asset_type != "GasStorage":
                     # index is 0 because buffers only have one in out port
