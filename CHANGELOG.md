@@ -2,6 +2,7 @@
 
 ## Added
 - selfDischargeRate is parsed from HeatStorage assets in ESDL to calculate heat loss coefficient of heat buffer
+- Cater for gurobi solver retry, at specified time intervals, when no license session is available
 - Added primary_heat and secondary_heat profiles for water-to-water heat pumps and heat exchangers to the output ESDL.
 - Parsing and basic model of Combined Heat Power (CHP) has been added, which is based on existing heat producer, electricity producer and gas consumption classes.
 - Parsing of a building asset and creating building parameters. Only Heating and Cooling Demand assets currently supported in a building asset. 
@@ -11,6 +12,7 @@
 ## Changed
 - Upgrade to rtc-tools 2.7.3, casadi 3.7.2 and rtctools-highs 0.1.4, replacing rtc-tools-gil-comp/casadi-gil-comp; Python 3.12 is now also supported.
 - Remove HiGHS presolve=off workarounds that were needed for a bug in the older HiGHS bundled via casadi-gil-comp.
+- Carrier profile in input csv needs to have a suffix in the column name to specify the profile type (e.g. __profile, __temperature).
 
 ## Fixed
 - Voltage losses are now also excluded when include_electric_cable_power_loss is set to False.

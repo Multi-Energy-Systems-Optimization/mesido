@@ -54,10 +54,12 @@ class TestProfileUpdating(unittest.TestCase):
 
         Checks:
         - Input CSV has 15-min time spacing and expected number of data points
-        - Input profile is parsed correctly (2-hours and 15-minutes time steps)
-        - No indexing problem with input demand and electricity profile
-        - Carrier price and temperature profiles are parsed from csv, adapted and saved
-          into <carrier_name>.price_profile and <carrier_name>.temperature_profile variables.
+        - Input profiles are parsed correctly (2-hours and 15-minutes time steps)
+        - No indexing problem with input demand, electricity price, heat price
+          and heat temperature profiles.
+        - Carrier price and temperature profiles are parsed and adapted correctly.
+          Saving those profiles into <carrier_name>.price_profile and
+          <carrier_name>.temperature_profile variables are verified.
 
         """
         import models.source_pipe_sink.src.double_pipe_heat as double_pipe_heat
@@ -242,8 +244,10 @@ class TestProfileLoading(unittest.TestCase):
         and some values. This is because this scenario should also do aggragation
         of the profiles for non-peak days.
 
-        Also check:
+        Checks:
             - that the timezone setting from the "influx_mock.csv" is correct
+            - that loading of the demand profiles of the heating demands and
+              price and temperature profiles of heat carrier work correct.
         """
         import models.unit_cases.case_1a.src.run_1a as run_1a
 
@@ -272,13 +276,12 @@ class TestProfileLoading(unittest.TestCase):
             self.assertEqual(profile_values[0], profile_values[1])
             self.assertEqual(len(profile_values), 26)
 
-        heat_price_profile = problem.get_timeseries("Heat.price_profile").values
-        self.assertEqual(heat_price_profile[0], heat_price_profile[1])
-        self.assertLess(max(heat_price_profile), 1.0)
-
-        heat_temperature_profile = problem.get_timeseries("Heat.temperature_profile").values
-        self.assertEqual(len(heat_temperature_profile), len(heat_price_profile))
-        self.assertLess(max(heat_temperature_profile), 1.0)
+        # the heat carrier price and temperature profiles in the test ESDL
+        for profile_type in ["price_profile", "temperature_profile"]:
+            profile_values = problem.get_timeseries(f"Heat.{profile_type}").values
+            self.assertEqual(profile_values[0], profile_values[1])
+            self.assertLess(max(profile_values), 1.0)
+            self.assertEqual(len(profile_values), 26)
 
     def test_loading_from_csv(self):
         """
