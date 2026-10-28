@@ -1,4 +1,4 @@
-# [Unreleased-main] - 2026-10-20
+# [Unreleased-main] - 2026-10-28
 
 ## Added
 - selfDischargeRate is parsed from HeatStorage assets in ESDL to calculate heat loss coefficient of heat buffer

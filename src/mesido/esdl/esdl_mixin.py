@@ -426,11 +426,11 @@ class ESDLMixin(
 
         p = asset.id
 
-        if asset.attributes["state"].name == "OPTIONAL":
+        if asset.attributes["state"] == esdl.AssetStateEnum.OPTIONAL:
             c = override_classes[p] = []
             c.append(no_pipe_class)
 
-            max_size_enum, _ = _AssetToComponentBase._get_pipe_max_size_input(
+            max_size_enum = _AssetToComponentBase._get_pipe_max_size_input(
                 self,
                 asset,
                 self._ESDLMixin__energy_system_handler.energy_system.esdlVersion,
@@ -470,7 +470,7 @@ class ESDLMixin(
                 c.append(pipe_classes[min_size_idx])
             else:
                 c.extend(pipe_classes[min_size_idx : max_size_idx + 1])
-        elif asset.attributes["state"].name == "DISABLED":
+        elif asset.attributes["state"] == esdl.AssetStateEnum.DISABLED:
             c = override_classes[p] = []
             c.append(no_pipe_class)
 

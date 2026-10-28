@@ -79,7 +79,7 @@
         </port>
         <port xsi:type="esdl:OutPort" id="a2c97ce1-78c8-4b0b-98c1-868597c6b98f" name="Out" carrier="876b17e3-3231-426c-9070-5a7de59571ad_ret" connectedTo="a09679c0-b272-4a23-aa2f-5ac562b95937"/>
       </asset>
-      <asset xsi:type="esdl:Pipe" id="Pipe1" name="Pipe1" length="20.4" state="OPTIONAL" related="Pipe1_ret">
+      <asset xsi:type="esdl:Pipe" id="Pipe1" name="Pipe1" length="20.4" state="OPTIONAL" related="Pipe1_ret" diameter="DN700">
         <geometry xsi:type="esdl:Line" CRS="WGS84">
           <point xsi:type="esdl:Point" lat="51.99836662049688" lon="4.368438720703126"/>
           <point xsi:type="esdl:Point" lat="51.998194875294075" lon="4.368541985750199"/>
@@ -217,7 +217,7 @@
         <port xsi:type="esdl:OutPort" id="a7404e80-36e4-4593-80dd-453bc9e15bc0" name="ret_port" carrier="876b17e3-3231-426c-9070-5a7de59571ad_ret" connectedTo="baaf56b1-8a71-4de1-ab0c-bd8097f038dc"/>
         <port xsi:type="esdl:InPort" id="75840966-1afb-464c-9541-e689bd5800cf" name="ret_port" carrier="876b17e3-3231-426c-9070-5a7de59571ad_ret" connectedTo="59213300-9005-41fe-963e-cbff1477b32e e9f234dd-0cb5-4c55-ae04-19000a5fbcc1"/>
       </asset>
-      <asset xsi:type="esdl:Pipe" length="20.4" id="Pipe1_ret" name="Pipe1_ret" state="OPTIONAL" related="Pipe1">
+      <asset xsi:type="esdl:Pipe" length="20.4" id="Pipe1_ret" name="Pipe1_ret" state="OPTIONAL" related="Pipe1" diameter="DN700">
         <geometry xsi:type="esdl:Line">
           <point xsi:type="esdl:Point" CRS="WGS84" lat="51.99828487538407" lon="4.367752577537374"/>
           <point xsi:type="esdl:Point" CRS="WGS84" lat="51.99845662058688" lon="4.367650141605942"/>
