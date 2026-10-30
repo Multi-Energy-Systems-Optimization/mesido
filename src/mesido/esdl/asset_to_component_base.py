@@ -523,6 +523,37 @@ class _AssetToComponentBase:
         else:
             return asset.attributes["diameter"]
 
+    def _check_if_valid_pipe_diameter_exists(
+        self,
+        pipe_dn_size: EEnumLiteral,
+        pipe_inner_diameter_attribute: Optional[float],
+        material: esdl.esdl.MatterReference,
+        asset: Asset,
+    ) -> None:
+        """Warn on conflicting pipe inputs and reject pipes without a usable diameter."""
+        asset_type_and_name = f"Asset type: {asset.asset_type} named: {asset.name}"
+        if pipe_dn_size.value > 0:
+            if pipe_inner_diameter_attribute:
+                logger.warning(
+                    f"{asset_type_and_name}' has both 'innerDiameter' and 'diameter' specified. "
+                    f"Diameter of {asset.attributes['diameter'].name} will be used."
+                )
+            if material:
+                logger.warning(
+                    f"{asset_type_and_name}' has both 'material' and 'diameter' specified. "
+                    f"Insulation properties of {asset.attributes['diameter'].name}"
+                    f" will be used."
+                )
+        elif not pipe_inner_diameter_attribute:
+            if material:
+                logger.error(
+                    f"{asset_type_and_name}' has only 'material' specified, but no information "
+                    f"on diameter."
+                )
+            else:
+                logger.error(f"{asset_type_and_name}' has no DN size or innerDiameter specified.")
+            sys.exit(1)
+
     def _pipe_get_diameter_and_insulation(
         self,
         asset: Asset,
@@ -543,45 +574,24 @@ class _AssetToComponentBase:
         pipe inner diameter, thickness and conductivity of each insulation layer
         """
 
-        full_name = f"{asset.asset_type} '{asset.name}'"
-
         edr_dn_size = None
+        inner_diameter_attr = asset.attributes.get("innerDiameter", None)
+        material = asset.attributes.get("material", None)
         if asset.attributes["state"] == esdl.AssetStateEnum.OPTIONAL:
             edr_dn_size = self._get_pipe_max_size_input(asset, esdl_version)
         elif asset.attributes["state"] == esdl.AssetStateEnum.ENABLED:
             edr_dn_size = asset.attributes["diameter"]
-            inner_diameter_attr = asset.attributes["innerDiameter"]
-            material = asset.attributes["material"]
-            if edr_dn_size.value > 0:
-                if inner_diameter_attr:
-                    logger.warning(
-                        f"{full_name}' has both 'innerDiameter' and 'diameter' specified. "
-                        f"Diameter of {asset.attributes['diameter'].name} will be used."
-                    )
-                if material:
-                    logger.warning(
-                        f"{full_name}' has both 'material' and 'diameter' specified. "
-                        f"Insulation properties of {asset.attributes['diameter'].name}"
-                        f" will be used."
-                    )
-            elif not inner_diameter_attr:
-                if material:
-                    logger.error(
-                        f"{full_name}' has only 'material' specified, but no information "
-                        f"on diameter."
-                    )
-                else:
-                    logger.error(f"{full_name}' has no DN size or innerDiameter specified.")
-                sys.exit(1)
         else:
             exit(f"{asset.name}: asset state DISABLED is not supported yet")
+
+        self._check_if_valid_pipe_diameter_exists(edr_dn_size, inner_diameter_attr, material, asset)
 
         # NaN means the default values will be used
         insulation_thicknesses = math.nan
         conductivies_insulation = math.nan
 
         if edr_dn_size and edr_dn_size.value > 0:
-            # Get insulation and diameter properties from EDR asset with this size.
+            # Get insulation and diameter properties from EDR asset
             edr_asset = self._edr_pipes[self.STEEL_S1_PIPE_EDR_ASSETS[edr_dn_size]]
             inner_diameter = edr_asset["inner_diameter"]
             insulation_thicknesses = edr_asset["insulation_thicknesses"]
