@@ -947,6 +947,7 @@ def run_end_scenario_sizing(
         for pipe_classes in pc_map.values():
             v_prev = 0.0
             v_prev_2 = 0.0
+            previous_var_name = None
             first_pipe_class = True
             for var_name in pipe_classes.values():
                 v = round(abs(results[var_name][0]))
@@ -958,8 +959,12 @@ def run_end_scenario_sizing(
                     boolean_bounds[var_name] = (0.0, 1.0)
                 else:
                     boolean_bounds[var_name] = (v, v)
+                if v == 1.0 and previous_var_name is not None:
+                    boolean_bounds[previous_var_name] = (0.0, 1.0)
+
                 v_prev_2 = v_prev
                 v_prev = v
+                previous_var_name = var_name
 
                 first_pipe_class = False
 
@@ -986,24 +991,41 @@ def run_end_scenario_sizing(
 
         for p in solution.energy_system_components.get("heat_pipe", []):
             if p not in solution.cold_pipes and parameters[f"{p}.area"] > 0.0:
-                lb = []
-                ub = []
-                bounds_pipe = bounds[f"{p}.__flow_direct_var"]
-                for i in range(len(t)):
-                    r = results[f"{p}.__flow_direct_var"][i]
-                    # bound to roughly represent 4km of milp losses in pipes
-                    lb.append(
-                        r
-                        if abs(results[f"{p}.Q"][i] / parameters[f"{p}.area"]) > 2.5e-2
-                        else bounds_pipe[0]
-                    )
-                    ub.append(
-                        r
-                        if abs(results[f"{p}.Q"][i] / parameters[f"{p}.area"]) > 2.5e-2
-                        else bounds_pipe[1]
-                    )
+                velocity = results[f"{p}.Q"] / parameters[f"{p}.area"]
+                if f"{p}.__flow_direct_var" in results:
+                    lb = []
+                    ub = []
+                    bounds_pipe = bounds[f"{p}.__flow_direct_var"]
+                    for i in range(len(t)):
+                        r = results[f"{p}.__flow_direct_var"][i]
+                        # bound to roughly represent 4km of milp losses in pipes
+                        lb.append(r if abs(velocity[i]) > 4e-2 else bounds_pipe[0])
+                        ub.append(r if abs(velocity[i]) > 4e-2 else bounds_pipe[1])
 
-                boolean_bounds[f"{p}__flow_direct_var"] = (Timeseries(t, lb), Timeseries(t, ub))
+                    boolean_bounds[f"{p}.__flow_direct_var"] = (
+                        Timeseries(t, lb),
+                        Timeseries(t, ub),
+                    )
+                else:
+                    lb = []
+                    ub = []
+                    q_lower, q_upper = bounds[f"{p}.Q"]
+                    for i in range(len(t)):
+                        if q_upper <= 0.0:
+                            direction_bounds = (0.0, 0.0)
+                        elif q_lower > 0.0:
+                            direction_bounds = (1.0, 1.0)
+                        elif abs(velocity[i]) > 4e-2:
+                            direction_bounds = (1.0, 1.0) if velocity[i] > 0.0 else (0.0, 0.0)
+                        else:
+                            direction_bounds = (0.0, 1.0)
+                        lb.append(direction_bounds[0])
+                        ub.append(direction_bounds[1])
+
+                    boolean_bounds[f"{p}.__flow_direct_var"] = (
+                        Timeseries(t, lb),
+                        Timeseries(t, ub),
+                    )
                 if not producer_input_timeseries:
                     try:
                         r = results[f"{p}.__is_disconnected"]
