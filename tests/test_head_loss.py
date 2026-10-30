@@ -577,9 +577,9 @@ class TestHeadLoss(TestCase):
         # The following variables are not created:
         # - .HeatIn.H, .HeatOut.H, .HeatIn.Hydraulic_power, .HeatOut.Hydraulic_power, .dH,
         # .Hydraulic_power for each pipe
-        # - .dH for each consumer
+        # - .dH and .Hydraulic_power for each consumer
         # - .dH and .Pump_power for each producer.
-        additional_headloss_vars = 6 * numb_pipes + 2 * numb_prod + 1 * numb_cons
+        additional_headloss_vars = 6 * numb_pipes + 2 * numb_prod + 2 * numb_cons
 
         np.testing.assert_equal(
             number_of_path_variables_no_head_loss,
