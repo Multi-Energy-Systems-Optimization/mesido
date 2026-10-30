@@ -14,10 +14,13 @@ from esdl import TimeUnitEnum, UnitEnum
 
 from mesido.esdl._exceptions import _RetryLaterException
 from mesido.esdl.common import Asset
+from mesido.esdl.esdl_additional_vars_mixin import get_asset_contraints
 from mesido.network_common import NetworkSettings
 from mesido.pipe_class import TRACE_TO_SINGLE_PIPE_COST_FACTOR
 from mesido.potential_errors import MesidoAssetIssueType, get_potential_errors
 from mesido.pycml import Model as _Model
+
+from pyecore.ecore import EEnumLiteral
 
 logger = logging.getLogger("mesido")
 
@@ -250,6 +253,8 @@ class _AssetToComponentBase:
         "CheckValve": "check_valve",
         "Compressor": "compressor",
         "CoolingDemand": "cold_demand",
+        # CHP currently uses the generic heat-and-electricity co-generation model.
+        "CHP": "co_generation",
         "ElectricBoiler": "heat_source_elec",
         "ElectricityCable": "electricity_cable",
         "ElectricityDemand": "electricity_demand",
@@ -266,6 +271,7 @@ class _AssetToComponentBase:
         "GenericProducer": "heat_source",
         "GeothermalSource": "heat_source",
         "HeatExchange": "heat_exchanger",
+        "HConnection": "hconnection",
         "HeatingDemand": "heat_demand",
         "HeatProducer": "heat_source",
         "HeatPump": "heat_pump",
@@ -356,6 +362,7 @@ class _AssetToComponentBase:
         "Airco": "heat_pump",
         "ATES": "ates",
         "CoolingDemand": "heat_demand",
+        "CHP": "heat_source",
         "Electrolyzer": "electrolyzer",
         "ElectricBoiler": "heat_source",
         "Import": "electricity_import",
@@ -445,12 +452,113 @@ class _AssetToComponentBase:
             ports.extend(asset.in_ports)
         if asset.out_ports is not None:
             ports.extend(asset.out_ports)
-        assert len(ports) > 0
 
         for port in ports:
             self._port_to_esdl_component_type[port] = asset.asset_type
 
-    def _pipe_get_diameter_and_insulation(self, asset: Asset) -> Tuple[float, list, list]:
+    def _get_pipe_max_size_input(
+        self,
+        asset: Asset,
+        esdl_version: Optional[str],
+    ) -> EEnumLiteral:
+        """
+        This function gets the upper limit for the pipe DN. Either from the asset attribute input
+        DN size or from the PipeDiameterConstraint, depending on what is applicable.
+        Args:
+            asset: mesido common asset with all attributes
+            esdl_version: The version of the ESDL model
+        """
+        # Backward compatibility:
+        # PipeDiameterConstraint vs pipe diameter attribute, as the value to be used for the
+        # maximum size of the pipe. We check the esdl version to determine which attribute to use
+        # for the maximum size of the pipe.
+        # While the front end is being updated to accommodate easy use of PipeDiameterConstraint:
+        # - If the esdl version caters for PipeDiameterConstraint:
+        #   - check if a constraint exists, then use it.
+        #   - if the constraint does not exist then use the diameter specific in the asset attribute
+        # - If PipeDiameterConstraint does not
+
+        # "v2602" contains the items needed for the ranged constraint implementation in MESIDO
+        if esdl_version is not None and esdl_version >= "v2602":
+            pipe_constraint, qty_pipe_constraint = get_asset_contraints(
+                self, asset, esdl.PipeDiameterConstraint
+            )
+
+            if qty_pipe_constraint > 1:
+                logger.error(
+                    f"More than 1 pipe diameter constraint has been specified to "
+                    f"pipe named {asset.name}, currenlty only the 1st constraint is being used"
+                )
+                sys.exit(1)
+            elif (
+                qty_pipe_constraint == 0
+                or pipe_constraint[0].maximum == esdl.PipeDiameterEnum.VALUE_SPECIFIED
+            ):
+                logger.warning(
+                    "Expected a pipe diameter contraint (upper size limit) for pipe named "
+                    f"{asset.name}, but none has been specified. Therefore, the pipe diameter "
+                    "specified in the asset attribute is being used."
+                )
+                # Do not delete the code below. This will be enforced late, once the front end has
+                # been updated for this
+
+                # get_potential_errors().add_potential_issue(
+                #     MesidoAssetIssueType.ASSET_UPPER_LIMIT,
+                #     asset.id,
+                #     f"Pipe named {asset.name}: The upper limit of the pipe size has to be
+                # specified via a maximum value in a pipe diameter constraint."
+                # )
+                # Raise the potential error here if applicable, with feedback to user
+                # Else a normal error exit might occur which will not give feedback to the user
+                # potential_error_to_error(self._error_type_check)
+
+                return asset.attributes["diameter"]
+            else:
+                logger.warning(
+                    f"For pipe named {asset.name}, the pipe diameter constraint max value is "
+                    "used for the pipe's diameter upper limit, instead of the pipe diameter "
+                    "specified (if any) in the asset attribute."
+                )
+                return pipe_constraint[0].maximum
+        else:
+            return asset.attributes["diameter"]
+
+    def _check_if_valid_pipe_diameter_exists(
+        self,
+        pipe_dn_size: EEnumLiteral,
+        pipe_inner_diameter_attribute: Optional[float],
+        material: esdl.esdl.MatterReference,
+        asset: Asset,
+    ) -> None:
+        """Warn on conflicting pipe inputs and reject pipes without a usable diameter."""
+        asset_type_and_name = f"Asset type: {asset.asset_type} named: {asset.name}"
+        if pipe_dn_size.value > 0:
+            if pipe_inner_diameter_attribute:
+                logger.warning(
+                    f"{asset_type_and_name}' has both 'innerDiameter' and 'diameter' specified. "
+                    f"Diameter of {pipe_dn_size.name} will be used."
+                )
+            if material:
+                logger.warning(
+                    f"{asset_type_and_name}' has both 'material' and 'diameter' specified. "
+                    f"Insulation properties of {pipe_dn_size.name}"
+                    f" will be used."
+                )
+        elif not pipe_inner_diameter_attribute:
+            if material:
+                logger.error(
+                    f"{asset_type_and_name}' has only 'material' specified, but no information "
+                    f"on diameter."
+                )
+            else:
+                logger.error(f"{asset_type_and_name}' has no DN size or innerDiameter specified.")
+            sys.exit(1)
+
+    def _pipe_get_diameter_and_insulation(
+        self,
+        asset: Asset,
+        esdl_version: Optional[str],
+    ) -> Tuple[float, list, list]:
         """
         There are multiple ways to specify pipe properties like inner-diameter and
         pipe/insulation material and thickness.  The user specified nominal diameter (DN size)
@@ -459,54 +567,31 @@ class _AssetToComponentBase:
         Parameters
         ----------
         asset : Asset pipe object with its properties from ESDL
+        esdl_version : The version of the ESDL model
 
         Returns
         -------
         pipe inner diameter, thickness and conductivity of each insulation layer
         """
 
-        full_name = f"{asset.asset_type} '{asset.name}'"
-        if asset.attributes["innerDiameter"] and asset.attributes["diameter"].value > 0:
-            logger.warning(
-                f"{full_name}' has both 'innerDiameter' and 'diameter' specified. "
-                f"Diameter of {asset.attributes['diameter'].name} will be used."
-            )
-        if asset.attributes["material"] and asset.attributes["diameter"].value > 0:
-            logger.warning(
-                f"{full_name}' has both 'material' and 'diameter' specified. "
-                f"Insulation properties of {asset.attributes['diameter'].name} will be used."
-            )
-        if asset.attributes["material"] and (
-            asset.attributes["diameter"].value == 0 and not asset.attributes["innerDiameter"]
-        ):
-            logger.warning(
-                f"{full_name}' has only 'material' specified, but no information on diameter. "
-                f"Diameter and insulation properties of DN200 will be used."
-            )
-        if asset.attributes["diameter"].value == 0 and not asset.attributes["innerDiameter"]:
-            if asset.attributes["material"]:
-                logger.warning(
-                    f"{full_name}' has only 'material' specified, but no information on diameter. "
-                    f"Diameter and insulation properties of DN200 will be used."
-                )
-            else:
-                logger.warning(
-                    f"{full_name}' has no DN size or innerDiameter specified. "
-                    f"Diameter and insulation properties of DN200 will be used. "
-                )
-
         edr_dn_size = None
-        if asset.attributes["diameter"].value > 0:
+        inner_diameter_attr = asset.attributes.get("innerDiameter", None)
+        material = asset.attributes.get("material", None)
+        if asset.attributes["state"] == esdl.AssetStateEnum.OPTIONAL:
+            edr_dn_size = self._get_pipe_max_size_input(asset, esdl_version)
+        elif asset.attributes["state"] == esdl.AssetStateEnum.ENABLED:
             edr_dn_size = asset.attributes["diameter"]
-        elif not asset.attributes["innerDiameter"]:
-            edr_dn_size = esdl.PipeDiameterEnum.DN200
+        else:
+            exit(f"{asset.name}: asset state DISABLED is not supported yet")
+
+        self._check_if_valid_pipe_diameter_exists(edr_dn_size, inner_diameter_attr, material, asset)
 
         # NaN means the default values will be used
         insulation_thicknesses = math.nan
         conductivies_insulation = math.nan
 
-        if edr_dn_size:
-            # Get insulation and diameter properties from EDR asset with this size.
+        if edr_dn_size and edr_dn_size.value > 0:
+            # Get insulation and diameter properties from EDR asset
             edr_asset = self._edr_pipes[self.STEEL_S1_PIPE_EDR_ASSETS[edr_dn_size]]
             inner_diameter = edr_asset["inner_diameter"]
             insulation_thicknesses = edr_asset["insulation_thicknesses"]
@@ -1345,12 +1430,16 @@ class _AssetToComponentBase:
         Tuple with the supply and return temperature.
         """
 
-        assert len(asset.in_ports) <= 2 and len(asset.out_ports) == 1
+        heat_in_ports = [
+            port for port in asset.in_ports if isinstance(port.carrier, esdl.HeatCommodity)
+        ]
+        heat_out_ports = [
+            port for port in asset.out_ports if isinstance(port.carrier, esdl.HeatCommodity)
+        ]
+        assert len(heat_in_ports) == 1 and len(heat_out_ports) == 1
 
-        for port in asset.in_ports:
-            if isinstance(port.carrier, esdl.HeatCommodity):
-                in_carrier = asset.global_properties["carriers"][port.carrier.id]
-        out_carrier = asset.global_properties["carriers"][asset.out_ports[0].carrier.id]
+        in_carrier = asset.global_properties["carriers"][heat_in_ports[0].carrier.id]
+        out_carrier = asset.global_properties["carriers"][heat_out_ports[0].carrier.id]
 
         if in_carrier["id"] == out_carrier["id"]:
             # these are the pipes, nodes, valves, pumps
@@ -1404,10 +1493,17 @@ class _AssetToComponentBase:
         dict with all the temperatures.
         """
 
-        if len(asset.in_ports) <= 2 and len(asset.out_ports) == 1:
+        heat_in_ports = [
+            port for port in asset.in_ports if isinstance(port.carrier, esdl.HeatCommodity)
+        ]
+        heat_out_ports = [
+            port for port in asset.out_ports if isinstance(port.carrier, esdl.HeatCommodity)
+        ]
+
+        if len(heat_in_ports) == 1 and len(heat_out_ports) == 1:
             modifiers = self._get_supply_return_temperatures(asset)
             return modifiers
-        elif len(asset.in_ports) >= 2 and len(asset.out_ports) == 2:
+        elif len(heat_in_ports) == 2 and len(heat_out_ports) == 2:
             prim_return_temperature = None
             sec_return_temperature = None
             for p in asset.in_ports:

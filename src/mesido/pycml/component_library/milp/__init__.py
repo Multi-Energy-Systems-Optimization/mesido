@@ -38,6 +38,7 @@ from .heat.low_temperature_ates import LowTemperatureATES
 from .heat.node import Node
 from .heat.pump import Pump
 from .multicommodity.airwater_heat_pump_elec import AirWaterHeatPumpElec
+from .multicommodity.co_generation import CoGeneration
 from .multicommodity.elec_heat_source_elec import ElecHeatSourceElec
 from .multicommodity.electrolyzer import Electrolyzer
 from .multicommodity.gas_heat_source_gas import GasHeatSourceGas
@@ -47,6 +48,7 @@ __all__ = [
     "Airco",
     "AirWaterHeatPump",
     "AirWaterHeatPumpElec",
+    "CoGeneration",
     "ATES",
     "HeatBuffer",
     "HeatBufferElec",
