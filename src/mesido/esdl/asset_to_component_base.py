@@ -536,12 +536,12 @@ class _AssetToComponentBase:
             if pipe_inner_diameter_attribute:
                 logger.warning(
                     f"{asset_type_and_name}' has both 'innerDiameter' and 'diameter' specified. "
-                    f"Diameter of {asset.attributes['diameter'].name} will be used."
+                    f"Diameter of {pipe_dn_size.name} will be used."
                 )
             if material:
                 logger.warning(
                     f"{asset_type_and_name}' has both 'material' and 'diameter' specified. "
-                    f"Insulation properties of {asset.attributes['diameter'].name}"
+                    f"Insulation properties of {pipe_dn_size.name}"
                     f" will be used."
                 )
         elif not pipe_inner_diameter_attribute:
