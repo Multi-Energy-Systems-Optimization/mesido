@@ -79,6 +79,14 @@ class SourcePipeSink(
         super().post()
 
 
+class SourcePipeSinkNoHeatLoss(SourcePipeSink):
+    def energy_system_options(self):
+        options = super().energy_system_options()
+        options["neglect_pipe_heat_losses"] = True
+
+        return options
+
+
 class SourcePipeSinkReducedTimeseries(SourcePipeSink):
 
     def __init__(self, *args, **kwargs):

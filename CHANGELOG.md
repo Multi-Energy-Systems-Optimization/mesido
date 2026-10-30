@@ -7,6 +7,7 @@
 - Parsing and basic model of Combined Heat Power (CHP) has been added, which is based on existing heat producer, electricity producer and gas consumption classes.
 - Parsing of a building asset and creating building parameters. Only Heating and Cooling Demand assets currently supported in a building asset. 
 - A new temperature_profile variable for carrier is added and used (instead of using price_profile variable).
+- Cold demand caters supply temperature profile.
 
 ## Changed
 - Upgrade to rtc-tools 2.7.3, casadi 3.7.2 and rtctools-highs 0.1.4, replacing rtc-tools-gil-comp/casadi-gil-comp; Python 3.12 is now also supported.
