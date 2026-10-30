@@ -316,6 +316,7 @@ class TestRangedConstraints(TestCase):
                             pipe_classes[-1].diameter_enum, pipe_diam_constraint
                         )
                         # Check that an attribute value and a constraint value exist, and not equal
+                        # else this test case is not valid anymore
                         _check_for_valid_pipe_diameter_inputs(
                             pipe_diam_attribute, pipe_diam_constraint
                         )
@@ -336,6 +337,7 @@ class TestRangedConstraints(TestCase):
                     if pipe_name in pipes_with_ranged_constraint_and_attribute_diam:
                         pipe_diam_constraint = esdl_asset.attributes["constraint"][0].maximum
                         # Check that an attribute value and a constraint value exist, and not equal
+                        # else this test case is not valid anymore
                         _check_for_valid_pipe_diameter_inputs(
                             pipe_diam_attribute, pipe_diam_constraint
                         )
