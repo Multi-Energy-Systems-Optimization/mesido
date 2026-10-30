@@ -1,9 +1,16 @@
+import json
 from pathlib import Path
+from typing import Any
 from unittest import TestCase
 
+import esdl
+
+from mesido.esdl.asset_to_component_base import _AssetToComponentBase
 from mesido.esdl.esdl_parser import ESDLFileParser
 
 import numpy as np
+
+from pyecore.ecore import EEnumLiteral
 
 
 class TestRangedConstraints(TestCase):
@@ -262,30 +269,81 @@ class TestRangedConstraints(TestCase):
 
             # -------------------------------------------------------------------------------------
             # Check the pipes with and without PipeDiameterConstraint
-            pipes_with_ranged_constraint = [""]
+            pipes_with_ranged_constraint_and_attribute_diam = [
+                "Pipe1",
+                "Pipe1_ret",
+                "Pipe2",
+                "Pipe2_ret",
+            ]
+
+            edr_pipes = json.load(
+                open(Path(__file__).parent.parent / "src/mesido/esdl/_edr_pipes.json")
+            )
+
+            def _check_for_valid_pipe_diameter_inputs(
+                pipe_diameter_attribute: EEnumLiteral,
+                pipe_diameter_constraint: EEnumLiteral,
+            ) -> None:
+                np.testing.assert_equal(pipe_diameter_attribute != pipe_diameter_constraint, True)
+                np.testing.assert_equal(
+                    esdl.PipeDiameterEnum.VALUE_SPECIFIED != pipe_diameter_attribute
+                    and esdl.PipeDiameterEnum.VALUE_SPECIFIED != pipe_diameter_constraint,
+                    True,
+                )
+
+            def _check_pycml_object_diameter(
+                problem: NetworkProblem,
+                edr_pipes: dict[str, dict[str, Any]],
+                pipe_id: str,
+                pipe_diameter_expected: EEnumLiteral,
+            ) -> None:
+                pycml_pipe = getattr(problem.pycml_model(), pipe_id)
+                pipe_inner_diameter = edr_pipes[
+                    _AssetToComponentBase.STEEL_S1_PIPE_EDR_ASSETS[pipe_diameter_expected]
+                ]["inner_diameter"]
+                np.testing.assert_equal(pycml_pipe.diameter, pipe_inner_diameter)
 
             if esdl_file == "testing_network_1_all_optional.esdl":
-                pipes_with_ranged_constraint = ["Pipe1", "Pipe1_ret", "Pipe2", "Pipe2_ret"]
-
                 for pipe_id in problem.energy_system_components.get("heat_pipe", []):
                     esdl_asset = problem._esdl_assets[pipe_id]
                     pipe_name = esdl_asset.name
-
                     pipe_classes = list(problem._heat_pipe_topo_pipe_class_map[f"{pipe_id}"])
-                    pipe_input_size = esdl_asset.attributes["diameter"].name
-
-                    if pipe_name in pipes_with_ranged_constraint:
-                        range_contraint_max = esdl_asset.attributes["constraint"][0].maximum.name
-                        np.testing.assert_equal(pipe_classes[-1].name, range_contraint_max)
-                        np.testing.assert_array_less(
-                            int(pipe_input_size.replace("DN", "")),
-                            int(range_contraint_max.replace("DN", "")),
+                    pipe_diam_attribute = esdl_asset.attributes["diameter"]
+                    if pipe_name in pipes_with_ranged_constraint_and_attribute_diam:
+                        pipe_diam_constraint = esdl_asset.attributes["constraint"][0].maximum
+                        # Check that the largest available pipe class == pipe constraint value
+                        np.testing.assert_equal(
+                            pipe_classes[-1].diameter_enum, pipe_diam_constraint
                         )
+                        # Check that an attribute value and a constraint value exist, and not equal
+                        # else this test case is not valid anymore
+                        _check_for_valid_pipe_diameter_inputs(
+                            pipe_diam_attribute, pipe_diam_constraint
+                        )
+                        pipe_diameter_used = pipe_diam_constraint
                     else:
-                        np.testing.assert_equal(pipe_classes[-1].name, pipe_input_size)
+                        # Check that the largest available pipe class == pipe attribute value
+                        np.testing.assert_equal(pipe_classes[-1].diameter_enum, pipe_diam_attribute)
+                        pipe_diameter_used = pipe_diam_attribute
+                    # Check that the pycml object has the correct diameter. This cannot be checked
+                    # via the parameters(), since the latter is not updated in pre()
+                    _check_pycml_object_diameter(problem, edr_pipes, pipe_id, pipe_diameter_used)
+
             elif esdl_file == "testing_network_1_all_optional_excluding_pipes.esdl":
                 for pipe_id in problem.energy_system_components.get("heat_pipe", []):
-                    (problem.parameters(0)[f"{pipe_id}.diameter"], 0.695)  # DN700
+                    esdl_asset = problem._esdl_assets[pipe_id]
+                    pipe_name = esdl_asset.name
+                    pipe_diam_attribute = esdl_asset.attributes["diameter"]
+                    if pipe_name in pipes_with_ranged_constraint_and_attribute_diam:
+                        pipe_diam_constraint = esdl_asset.attributes["constraint"][0].maximum
+                        # Check that an attribute value and a constraint value exist, and not equal
+                        # else this test case is not valid anymore
+                        _check_for_valid_pipe_diameter_inputs(
+                            pipe_diam_attribute, pipe_diam_constraint
+                        )
+                    # Check that the pycml object has the correct diameter. This cannot be checked
+                    # via the parameters(), since the latter is not updated in pre()
+                    _check_pycml_object_diameter(problem, edr_pipes, pipe_id, pipe_diam_attribute)
 
 
 if __name__ == "__main__":
