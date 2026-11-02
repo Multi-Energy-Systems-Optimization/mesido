@@ -34,6 +34,8 @@ class TestHeadLoss(TestCase):
         - That for the dH value approximated by the code is conservative, in other word greater
         than the theoretical value
         - That the pump power is conservative
+        - That the hydraulic power of the demand equals the difference in hydraulic power
+        between its ports
         - The water kinematic viscosity of water by comparing head loss to a hard-coded value
         """
         import models.source_pipe_sink.src.double_pipe_heat as example
@@ -196,7 +198,7 @@ class TestHeadLoss(TestCase):
                 )
 
                 # Compare the head loss to hard-coded values. Difference expected if an error
-                # occours in the calculation of the gas kinematic viscosity.
+                # occurs in the calculation of the gas kinematic viscosity.
                 if head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY:
                     if itime == 3:  # this index was chosen randomly
                         np.testing.assert_allclose(dh_milp_head_loss_function, 0.001690727020401069)
@@ -239,20 +241,18 @@ class TestHeadLoss(TestCase):
             # the second order for head loss.
             np.testing.assert_array_less(pump_power_post_process, pump_power)
 
-            sum_hp = (
-                results[f"{demand_id}.HeatOut.Hydraulic_power"]
-                - results[f"{demand_id}.HeatIn.Hydraulic_power"]
-            )
-            sum_hp += (
-                results[f"{pipe1_id}.HeatOut.Hydraulic_power"]
-                - results[f"{pipe1_id}.HeatIn.Hydraulic_power"]
-            )
-            sum_hp += (
-                results[f"{pipe1_ret_id}.HeatOut.Hydraulic_power"]
-                - results[f"{pipe1_ret_id}.HeatIn.Hydraulic_power"]
-            )
-
-            np.testing.assert_allclose(abs(sum_hp), pump_power, atol=1.0e-3)
+            sum_hp = 0.0
+            for asset_id in [demand_id, pipe1_id, pipe1_ret_id]:
+                asset_hp = results[f"{asset_id}.Hydraulic_power"]
+                np.testing.assert_allclose(
+                    (
+                        results[f"{asset_id}.HeatIn.Hydraulic_power"]
+                        - results[f"{asset_id}.HeatOut.Hydraulic_power"]
+                    ),
+                    asset_hp,
+                )
+                sum_hp += asset_hp
+            np.testing.assert_allclose(sum_hp, pump_power, atol=1.0e-3)
 
     def test_heat_network_pipe_split_head_loss(self):
         """
@@ -1119,7 +1119,7 @@ if __name__ == "__main__":
     a = TestHeadLoss()
     a.test_heat_network_head_loss()
     a.test_heat_network_pipe_split_head_loss()
-    a.test_heat_network_head_loss_CQ2_WEAK_INEQUALITY()
+    a.test_heat_network_head_loss_cq2()
     a.test_gas_network_head_loss()
     a.test_gas_network_pipe_split_head_loss()
     a.test_gas_substation()

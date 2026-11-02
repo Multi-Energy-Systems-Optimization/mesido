@@ -40,6 +40,7 @@ class TestHydraulicPower(TestCase):
             would be expected because scenario 3 has more linear line segments, theerefore the
             approximation would be closer to the theoretical non-linear curve when compared to 1
             linear line approximation of the theoretical non-linear curve.
+            - Scenario 1,2,3: check that the network has hydraulic power and pump power balance
             - Scenario 4: checks that the hydraulic power is 0, and also no hydraulic power or
             pressure loss is assumed over assets with a minimum pressure drop.
 
@@ -82,6 +83,8 @@ class TestHydraulicPower(TestCase):
             "Heat_demand",
             "Heat_loss",
             "pipe_length",
+            "Heat_demand_Hydraulic_power",
+            "Heat_source_Pump_power",
         ]
 
         # Initialize variables
@@ -120,6 +123,9 @@ class TestHydraulicPower(TestCase):
             run_hydraulic_power.df_MILP["Pipe1_supply_dPress"][0]
         )
         hydraulic_power_dw_1 = run_hydraulic_power.df_MILP["Pipe1_supply_Hydraulic_power"][0]
+        hydraulic_power_dw_1_ret = run_hydraulic_power.df_MILP["Pipe1_return_Hydraulic_power"][0]
+        hydraulic_power_hd_dw_1 = run_hydraulic_power.df_MILP["Heat_demand_Hydraulic_power"][0]
+        pump_power_hs_dw_1 = run_hydraulic_power.df_MILP["Heat_source_Pump_power"][0]
         # Hydraulic power = delta pressure * Q = f(Q^3), where delta pressure = f(Q^2)
         # The linear approximation (hydraulic_power_dw_1) of the 3rd order function should
         # overestimate the hydraulic power when compared to the product of Q and the linear
@@ -137,9 +143,15 @@ class TestHydraulicPower(TestCase):
         # larger pressure drops.
         np.testing.assert_allclose(128001.23151838078, hydraulic_power_dw_1, atol=10)
         np.testing.assert_allclose(
-            run_hydraulic_power.df_MILP["Pipe1_return_Hydraulic_power"][0],
-            run_hydraulic_power.df_MILP["Pipe1_supply_Hydraulic_power"][0],
+            hydraulic_power_dw_1,
+            hydraulic_power_dw_1_ret,
             rtol=1e-2,
+        )
+
+        # Check the pump and hydraulic power balance
+        np.testing.assert_allclose(
+            hydraulic_power_dw_1 + hydraulic_power_dw_1_ret + hydraulic_power_hd_dw_1,
+            pump_power_hs_dw_1,
         )
         # ----------------------------------------------------------------------------------------
         # Rerun MILP with LINEARIZED_ONE_LINE_EQUALITY head loss setting
@@ -163,6 +175,9 @@ class TestHydraulicPower(TestCase):
             0
         ] * abs(run_hydraulic_power.df_MILP["Pipe1_supply_dPress"][0])
         hydraulic_power_linear = run_hydraulic_power.df_MILP["Pipe1_supply_Hydraulic_power"][0]
+        hydraulic_power_linear_ret = run_hydraulic_power.df_MILP["Pipe1_return_Hydraulic_power"][0]
+        hydraulic_power_linear_hd = run_hydraulic_power.df_MILP["Heat_demand_Hydraulic_power"][0]
+        pump_power_linear_hs = run_hydraulic_power.df_MILP["Heat_source_Pump_power"][0]
         # Hydraulic power = delta pressure * Q = f(Q^3), where delta pressure = f(Q^2)
         # The linear approximation (1 line segment) of the 3rd order function should
         # overestimate the hydraulic power when compared to the product of Q and the linear
@@ -191,6 +206,12 @@ class TestHydraulicPower(TestCase):
         np.testing.assert_allclose(
             hydraulic_power_linear, hydraulic_power_dw_1, err_msg="Values should be the same"
         )
+
+        # Check the pump and hydraulic power balance
+        np.testing.assert_allclose(
+            hydraulic_power_linear + hydraulic_power_linear_ret + hydraulic_power_linear_hd,
+            pump_power_linear_hs,
+        )
         # ----------------------------------------------------------------------------------------
         # Rerun MILP with DW head loss setting, and default line segments
         run_hydraulic_power.df_MILP = pd.DataFrame(columns=standard_columns_specified)  # empty df
@@ -214,6 +235,9 @@ class TestHydraulicPower(TestCase):
             run_hydraulic_power.df_MILP["Pipe1_supply_dPress"][0]
         )
         hydraulic_power_dw = run_hydraulic_power.df_MILP["Pipe1_supply_Hydraulic_power"][0]
+        hydraulic_power_dw_ret = run_hydraulic_power.df_MILP["Pipe1_return_Hydraulic_power"][0]
+        hydraulic_power_hd_dw = run_hydraulic_power.df_MILP["Heat_demand_Hydraulic_power"][0]
+        pump_power_hs_dw = run_hydraulic_power.df_MILP["Heat_source_Pump_power"][0]
         # Hydraulic power = delta pressure * Q = f(Q^3), where delta pressure = f(Q^2)
         # The linear approximation (default number of line segments) of the 3rd order function
         # should overestimate the hydraulic power when compared to the product of Q and the linear
@@ -243,7 +267,13 @@ class TestHydraulicPower(TestCase):
             hydraulic_power_dw,
             atol=10.0,
         )
+        # Check the pump and hydraulic power balance
+        np.testing.assert_allclose(
+            hydraulic_power_dw + hydraulic_power_dw_ret + hydraulic_power_hd_dw,
+            pump_power_hs_dw,
+        )
 
+        # ----------------------------------------------------------------------------------------
         # # NoHeadloss should imply also no hydraulic power and no pump_power
         run_hydraulic_power.df_MILP = pd.DataFrame(columns=standard_columns_specified)
         run_hydraulic_power.head_loss_setting = HeadLossOption.NO_HEADLOSS
@@ -265,6 +295,8 @@ class TestHydraulicPower(TestCase):
                 results[f"{demand}.HeatIn.Hydraulic_power"]
             with self.assertRaises(KeyError):
                 results[f"{demand}.HeatOut.Hydraulic_power"]
+            with self.assertRaises(KeyError):
+                results[f"{demand}.Hydraulic_power"]
         for source in solution.energy_system_components.get("heat_source", []):
             with self.assertRaises(KeyError):
                 results[f"{source}.Pump_power"]
