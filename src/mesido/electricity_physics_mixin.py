@@ -65,6 +65,8 @@ class ElectricityPhysicsMixin(
         # Boolean path-variable for the charging of storage assets
         self.__storage_charging_map = {}
 
+        self.__storage_t0_bounds = {}
+
         self.__set_point_var = {}
         self.__set_point_bounds = {}
         self.__set_point_map = {}
@@ -112,6 +114,9 @@ class ElectricityPhysicsMixin(
         options = self.energy_system_options()
 
         self.__update_electricity_producer_upper_bounds()
+
+        if len(self.times()) > 2:
+            self.__check_storage_values_and_set_bounds_at_t0()
 
         if options["include_asset_is_switched_on"]:
             for asset in [
@@ -228,6 +233,7 @@ class ElectricityPhysicsMixin(
         bounds.update(self.__electricity_producer_upper_bounds)
         bounds.update(self.__set_point_bounds)
         bounds.update(self.__electricity_storage_discharge_bounds)
+        bounds.update(self.__storage_t0_bounds)
 
         return bounds
 
@@ -251,6 +257,60 @@ class ElectricityPhysicsMixin(
 
     def __state_vector_scaled(self, variable, ensemble_member):
         return self._BaseProblemMixin__state_vector_scaled(variable, ensemble_member)
+
+    def __check_storage_values_and_set_bounds_at_t0(self):
+        """
+        In this function we force the buffer at t0 to have a certain amount of set energy in it.
+        We do this via the bounds, by providing the bounds with a time-series where the first
+        element is the initial heat in the buffer.
+        """
+        t = self.times()
+        # We assume that t0 is always equal to self.times()[0]
+        assert self.initial_time == self.times()[0]
+
+        parameters = self.parameters(0)
+        bounds = self.bounds()
+        components = self.energy_system_components
+        buffers = components.get("electricity_storage", [])
+
+        for b in buffers:
+            elec_t0 = parameters[f"{b}.init_Elec"]
+            min_fraction = parameters[f"{b}.min_fraction_storage"]
+            stored_elec = f"{b}.Stored_electricity"
+
+            if np.isnan(elec_t0):
+                # Set default value
+                max_cap = parameters[f"{b}.max_capacity"]
+                elec_t0 = min_fraction * max_cap
+
+            if not np.isnan(elec_t0):
+                # Check that volume/initial stored mass at t0 is within bounds
+                lb_elec, ub_elec = bounds[stored_elec]
+                lb_elec_t0 = np.inf
+                ub_elec_t0 = -np.inf
+                for bound in [lb_elec, ub_elec]:
+                    assert not isinstance(
+                        bound, np.ndarray
+                    ), f"{b} stored heat cannot be a vector state"
+                    if isinstance(bound, Timeseries):
+                        bound_t0 = bound.values[0]
+                    else:
+                        bound_t0 = bound
+                    lb_elec_t0 = min(lb_elec_t0, bound_t0)
+                    ub_elec_t0 = max(ub_elec_t0, bound_t0)
+
+                if elec_t0 < lb_elec_t0 or elec_t0 > ub_elec_t0:
+                    raise Exception(f"Initial stored electricity of {b} is not within bounds.")
+
+                # Set mass at t0
+                lb = np.full_like(t, -np.inf)
+                ub = np.full_like(t, np.inf)
+                lb[0] = elec_t0
+                ub[0] = elec_t0
+                b_t0 = (Timeseries(t, lb), Timeseries(t, ub))
+                self.__storage_t0_bounds[stored_elec] = self.merge_bounds(bounds[stored_elec], b_t0)
+            else:
+                logger.warning(f"Initial stored electricity of {b} is not set.")
 
     def __update_electricity_producer_upper_bounds(self):
         # TODO: When a profile is assigned via esdl, this code below needs to be aligned with
@@ -289,6 +349,8 @@ class ElectricityPhysicsMixin(
                 # time-sampled.
                 max_ = bounds[f"{asset}.Electricity_source"][1].values[: len(self.times())]
                 a = [x for x in max_ if abs(x) > 0.0]
+                if len(a) == 0:
+                    a = [1]
                 nominal = (
                     self.variable_nominal(f"{asset}.Electricity_source") * min(a) * np.median(a)
                 ) ** (1.0 / 3.0)
