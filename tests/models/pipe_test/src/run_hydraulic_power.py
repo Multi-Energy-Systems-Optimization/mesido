@@ -235,10 +235,24 @@ class HeatProblem(
             }
         )
 
-        # Hydraulic power via linearized method in MILP [W]
+        # Hydraulic power and pump power via linearized method in MILP [W]
         if self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
             data_milp.update({"Pipe1_supply_Hydraulic_power": results["Pipe1.Hydraulic_power"]})
             data_milp.update({"Pipe1_return_Hydraulic_power": results["Pipe1_ret.Hydraulic_power"]})
+            data_milp.update(
+                {
+                    "Heat_demand_Hydraulic_power": results[
+                        f"{name_id_map['HeatingDemand_1']}.Hydraulic_power"
+                    ]
+                }
+            )
+            data_milp.update(
+                {
+                    "Heat_source_Pump_power": results[
+                        f"{name_id_map['ResidualHeatSource_1']}.Pump_power"
+                    ]
+                }
+            )
 
         # Determine index to be used for row data that will be added to the dataframe
         if len(df_MILP) == 0:
