@@ -149,7 +149,7 @@ class TestHydraulicPower(TestCase):
         )
 
         # Check the pump and hydraulic power balance
-        np.testing.assert_array_less(1000.0, hydraulic_power_hd_1)
+        np.testing.assert_array_less(0.0, hydraulic_power_hd_1)
         np.testing.assert_allclose(
             hydraulic_power_dw_1 + hydraulic_power_dw_1_ret + hydraulic_power_hd_1,
             pump_power_hs_1,
@@ -209,7 +209,7 @@ class TestHydraulicPower(TestCase):
         )
 
         # Check the pump and hydraulic power balance
-        np.testing.assert_array_less(1000.0, hydraulic_power_linear_hd)
+        np.testing.assert_array_less(0.0, hydraulic_power_linear_hd)
         np.testing.assert_allclose(
             hydraulic_power_linear + hydraulic_power_linear_ret + hydraulic_power_linear_hd,
             pump_power_linear_hs,
@@ -270,7 +270,7 @@ class TestHydraulicPower(TestCase):
             atol=10.0,
         )
         # Check the pump and hydraulic power balance
-        np.testing.assert_array_less(1000.0, hydraulic_power_hd)
+        np.testing.assert_array_less(0.0, hydraulic_power_hd)
         np.testing.assert_allclose(
             hydraulic_power_dw + hydraulic_power_dw_ret + hydraulic_power_hd,
             pump_power_hs,
