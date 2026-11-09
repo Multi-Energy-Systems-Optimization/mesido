@@ -1,7 +1,7 @@
 # [Unreleased-main] - 2026-11-06
 
 ## Added
-- xxx
+- A hydraulic power variable is created for heat and cold demands, used when head loss calculations are included.
 
 ## Changed
 - xxx
