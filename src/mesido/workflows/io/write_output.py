@@ -825,6 +825,8 @@ class ScenarioOutput:
                             )
                     if asset_id in self.energy_system_components.get("heat_demand", []):
                         flow_variable = results[f"{asset_id}.Heat_demand"][1:]
+                    elif asset_id in self.energy_system_components.get("cold_demand", []):
+                        flow_variable = results[f"{asset_id}.Cold_demand"][1:]
                     elif asset_id in self.energy_system_components.get("heat_buffer", []):
                         flow_variable = results[f"{asset_id}.Heat_buffer"][1:]
                     elif asset_id in [
@@ -1049,6 +1051,7 @@ class ScenarioOutput:
         return [
             *self.energy_system_components.get("heat_source", []),
             *self.energy_system_components.get("heat_demand", []),
+            *self.energy_system_components.get("cold_demand", []),
             *self.energy_system_components.get("heat_pipe", []),
             *self.energy_system_components.get("gas_pipe", []),
             *self.energy_system_components.get("heat_buffer", []),
@@ -1079,6 +1082,7 @@ class ScenarioOutput:
             or isinstance(asset, esdl.Airco)
             or isinstance(asset, esdl.ElectricBoiler)
             or isinstance(asset, esdl.GasHeater)
+            or isinstance(asset, esdl.HeatStorage)
         ):
             port = [port for port in asset.port if isinstance(port, esdl.OutPort)][0]
         elif isinstance(asset, esdl.Conversion):
