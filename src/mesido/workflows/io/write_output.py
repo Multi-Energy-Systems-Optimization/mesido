@@ -1072,10 +1072,12 @@ class ScenarioOutput:
         ]
         return next(c.__name__ for c in capabilities if c in asset.__class__.__mro__)
 
-    def _get_output_profile_carrier_id(self, asset: Any, asset_name: str) -> dict[str, str]:
+    def _get_output_profile_carrier_id(self, asset: Any) -> dict[str, str]:
         """Return carrier ids keyed by the relevant asset side."""
         port, port_prim, port_sec = 3 * [None]
-        if isinstance(asset, esdl.Transport) or isinstance(asset, esdl.Consumer):
+        if (
+            isinstance(asset, esdl.Transport) and not isinstance(asset, esdl.HeatExchange)
+        ) or isinstance(asset, esdl.Consumer):
             port = [port for port in asset.port if isinstance(port, esdl.InPort)][0]
         elif (
             isinstance(asset, esdl.Producer)
@@ -1085,7 +1087,7 @@ class ScenarioOutput:
             or isinstance(asset, esdl.HeatStorage)
         ):
             port = [port for port in asset.port if isinstance(port, esdl.OutPort)][0]
-        elif isinstance(asset, esdl.Conversion):
+        elif isinstance(asset, esdl.Conversion) or isinstance(asset, esdl.HeatExchange):
             primary_inports = [
                 port for port in asset.port if isinstance(port, esdl.InPort) and "Prim" in port.name
             ]
@@ -1099,7 +1101,7 @@ class ScenarioOutput:
                 port_sec = secondary_outports[0]
             else:
                 logger.error(
-                    f"Write to influxdb does not cater for asset: {asset_name}, "
+                    f"Write to influxdb does not cater for asset: {asset.name}, "
                     f"with {len(primary_inports)} primary inport(s) and"
                     f" {len(secondary_outports)} secondary outport(s)."
                 )
@@ -1120,23 +1122,20 @@ class ScenarioOutput:
 
         raise NotImplementedError("Unsuported types for the different port carrier combinations")
 
-    def _get_output_profile_outport_index(self, asset: Any, asset_name: str) -> int:
+    def _get_output_profile_outport_index(self, asset: Any, asset_side: str) -> int:
         """Return the outport index used for attaching output profiles."""
         index_outport = -1
-        for ip in range(len(asset.port)):
-            if isinstance(asset.port[ip], esdl.OutPort):
-                if index_outport == -1:
+        for ip, port in enumerate(asset.port):
+            if isinstance(port, esdl.OutPort):
+                if asset_side == "primary_carrier_id" and "Prim" in port.name:
                     index_outport = ip
-                else:
-                    logger.warning(
-                        f"Asset {asset_name} has more than 1 OutPort, and the "
-                        "profile data has been assigned to the 1st OutPort"
-                    )
-                    break
+                if asset_side == "secondary_carrier_id" and "Sec" in port.name:
+                    index_outport = ip
+                if asset_side == "single_carrier_id":
+                    index_outport = ip
 
         if index_outport == -1:
-            logger.error(f"Variable {index_outport} has not been assigned to the asset OutPort")
-            sys.exit(1)
+            logger.error(f"Outport Index has not been assigned to asset: {asset.name}.")
 
         return index_outport
 
@@ -1588,8 +1587,7 @@ class ScenarioOutput:
                     variables_two_hydraulic_system,
                     post_processed,
                 ) = self._get_output_profile_variables(asset_id, commodity, results, parameters)
-                carrier_id_dict = self._get_output_profile_carrier_id(asset, asset_name)
-                index_outport = self._get_output_profile_outport_index(asset, asset_name)
+                carrier_id_dict = self._get_output_profile_carrier_id(asset)
 
                 # Looping over the carrier_ids relevant for the asset
                 # If primary or secondary port are set, variables_to_hydraulic_system will be
@@ -1597,12 +1595,15 @@ class ScenarioOutput:
                 # when the primary port is selected and vice versa
                 variables_two_hydraulic_system_org = variables_two_hydraulic_system.copy()
                 for asset_side, carrier_id in carrier_id_dict.items():
+                    index_outport = self._get_output_profile_outport_index(asset, asset_side)
                     variables_two_hydraulic_system = variables_two_hydraulic_system_org.copy()
                     var_pops = []
                     if asset_side == "primary_carrier_id":
-                        var_pops = [v for v in variables_two_hydraulic_system if "Secondary" in v]
-                        if asset_id in self.energy_system_components.get("heat_pump", []):
-                            var_pops.append("Heat_flow")
+                        var_pops = [
+                            v
+                            for v in variables_two_hydraulic_system
+                            if "Secondary" in v or "Heat_flow" in v
+                        ]
                     elif asset_side == "secondary_carrier_id":
                         var_pops = [v for v in variables_two_hydraulic_system if "Primary" in v]
                     for v in var_pops:
