@@ -6,22 +6,92 @@ from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.techno_economic_mixin import TechnoEconomicMixin
 
+import casadi as ca
 import numpy as np
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
+    logger,
 )
 from rtctools.optimization.goal_programming_mixin import Goal, GoalProgrammingMixin
 from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
 )
+from rtctools.optimization.timeseries import Timeseries
 from rtctools.util import run_optimization_problem
+
+
+# class TargetHeatGoal(Goal):
+#     priority = 1
+
+#     order = 2
+
+#     def __init__(self, state, target):
+#         self.state = state
+
+#         self.target_min = target
+#         self.target_max = target
+#         try:
+#             self.function_range = (-1.0e6, max(2.0 * max(target.values), 1.0e6))
+#             self.function_nominal = max(np.median(target.values), 1.0e6)
+#         except Exception:
+#             self.function_range = (-1.0e6, max(2.0 * target, 1.0e6))
+#             self.function_nominal = max(target, 1.0e6)
+
+#     def function(self, optimization_problem, ensemble_member):
+#         return optimization_problem.state(self.state)
+
+class TargetHeatGoal(Goal):
+    priority = 1
+    order = 1
+
+    target_min = 0.0
+    target_max = 0.0
+
+    def __init__(self, state, profiles, profile_bools):
+        self.state = state
+        self.profiles = profiles
+        self.profile_bools = profile_bools
+
+        max_profile = max(
+            np.max(np.abs(profile.values))
+            for profile in profiles
+        )
+        self.function_range = (-max_profile, max_profile)
+        self.function_nominal = max(max_profile, 1.0)
+
+        # self.function_range = (-1.0e6, 1.0e6)
+        # self.function_nominal = 1.0e6
+
+    def function(self, optimization_problem, ensemble_member):
+        y = optimization_problem.state(self.state)
+
+        selected_target = 0.0
+
+        # for profile, bool_state in zip(
+        #     self.profiles, self.profile_bools
+        # ):
+        #     selected_target += ca.times(
+        #         ca.DM(profile.values),
+        #         bool_state,
+        #     )
+
+            
+        for profile, selector_name in zip(self.profiles, self.profile_bools):
+            is_insulation_active_var = optimization_problem.state(selector_name)
+            selected_target += ca.times(
+                ca.DM(profile.values),
+                is_insulation_active_var,
+            )
+
+        # y - x_t*b_t
+        return y - selected_target 
 
 
 class MinimizeSourcesHeatGoal(Goal):
     priority = 2
 
-    order = 2
+    order = 1
 
     def __init__(self, source):
         self.target_max = 0.0
@@ -59,6 +129,74 @@ class HeatProblem(
         for s in self.energy_system_components["heat_source"]:
             goals.append(MinimizeSourcesHeatGoal(s))
 
+        bounds = self.bounds()
+        demand_type = ["heat_demand", "cold_demand"]
+        for dtype in demand_type:
+            for demand in self.energy_system_components.get(dtype, []):
+                # target = self.get_timeseries(f"{demand}.target_{dtype}")
+                # if bounds[f"{demand}.HeatIn.Heat"][1] < max(target.values):
+                #     logger.warning(
+                #         f"{demand} has a flow limit, {bounds[f'{demand}.HeatIn.Heat'][1]}, "
+                #         f"lower than what is required for the maximum demand {max(target.values)}"
+                #     )
+                # TODO:
+                # update this caclulation to bounds[f"{demand}.HeatIn.Heat"][1]/ dT * Tsup & move
+                # to potential_errors variable
+                state = f"{demand}.{dtype[0].upper() + dtype[1:]}"
+
+                # goals.append(TargetHeatGoal(state, target))
+
+                # Adding constraints for the entire time horizon per demand insulation
+                # for iclasses in range(len(self.demand_profile_for_this_class)):
+                demand_insulation_classes = self._HeatPhysicsMixin__demand_insulation_class_map[demand]
+                target = None
+                # ins_class_to_variable = self._HeatPhysicsMixin__demand_insulation_class_map[demand]
+                # self._HeatPhysicsMixin__demand_insulation_class_var["e6b37a73-ebb4-4deb-80b4-80e8ceafe16f__demand_insulation_class_A"]
+                is_insulation_class_active_list = []
+                demand_profile_for_this_class = []
+                is_insulation_class_active_name_list = []
+                for pc, pc_var_name in demand_insulation_classes.items():
+                    target_demand = self.get_timeseries(f"{demand}.target_heat_demand")
+                    
+                    demand_profile_for_this_class.append(
+                        Timeseries(
+                            target_demand.times[: len(self.times())],
+                            pc.demand_scaling_factor * target_demand.values[: len(self.times())],
+                        )
+                    )
+                    target = demand_profile_for_this_class[-1]
+                    # target += demand_profile_for_this_class[-1]
+
+                    if bounds[f"{demand}.HeatIn.Heat"][1] < max(target.values):
+                        logger.warning(
+                            f"{demand} has a flow limit, {bounds[f'{demand}.HeatIn.Heat'][1]}, "
+                            f"lower than what is required for the maximum demand {max(target.values)}"
+                        )
+
+                    # for itstep in range(len(demand_profile_for_this_class[iclasses])):
+                    #     constraints.extend(
+                    #         self._symmetric_big_m_constraints(
+                    #             heat_demand[itstep]
+                    #             - demand_profile_for_this_class[iclasses][itstep],
+                    #             big_m[iclasses] * (1.0 - is_insulation_active[iclasses][itstep]),
+                    #             nominal[iclasses],
+                    #         )
+                    #     )
+
+                    # is_insulation_class_active = self._HeatPhysicsMixin__demand_insulation_class_var[pc_var_name]
+                    # is_insulation_class_active_list.append(
+                    #     ca.repmat(
+                    #         is_insulation_class_active,
+                    #         len(target_demand.values[: (len(self.times()))]),
+                    #     )
+                    # )
+                    # still to multilpy by the normol self.variable_nominal(f"{asset}.Power_consumed"), to replicate is_insulation_active_var = self.extra_variable(pc_var_name, ensemble_member)
+
+                    is_insulation_class_active_name_list.append(pc_var_name)
+
+                    # goals.append(TargetHeatGoal(state, demand_profile_for_this_class[-1]))
+                goals.append(TargetHeatGoal(state, demand_profile_for_this_class, is_insulation_class_active_name_list))
+
         return goals
 
     def energy_system_options(self):
@@ -80,7 +218,7 @@ class HeatProblem(
     def insulation_levels(self):
         attributes = {
             "insulation_level": ["A", "B", "C"],
-            "scaling_factor": [0.6, 0.9, 1.0],
+            "scaling_factor": [0.5, 0.1, 1.0],
             "Tmin_deg": [50, 60, 70],
             "insulation_cost_euro": [5.0e6, 2.0e6, 1.0e6],
         }
