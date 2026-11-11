@@ -34,7 +34,7 @@ def __get_out_port_temp_profile(solution, asset_name, asset_type):
         if carrier_id == string_parameters[f"{asset_name}{carrier_id_types[asset_type]}"]:
             sup_carrier_name = carriers[carrier_id]["name"]
     try:
-        temp_out_profile = solution.get_timeseries(f"{sup_carrier_name}.price_profile")
+        temp_out_profile = solution.get_timeseries(f"{sup_carrier_name}.temperature_profile")
     except KeyError:
         pass
 
@@ -421,7 +421,7 @@ def electric_power_conservation_test(solution, results, atol=1e-2):
             "geothermal_source_elec",
         ]
     )
-    producers = solution.energy_system_components_get(["electricity_source"])
+    producers = solution.energy_system_components_get(["electricity_source", "co_generation"])
     cables = solution.energy_system_components_get(["electricity_cable"])
     transformers = solution.energy_system_components.get("transformer", [])
 
@@ -918,6 +918,7 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
                 )
             elif asset in [
                 *solution.energy_system_components.get("heat_source", []),
+                *solution.energy_system_components.get("co_generation", []),
             ]:
                 if parameters[f"{asset}.include_head_loss_variables"]:
                     pump_power = results[f"{asset}.Pump_power"]
@@ -935,6 +936,17 @@ def cost_calculation_test(solution, results, check_objective_function=False, ato
                     nominator_vector = heat_source
                     denominator = esdl_asset.attributes["COP"]
 
+                elif asset in solution.energy_system_components.get("co_generation", []):
+                    if (
+                        f"{asset}.Gas_demand_mass_flow" in results
+                        and f"{asset}.density_normal" in parameters
+                    ):
+                        density_normal = parameters[f"{asset}.density_normal"]
+                        nominator_vector = (
+                            results[f"{asset}.Gas_demand_mass_flow"] / density_normal * 3600.0
+                        )  # [Nm3/h]
+                    else:
+                        nominator_vector = heat_source
                 elif asset in [
                     *solution.energy_system_components.get("heat_source_gas", []),
                     *solution.energy_system_components.get("gas_heat_source_gas", []),

@@ -1,14 +1,35 @@
-# [Unreleased-main] - 2026-09-17
+# [Unreleased-main] - 2026-11-11
 
 ## Added
-- Supported tools section is added to the documentation 
+- A hydraulic power variable is created for heat and cold demands, used when head loss calculations are included.
+- Supported tools section is added to the documentation
 
 ## Changed
 - xxx
 
 ## Fixed
-- Voltage losses are now also excluded when include_electric_cable_power_loss is set to False.
+- xxx
 
+
+# [0.1.23] - 2026-11-06
+
+## Added
+- selfDischargeRate is parsed from HeatStorage assets in ESDL to calculate heat loss coefficient of heat buffer
+- Cater for gurobi solver retry, at specified time intervals, when no license session is available
+- Added primary_heat and secondary_heat profiles for water-to-water heat pumps and heat exchangers to the output ESDL.
+- Parsing and basic model of Combined Heat Power (CHP) has been added, which is based on existing heat producer, electricity producer and gas consumption classes.
+- Parsing of a building asset and creating building parameters. Only Heating and Cooling Demand assets currently supported in a building asset. 
+- A new temperature_profile variable for carrier is added and used (instead of using price_profile variable).
+
+## Changed
+- Upgrade to rtc-tools 2.7.3, casadi 3.7.2 and rtctools-highs 0.1.4, replacing rtc-tools-gil-comp/casadi-gil-comp; Python 3.12 is now also supported.
+- Remove HiGHS presolve=off workarounds that were needed for a bug in the older HiGHS bundled via casadi-gil-comp.
+- Carrier profile in input csv needs to have a suffix in the column name to specify the profile type (e.g. __profile, __temperature).
+
+## Fixed
+- Voltage losses are now also excluded when include_electric_cable_power_loss is set to False.
+- Prevented duplicate writing of water-to-water heat pump heat_flow profiles to the output ESDL.
+- Bug fix: Use PipeDiameterConstraint (if it exists and esdl_version>="v2602") for the pipe diameter in the setup of the pipe pycml object
 
 # [0.1.22] - 2026-09-07
 

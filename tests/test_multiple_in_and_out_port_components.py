@@ -359,8 +359,7 @@ class TestHP(TestCase):
             def solver_options(self):
                 options = super().solver_options()
                 options["solver"] = "highs"
-                highs_options = options["highs"] = {}
-                highs_options["presolve"] = "off"
+                options["highs"] = {}
 
                 return options
 

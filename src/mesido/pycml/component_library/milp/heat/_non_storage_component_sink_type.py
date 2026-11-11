@@ -1,3 +1,4 @@
+from mesido.pycml import Variable
 from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
 
 from ._non_storage_component import _NonStorageComponent
@@ -23,3 +24,16 @@ class _NonStorageComponentSinkType(_NonStorageComponent):
 
         if self.include_head_loss_variables:
             self.dH.max = 0.0
+
+            self.Hydraulic_power_nominal = self.Q_nominal * self.nominal_pressure
+            self.add_variable(
+                Variable, "Hydraulic_power", min=0.0, nominal=self.Hydraulic_power_nominal
+            )  # [W]
+
+            self.add_equation(
+                (
+                    self.Hydraulic_power
+                    - (self.HeatIn.Hydraulic_power - self.HeatOut.Hydraulic_power)
+                )
+                / (self.nominal_pressure * self.Q_nominal * self.Hydraulic_power_nominal) ** 0.5
+            )

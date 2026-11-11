@@ -5,6 +5,8 @@ import sys
 import time
 from pathlib import Path
 
+import casadi as ca
+
 import esdl
 
 from mesido import __version__
@@ -120,6 +122,79 @@ def main_decorator(func):
     return main
 
 
+logger = logging.getLogger("mesido")
+
+GUROBI_SESSION_RETRY_INTERVAL_S = 10
+GUROBI_SESSION_RETRY_TIMEOUT_S = 5 * 60
+GUROBI_RETRYABLE_ERROR_STRINGS = [
+    "too many sessions",
+    "single-use license",
+    "another gurobi process running",
+]
+
+
+def _with_gurobi_session_retry(casadi_solver):
+    """
+    Retry Gurobi session errors until timeout, other errors are not retried.
+    Errors from other solvers, such as HiGHS, are never retried.
+    """
+    if isinstance(casadi_solver, str):
+        casadi_solver = getattr(ca, casadi_solver)
+
+    def create_solver(*args, **kwargs):
+        start = time.monotonic()
+        deadline = start + GUROBI_SESSION_RETRY_TIMEOUT_S
+        waiting = False
+        while True:
+            try:
+                solver = casadi_solver(*args, **kwargs)
+            except RuntimeError as e:
+                error_message = str(e).lower()
+                if not any(
+                    error_string in error_message for error_string in GUROBI_RETRYABLE_ERROR_STRINGS
+                ):
+                    raise
+                if time.monotonic() >= deadline:
+                    logger.warning(
+                        f"No Gurobi session after {time.monotonic() - start:.0f}s, giving up"
+                    )
+                    raise
+                if not waiting:
+                    logger.warning(
+                        f"No Gurobi session available, retrying every "
+                        f"{GUROBI_SESSION_RETRY_INTERVAL_S}s for up to "
+                        f"{GUROBI_SESSION_RETRY_TIMEOUT_S}s"
+                    )
+                    waiting = True
+                else:
+                    # Gurobi logs on every attempt, so repeat our status to keep it the last line
+                    logger.warning(
+                        f"Still waiting for a Gurobi session "
+                        f"({time.monotonic() - start:.0f}s / {GUROBI_SESSION_RETRY_TIMEOUT_S}s)"
+                    )
+                time.sleep(GUROBI_SESSION_RETRY_INTERVAL_S)
+            else:
+                if waiting:
+                    logger.warning(f"Gurobi session obtained after {time.monotonic() - start:.0f}s")
+                return solver
+
+    return create_solver
+
+
+def _run_optimization_problem_with_gurobi_retry(problem_class, **kwargs):
+    class RetryProblemClass(problem_class):
+        def solver_options(self):
+            options = super().solver_options()
+            if "casadi_solver" in options:
+                options["casadi_solver"] = _with_gurobi_session_retry(options["casadi_solver"])
+            return options
+
+    RetryProblemClass.__name__ = problem_class.__name__
+    RetryProblemClass.__qualname__ = problem_class.__qualname__
+
+    return run_optimization_problem(RetryProblemClass, **kwargs)
+
+
 def run_optimization_problem_solver(
     scenario_problem_class,
     solver_class=None,
@@ -144,11 +219,11 @@ def run_optimization_problem_solver(
             class ProblemSolverClass(solver_class, scenario_problem_class):
                 pass
 
-            solution = run_optimization_problem(ProblemSolverClass, **kwargs)
+            solution = _run_optimization_problem_with_gurobi_retry(ProblemSolverClass, **kwargs)
 
             new_solver = True
 
     if not new_solver:
-        solution = run_optimization_problem(scenario_problem_class, **kwargs)
+        solution = _run_optimization_problem_with_gurobi_retry(scenario_problem_class, **kwargs)
 
     return solution

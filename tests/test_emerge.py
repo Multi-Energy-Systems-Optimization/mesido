@@ -29,8 +29,7 @@ class TestEmerge(TestCase):
             input_timeseries_file="timeseries.csv",
         )
 
-        # TODO: checks on values need to be added, not sure if cost values now make sense, scaling
-        #  is not too bad, but if presolve of HIGHS is on, it becomes infeasible.
+        # TODO: checks on values need to be added, not sure if cost values now make sense.
 
 
 if __name__ == "__main__":

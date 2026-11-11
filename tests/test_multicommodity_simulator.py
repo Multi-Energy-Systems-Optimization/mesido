@@ -622,21 +622,34 @@ class TestMultiCommoditySimulator(TestCase):
     def test_multi_commodity_simulator_sequential_staged(self):
         """
         Test to run the multicommodity simulator including a battery and gas storage using
-        the sequential staged optimization approach. The results between the staged and unstaaged
-        approach should be equal if the assets in the system do not have an internal state that
-        makes timesteps interdependent (like Stored_energy for a battery) or when the bounds on
-        those states do not limit the problem.
+        the sequential staged optimization approach. Because the underlying MILP's optimum is
+        not necessarily unique, the staged and unstaged approaches are not guaranteed to produce
+        identical variable values, so this test checks invariants instead of exact equality.
 
         Checks:
-        - that the staged approach results in same values as the unstaged approach.
+        - that the staged approach matches demand and conserves energy, same as the unstaged
+          approach.
+        - that the staged approach reaches the same per-stage objective as an independent solver.
         - Verify that under limited case bounds are set correctly.
         """
         import models.emerge.src.example as example
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
+        # Per-stage objectives use per-stage normalization, so they can't be compared to the
+        # unstaged run's objective. Instead we check them against CPLEX reference values below,
+        # computed independently on this same staged formulation.
+        stage_objectives = []
+
+        class MultiCommoditySimulatorNoLossesRecordObjectives(MultiCommoditySimulatorNoLosses):
+            def priority_completed(self, priority):
+                super().priority_completed(priority)
+                if not stage_objectives or self is not stage_objectives[-1][0]:
+                    stage_objectives.append((self, {}))
+                stage_objectives[-1][1][priority] = self.objective_value
+
         solution_staged_unbounded = run_sequatially_staged_simulation(
-            multi_commodity_simulator_class=MultiCommoditySimulatorNoLosses,
+            multi_commodity_simulator_class=MultiCommoditySimulatorNoLossesRecordObjectives,
             simulation_window_size=20,
             base_folder=base_folder,
             esdl_file_name="emerge_battery_priorities.esdl",
@@ -656,19 +669,50 @@ class TestMultiCommoditySimulator(TestCase):
             input_timeseries_file="timeseries_short.csv",
         )
 
-        results_unstaged = solution_unstaged.extract_results()
+        # results_staged has no model carrier of its own, so solution_unstaged is used for
+        # component/timeseries lookups.
+        demand_matching_test(solution_unstaged, results_staged)
+        electric_power_conservation_test(solution_unstaged, results_staged)
 
-        # Checking that the results are the same.
-        for key, value in results_unstaged.items():
-            value_staged = results_staged[key]
-            if len(key.split("__")) > 1 and key.split("__")[1] == "flow_direct_var":
-                # For the scenario when Q is -0 and 0 then gas_flow_direct_var 0 or 1 for the same
-                # volumetric flow rate of zero. So only check gas_flow_direct_var when Q != zero
-                zero_staged = results_staged[f"{key.split('__')[0]}GasIn.Q"] != 0
-                zero_unstaged = results_unstaged[f"{key.split('__')[0]}GasIn.Q"] != 0
-                np.testing.assert_allclose(value[zero_staged], value_staged[zero_unstaged])
-            else:
-                np.testing.assert_allclose(value, value_staged, atol=1e-4)
+        # Catches a dropped/duplicated timestep at the stage seam, which the checks above don't.
+        battery_id = solution_unstaged.esdl_asset_name_to_id_map["Battery_4688"]
+        assert len(results_staged[f"{battery_id}.Stored_electricity"]) == len(
+            solution_unstaged.times()
+        )
+
+        # Regenerate by overriding solver_options() to "cplex" and rerunning
+        # MultiCommoditySimulatorNoLossesRecordObjectives against this ESDL/timeseries, or by
+        # exporting each stage's LP (export_lp, available since rtc-tools 2.8.0) and solving it
+        # on the NEOS server.
+        cplex_reference_objectives = [
+            {
+                3: -5.988997575483286,
+                4: 1.1985084874328542,
+                5: 8.032907152232609,
+                6: 0.02935812035813031,
+                7: 5.191496612269487,
+                8: -15.060707894976723,
+                9: 19.000000000000007,
+                30: 0.0,
+            },
+            {
+                3: -1.196208109047731,
+                4: 0.0,
+                5: 0.0,
+                6: -6.938893903934504e-19,
+                7: 1.0193063399105586,
+                8: -4.355922577847732,
+                9: 4.0,
+                30: -4.163336342360702e-17,
+            },
+        ]
+
+        assert len(stage_objectives) == len(cplex_reference_objectives)
+        for (_, objectives), reference in zip(stage_objectives, cplex_reference_objectives):
+            for priority, reference_value in reference.items():
+                np.testing.assert_allclose(
+                    objectives[priority], reference_value, rtol=1e-6, atol=1e-12
+                )
 
         solution_staged_bounded = run_sequatially_staged_simulation(
             multi_commodity_simulator_class=MultiCommoditySimulatorNoLosses,

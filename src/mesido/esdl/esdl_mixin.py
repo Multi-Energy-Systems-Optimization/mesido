@@ -17,7 +17,6 @@ from mesido.component_type_mixin import (
 from mesido.esdl.asset_to_component_base import _AssetToComponentBase
 from mesido.esdl.common import Asset
 from mesido.esdl.edr_pipe_class import EDRGasPipeClass, EDRPipeClass
-from mesido.esdl.esdl_additional_vars_mixin import get_asset_contraints
 from mesido.esdl.esdl_heat_model import ESDLHeatModel
 from mesido.esdl.esdl_model_base import _ESDLModelBase
 from mesido.esdl.esdl_parser import ESDLStringParser
@@ -100,6 +99,13 @@ class ESDLMixin(
     __minimum_pipe_size_name: EEnumLiteral = esdl.PipeDiameterEnum.DN150
     __use_user_defined_minimum_pipe_size: bool = False
 
+    _BUILDING_SUPPORTED_ESDL_ASSET_TYPES = frozenset(
+        {
+            "HeatingDemand",
+            "CoolingDemand",
+        }
+    )
+
     def __init__(self, *args, **kwargs) -> None:
         """
         In this __init__ function we do the parsing of the esdl file based on either a string which
@@ -149,6 +155,8 @@ class ESDLMixin(
         input_file_name = kwargs.get("input_timeseries_file", None)
         input_folder = kwargs.get("input_folder")
         input_file_path = None
+
+        self.__building_parameters = self._build_building_parameters()
 
         # Setup credentials for database connections
         database_connection_info = kwargs.get("database_connections", {})
@@ -263,7 +271,12 @@ class ESDLMixin(
 
             self.__max_supply_temperature = max(max_global_supply, max_attribute) + 10.0
 
-            self.__model = ESDLQTHModel(assets, **self.esdl_qth_model_options())
+            esdl_version = self._ESDLMixin__energy_system_handler.energy_system.esdlVersion
+            self.__model = ESDLQTHModel(
+                assets,
+                energy_system_esdl_version=esdl_version,
+                **self.esdl_qth_model_options(),
+            )
 
         self._override_pipe_classes = dict()
         self.override_pipe_classes()
@@ -283,6 +296,92 @@ class ESDLMixin(
         Returns a bytes string representation of the ESDL model used.
         """
         return base64.b64encode(self.__energy_system_handler.to_string().encode("utf-8"))
+
+    def _build_building_parameters(self) -> Dict[str, Dict[str, Any]]:
+        """
+        Build a table with building-scoped information for easy access and use elsewhere.
+
+        Structure of the building_parameters dict:
+        It is a dictionary where the keys are building asset IDs. Each value contains, when
+        applicable:
+            - "contained_measure" dictionary keyed by measure ID. Each measure entry contains:
+                - "measure_assets": A dictionary where the keys are contained ESDL asset IDs and
+                the values are the corresponding ESDL assets.
+                - Note: Only supported building-related measure assets are included. Currently these
+                are the ESDL asset types listed in ``_BUILDING_SUPPORTED_ESDL_ASSET_TYPES``.
+
+        Returns
+        -------
+        building_parameters : Dict[str, Dict[str, Any]]
+            A dictionary containing building-scoped information for easy access.
+
+        """
+
+        def _get_supported_esdl_assets(
+            measure: esdl.Measure, supported_esdl_asset_types: List[str]
+        ) -> Dict[str, Any]:
+            """Returns: dict of ESDL assets specified in a measure, that are supported by building
+            parameters and the rest of the codebase"""
+
+            measure_esdl_assets = {}
+            for esdl_asset_type in supported_esdl_asset_types:
+                esdl_assets = _get_assets_from_measure(measure, esdl_asset_type)
+                assert len(esdl_assets) <= 1, (
+                    f"Code currently only supports a single ESDL asset of each type per "
+                    f" measure. More than 1 ESDL asset of type {esdl_asset_type} found in "
+                    f"measure {measure.id}."
+                )
+                for esdl_asset in esdl_assets:
+                    measure_esdl_assets[esdl_asset.id] = esdl_asset
+            return measure_esdl_assets
+
+        def _get_assets_from_measure(measure: esdl.Measure, esdl_asset_type: str) -> List[Any]:
+            """Returns: list of ESDL assets of the specified type contained in the measure."""
+
+            matched_assets: List[Any] = []
+            for measure_asset in measure.asset:
+                if isinstance(measure_asset, getattr(esdl, esdl_asset_type)):
+                    matched_assets.append(measure_asset)
+
+            return matched_assets
+
+        def _build_contained_measure_parameters(measures: Any) -> Dict[str, Dict[str, Any]]:
+            """Returns: contained measure parameters for supported building measure assets."""
+
+            contained_measure_parameters: Dict[str, Dict[str, Any]] = {}
+            for measure in getattr(measures, "measure", []):
+                measure_esdl_assets = _get_supported_esdl_assets(
+                    measure, self._BUILDING_SUPPORTED_ESDL_ASSET_TYPES
+                )
+                if not measure_esdl_assets:
+                    continue
+                contained_measure_parameters[measure.id] = {"measure_assets": measure_esdl_assets}
+
+            return contained_measure_parameters
+
+        building_parameters: Dict[str, Dict[str, Any]] = {}
+
+        for building_asset in self._esdl_assets.values():
+            if building_asset.asset_type != "Building":
+                continue
+
+            building_parameters[building_asset.id] = {}
+
+            measures = building_asset.attributes.get("measures", None)
+            if measures:
+                # Buidling parameters might include other information in the future in addition to
+                # "contained_measures"
+                building_parameters[building_asset.id] = {
+                    "contained_measure": _build_contained_measure_parameters(measures)
+                }
+
+        return building_parameters
+
+    @property
+    def building_parameters(self) -> Dict[str, Dict[str, Any]]:
+        """Return the cached building parameter lookup."""
+
+        return copy.deepcopy(self.__building_parameters)
 
     def pre(self) -> None:
         """
@@ -314,74 +413,6 @@ class ESDLMixin(
                 return ii
         return None
 
-    def _get_pipe_max_size_input(
-        self,
-        asset: Asset,
-    ) -> EEnumLiteral:
-        """
-        This function gets the upper limit for the pipe DN. Either from the asset attribute input
-        DN size or from the PipeDiameterConstraint, depending on what is applicable.
-        Args:
-            asset: mesido common asset with all attributes
-            max_size_attribute: type of attribute e.g. powrr, volume etc.
-            max_value_attribute: value that of the attribute,
-            constraint_attribute: Does the atrribute value originate from a constraint
-        """
-        # Backward compatibility:
-        # PipeDiameterConstraint vs pipe diameter attribute, as the value to be used for the
-        # maximum size of the pipe. We check the esdl version to determine which attribute to use
-        # for the maximum size of the pipe.
-        # While the front end is being updated to accomodate easy use of PipeDiameterConstraint:
-        # - If the esdl version caters for PipeDiameterConstraint:
-        #   - check if a constraint exists, then use it.
-        #   - if the contraint does not exist then use the diameter specific in the asset attribute
-        # - If PipeDiameterConstraint does not
-        esdl_version = self._ESDLMixin__energy_system_handler.energy_system.esdlVersion
-        # "v2602" contains the items needed for the ranged constraint implementation in MESIDO
-        if esdl_version is not None and esdl_version >= "v2602":
-            pipe_constraint, qty_pipe_constraint = get_asset_contraints(
-                self, asset, esdl.PipeDiameterConstraint
-            )
-
-            if qty_pipe_constraint > 1:
-                logger.exit(
-                    f"More than 1 pipe diameter constraint has been specified to "
-                    f"pipe named {asset.name}, currenlty only the 1st constraint is being used"
-                )
-                exit(1)
-            elif (
-                qty_pipe_constraint == 0
-                or pipe_constraint[0].maximum == esdl.PipeDiameterEnum.VALUE_SPECIFIED
-            ):
-                logger.warning(
-                    "Expected a pipe diameter contraint (upper size limit) for pipe named "
-                    f"{asset.name}, but none has been specified. Therefore, the pipe diameter "
-                    "specified in the asset attribute is being used."
-                )
-                # Do not delete the code below. This will be enforced late, once the front end has
-                # been updated for this
-
-                # get_potential_errors().add_potential_issue(
-                #     MesidoAssetIssueType.ASSET_UPPER_LIMIT,
-                #     asset.id,
-                #     f"Pipe named {asset.name}: The upper limit of the pipe size has to be
-                # specified via a maximum value in a pipe diameter constraint."
-                # )
-                # Raise the potential error here if applicable, with feedback to user
-                # Else a normal error exit might occer which will not give feedback to the user
-                # potential_error_to_error(self._error_type_check)
-
-                return asset.attributes["diameter"]
-            else:
-                logger.warning(
-                    f"For pipe named {asset.name}, the pipe diameter constraint max value is "
-                    "used for the pipe's diameter upper limit, instead of the pipe diameter "
-                    "specified (if any) in the asset attribute."
-                )
-                return pipe_constraint[0].maximum
-        else:
-            return asset.attributes["diameter"]
-
     def __override_pipe_classes_dicts(
         self,
         asset: Asset,
@@ -395,11 +426,15 @@ class ESDLMixin(
 
         p = asset.id
 
-        if asset.attributes["state"].name == "OPTIONAL":
+        if asset.attributes["state"] == esdl.AssetStateEnum.OPTIONAL:
             c = override_classes[p] = []
             c.append(no_pipe_class)
 
-            max_size_enum = self._get_pipe_max_size_input(asset)
+            max_size_enum = _AssetToComponentBase._get_pipe_max_size_input(
+                self,
+                asset,
+                self._ESDLMixin__energy_system_handler.energy_system.esdlVersion,
+            )
 
             max_size_idx = [
                 idx for idx, pipe in enumerate(pipe_classes) if pipe.diameter_enum == max_size_enum
@@ -435,7 +470,7 @@ class ESDLMixin(
                 c.append(pipe_classes[min_size_idx])
             else:
                 c.extend(pipe_classes[min_size_idx : max_size_idx + 1])
-        elif asset.attributes["state"].name == "DISABLED":
+        elif asset.attributes["state"] == esdl.AssetStateEnum.DISABLED:
             c = override_classes[p] = []
             c.append(no_pipe_class)
 
