@@ -31,7 +31,27 @@ logger = logging.getLogger("mesido")
 logger.setLevel(logging.INFO)
 
 
-class TestColdDemand(TestCase):
+def _calculate_pipe_port_temperature(pipe_id: str, pipe_port: str, results: dict, parameters: dict):
+    """
+    Calculate pipe temperature at port (i.e. outlet or inlet ) from heat flow and volumetric flow.
+
+    Parameters
+    ----------
+    pipe_id : Id of the pipe
+    pipe_port : Port of the pipe ("In" or "Out")
+    results : Results dictionary from the optimization
+    parameters : Parameters dictionary from the solution
+
+    """
+    heat_flow_out = results[f"{pipe_id}.Heat{pipe_port}.Heat"]
+    vol_flow = results[f"{pipe_id}.Heat{pipe_port}.Q"]
+    cp = parameters[f"{pipe_id}.cp"]
+    rho = parameters[f"{pipe_id}.rho"]
+    pipe_temp = heat_flow_out / (cp * rho * vol_flow)
+    return pipe_temp
+
+
+class TestColdHeat(TestCase):
 
     def test_insufficient_capacity(self):
         """
@@ -106,6 +126,57 @@ class TestColdDemand(TestCase):
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
 
+    def test_cold_demand_with_varying_warm_temperature(self):
+        """
+        This test is to check the basic physics of a low temperature network that includes a cold
+        demand and an airco. The warm carrier has a time varying temperature profile and the pipe
+        heat losses are neglected. The aim is to verify that the cold demand asset correctly
+        accounts for the varying warm carrier temperature.
+
+        Checks:
+        1. demand is matched
+        2. energy conservation in the network
+        3. heat to discharge
+        4. the temperature at the inlet of the warm-carrier pipe connected to the cold demand
+           matches the temperature profile specified in the input csv file
+
+        """
+        import models.wko.src.example as example
+        from models.wko.src.example import HeatColdProblem
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        class HeatColdProblemNoHeatLoss(HeatColdProblem):
+            def energy_system_options(self):
+                options = super().energy_system_options()
+                options["neglect_pipe_heat_losses"] = True
+                return options
+
+        heat_problem = run_esdl_mesido_optimization(
+            HeatColdProblemNoHeatLoss,
+            base_folder=base_folder,
+            esdl_file_name="airco_and_cold_demand.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_cold_demand_with_warm_temp_profile.csv",
+        )
+        results = heat_problem.extract_results()
+        parameters = heat_problem.parameters(0)
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
+
+        pipe1_id = name_to_id_map["Pipe1"]
+
+        demand_matching_test(heat_problem, results)
+        energy_conservation_test(heat_problem, results)
+        heat_to_discharge_test(heat_problem, results)
+
+        # Check the supply temperature profile of the pipe linked to cold demand at pipe inlet
+        supply_temp_input = heat_problem.get_timeseries("LT.temperature_profile").values
+        pipe1_temp_calculated = _calculate_pipe_port_temperature(
+            pipe1_id, "In", results, parameters
+        )
+        np.testing.assert_array_almost_equal(pipe1_temp_calculated, supply_temp_input)
+
     def test_airco(self):
         """
         This test is to check the basic physics for a network which includes an airco. In this
@@ -172,13 +243,13 @@ class TestColdDemand(TestCase):
         1. demand is matched
         2. energy conservation in the network
         3. heat to discharge (note cold line is colder than T_ground)
-        4. the cyclic heat_stored contraint, which ensures yearly heat balance between the warm and
+        4. the cyclic heat_stored constraint, which ensures yearly heat balance between the warm and
         cold well
         5. pipe heat loss and gain
             - pipe heat losses included: expect loss and gain values due to the carrier
-            temperatures (warm and cold) in the pipes being higher and lower than the ground
-            temperature
-            - pipe heat losses excluded: excpect no heat losses or gains
+              temperatures (warm and cold) in the pipes being higher and lower than the ground
+              temperature
+            - pipe heat losses excluded: expect no heat losses or gains
         """
         import models.wko.src.example as example
         from models.wko.src.example import HeatColdProblem
@@ -226,6 +297,8 @@ class TestColdDemand(TestCase):
 
                 return constraints
 
+        # ------------------------------------------------------------------------------------------
+        # Pipe heat losses included
         heat_problem = run_esdl_mesido_optimization(
             HeatingCoolingProblem,
             base_folder=base_folder,
@@ -294,7 +367,6 @@ class TestColdDemand(TestCase):
             results[f"{ates_id}.Stored_heat"][0], results[f"{ates_id}.Stored_heat"][-1]
         )
         # Check heat loss and gain
-        tol_value = 1.0e-6
         np.testing.assert_allclose(
             0.0, results[f"{pipe1_id}.HeatIn.Heat"] - results[f"{pipe1_id}.HeatOut.Heat"], atol=1e-6
         )
@@ -303,7 +375,6 @@ class TestColdDemand(TestCase):
             results[f"{pipe1_ret_id}.HeatIn.Heat"] - results[f"{pipe1_ret_id}.HeatOut.Heat"],
             atol=1e-6,
         )
-        # ------------------------------------------------------------------------------------------
 
     def test_heat_cold_demand_peak_overlap(self):
         """
@@ -526,7 +597,7 @@ class TestColdDemand(TestCase):
 
 
 if __name__ == "__main__":
-    test_cold_demand = TestColdDemand()
+    test_cold_demand = TestColdHeat()
     test_cold_demand.test_insufficient_capacity()
     test_cold_demand.test_cold_demand()
     test_cold_demand.test_wko()
