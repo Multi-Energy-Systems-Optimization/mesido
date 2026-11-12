@@ -59,7 +59,9 @@ class HeatPipe(_NonStorageComponent):
 
         self.Heat_loss = nan
 
-        self.add_variable(DiscreteVariable, "__flow_direct_var", min=0.0, max=1.0)
+        self.include_flow_direction_variable = True
+        if self.include_flow_direction_variable:
+            self.add_variable(DiscreteVariable, "__flow_direct_var", min=0.0, max=1.0)
 
         if self.disconnectable:
             self.add_variable(DiscreteVariable, "__is_disconnected", min=0.0, max=1.0)

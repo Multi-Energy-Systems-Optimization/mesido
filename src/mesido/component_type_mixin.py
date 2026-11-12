@@ -89,6 +89,10 @@ class ComponentTypeMixin(BaseComponentTypeMixin):
 
             pipes_map = {f"{pipe}.HeatIn.Heat": pipe for pipe in hot_pipes}
             pipes_map.update({f"{pipe}.HeatOut.Heat": pipe for pipe in hot_pipes})
+            options = self.energy_system_options()
+            has_pipe_flow_direction = (
+                options["include_head_losses"] or not options["neglect_pipe_heat_losses"]
+            )
 
             for p in hot_pipes:
                 for port in ["In", "Out"]:
@@ -107,7 +111,7 @@ class ComponentTypeMixin(BaseComponentTypeMixin):
                         other_pipe = pipes_map[other_pipe_port]
                         if f"{other_pipe}.Q" not in alias_relation.canonical_variables:
                             alias_relation.add(f"{p}.Q", f"{sign_prefix}{other_pipe}.Q")
-                if self.has_related_pipe(p):
+                if self.has_related_pipe(p) and has_pipe_flow_direction:
                     cold_pipe = self.hot_to_cold_pipe(p)
                     alias_relation.add(f"{p}.__flow_direct_var", f"{cold_pipe}.__flow_direct_var")
 
