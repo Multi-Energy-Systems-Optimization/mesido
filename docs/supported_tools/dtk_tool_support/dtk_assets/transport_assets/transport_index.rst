@@ -1,7 +1,7 @@
 Transport Assets
 ==================
 
-In DTK transport assets are used transfer heat from one asset to other.
+In DTK transport assets are used transfer heat from one asset to another.
 
 The following transport assets are supported in DTK:
 

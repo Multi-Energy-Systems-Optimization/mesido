@@ -1,9 +1,8 @@
 DTK Assets
 ==========
 
-Energy assets can be subdivided into 5 different types, the so called ESDL capabilities.
-
-The following table shows some examples of each capability with its icon:
+Energy assets supported by MESIDO in the DTK are grouped into five different categories, represented by the MapEditor
+icons shown below:
 
 .. |icon_heat_producer| image:: images_dtk_assets/asset_icon_HeatProducer.png
    :width: 24px
@@ -38,12 +37,12 @@ The following table shows some examples of each capability with its icon:
 .. |icon_pipe| image:: images_dtk_assets/asset_icon_Pipe.png
    :width: 24px
 
-.. list-table:: DTK Supported Asset Icons
+.. list-table:: Overview of DTK supported assets
    :widths: 2 1 20
    :header-rows: 1
 
    * - ESDL Asset Types
-     - Example Icons
+     - MapEditor icons
      - ESDL Asset Class
    * - Producer
      - |icon_geothermal_source| |icon_residual_heat_source| |icon_heat_producer|
@@ -62,7 +61,8 @@ The following table shows some examples of each capability with its icon:
      - HeatExchange, Pipe
 
 
-The following sections provide an overview of all assets supported by DTK, grouped according to their ESDL capability.
+The following sections describe the assets supported by MESIDO in the DTK, including their relevant properties,
+attribute inputs, constraints and assumptions.
 
 .. toctree::
    :maxdepth: 2

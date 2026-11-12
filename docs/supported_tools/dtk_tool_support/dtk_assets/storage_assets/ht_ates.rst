@@ -1,8 +1,8 @@
-HT-ATES (high)
+HT-ATES
 --------------
 High-temperature aquifer thermal energy storage (HT-ATES) is used to model underground heat storage doublets.
 
-HT-ATES (high) Asset Attributes
+HT-ATES Asset Attributes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The following table provides an overview of the relevant attributes for this asset, including their configuration in the
 front end and their interpretation and use by the optimizer.

@@ -1,37 +1,47 @@
 DTK Workflows
 =========
 
-This page eleborates on the available Design Toolkit workflows...
+This page elaborates on the available Design Toolkit optimization workflows that are supported by MESIDO:
 
-To run an Omotes workflow over the ESDL, just click on "External ESDL Services..." from "Services" and select "Omotes" to open.
+* :ref:`draft_design_quickscan_validation-section`
+* :ref:`draft_design_optimization-section`
+* :ref:`draft_design_optimization_eac-section`
+* :ref:`draft_design_quickscan_validation_gurobi-section`
+* :ref:`draft_design_optimization_gurobi-section`
+* :ref:`draft_design_optimization_eac_gurobi-section`
+
+
+These supported workflows are available through Omotes in the ESDL MapEditor, which is accessed as follows:
 
 .. _image_omotes_workflow_access:
 .. figure:: ../images/omotes_workflow_access.png
     :figwidth: 5in
     :align: center
 
-    Accessing to the Omotes workflows.
+    Accessing Omotes.
 
-Then give a name to the run and select the desired workflow from the list of available workflows and click "Start model run" to start the workflow.
+The available workflows can be selected from the Omotes workflow selection menu, as shown below:
 
 .. _image_omotes_workflows:
 .. figure:: ../images/omotes_workflows.png
     :figwidth: 3in
     :align: center
 
-    Omotes workflows.
+    Available workflows.
+
+
+The individual workflows are described in the sections below.
 
 .. _draft_design_quickscan_validation-section:
 Draft Design - Quickscan Validation
 -----------------------------------
 
-"Draft Design - Quickscan Validation" workflow is designed to optimize the ESDL of a heating network excluding the heat
+"Draft Design - Quickscan Validation" workflow is designed to optimize a heating network excluding the heat
 losses in the network. This allows for a much faster optimization than other optimization workflows. It is suggested to
-be used in the initial design phase of the large networks for fast iterations. The optimization objective function
-includes the total CAPEX and OPEX of all enabled assets, as well as the OPEX of optional assets.This workflow uses
-`HiGHS <https://highs.dev//>`_ as the optimization solver.
+be used in the initial design phase of the large networks for fast iterations and/or debugging potential errors in the
+input ESDL file in a shorter time-frame. The optimization objective function includes the total OPEX of all assets and CAPEX of selected optional assets. This workflow uses `HiGHS <https://highs.dev//>`_ as the optimization solver.
 
-Details on the cost calculation and workflow are discussed in :ref:`regular-cost-section` and
+For more details regarding this workflow and the cost aspects used in the workflow see :ref:`regular-cost-section` and
 :ref:`end_scenario_sizing_no_heat_loss-section` section, respectively.
 
 
@@ -39,11 +49,11 @@ Details on the cost calculation and workflow are discussed in :ref:`regular-cost
 Draft Design - Optimization
 -----------------------------------
 
-"Draft Design - Optimization" workflow is designed to optimize the ESDL of a heating network. The optimization objective
-function includes the total CAPEX and OPEX of all enabled assets, as well as the OPEX of optional assets. This workflow
-uses `HiGHS <https://highs.dev//>`_ as the optimization solver.
+"Draft Design - Optimization" workflow is designed to optimize a heating network. The optimization objective function
+includes the total OPEX of all assets and CAPEX of selected optional assets. This workflow uses
+`HiGHS <https://highs.dev//>`_ as the optimization solver.
 
-Details on the cost calculations and workflow are discussed in :ref:`regular-cost-section` and
+For more details regarding this workflow and the cost aspects used in the workflow see :ref:`regular-cost-section` and
 :ref:`end_scenario_sizing-section` sections, respectively.
 
 
@@ -51,18 +61,19 @@ Details on the cost calculations and workflow are discussed in :ref:`regular-cos
 Draft Design - Optimization - EAC
 -----------------------------------
 
-"Draft Design - Optimization - EAC"  workflow is designed to optimize the ESDL of a heating network. The optimization objective function
-includes the Equivalent Annual Cost (EAC) of CAPEX and OPEX of all enabled assets, as well as EAC of the OPEX of optional
-assets. This workflow uses `HiGHS <https://highs.dev//>`_ as the optimization solver.
+"Draft Design - Optimization - EAC"  workflow is designed to optimize a heating network. The optimization objective
+function includes the total the Equivalent Annual Cost (EAC) of OPEX of all assets and the Equivalent Annual Cost (EAC)
+of CAPEX of selected optional assets. This workflow uses `HiGHS <https://highs.dev//>`_ as the optimization solver.
 
-Additional details on the annualized cost calculations and workflow are discussed in the :ref:`discounted-cost-section`
+For more details regarding this workflow and the cost aspects used in the workflow see :ref:`discounted-cost-section`
 and :ref:`end_scenario_sizing_discounted-section` sections, respectively.
 
 
+.. _draft_design_quickscan_validation_gurobi-section:
 Draft Design - Quickscan Validation - Gurobi
 --------------------------------------------
 
-"Draft Design - Quickscan Validation - Gurobi" workflow is designed to optimize the ESDL of a heating network. Problem
+"Draft Design - Quickscan Validation - Gurobi" workflow is designed to optimize a heating network. Problem
 formulation and the objective function are the same as in the :ref:`draft_design_quickscan_validation-section` workflow.
 The difference is that this workflow uses `Gurobi Optimizer <https://www.gurobi.com/>`_ as the optimization solver.
 
@@ -70,22 +81,25 @@ Due to limited availability of Gurobi licenses, this workflow is recommended to 
 other optimization workflows take too long to converge.
 
 
-Draft Design - Optimization - EAC - Gurobi
---------------------------------------------------
+.. _draft_design_optimization_gurobi-section:
+Draft Design - Optimization - Gurobi
+--------------------------------------------
 
-"Draft Design - Optimization - EAC - Gurobi" workflow is designed to optimize the ESDL of a heating network. Problem formulation
-and the objective function are the same as in the :ref:`draft_design_optimization_eac-section` workflow. The difference is that
-this workflow uses `Gurobi Optimizer <https://www.gurobi.com/>`_ as the optimization solver.
+"Draft Design - Optimization - Gurobi" workflow is designed to optimize a heating network. Problem
+formulation and the objective function are the same as in the :ref:`draft_design_optimization-section` workflow.
+The difference is that this workflow uses `Gurobi Optimizer <https://www.gurobi.com/>`_ as the optimization solver.
 
 Due to limited availability of Gurobi licenses, this workflow is recommended to be used only for very large networks where
 other optimization workflows take too long to converge.
 
 
-Conceptual Design - Simulation
-------------------------------
+.. _draft_design_optimization_eac_gurobi-section:
+Draft Design - Optimization - EAC - Gurobi
+--------------------------------------------------
 
-"Conceptual Design - Simulation" workflow is designed to simulate the operation of a heating network over a user defined
-time period and timestep. The simulation is based on the assets and their properties as defined in the ESDL.
-All the assets in the input ESDL must be ENABLED. Resulting ESDLs of the optimization workflows can be used as an input
-ESDL in this workflow. The simulation will return the time series of all the relevant outputs, such as thermal power,
-flow rates, temperatures, etc. for all the assets in the system.
+"Draft Design - Optimization - EAC - Gurobi" workflow is designed to optimize a heating network. Problem formulation
+and the objective function are the same as in the :ref:`draft_design_optimization_eac-section` workflow. The difference is that
+this workflow uses `Gurobi Optimizer <https://www.gurobi.com/>`_ as the optimization solver.
+
+Due to limited availability of Gurobi licenses, this workflow is recommended to be used only for very large networks where
+other optimization workflows take too long to converge.
