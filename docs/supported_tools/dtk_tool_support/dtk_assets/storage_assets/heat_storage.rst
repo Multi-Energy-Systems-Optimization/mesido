@@ -1,0 +1,132 @@
+Heat Storage: Surface Tank Storage
+----------------------------------
+A surface tank heat storage asset stores thermal energy as hot water for later discharge into the heat network.
+
+Surface Tank Storage Asset Attributes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The following table provides an overview of the relevant attributes for this asset, including their configuration in the
+front end and their interpretation and use by the optimizer.
+
+.. list-table:: Asset Attributes
+   :widths: 35 25 60 25 25 70
+   :header-rows: 1
+
+   * - ESDL attribute category
+     - ESDL attribute
+     - Definition
+     - Units
+     - Required/Optional
+     - Optimizer use
+   * - Basic attributes
+     - Name
+     - Asset unique name
+     - \-
+     - Required
+     - \-
+   * - Basic attributes
+     - State
+     - States if the asset is ENABLED or OPTIONAL
+     - \-
+     - Required
+     - ENABLED:
+       use the specific asset with all its specified attributes
+
+       OPTIONAL:
+       allows the optimizer to determine if the asset is required
+       (if not then it will be removed from the network), else if
+       the asset is required then it will be sized appropriately
+   * - Basic attributes
+     - Technical Lifetime
+     - Operational lifetime of the asset (default=30, min=1, max 50)
+     - Years
+     - Optional
+     - \-
+   * - Basic attributes
+     - Capacity
+     - The maximum amount of heat that can be stored.
+     - Joule
+     - Optional
+     - This is the maximum heat that can be stored in the storage. If both
+       capacity and volume are specified, then only the volume will be used.
+   * - Basic attributes
+     - Max Charge Rate
+     - Maximum amount of heat that can be consumed.
+     - W
+     - Optional
+     - If nothing is specified, the optimizer currently uses 10e6.
+   * - Basic attributes
+     - Max Discharge Rate
+     - Maximum amount of heat that can be delivered.
+     - W
+     - Optional
+     - If nothing is specified, the optimizer currently uses 10e6.
+   * - Advanced attributes
+     - Volume
+     - Size of the heat storage in terms of volume with a radius = height.
+     - :math:`\mathrm{m^{3}}`
+     - Required
+     - The volume is used to determine the maximum heat capacity that can be
+       stored with the implied :math:`\mathrm{\Delta T = T_{In} - T_{Out}}`. If both capacity and volume
+       are specified, then only the volume will be used.
+   * - Advanced attributes
+     - Self Discharge Rate
+     - Heat loss at the maximum heat storage capacity (the default value makes the heat loss 1% of the stored heat per day).
+     - W
+     - Optional
+     - Self discharge rate is used to calculate the heat loss coefficient.
+   * - Ports
+     - Inport and OutPort (1 of each)
+     - The in port and the out port for the asset should be connected 1 hydraulically coupled network.
+
+       Each port must have a carrier assigned to it.
+
+       Port naming convention required: In & Out.
+
+       :math:`\mathrm{T_{In} > T_{Out}}`
+     - \-
+     - Required
+     - \-
+   * - Cost Information
+     - Investment Costs
+     - CAPEX: Once-off cost linked to the size of the asset
+     - :math:`\mathrm{EUR / m^{3}}`
+     - Required
+     - \-
+   * - Cost Information
+     - Installation Costs
+     - CAPEX: Once-off cost
+     - EUR
+     - Required
+     - \-
+   * - Cost Information
+     - Fixed Maintenance Costs
+     - OPEX: Cost per year linked to the size (volume) of the asset
+     - :math:`\mathrm{EUR / m^{3} / yr}`
+     - Optional
+     - \-
+   * - Cost Information
+     - Fixed Operational Costs
+     - OPEX: Cost per year linked to the size (volume) of the asset
+     - :math:`\mathrm{EUR / m^{3} / yr}`
+     - Optional
+     - \-
+
+Surface Tank Storage from EDR Assets
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The Design Toolkit also provides access to predefined configurations of this asset type, with the required input
+settings, including benchmark cost values, already assigned. More information on these configurations is available in
+the `ESDL Energy Data Repository (EDR) <https://edr.hesi.energy/>`_.
+
+* `HeatStorage: Surface tank storage <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FDistrict%20heating%20and%20cooling%20networks%2FSurface%20tank%20storage.edd>`_
+
+Constraints
+^^^^^^^^^^^
+No assets specific constraints are defined for the surface tank storage asset.
+
+Assumptions
+^^^^^^^^^^^
+* The temperature at the inport must be higher than the temperature at the outport (:math:`\mathrm{T_{In} > T_{Out}}`).
+* If both capacity and volume are specified, the volume definition takes precedence.
+* If the maximum charge or discharge rate is not specified, the optimizer uses a default of :math:`10e6\,\mathrm{W}`.
+* The heat physics described for the storage and tank in :ref:`heat_physics_storage` and :ref:`heat_physics_storage_tank` sections applies to the surface tank storage asset.
+* The heat loss coefficient is the fraction of stored heat lost per second and obtained by dividing the self discharge rate by the maximum heat storage capacity. Its default value corresponds to a loss of 1% of the stored heat per day.

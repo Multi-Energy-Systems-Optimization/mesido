@@ -1,0 +1,133 @@
+Gas Heater
+----------
+Gas heater is used to transfer heat to heat network by converting gas heat into heat through combustion.
+
+Gas Heater Asset Attributes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The following table provides an overview of the relevant attributes for this asset, including their configuration in the
+front end and their interpretation and use by the optimizer.
+
+.. list-table:: Asset Attributes
+   :widths: 35 25 60 25 25 70
+   :header-rows: 1
+
+   * - ESDL attribute category
+     - ESDL attribute
+     - Definition
+     - Units
+     - Required/Optional
+     - Optimizer use
+   * - Basic attributes
+     - Name
+     - Asset unique name
+     - \-
+     - Required
+     - \-
+   * - Basic attributes
+     - State
+     - States if the asset is ENABLED or OPTIONAL
+     - \-
+     - Required
+     - ENABLED:
+       use the specific asset with all its specified attributes
+
+       OPTIONAL:
+       allows the optimizer to determine if the asset is required
+
+       (if not then it will be removed from the network), else if
+
+       the asset is required then it will be sized appropriately
+
+   * - Basic attributes
+     - Technical Lifetime
+     - Operational lifetime of the asset (default=30, min=1, max 50)
+     - Years
+     - Optional
+     - Once-off costs occur once per lifetime span
+   * - Basic attributes
+     - Power
+     - Size of the heat pump in terms electical power input.
+
+       Must be > 0.0
+     - Watts
+     - Required
+     - If state=OPTIONAL: the Power is used as the upper limit for sizing the asset
+
+   * - Basic attributes
+     - Efficiency
+     - The efficiency of the conversion of commodity to the heat.
+
+       Heat loss in the asset = Efficiency - 1.0.
+
+       (default=1.0, min=0.0, max=1.0).
+     - \-
+     - Optional
+     - Default value of Efficiency is 1.0 in optimizer if nothing is specified in the ESDL
+
+   * - Ports
+     - Inport and OutPort (1 of each)
+     - 1 inport and 1 outport for  the heat (production) side.
+
+       The heat producing should be connected to 1 hydraulically coupled network.
+
+       Each port must have a carrier assigned to it.
+
+       Port naming convention required: In & Out
+
+       The heat producing side:  :math:`T_{Out} > T_{In}`
+     - \-
+     - Required
+     - \-
+   * - Cost Information
+     - Investment Costs
+     - CAPEX: Once-off cost linked to the size (heat produced) of the asset
+     - EUR/MW or
+       EUR/kW
+     - Required
+     - \-
+   * - Cost Information
+     - Installation Costs
+     - CAPEX: Once-off cost
+     - EUR
+     - Required
+     - \-
+   * - Cost Information
+     - Variable Operational Costs
+     - OPEX: Cost linked to the normal-volume of the consumed gas over time
+     - EUR/m3
+     - Required
+     - \-
+   * - Cost Information
+     - Fixed Maintenance Costs
+     - OPEX: Cost per year linked to the size (heat produced)  of the asset
+     - EUR/MW or EUR/MW/yr or
+
+       EUR/kW or EUR/kW/yr
+     - Optional
+     - \-
+   * - Cost Information
+     - Fixed Operational Costs
+     - OPEX: Cost per year linked to the size  (heat produced)  of the asset
+     - EUR/MW or EUR/MW/yr or
+
+       EUR/kW or EUR/kW/yr
+     - Optional
+     - \-
+
+
+Gas Heater from EDR Assets
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The Design Toolkit also provides access to predefined configurations of this asset type, with the required input
+settings, including benchmark cost values, already assigned. More information on these configurations is available in
+the `ESDL Energy Data Repository (EDR) <https://edr.hesi.energy/>`_.
+
+* `GasHeater: Gas boiler <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FDistrict%20heating%20and%20cooling%20networks%2FGas%20boiler.edd>`_
+
+Constraints
+^^^^^^^^^^^
+No assets specific constraints are defined for the gas heater.
+
+Assumtions
+^^^^^^^^^^
+* The gas heater operates with an efficiency that is constant over time. Efficiency is equal to the ratio of thermal power output to gas (fuel) power input.
+* It behaves as a source asset, and the physics described for source assets in the :ref:`heat_physics_source` section applies to the gas heater.

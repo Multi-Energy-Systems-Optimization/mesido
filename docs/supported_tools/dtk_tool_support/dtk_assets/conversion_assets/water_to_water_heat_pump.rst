@@ -1,0 +1,151 @@
+Water to Water Heat Pump
+------------------------
+Water-to-water heat pump is used to transfer heat from a lower temperature water source (i.e. lower temperature heat network)
+to a higher temperature water sink (i.e. higher temperature heat network) by converting electrical energy into heat.
+
+
+Water-to-Water Heat Pump Asset Attributes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The following table provides an overview of the relevant attributes for this asset, including their configuration in
+the front end and their interpretation and use by the optimizer.
+
+.. list-table:: Asset Attributes
+   :widths: 35 25 60 25 25 70
+   :header-rows: 1
+
+   * - ESDL attribute category
+     - ESDL attribute
+     - Definition
+     - Units
+     - Required/Optional
+     - Optimizer use
+   * - Basic attributes
+     - Name
+     - Asset unique name
+     - \-
+     - Required
+     - \-
+   * - Basic attributes
+     - State
+     - States if the asset is ENABLED or OPTIONAL
+     - \-
+     - Required
+     - ENABLED:
+       use the specific asset with all its specified attributes
+
+       OPTIONAL:
+       allows the optimizer to determine if the asset is required
+
+       (if not then it will be removed from the network), else if
+
+       the asset is required then it will be sized appropriately"
+
+   * - Basic attributes
+     - Technical Lifetime
+     - Operational lifetime of the asset (default=30, min=1, max 50)
+     - Years
+     - Optional
+     - Once-off costs occur once per lifetime span
+   * - Basic attributes
+     - Power
+     - Size of the heat pump in terms electical power input.
+
+       Must be > 0.0
+     - Watts
+     - Required
+     - The electrical power capacity is used in conjuction with the COP
+
+       to determine the heat produced on the heat pump secondary side
+
+       If state=OPTIONAL: the Power is used as the upper limit for sizing the asset
+
+   * - Basic attributes
+     - COP
+     - Coefficient of performance of the heat pump
+     - \-
+     - Required
+     - See heat pump Power attribute
+   * - Ports
+     - Inport and OutPort (2 of each)
+     - Both the primary and secondary sides of heat pump have in-port
+
+       and out-port.
+
+       Required port naming convention is PrimIn, PrimOut, SecIn, SecOut.
+
+       The primary and secondary side should be connected to hydraulically
+
+       decoupled networks.
+
+       Each port must have a carrier assigned to it.
+
+       Required carrier temperatures are :math:`T_{PrimIn} > T_{PrimOut}`
+
+       & :math:`T_{SecOUT} > T_{SecIN}`
+     - \-
+     - Required
+     - Heat is transferred from the primary side to the secondary side
+
+       (2 hydraulically decoupled networks).
+   * - Cost Information
+     - Investment Costs
+     - CAPEX: Once-off cost linked to the size (secondary heat produced) of the asset
+     - EUR/MW
+     - Required
+     - \-
+   * - Cost Information
+     - Installation Costs
+     - CAPEX: Once-off cost
+     - EUR
+     - Required
+     - \-
+   * - Cost Information
+     - Variable Operational Costs
+     - OPEX: cost linked to electrical power consumption over time of the asset
+     - EUR/MWh
+     - Required
+     - \-
+   * - Cost Information
+     - Fixed Maintenance Costs
+     - OPEX: Cost per year linked to the size (secondary heat produced)  of the asset
+     - EUR/MW or EUR/MW/yr or
+
+       EUR/kW or EUR/kW/yr
+     - Optional
+     - \-
+   * - Cost Information
+     - Fixed Operational Costs
+     - OPEX: Cost per year linked to the size  (secondary heat produced)  of the asset
+     - EUR/MW or EUR/MW/yr or
+
+       EUR/kW or EUR/kW/yr
+     - Optional
+     - \-
+
+
+Water-to-Water Heat Pump from EDR Assets
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The Design Toolkit also provides access to predefined configurations of this asset type, with the required input
+settings, including benchmark cost values, already assigned. More information on these configurations is available in
+the `ESDL Energy Data Repository (EDR) <https://edr.hesi.energy/>`_.
+
+* `HeatPump: W-W heatpump T50-dT10 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FDistrict%20heating%20and%20cooling%20networks%2FW-W%20heatpump%20T50-dT10.edd>`_
+* `HeatPump: W-W heatpump T70-dT10 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FDistrict%20heating%20and%20cooling%20networks%2FW-W%20heatpump%20T70-dT10.edd>`_
+* `HeatPump: W-W heatpump T90-dT10 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FDistrict%20heating%20and%20cooling%20networks%2FW-W%20heatpump%20T90-dT10.edd>`_
+* `HeatPump: W-W heatpump T70-dT30 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FDistrict%20heating%20and%20cooling%20networks%2FW-W%20heatpump%20T70-dT30.edd>`_
+* `HeatPump: W-W heatpump T90-dT30 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FDistrict%20heating%20and%20cooling%20networks%2FW-W%20heatpump%20T90-dT30.edd>`_
+
+
+Constraints
+^^^^^^^^^^^
+No assets specific constraints are defined for the water-to-water-heatpump.
+
+
+Assumptions
+^^^^^^^^^^^
+* The primary side of the heat pump must be connected to a hydraulic network with a lower supply temperature. It behaves as a demand asset, and the physics described for demand assets in the :ref:`heat_physics_demand` section applies to the primary side of the heat pump.
+* The secondary side of the heat pump must be connected to a hydraulic network with a higher supply temperature. It behaves as a source asset, and the physics described for source assets in the :ref:`heat_physics_source` section applies to the secondary side of the heat pump.
+* The heat pump operates with a Coefficient of Performance (COP) that is constant over time. COP is equal to the ratio of the secondary heat output to electrical power input. This defines the relationship between the heat input on the primary side and the heat output on the secondary side of the heat pump. The influence of the outside air temperature variations on the COP is not currently taken into account.
+
+.. TODO: Currently primary and secondary sides are referring to physics of demand and source.
+Once heat_physics.rst is updated to include heat pump physics, this should be updated to refer to that section instead.

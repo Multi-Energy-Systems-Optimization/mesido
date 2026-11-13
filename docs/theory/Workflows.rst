@@ -1,9 +1,9 @@
 .. _chp_workflows:
 
-Design Toolkit Workflows
+Generic Workflows
 ========================
 
-This page eleborates on the available Design Toolkit workflows within MESIDO.
+This page eleborates on the available generic workflows in MESIDO that are specifically developed for the Design Toolkit.
 The Design Toolkit is a subsidy funded project (NieuweWarmteNu) to help different organizatons in the district heating value chain with draft and/or conceptual designing of District Heating Systems (DHS).
 For more information see : https://nwn.nu/projecten/innovaties/design-toolkit-warmtenetten/.
 MESIDO is by no means limited to only these workflows, but it is left to the user itself to define the most logical workflow if the ones below are unsuitable.
@@ -27,6 +27,8 @@ This workflow comes in a few variants that give the user the possibility to trad
 * EndScenarioSizingHeadLoss
 * EndScenarioSizingHeadLossDiscounted
 
+
+.. _end_scenario_sizing-section:
 EndScenarioSizing
 ~~~~~~~~~~~~~~~~~
 
@@ -71,6 +73,8 @@ In its default configuration the workflow has the following main assumptions:
 
 For the assumptions on the physics and cost modelling the reader is referred to the respective modelling pages.
 
+
+.. _end_scenario_sizing_no_heat_loss-section:
 EndScenarioSizingNoHeatLosses
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -83,6 +87,7 @@ This workflow will allow the user to make quicker iterations on the input ESDL f
 EndScenarioSizingNoHeatLosses workflow should not be used as a replacement of the EndScenarioSizing workflow as heat losses can be up to 30% of the demand and should not be neglected for design.
 
 
+.. _end_scenario_sizing_discounted-section:
 EndScenarioSizingDiscounted
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
