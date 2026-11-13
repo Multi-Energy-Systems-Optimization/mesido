@@ -175,6 +175,6 @@ Constraints
 Assumptions
 ^^^^^^^^^^^
 * Pipe length is lower-bounded at 25 m; shorter input lengths are treated as 25 m.
+* The pipe heat loss calculation accounts for both the heat transfer from the pipe to the ground and the heat transfer between the supply and return pipes. The latter is taken into account when the return pipes are created with the pipe duplicator, since in that case they are assumed to be laid next to each other and considered as a related pipe pair.
 * If a pipe pair set as related to the each other, pipe sizing is performed over only one of the pipe assets, and the other pipe is sized identically.
-* When a pipe duplicator is used to create the return pipes, both the supply and return pipes become automatically related pipes.
 * The heat physics described for the pipe in :ref:`heat_physics_pipe` section applies to the pipe asset.

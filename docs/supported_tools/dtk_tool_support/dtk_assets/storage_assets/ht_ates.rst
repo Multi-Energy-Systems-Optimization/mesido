@@ -37,7 +37,7 @@ front end and their interpretation and use by the optimizer.
        required then it will be sized appropriately
    * - Basic attributes
      - Technical Lifetime
-     - Operational lifetime of the asset (default=30, min=1, max 50)
+     - Operational lifetime of the asset (default=30, min=1, max=50)
      - Years
      - Optional
      - \-
@@ -60,98 +60,11 @@ front end and their interpretation and use by the optimizer.
      - Required
      - By increasing this number one increases the number of installed ATES doublets.
    * - Advanced attributes
-     - Aquifer Top Depth
-     - The depth of the top of the aquifer (water-bearing permeable rock or
-
-       unconsolidated material) in meters below ground surface
-     - m
-     - Required
-     - NA
-   * - Advanced attributes
-     - Aquifer Thickness
-     - The vertical thickness of the aquifer
-     - m
-     - Required
-     - NA
-   * - Advanced attributes
-     - Aquifer Mid Temperature
-     - The ambient temperature of the aquifer at mid depth
-     - C
-     - Required
-     - NA
-   * - Advanced attributes
-     - Aquifer Net To Gross
-     - The ratio of the total thickness of the aquifer contributing to
-
-       production over the total thickness of the aquifer (usually calculated
-
-       by applying a minimum porosity and maximum clay volume cutoff). The net
-
-       thickness of the aquifer is determined by multiplying the gross thickness
-
-       with the net-to-gross ratio.
+     - Discharge Efficiency
+     - Efficiency of storing heat over a period of 100 days (default = 0.7, min=0, max=1)
      - \-
-     - Required
-     - NA
-   * - Advanced attributes
-     - Aquifer Porosity
-     - The percentage of pore volume or void space within a rock or
-
-       unconsolidated sediment, restricted to those pores that can contribute
-
-       to fluid flow (effective porosity)
-     - %
-     - Required
-     - NA
-   * - Advanced attributes
-     - Aquifer Permeability
-     - The permeability is a measure of the interconnectedness of pores in a
-
-       rock/material. And indicates the ability or ease of a volume of rock to
-
-       transmit fluids.
-     - mD
-     - Required
-     - NA
-   * - Advanced attributes
-     - Aquifer Anisotropy
-     - The directional variation of a property of a volume of rock or
-
-       unconsolidated sand, in this case, the ratio between vertical and
-
-       horizontal permeability.
-     - \-
-     - Required
-     - NA
-   * - Advanced attributes
-     - Salinity
-     - The dissolved salt content in a body of water usually expressed as NaCl
-       equivalent
-     - ppm
-     - Required
-     - NA
-   * - Advanced attributes
-     - Well Casing Size
-     - In ROSIM/DoubletCalc3D, the simulation software behind the ATES module
-
-       (used in the Simulator solver), this means the diameter of the part of
-
-       the well in which the permeability is significantly higher than the
-
-       formation, in this case, the borehole diameter
-     - inch
-     - Required
-     - NA
-   * - Advanced attributes
-     - Well Distance
-     - The well distance is the distance between two wells at storage aquifer
-
-       (reservoir) depth. For HT-ATES, often the distance between the hot and
-
-       cold/warm well.
-     - m
-     - Required
-     - NA
+     - Optional
+     - Discharge efficiency is used to calculate the heat loss coefficient.
    * - Ports
      - Inport and OutPort (1 off each)
      - The in port and the out port for the asset should be connected to 1
@@ -212,3 +125,4 @@ Assumptions
 ^^^^^^^^^^^
 * The temperature at the inport must be higher than the temperature at the outport (:math:`\mathrm{T_{In} > T_{Out}}`).
 * The heat physics described for the storage and tank in :ref:`heat_physics_storage` and :ref:`heat_physics_storage_ates` sections applies to HT-ATES asset.
+* Heat loss coefficient is the fraction of stored heat lost per second and calculated by :math:`\mathrm{\frac{1 - \eta^{1/100}}{3600.0 \times 24.0}\ s^{-1}}`, where :math:`\mathrm{\eta}` is the discharge efficiency. Default value of the heat loss coefficient is equivalent to losing 30% of the stored heat per 100 days.
