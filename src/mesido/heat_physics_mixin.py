@@ -907,14 +907,14 @@ class HeatPhysicsMixin(
                 big_m = []  # big_m for every insulation class
                 nominal = []
                 for pc, pc_var_name in demand_insulation_classes.items():
-                    # Create a demand profile for every insulation level option for this demand
-                    demand_profile_for_this_class.append(
-                        pc.demand_scaling_factor * target_demand.values[: (len(self.times()))]
-                    )
-                    # There might be a large differnece between profiles of different insulation
-                    # classes. Therefor create variables below per profile (per insulation class)
-                    big_m.append(2.0 * max(demand_profile_for_this_class[-1]))
-                    nominal.append(np.median(demand_profile_for_this_class[-1]))
+                    # # Create a demand profile for every insulation level option for this demand
+                    # demand_profile_for_this_class.append(
+                    #     pc.demand_scaling_factor * target_demand.values[: (len(self.times()))]
+                    # )
+                    # # There might be a large differnece between profiles of different insulation
+                    # # classes. Therefor create variables below per profile (per insulation class)
+                    # big_m.append(2.0 * max(demand_profile_for_this_class[-1]))
+                    # nominal.append(np.median(demand_profile_for_this_class[-1]))
 
                     # Create integer variable to activated/deactivate (1/0) a demand insulation
                     is_insulation_active_var = self.extra_variable(pc_var_name, ensemble_member)
@@ -924,11 +924,23 @@ class HeatPhysicsMixin(
                 # per time step for a specific demand
                 for itstep in range(len(target_demand.values[: (len(self.times()))])):
                     is_insulation_active_sum_per_timestep = 0
-                    for iclasses in range(len(demand_profile_for_this_class)):
+                    # for iclasses in range(len(demand_profile_for_this_class)):
+                    for iclasses in range(len(demand_insulation_classes)):
                         is_insulation_active_sum_per_timestep = (
                             is_insulation_active_sum_per_timestep
                             + is_insulation_active[iclasses][itstep]
                         )
+                        # This was missing, but aslo to be removed when ptah variable becomes nromal variable
+                        if itstep > 0:
+                            constraints.append(
+                                (
+                                    is_insulation_active[iclasses][itstep]
+                                    - is_insulation_active[iclasses][0],
+                                    0.0,
+                                    0.0,
+                                )
+                            )
+                    # Below still to be updated
                     constraints.append((is_insulation_active_sum_per_timestep, 1.0, 1.0))
 
                 # # Adding constraints for the entire time horizon per demand insulation
@@ -949,81 +961,81 @@ class HeatPhysicsMixin(
                 )
         return constraints
 
-    def __demand_profile_options_constraints(self, ensemble_member):
-        constraints = []
+    # def __demand_profile_options_constraints(self, ensemble_member):
+    #     constraints = []
 
-        for dmnd in self.energy_system_components["heat_demand"]:
-            heat_demand = self.__state_vector_scaled(f"{dmnd}.Heat_demand", ensemble_member)
-            target_demand = self.get_timeseries(f"{dmnd}.target_heat_demand")
+    #     for dmnd in self.energy_system_components["heat_demand"]:
+    #         heat_demand = self.__state_vector_scaled(f"{dmnd}.Heat_demand", ensemble_member)
+    #         target_demand = self.get_timeseries(f"{dmnd}.target_heat_demand")
 
-            demand_insulation_classes = self.__demand_insulation_class_map[dmnd]
-            is_insulation_active = []
-            demand_profile_for_this_class = []
-            big_m = []  # big_m for every insulation class
-            nominal = []
-            for pc, pc_var_name in demand_insulation_classes.items():
-                # Create a demand profile for every insulation level option for this demand
-                demand_profile_for_this_class.append(
-                    pc.demand_scaling_factor * target_demand.values[: (len(self.times()))]
-                )
-                # There might be a large differnece between profiles of different insulation
-                # classes. Therefor create variables below per profile (per insulation class)
-                big_m.append(2.0 * max(demand_profile_for_this_class[-1]))
-                nominal.append(np.median(demand_profile_for_this_class[-1]))
+    #         demand_insulation_classes = self.__demand_insulation_class_map[dmnd]
+    #         is_insulation_active = []
+    #         demand_profile_for_this_class = []
+    #         big_m = []  # big_m for every insulation class
+    #         nominal = []
+    #         for pc, pc_var_name in demand_insulation_classes.items():
+    #             # Create a demand profile for every insulation level option for this demand
+    #             demand_profile_for_this_class.append(
+    #                 pc.demand_scaling_factor * target_demand.values[: (len(self.times()))]
+    #             )
+    #             # There might be a large differnece between profiles of different insulation
+    #             # classes. Therefor create variables below per profile (per insulation class)
+    #             big_m.append(2.0 * max(demand_profile_for_this_class[-1]))
+    #             nominal.append(np.median(demand_profile_for_this_class[-1]))
 
-                # Create integer variable to activated/deactivate (1/0) a demand insulation
-                is_insulation_active_var = self.extra_variable(pc_var_name, ensemble_member)
-                # The registered path variable already contains one value per timestep.
-                is_insulation_active.append(is_insulation_active_var)
+    #             # Create integer variable to activated/deactivate (1/0) a demand insulation
+    #             is_insulation_active_var = self.extra_variable(pc_var_name, ensemble_member)
+    #             # The registered path variable already contains one value per timestep.
+    #             is_insulation_active.append(is_insulation_active_var)
             
-            for itstep in range(len(target_demand.values[: (len(self.times()))])):
-                # Add constraint to enforce that only 1 demand insulation can be active
-                # per time step for a specific demand
-                is_insulation_active_sum_per_timestep = 0
-                for iclasses in range(len(demand_profile_for_this_class)):
-                    is_insulation_active_sum_per_timestep = (
-                        is_insulation_active_sum_per_timestep
-                        + is_insulation_active[iclasses][itstep]
-                    )
+    #         for itstep in range(len(target_demand.values[: (len(self.times()))])):
+    #             # Add constraint to enforce that only 1 demand insulation can be active
+    #             # per time step for a specific demand
+    #             is_insulation_active_sum_per_timestep = 0
+    #             for iclasses in range(len(demand_profile_for_this_class)):
+    #                 is_insulation_active_sum_per_timestep = (
+    #                     is_insulation_active_sum_per_timestep
+    #                     + is_insulation_active[iclasses][itstep]
+    #                 )
 
-                constraints.append((is_insulation_active_sum_per_timestep, 1.0, 1.0))
+    #             constraints.append((is_insulation_active_sum_per_timestep, 1.0, 1.0))
                 
-                # # Add consstraints to linearize z_t = b * x_t 
-                # # z_t -> heat demand variable being solved
-                # # z_t = b * x_t -> linearized
-                # # L <= x_t <= U 
-                # # z_t <= Ub
-                # # z_t >= Lb
-                # # z_t <= x_t - L(1-b)
-                # # z_t >= x_t - U(1-b)
-                # # below still to be moved outside loop
-                # max_demand_value = max(demand_profile_for_this_class[iclasses][: (len(self.times()))])
-                # min_demand_value = min(demand_profile_for_this_class[iclasses][: (len(self.times()))])
+    #             # # Add consstraints to linearize z_t = b * x_t 
+    #             # # z_t -> heat demand variable being solved
+    #             # # z_t = b * x_t -> linearized
+    #             # # L <= x_t <= U 
+    #             # # z_t <= Ub
+    #             # # z_t >= Lb
+    #             # # z_t <= x_t - L(1-b)
+    #             # # z_t >= x_t - U(1-b)
+    #             # # below still to be moved outside loop
+    #             # max_demand_value = max(demand_profile_for_this_class[iclasses][: (len(self.times()))])
+    #             # min_demand_value = min(demand_profile_for_this_class[iclasses][: (len(self.times()))])
         
-                # # z_t <= U * b_t
-                # # constraints.append(
-                # #     (z - U * b, -np.inf, 0.0)
-                # # )
-                # constraints.append(
-                #     (heat_demand[itstep] - max_demand_value * is_insulation_active[iclasses][itstep], -np.inf, 0.0)
-                # )
-                # # z_t >= L * b_t
-                # constraints.append(
-                #     # (z - L*b_T, 0.0, np.inf)
-                #     (heat_demand[itstep] - min_demand_value * is_insulation_active[iclasses][itstep], 0.0, np.inf)
-                # )
-                # # z_t <= x_t - L * (1-b_t)
-                # constraints.append(
-                #     # (z - x + L * (1 - b), -np.inf, 0.0)
-                #     (heat_demand[itstep] - demand_profile_for_this_class[iclasses][itstep] + min_demand_value * (1 - is_insulation_active[iclasses][itstep]), -np.inf, 0.0)
-                # )
-                # # z_t >= x_t - U*(1-b_t)
-                # constraints.append(
-                #     # (z - x + U * (1 - b), 0.0, np.inf)
-                #     (heat_demand[itstep] - demand_profile_for_this_class[iclasses][itstep] + max_demand_value * (1 - is_insulation_active[iclasses][itstep]), 0.0, np.inf)
-                # )
+    #             # # z_t <= U * b_t
+    #             # # constraints.append(
+    #             # #     (z - U * b, -np.inf, 0.0)
+    #             # # )
+    #             # constraints.append(
+    #             #     (heat_demand[itstep] - max_demand_value * is_insulation_active[iclasses][itstep], -np.inf, 0.0)
+    #             # )
+    #             # # z_t >= L * b_t
+    #             # constraints.append(
+    #             #     # (z - L*b_T, 0.0, np.inf)
+    #             #     (heat_demand[itstep] - min_demand_value * is_insulation_active[iclasses][itstep], 0.0, np.inf)
+    #             # )
+    #             # # z_t <= x_t - L * (1-b_t)
+    #             # constraints.append(
+    #             #     # (z - x + L * (1 - b), -np.inf, 0.0)
+    #             #     (heat_demand[itstep] - demand_profile_for_this_class[iclasses][itstep] + min_demand_value * (1 - is_insulation_active[iclasses][itstep]), -np.inf, 0.0)
+    #             # )
+    #             # # z_t >= x_t - U*(1-b_t)
+    #             # constraints.append(
+    #             #     # (z - x + U * (1 - b), 0.0, np.inf)
+    #             #     (heat_demand[itstep] - demand_profile_for_this_class[iclasses][itstep] + max_demand_value * (1 - is_insulation_active[iclasses][itstep]), 0.0, np.inf)
+    #             # )
 
-        return constraints
+    #     return constraints
     
     def __pipe_rate_heat_change_constraints(self, ensemble_member):
         """
@@ -3761,8 +3773,8 @@ class HeatPhysicsMixin(
         constraints.extend(self.__pipe_rate_heat_change_constraints(ensemble_member))
 
         if self.energy_system_options()["include_demand_insulation_options"]:
-            # constraints.extend(self.__heat_matching_demand_insulation_constraints(ensemble_member))
-            constraints.extend(self.__demand_profile_options_constraints(ensemble_member))
+            constraints.extend(self.__heat_matching_demand_insulation_constraints(ensemble_member))
+            # constraints.extend(self.__demand_profile_options_constraints(ensemble_member))
 
         constraints.extend(self.__ates_max_stored_heat_constraints(ensemble_member))
         constraints.extend(

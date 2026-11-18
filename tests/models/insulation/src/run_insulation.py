@@ -5,6 +5,7 @@ from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.techno_economic_mixin import TechnoEconomicMixin
+from mesido.workflows.goals.demand_options_goals import TargetDemandAlternativesGoal
 
 import casadi as ca
 import numpy as np
@@ -155,47 +156,27 @@ class HeatProblem(
                 is_insulation_class_active_list = []
                 demand_profile_for_this_class = []
                 is_insulation_class_active_name_list = []
+                scaling_factor = {
+                    "measure_asset_id_1": 0.6, "measure_asset_id_2": 0.9, "measure_asset_id_3": 1.0
+                }
                 for pc, pc_var_name in demand_insulation_classes.items():
                     target_demand = self.get_timeseries(f"{demand}.target_heat_demand")
-                    
-                    demand_profile_for_this_class.append(
-                        Timeseries(
-                            target_demand.times[: len(self.times())],
-                            pc.demand_scaling_factor * target_demand.values[: len(self.times())],
-                        )
+                    profile_times = self.times()
+                    new_profile = Timeseries(
+                        profile_times,
+                        scaling_factor[pc.demand_scaling_factor] * target_demand.values[: len(profile_times)]
                     )
-                    target = demand_profile_for_this_class[-1]
-                    # target += demand_profile_for_this_class[-1]
+                    demand_profile_for_this_class.append(new_profile) # with profile stored instead of factor
+                    is_insulation_class_active_name_list.append(pc_var_name)
 
+                    target = demand_profile_for_this_class[-1]
                     if bounds[f"{demand}.HeatIn.Heat"][1] < max(target.values):
                         logger.warning(
                             f"{demand} has a flow limit, {bounds[f'{demand}.HeatIn.Heat'][1]}, "
                             f"lower than what is required for the maximum demand {max(target.values)}"
                         )
 
-                    # for itstep in range(len(demand_profile_for_this_class[iclasses])):
-                    #     constraints.extend(
-                    #         self._symmetric_big_m_constraints(
-                    #             heat_demand[itstep]
-                    #             - demand_profile_for_this_class[iclasses][itstep],
-                    #             big_m[iclasses] * (1.0 - is_insulation_active[iclasses][itstep]),
-                    #             nominal[iclasses],
-                    #         )
-                    #     )
-
-                    # is_insulation_class_active = self._HeatPhysicsMixin__demand_insulation_class_var[pc_var_name]
-                    # is_insulation_class_active_list.append(
-                    #     ca.repmat(
-                    #         is_insulation_class_active,
-                    #         len(target_demand.values[: (len(self.times()))]),
-                    #     )
-                    # )
-                    # still to multilpy by the normol self.variable_nominal(f"{asset}.Power_consumed"), to replicate is_insulation_active_var = self.extra_variable(pc_var_name, ensemble_member)
-
-                    is_insulation_class_active_name_list.append(pc_var_name)
-
-                    # goals.append(TargetHeatGoal(state, demand_profile_for_this_class[-1]))
-                goals.append(TargetHeatGoal(state, demand_profile_for_this_class, is_insulation_class_active_name_list))
+                goals.append(TargetDemandAlternativesGoal(state, demand_profile_for_this_class, is_insulation_class_active_name_list))
 
         return goals
 
@@ -217,10 +198,11 @@ class HeatProblem(
 
     def insulation_levels(self):
         attributes = {
-            "insulation_level": ["A", "B", "C"],
-            "scaling_factor": [0.5, 0.1, 1.0],
-            "Tmin_deg": [50, 60, 70],
-            "insulation_cost_euro": [5.0e6, 2.0e6, 1.0e6],
+            "insulation_level": ["measure_id_1", "measure_id_2", "measure_id_3"], # -> this can be the measure_id
+            "scaling_factor": ["measure_asset_id_1", "measure_asset_id_2", "measure_asset_id_3"],
+            # [0.6, 0.9, 1.0],  # -> this can become the actual profiles instead of factors or the measure_asset_id-> can be used to get the profile from self._ESDLMixin__profile_reader._profiles[0][f"{measure_asset_id}.target_heat_demand"].value
+            "Tmin_deg": [50, 60, 70],  # -> propery for the demand_alternative
+            "insulation_cost_euro": [5.0e6, 2.0e6, 1.0e6],  # -> propery for the demand_alternative
         }
         return attributes
 

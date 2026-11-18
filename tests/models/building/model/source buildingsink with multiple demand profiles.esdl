@@ -78,7 +78,7 @@
                 </fixedMaintenanceCosts>
               </costInformation>
               <port xsi:type="esdl:InPort" id="5742f582-ad5c-4355-9dce-b2617e8540a6" name="NewInPort">
-                <profile xsi:type="esdl:InfluxDBProfile" id="cbdbcc7a-0f2a-4238-8170-eb263f7e5f11" database="energy_profiles" endDate="2019-12-31T22:00:00.000000+0000" field="SpaceHeat&amp;HotWater_PowerProfile_2000_2010" host="https://profiles.warmingup.info" measurement="Space Heat default profiles" startDate="2018-12-31T23:00:00.000000+0000">
+                <profile xsi:type="esdl:InfluxDBProfile" multiplier="5.0" id="cbdbcc7a-0f2a-4238-8170-eb263f7e5f11" database="energy_profiles" endDate="2019-12-31T22:00:00.000000+0000" field="SpaceHeat&amp;HotWater_PowerProfile_2000_2010" host="https://profiles.warmingup.info" measurement="Space Heat default profiles" startDate="2018-12-31T23:00:00.000000+0000">
                   <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="187a5e7a-8abb-40d9-9714-006b2a06551b" unit="WATT" multiplier="MEGA" physicalQuantity="POWER"/>
                 </profile>
               </port>
@@ -109,7 +109,7 @@
             </asset>
             <asset xsi:type="esdl:HeatingDemand" id="ebe5a192-b10c-441a-b212-f54b0814d378" name="HeatingDemandProf_2">
               <port xsi:type="esdl:InPort" id="d95d4742-0805-4bde-ac62-5dd98642fad3" name="NewInPort">
-                <profile xsi:type="esdl:InfluxDBProfile" id="9536a006-86e2-4f64-94c6-bb29a1701d6b" name="NewInfluxDBProfile" database="energy_profiles" endDate="2019-12-31T22:00:00.000000+0000" field="SpaceHeat&amp;HotWater_PowerProfile_2000_2010" host="https://profiles.warmingup.info" measurement="Space Heat default profiles" startDate="2018-12-31T23:00:00.000000+0000">
+                <profile xsi:type="esdl:InfluxDBProfile" multiplier="4.0" id="9536a006-86e2-4f64-94c6-bb29a1701d6b" name="NewInfluxDBProfile" database="energy_profiles" endDate="2019-12-31T22:00:00.000000+0000" field="SpaceHeat&amp;HotWater_PowerProfile_2000_2010" host="https://profiles.warmingup.info" measurement="Space Heat default profiles" startDate="2018-12-31T23:00:00.000000+0000">
                   <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="60a1176c-bce3-49f8-beac-47e49155ce24" unit="WATT" multiplier="MEGA" physicalQuantity="POWER"/>
                 </profile>
               </port>
