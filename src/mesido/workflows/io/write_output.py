@@ -7,8 +7,9 @@ import sys
 import traceback
 import uuid
 from collections import OrderedDict
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any, Callable, Dict, List, Union
 
 import esdl
 from esdl.profiles.datatableprofilemanager import DataTableProfileManager
@@ -41,6 +42,159 @@ from rtctools.optimization.timeseries import Timeseries
 logger = logging.getLogger("mesido")
 
 OUTPUT_TIMESERIESPROFILE_TIME_STEP_SECONDS = 3600
+
+_OUTPUT_PROFILE_ASSET_TYPES = (
+    "heat_source",
+    "heat_demand",
+    "heat_pipe",
+    "gas_pipe",
+    "heat_buffer",
+    "ates",
+    "heat_exchanger",
+    "heat_pump",
+    "airco",
+)
+_SIZING_PLACEMENT_ASSET_TYPES = (
+    "heat_source",
+    "ates",
+    "heat_buffer",
+    "heat_pump",
+    "airco",
+    "heat_exchanger",
+)
+_PUMP_POWER_ASSET_TYPES = (
+    "heat_source",
+    "heat_buffer",
+    "ates",
+    "heat_exchanger",
+    "heat_pump",
+    "airco",
+)
+_PIPE_PROFILE_ASSET_TYPES = ("heat_pipe", "gas_pipe")
+_HEAT_PRODUCER_ESDL_TYPES = (
+    "HeatProducer",
+    "GenericProducer",
+    "ResidualHeatSource",
+    "GeothermalSource",
+    "GasHeater",
+    "ElectricBoiler",
+)
+
+
+@dataclass(frozen=True)
+class _OutputProfileVariable:
+    """Keep selection, units and value conversion together for each exported variable.
+
+    Missing metadata intentionally preserves existing exports. Head conversion retains the
+    existing water density of 988 kg/m3; changing physical assumptions is outside this refactor.
+    """
+
+    name: str
+    hydraulic_systems: tuple[int, ...] = (1, 2)
+    sides: tuple[str, ...] = ("primary_carrier_id", "secondary_carrier_id")
+    commodity: str | None = None
+    asset_types: tuple[str, ...] = ()
+    requires_head_losses: bool = False
+    quantity_and_unit: dict[str, Any] | None = None
+    conversion_factor: float = 1.0
+    post_process: Callable[..., Any] | None = None
+    exclude_primary_asset_types: tuple[str, ...] = ()
+
+
+def _output_profile_variables() -> tuple[_OutputProfileVariable, ...]:
+    power = dict(physicalQuantity=esdl.PhysicalQuantityEnum.POWER, unit=esdl.UnitEnum.WATT)
+    pressure = dict(physicalQuantity=esdl.PhysicalQuantityEnum.PRESSURE, unit=esdl.UnitEnum.PASCAL)
+    flow = dict(
+        physicalQuantity=esdl.PhysicalQuantityEnum.FLOW,
+        unit=esdl.UnitEnum.CUBIC_METRE,
+        perTimeUnit=esdl.TimeUnitEnum.SECOND,
+    )
+    return (
+        _OutputProfileVariable("{commodity}In.Q", hydraulic_systems=(1,), quantity_and_unit=flow),
+        _OutputProfileVariable(
+            "Primary.{commodity}In.Q",
+            hydraulic_systems=(2,),
+            sides=("primary_carrier_id",),
+            quantity_and_unit=flow,
+        ),
+        _OutputProfileVariable(
+            "Secondary.{commodity}In.Q",
+            hydraulic_systems=(2,),
+            sides=("secondary_carrier_id",),
+            quantity_and_unit=flow,
+        ),
+        _OutputProfileVariable(
+            "Heat_flow",
+            commodity=NetworkSettings.NETWORK_TYPE_HEAT,
+            quantity_and_unit=power,
+            exclude_primary_asset_types=("heat_pump",),
+        ),
+        _OutputProfileVariable(
+            "Primary_heat",
+            hydraulic_systems=(2,),
+            sides=("primary_carrier_id",),
+            commodity=NetworkSettings.NETWORK_TYPE_HEAT,
+            quantity_and_unit=power,
+        ),
+        _OutputProfileVariable(
+            "Secondary_heat",
+            hydraulic_systems=(2,),
+            sides=("secondary_carrier_id",),
+            commodity=NetworkSettings.NETWORK_TYPE_HEAT,
+            quantity_and_unit=power,
+        ),
+        _OutputProfileVariable(
+            "{commodity}In.mass_flow", commodity=NetworkSettings.NETWORK_TYPE_GAS
+        ),
+        _OutputProfileVariable(
+            "{commodity}In.H",
+            hydraulic_systems=(1,),
+            requires_head_losses=True,
+            quantity_and_unit=pressure,
+            conversion_factor=GRAVITATIONAL_CONSTANT * 988.0,
+        ),
+        _OutputProfileVariable(
+            "Primary.{commodity}In.H",
+            hydraulic_systems=(2,),
+            sides=("primary_carrier_id",),
+            requires_head_losses=True,
+            quantity_and_unit=pressure,
+            conversion_factor=GRAVITATIONAL_CONSTANT * 988.0,
+        ),
+        _OutputProfileVariable(
+            "Secondary.{commodity}In.H",
+            hydraulic_systems=(2,),
+            sides=("secondary_carrier_id",),
+            requires_head_losses=True,
+            quantity_and_unit=pressure,
+            conversion_factor=GRAVITATIONAL_CONSTANT * 988.0,
+        ),
+        _OutputProfileVariable(
+            "Pump_power",
+            asset_types=(*_PUMP_POWER_ASSET_TYPES, "pump"),
+            requires_head_losses=True,
+            quantity_and_unit=power,
+        ),
+        _OutputProfileVariable(
+            "PostProc.Velocity",
+            asset_types=_PIPE_PROFILE_ASSET_TYPES,
+            quantity_and_unit=dict(
+                physicalQuantity=esdl.PhysicalQuantityEnum.SPEED,
+                unit=esdl.UnitEnum.METRE,
+                perTimeUnit=esdl.TimeUnitEnum.SECOND,
+            ),
+            post_process=pipe_velocity,
+        ),
+        _OutputProfileVariable(
+            "PostProc.Pressure",
+            asset_types=_PIPE_PROFILE_ASSET_TYPES,
+            requires_head_losses=True,
+            post_process=pipe_pressure,
+        ),
+    )
+
+
+_OUTPUT_PROFILE_VARIABLES = _output_profile_variables()
 
 
 class ScenarioOutput:
@@ -252,7 +406,6 @@ class ScenarioOutput:
         #         )
         #     esh.save(str(filename))
 
-
     def remove_result_profiles(
         self,
         energy_system,
@@ -281,16 +434,10 @@ class ScenarioOutput:
 
         parameters = self.parameters(0)
         heat_pipes = set(self.energy_system_components.get("heat_pipe", []))
+        sizing_placement_assets = set(self._asset_ids_for_types(_SIZING_PLACEMENT_ASSET_TYPES))
         for _, attributes in self.esdl_assets.items():
             asset_id = attributes.id
-            if asset_id in [
-                *self.energy_system_components.get("heat_source", []),
-                *self.energy_system_components.get("ates", []),
-                *self.energy_system_components.get("heat_buffer", []),
-                *self.energy_system_components.get("heat_pump", []),
-                *self.energy_system_components.get("airco", []),
-                *self.energy_system_components.get("heat_exchanger", []),
-            ]:
+            if asset_id in sizing_placement_assets:
                 asset = self._id_to_asset(energy_system, asset_id)
                 asset_placement_var = self._asset_aggregation_count_var_map[asset_id]
                 placed = np.round(results[asset_placement_var][0]) >= 1.0
@@ -615,7 +762,6 @@ class ScenarioOutput:
         # )
         # test = 0.0
 
-
     def write_json_output(
         self,
         results: Union[AliasDict, Dict],
@@ -731,7 +877,7 @@ class ScenarioOutput:
         return values
 
     def _write_html_output(self, template_name="mpc_buffer_sizing_output"):
-        #FIXME: Do we want to keep this functionality? It is not used in MESIDO.
+        # FIXME: Do we want to keep this functionality? It is not used in MESIDO.
         from jinja2 import Environment, FileSystemLoader
 
         assert self.ensemble_size == 1
@@ -1059,14 +1205,7 @@ class ScenarioOutput:
 
                 # TODO: show discharge energy (current display) and charge energy
                 # (new display to be added for ATES etc)
-                if (
-                    asset.asset_type == "HeatProducer"
-                    or asset.asset_type == "GenericProducer"
-                    or asset.asset_type == "ResidualHeatSource"
-                    or asset.asset_type == "GeothermalSource"
-                    or asset.asset_type == "GasHeater"
-                    or asset.asset_type == "ElectricBoiler"
-                ):
+                if asset.asset_type in _HEAT_PRODUCER_ESDL_TYPES:
                     heat_source_energy_wh[asset_id] = np.sum(
                         results[f"{asset_id}.Heat_source"][1:] * diff_times / 3600
                     )
@@ -1568,17 +1707,22 @@ class ScenarioOutput:
 
     def _output_profile_asset_ids(self) -> list[str]:
         """Return asset ids that can export output profiles."""
-        return [
-            *self.energy_system_components.get("heat_source", []),
-            *self.energy_system_components.get("heat_demand", []),
-            *self.energy_system_components.get("heat_pipe", []),
-            *self.energy_system_components.get("gas_pipe", []),
-            *self.energy_system_components.get("heat_buffer", []),
-            *self.energy_system_components.get("ates", []),
-            *self.energy_system_components.get("heat_exchanger", []),
-            *self.energy_system_components.get("heat_pump", []),
-            *self.energy_system_components.get("airco", []),
-        ]
+        return self._asset_ids_for_types(_OUTPUT_PROFILE_ASSET_TYPES)
+
+    def _asset_ids_for_types(self, asset_types: tuple[str, ...]) -> list[str]:
+        """Return all asset ids for the given asset_types."""
+        list_asset_ids = []
+        for asset_type in asset_types:
+            for asset_id in self.energy_system_components.get(asset_type, []):
+                list_asset_ids.append(asset_id)
+        return list_asset_ids
+
+    def _get_output_profile_definitions(self, commodity: str) -> dict[str, _OutputProfileVariable]:
+        """Return all variables that can be extracted for a commodity"""
+        return {
+            variable.name.format(commodity=commodity): variable
+            for variable in _OUTPUT_PROFILE_VARIABLES
+        }
 
     def _get_asset_capability(self, asset: Any) -> str:
         """Return the ESDL capability name for an asset."""
@@ -1666,56 +1810,19 @@ class ScenarioOutput:
         parameters: dict[str, Any],
     ) -> tuple[list[str], list[str], dict[str, Any]]:
         """Return profile variables and post-processed data for an asset."""
-        variables_one_hydraulic_system = [f"{commodity}In.Q"]
-        variables_two_hydraulic_system = [
-            f"Primary.{commodity}In.Q",
-            f"Secondary.{commodity}In.Q",
-        ]
-        if commodity == NetworkSettings.NETWORK_TYPE_HEAT:
-            variables_one_hydraulic_system.append("Heat_flow")
-            variables_two_hydraulic_system.append("Heat_flow")
-            variables_two_hydraulic_system.append("Primary_heat")
-            variables_two_hydraulic_system.append("Secondary_heat")
-        elif commodity == NetworkSettings.NETWORK_TYPE_GAS:
-            variables_one_hydraulic_system.append(f"{commodity}In.mass_flow")
-            variables_two_hydraulic_system.append(f"{commodity}In.mass_flow")
-
+        variables_one_hydraulic_system = []
+        variables_two_hydraulic_system = []
         post_processed = {}
 
-        if self.heat_network_settings["minimize_head_losses"]:
-            variables_one_hydraulic_system.append(f"{commodity}In.H")
-            variables_two_hydraulic_system.append(f"Primary.{commodity}In.H")
-            variables_two_hydraulic_system.append(f"Secondary.{commodity}In.H")
-            if asset_id in [
-                *self.energy_system_components.get("heat_source", []),
-                *self.energy_system_components.get("heat_buffer", []),
-                *self.energy_system_components.get("ates", []),
-                *self.energy_system_components.get("heat_exchanger", []),
-                *self.energy_system_components.get("heat_pump", []),
-                *self.energy_system_components.get("airco", []),
-            ]:
-                variables_one_hydraulic_system.append("Pump_power")
-                variables_two_hydraulic_system.append("Pump_power")
-            elif asset_id in [*self.energy_system_components.get("pump", [])]:
-                variables_one_hydraulic_system = ["Pump_power"]
-                variables_two_hydraulic_system = ["Pump_power"]
-        if asset_id in [
-            *self.energy_system_components.get("heat_pipe", []),
-            *self.energy_system_components.get("gas_pipe", []),
-        ]:
-            variables_one_hydraulic_system.append("PostProc.Velocity")
-            variables_two_hydraulic_system.append("PostProc.Velocity")
-            # Velocity at the pipe outlet [m/s]
-            post_processed["PostProc.Velocity"] = pipe_velocity(
-                asset_id, commodity, results, parameters
-            )
-            if self.heat_network_settings["minimize_head_losses"]:
-                variables_one_hydraulic_system.append("PostProc.Pressure")
-                # TODO: seems unnecessary, pipes always only have 1 hydraulic system
-                variables_two_hydraulic_system.append("PostProc.Pressure")
-                post_processed["PostProc.Pressure"] = pipe_pressure(
+        for variable_name, variable in self._get_output_profile_definitions(commodity).items():
+            if 1 in variable.hydraulic_systems:
+                variables_one_hydraulic_system.append(variable_name)
+            if 2 in variable.hydraulic_systems:
+                variables_two_hydraulic_system.append(variable_name)
+            if variable.post_process is not None:
+                post_processed[variable_name] = variable.post_process(
                     asset_id, commodity, results, parameters
-                )  # Pa
+                )
 
         return (
             variables_one_hydraulic_system,
@@ -1787,20 +1894,15 @@ class ScenarioOutput:
             )
             for ii in range(len(self.times()))
         ]
-        head_variables = [
-            f"{commodity}In.H",
-            f"Primary.{commodity}In.H",
-            f"Secondary.{commodity}In.H",
-        ]
+        variables = self._get_output_profile_definitions(commodity)
 
         profile_data = {}
         for variable_name in variables_names:
-            if variable_name in ["PostProc.Velocity", "PostProc.Pressure"]:
+            variable = variables.get(variable_name)
+            if variable is not None and variable.post_process is not None:
                 values = post_processed[variable_name][: len(profile_datetimes)]
             else:
-                conversion_factor = (
-                    GRAVITATIONAL_CONSTANT * 988.0 if variable_name in head_variables else 1.0
-                )
+                conversion_factor = variable.conversion_factor if variable is not None else 1.0
                 values = [
                     value * conversion_factor
                     for value in results[f"{asset_id}." + variable_name][: len(profile_datetimes)]
@@ -1815,43 +1917,10 @@ class ScenarioOutput:
         self, asset_id: str, variable_name: str, commodity: str
     ) -> Union[esdl.esdl.QuantityAndUnitType, None]:
         """Return the quantity-and-unit metadata for a profile."""
-        if variable_name in [
-            "Heat_flow",
-            "Pump_power",
-            "Primary_heat",
-            "Secondary_heat",
-        ]:
+        variable = self._get_output_profile_definitions(commodity).get(variable_name)
+        if variable is not None and variable.quantity_and_unit is not None:
             return esdl.esdl.QuantityAndUnitType(
-                physicalQuantity=esdl.PhysicalQuantityEnum.POWER,
-                unit=esdl.UnitEnum.WATT,
-                multiplier=esdl.MultiplierEnum.NONE,
-            )
-        if variable_name in [
-            f"{commodity}In.H",
-            f"Primary.{commodity}In.H",
-            f"Secondary.{commodity}In.H",
-        ]:
-            return esdl.esdl.QuantityAndUnitType(
-                physicalQuantity=esdl.PhysicalQuantityEnum.PRESSURE,
-                unit=esdl.UnitEnum.PASCAL,
-                multiplier=esdl.MultiplierEnum.NONE,
-            )
-        if variable_name in [
-            f"{commodity}In.Q",
-            f"Primary.{commodity}In.Q",
-            f"Secondary.{commodity}In.Q",
-        ]:
-            return esdl.esdl.QuantityAndUnitType(
-                physicalQuantity=esdl.PhysicalQuantityEnum.FLOW,
-                unit=esdl.UnitEnum.CUBIC_METRE,
-                perTimeUnit=esdl.TimeUnitEnum.SECOND,
-                multiplier=esdl.MultiplierEnum.NONE,
-            )
-        if variable_name == "PostProc.Velocity":
-            return esdl.esdl.QuantityAndUnitType(
-                physicalQuantity=esdl.PhysicalQuantityEnum.SPEED,
-                unit=esdl.UnitEnum.METRE,
-                perTimeUnit=esdl.TimeUnitEnum.SECOND,
+                **variable.quantity_and_unit,
                 multiplier=esdl.MultiplierEnum.NONE,
             )
 
