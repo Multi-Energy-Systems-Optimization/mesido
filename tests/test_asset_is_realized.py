@@ -49,6 +49,18 @@ class TestAssetIsRealized(TestCase):
 
         prod_1_id = name_to_id_map["HeatProducer_1"]
         prod_2_id = name_to_id_map["HeatProducer_2"]
+        pipe_1_id = name_to_id_map["Pipe1"]
+
+        for pipe in solution.energy_system_components["heat_pipe"]:
+            self.assertNotIn(f"{pipe}.__flow_direct_var", results)
+        inactive = results[f"{prod_1_id}__asset_is_realized"] < 0.5
+        np.testing.assert_allclose(results[f"{pipe_1_id}.__is_disconnected"][inactive], 1.0)
+        connected = results[f"{pipe_1_id}.__is_disconnected"] < 0.5
+        minimum_flow = (
+            solution.heat_network_settings["minimum_velocity"]
+            * solution.parameters(0)[f"{pipe_1_id}.area"]
+        )
+        self.assertTrue(np.all(results[f"{pipe_1_id}.Q"][connected] >= minimum_flow - 1e-8))
 
         # First we test whether the investments made are below cap
         cap = 2.5e5 + 1.0e-3  # some small tolerance, CBC...
@@ -86,7 +98,7 @@ class TestAssetIsRealized(TestCase):
         inds_not_1 = np.where(np.round(results[f"{prod_1_id}__asset_is_realized"]) == 0)
         np.testing.assert_allclose(results[f"{prod_1_id}.Heat_source"][inds_not_1], 0.0, atol=1e-6)
         inds_not_2 = np.where(np.round(results[f"{prod_2_id}__asset_is_realized"]) == 0)
-        np.testing.assert_allclose(results[f"{prod_1_id}.Heat_source"][inds_not_2], 0.0, atol=1e-6)
+        np.testing.assert_allclose(results[f"{prod_2_id}.Heat_source"][inds_not_2], 0.0, atol=1e-6)
 
         # Here we test that the asset is actually used once it is realized
         np.testing.assert_allclose(results[f"{prod_1_id}.Heat_source"][inds_1] > 0.0, True)
