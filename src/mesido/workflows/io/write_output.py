@@ -166,6 +166,527 @@ class ScenarioOutput:
     def get_optimized_esh(self):
         return self.__optimized_energy_system_handler
 
+    def write_updated_esdl(
+        self,
+        energy_system,
+        optimizer_sim: bool = False,
+        add_kpis: bool = True,
+        remove_output_profiles: bool = True,
+    ):
+
+        logger.info("Updated esdl is being created.")
+
+        results = self.extract_results()
+
+        _ = energy_system.id  # input energy system id. Kept here as not sure if still needed
+        energy_system.id = str(uuid.uuid4())  # output energy system id
+        output_energy_system_id = energy_system.id
+        # Currently the simulation_id is created here, but in the future this will probably move
+        # to account for 1 simulation/optimization/run potentialy generating more than 1 output
+        # energy system (ESDL)
+        simulation_id = str(uuid.uuid4())  # simulation (optimization/simulator etc) id
+
+        if optimizer_sim:  # network simulator
+            energy_system.name = energy_system.name + "_Simulation"
+        else:  # network optimization
+            energy_system.name = energy_system.name + "_GrowOptimized"
+
+        if remove_output_profiles:
+            self.remove_result_profiles(energy_system)
+
+        if add_kpis:
+            self.add_kpis_to_energy_system(energy_system, optimizer_sim)
+
+        # ------------------------------------------------------------------------------------------
+        # Placement
+        self.update_esdl_assets_sizing_placement(results, energy_system, optimizer_sim)
+        # ------------------------------------------------------------------------------------------
+        # Important: This code below must be placed after the "Placement" code. Reason: it relies
+        # on unplaced assets being deleted.
+        # ------------------------------------------------------------------------------------------
+        # Write asset result profile data to database. The database is setup as follows:
+        #   - The each time step is represented by a row of data, with columns; datetime, field
+        #     values
+        #   - The database contains columns based on the carrier connected for visualisation
+        #   purposes
+        #   - Assets with more than 1 carrier are looped over the time steps as many times as there
+        #   are different carriers connected, to ensure the correct data is written to each carrier.
+        #   - Database name: input esdl id
+        #   - Measurment: carrier id
+        #   - Fields: profile value for the specific variable
+        #   - Tags used as filters: simulationRun, assetClass, assetName, assetId, capability
+
+        if self.esdl_output_profiles_type:
+            self.write_output_profiles(
+                energy_system,
+                optimizer_sim,
+                output_energy_system_id,
+                simulation_id,
+            )
+
+        # close ESDL output profile database connections
+        close_db_connections()
+
+        # ------------------------------------------------------------------------------------------
+        # Save esdl file
+        # Edwin_marker_esdl_string - line 1224
+        if self.esdl_parser_class == mesido.esdl.esdl_parser.ESDLFileParser:
+            extension = "_Simulation.esdl" if optimizer_sim else "_GrowOptimized.esdl"
+            file_path = Path(self.model_folder) / (Path(self.esdl_file_name).stem + extension)
+            self.save_energy_system_to_file(energy_system, file_path=file_path)
+        self.optimized_esdl_string = self.convert_energy_system_to_string(
+            energy_system=energy_system
+        )
+
+        # self.__optimized_energy_system_handler = esh
+        # self.optimized_esdl_string = esh.to_string()
+        #
+        # if self.esdl_string is None:
+        #     if optimizer_sim:
+        #         filename = run_info.esdl_file.with_name(
+        #             f"{run_info.esdl_file.stem}_Simulation.esdl"
+        #         )
+        #     else:
+        #         filename = run_info.esdl_file.with_name(
+        #             f"{run_info.esdl_file.stem}_GrowOptimized.esdl"
+        #         )
+        #     esh.save(str(filename))
+
+
+    def remove_result_profiles(
+        self,
+        energy_system,
+    ):
+
+        for asset_name in self._output_profile_asset_ids():
+            asset = self._id_to_asset(energy_system, asset_name)
+            for iport in range(len(asset.port)):
+                if isinstance(asset.port[iport], esdl.OutPort) or isinstance(
+                    asset.port[iport], esdl.InPort
+                ):
+                    profiles_to_remove = []
+                    for iprofile in range(len(asset.port[iport].profile)):
+                        if (
+                            asset.port[iport].profile[iprofile].profileType
+                            == esdl.ProfileTypeEnum.OUTPUT
+                        ):
+                            # Get OUTPUT the type objects to the list to be removed
+                            profiles_to_remove.append(asset.port[iport].profile[iprofile])
+                    # Remove the objects from the EOrderedSet
+                    for object_to_remove in profiles_to_remove:
+                        asset.port[iport].profile.remove(object_to_remove)
+
+    def update_esdl_assets_sizing_placement(self, results, energy_system, optimizer_sim):
+        from esdl.esdl_handler import EnergySystemHandler
+
+        parameters = self.parameters(0)
+        heat_pipes = set(self.energy_system_components.get("heat_pipe", []))
+        for _, attributes in self.esdl_assets.items():
+            asset_id = attributes.id
+            if asset_id in [
+                *self.energy_system_components.get("heat_source", []),
+                *self.energy_system_components.get("ates", []),
+                *self.energy_system_components.get("heat_buffer", []),
+                *self.energy_system_components.get("heat_pump", []),
+                *self.energy_system_components.get("airco", []),
+                *self.energy_system_components.get("heat_exchanger", []),
+            ]:
+                asset = self._id_to_asset(energy_system, asset_id)
+                asset_placement_var = self._asset_aggregation_count_var_map[asset_id]
+                placed = np.round(results[asset_placement_var][0]) >= 1.0
+                max_size = results[self._asset_max_size_map[asset_id]][0]
+
+                if asset_id in [
+                    *self.energy_system_components.get("ates", []),
+                    *self.energy_system_components.get("geothermal", []),
+                ]:
+                    asset.aggregationCount = int(results[f"{asset_id}_aggregation_count"])
+                elif asset_id in self.energy_system_components.get("heat_buffer", []):
+                    asset.capacity = max_size
+                    asset.volume = max_size / (
+                        parameters[f"{asset_id}.cp"]
+                        * parameters[f"{asset_id}.rho"]
+                        * parameters[f"{asset_id}.dT"]
+                    )
+                elif asset_id in self.energy_system_components.get("heat_exchanger", []):
+                    asset.capacity = max_size
+                elif asset_id in [
+                    *self.energy_system_components.get("heat_pump", []),
+                    *self.energy_system_components.get("airco", []),
+                ]:
+                    # Note: The heat capacity and not the electrical capacity
+                    # TODO: in the future we need to cater for varying COP as well
+                    asset.power = results[f"{asset_id}__max_size"][0]
+                else:
+                    asset.power = max_size
+                if not placed:
+                    asset.delete(recursive=True)
+                else:
+                    asset.state = esdl.AssetStateEnum.ENABLED
+            elif asset_id not in heat_pipes:  # because heat pipes are updated below
+                logger.warning(f"ESDL update: asset {asset_id} has not been updated")
+
+        # Pipes:
+        edr_pipe_properties_to_copy = [
+            "innerDiameter",
+            "outerDiameter",
+            "diameter",
+            "material",
+        ]
+
+        esh_edr = EnergySystemHandler()
+
+        for pipe in self.energy_system_components.get("heat_pipe", []):
+
+            pipe_classes = self.pipe_classes(pipe)
+            # When a pipe has not been optimized, enforce pipe to be shown in the simulator
+            # ESDL.
+            if not pipe_classes:
+                if not optimizer_sim:
+                    continue
+                else:
+                    asset.state = esdl.AssetStateEnum.ENABLED
+
+            if not optimizer_sim:
+                pipe_class = self.get_optimized_pipe_class(pipe)
+
+            if parameters[f"{pipe}.diameter"] != 0.0 or any(np.abs(results[f"{pipe}.Q"]) > 1.0e-6):
+                # if not isinstance(pipe_class, EDRPipeClass):
+                #     assert pipe_class.name == f"{pipe}_orig"
+                #     continue
+                # print(results[f"{pipe}.Q"])
+                # print(pipe + " has pipeclass: " + pipe_class.name )
+                # print(pipe + f" has diameter: " + pipe_class.name)
+
+                if not optimizer_sim:
+                    assert isinstance(pipe_class, EDRPipeClass)
+                    asset_edr = esh_edr.load_from_string(pipe_class.xml_string)
+
+                asset = self._id_to_asset(energy_system, pipe)
+                asset.state = esdl.AssetStateEnum.ENABLED
+
+                try:
+                    pipe_inv_cost = pipe_class.investment_costs / TRACE_TO_SINGLE_PIPE_COST_FACTOR
+                    if not self.has_related_pipe(pipe):
+                        # Cater for a unrelated pipe that has changed from OPTIONAL to being placed,
+                        # which did not have any input cost information in the input esdl file
+                        if asset.costInformation is None:
+                            asset.costInformation = esdl.CostInformation(id=str(uuid.uuid4()))
+                        if asset.costInformation.investmentCosts is None:
+                            investment_costs = esdl.SingleValue(
+                                id=str(uuid.uuid4()),
+                                value=pipe_inv_cost,
+                            )
+                            investment_costs.quantityAndUnit = esdl.QuantityAndUnitType(
+                                physicalQuantity=esdl.PhysicalQuantityEnum.COST,
+                                unit=esdl.UnitEnum.EURO,
+                                perUnit=esdl.UnitEnum.METRE,
+                            )
+                            asset.costInformation.investmentCosts = investment_costs
+                        else:
+                            asset.costInformation.investmentCosts.value = pipe_inv_cost
+                    else:
+                        asset.costInformation.investmentCosts.value = pipe_inv_cost
+                except AttributeError:
+                    pass
+                    # do nothing, in the case that no costs have been specified for the return
+                    # pipe in the mapeditor
+                except UnboundLocalError:
+                    pass
+
+                if not optimizer_sim:
+                    for prop in edr_pipe_properties_to_copy:
+                        setattr(asset, prop, getattr(asset_edr, prop))
+            else:
+                asset = self._id_to_asset(energy_system, pipe)
+                asset.delete(recursive=True)
+
+    def write_output_profiles(
+        self, energy_system, optimizer_sim, output_energy_system_id, simulation_id
+    ):
+        logger.info(f"Writing asset results to profile type '{self.esdl_output_profiles_type}'")
+        results = self.extract_results()
+        parameters = self.parameters(0)
+
+        start_date_time, end_date_time = self._get_output_profile_start_end_datetimes()
+
+        for asset_id in self._output_profile_asset_ids():
+            try:
+                # If the asset has been placed
+                asset = self._id_to_asset(energy_system, asset_id)
+                asset_class = asset.__class__.__name__
+                asset_name = asset.name
+                capability = self._get_asset_capability(asset)
+
+                # Note: when adding new variables to variables_one_hydraulic_system or"
+                # variables_two_hydraulic_system also add quantity and units to the ESDL for
+                # the new variables in the code lower down
+                # These variables exist for all the assets. Variables that only exist for
+                # specific
+                # assets are only added later, like Pump_power
+                commodity = self.energy_system_components_commodity.get(asset_id)
+                (
+                    variables_one_hydraulic_system,
+                    variables_two_hydraulic_system,
+                    post_processed,
+                ) = self._get_output_profile_variables(asset_id, commodity, results, parameters)
+                carrier_id_dict = self._get_output_profile_carrier_id(asset, asset_name)
+                index_outport = self._get_output_profile_outport_index(asset, asset_name)
+
+                # Looping over the carrier_ids relevant for the asset
+                # If primary or secondary port are set, variables_to_hydraulic_system will be
+                # used, variable names linking to the secondary port are popped from the list
+                # when the primary port is selected and vice versa
+                variables_two_hydraulic_system_org = variables_two_hydraulic_system.copy()
+                for asset_side, carrier_id in carrier_id_dict.items():
+                    variables_two_hydraulic_system = variables_two_hydraulic_system_org.copy()
+                    var_pops = []
+                    if asset_side == "primary_carrier_id":
+                        var_pops = [v for v in variables_two_hydraulic_system if "Secondary" in v]
+                        if asset_id in self.energy_system_components.get("heat_pump", []):
+                            var_pops.append("Heat_flow")
+                    elif asset_side == "secondary_carrier_id":
+                        var_pops = [v for v in variables_two_hydraulic_system if "Primary" in v]
+                    for v in var_pops:
+                        variables_two_hydraulic_system.remove(v)
+
+                    variables_names = self._select_output_profile_variables(
+                        asset_id,
+                        asset_name,
+                        results,
+                        variables_one_hydraulic_system,
+                        variables_two_hydraulic_system,
+                    )
+
+                    asset_esdl_output_profiles = {}
+
+                    for variable_name in variables_names:
+                        quantity_and_unit = self._get_output_profile_quantity_and_unit(
+                            asset_id, variable_name, commodity
+                        )
+                        esdl_profile, profile_handle = self._create_output_profile_handle(
+                            energy_system,
+                            output_energy_system_id,
+                            asset_id,
+                            carrier_id,
+                            variable_name,
+                            start_date_time,
+                            end_date_time,
+                            quantity_and_unit,
+                        )
+                        asset_esdl_output_profiles[variable_name] = profile_handle
+                        asset.port[index_outport].profile.append(esdl_profile)
+
+                    asset_esdl_output_profiles_data_dict = self._get_output_profile_data(
+                        asset_id, commodity, variables_names, results, post_processed
+                    )
+
+                    optim_simulation_tag = {
+                        "simulationRun": simulation_id,
+                        "simulation_type": type(self).__name__,
+                        "assetId": asset_id,
+                        "assetName": asset.name,
+                        "assetClass": asset_class,
+                        "capability": capability,
+                    }
+                    for (
+                        variable_name,
+                        profile_data,
+                    ) in asset_esdl_output_profiles_data_dict.items():
+                        if self.write_esdl_profiles_to_db:
+                            asset_esdl_output_profiles[variable_name].profile_data_list = (
+                                profile_data
+                            )
+                        elif (
+                            self.esdl_output_profiles_type
+                            == ESDLOutputProfilesType.TIME_SERIES_PROFILE
+                        ):
+                            asset_esdl_output_profiles[variable_name].values.extend(
+                                self._resample_profile_data_to_fixed_timestep(profile_data)
+                            )
+                        else:  # ESDLOutputProfilesType.DATE_TIME_PROFILE
+                            append_values_to_date_time_profile(
+                                asset_esdl_output_profiles[variable_name],
+                                profile_data,
+                            )
+                    if self.write_esdl_profiles_to_db:
+                        save_data_table_profiles_to_database(
+                            list(asset_esdl_output_profiles.values()),
+                            optim_simulation_tag,
+                        )
+
+                # -- Test tags -- # do not delete - to be used in test case
+                # prof_loaded_from_influxdb = InfluxDBProfileManager(influxdb_conn_settings)
+                # dicts = [{"tag": "output_esdl_id", "value": energy_system.id}]
+                # prof_loaded_from_influxdb.load_influxdb(
+                #     # '"' + "ResidualHeatSource_72d7" + '"' ,
+                #     asset_name,
+                #     variables_one_hydraulic_system,
+                #     # ["HeatIn.Q"],
+                #     # ["HeatIn.H"],
+                #     # ["Heat_flow"],
+                #     profiles.start_datetime,
+                #     profiles.end_datetime,
+                #     dicts,
+                # )
+                # test = 0.0
+
+                # ------------------------------------------------------------------------------
+                # Do not delete the code below: is used in the development of profile viewer in
+                # mapeditor
+                # Write database to excel file and read in to recreate the database
+                # database name: input esdl id
+                # tags when saving to database: optim_simulation_tag = {"output_esdl_id":
+                # output_esdl_id}
+
+                # print("Save ESDL profile data to excel")
+                # excel_prof_saved = ExcelProfileManager(
+                #     source_profile=prof_loaded_from_influxdb
+                # )
+                # file_path_setting = (
+                #     f"C:\\Projects_gitlab\\NWN_dev\\rtc-tools-milp-network\\{asset_name}.xlsx"
+                # )
+                # excel_prof_saved.save_excel(
+                #     file_path=file_path_setting,
+                #     sheet_name=input_energy_system_id
+                # )
+                # print("Read data from Excel")
+                # excel_prof_read = ExcelProfileManager()
+                # excel_prof_read.load_excel(file_path_setting)
+                # print("Create database")
+                # influxdb_profile_manager_create_new = InfluxDBProfileManager(
+                #     influxdb_conn_settings, excel_prof_read
+                # )
+                # optim_simulation_tag = {"output_esdl_id": energy_system.id}
+                # _ = influxdb_profile_manager_create_new.save_influxdb(
+                #     measurement=asset_name,
+                #     field_names=influxdb_profile_manager_create_new.profile_header[1:],
+                #     tags=optim_simulation_tag,
+                # )
+                # ------------------------------------------------------------------------------
+            except StopIteration:
+                # If the asset has been deleted, thus also not placed
+                pass
+            except Exception:  # TODO fix other places in the where try/except end with pass
+                logger.error(
+                    f"During the influxDB profile writing for asset: {asset_name}, the "
+                    "following error occured:"
+                )
+                traceback.print_exc()
+                sys.exit(1)
+
+        # TODO: create test case
+        # Code that can be used to remove a specific measurment from the database
+        # try:
+        #     influxdb_profile_manager.influxdb_client.drop_measurement(energy_system.id)
+        # except:
+        #     pass
+        # Code that can be used to check if a specific measurement exists in the database
+        # influxdb_profile_manager.influxdb_client.get_list_measurements()
+
+        # Do not delete: Test code still to be used in test case
+        # try:
+        #     esdl_infl_prof = profs[0]
+        #     np.any(isinstance(esdl_infl_prof, esdl.InfluxDBProfile))
+        # except:
+        #     np.any(isinstance(profs, esdl.InfluxDBProfile))
+        # print("Reading InfluxDB profile from test...")
+        # prof3 = InfluxDBProfileManager(conn_settings)
+        # # prof3.load_influxdb("test", ["Heat_flow"])
+        # prof3.load_influxdb('"' + energy_system.id + '"', profiles.profile_header[1:4])
+        # # can access values via
+        # # prof3.profile_data_list[0-row][0/1-date/value],
+        # # .strftime("%Y-%m-%dT%H:%M:%SZ")
+        # # prof3.profile_data_list[3][0].strftime("%Y-%m-%dT%H:%M:%SZ")
+        # ts_prof = prof3.get_esdl_timeseries_profile("Heat_flow")
+        # # np.testing.assert_array_equal(ts_prof.values[0], 45)
+        # # np.testing.assert_array_equal(ts_prof.values[1], 900)
+        # # np.testing.assert_array_equal(ts_prof.values[2], 5.6)
+        # # np.testing.assert_array_equal(ts_prof.values[3], 1.2)
+        # # np.testing.assert_array_equal(len(ts_prof.values), 4)
+        # # -- Test tags --
+        # prof3 = InfluxDBProfileManager(influxdb_conn_settings)
+        # dicts = [{"tag": "output_esdl_id", "value": energy_system.id}]
+        # prof3.load_influxdb(
+        #     '"' + "ResidualHeatSource_72d7" + '"' , ["HeatIn.Q"],
+        #     profiles.start_datetime,
+        #     profiles.end_datetime,
+        #     dicts,
+        # )
+        # test = 0.0
+
+
+    def write_json_output(
+        self,
+        results: Union[AliasDict, Dict],
+        parameters: Union[AliasDict, Dict],
+        bounds: Union[AliasDict, Dict],
+        aliases: OrderedDict,
+        solver_stats: Dict,
+        ensemble_member: int,
+    ):
+        """
+        The results, parameters, bounds are saved as json files which can be used for further
+        processing. Aliases are also saved as this allows us to only save the necessary variables.
+        :param results: dictionary or Alias dictionary with the results of the optimization problem
+        :param parameters: dictionary or Alias dictionary with the parameters of the optimization
+        problem
+        :param bounds: dictionary or Alias dictionary with the bounds of the optimization problem
+        :param aliases: Alias dictionary describing all the aliases for the variables used
+        :param solver_stats: solver statistics provided by the solver
+        :return:
+        """
+
+        workdir = os.path.join(self.output_folder, f"{ensemble_member}")
+        if not os.path.exists(workdir):
+            os.mkdir(workdir)
+
+        parameters_dict = dict()
+        parameter_path = os.path.join(workdir, "parameters.json")
+        for key, value in parameters.items():
+            new_value = value  # [x for x in value]
+            parameters_dict[key] = new_value
+        with open(parameter_path, "w") as file:
+            json.dump(parameters_dict, fp=file)
+
+        bounds_dict = dict()
+        bounds_path = os.path.join(workdir, "bounds.json")
+        for key, value in bounds.items():
+            if "Stored_heat" not in key:
+                new_value = value  # [x for x in value]
+                if isinstance(value[0], Timeseries) or isinstance(value[1], Timeseries):
+                    new_value = (value[0].values.tolist(), value[1].values.tolist())
+                bounds_dict[key] = new_value
+        with open(bounds_path, "w") as file:
+            json.dump(bounds_dict, fp=file)
+
+        results_dict = dict()
+        for key, values in results.items():
+            new_value = values.tolist()
+            if len(new_value) == 1:
+                new_value = new_value[0]
+            results_dict[key] = new_value
+
+        results_path = os.path.join(workdir, "results.json")
+        with open(results_path, "w") as file:
+            json.dump(results_dict, fp=file)
+
+        # save aliases
+        alias_dict = {}
+        for key, values in aliases.items():
+            new_value = values
+            alias_dict[key] = new_value
+
+        aliases_path = os.path.join(workdir, "aliases.json")
+        with open(aliases_path, "w") as file:
+            json.dump(alias_dict, fp=file)
+
+        # save solver_stats
+        solver_stats_dict = solver_stats
+        solver_stats_path = os.path.join(workdir, "solver_stats.json")
+        with open(solver_stats_path, "w") as file:
+            json.dump(solver_stats_dict, fp=file)
+
     def _resample_profile_data_to_fixed_timestep(self, profile_data):
         """
         Resample the profile data to a fixed timestep defined by
@@ -210,6 +731,7 @@ class ScenarioOutput:
         return values
 
     def _write_html_output(self, template_name="mpc_buffer_sizing_output"):
+        #FIXME: Do we want to keep this functionality? It is not used in MESIDO.
         from jinja2 import Environment, FileSystemLoader
 
         assert self.ensemble_size == 1
@@ -388,7 +910,7 @@ class ScenarioOutput:
                 )
             )
 
-    def _add_kpis_to_energy_system(self, energy_system, optimizer_sim: bool = False):
+    def add_kpis_to_energy_system(self, energy_system, optimizer_sim: bool = False):
 
         results = self.extract_results()
         parameters = self.parameters(0)
@@ -1058,7 +1580,7 @@ class ScenarioOutput:
             *self.energy_system_components.get("airco", []),
         ]
 
-    def _get_output_profile_capability(self, asset: Any) -> str:
+    def _get_asset_capability(self, asset: Any) -> str:
         """Return the ESDL capability name for an asset."""
         capabilities = [
             esdl.Transport,
@@ -1070,7 +1592,7 @@ class ScenarioOutput:
         return next(c.__name__ for c in capabilities if c in asset.__class__.__mro__)
 
     def _get_output_profile_carrier_id(self, asset: Any, asset_name: str) -> dict[str, str]:
-        """Return carrier ids keyed by the relevant asset side."""
+        """Return carrier ids for each of the relevant asset side."""
         port, port_prim, port_sec = 3 * [None]
         if isinstance(asset, esdl.Transport) or isinstance(asset, esdl.Consumer):
             port = [port for port in asset.port if isinstance(port, esdl.InPort)][0]
@@ -1406,522 +1928,3 @@ class ScenarioOutput:
             data_source=data_source,
         )
         return esdl_profile, esdl_profile
-
-    def _remove_result_profiles(
-        self,
-        energy_system,
-    ):
-
-        for asset_name in self._output_profile_asset_ids():
-            asset = self._id_to_asset(energy_system, asset_name)
-            for iport in range(len(asset.port)):
-                if isinstance(asset.port[iport], esdl.OutPort) or isinstance(
-                    asset.port[iport], esdl.InPort
-                ):
-                    profiles_to_remove = []
-                    for iprofile in range(len(asset.port[iport].profile)):
-                        if (
-                            asset.port[iport].profile[iprofile].profileType
-                            == esdl.ProfileTypeEnum.OUTPUT
-                        ):
-                            # Get OUTPUT the type objects to the list to be removed
-                            profiles_to_remove.append(asset.port[iport].profile[iprofile])
-                    # Remove the objects from the EOrderedSet
-                    for object_to_remove in profiles_to_remove:
-                        asset.port[iport].profile.remove(object_to_remove)
-
-    def _update_esdl_assets_sizing_placement(self, results, energy_system, optimizer_sim):
-        from esdl.esdl_handler import EnergySystemHandler
-
-        parameters = self.parameters(0)
-        heat_pipes = set(self.energy_system_components.get("heat_pipe", []))
-        for _, attributes in self.esdl_assets.items():
-            asset_id = attributes.id
-            if asset_id in [
-                *self.energy_system_components.get("heat_source", []),
-                *self.energy_system_components.get("ates", []),
-                *self.energy_system_components.get("heat_buffer", []),
-                *self.energy_system_components.get("heat_pump", []),
-                *self.energy_system_components.get("airco", []),
-                *self.energy_system_components.get("heat_exchanger", []),
-            ]:
-                asset = self._id_to_asset(energy_system, asset_id)
-                asset_placement_var = self._asset_aggregation_count_var_map[asset_id]
-                placed = np.round(results[asset_placement_var][0]) >= 1.0
-                max_size = results[self._asset_max_size_map[asset_id]][0]
-
-                if asset_id in [
-                    *self.energy_system_components.get("ates", []),
-                    *self.energy_system_components.get("geothermal", []),
-                ]:
-                    asset.aggregationCount = int(results[f"{asset_id}_aggregation_count"])
-                elif asset_id in self.energy_system_components.get("heat_buffer", []):
-                    asset.capacity = max_size
-                    asset.volume = max_size / (
-                        parameters[f"{asset_id}.cp"]
-                        * parameters[f"{asset_id}.rho"]
-                        * parameters[f"{asset_id}.dT"]
-                    )
-                elif asset_id in self.energy_system_components.get("heat_exchanger", []):
-                    asset.capacity = max_size
-                elif asset_id in [
-                    *self.energy_system_components.get("heat_pump", []),
-                    *self.energy_system_components.get("airco", []),
-                ]:
-                    # Note: The heat capacity and not the electrical capacity
-                    # TODO: in the future we need to cater for varying COP as well
-                    asset.power = results[f"{asset_id}__max_size"][0]
-                else:
-                    asset.power = max_size
-                if not placed:
-                    asset.delete(recursive=True)
-                else:
-                    asset.state = esdl.AssetStateEnum.ENABLED
-            elif asset_id not in heat_pipes:  # because heat pipes are updated below
-                logger.warning(f"ESDL update: asset {asset_id} has not been updated")
-
-        # Pipes:
-        edr_pipe_properties_to_copy = [
-            "innerDiameter",
-            "outerDiameter",
-            "diameter",
-            "material",
-        ]
-
-        esh_edr = EnergySystemHandler()
-
-        for pipe in self.energy_system_components.get("heat_pipe", []):
-
-            pipe_classes = self.pipe_classes(pipe)
-            # When a pipe has not been optimized, enforce pipe to be shown in the simulator
-            # ESDL.
-            if not pipe_classes:
-                if not optimizer_sim:
-                    continue
-                else:
-                    asset.state = esdl.AssetStateEnum.ENABLED
-
-            if not optimizer_sim:
-                pipe_class = self.get_optimized_pipe_class(pipe)
-
-            if parameters[f"{pipe}.diameter"] != 0.0 or any(np.abs(results[f"{pipe}.Q"]) > 1.0e-6):
-                # if not isinstance(pipe_class, EDRPipeClass):
-                #     assert pipe_class.name == f"{pipe}_orig"
-                #     continue
-                # print(results[f"{pipe}.Q"])
-                # print(pipe + " has pipeclass: " + pipe_class.name )
-                # print(pipe + f" has diameter: " + pipe_class.name)
-
-                if not optimizer_sim:
-                    assert isinstance(pipe_class, EDRPipeClass)
-                    asset_edr = esh_edr.load_from_string(pipe_class.xml_string)
-
-                asset = self._id_to_asset(energy_system, pipe)
-                asset.state = esdl.AssetStateEnum.ENABLED
-
-                try:
-                    pipe_inv_cost = pipe_class.investment_costs / TRACE_TO_SINGLE_PIPE_COST_FACTOR
-                    if not self.has_related_pipe(pipe):
-                        # Cater for a unrelated pipe that has changed from OPTIONAL to being placed,
-                        # which did not have any input cost information in the input esdl file
-                        if asset.costInformation is None:
-                            asset.costInformation = esdl.CostInformation(id=str(uuid.uuid4()))
-                        if asset.costInformation.investmentCosts is None:
-                            investment_costs = esdl.SingleValue(
-                                id=str(uuid.uuid4()),
-                                value=pipe_inv_cost,
-                            )
-                            investment_costs.quantityAndUnit = esdl.QuantityAndUnitType(
-                                physicalQuantity=esdl.PhysicalQuantityEnum.COST,
-                                unit=esdl.UnitEnum.EURO,
-                                perUnit=esdl.UnitEnum.METRE,
-                            )
-                            asset.costInformation.investmentCosts = investment_costs
-                        else:
-                            asset.costInformation.investmentCosts.value = pipe_inv_cost
-                    else:
-                        asset.costInformation.investmentCosts.value = pipe_inv_cost
-                except AttributeError:
-                    pass
-                    # do nothing, in the case that no costs have been specified for the return
-                    # pipe in the mapeditor
-                except UnboundLocalError:
-                    pass
-
-                if not optimizer_sim:
-                    for prop in edr_pipe_properties_to_copy:
-                        setattr(asset, prop, getattr(asset_edr, prop))
-            else:
-                asset = self._id_to_asset(energy_system, pipe)
-                asset.delete(recursive=True)
-
-    def _write_output_profiles(
-        self, energy_system, optimizer_sim, output_energy_system_id, simulation_id
-    ):
-        logger.info(f"Writing asset results to profile type '{self.esdl_output_profiles_type}'")
-        results = self.extract_results()
-        parameters = self.parameters(0)
-
-        start_date_time, end_date_time = self._get_output_profile_start_end_datetimes()
-
-        for asset_id in self._output_profile_asset_ids():
-            try:
-                # If the asset has been placed
-                asset = self._id_to_asset(energy_system, asset_id)
-                asset_class = asset.__class__.__name__
-                asset_name = asset.name
-                capability = self._get_output_profile_capability(asset)
-
-                # Note: when adding new variables to variables_one_hydraulic_system or"
-                # variables_two_hydraulic_system also add quantity and units to the ESDL for
-                # the new variables in the code lower down
-                # These variables exist for all the assets. Variables that only exist for
-                # specific
-                # assets are only added later, like Pump_power
-                commodity = self.energy_system_components_commodity.get(asset_id)
-                (
-                    variables_one_hydraulic_system,
-                    variables_two_hydraulic_system,
-                    post_processed,
-                ) = self._get_output_profile_variables(asset_id, commodity, results, parameters)
-                carrier_id_dict = self._get_output_profile_carrier_id(asset, asset_name)
-                index_outport = self._get_output_profile_outport_index(asset, asset_name)
-
-                # Looping over the carrier_ids relevant for the asset
-                # If primary or secondary port are set, variables_to_hydraulic_system will be
-                # used, variable names linking to the secondary port are popped from the list
-                # when the primary port is selected and vice versa
-                variables_two_hydraulic_system_org = variables_two_hydraulic_system.copy()
-                for asset_side, carrier_id in carrier_id_dict.items():
-                    variables_two_hydraulic_system = variables_two_hydraulic_system_org.copy()
-                    var_pops = []
-                    if asset_side == "primary_carrier_id":
-                        var_pops = [v for v in variables_two_hydraulic_system if "Secondary" in v]
-                        if asset_id in self.energy_system_components.get("heat_pump", []):
-                            var_pops.append("Heat_flow")
-                    elif asset_side == "secondary_carrier_id":
-                        var_pops = [v for v in variables_two_hydraulic_system if "Primary" in v]
-                    for v in var_pops:
-                        variables_two_hydraulic_system.remove(v)
-
-                    variables_names = self._select_output_profile_variables(
-                        asset_id,
-                        asset_name,
-                        results,
-                        variables_one_hydraulic_system,
-                        variables_two_hydraulic_system,
-                    )
-
-                    asset_esdl_output_profiles = {}
-
-                    for variable_name in variables_names:
-                        quantity_and_unit = self._get_output_profile_quantity_and_unit(
-                            asset_id, variable_name, commodity
-                        )
-                        esdl_profile, profile_handle = self._create_output_profile_handle(
-                            energy_system,
-                            output_energy_system_id,
-                            asset_id,
-                            carrier_id,
-                            variable_name,
-                            start_date_time,
-                            end_date_time,
-                            quantity_and_unit,
-                        )
-                        asset_esdl_output_profiles[variable_name] = profile_handle
-                        asset.port[index_outport].profile.append(esdl_profile)
-
-                    asset_esdl_output_profiles_data_dict = self._get_output_profile_data(
-                        asset_id, commodity, variables_names, results, post_processed
-                    )
-
-                    optim_simulation_tag = {
-                        "simulationRun": simulation_id,
-                        "simulation_type": type(self).__name__,
-                        "assetId": asset_id,
-                        "assetName": asset.name,
-                        "assetClass": asset_class,
-                        "capability": capability,
-                    }
-                    for (
-                        variable_name,
-                        profile_data,
-                    ) in asset_esdl_output_profiles_data_dict.items():
-                        if self.write_esdl_profiles_to_db:
-                            asset_esdl_output_profiles[variable_name].profile_data_list = (
-                                profile_data
-                            )
-                        elif (
-                            self.esdl_output_profiles_type
-                            == ESDLOutputProfilesType.TIME_SERIES_PROFILE
-                        ):
-                            asset_esdl_output_profiles[variable_name].values.extend(
-                                self._resample_profile_data_to_fixed_timestep(profile_data)
-                            )
-                        else:  # ESDLOutputProfilesType.DATE_TIME_PROFILE
-                            append_values_to_date_time_profile(
-                                asset_esdl_output_profiles[variable_name],
-                                profile_data,
-                            )
-                    if self.write_esdl_profiles_to_db:
-                        save_data_table_profiles_to_database(
-                            list(asset_esdl_output_profiles.values()),
-                            optim_simulation_tag,
-                        )
-
-                # -- Test tags -- # do not delete - to be used in test case
-                # prof_loaded_from_influxdb = InfluxDBProfileManager(influxdb_conn_settings)
-                # dicts = [{"tag": "output_esdl_id", "value": energy_system.id}]
-                # prof_loaded_from_influxdb.load_influxdb(
-                #     # '"' + "ResidualHeatSource_72d7" + '"' ,
-                #     asset_name,
-                #     variables_one_hydraulic_system,
-                #     # ["HeatIn.Q"],
-                #     # ["HeatIn.H"],
-                #     # ["Heat_flow"],
-                #     profiles.start_datetime,
-                #     profiles.end_datetime,
-                #     dicts,
-                # )
-                # test = 0.0
-
-                # ------------------------------------------------------------------------------
-                # Do not delete the code below: is used in the development of profile viewer in
-                # mapeditor
-                # Write database to excel file and read in to recreate the database
-                # database name: input esdl id
-                # tags when saving to database: optim_simulation_tag = {"output_esdl_id":
-                # output_esdl_id}
-
-                # print("Save ESDL profile data to excel")
-                # excel_prof_saved = ExcelProfileManager(
-                #     source_profile=prof_loaded_from_influxdb
-                # )
-                # file_path_setting = (
-                #     f"C:\\Projects_gitlab\\NWN_dev\\rtc-tools-milp-network\\{asset_name}.xlsx"
-                # )
-                # excel_prof_saved.save_excel(
-                #     file_path=file_path_setting,
-                #     sheet_name=input_energy_system_id
-                # )
-                # print("Read data from Excel")
-                # excel_prof_read = ExcelProfileManager()
-                # excel_prof_read.load_excel(file_path_setting)
-                # print("Create database")
-                # influxdb_profile_manager_create_new = InfluxDBProfileManager(
-                #     influxdb_conn_settings, excel_prof_read
-                # )
-                # optim_simulation_tag = {"output_esdl_id": energy_system.id}
-                # _ = influxdb_profile_manager_create_new.save_influxdb(
-                #     measurement=asset_name,
-                #     field_names=influxdb_profile_manager_create_new.profile_header[1:],
-                #     tags=optim_simulation_tag,
-                # )
-                # ------------------------------------------------------------------------------
-            except StopIteration:
-                # If the asset has been deleted, thus also not placed
-                pass
-            except Exception:  # TODO fix other places in the where try/except end with pass
-                logger.error(
-                    f"During the influxDB profile writing for asset: {asset_name}, the "
-                    "following error occured:"
-                )
-                traceback.print_exc()
-                sys.exit(1)
-
-        # TODO: create test case
-        # Code that can be used to remove a specific measurment from the database
-        # try:
-        #     influxdb_profile_manager.influxdb_client.drop_measurement(energy_system.id)
-        # except:
-        #     pass
-        # Code that can be used to check if a specific measurement exists in the database
-        # influxdb_profile_manager.influxdb_client.get_list_measurements()
-
-        # Do not delete: Test code still to be used in test case
-        # try:
-        #     esdl_infl_prof = profs[0]
-        #     np.any(isinstance(esdl_infl_prof, esdl.InfluxDBProfile))
-        # except:
-        #     np.any(isinstance(profs, esdl.InfluxDBProfile))
-        # print("Reading InfluxDB profile from test...")
-        # prof3 = InfluxDBProfileManager(conn_settings)
-        # # prof3.load_influxdb("test", ["Heat_flow"])
-        # prof3.load_influxdb('"' + energy_system.id + '"', profiles.profile_header[1:4])
-        # # can access values via
-        # # prof3.profile_data_list[0-row][0/1-date/value],
-        # # .strftime("%Y-%m-%dT%H:%M:%SZ")
-        # # prof3.profile_data_list[3][0].strftime("%Y-%m-%dT%H:%M:%SZ")
-        # ts_prof = prof3.get_esdl_timeseries_profile("Heat_flow")
-        # # np.testing.assert_array_equal(ts_prof.values[0], 45)
-        # # np.testing.assert_array_equal(ts_prof.values[1], 900)
-        # # np.testing.assert_array_equal(ts_prof.values[2], 5.6)
-        # # np.testing.assert_array_equal(ts_prof.values[3], 1.2)
-        # # np.testing.assert_array_equal(len(ts_prof.values), 4)
-        # # -- Test tags --
-        # prof3 = InfluxDBProfileManager(influxdb_conn_settings)
-        # dicts = [{"tag": "output_esdl_id", "value": energy_system.id}]
-        # prof3.load_influxdb(
-        #     '"' + "ResidualHeatSource_72d7" + '"' , ["HeatIn.Q"],
-        #     profiles.start_datetime,
-        #     profiles.end_datetime,
-        #     dicts,
-        # )
-        # test = 0.0
-
-    def _write_updated_esdl(
-        self,
-        energy_system,
-        optimizer_sim: bool = False,
-        add_kpis: bool = True,
-        remove_output_profiles: bool = True,
-    ):
-
-        logger.info("Updated esdl is being created.")
-
-        results = self.extract_results()
-
-        _ = energy_system.id  # input energy system id. Kept here as not sure if still needed
-        energy_system.id = str(uuid.uuid4())  # output energy system id
-        output_energy_system_id = energy_system.id
-        # Currently the simulation_id is created here, but in the future this will probably move
-        # to account for 1 simulation/optimization/run potentialy generating more than 1 output
-        # energy system (ESDL)
-        simulation_id = str(uuid.uuid4())  # simulation (optimization/simulator etc) id
-
-        if optimizer_sim:  # network simulator
-            energy_system.name = energy_system.name + "_Simulation"
-        else:  # network optimization
-            energy_system.name = energy_system.name + "_GrowOptimized"
-
-        if remove_output_profiles:
-            self._remove_result_profiles(energy_system)
-
-        if add_kpis:
-            self._add_kpis_to_energy_system(energy_system, optimizer_sim)
-
-        # ------------------------------------------------------------------------------------------
-        # Placement
-        self._update_esdl_assets_sizing_placement(results, energy_system, optimizer_sim)
-        # ------------------------------------------------------------------------------------------
-        # Important: This code below must be placed after the "Placement" code. Reason: it relies
-        # on unplaced assets being deleted.
-        # ------------------------------------------------------------------------------------------
-        # Write asset result profile data to database. The database is setup as follows:
-        #   - The each time step is represented by a row of data, with columns; datetime, field
-        #     values
-        #   - The database contains columns based on the carrier connected for visualisation
-        #   purposes
-        #   - Assets with more than 1 carrier are looped over the time steps as many times as there
-        #   are different carriers connected, to ensure the correct data is written to each carrier.
-        #   - Database name: input esdl id
-        #   - Measurment: carrier id
-        #   - Fields: profile value for the specific variable
-        #   - Tags used as filters: simulationRun, assetClass, assetName, assetId, capability
-
-        if self.esdl_output_profiles_type:
-            self._write_output_profiles(
-                energy_system,
-                optimizer_sim,
-                output_energy_system_id,
-                simulation_id,
-            )
-
-        # close ESDL output profile database connections
-        close_db_connections()
-
-        # ------------------------------------------------------------------------------------------
-        # Save esdl file
-        # Edwin_marker_esdl_string - line 1224
-        if self.esdl_parser_class == mesido.esdl.esdl_parser.ESDLFileParser:
-            extension = "_Simulation.esdl" if optimizer_sim else "_GrowOptimized.esdl"
-            file_path = Path(self.model_folder) / (Path(self.esdl_file_name).stem + extension)
-            self.save_energy_system_to_file(energy_system, file_path=file_path)
-        self.optimized_esdl_string = self.convert_energy_system_to_string(
-            energy_system=energy_system
-        )
-
-        # self.__optimized_energy_system_handler = esh
-        # self.optimized_esdl_string = esh.to_string()
-        #
-        # if self.esdl_string is None:
-        #     if optimizer_sim:
-        #         filename = run_info.esdl_file.with_name(
-        #             f"{run_info.esdl_file.stem}_Simulation.esdl"
-        #         )
-        #     else:
-        #         filename = run_info.esdl_file.with_name(
-        #             f"{run_info.esdl_file.stem}_GrowOptimized.esdl"
-        #         )
-        #     esh.save(str(filename))
-
-    def _write_json_output(
-        self,
-        results: Union[AliasDict, Dict],
-        parameters: Union[AliasDict, Dict],
-        bounds: Union[AliasDict, Dict],
-        aliases: OrderedDict,
-        solver_stats: Dict,
-        ensemble_member: int,
-    ):
-        """
-        The results, parameters, bounds are saved as json files which can be used for further
-        processing. Aliases are also saved as this allows us to only save the necessary variables.
-        :param results: dictionary or Alias dictionary with the results of the optimization problem
-        :param parameters: dictionary or Alias dictionary with the parameters of the optimization
-        problem
-        :param bounds: dictionary or Alias dictionary with the bounds of the optimization problem
-        :param aliases: Alias dictionary describing all the aliases for the variables used
-        :param solver_stats: solver statistics provided by the solver
-        :return:
-        """
-
-        workdir = os.path.join(self.output_folder, f"{ensemble_member}")
-        if not os.path.exists(workdir):
-            os.mkdir(workdir)
-
-        parameters_dict = dict()
-        parameter_path = os.path.join(workdir, "parameters.json")
-        for key, value in parameters.items():
-            new_value = value  # [x for x in value]
-            parameters_dict[key] = new_value
-        with open(parameter_path, "w") as file:
-            json.dump(parameters_dict, fp=file)
-
-        bounds_dict = dict()
-        bounds_path = os.path.join(workdir, "bounds.json")
-        for key, value in bounds.items():
-            if "Stored_heat" not in key:
-                new_value = value  # [x for x in value]
-                if isinstance(value[0], Timeseries) or isinstance(value[1], Timeseries):
-                    new_value = (value[0].values.tolist(), value[1].values.tolist())
-                bounds_dict[key] = new_value
-        with open(bounds_path, "w") as file:
-            json.dump(bounds_dict, fp=file)
-
-        results_dict = dict()
-        for key, values in results.items():
-            new_value = values.tolist()
-            if len(new_value) == 1:
-                new_value = new_value[0]
-            results_dict[key] = new_value
-
-        results_path = os.path.join(workdir, "results.json")
-        with open(results_path, "w") as file:
-            json.dump(results_dict, fp=file)
-
-        # save aliases
-        alias_dict = {}
-        for key, values in aliases.items():
-            new_value = values
-            alias_dict[key] = new_value
-
-        aliases_path = os.path.join(workdir, "aliases.json")
-        with open(aliases_path, "w") as file:
-            json.dump(alias_dict, fp=file)
-
-        # save solver_stats
-        solver_stats_dict = solver_stats
-        solver_stats_path = os.path.join(workdir, "solver_stats.json")
-        with open(solver_stats_path, "w") as file:
-            json.dump(solver_stats_dict, fp=file)
