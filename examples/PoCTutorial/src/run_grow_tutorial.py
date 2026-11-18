@@ -14,7 +14,7 @@ if __name__ == "__main__":
 
     kwargs = {
         # '"esdl_output_profiles_type"=None' (default) means no profiles to DB
-        "esdl_output_profiles_type": ESDLOutputProfilesType.INFLUXDB,
+        "esdl_output_profiles_type": ESDLOutputProfilesType.TIME_SERIES_PROFILE,
         "database_connections": [
             {
                 "access_type": DBAccessType.WRITE,  # DBAccessType.READ or DBAccessType.READ_WRITE
@@ -35,7 +35,7 @@ if __name__ == "__main__":
         base_folder=base_folder,
         esdl_file_name="PoC Tutorial.esdl",
         esdl_parser=ESDLFileParser,
-        # **kwargs,
+        **kwargs,
     )
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

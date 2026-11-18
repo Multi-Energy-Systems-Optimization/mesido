@@ -769,6 +769,6 @@ class RollOutProblem(
             bounds = self.bounds()
             aliases = self.alias_relation._canonical_variables_map
             solver_stats = self.solver_stats
-            self._write_json_output(results, parameters, bounds, aliases, solver_stats)
+            self.write_json_output(results, parameters, bounds, aliases, solver_stats)
 
         # rollout_post(self, results)

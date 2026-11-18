@@ -585,7 +585,7 @@ class EndScenarioSizing(
                 sys.exit(1)
             if self._total_stages == self._stage:  # When staging does exists
                 if solver_success:
-                    self._write_updated_esdl(self._ESDLMixin__energy_system_handler.energy_system)
+                    self.write_updated_esdl(self._ESDLMixin__energy_system_handler.energy_system)
                 else:
                     logger.warning("Optimization was not successful: Updated esdl is not created.")
             elif self._total_stages < self._stage:
@@ -597,7 +597,7 @@ class EndScenarioSizing(
 
         except AttributeError:
             # Staging does not exist
-            self._write_updated_esdl(self._ESDLMixin__energy_system_handler.energy_system)
+            self.write_updated_esdl(self._ESDLMixin__energy_system_handler.energy_system)
         except Exception:
             logger.error("Unkown error occured when evaluating self._stage for _write_updated_esdl")
             sys.exit(1)
@@ -612,7 +612,7 @@ class EndScenarioSizing(
                 bounds = self.bounds()
                 aliases = self.alias_relation._canonical_variables_map
                 solver_stats = self.solver_stats
-                self._write_json_output(results, parameters, bounds, aliases, solver_stats, e_m)
+                self.write_json_output(results, parameters, bounds, aliases, solver_stats, e_m)
 
     def __heat_demand_match_check(self, results: AliasDict, e_m: int = 0) -> None:
         """
