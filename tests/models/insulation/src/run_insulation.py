@@ -5,7 +5,9 @@ from mesido.esdl.esdl_mixin import ESDLMixin
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import ProfileReaderFromFile
 from mesido.techno_economic_mixin import TechnoEconomicMixin
-from mesido.workflows.goals.demand_options_goals import TargetDemandAlternativesGoal
+from mesido.workflows.goals.demand_options_goals import (
+    TargetDemandAlternativesGlobalGoal,
+)
 
 import casadi as ca
 import numpy as np
@@ -131,42 +133,25 @@ class HeatProblem(
             goals.append(MinimizeSourcesHeatGoal(s))
 
         bounds = self.bounds()
+        alternative_profiles = self.constant_inputs(0)
         demand_type = ["heat_demand", "cold_demand"]
         for dtype in demand_type:
             for demand in self.energy_system_components.get(dtype, []):
-                # target = self.get_timeseries(f"{demand}.target_{dtype}")
-                # if bounds[f"{demand}.HeatIn.Heat"][1] < max(target.values):
-                #     logger.warning(
-                #         f"{demand} has a flow limit, {bounds[f'{demand}.HeatIn.Heat'][1]}, "
-                #         f"lower than what is required for the maximum demand {max(target.values)}"
-                #     )
-                # TODO:
-                # update this caclulation to bounds[f"{demand}.HeatIn.Heat"][1]/ dT * Tsup & move
-                # to potential_errors variable
+
                 state = f"{demand}.{dtype[0].upper() + dtype[1:]}"
 
-                # goals.append(TargetHeatGoal(state, target))
-
                 # Adding constraints for the entire time horizon per demand insulation
-                # for iclasses in range(len(self.demand_profile_for_this_class)):
-                demand_insulation_classes = self._HeatPhysicsMixin__demand_insulation_class_map[demand]
+                demand_insulation_classes = (
+                    self._HeatPhysicsMixin__demand_insulation_class_global_map[demand]
+                )
+
                 target = None
-                # ins_class_to_variable = self._HeatPhysicsMixin__demand_insulation_class_map[demand]
-                # self._HeatPhysicsMixin__demand_insulation_class_var["e6b37a73-ebb4-4deb-80b4-80e8ceafe16f__demand_insulation_class_A"]
-                is_insulation_class_active_list = []
                 demand_profile_for_this_class = []
                 is_insulation_class_active_name_list = []
-                scaling_factor = {
-                    "measure_asset_id_1": 0.6, "measure_asset_id_2": 0.9, "measure_asset_id_3": 1.0
-                }
-                for pc, pc_var_name in demand_insulation_classes.items():
-                    target_demand = self.get_timeseries(f"{demand}.target_heat_demand")
-                    profile_times = self.times()
-                    new_profile = Timeseries(
-                        profile_times,
-                        scaling_factor[pc.demand_scaling_factor] * target_demand.values[: len(profile_times)]
+                for pc_var_name in demand_insulation_classes.values():
+                    demand_profile_for_this_class.append(
+                        alternative_profiles[f"{pc_var_name}__alternative_target_profile"]
                     )
-                    demand_profile_for_this_class.append(new_profile) # with profile stored instead of factor
                     is_insulation_class_active_name_list.append(pc_var_name)
 
                     target = demand_profile_for_this_class[-1]
@@ -176,9 +161,39 @@ class HeatProblem(
                             f"lower than what is required for the maximum demand {max(target.values)}"
                         )
 
-                goals.append(TargetDemandAlternativesGoal(state, demand_profile_for_this_class, is_insulation_class_active_name_list))
+                goals.append(
+                    TargetDemandAlternativesGlobalGoal(
+                        state,
+                        demand_profile_for_this_class,
+                        is_insulation_class_active_name_list,
+                    )
+                )
 
         return goals
+
+    # Still to double check this
+    def constant_inputs(self, ensemble_member):
+        inputs = super().constant_inputs(ensemble_member).copy()
+        scaling_factors = {
+            "measure_asset_id_1": 0.6,
+            "measure_asset_id_2": 0.9,
+            "measure_asset_id_3": 1.0,
+        }
+
+        global_map = getattr(
+            self, "_HeatPhysicsMixin__demand_insulation_class_global_map", {}
+        )
+        for demand, alternatives in global_map.items():
+            target = self.get_timeseries(
+                f"{demand}.target_heat_demand", ensemble_member
+            )
+            for alternative, selector_name in alternatives.items():
+                inputs[f"{selector_name}__alternative_target_profile"] = Timeseries(
+                    target.times,
+                    scaling_factors[alternative.demand_scaling_factor] * target.values,
+                )
+
+        return inputs
 
     def energy_system_options(self):
         options = super().energy_system_options()
@@ -401,7 +416,8 @@ if __name__ == "__main__":
 
     start_time = time.time()
     heat_problem = run_optimization_problem(
-        HeatProblemB,
+        HeatProblem,
+        # HeatProblemB,
         esdl_file_name="Insulation.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,

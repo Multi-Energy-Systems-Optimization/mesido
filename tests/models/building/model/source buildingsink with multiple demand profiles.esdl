@@ -16,7 +16,7 @@
   </energySystemInformation>
   <instance xsi:type="esdl:Instance" id="90e7e098-038e-4462-89fe-a8852c501753" name="Untitled instance">
     <area xsi:type="esdl:Area" name="Untitled area" id="4fd1adc2-5371-4ab7-806a-b40e49d127e9">
-      <asset xsi:type="esdl:HeatProducer" name="source_1" id="source_1" power="10000000.0">
+      <asset xsi:type="esdl:HeatProducer" name="source_1" id="source_1" power="20000000.0">
         <port xsi:type="esdl:OutPort" id="b0b1a87c-7b5a-4edb-a732-274d1bf69647" name="Out" connectedTo="3b5636b1-7b14-46bd-bb27-c0718350b418" carrier="435a0034-fab0-4e7e-9a17-edf8de9a2b11"/>
         <port xsi:type="esdl:InPort" id="622d7e19-e360-46af-bfbf-eb35ec14548b" name="In" carrier="435a0034-fab0-4e7e-9a17-edf8de9a2b11_ret" connectedTo="0f11bb2d-fb28-4f9d-8992-8d5901f579d7"/>
         <port xsi:type="esdl:OutPort" id="417ab7fa-d210-469c-9c40-b7762909e99c" name="EmissionPort" carrier="47213979-189c-4537-8eca-5f79e70810e1"/>
@@ -78,7 +78,7 @@
                 </fixedMaintenanceCosts>
               </costInformation>
               <port xsi:type="esdl:InPort" id="5742f582-ad5c-4355-9dce-b2617e8540a6" name="NewInPort">
-                <profile xsi:type="esdl:InfluxDBProfile" multiplier="5.0" id="cbdbcc7a-0f2a-4238-8170-eb263f7e5f11" database="energy_profiles" endDate="2019-12-31T22:00:00.000000+0000" field="SpaceHeat&amp;HotWater_PowerProfile_2000_2010" host="https://profiles.warmingup.info" measurement="Space Heat default profiles" startDate="2018-12-31T23:00:00.000000+0000">
+                <profile xsi:type="esdl:InfluxDBProfile" multiplier="10.0" id="cbdbcc7a-0f2a-4238-8170-eb263f7e5f11" database="energy_profiles" endDate="2019-12-31T22:00:00.000000+0000" field="SpaceHeat&amp;HotWater_PowerProfile_2000_2010" host="https://profiles.warmingup.info" measurement="Space Heat default profiles" startDate="2018-12-31T23:00:00.000000+0000">
                   <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="187a5e7a-8abb-40d9-9714-006b2a06551b" unit="WATT" multiplier="MEGA" physicalQuantity="POWER"/>
                 </profile>
               </port>
@@ -109,17 +109,17 @@
             </asset>
             <asset xsi:type="esdl:HeatingDemand" id="ebe5a192-b10c-441a-b212-f54b0814d378" name="HeatingDemandProf_2">
               <port xsi:type="esdl:InPort" id="d95d4742-0805-4bde-ac62-5dd98642fad3" name="NewInPort">
-                <profile xsi:type="esdl:InfluxDBProfile" multiplier="4.0" id="9536a006-86e2-4f64-94c6-bb29a1701d6b" name="NewInfluxDBProfile" database="energy_profiles" endDate="2019-12-31T22:00:00.000000+0000" field="SpaceHeat&amp;HotWater_PowerProfile_2000_2010" host="https://profiles.warmingup.info" measurement="Space Heat default profiles" startDate="2018-12-31T23:00:00.000000+0000">
+                <profile xsi:type="esdl:InfluxDBProfile" multiplier="12.0" id="9536a006-86e2-4f64-94c6-bb29a1701d6b" name="NewInfluxDBProfile" database="energy_profiles" endDate="2019-12-31T22:00:00.000000+0000" field="SpaceHeat&amp;HotWater_PowerProfile_2000_2010" host="https://profiles.warmingup.info" measurement="Space Heat default profiles" startDate="2018-12-31T23:00:00.000000+0000">
                   <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="60a1176c-bce3-49f8-beac-47e49155ce24" unit="WATT" multiplier="MEGA" physicalQuantity="POWER"/>
                 </profile>
               </port>
             </asset>
           </measure>
         </measures>
-        <asset xsi:type="esdl:HeatingDemand" id="7627b44c-d281-450d-ac57-c13f749b85b6" name="HeatingDemand_1" power="5000000.0">
+        <asset xsi:type="esdl:HeatingDemand" id="7627b44c-d281-450d-ac57-c13f749b85b6" name="HeatingDemand_1" power="15000000.0">
           <geometry xsi:type="esdl:Point" lat="356.78125" lon="246.0" CRS="Simple"/>
           <port xsi:type="esdl:InPort" id="86e2ea2b-bec5-4e43-8ac1-3e1272dbacd5" name="In" connectedTo="520b6cb8-41d6-4527-b08b-a6ed481ba555" carrier="435a0034-fab0-4e7e-9a17-edf8de9a2b11">
-            <profile xsi:type="esdl:InfluxDBProfile" measurement="Space Heat default profiles" field="SpaceHeat_and_HotWater_PowerProfile_1700_1950" host="https://profiles.warmingup.info" database="energy_profiles" filters="" startDate="2018-12-31T23:00:00.000000+0000" endDate="2019-12-31T22:00:00.000000+0000" id="d1290570-4e83-4cd3-be68-c4f88ca1670c" profileType="INPUT">
+            <profile xsi:type="esdl:InfluxDBProfile"  multiplier="1.0" measurement="Space Heat default profiles" field="SpaceHeat_and_HotWater_PowerProfile_1700_1950" host="https://profiles.warmingup.info" database="energy_profiles" filters="" startDate="2018-12-31T23:00:00.000000+0000" endDate="2019-12-31T22:00:00.000000+0000" id="d1290570-4e83-4cd3-be68-c4f88ca1670c" profileType="INPUT">
               <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference" reference="e9405fc8-5e57-4df5-8584-4babee7cdf1b"/>
             </profile>
           </port>
@@ -128,7 +128,7 @@
         <asset xsi:type="esdl:CoolingDemand" id="04fc1b98-7d69-423a-9b35-9fecc5dab19b" name="CoolingDemand_1" power="5000000.0">
           <geometry xsi:type="esdl:Point" lat="149.78125" lon="244.0" CRS="Simple"/>
           <port xsi:type="esdl:InPort" id="419b7343-2ea1-43dd-8202-a54ea8e3720f" name="In" connectedTo="9a3d5f9c-da1a-4d88-b892-9e17247b3f86" carrier="435a0034-fab0-4e7e-9a17-edf8de9a2b11_ret">
-            <profile xsi:type="esdl:InfluxDBProfile" measurement="Space Heat default profiles" field="SpaceHeat_PowerProfile_1700_1950" host="https://profiles.warmingup.info" database="energy_profiles" filters="" startDate="2018-12-31T23:00:00.000000+0000" endDate="2019-12-31T22:00:00.000000+0000" id="cd64ce8b-5d75-47c6-890c-d05c67bfa57f" profileType="INPUT">
+            <profile xsi:type="esdl:InfluxDBProfile" multiplier="0.1" measurement="Space Heat default profiles" field="SpaceHeat_PowerProfile_1700_1950" host="https://profiles.warmingup.info" database="energy_profiles" filters="" startDate="2018-12-31T23:00:00.000000+0000" endDate="2019-12-31T22:00:00.000000+0000" id="cd64ce8b-5d75-47c6-890c-d05c67bfa57f" profileType="INPUT">
               <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference" reference="e9405fc8-5e57-4df5-8584-4babee7cdf1b"/>
             </profile>
           </port>
