@@ -9,11 +9,13 @@ from mesido.network_common import NetworkSettings
 from mesido.workflows.multicommodity_simulator_workflow import (
     MultiCommoditySimulator,
     MultiCommoditySimulatorNoLosses,
-    run_sequatially_staged_simulation,
+    SolverHIGHS,
+    run_sequentially_staged_simulation,
 )
 
 import numpy as np
 
+from rtctools.optimization.timeseries import Timeseries
 from rtctools.util import run_optimization_problem
 
 from utils_test_scaling import create_problem_with_debug_info, problem_scaling_check
@@ -34,9 +36,9 @@ def check_electrolyzer_efficiency(tol, electrolyzer_gas, electrolyzer_power, esd
         esdl_electrolyzer.attributes["effMinLoad"],
         esdl_electrolyzer.attributes["efficiency"],
     )
-    np.testing.assert_array_less(min(provided_efficiencies), efficiency[electrolyzer_power > 1])
+    np.testing.assert_array_less(min(provided_efficiencies), efficiency[electrolyzer_gas > tol])
     np.testing.assert_array_less(
-        efficiency[electrolyzer_power > 0], max(provided_efficiencies) + tol
+        efficiency[electrolyzer_gas > tol], max(provided_efficiencies) + tol,
     )
 
 
@@ -309,9 +311,8 @@ class TestMultiCommoditySimulator(TestCase):
                 super().read()
 
                 for asset in self.energy_system_components["wind_park"]:
-                    new_timeseries = (
-                        self.get_timeseries(f"{asset}.maximum_electricity_source").values * 0.5
-                    )
+                    max_source_ts = self.get_timeseries(f"{asset}.maximum_electricity_source")
+                    new_timeseries = Timeseries(max_source_ts.times, max_source_ts.values * 0.5)
                     self.set_timeseries(f"{asset}.maximum_electricity_source", new_timeseries)
 
             def energy_system_options(self):
@@ -457,7 +458,7 @@ class TestMultiCommoditySimulator(TestCase):
         )
 
         solution = run_optimization_problem(
-            multicommoditysimulatornolossesscaling,
+            MultiCommoditySimulatorNoLosses,
             base_folder=base_folder,
             esdl_file_name="emerge_battery_priorities.esdl",
             esdl_parser=ESDLFileParser,
@@ -648,8 +649,9 @@ class TestMultiCommoditySimulator(TestCase):
                     stage_objectives.append((self, {}))
                 stage_objectives[-1][1][priority] = self.objective_value
 
-        solution_staged_unbounded = run_sequatially_staged_simulation(
+        solution_staged_unbounded = run_sequentially_staged_simulation(
             multi_commodity_simulator_class=MultiCommoditySimulatorNoLossesRecordObjectives,
+            solver_class=SolverHIGHS,
             simulation_window_size=20,
             base_folder=base_folder,
             esdl_file_name="emerge_battery_priorities.esdl",
@@ -662,6 +664,7 @@ class TestMultiCommoditySimulator(TestCase):
 
         solution_unstaged = run_optimization_problem(
             MultiCommoditySimulatorNoLosses,
+            solver_class=SolverHIGHS,
             base_folder=base_folder,
             esdl_file_name="emerge_battery_priorities.esdl",
             esdl_parser=ESDLFileParser,
@@ -686,24 +689,22 @@ class TestMultiCommoditySimulator(TestCase):
         # on the NEOS server.
         cplex_reference_objectives = [
             {
-                3: -5.988997575483286,
-                4: 1.1985084874328542,
+                2: 0.0,
+                3: -5.988997575483287,
+                4: 1.1985084874328533,
                 5: 8.032907152232609,
                 6: 0.02935812035813031,
                 7: 5.191496612269487,
-                8: -15.060707894976723,
-                9: 19.000000000000007,
-                30: 0.0,
+                8: -15.060707894976721,
             },
             {
-                3: -1.196208109047731,
+                2: 0.0,
+                3: -1.2041651392923625,
                 4: 0.0,
                 5: 0.0,
-                6: -6.938893903934504e-19,
-                7: 1.0193063399105586,
+                6: 0.00039785151223312566,
+                7: 1.0217676310815835,
                 8: -4.355922577847732,
-                9: 4.0,
-                30: -4.163336342360702e-17,
             },
         ]
 
@@ -714,7 +715,7 @@ class TestMultiCommoditySimulator(TestCase):
                     objectives[priority], reference_value, rtol=1e-6, atol=1e-12
                 )
 
-        solution_staged_bounded = run_sequatially_staged_simulation(
+        solution_staged_bounded = run_sequentially_staged_simulation(
             multi_commodity_simulator_class=MultiCommoditySimulatorNoLosses,
             simulation_window_size=20,
             base_folder=base_folder,
