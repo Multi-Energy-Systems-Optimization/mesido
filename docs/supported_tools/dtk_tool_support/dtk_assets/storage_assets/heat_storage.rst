@@ -68,12 +68,6 @@ front end and their interpretation and use by the optimizer.
      - The volume is used to determine the maximum heat capacity that can be
        stored with the implied :math:`\mathrm{\Delta T = T_{In} - T_{Out}}`. If both capacity and volume
        are specified, then only the volume will be used.
-   * - Advanced attributes
-     - Self Discharge Rate
-     - Heat loss at the maximum heat storage capacity (the default value makes the heat loss 1% of the stored heat per day).
-     - W
-     - Optional
-     - Self discharge rate is used to calculate the heat loss coefficient.
    * - Ports
      - Inport and OutPort (1 of each)
      - The in port and the out port for the asset should be connected 1 hydraulically coupled network.
@@ -129,4 +123,4 @@ Assumptions
 * If both capacity and volume are specified, the volume definition takes precedence.
 * If the maximum charge or discharge rate is not specified, the optimizer uses a default of :math:`10e6\,\mathrm{W}`.
 * The heat physics described for the storage and tank in :ref:`heat_physics_storage` and :ref:`heat_physics_storage_tank` sections applies to the surface tank storage asset.
-* The heat loss coefficient is the fraction of stored heat lost per second and obtained by dividing the self discharge rate by the maximum heat storage capacity. Its default value corresponds to a loss of 1% of the stored heat per day.
+* The surface tank storage losses 1% of its stored heat per day. See :ref:`heat_physics_storage_tank` for more information on heat losses.

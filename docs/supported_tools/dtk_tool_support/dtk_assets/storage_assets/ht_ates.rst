@@ -59,12 +59,6 @@ front end and their interpretation and use by the optimizer.
      - \-
      - Required
      - By increasing this number one increases the number of installed ATES doublets.
-   * - Advanced attributes
-     - Discharge Efficiency
-     - Efficiency of storing heat over a period of 100 days (default = 0.7, min=0, max=1)
-     - \-
-     - Optional
-     - Discharge efficiency is used to calculate the heat loss coefficient.
    * - Ports
      - Inport and OutPort (1 off each)
      - The in port and the out port for the asset should be connected to 1
@@ -125,4 +119,4 @@ Assumptions
 ^^^^^^^^^^^
 * The temperature at the inport must be higher than the temperature at the outport (:math:`\mathrm{T_{In} > T_{Out}}`).
 * The heat physics described for the storage and tank in :ref:`heat_physics_storage` and :ref:`heat_physics_storage_ates` sections applies to HT-ATES asset.
-* Heat loss coefficient is the fraction of stored heat lost per second and calculated by :math:`\mathrm{\frac{1 - \eta^{1/100}}{3600.0 \times 24.0}\ s^{-1}}`, where :math:`\mathrm{\eta}` is the discharge efficiency. Default value of the heat loss coefficient is equivalent to losing 30% of the stored heat per 100 days.
+* HT-ATES losses 30% of its stored heat per 100 days. See :ref:`heat_physics_storage_ates` for more information on heat losses.

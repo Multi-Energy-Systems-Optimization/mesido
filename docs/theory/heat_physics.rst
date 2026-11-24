@@ -358,7 +358,7 @@ Heat loss in a tank is modelled as linear with the stored heat:
 
 where :math:`Q^{a}_{stored}` is the heat stored in the storage asset and :math:`\beta` is the efficiency factor.
 
-The efficiency factor increases linearly with the maximum heat storage capacity of the tank. Its default value corresponds to heat loss of 1% of the stored heat per day.
+The efficiency factor scales linearly with both the maximum heat storage capacity and the self-discharge rate, where the self-discharge rate is defined as the heat loss at maximum storage capacity. By default, this efficiency factor corresponds to a heat loss of 1% of the stored heat per day.
 
 .. _heat_physics_storage_ates:
 HT-ATES
